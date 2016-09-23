@@ -1,0 +1,25 @@
+{
+	"FileVersion" : 3,
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"FriendlyName" : "Semantic Logger",
+	"Description" : "Semantic logger plugin for openease.org",
+	"Category" : "Semantic Logger",
+	"CreatedBy" : "Andrei Haidu",
+	"CreatedByURL" : "http://ai.uni-bremen.de/team/andrei_haidu",
+	"DocsURL" : "",
+	"MarketplaceURL" : "",
+	"SupportURL" : "",
+	"EnabledByDefault" : false,
+	"CanContainContent" : false,
+	"IsBetaVersion" : false,
+	"Installed" : false,
+	"Modules" :
+	[
+		{
+			"Name" : "SemLog",
+			"Type" : "Runtime",
+			"LoadingPhase" : "PreDefault"
+		}
+	]
+}
