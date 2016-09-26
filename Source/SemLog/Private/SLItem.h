@@ -3,8 +3,8 @@
 #pragma once
 
 #include "Engine/StaticMeshActor.h"
-#include "REnums.h"
-#include "RItem.generated.h"
+#include "SLEnums.h"
+#include "SLItem.generated.h"
 
 /**
 *
@@ -16,16 +16,16 @@ class SEMLOG_API ARItem : public AStaticMeshActor
 
 public:
 	// Constructor, sets default values for object
-	ARItem();
+	ASLItem();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	// Ontology class name
-	UPROPERTY(EditAnywhere, Category = "Semlog|Semantic Map")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString ItemClassName;
 
 	// Ontology class name
-	UPROPERTY(EditAnywhere, Category = "Semlog|Semantic Logger")
-	ERLogType ItemLogType;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESemLogType ItemLogType;
 };

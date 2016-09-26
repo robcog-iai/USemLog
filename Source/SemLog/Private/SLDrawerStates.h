@@ -3,16 +3,16 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "RSemDrawerStateLog.generated.h"
+#include "SLDrawerStates.generated.h"
 
 UCLASS()
-class SEMLOG_API ARSemDrawerStateLog : public AActor
+class SEMLOG_API ASLDrawerStates : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ARSemDrawerStateLog();
+	ASLDrawerStates();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -28,7 +28,7 @@ private:
 	void LogState(AActor* Furniture, const FString State);
 
 	// Drawer state check update rate (seconds)
-	UPROPERTY(EditAnywhere, Category = "Drawer State Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float UpdateRate;
 
 	// Array of constraints to watch

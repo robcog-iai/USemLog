@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SemLogPrivatePCH.h"
-#include "RRawDataExporter.h"
+#include "SLRawDataExporter.h"
 
 // Set default values
-FRRawDataExporter::FRRawDataExporter(
+FSLRawDataExporter::FSLRawDataExporter(
 	const float DistThreshSqr, 
 	const FString Path,
 	TMap<ASkeletalMeshActor*, FString> SkelActPtrToUniqNameMap,
@@ -22,19 +22,19 @@ FRRawDataExporter::FRRawDataExporter(
 	CameraPrevLoc = FVector(0);
 
 	// Init items we want to log
-	FRRawDataExporter::InitItemsToLog(SkelActPtrToUniqNameMap,
+	FSLRawDataExporter::InitItemsToLog(SkelActPtrToUniqNameMap,
 		DynamicActPtrToUniqNameMap,
 		StaticActPtrToUniqNameMap);
 }
 
 // Destructor
-FRRawDataExporter::~FRRawDataExporter()
+FSLRawDataExporter::~FSLRawDataExporter()
 {
 	RawFileHandle.Reset();
 }
 
 // Update grasping
-void FRRawDataExporter::Update(const float Timestamp)
+void FSLRawDataExporter::Update(const float Timestamp)
 {
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
@@ -62,7 +62,7 @@ void FRRawDataExporter::Update(const float Timestamp)
 			// Update previous location
 			SkelActStructItr.PrevLoc = CurrCompLocation;
 			// Json actor object with name location and rotation
-			TSharedPtr<FJsonObject> JsonActorObj = FRRawDataExporter::CreateNameLocRotJsonObject(
+			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
 				SkelActStructItr.UniqueName, CurrCompLocation * 0.01, CurrSkelMesh->GetComponentQuat());
 
 			// Json array of bones
@@ -78,7 +78,7 @@ void FRRawDataExporter::Update(const float Timestamp)
 				CurrSkelMesh->GetBoneQuaternion(BoneName);
 
 				// Json bone object with name location and rotation
-				TSharedPtr<FJsonObject> JsonBoneObj = FRRawDataExporter::CreateNameLocRotJsonObject(
+				TSharedPtr<FJsonObject> JsonBoneObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
 					BoneName.ToString(), CurrSkelMesh->GetBoneLocation(BoneName) * 0.01,
 					CurrSkelMesh->GetBoneQuaternion(BoneName));
 
@@ -111,7 +111,7 @@ void FRRawDataExporter::Update(const float Timestamp)
 			DynamicActStructItr.PrevLoc = CurrActLocation;
 
 			// Json actor object with name location and rotation
-			TSharedPtr<FJsonObject> JsonActorObj = FRRawDataExporter::CreateNameLocRotJsonObject(
+			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
 				DynamicActStructItr.UniqueName, CurrActLocation * 0.01, CurrStaticMeshAct->GetActorQuat());
 
 			// Add actor to Json array
@@ -135,7 +135,7 @@ void FRRawDataExporter::Update(const float Timestamp)
 			CameraPrevLoc = CurrCameraLocation;
 
 			// Json actor object with name location and rotation
-			TSharedPtr<FJsonObject> JsonActorObj = FRRawDataExporter::CreateNameLocRotJsonObject(
+			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
 				CameraToUniqueName.Value, CurrCameraLocation * 0.01, CameraToUniqueName.Key->GetComponentQuat());
 			// Add actor to Json array
 			JsonActorArr.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));
@@ -150,7 +150,7 @@ void FRRawDataExporter::Update(const float Timestamp)
 		for (auto& StaticActToUniqNameItr : StaticActToUniqName)
 		{
 			// Json actor object with name location and rotation
-			TSharedPtr<FJsonObject> JsonActorObj = FRRawDataExporter::CreateNameLocRotJsonObject(
+			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
 				StaticActToUniqNameItr.Value, StaticActToUniqNameItr.Key->GetActorLocation() * 0.01, StaticActToUniqNameItr.Key->GetActorQuat());
 
 			// Add actor to Json array
@@ -174,7 +174,7 @@ void FRRawDataExporter::Update(const float Timestamp)
 }
 
 // Create Json object with a 3d location
-FORCEINLINE TSharedPtr<FJsonObject> FRRawDataExporter::CreateLocationJsonObject(const FVector Location)
+FORCEINLINE TSharedPtr<FJsonObject> FSLRawDataExporter::CreateLocationJsonObject(const FVector Location)
 {
 	// Json location object
 	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
@@ -187,7 +187,7 @@ FORCEINLINE TSharedPtr<FJsonObject> FRRawDataExporter::CreateLocationJsonObject(
 }
 
 // Create Json object with a 3d rotation as quaternion 
-FORCEINLINE TSharedPtr<FJsonObject> FRRawDataExporter::CreateRotationJsonObject(const FQuat Rotation)
+FORCEINLINE TSharedPtr<FJsonObject> FSLRawDataExporter::CreateRotationJsonObject(const FQuat Rotation)
 {
 	// Json rotation object
 	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
@@ -201,20 +201,20 @@ FORCEINLINE TSharedPtr<FJsonObject> FRRawDataExporter::CreateRotationJsonObject(
 }
 
 // Create Json object with name location and rotation
-FORCEINLINE TSharedPtr<FJsonObject> FRRawDataExporter::CreateNameLocRotJsonObject(const FString Name, const FVector Location, const FQuat Rotation)
+FORCEINLINE TSharedPtr<FJsonObject> FSLRawDataExporter::CreateNameLocRotJsonObject(const FString Name, const FVector Location, const FQuat Rotation)
 {
 	// Json  actor object
 	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
 	// Add fields
 	JsonObj->SetStringField("name", Name);
-	JsonObj->SetObjectField("pos", FRRawDataExporter::CreateLocationJsonObject(Location));
-	JsonObj->SetObjectField("rot", FRRawDataExporter::CreateRotationJsonObject(Rotation));
+	JsonObj->SetObjectField("pos", FSLRawDataExporter::CreateLocationJsonObject(Location));
+	JsonObj->SetObjectField("rot", FSLRawDataExporter::CreateRotationJsonObject(Rotation));
 
 	return JsonObj;
 }
 
 // Initialize items to log
-void FRRawDataExporter::InitItemsToLog(
+void FSLRawDataExporter::InitItemsToLog(
 	const TMap<ASkeletalMeshActor*, FString>& SkelActPtrToUniqNameMap,
 	const TMap<AStaticMeshActor*, FString>& DynamicActPtrToUniqNameMap,
 	const TMap<AStaticMeshActor*, FString>& StaticActPtrToUniqNameMap)
@@ -225,7 +225,7 @@ void FRRawDataExporter::InitItemsToLog(
 	for (const auto SkelActPtrToUniqNameItr : SkelActPtrToUniqNameMap)
 	{
 		SkelActStructArr.Add(
-			FRSkelLogRawStruct(SkelActPtrToUniqNameItr.Key, SkelActPtrToUniqNameItr.Value));
+			FSLSkelLogRawStruct(SkelActPtrToUniqNameItr.Key, SkelActPtrToUniqNameItr.Value));
 		UE_LOG(SemLogRaw, Warning, TEXT("\t%s -> %s"),
 			*SkelActPtrToUniqNameItr.Key->GetName(), *SkelActPtrToUniqNameItr.Value);
 	}
@@ -234,7 +234,7 @@ void FRRawDataExporter::InitItemsToLog(
 	for (const auto DynamicActPtrToUniqNameItr : DynamicActPtrToUniqNameMap)
 	{
 		DynamicActStructArr.Add(
-			FRDynActLogRawStruct(DynamicActPtrToUniqNameItr.Key, DynamicActPtrToUniqNameItr.Value));
+			FSLDynActLogRawStruct(DynamicActPtrToUniqNameItr.Key, DynamicActPtrToUniqNameItr.Value));
 		UE_LOG(SemLogRaw, Warning, TEXT("\t%s -> %s"),
 			*DynamicActPtrToUniqNameItr.Key->GetName(), *DynamicActPtrToUniqNameItr.Value);
 	}

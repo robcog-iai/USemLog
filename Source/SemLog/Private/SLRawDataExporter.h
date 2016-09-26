@@ -7,11 +7,11 @@
 /**
  * Class exporting raw data during gameplay
  */
-class SEMLOG_API FRRawDataExporter
+class SEMLOG_API SLRawDataExporter
 {
 public:
 	// Constructor
-	FRRawDataExporter(const float DistThreshSqr,
+	SLRawDataExporter(const float DistThreshSqr,
 		const FString Path,
 		TMap<ASkeletalMeshActor*, FString> SkelActPtrToUniqNameMap,
 		TMap<AStaticMeshActor*, FString> DynamicActPtrToUniqNameMap,
@@ -19,15 +19,15 @@ public:
 		TPair<USceneComponent*, FString> CamToUniqName);
 
 	// Destructor
-	~FRRawDataExporter();
+	~SLRawDataExporter();
 
 	// Log step
 	void Update(const float Timestamp);
 
 	// Structure of skeletal mesh comp with its previous pose
-	struct FRSkelLogRawStruct
+	struct FSLSkelLogRawStruct
 	{
-		FRSkelLogRawStruct(ASkeletalMeshActor* SkMComp, const FString UniqName) :
+		FSLSkelLogRawStruct(ASkeletalMeshActor* SkMComp, const FString UniqName) :
 			SkelMeshComp(SkMComp),
 			UniqueName(UniqName),
 			PrevLoc(FVector(0.0f)),
@@ -39,9 +39,9 @@ public:
 	};
 
 	// Structure of dyamic actors with prev pose and unique name
-	struct FRDynActLogRawStruct
+	struct FSLDynActLogRawStruct
 	{
-		FRDynActLogRawStruct(AStaticMeshActor* StMAct, const FString UniqName) : 
+		FSLDynActLogRawStruct(AStaticMeshActor* StMAct, const FString UniqName) : 
 			StaticMeshAct(StMAct),
 			UniqueName(UniqName),
 			PrevLoc(FVector(0.0f)),
@@ -76,10 +76,10 @@ private:
 	TSharedPtr<IFileHandle> RawFileHandle;
 
 	// Array of skeletal meshes with prev position and orientation
-	TArray<FRSkelLogRawStruct> SkelActStructArr;
+	TArray<FSLSkelLogRawStruct> SkelActStructArr;
 
 	// Array of static meshes with prev position and orientation
-	TArray<FRDynActLogRawStruct> DynamicActStructArr;
+	TArray<FSLDynActLogRawStruct> DynamicActStructArr;
 
 	// Map of static map actors  to unique name
 	TMap<AStaticMeshActor*, FString> StaticActToUniqName;

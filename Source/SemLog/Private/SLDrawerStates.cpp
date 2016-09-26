@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SemLogPrivatePCH.h"
-#include "RSemEventsExporterSingl.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
-#include "RSemDrawerStateLog.h"
+#include "SLEventsExporterSingl.h"
+#include "SLDrawerStates.h"
 
 
 // Sets default values
-ARSemDrawerStateLog::ARSemDrawerStateLog()
+ASLDrawerStates::ASLDrawerStates()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
@@ -17,7 +17,7 @@ ARSemDrawerStateLog::ARSemDrawerStateLog()
 }
 
 // Called when the game starts or when spawned
-void ARSemDrawerStateLog::BeginPlay()
+void ASLDrawerStates::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -29,11 +29,11 @@ void ARSemDrawerStateLog::BeginPlay()
 
 	// Apply force to close the drawers (after a delay until the objects fall on the surfaces)
 	GetWorldTimerManager().SetTimer(
-		CloseFurnitureTimerHandle, this, &ARSemDrawerStateLog::CloseDrawers, UpdateRate, true, 2);
+		CloseFurnitureTimerHandle, this, &ASLDrawerStates::CloseDrawers, UpdateRate, true, 2);
 }
 
 // Close drawers
-void ARSemDrawerStateLog::CloseDrawers()
+void ASLDrawerStates::CloseDrawers()
 {
 	// TODO remove close drawers
 	for (const auto ConstrItr : Constraints)
@@ -84,11 +84,11 @@ void ARSemDrawerStateLog::CloseDrawers()
 
 	// Check drawer states with the given update rate (add delay until the drawers are closed)
 	GetWorldTimerManager().SetTimer(
-		FurnitureStateTimerHandle, this, &ARSemDrawerStateLog::CheckDrawerStates, UpdateRate, true, 3);
+		FurnitureStateTimerHandle, this, &ASLDrawerStates::CheckDrawerStates, UpdateRate, true, 3);
 }
 
 // Check drawer states
-void ARSemDrawerStateLog::CheckDrawerStates()
+void ASLDrawerStates::CheckDrawerStates()
 {
 	// Iterate all constraints
 	for (const auto ConstrItr : Constraints)
@@ -105,19 +105,19 @@ void ARSemDrawerStateLog::CheckDrawerStates()
 
 			if (Dist < -20.0f)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "Closed");
+				ASLDrawerStates::LogState(FurnitureAct, "Closed");
 			}
 			else if (Dist < 0.0f && Dist > -20.0f)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "HalfClosed");
+				ASLDrawerStates::LogState(FurnitureAct, "HalfClosed");
 			}
 			else if (Dist > 20.0f)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "Opened");
+				ASLDrawerStates::LogState(FurnitureAct, "Opened");
 			}
 			else if (Dist > 0.0f && Dist < 20.0f)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "HalfOpened");
+				ASLDrawerStates::LogState(FurnitureAct, "HalfOpened");
 			}
 		}
 		else if(ConstrItr->ConstraintInstance.GetAngularSwing1Motion() == EAngularConstraintMotion::ACM_Limited)
@@ -131,19 +131,19 @@ void ARSemDrawerStateLog::CheckDrawerStates()
 
 			if (CurrPos < ClosedVal)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "Closed");
+				ASLDrawerStates::LogState(FurnitureAct, "Closed");
 			}
 			else if (CurrPos < HalfVal && CurrPos > ClosedVal)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "HalfClosed");
+				ASLDrawerStates::LogState(FurnitureAct, "HalfClosed");
 			}
 			else if (CurrPos > OpenedVal)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "Opened");
+				ASLDrawerStates::LogState(FurnitureAct, "Opened");
 			}
 			else if (CurrPos < OpenedVal && CurrPos > HalfVal)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "HalfOpened");
+				ASLDrawerStates::LogState(FurnitureAct, "HalfOpened");
 			}
 		}
 		else if (ConstrItr->ConstraintInstance.GetAngularSwing2Motion() == EAngularConstraintMotion::ACM_Limited)
@@ -157,26 +157,26 @@ void ARSemDrawerStateLog::CheckDrawerStates()
 
 			if (CurrPos > ClosedVal)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "Closed");
+				ASLDrawerStates::LogState(FurnitureAct, "Closed");
 			}
 			else if (CurrPos > HalfVal && CurrPos < ClosedVal)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "HalfClosed");
+				ASLDrawerStates::LogState(FurnitureAct, "HalfClosed");
 			}
 			else if (CurrPos < OpenedVal)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "Opened");
+				ASLDrawerStates::LogState(FurnitureAct, "Opened");
 			}
 			else if (CurrPos > OpenedVal && CurrPos < HalfVal)
 			{
-				ARSemDrawerStateLog::LogState(FurnitureAct, "HalfOpened");
+				ASLDrawerStates::LogState(FurnitureAct, "HalfOpened");
 			}
 		}
 	}
 }
 
 // Log state
-void ARSemDrawerStateLog::LogState(AActor* Furniture, const FString State)
+void ASLDrawerStates::LogState(AActor* Furniture, const FString State)
 {
 	// Get the previous state of the furniture
 	FString PrevState = FurnitureToStateMap.FindRef(Furniture);

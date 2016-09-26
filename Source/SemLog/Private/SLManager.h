@@ -3,18 +3,18 @@
 #pragma once
 #include "GameFramework/Actor.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "RRawDataExporter.h"
-#include "RSemMapExporter.h"
-#include "RSemLogManager.generated.h"
+#include "SLRawDataExporter.h"
+#include "SLMapExporter.h"
+#include "SLManager.generated.h"
 
 UCLASS()
-class SEMLOG_API ARSemLogManager : public AActor
+class SEMLOG_API ASLManager : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ARSemLogManager();
+	ASLManager();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -42,23 +42,23 @@ private:
 	void WriteUniqueNames(const FString Path);
 
 	// Directory to save the logs
-	UPROPERTY(EditAnywhere, Category = "Semlog|Semantic logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString LogRootDirectoryName;
 
 	// Log raw data
-	UPROPERTY(EditAnywhere, Category = "Semlog|Semantic logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogRawData;
 
 	// Distance threshold for raw data logging (cm)
-	UPROPERTY(EditAnywhere, Category = "Semlog|Semantic logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float DistanceThreshold;
 
 	// Log semantic map (if not already logged)
-	UPROPERTY(EditAnywhere, Category = "Semlog|Semantic logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogSemanticMap;
 
 	// Log semantic events
-	UPROPERTY(EditAnywhere, Category = "Semlog|Semantic logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogSemanticEvents;
 
 	// Distance threshold squared for raw data logging
@@ -92,10 +92,10 @@ private:
 	TPair<USceneComponent*, FString> CameraToUniqueName;
 
 	// Raw data exporter
-	FRRawDataExporter* RawDataExporter;
+	FSLRawDataExporter* RawDataExporter;
 
 	// Semantic map exporter
-	FRSemMapExporter* SemMapExporter;
+	FSLSemMapExporter* SemMapExporter;
 
 	// Level path
 	FString LevelPath;

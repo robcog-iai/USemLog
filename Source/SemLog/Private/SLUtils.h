@@ -1,22 +1,68 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
+#include <string>
+#include <algorithm>
 #include "rapidxml/rapidxml_print.hpp"
 
 /**
  * Utils for OWL generation
  */
-struct SEMLOG_API FROwlUtils
+struct SEMLOG_API FSLUtils
 {
 public:
 	// Constructor
-	FROwlUtils()
+	FSLUtils()
 	{
 	};
 
 	// Destructor
-	~FROwlUtils()
+	~FSLUtils()
 	{
+	};
+
+	// Generate random FString
+	static FORCEINLINE FString GenerateRandomFString(const int32 Length)
+	{
+		auto RandChar = []() -> char
+		{
+			const char CharSet[] =
+				"0123456789"
+				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+				"abcdefghijklmnopqrstuvwxyz";
+			const size_t MaxIndex = (sizeof(CharSet) - 1);
+			return CharSet[rand() % MaxIndex];
+		};
+		std::string RandString(Length, 0);
+		std::generate_n(RandString.begin(), Length, RandChar);
+		// Return as Fstring
+		return FString(RandString.c_str());
+	}
+
+	// Convert FString to const char*
+	static FORCEINLINE const char* FStringToChar(const FString FStr)
+	{
+		const std::string str = TCHAR_TO_UTF8(*FStr);
+		char *cstr = new char[str.length() + 1];
+		strcpy(cstr, str.c_str());
+		return cstr;
+
+		//std::string str = TCHAR_TO_UTF8(*FStr);
+		//char* cstr = (char *)malloc(sizeof(char) * (str.length() + 1));
+		//strncpy_s(cstr, str.length(), str.c_str(), str.length());
+		//return cstr;
+	}
+
+	// Get the enum value to string
+	template<typename TEnum>
+	static FORCEINLINE FString GetEnumValueToString(const FString& Name, TEnum Value)
+	{
+		const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, *Name, true);
+		if (!EnumPtr)
+		{
+			return FString("Invalid");
+		}
+		return EnumPtr->GetEnumName((int32)Value);
 	};
 
 	// Node attribute as struct
@@ -30,9 +76,9 @@ public:
 	};
 
 	// Owl triple as struct
-	struct ROwlTriple
+	struct SLOwlTriple
 	{
-		ROwlTriple(const char* Subj, const char* Pred, const char* Obj, const char* Val = "")
+		SLOwlTriple(const char* Subj, const char* Pred, const char* Obj, const char* Val = "")
 			: Subject(Subj), Predicate(Pred), Object(Obj), Value(Val)
 		{}
 		const char* Subject;
@@ -81,7 +127,7 @@ public:
 	static FORCEINLINE void AddNodeTriple(
 		rapidxml::xml_document<>* Doc,
 		rapidxml::xml_node<>* ParentNode,
-		const ROwlTriple Triple)
+		const FSLOwlTriple Triple)
 	{
 		// Create Triple node
 		rapidxml::xml_node<> *TripleNode = Doc->allocate_node(rapidxml::node_element, Triple.Subject, Triple.Value);
@@ -95,11 +141,11 @@ public:
 	static FORCEINLINE void AddNodeTriples(
 		rapidxml::xml_document<>* Doc,
 		rapidxml::xml_node<>* ParentNode,
-		const TArray<ROwlTriple>& Triples)
+		const TArray<FSLOwlTriple>& Triples)
 	{
 		for (const auto TripleItr : Triples)
 		{
-			FROwlUtils::AddNodeTriple(Doc, ParentNode, TripleItr);
+			FSLUtils::AddNodeTriple(Doc, ParentNode, TripleItr);
 		}
 	}
 
@@ -107,15 +153,15 @@ public:
 	static FORCEINLINE void AddNodeEntityWithProperty(
 		rapidxml::xml_document<>* Doc,
 		rapidxml::xml_node<>* ParentNode,
-		const ROwlTriple EntityTriple,
-		const ROwlTriple PropertyTriple)
+		const FSLOwlTriple EntityTriple,
+		const FSLOwlTriple PropertyTriple)
 	{
 		// Create the entity node
 		rapidxml::xml_node<> *EntityNode = Doc->allocate_node(rapidxml::node_element, EntityTriple.Subject, EntityTriple.Value);
 		// Add predicate and object to entity node
 		EntityNode->append_attribute(Doc->allocate_attribute(EntityTriple.Predicate, EntityTriple.Object));
 		// Add property triple to entity node
-		FROwlUtils::AddNodeTriple(Doc, EntityNode, PropertyTriple);
+		FSLUtils::AddNodeTriple(Doc, EntityNode, PropertyTriple);
 		// Append entity to parent
 		ParentNode->append_node(EntityNode);
 	}
@@ -124,15 +170,15 @@ public:
 	static FORCEINLINE void AddNodeEntityWithProperties(
 		rapidxml::xml_document<>* Doc,
 		rapidxml::xml_node<>* ParentNode,
-		const ROwlTriple EntityTriple,
-		const TArray<ROwlTriple>& PropertyTriples)
+		const FSLOwlTriple EntityTriple,
+		const TArray<FSLOwlTriple>& PropertyTriples)
 	{
 		// Create the entity node
 		rapidxml::xml_node<> *EntityNode = Doc->allocate_node(rapidxml::node_element, EntityTriple.Subject, EntityTriple.Value);
 		// Add predicate and object to entity node
 		EntityNode->append_attribute(Doc->allocate_attribute(EntityTriple.Predicate, EntityTriple.Object));
 		// Add property triples to entity node
-		FROwlUtils::AddNodeTriples(Doc, EntityNode, PropertyTriples);
+		FSLUtils::AddNodeTriples(Doc, EntityNode, PropertyTriples);
 		// Append entity to parent
 		ParentNode->append_node(EntityNode);
 	}

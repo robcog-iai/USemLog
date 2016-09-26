@@ -1,12 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SemLogPrivatePCH.h"
-#include "RUtils.h"
-#include "RSemEventsExporterSingl.h"
-#include "RSemLogManager.h"
+#include "SLUtils.h"
+#include "SLEventsExporterSingl.h"
+#include "SLManager.h"
 
 // Sets default values
-ARSemLogManager::ARSemLogManager()
+ASLManager::ASLManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -30,7 +30,7 @@ ARSemLogManager::ARSemLogManager()
 }
 
 // Called when the game starts or when spawned
-void ARSemLogManager::BeginPlay()
+void ASLManager::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -44,18 +44,18 @@ void ARSemLogManager::BeginPlay()
 	// Raw data directory path
 	RawDataPath = LevelPath + "/RawData/";
 	// Create the directory paths
-	ARSemLogManager::CreateDirectoryPath(EpisodePath);
-	ARSemLogManager::CreateDirectoryPath(RawDataPath);
+	ASLManager::CreateDirectoryPath(EpisodePath);
+	ASLManager::CreateDirectoryPath(RawDataPath);
 
 	// Check items tags to see which should be logged
-	ARSemLogManager::SetLogItems();
+	ASLManager::SetLogItems();
 	// Check if unique names already generated (past episodes)
-	if (!ARSemLogManager::ReadUniqueNames(LevelPath + "/MetaData.json"))
+	if (!ASLManager::ReadUniqueNames(LevelPath + "/MetaData.json"))
 	{
 		// Generate new unique names if not generated or out of sync
-		ARSemLogManager::GenerateUniqueNames();
+		ASLManager::GenerateUniqueNames();
 		// Save unique names to file (for future use)
-		ARSemLogManager::WriteUniqueNames(LevelPath + "/MetaData.json");
+		ASLManager::WriteUniqueNames(LevelPath + "/MetaData.json");
 	}
 	
 	// Log Semantic map
@@ -67,7 +67,7 @@ void ARSemLogManager::BeginPlay()
 		if (!IFileManager::Get().FileExists(*SemMapPath))
 		{
 			// Create sem map exporter
-			SemMapExporter = new FRSemMapExporter();
+			SemMapExporter = new FSLMapExporter();
 			// Generate and write level semantic map
 			SemMapExporter->WriteSemanticMap(
 				DynamicActPtrToUniqNameMap,
@@ -85,7 +85,7 @@ void ARSemLogManager::BeginPlay()
 		// Path to the json file
 		const FString RawFilePath = RawDataPath + "/RawData_" + EpisodeUniqueTag + ".json";
 		// Init raw data exporter
-		RawDataExporter = new FRRawDataExporter(
+		RawDataExporter = new FSLRawDataExporter(
 			DistanceThresholdSquared,
 			RawFilePath,
 			SkelActPtrToUniqNameMap,
@@ -98,7 +98,7 @@ void ARSemLogManager::BeginPlay()
 	// Init semantic events logger
 	if (bLogSemanticEvents)
 	{
-		FRSemEventsExporterSingl::Get().Init(
+		FSLEventsExporterSingl::Get().Init(
 			EpisodeUniqueTag,
 			ActorToUniqueNameMap, 
 			ActorToClassTypeMap, 
@@ -107,23 +107,23 @@ void ARSemLogManager::BeginPlay()
 }
 
 // Called when the game is terminated
-void ARSemLogManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	// Write events and terminate the singleton
-	if (FRSemEventsExporterSingl::Get().IsInit())
+	if (FSLEventsExporterSingl::Get().IsInit())
 	{
 		// Save logged events
-		FRSemEventsExporterSingl::Get().WriteEvents(
+		FSLEventsExporterSingl::Get().WriteEvents(
 			EpisodePath,
 			GetWorld()->GetTimeSeconds());
 
 		// Reset the singleton (if we run it in editor it does not get deleted)
-		FRSemEventsExporterSingl::Get().Reset();
+		FSLEventsExporterSingl::Get().Reset();
 	}	
 }
 
 // Called every frame
-void ARSemLogManager::Tick( float DeltaTime )
+void ASLManager::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
 		
@@ -135,7 +135,7 @@ void ARSemLogManager::Tick( float DeltaTime )
 }
 
 // Create directory path for logging
-void ARSemLogManager::CreateDirectoryPath(FString Path)
+void ASLManager::CreateDirectoryPath(FString Path)
 {
 	// Create array of the directory names
 	TArray<FString> DirNames;
@@ -161,7 +161,7 @@ void ARSemLogManager::CreateDirectoryPath(FString Path)
 }
 
 // Set items to be logged (from tags)
-void ARSemLogManager::SetLogItems()
+void ASLManager::SetLogItems()
 {
 	// Iterate through the static mesh actors and check tags to see which objects should be logged
 	for (TActorIterator<AStaticMeshActor> StaticMeshActItr(GetWorld()); StaticMeshActItr; ++StaticMeshActItr)
@@ -268,7 +268,7 @@ void ARSemLogManager::SetLogItems()
 }
 
 // Generate items unique names
-void ARSemLogManager::GenerateUniqueNames()
+void ASLManager::GenerateUniqueNames()
 {
 	// Lambda function to iterate through actor types and generate unique names
 	auto GenerateUniqueNamesLambda = [this](const TMap<FString,AStaticMeshActor*>& ActNameToActPtrMap)
@@ -334,7 +334,7 @@ void ARSemLogManager::GenerateUniqueNames()
 }
 
 // Read unique names from file
-bool ARSemLogManager::ReadUniqueNames(const FString Path)
+bool ASLManager::ReadUniqueNames(const FString Path)
 {
 	// Check if file exists, and see if it is in sync with the level
 	if (IFileManager::Get().FileExists(*Path))
@@ -420,7 +420,7 @@ bool ARSemLogManager::ReadUniqueNames(const FString Path)
 }
 
 // Write generated unique names to file
-void ARSemLogManager::WriteUniqueNames(const FString Path)
+void ASLManager::WriteUniqueNames(const FString Path)
 {
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);

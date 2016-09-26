@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SemLogPrivatePCH.h"
-#include "RSemEventsExporterSingl.h"
-#include "RSemanticContactTriggerBox.h"
+#include "SLEventsExporterSingl.h"
+#include "SLContactTriggerBox.h"
 
 // Set default values
-ARSemanticContactTriggerBox::ARSemanticContactTriggerBox()
+ASLContactTriggerBox::ASLContactTriggerBox()
 {
 	// Create raster
 	bCreateRaster = false;
@@ -24,12 +24,12 @@ ARSemanticContactTriggerBox::ARSemanticContactTriggerBox()
 }
 
 // Destructor
-ARSemanticContactTriggerBox::~ARSemanticContactTriggerBox()
+ASLContactTriggerBox::~ASLContactTriggerBox()
 {
 }
 
 // Called when the games starts or when spawned
-void ARSemanticContactTriggerBox::BeginPlay()
+void ASLContactTriggerBox::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -37,13 +37,13 @@ void ARSemanticContactTriggerBox::BeginPlay()
 	if (Parent)
 	{
 		// Bind overlap events
-		OnActorBeginOverlap.AddDynamic(this, &ARSemanticContactTriggerBox::BeginSemanticContact);
-		OnActorEndOverlap.AddDynamic(this, &ARSemanticContactTriggerBox::EndSemanticContact);
+		OnActorBeginOverlap.AddDynamic(this, &ASLContactTriggerBox::BeginSemanticContact);
+		OnActorEndOverlap.AddDynamic(this, &ASLContactTriggerBox::EndSemanticContact);
 
 		// Create raster if required
 		if (bCreateRaster)
 		{
-			ARSemanticContactTriggerBox::CreateRaster();
+			ASLContactTriggerBox::CreateRaster();
 		}
 	}
 	else
@@ -53,7 +53,7 @@ void ARSemanticContactTriggerBox::BeginPlay()
 }
 
 // Callback on start overlap, end the semantic contact
-void ARSemanticContactTriggerBox::BeginSemanticContact(
+void ASLContactTriggerBox::BeginSemanticContact(
 	AActor* Self, AActor* OtherActor)
 {
 	if (FRSemEventsExporterSingl::Get().IsInit())
@@ -64,7 +64,7 @@ void ARSemanticContactTriggerBox::BeginSemanticContact(
 }
 
 // Callback on end overlap, end the semantic contact
-void ARSemanticContactTriggerBox::EndSemanticContact(
+void ASLContactTriggerBox::EndSemanticContact(
 	AActor* Self, AActor* OtherActor)
 {
 	if (FRSemEventsExporterSingl::Get().IsInit())
@@ -75,7 +75,7 @@ void ARSemanticContactTriggerBox::EndSemanticContact(
 }
 
 // Create raster
-void ARSemanticContactTriggerBox::CreateRaster()
+void ASLContactTriggerBox::CreateRaster()
 {
 	// Get the bounding box of the parent
 	const FBox ParentBB = Parent->GetComponentsBoundingBox();
@@ -142,12 +142,12 @@ void ARSemanticContactTriggerBox::CreateRaster()
 	SetActorHiddenInGame(bRasterHiddenInGame);
 
 	// Update collision checking with the given frequency
-	GetWorldTimerManager().SetTimer(
-		TimerHandle, this, &ARSemanticContactTriggerBox::CheckParticleCount, RasterUpdateRate, true);
+	//GetWorldTimerManager().SetTimer(
+	//	TimerHandle, this, &ASLContactTriggerBox::CheckParticleCount, RasterUpdateRate, true);
 }
 
 // Check particle collisions
-void ARSemanticContactTriggerBox::CheckParticleCount()
+void ASLContactTriggerBox::CheckParticleCount()
 {
 	//UE_LOG(LogTemp, Warning, TEXT(" **** < ---  "));
 	//for (const auto TriggerBoxItr : RasterTriggerBoxes)

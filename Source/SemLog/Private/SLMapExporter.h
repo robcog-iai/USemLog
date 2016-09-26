@@ -5,14 +5,14 @@
 /**
  * Semantic map exporter
  */
-class SEMLOG_API FRSemMapExporter
+class SEMLOG_API FSLMapExporter
 {
 public:
 	// Constructor
-	FRSemMapExporter();
+	FSLMapExporter();
 
 	// Destructor
-	~FRSemMapExporter();
+	~FSLMapExporter();
 
 	// Generate and write semantic map
 	void WriteSemanticMap(

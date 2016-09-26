@@ -1,23 +1,23 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-#include "ROwlUtils.h"
+#include "SLUtils.h"
 
 /**
  * Semantic map exporter
  */
-class SEMLOG_API FRSemEventsExporterSingl
+class SEMLOG_API FSLEventsExporterSingl
 {
 public:
 	// Get singleton instance
-	static FRSemEventsExporterSingl& Get()
+	static FSLEventsExporterSingl& Get()
 	{
-		static FRSemEventsExporterSingl Instance;
+		static FSLEventsExporterSingl Instance;
 		return Instance;	
 	}
 	// Remove copy constructor and operator
-	FRSemEventsExporterSingl(FRSemEventsExporterSingl const&) = delete;
-	void operator=(FRSemEventsExporterSingl const&) = delete;
+	FSLEventsExporterSingl(FSLEventsExporterSingl const&) = delete;
+	void operator=(FSLEventsExporterSingl const&) = delete;
 
 	// Initialize
 	void Init(
@@ -65,10 +65,10 @@ public:
 	
 private:
 	// Constructor
-	FRSemEventsExporterSingl();
+	FSLEventsExporterSingl();
 
 	// Destructor
-	~FRSemEventsExporterSingl();
+	~FSLEventsExporterSingl();
 
 	// Add finish time to all events
 	void TerminateEvents(const float Timestamp);

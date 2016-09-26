@@ -3,21 +3,21 @@
 #pragma once
 
 #include "Engine/TriggerBox.h"
-#include "RSemanticContactTriggerBox.generated.h"
+#include "SLContactTriggerBox.generated.h"
 
 /**
  *  Trigger box sending contact information to the semantic events exporter
  */
 UCLASS()
-class SEMLOG_API ARSemanticContactTriggerBox : public ATriggerBox
+class SEMLOG_API ASLContactTriggerBox : public ATriggerBox
 {
 	GENERATED_BODY()
 
 	// Constructor
-	ARSemanticContactTriggerBox();
+	ASLContactTriggerBox();
 	
 	// Destructor
-	~ARSemanticContactTriggerBox();
+	~ASLContactTriggerBox();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -38,32 +38,32 @@ private:
 	void CheckParticleCount();
 
 	// Static mesh actor parent for the trigger
-	UPROPERTY(EditAnywhere, Category = "Semantic TriggerBox")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	AStaticMeshActor* Parent;
 
 	// Create raster for particle collisions
-	UPROPERTY(EditAnywhere, Category = "Semantic TriggerBox")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bCreateRaster;
 
 	// Number of rows in the raster
-	UPROPERTY(EditAnywhere, Category = "Semantic TriggerBox")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint32 RasterNrRows;
 
 	// Number of columns in the raster
-	UPROPERTY(EditAnywhere, Category = "Semantic TriggerBox")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint32 RasterNrColumns;
 
 	// Particle collision update rate
-	UPROPERTY(EditAnywhere, Category = "Semantic TriggerBox")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float RasterUpdateRate;
 
 	// Raster visibility
-	UPROPERTY(EditAnywhere, Category = "Semantic TriggerBox")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bRasterHiddenInGame;
 
 	// Array of trigger boxes from the raster
 	TArray<UBoxComponent*> RasterTriggerBoxes;
 
-	// Timer handle
+	// Timer handle to checks for raster components collisions
 	FTimerHandle TimerHandle;
 };
