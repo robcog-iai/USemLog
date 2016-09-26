@@ -3,6 +3,7 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
+#include "SLEventsExporter.h"
 #include "SLDrawerStates.generated.h"
 
 /**

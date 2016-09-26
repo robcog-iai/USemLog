@@ -170,12 +170,12 @@ void ASLManager::InitLogItems()
 	for (TActorIterator<AStaticMeshActor> StaticMeshActItr(GetWorld()); StaticMeshActItr; ++StaticMeshActItr)
 	{
 		// Get static mesh comp tags
-		const TArray<FName> Tags = StaticMeshActItr->GetStaticMeshComponent()->ComponentTags;
+		const TArray<FName> TagsArr = StaticMeshActItr->GetStaticMeshComponent()->ComponentTags;
 		// Skip if object has less than 2 tags (type, class)
-		if (Tags.Num() > 1)
+		if (TagsArr.Num() > 1)
 		{
 			// Get the first tag 
-			const FString Tag0 = Tags[0].ToString();
+			const FString Tag0 = TagsArr[0].ToString();
 			// Check tag type
 			if (Tag0.Contains("DynamicItem"))
 			{
