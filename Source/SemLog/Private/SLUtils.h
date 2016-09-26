@@ -127,7 +127,7 @@ public:
 	static FORCEINLINE void AddNodeTriple(
 		rapidxml::xml_document<>* Doc,
 		rapidxml::xml_node<>* ParentNode,
-		const FSLOwlTriple Triple)
+		const SLOwlTriple Triple)
 	{
 		// Create Triple node
 		rapidxml::xml_node<> *TripleNode = Doc->allocate_node(rapidxml::node_element, Triple.Subject, Triple.Value);
@@ -141,7 +141,7 @@ public:
 	static FORCEINLINE void AddNodeTriples(
 		rapidxml::xml_document<>* Doc,
 		rapidxml::xml_node<>* ParentNode,
-		const TArray<FSLOwlTriple>& Triples)
+		const TArray<SLOwlTriple>& Triples)
 	{
 		for (const auto TripleItr : Triples)
 		{
@@ -153,8 +153,8 @@ public:
 	static FORCEINLINE void AddNodeEntityWithProperty(
 		rapidxml::xml_document<>* Doc,
 		rapidxml::xml_node<>* ParentNode,
-		const FSLOwlTriple EntityTriple,
-		const FSLOwlTriple PropertyTriple)
+		const SLOwlTriple EntityTriple,
+		const SLOwlTriple PropertyTriple)
 	{
 		// Create the entity node
 		rapidxml::xml_node<> *EntityNode = Doc->allocate_node(rapidxml::node_element, EntityTriple.Subject, EntityTriple.Value);
@@ -170,8 +170,8 @@ public:
 	static FORCEINLINE void AddNodeEntityWithProperties(
 		rapidxml::xml_document<>* Doc,
 		rapidxml::xml_node<>* ParentNode,
-		const FSLOwlTriple EntityTriple,
-		const TArray<FSLOwlTriple>& PropertyTriples)
+		const SLOwlTriple EntityTriple,
+		const TArray<SLOwlTriple>& PropertyTriples)
 	{
 		// Create the entity node
 		rapidxml::xml_node<> *EntityNode = Doc->allocate_node(rapidxml::node_element, EntityTriple.Subject, EntityTriple.Value);

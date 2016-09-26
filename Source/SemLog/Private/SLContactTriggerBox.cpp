@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "SemLogPrivatePCH.h"
-#include "SLEventsExporterSingl.h"
+#include "SLManager.h"
 #include "SLContactTriggerBox.h"
 
 // Set default values
@@ -33,8 +32,15 @@ void ASLContactTriggerBox::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Check if parent is set
-	if (Parent)
+	// Set the semantic events exporter
+	for (TActorIterator<ASLManager> SLManagerItr(GetWorld()); SLManagerItr; ++SLManagerItr)
+	{
+		SemEventsExporter = SLManagerItr->GetEventsExporter();
+		break;
+	}
+
+	// Check if parent and the semantic events exporter is set
+	if (Parent && SemEventsExporter)
 	{
 		// Bind overlap events
 		OnActorBeginOverlap.AddDynamic(this, &ASLContactTriggerBox::BeginSemanticContact);
@@ -48,7 +54,7 @@ void ASLContactTriggerBox::BeginPlay()
 	}
 	else
 	{
-		UE_LOG(SemLog, Error, TEXT(" SCTB: %s's parent is not set!"), *GetName());
+		UE_LOG(SemLog, Error, TEXT(" ** CTB: %s s parent, or the events exporter is not set!"), *GetName());
 	}
 }
 
@@ -56,9 +62,9 @@ void ASLContactTriggerBox::BeginPlay()
 void ASLContactTriggerBox::BeginSemanticContact(
 	AActor* Self, AActor* OtherActor)
 {
-	if (FRSemEventsExporterSingl::Get().IsInit())
+	if (SemEventsExporter)
 	{
-		FRSemEventsExporterSingl::Get().BeginTouchingEvent(
+		SemEventsExporter->BeginTouchingEvent(
 			Parent, OtherActor, GetWorld()->GetTimeSeconds());
 	}
 }
@@ -67,9 +73,9 @@ void ASLContactTriggerBox::BeginSemanticContact(
 void ASLContactTriggerBox::EndSemanticContact(
 	AActor* Self, AActor* OtherActor)
 {
-	if (FRSemEventsExporterSingl::Get().IsInit())
+	if (SemEventsExporter)
 	{
-		FRSemEventsExporterSingl::Get().EndTouchingEvent(
+		SemEventsExporter->BeginTouchingEvent(
 			Parent, OtherActor, GetWorld()->GetTimeSeconds());
 	}
 }

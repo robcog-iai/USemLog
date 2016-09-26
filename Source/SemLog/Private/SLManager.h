@@ -5,6 +5,7 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "SLRawDataExporter.h"
 #include "SLMapExporter.h"
+#include "SLEventsExporter.h"
 #include "SLManager.generated.h"
 
 UCLASS()
@@ -25,12 +26,15 @@ public:
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
+	// Get semantic events exporter
+	FSLEventsExporter* GetEventsExporter() { return SemEventsExporter; };
+
 private:
 	// Create directory path for logging
 	void CreateDirectoryPath(FString Path);
 
 	// Set items to be loggeed (from tags)
-	void SetLogItems();
+	void InitLogItems();
 
 	// Set unique names of items
 	void GenerateUniqueNames();
@@ -95,7 +99,10 @@ private:
 	FSLRawDataExporter* RawDataExporter;
 
 	// Semantic map exporter
-	FSLSemMapExporter* SemMapExporter;
+	FSLMapExporter* SemMapExporter;
+
+	// Semantic events exporter
+	FSLEventsExporter* SemEventsExporter;
 
 	// Level path
 	FString LevelPath;

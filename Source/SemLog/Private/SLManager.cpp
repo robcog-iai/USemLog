@@ -2,7 +2,7 @@
 
 #include "SemLogPrivatePCH.h"
 #include "SLUtils.h"
-#include "SLEventsExporterSingl.h"
+#include "SLEventsExporter.h"
 #include "SLManager.h"
 
 // Sets default values
@@ -18,14 +18,14 @@ ASLManager::ASLManager()
 	LogRootDirectoryName = "SemLogs";
 
 	// Episode unique tag
-	EpisodeUniqueTag = FRUtils::GenerateRandomFString(4);
+	EpisodeUniqueTag = FSLUtils::GenerateRandomFString(4);
 
 	// Default flag values
 	bLogRawData = true;
 	bLogSemanticMap = true;
 	bLogSemanticEvents = true;
 
-	// Distance threshold for logging the raw data
+	// Default distance threshold for logging raw data
 	DistanceThreshold = 0.1;
 }
 
@@ -34,7 +34,7 @@ void ASLManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// The square of the distance threshold (faster comparisons)
+	// Compute the square of the distance threshold (faster comparisons)
 	DistanceThresholdSquared = DistanceThreshold * DistanceThreshold;
 
 	// Level directory path
@@ -47,8 +47,8 @@ void ASLManager::BeginPlay()
 	ASLManager::CreateDirectoryPath(EpisodePath);
 	ASLManager::CreateDirectoryPath(RawDataPath);
 
-	// Check items tags to see which should be logged
-	ASLManager::SetLogItems();
+	// Init items that should be logged
+	ASLManager::InitLogItems();
 	// Check if unique names already generated (past episodes)
 	if (!ASLManager::ReadUniqueNames(LevelPath + "/MetaData.json"))
 	{
@@ -98,7 +98,7 @@ void ASLManager::BeginPlay()
 	// Init semantic events logger
 	if (bLogSemanticEvents)
 	{
-		FSLEventsExporterSingl::Get().Init(
+		SemEventsExporter = new FSLEventsExporter(
 			EpisodeUniqueTag,
 			ActorToUniqueNameMap, 
 			ActorToClassTypeMap, 
@@ -109,17 +109,20 @@ void ASLManager::BeginPlay()
 // Called when the game is terminated
 void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	// Write events and terminate the singleton
-	if (FSLEventsExporterSingl::Get().IsInit())
-	{
-		// Save logged events
-		FSLEventsExporterSingl::Get().WriteEvents(
-			EpisodePath,
-			GetWorld()->GetTimeSeconds());
+	// Write events
+	SemEventsExporter->WriteEvents(EpisodePath,	GetWorld()->GetTimeSeconds());
 
-		// Reset the singleton (if we run it in editor it does not get deleted)
-		FSLEventsExporterSingl::Get().Reset();
-	}	
+	//// Write events and terminate the singleton
+	//if (FSLEventsExporter::Get().IsInit())
+	//{
+	//	// Save logged events
+	//	FSLEventsExporter::Get().WriteEvents(
+	//		EpisodePath,
+	//		GetWorld()->GetTimeSeconds());
+
+	//	// Reset the singleton (if we run it in editor it does not get deleted)
+	//	FSLEventsExporter::Get().Reset();
+	//}	
 }
 
 // Called every frame
@@ -161,7 +164,7 @@ void ASLManager::CreateDirectoryPath(FString Path)
 }
 
 // Set items to be logged (from tags)
-void ASLManager::SetLogItems()
+void ASLManager::InitLogItems()
 {
 	// Iterate through the static mesh actors and check tags to see which objects should be logged
 	for (TActorIterator<AStaticMeshActor> StaticMeshActItr(GetWorld()); StaticMeshActItr; ++StaticMeshActItr)
@@ -247,7 +250,12 @@ void ASLManager::SetLogItems()
 		}
 	}
 
-	// TODO get character directly: UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)
+	// TODO get character directly: UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)	
+	//TInlineComponentArray<UCameraComponent*> Cameras(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	// or
+	//TInlineComponentArray<UCameraComponent*> CharCamComp;
+	//UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->GetComponents(CharCamComp);
+
 	// Iterate characters to get the the camera component
 	for (TActorIterator<ACharacter> CharactItr(GetWorld()); CharactItr; ++CharactItr)
 	{
@@ -265,6 +273,8 @@ void ASLManager::SetLogItems()
 			}
 		}
 	}
+
+	UE_LOG(SemLog, Log, TEXT(" ** Finished InitLogItems() "));
 }
 
 // Generate items unique names
@@ -282,8 +292,8 @@ void ASLManager::GenerateUniqueNames()
 			// Generate unique name and make sure there is an underscore before the unique hash
 			FString UniqueName = NameKey;
 			UniqueName += (UniqueName.Contains("_"))
-				? FRUtils::GenerateRandomFString(4)
-				: "_" + FRUtils::GenerateRandomFString(4);
+				? FSLUtils::GenerateRandomFString(4)
+				: "_" + FSLUtils::GenerateRandomFString(4);
 
 			// Add generated unqique name to the dynamic actors map
 			DynamicActPtrToUniqNameMap.Add(ActNameToActPtrItr.Value, UniqueName);
@@ -303,8 +313,8 @@ void ASLManager::GenerateUniqueNames()
 		// Generate unique name and make sure there is an underscore before the unique hash
 		FString UniqueName = SkelActNameToCompPtrItr.Key;
 		UniqueName += (UniqueName.Contains("_"))
-			? FRUtils::GenerateRandomFString(4)
-			: "_" + FRUtils::GenerateRandomFString(4);
+			? FSLUtils::GenerateRandomFString(4)
+			: "_" + FSLUtils::GenerateRandomFString(4);
 
 		// Add generated unqique name to map
 		SkelActPtrToUniqNameMap.Add(SkelActNameToCompPtrItr.Value, UniqueName);
@@ -325,7 +335,7 @@ void ASLManager::GenerateUniqueNames()
 			if (ChildItr->IsA(UCameraComponent::StaticClass()))
 			{
 				CameraToUniqueName.Key = ChildItr;
-				CameraToUniqueName.Value = ChildItr->GetName() + "_" + FRUtils::GenerateRandomFString(4);
+				CameraToUniqueName.Value = ChildItr->GetName() + "_" + FSLUtils::GenerateRandomFString(4);
 				UE_LOG(SemLog, Error, TEXT("Generated Unique Name: %s"), *CameraToUniqueName.Value);
 				break;
 			}

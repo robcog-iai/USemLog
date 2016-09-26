@@ -1,8 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "SemLogPrivatePCH.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
-#include "SLEventsExporterSingl.h"
+#include "SLManager.h"
 #include "SLDrawerStates.h"
 
 
@@ -21,15 +20,29 @@ void ASLDrawerStates::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Get the drawer/door constraints
-	for (TActorIterator<APhysicsConstraintActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	// Set the semantic events exporter
+	for (TActorIterator<ASLManager> SLManagerItr(GetWorld()); SLManagerItr; ++SLManagerItr)
 	{
-		Constraints.Add(ActorItr->GetConstraintComp());
+		SemEventsExporter = SLManagerItr->GetEventsExporter();
+		break;
 	}
 
-	// Apply force to close the drawers (after a delay until the objects fall on the surfaces)
-	GetWorldTimerManager().SetTimer(
-		CloseFurnitureTimerHandle, this, &ASLDrawerStates::CloseDrawers, UpdateRate, true, 2);
+	if (SemEventsExporter)
+	{
+		// Get the drawer/door constraints
+		for (TActorIterator<APhysicsConstraintActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+		{
+			Constraints.Add(ActorItr->GetConstraintComp());
+		}
+
+		// Apply force to close the drawers (after a delay until the objects fall on the surfaces)
+		GetWorldTimerManager().SetTimer(
+			CloseFurnitureTimerHandle, this, &ASLDrawerStates::CloseDrawers, UpdateRate, true, 2);
+	}
+	else
+	{
+		UE_LOG(SemLog, Error, TEXT(" ** DrawerStates: events exporter is not set!"));
+	}
 }
 
 // Close drawers
@@ -187,8 +200,8 @@ void ASLDrawerStates::LogState(AActor* Furniture, const FString State)
 		// Add to map
 		FurnitureToStateMap.Add(Furniture, State);
 		// Log first state, init the semantic event
-		FRSemEventsExporterSingl::Get().FurnitureStateEvent
-			(Furniture, State, GetWorld()->GetTimeSeconds());
+		SemEventsExporter->FurnitureStateEvent(
+			Furniture, State, GetWorld()->GetTimeSeconds());
 	}
 	else
 	{
@@ -202,8 +215,8 @@ void ASLDrawerStates::LogState(AActor* Furniture, const FString State)
 			// Update map state
 			FurnitureToStateMap.Add(Furniture, State);
 			// Log state
-			FRSemEventsExporterSingl::Get().FurnitureStateEvent
-				(Furniture, State, GetWorld()->GetTimeSeconds());
+			SemEventsExporter->FurnitureStateEvent(
+				Furniture, State, GetWorld()->GetTimeSeconds());
 		}
 	}
 }

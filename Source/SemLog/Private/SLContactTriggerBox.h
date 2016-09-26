@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Engine/TriggerBox.h"
+#include "SLEventsExporter.h"
 #include "SLContactTriggerBox.generated.h"
 
 /**
@@ -30,7 +31,7 @@ private:
 	// Callback on end overlap
 	UFUNCTION()
 	void EndSemanticContact(AActor* Self, AActor* OtherActor);
-
+	
 	// Create raster
 	void CreateRaster();
 
@@ -66,4 +67,7 @@ private:
 
 	// Timer handle to checks for raster components collisions
 	FTimerHandle TimerHandle;
+
+	// Pointer to the semantic events exporter
+	FSLEventsExporter* SemEventsExporter;
 };

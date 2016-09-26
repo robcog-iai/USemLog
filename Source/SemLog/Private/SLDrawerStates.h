@@ -5,6 +5,9 @@
 #include "GameFramework/Actor.h"
 #include "SLDrawerStates.generated.h"
 
+/**
+*  Actor that logs drawer states
+*/
 UCLASS()
 class SEMLOG_API ASLDrawerStates : public AActor
 {
@@ -48,4 +51,7 @@ private:
 
 	// Actor to state map
 	TMap<AActor*, FString> FurnitureToStateMap;
+
+	// Pointer to the semantic events exporter
+	FSLEventsExporter* SemEventsExporter;
 };

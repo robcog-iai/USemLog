@@ -1,23 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SemLogPrivatePCH.h"
-#include "FSLUtils.h"
-#include "SLEventsExporterSingl.h"
+#include "SLUtils.h"
+#include "SLEventsExporter.h"
 
 // Constructor
-FSLEventsExporterSingl::FSLEventsExporterSingl()
-{
-	// Set init flag to false
-	bInit = false;
-}
-
-// Destructor
-FSLEventsExporterSingl::~FSLEventsExporterSingl()
-{
-}
-
-// Init exporter
-void FSLEventsExporterSingl::Init(
+FSLEventsExporter::FSLEventsExporter(
 	const FString UniqueTag,
 	const TMap<AActor*, FString>& ActorToUniqueName,
 	const TMap<AActor*, FString>& ActorToClassType,
@@ -31,60 +19,34 @@ void FSLEventsExporterSingl::Init(
 	EvActorToClassType = ActorToClassType;
 
 	// Init metadata
-	Metadata = new RSemEvent("&log;",
+	Metadata = new SLEventStruct("&log;",
 		"UnrealExperiment_" + EpisodeUniqueTag, Timestamp);
 	// Add class property
 	Metadata->Properties.Add(FSLUtils::SLOwlTriple(
 		"rdf:type", "rdf:resource", "&knowrob;UnrealExperiment"));
 	// Add experiment unique name tag
 	Metadata->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:experiment", "rdf:datatype", "&xsd;string", 
+		"knowrob:experiment", "rdf:datatype", "&xsd;string",
 		FSLUtils::FStringToChar(EpisodeUniqueTag)));
 	// Add startTime property
 	Metadata->Properties.Add(
 		FSLUtils::SLOwlTriple("knowrob:startTime", "rdf:resource",
-			FSLUtils::FStringToChar("&log;" + 
-				FSLEventsExporterSingl::AddTimestamp(Timestamp))));
-
-	// Set init flag to true
-	bInit = true;
-}
-
-// Check if the singleton is initialized
-bool FSLEventsExporterSingl::IsInit()
-{
-	return bInit;
-}
-
-// Reset singleton
-void FSLEventsExporterSingl::Reset()
-{
-	// Set init to false
-	bInit = false;
-	// Empty containers
-	EvActorToUniqueName.Empty();
-	EvActorToClassType.Empty();
-	NameToOpenedEventsMap.Empty();
-	ObjectIndividuals.Empty();
-	TimepointIndividuals.Empty();
-	EpisodeUniqueTag.Empty();
-	FinishedEvents.Empty();
-	// Empty metadata
-	delete Metadata;
+			FSLUtils::FStringToChar("&log;" +
+				FSLEventsExporter::AddTimestamp(Timestamp))));
 }
 
 // Write events to file
-void FSLEventsExporterSingl::WriteEvents(const FString Path, const float Timestamp, bool bWriteTimelines)
+void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, bool bWriteTimelines)
 {
 	// End all opened events
-	FSLEventsExporterSingl::TerminateEvents(Timestamp);
+	FSLEventsExporter::TerminateEvents(Timestamp);
 	// Set metadata as finished
 	Metadata->End = Timestamp;
 	// Add endTime property
 	Metadata->Properties.Add(
 		FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
 			FSLUtils::FStringToChar("&log;" + 
-				FSLEventsExporterSingl::AddTimestamp(Timestamp))));
+				FSLEventsExporter::AddTimestamp(Timestamp))));
 
 	///////// DOC
 	rapidxml::xml_document<>* EventsDoc = new rapidxml::xml_document<>();
@@ -254,12 +216,12 @@ void FSLEventsExporterSingl::WriteEvents(const FString Path, const float Timesta
 	// Write the events as timelines
 	if (bWriteTimelines)
 	{
-		FSLEventsExporterSingl::WriteTimelines(Path + "/Timelines_" + EpisodeUniqueTag + ".html");
+		FSLEventsExporter::WriteTimelines(Path + "/Timelines_" + EpisodeUniqueTag + ".html");
 	}
 }
 
 // Add beginning of grasping event
-void FSLEventsExporterSingl::BeginGraspingEvent(
+void FSLEventsExporter::BeginGraspingEvent(
 	AActor* Self, AActor* Other, const float Timestamp)
 {
 	const FString HandName = Self->GetName();
@@ -284,7 +246,7 @@ void FSLEventsExporterSingl::BeginGraspingEvent(
 	// Create unique name of the event
 	const FString EventUniqueName = "GraspingSomething_" + FSLUtils::GenerateRandomFString(4);
 	// Init grasp event
-	RSemEvent* GraspEvent = new RSemEvent("&log;", EventUniqueName, Timestamp);
+	SLEventStruct* GraspEvent = new SLEventStruct("&log;", EventUniqueName, Timestamp);
 	// Add class property
 	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
 		"rdf:type", "rdf:resource", "&knowrob;GraspingSomething"));
@@ -296,7 +258,7 @@ void FSLEventsExporterSingl::BeginGraspingEvent(
 	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
 		"knowrob:startTime", "rdf:resource", 
 		FSLUtils::FStringToChar("&log;" + 
-			FSLEventsExporterSingl::AddTimestamp(Timestamp))));
+			FSLEventsExporter::AddTimestamp(Timestamp))));
 	// Add objectActedOn
 	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
 		"knowrob:objectActedOn", "rdf:resource", 
@@ -311,7 +273,7 @@ void FSLEventsExporterSingl::BeginGraspingEvent(
 }
 
 // Add ending of grasping event
-void FSLEventsExporterSingl::EndGraspingEvent(
+void FSLEventsExporter::EndGraspingEvent(
 	AActor* Self, AActor* Other, const float Timestamp)
 {
 	const FString HandName = Self->GetName();
@@ -323,7 +285,7 @@ void FSLEventsExporterSingl::EndGraspingEvent(
 	if (NameToOpenedEventsMap.Contains("Grasp" + HandName + GraspedActorName))
 	{
 		// Get and remove the event from the opened events map
-		RSemEvent* CurrGraspEv;
+		SLEventStruct* CurrGraspEv;
 		NameToOpenedEventsMap.RemoveAndCopyValue("Grasp" + HandName + GraspedActorName, CurrGraspEv);
 
 		// Add finishing time
@@ -333,7 +295,7 @@ void FSLEventsExporterSingl::EndGraspingEvent(
 		CurrGraspEv->Properties.Add(
 			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
 				FSLUtils::FStringToChar("&log;" + 
-					FSLEventsExporterSingl::AddTimestamp(Timestamp))));
+					FSLEventsExporter::AddTimestamp(Timestamp))));
 
 		// Add as subAction property to Metadata
 		Metadata->Properties.Add(
@@ -350,7 +312,7 @@ void FSLEventsExporterSingl::EndGraspingEvent(
 }
 
 // Add beginning of touching event
-void FSLEventsExporterSingl::BeginTouchingEvent(
+void FSLEventsExporter::BeginTouchingEvent(
 	AActor* TriggerParent, AActor* OtherActor, const float Timestamp)
 {
 	const FString TriggerParentName = TriggerParent->GetName();
@@ -375,7 +337,7 @@ void FSLEventsExporterSingl::BeginTouchingEvent(
 	// Create unique name of the event
 	const FString EventUniqueName = "TouchingSituation_" + FSLUtils::GenerateRandomFString(4);
 	// Init contact event
-	RSemEvent* ContactEvent = new RSemEvent("&log;", EventUniqueName, Timestamp);
+	SLEventStruct* ContactEvent = new SLEventStruct("&log;", EventUniqueName, Timestamp);
 	// Add class property
 	ContactEvent->Properties.Add(FSLUtils::SLOwlTriple(
 		"rdf:type", "rdf:resource", "&knowrob_u;TouchingSituation"));
@@ -387,7 +349,7 @@ void FSLEventsExporterSingl::BeginTouchingEvent(
 	ContactEvent->Properties.Add(FSLUtils::SLOwlTriple(
 		"knowrob:startTime", "rdf:resource",
 		FSLUtils::FStringToChar("&log;" +
-			FSLEventsExporterSingl::AddTimestamp(Timestamp))));
+			FSLEventsExporter::AddTimestamp(Timestamp))));
 	// Add in contact 1
 	ContactEvent->Properties.Add(FSLUtils::SLOwlTriple(
 		"knowrob_u:inContact", "rdf:resource",
@@ -402,7 +364,7 @@ void FSLEventsExporterSingl::BeginTouchingEvent(
 }
 
 // Add end of touching event
-void FSLEventsExporterSingl::EndTouchingEvent(
+void FSLEventsExporter::EndTouchingEvent(
 	AActor* TriggerParent, AActor* OtherActor, const float Timestamp)
 {
 	const FString TriggerParentName = TriggerParent->GetName();
@@ -415,7 +377,7 @@ void FSLEventsExporterSingl::EndTouchingEvent(
 	if (NameToOpenedEventsMap.Contains("Contact" + TriggerParent->GetName() + OtherActor->GetName()))
 	{
 		// Get and remove the event from the opened events map
-		RSemEvent* CurrContactEv;
+		SLEventStruct* CurrContactEv;
 		NameToOpenedEventsMap.RemoveAndCopyValue("Contact" + TriggerParentName + OtherActorName,
 			CurrContactEv);
 
@@ -426,7 +388,7 @@ void FSLEventsExporterSingl::EndTouchingEvent(
 		CurrContactEv->Properties.Add(
 			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
 				FSLUtils::FStringToChar("&log;" +
-					FSLEventsExporterSingl::AddTimestamp(Timestamp))));
+					FSLEventsExporter::AddTimestamp(Timestamp))));
 
 		// Add as subAction property to Metadata
 		Metadata->Properties.Add(
@@ -444,7 +406,7 @@ void FSLEventsExporterSingl::EndTouchingEvent(
 }
 
 // Add furniture state event
-void FSLEventsExporterSingl::FurnitureStateEvent(
+void FSLEventsExporter::FurnitureStateEvent(
 	AActor* Furniture, const FString State, const float Timestamp)
 {
 	const FString FurnitureName = Furniture->GetName();
@@ -459,7 +421,7 @@ void FSLEventsExporterSingl::FurnitureStateEvent(
 	const FString FurnitureUniqueName = EvActorToUniqueName[Furniture];
 	
 	// Check if the furniture has any opened events
-	RSemEvent* FurnitureEvent = NameToOpenedEventsMap.FindRef("FurnitureState" + FurnitureUniqueName);
+	SLEventStruct* FurnitureEvent = NameToOpenedEventsMap.FindRef("FurnitureState" + FurnitureUniqueName);
 
 	if (!FurnitureEvent)
 	{
@@ -468,7 +430,7 @@ void FSLEventsExporterSingl::FurnitureStateEvent(
 		// Create unique name of the event
 		const FString EventUniqueName = "FurnitureState" + State + "_" + FSLUtils::GenerateRandomFString(4);
 		// Create the event
-		FurnitureEvent = new RSemEvent("&log;", EventUniqueName, Timestamp);
+		FurnitureEvent = new SLEventStruct("&log;", EventUniqueName, Timestamp);
 		// Add class property
 		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
 			"rdf:type", "rdf:resource", 
@@ -481,7 +443,7 @@ void FSLEventsExporterSingl::FurnitureStateEvent(
 		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
 			"knowrob:startTime", "rdf:resource",
 			FSLUtils::FStringToChar("&log;" +
-				FSLEventsExporterSingl::AddTimestamp(Timestamp))));
+				FSLEventsExporter::AddTimestamp(Timestamp))));
 		// Add object acted on
 		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
 			"knowrob:objectActedOn", "rdf:resource",
@@ -501,7 +463,7 @@ void FSLEventsExporterSingl::FurnitureStateEvent(
 		FurnitureEvent->Properties.Add(
 			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
 				FSLUtils::FStringToChar("&log;" +
-					FSLEventsExporterSingl::AddTimestamp(Timestamp))));
+					FSLEventsExporter::AddTimestamp(Timestamp))));
 
 		// Add as subAction property to Metadata
 		Metadata->Properties.Add(
@@ -514,7 +476,7 @@ void FSLEventsExporterSingl::FurnitureStateEvent(
 		// Create unique name of the event
 		const FString EventUniqueName = "FurnitureState" + State + "_" + FSLUtils::GenerateRandomFString(4);
 		// Create the event
-		FurnitureEvent = new RSemEvent("&log;", EventUniqueName, Timestamp);
+		FurnitureEvent = new SLEventStruct("&log;", EventUniqueName, Timestamp);
 		// Add class property
 		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
 			"rdf:type", "rdf:resource",
@@ -527,7 +489,7 @@ void FSLEventsExporterSingl::FurnitureStateEvent(
 		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
 			"knowrob:startTime", "rdf:resource",
 			FSLUtils::FStringToChar("&log;" +
-				FSLEventsExporterSingl::AddTimestamp(Timestamp))));
+				FSLEventsExporter::AddTimestamp(Timestamp))));
 		// Add object acted on
 		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
 			"knowrob:objectActedOn", "rdf:resource",
@@ -539,7 +501,7 @@ void FSLEventsExporterSingl::FurnitureStateEvent(
 }
 
 // Terminate all dangling events
-void FSLEventsExporterSingl::TerminateEvents(const float Timestamp)
+void FSLEventsExporter::TerminateEvents(const float Timestamp)
 {
 	// Iterate all opened events
 	for (const auto NameToEvItr : NameToOpenedEventsMap)
@@ -551,7 +513,7 @@ void FSLEventsExporterSingl::TerminateEvents(const float Timestamp)
 		NameToEvItr.Value->Properties.Add(
 			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
 				FSLUtils::FStringToChar("&log;" + 
-					FSLEventsExporterSingl::AddTimestamp(Timestamp))));
+					FSLEventsExporter::AddTimestamp(Timestamp))));
 
 		// Add as subAction property to Metadata
 		Metadata->Properties.Add(
@@ -570,7 +532,7 @@ void FSLEventsExporterSingl::TerminateEvents(const float Timestamp)
 }
 
 // Write events as timelines
-void FSLEventsExporterSingl::WriteTimelines(const FString FilePath)
+void FSLEventsExporter::WriteTimelines(const FString FilePath)
 {
 	FString TimelineStr = "<html>\n"
 		"<script type=\"text/javascript\" src=\"https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization',\n"
@@ -611,7 +573,7 @@ void FSLEventsExporterSingl::WriteTimelines(const FString FilePath)
 }
 
 // Add timepoint to array, and return Knowrob specific timestamp
-inline const FString FSLEventsExporterSingl::AddTimestamp(const float Timestamp)
+inline const FString FSLEventsExporter::AddTimestamp(const float Timestamp)
 {
 	// KnowRob Timepoint
 	const FString TimepointStr = "timepoint_" + FString::SanitizeFloat(Timestamp);

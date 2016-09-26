@@ -1,3 +1,14 @@
+# Unreal
+*.db
+*.opendb
+/Binaries
+/DerivedDataCache
+/Intermediate
+/Saved
+/.vs
+/Plugins/hydra-ue4/Binaries/
+*.sln
+
 # Compiled Object files
 *.slo
 *.lo

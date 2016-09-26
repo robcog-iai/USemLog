@@ -10,7 +10,7 @@
 *
 */
 UCLASS()
-class SEMLOG_API ARItem : public AStaticMeshActor
+class SEMLOG_API ASLItem : public AStaticMeshActor
 {
 	GENERATED_BODY()
 
@@ -28,4 +28,14 @@ public:
 	// Ontology class name
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	ESemLogType ItemLogType;
+
+	// Set unique name
+	void SetUniqueName(const FString Name) { UniqueName = Name; };
+
+	// Get unique name
+	FString GetUniqueName(const FString Name) { return UniqueName; };
+
+private:
+	// Unique name of the item
+	FString UniqueName;
 };

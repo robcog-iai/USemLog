@@ -6,31 +6,38 @@
 /**
  * Semantic map exporter
  */
-class SEMLOG_API FSLEventsExporterSingl
+class SEMLOG_API FSLEventsExporter
 {
 public:
-	// Get singleton instance
-	static FSLEventsExporterSingl& Get()
-	{
-		static FSLEventsExporterSingl Instance;
-		return Instance;	
-	}
-	// Remove copy constructor and operator
-	FSLEventsExporterSingl(FSLEventsExporterSingl const&) = delete;
-	void operator=(FSLEventsExporterSingl const&) = delete;
+	//// Get singleton instance
+	//static FSLEventsExporter& Get()
+	//{
+	//	static FSLEventsExporter Instance;
+	//	return Instance;	
+	//}
+	//// Remove copy constructor and operator
+	//FSLEventsExporter(FSLEventsExporter const&) = delete;
+	//void operator=(FSLEventsExporter const&) = delete;
 
-	// Initialize
-	void Init(
+	// Constr
+	FSLEventsExporter(
 		const FString EpisodeUniqueTag,
-		const TMap<AActor*, FString>& ActorToUniqueName, 
+		const TMap<AActor*, FString>& ActorToUniqueName,
 		const TMap<AActor*, FString>& ActorToClassType,
 		const float Timestamp);
 
-	// Check if init
-	bool IsInit();
+	//// Initialize
+	//void Init(
+	//	const FString EpisodeUniqueTag,
+	//	const TMap<AActor*, FString>& ActorToUniqueName, 
+	//	const TMap<AActor*, FString>& ActorToClassType,
+	//	const float Timestamp);
 
-	// Reset singleton
-	void Reset();
+	//// Check if init
+	//bool IsInit();
+
+	//// Reset singleton
+	//void Reset();
 
 	// Add beginning of touching event
 	void BeginTouchingEvent(AActor* TriggerParent, AActor* OtherActor, const float Timestamp);
@@ -51,24 +58,24 @@ public:
 	void WriteEvents(const FString Path, const float Timestamp, bool bWriteTimelines = true);
 
 	// Event struct
-	struct RSemEvent
+	struct SLEventStruct
 	{
-		RSemEvent(FString Namespace, FString UniqueName, float Start = -1.0f, float End = -1.0f)
+		SLEventStruct(FString Namespace, FString UniqueName, float Start = -1.0f, float End = -1.0f)
 			: Ns(Namespace), Name(UniqueName), Start(Start), End(End)
 		{}
 		FString Ns;
 		FString Name;
 		float Start;
 		float End;
-		TArray<FROwlUtils::ROwlTriple> Properties;
+		TArray<FSLUtils::SLOwlTriple> Properties;
 	};
 	
 private:
 	// Constructor
-	FSLEventsExporterSingl();
+	FSLEventsExporter();
 
 	// Destructor
-	~FSLEventsExporterSingl();
+	~FSLEventsExporter();
 
 	// Add finish time to all events
 	void TerminateEvents(const float Timestamp);
@@ -79,8 +86,8 @@ private:
 	// Add timepoint to array, and return Knowrob specific timestamp
 	const FString AddTimestamp(const float Timestamp);
 
-	// Flag showing if the exportert is init
-	bool bInit;
+	//// Flag showing if the exportert is init
+	//bool bInit;
 
 	// Episode unique tag
 	FString EpisodeUniqueTag;
@@ -92,10 +99,10 @@ private:
 	TMap<AActor*, FString> EvActorToClassType;
 
 	// Event name to event individuals map
-	TMap<FString, RSemEvent*> NameToOpenedEventsMap;
+	TMap<FString, SLEventStruct*> NameToOpenedEventsMap;
 
 	// Array of all the finished events
-	TArray<RSemEvent*> FinishedEvents;
+	TArray<SLEventStruct*> FinishedEvents;
 
 	// Array of object individuals
 	TArray<AActor*> ObjectIndividuals;
@@ -104,6 +111,6 @@ private:
 	TArray<FString> TimepointIndividuals;
 
 	// Metadata individual semantic event
-	RSemEvent* Metadata;
+	SLEventStruct* Metadata;
 };
 

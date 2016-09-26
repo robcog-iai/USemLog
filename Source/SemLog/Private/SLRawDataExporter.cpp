@@ -225,7 +225,7 @@ void FSLRawDataExporter::InitItemsToLog(
 	for (const auto SkelActPtrToUniqNameItr : SkelActPtrToUniqNameMap)
 	{
 		SkelActStructArr.Add(
-			FSLSkelLogRawStruct(SkelActPtrToUniqNameItr.Key, SkelActPtrToUniqNameItr.Value));
+			SLSkelLogRawStruct(SkelActPtrToUniqNameItr.Key, SkelActPtrToUniqNameItr.Value));
 		UE_LOG(SemLogRaw, Warning, TEXT("\t%s -> %s"),
 			*SkelActPtrToUniqNameItr.Key->GetName(), *SkelActPtrToUniqNameItr.Value);
 	}
@@ -234,7 +234,7 @@ void FSLRawDataExporter::InitItemsToLog(
 	for (const auto DynamicActPtrToUniqNameItr : DynamicActPtrToUniqNameMap)
 	{
 		DynamicActStructArr.Add(
-			FSLDynActLogRawStruct(DynamicActPtrToUniqNameItr.Key, DynamicActPtrToUniqNameItr.Value));
+			SLDynActLogRawStruct(DynamicActPtrToUniqNameItr.Key, DynamicActPtrToUniqNameItr.Value));
 		UE_LOG(SemLogRaw, Warning, TEXT("\t%s -> %s"),
 			*DynamicActPtrToUniqNameItr.Key->GetName(), *DynamicActPtrToUniqNameItr.Value);
 	}
