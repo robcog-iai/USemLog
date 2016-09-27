@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SemLogPrivatePCH.h"
-#include "SLUtils.h"
 #include "SLMapExporter.h"
 
 // Set default values
@@ -11,23 +10,50 @@ FSLMapExporter::FSLMapExporter()
 	UniqueName = "USemMap_" + FSLUtils::GenerateRandomFString(4);
 }
 
-// Destructor
-FSLMapExporter::~FSLMapExporter()
-{
-}
-
 // Write semantic map
 void FSLMapExporter::WriteSemanticMap(
-	const TMap<AStaticMeshActor*, FString>& DynamicActPtrToUniqNameMap,
-	const TMap<AStaticMeshActor*, FString>& StaticActPtrToUniqNameMap,
-	const TMap<AActor*, FString>& ActorToClassTypeMap,
+	const TArray<ASLItem*>& DynamicItems,
+	const TArray<ASLItem*>& StaticItems,
 	const TPair<USceneComponent*, FString> CameraToUniqueName,
 	const FString Path)
-{
-	///////// DOC
-	// Semantic map document
+{	
+	// Declare the xml semantic map document
 	rapidxml::xml_document<>* SemMapDoc = new rapidxml::xml_document<>();
 
+	// Add declaration of the xml map document
+	FSLMapExporter::AddDoctype(SemMapDoc);
+
+	// Semantic map RDF node
+	rapidxml::xml_node<>* RDFNode = SemMapDoc->allocate_node(rapidxml::node_element, "rdf:RDF", "");
+	
+	// Add rdf attributes
+	FSLMapExporter::AddRDFAttribures(SemMapDoc, RDFNode);
+
+	// Import ontologies
+	FSLMapExporter::ImportOntologies(SemMapDoc, RDFNode);
+
+	// Add general definitions
+	FSLMapExporter::AddGeneralDefinitions(SemMapDoc, RDFNode);
+
+	// Add the semantic map individual
+	FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode);
+
+	// Add the semantic map events individuals
+	FSLMapExporter::AddMapEventIndividuals(SemMapDoc, RDFNode,
+		DynamicItems, StaticItems, CameraToUniqueName);
+
+	// Create string
+	std::string RapidXmlString;
+	rapidxml::print(std::back_inserter(RapidXmlString), *SemMapDoc, 0 /*rapidxml::print_no_indenting*/);
+	FString OwlString = UTF8_TO_TCHAR(RapidXmlString.c_str());
+
+	// Write string to file
+	FFileHelper::SaveStringToFile(OwlString, *Path);
+}
+
+// Add the semantic map document declaration
+inline void FSLMapExporter::AddDoctype(rapidxml::xml_document<>* SemMapDoc)
+{
 	///////// TYPE DECLARATION
 	// Create declaration node <?xml version="1.0" encoding="utf-8"?>
 	rapidxml::xml_node<> *DeclarationNode = SemMapDoc->allocate_node(rapidxml::node_declaration);
@@ -53,11 +79,12 @@ void FSLMapExporter::WriteSemanticMap(
 	rapidxml::xml_node<> *DoctypeNode = SemMapDoc->allocate_node(rapidxml::node_doctype, "", doctype);
 	// Add node to document
 	SemMapDoc->append_node(DoctypeNode);
+}
 
-	///////// RDF NODE
-	// Semantic map RDF node
-	rapidxml::xml_node<>* RDFNode = SemMapDoc->allocate_node(rapidxml::node_element, "rdf:RDF", "");
-
+// Add rdf node attributes
+inline void FSLMapExporter::AddRDFAttribures(rapidxml::xml_document<>* SemMapDoc,
+	rapidxml::xml_node<>* RDFNode)
+{
 	// Add attributes
 	FSLUtils::AddNodeAttribute(SemMapDoc, RDFNode,
 		"xmlns:computable", "http://knowrob.org/kb/computable.owl#");
@@ -77,8 +104,12 @@ void FSLMapExporter::WriteSemanticMap(
 		"xmlns:u-map", "http://knowrob.org/kb/u_map.owl#");
 	FSLUtils::AddNodeAttribute(SemMapDoc, RDFNode,
 		"xml:base", "http://knowrob.org/kb/u_map.owl#");
+}
 
-	///////// ONTOLOGY IMPORT
+// Import ontologies
+inline void FSLMapExporter::ImportOntologies(rapidxml::xml_document<>* SemMapDoc,
+	rapidxml::xml_node<>* RDFNode)
+{
 	FSLUtils::AddNodeComment(SemMapDoc, RDFNode, "Ontologies");
 	// Create entity node with ontologies as properties
 	TArray<FSLUtils::SLOwlTriple> Ontologies;
@@ -87,8 +118,12 @@ void FSLMapExporter::WriteSemanticMap(
 	FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
 		FSLUtils::SLOwlTriple("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl"),
 		Ontologies);
+}
 
-	///////// GENERAL DEFINITIONS
+// Add general definitions
+inline void FSLMapExporter::AddGeneralDefinitions(rapidxml::xml_document<>* SemMapDoc,
+	rapidxml::xml_node<>* RDFNode)
+{
 	// Object property definitions
 	FSLUtils::AddNodeComment(SemMapDoc, RDFNode, "Property Definitions");
 	FSLUtils::AddNodeTriple(SemMapDoc, RDFNode,
@@ -121,15 +156,19 @@ void FSLMapExporter::WriteSemanticMap(
 		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob;TimePoint"));
 	FSLUtils::AddNodeTriple(SemMapDoc, RDFNode,
 		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob;Vector"));
+}
 
-
-	///////// EVENT INDIVIDUALS
+// Add semantic map individual
+inline void FSLMapExporter::AddMapIndividual(
+	rapidxml::xml_document<>* SemMapDoc,
+	rapidxml::xml_node<>* RDFNode)
+{
 	// Semantic map individual
 	FSLUtils::AddNodeComment(SemMapDoc, RDFNode, "Semantic Environment Map");
 	// Add semantic map instance
-	FSLUtils::AddNodeEntityWithProperty(SemMapDoc, RDFNode, 
-		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about", 
-			FSLUtils::FStringToChar("&u-map;" + UniqueName)), 
+	FSLUtils::AddNodeEntityWithProperty(SemMapDoc, RDFNode,
+		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
+			FSLUtils::FStringToChar("&u-map;" + UniqueName)),
 		FSLUtils::SLOwlTriple("rdf:type", "rdf:resource", "&knowrob;SemanticEnvironmentMap"));
 
 	// Timepoint individual
@@ -138,33 +177,41 @@ void FSLMapExporter::WriteSemanticMap(
 	FSLUtils::AddNodeEntityWithProperty(SemMapDoc, RDFNode,
 		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about", "&u-map;timepoint_0"),
 		FSLUtils::SLOwlTriple("rdf:type", "rdf:resource", "&knowrob;Timepoint"));
-	
-	UE_LOG(SemLogMap, Warning, TEXT(" *** "));
-	UE_LOG(SemLogMap, Warning, TEXT("Semantic map components:"));
+}
+
+// Add map event individuals
+inline void FSLMapExporter::AddMapEventIndividuals(
+	rapidxml::xml_document<>* SemMapDoc,
+	rapidxml::xml_node<>* RDFNode,
+	const TArray<ASLItem*>& DynamicItems,
+	const TArray<ASLItem*>& StaticItems,
+	const TPair<USceneComponent*, FString> CameraToUniqueName)
+{
+	UE_LOG(SemLogMap, Log, TEXT(" ** Semantic map individuals:"));
 
 	// Lambda to add actors to the semantic map as perception events
 	auto AddActorsToSemMapLambda = [SemMapDoc, RDFNode, this](
-		const TMap<AStaticMeshActor*, FString>& ActPtrToUniqNameMap,
-		const TMap<AActor*, FString>& ActorToClassTypeMap)
+		const TArray<ASLItem*>& Items)
 	{
-		for (const auto ActPtrToUniqNameItr : ActPtrToUniqNameMap)
+		for (const auto ItemItr : Items)
 		{
 			// Local copies of name and unique name
-			const FString ActName = ActPtrToUniqNameItr.Key->GetName();
-			const FString ActUniqueName = ActPtrToUniqNameItr.Value;
-			const FString ActClass = ActorToClassTypeMap[ActPtrToUniqNameItr.Key];
-			UE_LOG(SemLogMap, Warning, TEXT("\t%s [%s] -> %s "), *ActName, *ActClass, *ActUniqueName);
+			const FString ActName = ItemItr->GetName();
+			const FString ActUniqueName = ItemItr->GetUniqueName();
+			const FString ActClass = ItemItr->ItemClassName;
+			UE_LOG(SemLogMap, Log, TEXT(" \t %s --> %s \t [Class = %s]"),
+				*ActName,*ActUniqueName, *ActClass);
 
 			// Transf unique name
 			const FString TransfUniqueName = "Transformation_" + FSLUtils::GenerateRandomFString(4);
 
 			// Loc and rotation as quat of the objects as strings, change from left hand to right hand coord
-			const FVector Loc = ActPtrToUniqNameItr.Key->GetActorLocation() / 100;
+			const FVector Loc = ItemItr->GetActorLocation() / 100;
 			const FString LocStr = FString::SanitizeFloat(Loc.X) + " "
 				+ FString::SanitizeFloat(-Loc.Y) + " "
 				+ FString::SanitizeFloat(Loc.Z);
 
-			const FQuat Quat = ActPtrToUniqNameItr.Key->GetActorQuat();
+			const FQuat Quat = ItemItr->GetActorQuat();
 			const FString QuatStr = FString::SanitizeFloat(Quat.W) + " "
 				+ FString::SanitizeFloat(-Quat.X) + " "
 				+ FString::SanitizeFloat(Quat.Y) + " "
@@ -229,8 +276,8 @@ void FSLMapExporter::WriteSemanticMap(
 	};
 
 	// Add dynamic and static actors initial position to the map
-	AddActorsToSemMapLambda(DynamicActPtrToUniqNameMap, ActorToClassTypeMap);
-	AddActorsToSemMapLambda(StaticActPtrToUniqNameMap, ActorToClassTypeMap);
+	AddActorsToSemMapLambda(DynamicItems);
+	AddActorsToSemMapLambda(StaticItems);
 
 	// Add camera to the map
 	if (CameraToUniqueName.Key)
@@ -238,7 +285,7 @@ void FSLMapExporter::WriteSemanticMap(
 		const FString CameraName = CameraToUniqueName.Key->GetName();
 		const FString CameraUniqueName = CameraToUniqueName.Value;
 		const FString CameraClass = CameraToUniqueName.Key->GetName();
-		UE_LOG(SemLogMap, Warning, TEXT("\t%s [%s] -> %s "), *CameraName, *CameraUniqueName, *CameraClass);
+		UE_LOG(SemLogMap, Log, TEXT(" \t %s --> %s \t [Class = %s]"), *CameraName, *CameraUniqueName, *CameraClass);
 
 		// Transf unique name
 		const FString TransfUniqueName = "Transformation_" + FSLUtils::GenerateRandomFString(4);
@@ -314,18 +361,4 @@ void FSLMapExporter::WriteSemanticMap(
 
 	///////// ADD RDF TO OWL DOC
 	SemMapDoc->append_node(RDFNode);
-
-	// Create string
-	std::string RapidXmlString;
-	rapidxml::print(std::back_inserter(RapidXmlString), *SemMapDoc, 0 /*rapidxml::print_no_indenting*/);
-	FString OwlString = UTF8_TO_TCHAR(RapidXmlString.c_str());
-
-	// Write string to file
-	FFileHelper::SaveStringToFile(OwlString, *Path);
-}
-
-// Get unique name
-FString FSLMapExporter::GetUniqueName()
-{
-	return UniqueName;
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Animation/SkeletalMeshActor.h"
+#include "SLItem.h"
 
 /**
  * Class exporting raw data during gameplay
@@ -11,12 +12,13 @@ class SEMLOG_API FSLRawDataExporter
 {
 public:
 	// Constructor
-	FSLRawDataExporter(const float DistThreshSqr,
-		const FString Path,
-		TMap<ASkeletalMeshActor*, FString> SkelActPtrToUniqNameMap,
-		TMap<AStaticMeshActor*, FString> DynamicActPtrToUniqNameMap,
-		TMap<AStaticMeshActor*, FString> StaticActPtrToUniqNameMap,
-		TPair<USceneComponent*, FString> CamToUniqName);
+	FSLRawDataExporter(
+		const float DistThreshSqr,
+		const TArray<ASLItem*>& DynamicItems,
+		const TArray<ASLItem*>& StaticItems,
+		const TMap<ASkeletalMeshActor*, FString>& SkelActPtrToUniqNameMap,
+		const TPair<USceneComponent*, FString> CamToUniqName,
+		const FString Path);
 
 	// Destructor
 	~FSLRawDataExporter();
@@ -25,9 +27,9 @@ public:
 	void Update(const float Timestamp);
 
 	// Structure of skeletal mesh comp with its previous pose
-	struct SLSkelLogRawStruct
+	struct SkelRawStruct
 	{
-		SLSkelLogRawStruct(ASkeletalMeshActor* SkMComp, const FString UniqName) :
+		SkelRawStruct(ASkeletalMeshActor* SkMComp, const FString UniqName) :
 			SkelMeshComp(SkMComp),
 			UniqueName(UniqName),
 			PrevLoc(FVector(0.0f)),
@@ -38,21 +40,25 @@ public:
 		FRotator PrevRot;
 	};
 
-	// Structure of dyamic actors with prev pose and unique name
-	struct SLDynActLogRawStruct
+	// Structure of the items and their prev pose
+	struct ItemRawStruct
 	{
-		SLDynActLogRawStruct(AStaticMeshActor* StMAct, const FString UniqName) : 
-			StaticMeshAct(StMAct),
-			UniqueName(UniqName),
+		ItemRawStruct(ASLItem* It) :
+			Item(It),
 			PrevLoc(FVector(0.0f)),
 			PrevRot(FRotator(0.0f)) {};
-		AStaticMeshActor* StaticMeshAct;
-		FString UniqueName;
+		ASLItem* Item;
 		FVector PrevLoc;
 		FRotator PrevRot;
 	};
 	
 private:
+	// Init items to log from the level
+	void InitItemsToLog(
+		const TArray<ASLItem*>& DynamicItems,
+		const TArray<ASLItem*>& StaticItems,
+		const TMap<ASkeletalMeshActor*, FString>& SkelActPtrToUniqNameMap);
+
 	// Create Json object with a 3d location
 	TSharedPtr<FJsonObject> CreateLocationJsonObject(const FVector Location);
 
@@ -63,12 +69,6 @@ private:
 	TSharedPtr<FJsonObject> CreateNameLocRotJsonObject(
 		const FString Name, const FVector Location, const FQuat Rotation);
 
-	// Init items to log from the level
-	void InitItemsToLog(
-		const TMap<ASkeletalMeshActor*, FString>& SkelActPtrToUniqNameMap,
-		const TMap<AStaticMeshActor*, FString>& DynamicActPtrToUniqNameMap,
-		const TMap<AStaticMeshActor*, FString>& StaticActPtrToUniqNameMap);
-
 	// Distance threshold (squared) for raw data logging
 	float DistanceThresholdSquared;
 
@@ -76,16 +76,16 @@ private:
 	TSharedPtr<IFileHandle> RawFileHandle;
 
 	// Array of skeletal meshes with prev position and orientation
-	TArray<SLSkelLogRawStruct> SkelActStructArr;
+	TArray<SkelRawStruct> SkelActStructArr;
 
 	// Array of static meshes with prev position and orientation
-	TArray<SLDynActLogRawStruct> DynamicActStructArr;
-
-	// Map of static map actors  to unique name
-	TMap<AStaticMeshActor*, FString> StaticActToUniqName;
+	TArray<ItemRawStruct> DynamicItemsStructArr;
 
 	// User camera to unique name
 	TPair<USceneComponent*, FString> CameraToUniqueName;
+
+	// Array of the static items
+	TArray<ASLItem*> StaticItemsArr;
 	
 	// Camera previous location
 	FVector CameraPrevLoc;

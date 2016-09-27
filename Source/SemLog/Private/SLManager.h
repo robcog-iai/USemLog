@@ -3,6 +3,7 @@
 #pragma once
 #include "GameFramework/Actor.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "SLItem.h"
 #include "SLRawDataExporter.h"
 #include "SLMapExporter.h"
 #include "SLEventsExporter.h"
@@ -16,10 +17,13 @@ class SEMLOG_API ASLManager : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ASLManager();
+	
+	// Actor initialization, log items init
+	virtual void PostInitializeComponents() override;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	
 	// Called when the game is terminated
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
@@ -92,8 +96,13 @@ private:
 	// Map of actors to their class type
 	TMap<AActor*, FString> ActorToClassTypeMap;
 
-	// User camera to unique name
+	// User camera to unique name pair
 	TPair<USceneComponent*, FString> CameraToUniqueName;
+
+
+	TArray<ASLItem*> StaticItems;
+	TArray<ASLItem*> DynamicItems;
+
 
 	// Raw data exporter
 	FSLRawDataExporter* RawDataExporter;

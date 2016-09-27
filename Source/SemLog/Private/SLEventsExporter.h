@@ -9,35 +9,12 @@
 class SEMLOG_API FSLEventsExporter
 {
 public:
-	//// Get singleton instance
-	//static FSLEventsExporter& Get()
-	//{
-	//	static FSLEventsExporter Instance;
-	//	return Instance;	
-	//}
-	//// Remove copy constructor and operator
-	//FSLEventsExporter(FSLEventsExporter const&) = delete;
-	//void operator=(FSLEventsExporter const&) = delete;
-
 	// Constr
 	FSLEventsExporter(
 		const FString EpisodeUniqueTag,
 		const TMap<AActor*, FString>& ActorToUniqueName,
 		const TMap<AActor*, FString>& ActorToClassType,
 		const float Timestamp);
-
-	//// Initialize
-	//void Init(
-	//	const FString EpisodeUniqueTag,
-	//	const TMap<AActor*, FString>& ActorToUniqueName, 
-	//	const TMap<AActor*, FString>& ActorToClassType,
-	//	const float Timestamp);
-
-	//// Check if init
-	//bool IsInit();
-
-	//// Reset singleton
-	//void Reset();
 
 	// Add beginning of touching event
 	void BeginTouchingEvent(AActor* TriggerParent, AActor* OtherActor, const float Timestamp);
@@ -73,10 +50,7 @@ public:
 private:
 	// Constructor
 	FSLEventsExporter();
-
-	// Destructor
-	~FSLEventsExporter();
-
+	
 	// Add finish time to all events
 	void TerminateEvents(const float Timestamp);
 

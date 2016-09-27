@@ -25,7 +25,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString ItemClassName;
 
-	// Ontology class name
+	// Log type (Static = logged only once at begginning)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	ESemLogType ItemLogType;
 
@@ -33,7 +33,7 @@ public:
 	void SetUniqueName(const FString Name) { UniqueName = Name; };
 
 	// Get unique name
-	FString GetUniqueName(const FString Name) { return UniqueName; };
+	FString GetUniqueName() { return UniqueName; };
 
 private:
 	// Unique name of the item

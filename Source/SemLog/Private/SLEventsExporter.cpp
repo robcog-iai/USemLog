@@ -33,6 +33,8 @@ FSLEventsExporter::FSLEventsExporter(
 		FSLUtils::SLOwlTriple("knowrob:startTime", "rdf:resource",
 			FSLUtils::FStringToChar("&log;" +
 				FSLEventsExporter::AddTimestamp(Timestamp))));
+
+	UE_LOG(SemLogEvent, Log, TEXT(" ** FSLEventsExporter Constr !"));
 }
 
 // Write events to file

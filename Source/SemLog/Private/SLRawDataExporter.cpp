@@ -3,18 +3,18 @@
 #include "SemLogPrivatePCH.h"
 #include "SLRawDataExporter.h"
 
+
 // Set default values
 FSLRawDataExporter::FSLRawDataExporter(
-	const float DistThreshSqr, 
-	const FString Path,
-	TMap<ASkeletalMeshActor*, FString> SkelActPtrToUniqNameMap,
-	TMap<AStaticMeshActor*, FString> DynamicActPtrToUniqNameMap,
-	TMap<AStaticMeshActor*, FString> StaticActPtrToUniqNameMap,
-	TPair<USceneComponent*, FString> CamToUniqName) :
-	DistanceThresholdSquared(DistThreshSqr)
+	const float DistThreshSqr,
+	const TArray<ASLItem*>& DynamicItems,
+	const TArray<ASLItem*>& StaticItems,
+	const TMap<ASkeletalMeshActor*, FString>& SkelActPtrToUniqNameMap,
+	const TPair<USceneComponent*, FString> CamToUniqName,
+	const FString Path)
 {
 	// Get platform file and init file handle
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();	
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	RawFileHandle = MakeShareable(PlatformFile.OpenWrite(*Path, true, true));
 
 	// Set the camera to be loggeds
@@ -22,9 +22,10 @@ FSLRawDataExporter::FSLRawDataExporter(
 	CameraPrevLoc = FVector(0);
 
 	// Init items we want to log
-	FSLRawDataExporter::InitItemsToLog(SkelActPtrToUniqNameMap,
-		DynamicActPtrToUniqNameMap,
-		StaticActPtrToUniqNameMap);
+	FSLRawDataExporter::InitItemsToLog(
+		DynamicItems,
+		StaticItems,
+		SkelActPtrToUniqNameMap);
 }
 
 // Destructor
@@ -32,6 +33,47 @@ FSLRawDataExporter::~FSLRawDataExporter()
 {
 	RawFileHandle.Reset();
 }
+
+// Initialize items to log
+void FSLRawDataExporter::InitItemsToLog(
+	const TArray<ASLItem*>& DynamicItems,
+	const TArray<ASLItem*>& StaticItems,
+	const TMap<ASkeletalMeshActor*, FString>& SkelActPtrToUniqNameMap)
+
+{
+	UE_LOG(SemLogRaw, Log, TEXT(" ** Raw data logger: "));
+
+	for (const auto ItemItr : DynamicItems)
+	{
+		DynamicItemsStructArr.Add(ItemRawStruct(ItemItr));
+		UE_LOG(SemLogRaw, Log, TEXT("\t %s --> %s [Dynamic]"),
+			*ItemItr->GetName(), *ItemItr->GetUniqueName());
+	}
+
+	if (CameraToUniqueName.Key)
+	{
+		// Camera component
+		UE_LOG(SemLogRaw, Log, TEXT("\t%s --> %s [Dynamic]"),
+			*CameraToUniqueName.Key->GetName(), *CameraToUniqueName.Value);
+	}
+
+	for (const auto SkelActPtrToUniqNameItr : SkelActPtrToUniqNameMap)
+	{
+		SkelActStructArr.Add(
+			SkelRawStruct(SkelActPtrToUniqNameItr.Key, SkelActPtrToUniqNameItr.Value));
+		UE_LOG(SemLogRaw, Log, TEXT(" \t% s --> %s [Skeletal]"),
+			*SkelActPtrToUniqNameItr.Key->GetName(), *SkelActPtrToUniqNameItr.Value);
+	}
+
+	// Local copy of the static items
+	StaticItemsArr = StaticItems;
+	for (const auto ItemItr : StaticItems)
+	{
+		UE_LOG(SemLogRaw, Log, TEXT("\t %s --> %s [Static]"),
+			*ItemItr->GetName(), *ItemItr->GetUniqueName());
+	}
+}
+
 
 // Update grasping
 void FSLRawDataExporter::Update(const float Timestamp)
@@ -93,26 +135,26 @@ void FSLRawDataExporter::Update(const float Timestamp)
 		}
 	}
 
-	// Iterate through the static mesh components
-	for (auto& DynamicActStructItr : DynamicActStructArr)
+	// Iterate through dynamic items
+	for (auto& DynamicItemStructItr : DynamicItemsStructArr)
 	{
 		// Get component current location
-		const FVector CurrActLocation = DynamicActStructItr.StaticMeshAct->GetActorLocation();
+		const FVector CurrActLocation = DynamicItemStructItr.Item->GetActorLocation();
 
 		// Squared distance between the current and the previous pose
-		const float DistSqr = FVector::DistSquared(CurrActLocation, DynamicActStructItr.PrevLoc);
+		const float DistSqr = FVector::DistSquared(CurrActLocation, DynamicItemStructItr.PrevLoc);
 
 		// Save data if distance larger than threshold
 		if (DistSqr > DistanceThresholdSquared)
 		{
 			// Get a local pointer of the skeletal mesh actor
-			AStaticMeshActor* CurrStaticMeshAct = DynamicActStructItr.StaticMeshAct;
+			AStaticMeshActor* CurrStaticMeshAct = DynamicItemStructItr.Item;
 			// Update previous location
-			DynamicActStructItr.PrevLoc = CurrActLocation;
+			DynamicItemStructItr.PrevLoc = CurrActLocation;
 
 			// Json actor object with name location and rotation
 			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
-				DynamicActStructItr.UniqueName, CurrActLocation * 0.01, CurrStaticMeshAct->GetActorQuat());
+				DynamicItemStructItr.Item->GetUniqueName(), CurrActLocation * 0.01, CurrStaticMeshAct->GetActorQuat());
 
 			// Add actor to Json array
 			JsonActorArr.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));
@@ -144,20 +186,20 @@ void FSLRawDataExporter::Update(const float Timestamp)
 
 
 	// Check if static map actors need to be logged
-	if (StaticActToUniqName.Num() > 0)
+	if (StaticItemsArr.Num() > 0)
 	{
 		// Iterate the static map actors (done only once)
-		for (auto& StaticActToUniqNameItr : StaticActToUniqName)
+		for (const auto StaticItemsItr : StaticItemsArr)
 		{
 			// Json actor object with name location and rotation
 			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
-				StaticActToUniqNameItr.Value, StaticActToUniqNameItr.Key->GetActorLocation() * 0.01, StaticActToUniqNameItr.Key->GetActorQuat());
+				StaticItemsItr->GetUniqueName(), StaticItemsItr->GetActorLocation() * 0.01, StaticItemsItr->GetActorQuat());
 
 			// Add actor to Json array
 			JsonActorArr.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));
 		}
 		// Empty array, only needs to be logged once;
-		StaticActToUniqName.Empty();
+		StaticItemsArr.Empty();
 	}
 
 	
@@ -213,44 +255,3 @@ FORCEINLINE TSharedPtr<FJsonObject> FSLRawDataExporter::CreateNameLocRotJsonObje
 	return JsonObj;
 }
 
-// Initialize items to log
-void FSLRawDataExporter::InitItemsToLog(
-	const TMap<ASkeletalMeshActor*, FString>& SkelActPtrToUniqNameMap,
-	const TMap<AStaticMeshActor*, FString>& DynamicActPtrToUniqNameMap,
-	const TMap<AStaticMeshActor*, FString>& StaticActPtrToUniqNameMap)
-{
-	UE_LOG(SemLogRaw, Warning, TEXT(" *** "));
-	UE_LOG(SemLogRaw, Warning, TEXT("Raw data logger: "));
-	UE_LOG(SemLogRaw, Warning, TEXT("  Skeletal components:"));
-	for (const auto SkelActPtrToUniqNameItr : SkelActPtrToUniqNameMap)
-	{
-		SkelActStructArr.Add(
-			SLSkelLogRawStruct(SkelActPtrToUniqNameItr.Key, SkelActPtrToUniqNameItr.Value));
-		UE_LOG(SemLogRaw, Warning, TEXT("\t%s -> %s"),
-			*SkelActPtrToUniqNameItr.Key->GetName(), *SkelActPtrToUniqNameItr.Value);
-	}
-
-	UE_LOG(SemLogRaw, Warning, TEXT("  Dynamic items:"));
-	for (const auto DynamicActPtrToUniqNameItr : DynamicActPtrToUniqNameMap)
-	{
-		DynamicActStructArr.Add(
-			SLDynActLogRawStruct(DynamicActPtrToUniqNameItr.Key, DynamicActPtrToUniqNameItr.Value));
-		UE_LOG(SemLogRaw, Warning, TEXT("\t%s -> %s"),
-			*DynamicActPtrToUniqNameItr.Key->GetName(), *DynamicActPtrToUniqNameItr.Value);
-	}
-
-	if (CameraToUniqueName.Key)
-	{
-		// Camera component
-		UE_LOG(SemLogRaw, Warning, TEXT("\t%s -> %s"),
-			*CameraToUniqueName.Key->GetName(), *CameraToUniqueName.Value);
-	}
-
-	UE_LOG(SemLogRaw, Warning, TEXT("  Static map items (logged once):"));
-	StaticActToUniqName = StaticActPtrToUniqNameMap;
-	for (const auto StaticActPtrToUniqNameItr : StaticActPtrToUniqNameMap)
-	{
-		UE_LOG(SemLogRaw, Warning, TEXT("\t%s -> %s"),
-			*StaticActPtrToUniqNameItr.Key->GetName(), *StaticActPtrToUniqNameItr.Value);
-	}
-}

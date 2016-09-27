@@ -2,7 +2,6 @@
 
 #include "SemLogPrivatePCH.h"
 #include "SLUtils.h"
-#include "SLEventsExporter.h"
 #include "SLManager.h"
 
 // Sets default values
@@ -29,16 +28,16 @@ ASLManager::ASLManager()
 	DistanceThreshold = 0.1;
 }
 
-// Called when the game starts or when spawned
-void ASLManager::BeginPlay()
+// Actor initialization, log items init
+void ASLManager::PostInitializeComponents()
 {
-	Super::BeginPlay();
+	Super::PostInitializeComponents();
 
 	// Compute the square of the distance threshold (faster comparisons)
 	DistanceThresholdSquared = DistanceThreshold * DistanceThreshold;
 
 	// Level directory path
-	LevelPath = LogRootDirectoryName + "/" +	GetWorld()->GetName();
+	LevelPath = LogRootDirectoryName + "/" + GetWorld()->GetName();
 	// Episode directory path
 	EpisodePath = LevelPath + "/Episodes/" + "rcg_" + FDateTime::Now().ToString();
 	// Raw data directory path
@@ -57,7 +56,7 @@ void ASLManager::BeginPlay()
 		// Save unique names to file (for future use)
 		ASLManager::WriteUniqueNames(LevelPath + "/MetaData.json");
 	}
-	
+
 	// Log Semantic map
 	if (bLogSemanticMap)
 	{
@@ -70,14 +69,12 @@ void ASLManager::BeginPlay()
 			SemMapExporter = new FSLMapExporter();
 			// Generate and write level semantic map
 			SemMapExporter->WriteSemanticMap(
-				DynamicActPtrToUniqNameMap,
-				StaticActPtrToUniqNameMap,
-				ActorToClassTypeMap,
+				DynamicItems,
+				StaticItems,
 				CameraToUniqueName,
 				SemMapPath);
 		}
 	}
-
 
 	// Init raw data logger
 	if (bLogRawData)
@@ -86,43 +83,39 @@ void ASLManager::BeginPlay()
 		const FString RawFilePath = RawDataPath + "/RawData_" + EpisodeUniqueTag + ".json";
 		// Init raw data exporter
 		RawDataExporter = new FSLRawDataExporter(
-			DistanceThresholdSquared,
-			RawFilePath,
+			DistanceThresholdSquared,			
+			DynamicItems,
+			StaticItems,
 			SkelActPtrToUniqNameMap,
-			DynamicActPtrToUniqNameMap,
-			StaticActPtrToUniqNameMap,
-			CameraToUniqueName);
+			CameraToUniqueName,
+			RawFilePath);
 	}
-
 
 	// Init semantic events logger
 	if (bLogSemanticEvents)
 	{
 		SemEventsExporter = new FSLEventsExporter(
 			EpisodeUniqueTag,
-			ActorToUniqueNameMap, 
-			ActorToClassTypeMap, 
+			ActorToUniqueNameMap,
+			ActorToClassTypeMap,
 			GetWorld()->GetTimeSeconds());
 	}
+}
+
+// Called when the game starts or when spawned
+void ASLManager::BeginPlay()
+{
+	Super::BeginPlay();
 }
 
 // Called when the game is terminated
 void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	// Write events
-	SemEventsExporter->WriteEvents(EpisodePath,	GetWorld()->GetTimeSeconds());
-
-	//// Write events and terminate the singleton
-	//if (FSLEventsExporter::Get().IsInit())
-	//{
-	//	// Save logged events
-	//	FSLEventsExporter::Get().WriteEvents(
-	//		EpisodePath,
-	//		GetWorld()->GetTimeSeconds());
-
-	//	// Reset the singleton (if we run it in editor it does not get deleted)
-	//	FSLEventsExporter::Get().Reset();
-	//}	
+	if (SemEventsExporter)
+	{
+		SemEventsExporter->WriteEvents(EpisodePath,	GetWorld()->GetTimeSeconds());
+	}
 }
 
 // Called every frame
@@ -166,34 +159,51 @@ void ASLManager::CreateDirectoryPath(FString Path)
 // Set items to be logged (from tags)
 void ASLManager::InitLogItems()
 {
-	// Iterate through the static mesh actors and check tags to see which objects should be logged
-	for (TActorIterator<AStaticMeshActor> StaticMeshActItr(GetWorld()); StaticMeshActItr; ++StaticMeshActItr)
+	UE_LOG(SemLog, Log, TEXT(" ** World items:"));
+	// Iterate items to be logges (ASLItem)
+	for (TActorIterator<ASLItem> ItemsItr(GetWorld()); ItemsItr; ++ItemsItr)
 	{
-		// Get static mesh comp tags
-		const TArray<FName> TagsArr = StaticMeshActItr->GetStaticMeshComponent()->ComponentTags;
-		// Skip if object has less than 2 tags (type, class)
-		if (TagsArr.Num() > 1)
+		if (ItemsItr->ItemLogType == ESemLogType::Dynamic)
 		{
-			// Get the first tag 
-			const FString Tag0 = TagsArr[0].ToString();
-			// Check tag type
-			if (Tag0.Contains("DynamicItem"))
-			{
-				// Add dynamic actor to be loggend
-				DynamicActNameToActPtrMap.Add(*StaticMeshActItr->GetName(), *StaticMeshActItr);
-			}
-			else if (Tag0.Contains("StaticMap"))
-			{
-				// Add static actor to be loggend
-				StaticActNameToActPtrMap.Add(*StaticMeshActItr->GetName(), *StaticMeshActItr);
-			}
-
-			// Get the second tag 
-			const FString Tag1 = Tags[1].ToString();
-			// Add class type to the map (unique name will be changed)
-			ActorToClassTypeMap.Add(*StaticMeshActItr, Tag1);
+			DynamicItems.Add(*ItemsItr);
+			UE_LOG(SemLog, Log, TEXT(" \t %s \t [Dynamic]"), *ItemsItr->GetName());
+		}
+		else if (ItemsItr->ItemLogType == ESemLogType::Static)
+		{
+			StaticItems.Add(*ItemsItr);
+			UE_LOG(SemLog, Log, TEXT(" \t %s \t [Static]"), *ItemsItr->GetName());
 		}
 	}
+
+
+	//// Iterate through the static mesh actors and check tags to see which objects should be logged
+	//for (TActorIterator<AStaticMeshActor> StaticMeshActItr(GetWorld()); StaticMeshActItr; ++StaticMeshActItr)
+	//{
+	//	// Get static mesh comp tags
+	//	const TArray<FName> TagsArr = StaticMeshActItr->GetStaticMeshComponent()->ComponentTags;
+	//	// Skip if object has less than 2 tags (type, class)
+	//	if (TagsArr.Num() > 1)
+	//	{
+	//		// Get the first tag 
+	//		const FString Tag0 = TagsArr[0].ToString();
+	//		// Check tag type
+	//		if (Tag0.Contains("DynamicItem"))
+	//		{
+	//			// Add dynamic actor to be loggend
+	//			DynamicActNameToActPtrMap.Add(*StaticMeshActItr->GetName(), *StaticMeshActItr);
+	//		}
+	//		else if (Tag0.Contains("StaticMap"))
+	//		{
+	//			// Add static actor to be loggend
+	//			StaticActNameToActPtrMap.Add(*StaticMeshActItr->GetName(), *StaticMeshActItr);
+	//		}
+
+	//		// Get the second tag 
+	//		const FString Tag1 = Tags[1].ToString();
+	//		// Add class type to the map (unique name will be changed)
+	//		ActorToClassTypeMap.Add(*StaticMeshActItr, Tag1);
+	//	}
+	//}
 
 	//// Iterate through characters to check for skeletal components to be logged
 	//for (TActorIterator<ACharacter> CharItr(GetWorld()); CharItr; ++CharItr)
@@ -226,86 +236,79 @@ void ASLManager::InitLogItems()
 	//	}
 	//}
 
-	// Iterate the world directly for skeletal mesh actors to be logged
-	for (TActorIterator<ASkeletalMeshActor> SkelMeshActItr(GetWorld()); SkelMeshActItr; ++SkelMeshActItr)
-	{
-		// Get component tags
-		const TArray<FName> Tags = SkelMeshActItr->Tags;
-		// Skip if object has no tags
-		if (Tags.Num() > 1)
-		{
-			// Get the first tag 
-			const FString Tag0 = Tags[0].ToString();
-			// Check first tag type
-			if (Tag0.Contains("DynamicItem"))
-			{
-				// Add skel component to be loggend
-				SkelActNameToActPtrMap.Add(SkelMeshActItr->GetName(), *SkelMeshActItr);
-			}
+	//// Iterate the world directly for skeletal mesh actors to be logged
+	//for (TActorIterator<ASkeletalMeshActor> SkelMeshActItr(GetWorld()); SkelMeshActItr; ++SkelMeshActItr)
+	//{
+	//	// Get component tags
+	//	const TArray<FName> TagsArr = SkelMeshActItr->Tags;
+	//	// Skip if object has no tags
+	//	if (TagsArr.Num() > 1)
+	//	{
+	//		// Get the first tag 
+	//		const FString Tag0 = TagsArr[0].ToString();
+	//		// Check first tag type
+	//		if (Tag0.Contains("DynamicItem"))
+	//		{
+	//			// Add skel component to be loggend
+	//			SkelActNameToActPtrMap.Add(SkelMeshActItr->GetName(), *SkelMeshActItr);
+	//		}
 
-			// Get the second tag 
-			const FString Tag1 = Tags[1].ToString();
-			// Add class type to the map (unique name will be changed)
-			ActorToClassTypeMap.Add(*SkelMeshActItr, Tag1);
-		}
-	}
+	//		// Get the second tag 
+	//		const FString Tag1 = TagsArr[1].ToString();
+	//		// Add class type to the map (unique name will be changed)
+	//		ActorToClassTypeMap.Add(*SkelMeshActItr, Tag1);
+	//	}
+	//}
 
-	// TODO get character directly: UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)	
-	//TInlineComponentArray<UCameraComponent*> Cameras(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	// or
-	//TInlineComponentArray<UCameraComponent*> CharCamComp;
-	//UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->GetComponents(CharCamComp);
+	//// TODO get character directly: UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)	
+	////TInlineComponentArray<UCameraComponent*> Cameras(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	//// or
+	////TInlineComponentArray<UCameraComponent*> CharCamComp;
+	////UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->GetComponents(CharCamComp);
+	//// Iterate characters to get the the camera component
+	//for (TActorIterator<ACharacter> CharactItr(GetWorld()); CharactItr; ++CharactItr)
+	//{
+	//	// Get children components and check for UCameraComponent
+	//	TArray<USceneComponent*> ChildrenArr;
+	//	CharactItr->GetCapsuleComponent()->GetChildrenComponents(true, ChildrenArr);
+	//	for (const auto ChildItr : ChildrenArr)
+	//	{
+	//		if (ChildItr->IsA(UCameraComponent::StaticClass()))
+	//		{
+	//			CameraToUniqueName.Key = ChildItr;
+	//			CameraToUniqueName.Value = ""; // mockup unique name
+	//			UE_LOG(SemLog, Log, TEXT("Class: %s"), *CameraToUniqueName.Key->GetName());
+	//			break;
+	//		}
+	//	}
+	//}
 
-	// Iterate characters to get the the camera component
-	for (TActorIterator<ACharacter> CharactItr(GetWorld()); CharactItr; ++CharactItr)
-	{
-		// Get children components and check for UCameraComponent
-		TArray<USceneComponent*> ChildrenArr;
-		CharactItr->GetCapsuleComponent()->GetChildrenComponents(true, ChildrenArr);
-		for (const auto ChildItr : ChildrenArr)
-		{
-			if (ChildItr->IsA(UCameraComponent::StaticClass()))
-			{
-				CameraToUniqueName.Key = ChildItr;
-				CameraToUniqueName.Value = ""; // mockup unique name
-				UE_LOG(SemLog, Error, TEXT("Class: %s"), *CameraToUniqueName.Key->GetName());
-				break;
-			}
-		}
-	}
-
-	UE_LOG(SemLog, Log, TEXT(" ** Finished InitLogItems() "));
+	//UE_LOG(SemLog, Log, TEXT(" ** Finished InitLogItems() "));
 }
 
 // Generate items unique names
 void ASLManager::GenerateUniqueNames()
 {
-	// Lambda function to iterate through actor types and generate unique names
-	auto GenerateUniqueNamesLambda = [this](const TMap<FString,AStaticMeshActor*>& ActNameToActPtrMap)
+	UE_LOG(SemLog, Log, TEXT(" ** Generating unique names:"));
+
+	// Lambada function used to generate unqiue names to the items
+	auto GenUniqueNamesLambda = [this](const TArray<ASLItem*>& Items)
 	{
-		// Iterate all dynamic items to be logged and generate unique names
-		for (const auto ActNameToActPtrItr : ActNameToActPtrMap)
+		for (const auto ItemItr : Items)
 		{
-			// Actor name
-			const FString NameKey = ActNameToActPtrItr.Key;
+			FString UName = ItemItr->GetName();
+			UName += (UName.Contains("_")) ? FSLUtils::GenerateRandomFString(4)
+					: "_" + FSLUtils::GenerateRandomFString(4);
+			ItemItr->SetUniqueName(UName);
+			UE_LOG(SemLog, Log, TEXT(" \t %s --> %s"), *ItemItr->GetName(), *ItemItr->GetUniqueName());
 
-			// Generate unique name and make sure there is an underscore before the unique hash
-			FString UniqueName = NameKey;
-			UniqueName += (UniqueName.Contains("_"))
-				? FSLUtils::GenerateRandomFString(4)
-				: "_" + FSLUtils::GenerateRandomFString(4);
-
-			// Add generated unqique name to the dynamic actors map
-			DynamicActPtrToUniqNameMap.Add(ActNameToActPtrItr.Value, UniqueName);
-
-			// Add actor to unique name
-			ActorToUniqueNameMap.Add(ActNameToActPtrItr.Value, UniqueName);
+			ActorToUniqueNameMap.Add(ItemItr, ItemItr->GetUniqueName());
 		}
 	};
 
-	// Call lambda function to interate through actors and add them unique names
-	GenerateUniqueNamesLambda(DynamicActNameToActPtrMap);
-	GenerateUniqueNamesLambda(StaticActNameToActPtrMap);
+	// Calling the lambda functions
+	GenUniqueNamesLambda(DynamicItems);
+	GenUniqueNamesLambda(StaticItems);
 
 	// Iterate all skeletal actors to be logged and generate unique names
 	for (const auto SkelActNameToCompPtrItr : SkelActNameToActPtrMap)
@@ -336,7 +339,7 @@ void ASLManager::GenerateUniqueNames()
 			{
 				CameraToUniqueName.Key = ChildItr;
 				CameraToUniqueName.Value = ChildItr->GetName() + "_" + FSLUtils::GenerateRandomFString(4);
-				UE_LOG(SemLog, Error, TEXT("Generated Unique Name: %s"), *CameraToUniqueName.Value);
+				UE_LOG(SemLog, Log, TEXT(" \t %s --> %s"), *ChildItr->GetName(), *CameraToUniqueName.Value);
 				break;
 			}
 		}
@@ -346,68 +349,57 @@ void ASLManager::GenerateUniqueNames()
 // Read unique names from file
 bool ASLManager::ReadUniqueNames(const FString Path)
 {
+	UE_LOG(SemLog, Log, TEXT(" ** Reading unique names:"));
 	// Check if file exists, and see if it is in sync with the level
 	if (IFileManager::Get().FileExists(*Path))
 	{
 		// Read string from file		
 		FString JsonString;
 		FFileHelper::LoadFileToString(JsonString, *Path);
-		
-		// Create json from string
+
+		// Create a json object from the read string
 		TSharedRef< TJsonReader<> > Reader = TJsonReaderFactory<>::Create(JsonString);
-		TSharedPtr<FJsonObject> JsonObject;		
+		TSharedPtr<FJsonObject> JsonObject;
 		if (FJsonSerializer::Deserialize(Reader, JsonObject))
 		{
 			// Get the actor to unique name array
 			TArray< TSharedPtr<FJsonValue> > JsonArr = JsonObject->GetArrayField("level_unique_names");
-			
-			// Check if the items to be logged are in the json array
+
+			// Map that will store all the names and unique names from the json file
+			TMap<FString, FString> NameToUniqueNameMap;
+			// Iterate the json array to read the names and the unique names
 			for (const auto JsonItr : JsonArr)
 			{
-				// Check if actor name is to be logged, and if the unique name is the same
-				const FString NameField = *JsonItr->AsObject()->GetStringField("name");
-				if (DynamicActNameToActPtrMap.Contains(NameField))
-				{
-					// Get unique name and add it to the map
-					const FString UniqueName = *JsonItr->AsObject()->GetStringField("unique_name");
-					// Add generated unique name to map
-					DynamicActPtrToUniqNameMap.Add(DynamicActNameToActPtrMap[NameField], UniqueName);
+				NameToUniqueNameMap.Add(*JsonItr->AsObject()->GetStringField("name"),
+					*JsonItr->AsObject()->GetStringField("unique_name"));
+			}
 
-					// Add actor to unique name
-					ActorToUniqueNameMap.Add(DynamicActNameToActPtrMap[NameField], UniqueName);
-
-				}
-				else if(StaticActNameToActPtrMap.Contains(NameField))
+			// Check if the dynamic items are in the stored json array, if so set their unique name
+			for (const auto ItemItr : DynamicItems)
+			{
+				if(NameToUniqueNameMap.Contains(ItemItr->GetName()))
 				{
-					// Get unique name and add it to the map
-					const FString UniqueName = *JsonItr->AsObject()->GetStringField("unique_name");
-					// Add generated unique name to map
-					StaticActPtrToUniqNameMap.Add(StaticActNameToActPtrMap[NameField], UniqueName);
-
-					// Add actor to unique name
-					ActorToUniqueNameMap.Add(StaticActNameToActPtrMap[NameField], UniqueName);
-				}
-				else if (SkelActNameToActPtrMap.Contains(NameField))
-				{
-					// Get unique name and add it to the map
-					const FString UniqueName = *JsonItr->AsObject()->GetStringField("unique_name");
-					// Add generated unique name to map
-					SkelActPtrToUniqNameMap.Add(SkelActNameToActPtrMap[NameField], UniqueName);
-
-					// Add actor to unique name
-					ActorToUniqueNameMap.Add(SkelActNameToActPtrMap[NameField], UniqueName);
-				}
-				else if (CameraToUniqueName.Key->GetName().Equals(NameField))
-				{
-					// Get unique name and add it to the map
-					const FString UniqueName = *JsonItr->AsObject()->GetStringField("unique_name");
-					// Add generated unique name to map
-					CameraToUniqueName.Value = UniqueName;
-					UE_LOG(SemLog, Error, TEXT("Stored Json Unique Name: %s"), *CameraToUniqueName.Value);
+					ItemItr->SetUniqueName(NameToUniqueNameMap[ItemItr->GetName()]);
+					UE_LOG(SemLog, Log, TEXT(" \t %s --> %s"), *ItemItr->GetName(), *ItemItr->GetUniqueName());
 				}
 				else
 				{
-					UE_LOG(SemLog, Error, TEXT("Unique names not in sync with older episode! %s not found!"), *NameField);
+					UE_LOG(SemLog, Error, TEXT("Unique names not in sync with older episode! %s not found!"), *ItemItr->GetName());
+					return false;
+				}
+			}
+
+			// Check if the static items are in the stored json array, if so set their unique name
+			for (const auto ItemItr : StaticItems)
+			{
+				if (NameToUniqueNameMap.Contains(ItemItr->GetName()))
+				{
+					ItemItr->SetUniqueName(NameToUniqueNameMap[ItemItr->GetName()]);
+					UE_LOG(SemLog, Log, TEXT(" \t %s --> %s"), *ItemItr->GetName(), *ItemItr->GetUniqueName());
+				}
+				else
+				{
+					UE_LOG(SemLog, Error, TEXT("Unique names not in sync with older episode! %s not found!"), *ItemItr->GetName());
 					return false;
 				}
 			}
@@ -427,64 +419,175 @@ bool ASLManager::ReadUniqueNames(const FString Path)
 			TEXT("No previous level unique names found at: %s, generating new ones!"), *Path);
 		return false;
 	}
+
+
+
+
+
+
+	//// Check if file exists, and see if it is in sync with the level
+	//if (IFileManager::Get().FileExists(*Path))
+	//{
+	//	// Read string from file		
+	//	FString JsonString;
+	//	FFileHelper::LoadFileToString(JsonString, *Path);
+	//	
+	//	// Create a json object from the read string
+	//	TSharedRef< TJsonReader<> > Reader = TJsonReaderFactory<>::Create(JsonString);
+	//	TSharedPtr<FJsonObject> JsonObject;		
+	//	if (FJsonSerializer::Deserialize(Reader, JsonObject))
+	//	{
+	//		// Get the actor to unique name array
+	//		TArray< TSharedPtr<FJsonValue> > JsonArr = JsonObject->GetArrayField("level_unique_names");
+	//		
+	//		// Check if the items to be logged are in the json array
+	//		for (const auto JsonItr : JsonArr)
+	//		{
+	//			// Check if actor name is to be logged, and if the unique name is the same
+	//			const FString NameField = *JsonItr->AsObject()->GetStringField("name");
+	//			if (DynamicActNameToActPtrMap.Contains(NameField))
+	//			{
+	//				// Get unique name and add it to the map
+	//				const FString UniqueName = *JsonItr->AsObject()->GetStringField("unique_name");
+	//				// Add generated unique name to map
+	//				DynamicActPtrToUniqNameMap.Add(DynamicActNameToActPtrMap[NameField], UniqueName);
+
+	//				// Add actor to unique name
+	//				ActorToUniqueNameMap.Add(DynamicActNameToActPtrMap[NameField], UniqueName);
+
+	//			}
+	//			else if(StaticActNameToActPtrMap.Contains(NameField))
+	//			{
+	//				// Get unique name and add it to the map
+	//				const FString UniqueName = *JsonItr->AsObject()->GetStringField("unique_name");
+	//				// Add generated unique name to map
+	//				StaticActPtrToUniqNameMap.Add(StaticActNameToActPtrMap[NameField], UniqueName);
+
+	//				// Add actor to unique name
+	//				ActorToUniqueNameMap.Add(StaticActNameToActPtrMap[NameField], UniqueName);
+	//			}
+	//			else if (SkelActNameToActPtrMap.Contains(NameField))
+	//			{
+	//				// Get unique name and add it to the map
+	//				const FString UniqueName = *JsonItr->AsObject()->GetStringField("unique_name");
+	//				// Add generated unique name to map
+	//				SkelActPtrToUniqNameMap.Add(SkelActNameToActPtrMap[NameField], UniqueName);
+
+	//				// Add actor to unique name
+	//				ActorToUniqueNameMap.Add(SkelActNameToActPtrMap[NameField], UniqueName);
+	//			}
+	//			else if (CameraToUniqueName.Key->GetName().Equals(NameField))
+	//			{
+	//				// Get unique name and add it to the map
+	//				const FString UniqueName = *JsonItr->AsObject()->GetStringField("unique_name");
+	//				// Add generated unique name to map
+	//				CameraToUniqueName.Value = UniqueName;
+	//				UE_LOG(SemLog, Error, TEXT("Stored Json Unique Name: %s"), *CameraToUniqueName.Value);
+	//			}
+	//			else
+	//			{
+	//				UE_LOG(SemLog, Error, TEXT("Unique names not in sync with older episode! %s not found!"), *NameField);
+	//				return false;
+	//			}
+	//		}
+	//	}
+	//	else
+	//	{
+	//		UE_LOG(SemLog, Error, TEXT("Unique names cannot be read! Json string: %s"), *JsonString);
+	//		return false;
+	//	}
+
+	//	// Succesfully read all the unique values
+	//	return true;
+	//}
+	//else
+	//{
+	//	UE_LOG(SemLog, Warning,
+	//		TEXT("No previous level unique names found at: %s, generating new ones!"), *Path);
+	//	return false;
+	//}
 }
 
 // Write generated unique names to file
 void ASLManager::WriteUniqueNames(const FString Path)
 {
+	UE_LOG(SemLog, Log, TEXT(" ** Writing unique names:"));
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
 
 	// Json array of actors
 	TArray< TSharedPtr<FJsonValue> > JsonUniqueNamesArr;
 
-	// Iterate through the dynamic items
-	for (const auto DynActPtrToUniqNameItr : DynamicActPtrToUniqNameMap)
+	// Lambda function to add the items to the json array
+	auto WriteItemsToJsonLambda = [&JsonUniqueNamesArr](const TArray<ASLItem*>& Items)
 	{
-		// Json location object
-		TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
-		// Add fields
-		JsonObj->SetStringField("name", DynActPtrToUniqNameItr.Key->GetName());
-		JsonObj->SetStringField("unique_name", DynActPtrToUniqNameItr.Value);
-		// Add actor to Json array
-		JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
-	}
+		for (const auto ItemItr : Items)
+		{
+			// Json location object
+			TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
+			// Add fields
+			JsonObj->SetStringField("name", ItemItr->GetName());
+			JsonObj->SetStringField("unique_name", ItemItr->GetUniqueName());
+			// Add actor to Json array
+			JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
+			UE_LOG(SemLog, Log, TEXT(" \t %s --> %s"), *ItemItr->GetName(), *ItemItr->GetUniqueName());
+		}
+	};
+	// Call lambda function
+	WriteItemsToJsonLambda(DynamicItems);
+	WriteItemsToJsonLambda(StaticItems);
 
-	// Iterate through the static map items
-	for (const auto StaActPtrToUniqNameItr : StaticActPtrToUniqNameMap)
-	{
-		// Json location object
-		TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
-		// Add fields
-		JsonObj->SetStringField("name", StaActPtrToUniqNameItr.Key->GetName());
-		JsonObj->SetStringField("unique_name", StaActPtrToUniqNameItr.Value);
-		// Add actor to Json array
-		JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
-	}
+	
 
-	// Iterate through the static map items
-	for (const auto SkelActPtrToUniqNameItr : SkelActPtrToUniqNameMap)
-	{
-		// Json location object
-		TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
-		// Add fields
-		JsonObj->SetStringField("name", SkelActPtrToUniqNameItr.Key->GetName());
-		JsonObj->SetStringField("unique_name", SkelActPtrToUniqNameItr.Value);
-		// Add actor to Json array
-		JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
-	}
 
-	// Write character camera unique name
-	if(CameraToUniqueName.Key)
-	{
-		// Json location object
-		TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
-		// Add fields
-		JsonObj->SetStringField("name", CameraToUniqueName.Key->GetName());
-		JsonObj->SetStringField("unique_name", CameraToUniqueName.Value);
-		// Add actor to Json array
-		JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
-	}
+
+	//// Iterate through the dynamic items
+	//for (const auto DynActPtrToUniqNameItr : DynamicActPtrToUniqNameMap)
+	//{
+	//	// Json location object
+	//	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
+	//	// Add fields
+	//	JsonObj->SetStringField("name", DynActPtrToUniqNameItr.Key->GetName());
+	//	JsonObj->SetStringField("unique_name", DynActPtrToUniqNameItr.Value);
+	//	// Add actor to Json array
+	//	JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
+	//}
+
+	//// Iterate through the static map items
+	//for (const auto StaActPtrToUniqNameItr : StaticActPtrToUniqNameMap)
+	//{
+	//	// Json location object
+	//	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
+	//	// Add fields
+	//	JsonObj->SetStringField("name", StaActPtrToUniqNameItr.Key->GetName());
+	//	JsonObj->SetStringField("unique_name", StaActPtrToUniqNameItr.Value);
+	//	// Add actor to Json array
+	//	JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
+	//}
+
+	//// Iterate through the static map items
+	//for (const auto SkelActPtrToUniqNameItr : SkelActPtrToUniqNameMap)
+	//{
+	//	// Json location object
+	//	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
+	//	// Add fields
+	//	JsonObj->SetStringField("name", SkelActPtrToUniqNameItr.Key->GetName());
+	//	JsonObj->SetStringField("unique_name", SkelActPtrToUniqNameItr.Value);
+	//	// Add actor to Json array
+	//	JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
+	//}
+
+	//// Write character camera unique name
+	//if(CameraToUniqueName.Key)
+	//{
+	//	// Json location object
+	//	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
+	//	// Add fields
+	//	JsonObj->SetStringField("name", CameraToUniqueName.Key->GetName());
+	//	JsonObj->SetStringField("unique_name", CameraToUniqueName.Value);
+	//	// Add actor to Json array
+	//	JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
+	//}
 
 	// Add actors to Json root
 	JsonRootObj->SetArrayField("level_unique_names", JsonUniqueNamesArr);
