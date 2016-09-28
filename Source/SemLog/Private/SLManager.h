@@ -3,7 +3,6 @@
 #pragma once
 #include "GameFramework/Actor.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "SLItem.h"
 #include "SLRawDataExporter.h"
 #include "SLMapExporter.h"
 #include "SLEventsExporter.h"
@@ -40,14 +39,14 @@ private:
 	// Set items to be loggeed (from tags)
 	void InitLogItems();
 
-	// Set unique names of items
-	void GenerateUniqueNames();
+	// Read previously stored unique names from file
+	bool ReadPrevUniqueNames(const FString Path);
 
-	// Read unique names from file
-	bool ReadUniqueNames(const FString Path);
+	// Set unique names of items
+	void GenerateNewUniqueNames();
 
 	// Write generated unique names to file
-	void WriteUniqueNames(const FString Path);
+	void StoreNewUniqueNames(const FString Path);
 
 	// Directory to save the logs
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -69,39 +68,52 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogSemanticEvents;
 
-	// Distance threshold squared for raw data logging
-	float DistanceThresholdSquared;
+	// Map of actors to be logged to the semlog key-value pair info
+	TMap<AActor*, TArray<TPair<FString, FString>>> ActorToSemLogInfo;
 
-	// Map of skeletal component (to be logged) names to actor map 
-	TMap<FString, ASkeletalMeshActor*> SkelActNameToActPtrMap;
-
-	// Map of dynamic actors (to be logged) names to actor map 
-	TMap<FString, AStaticMeshActor*> DynamicActNameToActPtrMap;
-
-	// Map of static actors (to be logged) names to actor map 
-	TMap<FString, AStaticMeshActor*> StaticActNameToActPtrMap;
-
-	// Map of skeletal component (to be logged) to unique name
-	TMap<ASkeletalMeshActor*, FString> SkelActPtrToUniqNameMap;
-
-	// Map of dynamic actors (to be logged) to unique name
-	TMap<AStaticMeshActor*, FString> DynamicActPtrToUniqNameMap;
-
-	// Map of static map actors (to be logged) to unique name
-	TMap<AStaticMeshActor*, FString> StaticActPtrToUniqNameMap;
-	
-	// Map of actors to their unique name
-	TMap<AActor*, FString> ActorToUniqueNameMap;
-
-	// Map of actors to their class type
-	TMap<AActor*, FString> ActorToClassTypeMap;
-
-	// User camera to unique name pair
-	TPair<USceneComponent*, FString> CameraToUniqueName;
+	// Map of actors to be logged to their unique name
+	TMap<AActor*, FString> ActorToUniqueName;
 
 
-	TArray<ASLItem*> StaticItems;
-	TArray<ASLItem*> DynamicItems;
+
+
+
+
+	//// Distance threshold squared for raw data logging
+	////float DistanceThresholdSquared;
+
+	//// Map of skeletal component (to be logged) names to actor map 
+	//TMap<FString, ASkeletalMeshActor*> SkelActNameToActPtrMap; // NameToSkelMap check  // check if skel can be used as AActor, and compare with IsA afterwards
+
+	//// Map of dynamic actors (to be logged) names to actor map 
+	//TMap<FString, AStaticMeshActor*> DynamicActNameToActPtrMap; // NameToDynamicActMap
+
+	//// Map of static actors (to be logged) names to actor map 
+	//TMap<FString, AStaticMeshActor*> StaticActNameToActPtrMap; // NameToStaticActMap
+
+	//// Map of skeletal component (to be logged) to unique name
+	//TMap<ASkeletalMeshActor*, FString> SkelActPtrToUniqNameMap; // SkelToUniqueName // Cast from AActor?
+
+	//// Map of dynamic actors (to be logged) to unique name
+	//TMap<AStaticMeshActor*, FString> DynamicActPtrToUniqNameMap; // DynamicActToUniqueName
+
+	//// Map of static map actors (to be logged) to unique name
+	//TMap<AStaticMeshActor*, FString> StaticActPtrToUniqNameMap; // StaticActToUniqueName // Make sure static functions are only called once? At beginplay, or laterz.. (the raw exporter could have a function called UpdateWithStatic() and Update() have a funct
+	//
+	//// Map of actors to their unique name
+	//TMap<AActor*, FString> ActorToUniqueNameMap;
+
+	//// Map of actors to their class type
+	//TMap<AActor*, FString> ActorToClassTypeMap;
+
+	//// User camera to unique name pair
+	//TPair<USceneComponent*, FString> CameraToUniqueName;
+
+
+	//TArray<ASLItem*> StaticItems;
+	//TArray<ASLItem*> DynamicItems;
+
+
 
 
 	// Raw data exporter

@@ -1,22 +1,23 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SemLogPrivatePCH.h"
+#include "SLUtils.h"
 #include "SLMapExporter.h"
 
 // Set default values
 FSLMapExporter::FSLMapExporter()
 {
 	// Generate unique name
-	UniqueName = "USemMap_" + FSLUtils::GenerateRandomFString(4);
+	MapUniqueName = "USemMap_" + FSLUtils::GenerateRandomFString(4);
 }
 
 // Write semantic map
 void FSLMapExporter::WriteSemanticMap(
-	const TArray<ASLItem*>& DynamicItems,
-	const TArray<ASLItem*>& StaticItems,
-	const TPair<USceneComponent*, FString> CameraToUniqueName,
+	const TMap<AActor*, FString>& ActToUniqueName,
+	const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo,
 	const FString Path)
 {	
+	UE_LOG(SemLogMap, Log, TEXT(" ** Writing semantic map [%s], with individuals:"), *Path);
 	// Declare the xml semantic map document
 	rapidxml::xml_document<>* SemMapDoc = new rapidxml::xml_document<>();
 
@@ -39,8 +40,7 @@ void FSLMapExporter::WriteSemanticMap(
 	FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode);
 
 	// Add the semantic map events individuals
-	FSLMapExporter::AddMapEventIndividuals(SemMapDoc, RDFNode,
-		DynamicItems, StaticItems, CameraToUniqueName);
+	FSLMapExporter::AddMapEventIndividuals(SemMapDoc, RDFNode, ActToUniqueName, ActToSemLogInfo);
 
 	// Create string
 	std::string RapidXmlString;
@@ -168,7 +168,7 @@ inline void FSLMapExporter::AddMapIndividual(
 	// Add semantic map instance
 	FSLUtils::AddNodeEntityWithProperty(SemMapDoc, RDFNode,
 		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-			FSLUtils::FStringToChar("&u-map;" + UniqueName)),
+			FSLUtils::FStringToChar("&u-map;" + MapUniqueName)),
 		FSLUtils::SLOwlTriple("rdf:type", "rdf:resource", "&knowrob;SemanticEnvironmentMap"));
 
 	// Timepoint individual
@@ -182,144 +182,61 @@ inline void FSLMapExporter::AddMapIndividual(
 // Add map event individuals
 inline void FSLMapExporter::AddMapEventIndividuals(
 	rapidxml::xml_document<>* SemMapDoc,
-	rapidxml::xml_node<>* RDFNode,
-	const TArray<ASLItem*>& DynamicItems,
-	const TArray<ASLItem*>& StaticItems,
-	const TPair<USceneComponent*, FString> CameraToUniqueName)
+	rapidxml::xml_node<>* RDFNode, 
+	const TMap<AActor*, FString>& ActToUniqueName,
+	const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo)
 {
-	UE_LOG(SemLogMap, Log, TEXT(" ** Semantic map individuals:"));
-
-	// Lambda to add actors to the semantic map as perception events
-	auto AddActorsToSemMapLambda = [SemMapDoc, RDFNode, this](
-		const TArray<ASLItem*>& Items)
+	// Iterate 
+	for (const auto ActToSemLogItr : ActToSemLogInfo)
 	{
-		for (const auto ItemItr : Items)
+		// Local copies of actor, name and unique name
+		const AActor* CurrAct = ActToSemLogItr.Key;
+		const FString ActName = CurrAct->GetName();
+		const FString ActUniqueName = ActToUniqueName[CurrAct];
+		// Get the class type from the semlog info
+		FString ActClass = FSLUtils::GetPairArrayValue(ActToSemLogItr.Value, TEXT("Class"));
+		if (ActClass.IsEmpty())
 		{
-			// Local copies of name and unique name
-			const FString ActName = ItemItr->GetName();
-			const FString ActUniqueName = ItemItr->GetUniqueName();
-			const FString ActClass = ItemItr->ItemClassName;
-			UE_LOG(SemLogMap, Log, TEXT(" \t %s --> %s \t [Class = %s]"),
-				*ActName,*ActUniqueName, *ActClass);
-
-			// Transf unique name
-			const FString TransfUniqueName = "Transformation_" + FSLUtils::GenerateRandomFString(4);
-
-			// Loc and rotation as quat of the objects as strings, change from left hand to right hand coord
-			const FVector Loc = ItemItr->GetActorLocation() / 100;
-			const FString LocStr = FString::SanitizeFloat(Loc.X) + " "
-				+ FString::SanitizeFloat(-Loc.Y) + " "
-				+ FString::SanitizeFloat(Loc.Z);
-
-			const FQuat Quat = ItemItr->GetActorQuat();
-			const FString QuatStr = FString::SanitizeFloat(Quat.W) + " "
-				+ FString::SanitizeFloat(-Quat.X) + " "
-				+ FString::SanitizeFloat(Quat.Y) + " "
-				+ FString::SanitizeFloat(-Quat.Z);
-
-			// Object instance
-			FSLUtils::AddNodeComment(SemMapDoc, RDFNode, FSLUtils::FStringToChar("Object " + ActUniqueName));
-
-			// Array of object properties
-			TArray<FSLUtils::SLOwlTriple> ObjProperties;
-			// Add obj event properties
-			ObjProperties.Add(FSLUtils::SLOwlTriple(
-				"rdf:type", "rdf:resource", FSLUtils::FStringToChar("&knowrob;" + ActClass)));
-			ObjProperties.Add(FSLUtils::SLOwlTriple(
-				"knowrob:pathToCadModel", "rdf:datatype", "&xsd; string",
-				FSLUtils::FStringToChar("package://sim/unreal/" + ActClass + ".dae")));
-			ObjProperties.Add(FSLUtils::SLOwlTriple(
-				"knowrob:describedInMap", "rdf:resource",
-				FSLUtils::FStringToChar(FSLUtils::FStringToChar("&u-map;" + UniqueName))));
-			// Add instance with properties
-			FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
-				FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-					FSLUtils::FStringToChar("&log;" + ActUniqueName)), ObjProperties);
-
-			// Map perception unique name
-			const FString MapPerceptionUniqueName = "SemanticMapPerception_" + FSLUtils::GenerateRandomFString(4);
-
-			// Map perception properties
-			TArray<FSLUtils::SLOwlTriple> MapPerceptionProperties;
-			// Add obj event properties
-			MapPerceptionProperties.Add(FSLUtils::SLOwlTriple(
-				"rdf:type", "rdf:resource", "&knowrob;SemanticMapPerception"));
-			MapPerceptionProperties.Add(FSLUtils::SLOwlTriple(
-				"knowrob:eventOccursAt", "rdf:resource",
-				FSLUtils::FStringToChar("&u-map;" + TransfUniqueName)));
-			MapPerceptionProperties.Add(FSLUtils::SLOwlTriple(
-				"knowrob:startTime", "rdf:resource", "&u-map;timepoint_0"));
-			MapPerceptionProperties.Add(FSLUtils::SLOwlTriple(
-				"knowrob:objectActedOn", "rdf:resource",
-				FSLUtils::FStringToChar("&log;" + ActUniqueName)));
-			// Add instance with properties
-			FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
-				FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-					FSLUtils::FStringToChar(MapPerceptionUniqueName)),
-				MapPerceptionProperties);
-
-			// Transformation properties
-			TArray<FSLUtils::SLOwlTriple> TransfProperties;
-			// Add obj event properties
-			TransfProperties.Add(FSLUtils::SLOwlTriple(
-				"rdf:type", "rdf:resource", "&knowrob;Transformation"));
-			TransfProperties.Add(FSLUtils::SLOwlTriple(
-				"knowrob:quaternion", "rdf:datatype", "&xsd;string", FSLUtils::FStringToChar(QuatStr)));
-			TransfProperties.Add(FSLUtils::SLOwlTriple(
-				"knowrob:translation", "rdf:datatype", "&xsd;string", FSLUtils::FStringToChar(LocStr)));
-			// Add instance with properties
-			FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
-				FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-					FSLUtils::FStringToChar("&u-map;" + TransfUniqueName)),
-				TransfProperties);
+			ActClass = TEXT("Class_DEFAULT");
+			UE_LOG(SemLogMap, Error, TEXT(" !! Actor %s has no semantic class, using default value!"),
+				*ActName);
 		}
-	};
-
-	// Add dynamic and static actors initial position to the map
-	AddActorsToSemMapLambda(DynamicItems);
-	AddActorsToSemMapLambda(StaticItems);
-
-	// Add camera to the map
-	if (CameraToUniqueName.Key)
-	{
-		const FString CameraName = CameraToUniqueName.Key->GetName();
-		const FString CameraUniqueName = CameraToUniqueName.Value;
-		const FString CameraClass = CameraToUniqueName.Key->GetName();
-		UE_LOG(SemLogMap, Log, TEXT(" \t %s --> %s \t [Class = %s]"), *CameraName, *CameraUniqueName, *CameraClass);
+		UE_LOG(SemLogMap, Log, TEXT(" \t %s --> %s \t [Class = %s]"),
+			*ActName,*ActUniqueName, *ActClass);
 
 		// Transf unique name
 		const FString TransfUniqueName = "Transformation_" + FSLUtils::GenerateRandomFString(4);
 
 		// Loc and rotation as quat of the objects as strings, change from left hand to right hand coord
-		const FVector Loc = CameraToUniqueName.Key->GetComponentLocation() / 100;
+		const FVector Loc = CurrAct->GetActorLocation() / 100;
 		const FString LocStr = FString::SanitizeFloat(Loc.X) + " "
 			+ FString::SanitizeFloat(-Loc.Y) + " "
 			+ FString::SanitizeFloat(Loc.Z);
 
-		const FQuat Quat = CameraToUniqueName.Key->GetComponentQuat();
+		const FQuat Quat = CurrAct->GetActorQuat();
 		const FString QuatStr = FString::SanitizeFloat(Quat.W) + " "
 			+ FString::SanitizeFloat(-Quat.X) + " "
 			+ FString::SanitizeFloat(Quat.Y) + " "
 			+ FString::SanitizeFloat(-Quat.Z);
 
-		// Camera Object instance
-		FSLUtils::AddNodeComment(SemMapDoc, RDFNode, FSLUtils::FStringToChar("Object " + CameraUniqueName));
+		// Object instance
+		FSLUtils::AddNodeComment(SemMapDoc, RDFNode, FSLUtils::FStringToChar("Object " + ActUniqueName));
 
 		// Array of object properties
 		TArray<FSLUtils::SLOwlTriple> ObjProperties;
 		// Add obj event properties
 		ObjProperties.Add(FSLUtils::SLOwlTriple(
-			"rdf:type", "rdf:resource", FSLUtils::FStringToChar("&knowrob;" + CameraClass)));
+			"rdf:type", "rdf:resource", FSLUtils::FStringToChar("&knowrob;" + ActClass)));
 		ObjProperties.Add(FSLUtils::SLOwlTriple(
 			"knowrob:pathToCadModel", "rdf:datatype", "&xsd; string",
-			FSLUtils::FStringToChar("package://sim/unreal/" + CameraClass + ".dae")));
+			FSLUtils::FStringToChar("package://sim/unreal/" + ActClass + ".dae")));
 		ObjProperties.Add(FSLUtils::SLOwlTriple(
 			"knowrob:describedInMap", "rdf:resource",
-			FSLUtils::FStringToChar(FSLUtils::FStringToChar("&u-map;" + UniqueName))));
+			FSLUtils::FStringToChar(FSLUtils::FStringToChar("&u-map;" + MapUniqueName))));
 		// Add instance with properties
 		FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
 			FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-				FSLUtils::FStringToChar("&log;" + CameraUniqueName)), ObjProperties);
+				FSLUtils::FStringToChar("&log;" + ActUniqueName)), ObjProperties);
 
 		// Map perception unique name
 		const FString MapPerceptionUniqueName = "SemanticMapPerception_" + FSLUtils::GenerateRandomFString(4);
@@ -336,14 +253,14 @@ inline void FSLMapExporter::AddMapEventIndividuals(
 			"knowrob:startTime", "rdf:resource", "&u-map;timepoint_0"));
 		MapPerceptionProperties.Add(FSLUtils::SLOwlTriple(
 			"knowrob:objectActedOn", "rdf:resource",
-			FSLUtils::FStringToChar("&log;" + CameraUniqueName)));
+			FSLUtils::FStringToChar("&log;" + ActUniqueName)));
 		// Add instance with properties
 		FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
 			FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
 				FSLUtils::FStringToChar(MapPerceptionUniqueName)),
 			MapPerceptionProperties);
 
-		// Camera Transformation properties
+		// Transformation properties
 		TArray<FSLUtils::SLOwlTriple> TransfProperties;
 		// Add obj event properties
 		TransfProperties.Add(FSLUtils::SLOwlTriple(

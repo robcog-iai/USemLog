@@ -3,7 +3,6 @@
 #pragma once
 
 #include "SLUtils.h"
-#include "SLItem.h"
 
 /**
  * Semantic map exporter
@@ -16,13 +15,12 @@ public:
 
 	// Generate and write semantic map
 	void WriteSemanticMap(
-		const TArray<ASLItem*>& DynamicItems,
-		const TArray<ASLItem*>& StaticItems,
-		const TPair<USceneComponent*, FString> CameraToUniqueName,
+		const TMap<AActor*, FString>& ActToUniqueName,
+		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo,
 		const FString Path);
 
 	// Get semantic map unique name
-	FString GetUniqueName() { return UniqueName; };
+	FString GetUniqueName() { return MapUniqueName; };
 
 private:
 	// Add the doctype to the xml file
@@ -48,11 +46,10 @@ private:
 	inline void AddMapEventIndividuals(
 		rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode,
-		const TArray<ASLItem*>& DynamicItems,
-		const TArray<ASLItem*>& StaticItems,
-		const TPair<USceneComponent*, FString> CameraToUniqueName);
+		const TMap<AActor*, FString>& ActToUniqueName,
+		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo);
 
 	// Unique name of the map
-	FString UniqueName;
+	FString MapUniqueName;
 };
 

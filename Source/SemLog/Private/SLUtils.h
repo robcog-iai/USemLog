@@ -65,6 +65,29 @@ public:
 		return EnumPtr->GetEnumName((int32)Value);
 	};
 
+
+	// Get the value of pair, from an array of pairs
+	static FORCEINLINE FString GetPairArrayValue(
+		const TArray<TPair<FString, FString>>& PairArray,
+		const FString PairKey)
+	{
+		const TPair<FString, FString>* KeyValPair = PairArray.FindByPredicate(
+			[&PairKey](const TPair<FString, FString>& SemLogKeyVal)
+			{return SemLogKeyVal.Key.Equals(PairKey);}
+		);
+		// Avoid returning nullptr (return empty string if the case)
+		if (KeyValPair)
+		{
+			return KeyValPair->Value;
+		}
+		else
+		{
+			return FString();
+		}
+	}
+
+	/* OWL Utils */
+
 	// Node attribute as struct
 	struct RNodeAttribute
 	{

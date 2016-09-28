@@ -1,31 +1,19 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SemLogPrivatePCH.h"
+#include "SLUtils.h"
 #include "SLRawDataExporter.h"
 
 
 // Set default values
-FSLRawDataExporter::FSLRawDataExporter(
-	const float DistThreshSqr,
-	const TArray<ASLItem*>& DynamicItems,
-	const TArray<ASLItem*>& StaticItems,
-	const TMap<ASkeletalMeshActor*, FString>& SkelActPtrToUniqNameMap,
-	const TPair<USceneComponent*, FString> CamToUniqName,
-	const FString Path)
+FSLRawDataExporter::FSLRawDataExporter(const float DistThresh, const FString Path)
 {
+	// Square distance threshold (faster vector distance comparison)
+	DistanceThresholdSquared = DistThresh * DistThresh;
+
 	// Get platform file and init file handle
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	RawFileHandle = MakeShareable(PlatformFile.OpenWrite(*Path, true, true));
-
-	// Set the camera to be loggeds
-	CameraToUniqueName = CamToUniqName;
-	CameraPrevLoc = FVector(0);
-
-	// Init items we want to log
-	FSLRawDataExporter::InitItemsToLog(
-		DynamicItems,
-		StaticItems,
-		SkelActPtrToUniqNameMap);
 }
 
 // Destructor
@@ -35,42 +23,44 @@ FSLRawDataExporter::~FSLRawDataExporter()
 }
 
 // Initialize items to log
-void FSLRawDataExporter::InitItemsToLog(
-	const TArray<ASLItem*>& DynamicItems,
-	const TArray<ASLItem*>& StaticItems,
-	const TMap<ASkeletalMeshActor*, FString>& SkelActPtrToUniqNameMap)
+void FSLRawDataExporter::WriteInit(
+	const TMap<AActor*, FString>& ActToUniqueName,
+	const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo,
+	const float Timestamp)
 
 {
-	UE_LOG(SemLogRaw, Log, TEXT(" ** Raw data logger: "));
+	UE_LOG(SemLogRaw, Log, TEXT(" ** Init raw data logger: "));
 
-	for (const auto ItemItr : DynamicItems)
+	// Iterate through the actors and their semlog info
+	for (const auto ActToSemLogItr : ActToSemLogInfo)
 	{
-		DynamicItemsStructArr.Add(ItemRawStruct(ItemItr));
-		UE_LOG(SemLogRaw, Log, TEXT("\t %s --> %s [Dynamic]"),
-			*ItemItr->GetName(), *ItemItr->GetUniqueName());
-	}
+		// Local copy of the actor, unique name and log type
+		const AActor* CurrAct = ActToSemLogItr.Key;
+		const FString ActUniqueName = ActToUniqueName[CurrAct];
+		FString LogType = FSLUtils::GetPairArrayValue(ActToSemLogItr.Value, TEXT("LogType"));
 
-	if (CameraToUniqueName.Key)
-	{
-		// Camera component
-		UE_LOG(SemLogRaw, Log, TEXT("\t%s --> %s [Dynamic]"),
-			*CameraToUniqueName.Key->GetName(), *CameraToUniqueName.Value);
-	}
+		if (LogType.Equals("Dynamic"))
+		{
+			// Store the actors and their unique names in the local array for frequent update logging
+			RawExpActArr.Add(RawExpActStruct(CurrAct, ActUniqueName));
+			UE_LOG(SemLogRaw, Log, TEXT("\t %s --> %s [Dynamic]"),
+				*CurrAct->GetName(), *ActUniqueName);
 
-	for (const auto SkelActPtrToUniqNameItr : SkelActPtrToUniqNameMap)
-	{
-		SkelActStructArr.Add(
-			SkelRawStruct(SkelActPtrToUniqNameItr.Key, SkelActPtrToUniqNameItr.Value));
-		UE_LOG(SemLogRaw, Log, TEXT(" \t% s --> %s [Skeletal]"),
-			*SkelActPtrToUniqNameItr.Key->GetName(), *SkelActPtrToUniqNameItr.Value);
-	}
+			// TODO create a function to write the data, use this in the update as well
+		}
+		else if (LogType.Equals("Static"))
+		{
+			// Write the position of the actors only once, no storing required
+			UE_LOG(SemLogRaw, Log, TEXT("\t %s --> %s [Static]"),
+				*CurrAct->GetName(), *ActUniqueName);
 
-	// Local copy of the static items
-	StaticItemsArr = StaticItems;
-	for (const auto ItemItr : StaticItems)
-	{
-		UE_LOG(SemLogRaw, Log, TEXT("\t %s --> %s [Static]"),
-			*ItemItr->GetName(), *ItemItr->GetUniqueName());
+			// TODO create a function to write the data
+		}
+		else
+		{
+			UE_LOG(SemLogRaw, Error, TEXT(" !! %s has no LogType, ignored by the RawDataExporter."),
+				*CurrAct->GetName());
+		}
 	}
 }
 
@@ -88,121 +78,69 @@ void FSLRawDataExporter::Update(const float Timestamp)
 	TArray< TSharedPtr<FJsonValue> > JsonActorArr;
 
 	// Iterate through the skeletal mesh components
-	for (auto& SkelActStructItr : SkelActStructArr)
+	for (auto& RawExpActItr : RawExpActArr)
 	{
+		// Get a local pointer of the actor
+		const AActor* CurrAct = RawExpActItr.Actor;
 		// Get component current location
-		const FVector CurrCompLocation = SkelActStructItr.SkelMeshComp->GetActorLocation();
-
-		// Squared distance between the current and the previous pose
-		const float DistSqr = FVector::DistSquared(CurrCompLocation, SkelActStructItr.PrevLoc);
-
-		// Save data if distance larger than threshold
-		if (DistSqr > DistanceThresholdSquared)
-		{
-			// Get a local pointer of the skeletal mesh
-			USkeletalMeshComponent* CurrSkelMesh = SkelActStructItr.SkelMeshComp->GetSkeletalMeshComponent();
-			// Update previous location
-			SkelActStructItr.PrevLoc = CurrCompLocation;
-			// Json actor object with name location and rotation
-			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
-				SkelActStructItr.UniqueName, CurrCompLocation * 0.01, CurrSkelMesh->GetComponentQuat());
-
-			// Json array of bones
-			TArray< TSharedPtr<FJsonValue> > JsonBoneArr;
-			// Get bone names
-			TArray<FName> BoneNames;
-			CurrSkelMesh->GetBoneNames(BoneNames);
-
-			// Iterate through the bones of the skeletal mesh
-			for (const auto BoneName : BoneNames)
-			{
-				// TODO black voodo magic crashes, bug report, crashes if this is not called before
-				CurrSkelMesh->GetBoneQuaternion(BoneName);
-
-				// Json bone object with name location and rotation
-				TSharedPtr<FJsonObject> JsonBoneObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
-					BoneName.ToString(), CurrSkelMesh->GetBoneLocation(BoneName) * 0.01,
-					CurrSkelMesh->GetBoneQuaternion(BoneName));
-
-				// Add bone to Json array
-				JsonBoneArr.Add(MakeShareable(new FJsonValueObject(JsonBoneObj)));
-			}
-			// Add bones to Json actor
-			JsonActorObj->SetArrayField("bones", JsonBoneArr);
-
-			// Add actor to Json array
-			JsonActorArr.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));
-		}
-	}
-
-	// Iterate through dynamic items
-	for (auto& DynamicItemStructItr : DynamicItemsStructArr)
-	{
-		// Get component current location
-		const FVector CurrActLocation = DynamicItemStructItr.Item->GetActorLocation();
-
-		// Squared distance between the current and the previous pose
-		const float DistSqr = FVector::DistSquared(CurrActLocation, DynamicItemStructItr.PrevLoc);
-
-		// Save data if distance larger than threshold
-		if (DistSqr > DistanceThresholdSquared)
-		{
-			// Get a local pointer of the skeletal mesh actor
-			AStaticMeshActor* CurrStaticMeshAct = DynamicItemStructItr.Item;
-			// Update previous location
-			DynamicItemStructItr.PrevLoc = CurrActLocation;
-
-			// Json actor object with name location and rotation
-			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
-				DynamicItemStructItr.Item->GetUniqueName(), CurrActLocation * 0.01, CurrStaticMeshAct->GetActorQuat());
-
-			// Add actor to Json array
-			JsonActorArr.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));
-		}
-	}
-
-	// Log the camera component
-	if(CameraToUniqueName.Key)
-	{
-		// Get component current location
-		const FVector CurrCameraLocation = CameraToUniqueName.Key->GetComponentLocation();
-
-		// Squared distance between the current and the previous pose
-		const float DistSqr = FVector::DistSquared(CurrCameraLocation, CameraPrevLoc);
-
-		// Save data if distance larger than threshold
-		if (DistSqr > DistanceThresholdSquared)
+		const FVector CurrActLocation = CurrAct->GetActorLocation();
+		// Write data if distance larger than threshold
+		if (FVector::DistSquared(CurrActLocation, RawExpActItr.PrevLoc) > DistanceThresholdSquared)
 		{
 			// Update previous location
-			CameraPrevLoc = CurrCameraLocation;
+			RawExpActItr.PrevLoc = CurrActLocation;
 
 			// Json actor object with name location and rotation
 			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
-				CameraToUniqueName.Value, CurrCameraLocation * 0.01, CameraToUniqueName.Key->GetComponentQuat());
-			// Add actor to Json array
-			JsonActorArr.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));
-		}
-	}
-
-
-	// Check if static map actors need to be logged
-	if (StaticItemsArr.Num() > 0)
-	{
-		// Iterate the static map actors (done only once)
-		for (const auto StaticItemsItr : StaticItemsArr)
-		{
-			// Json actor object with name location and rotation
-			TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
-				StaticItemsItr->GetUniqueName(), StaticItemsItr->GetActorLocation() * 0.01, StaticItemsItr->GetActorQuat());
+				RawExpActItr.UniqueName, CurrActLocation * 0.01, CurrAct->GetActorQuat());
 
 			// Add actor to Json array
 			JsonActorArr.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));
+
+			// TODO check if skeletal component
+
+			// Check if skeletal component
+
+			//// Get a local pointer of the skeletal mesh
+			//USkeletalMeshComponent* CurrSkelMesh = RawExpActItr.Actor->GetSkeletalMeshComponent();
+			//// Update previous location
+			//SkelActStructItr.PrevLoc = CurrCompLocation;
+			//// Json actor object with name location and rotation
+			//TSharedPtr<FJsonObject> JsonActorObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
+			//	SkelActStructItr.UniqueName, CurrCompLocation * 0.01, CurrSkelMesh->GetComponentQuat());
+
+			//// Json array of bones
+			//TArray< TSharedPtr<FJsonValue> > JsonBoneArr;
+			//// Get bone names
+			//TArray<FName> BoneNames;
+			//CurrSkelMesh->GetBoneNames(BoneNames);
+
+			//// Iterate through the bones of the skeletal mesh
+			//for (const auto BoneName : BoneNames)
+			//{
+			//	// TODO black voodo magic crashes, bug report, crashes if this is not called before
+			//	CurrSkelMesh->GetBoneQuaternion(BoneName);
+
+			//	// Json bone object with name location and rotation
+			//	TSharedPtr<FJsonObject> JsonBoneObj = FSLRawDataExporter::CreateNameLocRotJsonObject(
+			//		BoneName.ToString(), CurrSkelMesh->GetBoneLocation(BoneName) * 0.01,
+			//		CurrSkelMesh->GetBoneQuaternion(BoneName));
+
+			//	// Add bone to Json array
+			//	JsonBoneArr.Add(MakeShareable(new FJsonValueObject(JsonBoneObj)));
+			//}
+			//// Add bones to Json actor
+			//JsonActorObj->SetArrayField("bones", JsonBoneArr);
+
+			//// Add actor to Json array
+			//JsonActorArr.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));
+
+
+
+
 		}
-		// Empty array, only needs to be logged once;
-		StaticItemsArr.Empty();
 	}
 
-	
 	// Add actors to Json root
 	JsonRootObj->SetArrayField("actors", JsonActorArr);
 
