@@ -8,18 +8,21 @@
 FSLEventsExporter::FSLEventsExporter(
 	const FString UniqueTag,
 	const TMap<AActor*, FString>& ActorToUniqueName,
-	const TMap<AActor*, FString>& ActorToClassType,
-	const float Timestamp)
+	const TMap<AActor*, TArray<TPair<FString, FString>>>& ActorToSemLogInfo,
+	const float Timestamp) :
+	EpisodeUniqueTag(UniqueTag),
+	ActToUniqueName(ActorToUniqueName)
 {
-	// Set episode unique tag
-	EpisodeUniqueTag = UniqueTag;
-
 	// Set the map references to the member maps
-	EvActorToUniqueName = ActorToUniqueName;
-	EvActorToClassType = ActorToClassType;
+	ActToClassType = FSLUtils::GetSemLogInfoToActorToClass(ActorToSemLogInfo, "Class");
+
+	for (const auto ActToItr : ActToClassType)
+	{
+		UE_LOG(SemLog, Log, TEXT(" ** SemEventsExporter Class: %s"), *ActToItr.Value);
+	}
 
 	// Init metadata
-	Metadata = new SLEventStruct("&log;",
+	Metadata = new EventStruct("&log;",
 		"UnrealExperiment_" + EpisodeUniqueTag, Timestamp);
 	// Add class property
 	Metadata->Properties.Add(FSLUtils::SLOwlTriple(
@@ -33,8 +36,6 @@ FSLEventsExporter::FSLEventsExporter(
 		FSLUtils::SLOwlTriple("knowrob:startTime", "rdf:resource",
 			FSLUtils::FStringToChar("&log;" +
 				FSLEventsExporter::AddTimestamp(Timestamp))));
-
-	UE_LOG(SemLogEvent, Log, TEXT(" ** FSLEventsExporter Constr !"));
 }
 
 // Write events to file
@@ -156,7 +157,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	{
 		FSLUtils::AddNodeEntityWithProperties(EventsDoc, RDFNode,
 			FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-				FSLUtils::FStringToChar(FinishedEventItr->Ns + FinishedEventItr->Name)),
+				FSLUtils::FStringToChar(FinishedEventItr->Ns + FinishedEventItr->UniqueName)),
 			FinishedEventItr->Properties);
 	}
 
@@ -168,18 +169,18 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	for (const auto ObjIndividualItr : ObjectIndividuals)
 	{		
 		// Check that both unique name and class is available
-		if ((EvActorToUniqueName.Contains(ObjIndividualItr)) &&
-			(EvActorToClassType.Contains(ObjIndividualItr)))
+		if ((ActToUniqueName.Contains(ObjIndividualItr)) &&
+			(ActToClassType.Contains(ObjIndividualItr)))
 		{
 			FSLUtils::AddNodeEntityWithProperty(EventsDoc, RDFNode,
 				FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-					FSLUtils::FStringToChar("&log;" + EvActorToUniqueName[ObjIndividualItr])),
+					FSLUtils::FStringToChar("&log;" + ActToUniqueName[ObjIndividualItr])),
 				FSLUtils::SLOwlTriple("rdf:type", "rdf:resource",
-					FSLUtils::FStringToChar("&knowrob;" + EvActorToClassType[ObjIndividualItr])));
+					FSLUtils::FStringToChar("&knowrob;" + ActToClassType[ObjIndividualItr])));
 		}
 		else
 		{
-			UE_LOG(SemLogEvent, Error, TEXT("%s 's unique name is not set! Writing object individual skipped!"), *ObjIndividualItr->GetName());
+			UE_LOG(SemLogEvent, Error, TEXT(" !! %s 's unique name is not set! Writing object individual skipped!"), *ObjIndividualItr->GetName());
 		}
 	}
 
@@ -199,7 +200,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	// Add metadata to RDF node
 	FSLUtils::AddNodeEntityWithProperties(EventsDoc, RDFNode,
 		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-			FSLUtils::FStringToChar(Metadata->Ns + Metadata->Name)),
+			FSLUtils::FStringToChar(Metadata->Ns + Metadata->UniqueName)),
 		Metadata->Properties);
 	
 
@@ -230,14 +231,14 @@ void FSLEventsExporter::BeginGraspingEvent(
 	const FString GraspedActorName = Other->GetName();
 
 	// Skip saving the event if one of the actor is not registered with unique name
-	if (!(EvActorToUniqueName.Contains(Self) && EvActorToUniqueName.Contains(Other)))
+	if (!(ActToUniqueName.Contains(Self) && ActToUniqueName.Contains(Other)))
 	{
-		UE_LOG(SemLogEvent, Error, TEXT(" %s or %s's unique name is not set! Begin grasp event skipped!"), *HandName, *GraspedActorName);
+		UE_LOG(SemLogEvent, Error, TEXT(" !! %s or %s's unique name is not set! Begin grasp event skipped!"), *HandName, *GraspedActorName);
 		return;
 	}
 	// Get unique name of the hand and object
-	const FString HandUniqueName = EvActorToUniqueName[Self];
-	const FString GraspedActorUniqueName = EvActorToUniqueName[Other];
+	const FString HandUniqueName = ActToUniqueName[Self];
+	const FString GraspedActorUniqueName = ActToUniqueName[Other];
 	
 	// Add hand and object to the object individuals array
 	ObjectIndividuals.AddUnique(Self);
@@ -248,7 +249,7 @@ void FSLEventsExporter::BeginGraspingEvent(
 	// Create unique name of the event
 	const FString EventUniqueName = "GraspingSomething_" + FSLUtils::GenerateRandomFString(4);
 	// Init grasp event
-	SLEventStruct* GraspEvent = new SLEventStruct("&log;", EventUniqueName, Timestamp);
+	EventStruct* GraspEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
 	// Add class property
 	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
 		"rdf:type", "rdf:resource", "&knowrob;GraspingSomething"));
@@ -287,7 +288,7 @@ void FSLEventsExporter::EndGraspingEvent(
 	if (NameToOpenedEventsMap.Contains("Grasp" + HandName + GraspedActorName))
 	{
 		// Get and remove the event from the opened events map
-		SLEventStruct* CurrGraspEv;
+		EventStruct* CurrGraspEv;
 		NameToOpenedEventsMap.RemoveAndCopyValue("Grasp" + HandName + GraspedActorName, CurrGraspEv);
 
 		// Add finishing time
@@ -302,14 +303,14 @@ void FSLEventsExporter::EndGraspingEvent(
 		// Add as subAction property to Metadata
 		Metadata->Properties.Add(
 			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
-				FSLUtils::FStringToChar(CurrGraspEv->Ns + CurrGraspEv->Name)));
+				FSLUtils::FStringToChar(CurrGraspEv->Ns + CurrGraspEv->UniqueName)));
 
 		// Add event to the finished events array
 		FinishedEvents.Add(CurrGraspEv);
 	}
 	else
 	{
-		UE_LOG(SemLogEvent, Error, TEXT(" Trying to end grasp which did not start: %s !"), *FString("Grasp" + HandName + GraspedActorName));
+		UE_LOG(SemLogEvent, Error, TEXT(" !! Trying to end grasp which did not start: %s !"), *FString("Grasp" + HandName + GraspedActorName));
 	}
 }
 
@@ -321,25 +322,25 @@ void FSLEventsExporter::BeginTouchingEvent(
 	const FString OtherActorName = OtherActor->GetName();
 
 	// Skip saving the event if one of the actor is not registered with unique name
-	if (!(EvActorToUniqueName.Contains(TriggerParent) && EvActorToUniqueName.Contains(OtherActor)))
+	if (!(ActToUniqueName.Contains(TriggerParent) && ActToUniqueName.Contains(OtherActor)))
 	{
-		UE_LOG(SemLogEvent, Error, TEXT(" %s or %s's unique name is not set! Begin touch event skipped!"), *TriggerParent->GetName(), *OtherActor->GetName());
+		UE_LOG(SemLogEvent, Error, TEXT(" !! %s or %s's unique name is not set! Begin touch event skipped!"), *TriggerParent->GetName(), *OtherActor->GetName());
 		return;
 	}
 	// Get unique names of the objects in contact
-	const FString TriggerUniqueName = EvActorToUniqueName[TriggerParent];
-	const FString OtherActorUniqueName = EvActorToUniqueName[OtherActor];
+	const FString TriggerUniqueName = ActToUniqueName[TriggerParent];
+	const FString OtherActorUniqueName = ActToUniqueName[OtherActor];
 
 	// Add objects to the object individuals array
 	ObjectIndividuals.AddUnique(TriggerParent);	
 	ObjectIndividuals.AddUnique(OtherActor);
 
-	UE_LOG(SemLogEvent, Warning, TEXT("Begin Contact[%s <--> %s]"),	*TriggerParentName, *OtherActorName);
+	UE_LOG(SemLogEvent, Log, TEXT("Begin Contact[%s <--> %s]"),	*TriggerParentName, *OtherActorName);
 
 	// Create unique name of the event
 	const FString EventUniqueName = "TouchingSituation_" + FSLUtils::GenerateRandomFString(4);
 	// Init contact event
-	SLEventStruct* ContactEvent = new SLEventStruct("&log;", EventUniqueName, Timestamp);
+	EventStruct* ContactEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
 	// Add class property
 	ContactEvent->Properties.Add(FSLUtils::SLOwlTriple(
 		"rdf:type", "rdf:resource", "&knowrob_u;TouchingSituation"));
@@ -372,14 +373,14 @@ void FSLEventsExporter::EndTouchingEvent(
 	const FString TriggerParentName = TriggerParent->GetName();
 	const FString OtherActorName = OtherActor->GetName();
 
-	UE_LOG(SemLogEvent, Warning,
+	UE_LOG(SemLogEvent, Log,
 		TEXT("End Contact[%s <--> %s]"), *TriggerParentName, *OtherActorName);
 
 	// Check if grasp is started
 	if (NameToOpenedEventsMap.Contains("Contact" + TriggerParent->GetName() + OtherActor->GetName()))
 	{
 		// Get and remove the event from the opened events map
-		SLEventStruct* CurrContactEv;
+		EventStruct* CurrContactEv;
 		NameToOpenedEventsMap.RemoveAndCopyValue("Contact" + TriggerParentName + OtherActorName,
 			CurrContactEv);
 
@@ -395,14 +396,14 @@ void FSLEventsExporter::EndTouchingEvent(
 		// Add as subAction property to Metadata
 		Metadata->Properties.Add(
 			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
-				FSLUtils::FStringToChar(CurrContactEv->Ns + CurrContactEv->Name)));
+				FSLUtils::FStringToChar(CurrContactEv->Ns + CurrContactEv->UniqueName)));
 
 		// Add event to the finished events array
 		FinishedEvents.Add(CurrContactEv);
 	}
 	else
 	{
-		UE_LOG(SemLogEvent, Error, TEXT(" Trying to end a contact event which did not start: %s !"),
+		UE_LOG(SemLogEvent, Error, TEXT(" !! Trying to end a contact event which did not start: %s !"),
 			*FString("Contact" + TriggerParent->GetName() + OtherActor->GetName()));
 	}
 }
@@ -414,25 +415,25 @@ void FSLEventsExporter::FurnitureStateEvent(
 	const FString FurnitureName = Furniture->GetName();
 
 	// Skip saving the event if the furniture is not registered with a unique name
-	if (!(EvActorToUniqueName.Contains(Furniture)))
+	if (!(ActToUniqueName.Contains(Furniture)))
 	{
-		UE_LOG(SemLogEvent, Error, TEXT(" %s's unique name is not set! Furniture state event skipped!"), *Furniture->GetName());
+		UE_LOG(SemLogEvent, Error, TEXT(" !! %s's unique name is not set! Furniture state event skipped!"), *Furniture->GetName());
 		return;
 	}
 	// Get unique names of the objects in contact
-	const FString FurnitureUniqueName = EvActorToUniqueName[Furniture];
+	const FString FurnitureUniqueName = ActToUniqueName[Furniture];
 	
 	// Check if the furniture has any opened events
-	SLEventStruct* FurnitureEvent = NameToOpenedEventsMap.FindRef("FurnitureState" + FurnitureUniqueName);
+	EventStruct* FurnitureEvent = NameToOpenedEventsMap.FindRef("FurnitureState" + FurnitureUniqueName);
 
 	if (!FurnitureEvent)
 	{
 		// Create first event
-		UE_LOG(SemLogEvent, Warning, TEXT("*Init*FurnitureState[%s <--> %s]"), *FurnitureName, *State);
+		UE_LOG(SemLogEvent, Log, TEXT("*Init*FurnitureState[%s <--> %s]"), *FurnitureName, *State);
 		// Create unique name of the event
 		const FString EventUniqueName = "FurnitureState" + State + "_" + FSLUtils::GenerateRandomFString(4);
 		// Create the event
-		FurnitureEvent = new SLEventStruct("&log;", EventUniqueName, Timestamp);
+		FurnitureEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
 		// Add class property
 		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
 			"rdf:type", "rdf:resource", 
@@ -457,7 +458,7 @@ void FSLEventsExporter::FurnitureStateEvent(
 	else
 	{
 		// Terminate previous furniture event
-		UE_LOG(SemLogEvent, Warning, TEXT("*Update*FurnitureState[%s <--> %s]"), *FurnitureName, *State);
+		UE_LOG(SemLogEvent, Log, TEXT("*Update*FurnitureState[%s <--> %s]"), *FurnitureName, *State);
 		// Add finishing time
 		FurnitureEvent->End = Timestamp;
 
@@ -470,7 +471,7 @@ void FSLEventsExporter::FurnitureStateEvent(
 		// Add as subAction property to Metadata
 		Metadata->Properties.Add(
 			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
-				FSLUtils::FStringToChar(FurnitureEvent->Ns + FurnitureEvent->Name)));
+				FSLUtils::FStringToChar(FurnitureEvent->Ns + FurnitureEvent->UniqueName)));
 
 		// Add event to the finished events array
 		FinishedEvents.Add(FurnitureEvent);
@@ -478,7 +479,7 @@ void FSLEventsExporter::FurnitureStateEvent(
 		// Create unique name of the event
 		const FString EventUniqueName = "FurnitureState" + State + "_" + FSLUtils::GenerateRandomFString(4);
 		// Create the event
-		FurnitureEvent = new SLEventStruct("&log;", EventUniqueName, Timestamp);
+		FurnitureEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
 		// Add class property
 		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
 			"rdf:type", "rdf:resource",
@@ -520,12 +521,12 @@ void FSLEventsExporter::TerminateEvents(const float Timestamp)
 		// Add as subAction property to Metadata
 		Metadata->Properties.Add(
 			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
-				FSLUtils::FStringToChar(NameToEvItr.Value->Ns + NameToEvItr.Value->Name)));
+				FSLUtils::FStringToChar(NameToEvItr.Value->Ns + NameToEvItr.Value->UniqueName)));
 
 		// Add event to the finished events array
 		FinishedEvents.Add(NameToEvItr.Value);
 
-		UE_LOG(SemLogEvent, Warning,
+		UE_LOG(SemLogEvent, Log,
 			TEXT("Terminate [%s]"), *NameToEvItr.Key);
 	}
 
@@ -555,7 +556,7 @@ void FSLEventsExporter::WriteTimelines(const FString FilePath)
 	// Add events to the timelines
 	for (const auto FinishedEventItr : FinishedEvents)
 	{
-		TimelineStr.Append("    [ '" + FinishedEventItr->Name + "', "
+		TimelineStr.Append("    [ '" + FinishedEventItr->UniqueName + "', "
 			+ FString::SanitizeFloat(FinishedEventItr->Start) + ", "
 			+ FString::SanitizeFloat(FinishedEventItr->End) + "],\n");
 	}

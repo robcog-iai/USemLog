@@ -78,15 +78,15 @@ void ASLManager::PostInitializeComponents()
 		RawDataExporter = new FSLRawDataExporter(DistanceThreshold, RawFilePath);
 	}
 
-	//// Init semantic events logger
-	//if (bLogSemanticEvents)
-	//{
-	//	SemEventsExporter = new FSLEventsExporter(
-	//		EpisodeUniqueTag,
-	//		ActorToUniqueNameMap,
-	//		ActorToClassTypeMap,
-	//		GetWorld()->GetTimeSeconds());
-	//}
+	// Init semantic events logger
+	if (bLogSemanticEvents)
+	{
+		SemEventsExporter = new FSLEventsExporter(
+			EpisodeUniqueTag,
+			ActorToUniqueName,
+			ActorToSemLogInfo,
+			GetWorld()->GetTimeSeconds());
+	}
 }
 
 // Called when the game starts or when spawned
@@ -195,197 +195,7 @@ void ASLManager::InitLogItems()
 				break;
 			}
 		}
-
-		
-
-		//UE_LOG(SemLog, Error, TEXT("Tag: %s"), *TagItr.ToString());
-
-		////TMap<AActor*, TArray<TPair<FString, FString>>> 
-
-		//TArray<TPair<FString, FString>> FTT;
-
-		//TPair<FString, FString> SemLogPair;
-		//SemLogPair.Key = "Class";
-		//SemLogPair.Value = "Magic";
-		//FTT.Add(SemLogPair);
-
-		///*FString Class = FTT.FindByPredicate([](const TPair<FString, FString>& SemLogKeyVal)
-		//{
-		//return SemLogKeyVal.Key.Equals("Class");
-		//})->Value;*/
-
-		//UE_LOG(SemLog, Warning, TEXT("Class: %s"), *FSLUtils::GetPairArrayValue(FTT, "Class"));
-
-		//break;
-
-		//if(ActItr->IsA(AStaticMeshActor::StaticClass()))
-		//{
-		//	UE_LOG(SemLog, Error, TEXT("StaticMeshActor: %s"), *ActItr->GetName());
-		//}
-
-
-
-		//// Get static mesh comp tags
-		//const TArray<FName> TagsArr = ActItr->GetStaticMeshComponent()->ComponentTags;
-		//// Skip if object has less than 2 tags (type, class)
-		//if (TagsArr.Num() > 1)
-		//{
-		//	// Get the first tag 
-		//	const FString Tag0 = TagsArr[0].ToString();
-		//	// Check tag type
-		//	if (Tag0.Contains("DynamicItem"))
-		//	{
-		//		// Add dynamic actor to be loggend
-		//		DynamicActNameToActPtrMap.Add(*StaticMeshActItr->GetName(), *StaticMeshActItr);
-		//	}
-		//	else if (Tag0.Contains("StaticMap"))
-		//	{
-		//		// Add static actor to be loggend
-		//		StaticActNameToActPtrMap.Add(*StaticMeshActItr->GetName(), *StaticMeshActItr);
-		//	}
-
-		//	// Get the second tag 
-		//	const FString Tag1 = Tags[1].ToString();
-		//	// Add class type to the map (unique name will be changed)
-		//	ActorToClassTypeMap.Add(*StaticMeshActItr, Tag1);
-		//}
 	}
-
-	//for (const auto ActToInfoItr : ActorToSemLogInfo)
-	//{
-	//	UE_LOG(SemLog, Warning, TEXT("Actor: %s"), *ActToInfoItr.Key->GetName());
-
-	//	for (const auto InfoArrItr : ActToInfoItr.Value)
-	//	{
-	//		UE_LOG(SemLog, Warning, TEXT(" \t Key-Val: %s : %s"), *InfoArrItr.Key, *InfoArrItr.Value);
-	//	}
-	//}
-		
-	//UE_LOG(SemLog, Log, TEXT(" ** World items:"));
-	//// Iterate items to be logges (ASLItem)
-	//for (TActorIterator<ASLItem> ItemsItr(GetWorld()); ItemsItr; ++ItemsItr)
-	//{
-	//	if (ItemsItr->ItemLogType == ESemLogType::Dynamic)
-	//	{
-	//		DynamicItems.Add(*ItemsItr);
-	//		UE_LOG(SemLog, Log, TEXT(" \t %s \t [Dynamic]"), *ItemsItr->GetName());
-	//	}
-	//	else if (ItemsItr->ItemLogType == ESemLogType::Static)
-	//	{
-	//		StaticItems.Add(*ItemsItr);
-	//		UE_LOG(SemLog, Log, TEXT(" \t %s \t [Static]"), *ItemsItr->GetName());
-	//	}
-	//}
-
-
-	//// Iterate through the static mesh actors and check tags to see which objects should be logged
-	//for (TActorIterator<AStaticMeshActor> StaticMeshActItr(GetWorld()); StaticMeshActItr; ++StaticMeshActItr)
-	//{
-	//	// Get static mesh comp tags
-	//	const TArray<FName> TagsArr = StaticMeshActItr->GetStaticMeshComponent()->ComponentTags;
-	//	// Skip if object has less than 2 tags (type, class)
-	//	if (TagsArr.Num() > 1)
-	//	{
-	//		// Get the first tag 
-	//		const FString Tag0 = TagsArr[0].ToString();
-	//		// Check tag type
-	//		if (Tag0.Contains("DynamicItem"))
-	//		{
-	//			// Add dynamic actor to be loggend
-	//			DynamicActNameToActPtrMap.Add(*StaticMeshActItr->GetName(), *StaticMeshActItr);
-	//		}
-	//		else if (Tag0.Contains("StaticMap"))
-	//		{
-	//			// Add static actor to be loggend
-	//			StaticActNameToActPtrMap.Add(*StaticMeshActItr->GetName(), *StaticMeshActItr);
-	//		}
-
-	//		// Get the second tag 
-	//		const FString Tag1 = Tags[1].ToString();
-	//		// Add class type to the map (unique name will be changed)
-	//		ActorToClassTypeMap.Add(*StaticMeshActItr, Tag1);
-	//	}
-	//}
-
-	//// Iterate through characters to check for skeletal components to be logged
-	//for (TActorIterator<ACharacter> CharItr(GetWorld()); CharItr; ++CharItr)
-	//{
-	//	// Get the skeletal components from the character
-	//	TArray<UActorComponent*> SkelComponents = (*CharItr)->GetComponentsByClass(USkeletalMeshComponent::StaticClass());
-	//	// Itrate through the skeletal components
-	//	for (const auto SkelCompItr : SkelComponents)
-	//	{
-	//		// Cast UActorComponent to USkeletalMeshComponent
-	//		USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(SkelCompItr);
-	//		// Check that the skel mesh is not empty
-	//		if (SkelComp->bHasValidBodies)
-	//		{
-	//			// Get component tags
-	//			const TArray<FName> Tags = SkelCompItr->ComponentTags;
-	//			// Skip if object has no tags
-	//			if (Tags.Num() > 0)
-	//			{
-	//				// Get the first tag 
-	//				const FString Tag0 = Tags[0].ToString();
-	//				// Check first tag type
-	//				if (Tag0.Contains("DynamicItem"))
-	//				{
-	//					// Add skel component to be loggend
-	//					SkelCompNameToCompPtrMap.Add(SkelComp->GetName(), SkelComp);
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
-
-	//// Iterate the world directly for skeletal mesh actors to be logged
-	//for (TActorIterator<ASkeletalMeshActor> SkelMeshActItr(GetWorld()); SkelMeshActItr; ++SkelMeshActItr)
-	//{
-	//	// Get component tags
-	//	const TArray<FName> TagsArr = SkelMeshActItr->Tags;
-	//	// Skip if object has no tags
-	//	if (TagsArr.Num() > 1)
-	//	{
-	//		// Get the first tag 
-	//		const FString Tag0 = TagsArr[0].ToString();
-	//		// Check first tag type
-	//		if (Tag0.Contains("DynamicItem"))
-	//		{
-	//			// Add skel component to be loggend
-	//			SkelActNameToActPtrMap.Add(SkelMeshActItr->GetName(), *SkelMeshActItr);
-	//		}
-
-	//		// Get the second tag 
-	//		const FString Tag1 = TagsArr[1].ToString();
-	//		// Add class type to the map (unique name will be changed)
-	//		ActorToClassTypeMap.Add(*SkelMeshActItr, Tag1);
-	//	}
-	//}
-
-	//// TODO get character directly: UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)	
-	////TInlineComponentArray<UCameraComponent*> Cameras(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-	//// or
-	////TInlineComponentArray<UCameraComponent*> CharCamComp;
-	////UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->GetComponents(CharCamComp);
-	//// Iterate characters to get the the camera component
-	//for (TActorIterator<ACharacter> CharactItr(GetWorld()); CharactItr; ++CharactItr)
-	//{
-	//	// Get children components and check for UCameraComponent
-	//	TArray<USceneComponent*> ChildrenArr;
-	//	CharactItr->GetCapsuleComponent()->GetChildrenComponents(true, ChildrenArr);
-	//	for (const auto ChildItr : ChildrenArr)
-	//	{
-	//		if (ChildItr->IsA(UCameraComponent::StaticClass()))
-	//		{
-	//			CameraToUniqueName.Key = ChildItr;
-	//			CameraToUniqueName.Value = ""; // mockup unique name
-	//			UE_LOG(SemLog, Log, TEXT("Class: %s"), *CameraToUniqueName.Key->GetName());
-	//			break;
-	//		}
-	//	}
-	//}
-
-	//UE_LOG(SemLog, Log, TEXT(" ** Finished InitLogItems() "));
 }
 
 // Read previously stored unique names from file

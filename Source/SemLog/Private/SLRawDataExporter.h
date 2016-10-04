@@ -28,12 +28,12 @@ public:
 	// Raw datastructure with the dynamic actors, previous position and unique name
 	struct RawExpActStruct
 	{
-		RawExpActStruct(const AActor* Act, const FString UName) :
+		RawExpActStruct(AActor* Act, const FString UName) :
 			Actor(Act),
 			UniqueName(UName),
 			PrevLoc(FVector(0.0f)){};
-		const AActor* Actor;
-		FString UniqueName;
+		AActor* Actor;
+		const FString UniqueName;
 		FVector PrevLoc;
 	};
 	
@@ -47,6 +47,10 @@ private:
 	// Create Json object with name location and rotation
 	FORCEINLINE TSharedPtr<FJsonObject> CreateNameLocRotJsonObject(
 		const FString Name, const FVector Location, const FQuat Rotation);
+
+	// Add the actors raw data to the json array
+	FORCEINLINE void AddActorToJsonArray(RawExpActStruct& RawActStruct,
+		TArray<TSharedPtr<FJsonValue>>& JsonArray);
 
 	// Distance threshold (squared) for raw data logging
 	float DistanceThresholdSquared;

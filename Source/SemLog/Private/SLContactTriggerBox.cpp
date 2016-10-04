@@ -33,6 +33,8 @@ void ASLContactTriggerBox::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UE_LOG(SemLog, Warning, TEXT("ASLContactTriggerBox BP "));
+
 	// Set the semantic events exporter
 	for (TActorIterator<ASLManager> SLManagerItr(GetWorld()); SLManagerItr; ++SLManagerItr)
 	{
@@ -68,6 +70,8 @@ void ASLContactTriggerBox::BeginSemanticContact(
 		SemEventsExporter->BeginTouchingEvent(
 			Parent, OtherActor, GetWorld()->GetTimeSeconds());
 	}
+	UE_LOG(SemLog, Warning,
+		TEXT("ASLContactTriggerBox BeginSemanticContact [%s <--> %s]"), *Self->GetName(), *OtherActor->GetName());
 }
 
 // Callback on end overlap, end the semantic contact
@@ -79,6 +83,9 @@ void ASLContactTriggerBox::EndSemanticContact(
 		SemEventsExporter->BeginTouchingEvent(
 			Parent, OtherActor, GetWorld()->GetTimeSeconds());
 	}
+
+	UE_LOG(SemLog, Warning,
+		TEXT("ASLContactTriggerBox EndSemanticContact [%s <--> %s]"), *Self->GetName(), *OtherActor->GetName());
 }
 
 // Create raster

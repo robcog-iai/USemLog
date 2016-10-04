@@ -195,12 +195,7 @@ inline void FSLMapExporter::AddMapEventIndividuals(
 		const FString ActUniqueName = ActToUniqueName[CurrAct];
 		// Get the class type from the semlog info
 		FString ActClass = FSLUtils::GetPairArrayValue(ActToSemLogItr.Value, TEXT("Class"));
-		if (ActClass.IsEmpty())
-		{
-			ActClass = TEXT("Class_DEFAULT");
-			UE_LOG(SemLogMap, Error, TEXT(" !! Actor %s has no semantic class, using default value!"),
-				*ActName);
-		}
+
 		UE_LOG(SemLogMap, Log, TEXT(" \t %s --> %s \t [Class = %s]"),
 			*ActName,*ActUniqueName, *ActClass);
 

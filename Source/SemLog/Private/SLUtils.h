@@ -82,8 +82,25 @@ public:
 		}
 		else
 		{
-			return FString();
+			FString Def = PairKey + "_DEFAULT";
+			UE_LOG(SemLog, Error, TEXT(" !! %s is not available in the SemLogInfo. Using default name: %s"), *PairKey, *Def);
+			return Def;
 		}
+	}
+
+	// Get all pair array values
+	static FORCEINLINE TMap<AActor*, FString> GetSemLogInfoToActorToClass(
+		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActorToSemLogInfo,
+		const FString ClassName)
+	{
+		TMap<AActor*, FString> ActToClass;
+		// Iterate through the semlog info
+		for (const auto ActToSemLogInfoItr : ActorToSemLogInfo)
+		{
+			// Add actor pointer and found class to the map
+			ActToClass.Add(ActToSemLogInfoItr.Key, FSLUtils::GetPairArrayValue(ActToSemLogInfoItr.Value, ClassName));
+		}
+		return ActToClass;
 	}
 
 	/* OWL Utils */

@@ -13,7 +13,7 @@ public:
 	FSLEventsExporter(
 		const FString EpisodeUniqueTag,
 		const TMap<AActor*, FString>& ActorToUniqueName,
-		const TMap<AActor*, FString>& ActorToClassType,
+		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActorToSemLogInfo,
 		const float Timestamp);
 
 	// Add beginning of touching event
@@ -35,13 +35,13 @@ public:
 	void WriteEvents(const FString Path, const float Timestamp, bool bWriteTimelines = true);
 
 	// Event struct
-	struct SLEventStruct
+	struct EventStruct
 	{
-		SLEventStruct(FString Namespace, FString UniqueName, float Start = -1.0f, float End = -1.0f)
-			: Ns(Namespace), Name(UniqueName), Start(Start), End(End)
+		EventStruct(const FString Namespace, const FString UName, float Start = -1.0f, float End = -1.0f)
+			: Ns(Namespace), UniqueName(UName), Start(Start), End(End)
 		{}
-		FString Ns;
-		FString Name;
+		const FString Ns;
+		const FString UniqueName;
 		float Start;
 		float End;
 		TArray<FSLUtils::SLOwlTriple> Properties;
@@ -58,25 +58,22 @@ private:
 	void WriteTimelines(const FString FilePath);
 
 	// Add timepoint to array, and return Knowrob specific timestamp
-	const FString AddTimestamp(const float Timestamp);
-
-	//// Flag showing if the exportert is init
-	//bool bInit;
+	inline const FString AddTimestamp(const float Timestamp);
 
 	// Episode unique tag
 	FString EpisodeUniqueTag;
 
 	// Reference map of actors to their unique name
-	TMap<AActor*, FString> EvActorToUniqueName;
+	TMap<AActor*, FString> ActToUniqueName;
 
 	// Reference map of actors to their class type
-	TMap<AActor*, FString> EvActorToClassType;
+	TMap<AActor*, FString> ActToClassType;
 
 	// Event name to event individuals map
-	TMap<FString, SLEventStruct*> NameToOpenedEventsMap;
+	TMap<FString, EventStruct*> NameToOpenedEventsMap;
 
 	// Array of all the finished events
-	TArray<SLEventStruct*> FinishedEvents;
+	TArray<EventStruct*> FinishedEvents;
 
 	// Array of object individuals
 	TArray<AActor*> ObjectIndividuals;
@@ -85,6 +82,6 @@ private:
 	TArray<FString> TimepointIndividuals;
 
 	// Metadata individual semantic event
-	SLEventStruct* Metadata;
+	EventStruct* Metadata;
 };
 
