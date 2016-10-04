@@ -16,11 +16,6 @@ FSLEventsExporter::FSLEventsExporter(
 	// Set the map references to the member maps
 	ActToClassType = FSLUtils::GetSemLogInfoToActorToClass(ActorToSemLogInfo, "Class");
 
-	for (const auto ActToItr : ActToClassType)
-	{
-		UE_LOG(SemLog, Log, TEXT(" ** SemEventsExporter Class: %s"), *ActToItr.Value);
-	}
-
 	// Init metadata
 	Metadata = new EventStruct("&log;",
 		"UnrealExperiment_" + EpisodeUniqueTag, Timestamp);

@@ -64,8 +64,7 @@ public:
 		}
 		return EnumPtr->GetEnumName((int32)Value);
 	};
-
-
+	
 	// Get the value of pair, from an array of pairs
 	static FORCEINLINE FString GetPairArrayValue(
 		const TArray<TPair<FString, FString>>& PairArray,
