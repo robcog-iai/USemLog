@@ -7,7 +7,7 @@
 /**
  * Semantic map exporter
  */
-class SEMLOG_API FSLMapExporter
+class FSLMapExporter
 {
 public:
 	// Constructor

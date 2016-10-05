@@ -7,7 +7,7 @@
 /**
  * Class exporting raw data during gameplay
  */
-class SEMLOG_API FSLRawDataExporter
+class FSLRawDataExporter
 {
 public:
 	// Constructor

@@ -8,7 +8,7 @@
 /**
  * Utils for OWL generation
  */
-struct SEMLOG_API FSLUtils
+struct FSLUtils
 {
 public:
 	// Constructor

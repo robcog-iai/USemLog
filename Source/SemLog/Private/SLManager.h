@@ -74,48 +74,6 @@ private:
 	// Map of actors to be logged to their unique name
 	TMap<AActor*, FString> ActorToUniqueName;
 
-
-
-
-
-
-	//// Distance threshold squared for raw data logging
-	////float DistanceThresholdSquared;
-
-	//// Map of skeletal component (to be logged) names to actor map 
-	//TMap<FString, ASkeletalMeshActor*> SkelActNameToActPtrMap; // NameToSkelMap check  // check if skel can be used as AActor, and compare with IsA afterwards
-
-	//// Map of dynamic actors (to be logged) names to actor map 
-	//TMap<FString, AStaticMeshActor*> DynamicActNameToActPtrMap; // NameToDynamicActMap
-
-	//// Map of static actors (to be logged) names to actor map 
-	//TMap<FString, AStaticMeshActor*> StaticActNameToActPtrMap; // NameToStaticActMap
-
-	//// Map of skeletal component (to be logged) to unique name
-	//TMap<ASkeletalMeshActor*, FString> SkelActPtrToUniqNameMap; // SkelToUniqueName // Cast from AActor?
-
-	//// Map of dynamic actors (to be logged) to unique name
-	//TMap<AStaticMeshActor*, FString> DynamicActPtrToUniqNameMap; // DynamicActToUniqueName
-
-	//// Map of static map actors (to be logged) to unique name
-	//TMap<AStaticMeshActor*, FString> StaticActPtrToUniqNameMap; // StaticActToUniqueName // Make sure static functions are only called once? At beginplay, or laterz.. (the raw exporter could have a function called UpdateWithStatic() and Update() have a funct
-	//
-	//// Map of actors to their unique name
-	//TMap<AActor*, FString> ActorToUniqueNameMap;
-
-	//// Map of actors to their class type
-	//TMap<AActor*, FString> ActorToClassTypeMap;
-
-	//// User camera to unique name pair
-	//TPair<USceneComponent*, FString> CameraToUniqueName;
-
-
-	//TArray<ASLItem*> StaticItems;
-	//TArray<ASLItem*> DynamicItems;
-
-
-
-
 	// Raw data exporter
 	FSLRawDataExporter* RawDataExporter;
 

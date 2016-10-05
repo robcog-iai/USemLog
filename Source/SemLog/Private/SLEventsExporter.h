@@ -6,7 +6,7 @@
 /**
  * Semantic map exporter
  */
-class SEMLOG_API FSLEventsExporter
+class FSLEventsExporter
 {
 public:
 	// Constr
