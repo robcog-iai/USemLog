@@ -29,9 +29,9 @@ ASLManager::ASLManager()
 }
 
 // Actor initialization, log items init
-void ASLManager::PostInitializeComponents()
+void ASLManager::PreInitializeComponents()
 {
-	Super::PostInitializeComponents();
+	Super::PreInitializeComponents();
 
 	// Level directory path
 	LevelPath = LogRootDirectoryName + "/" + GetWorld()->GetName();
