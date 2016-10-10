@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
+
 #include "SLUtils.h"
 
 /**
@@ -34,6 +35,9 @@ public:
 	// Write events to file
 	void WriteEvents(const FString Path, const float Timestamp, bool bWriteTimelines = true);
 
+	// Enable listening to events
+	void SetListenToEvents(bool bListen) {bListenToEvents = bListen;}
+
 	// Event struct
 	struct EventStruct
 	{
@@ -48,9 +52,6 @@ public:
 	};
 	
 private:
-	// Constructor
-	FSLEventsExporter();
-	
 	// Add finish time to all events
 	void TerminateEvents(const float Timestamp);
 
@@ -83,5 +84,8 @@ private:
 
 	// Metadata individual semantic event
 	EventStruct* Metadata;
+
+	// Enable listening to events
+	bool bListenToEvents;
 };
 

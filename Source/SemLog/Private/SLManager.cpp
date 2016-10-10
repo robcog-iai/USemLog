@@ -64,8 +64,6 @@ void ASLManager::PreInitializeComponents()
 		{
 			// Create sem map exporter
 			SemMapExporter = new FSLMapExporter();
-			// Generate and write level semantic map
-			SemMapExporter->WriteSemanticMap(ActorToUniqueName, ActorToSemLogInfo, SemMapPath);
 		}
 	}
 
@@ -94,14 +92,8 @@ void ASLManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Initial raw data log (static objects are stored once)
-	if (RawDataExporter)
-	{
-		RawDataExporter->WriteInit(
-			ActorToUniqueName,
-			ActorToSemLogInfo,
-			GetWorld()->GetTimeSeconds());
-	}
+	// Disable tick for now
+	SetActorTickEnabled(false);
 }
 
 // Called when the game is terminated
@@ -123,6 +115,61 @@ void ASLManager::Tick( float DeltaTime )
 	if (RawDataExporter)
 	{
 		RawDataExporter->Update(GetWorld()->GetTimeSeconds());
+	}
+}
+
+// Init exporters, write initial states
+void ASLManager::Init()
+{
+	// Generate and write level semantic map
+	if (SemMapExporter)
+	{
+		// Semantic map file path
+		const FString SemMapPath = LevelPath + "/SemanticMap.owl";
+		// Write map to path
+		SemMapExporter->WriteSemanticMap(ActorToUniqueName, ActorToSemLogInfo, SemMapPath);
+	}
+
+	// Initial raw data log (static objects are stored once)
+	if (RawDataExporter)
+	{
+		RawDataExporter->WriteInit(
+			ActorToUniqueName,
+			ActorToSemLogInfo,
+			GetWorld()->GetTimeSeconds());
+	}
+
+	// Enable listening to events
+	if (SemEventsExporter)
+	{
+		SemEventsExporter->SetListenToEvents(true);
+	}
+}
+
+// Start logging by enabling tick
+void ASLManager::Start()
+{
+	// Enable tick
+	SetActorTickEnabled(true);
+
+	// Enable listening to events
+	if (SemEventsExporter)
+	{
+		SemEventsExporter->SetListenToEvents(true);
+	}
+
+}
+
+// Pause logging by disabling tick
+void ASLManager::Pause()
+{
+	// Disable tick
+	SetActorTickEnabled(false);
+
+	// Disable listening to events
+	if (SemEventsExporter)
+	{
+		SemEventsExporter->SetListenToEvents(false);
 	}
 }
 
@@ -312,3 +359,5 @@ void ASLManager::StoreNewUniqueNames(const FString Path)
 	// Write string to file
 	FFileHelper::SaveStringToFile(JsonOutputString, *Path);
 }
+
+

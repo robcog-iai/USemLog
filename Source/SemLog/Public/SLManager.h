@@ -29,6 +29,15 @@ public:
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
+	// Init exporters, write initial states
+	void Init();
+
+	// Start logging by enabling tick
+	void Start();
+	
+	// Pause logging by disabling tick
+	void Pause();
+
 	// Get semantic events exporter
 	FSLEventsExporter* GetEventsExporter() { return SemEventsExporter; };
 
@@ -39,8 +48,8 @@ private:
 	// Set items to be loggeed (from tags)
 	void InitLogItems();
 
-	// Read previously stored unique names from file
 	bool ReadPrevUniqueNames(const FString Path);
+	// Read previously stored unique names from file
 
 	// Set unique names of items
 	void GenerateNewUniqueNames();

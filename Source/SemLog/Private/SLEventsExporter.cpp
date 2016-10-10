@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SemLogPrivatePCH.h"
-#include "SLUtils.h"
 #include "SLEventsExporter.h"
 
 // Constructor
@@ -13,6 +12,9 @@ FSLEventsExporter::FSLEventsExporter(
 	EpisodeUniqueTag(UniqueTag),
 	ActToUniqueName(ActorToUniqueName)
 {
+	// Disable listening to events
+	bListenToEvents = false;
+
 	// Set the map references to the member maps
 	ActToClassType = FSLUtils::GetSemLogInfoToActorToClass(ActorToSemLogInfo, "Class");
 
@@ -222,6 +224,11 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 void FSLEventsExporter::BeginGraspingEvent(
 	AActor* Self, AActor* Other, const float Timestamp)
 {
+	if (!bListenToEvents)
+	{
+		return;
+	}
+
 	const FString HandName = Self->GetName();
 	const FString GraspedActorName = Other->GetName();
 
@@ -274,6 +281,11 @@ void FSLEventsExporter::BeginGraspingEvent(
 void FSLEventsExporter::EndGraspingEvent(
 	AActor* Self, AActor* Other, const float Timestamp)
 {
+	if (!bListenToEvents)
+	{
+		return;
+	}
+
 	const FString HandName = Self->GetName();
 	const FString GraspedActorName = Other->GetName();
 
@@ -313,6 +325,11 @@ void FSLEventsExporter::EndGraspingEvent(
 void FSLEventsExporter::BeginTouchingEvent(
 	AActor* TriggerParent, AActor* OtherActor, const float Timestamp)
 {
+	if (!bListenToEvents)
+	{
+		return;
+	}
+
 	const FString TriggerParentName = TriggerParent->GetName();
 	const FString OtherActorName = OtherActor->GetName();
 
@@ -365,6 +382,11 @@ void FSLEventsExporter::BeginTouchingEvent(
 void FSLEventsExporter::EndTouchingEvent(
 	AActor* TriggerParent, AActor* OtherActor, const float Timestamp)
 {
+	if (!bListenToEvents)
+	{
+		return;
+	}
+
 	const FString TriggerParentName = TriggerParent->GetName();
 	const FString OtherActorName = OtherActor->GetName();
 
@@ -407,6 +429,11 @@ void FSLEventsExporter::EndTouchingEvent(
 void FSLEventsExporter::FurnitureStateEvent(
 	AActor* Furniture, const FString State, const float Timestamp)
 {
+	if (!bListenToEvents)
+	{
+		return;
+	}
+
 	const FString FurnitureName = Furniture->GetName();
 
 	// Skip saving the event if the furniture is not registered with a unique name

@@ -4,6 +4,7 @@
 #include <string>
 #include <algorithm>
 #include "rapidxml/rapidxml_print.hpp"
+#include "Private/SemLogPrivatePCH.h"
 
 /**
  * Utils for OWL generation
