@@ -89,7 +89,7 @@ void ASLContactTriggerBox::EndSemanticContact(
 {
 	if (SemEventsExporter)
 	{
-		SemEventsExporter->BeginTouchingEvent(
+		SemEventsExporter->EndTouchingEvent(
 			Parent, OtherActor, GetWorld()->GetTimeSeconds());
 	}
 }
