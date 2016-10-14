@@ -52,7 +52,7 @@ namespace rapidxml
     
 #include <exception>    // For std::exception
 
-#define RAPIDXML_PARSE_ERROR(what, where) throw parse_error(what, where)
+#define RAPIDXML_PARSE_ERROR(what, where) /*throw parse_error(what, where)*/
 
 namespace rapidxml
 {
@@ -82,7 +82,7 @@ namespace rapidxml
 
         //! Gets human readable description of error.
         //! \return Pointer to null terminated description of the error.
-        virtual const char *what() const throw()
+        virtual const char *what() const /*throw()*/
         {
             return m_what;
         }
