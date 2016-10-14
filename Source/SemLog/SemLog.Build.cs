@@ -17,6 +17,7 @@ namespace UnrealBuildTool.Rules
 			PublicIncludePaths.AddRange(
 				new string[] {
 					"SemLog/Public",
+                    Path.Combine(ThirdPartyPath, "RapidXml", "Includes"),
 					// ... add public include paths required here ...
 				}
 				);
@@ -24,7 +25,7 @@ namespace UnrealBuildTool.Rules
 			PrivateIncludePaths.AddRange(
 				new string[] {
 					"SemLog/Private",
-					Path.Combine(ThirdPartyPath, "RapidXml", "Includes"),
+					//Path.Combine(ThirdPartyPath, "RapidXml", "Includes"),
 					// ... add other private include paths required here ...
 				}
 				);

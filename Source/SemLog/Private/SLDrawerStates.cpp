@@ -3,6 +3,7 @@
 #include "SemLogPrivatePCH.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "SLManager.h"
+#include "SLEventsExporter.h"
 #include "SLDrawerStates.h"
 
 

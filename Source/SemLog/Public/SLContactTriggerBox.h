@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Engine/TriggerBox.h"
-#include "SLEventsExporter.h"
 #include "SLContactTriggerBox.generated.h"
 
 /**
@@ -69,5 +68,5 @@ private:
 	FTimerHandle TimerHandle;
 
 	// Pointer to the semantic events exporter
-	FSLEventsExporter* SemEventsExporter;
+	class FSLEventsExporter* SemEventsExporter;
 };

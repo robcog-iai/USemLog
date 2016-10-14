@@ -2,10 +2,6 @@
 
 #pragma once
 #include "GameFramework/Actor.h"
-#include "Animation/SkeletalMeshActor.h"
-#include "SLRawDataExporter.h"
-#include "SLMapExporter.h"
-#include "SLEventsExporter.h"
 #include "SLManager.generated.h"
 
 UCLASS()
@@ -39,7 +35,7 @@ public:
 	void Pause();
 
 	// Get semantic events exporter
-	FSLEventsExporter* GetEventsExporter() { return SemEventsExporter; };
+	class FSLEventsExporter* GetEventsExporter() { return SemEventsExporter; };
 
 private:
 	// Create directory path for logging
@@ -84,13 +80,13 @@ private:
 	TMap<AActor*, FString> ActorToUniqueName;
 
 	// Raw data exporter
-	FSLRawDataExporter* RawDataExporter;
+	class FSLRawDataExporter* RawDataExporter;
 
 	// Semantic map exporter
-	FSLMapExporter* SemMapExporter;
+	class FSLMapExporter* SemMapExporter;
 
 	// Semantic events exporter
-	FSLEventsExporter* SemEventsExporter;
+	class FSLEventsExporter* SemEventsExporter;
 
 	// Level path
 	FString LevelPath;

@@ -2,6 +2,7 @@
 
 #include "SemLogPrivatePCH.h"
 #include "SLUtils.h"
+#include "Animation/SkeletalMeshActor.h"
 #include "SLRawDataExporter.h"
 
 

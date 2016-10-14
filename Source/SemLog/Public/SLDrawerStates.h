@@ -3,7 +3,6 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "SLEventsExporter.h"
 #include "SLDrawerStates.generated.h"
 
 /**
@@ -54,5 +53,5 @@ private:
 	TMap<AActor*, FString> FurnitureToStateMap;
 
 	// Pointer to the semantic events exporter
-	FSLEventsExporter* SemEventsExporter;
+	class FSLEventsExporter* SemEventsExporter;
 };

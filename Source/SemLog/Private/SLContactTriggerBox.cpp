@@ -2,6 +2,7 @@
 
 #include "SemLogPrivatePCH.h"
 #include "SLManager.h"
+#include "SLEventsExporter.h"
 #include "SLContactTriggerBox.h"
 
 // Set default values

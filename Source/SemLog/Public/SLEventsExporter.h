@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "SLUtils.h"
+#include "Private/SLUtils.h"
 
 /**
  * Semantic map exporter

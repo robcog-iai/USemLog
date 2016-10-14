@@ -2,6 +2,9 @@
 
 #include "SemLogPrivatePCH.h"
 #include "SLUtils.h"
+#include "SLRawDataExporter.h"
+#include "SLMapExporter.h"
+#include "SLEventsExporter.h"
 #include "SLManager.h"
 
 // Sets default values

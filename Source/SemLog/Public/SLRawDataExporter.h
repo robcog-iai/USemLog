@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "Animation/SkeletalMeshActor.h"
-
 /**
  * Class exporting raw data during gameplay
  */
