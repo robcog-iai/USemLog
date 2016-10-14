@@ -41,8 +41,8 @@ public:
 	// Event struct
 	struct EventStruct
 	{
-		EventStruct(const FString Namespace, const FString UName, float Start = -1.0f, float End = -1.0f)
-			: Ns(Namespace), UniqueName(UName), Start(Start), End(End)
+		EventStruct(const FString Namespace, const FString UName, float EvStart = -1.0f, float EvEnd = -1.0f)
+			: Ns(Namespace), UniqueName(UName), Start(EvStart), End(EvEnd)
 		{}
 		const FString Ns;
 		const FString UniqueName;
