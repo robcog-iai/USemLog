@@ -1,8 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+<<<<<<< HEAD:Source/USemLog/Private/SLContactTriggerBox.cpp
+#include "USemLogPrivatePCH.h"
+=======
 #include "SemLogPrivatePCH.h"
 #include "SLManager.h"
 #include "SLEventsExporter.h"
+>>>>>>> d32ae4304c8213e6fbe58632be4b3cf04817b40c:Source/SemLog/Private/SLContactTriggerBox.cpp
 #include "SLContactTriggerBox.h"
 
 // Set default values
@@ -37,7 +41,7 @@ void ASLContactTriggerBox::BeginPlay()
 	// Set the semantic events exporter
 	for (TActorIterator<ASLManager> SLManagerItr(GetWorld()); SLManagerItr; ++SLManagerItr)
 	{
-		SemEventsExporter = SLManagerItr->GetEventsExporter();
+		//SemEventsExporter = SLManagerItr->GetEventsExporter();
 		break;
 	}
 

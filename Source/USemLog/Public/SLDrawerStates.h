@@ -3,13 +3,14 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
+#include "SLManager.h"
 #include "SLDrawerStates.generated.h"
 
 /**
 *  Actor that logs drawer states
 */
 UCLASS()
-class SEMLOG_API ASLDrawerStates : public AActor
+class USEMLOG_API ASLDrawerStates : public AActor
 {
 	GENERATED_BODY()
 	
@@ -53,5 +54,5 @@ private:
 	TMap<AActor*, FString> FurnitureToStateMap;
 
 	// Pointer to the semantic events exporter
-	class FSLEventsExporter* SemEventsExporter;
+	FSLEventsExporter* SemEventsExporter;
 };

@@ -2,10 +2,16 @@
 
 #pragma once
 #include "GameFramework/Actor.h"
+<<<<<<< HEAD:Source/USemLog/Public/SLManager.h
+#include "Private/SLRawDataExporter.h"
+#include "Private/SLMapExporter.h"
+#include "Private/SLEventsExporter.h"
+=======
+>>>>>>> d32ae4304c8213e6fbe58632be4b3cf04817b40c:Source/SemLog/Public/SLManager.h
 #include "SLManager.generated.h"
 
 UCLASS()
-class SEMLOG_API ASLManager : public AActor
+class USEMLOG_API ASLManager : public AActor
 {
 	GENERATED_BODY()
 	

@@ -3,13 +3,17 @@
 #pragma once
 
 #include "Engine/TriggerBox.h"
+<<<<<<< HEAD:Source/USemLog/Public/SLContactTriggerBox.h
+#include "SLManager.h"
+=======
+>>>>>>> d32ae4304c8213e6fbe58632be4b3cf04817b40c:Source/SemLog/Public/SLContactTriggerBox.h
 #include "SLContactTriggerBox.generated.h"
 
 /**
  *  Trigger box sending contact information to the semantic events exporter
  */
 UCLASS()
-class SEMLOG_API ASLContactTriggerBox : public ATriggerBox
+class USEMLOG_API ASLContactTriggerBox : public ATriggerBox
 {
 	GENERATED_BODY()
 

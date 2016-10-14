@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "SemLogPrivatePCH.h"
+#include "USemLogPrivatePCH.h"
 #include "SLUtils.h"
 #include "SLRawDataExporter.h"
 #include "SLMapExporter.h"
@@ -362,5 +362,3 @@ void ASLManager::StoreNewUniqueNames(const FString Path)
 	// Write string to file
 	FFileHelper::SaveStringToFile(JsonOutputString, *Path);
 }
-
-

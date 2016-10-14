@@ -4,7 +4,7 @@
 #include <string>
 #include <algorithm>
 #include "rapidxml/rapidxml_print.hpp"
-#include "Private/SemLogPrivatePCH.h"
+#include "USemLogPrivatePCH.h"
 
 /**
  * Utils for OWL generation
@@ -108,8 +108,8 @@ public:
 	// Node attribute as struct
 	struct RNodeAttribute
 	{
-		RNodeAttribute(const char* Name, const char* Value)
-			: Name(Name), Value(Value)
+		RNodeAttribute(const char* NodeName, const char* NodeValue)
+			: Name(NodeName), Value(NodeValue)
 		{}
 		const char* Name;
 		const char* Value;
