@@ -187,7 +187,7 @@ inline void FSLMapExporter::AddMapEventIndividuals(
 	const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo)
 {
 	// Iterate 
-	for (const auto ActToSemLogItr : ActToSemLogInfo)
+	for (const auto& ActToSemLogItr : ActToSemLogInfo)
 	{
 		// Local copies of actor, name and unique name
 		const AActor* CurrAct = ActToSemLogItr.Key;

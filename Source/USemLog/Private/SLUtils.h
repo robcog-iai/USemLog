@@ -44,14 +44,11 @@ public:
 	static FORCEINLINE const char* FStringToChar(const FString FStr)
 	{
 		const std::string str = TCHAR_TO_UTF8(*FStr);
-		char *cstr = new char[str.length() + 1];
-		strcpy(cstr, str.c_str());
+		const size_t str_length = str.length() + 1;
+		char *cstr = new char[str_length];
+		//strcpy(cstr, str.c_str());
+		strcpy_s(cstr, str_length + 1, str.c_str());
 		return cstr;
-
-		//std::string str = TCHAR_TO_UTF8(*FStr);
-		//char* cstr = (char *)malloc(sizeof(char) * (str.length() + 1));
-		//strncpy_s(cstr, str.length(), str.c_str(), str.length());
-		//return cstr;
 	}
 
 	// Get the enum value to string

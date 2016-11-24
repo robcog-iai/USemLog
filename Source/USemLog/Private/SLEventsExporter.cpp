@@ -150,7 +150,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	///////// EVENT INDIVIDUALS
 	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Event Individuals");
 	// Add event individuals to RDF node
-	for (const auto FinishedEventItr : FinishedEvents)
+	for (const auto& FinishedEventItr : FinishedEvents)
 	{
 		FSLUtils::AddNodeEntityWithProperties(EventsDoc, RDFNode,
 			FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
@@ -163,7 +163,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 
 
 	// Add event individuals to RDF node
-	for (const auto ObjIndividualItr : ObjectIndividuals)
+	for (const auto& ObjIndividualItr : ObjectIndividuals)
 	{		
 		// Check that both unique name and class is available
 		if ((ActToUniqueName.Contains(ObjIndividualItr)) &&
@@ -184,7 +184,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	///////// TIMEPOINT INDIVIDUALS
 	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Timepoint Individuals");
 	// Add time individuals to RDF node
-	for (const auto TimepointIter : TimepointIndividuals)
+	for (const auto& TimepointIter : TimepointIndividuals)
 	{
 		FSLUtils::AddNodeEntityWithProperty(EventsDoc, RDFNode,
 			FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
@@ -529,7 +529,7 @@ void FSLEventsExporter::FurnitureStateEvent(
 void FSLEventsExporter::TerminateEvents(const float Timestamp)
 {
 	// Iterate all opened events
-	for (const auto NameToEvItr : NameToOpenedEventsMap)
+	for (const auto& NameToEvItr : NameToOpenedEventsMap)
 	{
 		// Add finishing time
 		NameToEvItr.Value->End = Timestamp;
@@ -576,7 +576,7 @@ void FSLEventsExporter::WriteTimelines(const FString FilePath)
 		"  dataTable.addRows([\n";
 
 	// Add events to the timelines
-	for (const auto FinishedEventItr : FinishedEvents)
+	for (const auto& FinishedEventItr : FinishedEvents)
 	{
 		TimelineStr.Append("    [ '" + FinishedEventItr->UniqueName + "', "
 			+ FString::SanitizeFloat(FinishedEventItr->Start) + ", "

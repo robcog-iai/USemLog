@@ -41,7 +41,7 @@ void FSLRawDataExporter::WriteInit(
 	TArray< TSharedPtr<FJsonValue> > JsonActorArr;
 
 	// Iterate through the actors and their semlog info
-	for (const auto ActToSemLogItr : ActToSemLogInfo)
+	for (const auto& ActToSemLogItr : ActToSemLogInfo)
 	{
 		// Local copy of the actor, unique name and log type
 		AActor* CurrAct = ActToSemLogItr.Key;
@@ -191,7 +191,7 @@ FORCEINLINE void FSLRawDataExporter::AddActorToJsonArray(RawExpActStruct& RawAct
 			CurrSkelMesh->GetBoneNames(BoneNames);
 
 			// Iterate through the bones of the skeletal mesh
-			for (const auto BoneName : BoneNames)
+			for (const auto& BoneName : BoneNames)
 			{
 				// TODO black voodo magic crashes, bug report, crashes if this is not called before
 				CurrSkelMesh->GetBoneQuaternion(BoneName);
