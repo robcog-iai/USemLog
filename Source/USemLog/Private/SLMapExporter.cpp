@@ -196,10 +196,10 @@ inline void FSLMapExporter::AddMapEventIndividuals(
 {
 	UE_LOG(SemLogMap, Log, TEXT(" ** Adding the semantic map individuals: "));
 
+	UE_LOG(SemLogMap, Log, TEXT(" \t Actors: "));
 	// Iterate 
 	for (const auto& ActToSemLogItr : ActToSemLogInfo)
-	{
-		UE_LOG(SemLogMap, Log, TEXT(" \t Actors: "));
+	{		
 		// Local copies of actor, name and unique name
 		const AActor* CurrAct = ActToSemLogItr.Key;
 		const FString ActName = CurrAct->GetName();
@@ -207,58 +207,47 @@ inline void FSLMapExporter::AddMapEventIndividuals(
 		// Get the class type from the semlog info
 		const FString ActClass = FSLUtils::GetPairArrayValue(ActToSemLogItr.Value, TEXT("Class"));
 
-		UE_LOG(SemLogMap, Log, TEXT(" \t %s --> %s \t\t [Class = %s]"),
+		UE_LOG(SemLogMap, Log, TEXT(" \t\t %s --> %s \t\t [Class = %s]"),
 			*ActName,*ActUniqueName, *ActClass);
-
 		// Loc and rotation as quat of the objects as strings, change from left hand to right hand coord
 		const FVector Loc = CurrAct->GetActorLocation() / 100;
-		const FString LocStr = FString::SanitizeFloat(Loc.X) + " "
-			+ FString::SanitizeFloat(-Loc.Y) + " "
-			+ FString::SanitizeFloat(Loc.Z);
 		const FQuat Quat = CurrAct->GetActorQuat();
-		const FString QuatStr = FString::SanitizeFloat(Quat.W) + " "
-			+ FString::SanitizeFloat(-Quat.X) + " "
-			+ FString::SanitizeFloat(Quat.Y) + " "
-			+ FString::SanitizeFloat(-Quat.Z);
+		// Get the bounds
+		FBox BoundingBox = CurrAct->GetComponentsBoundingBox();
 
 		// Add the individual
-		FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, LocStr, QuatStr, ActClass, ActUniqueName);
+		FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, Loc, Quat, BoundingBox, ActClass, ActUniqueName);
 	}
 	
+	UE_LOG(SemLogMap, Log, TEXT(" \t Foliage: "));
 	// Iterate foliage if available
 	for (const auto& FoliageClassNameToCompItr : FoliageClassNameToComponent)
 	{
-		UE_LOG(SemLogMap, Log, TEXT(" \t Foliage: "));
-
 		// Get the component class name
 		const FString CompClassName = FoliageClassNameToCompItr.Key;
 
 		// Get the current component unique names array
 		TArray<TPair<FBodyInstance*, FString>> CurrCompUniqueNameArray =
 			*FoliageComponentToUniqueNameArray.Find(FoliageClassNameToCompItr.Value);
+		UE_LOG(SemLogMap, Log, TEXT(" \t\t Class = %s, number of objects: %i"),
+			*CompClassName, CurrCompUniqueNameArray.Num());
 		// Iterate the bodies of the current foliage component
 		for (const auto& UniqueNameItr : CurrCompUniqueNameArray)
 		{
 			// The unique name of the body
 			const FString BodyUniqueName = UniqueNameItr.Value;
-
-			UE_LOG(SemLogMap, Log, TEXT(" \t\t %s \t [Class = %s]"),
-				*BodyUniqueName, *CompClassName);
-
+			//UE_LOG(SemLogMap, Log, TEXT(" \t\t %s \t [Class = %s]"),
+			//	*BodyUniqueName, *CompClassName);
+	
 			// Loc and rotation as quat of the objects as strings, change from left hand to right hand coord
 			FTransform BodyTransf = UniqueNameItr.Key->GetUnrealWorldTransform();
 			const FVector Loc = BodyTransf.GetLocation() / 100;
-			const FString LocStr = FString::SanitizeFloat(Loc.X) + " "
-				+ FString::SanitizeFloat(-Loc.Y) + " "
-				+ FString::SanitizeFloat(Loc.Z);
 			const FQuat Quat = BodyTransf.GetRotation();
-			const FString QuatStr = FString::SanitizeFloat(Quat.W) + " "
-				+ FString::SanitizeFloat(-Quat.X) + " "
-				+ FString::SanitizeFloat(Quat.Y) + " "
-				+ FString::SanitizeFloat(-Quat.Z);
+			// Get the bounds
+			const FBox BoundingBox = UniqueNameItr.Key->GetBodyBounds();
 
 			// Add the individual
-			FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, LocStr, QuatStr, CompClassName, BodyUniqueName);
+			FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, Loc, Quat, BoundingBox, CompClassName, BodyUniqueName);
 		}
 	}
 
@@ -270,12 +259,22 @@ inline void FSLMapExporter::AddMapEventIndividuals(
 FORCEINLINE void FSLMapExporter::AddMapIndividual(
 	rapidxml::xml_document<>* SemMapDoc,
 	rapidxml::xml_node<>* RDFNode,
-	const FString& LocStr,
-	const FString& QuatStr,
+	const FVector Loc,
+	const FQuat Quat,
+	const FBox Box,
 	const FString& ClassName,
 	const FString& UniqueName
 )
 {
+	const FString LocStr = FString::SanitizeFloat(Loc.X) + " "
+		+ FString::SanitizeFloat(-Loc.Y) + " "
+		+ FString::SanitizeFloat(Loc.Z);
+	const FString QuatStr = FString::SanitizeFloat(Quat.W) + " "
+		+ FString::SanitizeFloat(-Quat.X) + " "
+		+ FString::SanitizeFloat(Quat.Y) + " "
+		+ FString::SanitizeFloat(-Quat.Z);
+	const FVector BoundingBoxSize = Box.GetSize() / 100;
+
 	// Transf unique name
 	const FString TransfUniqueName = "Transformation_" + FSLUtils::GenerateRandomFString(4);
 
@@ -286,9 +285,19 @@ FORCEINLINE void FSLMapExporter::AddMapIndividual(
 	TArray<FSLUtils::SLOwlTriple> ObjProperties;
 	// Add obj event properties
 	ObjProperties.Add(FSLUtils::SLOwlTriple(
-		"rdf:type", "rdf:resource", FSLUtils::FStringToChar("&knowrob;" + ClassName)));
+		"rdf:type", "rdf:resource", 
+		FSLUtils::FStringToChar("&knowrob;" + ClassName)));
 	ObjProperties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:pathToCadModel", "rdf:datatype", "&xsd; string",
+		"knowrob:depthOfObject", "rdf:datatype", "&xsd;double",
+		FSLUtils::FStringToChar(FString::SanitizeFloat(BoundingBoxSize.X))));
+	ObjProperties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:widthOfObject", "rdf:datatype", "&xsd;double",
+		FSLUtils::FStringToChar(FString::SanitizeFloat(BoundingBoxSize.Y))));
+	ObjProperties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:heightOfObject", "rdf:datatype", "&xsd;double",
+		FSLUtils::FStringToChar(FString::SanitizeFloat(BoundingBoxSize.Z))));
+	ObjProperties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:pathToCadModel", "rdf:datatype", "&xsd;string",
 		FSLUtils::FStringToChar("package://sim/unreal/" + ClassName + ".dae")));
 	ObjProperties.Add(FSLUtils::SLOwlTriple(
 		"knowrob:describedInMap", "rdf:resource",

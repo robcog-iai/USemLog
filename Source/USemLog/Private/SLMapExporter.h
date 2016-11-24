@@ -57,8 +57,9 @@ private:
 	FORCEINLINE void AddMapIndividual(
 		rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode,
-		const FString& LocStr,
-		const FString& QuatStr,
+		const FVector Loc,
+		const FQuat Quat,
+		const FBox Box,
 		const FString& ClassName,
 		const FString& UniqueName
 		);
