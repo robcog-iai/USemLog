@@ -17,6 +17,8 @@ public:
 	void WriteSemanticMap(
 		const TMap<AActor*, FString>& ActToUniqueName,
 		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo,
+		const TMap<FString, UInstancedStaticMeshComponent*>& FoliageClassNameToComponent,
+		const TMap<UInstancedStaticMeshComponent*, TArray<TPair<FBodyInstance*, FString>>>& FoliageComponentToUniqueNameArray,
 		const FString Path);
 
 	// Get semantic map unique name
@@ -31,7 +33,7 @@ private:
 		rapidxml::xml_node<>* RDFNode);
 
 	// Import ontologies
-	inline void ImportOntologies(rapidxml::xml_document<>* SemMapDoc,
+	inline void AddOntologies(rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode);
 
 	// Add general definitions
@@ -47,7 +49,21 @@ private:
 		rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode,
 		const TMap<AActor*, FString>& ActToUniqueName,
-		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo);
+		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo,
+		const TMap<FString, UInstancedStaticMeshComponent*>& FoliageClassNameToComponent,
+		const TMap<UInstancedStaticMeshComponent*, TArray<TPair<FBodyInstance*, FString>>>& FoliageComponentToUniqueNameArray);
+
+	// Map event individual node
+	FORCEINLINE void AddMapIndividual(
+		rapidxml::xml_document<>* SemMapDoc,
+		rapidxml::xml_node<>* RDFNode,
+		const FString& LocStr,
+		const FString& QuatStr,
+		const FString& ClassName,
+		const FString& UniqueName
+		);
+
+
 
 	// Unique name of the map
 	FString MapUniqueName;

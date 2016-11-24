@@ -98,6 +98,10 @@ void ASLManager::BeginPlay()
 
 	// Disable tick for now
 	SetActorTickEnabled(false);
+
+	// TODO check where init/start has to be
+	ASLManager::Init();
+	ASLManager::Start();
 }
 
 // Called when the game is terminated
@@ -131,7 +135,12 @@ void ASLManager::Init()
 		// Semantic map file path
 		const FString SemMapPath = LevelPath + "/SemanticMap.owl";
 		// Write map to path
-		SemMapExporter->WriteSemanticMap(ActorToUniqueName, ActorToSemLogInfo, SemMapPath);
+		SemMapExporter->WriteSemanticMap(
+			ActorToUniqueName,
+			ActorToSemLogInfo,
+			FoliageClassNameToComponent,
+			FoliageComponentToUniqueNameArray,
+			SemMapPath);
 	}
 
 	// Initial raw data log (static objects are stored once)
@@ -381,8 +390,7 @@ bool ASLManager::ReadPrevUniqueNames(const FString Path)
 								FoliageKeyValPair.Key = Bodies[CurrIndex];
 								FoliageKeyValPair.Value = CurrUniqueName;
 								FoliageUniqueNameArr.EmplaceAt(CurrIndex, FoliageKeyValPair);
-
-								UE_LOG(SemLog, Log, TEXT(" \t\t %i --> %s"), CurrIndex, *CurrUniqueName);
+								//UE_LOG(SemLog, Log, TEXT(" \t\t %i --> %s"), CurrIndex, *CurrUniqueName);
 							}
 							// Add foliage class name and the array of the unique names to the map
 							FoliageComponentToUniqueNameArray.Emplace(FoliageClassNameToCompItr.Value, FoliageUniqueNameArr);
