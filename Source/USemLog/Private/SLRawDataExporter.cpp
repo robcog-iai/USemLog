@@ -96,11 +96,9 @@ void FSLRawDataExporter::Update(const float Timestamp)
 {
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
-	// Set timestamp
-	JsonRootObj->SetNumberField("timestamp", Timestamp);
+
 	// Json array of actors
 	TArray< TSharedPtr<FJsonValue> > JsonActorArr;
-
 	// Iterate through the skeletal mesh components
 	for (auto& RawExpActItr : RawExpActArr)
 	{
@@ -108,16 +106,24 @@ void FSLRawDataExporter::Update(const float Timestamp)
 		FSLRawDataExporter::AddActorToJsonArray(RawExpActItr, JsonActorArr);
 	}
 
-	// Add actors to Json root
-	JsonRootObj->SetArrayField("actors", JsonActorArr);
 
-	// Transform to string
-	FString JsonOutputString;
-	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&JsonOutputString);
-	FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
+	// Check if there is anything to log
+	if (JsonActorArr.Num() > 0)
+	{
+		// Set timestamp
+		JsonRootObj->SetNumberField("timestamp", Timestamp);
 
-	// Write string to file
-	RawFileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
+		// Add actors to Json root
+		JsonRootObj->SetArrayField("actors", JsonActorArr);
+
+		// Transform to string
+		FString JsonOutputString;
+		TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&JsonOutputString);
+		FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
+
+		// Write string to file
+		RawFileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
+	}
 }
 
 // Create Json object with a 3d location

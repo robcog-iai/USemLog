@@ -47,14 +47,21 @@ private:
 	// Set items to be loggeed (from tags)
 	void InitLogItems();
 
-	bool ReadPrevUniqueNames(const FString Path);
-	// Read previously stored unique names from file
+	// Check if new unique names should be generated (previous ones are not stored)
+	bool ShouldGenerateNewUniqueNames(const FString Path);
 
 	// Set unique names of items
 	void GenerateNewUniqueNames();
 
 	// Write generated unique names to file
 	void StoreNewUniqueNames(const FString Path);
+
+	// Cancel logging (e.g if objects are out of sync)
+	void CancelLogging();
+
+	// Log semantic events
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bStartLoggingAtLoadTime;
 
 	// Directory to save the logs
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -78,7 +85,7 @@ private:
 
 	// Log semantic events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TArray<FString> FoliageClasses;
+	TArray<FString> LogFoliageClasses;
 
 	// Map of actors to be logged to the semlog key-value pair info
 	TMap<AActor*, TArray<TPair<FString, FString>>> ActorToSemLogInfo;

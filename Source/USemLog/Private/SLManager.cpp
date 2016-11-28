@@ -24,6 +24,7 @@ ASLManager::ASLManager()
 	EpisodeUniqueTag = FSLUtils::GenerateRandomFString(4);
 
 	// Default flag values
+	bStartLoggingAtLoadTime = true;
 	bLogRawData = true;
 	bLogSemanticMap = true;
 	bLogSemanticEvents = true;
@@ -49,8 +50,8 @@ void ASLManager::PreInitializeComponents()
 
 	// Init items that should be logged
 	ASLManager::InitLogItems();
-	// Check if unique names already generated (past episodes)
-	if (!ASLManager::ReadPrevUniqueNames(LevelPath + "/MetaData.json"))
+	// Check if unique names are already generated AND in sync (past episodes)
+	if (ASLManager::ShouldGenerateNewUniqueNames(LevelPath + "/MetaData.json"))
 	{
 		// Generate new unique names if not generated or out of sync
 		ASLManager::GenerateNewUniqueNames();
@@ -99,9 +100,11 @@ void ASLManager::BeginPlay()
 	// Disable tick for now
 	SetActorTickEnabled(false);
 
-	// TODO check where init/start has to be
-	ASLManager::Init();
-	ASLManager::Start();
+	if (bStartLoggingAtLoadTime)
+	{
+		ASLManager::Init();
+		ASLManager::Start();
+	}
 }
 
 // Called when the game is terminated
@@ -260,7 +263,7 @@ void ASLManager::InitLogItems()
 
 	// Check if foliage should be logged
 	AInstancedFoliageActor* Foliage = AInstancedFoliageActor::GetInstancedFoliageActorForCurrentLevel(GetWorld());
-	if (FoliageClasses.Num() > 0 && Foliage)
+	if (LogFoliageClasses.Num() > 0 && Foliage)
 	{
 		UE_LOG(SemLog, Log, TEXT(" \t Init foliage: "));
 
@@ -270,7 +273,7 @@ void ASLManager::InitLogItems()
 		for (const auto& FoliageCompItr : FoliageComponents)
 		{
 			// Check if one of the given foliage class names is present in the static mesh name
-			for (const auto& FoliageClassNameItr : FoliageClasses)
+			for (const auto& FoliageClassNameItr : LogFoliageClasses)
 			{
 				if (FoliageCompItr->GetStaticMesh()->GetName().Contains(FoliageClassNameItr))
 				{
@@ -286,12 +289,12 @@ void ASLManager::InitLogItems()
 }
 
 // Read previously stored unique names from file
-bool ASLManager::ReadPrevUniqueNames(const FString Path)
+bool ASLManager::ShouldGenerateNewUniqueNames(const FString Path)
 {
-	UE_LOG(SemLog, Log, TEXT(" ** Reading unique names:"));
 	// Check if file exists, and see if it is in sync with the level
 	if (IFileManager::Get().FileExists(*Path))
 	{
+		UE_LOG(SemLog, Log, TEXT(" ** Reading unique names:"));
 		// Read string from file		
 		FString JsonString;
 		FFileHelper::LoadFileToString(JsonString, *Path);
@@ -304,6 +307,14 @@ bool ASLManager::ReadPrevUniqueNames(const FString Path)
 			UE_LOG(SemLog, Log, TEXT(" \t Reading actor unique names:"));
 			// Get the actor to unique name array
 			TArray< TSharedPtr<FJsonValue> > JsonArr = RootJsonObject->GetArrayField("actor_unique_names");
+			// Check that the two arrays are of the same size
+			if (ActorToSemLogInfo.Num() != JsonArr.Num())
+			{
+				UE_LOG(SemLog, Error, 
+					TEXT(" !! Actor unique names not in sync! Current to previous actor number differ!"));
+				ASLManager::CancelLogging();
+				return false;
+			}
 
 			// Map that will store all the names and unique names from the json file
 			TMap<FString, FString> NameToUniqueNameMap;
@@ -327,6 +338,8 @@ bool ASLManager::ReadPrevUniqueNames(const FString Path)
 				else
 				{
 					UE_LOG(SemLog, Error, TEXT(" !! Actor unique names not in sync! %s not found!"), *ActName);
+					ASLManager::CancelLogging();
+					return false;
 				}
 			}
 
@@ -342,6 +355,7 @@ bool ASLManager::ReadPrevUniqueNames(const FString Path)
 				if (FoliageClassNameToComponent.Num() != FoliageJsonArr.Num())
 				{
 					UE_LOG(SemLog, Error, TEXT(" !! Foliage unique names not in sync! Number of types differ."));
+					ASLManager::CancelLogging();
 					return false;
 				}
 
@@ -376,6 +390,7 @@ bool ASLManager::ReadPrevUniqueNames(const FString Path)
 							if (FoliageUniqueNameJsonArr.Num() != CurrCount)
 							{
 								UE_LOG(SemLog, Error, TEXT(" !! Foliage unique names not in sync! Number of unique names differ."));
+								ASLManager::CancelLogging();
 								return false;
 							}
 
@@ -401,6 +416,7 @@ bool ASLManager::ReadPrevUniqueNames(const FString Path)
 					if (!bIsNameAndCountInSync)
 					{
 						UE_LOG(SemLog, Error, TEXT(" !! Foliage unique names not in sync! Class or count number differ."));
+						ASLManager::CancelLogging();
 						return false;
 					}
 				}
@@ -409,17 +425,18 @@ bool ASLManager::ReadPrevUniqueNames(const FString Path)
 		else
 		{
 			UE_LOG(SemLog, Error, TEXT(" !! Unique names cannot be read! Json string: %s"), *JsonString);
+			ASLManager::CancelLogging();
 			return false;
 		}
 
 		// Succesfully read all the unique values
-		return true;
+		return false;
 	}
 	else
 	{
 		UE_LOG(SemLog, Warning,
 			TEXT(" ** No previous level unique names found at: %s, generating new ones!"), *Path);
-		return false;
+		return true;
 	}
 }
 
@@ -548,4 +565,25 @@ void ASLManager::StoreNewUniqueNames(const FString Path)
 	FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
 	// Write string to file
 	FFileHelper::SaveStringToFile(JsonOutputString, *Path);
+}
+
+// Cancel logging
+void ASLManager::CancelLogging()
+{
+	// Set flags to false
+	bStartLoggingAtLoadTime = false;
+	bLogRawData = false;
+	bLogSemanticMap = false;
+	bLogSemanticEvents = false;
+
+	// Disable tick
+	SetActorTickEnabled(false);
+
+	// Disable listening to events
+	if (SemEventsExporter)
+	{
+		SemEventsExporter->SetListenToEvents(false);
+	}
+
+	UE_LOG(SemLog, Error, TEXT(" !! Logging cancelled!"));
 }
