@@ -17,6 +17,9 @@ void FSLMapExporter::WriteSemanticMap(
 	const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo,
 	const TMap<FString, UInstancedStaticMeshComponent*>& FoliageClassNameToComponent,
 	const TMap<UInstancedStaticMeshComponent*, TArray<TPair<FBodyInstance*, FString>>>& FoliageComponentToUniqueNameArray,
+	const TMap<FString, USceneComponent*>& RoadCompNameToComponent,
+	const TMap<FString, FString>& RoadComponentNameToUniqueName,
+	const FString& RoadUniqueName,
 	const FString Path)
 {	
 	UE_LOG(SemLogMap, Log, TEXT(" ** Writing semantic map [%s], with individuals:"), *Path);
@@ -39,14 +42,17 @@ void FSLMapExporter::WriteSemanticMap(
 	FSLMapExporter::AddGeneralDefinitions(SemMapDoc, RDFNode);
 
 	// Add the semantic map individual
-	FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode);
+	FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, RoadUniqueName);
 
 	// Add the semantic map events individuals
 	FSLMapExporter::AddMapEventIndividuals(SemMapDoc, RDFNode,
 		ActToUniqueName,
 		ActToSemLogInfo,
 		FoliageClassNameToComponent,
-		FoliageComponentToUniqueNameArray);
+		FoliageComponentToUniqueNameArray,
+		RoadCompNameToComponent,
+		RoadComponentNameToUniqueName,
+		RoadUniqueName);
 
 	// Create string
 	std::string RapidXmlString;
@@ -167,7 +173,8 @@ inline void FSLMapExporter::AddGeneralDefinitions(rapidxml::xml_document<>* SemM
 // Add semantic map individual
 inline void FSLMapExporter::AddMapIndividual(
 	rapidxml::xml_document<>* SemMapDoc,
-	rapidxml::xml_node<>* RDFNode)
+	rapidxml::xml_node<>* RDFNode,
+	const FString& RoadUniqueName)
 {
 	// Semantic map individual
 	FSLUtils::AddNodeComment(SemMapDoc, RDFNode, "Semantic Environment Map");
@@ -183,6 +190,28 @@ inline void FSLMapExporter::AddMapIndividual(
 	FSLUtils::AddNodeEntityWithProperty(SemMapDoc, RDFNode,
 		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about", "&u-map;timepoint_0"),
 		FSLUtils::SLOwlTriple("rdf:type", "rdf:resource", "&knowrob;Timepoint"));
+
+	// Semantic map individual
+	FSLUtils::AddNodeComment(SemMapDoc, RDFNode, FSLUtils::FStringToChar("Mountain road " + RoadUniqueName));
+
+	// Array of object properties
+	TArray<FSLUtils::SLOwlTriple> ObjProperties;
+	// Add obj event properties
+	ObjProperties.Add(FSLUtils::SLOwlTriple("rdf:type", "rdf:resource", "&knowrob;Road"));
+	ObjProperties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:nrOfSegments", "rdf:datatype", "&xsd;int",
+		FSLUtils::FStringToChar(FString::FromInt(25))));
+	ObjProperties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:widthOfObject", "rdf:datatype", "&xsd;double",
+		FSLUtils::FStringToChar(FString::SanitizeFloat(250.5f))));
+	ObjProperties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:describedInMap", "rdf:resource",
+		FSLUtils::FStringToChar(FSLUtils::FStringToChar("&u-map;" + MapUniqueName))));
+
+	// Add road instance
+	FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
+		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
+			FSLUtils::FStringToChar("&log;" + RoadUniqueName)), ObjProperties);
 }
 
 // Add map event individuals
@@ -192,7 +221,10 @@ inline void FSLMapExporter::AddMapEventIndividuals(
 	const TMap<AActor*, FString>& ActToUniqueName,
 	const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo,
 	const TMap<FString, UInstancedStaticMeshComponent*>& FoliageClassNameToComponent,
-	const TMap<UInstancedStaticMeshComponent*, TArray<TPair<FBodyInstance*, FString>>>& FoliageComponentToUniqueNameArray)
+	const TMap<UInstancedStaticMeshComponent*, TArray<TPair<FBodyInstance*, FString>>>& FoliageComponentToUniqueNameArray,
+	const TMap<FString, USceneComponent*>& RoadCompNameToComponent,
+	const TMap<FString, FString>& RoadComponentNameToUniqueName,
+	const FString& RoadUniqueName)
 {
 	UE_LOG(SemLogMap, Log, TEXT(" ** Adding the semantic map individuals: "));
 
@@ -249,6 +281,29 @@ inline void FSLMapExporter::AddMapEventIndividuals(
 			// Add the individual
 			FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, Loc, Quat, BoundingBox, CompClassName, BodyUniqueName);
 		}
+	}
+
+	UE_LOG(SemLogMap, Log, TEXT(" \t Road: "));
+	// Iterate road if available
+	for (const auto& RoadCompNameToCompItr : RoadCompNameToComponent)
+	{
+		// Local copies of actor, name and unique name
+		const USceneComponent* CurrComp = RoadCompNameToCompItr.Value;
+		const FString RoadSegmentName = RoadCompNameToCompItr.Key;
+		const FString RoadUniqueName = RoadComponentNameToUniqueName[RoadSegmentName];
+		// Get the class type from the semlog info
+		const FString RoadClass = "RoadSegment";
+
+		UE_LOG(SemLogMap, Log, TEXT(" \t\t %s --> %s \t\t [Class = %s]"),
+			*RoadSegmentName, *RoadUniqueName, *RoadClass);
+		// Loc and rotation as quat of the objects as strings, change from left hand to right hand coord
+		const FVector Loc = CurrComp->GetComponentLocation() / 100;
+		const FQuat Quat = CurrComp->GetComponentQuat();
+		// Get the bounds
+		FBox BoundingBox = FBox(0.f);
+
+		// Add the individual
+		FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, Loc, Quat, BoundingBox, RoadClass, RoadUniqueName);
 	}
 
 	///////// ADD RDF TO OWL DOC

@@ -19,6 +19,9 @@ public:
 		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo,
 		const TMap<FString, UInstancedStaticMeshComponent*>& FoliageClassNameToComponent,
 		const TMap<UInstancedStaticMeshComponent*, TArray<TPair<FBodyInstance*, FString>>>& FoliageComponentToUniqueNameArray,
+		const TMap<FString, USceneComponent*>& RoadCompNameToComponent,
+		const TMap<FString, FString>& RoadComponentNameToUniqueName,
+		const FString& RoadUniqueName,
 		const FString Path);
 
 	// Get semantic map unique name
@@ -42,7 +45,8 @@ private:
 
 	// Add semantic map individual
 	inline void AddMapIndividual(rapidxml::xml_document<>* SemMapDoc,
-		rapidxml::xml_node<>* RDFNode);
+		rapidxml::xml_node<>* RDFNode,
+		const FString& RoadUniqueName);
 
 	// Add map event individuals
 	inline void AddMapEventIndividuals(
@@ -51,7 +55,10 @@ private:
 		const TMap<AActor*, FString>& ActToUniqueName,
 		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActToSemLogInfo,
 		const TMap<FString, UInstancedStaticMeshComponent*>& FoliageClassNameToComponent,
-		const TMap<UInstancedStaticMeshComponent*, TArray<TPair<FBodyInstance*, FString>>>& FoliageComponentToUniqueNameArray);
+		const TMap<UInstancedStaticMeshComponent*, TArray<TPair<FBodyInstance*, FString>>>& FoliageComponentToUniqueNameArray,
+		const TMap<FString, USceneComponent*>& RoadCompNameToComponent,
+		const TMap<FString, FString>& RoadComponentNameToUniqueName,
+		const FString& RoadUniqueName);
 
 	// Map event individual node
 	FORCEINLINE void AddMapIndividual(

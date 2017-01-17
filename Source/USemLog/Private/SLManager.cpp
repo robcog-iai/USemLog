@@ -2,6 +2,8 @@
 
 #include "USemLogPrivatePCH.h"
 #include "InstancedFoliageActor.h"
+#include "Landscape.h"
+#include "Components/SplineMeshComponent.h"
 #include "SLUtils.h"
 #include "SLRawDataExporter.h"
 #include "SLMapExporter.h"
@@ -28,6 +30,7 @@ ASLManager::ASLManager()
 	bLogRawData = true;
 	bLogSemanticMap = true;
 	bLogSemanticEvents = true;
+	bLogLandscapeComponents = true;
 
 	// Default distance threshold for logging raw data
 	DistanceThreshold = 0.1;
@@ -117,18 +120,6 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-// Called every frame
-void ASLManager::Tick( float DeltaTime )
-{
-	Super::Tick( DeltaTime );
-		
-	// Log raw data
-	if (RawDataExporter)
-	{
-		RawDataExporter->Update(GetWorld()->GetTimeSeconds());
-	}
-}
-
 // Init exporters, write initial states
 void ASLManager::Init()
 {
@@ -143,6 +134,9 @@ void ASLManager::Init()
 			ActorToSemLogInfo,
 			FoliageClassNameToComponent,
 			FoliageComponentToUniqueNameArray,
+			RoadCompNameToComponent,
+			RoadComponentNameToUniqueName,
+			RoadUniqueName,
 			SemMapPath);
 	}
 
@@ -159,6 +153,18 @@ void ASLManager::Init()
 	if (SemEventsExporter)
 	{
 		SemEventsExporter->SetListenToEvents(true);
+	}
+}
+
+// Called every frame
+void ASLManager::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// Log raw data
+	if (RawDataExporter)
+	{
+		RawDataExporter->Update(GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -261,27 +267,52 @@ void ASLManager::InitLogItems()
 		}
 	}
 
-	// Check if foliage should be logged
-	AInstancedFoliageActor* Foliage = AInstancedFoliageActor::GetInstancedFoliageActorForCurrentLevel(GetWorld());
-	if (LogFoliageClasses.Num() > 0 && Foliage)
+	// Check if lanscape components should be logged
+	if (bLogLandscapeComponents)
 	{
-		UE_LOG(SemLog, Log, TEXT(" \t Init foliage: "));
-
-		// Get and iterate through the foliage components
-		TInlineComponentArray<UInstancedStaticMeshComponent*> FoliageComponents;
-		Foliage->GetComponents<UInstancedStaticMeshComponent>(FoliageComponents);
-		for (const auto& FoliageCompItr : FoliageComponents)
+		// Check if foliage should be logged
+		AInstancedFoliageActor* Foliage = AInstancedFoliageActor::GetInstancedFoliageActorForCurrentLevel(GetWorld());
+		if (LogFoliageClasses.Num() > 0 && Foliage)
 		{
-			// Check if one of the given foliage class names is present in the static mesh name
-			for (const auto& FoliageClassNameItr : LogFoliageClasses)
+			UE_LOG(SemLog, Log, TEXT(" \t Init foliage: "));
+
+			// Get and iterate through the foliage components
+			TInlineComponentArray<UInstancedStaticMeshComponent*> FoliageComponents;
+			Foliage->GetComponents<UInstancedStaticMeshComponent>(FoliageComponents);
+			for (const auto& FoliageCompItr : FoliageComponents)
 			{
-				if (FoliageCompItr->GetStaticMesh()->GetName().Contains(FoliageClassNameItr))
+				// Check if one of the given foliage class names is present in the static mesh name
+				for (const auto& FoliageClassNameItr : LogFoliageClasses)
 				{
-					UE_LOG(SemLog, Log, TEXT(" \t\t %s --> bodies count: %i"), *FoliageClassNameItr, FoliageCompItr->InstanceBodies.Num())
-					// Add the class name to the component map
-					FoliageClassNameToComponent.Add(FoliageClassNameItr, FoliageCompItr);
-					// Foliage class name found in the components, break
-					break;
+					if (FoliageCompItr->GetStaticMesh()->GetName().Contains(FoliageClassNameItr))
+					{
+						UE_LOG(SemLog, Log, TEXT(" \t\t %s --> bodies count: %i"), *FoliageClassNameItr, FoliageCompItr->InstanceBodies.Num())
+							// Add the class name to the component map
+							FoliageClassNameToComponent.Add(FoliageClassNameItr, FoliageCompItr);
+						// Foliage class name found in the components, break
+						break;
+					}
+				}
+			}
+		}
+
+		// Check for roads
+		TActorIterator<ALandscape> LandscapeIterator(GetWorld());
+		if (LandscapeIterator)
+		{
+			ALandscape* MyLandscape = *LandscapeIterator;
+			UE_LOG(SemLog, Log, TEXT(" \t Init road: "));			
+
+			TSet<UActorComponent*> LandscapeComponents = MyLandscape->GetComponents();
+			for (auto const& LandscapeCompItr : LandscapeComponents)
+			{
+				// Check if spline component (road)
+				if (LandscapeCompItr->IsA(USplineMeshComponent::StaticClass()))
+				{
+					// Cast to spline component
+					USplineMeshComponent* SplineComp = Cast<USplineMeshComponent>(LandscapeCompItr);
+					UE_LOG(SemLog, Log, TEXT(" \t\t road segment: %s"), *SplineComp->GetName());
+					RoadCompNameToComponent.Add(SplineComp->GetName(), SplineComp);
 				}
 			}
 		}
@@ -421,6 +452,51 @@ bool ASLManager::ShouldGenerateNewUniqueNames(const FString Path)
 					}
 				}
 			}
+
+
+			UE_LOG(SemLog, Log, TEXT(" \t Reading road segments unique names:"));
+
+			RoadUniqueName = RootJsonObject->GetStringField("road_unique_name");
+
+			// Get the actor to unique name array
+			TArray< TSharedPtr<FJsonValue> > RoadJsonArr = RootJsonObject->GetArrayField("road_segments_unique_names");
+			// Check that the two arrays are of the same size
+			if (RoadCompNameToComponent.Num() != RoadJsonArr.Num())
+			{
+				UE_LOG(SemLog, Error,
+					TEXT(" !! Road segments unique names not in sync! Current to previous number differ!"));
+				ASLManager::CancelLogging();
+				return false;
+			}
+
+			// Map that will store all the names and unique names from the json file
+			TMap<FString, FString> RoadNameToUniqueNameMap;
+			// Iterate the json array to read the names and the unique names
+			for (const auto& RoadJsonItr : RoadJsonArr)
+			{
+				RoadNameToUniqueNameMap.Add(*RoadJsonItr->AsObject()->GetStringField("name"),
+					*RoadJsonItr->AsObject()->GetStringField("unique_name"));
+			}
+
+			// Check if the current items to be logged are stored in the json array
+			for (const auto& RoadCompNameToCompItr : RoadCompNameToComponent)
+			{
+				// Local copy of the road segment name
+				const FString RoadSegmentName = RoadCompNameToCompItr.Key;
+				if (RoadNameToUniqueNameMap.Contains(RoadSegmentName))
+				{
+					RoadComponentNameToUniqueName.Add(RoadSegmentName,
+						RoadNameToUniqueNameMap[RoadSegmentName]);
+					UE_LOG(SemLog, Log, TEXT(" \t\t %s --> %s"), *RoadSegmentName, *RoadNameToUniqueNameMap[RoadSegmentName]);
+				}
+				else
+				{
+					UE_LOG(SemLog, Error, TEXT(" !! Road segment unique names not in sync! %s not found!"), *RoadSegmentName);
+					ASLManager::CancelLogging();
+					return false;
+				}
+			}
+
 		}
 		else
 		{
@@ -481,6 +557,23 @@ void ASLManager::GenerateNewUniqueNames()
 				*FoliageClassNameToCompItr.Key, FoliageClassNameToCompItr.Value->GetInstanceCount());
 		}
 	}
+
+	// Generate unique names for the road components
+	if (RoadCompNameToComponent.Num() > 0)
+	{
+		UE_LOG(SemLog, Log, TEXT(" \t Generating road unique names:"));
+
+		RoadUniqueName = "MountainRoad_" + FSLUtils::GenerateRandomFString(4);
+		UE_LOG(SemLog, Log, TEXT(" \t Road unique name: %s"), *RoadUniqueName);
+
+		for (const auto& RoadCompItr : RoadCompNameToComponent)
+		{
+			FString RoadCompUniqueName = "RoadSegment_" + FSLUtils::GenerateRandomFString(4);
+			RoadComponentNameToUniqueName.Add(RoadCompItr.Key, RoadCompUniqueName);
+			UE_LOG(SemLog, Log, TEXT(" \t\t %s --> unique name: %s"),
+				*RoadCompItr.Key, *RoadCompUniqueName);
+		}
+	}
 }
 
 // Write generated unique names to file
@@ -508,7 +601,7 @@ void ASLManager::StoreNewUniqueNames(const FString Path)
 		// Add actor to Json array
 		JsonUniqueNamesArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
 		UE_LOG(SemLog, Log, TEXT(" \t\t %s --> %s"), *ActName, *ActToUniqNameItr.Value);
-	}	
+	}
 	// Add actors to Json root
 	JsonRootObj->SetArrayField("actor_unique_names", JsonUniqueNamesArr);
 
@@ -556,6 +649,34 @@ void ASLManager::StoreNewUniqueNames(const FString Path)
 		}
 		// Add foliage unique names to Json root
 		JsonRootObj->SetArrayField("foliage_unique_names", JsonFoliageTypeArr);
+	}
+
+	// Generate unique names for the road components
+	if (RoadCompNameToComponent.Num() > 0)
+	{
+		UE_LOG(SemLog, Log, TEXT(" \t Writing road unique name:"));
+		UE_LOG(SemLog, Log, TEXT(" \t\t %s"), *RoadUniqueName);
+		// Add road unique name to Json root
+		JsonRootObj->SetStringField("road_unique_name", RoadUniqueName);
+
+		UE_LOG(SemLog, Log, TEXT(" \t Writing road segments unique names:"));
+		// Json array of road segments
+		TArray< TSharedPtr<FJsonValue> > JsonRoadSegmentTypeArr;
+		// Iterate the foliage class types, and store the unique names
+		for (const auto& RoadCompItr : RoadComponentNameToUniqueName)
+		{
+			// Json location object
+			TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
+			// Add fields
+			JsonObj->SetStringField("name", RoadCompItr.Key);
+			JsonObj->SetStringField("unique_name", RoadCompItr.Value);
+			// Add actor to Json array
+			JsonRoadSegmentTypeArr.Add(MakeShareable(new FJsonValueObject(JsonObj)));
+			UE_LOG(SemLog, Log, TEXT(" \t\t %s --> %s"), *RoadCompItr.Key, *RoadCompItr.Value);
+		}
+
+		// Add actors to Json root
+		JsonRootObj->SetArrayField("road_segments_unique_names", JsonRoadSegmentTypeArr);
 	}
 
 

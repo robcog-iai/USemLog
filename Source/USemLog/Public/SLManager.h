@@ -83,9 +83,14 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogSemanticEvents;
 
-	// Log semantic events
+	// Log landscape components (e.g. roads, foliage)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bLogLandscapeComponents;
+
+	// Log foliage classes
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TArray<FString> LogFoliageClasses;
+
 
 	// Map of actors to be logged to the semlog key-value pair info
 	TMap<AActor*, TArray<TPair<FString, FString>>> ActorToSemLogInfo;
@@ -98,6 +103,15 @@ private:
 
 	// Map of foliage class to array of bodies with unique names 
 	TMap<UInstancedStaticMeshComponent*, TArray<TPair<FBodyInstance*, FString>>> FoliageComponentToUniqueNameArray;
+
+	// Road components name to component //TODO only one road, add to sherpa branch
+	TMap<FString, USceneComponent*> RoadCompNameToComponent;
+
+	// Road components name to unique names //TODO only one road, add to sherpa branch
+	TMap<FString, FString> RoadComponentNameToUniqueName;
+
+	// Road unique name //TODO only one road, add to sherpa branch
+	FString RoadUniqueName;
 
 	// Raw data exporter
 	class FSLRawDataExporter* RawDataExporter;
