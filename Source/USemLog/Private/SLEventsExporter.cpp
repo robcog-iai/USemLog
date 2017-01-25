@@ -220,107 +220,6 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	}
 }
 
-// Add beginning of grasping event
-void FSLEventsExporter::BeginGraspingEvent(
-	AActor* Self, AActor* Other, const float Timestamp)
-{
-	if (!bListenToEvents)
-	{
-		return;
-	}
-
-	const FString HandName = Self->GetName();
-	const FString GraspedActorName = Other->GetName();
-
-	// Skip saving the event if one of the actor is not registered with unique name
-	if (!(ActToUniqueName.Contains(Self) && ActToUniqueName.Contains(Other)))
-	{
-		UE_LOG(SemLogEvent, Error, TEXT(" !! %s or %s's unique name is not set! Begin grasp event skipped!"), *HandName, *GraspedActorName);
-		return;
-	}
-	// Get unique name of the hand and object
-	const FString HandUniqueName = ActToUniqueName[Self];
-	const FString GraspedActorUniqueName = ActToUniqueName[Other];
-	
-	// Add hand and object to the object individuals array
-	ObjectIndividuals.AddUnique(Self);
-	ObjectIndividuals.AddUnique(Other);
-
-	UE_LOG(SemLogEvent, Warning, TEXT("Begin Grasp[%s --> %s]"), *HandUniqueName, *GraspedActorUniqueName);
-	
-	// Create unique name of the event
-	const FString EventUniqueName = "GraspingSomething_" + FSLUtils::GenerateRandomFString(4);
-	// Init grasp event
-	EventStruct* GraspEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
-	// Add class property
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"rdf:type", "rdf:resource", "&knowrob;GraspingSomething"));
-	// Add taskContext
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:taskContext", "rdf:datatype", "&xsd;string", 
-		FSLUtils::FStringToChar("Grasp-" + HandUniqueName + "-" + GraspedActorUniqueName)));
-	// Add startTime
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:startTime", "rdf:resource", 
-		FSLUtils::FStringToChar("&log;" + 
-			FSLEventsExporter::AddTimestamp(Timestamp))));
-	// Add objectActedOn
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:objectActedOn", "rdf:resource", 
-		FSLUtils::FStringToChar("&log;" + GraspedActorUniqueName)));
-	// Add objectActedOn
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:performedBy", "rdf:resource",
-		FSLUtils::FStringToChar("&log;" + HandUniqueName)));
-
-	// Add events to the map
-	NameToOpenedEventsMap.Add("Grasp" + HandName + GraspedActorName, GraspEvent);
-}
-
-// Add ending of grasping event
-void FSLEventsExporter::EndGraspingEvent(
-	AActor* Self, AActor* Other, const float Timestamp)
-{
-	if (!bListenToEvents)
-	{
-		return;
-	}
-
-	const FString HandName = Self->GetName();
-	const FString GraspedActorName = Other->GetName();
-
-	UE_LOG(SemLogEvent, Warning, TEXT("End Grasp[%s --> %s]"), *HandName, *GraspedActorName);
-
-	// Check if grasp is started
-	if (NameToOpenedEventsMap.Contains("Grasp" + HandName + GraspedActorName))
-	{
-		// Get and remove the event from the opened events map
-		EventStruct* CurrGraspEv;
-		NameToOpenedEventsMap.RemoveAndCopyValue("Grasp" + HandName + GraspedActorName, CurrGraspEv);
-
-		// Add finishing time
-		CurrGraspEv->End = Timestamp;
-
-		// Add endTime property
-		CurrGraspEv->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
-				FSLUtils::FStringToChar("&log;" + 
-					FSLEventsExporter::AddTimestamp(Timestamp))));
-
-		// Add as subAction property to Metadata
-		Metadata->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
-				FSLUtils::FStringToChar(CurrGraspEv->Ns + CurrGraspEv->UniqueName)));
-
-		// Add event to the finished events array
-		FinishedEvents.Add(CurrGraspEv);
-	}
-	else
-	{
-		UE_LOG(SemLogEvent, Error, TEXT(" !! Trying to end grasp which did not start: %s !"), *FString("Grasp" + HandName + GraspedActorName));
-	}
-}
-
 // Add beginning of touching event
 void FSLEventsExporter::BeginTouchingEvent(
 	AActor* TriggerParent, AActor* OtherActor, const float Timestamp)
@@ -425,6 +324,107 @@ void FSLEventsExporter::EndTouchingEvent(
 	}
 }
 
+// Add beginning of grasping event
+void FSLEventsExporter::BeginGraspingEvent(
+	AActor* Self, AActor* Other, const float Timestamp)
+{
+	if (!bListenToEvents)
+	{
+		return;
+	}
+
+	const FString HandName = Self->GetName();
+	const FString GraspedActorName = Other->GetName();
+
+	// Skip saving the event if one of the actor is not registered with unique name
+	if (!(ActToUniqueName.Contains(Self) && ActToUniqueName.Contains(Other)))
+	{
+		UE_LOG(SemLogEvent, Error, TEXT(" !! %s or %s's unique name is not set! Begin grasp event skipped!"), *HandName, *GraspedActorName);
+		return;
+	}
+	// Get unique name of the hand and object
+	const FString HandUniqueName = ActToUniqueName[Self];
+	const FString GraspedActorUniqueName = ActToUniqueName[Other];
+	
+	// Add hand and object to the object individuals array
+	ObjectIndividuals.AddUnique(Self);
+	ObjectIndividuals.AddUnique(Other);
+
+	UE_LOG(SemLogEvent, Warning, TEXT("Begin Grasp[%s --> %s]"), *HandUniqueName, *GraspedActorUniqueName);
+	
+	// Create unique name of the event
+	const FString EventUniqueName = "GraspingSomething_" + FSLUtils::GenerateRandomFString(4);
+	// Init grasp event
+	EventStruct* GraspEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
+	// Add class property
+	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
+		"rdf:type", "rdf:resource", "&knowrob;GraspingSomething"));
+	// Add taskContext
+	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:taskContext", "rdf:datatype", "&xsd;string", 
+		FSLUtils::FStringToChar("Grasp-" + HandUniqueName + "-" + GraspedActorUniqueName)));
+	// Add startTime
+	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:startTime", "rdf:resource", 
+		FSLUtils::FStringToChar("&log;" + 
+			FSLEventsExporter::AddTimestamp(Timestamp))));
+	// Add objectActedOn
+	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:objectActedOn", "rdf:resource", 
+		FSLUtils::FStringToChar("&log;" + GraspedActorUniqueName)));
+	// Add objectActedOn
+	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
+		"knowrob:performedBy", "rdf:resource",
+		FSLUtils::FStringToChar("&log;" + HandUniqueName)));
+
+	// Add events to the map
+	NameToOpenedEventsMap.Add("Grasp" + HandName + GraspedActorName, GraspEvent);
+}
+
+// Add ending of grasping event
+void FSLEventsExporter::EndGraspingEvent(
+	AActor* Self, AActor* Other, const float Timestamp)
+{
+	if (!bListenToEvents)
+	{
+		return;
+	}
+
+	const FString HandName = Self->GetName();
+	const FString GraspedActorName = Other->GetName();
+
+	UE_LOG(SemLogEvent, Warning, TEXT("End Grasp[%s --> %s]"), *HandName, *GraspedActorName);
+
+	// Check if grasp is started
+	if (NameToOpenedEventsMap.Contains("Grasp" + HandName + GraspedActorName))
+	{
+		// Get and remove the event from the opened events map
+		EventStruct* CurrGraspEv;
+		NameToOpenedEventsMap.RemoveAndCopyValue("Grasp" + HandName + GraspedActorName, CurrGraspEv);
+
+		// Add finishing time
+		CurrGraspEv->End = Timestamp;
+
+		// Add endTime property
+		CurrGraspEv->Properties.Add(
+			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
+				FSLUtils::FStringToChar("&log;" + 
+					FSLEventsExporter::AddTimestamp(Timestamp))));
+
+		// Add as subAction property to Metadata
+		Metadata->Properties.Add(
+			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
+				FSLUtils::FStringToChar(CurrGraspEv->Ns + CurrGraspEv->UniqueName)));
+
+		// Add event to the finished events array
+		FinishedEvents.Add(CurrGraspEv);
+	}
+	else
+	{
+		UE_LOG(SemLogEvent, Error, TEXT(" !! Trying to end grasp which did not start: %s !"), *FString("Grasp" + HandName + GraspedActorName));
+	}
+}
+
 // Add furniture state event
 void FSLEventsExporter::FurnitureStateEvent(
 	AActor* Furniture, const FString State, const float Timestamp)
@@ -523,6 +523,29 @@ void FSLEventsExporter::FurnitureStateEvent(
 		// Add new opened event to the map
 		NameToOpenedEventsMap.Add("FurnitureState" + FurnitureUniqueName, FurnitureEvent);
 	}
+}
+
+// Add generic event with array of properties
+void FSLEventsExporter::AddFinishedGenericEvent(
+	const FString EventNs,
+	const FString EventName,
+	const float StartTime,
+	const float EndTime,
+	const TArray<FSLUtils::SLOwlTriple>& Properties)
+{
+	if (!bListenToEvents)
+	{
+		return;
+	}
+
+	// Create unique name of the event
+	const FString EventUniqueName = EventName + "_" + FSLUtils::GenerateRandomFString(4);
+	// Init generic event
+	EventStruct* GenericEvent = new EventStruct(EventNs, EventUniqueName, StartTime, EndTime);
+	// Add properties
+	GenericEvent->Properties = Properties;
+	// Add event to the finished events array
+	FinishedEvents.Add(GenericEvent);
 }
 
 // Terminate all dangling events

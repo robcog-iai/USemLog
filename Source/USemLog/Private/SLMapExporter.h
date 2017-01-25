@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "SLUtils.h"
 #include "rapidxml/rapidxml_print.hpp"
 
 /**
@@ -43,13 +44,14 @@ private:
 	inline void AddGeneralDefinitions(rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode);
 
-	// Add semantic map individual
+	// Add semantic map individual // TODO name used twice
 	inline void AddMapIndividual(rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode,
-		const FString& RoadUniqueName);
+		const FString& RoadUniqueName,
+		int32 NrOfRoadSegments);
 
 	// Add map event individuals
-	inline void AddMapEventIndividuals(
+	inline void AddAllMapEventIndividuals(
 		rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode,
 		const TMap<AActor*, FString>& ActToUniqueName,
@@ -60,7 +62,7 @@ private:
 		const TMap<FString, FString>& RoadComponentNameToUniqueName,
 		const FString& RoadUniqueName);
 
-	// Map event individual node
+	// Map event individual node // TODO name used twice
 	FORCEINLINE void AddMapIndividual(
 		rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode,
@@ -68,10 +70,9 @@ private:
 		const FQuat Quat,
 		const FBox Box,
 		const FString& ClassName,
-		const FString& UniqueName
+		const FString& UniqueName,
+		const TArray<FSLUtils::SLOwlTriple>& ExtraProperties = TArray<FSLUtils::SLOwlTriple>()
 		);
-
-
 
 	// Unique name of the map
 	FString MapUniqueName;

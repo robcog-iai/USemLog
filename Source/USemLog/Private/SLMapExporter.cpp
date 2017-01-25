@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "USemLogPrivatePCH.h"
-#include "SLUtils.h"
 #include "SLMapExporter.h"
 
 // Set default values
@@ -42,10 +41,10 @@ void FSLMapExporter::WriteSemanticMap(
 	FSLMapExporter::AddGeneralDefinitions(SemMapDoc, RDFNode);
 
 	// Add the semantic map individual
-	FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, RoadUniqueName);
+	FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, RoadUniqueName, RoadCompNameToComponent.Num());
 
 	// Add the semantic map events individuals
-	FSLMapExporter::AddMapEventIndividuals(SemMapDoc, RDFNode,
+	FSLMapExporter::AddAllMapEventIndividuals(SemMapDoc, RDFNode,
 		ActToUniqueName,
 		ActToSemLogInfo,
 		FoliageClassNameToComponent,
@@ -174,7 +173,8 @@ inline void FSLMapExporter::AddGeneralDefinitions(rapidxml::xml_document<>* SemM
 inline void FSLMapExporter::AddMapIndividual(
 	rapidxml::xml_document<>* SemMapDoc,
 	rapidxml::xml_node<>* RDFNode,
-	const FString& RoadUniqueName)
+	const FString& RoadUniqueName,
+	int32 NrOfRoadSegments)
 {
 	// Semantic map individual
 	FSLUtils::AddNodeComment(SemMapDoc, RDFNode, "Semantic Environment Map");
@@ -200,13 +200,10 @@ inline void FSLMapExporter::AddMapIndividual(
 	ObjProperties.Add(FSLUtils::SLOwlTriple("rdf:type", "rdf:resource", "&knowrob;Road"));
 	ObjProperties.Add(FSLUtils::SLOwlTriple(
 		"knowrob:nrOfSegments", "rdf:datatype", "&xsd;int",
-		FSLUtils::FStringToChar(FString::FromInt(25))));
-	ObjProperties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:widthOfObject", "rdf:datatype", "&xsd;double",
-		FSLUtils::FStringToChar(FString::SanitizeFloat(250.5f))));
+		FSLUtils::FStringToChar(FString::FromInt(NrOfRoadSegments))));
 	ObjProperties.Add(FSLUtils::SLOwlTriple(
 		"knowrob:describedInMap", "rdf:resource",
-		FSLUtils::FStringToChar(FSLUtils::FStringToChar("&u-map;" + MapUniqueName))));
+		FSLUtils::FStringToChar("&u-map;" + MapUniqueName)));
 
 	// Add road instance
 	FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
@@ -215,7 +212,7 @@ inline void FSLMapExporter::AddMapIndividual(
 }
 
 // Add map event individuals
-inline void FSLMapExporter::AddMapEventIndividuals(
+inline void FSLMapExporter::AddAllMapEventIndividuals(
 	rapidxml::xml_document<>* SemMapDoc,
 	rapidxml::xml_node<>* RDFNode, 
 	const TMap<AActor*, FString>& ActToUniqueName,
@@ -290,20 +287,26 @@ inline void FSLMapExporter::AddMapEventIndividuals(
 		// Local copies of actor, name and unique name
 		const USceneComponent* CurrComp = RoadCompNameToCompItr.Value;
 		const FString RoadSegmentName = RoadCompNameToCompItr.Key;
-		const FString RoadUniqueName = RoadComponentNameToUniqueName[RoadSegmentName];
+		const FString RoadSegmentUniqueName = RoadComponentNameToUniqueName[RoadSegmentName];
 		// Get the class type from the semlog info
 		const FString RoadClass = "RoadSegment";
 
 		UE_LOG(SemLogMap, Log, TEXT(" \t\t %s --> %s \t\t [Class = %s]"),
-			*RoadSegmentName, *RoadUniqueName, *RoadClass);
+			*RoadSegmentName, *RoadSegmentUniqueName, *RoadClass);
 		// Loc and rotation as quat of the objects as strings, change from left hand to right hand coord
 		const FVector Loc = CurrComp->GetComponentLocation() / 100;
 		const FQuat Quat = CurrComp->GetComponentQuat();
 		// Get the bounds
 		FBox BoundingBox = FBox(0.f);
 
+		// Add extra properties
+		TArray<FSLUtils::SLOwlTriple> ExtraProperties;
+		ExtraProperties.Add(FSLUtils::SLOwlTriple("knowrob:partOf", "rdf:resource",
+			FSLUtils::FStringToChar("&log;" + RoadUniqueName)));
+
 		// Add the individual
-		FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, Loc, Quat, BoundingBox, RoadClass, RoadUniqueName);
+		FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, Loc, Quat, BoundingBox, RoadClass, RoadSegmentUniqueName,
+			ExtraProperties);
 	}
 
 	///////// ADD RDF TO OWL DOC
@@ -318,8 +321,8 @@ FORCEINLINE void FSLMapExporter::AddMapIndividual(
 	const FQuat Quat,
 	const FBox Box,
 	const FString& ClassName,
-	const FString& UniqueName
-)
+	const FString& UniqueName,
+	const TArray<FSLUtils::SLOwlTriple>& ExtraProperties)
 {
 	const FString LocStr = FString::SanitizeFloat(Loc.X) + " "
 		+ FString::SanitizeFloat(-Loc.Y) + " "
@@ -353,10 +356,15 @@ FORCEINLINE void FSLMapExporter::AddMapIndividual(
 		FSLUtils::FStringToChar(FString::SanitizeFloat(BoundingBoxSize.Z))));
 	ObjProperties.Add(FSLUtils::SLOwlTriple(
 		"knowrob:pathToCadModel", "rdf:datatype", "&xsd;string",
-		FSLUtils::FStringToChar("package://sim/unreal/" + ClassName + ".dae")));
+		FSLUtils::FStringToChar("package://sim/unreal/" + ClassName + ".dae")));	
+	// Add extra properties
+	for(const auto& ExtraProperty : ExtraProperties)
+	{
+		ObjProperties.Add(ExtraProperty);
+	}
 	ObjProperties.Add(FSLUtils::SLOwlTriple(
 		"knowrob:describedInMap", "rdf:resource",
-		FSLUtils::FStringToChar(FSLUtils::FStringToChar("&u-map;" + MapUniqueName))));
+		FSLUtils::FStringToChar("&u-map;" + MapUniqueName)));
 	// Add instance with properties
 	FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
 		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",

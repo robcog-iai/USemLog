@@ -17,6 +17,9 @@ public:
 		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActorToSemLogInfo,
 		const float Timestamp);
 
+	// Write events to file
+	void WriteEvents(const FString Path, const float Timestamp, bool bWriteTimelines = true);
+
 	// Add beginning of touching event
 	void BeginTouchingEvent(AActor* TriggerParent, AActor* OtherActor, const float Timestamp);
 
@@ -32,9 +35,14 @@ public:
 	// Add furniture state event
 	void FurnitureStateEvent(AActor* Furniture, const FString State, const float Timestamp);
 	
-	// Write events to file
-	void WriteEvents(const FString Path, const float Timestamp, bool bWriteTimelines = true);
-
+	// Add generic event with array of properties
+	void AddFinishedGenericEvent(
+		const FString EventNs,
+		const FString EventName,
+		const float StartTime,
+		const float EndTime,
+		const TArray<FSLUtils::SLOwlTriple>& Properties);
+	
 	// Enable listening to events
 	void SetListenToEvents(bool bListen) {bListenToEvents = bListen;}
 
