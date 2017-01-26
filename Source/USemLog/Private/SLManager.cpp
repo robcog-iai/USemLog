@@ -34,12 +34,63 @@ ASLManager::ASLManager()
 
 	// Default distance threshold for logging raw data
 	DistanceThreshold = 0.1;
+
+	// Set the manager state to un initialized
+	ManagerState = ESLManagerState::UnInit;
 }
 
-// Actor initialization, log items init
+// Actor initialization, log items init, called before BeginPlay
 void ASLManager::PreInitializeComponents()
 {
 	Super::PreInitializeComponents();
+
+	if (bStartLoggingAtLoadTime)
+	{
+		ASLManager::PreInit();
+	}
+}
+
+// Called when the game starts or when spawned
+void ASLManager::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Disable tick for now
+	SetActorTickEnabled(false);
+
+	if (bStartLoggingAtLoadTime)
+	{
+		ASLManager::Init();
+		ASLManager::Start();
+	}
+}
+
+// Called when the game is terminated
+void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	ASLManager::Stop();
+}
+
+// Called every frame
+void ASLManager::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// Log raw data
+	if (RawDataExporter)
+	{
+		RawDataExporter->Update(GetWorld()->GetTimeSeconds());
+	}
+}
+
+// Before init exporters, setup folders, read previous values
+bool ASLManager::PreInit()
+{
+	if (!ASLManager::IsUnInit())
+	{
+		UE_LOG(SemLog, Error, TEXT(" !! Cannot Init SLManager, current state is not PreInit."));
+		return false;
+	}
 
 	// Level directory path
 	LevelPath = LogRootDirectoryName + "/" + GetWorld()->GetName();
@@ -93,36 +144,22 @@ void ASLManager::PreInitializeComponents()
 			ActorToSemLogInfo,
 			GetWorld()->GetTimeSeconds());
 	}
-}
 
-// Called when the game starts or when spawned
-void ASLManager::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// Disable tick for now
-	SetActorTickEnabled(false);
-
-	if (bStartLoggingAtLoadTime)
-	{
-		ASLManager::Init();
-		ASLManager::Start();
-	}
-}
-
-// Called when the game is terminated
-void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	// Write events
-	if (SemEventsExporter)
-	{
-		SemEventsExporter->WriteEvents(EpisodePath,	GetWorld()->GetTimeSeconds());
-	}
+	// Set the manager state to pre initialized
+	ManagerState = ESLManagerState::PreInit;
+	
+	return true;
 }
 
 // Init exporters, write initial states
-void ASLManager::Init()
+bool ASLManager::Init()
 {
+	if (!ASLManager::IsPreInit())
+	{
+		UE_LOG(SemLog, Error, TEXT(" !! Cannot Init SLManager, current state is not PreInit."));
+		return false;
+	}
+
 	// Generate and write level semantic map
 	if (SemMapExporter)
 	{
@@ -154,23 +191,22 @@ void ASLManager::Init()
 	{
 		SemEventsExporter->SetListenToEvents(true);
 	}
-}
 
-// Called every frame
-void ASLManager::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+	// Set the manager state to initialized
+	ManagerState = ESLManagerState::Init;
 
-	// Log raw data
-	if (RawDataExporter)
-	{
-		RawDataExporter->Update(GetWorld()->GetTimeSeconds());
-	}
+	return true;
 }
 
 // Start logging by enabling tick
-void ASLManager::Start()
+bool ASLManager::Start()
 {
+	if (!ASLManager::IsInit() && !ASLManager::IsPaused())
+	{
+		UE_LOG(SemLog, Error, TEXT(" !! Cannot Start SLManager, current state is not Init or Paused."));
+		return false;
+	}
+
 	// Enable tick
 	SetActorTickEnabled(true);
 
@@ -180,11 +216,20 @@ void ASLManager::Start()
 		SemEventsExporter->SetListenToEvents(true);
 	}
 
+	// Set the manager state to active
+	ManagerState = ESLManagerState::Active;
+
+	return true;
 }
 
 // Pause logging by disabling tick
-void ASLManager::Pause()
+bool ASLManager::Pause()
 {
+	if (!ASLManager::IsActive())
+	{
+		UE_LOG(SemLog, Error, TEXT(" !! Cannot Pause SLManager, current state is not Active."));
+		return false;
+	}
 	// Disable tick
 	SetActorTickEnabled(false);
 
@@ -193,6 +238,32 @@ void ASLManager::Pause()
 	{
 		SemEventsExporter->SetListenToEvents(false);
 	}
+
+	// Set the manager state to paused
+	ManagerState = ESLManagerState::Paused;
+
+	return true;
+}
+
+// Stop the loggers, save states to file
+bool ASLManager::Stop()
+{
+	if (!ASLManager::IsActive() && !ASLManager::IsPaused())
+	{
+		UE_LOG(SemLog, Error, TEXT(" !! Cannot Stop SLManager, current state is not Active or Paused."));
+		return false;
+	}
+
+	// Write events
+	if (SemEventsExporter)
+	{
+		SemEventsExporter->WriteEvents(EpisodePath, GetWorld()->GetTimeSeconds());
+	}
+
+	// Set the manager state to paused
+	ManagerState = ESLManagerState::Stopped;
+
+	return true;
 }
 
 // Create directory path for logging

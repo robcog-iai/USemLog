@@ -7,6 +7,18 @@
 #include "Private/SLEventsExporter.h"
 #include "SLManager.generated.h"
 
+UENUM()
+enum class ESLManagerState : uint8
+{
+	UnInit			UMETA(DisplayName = "UnInit"),
+	PreInit         UMETA(DisplayName = "PreInit"),
+	Init			UMETA(DisplayName = "Init"),
+	Active			UMETA(DisplayName = "Active"),
+	Paused			UMETA(DisplayName = "Paused"),
+	Stopped			UMETA(DisplayName = "Stopped"),
+	Cancelled		UMETA(DisplayName = "Stopped"),
+};
+
 UCLASS()
 class USEMLOG_API ASLManager : public AActor
 {
@@ -28,17 +40,46 @@ public:
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
-	// Init exporters, write initial states
-	void Init();
+	// Pre init exporters, setup folders, read previous values
+	bool PreInit();
 
-	// Start logging by enabling tick
-	void Start();
+	// Init exporters, write initial states
+	bool Init();
+
+	// Start logging by enabling tick and listening to events
+	bool Start();
 	
-	// Pause logging by disabling tick
-	void Pause();
+	// Pause logging by disabling tick and listening to events
+	bool Pause();
+
+	// Stop the loggers, save states to file
+	bool Stop();
+	
+	// TODO Cancelled() - RM files (check if the map was created now, then remove it, if not only the episode)
+
+	// Check if state is uninit
+	bool IsUnInit() { return ManagerState == ESLManagerState::UnInit; };
+
+	// Check if state is pre init
+	bool IsPreInit() { return ManagerState == ESLManagerState::PreInit; };
+
+	// Check if state is init
+	bool IsInit() { return ManagerState == ESLManagerState::Init; };
+
+	// Check if state is active
+	bool IsActive() { return ManagerState == ESLManagerState::Active; };
+
+	// Check if state is active
+	bool IsPaused() { return ManagerState == ESLManagerState::Paused; };
+
+	// Check if state is stopped
+	bool IsStopped() { return ManagerState == ESLManagerState::Stopped; };
 
 	// Get semantic events exporter
 	class FSLEventsExporter* GetEventsExporter() { return SemEventsExporter; };
+
+	// Semantic logger manager state
+	ESLManagerState ManagerState;
 
 private:
 	// Create directory path for logging
