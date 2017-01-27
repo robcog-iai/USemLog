@@ -129,6 +129,6 @@ private:
 	// Metadata individual semantic event
 	FSLOwlObjectIndividual* MetadataF;
 
-	FORCEINLINE void InitMetadata(const float Timestamp);
+	void InitMetadata(const float Timestamp);
 
 };
