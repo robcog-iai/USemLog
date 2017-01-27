@@ -26,14 +26,21 @@ ASLManager::ASLManager()
 	EpisodeUniqueTag = FSLUtils::GenerateRandomFString(4);
 
 	// Default flag values
-	bStartLoggingAtLoadTime = true;
+	bStartLoggingAtLoadTime = false;
 	bLogRawData = true;
 	bLogSemanticMap = true;
 	bLogSemanticEvents = true;
 	bLogLandscapeComponents = true;
+	bFirstEpisode = false;
 
 	// Default distance threshold for logging raw data
 	DistanceThreshold = 0.1;
+
+	// Delay for starting logging at load time
+	LoadTimeLoggingDelay = 0.f;
+
+	// External time
+	ExternalInitTime = 0.f;
 
 	// Set the manager state to un initialized
 	ManagerState = ESLManagerState::UnInit;
@@ -44,7 +51,8 @@ void ASLManager::PreInitializeComponents()
 {
 	Super::PreInitializeComponents();
 
-	if (bStartLoggingAtLoadTime)
+	// Run pre init only if loggins should happen at load time without a delay
+	if (bStartLoggingAtLoadTime && !(LoadTimeLoggingDelay > 0.f))
 	{
 		ASLManager::PreInit();
 	}
@@ -58,17 +66,31 @@ void ASLManager::BeginPlay()
 	// Disable tick for now
 	SetActorTickEnabled(false);
 
+	// Check if logging should start at load time, and if with a delay
 	if (bStartLoggingAtLoadTime)
 	{
-		ASLManager::Init();
-		ASLManager::Start();
+		if (!(LoadTimeLoggingDelay > 0.f))
+		{
+			ASLManager::Init();
+			ASLManager::Activate();
+		}
+		else
+		{
+			UE_LOG(SemLog, Log, TEXT(" ** Semantic logging will start after %f seconds."), LoadTimeLoggingDelay);
+			FTimerHandle UnusedHandle;
+			GetWorldTimerManager().SetTimer(
+				UnusedHandle, this, &ASLManager::StartLoggingWithDelay, LoadTimeLoggingDelay, false);			
+		}
 	}
 }
 
 // Called when the game is terminated
 void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	ASLManager::Stop();
+	if (!ASLManager::IsUnInit() && !ASLManager::IsFinished())
+	{
+		ASLManager::Finish();
+	}
 }
 
 // Called every frame
@@ -79,34 +101,33 @@ void ASLManager::Tick(float DeltaTime)
 	// Log raw data
 	if (RawDataExporter)
 	{
-		RawDataExporter->Update(GetWorld()->GetTimeSeconds());
+		RawDataExporter->Update(GetWorld()->GetTimeSeconds() + ExternalInitTime);
 	}
 }
 
 // Before init exporters, setup folders, read previous values
-bool ASLManager::PreInit()
+bool ASLManager::PreInit(const float ExternalTime)
 {
 	if (!ASLManager::IsUnInit())
 	{
-		UE_LOG(SemLog, Error, TEXT(" !! Cannot Init SLManager, current state is not PreInit."));
+		UE_LOG(SemLog, Error, TEXT(" !! Cannot PreInit SLManager, current state is not UnInit."));
 		return false;
 	}
+	UE_LOG(SemLog, Log, TEXT(" ** PreInit **"));
+
+	// Set the external init time
+	ExternalInitTime = ExternalTime;
 
 	// Level directory path
 	LevelPath = LogRootDirectoryName + "/" + GetWorld()->GetName();
-	// Episode directory path
-	EpisodePath = LevelPath + "/Episodes/" + "rcg_" + FDateTime::Now().ToString();
-	// Raw data directory path
-	RawDataPath = LevelPath + "/RawData/";
-	// Create the directory paths
-	ASLManager::CreateDirectoryPath(EpisodePath);
-	ASLManager::CreateDirectoryPath(RawDataPath);
-
 	// Init items that should be logged
 	ASLManager::InitLogItems();
+
 	// Check if unique names are already generated AND in sync (past episodes)
 	if (ASLManager::ShouldGenerateNewUniqueNames(LevelPath + "/MetaData.json"))
 	{
+		// Mark as first episode
+		bFirstEpisode = true;
 		// Generate new unique names if not generated or out of sync
 		ASLManager::GenerateNewUniqueNames();
 		// Save unique names to file (for future use)
@@ -129,6 +150,10 @@ bool ASLManager::PreInit()
 	// Init raw data logger
 	if (bLogRawData)
 	{
+		// Raw data directory path
+		RawDataPath = LevelPath + "/RawData/";
+		// Create the raw data directory path
+		ASLManager::CreateDirectoryPath(RawDataPath);
 		// Path to the json file
 		const FString RawFilePath = RawDataPath + "/RawData_" + EpisodeUniqueTag + ".json";
 		// Init raw data exporter
@@ -138,11 +163,12 @@ bool ASLManager::PreInit()
 	// Init semantic events logger
 	if (bLogSemanticEvents)
 	{
+		// Init semantic events exporter
 		SemEventsExporter = new FSLEventsExporter(
 			EpisodeUniqueTag,
 			ActorToUniqueName,
 			ActorToSemLogInfo,
-			GetWorld()->GetTimeSeconds());
+			GetWorld()->GetTimeSeconds() + ExternalInitTime);
 	}
 
 	// Set the manager state to pre initialized
@@ -159,6 +185,7 @@ bool ASLManager::Init()
 		UE_LOG(SemLog, Error, TEXT(" !! Cannot Init SLManager, current state is not PreInit."));
 		return false;
 	}
+	UE_LOG(SemLog, Log, TEXT(" ** Init **"));
 
 	// Generate and write level semantic map
 	if (SemMapExporter)
@@ -179,11 +206,11 @@ bool ASLManager::Init()
 
 	// Initial raw data log (static objects are stored once)
 	if (RawDataExporter)
-	{
+	{		
 		RawDataExporter->WriteInit(
 			ActorToUniqueName,
 			ActorToSemLogInfo,
-			GetWorld()->GetTimeSeconds());
+			GetWorld()->GetTimeSeconds() + ExternalInitTime);
 	}
 
 	// Enable listening to events
@@ -199,13 +226,14 @@ bool ASLManager::Init()
 }
 
 // Start logging by enabling tick
-bool ASLManager::Start()
+bool ASLManager::Activate()
 {
 	if (!ASLManager::IsInit() && !ASLManager::IsPaused())
 	{
 		UE_LOG(SemLog, Error, TEXT(" !! Cannot Start SLManager, current state is not Init or Paused."));
 		return false;
 	}
+	UE_LOG(SemLog, Log, TEXT(" ** Active **"));
 
 	// Enable tick
 	SetActorTickEnabled(true);
@@ -230,6 +258,8 @@ bool ASLManager::Pause()
 		UE_LOG(SemLog, Error, TEXT(" !! Cannot Pause SLManager, current state is not Active."));
 		return false;
 	}
+	UE_LOG(SemLog, Log, TEXT(" ** Paused **"));
+
 	// Disable tick
 	SetActorTickEnabled(false);
 
@@ -246,24 +276,80 @@ bool ASLManager::Pause()
 }
 
 // Stop the loggers, save states to file
-bool ASLManager::Stop()
+bool ASLManager::Finish()
 {
-	if (!ASLManager::IsActive() && !ASLManager::IsPaused())
+	if (ASLManager::IsUnInit() || ASLManager::IsFinished())
 	{
-		UE_LOG(SemLog, Error, TEXT(" !! Cannot Stop SLManager, current state is not Active or Paused."));
+		UE_LOG(SemLog, Error, TEXT(" !! Cannot Finish SLManager, current state is UnInit or already Finished."));
 		return false;
 	}
+	UE_LOG(SemLog, Log, TEXT(" ** Finished **"));
 
 	// Write events
 	if (SemEventsExporter)
 	{
-		SemEventsExporter->WriteEvents(EpisodePath, GetWorld()->GetTimeSeconds());
+		// Episode directory path
+		EpisodePath = LevelPath + "/Episodes/" + "rcg_" + FDateTime::Now().ToString();
+		// Create the directory paths
+		ASLManager::CreateDirectoryPath(EpisodePath);
+		// Write semantic events
+		SemEventsExporter->WriteEvents(EpisodePath, GetWorld()->GetTimeSeconds() + ExternalInitTime);
 	}
 
 	// Set the manager state to paused
-	ManagerState = ESLManagerState::Stopped;
+	ManagerState = ESLManagerState::Finished;
 
 	return true;
+}
+
+// Cancel logging, remove generated files
+bool ASLManager::Cancel()
+{
+	if (ASLManager::IsUnInit())
+	{
+		UE_LOG(SemLog, Error, TEXT(" !! Cannot Cancel SLManager, current state is UnInit."));
+		return false;
+	}
+	UE_LOG(SemLog, Log, TEXT(" ** Cancelled ** "));
+	
+	if (bFirstEpisode)
+	{
+		// TODO remove everything
+		//LevelPath
+	}
+	else
+	{
+		// TODO remove raw and events
+		if (bLogRawData)
+		{
+			const FString RawFilePath = RawDataPath + "/RawData_" + EpisodeUniqueTag + ".json";
+			if (!IFileManager::Get().FileExists(*RawFilePath))
+			{
+				// RM
+			}
+		}
+	
+		if (bLogSemanticEvents)
+		{
+			if (!IFileManager::Get().FileExists(*EpisodePath))
+			{
+				// RM
+			}
+		}
+	}
+
+	// Set the manager state to paused
+	ManagerState = ESLManagerState::Cancelled;
+
+	return true;
+}
+
+// Start logging with delay
+void ASLManager::StartLoggingWithDelay()
+{
+	ASLManager::PreInit();
+	ASLManager::Init();
+	ASLManager::Activate();
 }
 
 // Create directory path for logging

@@ -15,7 +15,7 @@ enum class ESLManagerState : uint8
 	Init			UMETA(DisplayName = "Init"),
 	Active			UMETA(DisplayName = "Active"),
 	Paused			UMETA(DisplayName = "Paused"),
-	Stopped			UMETA(DisplayName = "Stopped"),
+	Finished		UMETA(DisplayName = "Finished"),
 	Cancelled		UMETA(DisplayName = "Stopped"),
 };
 
@@ -41,47 +41,64 @@ public:
 	virtual void Tick( float DeltaSeconds ) override;
 
 	// Pre init exporters, setup folders, read previous values
-	bool PreInit();
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
+	bool PreInit(const float ExternalTime = 0.f);
 
 	// Init exporters, write initial states
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
 	bool Init();
 
-	// Start logging by enabling tick and listening to events
-	bool Start();
+	// Activate logging by enabling tick and listening to events
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
+	bool Activate();
 	
 	// Pause logging by disabling tick and listening to events
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
 	bool Pause();
 
 	// Stop the loggers, save states to file
-	bool Stop();
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
+	bool Finish();
 	
-	// TODO Cancelled() - RM files (check if the map was created now, then remove it, if not only the episode)
+	// Cancel logging, remove generated files
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
+	bool Cancel();
 
 	// Check if state is uninit
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
 	bool IsUnInit() { return ManagerState == ESLManagerState::UnInit; };
 
 	// Check if state is pre init
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
 	bool IsPreInit() { return ManagerState == ESLManagerState::PreInit; };
 
 	// Check if state is init
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
 	bool IsInit() { return ManagerState == ESLManagerState::Init; };
 
 	// Check if state is active
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
 	bool IsActive() { return ManagerState == ESLManagerState::Active; };
 
 	// Check if state is active
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
 	bool IsPaused() { return ManagerState == ESLManagerState::Paused; };
 
 	// Check if state is stopped
-	bool IsStopped() { return ManagerState == ESLManagerState::Stopped; };
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
+	bool IsFinished() { return ManagerState == ESLManagerState::Finished; };
+
+	// Check if state is stopped
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
+	bool IsCancelled() { return ManagerState == ESLManagerState::Cancelled; };
 
 	// Get semantic events exporter
 	class FSLEventsExporter* GetEventsExporter() { return SemEventsExporter; };
 
-	// Semantic logger manager state
-	ESLManagerState ManagerState;
-
 private:
+	// Start logging with delay
+	void StartLoggingWithDelay();
+
 	// Create directory path for logging
 	void CreateDirectoryPath(FString Path);
 
@@ -103,6 +120,10 @@ private:
 	// Log semantic events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartLoggingAtLoadTime;
+
+	// Delay for starting logging at load time (works only if StartLoggingAtLoadTime is true)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float LoadTimeLoggingDelay;
 
 	// Directory to save the logs
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -128,11 +149,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogLandscapeComponents;
 
+	// Semantic logger manager state
+	ESLManagerState ManagerState;
+
 	// Log foliage classes
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TArray<FString> LogFoliageClasses;
-
-
+	
 	// Map of actors to be logged to the semlog key-value pair info
 	TMap<AActor*, TArray<TPair<FString, FString>>> ActorToSemLogInfo;
 
@@ -174,4 +197,10 @@ private:
 
 	// Episode unique tag
 	FString EpisodeUniqueTag;
+
+	// Flag marging first episode
+	bool bFirstEpisode;
+
+	// Store external init time (seconds)
+	float ExternalInitTime;
 };

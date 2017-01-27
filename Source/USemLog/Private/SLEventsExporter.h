@@ -3,6 +3,33 @@
 #pragma once
 
 #include "Private/SLUtils.h"
+#include "Private/SLOwlEntities.h"
+
+// Individual struct
+struct IndividualStruct
+{
+	IndividualStruct(const FString Namespace, const FString UName, 
+		const TArray<FSLUtils::SLOwlTriple>& Properties = TArray<FSLUtils::SLOwlTriple>())
+		: Ns(Namespace), UniqueName(UName), Properties(Properties)
+	{}
+	const FString Ns;
+	const FString UniqueName;
+	TArray<FSLUtils::SLOwlTriple> Properties;
+};
+
+// Event struct
+struct EventStruct
+{
+	EventStruct(const FString Namespace, const FString UName, float EvStart = -1.0f, float EvEnd = -1.0f,
+		const TArray<FSLUtils::SLOwlTriple>& Properties = TArray<FSLUtils::SLOwlTriple>())
+		: Ns(Namespace), UniqueName(UName), Start(EvStart), End(EvEnd), Properties(Properties)
+	{}
+	const FString Ns;
+	const FString UniqueName;
+	float Start;
+	float End;
+	TArray<FSLUtils::SLOwlTriple> Properties;
+};
 
 /**
  * Semantic map exporter
@@ -35,30 +62,23 @@ public:
 	// Add furniture state event
 	void FurnitureStateEvent(AActor* Furniture, const FString State, const float Timestamp);
 	
+	// Add generic individual
+	void AddGenericIndividual(
+		const FString IndividualNs,
+		const FString IndividualName,
+		const TArray<FSLUtils::SLOwlTriple>& Properties = TArray<FSLUtils::SLOwlTriple>());
+
 	// Add generic event with array of properties
-	void AddFinishedGenericEvent(
+	void AddFinishedEvent(
 		const FString EventNs,
 		const FString EventName,
 		const float StartTime,
 		const float EndTime,
-		const TArray<FSLUtils::SLOwlTriple>& Properties);
+		const TArray<FSLUtils::SLOwlTriple>& Properties = TArray<FSLUtils::SLOwlTriple>());
 	
 	// Enable listening to events
 	void SetListenToEvents(bool bListen) {bListenToEvents = bListen;}
-
-	// Event struct
-	struct EventStruct
-	{
-		EventStruct(const FString Namespace, const FString UName, float EvStart = -1.0f, float EvEnd = -1.0f)
-			: Ns(Namespace), UniqueName(UName), Start(EvStart), End(EvEnd)
-		{}
-		const FString Ns;
-		const FString UniqueName;
-		float Start;
-		float End;
-		TArray<FSLUtils::SLOwlTriple> Properties;
-	};
-	
+		
 private:
 	// Add finish time to all events
 	void TerminateEvents(const float Timestamp);
@@ -67,7 +87,10 @@ private:
 	void WriteTimelines(const FString FilePath);
 
 	// Add timepoint to array, and return Knowrob specific timestamp
-	inline const FString AddTimestamp(const float Timestamp);
+	FORCEINLINE const FString AddTimestamp(const float Timestamp);
+
+	// Get the timepoint with namespace
+	FORCEINLINE const FString GetAsKnowrobTs(const float Timestamp);
 
 	// Episode unique tag
 	FString EpisodeUniqueTag;
@@ -95,5 +118,17 @@ private:
 
 	// Enable listening to events
 	bool bListenToEvents;
-};
 
+
+	// Event name to event individuals map
+	TMap<FString, FSLOwlEventIndividual*> NameToOpenedEventsMapF;
+	// Array of all the finished events
+	TArray<FSLOwlEventIndividual*> FinishedEventsF;
+	//
+	TArray<FSLOwlObjectIndividual*> ObjIndividuals;
+	// Metadata individual semantic event
+	FSLOwlObjectIndividual* MetadataF;
+
+	FORCEINLINE void InitMetadata(const float Timestamp);
+
+};

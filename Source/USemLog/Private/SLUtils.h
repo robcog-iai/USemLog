@@ -86,7 +86,7 @@ public:
 	}
 
 	// Get all pair array values
-	static FORCEINLINE TMap<AActor*, FString> GetSemLogInfoToActorToClass(
+	static FORCEINLINE TMap<AActor*, FString> GetMapOfSemLogInfoToActorToClass(
 		const TMap<AActor*, TArray<TPair<FString, FString>>>& ActorToSemLogInfo,
 		const FString ClassName)
 	{

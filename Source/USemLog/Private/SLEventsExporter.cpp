@@ -16,7 +16,7 @@ FSLEventsExporter::FSLEventsExporter(
 	bListenToEvents = false;
 
 	// Set the map references to the member maps
-	ActToClassType = FSLUtils::GetSemLogInfoToActorToClass(ActorToSemLogInfo, "Class");
+	ActToClassType = FSLUtils::GetMapOfSemLogInfoToActorToClass(ActorToSemLogInfo, "Class");
 
 	// Init metadata
 	Metadata = new EventStruct("&log;",
@@ -32,7 +32,7 @@ FSLEventsExporter::FSLEventsExporter(
 	Metadata->Properties.Add(
 		FSLUtils::SLOwlTriple("knowrob:startTime", "rdf:resource",
 			FSLUtils::FStringToChar("&log;" +
-				FSLEventsExporter::AddTimestamp(Timestamp))));
+				FSLEventsExporter::GetAsKnowrobTs(Timestamp))));
 }
 
 // Write events to file
@@ -525,8 +525,29 @@ void FSLEventsExporter::FurnitureStateEvent(
 	}
 }
 
+// Add generic individual
+void FSLEventsExporter::AddGenericIndividual(
+	const FString IndividualNs,
+	const FString IndividualName,
+	const TArray<FSLUtils::SLOwlTriple>& Properties)
+{
+	if (!bListenToEvents)
+	{
+		return;
+	}
+
+	// Create unique name of the event
+	const FString IndividualUniqueName = IndividualName + "_" + FSLUtils::GenerateRandomFString(4);
+	// Init generic event
+	EventStruct* GenericEvent = new EventStruct(IndividualNs, IndividualUniqueName);
+	// Add properties
+	GenericEvent->Properties = Properties;
+	// Add event to the finished events array
+	FinishedEvents.Add(GenericEvent);
+}
+
 // Add generic event with array of properties
-void FSLEventsExporter::AddFinishedGenericEvent(
+void FSLEventsExporter::AddFinishedEvent(
 	const FString EventNs,
 	const FString EventName,
 	const float StartTime,
@@ -621,7 +642,7 @@ void FSLEventsExporter::WriteTimelines(const FString FilePath)
 }
 
 // Add timepoint to array, and return Knowrob specific timestamp
-inline const FString FSLEventsExporter::AddTimestamp(const float Timestamp)
+FORCEINLINE const FString FSLEventsExporter::AddTimestamp(const float Timestamp)
 {
 	// KnowRob Timepoint
 	const FString TimepointStr = "timepoint_" + FString::SanitizeFloat(Timestamp);
@@ -629,4 +650,36 @@ inline const FString FSLEventsExporter::AddTimestamp(const float Timestamp)
 	TimepointIndividuals.AddUnique(TimepointStr);
 	// Return string ts
 	return TimepointStr;
+}
+
+// Get the timepoint with namespace
+FORCEINLINE const FString FSLEventsExporter::GetAsKnowrobTs(const float Timestamp)
+{
+	// KnowRob Timepoint
+	return "timepoint_" + FString::SanitizeFloat(Timestamp);
+}
+
+
+// Init the metadata object individual of the episode
+void FSLEventsExporter::InitMetadata(const float Timestamp)
+{
+	// Init metadata object individual
+	MetadataF = new FSLOwlObjectIndividual("&log;", "UnrealExperiment_" + EpisodeUniqueTag);
+	// Add class property
+	MetadataF->AddProperty(FSLUtils::SLOwlTriple(
+		"rdf:type", "rdf:resource", "&knowrob;UnrealExperiment"));
+	// Add experiment unique name tag
+	MetadataF->AddProperty(FSLUtils::SLOwlTriple(
+		"knowrob:experiment", "rdf:datatype", "&xsd;string",
+		FSLUtils::FStringToChar(EpisodeUniqueTag)));
+
+	// Add startTime property
+	FString TimeObject = "&log;" + FSLEventsExporter::GetAsKnowrobTs(Timestamp);
+	FSLUtils::SLOwlTriple TimeProperty = FSLUtils::SLOwlTriple(
+		"knowrob:startTime", "rdf:resource", FSLUtils::FStringToChar(TimeObject));
+	MetadataF->AddProperty(TimeProperty);
+
+	// Add time individual
+	ObjIndividuals.Add(new FSLOwlObjectIndividual(TimeObject,
+		TArray<FSLUtils::SLOwlTriple>{TimeProperty}));
 }

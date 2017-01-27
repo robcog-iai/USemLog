@@ -71,8 +71,7 @@ private:
 		const FBox Box,
 		const FString& ClassName,
 		const FString& UniqueName,
-		const TArray<FSLUtils::SLOwlTriple>& ExtraProperties = TArray<FSLUtils::SLOwlTriple>()
-		);
+		const TArray<FSLUtils::SLOwlTriple>& ExtraProperties = TArray<FSLUtils::SLOwlTriple>());
 
 	// Unique name of the map
 	FString MapUniqueName;
