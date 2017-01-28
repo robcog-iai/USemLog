@@ -293,7 +293,8 @@ bool ASLManager::Finish()
 		// Create the directory paths
 		ASLManager::CreateDirectoryPath(EpisodePath);
 		// Write semantic events
-		SemEventsExporter->WriteEvents(EpisodePath, GetWorld()->GetTimeSeconds() + ExternalInitTime);
+		SemEventsExporter->WriteEvents(EpisodePath,
+			GetWorld()->GetTimeSeconds() + ExternalInitTime);
 	}
 
 	// Set the manager state to paused

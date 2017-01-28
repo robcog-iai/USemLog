@@ -77,8 +77,8 @@ void ASLContactTriggerBox::BeginSemanticContact(
 {
 	if (SemEventsExporter)
 	{
-		SemEventsExporter->BeginTouchingEvent(
-			Parent, OtherActor, GetWorld()->GetTimeSeconds());
+		//SemEventsExporter->BeginTouchingEvent(
+		//	Parent, OtherActor, GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -88,8 +88,8 @@ void ASLContactTriggerBox::EndSemanticContact(
 {
 	if (SemEventsExporter)
 	{
-		SemEventsExporter->EndTouchingEvent(
-			Parent, OtherActor, GetWorld()->GetTimeSeconds());
+		//SemEventsExporter->EndTouchingEvent(
+		//	Parent, OtherActor, GetWorld()->GetTimeSeconds());
 	}
 }
 

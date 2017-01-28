@@ -19,20 +19,7 @@ FSLEventsExporter::FSLEventsExporter(
 	ActToClassType = FSLUtils::GetMapOfSemLogInfoToActorToClass(ActorToSemLogInfo, "Class");
 
 	// Init metadata
-	Metadata = new EventStruct("&log;",
-		"UnrealExperiment_" + EpisodeUniqueTag, Timestamp);
-	// Add class property
-	Metadata->Properties.Add(FSLUtils::SLOwlTriple(
-		"rdf:type", "rdf:resource", "&knowrob;UnrealExperiment"));
-	// Add experiment unique name tag
-	Metadata->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:experiment", "rdf:datatype", "&xsd;string",
-		FSLUtils::FStringToChar(EpisodeUniqueTag)));
-	// Add startTime property
-	Metadata->Properties.Add(
-		FSLUtils::SLOwlTriple("knowrob:startTime", "rdf:resource",
-			FSLUtils::FStringToChar("&log;" +
-				FSLEventsExporter::GetAsKnowrobTs(Timestamp))));
+	FSLEventsExporter::InitMetadata(Timestamp);
 }
 
 // Write events to file
@@ -40,168 +27,91 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 {
 	// End all opened events
 	FSLEventsExporter::TerminateEvents(Timestamp);
-	// Set metadata as finished
-	Metadata->End = Timestamp;
-	// Add endTime property
-	Metadata->Properties.Add(
-		FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
-			FSLUtils::FStringToChar("&log;" + 
-				FSLEventsExporter::AddTimestamp(Timestamp))));
-
-	///////// DOC
+	
+	// Finish metadata
+	FSLEventsExporter::FinishMetadata(Timestamp);
+	
+	// Create the OWL document
 	rapidxml::xml_document<>* EventsDoc = new rapidxml::xml_document<>();
-
-	///////// TYPE DECLARATION
-	rapidxml::xml_node<> *DeclarationNode = EventsDoc->allocate_node(rapidxml::node_declaration);
-	// Create attibutes
-	FSLUtils::AddNodeAttribute(EventsDoc, DeclarationNode, "version", "1.0");
-	FSLUtils::AddNodeAttribute(EventsDoc, DeclarationNode, "encoding", "utf-8");
-	// Add node to document
-	EventsDoc->append_node(DeclarationNode);
-
-	///////// DOCTYPE
-	const char* doctype = "rdf:RDF[ \n"
-		"\t<!ENTITY rdf \"http://www.w3.org/1999/02/22-rdf-syntax-ns\">\n"
-		"\t<!ENTITY rdfs \"http://www.w3.org/2000/01/rdf-schema\">\n"
-		"\t<!ENTITY owl \"http://www.w3.org/2002/07/owl\">\n"
-		"\t<!ENTITY xsd \"http://www.w3.org/2001/XMLSchema#\">\n"
-		"\t<!ENTITY knowrob \"http://knowrob.org/kb/knowrob.owl#\">\n"
-		"\t<!ENTITY knowrob_u \"http://knowrob.org/kb/knowrob_u.owl#\">\n"
-		"\t<!ENTITY log \"http://knowrob.org/kb/unreal_log.owl#\">\n"
-		"\t<!ENTITY u-map \"http://knowrob.org/kb/u_map.owl#\">\n"
-		"]";
-	// Create doctype node
-	rapidxml::xml_node<> *DoctypeNode = EventsDoc->allocate_node(rapidxml::node_doctype, "", doctype);
-	// Add node to document
-	EventsDoc->append_node(DoctypeNode);
-
-	///////// RDF NODE
+	
+	// Add document declarations
+	FSLEventsExporter::AddDocumentDeclarations(EventsDoc);
+	
+	// Create parent RDF node
 	rapidxml::xml_node<>* RDFNode = EventsDoc->allocate_node(rapidxml::node_element, "rdf:RDF", "");
-	// Add attributes
-	FSLUtils::AddNodeAttribute(EventsDoc, RDFNode,
-		"xmlns:computable", "http://knowrob.org/kb/computable.owl#");
-	FSLUtils::AddNodeAttribute(EventsDoc, RDFNode,
-		"xmlns:swrl", "http://www.w3.org/2003/11/swrl#");
-	FSLUtils::AddNodeAttribute(EventsDoc, RDFNode,
-		"xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	FSLUtils::AddNodeAttribute(EventsDoc, RDFNode,
-		"xmlns:rdfs", "http://www.w3.org/2000/01/rdf-schema#");
-	FSLUtils::AddNodeAttribute(EventsDoc, RDFNode,
-		"xmlns:owl", "http://www.w3.org/2002/07/owl#");
-	FSLUtils::AddNodeAttribute(EventsDoc, RDFNode,
-		"xmlns:knowrob", "http://knowrob.org/kb/knowrob.owl#");
-	FSLUtils::AddNodeAttribute(EventsDoc, RDFNode,
-		"xmlns:knowrob_u", "http://knowrob.org/kb/knowrob_u.owl#");
-	FSLUtils::AddNodeAttribute(EventsDoc, RDFNode,
-		"xmlns:u-map", "http://knowrob.org/kb/u_map.owl#");
-	FSLUtils::AddNodeAttribute(EventsDoc, RDFNode,
-		"xml:base", "http://knowrob.org/kb/u_map.owl#");
-
-	///////// ONTOLOGY IMPORT
-	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Ontologies");
+	
+	// Add RDF node attributes
+	FSLEventsExporter::AddRDFNodeAttributes(EventsDoc, RDFNode);
+	
+	// Add ontology imports
+	AddNodeComment(EventsDoc, RDFNode, "Ontologies");
 	// Create entity node with ontologies as properties
-	TArray<FSLUtils::SLOwlTriple> Ontologies;
-	Ontologies.Add(FSLUtils::SLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
-	Ontologies.Add(FSLUtils::SLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_u.owl"));
-	FSLUtils::AddNodeEntityWithProperties(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Ontology", "rdf:about", "http://knowrob.org/kb/unreal_log.owl"),
-		Ontologies);
-
-	///////// GENERAL DEFINITIONS
+	FSLOwlObjectIndividual* OntologiesF = new FSLOwlObjectIndividual(
+		"owl:Ontology", "rdf:about", "http://knowrob.org/kb/unreal_log.owl");
+	OntologiesF->AddProperty(FSLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
+	OntologiesF->AddProperty(FSLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob_u.owl"));
+	OntologiesF->AddProperty(FSLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/sherpa.owl"));
+	OntologiesF->AddToDocument(EventsDoc, RDFNode);
+	
+	// GENERAL DEFINITIONS
 	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Property Definitions");
 	// Object property definitions
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:ObjectProperty", "rdf:about", "&knowrob;taskContext"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:ObjectProperty", "rdf:about", "&knowrob;taskSuccess"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:ObjectProperty", "rdf:about", "&knowrob;startTime"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:ObjectProperty", "rdf:about", "&knowrob;endTime"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:ObjectProperty", "rdf:about", "&knowrob;experiment"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:ObjectProperty", "rdf:about", "&knowrob_u;inContact"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:ObjectProperty", "rdf:about", "&knowrob_u;semanticMap"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:ObjectProperty", "rdf:about", "&knowrob_u;rating"));
+	FSLOwlDefinitions* PropertyDefinitions = new FSLOwlDefinitions("owl:ObjectProperty", "rdf:about");
+	PropertyDefinitions->AddObject("&knowrob;taskContext");
+	PropertyDefinitions->AddObject("&knowrob;taskSuccess");
+	PropertyDefinitions->AddObject("&knowrob;startTime");
+	PropertyDefinitions->AddObject("&knowrob;endTime");
+	PropertyDefinitions->AddObject("&knowrob;experiment");
+	PropertyDefinitions->AddObject("&knowrob_u;inContact");
+	PropertyDefinitions->AddObject("&knowrob_u;semanticMap");
+	PropertyDefinitions->AddObject("&knowrob_u;rating");
+	PropertyDefinitions->AddToDocument(EventsDoc, RDFNode);
+
 	// Class definitions
-	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Class Definitions");
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob;GraspingSomething"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob_u;UnrealExperiment"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob_u;TouchingSituation"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob_u;KitchenEpisode"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob_u;ParticleTranslation"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateClosed"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateHalfClosed"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateOpened"));
-	FSLUtils::AddNodeTriple(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateHalfOpened"));
+	FSLOwlDefinitions* ClassDefinitions = new FSLOwlDefinitions("owl:Class", "rdf:about");
+	ClassDefinitions->AddObject("&knowrob;GraspingSomething");
+	ClassDefinitions->AddObject("&knowrob_u;UnrealExperiment");
+	ClassDefinitions->AddObject("&knowrob_u;TouchingSituation");
+	ClassDefinitions->AddObject("&knowrob_u;KitchenEpisode");
+	ClassDefinitions->AddObject("&knowrob_u;ParticleTranslation");
+	ClassDefinitions->AddObject("&knowrob_u;FurnitureStateClosed");
+	ClassDefinitions->AddObject("&knowrob_u;FurnitureStateHalfClosed");
+	ClassDefinitions->AddObject("&knowrob_u;FurnitureStateOpened");
+	ClassDefinitions->AddObject("&knowrob_u;FurnitureStateHalfOpened");
+	ClassDefinitions->AddToDocument(EventsDoc, RDFNode);
 
 	///////// EVENT INDIVIDUALS
 	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Event Individuals");
 	// Add event individuals to RDF node
 	for (const auto& FinishedEventItr : FinishedEvents)
 	{
-		FSLUtils::AddNodeEntityWithProperties(EventsDoc, RDFNode,
-			FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-				FSLUtils::FStringToChar(FinishedEventItr->Ns + FinishedEventItr->UniqueName)),
-			FinishedEventItr->Properties);
+		FinishedEventItr->AddToDocument(EventsDoc, RDFNode);
 	}
 
 	///////// OBJECT INDIVIDUALS
 	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Object Individuals");
-
-
-	// Add event individuals to RDF node
-	for (const auto& ObjIndividualItr : ObjectIndividuals)
-	{		
-		// Check that both unique name and class is available
-		if ((ActToUniqueName.Contains(ObjIndividualItr)) &&
-			(ActToClassType.Contains(ObjIndividualItr)))
-		{
-			FSLUtils::AddNodeEntityWithProperty(EventsDoc, RDFNode,
-				FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-					FSLUtils::FStringToChar("&log;" + ActToUniqueName[ObjIndividualItr])),
-				FSLUtils::SLOwlTriple("rdf:type", "rdf:resource",
-					FSLUtils::FStringToChar("&knowrob;" + ActToClassType[ObjIndividualItr])));
-		}
-		else
-		{
-			UE_LOG(SemLogEvent, Error, TEXT(" !! %s 's unique name is not set! Writing object individual skipped!"), *ObjIndividualItr->GetName());
-		}
+	for (const auto& ObjIndividualItr : ObjIndividualsMap)
+	{
+		ObjIndividualItr.Value->AddToDocument(EventsDoc, RDFNode);
 	}
 
-	///////// TIMEPOINT INDIVIDUALS
-	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Timepoint Individuals");
-	// Add time individuals to RDF node
-	for (const auto& TimepointIter : TimepointIndividuals)
-	{
-		FSLUtils::AddNodeEntityWithProperty(EventsDoc, RDFNode,
-			FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-				FSLUtils::FStringToChar("&log;" + TimepointIter)),
-			FSLUtils::SLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint"));
-	};
+	/////////// TIMEPOINT INDIVIDUALS
+	//FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Timepoint Individuals");
+	//// Add time individuals to RDF node
+	//for (const auto& TimepointIter : TimepointIndividuals)
+	//{
+	//	FSLUtils::AddNodeEntityWithProperty(EventsDoc, RDFNode,
+	//		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
+	//			FSLUtils::FStringToChar("&log;" + TimepointIter)),
+	//		FSLUtils::SLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint"));
+	//};
 
 	///////// METADATA INDIVIDUAL
 	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Metadata Individual");
 	// Add metadata to RDF node
-	FSLUtils::AddNodeEntityWithProperties(EventsDoc, RDFNode,
-		FSLUtils::SLOwlTriple("owl:NamedIndividual", "rdf:about",
-			FSLUtils::FStringToChar(Metadata->Ns + Metadata->UniqueName)),
-		Metadata->Properties);
+	MetadataF->AddToDocument(EventsDoc, RDFNode);
 	
-
-	///////// ADD RDF TO OWL DOC
+	///////// ADD RDF NODE TO THE OWL DOC
 	EventsDoc->append_node(RDFNode);
 
 	// Create string
@@ -220,316 +130,11 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	}
 }
 
-// Add beginning of touching event
-void FSLEventsExporter::BeginTouchingEvent(
-	AActor* TriggerParent, AActor* OtherActor, const float Timestamp)
-{
-	if (!bListenToEvents)
-	{
-		return;
-	}
-
-	const FString TriggerParentName = TriggerParent->GetName();
-	const FString OtherActorName = OtherActor->GetName();
-
-	// Skip saving the event if one of the actor is not registered with unique name
-	if (!(ActToUniqueName.Contains(TriggerParent) && ActToUniqueName.Contains(OtherActor)))
-	{
-		UE_LOG(SemLogEvent, Error, TEXT(" !! %s or %s's unique name is not set! Begin touch event skipped!"), *TriggerParent->GetName(), *OtherActor->GetName());
-		return;
-	}
-	// Get unique names of the objects in contact
-	const FString TriggerUniqueName = ActToUniqueName[TriggerParent];
-	const FString OtherActorUniqueName = ActToUniqueName[OtherActor];
-
-	// Add objects to the object individuals array
-	ObjectIndividuals.AddUnique(TriggerParent);	
-	ObjectIndividuals.AddUnique(OtherActor);
-
-	UE_LOG(SemLogEvent, Log, TEXT("Begin Contact[%s <--> %s]"),	*TriggerParentName, *OtherActorName);
-
-	// Create unique name of the event
-	const FString EventUniqueName = "TouchingSituation_" + FSLUtils::GenerateRandomFString(4);
-	// Init contact event
-	EventStruct* ContactEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
-	// Add class property
-	ContactEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"rdf:type", "rdf:resource", "&knowrob_u;TouchingSituation"));
-	// Add taskContext
-	ContactEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:taskContext", "rdf:datatype", "&xsd;string",
-		FSLUtils::FStringToChar("Contact-" + TriggerUniqueName + "-" + OtherActorUniqueName)));
-	// Add startTime
-	ContactEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:startTime", "rdf:resource",
-		FSLUtils::FStringToChar("&log;" +
-			FSLEventsExporter::AddTimestamp(Timestamp))));
-	// Add in contact 1
-	ContactEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob_u:inContact", "rdf:resource",
-		FSLUtils::FStringToChar("&log;" + TriggerUniqueName)));
-	// Add in contact 2
-	ContactEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob_u:inContact", "rdf:resource",
-		FSLUtils::FStringToChar("&log;" + OtherActorUniqueName)));
-
-	// Add events to the map
-	NameToOpenedEventsMap.Add("Contact" + TriggerParentName + OtherActorName, ContactEvent);
-}
-
-// Add end of touching event
-void FSLEventsExporter::EndTouchingEvent(
-	AActor* TriggerParent, AActor* OtherActor, const float Timestamp)
-{
-	if (!bListenToEvents)
-	{
-		return;
-	}
-
-	const FString TriggerParentName = TriggerParent->GetName();
-	const FString OtherActorName = OtherActor->GetName();
-
-	UE_LOG(SemLogEvent, Log,
-		TEXT("End Contact[%s <--> %s]"), *TriggerParentName, *OtherActorName);
-
-	// Check if grasp is started
-	if (NameToOpenedEventsMap.Contains("Contact" + TriggerParent->GetName() + OtherActor->GetName()))
-	{
-		// Get and remove the event from the opened events map
-		EventStruct* CurrContactEv;
-		NameToOpenedEventsMap.RemoveAndCopyValue("Contact" + TriggerParentName + OtherActorName,
-			CurrContactEv);
-
-		// Add finishing time
-		CurrContactEv->End = Timestamp;
-
-		// Add endTime property
-		CurrContactEv->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
-				FSLUtils::FStringToChar("&log;" +
-					FSLEventsExporter::AddTimestamp(Timestamp))));
-
-		// Add as subAction property to Metadata
-		Metadata->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
-				FSLUtils::FStringToChar(CurrContactEv->Ns + CurrContactEv->UniqueName)));
-
-		// Add event to the finished events array
-		FinishedEvents.Add(CurrContactEv);
-	}
-	else
-	{
-		UE_LOG(SemLogEvent, Error, TEXT(" !! Trying to end a contact event which did not start: %s !"),
-			*FString("Contact" + TriggerParent->GetName() + OtherActor->GetName()));
-	}
-}
-
-// Add beginning of grasping event
-void FSLEventsExporter::BeginGraspingEvent(
-	AActor* Self, AActor* Other, const float Timestamp)
-{
-	if (!bListenToEvents)
-	{
-		return;
-	}
-
-	const FString HandName = Self->GetName();
-	const FString GraspedActorName = Other->GetName();
-
-	// Skip saving the event if one of the actor is not registered with unique name
-	if (!(ActToUniqueName.Contains(Self) && ActToUniqueName.Contains(Other)))
-	{
-		UE_LOG(SemLogEvent, Error, TEXT(" !! %s or %s's unique name is not set! Begin grasp event skipped!"), *HandName, *GraspedActorName);
-		return;
-	}
-	// Get unique name of the hand and object
-	const FString HandUniqueName = ActToUniqueName[Self];
-	const FString GraspedActorUniqueName = ActToUniqueName[Other];
-	
-	// Add hand and object to the object individuals array
-	ObjectIndividuals.AddUnique(Self);
-	ObjectIndividuals.AddUnique(Other);
-
-	UE_LOG(SemLogEvent, Warning, TEXT("Begin Grasp[%s --> %s]"), *HandUniqueName, *GraspedActorUniqueName);
-	
-	// Create unique name of the event
-	const FString EventUniqueName = "GraspingSomething_" + FSLUtils::GenerateRandomFString(4);
-	// Init grasp event
-	EventStruct* GraspEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
-	// Add class property
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"rdf:type", "rdf:resource", "&knowrob;GraspingSomething"));
-	// Add taskContext
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:taskContext", "rdf:datatype", "&xsd;string", 
-		FSLUtils::FStringToChar("Grasp-" + HandUniqueName + "-" + GraspedActorUniqueName)));
-	// Add startTime
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:startTime", "rdf:resource", 
-		FSLUtils::FStringToChar("&log;" + 
-			FSLEventsExporter::AddTimestamp(Timestamp))));
-	// Add objectActedOn
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:objectActedOn", "rdf:resource", 
-		FSLUtils::FStringToChar("&log;" + GraspedActorUniqueName)));
-	// Add objectActedOn
-	GraspEvent->Properties.Add(FSLUtils::SLOwlTriple(
-		"knowrob:performedBy", "rdf:resource",
-		FSLUtils::FStringToChar("&log;" + HandUniqueName)));
-
-	// Add events to the map
-	NameToOpenedEventsMap.Add("Grasp" + HandName + GraspedActorName, GraspEvent);
-}
-
-// Add ending of grasping event
-void FSLEventsExporter::EndGraspingEvent(
-	AActor* Self, AActor* Other, const float Timestamp)
-{
-	if (!bListenToEvents)
-	{
-		return;
-	}
-
-	const FString HandName = Self->GetName();
-	const FString GraspedActorName = Other->GetName();
-
-	UE_LOG(SemLogEvent, Warning, TEXT("End Grasp[%s --> %s]"), *HandName, *GraspedActorName);
-
-	// Check if grasp is started
-	if (NameToOpenedEventsMap.Contains("Grasp" + HandName + GraspedActorName))
-	{
-		// Get and remove the event from the opened events map
-		EventStruct* CurrGraspEv;
-		NameToOpenedEventsMap.RemoveAndCopyValue("Grasp" + HandName + GraspedActorName, CurrGraspEv);
-
-		// Add finishing time
-		CurrGraspEv->End = Timestamp;
-
-		// Add endTime property
-		CurrGraspEv->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
-				FSLUtils::FStringToChar("&log;" + 
-					FSLEventsExporter::AddTimestamp(Timestamp))));
-
-		// Add as subAction property to Metadata
-		Metadata->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
-				FSLUtils::FStringToChar(CurrGraspEv->Ns + CurrGraspEv->UniqueName)));
-
-		// Add event to the finished events array
-		FinishedEvents.Add(CurrGraspEv);
-	}
-	else
-	{
-		UE_LOG(SemLogEvent, Error, TEXT(" !! Trying to end grasp which did not start: %s !"), *FString("Grasp" + HandName + GraspedActorName));
-	}
-}
-
-// Add furniture state event
-void FSLEventsExporter::FurnitureStateEvent(
-	AActor* Furniture, const FString State, const float Timestamp)
-{
-	if (!bListenToEvents)
-	{
-		return;
-	}
-
-	const FString FurnitureName = Furniture->GetName();
-
-	// Skip saving the event if the furniture is not registered with a unique name
-	if (!(ActToUniqueName.Contains(Furniture)))
-	{
-		UE_LOG(SemLogEvent, Error, TEXT(" !! %s's unique name is not set! Furniture state event skipped!"), *Furniture->GetName());
-		return;
-	}
-	// Get unique names of the objects in contact
-	const FString FurnitureUniqueName = ActToUniqueName[Furniture];
-	
-	// Check if the furniture has any opened events
-	EventStruct* FurnitureEvent = NameToOpenedEventsMap.FindRef("FurnitureState" + FurnitureUniqueName);
-
-	if (!FurnitureEvent)
-	{
-		// Create first event
-		UE_LOG(SemLogEvent, Log, TEXT("*Init*FurnitureState[%s <--> %s]"), *FurnitureName, *State);
-		// Create unique name of the event
-		const FString EventUniqueName = "FurnitureState" + State + "_" + FSLUtils::GenerateRandomFString(4);
-		// Create the event
-		FurnitureEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
-		// Add class property
-		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
-			"rdf:type", "rdf:resource", 
-			FSLUtils::FStringToChar("&knowrob_u;FurnitureState" + State)));
-		// Add taskContext
-		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
-			"knowrob:taskContext", "rdf:datatype", "&xsd;string",
-			FSLUtils::FStringToChar("FurnitureState" + State + "-" + FurnitureUniqueName)));
-		// Add startTime
-		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
-			"knowrob:startTime", "rdf:resource",
-			FSLUtils::FStringToChar("&log;" +
-				FSLEventsExporter::AddTimestamp(Timestamp))));
-		// Add object acted on
-		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
-			"knowrob:objectActedOn", "rdf:resource",
-			FSLUtils::FStringToChar("&log;" + FurnitureUniqueName)));
-
-		// Add init furniture event to map
-		NameToOpenedEventsMap.Add("FurnitureState" + FurnitureUniqueName, FurnitureEvent);
-	}
-	else
-	{
-		// Terminate previous furniture event
-		UE_LOG(SemLogEvent, Log, TEXT("*Update*FurnitureState[%s <--> %s]"), *FurnitureName, *State);
-		// Add finishing time
-		FurnitureEvent->End = Timestamp;
-
-		// Add endTime property
-		FurnitureEvent->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
-				FSLUtils::FStringToChar("&log;" +
-					FSLEventsExporter::AddTimestamp(Timestamp))));
-
-		// Add as subAction property to Metadata
-		Metadata->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
-				FSLUtils::FStringToChar(FurnitureEvent->Ns + FurnitureEvent->UniqueName)));
-
-		// Add event to the finished events array
-		FinishedEvents.Add(FurnitureEvent);
-
-		// Create unique name of the event
-		const FString EventUniqueName = "FurnitureState" + State + "_" + FSLUtils::GenerateRandomFString(4);
-		// Create the event
-		FurnitureEvent = new EventStruct("&log;", EventUniqueName, Timestamp);
-		// Add class property
-		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
-			"rdf:type", "rdf:resource",
-			FSLUtils::FStringToChar("&knowrob_u;FurnitureState" + State)));
-		// Add taskContext
-		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
-			"knowrob:taskContext", "rdf:datatype", "&xsd;string",
-			FSLUtils::FStringToChar("FurnitureState" + State + "-" + FurnitureUniqueName)));
-		// Add startTime
-		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
-			"knowrob:startTime", "rdf:resource",
-			FSLUtils::FStringToChar("&log;" +
-				FSLEventsExporter::AddTimestamp(Timestamp))));
-		// Add object acted on
-		FurnitureEvent->Properties.Add(FSLUtils::SLOwlTriple(
-			"knowrob:objectActedOn", "rdf:resource",
-			FSLUtils::FStringToChar("&log;" + FurnitureUniqueName)));
-
-		// Add new opened event to the map
-		NameToOpenedEventsMap.Add("FurnitureState" + FurnitureUniqueName, FurnitureEvent);
-	}
-}
-
 // Add generic individual
-void FSLEventsExporter::AddGenericIndividual(
-	const FString IndividualNs,
-	const FString IndividualName,
-	const TArray<FSLUtils::SLOwlTriple>& Properties)
+void FSLEventsExporter::AddObjectIndividual(
+	const FString ObjNamespace,
+	const FString ObjName,
+	const TArray<FSLOwlTriple>& Properties)
 {
 	if (!bListenToEvents)
 	{
@@ -537,22 +142,21 @@ void FSLEventsExporter::AddGenericIndividual(
 	}
 
 	// Create unique name of the event
-	const FString IndividualUniqueName = IndividualName + "_" + FSLUtils::GenerateRandomFString(4);
+	const FString ObjUniqueName = ObjName + "_" + FSLUtils::GenerateRandomFString(4);
 	// Init generic event
-	EventStruct* GenericEvent = new EventStruct(IndividualNs, IndividualUniqueName);
-	// Add properties
-	GenericEvent->Properties = Properties;
+	FSLOwlObjectIndividual* ObjIndividual = new FSLOwlObjectIndividual(
+		ObjNamespace, ObjUniqueName, Properties);
 	// Add event to the finished events array
-	FinishedEvents.Add(GenericEvent);
+	ObjIndividualsMap.Add(ObjUniqueName, ObjIndividual);
 }
 
 // Add generic event with array of properties
-void FSLEventsExporter::AddFinishedEvent(
+void FSLEventsExporter::AddFinishedEventIndividual(
 	const FString EventNs,
 	const FString EventName,
 	const float StartTime,
 	const float EndTime,
-	const TArray<FSLUtils::SLOwlTriple>& Properties)
+	const TArray<FSLOwlTriple>& Properties)
 {
 	if (!bListenToEvents)
 	{
@@ -561,39 +165,40 @@ void FSLEventsExporter::AddFinishedEvent(
 
 	// Create unique name of the event
 	const FString EventUniqueName = EventName + "_" + FSLUtils::GenerateRandomFString(4);
-	// Init generic event
-	EventStruct* GenericEvent = new EventStruct(EventNs, EventUniqueName, StartTime, EndTime);
-	// Add properties
-	GenericEvent->Properties = Properties;
+	// Init event
+	FSLOwlEventIndividual* Event = new FSLOwlEventIndividual(
+		EventNs, EventUniqueName, StartTime, EndTime, Properties);
 	// Add event to the finished events array
-	FinishedEvents.Add(GenericEvent);
+	FinishedEvents.Add(Event);
 }
 
 // Terminate all dangling events
 void FSLEventsExporter::TerminateEvents(const float Timestamp)
 {
-	// Iterate all opened events
+	// Iterate all unfinished events
 	for (const auto& NameToEvItr : NameToOpenedEventsMap)
 	{
 		// Add finishing time
-		NameToEvItr.Value->End = Timestamp;
+		NameToEvItr.Value->SetEndTime(Timestamp);
 
 		// Add endTime property
-		NameToEvItr.Value->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:endTime", "rdf:resource",
-				FSLUtils::FStringToChar("&log;" + 
-					FSLEventsExporter::AddTimestamp(Timestamp))));
+		FString EndTimeObject = "&log;" + FSLEventsExporter::GetAsKnowrobTs(Timestamp);
+		FSLOwlTriple EndTimeProperty = FSLOwlTriple(
+			"knowrob:endTime", "rdf:resource", EndTimeObject);
+		MetadataF->AddProperty(EndTimeProperty);
+		// Add time individual
+		ObjIndividualsMap.Add(EndTimeObject, new FSLOwlObjectIndividual(EndTimeObject,
+			TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint")}));
+
 
 		// Add as subAction property to Metadata
-		Metadata->Properties.Add(
-			FSLUtils::SLOwlTriple("knowrob:subAction", "rdf:resource",
-				FSLUtils::FStringToChar(NameToEvItr.Value->Ns + NameToEvItr.Value->UniqueName)));
+		MetadataF->AddProperty(FSLOwlTriple("knowrob:subAction", "rdf:resource",
+				NameToEvItr.Value->GetObject()));
 
 		// Add event to the finished events array
 		FinishedEvents.Add(NameToEvItr.Value);
 
-		UE_LOG(SemLogEvent, Log,
-			TEXT("Terminate [%s]"), *NameToEvItr.Key);
+		UE_LOG(SemLogEvent, Log, TEXT("Terminate [%s]"), *NameToEvItr.Key);
 	}
 
 	// Empty the open events map
@@ -619,13 +224,13 @@ void FSLEventsExporter::WriteTimelines(const FString FilePath)
 		"  dataTable.addColumn({ type: 'number', id: 'End' });\n\n"
 		"  dataTable.addRows([\n";
 
-	// Add events to the timelines
-	for (const auto& FinishedEventItr : FinishedEvents)
-	{
-		TimelineStr.Append("    [ '" + FinishedEventItr->UniqueName + "', "
-			+ FString::SanitizeFloat(FinishedEventItr->Start) + ", "
-			+ FString::SanitizeFloat(FinishedEventItr->End) + "],\n");
-	}
+	//// Add events to the timelines
+	//for (const auto& FinishedEventItr : FinishedEvents)
+	//{
+	//	TimelineStr.Append("    [ '" + FinishedEventItr->UniqueName + "', "
+	//		+ FString::SanitizeFloat(FinishedEventItr->Start) + ", "
+	//		+ FString::SanitizeFloat(FinishedEventItr->End) + "],\n");
+	//}
 
 
 	TimelineStr.Append(
@@ -641,17 +246,6 @@ void FSLEventsExporter::WriteTimelines(const FString FilePath)
 	FFileHelper::SaveStringToFile(TimelineStr, *FilePath);
 }
 
-// Add timepoint to array, and return Knowrob specific timestamp
-FORCEINLINE const FString FSLEventsExporter::AddTimestamp(const float Timestamp)
-{
-	// KnowRob Timepoint
-	const FString TimepointStr = "timepoint_" + FString::SanitizeFloat(Timestamp);
-	// Add to timepoints array
-	TimepointIndividuals.AddUnique(TimepointStr);
-	// Return string ts
-	return TimepointStr;
-}
-
 // Get the timepoint with namespace
 FORCEINLINE const FString FSLEventsExporter::GetAsKnowrobTs(const float Timestamp)
 {
@@ -659,27 +253,91 @@ FORCEINLINE const FString FSLEventsExporter::GetAsKnowrobTs(const float Timestam
 	return "timepoint_" + FString::SanitizeFloat(Timestamp);
 }
 
-
 // Init the metadata object individual of the episode
 void FSLEventsExporter::InitMetadata(const float Timestamp)
 {
 	// Init metadata object individual
 	MetadataF = new FSLOwlObjectIndividual("&log;", "UnrealExperiment_" + EpisodeUniqueTag);
+
 	// Add class property
-	MetadataF->AddProperty(FSLUtils::SLOwlTriple(
+	MetadataF->AddProperty(FSLOwlTriple(
 		"rdf:type", "rdf:resource", "&knowrob;UnrealExperiment"));
+
 	// Add experiment unique name tag
-	MetadataF->AddProperty(FSLUtils::SLOwlTriple(
-		"knowrob:experiment", "rdf:datatype", "&xsd;string",
-		FSLUtils::FStringToChar(EpisodeUniqueTag)));
+	MetadataF->AddProperty(FSLOwlTriple(
+		"knowrob:experiment", "rdf:datatype", "&xsd;string", EpisodeUniqueTag));
 
 	// Add startTime property
-	FString TimeObject = "&log;" + FSLEventsExporter::GetAsKnowrobTs(Timestamp);
-	FSLUtils::SLOwlTriple TimeProperty = FSLUtils::SLOwlTriple(
-		"knowrob:startTime", "rdf:resource", FSLUtils::FStringToChar(TimeObject));
-	MetadataF->AddProperty(TimeProperty);
-
+	FString StartTimeObject = "&log;" + FSLEventsExporter::GetAsKnowrobTs(Timestamp);
+	FSLOwlTriple StartTimeProperty = FSLOwlTriple(
+		"knowrob:startTime", "rdf:resource", StartTimeObject);
+	MetadataF->AddProperty(StartTimeProperty);
 	// Add time individual
-	ObjIndividuals.Add(new FSLOwlObjectIndividual(TimeObject,
-		TArray<FSLUtils::SLOwlTriple>{TimeProperty}));
+	ObjIndividualsMap.Add(StartTimeObject, new FSLOwlObjectIndividual(StartTimeObject,
+		TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint")}));
+}
+
+// Finish metadata
+void FSLEventsExporter::FinishMetadata(const float Timestamp)
+{
+	// Add startTime property
+	FString EndTimeObject = "&log;" + FSLEventsExporter::GetAsKnowrobTs(Timestamp);
+	FSLOwlTriple EndTimeProperty = FSLOwlTriple(
+		"knowrob:endTime", "rdf:resource", EndTimeObject);
+	MetadataF->AddProperty(EndTimeProperty);
+	// Add time individual
+	ObjIndividualsMap.Add(EndTimeObject, new FSLOwlObjectIndividual(EndTimeObject,
+		TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint")}));
+}
+
+// Add document delcarations
+void FSLEventsExporter::AddDocumentDeclarations(rapidxml::xml_document<>* Doc)
+{
+	///////// TYPE DECLARATION
+	rapidxml::xml_node<> *DeclarationNode = Doc->allocate_node(rapidxml::node_declaration);
+	// Create attibutes
+	AddNodeAttribute(Doc, DeclarationNode, "version", "1.0");
+	AddNodeAttribute(Doc, DeclarationNode, "encoding", "utf-8");
+	// Add node to document
+	Doc->append_node(DeclarationNode);
+
+	///////// DOCTYPE
+	const char* doctype = "rdf:RDF[ \n"
+		"\t<!ENTITY rdf \"http://www.w3.org/1999/02/22-rdf-syntax-ns\">\n"
+		"\t<!ENTITY rdfs \"http://www.w3.org/2000/01/rdf-schema\">\n"
+		"\t<!ENTITY owl \"http://www.w3.org/2002/07/owl\">\n"
+		"\t<!ENTITY xsd \"http://www.w3.org/2001/XMLSchema#\">\n"
+		"\t<!ENTITY knowrob \"http://knowrob.org/kb/knowrob.owl#\">\n"
+		"\t<!ENTITY knowrob_u \"http://knowrob.org/kb/knowrob_u.owl#\">\n"
+		"\t<!ENTITY log \"http://knowrob.org/kb/unreal_log.owl#\">\n"
+		"\t<!ENTITY u-map \"http://knowrob.org/kb/u_map.owl#\">\n"
+		"]";
+	// Create doctype node
+	rapidxml::xml_node<> *DoctypeNode = Doc->allocate_node(rapidxml::node_doctype, "", doctype);
+	// Add node to document
+	Doc->append_node(DoctypeNode);
+}
+
+// Add RDF Node attributes
+void FSLEventsExporter::AddRDFNodeAttributes(rapidxml::xml_document<>* Doc, rapidxml::xml_node<>* RDFNode)
+{
+	// Add attributes
+	AddNodeAttribute(Doc, RDFNode,
+		"xmlns:computable", "http://knowrob.org/kb/computable.owl#");
+	AddNodeAttribute(Doc, RDFNode,
+		"xmlns:swrl", "http://www.w3.org/2003/11/swrl#");
+	AddNodeAttribute(Doc, RDFNode,
+		"xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+	AddNodeAttribute(Doc, RDFNode,
+		"xmlns:rdfs", "http://www.w3.org/2000/01/rdf-schema#");
+	AddNodeAttribute(Doc, RDFNode,
+		"xmlns:owl", "http://www.w3.org/2002/07/owl#");
+	AddNodeAttribute(Doc, RDFNode,
+		"xmlns:knowrob", "http://knowrob.org/kb/knowrob.owl#");
+	AddNodeAttribute(Doc, RDFNode,
+		"xmlns:knowrob_u", "http://knowrob.org/kb/knowrob_u.owl#");
+	AddNodeAttribute(Doc, RDFNode,
+		"xmlns:u-map", "http://knowrob.org/kb/u_map.owl#");
+	AddNodeAttribute(Doc, RDFNode,
+		"xml:base", "http://knowrob.org/kb/u_map.owl#");
 }

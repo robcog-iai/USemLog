@@ -200,8 +200,8 @@ void ASLDrawerStates::LogState(AActor* Furniture, const FString State)
 		// Add to map
 		FurnitureToStateMap.Add(Furniture, State);
 		// Log first state, init the semantic event
-		SemEventsExporter->FurnitureStateEvent(
-			Furniture, State, GetWorld()->GetTimeSeconds());
+		//SemEventsExporter->FurnitureStateEvent(
+		//	Furniture, State, GetWorld()->GetTimeSeconds());
 	}
 	else
 	{
@@ -215,8 +215,8 @@ void ASLDrawerStates::LogState(AActor* Furniture, const FString State)
 			// Update map state
 			FurnitureToStateMap.Add(Furniture, State);
 			// Log state
-			SemEventsExporter->FurnitureStateEvent(
-				Furniture, State, GetWorld()->GetTimeSeconds());
+			//SemEventsExporter->FurnitureStateEvent(
+			//	Furniture, State, GetWorld()->GetTimeSeconds());
 		}
 	}
 }
