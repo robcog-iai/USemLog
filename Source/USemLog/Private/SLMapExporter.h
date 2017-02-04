@@ -51,7 +51,7 @@ private:
 		int32 NrOfRoadSegments);
 
 	// Add map event individuals
-	FORCEINLINE void AddAllMapEventIndividuals(
+	FORCEINLINE const FString AddAllMapEventIndividuals(
 		rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode,
 		const TMap<AActor*, FString>& ActToUniqueName,

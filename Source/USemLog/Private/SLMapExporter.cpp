@@ -44,7 +44,7 @@ void FSLMapExporter::WriteSemanticMap(
 	FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, RoadUniqueName, RoadCompNameToComponent.Num());
 
 	// Add the semantic map events individuals
-	FSLMapExporter::AddAllMapEventIndividuals(SemMapDoc, RDFNode,
+	const FString CSVFile = FSLMapExporter::AddAllMapEventIndividuals(SemMapDoc, RDFNode,
 		ActToUniqueName,
 		ActToSemLogInfo,
 		FoliageClassNameToComponent,
@@ -52,6 +52,9 @@ void FSLMapExporter::WriteSemanticMap(
 		RoadCompNameToComponent,
 		RoadComponentNameToUniqueName,
 		RoadUniqueName);
+
+	// Write string to file
+	FFileHelper::SaveStringToFile(CSVFile, *(Path + ".csv"));
 
 	// Create string
 	std::string RapidXmlString;
@@ -212,7 +215,7 @@ FORCEINLINE void FSLMapExporter::AddMapIndividual(
 }
 
 // Add map event individuals
-FORCEINLINE void FSLMapExporter::AddAllMapEventIndividuals(
+FORCEINLINE const FString FSLMapExporter::AddAllMapEventIndividuals(
 	rapidxml::xml_document<>* SemMapDoc,
 	rapidxml::xml_node<>* RDFNode, 
 	const TMap<AActor*, FString>& ActToUniqueName,
@@ -223,6 +226,7 @@ FORCEINLINE void FSLMapExporter::AddAllMapEventIndividuals(
 	const TMap<FString, FString>& RoadComponentNameToUniqueName,
 	const FString& RoadUniqueName)
 {
+	FString CSVString;
 	UE_LOG(SemLogMap, Log, TEXT(" ** Adding the semantic map individuals: "));
 
 	UE_LOG(SemLogMap, Log, TEXT(" \t Actors: "));
@@ -277,6 +281,11 @@ FORCEINLINE void FSLMapExporter::AddAllMapEventIndividuals(
 
 			// Add the individual
 			FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, Loc, Quat, BoundingBox, CompClassName, BodyUniqueName);
+		
+			CSVString.Append(BodyUniqueName + "," 
+				+ FString::SanitizeFloat(Loc.X) + "," 
+				+ FString::SanitizeFloat(Loc.Y) + ","
+				+ FString::SanitizeFloat(Loc.Z) + "\n");
 		}
 	}
 
@@ -311,6 +320,8 @@ FORCEINLINE void FSLMapExporter::AddAllMapEventIndividuals(
 
 	///////// ADD RDF TO OWL DOC
 	SemMapDoc->append_node(RDFNode);
+
+	return CSVString;
 }
 
 // Add a map individual
