@@ -30,28 +30,28 @@ public:
 
 private:
 	// Add the doctype to the xml file
-	inline void AddDoctype(rapidxml::xml_document<>* SemMapDoc);
+	FORCEINLINE void AddDoctype(rapidxml::xml_document<>* SemMapDoc);
 
 	// Add rdf node attributes
-	inline void AddRDFAttribures(rapidxml::xml_document<>* SemMapDoc,
+	FORCEINLINE void AddRDFAttribures(rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode);
 
 	// Import ontologies
-	inline void AddOntologies(rapidxml::xml_document<>* SemMapDoc,
+	FORCEINLINE void AddOntologies(rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode);
 
 	// Add general definitions
-	inline void AddGeneralDefinitions(rapidxml::xml_document<>* SemMapDoc,
+	FORCEINLINE void AddGeneralDefinitions(rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode);
 
 	// Add semantic map individual // TODO name used twice
-	inline void AddMapIndividual(rapidxml::xml_document<>* SemMapDoc,
+	FORCEINLINE void AddMapIndividual(rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode,
 		const FString& RoadUniqueName,
 		int32 NrOfRoadSegments);
 
 	// Add map event individuals
-	inline void AddAllMapEventIndividuals(
+	FORCEINLINE void AddAllMapEventIndividuals(
 		rapidxml::xml_document<>* SemMapDoc,
 		rapidxml::xml_node<>* RDFNode,
 		const TMap<AActor*, FString>& ActToUniqueName,

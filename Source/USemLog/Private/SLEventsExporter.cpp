@@ -54,8 +54,8 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	OntologiesF->AddToDocument(EventsDoc, RDFNode);
 	
 	// GENERAL DEFINITIONS
-	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Property Definitions");
 	// Object property definitions
+	AddNodeComment(EventsDoc, RDFNode, "Property Definitions");
 	FSLOwlDefinitions* PropertyDefinitions = new FSLOwlDefinitions("owl:ObjectProperty", "rdf:about");
 	PropertyDefinitions->AddObject("&knowrob;taskContext");
 	PropertyDefinitions->AddObject("&knowrob;taskSuccess");
@@ -68,6 +68,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	PropertyDefinitions->AddToDocument(EventsDoc, RDFNode);
 
 	// Class definitions
+	AddNodeComment(EventsDoc, RDFNode, "Class Definitions");
 	FSLOwlDefinitions* ClassDefinitions = new FSLOwlDefinitions("owl:Class", "rdf:about");
 	ClassDefinitions->AddObject("&knowrob;GraspingSomething");
 	ClassDefinitions->AddObject("&knowrob_u;UnrealExperiment");
@@ -81,7 +82,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	ClassDefinitions->AddToDocument(EventsDoc, RDFNode);
 
 	///////// EVENT INDIVIDUALS
-	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Event Individuals");
+	AddNodeComment(EventsDoc, RDFNode, "Event Individuals");
 	// Add event individuals to RDF node
 	for (const auto& FinishedEventItr : FinishedEvents)
 	{
@@ -89,14 +90,14 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	}
 
 	///////// OBJECT INDIVIDUALS
-	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Object Individuals");
+	AddNodeComment(EventsDoc, RDFNode, "Object Individuals");
 	for (const auto& ObjIndividualItr : ObjIndividualsMap)
 	{
 		ObjIndividualItr.Value->AddToDocument(EventsDoc, RDFNode);
 	}
 
 	/////////// TIMEPOINT INDIVIDUALS
-	//FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Timepoint Individuals");
+	//AddNodeComment(EventsDoc, RDFNode, "Timepoint Individuals");
 	//// Add time individuals to RDF node
 	//for (const auto& TimepointIter : TimepointIndividuals)
 	//{
@@ -107,7 +108,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	//};
 
 	///////// METADATA INDIVIDUAL
-	FSLUtils::AddNodeComment(EventsDoc, RDFNode, "Metadata Individual");
+	AddNodeComment(EventsDoc, RDFNode, "Metadata Individual");
 	// Add metadata to RDF node
 	MetadataF->AddToDocument(EventsDoc, RDFNode);
 	
@@ -152,8 +153,8 @@ void FSLEventsExporter::AddObjectIndividual(
 
 // Add generic event with array of properties
 void FSLEventsExporter::AddFinishedEventIndividual(
-	const FString EventNs,
-	const FString EventName,
+	const FString& EventNs,
+	const FString& EventName,
 	const float StartTime,
 	const float EndTime,
 	const TArray<FSLOwlTriple>& Properties)
@@ -170,6 +171,16 @@ void FSLEventsExporter::AddFinishedEventIndividual(
 		EventNs, EventUniqueName, StartTime, EndTime, Properties);
 	// Add event to the finished events array
 	FinishedEvents.Add(Event);
+
+	// Add start end time to the object individuals
+	const FString StartTimeObj = Event->GetStartTimeProperty().GetRdfObject();
+	const FString EndTimeObj = Event->GetEndTimeProperty().GetRdfObject();
+
+	ObjIndividualsMap.Add(StartTimeObj, FSLEventsExporter::CreateTimeIndividual(StartTimeObj));
+	ObjIndividualsMap.Add(EndTimeObj, FSLEventsExporter::CreateTimeIndividual(EndTimeObj));
+
+	// Check for CRAMDesignators
+	FSLEventsExporter::CheckForCRAMDesignators(Properties);
 }
 
 // Terminate all dangling events
@@ -187,13 +198,12 @@ void FSLEventsExporter::TerminateEvents(const float Timestamp)
 			"knowrob:endTime", "rdf:resource", EndTimeObject);
 		MetadataF->AddProperty(EndTimeProperty);
 		// Add time individual
-		ObjIndividualsMap.Add(EndTimeObject, new FSLOwlObjectIndividual(EndTimeObject,
-			TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint")}));
-
+		ObjIndividualsMap.Add(EndTimeObject,
+			FSLEventsExporter::CreateTimeIndividual(EndTimeObject));
 
 		// Add as subAction property to Metadata
 		MetadataF->AddProperty(FSLOwlTriple("knowrob:subAction", "rdf:resource",
-				NameToEvItr.Value->GetObject()));
+				NameToEvItr.Value->GetRdfObject()));
 
 		// Add event to the finished events array
 		FinishedEvents.Add(NameToEvItr.Value);
@@ -253,6 +263,29 @@ FORCEINLINE const FString FSLEventsExporter::GetAsKnowrobTs(const float Timestam
 	return "timepoint_" + FString::SanitizeFloat(Timestamp);
 }
 
+// Create time object
+FSLOwlObjectIndividual* FSLEventsExporter::CreateTimeIndividual(const FString TimeObject)
+{
+	return new FSLOwlObjectIndividual(TimeObject,
+		TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint")});
+};
+
+// Check for designators in the properties
+void FSLEventsExporter::CheckForCRAMDesignators(const TArray<FSLOwlTriple>& Properties)
+{
+	for (auto PropItr : Properties)
+	{
+		FString Sub = PropItr.GetRdfSubject();
+		if(Sub.Contains("knowrob:goalLocation") ||
+			Sub.Contains("knowrob:perceptionResult"))
+		{
+			FString Obj = PropItr.GetRdfObject();
+			ObjIndividualsMap.Add(Obj, new FSLOwlObjectIndividual(Obj,
+				TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;CRAMDesignator")}));
+		}
+	}
+}
+
 // Init the metadata object individual of the episode
 void FSLEventsExporter::InitMetadata(const float Timestamp)
 {
@@ -273,8 +306,8 @@ void FSLEventsExporter::InitMetadata(const float Timestamp)
 		"knowrob:startTime", "rdf:resource", StartTimeObject);
 	MetadataF->AddProperty(StartTimeProperty);
 	// Add time individual
-	ObjIndividualsMap.Add(StartTimeObject, new FSLOwlObjectIndividual(StartTimeObject,
-		TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint")}));
+	ObjIndividualsMap.Add(StartTimeObject,
+		FSLEventsExporter::CreateTimeIndividual(StartTimeObject));
 }
 
 // Finish metadata
@@ -286,8 +319,8 @@ void FSLEventsExporter::FinishMetadata(const float Timestamp)
 		"knowrob:endTime", "rdf:resource", EndTimeObject);
 	MetadataF->AddProperty(EndTimeProperty);
 	// Add time individual
-	ObjIndividualsMap.Add(EndTimeObject, new FSLOwlObjectIndividual(EndTimeObject,
-		TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint")}));
+	ObjIndividualsMap.Add(EndTimeObject,
+		FSLEventsExporter::CreateTimeIndividual(EndTimeObject));
 }
 
 // Add document delcarations

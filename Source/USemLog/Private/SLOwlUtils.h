@@ -47,6 +47,14 @@ static FORCEINLINE void AddNodeAttribute(
 class FSLOwlTriple
 {
 public:
+	// Default constr
+	FSLOwlTriple() 
+	{ 
+		Subject = "";
+		Predicate = "";
+		Object = "";
+	};
+
 	// Constructor
 	FSLOwlTriple(const char* Subj, const char* Pred, const char* Obj, const char* Val = "")
 		: Subject(Subj), Predicate(Pred), Object(Obj), Value(Val)
@@ -65,7 +73,6 @@ public:
 		Value(FStringToChar(Val))
 	{};
 
-	
 	// Add to XML document
 	void AddToDocument(rapidxml::xml_document<>* Doc, rapidxml::xml_node<>* ParentNode)
 	{
@@ -88,6 +95,18 @@ public:
 
 	// Value e.g. >8uFQ<
 	const char* Value;
+
+	// Get the subject as FString
+	const FString GetRdfSubject() { return FString(ANSI_TO_TCHAR(Subject)); };
+
+	// Get the predicate as FString
+	const FString GetRdfPredicate() { return FString(ANSI_TO_TCHAR(Predicate)); };
+
+	// Get the predicate as FString
+	const FString GetRdfObject() { return FString(ANSI_TO_TCHAR(Object)); };
+
+	// Get the predicate as FString
+	const FString GetRdfValue() { return FString(ANSI_TO_TCHAR(Value)); };
 };
 
 /**
@@ -127,7 +146,13 @@ public:
 		{
 			UE_LOG(SemLogEvent, Error, TEXT(" !! Could not split object %s into namespace and unique name."),
 				*Obj);
-		};
+		}
+		else 
+		{
+			UE_LOG(SemLogEvent, Error, 
+				TEXT(" !! split object %s into namespace %s and unique name %s"),
+				*Obj, *ObjectNamespace, *ObjectUniqueName);
+		}
 		// Namespace +=";";
 	};
 
@@ -153,16 +178,16 @@ public:
 	void AddProperty(FSLOwlTriple Property) { Properties.Add(Property); };
 
 	// Get object
-	FString GetObject() { return Object; };
+	FString GetRdfObject() { return Object; };
 
 	// Get properties
 	TArray<FSLOwlTriple>& GetProperties() { return Properties; };
 
 	// Get object namespace
-	FString GetObjectNamespace() { return ObjectNamespace; };
+	FString GetRdfObjectNamespace() { return ObjectNamespace; };
 
 	// Get object unique name
-	FString GetObjectUniqueName() { return ObjectUniqueName; };
+	FString GetRdfObjectUniqueName() { return ObjectUniqueName; };
 
 	// Add to XML document
 	void AddToDocument(rapidxml::xml_document<>* Doc, rapidxml::xml_node<>* ParentNode)
@@ -228,30 +253,60 @@ public:
 	{
 		if (StartTime > -1.f)
 		{
-			Properties.Add(FSLOwlEventIndividual::CreateTimeProperty(StartTime));
-			bStartPropertySet = true;
+			const FString TimepointStr = "timepoint_" + FString::SanitizeFloat(StartTime);
+			StartTimeProperty = FSLOwlTriple("knowrob:startTime", "rdf:resource",
+				FSLUtils::FStringToChar("&log;" + TimepointStr));
+			Properties.Add(StartTimeProperty);
 		}
-		bStartPropertySet = false;
 
 		if (EndTime > -1.f)
 		{
-			Properties.Add(FSLOwlEventIndividual::CreateTimeProperty(EndTime));
-			bEndPropertySet = true;
+			const FString TimepointStr = "timepoint_" + FString::SanitizeFloat(EndTime);
+			EndTimeProperty = FSLOwlTriple("knowrob:endTime", "rdf:resource",
+				FSLUtils::FStringToChar("&log;" + TimepointStr));
+			Properties.Add(EndTimeProperty);
 		}
-		bEndPropertySet = false;
 	};
 
 	// Set end time
-	void SetStartTime(float NewStartTime) { StartTime = NewStartTime; };
+	void SetStartTime(float NewStartTime) 
+	{
+		if (StartTime < 0.f)
+		{
+			StartTime = NewStartTime;
+			// Append "timepoint_"
+			const FString TimepointStr = "timepoint_" + FString::SanitizeFloat(StartTime);
+			StartTimeProperty = FSLOwlTriple("knowrob:startTime", "rdf:resource",
+				FSLUtils::FStringToChar("&log;" + TimepointStr));
+			Properties.Add(StartTimeProperty);
+		}
+	};
 
 	// Get start time
 	float GetStartTime() { return StartTime; };
+	
+	// Get start time property
+	FSLOwlTriple GetStartTimeProperty() { return StartTimeProperty; };
 
 	// Set end time
-	void SetEndTime(float NewEndTime) { EndTime = NewEndTime; };
+	void SetEndTime(float NewEndTime) 
+	{
+		if (EndTime < 0.f)
+		{
+			EndTime = NewEndTime;
+			// Append "timepoint_"
+			const FString TimepointStr = "timepoint_" + FString::SanitizeFloat(EndTime);
+			EndTimeProperty = FSLOwlTriple("knowrob:endTime", "rdf:resource",
+				FSLUtils::FStringToChar("&log;" + TimepointStr));
+			Properties.Add(EndTimeProperty);
+		}
+	};
 
 	// Get end time
 	float GetEndTime() { return EndTime; };
+
+	// Get end time property
+	FSLOwlTriple GetEndTimeProperty() { return EndTimeProperty; };
 
 
 protected:
@@ -261,22 +316,11 @@ protected:
 	// End time of the event
 	float EndTime;
 
-	// Shows that the start time has been set
-	bool bStartPropertySet;
+	// Start time property
+	FSLOwlTriple StartTimeProperty;
 
-	// Shows that the end time has been set
-	bool bEndPropertySet;
-
-private:
-	// Create time property
-	FORCEINLINE FSLOwlTriple CreateTimeProperty(const float Timestamp)
-	{
-		// Append "timepoint_"
-		const FString TimepointStr = "timepoint_" + FString::SanitizeFloat(Timestamp);
-		// Return triple
-		return FSLOwlTriple("knowrob:startTime", "rdf:resource",
-			FSLUtils::FStringToChar("&log;" + TimepointStr));
-	};
+	// End time property
+	FSLOwlTriple EndTimeProperty;
 };
 
 /**
@@ -300,13 +344,13 @@ public:
 	void AddObject(const FString Property) { Objects.Add(Property); };
 
 	// Get properties
-	TArray<FString>& GetObjects() { return Objects; };
+	TArray<FString>& GetRdfObjects() { return Objects; };
 
 	// Get namespace
-	FString GetSubject() { return Subject; };
+	FString GetRdfSubject() { return Subject; };
 
 	// Get unique name
-	FString GetPredicate() { return Predicate; };
+	FString GetRdfPredicate() { return Predicate; };
 
 	// Add to XML document
 	void AddToDocument(rapidxml::xml_document<>* Doc, rapidxml::xml_node<>* ParentNode)

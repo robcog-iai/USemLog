@@ -5,9 +5,9 @@
 #include "Landscape.h"
 #include "Components/SplineMeshComponent.h"
 #include "SLUtils.h"
-#include "SLRawDataExporter.h"
-#include "SLMapExporter.h"
-#include "SLEventsExporter.h"
+//#include "SLRawDataExporter.h"
+//#include "SLMapExporter.h"
+//#include "SLEventsExporter.h"
 #include "SLManager.h"
 
 // Sets default values
@@ -225,7 +225,7 @@ bool ASLManager::Init()
 	return true;
 }
 
-// Start logging by enabling tick
+// Activate logging
 bool ASLManager::Activate()
 {
 	if (!ASLManager::IsInit() && !ASLManager::IsPaused())
@@ -343,6 +343,23 @@ bool ASLManager::Cancel()
 	ManagerState = ESLManagerState::Cancelled;
 
 	return true;
+}
+
+// Add finished semantic event
+bool ASLManager::AddFinishedSemanticEvent(
+	const FString EventNamespace,
+	const FString EventName,
+	const float StartTime,
+	const float EndTime,
+	const TArray<FSLOwlTriple>& Properties)
+{
+	if (SemEventsExporter && ASLManager::IsActive())
+	{
+		SemEventsExporter->AddFinishedEventIndividual(
+			EventNamespace,	EventName, StartTime, EndTime, Properties);
+		return true;
+	}
+	return false;
 }
 
 // Start logging with delay

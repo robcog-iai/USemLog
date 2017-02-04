@@ -12,16 +12,6 @@
 struct FSLUtils
 {
 public:
-	// Constructor
-	FSLUtils()
-	{
-	};
-
-	// Destructor
-	~FSLUtils()
-	{
-	};
-
 	// Generate random FString
 	static FORCEINLINE FString GenerateRandomFString(const int32 Length)
 	{
@@ -49,6 +39,15 @@ public:
 		//strcpy(cstr, str.c_str());
 		strcpy_s(cstr, str_length + 1, str.c_str());
 		return cstr;
+	}
+
+	// Convert FString to const char*
+	static FORCEINLINE FString CharToFString(const char* CharArr)
+	{
+		const std::string str(CharArr);
+		return FString(str.c_str());
+		//return FString(ANSI_TO_TCHAR(CharArr));
+		//return FString((UTF8_TO_TCHAR(CharArr));
 	}
 
 	// Get the enum value to string

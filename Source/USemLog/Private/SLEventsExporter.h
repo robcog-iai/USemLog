@@ -29,13 +29,15 @@ public:
 
 	// Add finished event
 	void AddFinishedEventIndividual(
-		const FString EventNs,
-		const FString EventName,
+		const FString& EventNs,
+		const FString& EventName,
 		const float StartTime,
 		const float EndTime,
 		const TArray<FSLOwlTriple>& Properties = TArray<FSLOwlTriple>());
 	
-	// TODO StartEventIndividual EndEventIndividual
+	// TODO 
+	// BeginEventIndividual
+	// EndEventIndividual
 
 	// Enable listening to events
 	void SetListenToEvents(bool bListen) {bListenToEvents = bListen;}
@@ -62,6 +64,12 @@ private:
 	// Get the timepoint with namespace
 	FORCEINLINE const FString GetAsKnowrobTs(const float Timestamp);
 
+	// Create time object
+	FSLOwlObjectIndividual* CreateTimeIndividual(const FString TimeObject);
+
+	// Check for designators in the properties
+	void CheckForCRAMDesignators(const TArray<FSLOwlTriple>& Properties);
+
 	// Episode unique tag
 	FString EpisodeUniqueTag;
 
@@ -85,4 +93,5 @@ private:
 
 	// Unique objects individuals map
 	TMap<FString, FSLOwlObjectIndividual*> ObjIndividualsMap;
+
 };

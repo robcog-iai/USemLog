@@ -5,6 +5,7 @@
 #include "Private/SLRawDataExporter.h"
 #include "Private/SLMapExporter.h"
 #include "Private/SLEventsExporter.h"
+#include "Private/SLOwlUtils.h"
 #include "SLManager.generated.h"
 
 UENUM()
@@ -93,7 +94,17 @@ public:
 	bool IsCancelled() { return ManagerState == ESLManagerState::Cancelled; };
 
 	// Get semantic events exporter
+	// TODO rm, or check linking issues
 	class FSLEventsExporter* GetEventsExporter() { return SemEventsExporter; };
+
+	// Add finished semantic event
+	//UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
+	bool AddFinishedSemanticEvent(
+		const FString EventNamespace,
+		const FString EventName,
+		const float StartTime,
+		const float EndTime,
+		const TArray<FSLOwlTriple>& Properties = TArray<FSLOwlTriple>());
 
 private:
 	// Start logging with delay
@@ -178,13 +189,13 @@ private:
 	FString RoadUniqueName;
 
 	// Raw data exporter
-	class FSLRawDataExporter* RawDataExporter;
+	FSLRawDataExporter* RawDataExporter;
 
 	// Semantic map exporter
-	class FSLMapExporter* SemMapExporter;
+	FSLMapExporter* SemMapExporter;
 
 	// Semantic events exporter
-	class FSLEventsExporter* SemEventsExporter;
+	FSLEventsExporter* SemEventsExporter;
 
 	// Level path
 	FString LevelPath;

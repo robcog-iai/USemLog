@@ -63,7 +63,7 @@ void FSLMapExporter::WriteSemanticMap(
 }
 
 // Add the semantic map document declaration
-inline void FSLMapExporter::AddDoctype(rapidxml::xml_document<>* SemMapDoc)
+FORCEINLINE void FSLMapExporter::AddDoctype(rapidxml::xml_document<>* SemMapDoc)
 {
 	///////// TYPE DECLARATION
 	// Create declaration node <?xml version="1.0" encoding="utf-8"?>
@@ -93,7 +93,7 @@ inline void FSLMapExporter::AddDoctype(rapidxml::xml_document<>* SemMapDoc)
 }
 
 // Add rdf node attributes
-inline void FSLMapExporter::AddRDFAttribures(rapidxml::xml_document<>* SemMapDoc,
+FORCEINLINE void FSLMapExporter::AddRDFAttribures(rapidxml::xml_document<>* SemMapDoc,
 	rapidxml::xml_node<>* RDFNode)
 {
 	// Add attributes
@@ -118,7 +118,7 @@ inline void FSLMapExporter::AddRDFAttribures(rapidxml::xml_document<>* SemMapDoc
 }
 
 // Import ontologies
-inline void FSLMapExporter::AddOntologies(rapidxml::xml_document<>* SemMapDoc,
+FORCEINLINE void FSLMapExporter::AddOntologies(rapidxml::xml_document<>* SemMapDoc,
 	rapidxml::xml_node<>* RDFNode)
 {
 	FSLUtils::AddNodeComment(SemMapDoc, RDFNode, "Ontologies");
@@ -132,7 +132,7 @@ inline void FSLMapExporter::AddOntologies(rapidxml::xml_document<>* SemMapDoc,
 }
 
 // Add general definitions
-inline void FSLMapExporter::AddGeneralDefinitions(rapidxml::xml_document<>* SemMapDoc,
+FORCEINLINE void FSLMapExporter::AddGeneralDefinitions(rapidxml::xml_document<>* SemMapDoc,
 	rapidxml::xml_node<>* RDFNode)
 {
 	// Object property definitions
@@ -170,7 +170,7 @@ inline void FSLMapExporter::AddGeneralDefinitions(rapidxml::xml_document<>* SemM
 }
 
 // Add semantic map individual
-inline void FSLMapExporter::AddMapIndividual(
+FORCEINLINE void FSLMapExporter::AddMapIndividual(
 	rapidxml::xml_document<>* SemMapDoc,
 	rapidxml::xml_node<>* RDFNode,
 	const FString& RoadUniqueName,
@@ -212,7 +212,7 @@ inline void FSLMapExporter::AddMapIndividual(
 }
 
 // Add map event individuals
-inline void FSLMapExporter::AddAllMapEventIndividuals(
+FORCEINLINE void FSLMapExporter::AddAllMapEventIndividuals(
 	rapidxml::xml_document<>* SemMapDoc,
 	rapidxml::xml_node<>* RDFNode, 
 	const TMap<AActor*, FString>& ActToUniqueName,
