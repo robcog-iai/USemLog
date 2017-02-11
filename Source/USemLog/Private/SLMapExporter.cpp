@@ -128,7 +128,8 @@ FORCEINLINE void FSLMapExporter::AddOntologies(rapidxml::xml_document<>* SemMapD
 	// Create entity node with ontologies as properties
 	TArray<FSLUtils::SLOwlTriple> Ontologies;
 	Ontologies.Add(FSLUtils::SLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
-	Ontologies.Add(FSLUtils::SLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_u.owl"));
+	//Ontologies.Add(FSLUtils::SLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_u.owl"));
+	Ontologies.Add(FSLUtils::SLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_sherpa.owl"));
 	FSLUtils::AddNodeEntityWithProperties(SemMapDoc, RDFNode,
 		FSLUtils::SLOwlTriple("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl"),
 		Ontologies);
@@ -281,10 +282,10 @@ FORCEINLINE const FString FSLMapExporter::AddAllMapEventIndividuals(
 
 			// Add the individual
 			FSLMapExporter::AddMapIndividual(SemMapDoc, RDFNode, Loc, Quat, BoundingBox, CompClassName, BodyUniqueName);
-		
+
 			CSVString.Append(BodyUniqueName + "," 
 				+ FString::SanitizeFloat(Loc.X) + "," 
-				+ FString::SanitizeFloat(Loc.Y) + ","
+				+ FString::SanitizeFloat(-Loc.Y) + ","
 				+ FString::SanitizeFloat(Loc.Z) + "\n");
 		}
 	}

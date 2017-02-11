@@ -106,6 +106,13 @@ public:
 		const float EndTime,
 		const TArray<FSLOwlTriple>& Properties = TArray<FSLOwlTriple>());
 
+	// Add object individual
+	//UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
+	bool AddObjectIndividual(
+		const FString EventNamespace,
+		const FString EventName,
+		const TArray<FSLOwlTriple>& Properties = TArray<FSLOwlTriple>());
+
 private:
 	// Start logging with delay
 	void StartLoggingWithDelay();

@@ -44,6 +44,8 @@ ASLManager::ASLManager()
 
 	// Set the manager state to un initialized
 	ManagerState = ESLManagerState::UnInit;
+
+	bNetLoadOnClient = false;
 }
 
 // Actor initialization, log items init, called before BeginPlay
@@ -357,6 +359,21 @@ bool ASLManager::AddFinishedSemanticEvent(
 	{
 		SemEventsExporter->AddFinishedEventIndividual(
 			EventNamespace,	EventName, StartTime, EndTime, Properties);
+		return true;
+	}
+	return false;
+}
+
+// Add object individual
+bool ASLManager::AddObjectIndividual(
+	const FString EventNamespace,
+	const FString EventName,
+	const TArray<FSLOwlTriple>& Properties)
+{
+	if (SemEventsExporter && ASLManager::IsActive())
+	{
+		SemEventsExporter->AddObjectIndividual(
+			EventNamespace, EventName, Properties);
 		return true;
 	}
 	return false;

@@ -149,6 +149,9 @@ void FSLEventsExporter::AddObjectIndividual(
 		ObjNamespace, ObjUniqueName, Properties);
 	// Add event to the finished events array
 	ObjIndividualsMap.Add(ObjUniqueName, ObjIndividual);
+
+	// Check for CRAMDesignators
+	FSLEventsExporter::CheckForCRAMDesignators(Properties);
 }
 
 // Add generic event with array of properties
