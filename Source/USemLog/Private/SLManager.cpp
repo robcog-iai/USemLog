@@ -353,12 +353,13 @@ bool ASLManager::AddFinishedSemanticEvent(
 	const FString EventName,
 	const float StartTime,
 	const float EndTime,
+	bool bGenerateUniqueIdentifier,
 	const TArray<FSLOwlTriple>& Properties)
 {
 	if (SemEventsExporter && ASLManager::IsActive())
 	{
 		SemEventsExporter->AddFinishedEventIndividual(
-			EventNamespace,	EventName, StartTime, EndTime, Properties);
+			EventNamespace,	EventName, StartTime, EndTime, bGenerateUniqueIdentifier, Properties);
 		return true;
 	}
 	return false;
@@ -368,12 +369,13 @@ bool ASLManager::AddFinishedSemanticEvent(
 bool ASLManager::AddObjectIndividual(
 	const FString EventNamespace,
 	const FString EventName,
+	bool bGenerateUniqueIdentifier,
 	const TArray<FSLOwlTriple>& Properties)
 {
 	if (SemEventsExporter && ASLManager::IsActive())
 	{
 		SemEventsExporter->AddObjectIndividual(
-			EventNamespace, EventName, Properties);
+			EventNamespace, EventName, bGenerateUniqueIdentifier, Properties);
 		return true;
 	}
 	return false;

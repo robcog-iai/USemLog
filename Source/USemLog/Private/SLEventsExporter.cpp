@@ -49,7 +49,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	FSLOwlObjectIndividual* OntologiesF = new FSLOwlObjectIndividual(
 		"owl:Ontology", "rdf:about", "http://knowrob.org/kb/unreal_log.owl");
 	OntologiesF->AddProperty(FSLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
-	OntologiesF->AddProperty(FSLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob_u.owl"));
+	//OntologiesF->AddProperty(FSLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob_u.owl"));
 	OntologiesF->AddProperty(FSLOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/sherpa.owl"));
 	OntologiesF->AddToDocument(EventsDoc, RDFNode);
 	
@@ -62,23 +62,23 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 	PropertyDefinitions->AddObject("&knowrob;startTime");
 	PropertyDefinitions->AddObject("&knowrob;endTime");
 	PropertyDefinitions->AddObject("&knowrob;experiment");
-	PropertyDefinitions->AddObject("&knowrob_u;inContact");
-	PropertyDefinitions->AddObject("&knowrob_u;semanticMap");
-	PropertyDefinitions->AddObject("&knowrob_u;rating");
+	//PropertyDefinitions->AddObject("&knowrob_u;inContact");
+	//PropertyDefinitions->AddObject("&knowrob_u;semanticMap");
+	//PropertyDefinitions->AddObject("&knowrob_u;rating");
 	PropertyDefinitions->AddToDocument(EventsDoc, RDFNode);
 
 	// Class definitions
 	AddNodeComment(EventsDoc, RDFNode, "Class Definitions");
 	FSLOwlDefinitions* ClassDefinitions = new FSLOwlDefinitions("owl:Class", "rdf:about");
 	ClassDefinitions->AddObject("&knowrob;GraspingSomething");
-	ClassDefinitions->AddObject("&knowrob_u;UnrealExperiment");
-	ClassDefinitions->AddObject("&knowrob_u;TouchingSituation");
-	ClassDefinitions->AddObject("&knowrob_u;KitchenEpisode");
-	ClassDefinitions->AddObject("&knowrob_u;ParticleTranslation");
-	ClassDefinitions->AddObject("&knowrob_u;FurnitureStateClosed");
-	ClassDefinitions->AddObject("&knowrob_u;FurnitureStateHalfClosed");
-	ClassDefinitions->AddObject("&knowrob_u;FurnitureStateOpened");
-	ClassDefinitions->AddObject("&knowrob_u;FurnitureStateHalfOpened");
+	//ClassDefinitions->AddObject("&knowrob_u;UnrealExperiment");
+	//ClassDefinitions->AddObject("&knowrob_u;TouchingSituation");
+	//ClassDefinitions->AddObject("&knowrob_u;KitchenEpisode");
+	//ClassDefinitions->AddObject("&knowrob_u;ParticleTranslation");
+	//ClassDefinitions->AddObject("&knowrob_u;FurnitureStateClosed");
+	//ClassDefinitions->AddObject("&knowrob_u;FurnitureStateHalfClosed");
+	//ClassDefinitions->AddObject("&knowrob_u;FurnitureStateOpened");
+	//ClassDefinitions->AddObject("&knowrob_u;FurnitureStateHalfOpened");
 	ClassDefinitions->AddToDocument(EventsDoc, RDFNode);
 
 	///////// EVENT INDIVIDUALS
@@ -135,6 +135,7 @@ void FSLEventsExporter::WriteEvents(const FString Path, const float Timestamp, b
 void FSLEventsExporter::AddObjectIndividual(
 	const FString ObjNamespace,
 	const FString ObjName,
+	bool bGenerateUniqueIdentifier,
 	const TArray<FSLOwlTriple>& Properties)
 {
 	if (!bListenToEvents)
@@ -143,7 +144,12 @@ void FSLEventsExporter::AddObjectIndividual(
 	}
 
 	// Create unique name of the event
-	const FString ObjUniqueName = ObjName + "_" + FSLUtils::GenerateRandomFString(4);
+	FString ObjUniqueName = ObjName;
+	if (bGenerateUniqueIdentifier)
+	{
+		ObjUniqueName += "_" + FSLUtils::GenerateRandomFString(4);
+	}
+
 	// Init generic event
 	FSLOwlObjectIndividual* ObjIndividual = new FSLOwlObjectIndividual(
 		ObjNamespace, ObjUniqueName, Properties);
@@ -151,7 +157,7 @@ void FSLEventsExporter::AddObjectIndividual(
 	ObjIndividualsMap.Add(ObjUniqueName, ObjIndividual);
 
 	// Check for CRAMDesignators
-	FSLEventsExporter::CheckForCRAMDesignators(Properties);
+	//FSLEventsExporter::CheckForCRAMDesignators(Properties);
 }
 
 // Add generic event with array of properties
@@ -160,6 +166,7 @@ void FSLEventsExporter::AddFinishedEventIndividual(
 	const FString& EventName,
 	const float StartTime,
 	const float EndTime,
+	bool bGenerateUniqueIdentifier,
 	const TArray<FSLOwlTriple>& Properties)
 {
 	if (!bListenToEvents)
@@ -168,7 +175,11 @@ void FSLEventsExporter::AddFinishedEventIndividual(
 	}
 
 	// Create unique name of the event
-	const FString EventUniqueName = EventName + "_" + FSLUtils::GenerateRandomFString(4);
+	FString EventUniqueName = EventName;
+	if (bGenerateUniqueIdentifier)
+	{
+		EventUniqueName += "_" + FSLUtils::GenerateRandomFString(4);
+	}
 	// Init event
 	FSLOwlEventIndividual* Event = new FSLOwlEventIndividual(
 		EventNs, EventUniqueName, StartTime, EndTime, Properties);
@@ -183,7 +194,7 @@ void FSLEventsExporter::AddFinishedEventIndividual(
 	ObjIndividualsMap.Add(EndTimeObj, FSLEventsExporter::CreateTimeIndividual(EndTimeObj));
 
 	// Check for CRAMDesignators
-	FSLEventsExporter::CheckForCRAMDesignators(Properties);
+	//FSLEventsExporter::CheckForCRAMDesignators(Properties);
 }
 
 // Terminate all dangling events
@@ -344,7 +355,7 @@ void FSLEventsExporter::AddDocumentDeclarations(rapidxml::xml_document<>* Doc)
 		"\t<!ENTITY owl \"http://www.w3.org/2002/07/owl\">\n"
 		"\t<!ENTITY xsd \"http://www.w3.org/2001/XMLSchema#\">\n"
 		"\t<!ENTITY knowrob \"http://knowrob.org/kb/knowrob.owl#\">\n"
-		"\t<!ENTITY knowrob_u \"http://knowrob.org/kb/knowrob_u.owl#\">\n"
+		//"\t<!ENTITY knowrob_u \"http://knowrob.org/kb/knowrob_u.owl#\">\n"
 		"\t<!ENTITY log \"http://knowrob.org/kb/unreal_log.owl#\">\n"
 		"\t<!ENTITY u-map \"http://knowrob.org/kb/u_map.owl#\">\n"
 		"]";
@@ -370,8 +381,8 @@ void FSLEventsExporter::AddRDFNodeAttributes(rapidxml::xml_document<>* Doc, rapi
 		"xmlns:owl", "http://www.w3.org/2002/07/owl#");
 	AddNodeAttribute(Doc, RDFNode,
 		"xmlns:knowrob", "http://knowrob.org/kb/knowrob.owl#");
-	AddNodeAttribute(Doc, RDFNode,
-		"xmlns:knowrob_u", "http://knowrob.org/kb/knowrob_u.owl#");
+	//AddNodeAttribute(Doc, RDFNode,
+	//	"xmlns:knowrob_u", "http://knowrob.org/kb/knowrob_u.owl#");
 	AddNodeAttribute(Doc, RDFNode,
 		"xmlns:u-map", "http://knowrob.org/kb/u_map.owl#");
 	AddNodeAttribute(Doc, RDFNode,

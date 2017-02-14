@@ -104,6 +104,7 @@ public:
 		const FString EventName,
 		const float StartTime,
 		const float EndTime,
+		bool bGenerateUniqueIdentifier = true,
 		const TArray<FSLOwlTriple>& Properties = TArray<FSLOwlTriple>());
 
 	// Add object individual
@@ -111,6 +112,7 @@ public:
 	bool AddObjectIndividual(
 		const FString EventNamespace,
 		const FString EventName,
+		bool bGenerateUniqueIdentifier = true,
 		const TArray<FSLOwlTriple>& Properties = TArray<FSLOwlTriple>());
 
 private:
