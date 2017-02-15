@@ -72,6 +72,9 @@ private:
 	// Check for designators in the properties
 	void CheckForCRAMDesignators(const TArray<FSLOwlTriple>& Properties);
 
+	// Check for timestamps
+	void CheckForTimestamps(const TArray<FSLOwlTriple>& Properties);
+
 	// Episode unique tag
 	FString EpisodeUniqueTag;
 

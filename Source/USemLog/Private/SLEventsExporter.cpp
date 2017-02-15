@@ -157,7 +157,7 @@ void FSLEventsExporter::AddObjectIndividual(
 	ObjIndividualsMap.Add(ObjUniqueName, ObjIndividual);
 
 	// Check for CRAMDesignators
-	//FSLEventsExporter::CheckForCRAMDesignators(Properties);
+	FSLEventsExporter::CheckForTimestamps(Properties);
 }
 
 // Add generic event with array of properties
@@ -296,6 +296,21 @@ void FSLEventsExporter::CheckForCRAMDesignators(const TArray<FSLOwlTriple>& Prop
 			FString Obj = PropItr.GetRdfObject();
 			ObjIndividualsMap.Add(Obj, new FSLOwlObjectIndividual(Obj,
 				TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;CRAMDesignator")}));
+		}
+	}
+}
+
+// Check for timestamps
+void FSLEventsExporter::CheckForTimestamps(const TArray<FSLOwlTriple>& Properties)
+{
+	for (auto PropItr : Properties)
+	{
+		FString Sub = PropItr.GetRdfSubject();
+		if (Sub.Contains("Time"))
+		{
+			FString Obj = PropItr.GetRdfObject();
+			ObjIndividualsMap.Add(Obj, new FSLOwlObjectIndividual(Obj,
+				TArray<FSLOwlTriple>{FSLOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint")}));
 		}
 	}
 }
