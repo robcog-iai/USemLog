@@ -13,8 +13,11 @@ static FORCEINLINE const char* FStringToChar(const FString FStr)
 	const std::string str = TCHAR_TO_UTF8(*FStr);
 	const size_t str_length = str.length() + 1;
 	char *cstr = new char[str_length];
-	//strcpy(cstr, str.c_str());
-	strcpy_s(cstr, str_length + 1, str.c_str());
+	#if PLATFORM_LINUX
+	  strcpy(cstr, str.c_str());
+	#elif PLATFORM_WINDOWS
+	  strcpy_s(cstr, str_length + 1, str.c_str());
+	#endif
 	return cstr;
 }
 
