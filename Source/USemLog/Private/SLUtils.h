@@ -38,7 +38,7 @@ public:
 		char *cstr = new char[str_length];
 		#if PLATFORM_LINUX
 		  strcpy(cstr, str.c_str());
-		#elif PLATFORM_WINDOSW
+		#elif PLATFORM_WINDOWS
 		  strcpy_s(cstr, str_length + 1, str.c_str());
 		#endif
 		return cstr;
