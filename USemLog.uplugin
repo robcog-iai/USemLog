@@ -1,25 +1,28 @@
 {
-	"FileVersion" : 3,
-	"Version" : 1,
-	"VersionName" : "1.0",
-	"FriendlyName" : "Semantic Logger",
-	"Description" : "Semantic logger plugin for openease.org",
-	"Category" : "Semantic Logger",
-	"CreatedBy" : "Andrei Haidu",
-	"CreatedByURL" : "http://ai.uni-bremen.de/team/andrei_haidu",
-	"DocsURL" : "",
-	"MarketplaceURL" : "",
-	"SupportURL" : "",
-	"EnabledByDefault" : false,
-	"CanContainContent" : false,
-	"IsBetaVersion" : false,
-	"Installed" : false,
-	"Modules" :
-	[
-		{
-			"Name" : "USemLog",
-			"Type" : "Runtime",
-			"LoadingPhase" : "PreDefault"
-		}
-	]
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "1.0",
+  "FriendlyName": "Semantic Logger",
+  "Description": "KnowRob/openEASE semantic logger.",
+  "Category": "Semantic Logger",
+  "CreatedBy": "Andrei Haidu",
+  "CreatedByURL": "http://haidu.eu",
+  "DocsURL": "",
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "EnabledByDefault": false,
+  "CanContainContent": false,
+  "IsBetaVersion": false,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "USemLog",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault"
+    },
+    {
+      "Name": "SemLogEditor",
+      "Type": "Editor"
+    }
+  ]
 }
