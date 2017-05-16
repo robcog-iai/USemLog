@@ -18,10 +18,10 @@
     {
       "Name": "USemLog",
       "Type": "Runtime",
-      "LoadingPhase": "PreDefault"
+      "LoadingPhase": "Default"
     },
     {
-      "Name": "SemLogEditor",
+      "Name": "USemLogEd",
       "Type": "Editor"
     }
   ]

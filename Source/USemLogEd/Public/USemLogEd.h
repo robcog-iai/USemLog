@@ -5,7 +5,7 @@
 
 #include "ModuleManager.h"
 
-class FUSemLogModule : public IModuleInterface
+class FUSemLogEdModule : public IModuleInterface
 {
 public:
 

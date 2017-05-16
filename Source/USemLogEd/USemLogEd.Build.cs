@@ -2,14 +2,14 @@
 
 using UnrealBuildTool;
 
-public class USemLog : ModuleRules
+public class USemLogEd : ModuleRules
 {
-	public USemLog(TargetInfo Target)
+	public USemLogEd(TargetInfo Target)
 	{
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
-				"USemLog/Public"
+				"USemLogEd/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -17,7 +17,7 @@ public class USemLog : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"USemLog/Private",
+				"USemLogEd/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -39,6 +39,9 @@ public class USemLog : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"InputCore",
+				"UnrealEd",
+				"LevelEditor",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
