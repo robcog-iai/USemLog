@@ -15,6 +15,11 @@ void FUSemLogEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost
 {
 	struct Locals
 	{
+		static bool IsAnythingSelected()
+		{			
+			return GEditor->GetSelectedActors()->Num() != 0;
+		}
+
 		static bool IsWidgetEnabled()
 		{
 			// GEditor->GetSelectedActors()->Num() != 0;
@@ -54,7 +59,34 @@ void FUSemLogEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost
 				.OnClicked_Static(&Locals::OnButtonClick, InOffset);
 		}
 
-		static FReply OnShowTagsButtonClick()
+		static FReply OnShowAllObjectsTagsButtonClick()
+		{
+			USelection* SelectedActors = GEditor->GetSelectedActors();
+
+			// Let editor know that we're about to do something that we want to undo/redo
+			GEditor->BeginTransaction(LOCTEXT("MoveActorsTransactionName", "MoveActors"));
+
+			// For each selected actor
+			for (FSelectionIterator Iter(*SelectedActors); Iter; ++Iter)
+			{
+				if (AActor* LevelActor = Cast<AActor>(*Iter))
+				{
+					// Register actor in opened transaction (undo/redo)
+					LevelActor->Modify();
+					// Draw debug
+					LevelActor->DrawDebugComponents();
+					// Move actor to given location
+					//LevelActor->TeleportTo(LevelActor->GetActorLocation() + InOffset, FRotator(0, 0, 0));
+				}
+			}
+
+			// We're done moving actors so close transaction
+			GEditor->EndTransaction();
+
+			return FReply::Handled();
+		}
+
+		static FReply OnShowSelectedObjectsTagsButtonClick()
 		{
 			USelection* SelectedActors = GEditor->GetSelectedActors();
 
