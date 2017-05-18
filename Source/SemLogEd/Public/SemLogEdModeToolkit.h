@@ -6,11 +6,11 @@
 #include "Editor/UnrealEd/Public/Toolkits/BaseToolkit.h"
 
 
-class FUSemLogEdModeToolkit : public FModeToolkit
+class FSemLogEdModeToolkit : public FModeToolkit
 {
 public:
 
-	FUSemLogEdModeToolkit();
+	FSemLogEdModeToolkit();
 	
 	/** FModeToolkit interface */
 	virtual void Init(const TSharedPtr<IToolkitHost>& InitToolkitHost) override;

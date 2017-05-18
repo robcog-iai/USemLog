@@ -1,15 +1,16 @@
-// Copyright 2017, Institute for Artificial Intelligence - University of Bremen, Author: Andrei Haidu (http://haidu.eu)
+// Copyright 2017, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
 
 using UnrealBuildTool;
 
-public class USemLogEd : ModuleRules
+public class SemLog : ModuleRules
 {
-	public USemLogEd(TargetInfo Target)
+	public SemLog(TargetInfo Target)
 	{
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
-				"USemLogEd/Public"
+				"SemLog/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -17,7 +18,7 @@ public class USemLogEd : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"USemLogEd/Private",
+				"SemLog/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -39,9 +40,6 @@ public class USemLogEd : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"InputCore",
-				"UnrealEd",
-				"LevelEditor",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

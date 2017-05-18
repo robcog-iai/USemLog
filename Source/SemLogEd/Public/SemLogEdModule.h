@@ -4,8 +4,12 @@
 #pragma once
 
 #include "ModuleManager.h"
+#include "Modules/ModuleInterface.h"
 
-class FUSemLogEdModule : public IModuleInterface
+// Declare log types
+DECLARE_LOG_CATEGORY_EXTERN(SemLogEd, All, All);
+
+class FSemLogEdModule : public IModuleInterface
 {
 public:
 

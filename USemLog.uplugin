@@ -11,17 +11,17 @@
   "MarketplaceURL": "",
   "SupportURL": "",
   "EnabledByDefault": false,
-  "CanContainContent": false,
+  "CanContainContent": true,
   "IsBetaVersion": false,
   "Installed": false,
   "Modules": [
     {
-      "Name": "USemLog",
+      "Name": "SemLog",
       "Type": "Runtime",
       "LoadingPhase": "Default"
     },
     {
-      "Name": "USemLogEd",
+      "Name": "SemLogEd",
       "Type": "Editor"
     }
   ]

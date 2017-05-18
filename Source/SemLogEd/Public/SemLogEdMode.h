@@ -6,13 +6,13 @@
 #include "UnrealEd.h" 
 #include "Editor.h"
 
-class FUSemLogEdMode : public FEdMode
+class FSemLogEdMode : public FEdMode
 {
 public:
-	const static FEditorModeID EM_USemLogEdModeId;
+	const static FEditorModeID EM_SemLogEdModeId;
 public:
-	FUSemLogEdMode();
-	virtual ~FUSemLogEdMode();
+	FSemLogEdMode();
+	virtual ~FSemLogEdMode();
 
 	// FEdMode interface
 	virtual void Enter() override;

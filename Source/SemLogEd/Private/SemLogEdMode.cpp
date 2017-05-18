@@ -1,37 +1,37 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "USemLogEd.h"
-#include "USemLogEdMode.h"
-#include "USemLogEdModeToolkit.h"
+#include "SemLogEdModule.h"
+#include "SemLogEdMode.h"
+#include "SemLogEdModeToolkit.h"
 #include "Toolkits/ToolkitManager.h"
 
-const FEditorModeID FUSemLogEdMode::EM_USemLogEdModeId = TEXT("EM_USemLogEdMode");
+const FEditorModeID FSemLogEdMode::EM_SemLogEdModeId = TEXT("EM_SemLogEdMode");
 
-FUSemLogEdMode::FUSemLogEdMode()
+FSemLogEdMode::FSemLogEdMode()
 {
 
 }
 
-FUSemLogEdMode::~FUSemLogEdMode()
+FSemLogEdMode::~FSemLogEdMode()
 {
 
 }
 
-void FUSemLogEdMode::Enter()
+void FSemLogEdMode::Enter()
 {
 	FEdMode::Enter();
 
 	if (!Toolkit.IsValid() && UsesToolkits())
 	{
-		Toolkit = MakeShareable(new FUSemLogEdModeToolkit);
+		Toolkit = MakeShareable(new FSemLogEdModeToolkit);
 		Toolkit->Init(Owner->GetToolkitHost());
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT(" ** USemLogEd Enter"));
+	UE_LOG(LogTemp, Warning, TEXT(" ** SemLogEd Enter"));
 }
 
-void FUSemLogEdMode::Exit()
+void FSemLogEdMode::Exit()
 {
 	if (Toolkit.IsValid())
 	{
@@ -42,10 +42,10 @@ void FUSemLogEdMode::Exit()
 	// Call base Exit method to ensure proper cleanup
 	FEdMode::Exit();
 
-	UE_LOG(LogTemp, Warning, TEXT(" ** USemLogEd Exit"));
+	UE_LOG(LogTemp, Warning, TEXT(" ** SemLogEd Exit"));
 }
 
-bool FUSemLogEdMode::UsesToolkits() const
+bool FSemLogEdMode::UsesToolkits() const
 {
 	return true;
 }
