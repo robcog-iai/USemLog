@@ -43,7 +43,6 @@ void FSemLogEdStyle::Initialize()
 
 	// Style
 	{
-		//StyleSet->Set("LevelEditor.BoxelMode", new FSlateImageBrush(FPluginStyle::InContent("icon_Mode_Boxel_selected_40x", ".png"), Icon40x40));
 		StyleSet->Set("LevelEditor.SemLogEd", new IMAGE_PLUGIN_BRUSH("Icons/icon_Mode_SemLog_40px", Icon40x40));
 		StyleSet->Set("LevelEditor.SemLogEd.Small", new IMAGE_PLUGIN_BRUSH("Icons/icon_Mode_SemLog_40px", Icon20x20));
 	}

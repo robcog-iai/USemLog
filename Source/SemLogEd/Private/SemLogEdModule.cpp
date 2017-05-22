@@ -19,8 +19,6 @@ void FSemLogEdModule::StartupModule()
 	FEditorModeRegistry::Get().RegisterMode<FSemLogEdMode>(
 		FSemLogEdMode::EM_SemLogEdModeId, 
 		LOCTEXT("SemLogEdModeName", "Semantic Logger"), 
-		//FSlateIcon(), 
-		//FSlateIcon(FEditorStyle::GetStyleSetName(), "LevelEditor.LandscapeMode", "LevelEditor.LandscapeMode.Small"),
 		FSlateIcon(FSemLogEdStyle::Get()->GetStyleSetName(), "LevelEditor.SemLogEd", "LevelEditor.SemLogEd.Small"),
 		true);
 }
