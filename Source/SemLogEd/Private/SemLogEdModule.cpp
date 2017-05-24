@@ -14,12 +14,13 @@ void FSemLogEdModule::StartupModule()
 {
 	// Register slate style overrides
 	FSemLogEdStyle::Initialize();
+	FSemLogEdStyle::ReloadTextures();
 
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	FEditorModeRegistry::Get().RegisterMode<FSemLogEdMode>(
 		FSemLogEdMode::EM_SemLogEdModeId, 
 		LOCTEXT("SemLogEdModeName", "Semantic Logger"), 
-		FSlateIcon(FSemLogEdStyle::Get()->GetStyleSetName(), "LevelEditor.SemLogEd", "LevelEditor.SemLogEd.Small"),
+		FSlateIcon(FSemLogEdStyle::Get().GetStyleSetName(), "LevelEditor.SemLogEd", "LevelEditor.SemLogEd.Small"),
 		true);
 }
 

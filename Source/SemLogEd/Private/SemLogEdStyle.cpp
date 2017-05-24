@@ -3,21 +3,32 @@
 
 #include "SemLogEdModule.h"
 #include "SemLogEdStyle.h"
+#include "SlateGameResources.h"
+#include "IPluginManager.h"
+
 #include "Styling/SlateTypes.h"
 #include "Interfaces/IPluginManager.h"
 
+TSharedPtr< FSlateStyleSet > FSemLogEdStyle::StyleSetInstance = NULL;
 
-#define IMAGE_PLUGIN_BRUSH( RelativePath, ... ) FSlateImageBrush( FSemLogEdStyle::InContent( RelativePath, ".png" ), __VA_ARGS__ )
-#define IMAGE_BRUSH(RelativePath, ...) FSlateImageBrush(StyleSet->RootToContentDir(RelativePath, TEXT(".png")), __VA_ARGS__)
-
-FString FSemLogEdStyle::InContent(const FString& RelativePath, const ANSICHAR* Extension)
+void FSemLogEdStyle::Initialize()
 {
-	static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("USemLog"))->GetContentDir();
-	return (ContentDir / RelativePath) + Extension;
-}
+	if (!StyleSetInstance.IsValid())
+	{
+		StyleSetInstance = Create();
+		FSlateStyleRegistry::RegisterSlateStyle(*StyleSetInstance);
+	}
+};
 
-TSharedPtr< FSlateStyleSet > FSemLogEdStyle::StyleSet = NULL;
-TSharedPtr< class ISlateStyle > FSemLogEdStyle::Get() { return StyleSet; }
+void FSemLogEdStyle::Shutdown()
+{
+	if (StyleSetInstance.IsValid())
+	{
+		FSlateStyleRegistry::UnRegisterSlateStyle(*StyleSetInstance);
+		ensure(StyleSetInstance.IsUnique());
+		StyleSetInstance.Reset();
+	}
+}
 
 FName FSemLogEdStyle::GetStyleSetName()
 {
@@ -25,42 +36,33 @@ FName FSemLogEdStyle::GetStyleSetName()
 	return SemLogStyleName;
 }
 
-BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
+#define IMAGE_BRUSH(RelativePath, ...) FSlateImageBrush(Style->RootToContentDir(RelativePath, TEXT(".png")), __VA_ARGS__)
 
-void FSemLogEdStyle::Initialize()
+const FVector2D Icon20x20(20.0f, 20.0f);
+const FVector2D Icon40x40(40.0f, 40.0f);
+
+TSharedRef< FSlateStyleSet > FSemLogEdStyle::Create()
 {
-	// Const icon sizes
-	const FVector2D Icon20x20(20.0f, 20.0f);
-	const FVector2D Icon40x40(40.0f, 40.0f);
+	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet(GetStyleSetName()));
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin(TEXT("USemLog"))->GetContentDir());
 
-	// Only register once
-	if (StyleSet.IsValid())
-	{
-		return;
-	}
+	Style->Set("LevelEditor.SemLogEd", new IMAGE_BRUSH(TEXT("Icons/icon_Mode_SemLog_40px"), Icon40x40));
+	Style->Set("LevelEditor.SemLogEd.Small", new IMAGE_BRUSH(TEXT("Icons/icon_Mode_SemLog_40px"), Icon20x20));
 
-	StyleSet = MakeShareable(new FSlateStyleSet(GetStyleSetName()));
+	return Style;
+}
 
-	// Style
-	{
-		StyleSet->Set("LevelEditor.SemLogEd", new IMAGE_PLUGIN_BRUSH("Icons/icon_Mode_SemLog_40px", Icon40x40));
-		StyleSet->Set("LevelEditor.SemLogEd.Small", new IMAGE_PLUGIN_BRUSH("Icons/icon_Mode_SemLog_40px", Icon20x20));
-	}
-
-	FSlateStyleRegistry::RegisterSlateStyle(*StyleSet.Get());
-};
-
-END_SLATE_FUNCTION_BUILD_OPTIMIZATION
-
-#undef IMAGE_PLUGIN_BRUSH
 #undef IMAGE_BRUSH
 
-void FSemLogEdStyle::Shutdown()
+void FSemLogEdStyle::ReloadTextures()
 {
-	if (StyleSet.IsValid())
+	if (FSlateApplication::IsInitialized())
 	{
-		FSlateStyleRegistry::UnRegisterSlateStyle(*StyleSet.Get());
-		ensure(StyleSet.IsUnique());
-		StyleSet.Reset();
+		FSlateApplication::Get().GetRenderer()->ReloadTextureResources();
 	}
+}
+
+const ISlateStyle& FSemLogEdStyle::Get()
+{
+	return *StyleSetInstance;
 }

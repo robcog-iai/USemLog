@@ -3,9 +3,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "Styling/ISlateStyle.h"
-#include "Styling/SlateStyle.h"
+#include "SlateBasics.h"
 
 class FSemLogEdStyle
 {
@@ -14,12 +12,19 @@ public:
 
 	static void Shutdown();
 
-	static TSharedPtr< class ISlateStyle > Get();
+	static void ReloadTextures();
+
+	static const ISlateStyle& Get();
 
 	static FName GetStyleSetName();
-private:
-	static FString InContent(const FString& RelativePath, const ANSICHAR* Extension);
 
 private:
-	static TSharedPtr< class FSlateStyleSet > StyleSet;
+
+	static TSharedRef< class FSlateStyleSet > Create();
+
+	//static FString InContent(const FString& RelativePath, const ANSICHAR* Extension);
+
+private:
+
+	static TSharedPtr< class FSlateStyleSet > StyleSetInstance;
 };
