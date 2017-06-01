@@ -5,10 +5,11 @@ using UnrealBuildTool;
 
 public class SemLogEd : ModuleRules
 {
-	public SemLogEd(TargetInfo Target)
-	{
-		
-		PublicIncludePaths.AddRange(
+	public SemLogEd(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+
+        PublicIncludePaths.AddRange(
 			new string[] {
 				"SemLogEd/Public"
 				// ... add public include paths required here ...

@@ -1,10 +1,15 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SemLogEdModule.h"
 #include "SemLogEdMode.h"
 #include "SemLogEdModeToolkit.h"
 #include "Toolkits/ToolkitManager.h"
+#include "EditorModeManager.h"
+
+//#include "SemLogEdModule.h"
+//#include "SemLogEdMode.h"
+//#include "SemLogEdModeToolkit.h"
+//#include "Toolkits/ToolkitManager.h"
 
 const FEditorModeID FSemLogEdMode::EM_SemLogEdModeId = TEXT("EM_SemLogEdMode");
 

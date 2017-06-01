@@ -1,10 +1,18 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SemLogEdModule.h"
-#include "SemLogEdMode.h"
+//#include "SemLogEdModule.h"
+//#include "SemLogEdMode.h"
+//#include "SemLogEdModeToolkit.h"
+
 #include "SemLogEdModeToolkit.h"
-#include "Private/EdModeUtils.h"
+#include "SemLogEdMode.h"
+#include "Engine/Selection.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Text/STextBlock.h"
+#include "EditorModeManager.h"
+//#include "Private/EdModeUtils.h"
+
 
 #define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"
 
@@ -15,6 +23,14 @@ FSemLogEdModeToolkit::FSemLogEdModeToolkit()
 void FSemLogEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 {
 	const float Factor = 256.0f;
+	
+	struct Locals
+	{
+		static FReply GenerateSemanticMap()
+		{
+			return FReply::Handled();
+		}
+	};
 
 	SAssignNew(ToolkitWidget, SBorder)
 		.HAlign(HAlign_Center)
@@ -28,7 +44,7 @@ void FSemLogEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					SNew(SButton)
 					.Text(LOCTEXT("SemlogGenSemMap", "Generate Semantic Map"))
 					.IsEnabled(true)
-					.OnClicked_Static(&EdModeUtils::GenerateSemanticMap)
+					.OnClicked_Static(&Locals::GenerateSemanticMap)
 				]
 			//SNew(SVerticalBox)
 			//	+ SVerticalBox::Slot()

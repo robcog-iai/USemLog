@@ -3,8 +3,10 @@
 
 #pragma once
 
-#include "UnrealEd.h" 
-#include "Editor.h"
+#include "CoreMinimal.h"
+#include "EdMode.h"
+//#include "UnrealEd.h" 
+//#include "Editor.h"
 
 class FSemLogEdMode : public FEdMode
 {

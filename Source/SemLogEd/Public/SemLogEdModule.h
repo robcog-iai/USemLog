@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "ModuleManager.h"
-#include "Modules/ModuleInterface.h"
+//#include "ModuleManager.h"
+//#include "Modules/ModuleInterface.h"
 
 // Declare log types
 DECLARE_LOG_CATEGORY_EXTERN(SemLogEd, All, All);

@@ -2,7 +2,11 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
-#include "SemLogEdModule.h"
+//#include "SemLogEdModule.h"
+#include "CoreMinimal.h"
+#include "PlatformFilemanager.h"
+#include "FileManager.h"
+#include "FileHelper.h"
 
 struct EdModeUtils
 {

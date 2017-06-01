@@ -1,8 +1,8 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SemLogEdModule.h"
 #include "SemLogEdStyle.h"
+#include "SemLogEdModule.h"
 #include "SlateGameResources.h"
 #include "IPluginManager.h"
 
