@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Toolkits/BaseToolkit.h"
+#include "TagUtils.h"
 //#include "Editor/UnrealEd/Public/Toolkits/BaseToolkit.h"
 
 

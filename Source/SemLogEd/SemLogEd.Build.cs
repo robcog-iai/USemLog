@@ -29,6 +29,7 @@ public class SemLogEd : ModuleRules
 			new string[]
 			{
 				"Core",
+				"UTags",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
