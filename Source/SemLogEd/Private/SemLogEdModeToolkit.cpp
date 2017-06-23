@@ -11,6 +11,9 @@
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "EditorModeManager.h"
+
+#include "SemanticMap.h"
+//#include "SLContactTrigger.h"
 //#include "Private/EdModeUtils.h"
 
 
@@ -26,7 +29,24 @@ void FSemLogEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 	
 	struct Locals
 	{
+		static bool AreActorsSelected()
+		{
+			return GEditor->GetSelectedActors()->Num() != 0;
+		}
+
 		static FReply GenerateSemanticMap()
+		{
+			USemanticMap* SemMap = NewObject<USemanticMap>();
+			if (SemMap)
+			{
+				SemMap->Generate(GEditor->GetEditorWorldContext().World());
+				SemMap->WriteToFile();
+			}
+			//SemMap->BeginDestroy();
+			return FReply::Handled();
+		}
+
+		static FReply AddContactListener()
 		{
 			return FReply::Handled();
 		}
@@ -46,50 +66,15 @@ void FSemLogEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.IsEnabled(true)
 					.OnClicked_Static(&Locals::GenerateSemanticMap)
 				]
-			//SNew(SVerticalBox)
-			//	+ SVerticalBox::Slot()
-			//	.AutoHeight()
-			//	.HAlign(HAlign_Center)
-			//	.Padding(50)
-			//	[
-			//		SNew(STextBlock)
-			//		.AutoWrapText(true)
-			//		.Text(LOCTEXT("HelperLabel", "Semantic Logging, generate visualize the semantic representation of the objects"))
-			//	]
-			//+ SVerticalBox::Slot()
-			//	.AutoHeight()
-			//	.HAlign(HAlign_Center)
-			//	[
-			//		SNew(SButton)
-			//		.Text(LOCTEXT("ShowAllObjectsTagsLabel", "ShowAllTags"))
-			//		.IsEnabled(true)
-			//		.OnClicked_Static(&EdUtils:OnShowAllObjectsTagsButtonClick)
-			//	]
-			//+ SVerticalBox::Slot()
-			//	.AutoHeight()
-			//	.HAlign(HAlign_Center)
-			//	[
-			//		SNew(SButton)
-			//		.Text(LOCTEXT("ShowSelectedObjectsTagsLabel", "ShowSelectdTags"))
-			//		.IsEnabled_Static(&EdUtils:IsAnythingSelected)
-			//		.OnClicked_Static(&EdUtils:OnShowSelectedObjectsTagsButtonClick)
-			//	]
-			//+ SVerticalBox::Slot()
-			//	.AutoHeight()
-			//	.HAlign(HAlign_Left)
-			//	.Padding(10)
-			//	[
-			//		SNew(STextBlock)
-			//		.Text(LOCTEXT("TagsText", "etc.etc.\netc.etc"))// &EdUtils:GetTagsText)
-			//	]
-			//+ SVerticalBox::Slot()
-			//	.AutoHeight()
-			//	.HAlign(HAlign_Left)
-			//	.Padding(10)
-			//	[
-			//		SNew(STextBlock)
-			//		.Text(&EdUtils:GetTagsText)
-			//	]
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.HAlign(HAlign_Center)
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("AButton", "A Button"))
+					.IsEnabled_Static(&Locals::AreActorsSelected)
+					.OnClicked_Static(&Locals::AddContactListener)
+				]
 		];
 		
 	FModeToolkit::Init(InitToolkitHost);
