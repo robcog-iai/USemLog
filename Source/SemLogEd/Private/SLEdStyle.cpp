@@ -32,7 +32,7 @@ void FSLEdStyle::Shutdown()
 
 FName FSLEdStyle::GetStyleSetName()
 {
-	static FName SemLogStyleName(TEXT("SLEdStyle"));
+	static FName SemLogStyleName(TEXT("SemLogEdStyle"));
 	return SemLogStyleName;
 }
 
@@ -46,8 +46,8 @@ TSharedRef< FSlateStyleSet > FSLEdStyle::Create()
 	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet(GetStyleSetName()));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin(TEXT("USemLog"))->GetContentDir());
 
-	Style->Set("LevelEditor.SLEd", new IMAGE_BRUSH(TEXT("Icons/icon_Mode_SemLog_40px"), Icon40x40));
-	Style->Set("LevelEditor.SLEd.Small", new IMAGE_BRUSH(TEXT("Icons/icon_Mode_SemLog_40px"), Icon20x20));
+	Style->Set("LevelEditor.SemLogEd", new IMAGE_BRUSH(TEXT("Icons/icon_Mode_SemLog_40px"), Icon40x40));
+	Style->Set("LevelEditor.SemLogEd.Small", new IMAGE_BRUSH(TEXT("Icons/icon_Mode_SemLog_40px"), Icon20x20));
 
 	return Style;
 }

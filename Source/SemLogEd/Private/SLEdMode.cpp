@@ -27,8 +27,6 @@ void FSLEdMode::Enter()
 		Toolkit = MakeShareable(new FSLEdModeToolkit);
 		Toolkit->Init(Owner->GetToolkitHost());
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT(" ** SLEd Enter"));
 }
 
 void FSLEdMode::Exit()
@@ -41,8 +39,6 @@ void FSLEdMode::Exit()
 
 	// Call base Exit method to ensure proper cleanup
 	FEdMode::Exit();
-
-	UE_LOG(LogTemp, Warning, TEXT(" ** SLEd Exit"));
 }
 
 bool FSLEdMode::UsesToolkits() const

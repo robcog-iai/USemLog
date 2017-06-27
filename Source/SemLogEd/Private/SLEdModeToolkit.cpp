@@ -3,13 +3,11 @@
 
 #include "SLEdModeToolkit.h"
 #include "SLEdMode.h"
+#include "SLMap.h"
 #include "Engine/Selection.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "EditorModeManager.h"
-
-#include "SLMap.h"
-
 
 #define LOCTEXT_NAMESPACE "FSLEdModeToolkit"
 

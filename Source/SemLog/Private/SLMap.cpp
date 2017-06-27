@@ -3,7 +3,7 @@
 
 #include "SLMap.h"
 #include "SLStatics.h"
-#include "TagUtils.h"
+#include "TagStatics.h"
 #include "PlatformFilemanager.h"
 #include "FileManager.h"
 #include "FileHelper.h"
@@ -52,7 +52,7 @@ bool USLMap::Generate(UWorld* World)
 
 	// Get the map of actors to their tag properties
 	const TMap<AActor*, TMap<FString, FString>> ActorToTagProperties =
-		TagUtils::GetAllActorsTagProperties(World, "SemLog:");
+		FTagStatics::GetAllActorsTagProperties(World, "SemLog:");
 
 
 	// Iterate all correctly tagged actors and add them to the semantic map
