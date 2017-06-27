@@ -36,8 +36,17 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 				[
 					SNew(SButton)
 					.Text(LOCTEXT("AddRuntimeManager", "Add Runtime Manager"))
-					.IsEnabled_Static(&FSLEdToolkitStatics::WorldHasRuntimeManager)
+					.IsEnabled_Static(&FSLEdToolkitStatics::NoRuntimeManager)
 					.OnClicked_Static(&FSLEdToolkitStatics::AddRuntimeManager)
+				]
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.HAlign(HAlign_Center)
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("GenerateNewIds", "Generate New Ids"))
+					.IsEnabled(true)
+					.OnClicked_Static(&FSLEdToolkitStatics::GenerateNewIds)
 				]
 		];
 		

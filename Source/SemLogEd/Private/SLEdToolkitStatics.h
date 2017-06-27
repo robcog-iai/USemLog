@@ -7,8 +7,11 @@
 #include "Engine/Selection.h"
 #include "FileManager.h"
 #include "FileHelper.h"
+#include "EngineUtils.h"
 #include "SLMap.h"
 #include "SLRuntimeManager.h"
+#include "SLStatics.h"
+#include "TagStatics.h"
 
 struct FSLEdToolkitStatics
 {
@@ -30,13 +33,35 @@ struct FSLEdToolkitStatics
 	}
 
 
-	static bool WorldHasRuntimeManager()
+	static bool NoRuntimeManager()
 	{
-		return GEditor->GetSelectedActors()->Num() != 0;
+		if (TActorIterator<ASLRuntimeManager>(GEditor->GetEditorWorldContext().World()))
+		{
+			return false;
+		}
+		return true;		
 	}
 
 	static FReply AddRuntimeManager()
 	{
+		GEditor->GetEditorWorldContext().World()->SpawnActor(ASLRuntimeManager::StaticClass());
+		return FReply::Handled();
+	}
+
+	static FReply GenerateNewIds()
+	{
+		for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+		{
+			int32 TagIndex = FTagStatics::FindTypeIndex(*ActItr, "SemLog:");
+			if (TagIndex != INDEX_NONE)
+			{
+				FString Id = FTagStatics::GetKeyValue(ActItr->Tags[TagIndex], "Id");
+				if (!Id.IsEmpty())
+				{
+					FTagStatics::AddKeyValuePair(*ActItr, "SemLog:", "Id", FSLStatics::GenerateRandomFString(4), false);
+				}
+			}
+		}
 		return FReply::Handled();
 	}
 
