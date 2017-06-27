@@ -3,13 +3,12 @@
 
 #include "SLEdModeToolkit.h"
 #include "SLEdMode.h"
-#include "SLMap.h"
-#include "Engine/Selection.h"
+#include "SLEdToolkitStatics.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "EditorModeManager.h"
 
-#define LOCTEXT_NAMESPACE "FSLEdModeToolkit"
+#define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"
 
 FSLEdModeToolkit::FSLEdModeToolkit()
 {
@@ -17,33 +16,6 @@ FSLEdModeToolkit::FSLEdModeToolkit()
 
 void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 {
-	const float Factor = 256.0f;
-	
-	struct Locals
-	{
-		static bool AreActorsSelected()
-		{
-			return GEditor->GetSelectedActors()->Num() != 0;
-		}
-
-		static FReply GenerateSemanticMap()
-		{
-			USLMap* SemMap = NewObject<USLMap>();
-			if (SemMap)
-			{
-				SemMap->Generate(GEditor->GetEditorWorldContext().World());
-				SemMap->WriteToFile();
-			}
-			//SemMap->BeginDestroy();
-			return FReply::Handled();
-		}
-
-		static FReply AddContactListener()
-		{
-			return FReply::Handled();
-		}
-	};
-
 	SAssignNew(ToolkitWidget, SBorder)
 		.HAlign(HAlign_Center)
 		.Padding(25)
@@ -54,18 +26,18 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 				.HAlign(HAlign_Left)
 				[
 					SNew(SButton)
-					.Text(LOCTEXT("SemlogGenSemMap", "Generate Semantic Map"))
+					.Text(LOCTEXT("GenSemMap", "Generate Semantic Map"))
 					.IsEnabled(true)
-					.OnClicked_Static(&Locals::GenerateSemanticMap)
+					.OnClicked_Static(&FSLEdToolkitStatics::GenerateSemanticMap)
 				]
 				+ SVerticalBox::Slot()
 				.AutoHeight()
 				.HAlign(HAlign_Center)
 				[
 					SNew(SButton)
-					.Text(LOCTEXT("AButton", "A Button"))
-					.IsEnabled_Static(&Locals::AreActorsSelected)
-					.OnClicked_Static(&Locals::AddContactListener)
+					.Text(LOCTEXT("AddRuntimeManager", "Add Runtime Manager"))
+					.IsEnabled_Static(&FSLEdToolkitStatics::WorldHasRuntimeManager)
+					.OnClicked_Static(&FSLEdToolkitStatics::AddRuntimeManager)
 				]
 		];
 		

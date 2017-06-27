@@ -8,7 +8,7 @@
 // Define logging types
 DEFINE_LOG_CATEGORY(SemLogEd);
 
-#define LOCTEXT_NAMESPACE "FSLEdModule"
+#define LOCTEXT_NAMESPACE "FSemLogEdModule"
 
 void FSLEdModule::StartupModule()
 {

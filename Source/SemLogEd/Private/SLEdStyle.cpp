@@ -5,7 +5,6 @@
 #include "SLEdModule.h"
 #include "SlateGameResources.h"
 #include "IPluginManager.h"
-
 #include "Styling/SlateTypes.h"
 #include "Interfaces/IPluginManager.h"
 
