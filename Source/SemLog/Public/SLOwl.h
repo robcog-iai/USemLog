@@ -1,9 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings. TEST
+// Copyright 2017, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
 
 #include "UObject/NoExportTypes.h"
-#include "OwlUtils.generated.h"
+#include "SLOwl.generated.h"
 
 
 /**

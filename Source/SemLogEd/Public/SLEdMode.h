@@ -5,16 +5,14 @@
 
 #include "CoreMinimal.h"
 #include "EdMode.h"
-//#include "UnrealEd.h" 
-//#include "Editor.h"
 
-class FSemLogEdMode : public FEdMode
+class FSLEdMode : public FEdMode
 {
 public:
-	const static FEditorModeID EM_SemLogEdModeId;
+	const static FEditorModeID EM_SLEdModeId;
 public:
-	FSemLogEdMode();
-	virtual ~FSemLogEdMode();
+	FSLEdMode();
+	virtual ~FSLEdMode();
 
 	// FEdMode interface
 	virtual void Enter() override;

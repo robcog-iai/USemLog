@@ -1,29 +1,23 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-//#include "SemLogEdModule.h"
-//#include "SemLogEdMode.h"
-//#include "SemLogEdModeToolkit.h"
-
-#include "SemLogEdModeToolkit.h"
-#include "SemLogEdMode.h"
+#include "SLEdModeToolkit.h"
+#include "SLEdMode.h"
 #include "Engine/Selection.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "EditorModeManager.h"
 
-#include "SemanticMap.h"
-//#include "SLContactTrigger.h"
-//#include "Private/EdModeUtils.h"
+#include "SLMap.h"
 
 
-#define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"
+#define LOCTEXT_NAMESPACE "FSLEdModeToolkit"
 
-FSemLogEdModeToolkit::FSemLogEdModeToolkit()
+FSLEdModeToolkit::FSLEdModeToolkit()
 {
 }
 
-void FSemLogEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
+void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 {
 	const float Factor = 256.0f;
 	
@@ -36,7 +30,7 @@ void FSemLogEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 
 		static FReply GenerateSemanticMap()
 		{
-			USemanticMap* SemMap = NewObject<USemanticMap>();
+			USLMap* SemMap = NewObject<USLMap>();
 			if (SemMap)
 			{
 				SemMap->Generate(GEditor->GetEditorWorldContext().World());
@@ -80,19 +74,19 @@ void FSemLogEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 	FModeToolkit::Init(InitToolkitHost);
 }
 
-FName FSemLogEdModeToolkit::GetToolkitFName() const
+FName FSLEdModeToolkit::GetToolkitFName() const
 {
 	return FName("Semantic Logger Editor Mode");
 }
 
-FText FSemLogEdModeToolkit::GetBaseToolkitName() const
+FText FSLEdModeToolkit::GetBaseToolkitName() const
 {
 	return NSLOCTEXT("SemLogEdModeToolkit", "DisplayName", "Semantic Logger Editor Mode Tool");
 }
 
-class FEdMode* FSemLogEdModeToolkit::GetEditorMode() const
+class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 {
-	return GLevelEditorModeTools().GetActiveMode(FSemLogEdMode::EM_SemLogEdModeId);
+	return GLevelEditorModeTools().GetActiveMode(FSLEdMode::EM_SLEdModeId);
 }
 
 #undef LOCTEXT_NAMESPACE

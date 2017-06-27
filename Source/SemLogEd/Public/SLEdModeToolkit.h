@@ -5,14 +5,12 @@
 
 #include "CoreMinimal.h"
 #include "Toolkits/BaseToolkit.h"
-//#include "Editor/UnrealEd/Public/Toolkits/BaseToolkit.h"
 
-
-class FSemLogEdModeToolkit : public FModeToolkit
+class FSLEdModeToolkit : public FModeToolkit
 {
 public:
 
-	FSemLogEdModeToolkit();
+	FSLEdModeToolkit();
 	
 	/** FModeToolkit interface */
 	virtual void Init(const TSharedPtr<IToolkitHost>& InitToolkitHost) override;

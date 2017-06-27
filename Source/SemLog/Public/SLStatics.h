@@ -1,10 +1,13 @@
+// Copyright 2017, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include <string>
 #include <algorithm>
 
-struct Utils
+struct FSLStatics
 {
 	// Generate random FString
 	static FORCEINLINE FString GenerateRandomFString(const uint32 Length)

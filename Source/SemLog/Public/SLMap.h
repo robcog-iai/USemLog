@@ -1,26 +1,27 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "OwlUtils.h"
+#include "SLOwl.h"
 #include "UObject/NoExportTypes.h"
-#include "SemanticMap.generated.h"
+#include "SLMap.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SEMLOG_API USemanticMap : public UObject
+class SEMLOG_API USLMap : public UObject
 {
 	GENERATED_BODY()
 
 public:
 	// Constructor
-	USemanticMap();
+	USLMap();
 
 	// Destructor
-	~USemanticMap();
+	~USLMap();
 
 	// Check if semantic map already exists
 	UFUNCTION(BlueprintCallable)
@@ -35,39 +36,39 @@ public:
 	bool WriteToFile(bool bOverwrite = false);
 
 	// Filename
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SemanticMap)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SLMap)
 	FString Filename;
 
 	// Semantic logging directory path
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SemanticMap)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SLMap)
 	FString LogDirectoryPath;
 
 	// Semantic map object // TODO see which version to use
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SemanticMap)
-	FOwlObject SemanticMapObject;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SLMap)
+	FOwlObject SLMapObject;
 
 	// Class name of the semantic map
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SemanticMap)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SLMap)
 	FString Class;
 
 	// Unique ID of the semantic map
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SemanticMap)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SLMap)
 	FString Id;
 
 	// Namespace of the semantic map
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SemanticMap)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SLMap)
 	FString Ns;
 
 	// Semantic map document as owl representation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SemanticMap)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SLMap)
 	FOwlDocument OwlDocument;
 
 	// Shows if the map already exists
-	UPROPERTY(BlueprintReadOnly, Category = SemanticMap)
+	UPROPERTY(BlueprintReadOnly, Category = SLMap)
 	bool bExists;
 
 	// Shows if the default values have been set
-	UPROPERTY(BlueprintReadOnly, Category = SemanticMap)
+	UPROPERTY(BlueprintReadOnly, Category = SLMap)
 	bool bDefaultValuesSet;
 
 private:

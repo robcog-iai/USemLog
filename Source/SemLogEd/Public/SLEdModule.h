@@ -6,7 +6,10 @@
 #include "CoreMinimal.h"
 #include "ModuleManager.h"
 
-class FSemLogModule : public IModuleInterface
+// Declare log types
+DECLARE_LOG_CATEGORY_EXTERN(SemLogEd, All, All);
+
+class FSLEdModule : public IModuleInterface
 {
 public:
 

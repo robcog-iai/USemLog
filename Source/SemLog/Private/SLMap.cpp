@@ -1,38 +1,39 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
 
-#include "SemanticMap.h"
+#include "SLMap.h"
+#include "SLStatics.h"
+#include "TagUtils.h"
 #include "PlatformFilemanager.h"
 #include "FileManager.h"
 #include "FileHelper.h"
-#include "TagUtils.h"
-#include "Utils.h"
 
 // Constructor, set default values
-USemanticMap::USemanticMap()
+USLMap::USLMap()
 {
 	// Default filename
-	Filename = "SemanticMap4.owl";
+	Filename = "SLMap4.owl";
 
 	// Default log folder path
 	LogDirectoryPath = FPaths::GameDir() + "SemLog";
 
 	// Check if the semantic map already exists or not
-	bExists = USemanticMap::Exists();
+	bExists = USLMap::Exists();
 
 	// If map does not exists, set default values
 	if (!bExists)
 	{
-		USemanticMap::SetDefaultValues();
+		USLMap::SetDefaultValues();
 	}
 }
 
 // Destructor
-USemanticMap::~USemanticMap()
+USLMap::~USLMap()
 {
 }
 
 // Check if document exists
-bool USemanticMap::Exists()
+bool USLMap::Exists()
 {
 	const FString FilePath = LogDirectoryPath.EndsWith("/") ?
 		LogDirectoryPath + Filename : LogDirectoryPath + "/" + Filename;
@@ -41,12 +42,12 @@ bool USemanticMap::Exists()
 }
 
 // Generate the semantic map
-bool USemanticMap::Generate(UWorld* World)
+bool USLMap::Generate(UWorld* World)
 {	
 	// Set default values
 	if (!bDefaultValuesSet)
 	{
-		USemanticMap::SetDefaultValues();
+		USLMap::SetDefaultValues();
 	}
 
 	// Get the map of actors to their tag properties
@@ -57,14 +58,14 @@ bool USemanticMap::Generate(UWorld* World)
 	// Iterate all correctly tagged actors and add them to the semantic map
 	for (const auto& ActorToTagItr : ActorToTagProperties)
 	{
-		USemanticMap::InsertIndividual(ActorToTagItr);
+		USLMap::InsertIndividual(ActorToTagItr);
 	}
 	
 	return true;
 }
 
 // Write document to file
-bool USemanticMap::WriteToFile(bool bOverwrite)
+bool USLMap::WriteToFile(bool bOverwrite)
 {
 	const FString FilePath = LogDirectoryPath.EndsWith("/") ?
 		LogDirectoryPath + Filename : LogDirectoryPath + "/" + Filename;
@@ -89,17 +90,17 @@ bool USemanticMap::WriteToFile(bool bOverwrite)
 }
 
 // Write document to file
-bool USemanticMap::SetDefaultValues()
+bool USLMap::SetDefaultValues()
 {
 	// 
 	Class = "SemanticEnvironmentMap";
-	Id = Utils::GenerateRandomFString(4);
+	Id = FSLStatics::GenerateRandomFString(4);
 	Name = Class + "_" + Id;
 	Ns = "u-map";
 	FullName = "&" + Ns + ";" + Name;
 
 	// Set as FOwlObject
-	SemanticMapObject.Set(FullName);
+	SLMapObject.Set(FullName);
 
 
 	// Remove previous default attributes
@@ -186,7 +187,7 @@ bool USemanticMap::SetDefaultValues()
 	OwlDocument.Nodes.Emplace(FOwlNode(
 		"owl:Class",
 		"rdf:about",
-		"&knowrob;SemanticMapPerception"));
+		"&knowrob;SLMapPerception"));
 	OwlDocument.Nodes.Emplace(FOwlNode(
 		"owl:Class",
 		"rdf:about",
@@ -214,7 +215,7 @@ bool USemanticMap::SetDefaultValues()
 }
 
 // Write document to file
-bool USemanticMap::RemoveDefaultValues()
+bool USLMap::RemoveDefaultValues()
 {
 	// Remove default attributes
 	OwlDocument.DoctypeAttributes.Empty();
@@ -226,15 +227,15 @@ bool USemanticMap::RemoveDefaultValues()
 }
 
 // Insert individual to the map with its 3D transform
-bool USemanticMap::InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties)
+bool USLMap::InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties)
 {
 	const FString IndividualClass = ActorWithProperties.Value.Contains("Class")
 		? *ActorWithProperties.Value.Find("Class") : FString("DefaultClass");
 	const FString IndividualId = ActorWithProperties.Value.Contains("Id")
 		? *ActorWithProperties.Value.Find("Id") : FString("DefaultId");
 	const FString IndividualName = IndividualClass + "_" + IndividualId;
-	const FString PerceptionId = Utils::GenerateRandomFString(4);
-	const FString TransfId = Utils::GenerateRandomFString(4);
+	const FString PerceptionId = FSLStatics::GenerateRandomFString(4);
+	const FString TransfId = FSLStatics::GenerateRandomFString(4);
 
 	const FVector Loc = ActorWithProperties.Key->GetActorLocation();
 	const FQuat Quat = ActorWithProperties.Key->GetActorQuat();
@@ -273,7 +274,7 @@ bool USemanticMap::InsertIndividual(const TPair<AActor*, TMap<FString, FString>>
 	// Add perception event for localization
 	TArray<FOwlTriple> PerceptionProperties;
 	PerceptionProperties.Emplace(FOwlTriple(
-		"rdf:type", "rdf:resource", "&knowrob;SemanticMapPerception"));
+		"rdf:type", "rdf:resource", "&knowrob;SLMapPerception"));
 	PerceptionProperties.Emplace(FOwlTriple(
 		"knowrob:eventOccursAt", "rdf:resource", "&u-map;Transformation_" + TransfId));
 	PerceptionProperties.Emplace(FOwlTriple(

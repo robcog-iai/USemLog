@@ -5,7 +5,7 @@
 
 #include "SlateBasics.h"
 
-class FSemLogEdStyle
+class FSLEdStyle
 {
 public:
 	static void Initialize();
