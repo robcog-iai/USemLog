@@ -52,7 +52,7 @@ bool USLMap::Generate(UWorld* World)
 
 	// Get the map of actors to their tag properties
 	const TMap<AActor*, TMap<FString, FString>> ActorToTagProperties =
-		FTagStatics::GetAllActorsTagProperties(World, "SemLog:");
+		FTagStatics::GetActorsToKeyValuePairs(World, "SemLog:");
 
 
 	// Iterate all correctly tagged actors and add them to the semantic map

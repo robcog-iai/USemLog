@@ -52,7 +52,7 @@ struct FSLEdToolkitStatics
 	{
 		for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 		{
-			int32 TagIndex = FTagStatics::FindTypeIndex(*ActItr, "SemLog:");
+			int32 TagIndex = FTagStatics::GetTagTypeIndex(*ActItr, "SemLog:");
 			if (TagIndex != INDEX_NONE)
 			{
 				FString Id = FTagStatics::GetKeyValue(ActItr->Tags[TagIndex], "Id");
