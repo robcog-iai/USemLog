@@ -22,7 +22,23 @@ public:
 	// Destructor
 	~USLRawData();
 
-	// Log raw data
+	// Distance treshold (squared for faster comparions)
 	UPROPERTY(EditAnywhere, Category = "SL")
-	FString Test;
+	float SquaredDistanceThreshold;
+
+	// Initialise the logger
+	void Init(UWorld* InWorld);
+
+	// Log dynamic and static entities
+	void LogAllEntities();
+
+	// Log dynamic entities
+	void LogDynamicEntities();
+
+private:
+	// Pointer to the world
+	UWorld* World;
+
+	// Array of the dynamic actors
+	TArray<AActor*> DynamicActors;
 };

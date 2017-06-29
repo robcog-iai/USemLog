@@ -29,25 +29,18 @@ public:
 
 private:
 	// Log raw data
-	UPROPERTY(EditAnywhere, Category = "SL|Raw Data")
+	UPROPERTY(EditAnywhere, Category = "SL")
 	bool bLogRawData;
 
 	// Raw data logger
-	UPROPERTY(EditAnywhere, Category = "SL|Raw Data", meta = (editcondition = "bLogRawData"))
+	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogRawData"))
 	USLRawData* RawDataLogger;
 
 	// Log semantic events
-	UPROPERTY(EditAnywhere, Category = "SL|Event Data")
+	UPROPERTY(EditAnywhere, Category = "SL")
 	bool bLogEventData;
 	
 	// Event data logger
-	UPROPERTY(EditAnywhere, Category = "SL|Event Data", meta = (editcondition = "bLogEventData"))
+	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogEventData"))
 	USLEventData* EventLogger;
-
-	//// Map of actors to be logged to their unique name
-	//TMap<AActor*, FString> ActorToId;
-
-	// Log raw data
-	UPROPERTY(EditAnywhere, Category = "SL")
-	USLMap* Map;
 };

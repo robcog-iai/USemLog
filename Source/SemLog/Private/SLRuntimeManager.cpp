@@ -1,4 +1,5 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLRuntimeManager.h"
 
@@ -6,20 +7,34 @@
 // Sets default values
 ASLRuntimeManager::ASLRuntimeManager()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+ 	// No tick by default
+	PrimaryActorTick.bCanEverTick = false;
+	
+	// Flag defaults
+	bLogRawData = true;
+	bLogEventData = true;
 
-	EventLogger = CreateDefaultSubobject<USLEventData>(TEXT("EventData"));
-	RawDataLogger = CreateDefaultSubobject<USLRawData>(TEXT("RawData"));
-	Map = CreateDefaultSubobject<USLMap>(TEXT("MapData"));
-
+	// Create UObjects
+	EventLogger = CreateDefaultSubobject<USLEventData>(TEXT("EventDataLogger"));
+	RawDataLogger = CreateDefaultSubobject<USLRawData>(TEXT("RawDataLogger"));
 }
 
 // Called when the game starts or when spawned
 void ASLRuntimeManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (bLogRawData && RawDataLogger)
+	{
+		// Enable tick for raw data logging
+		SetActorTickEnabled(true);
+
+		// Initalize the raw data logger
+		RawDataLogger->Init(GetWorld());
+		
+		// Log static and dynamic entities once
+		RawDataLogger->LogAllEntities();
+	}	
 }
 
 // Called every frame
@@ -27,5 +42,7 @@ void ASLRuntimeManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Log the raw data of the dynamic entities
+	RawDataLogger->LogDynamicEntities();
 }
 
