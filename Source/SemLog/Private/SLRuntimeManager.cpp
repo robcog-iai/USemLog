@@ -29,11 +29,8 @@ void ASLRuntimeManager::BeginPlay()
 		// Enable tick for raw data logging
 		SetActorTickEnabled(true);
 
-		// Initalize the raw data logger
-		RawDataLogger->Init(GetWorld());
-		
-		// Log static and dynamic entities once
-		RawDataLogger->LogAllEntities();
+		// Initalize the raw data logger and log the static and dynamic entities
+		RawDataLogger->InitAndFirstLog(GetWorld());
 	}	
 }
 

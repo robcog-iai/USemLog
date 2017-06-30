@@ -7,7 +7,6 @@
 #include "GameFramework/Actor.h"
 #include "SLRawData.h"
 #include "SLEventData.h"
-#include "SLMap.h"
 #include "SLRuntimeManager.generated.h"
 
 UCLASS()

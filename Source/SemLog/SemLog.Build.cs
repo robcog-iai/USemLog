@@ -41,6 +41,8 @@ public class SemLog : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "Json",
+                "JsonUtilities",
 				"UTags",
 				// ... add private dependencies that you statically link with here ...	
 			}
