@@ -6,6 +6,9 @@
 #include "CoreMinimal.h"
 #include "ModuleManager.h"
 
+// Declare logging types
+DECLARE_LOG_CATEGORY_EXTERN(LogSL, All, All);
+
 class FSLModule : public IModuleInterface
 {
 public:

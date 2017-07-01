@@ -7,7 +7,7 @@
 #include "ModuleManager.h"
 
 // Declare log types
-DECLARE_LOG_CATEGORY_EXTERN(SemLogEd, All, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSLEd, All, All);
 
 class FSLEdModule : public IModuleInterface
 {

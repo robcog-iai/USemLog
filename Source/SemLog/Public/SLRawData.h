@@ -10,6 +10,9 @@
 #include "SLRawData.generated.h"
 
 
+/**
+*
+*/
 USTRUCT()
 struct FUniqueNameAndLocation
 {
@@ -83,11 +86,11 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL")
 	FString LogDirectoryPath;
 
-	// Log entites which moved at least with the given distance
+	// Log entities which moved at least with the given distance
 	UPROPERTY(EditAnywhere, Category = "SL")
 	float DistanceThreshold;
 	
-	// Distance treshold (squared for faster comparions)
+	// Distance threshold (squared for faster comparisons)
 	float SquaredDistanceThreshold;
 
 	// Pointer to the world
@@ -96,6 +99,6 @@ private:
 	// File handle to append the raw data
 	IFileHandle* FileHandle;
 
-	// Dynamic actors with their ID and previous location
-	TMap<AActor*, FUniqueNameAndLocation> DynamicActorsUniqueNameAndPrevLoc;
+	// Dynamic actors with their unique name and previous location
+	TMap<AActor*, FUniqueNameAndLocation> DynamicActorsWithData;
 };

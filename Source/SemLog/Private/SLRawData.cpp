@@ -2,8 +2,8 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLRawData.h"
-#include "TagStatics.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "TagStatics.h"
 //#include "PlatformFilemanager.h"
 //#include "FileManager.h"
 //#include "FileHelper.h"
@@ -20,7 +20,6 @@ USLRawData::USLRawData()
 // Destructor
 USLRawData::~USLRawData()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Delete filehandle"));
 	delete FileHandle;
 }
 
@@ -38,8 +37,6 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 		(LogDirectoryPath + Filename) : (LogDirectoryPath + "/" + Filename);
 	FileHandle = FPlatformFileManager::Get().GetPlatformFile().OpenWrite(*FilePath, true);
 	
-
-
 	// Create Json root object
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
@@ -47,9 +44,8 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 	JsonRootObj->SetNumberField("timestamp", World->GetTimeSeconds());
 	// Json array of actors
 	TArray< TSharedPtr<FJsonValue> > JsonActorArr;
-
-
-	// Log static entities
+	
+	// Log static entities (logged only once at init)
 	TArray<AActor*> StaticActors = FTagStatics::GetActorsWithKeyValuePair(
 		World, "SemLog", "Runtime", "Static");
 
@@ -60,14 +56,13 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 		{
 			const FString UniqueName = ActItr->GetName() + "_" + Id;
 			FVector VirtualPreviousLocation(-99999.9f);
-			UE_LOG(LogTemp, Warning, TEXT("** AStatic actor: %s | Id: %s"),
-				*ActItr->GetName(), *UniqueName);
 
-			USLRawData::AddActorToJsonArray(JsonActorArr, ActItr, UniqueName, VirtualPreviousLocation);
+			USLRawData::AddActorToJsonArray(
+				JsonActorArr, ActItr, UniqueName, VirtualPreviousLocation);
 		}
 	}
 
-	// Get and log dynamic entities
+	// Setup and log dynamic entities
 	TArray<AActor*> DynamicActors = FTagStatics::GetActorsWithKeyValuePair(
 		World, "SemLog", "Runtime", "Dynamic");
 
@@ -78,10 +73,11 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 		{
 			const FString UniqueName = DynActItr->GetName() + "_" + Id;
 			FVector VirtualPreviousLocation(-99999.9f);
-			USLRawData::AddActorToJsonArray(JsonActorArr, DynActItr, UniqueName, VirtualPreviousLocation);
+			USLRawData::AddActorToJsonArray(
+				JsonActorArr, DynActItr, UniqueName, VirtualPreviousLocation);
 
 			// Store the UniqueName and the Location of the dynamic entity
-			DynamicActorsUniqueNameAndPrevLoc.Add(DynActItr, 
+			DynamicActorsWithData.Add(DynActItr, 
 				FUniqueNameAndLocation(UniqueName, DynActItr->GetActorLocation()));
 
 			UE_LOG(LogTemp, Warning, TEXT("** ADynamic actor: %s | Id: %s"),
@@ -104,10 +100,31 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 // Log dynamic entities
 void USLRawData::LogDynamicEntities()
 {
-	for (const auto& ActUniqueNameAndLocItr : DynamicActorsUniqueNameAndPrevLoc)
-	{
+	// Create Json root object
+	// Json root object
+	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
+	// Set timestamp
+	JsonRootObj->SetNumberField("timestamp", World->GetTimeSeconds());
+	// Json array of actors
+	TArray< TSharedPtr<FJsonValue> > JsonActorArr;
 
+	// Iterate and log dynamic actors
+	for (auto& ActWithDataItr : DynamicActorsWithData)
+	{
+		USLRawData::AddActorToJsonArray(JsonActorArr,
+			ActWithDataItr.Key, ActWithDataItr.Value.UniqueName, ActWithDataItr.Value.Location);
 	}
+
+	// Add actors to Json root
+	JsonRootObj->SetArrayField("actors", JsonActorArr);
+
+	// Transform to string
+	FString JsonOutputString;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonOutputString);
+	FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
+
+	// Write string to file
+	FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
 }
 
 // Create Json object with a 3d location

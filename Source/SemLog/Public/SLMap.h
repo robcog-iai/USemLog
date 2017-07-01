@@ -4,8 +4,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLOwl.h"
 #include "UObject/NoExportTypes.h"
+#include "SLOwl.h"
 #include "SLMap.generated.h"
 
 /**
@@ -45,7 +45,7 @@ public:
 
 	// Semantic map object // TODO see which version to use
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SL)
-	FOwlObject SLMapObject;
+	FOwlObject OwlObject;
 
 	// Class name of the semantic map
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SL)

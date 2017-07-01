@@ -100,7 +100,7 @@ bool USLMap::SetDefaultValues()
 	FullName = "&" + Ns + ";" + Name;
 
 	// Set as FOwlObject
-	SLMapObject.Set(FullName);
+	OwlObject.Set(FullName);
 
 
 	// Remove previous default attributes

@@ -3,6 +3,9 @@
 
 #include "SLModule.h"
 
+// Define logging types
+DEFINE_LOG_CATEGORY(LogSL);
+
 #define LOCTEXT_NAMESPACE "FSLModule"
 
 void FSLModule::StartupModule()
