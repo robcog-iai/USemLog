@@ -2,10 +2,6 @@
 
 Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data to a KnowRob compatible format.
 
-# Actor tags example:
+# Usage
 
-	SemLog:Class,HelaCurryKetchup;LogType,Dynamic;
-
-# Development branch
-
-	Unreal editor mode
+See repository branches for various versions.
