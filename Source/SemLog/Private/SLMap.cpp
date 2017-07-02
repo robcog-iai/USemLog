@@ -89,7 +89,7 @@ bool USLMap::WriteToFile(bool bOverwrite)
 	}
 }
 
-// Write document to file
+// Set document default values
 bool USLMap::SetDefaultValues()
 {
 	// 
@@ -101,7 +101,6 @@ bool USLMap::SetDefaultValues()
 
 	// Set as FOwlObject
 	OwlObject.Set(FullName);
-
 
 	// Remove previous default attributes
 	OwlDocument.DoctypeAttributes.Empty();
@@ -214,7 +213,7 @@ bool USLMap::SetDefaultValues()
 	return bDefaultValuesSet;
 }
 
-// Write document to file
+// Remove document default values
 bool USLMap::RemoveDefaultValues()
 {
 	// Remove default attributes

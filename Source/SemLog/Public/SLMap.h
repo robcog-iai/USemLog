@@ -65,11 +65,11 @@ public:
 
 	// Shows if the map already exists
 	UPROPERTY(BlueprintReadOnly, Category = SL)
-	bool bExists;
+	uint8 bExists : 1;
 
 	// Shows if the default values have been set
 	UPROPERTY(BlueprintReadOnly, Category = SL)
-	bool bDefaultValuesSet;
+	uint8 bDefaultValuesSet : 1;
 
 private:
 	// Full name of the semantic map, Class + Id 
@@ -81,7 +81,7 @@ private:
 	// Set document default values
 	FORCEINLINE bool SetDefaultValues();
 
-	// Remove the default values
+	// Remove document default values
 	FORCEINLINE bool RemoveDefaultValues();
 
 	// Insert individual to the map with its 3D transform
