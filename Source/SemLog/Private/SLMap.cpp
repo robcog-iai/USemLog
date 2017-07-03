@@ -11,8 +11,11 @@
 // Constructor, set default values
 USLMap::USLMap()
 {
+	// Default values
+	bOwlDefaultValuesSet = false;
+
 	// Default filename
-	Filename = "SLMap4.owl";
+	Filename = "SemanticMap.owl";
 
 	// Default log folder path
 	LogDirectoryPath = FPaths::GameDir() + "SemLog";
@@ -45,7 +48,7 @@ bool USLMap::Exists()
 bool USLMap::Generate(UWorld* World)
 {	
 	// Set default values
-	if (!bDefaultValuesSet)
+	if (!bOwlDefaultValuesSet)
 	{
 		USLMap::SetDefaultValues();
 	}
@@ -78,19 +81,12 @@ bool USLMap::WriteToFile(bool bOverwrite)
 		return false;
 	}
 
-	// Create logging directory, return true if already created
-	if (FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*LogDirectoryPath))
-	{
-		return FFileHelper::SaveStringToFile(OwlDocument.ToXmlString(), *FilePath);
-	}
-	else
-	{
-		return false;
-	}
+	// Creates directory tree as well
+	return FFileHelper::SaveStringToFile(OwlDocument.ToXmlString(), *FilePath);
 }
 
 // Set document default values
-bool USLMap::SetDefaultValues()
+void USLMap::SetDefaultValues()
 {
 	// 
 	Class = "SemanticEnvironmentMap";
@@ -209,20 +205,18 @@ bool USLMap::SetDefaultValues()
 		"Semantic Environment Map"));
 
 	// Mark that default values have been set
-	bDefaultValuesSet = true;
-	return bDefaultValuesSet;
+	bOwlDefaultValuesSet = true;
 }
 
 // Remove document default values
-bool USLMap::RemoveDefaultValues()
+void USLMap::RemoveDefaultValues()
 {
 	// Remove default attributes
 	OwlDocument.DoctypeAttributes.Empty();
 	OwlDocument.RdfAttributes.Empty();
 	
 	// Mark that default values have been removed
-	bDefaultValuesSet = false;
-	return !bDefaultValuesSet;
+	bOwlDefaultValuesSet = false;
 }
 
 // Insert individual to the map with its 3D transform

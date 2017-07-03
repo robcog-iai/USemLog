@@ -12,9 +12,7 @@
 USLRawData::USLRawData()
 {
 	// Default values
-	DistanceThreshold = 0.1;
-	Filename = "RawData.json";
-	LogDirectoryPath = FPaths::GameDir() + "SemLog";
+	bIsInit = false;
 }
 
 // Destructor
@@ -23,8 +21,11 @@ USLRawData::~USLRawData()
 	delete FileHandle;
 }
 
-// Init logger and log dynamic and static entities
-void USLRawData::InitAndFirstLog(UWorld* InWorld)
+// Init logger
+bool USLRawData::Init(UWorld* InWorld,
+	const FString EpisodeId,
+	const FString LogDirectoryPath,
+	const float DistanceThreshold)
 {
 	// Set the world
 	World = InWorld;
@@ -33,10 +34,36 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 	SquaredDistanceThreshold = DistanceThreshold * DistanceThreshold;
 
 	// Create Filehandle to incrementally append json logs to file
-	const FString FilePath = LogDirectoryPath.EndsWith("/") ?
-		(LogDirectoryPath + Filename) : (LogDirectoryPath + "/" + Filename);
+	const FString Filename = "RawData_" + EpisodeId + ".json";
+	const FString EpisodesDirPath = LogDirectoryPath.EndsWith("/") ?
+		(LogDirectoryPath + "Episodes/") : (LogDirectoryPath + "/Episodes/");
+	const FString FilePath = EpisodesDirPath + Filename;
+
+	// Create logging directory path and the filehandle
+	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*EpisodesDirPath);
 	FileHandle = FPlatformFileManager::Get().GetPlatformFile().OpenWrite(*FilePath, true);
 	
+	if (FileHandle)
+	{
+		// Logger initialised
+		bIsInit = true;
+		return true;
+	}
+	else
+	{
+		// Could not init logger
+		return false;
+	}
+}
+
+// Log dynamic and static entities
+void USLRawData::FirstLog()
+{	
+	if (!bIsInit)
+	{
+		return;
+	}
+
 	// Create Json root object
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
@@ -54,7 +81,7 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 		const FString Id = FTagStatics::GetKeyValue(ActItr, "SemLog", "Id");
 		if (!Id.IsEmpty())
 		{
-			const FString UniqueName = ActItr->GetName() + "_" + Id;
+			const FString UniqueName = FTagStatics::GetKeyValue(ActItr, "SemLog", "Class") + "_" + Id;
 			FVector VirtualPreviousLocation(-99999.9f);
 
 			USLRawData::AddActorToJsonArray(
@@ -71,7 +98,7 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 		const FString Id = FTagStatics::GetKeyValue(DynActItr, "SemLog", "Id");
 		if (!Id.IsEmpty())
 		{
-			const FString UniqueName = DynActItr->GetName() + "_" + Id;
+			const FString UniqueName = FTagStatics::GetKeyValue(DynActItr, "SemLog", "Class") + "_" + Id;
 			FVector VirtualPreviousLocation(-99999.9f);
 			USLRawData::AddActorToJsonArray(
 				JsonActorArr, DynActItr, UniqueName, VirtualPreviousLocation);
@@ -79,9 +106,6 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 			// Store the UniqueName and the Location of the dynamic entity
 			DynamicActorsWithData.Add(DynActItr, 
 				FUniqueNameAndLocation(UniqueName, DynActItr->GetActorLocation()));
-
-			UE_LOG(LogTemp, Warning, TEXT("** ADynamic actor: %s | Id: %s"),
-				*DynActItr->GetName(), *Id);
 		}
 	}
 
@@ -98,13 +122,17 @@ void USLRawData::InitAndFirstLog(UWorld* InWorld)
 }
 
 // Log dynamic entities
-void USLRawData::LogDynamicEntities()
+void USLRawData::LogDynamic()
 {
+	if (!bIsInit)
+	{
+		return;
+	}
+
 	// Create Json root object
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
-	// Set timestamp
-	JsonRootObj->SetNumberField("timestamp", World->GetTimeSeconds());
+
 	// Json array of actors
 	TArray< TSharedPtr<FJsonValue> > JsonActorArr;
 
@@ -115,16 +143,23 @@ void USLRawData::LogDynamicEntities()
 			ActWithDataItr.Key, ActWithDataItr.Value.UniqueName, ActWithDataItr.Value.Location);
 	}
 
-	// Add actors to Json root
-	JsonRootObj->SetArrayField("actors", JsonActorArr);
+	// Avoid appending emtpy entries
+	if (JsonActorArr.Num() > 0)
+	{
+		// Set timestamp
+		JsonRootObj->SetNumberField("timestamp", World->GetTimeSeconds());
 
-	// Transform to string
-	FString JsonOutputString;
-	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonOutputString);
-	FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
+		// Add actors to Json root
+		JsonRootObj->SetArrayField("actors", JsonActorArr);
 
-	// Write string to file
-	FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
+		// Transform to string
+		FString JsonOutputString;
+		TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonOutputString);
+		FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
+
+		// Write string to file
+		FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
+	}
 }
 
 // Create Json object with a 3d location

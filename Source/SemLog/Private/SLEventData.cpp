@@ -7,14 +7,12 @@
 #include "FileHelper.h"
 #include "SLStatics.h"
 
-// Constructor
+// Default constructor
 USLEventData::USLEventData()
 {
-	// Default filename
-	Filename = "SLMap4.owl";
-
-	// Default log folder path
-	LogDirectoryPath = FPaths::GameDir() + "SemLog";
+	// Default values
+	bOwlDefaultValuesSet = false;
+	bIsInit = false;
 }
 
 // Destructor
@@ -22,11 +20,22 @@ USLEventData::~USLEventData()
 {
 }
 
+// Initialise logger
+bool USLEventData::Init(const FString InEpisodeId, const FString InLogDirectoryPath)
+{
+	LogDirectoryPath = InLogDirectoryPath;
+	EpisodeId = InEpisodeId;
+
+	bIsInit = true;
+	return true;
+}
+
 // Write document to file
 bool USLEventData::WriteToFile()
 {
+	const FString Filename = "EventData_" + EpisodeId + ".owl";
 	const FString FilePath = LogDirectoryPath.EndsWith("/") ?
-		LogDirectoryPath + Filename : LogDirectoryPath + "/" + Filename;
+		(LogDirectoryPath + "Episodes/" + Filename) : (LogDirectoryPath + "/Episodes/" + Filename);
 
 	// Return false if file already exists
 	if (IFileManager::Get().FileExists(*FilePath))
@@ -36,29 +45,18 @@ bool USLEventData::WriteToFile()
 		return false;
 	}
 
-	// Create logging directory, return true if already created
-	if (FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*LogDirectoryPath))
-	{
-		return FFileHelper::SaveStringToFile(OwlDocument.ToXmlString(), *FilePath);
-	}
-	else
-	{
-		return false;
-	}
+	// Creates directory tree as well
+	return FFileHelper::SaveStringToFile(OwlDocument.ToXmlString(), *FilePath);
 }
 
 // Set document default values
-bool USLEventData::SetDefaultValues()
+void USLEventData::SetDefaultValues()
 {
-	// 
-	Class = "SemanticEnvironmentMap";
-	Id = FSLStatics::GenerateRandomFString(4);
-	Name = Class + "_" + Id;
-	Ns = "u-map";
-	FullName = "&" + Ns + ";" + Name;
-
-	// Set as FOwlObject
-	OwlObject.Set(FullName);
+	if (bOwlDefaultValuesSet)
+	{
+		// Default values already set
+		return;
+	}
 
 	// Remove previous default attributes
 	OwlDocument.DoctypeAttributes.Empty();
@@ -101,164 +99,69 @@ bool USLEventData::SetDefaultValues()
 	OwlDocument.Nodes.Emplace(FOwlNode(
 		"owl:ObjectProperty",
 		"rdf:about",
-		"&knowrob;describedInMap",
+		"&knowrob;taskContext",
 		"Property Definitions"));
-
-	// Add datatype property definitions
 	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
+		"owl:ObjectProperty",
 		"rdf:about",
-		"&knowrob;depthOfObject",
-		"Datatype Definitions"));
+		"&knowrob;taskSuccess"));
 	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
+		"owl:ObjectProperty",
 		"rdf:about",
-		"&knowrob;heightOfObject"));
+		"&knowrob;startTime"));
 	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
+		"owl:ObjectProperty",
 		"rdf:about",
-		"&knowrob;widthOfObject"));
+		"&knowrob;endTime"));
 	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
+		"owl:ObjectProperty",
 		"rdf:about",
-		"&knowrob;vectorX"));
+		"&knowrob;experiment"));
 	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
+		"owl:ObjectProperty",
 		"rdf:about",
-		"&knowrob;vectorY"));
+		"&knowrob_u;inContact"));
 	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
+		"owl:ObjectProperty",
 		"rdf:about",
-		"&knowrob;vectorZ"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
-		"rdf:about",
-		"&knowrob;pathToCadModel"));
+		"&knowrob_u;semanticMap"));
 
 	// Add class definitions
 	OwlDocument.Nodes.Emplace(FOwlNode(
 		"owl:Class",
 		"rdf:about",
-		"&knowrob;SemanticEnvironmentMap",
+		"&knowrob;GraspingSomething",
 		"Class Definitions"));
 	OwlDocument.Nodes.Emplace(FOwlNode(
 		"owl:Class",
 		"rdf:about",
-		"&knowrob;SLMapPerception"));
+		"&knowrob_u;UnrealExperiment"));
 	OwlDocument.Nodes.Emplace(FOwlNode(
 		"owl:Class",
 		"rdf:about",
-		"&knowrob;TimePoint"));
+		"&knowrob_u;TouchingSituation"));
 	OwlDocument.Nodes.Emplace(FOwlNode(
 		"owl:Class",
 		"rdf:about",
-		"&knowrob;Vector"));
-
-	// Add semantic map individual
-	TArray<FOwlTriple> SemMapOwlProperties;
-	SemMapOwlProperties.Emplace(
-		FOwlTriple("rdf:type", "rdf:resource", "&knowrob;SemanticEnvironmentMap"));
-
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:NamedIndividual",
-		"rdf:about",
-		FullName,
-		SemMapOwlProperties,
-		"Semantic Environment Map"));
+		"&knowrob_u;KitchenEpisode"));
 
 	// Mark that default values have been set
-	bDefaultValuesSet = true;
-	return bDefaultValuesSet;
+	bOwlDefaultValuesSet = true;
 }
 
 // Remove document default values
-bool USLEventData::RemoveDefaultValues()
+void USLEventData::RemoveDefaultValues()
 {
 	// Remove default attributes
 	OwlDocument.DoctypeAttributes.Empty();
 	OwlDocument.RdfAttributes.Empty();
 
 	// Mark that default values have been removed
-	bDefaultValuesSet = false;
-	return !bDefaultValuesSet;
+	bOwlDefaultValuesSet = false;
 }
 
 // Insert event to the document
 bool USLEventData::InsertEvent(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties)
 {
-	const FString IndividualClass = ActorWithProperties.Value.Contains("Class")
-		? *ActorWithProperties.Value.Find("Class") : FString("DefaultClass");
-	const FString IndividualId = ActorWithProperties.Value.Contains("Id")
-		? *ActorWithProperties.Value.Find("Id") : FString("DefaultId");
-	const FString IndividualName = IndividualClass + "_" + IndividualId;
-	const FString PerceptionId = FSLStatics::GenerateRandomFString(4);
-	const FString TransfId = FSLStatics::GenerateRandomFString(4);
-
-	const FVector Loc = ActorWithProperties.Key->GetActorLocation();
-	const FQuat Quat = ActorWithProperties.Key->GetActorQuat();
-	const FVector Box = ActorWithProperties.Key->GetComponentsBoundingBox().GetSize() / 100;
-
-	const FString LocStr = FString::SanitizeFloat(Loc.X) + " "
-		+ FString::SanitizeFloat(-Loc.Y) + " "
-		+ FString::SanitizeFloat(Loc.Z);
-	const FString QuatStr = FString::SanitizeFloat(Quat.W) + " "
-		+ FString::SanitizeFloat(-Quat.X) + " "
-		+ FString::SanitizeFloat(Quat.Y) + " "
-		+ FString::SanitizeFloat(-Quat.Z);
-
-	// Add object individual
-	TArray<FOwlTriple> IndividualProperties;
-	IndividualProperties.Emplace(FOwlTriple(
-		"rdf:type", "rdf:resource", "&knowrob;" + IndividualClass));
-	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:depthOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(Box.X)));
-	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:widthOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(Box.Y)));
-	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:heightOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(Box.Z)));
-	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:pathToCadModel", "rdf:datatype", "&xsd;string", "package://sim/unreal/" + IndividualClass + ".dae"));
-	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:describedInMap", "rdf:resource", FullName));
-
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:NamedIndividual",
-		"rdf:about=",
-		"&log;" + IndividualName,
-		IndividualProperties,
-		"Object " + IndividualName));
-
-	// Add perception event for localization
-	TArray<FOwlTriple> PerceptionProperties;
-	PerceptionProperties.Emplace(FOwlTriple(
-		"rdf:type", "rdf:resource", "&knowrob;SLMapPerception"));
-	PerceptionProperties.Emplace(FOwlTriple(
-		"knowrob:eventOccursAt", "rdf:resource", "&u-map;Transformation_" + TransfId));
-	PerceptionProperties.Emplace(FOwlTriple(
-		"knowrob:startTime", "rdf:resource", "&u-map;timepoint_0"));
-	PerceptionProperties.Emplace(FOwlTriple(
-		"knowrob:objectActedOn", "rdf:resource", "&log;" + IndividualName));
-
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:NamedIndividual",
-		"rdf:about",
-		"&u-map;Transformation_" + TransfId,
-		PerceptionProperties));
-
-	// Add transform for the perception event
-	TArray<FOwlTriple> TransfProperties;
-	TransfProperties.Emplace(FOwlTriple(
-		"rdf:type", "rdf:resource", "&knowrob;Transformation"));
-	PerceptionProperties.Emplace(FOwlTriple(
-		"knowrob:quaternion", "rdf:datatype", "&xsd;string", QuatStr));
-	PerceptionProperties.Emplace(FOwlTriple(
-		"knowrob:translation", "rdf:datatype", "&xsd;string", LocStr));
-
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:NamedIndividual",
-		"rdf:about",
-		"&u-map;Transformation_" + TransfId,
-		TransfProperties));
-
 	return true;
 }

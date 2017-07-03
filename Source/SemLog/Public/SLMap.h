@@ -64,12 +64,10 @@ public:
 	FOwlDocument OwlDocument;
 
 	// Shows if the map already exists
-	UPROPERTY(BlueprintReadOnly, Category = SL)
 	uint8 bExists : 1;
 
-	// Shows if the default values have been set
-	UPROPERTY(BlueprintReadOnly, Category = SL)
-	uint8 bDefaultValuesSet : 1;
+	// Shows if the default values of the owl document have been set
+	uint8 bOwlDefaultValuesSet : 1;
 
 private:
 	// Full name of the semantic map, Class + Id 
@@ -79,11 +77,11 @@ private:
 	FString FullName;
 
 	// Set document default values
-	FORCEINLINE bool SetDefaultValues();
+	void SetDefaultValues();
 
 	// Remove document default values
-	FORCEINLINE bool RemoveDefaultValues();
+	void RemoveDefaultValues();
 
 	// Insert individual to the map with its 3D transform
-	FORCEINLINE bool InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties);
+	bool InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties);
 };

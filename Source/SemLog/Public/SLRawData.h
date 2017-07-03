@@ -53,12 +53,21 @@ public:
 
 	// Destructor
 	~USLRawData();
+
+	// Init logger
+	bool Init(UWorld* InWorld,
+		const FString EpisodeId,
+		const FString LogDirectoryPath,
+		const float DistanceThreshold = 0.1f);
 	
 	// Initialise the logger and log dynamic and static entities
-	void InitAndFirstLog(UWorld* InWorld);
+	void FirstLog();
 
 	// Log dynamic entities
-	void LogDynamicEntities();
+	void LogDynamic();
+
+	// See if logger initialised
+	bool IsInit() const { return bIsInit; }
 
 private:
 	// Create Json object with a 3d location
@@ -78,18 +87,6 @@ private:
 		const FString& UniqueName,
 		FVector& PreviousLocation);
 
-	// Filename
-	UPROPERTY(EditAnywhere, Category = "SL")
-	FString Filename;
-
-	// Filename
-	UPROPERTY(EditAnywhere, Category = "SL")
-	FString LogDirectoryPath;
-
-	// Log entities which moved at least with the given distance
-	UPROPERTY(EditAnywhere, Category = "SL")
-	float DistanceThreshold;
-	
 	// Distance threshold (squared for faster comparisons)
 	float SquaredDistanceThreshold;
 
@@ -101,4 +98,7 @@ private:
 
 	// Dynamic actors with their unique name and previous location
 	TMap<AActor*, FUniqueNameAndLocation> DynamicActorsWithData;
+
+	// Logger initialised
+	bool bIsInit;
 };
