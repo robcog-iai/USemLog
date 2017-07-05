@@ -102,21 +102,31 @@ bool USLRawData::GetFirstJsonEntry(FString& FirstJsonEntry)
 		}
 	}
 
-	//TArray<USceneComponent*> StaticComponents = FTagStatics::GetActorsWithKeyValuePair(
-	//	World, "SemLog", "Runtime", "Static");
+	// Get all static components and cast them to USceneComponent
+	TArray<UActorComponent*> StaticActorComponents = FTagStatics::GetComponentsWithKeyValuePair(
+		World, "SemLog", "Runtime", "Static");
+	// Array to cast to
+	TArray<USceneComponent*> StaticSceneComponents;
+	for (const auto& StaticActCompItr : StaticActorComponents)
+	{
+		if (StaticActCompItr->IsA(USceneComponent::StaticClass()))
+		{
+			StaticSceneComponents.Emplace(Cast<USceneComponent>(StaticActCompItr));
+		}
+	}
 
-	//for (const auto& CompItr : StaticComponents)
-	//{
-	//	const FString Id = FTagStatics::GetKeyValue(CompItr, "SemLog", "Id");
-	//	if (!Id.IsEmpty())
-	//	{
-	//		const FString UniqueName = FTagStatics::GetKeyValue(CompItr, "SemLog", "Class") + "_" + Id;
-	//		FVector VirtualPreviousLocation(-99999.9f);
+	for (const auto& CompItr : StaticSceneComponents)
+	{
+		const FString Id = FTagStatics::GetKeyValue(CompItr, "SemLog", "Id");
+		if (!Id.IsEmpty())
+		{
+			const FString UniqueName = FTagStatics::GetKeyValue(CompItr, "SemLog", "Class") + "_" + Id;
+			FVector VirtualPreviousLocation(-99999.9f);
 
-	//		USLRawData::AddComponentToJsonArray(
-	//			JsonActorArr, CompItr, UniqueName, VirtualPreviousLocation);
-	//	}
-	//}
+			USLRawData::AddComponentToJsonArray(
+				JsonActorArr, CompItr, UniqueName, VirtualPreviousLocation);
+		}
+	}
 
 	// Setup and log dynamic entities
 	TArray<AActor*> DynamicActors = FTagStatics::GetActorsWithKeyValuePair(
@@ -138,24 +148,34 @@ bool USLRawData::GetFirstJsonEntry(FString& FirstJsonEntry)
 		}
 	}
 
-	//TArray<USceneComponent*> DynamicComponents = FTagStatics::GetActorsWithKeyValuePair(
-	//	World, "SemLog", "Runtime", "Dynamic");
+	// Get all static components and cast them to USceneComponent
+	TArray<UActorComponent*> DynamicActorComponents = FTagStatics::GetComponentsWithKeyValuePair(
+		World, "SemLog", "Runtime", "Dynamic");
+	// Array to cast to
+	TArray<USceneComponent*> DynamicSceneComponents;
+	for (const auto& DynamicActCompItr : DynamicActorComponents)
+	{
+		if (DynamicActCompItr->IsA(USceneComponent::StaticClass()))
+		{
+			DynamicSceneComponents.Emplace(Cast<USceneComponent>(DynamicActCompItr));
+		}
+	}
 
-	//for (const auto& DynCompItr : DynamicComponents)
-	//{
-	//	const FString Id = FTagStatics::GetKeyValue(DynCompItr, "SemLog", "Id");
-	//	if (!Id.IsEmpty())
-	//	{
-	//		const FString UniqueName = FTagStatics::GetKeyValue(DynCompItr, "SemLog", "Class") + "_" + Id;
-	//		FVector VirtualPreviousLocation(-99999.9f);
-	//		USLRawData::AddComponentToJsonArray(
-	//			JsonActorArr, DynCompItr, UniqueName, VirtualPreviousLocation);
+	for (const auto& DynCompItr : DynamicSceneComponents)
+	{
+		const FString Id = FTagStatics::GetKeyValue(DynCompItr, "SemLog", "Id");
+		if (!Id.IsEmpty())
+		{
+			const FString UniqueName = FTagStatics::GetKeyValue(DynCompItr, "SemLog", "Class") + "_" + Id;
+			FVector VirtualPreviousLocation(-99999.9f);
+			USLRawData::AddComponentToJsonArray(
+				JsonActorArr, DynCompItr, UniqueName, VirtualPreviousLocation);
 
-	//		// Store the UniqueName and the Location of the dynamic entity
-	//		DynamicComponentsWithData.Add(DynCompItr,
-	//			FUniqueNameAndLocation(UniqueName, DynCompItr->GetComponentLocation()));
-	//	}
-	//}
+			// Store the UniqueName and the Location of the dynamic entity
+			DynamicComponentsWithData.Add(DynCompItr,
+				FUniqueNameAndLocation(UniqueName, DynCompItr->GetComponentLocation()));
+		}
+	}
 
 	// Add actors to Json root
 	JsonRootObj->SetArrayField("actors", JsonActorArr);
