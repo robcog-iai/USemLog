@@ -4,7 +4,7 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 
 # Actor tags example:
 
-	SemLog:Class,HelaCurryKetchup;LogType,Dynamic;
+	SemLog;Class,HelaCurryKetchup;LogType,Dynamic;
 
 # Development branch
 
