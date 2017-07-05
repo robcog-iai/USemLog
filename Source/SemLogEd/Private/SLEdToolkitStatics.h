@@ -15,6 +15,9 @@
 
 struct FSLEdToolkitStatics
 {
+	// TODO avoid using static functions, see other examples
+	//static bool bOverwriteSemanticMap;
+
 	static bool AreActorsSelected()
 	{
 		return GEditor->GetSelectedActors()->Num() != 0;
@@ -33,7 +36,7 @@ struct FSLEdToolkitStatics
 	}
 
 
-	static bool NoRuntimeManager()
+	static bool NoRuntimeManagerInTheWorld()
 	{
 		if (TActorIterator<ASLRuntimeManager>(GEditor->GetEditorWorldContext().World()))
 		{
@@ -86,6 +89,11 @@ struct FSLEdToolkitStatics
 		return IFileManager::Get().Delete(*Path);
 	}
 
+	// Checkbox
+	static void OnCheckedOverwriteSemanticMap(ECheckBoxState NewCheckedState)
+	{
+		//bOverwriteSemanticMap = (NewCheckedState == ECheckBoxState::Checked);
+	}
 
 	//// Generate semantic map button callback
 	//static FReply GenerateSemanticMap()
