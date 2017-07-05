@@ -39,6 +39,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL")
 	bool bLogRawData;
 
+	// Update delta time in seconds (if 0 of < Tick DeltaTime => Update every tick)
+	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogRawData"), meta = (ClampMin = 0))
+	float RawDataUpdateDeltaTime;
+
 	// Raw data logger
 	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogRawData"))
 	USLRawData* RawDataLogger;
@@ -50,4 +54,7 @@ private:
 	// Event data logger
 	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogEventData"))
 	USLEventData* EventDataLogger;
+
+	// Amount of time passed since last update
+	float TimeSinceLastUpdate;
 };

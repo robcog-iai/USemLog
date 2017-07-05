@@ -127,80 +127,38 @@ void USLMap::SetDefaultValues()
 		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
 	OntologyOwlProperties.Emplace(FOwlTriple(
 		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob_u.owl"));
-	FOwlNode OntologyOwlNode(
-		"owl:Ontology",
-		"rdf:about",
-		"http://knowrob.org/kb/u_map.owl",
+	FOwlNode OntologyOwlNode("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl",
 		OntologyOwlProperties,
 		"Ontologies");
 	OwlDocument.Nodes.Insert(OntologyOwlNode, 0);
 
 	// Add object property definitions 
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:ObjectProperty",
-		"rdf:about",
-		"&knowrob;describedInMap",
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;describedInMap",
 		"Property Definitions"));
 
 	// Add datatype property definitions
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
-		"rdf:about",
-		"&knowrob;depthOfObject",
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;depthOfObject",
 		"Datatype Definitions"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
-		"rdf:about",
-		"&knowrob;heightOfObject"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
-		"rdf:about",
-		"&knowrob;widthOfObject"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
-		"rdf:about",
-		"&knowrob;vectorX"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
-		"rdf:about",
-		"&knowrob;vectorY"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
-		"rdf:about",
-		"&knowrob;vectorZ"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:DatatypeProperty",
-		"rdf:about",
-		"&knowrob;pathToCadModel"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;heightOfObject"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about",	"&knowrob;widthOfObject"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;vectorX"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about",	"&knowrob;vectorY"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;vectorZ"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about",	"&knowrob;pathToCadModel"));
 
 	// Add class definitions
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:Class",
-		"rdf:about",
-		"&knowrob;SemanticEnvironmentMap",
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob;SemanticEnvironmentMap",
 		"Class Definitions"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:Class",
-		"rdf:about",
-		"&knowrob;SLMapPerception"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:Class",
-		"rdf:about",
-		"&knowrob;TimePoint"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:Class",
-		"rdf:about",
-		"&knowrob;Vector"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob;SLMapPerception"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob;TimePoint"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob;Vector"));
 		
 	// Add semantic map individual
 	TArray<FOwlTriple> SemMapOwlProperties;
 	SemMapOwlProperties.Emplace(
 		FOwlTriple("rdf:type", "rdf:resource", "&knowrob;SemanticEnvironmentMap"));
 
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:NamedIndividual",
-		"rdf:about",
-		FullName,
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", FullName,
 		SemMapOwlProperties,
 		"Semantic Environment Map"));
 
@@ -253,7 +211,7 @@ bool USLMap::InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& Acto
 	IndividualProperties.Emplace(FOwlTriple(
 		"knowrob:heightOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(Box.Z)));
 	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:pathToCadModel", "rdf:datatype", "&xsd;string", "package://sim/unreal/" + IndividualClass + ".dae"));
+		"knowrob:pathToCadModel", "rdf:datatype", "&xsd;string", "package://robcog/" + IndividualClass + ".dae"));
 	IndividualProperties.Emplace(FOwlTriple(
 		"knowrob:describedInMap", "rdf:resource", FullName));
 

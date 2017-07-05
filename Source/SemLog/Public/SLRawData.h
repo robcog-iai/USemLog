@@ -55,18 +55,30 @@ public:
 	~USLRawData();
 
 	// Init logger
+	UFUNCTION(BlueprintCallable, Category = SL)
 	bool Init(UWorld* InWorld,
 		const FString EpisodeId,
 		const FString LogDirectoryPath,
 		const float DistanceThreshold = 0.1f);
 	
-	// Initialise the logger and log dynamic and static entities
-	void FirstLog();
+	// Initialise the logger and log dynamic and static entities to file
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool FirstLog();
+
+	// Initialise the logger and return logged dynamic and static entities as json string
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool FirstLogAsString(FString& FristLogString);
 
 	// Log dynamic entities
-	void LogDynamic();
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool LogDynamic();
+
+	// Log dynamic entities and return them as json string
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool LogDynamicAsString(FString& DynamicLogString);
 
 	// See if logger initialised
+	UFUNCTION(BlueprintCallable, Category = SL)
 	bool IsInit() const { return bIsInit; }
 
 private:

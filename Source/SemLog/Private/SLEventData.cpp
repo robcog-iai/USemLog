@@ -13,6 +13,8 @@ USLEventData::USLEventData()
 	// Default values
 	bOwlDefaultValuesSet = false;
 	bIsInit = false;
+	bIsStarted = false;
+	bIsFinished = false;
 }
 
 // Destructor
@@ -26,13 +28,49 @@ bool USLEventData::Init(const FString InEpisodeId, const FString InLogDirectoryP
 	LogDirectoryPath = InLogDirectoryPath;
 	EpisodeId = InEpisodeId;
 
+	USLEventData::SetDefaultValues();
+
 	bIsInit = true;
+	return true;
+}
+
+// Start logger
+bool USLEventData::Start(const float Timestamp)
+{
+	if (!bIsInit)
+	{
+		return false;
+	}
+
+	USLEventData::StartMetadataEvent(Timestamp);
+
+	bIsStarted = true;
+	return true;
+}
+
+// Finish logger
+bool USLEventData::Finish(const float Timestamp)
+{
+	if (!bIsStarted)
+	{
+		return false;
+	}
+
+	USLEventData::FinishAllIdleEvents(Timestamp);
+	USLEventData::FinishMetadataEvent(Timestamp);
+
+	bIsFinished = true;
 	return true;
 }
 
 // Write document to file
 bool USLEventData::WriteToFile()
 {
+	if (!bIsFinished)
+	{
+		return false;
+	}
+
 	const FString Filename = "EventData_" + EpisodeId + ".owl";
 	const FString FilePath = LogDirectoryPath.EndsWith("/") ?
 		(LogDirectoryPath + "Episodes/" + Filename) : (LogDirectoryPath + "/Episodes/" + Filename);
@@ -47,6 +85,19 @@ bool USLEventData::WriteToFile()
 
 	// Creates directory tree as well
 	return FFileHelper::SaveStringToFile(OwlDocument.ToXmlString(), *FilePath);
+}
+
+// Get document as a string
+bool USLEventData::GetAsString(FString& Document)
+{
+	if (!bIsFinished)
+	{
+		return false;
+	}
+
+	// Get document as string
+	Document = OwlDocument.ToXmlString();
+	return true;
 }
 
 // Set document default values
@@ -87,63 +138,31 @@ void USLEventData::SetDefaultValues()
 		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
 	OntologyOwlProperties.Emplace(FOwlTriple(
 		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob_u.owl"));
-	FOwlNode OntologyOwlNode(
-		"owl:Ontology",
-		"rdf:about",
-		"http://knowrob.org/kb/u_map.owl",
+	FOwlNode OntologyOwlNode("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl",
 		OntologyOwlProperties,
 		"Ontologies");
 	OwlDocument.Nodes.Insert(OntologyOwlNode, 0);
 
 	// Add object property definitions 
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:ObjectProperty",
-		"rdf:about",
-		"&knowrob;taskContext",
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;taskContext",
 		"Property Definitions"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:ObjectProperty",
-		"rdf:about",
-		"&knowrob;taskSuccess"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:ObjectProperty",
-		"rdf:about",
-		"&knowrob;startTime"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:ObjectProperty",
-		"rdf:about",
-		"&knowrob;endTime"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:ObjectProperty",
-		"rdf:about",
-		"&knowrob;experiment"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:ObjectProperty",
-		"rdf:about",
-		"&knowrob_u;inContact"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:ObjectProperty",
-		"rdf:about",
-		"&knowrob_u;semanticMap"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;taskSuccess"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;startTime"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;endTime"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;experiment"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;inContact"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;semanticMap"));
 
 	// Add class definitions
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:Class",
-		"rdf:about",
-		"&knowrob;GraspingSomething",
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob;GraspingSomething",
 		"Class Definitions"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:Class",
-		"rdf:about",
-		"&knowrob_u;UnrealExperiment"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:Class",
-		"rdf:about",
-		"&knowrob_u;TouchingSituation"));
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:Class",
-		"rdf:about",
-		"&knowrob_u;KitchenEpisode"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob_u;UnrealExperiment"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob_u;TouchingSituation"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob_u;KitchenEpisode"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob_u;FurnitureStateClosed"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob_u;FurnitureStateHalfClosed"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob_u;FurnitureStateOpened"));
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateHalfOpened"));
 
 	// Mark that default values have been set
 	bOwlDefaultValuesSet = true;
@@ -160,8 +179,62 @@ void USLEventData::RemoveDefaultValues()
 	bOwlDefaultValuesSet = false;
 }
 
-// Insert event to the document
-bool USLEventData::InsertEvent(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties)
+// Start an event
+bool USLEventData::StartEvent()
 {
+	if (!bIsStarted)
+	{
+		return false;
+	}
+	return true;
+};
+
+// Finish an event
+bool USLEventData::FinishEvent()
+{
+	if (!bIsStarted)
+	{
+		return false;
+	}
+	return true;
+}
+
+// Insert finished event
+bool USLEventData::InsertFinishedEvent()
+{
+	if (!bIsStarted)
+	{
+		return false;
+	}
+	return true;
+}
+
+// Start metadata event
+bool USLEventData::StartMetadataEvent(const float Timestamp)
+{
+	if (!bIsStarted)
+	{
+		return false;
+	}
+	return true;
+}
+
+// Start metadata event
+bool USLEventData::FinishMetadataEvent(const float Timestamp)
+{
+	if (!bIsStarted)
+	{
+		return false;
+	}
+	return true;
+}
+
+// Terminate all idling events
+bool USLEventData::FinishAllIdleEvents(const float Timestamp)
+{
+	if (!bIsStarted)
+	{
+		return false;
+	}
 	return true;
 }

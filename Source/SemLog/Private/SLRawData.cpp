@@ -18,7 +18,10 @@ USLRawData::USLRawData()
 // Destructor
 USLRawData::~USLRawData()
 {
-	delete FileHandle;
+	if (FileHandle)
+	{
+		delete FileHandle;
+	}
 }
 
 // Init logger
@@ -56,12 +59,12 @@ bool USLRawData::Init(UWorld* InWorld,
 	}
 }
 
-// Log dynamic and static entities
-void USLRawData::FirstLog()
+// Log dynamic and static entities to file
+bool USLRawData::FirstLog()
 {	
 	if (!bIsInit)
 	{
-		return;
+		return false;
 	}
 
 	// Create Json root object
@@ -118,15 +121,21 @@ void USLRawData::FirstLog()
 	FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
 
 	// Write string to file
-	FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
+	return FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
+}
+
+// Initialise the logger and return logged dynamic and static entities as json string
+bool USLRawData::FirstLogAsString(FString& FristLogString)
+{
+	return true;
 }
 
 // Log dynamic entities
-void USLRawData::LogDynamic()
+bool USLRawData::LogDynamic()
 {
 	if (!bIsInit)
 	{
-		return;
+		return false;
 	}
 
 	// Create Json root object
@@ -158,8 +167,17 @@ void USLRawData::LogDynamic()
 		FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
 
 		// Write string to file
-		FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
+		return FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
 	}
+
+	// No dynamic entities to be logged
+	return false;
+}
+
+// Log dynamic entities and return them as json string
+bool USLRawData::LogDynamicAsString(FString& DynamicLogString)
+{
+	return true;
 }
 
 // Create Json object with a 3d location
