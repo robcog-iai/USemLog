@@ -19,7 +19,7 @@ struct FUniqueNameAndLocation
 	GENERATED_USTRUCT_BODY()
 
 	// Default constructor
-	FUniqueNameAndLocation()
+	FUniqueNameAndLocation() 
 	{};
 	
 	// Constructor with Id
@@ -56,32 +56,36 @@ public:
 
 	// Init logger
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool Init(UWorld* InWorld,
-		const FString EpisodeId,
-		const FString LogDirectoryPath,
-		const float DistanceThreshold = 0.1f);
-	
-	// Initialise the logger and log dynamic and static entities to file
-	UFUNCTION(BlueprintCallable, Category = SL)
-	bool FirstLog();
+	bool Init(UWorld* InWorld, const float DistanceThreshold = 0.1f);
 
-	// Initialise the logger and return logged dynamic and static entities as json string
+	// Set file handle for appending log data to file every update
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool FirstLogAsString(FString& FristLogString);
+	void SetLogToFile(const FString EpisodeId, const FString LogDirectoryPath);
+	
+	// Log dynamic and static entities to file
+	UFUNCTION(BlueprintCallable, Category = SL)
+	void FirstLog();
+
+	// Get the dynamic and static entities as json string
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool GetFirstJsonEntry(FString& FirstJsonEntry);
 
 	// Log dynamic entities
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool LogDynamic();
+	void LogDynamic();
 
 	// Log dynamic entities and return them as json string
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool LogDynamicAsString(FString& DynamicLogString);
+	bool GetDynamicJsonEntry(FString& DynamicJsonEntry);
 
 	// See if logger initialised
 	UFUNCTION(BlueprintCallable, Category = SL)
 	bool IsInit() const { return bIsInit; }
 
 private:
+	// Add string to file
+	bool AddToFile(FString& JsonString);
+
 	// Create Json object with a 3d location
 	FORCEINLINE TSharedPtr<FJsonObject> CreateLocationJsonObject(const FVector& Location);
 
@@ -92,10 +96,17 @@ private:
 	FORCEINLINE TSharedPtr<FJsonObject> CreateNameLocRotJsonObject(
 	const FString& Name, const FVector& Location, const FQuat& Rotation);
 
-	// Add the entity's raw data to the json array
+	// Add actors data to the json array
 	void AddActorToJsonArray(
 		TArray<TSharedPtr<FJsonValue>>& OutJsonArray,
 		AActor* Actor,
+		const FString& UniqueName,
+		FVector& PreviousLocation);
+
+	// Add component's data to the json array
+	void AddComponentToJsonArray(
+		TArray<TSharedPtr<FJsonValue>>& OutJsonArray,
+		USceneComponent* Component,
 		const FString& UniqueName,
 		FVector& PreviousLocation);
 
@@ -111,6 +122,12 @@ private:
 	// Dynamic actors with their unique name and previous location
 	TMap<AActor*, FUniqueNameAndLocation> DynamicActorsWithData;
 
-	// Logger initialised
+	// Dynamic components with their unique name and previous location
+	TMap<USceneComponent*, FUniqueNameAndLocation> DynamicComponentsWithData;
+
+	// Logger initialized
 	bool bIsInit;
+
+	// Logging to file
+	bool bLogToFile;
 };

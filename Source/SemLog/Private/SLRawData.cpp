@@ -13,6 +13,7 @@ USLRawData::USLRawData()
 {
 	// Default values
 	bIsInit = false;
+	bLogToFile = false;
 }
 
 // Destructor
@@ -25,10 +26,7 @@ USLRawData::~USLRawData()
 }
 
 // Init logger
-bool USLRawData::Init(UWorld* InWorld,
-	const FString EpisodeId,
-	const FString LogDirectoryPath,
-	const float DistanceThreshold)
+bool USLRawData::Init(UWorld* InWorld, const float DistanceThreshold)
 {
 	// Set the world
 	World = InWorld;
@@ -36,7 +34,15 @@ bool USLRawData::Init(UWorld* InWorld,
 	// Calculate the squared distance threshold (faster comparisons)
 	SquaredDistanceThreshold = DistanceThreshold * DistanceThreshold;
 
-	// Create Filehandle to incrementally append json logs to file
+	// Logger initialized
+	bIsInit = (World != nullptr);
+	return bIsInit;
+}
+
+// Set file handle for appending log data to file every update
+void USLRawData::SetLogToFile(const FString EpisodeId, const FString LogDirectoryPath)
+{
+	// Create filehandle to incrementally append json logs to file
 	const FString Filename = "RawData_" + EpisodeId + ".json";
 	const FString EpisodesDirPath = LogDirectoryPath.EndsWith("/") ?
 		(LogDirectoryPath + "Episodes/") : (LogDirectoryPath + "/Episodes/");
@@ -45,23 +51,27 @@ bool USLRawData::Init(UWorld* InWorld,
 	// Create logging directory path and the filehandle
 	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*EpisodesDirPath);
 	FileHandle = FPlatformFileManager::Get().GetPlatformFile().OpenWrite(*FilePath, true);
-	
-	if (FileHandle)
-	{
-		// Logger initialised
-		bIsInit = true;
-		return true;
-	}
-	else
-	{
-		// Could not init logger
-		return false;
-	}
+
+	bLogToFile = (FileHandle != nullptr);
 }
 
 // Log dynamic and static entities to file
-bool USLRawData::FirstLog()
-{	
+void USLRawData::FirstLog()
+{
+	// String to store the json entry
+	FString JsonOutputString;
+	USLRawData::GetFirstJsonEntry(JsonOutputString);
+
+	// Append to file if set
+	if (bLogToFile)
+	{
+		USLRawData::AddToFile(JsonOutputString);
+	}
+}
+
+// Get the dynamic and static entities as json string
+bool USLRawData::GetFirstJsonEntry(FString& FirstJsonEntry)
+{
 	if (!bIsInit)
 	{
 		return false;
@@ -74,7 +84,7 @@ bool USLRawData::FirstLog()
 	JsonRootObj->SetNumberField("timestamp", World->GetTimeSeconds());
 	// Json array of actors
 	TArray< TSharedPtr<FJsonValue> > JsonActorArr;
-	
+
 	// Log static entities (logged only once at init)
 	TArray<AActor*> StaticActors = FTagStatics::GetActorsWithKeyValuePair(
 		World, "SemLog", "Runtime", "Static");
@@ -92,6 +102,22 @@ bool USLRawData::FirstLog()
 		}
 	}
 
+	//TArray<USceneComponent*> StaticComponents = FTagStatics::GetActorsWithKeyValuePair(
+	//	World, "SemLog", "Runtime", "Static");
+
+	//for (const auto& CompItr : StaticComponents)
+	//{
+	//	const FString Id = FTagStatics::GetKeyValue(CompItr, "SemLog", "Id");
+	//	if (!Id.IsEmpty())
+	//	{
+	//		const FString UniqueName = FTagStatics::GetKeyValue(CompItr, "SemLog", "Class") + "_" + Id;
+	//		FVector VirtualPreviousLocation(-99999.9f);
+
+	//		USLRawData::AddComponentToJsonArray(
+	//			JsonActorArr, CompItr, UniqueName, VirtualPreviousLocation);
+	//	}
+	//}
+
 	// Setup and log dynamic entities
 	TArray<AActor*> DynamicActors = FTagStatics::GetActorsWithKeyValuePair(
 		World, "SemLog", "Runtime", "Dynamic");
@@ -107,37 +133,57 @@ bool USLRawData::FirstLog()
 				JsonActorArr, DynActItr, UniqueName, VirtualPreviousLocation);
 
 			// Store the UniqueName and the Location of the dynamic entity
-			DynamicActorsWithData.Add(DynActItr, 
+			DynamicActorsWithData.Add(DynActItr,
 				FUniqueNameAndLocation(UniqueName, DynActItr->GetActorLocation()));
 		}
 	}
+
+	//TArray<USceneComponent*> DynamicComponents = FTagStatics::GetActorsWithKeyValuePair(
+	//	World, "SemLog", "Runtime", "Dynamic");
+
+	//for (const auto& DynCompItr : DynamicComponents)
+	//{
+	//	const FString Id = FTagStatics::GetKeyValue(DynCompItr, "SemLog", "Id");
+	//	if (!Id.IsEmpty())
+	//	{
+	//		const FString UniqueName = FTagStatics::GetKeyValue(DynCompItr, "SemLog", "Class") + "_" + Id;
+	//		FVector VirtualPreviousLocation(-99999.9f);
+	//		USLRawData::AddComponentToJsonArray(
+	//			JsonActorArr, DynCompItr, UniqueName, VirtualPreviousLocation);
+
+	//		// Store the UniqueName and the Location of the dynamic entity
+	//		DynamicComponentsWithData.Add(DynCompItr,
+	//			FUniqueNameAndLocation(UniqueName, DynCompItr->GetComponentLocation()));
+	//	}
+	//}
 
 	// Add actors to Json root
 	JsonRootObj->SetArrayField("actors", JsonActorArr);
 
 	// Transform to string
-	FString JsonOutputString;
-	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonOutputString);
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&FirstJsonEntry);
 	FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
 
-	// Write string to file
-	return FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
-}
-
-// Initialise the logger and return logged dynamic and static entities as json string
-bool USLRawData::FirstLogAsString(FString& FristLogString)
-{
-	return true;
+	return (!FirstJsonEntry.IsEmpty());
 }
 
 // Log dynamic entities
-bool USLRawData::LogDynamic()
+void USLRawData::LogDynamic()
 {
-	if (!bIsInit)
-	{
-		return false;
-	}
+	// String to store the json entry
+	FString DynamicJsonOutputString;
+	USLRawData::GetDynamicJsonEntry(DynamicJsonOutputString);
 
+	// Append to file if set
+	if (bLogToFile)
+	{
+		USLRawData::AddToFile(DynamicJsonOutputString);
+	}
+}
+
+// Get logged dynamic entities as json string
+bool USLRawData::GetDynamicJsonEntry(FString& DynamicJsonEntry)
+{
 	// Create Json root object
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
@@ -152,6 +198,13 @@ bool USLRawData::LogDynamic()
 			ActWithDataItr.Key, ActWithDataItr.Value.UniqueName, ActWithDataItr.Value.Location);
 	}
 
+	// Iterate and log dynamic components
+	for (auto& CompWithDataItr : DynamicComponentsWithData)
+	{
+		USLRawData::AddComponentToJsonArray(JsonActorArr,
+			CompWithDataItr.Key, CompWithDataItr.Value.UniqueName, CompWithDataItr.Value.Location);
+	}
+
 	// Avoid appending emtpy entries
 	if (JsonActorArr.Num() > 0)
 	{
@@ -163,21 +216,25 @@ bool USLRawData::LogDynamic()
 
 		// Transform to string
 		FString JsonOutputString;
-		TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonOutputString);
+		TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&DynamicJsonEntry);
 		FJsonSerializer::Serialize(JsonRootObj.ToSharedRef(), Writer);
 
-		// Write string to file
-		return FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonOutputString), JsonOutputString.Len());
+		return true;
 	}
 
 	// No dynamic entities to be logged
 	return false;
 }
 
-// Log dynamic entities and return them as json string
-bool USLRawData::LogDynamicAsString(FString& DynamicLogString)
+// Append string to the file
+bool USLRawData::AddToFile(FString& JsonString)
 {
-	return true;
+	if (!FileHandle)
+	{
+		return false;
+	}
+	// Write string to file
+	return FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonString), JsonString.Len());
 }
 
 // Create Json object with a 3d location
@@ -270,6 +327,30 @@ void USLRawData::AddActorToJsonArray(
 			// Add bones to Json actor
 			JsonActorObj->SetArrayField("bones", JsonBoneArr);
 		}
+
+		// Add actor to Json array
+		OutJsonArray.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));
+	}
+}
+
+// Add component's data to the json array
+void USLRawData::AddComponentToJsonArray(
+	TArray<TSharedPtr<FJsonValue>>& OutJsonArray,
+	USceneComponent* Component,
+	const FString& UniqueName,
+	FVector& PreviousLocation)
+{
+	// Get entity current location
+	const FVector CurrLocation = Component->GetComponentLocation();
+	// Write raw data if distance larger than threshold
+	if (FVector::DistSquared(CurrLocation, PreviousLocation) > SquaredDistanceThreshold)
+	{
+		// Update previous location
+		PreviousLocation = CurrLocation;
+
+		// Json actor object with name location and rotation
+		TSharedPtr<FJsonObject> JsonActorObj = USLRawData::CreateNameLocRotJsonObject(
+			UniqueName, CurrLocation * 0.01f, Component->GetComponentQuat());
 
 		// Add actor to Json array
 		OutJsonArray.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));

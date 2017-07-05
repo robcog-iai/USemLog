@@ -44,15 +44,26 @@ void ASLRuntimeManager::BeginPlay()
 		// Enable tick for raw data logging
 		SetActorTickEnabled(true);
 
-		// Initalize the raw data logger and log the static and dynamic entities
-		RawDataLogger->Init(GetWorld(), EpisodeId, LogDirectory, 0.1f);
+		// Initialize the raw data logger and log the static and dynamic entities
+		RawDataLogger->Init(GetWorld(), 0.1f);
+		RawDataLogger->SetLogToFile(EpisodeId, LogDirectory);
 		RawDataLogger->FirstLog();
 	}
 
 	if (bLogEventData && EventDataLogger)
 	{
-		// Initalize the raw data logger and log the static and dynamic entities
+		// Initialize the event data
 		EventDataLogger->Init(EpisodeId, LogDirectory);
+		EventDataLogger->Start(GetWorld()->GetTimeSeconds());
+	}
+}
+
+// Called when actor removed from game or game ended
+void ASLRuntimeManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if(bLogEventData && EventDataLogger)
+	{
+		EventDataLogger->Finish(GetWorld()->GetTimeSeconds());
 		EventDataLogger->WriteToFile();
 	}
 }
