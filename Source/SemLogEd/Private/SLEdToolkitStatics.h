@@ -61,6 +61,17 @@ struct FSLEdToolkitStatics
 				FTagStatics::AddKeyValuePair(
 					ActItr->Tags[TagIndex], "Id", FSLStatics::GenerateRandomFString(4));
 			}
+
+			// Check component tags as well
+			for (const auto& CompItr : ActItr->GetComponents())
+			{
+				int32 TagIndex = FTagStatics::GetTagTypeIndex(CompItr, "SemLog");
+				if (TagIndex != INDEX_NONE)
+				{
+					FTagStatics::AddKeyValuePair(
+						CompItr->ComponentTags[TagIndex], "Id", FSLStatics::GenerateRandomFString(4));
+				}
+			}
 		}
 		return FReply::Handled();
 	}

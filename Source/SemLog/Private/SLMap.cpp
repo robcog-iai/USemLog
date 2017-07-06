@@ -41,7 +41,6 @@ bool USLMap::Exists()
 	const FString FilePath = LogDirectoryPath.EndsWith("/") ?
 		LogDirectoryPath + Filename : LogDirectoryPath + "/" + Filename;
 	return IFileManager::Get().FileExists(*FilePath);
-
 }
 
 // Generate the semantic map
@@ -56,12 +55,21 @@ bool USLMap::Generate(UWorld* World)
 	// Get the map of actors to their tag properties
 	const TMap<AActor*, TMap<FString, FString>> ActorToTagProperties =
 		FTagStatics::GetActorsToKeyValuePairs(World, "SemLog");
-
-
+	
 	// Iterate all correctly tagged actors and add them to the semantic map
 	for (const auto& ActorToTagItr : ActorToTagProperties)
 	{
-		USLMap::InsertIndividual(ActorToTagItr);
+		USLMap::InsertActorIndividual(ActorToTagItr);
+	}
+
+	// Get the map of components to their tag properties
+	const TMap<UActorComponent*, TMap<FString, FString>> ComponentToTagProperties =
+		FTagStatics::GetComponentsToKeyValuePairs(World, "SemLog");
+
+	// Iterate all correctly tagged actors and add them to the semantic map
+	for (const auto& ComponentToTagItr : ComponentToTagProperties)
+	{
+		USLMap::InsertComponentIndividual(ComponentToTagItr);
 	}
 	
 	return true;
@@ -177,39 +185,88 @@ void USLMap::RemoveDefaultValues()
 	bOwlDefaultValuesSet = false;
 }
 
-// Insert individual to the map with its 3D transform
-bool USLMap::InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties)
+// Insert actor individual to the map with its 3D transform
+void USLMap::InsertActorIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties)
 {
 	const FString IndividualClass = ActorWithProperties.Value.Contains("Class")
 		? *ActorWithProperties.Value.Find("Class") : FString("DefaultClass");
 	const FString IndividualId = ActorWithProperties.Value.Contains("Id")
 		? *ActorWithProperties.Value.Find("Id") : FString("DefaultId");
+
+	const FVector Loc = ActorWithProperties.Key->GetActorLocation();
+	const FQuat Quat = ActorWithProperties.Key->GetActorQuat();
+	const FVector Box = ActorWithProperties.Key->GetComponentsBoundingBox().GetSize() / 100.f;
+
+	// Add to map
+	USLMap::InsertIndividual(IndividualClass, IndividualId, Loc, Quat, Box);
+}
+
+// Insert individual to the map with its 3D transform
+void USLMap::InsertComponentIndividual(const TPair<UActorComponent*, TMap<FString, FString>>& ComponentWithProperties)
+{
+	if (ComponentWithProperties.Key->IsA(USceneComponent::StaticClass()))
+	{
+		USceneComponent* SceneComp = Cast<USceneComponent>(ComponentWithProperties.Key);
+
+		const FString IndividualClass = ComponentWithProperties.Value.Contains("Class")
+			? *ComponentWithProperties.Value.Find("Class") : FString("DefaultClass");
+		const FString IndividualId = ComponentWithProperties.Value.Contains("Id")
+			? *ComponentWithProperties.Value.Find("Id") : FString("DefaultId");
+
+		const FVector Loc = SceneComp->GetComponentLocation();
+		const FQuat Quat = SceneComp->GetComponentQuat();
+		const FVector Box = SceneComp->Bounds.BoxExtent;		
+
+		// Add to map
+		USLMap::InsertIndividual(IndividualClass, IndividualId, Loc, Quat, Box);
+	}
+}
+
+// Insert individual to the document
+void USLMap::InsertIndividual(
+	const FString IndividualClass,
+	const FString IndividualId,
+	const FVector Location,
+	const FQuat Quat,
+	const FVector BoundingBox,
+	bool bSaveAsRightHandedCoordinate)
+{
 	const FString IndividualName = IndividualClass + "_" + IndividualId;
 	const FString PerceptionId = FSLStatics::GenerateRandomFString(4);
 	const FString TransfId = FSLStatics::GenerateRandomFString(4);
 
-	const FVector Loc = ActorWithProperties.Key->GetActorLocation();
-	const FQuat Quat = ActorWithProperties.Key->GetActorQuat();
-	const FVector Box = ActorWithProperties.Key->GetComponentsBoundingBox().GetSize() / 100;
+	// Get location as string in right(ROS) or left (UE4) hand coordinate system
+	const FString LocStr = 	bSaveAsRightHandedCoordinate ?
+		(FString::SanitizeFloat(Location.X) + " " 
+			+ FString::SanitizeFloat(-Location.Y) + " " 
+			+ FString::SanitizeFloat(Location.Z)) 
+		:
+		(FString::SanitizeFloat(Location.X) + " "
+			+ FString::SanitizeFloat(Location.Y) + " "
+			+ FString::SanitizeFloat(Location.Z));
 
-	const FString LocStr = FString::SanitizeFloat(Loc.X) + " "
-		+ FString::SanitizeFloat(-Loc.Y) + " "
-		+ FString::SanitizeFloat(Loc.Z);
-	const FString QuatStr = FString::SanitizeFloat(Quat.W) + " "
-		+ FString::SanitizeFloat(-Quat.X) + " "
-		+ FString::SanitizeFloat(Quat.Y) + " "
-		+ FString::SanitizeFloat(-Quat.Z);
-	
+	// Get orientation as string in right(ROS) or left (UE4) hand coordinate system
+	const FString QuatStr = bSaveAsRightHandedCoordinate ?
+		(FString::SanitizeFloat(Quat.W) + " "
+			+ FString::SanitizeFloat(-Quat.X) + " "
+			+ FString::SanitizeFloat(Quat.Y) + " "
+			+ FString::SanitizeFloat(-Quat.Z))
+		:
+		(FString::SanitizeFloat(Quat.W) + " "
+			+ FString::SanitizeFloat(Quat.X) + " "
+			+ FString::SanitizeFloat(Quat.Y) + " "
+			+ FString::SanitizeFloat(Quat.Z));
+
 	// Add object individual
 	TArray<FOwlTriple> IndividualProperties;
 	IndividualProperties.Emplace(FOwlTriple(
 		"rdf:type", "rdf:resource", "&knowrob;" + IndividualClass));
 	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:depthOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(Box.X)));
+		"knowrob:depthOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(BoundingBox.X)));
 	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:widthOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(Box.Y)));
+		"knowrob:widthOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(BoundingBox.Y)));
 	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:heightOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(Box.Z)));
+		"knowrob:heightOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(BoundingBox.Z)));
 	IndividualProperties.Emplace(FOwlTriple(
 		"knowrob:pathToCadModel", "rdf:datatype", "&xsd;string", "package://robcog/" + IndividualClass + ".dae"));
 	IndividualProperties.Emplace(FOwlTriple(
@@ -221,11 +278,11 @@ bool USLMap::InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& Acto
 		"&log;" + IndividualName,
 		IndividualProperties,
 		"Object " + IndividualName));
-	
+
 	// Add perception event for localization
 	TArray<FOwlTriple> PerceptionProperties;
 	PerceptionProperties.Emplace(FOwlTriple(
-		"rdf:type", "rdf:resource", "&knowrob;SLMapPerception"));
+		"rdf:type", "rdf:resource", "&knowrob;SemanticMapPerception"));
 	PerceptionProperties.Emplace(FOwlTriple(
 		"knowrob:eventOccursAt", "rdf:resource", "&u-map;Transformation_" + TransfId));
 	PerceptionProperties.Emplace(FOwlTriple(
@@ -236,16 +293,16 @@ bool USLMap::InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& Acto
 	OwlDocument.Nodes.Emplace(FOwlNode(
 		"owl:NamedIndividual",
 		"rdf:about",
-		"&u-map;Transformation_" + TransfId,
+		"&u-map;SemanticMapPerception_" + PerceptionId,
 		PerceptionProperties));
 
 	// Add transform for the perception event
 	TArray<FOwlTriple> TransfProperties;
 	TransfProperties.Emplace(FOwlTriple(
 		"rdf:type", "rdf:resource", "&knowrob;Transformation"));
-	PerceptionProperties.Emplace(FOwlTriple(
+	TransfProperties.Emplace(FOwlTriple(
 		"knowrob:quaternion", "rdf:datatype", "&xsd;string", QuatStr));
-	PerceptionProperties.Emplace(FOwlTriple(
+	TransfProperties.Emplace(FOwlTriple(
 		"knowrob:translation", "rdf:datatype", "&xsd;string", LocStr));
 
 	OwlDocument.Nodes.Emplace(FOwlNode(
@@ -253,6 +310,4 @@ bool USLMap::InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& Acto
 		"rdf:about",
 		"&u-map;Transformation_" + TransfId,
 		TransfProperties));
-
-	return true;
 }

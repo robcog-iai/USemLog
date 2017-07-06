@@ -82,6 +82,18 @@ private:
 	// Remove document default values
 	void RemoveDefaultValues();
 
-	// Insert individual to the map with its 3D transform
-	bool InsertIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties);
+	// Insert actor individual to the map with its 3D transform
+	void InsertActorIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties);
+
+	// Insert component individual to the map with its 3D transform
+	void InsertComponentIndividual(const TPair<UActorComponent*, TMap<FString, FString>>& ComponentWithProperties);
+
+	// Insert individual to the document
+	void InsertIndividual(
+		const FString IndividualClass,
+		const FString IndividualId,
+		const FVector Location,
+		const FQuat Quat,
+		const FVector BoundingBox,
+		bool bSaveAsRightHandedCoordinate = true);
 };
