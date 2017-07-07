@@ -112,8 +112,9 @@ void USLMap::SetDefaultValues()
 
 	// Default doctype attributes for the semantic map
 	OwlDocument.DoctypeAttributes.Add("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns");
-	OwlDocument.DoctypeAttributes.Add("rdfs", "http://www.w3.org/2002/07/owl");
-	OwlDocument.DoctypeAttributes.Add("owl", "http://www.w3.org/2001/XMLSchema#");
+	OwlDocument.DoctypeAttributes.Add("rdfs", "http://www.w3.org/2000/01/rdf-schema");
+	OwlDocument.DoctypeAttributes.Add("owl", "http://www.w3.org/2002/07/owl");
+	OwlDocument.DoctypeAttributes.Add("xsd", "http://www.w3.org/2001/XMLSchema#");
 	OwlDocument.DoctypeAttributes.Add("knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	OwlDocument.DoctypeAttributes.Add("knowrob_u", "http://knowrob.org/kb/knowrob_u.owl#");
 	OwlDocument.DoctypeAttributes.Add("log", "http://knowrob.org/kb/unreal_log.owl#");
@@ -121,6 +122,7 @@ void USLMap::SetDefaultValues()
 
 	// Default rdf attributes for the semantic map
 	OwlDocument.RdfAttributes.Add("xmlns:computable", "http://knowrob.org/kb/computable.owl#");
+	OwlDocument.RdfAttributes.Add("xmlns:swrl", "http://www.w3.org/2003/11/swrl#");
 	OwlDocument.RdfAttributes.Add("xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 	OwlDocument.RdfAttributes.Add("xmlns:rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	OwlDocument.RdfAttributes.Add("xmlns:owl", "http://www.w3.org/2002/07/owl#");
@@ -195,7 +197,7 @@ void USLMap::InsertActorIndividual(const TPair<AActor*, TMap<FString, FString>>&
 
 	const FVector Loc = ActorWithProperties.Key->GetActorLocation();
 	const FQuat Quat = ActorWithProperties.Key->GetActorQuat();
-	const FVector Box = ActorWithProperties.Key->GetComponentsBoundingBox().GetSize() / 100.f;
+	const FVector Box = ActorWithProperties.Key->GetComponentsBoundingBox().GetSize();
 
 	// Add to map
 	USLMap::InsertIndividual(IndividualClass, IndividualId, Loc, Quat, Box);
@@ -237,13 +239,13 @@ void USLMap::InsertIndividual(
 
 	// Get location as string in right(ROS) or left (UE4) hand coordinate system
 	const FString LocStr = 	bSaveAsRightHandedCoordinate ?
-		(FString::SanitizeFloat(Location.X) + " " 
-			+ FString::SanitizeFloat(-Location.Y) + " " 
-			+ FString::SanitizeFloat(Location.Z)) 
+		(FString::SanitizeFloat(Location.X / 100.f) + " "
+			+ FString::SanitizeFloat(-Location.Y / 100.f) + " "
+			+ FString::SanitizeFloat(Location.Z / 100.f))
 		:
-		(FString::SanitizeFloat(Location.X) + " "
-			+ FString::SanitizeFloat(Location.Y) + " "
-			+ FString::SanitizeFloat(Location.Z));
+		(FString::SanitizeFloat(Location.X / 100.f) + " "
+			+ FString::SanitizeFloat(Location.Y / 100.f) + " "
+			+ FString::SanitizeFloat(Location.Z / 100.f));
 
 	// Get orientation as string in right(ROS) or left (UE4) hand coordinate system
 	const FString QuatStr = bSaveAsRightHandedCoordinate ?
@@ -261,21 +263,18 @@ void USLMap::InsertIndividual(
 	TArray<FOwlTriple> IndividualProperties;
 	IndividualProperties.Emplace(FOwlTriple(
 		"rdf:type", "rdf:resource", "&knowrob;" + IndividualClass));
-	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:depthOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(BoundingBox.X)));
-	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:widthOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(BoundingBox.Y)));
-	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:heightOfObject", "rdf:datatype", "&xsd;double", FString::SanitizeFloat(BoundingBox.Z)));
-	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:pathToCadModel", "rdf:datatype", "&xsd;string", "package://robcog/" + IndividualClass + ".dae"));
+	IndividualProperties.Emplace(FOwlTriple("knowrob:depthOfObject", "rdf:datatype",
+		"&xsd;double", FString::SanitizeFloat(BoundingBox.X / 100.f)));
+	IndividualProperties.Emplace(FOwlTriple("knowrob:widthOfObject", "rdf:datatype",
+		"&xsd;double", FString::SanitizeFloat(BoundingBox.Y / 100.f)));
+	IndividualProperties.Emplace(FOwlTriple("knowrob:heightOfObject", "rdf:datatype",
+		"&xsd;double", FString::SanitizeFloat(BoundingBox.Z / 100.f)));
+	IndividualProperties.Emplace(FOwlTriple("knowrob:pathToCadModel", "rdf:datatype",
+		"&xsd;string", "package://robcog/" + IndividualClass + ".dae"));
 	IndividualProperties.Emplace(FOwlTriple(
 		"knowrob:describedInMap", "rdf:resource", FullName));
 
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:NamedIndividual",
-		"rdf:about=",
-		"&log;" + IndividualName,
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", "&log;" + IndividualName,
 		IndividualProperties,
 		"Object " + IndividualName));
 
@@ -290,10 +289,7 @@ void USLMap::InsertIndividual(
 	PerceptionProperties.Emplace(FOwlTriple(
 		"knowrob:objectActedOn", "rdf:resource", "&log;" + IndividualName));
 
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:NamedIndividual",
-		"rdf:about",
-		"&u-map;SemanticMapPerception_" + PerceptionId,
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", "&u-map;SemanticMapPerception_" + PerceptionId,
 		PerceptionProperties));
 
 	// Add transform for the perception event
@@ -305,9 +301,6 @@ void USLMap::InsertIndividual(
 	TransfProperties.Emplace(FOwlTriple(
 		"knowrob:translation", "rdf:datatype", "&xsd;string", LocStr));
 
-	OwlDocument.Nodes.Emplace(FOwlNode(
-		"owl:NamedIndividual",
-		"rdf:about",
-		"&u-map;Transformation_" + TransfId,
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", "&u-map;Transformation_" + TransfId,
 		TransfProperties));
 }
