@@ -136,7 +136,7 @@ void USLMap::SetDefaultValues()
 	OntologyOwlProperties.Emplace(FOwlTriple(
 		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
 	OntologyOwlProperties.Emplace(FOwlTriple(
-		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob_u.owl"));
+		"owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_u.owl"));
 	FOwlNode OntologyOwlNode("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl",
 		OntologyOwlProperties,
 		"Ontologies");
