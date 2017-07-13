@@ -1,13 +1,16 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLContactTrigger.h"
+#include "SLContactManager.h"
+#include "SLUtils.h"
+#include "TagStatics.h"
+#include "EngineUtils.h"
 
 // Constructor
-USLContactTrigger::USLContactTrigger()
+USLContactManager::USLContactManager()
 {
 	// Default type
-	AreaType = EContactAreaType::Init;
+	AreaType = EContactAreaType::Default;
 
 	// Set the default parent as the owning actor
 	ParentActor = GetOwner();
@@ -15,8 +18,7 @@ USLContactTrigger::USLContactTrigger()
 	// Check if the parent has a static mesh component
 	if (ParentActor && ParentActor->IsA(AStaticMeshActor::StaticClass()))
 	{
-		ParentStaticMeshComponent = Cast<AStaticMeshActor>(ParentActor)->
-			GetStaticMeshComponent();
+		ParentStaticMeshComponent = Cast<AStaticMeshActor>(ParentActor)->GetStaticMeshComponent();
 		if (!ParentStaticMeshComponent)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Could not get te static mesh component of the parent actor!"));
@@ -25,41 +27,68 @@ USLContactTrigger::USLContactTrigger()
 }
 
 // Destructor
-USLContactTrigger::~USLContactTrigger()
+USLContactManager::~USLContactManager()
 {
 }
 
 // Called when spawned or level started
-void USLContactTrigger::BeginPlay()
+void USLContactManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Bind overlap begin and end events
-	OnComponentBeginOverlap.AddDynamic(this, &USLContactTrigger::OnOverlapBegin);
-	OnComponentEndOverlap.AddDynamic(this, &USLContactTrigger::OnOverlapEnd);
+	// Index of the given tag type in the array
+	int32 TagIndex = FTagStatics::GetTagTypeIndex(GetOwner()->Tags, "SemLog");
+
+	// If tag type exist, read the Class and the Id of parent
+	if (TagIndex != INDEX_NONE)
+	{
+		ParentClass = FTagStatics::GetKeyValue(GetOwner()->Tags[TagIndex], "Class");
+		if (ParentClass.IsEmpty())
+		{
+			ParentClass = "DefaultClass";
+		}
+
+		ParentId = FTagStatics::GetKeyValue(GetOwner()->Tags[TagIndex], "Id");
+		if (ParentId.IsEmpty())
+		{
+			ParentId = "DefaultId";
+		}
+	}
+	
+	// Get the semantic log runtime manager from the world
+	SemLogRuntimeManager = *TActorIterator<ASLRuntimeManager>(GetWorld());
+	if (SemLogRuntimeManager)
+	{
+		// Bind overlap begin and end events
+		OnComponentBeginOverlap.AddDynamic(this, &USLContactManager::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLContactManager::OnOverlapEnd);
+	}
 }
 
 
 // Called on overlap begin events
-void USLContactTrigger::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void USLContactManager::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	TArray <FOwlTriple> Properties;
+	SemLogRuntimeManager->StartEvent("log", "TouchingSituation", FSLUtils::GenerateRandomFString(4),
+		GetWorld()->GetTimeSeconds(), Properties);
 	UE_LOG(LogTemp, Error, TEXT("Overlap begin!"));
 }
 
 // Called on overlap end events
-void USLContactTrigger::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void USLContactManager::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	UE_LOG(LogTemp, Error, TEXT("Overlap end!"));
 }
 
 #if WITH_EDITOR  
-void USLContactTrigger::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLContactManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	// Call the base class version  
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
 	// Check if the area type changed
-	if (PropertyChangedEvent.MemberProperty->GetMetaData(TEXT("Category")).Equals(TEXT("SemanticLogger")))
+	if (PropertyChangedEvent.MemberProperty->GetMetaData(TEXT("Category")).Equals(TEXT("SL")))
 	{
 		if (PropertyChangedEvent.MemberProperty->GetName().Equals(TEXT("AreaType")))
 		{
@@ -80,7 +109,7 @@ void USLContactTrigger::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 }
 
 // Check area type
-void USLContactTrigger::UpdateContactArea()
+void USLContactManager::UpdateContactArea()
 {
 	// Check if the parent is set and has a static mesh component
 	if (ParentActor && ParentStaticMeshComponent)
@@ -97,7 +126,7 @@ void USLContactTrigger::UpdateContactArea()
 		case(EContactAreaType::Wrapper):
 			CalculateAreaAsWrapper();
 			break;
-		case(EContactAreaType::Init):
+		case(EContactAreaType::Default):
 			break;
 		}
 	}
@@ -108,9 +137,9 @@ void USLContactTrigger::UpdateContactArea()
 }
 
 // Calculate surface area
-void USLContactTrigger::CaclulateAreaAsTop()
+void USLContactManager::CaclulateAreaAsTop()
 {
-	UE_LOG(LogTemp, Error, TEXT("USLContactTrigger %s type: SURFACE"), *GetName());
+	UE_LOG(LogTemp, Error, TEXT("USLContactManager %s type: SURFACE"), *GetName());
 
 	// Get the bounding box of the mesh
 	const FBox SMBox = ParentStaticMeshComponent->GetStaticMesh()->GetBoundingBox();
@@ -125,9 +154,9 @@ void USLContactTrigger::CaclulateAreaAsTop()
 }
 
 // Calculate inner area
-void USLContactTrigger::CalculateAreaAsBottom()
+void USLContactManager::CalculateAreaAsBottom()
 {
-	UE_LOG(LogTemp, Error, TEXT("USLContactTrigger %s type: INNER"), *GetName());
+	UE_LOG(LogTemp, Error, TEXT("USLContactManager %s type: INNER"), *GetName());
 
 	// Get the bounding box of the mesh
 	const FBox SMBox = ParentStaticMeshComponent->GetStaticMesh()->GetBoundingBox();
@@ -142,9 +171,9 @@ void USLContactTrigger::CalculateAreaAsBottom()
 }
 
 // Calculate wrapper area
-void USLContactTrigger::CalculateAreaAsWrapper()
+void USLContactManager::CalculateAreaAsWrapper()
 {
-	UE_LOG(LogTemp, Error, TEXT("USLContactTrigger %s type: WRAPPER"), *GetName());
+	UE_LOG(LogTemp, Error, TEXT("USLContactManager %s type: WRAPPER"), *GetName());
 
 	// Get the bounding box of the mesh
 	const FBox SMBox = ParentStaticMeshComponent->GetStaticMesh()->GetBoundingBox();

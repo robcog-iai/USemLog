@@ -6,46 +6,46 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "SLOwl.h"
-#include "SLEventData.generated.h"
+#include "SLEventDataLogger.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SEMLOG_API USLEventData : public UObject
+class SEMLOG_API USLEventDataLogger : public UObject
 {
 	GENERATED_BODY()
 
 public:
 	// Default constructor
-	USLEventData();
+	USLEventDataLogger();
 
 	// Destructor
-	~USLEventData();
+	~USLEventDataLogger();
 
-	// Initialise logger
+	// Initialize logger
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool Init(const FString InEpisodeId, const FString InLogDirectoryPath);
+	bool InitLogger(const FString InEpisodeId);
 
 	// Start logger
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool Start(const float Timestamp);
+	bool StartLogger(const float Timestamp);
 
 	// Finish logger
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool Finish(const float Timestamp);
+	bool FinishLogger(const float Timestamp);
 
 	// Write document to file
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool WriteToFile();
+	bool WriteEventsToFile(const FString InLogDirectoryPath);
 
 	// Get document as a string
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool GetAsString(FString& Document);
+	bool GetEventsAsString(FString& OutStringDocument);
 
-	// Check if the logger is initialised
+	// Check if the logger is initialized
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool IsInit() const { return bIsInit; };
+	bool IsInit() const { return bIsLoggerInit; };
 
 	// Check if the logger is started
 	UFUNCTION(BlueprintCallable, Category = SL)
@@ -55,21 +55,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category = SL)
 	bool IsFinished() const { return bIsFinished; };
 
+	// Start an event
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool StartAnEvent();
+
+	// Finish an event
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool FinishAnEvent();
+
+	// Insert finished event
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool InsertFinishedEvent();
+
 private:
 	// Set document default values
 	void SetDefaultValues();
 
 	// Remove document default values
 	void RemoveDefaultValues();
-
-	// Start an event
-	bool StartEvent();
-
-	// Finish an event
-	bool FinishEvent();
-
-	// Insert finished event
-	bool InsertFinishedEvent();
 
 	// Start metadata event
 	bool StartMetadataEvent(const float Timestamp);
@@ -84,14 +87,11 @@ private:
 	UPROPERTY(EditAnywhere, Category = SL)
 	FOwlDocument OwlDocument;
 
-	// Logging directory path
-	FString LogDirectoryPath;
-
 	// Id of the log file
 	FString EpisodeId;
 
-	// Logger initialised
-	uint8 bIsInit : 1;
+	// Logger initialized
+	uint8 bIsLoggerInit : 1;
 
 	// Logger started
 	uint8 bIsStarted : 1;

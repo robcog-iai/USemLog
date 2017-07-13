@@ -7,7 +7,7 @@
 #include <string>
 #include <algorithm>
 
-struct FSLStatics
+struct FSLUtils
 {
 	// Generate random FString
 	static FORCEINLINE FString GenerateRandomFString(const uint32 Length)

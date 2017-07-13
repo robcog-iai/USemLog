@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLMap.h"
-#include "SLStatics.h"
+#include "SLUtils.h"
 #include "TagStatics.h"
 #include "PlatformFilemanager.h"
 #include "FileManager.h"
@@ -98,7 +98,7 @@ void USLMap::SetDefaultValues()
 {
 	// 
 	Class = "SemanticEnvironmentMap";
-	Id = FSLStatics::GenerateRandomFString(4);
+	Id = FSLUtils::GenerateRandomFString(4);
 	Name = Class + "_" + Id;
 	Ns = "u-map";
 	FullName = "&" + Ns + ";" + Name;
@@ -234,8 +234,8 @@ void USLMap::InsertIndividual(
 	bool bSaveAsRightHandedCoordinate)
 {
 	const FString IndividualName = IndividualClass + "_" + IndividualId;
-	const FString PerceptionId = FSLStatics::GenerateRandomFString(4);
-	const FString TransfId = FSLStatics::GenerateRandomFString(4);
+	const FString PerceptionId = FSLUtils::GenerateRandomFString(4);
+	const FString TransfId = FSLUtils::GenerateRandomFString(4);
 
 	// Get location as string in right(ROS) or left (UE4) hand coordinate system
 	const FString LocStr = 	bSaveAsRightHandedCoordinate ?

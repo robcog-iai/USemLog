@@ -5,12 +5,17 @@
 
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
-#include "SLContactTrigger.generated.h"
+#include "SLRuntimeManager.h"
+#include "SLContactManager.generated.h"
 
+
+/**
+* Area type of the contact box
+*/
 UENUM()
 enum class EContactAreaType : uint8
 {
-	Init			UMETA(DisplayName = "Init"),
+	Default			UMETA(DisplayName = "Default"),
 	Top				UMETA(DisplayName = "Top"),
 	Bottom			UMETA(DisplayName = "Bottom"),
 	Wrapper			UMETA(DisplayName = "Wrapper")
@@ -19,42 +24,44 @@ enum class EContactAreaType : uint8
 /**
 * Semantic logging of contact events
 */
-UCLASS(ClassGroup = SemanticLogger, meta = (BlueprintSpawnableComponent))
-class SEMLOG_API USLContactTrigger : public UBoxComponent
+UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent))
+class SEMLOG_API USLContactManager : public UBoxComponent
 {
 	GENERATED_BODY()
 
 	// Constructor
-	USLContactTrigger();
+	USLContactManager();
 
 	// Destructor 
-	~USLContactTrigger();
+	~USLContactManager();
 
 	// Called when spawned or level started
 	virtual void BeginPlay() override;
 
-	// Setting contact area size depending on the selcted type
+	// Setting contact area size depending on the selected type
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 
 	// The type of the contact area
-	UPROPERTY(EditAnywhere, Category = SemanticLogger)
+	UPROPERTY(EditAnywhere, Category = SL)
 	EContactAreaType AreaType;
 
 	// The parent of the component
-	UPROPERTY(EditAnywhere, Category = SemanticLogger)
+	UPROPERTY(EditAnywhere, Category = SL)
 	AActor* ParentActor;
 
 	// Static mesh component of the parent
-	UPROPERTY(EditAnywhere, Category = SemanticLogger)
+	UPROPERTY(EditAnywhere, Category = SL)
 	UStaticMeshComponent* ParentStaticMeshComponent;
 
 	// Called on overlap begin events
 	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	// Called on overlap end events
 	UFUNCTION()
-	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex);
 
 private:
 	// Update contact area
@@ -68,4 +75,13 @@ private:
 
 	// Calculate wrapper area
 	void CalculateAreaAsWrapper();
+
+	// Parent class
+	FString ParentClass;
+
+	// Parent id
+	FString ParentId;
+
+	// Semantic events runtime manager
+	ASLRuntimeManager* SemLogRuntimeManager;
 };

@@ -7,7 +7,7 @@
 #include "UObject/NoExportTypes.h"
 #include "JsonObject.h"
 //#include "GenericPlatform/GenericPlatformFile.h"
-#include "SLRawData.generated.h"
+#include "SLRawDataLogger.generated.h"
 
 
 /**
@@ -43,16 +43,16 @@ struct FUniqueNameAndLocation
  * 
  */
 UCLASS()
-class SEMLOG_API USLRawData : public UObject
+class SEMLOG_API USLRawDataLogger : public UObject
 {
 	GENERATED_BODY()
 
 public:
 	// Constructor
-	USLRawData();
+	USLRawDataLogger();
 
 	// Destructor
-	~USLRawData();
+	~USLRawDataLogger();
 
 	// Init logger
 	UFUNCTION(BlueprintCallable, Category = SL)
@@ -60,15 +60,15 @@ public:
 
 	// Set file handle for appending log data to file every update
 	UFUNCTION(BlueprintCallable, Category = SL)
-	void SetLogToFile(const FString EpisodeId, const FString LogDirectoryPath);
+	void InitFileHandle(const FString EpisodeId, const FString LogDirectoryPath);
 	
 	// Log dynamic and static entities to file
 	UFUNCTION(BlueprintCallable, Category = SL)
-	void FirstLog();
+	void InitLogAll();
 
 	// Get the dynamic and static entities as json string
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool GetFirstJsonEntry(FString& FirstJsonEntry);
+	bool GetAllEntitiesAsJson(FString& FirstJsonEntry);
 
 	// Log dynamic entities
 	UFUNCTION(BlueprintCallable, Category = SL)
@@ -76,15 +76,15 @@ public:
 
 	// Log dynamic entities and return them as json string
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool GetDynamicJsonEntry(FString& DynamicJsonEntry);
+	bool GetDynamicEntitiesAsJson(FString& DynamicJsonEntry);
 
-	// See if logger initialised
+	// See if logger initialized
 	UFUNCTION(BlueprintCallable, Category = SL)
 	bool IsInit() const { return bIsInit; }
 
 private:
 	// Add string to file
-	bool AddToFile(FString& JsonString);
+	bool InsertJsonContentToFile(FString& JsonString);
 
 	// Create Json object with a 3d location
 	FORCEINLINE TSharedPtr<FJsonObject> CreateLocationJsonObject(const FVector& Location);

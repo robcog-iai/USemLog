@@ -10,7 +10,7 @@
 #include "EngineUtils.h"
 #include "SLMap.h"
 #include "SLRuntimeManager.h"
-#include "SLStatics.h"
+#include "SLUtils.h"
 #include "TagStatics.h"
 
 struct FSLEdToolkitStatics
@@ -59,7 +59,7 @@ struct FSLEdToolkitStatics
 			if (TagIndex != INDEX_NONE)
 			{
 				FTagStatics::AddKeyValuePair(
-					ActItr->Tags[TagIndex], "Id", FSLStatics::GenerateRandomFString(4));
+					ActItr->Tags[TagIndex], "Id", FSLUtils::GenerateRandomFString(4));
 			}
 
 			// Check component tags as well
@@ -69,7 +69,7 @@ struct FSLEdToolkitStatics
 				if (TagIndex != INDEX_NONE)
 				{
 					FTagStatics::AddKeyValuePair(
-						CompItr->ComponentTags[TagIndex], "Id", FSLStatics::GenerateRandomFString(4));
+						CompItr->ComponentTags[TagIndex], "Id", FSLUtils::GenerateRandomFString(4));
 				}
 			}
 		}

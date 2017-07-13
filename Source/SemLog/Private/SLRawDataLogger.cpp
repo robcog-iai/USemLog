@@ -1,7 +1,7 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLRawData.h"
+#include "SLRawDataLogger.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "TagStatics.h"
 //#include "PlatformFilemanager.h"
@@ -9,7 +9,7 @@
 //#include "FileHelper.h"
 
 // Constructor
-USLRawData::USLRawData()
+USLRawDataLogger::USLRawDataLogger()
 {
 	// Default values
 	bIsInit = false;
@@ -17,7 +17,7 @@ USLRawData::USLRawData()
 }
 
 // Destructor
-USLRawData::~USLRawData()
+USLRawDataLogger::~USLRawDataLogger()
 {
 	if (FileHandle)
 	{
@@ -26,7 +26,7 @@ USLRawData::~USLRawData()
 }
 
 // Init logger
-bool USLRawData::Init(UWorld* InWorld, const float DistanceThreshold)
+bool USLRawDataLogger::Init(UWorld* InWorld, const float DistanceThreshold)
 {
 	// Set the world
 	World = InWorld;
@@ -40,7 +40,7 @@ bool USLRawData::Init(UWorld* InWorld, const float DistanceThreshold)
 }
 
 // Set file handle for appending log data to file every update
-void USLRawData::SetLogToFile(const FString EpisodeId, const FString LogDirectoryPath)
+void USLRawDataLogger::InitFileHandle(const FString EpisodeId, const FString LogDirectoryPath)
 {
 	// Create filehandle to incrementally append json logs to file
 	const FString Filename = "RawData_" + EpisodeId + ".json";
@@ -56,21 +56,21 @@ void USLRawData::SetLogToFile(const FString EpisodeId, const FString LogDirector
 }
 
 // Log dynamic and static entities to file
-void USLRawData::FirstLog()
+void USLRawDataLogger::InitLogAll()
 {
 	// String to store the json entry
 	FString JsonOutputString;
-	USLRawData::GetFirstJsonEntry(JsonOutputString);
+	USLRawDataLogger::GetAllEntitiesAsJson(JsonOutputString);
 
 	// Append to file if set
 	if (bLogToFile)
 	{
-		USLRawData::AddToFile(JsonOutputString);
+		USLRawDataLogger::InsertJsonContentToFile(JsonOutputString);
 	}
 }
 
 // Get the dynamic and static entities as json string
-bool USLRawData::GetFirstJsonEntry(FString& FirstJsonEntry)
+bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 {
 	if (!bIsInit)
 	{
@@ -97,7 +97,7 @@ bool USLRawData::GetFirstJsonEntry(FString& FirstJsonEntry)
 			const FString UniqueName = FTagStatics::GetKeyValue(ActItr, "SemLog", "Class") + "_" + Id;
 			FVector VirtualPreviousLocation(-99999.9f);
 
-			USLRawData::AddActorToJsonArray(
+			USLRawDataLogger::AddActorToJsonArray(
 				JsonActorArr, ActItr, UniqueName, VirtualPreviousLocation);
 		}
 	}
@@ -123,7 +123,7 @@ bool USLRawData::GetFirstJsonEntry(FString& FirstJsonEntry)
 			const FString UniqueName = FTagStatics::GetKeyValue(CompItr, "SemLog", "Class") + "_" + Id;
 			FVector VirtualPreviousLocation(-99999.9f);
 
-			USLRawData::AddComponentToJsonArray(
+			USLRawDataLogger::AddComponentToJsonArray(
 				JsonActorArr, CompItr, UniqueName, VirtualPreviousLocation);
 		}
 	}
@@ -139,7 +139,7 @@ bool USLRawData::GetFirstJsonEntry(FString& FirstJsonEntry)
 		{
 			const FString UniqueName = FTagStatics::GetKeyValue(DynActItr, "SemLog", "Class") + "_" + Id;
 			FVector VirtualPreviousLocation(-99999.9f);
-			USLRawData::AddActorToJsonArray(
+			USLRawDataLogger::AddActorToJsonArray(
 				JsonActorArr, DynActItr, UniqueName, VirtualPreviousLocation);
 
 			// Store the UniqueName and the Location of the dynamic entity
@@ -168,7 +168,7 @@ bool USLRawData::GetFirstJsonEntry(FString& FirstJsonEntry)
 		{
 			const FString UniqueName = FTagStatics::GetKeyValue(DynCompItr, "SemLog", "Class") + "_" + Id;
 			FVector VirtualPreviousLocation(-99999.9f);
-			USLRawData::AddComponentToJsonArray(
+			USLRawDataLogger::AddComponentToJsonArray(
 				JsonActorArr, DynCompItr, UniqueName, VirtualPreviousLocation);
 
 			// Store the UniqueName and the Location of the dynamic entity
@@ -188,21 +188,21 @@ bool USLRawData::GetFirstJsonEntry(FString& FirstJsonEntry)
 }
 
 // Log dynamic entities
-void USLRawData::LogDynamic()
+void USLRawDataLogger::LogDynamic()
 {
 	// String to store the json entry
 	FString DynamicJsonOutputString;
-	USLRawData::GetDynamicJsonEntry(DynamicJsonOutputString);
+	USLRawDataLogger::GetDynamicEntitiesAsJson(DynamicJsonOutputString);
 
 	// Append to file if set
 	if (bLogToFile)
 	{
-		USLRawData::AddToFile(DynamicJsonOutputString);
+		USLRawDataLogger::InsertJsonContentToFile(DynamicJsonOutputString);
 	}
 }
 
 // Get logged dynamic entities as json string
-bool USLRawData::GetDynamicJsonEntry(FString& DynamicJsonEntry)
+bool USLRawDataLogger::GetDynamicEntitiesAsJson(FString& DynamicJsonEntry)
 {
 	// Create Json root object
 	// Json root object
@@ -214,14 +214,14 @@ bool USLRawData::GetDynamicJsonEntry(FString& DynamicJsonEntry)
 	// Iterate and log dynamic actors
 	for (auto& ActWithDataItr : DynamicActorsWithData)
 	{
-		USLRawData::AddActorToJsonArray(JsonActorArr,
+		USLRawDataLogger::AddActorToJsonArray(JsonActorArr,
 			ActWithDataItr.Key, ActWithDataItr.Value.UniqueName, ActWithDataItr.Value.Location);
 	}
 
 	// Iterate and log dynamic components
 	for (auto& CompWithDataItr : DynamicComponentsWithData)
 	{
-		USLRawData::AddComponentToJsonArray(JsonActorArr,
+		USLRawDataLogger::AddComponentToJsonArray(JsonActorArr,
 			CompWithDataItr.Key, CompWithDataItr.Value.UniqueName, CompWithDataItr.Value.Location);
 	}
 
@@ -247,7 +247,7 @@ bool USLRawData::GetDynamicJsonEntry(FString& DynamicJsonEntry)
 }
 
 // Append string to the file
-bool USLRawData::AddToFile(FString& JsonString)
+bool USLRawDataLogger::InsertJsonContentToFile(FString& JsonString)
 {
 	if (!FileHandle)
 	{
@@ -258,7 +258,7 @@ bool USLRawData::AddToFile(FString& JsonString)
 }
 
 // Create Json object with a 3d location
-FORCEINLINE TSharedPtr<FJsonObject> USLRawData::CreateLocationJsonObject(const FVector& Location)
+FORCEINLINE TSharedPtr<FJsonObject> USLRawDataLogger::CreateLocationJsonObject(const FVector& Location)
 {
 	// Json location object
 	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
@@ -271,7 +271,7 @@ FORCEINLINE TSharedPtr<FJsonObject> USLRawData::CreateLocationJsonObject(const F
 }
 
 // Create Json object with a 3d rotation as quaternion 
-FORCEINLINE TSharedPtr<FJsonObject> USLRawData::CreateRotationJsonObject(const FQuat& Rotation)
+FORCEINLINE TSharedPtr<FJsonObject> USLRawDataLogger::CreateRotationJsonObject(const FQuat& Rotation)
 {
 	// Json rotation object
 	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
@@ -285,21 +285,21 @@ FORCEINLINE TSharedPtr<FJsonObject> USLRawData::CreateRotationJsonObject(const F
 }
 
 // Create Json object with name location and rotation
-FORCEINLINE TSharedPtr<FJsonObject> USLRawData::CreateNameLocRotJsonObject(
+FORCEINLINE TSharedPtr<FJsonObject> USLRawDataLogger::CreateNameLocRotJsonObject(
 	const FString& Name, const FVector& Location, const FQuat& Rotation)
 {
 	// Json  actor object
 	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
 	// Add fields
 	JsonObj->SetStringField("name", Name);
-	JsonObj->SetObjectField("pos", USLRawData::CreateLocationJsonObject(Location));
-	JsonObj->SetObjectField("rot", USLRawData::CreateRotationJsonObject(Rotation));
+	JsonObj->SetObjectField("pos", USLRawDataLogger::CreateLocationJsonObject(Location));
+	JsonObj->SetObjectField("rot", USLRawDataLogger::CreateRotationJsonObject(Rotation));
 
 	return JsonObj;
 }
 
 // Add the actors raw data to the json array
-void USLRawData::AddActorToJsonArray(
+void USLRawDataLogger::AddActorToJsonArray(
 	TArray<TSharedPtr<FJsonValue>>& OutJsonArray,
 	AActor* Actor,
 	const FString& UniqueName,
@@ -314,7 +314,7 @@ void USLRawData::AddActorToJsonArray(
 		PreviousLocation = CurrLocation;
 
 		// Json actor object with name location and rotation
-		TSharedPtr<FJsonObject> JsonActorObj = USLRawData::CreateNameLocRotJsonObject(
+		TSharedPtr<FJsonObject> JsonActorObj = USLRawDataLogger::CreateNameLocRotJsonObject(
 			UniqueName, CurrLocation * 0.01f, Actor->GetActorQuat());
 
 		// Check if actor is skeletal
@@ -337,7 +337,7 @@ void USLRawData::AddActorToJsonArray(
 				CurrSkelMesh->GetBoneQuaternion(BoneName);
 
 				// Json bone object with name location and rotation
-				TSharedPtr<FJsonObject> JsonBoneObj = USLRawData::CreateNameLocRotJsonObject(
+				TSharedPtr<FJsonObject> JsonBoneObj = USLRawDataLogger::CreateNameLocRotJsonObject(
 					BoneName.ToString(), CurrSkelMesh->GetBoneLocation(BoneName) * 0.01f,
 					CurrSkelMesh->GetBoneQuaternion(BoneName));
 
@@ -354,7 +354,7 @@ void USLRawData::AddActorToJsonArray(
 }
 
 // Add component's data to the json array
-void USLRawData::AddComponentToJsonArray(
+void USLRawDataLogger::AddComponentToJsonArray(
 	TArray<TSharedPtr<FJsonValue>>& OutJsonArray,
 	USceneComponent* Component,
 	const FString& UniqueName,
@@ -369,7 +369,7 @@ void USLRawData::AddComponentToJsonArray(
 		PreviousLocation = CurrLocation;
 
 		// Json actor object with name location and rotation
-		TSharedPtr<FJsonObject> JsonActorObj = USLRawData::CreateNameLocRotJsonObject(
+		TSharedPtr<FJsonObject> JsonActorObj = USLRawDataLogger::CreateNameLocRotJsonObject(
 			UniqueName, CurrLocation * 0.01f, Component->GetComponentQuat());
 
 		// Add actor to Json array

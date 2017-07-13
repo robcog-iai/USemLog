@@ -1,70 +1,69 @@
 // Copyright 2017, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLEventData.h"
+#include "SLEventDataLogger.h"
 #include "PlatformFilemanager.h"
 #include "FileManager.h"
 #include "FileHelper.h"
-#include "SLStatics.h"
+#include "SLUtils.h"
 
 // Default constructor
-USLEventData::USLEventData()
+USLEventDataLogger::USLEventDataLogger()
 {
 	// Default values
 	bOwlDefaultValuesSet = false;
-	bIsInit = false;
+	bIsLoggerInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
 }
 
 // Destructor
-USLEventData::~USLEventData()
+USLEventDataLogger::~USLEventDataLogger()
 {
 }
 
-// Initialise logger
-bool USLEventData::Init(const FString InEpisodeId, const FString InLogDirectoryPath)
+// Initialize logger
+bool USLEventDataLogger::InitLogger(const FString InEpisodeId)
 {
-	LogDirectoryPath = InLogDirectoryPath;
 	EpisodeId = InEpisodeId;
 
-	USLEventData::SetDefaultValues();
+	USLEventDataLogger::SetDefaultValues();
 
-	bIsInit = true;
+	bIsLoggerInit = true;
 	return true;
 }
 
 // Start logger
-bool USLEventData::Start(const float Timestamp)
+bool USLEventDataLogger::StartLogger(const float Timestamp)
 {
-	if (!bIsInit)
+	if (!bIsLoggerInit)
 	{
 		return false;
 	}
 
-	USLEventData::StartMetadataEvent(Timestamp);
+	USLEventDataLogger::StartMetadataEvent(Timestamp);
 
 	bIsStarted = true;
 	return true;
 }
 
 // Finish logger
-bool USLEventData::Finish(const float Timestamp)
+bool USLEventDataLogger::FinishLogger(const float Timestamp)
 {
 	if (!bIsStarted)
 	{
 		return false;
 	}
 
-	USLEventData::FinishAllIdleEvents(Timestamp);
-	USLEventData::FinishMetadataEvent(Timestamp);
+	USLEventDataLogger::FinishAllIdleEvents(Timestamp);
+	USLEventDataLogger::FinishMetadataEvent(Timestamp);
 
 	bIsFinished = true;
 	return true;
 }
 
 // Write document to file
-bool USLEventData::WriteToFile()
+bool USLEventDataLogger::WriteEventsToFile(const FString LogDirectoryPath)
 {
 	if (!bIsFinished)
 	{
@@ -87,8 +86,8 @@ bool USLEventData::WriteToFile()
 	return FFileHelper::SaveStringToFile(OwlDocument.ToXmlString(), *FilePath);
 }
 
-// Get document as a string
-bool USLEventData::GetAsString(FString& Document)
+// Get the events document as a string
+bool USLEventDataLogger::GetEventsAsString(FString& OutStringDocument)
 {
 	if (!bIsFinished)
 	{
@@ -96,12 +95,12 @@ bool USLEventData::GetAsString(FString& Document)
 	}
 
 	// Get document as string
-	Document = OwlDocument.ToXmlString();
+	OutStringDocument = OwlDocument.ToXmlString();
 	return true;
 }
 
 // Set document default values
-void USLEventData::SetDefaultValues()
+void USLEventDataLogger::SetDefaultValues()
 {
 	if (bOwlDefaultValuesSet)
 	{
@@ -137,7 +136,7 @@ void USLEventData::SetDefaultValues()
 	OntologyOwlProperties.Emplace(FOwlTriple(
 		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
 	OntologyOwlProperties.Emplace(FOwlTriple(
-		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob_u.owl"));
+		"owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_u.owl"));
 	FOwlNode OntologyOwlNode("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl",
 		OntologyOwlProperties,
 		"Ontologies");
@@ -169,7 +168,7 @@ void USLEventData::SetDefaultValues()
 }
 
 // Remove document default values
-void USLEventData::RemoveDefaultValues()
+void USLEventDataLogger::RemoveDefaultValues()
 {
 	// Remove default attributes
 	OwlDocument.DoctypeAttributes.Empty();
@@ -180,7 +179,7 @@ void USLEventData::RemoveDefaultValues()
 }
 
 // Start an event
-bool USLEventData::StartEvent()
+bool USLEventDataLogger::StartAnEvent()
 {
 	if (!bIsStarted)
 	{
@@ -190,7 +189,7 @@ bool USLEventData::StartEvent()
 };
 
 // Finish an event
-bool USLEventData::FinishEvent()
+bool USLEventDataLogger::FinishAnEvent()
 {
 	if (!bIsStarted)
 	{
@@ -200,7 +199,7 @@ bool USLEventData::FinishEvent()
 }
 
 // Insert finished event
-bool USLEventData::InsertFinishedEvent()
+bool USLEventDataLogger::InsertFinishedEvent()
 {
 	if (!bIsStarted)
 	{
@@ -210,7 +209,7 @@ bool USLEventData::InsertFinishedEvent()
 }
 
 // Start metadata event
-bool USLEventData::StartMetadataEvent(const float Timestamp)
+bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
 {
 	if (!bIsStarted)
 	{
@@ -220,7 +219,7 @@ bool USLEventData::StartMetadataEvent(const float Timestamp)
 }
 
 // Start metadata event
-bool USLEventData::FinishMetadataEvent(const float Timestamp)
+bool USLEventDataLogger::FinishMetadataEvent(const float Timestamp)
 {
 	if (!bIsStarted)
 	{
@@ -230,7 +229,7 @@ bool USLEventData::FinishMetadataEvent(const float Timestamp)
 }
 
 // Terminate all idling events
-bool USLEventData::FinishAllIdleEvents(const float Timestamp)
+bool USLEventDataLogger::FinishAllIdleEvents(const float Timestamp)
 {
 	if (!bIsStarted)
 	{
