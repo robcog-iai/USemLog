@@ -43,16 +43,8 @@ void USLContactManager::BeginPlay()
 	if (TagIndex != INDEX_NONE)
 	{
 		ParentClass = FTagStatics::GetKeyValue(GetOwner()->Tags[TagIndex], "Class");
-		if (ParentClass.IsEmpty())
-		{
-			ParentClass = "DefaultClass";
-		}
-
 		ParentId = FTagStatics::GetKeyValue(GetOwner()->Tags[TagIndex], "Id");
-		if (ParentId.IsEmpty())
-		{
-			ParentId = "DefaultId";
-		}
+		ParentName = ParentClass + "_" + ParentId;
 	}
 	
 	// Get the semantic log runtime manager from the world
@@ -69,9 +61,24 @@ void USLContactManager::BeginPlay()
 // Called on overlap begin events
 void USLContactManager::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	TArray <FOwlTriple> Properties;
-	SemLogRuntimeManager->StartEvent("log", "TouchingSituation", FSLUtils::GenerateRandomFString(4),
-		GetWorld()->GetTimeSeconds(), Properties);
+	// Index of the given tag type in the array
+	int32 TagIndex = FTagStatics::GetTagTypeIndex(OtherActor->Tags, "SemLog");
+
+	// If tag type exist, read the Class and the Id of parent
+	if (TagIndex != INDEX_NONE)
+	{
+		const FString OtherName = FTagStatics::GetKeyValue(OtherActor()->Tags[TagIndex], "Class"); 
+		+ "_" + FTagStatics::GetKeyValue(GetOwner()->Tags[TagIndex], "Id");
+
+		TArray <FOwlTriple> Properties;
+		Properties.Add(FOwlTriple("rdf:type", "rdf:resource", "&knowrob_u;TouchingSituation");
+		Properties.Add(FOwlTriple("knowrob:taskContext", "rdf:datatype", "&xsd;string",
+			"Contact-" + ParentName + "-" + OtherName);
+		SemLogRuntimeManager->StartEvent("log", "TouchingSituation", FSLUtils::GenerateRandomFString(4),
+			GetWorld()->GetTimeSeconds(), Properties);
+	}
+
+
 	UE_LOG(LogTemp, Error, TEXT("Overlap begin!"));
 }
 

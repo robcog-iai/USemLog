@@ -82,6 +82,9 @@ private:
 	// Parent id
 	FString ParentId;
 
+	// Parent name
+	FString ParentName;
+
 	// Semantic events runtime manager
 	ASLRuntimeManager* SemLogRuntimeManager;
 };
