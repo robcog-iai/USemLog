@@ -6,6 +6,141 @@
 #include "UObject/NoExportTypes.h"
 #include "SLOwl.generated.h"
 
+// FOwlPrefixName
+// Prefix + : + Name
+// rdf:type
+
+// FOwlClass
+// & + Namespace + ; + Class
+// &knowrob;SemanticMapPerception
+
+// FOwlIndividualName : FOwlClass
+// & + Namespace + ; + Class + _ + Id
+// &log;SemanticMapPerception_XWRm
+
+
+///**
+//*  Name (with Id if available) (e.g. AlbiHimbeerJuice_ozW4)
+//*/
+//USTRUCT(BlueprintType)
+//struct SEMLOG_API FOwlNameId
+//{
+//	GENERATED_USTRUCT_BODY()
+//
+//	/** Name part (e.g. TouchingSituation, taskContext) */
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
+//	FString Name;
+//
+//	/** Id part (e.g. 8fHv)*/
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
+//	FString Id;
+//
+//	// Default constructor
+//	FOwlNameId()
+//	{
+//	}
+//
+//	// Constructor from Name and Id
+//	FOwlNameId(FString InName, FString InId = FString())
+//		: Name(InName), Id(InId)
+//	{
+//	}
+//
+//	// Return the name (with id if available)
+//	FString GetNameId()
+//	{
+//		if (Id.IsEmpty())
+//		{
+//			return Name;
+//		}
+//		else
+//		{
+//			return Name + "_" + Id;
+//		}
+//	}
+//};
+//
+//
+///**
+//*
+//*/
+//USTRUCT(BlueprintType)
+//struct SEMLOG_API FOwlPrefixName
+//{
+//	GENERATED_USTRUCT_BODY()
+//
+//	// Prefix part (e.g. rdf)
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
+//	FString Prefix;
+//
+//	// Name part (with Id if available) (e.g. AlbiHimbeerJuice_ozW4)
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
+//	FOwlNameId Name;
+//
+//	// Default constructor
+//	FOwlPrefixName()
+//	{
+//	}
+//
+//	// Constructor from Prefix and Name
+//	FOwlPrefixName(FString InPrefix, FString InName)
+//		: Prefix(InPrefix), Name(FOwlNameId(InName))
+//	{
+//	}
+//
+//	// Constructor from Prefix and Name with Id
+//	FOwlPrefixName(FString InPrefix, FString InName, FString InId)
+//		: Prefix(InPrefix), Name(FOwlNameId(InName, InId))
+//	{
+//	}
+//
+//	// Constructor from Prefix and FOwlNameId
+//	FOwlPrefixName(FString InPrefix, FOwlNameId InNameId)
+//		: Prefix(InPrefix), Name(InNameId))
+//	{
+//	}
+//
+//	// Constructor from namespaced name
+//	FOwlPrefixName(FString NsName)
+//	{
+//		// Remove ampersand from namespace
+//		NsName.RemoveFromStart("&");
+//		// Split into Ns and Name
+//		NsName.Split(";", &Ns, &Name);
+//	}
+//
+//	// Return as Ns + Name
+//	FString GetNsName()
+//	{
+//		return "&" + Ns + ";" + Name;
+//	}
+//
+//	// Set from namespaced name
+//	bool Set(FString NsName)
+//	{
+//		// Remove ampersand from namespace
+//		if (NsName.RemoveFromStart("&"))
+//		{
+//			if (NsName.Split(";", &Ns, &Name))
+//			{
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
+//
+//	// Set from namespaced name
+//	bool Set(FString InNs, FString InName)
+//	{
+//		if (!InNs.IsEmpty() && !InName.IsEmpty())
+//		{
+//			Ns = InNs;
+//			Name = InName;
+//			return true;
+//		}
+//		return false;
+//	}
+//};
 
 /**
 *
@@ -215,6 +350,11 @@ struct SEMLOG_API FOwlTriple
 	// Constructor.
 	FOwlTriple(FString InSubject, FString InPredicate, FString InObject, FString InValue = "")
 		: Subject(InSubject), Predicate(InPredicate), Object(InObject), Value(InValue)
+	{}
+
+	// Constructor using FOwlObject
+	FOwlTriple(FString InSubject, FString InPredicate, FOwlObject InObject, FString InValue = "")
+		: Subject(InSubject), Predicate(InPredicate), Object(InObject.GetFullName()), Value(InValue)
 	{}
 
 	// Set subject and return self
