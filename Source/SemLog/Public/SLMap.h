@@ -45,7 +45,7 @@ public:
 
 	// Semantic map object // TODO see which version to use
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SL)
-	FOwlObject OwlObject;
+	FOwlIndividualName OwlObject;
 
 	// Class name of the semantic map
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SL)

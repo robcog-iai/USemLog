@@ -6,216 +6,125 @@
 #include "UObject/NoExportTypes.h"
 #include "SLOwl.generated.h"
 
-// FOwlPrefixName
-// Prefix + : + Name
-// rdf:type
-
-// FOwlClass
-// & + Namespace + ; + Class
-// &knowrob;SemanticMapPerception
-
-// FOwlIndividualName : FOwlClass
-// & + Namespace + ; + Class + _ + Id
-// &log;SemanticMapPerception_XWRm
-
-
-///**
-//*  Name (with Id if available) (e.g. AlbiHimbeerJuice_ozW4)
-//*/
-//USTRUCT(BlueprintType)
-//struct SEMLOG_API FOwlNameId
-//{
-//	GENERATED_USTRUCT_BODY()
-//
-//	/** Name part (e.g. TouchingSituation, taskContext) */
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-//	FString Name;
-//
-//	/** Id part (e.g. 8fHv)*/
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-//	FString Id;
-//
-//	// Default constructor
-//	FOwlNameId()
-//	{
-//	}
-//
-//	// Constructor from Name and Id
-//	FOwlNameId(FString InName, FString InId = FString())
-//		: Name(InName), Id(InId)
-//	{
-//	}
-//
-//	// Return the name (with id if available)
-//	FString GetNameId()
-//	{
-//		if (Id.IsEmpty())
-//		{
-//			return Name;
-//		}
-//		else
-//		{
-//			return Name + "_" + Id;
-//		}
-//	}
-//};
-//
-//
-///**
-//*
-//*/
-//USTRUCT(BlueprintType)
-//struct SEMLOG_API FOwlPrefixName
-//{
-//	GENERATED_USTRUCT_BODY()
-//
-//	// Prefix part (e.g. rdf)
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-//	FString Prefix;
-//
-//	// Name part (with Id if available) (e.g. AlbiHimbeerJuice_ozW4)
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-//	FOwlNameId Name;
-//
-//	// Default constructor
-//	FOwlPrefixName()
-//	{
-//	}
-//
-//	// Constructor from Prefix and Name
-//	FOwlPrefixName(FString InPrefix, FString InName)
-//		: Prefix(InPrefix), Name(FOwlNameId(InName))
-//	{
-//	}
-//
-//	// Constructor from Prefix and Name with Id
-//	FOwlPrefixName(FString InPrefix, FString InName, FString InId)
-//		: Prefix(InPrefix), Name(FOwlNameId(InName, InId))
-//	{
-//	}
-//
-//	// Constructor from Prefix and FOwlNameId
-//	FOwlPrefixName(FString InPrefix, FOwlNameId InNameId)
-//		: Prefix(InPrefix), Name(InNameId))
-//	{
-//	}
-//
-//	// Constructor from namespaced name
-//	FOwlPrefixName(FString NsName)
-//	{
-//		// Remove ampersand from namespace
-//		NsName.RemoveFromStart("&");
-//		// Split into Ns and Name
-//		NsName.Split(";", &Ns, &Name);
-//	}
-//
-//	// Return as Ns + Name
-//	FString GetNsName()
-//	{
-//		return "&" + Ns + ";" + Name;
-//	}
-//
-//	// Set from namespaced name
-//	bool Set(FString NsName)
-//	{
-//		// Remove ampersand from namespace
-//		if (NsName.RemoveFromStart("&"))
-//		{
-//			if (NsName.Split(";", &Ns, &Name))
-//			{
-//				return true;
-//			}
-//		}
-//		return false;
-//	}
-//
-//	// Set from namespaced name
-//	bool Set(FString InNs, FString InName)
-//	{
-//		if (!InNs.IsEmpty() && !InName.IsEmpty())
-//		{
-//			Ns = InNs;
-//			Name = InName;
-//			return true;
-//		}
-//		return false;
-//	}
-//};
-
 /**
-*
+*	FOwlPrefixName, e.g. rdf:type
+*   "Prefix + : + Name"
 */
 USTRUCT(BlueprintType)
-struct SEMLOG_API FOwlNsName
+struct SEMLOG_API FOwlPrefixName
 {
 	GENERATED_USTRUCT_BODY()
 
-	/** Namespace part (e.g. knowrob) */
+	/** Prefix (e.g. rdf)*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-	FString Ns;
+	FString Prefix;
 
-	/** Name part (e.g. depthOfObject)*/
+	/** Name (e.g. type)*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
 	FString Name;
-	
+
 	// Default constructor
-	FOwlNsName()
+	FOwlPrefixName()
+	{}
+	
+	// Constructor from Prefix, Name
+	FOwlPrefixName(const FString InPrefix, const FString InName)
+		: Prefix(InPrefix), Name(InName)
+	{}
+	
+	// Constructor from FullName (e.g. rdf:type)
+	FOwlPrefixName(const FString FullName)
 	{
+		// Split into Ns and Class
+		FullName.Split(":", &Prefix, &Name);
 	}
-
-	// Constructor from Namespace and Name
-	FOwlNsName(FString InNs, FString InName)
-		: Ns(InNs), Name(InName)
+	
+	// Return the object as Prefix + Name
+	FString GetFullName() const
 	{
+		return Prefix + ":" + Name;
 	}
-
-	// Constructor from namespaced name
-	FOwlNsName(FString NsName)
+	
+	// Set from full name
+	void Set(const FString FullName)
 	{
-		// Remove ampersand from namespace
-		NsName.RemoveFromStart("&");
-		// Split into Ns and Name
-		NsName.Split(";", &Ns, &Name);
+		// Split into Prefix and Class
+		FullName.Split(":", &Prefix, &Name);
 	}
-
-	// Return as Ns + Name
-	FString GetNsName()
+	
+	// Set from namespace and name
+	void Set(const FString InPrefix, const FString InName)
 	{
-		return "&" + Ns + ";" + Name;
-	}
-
-	// Set from namespaced name
-	bool Set(FString NsName)
-	{
-		// Remove ampersand from namespace
-		if (NsName.RemoveFromStart("&"))
-		{
-			if (NsName.Split(";", &Ns, &Name))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	// Set from namespaced name
-	bool Set(FString InNs, FString InName)
-	{
-		if (!InNs.IsEmpty() && !InName.IsEmpty())
-		{
-			Ns = InNs;
-			Name = InName;
-			return true;
-		}
-		return false;
+		Prefix = InPrefix;
+		Name = InName;
 	}
 };
 
 /**
-*
+*	FOwlClass, e.g. &log;SemanticMapPerception
+*   "& + Namespace + ; + Class"
 */
 USTRUCT(BlueprintType)
-struct SEMLOG_API FOwlObject
+struct SEMLOG_API FOwlClass
+{
+	GENERATED_USTRUCT_BODY()
+
+	/** Namespace of the object (e.g. log)*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
+	FString Ns;
+
+	/** Class of the object (e.g. UnrealExperiment)*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
+	FString Class;
+
+	// Default constructor
+	FOwlClass()
+	{}
+
+	// Constructor from Namespace, Class, and Id
+	FOwlClass(const FString InNs, const FString InClass)
+		: Ns(InNs), Class(InClass)
+	{}
+
+	// Constructor from FullName (e.g. &log;UnrealExperiment)
+	FOwlClass(FString FullName)
+	{
+		// Remove ampersand from namespace
+		FullName.RemoveFromStart("&");
+		// Split into Ns and Class
+		FullName.Split(";", &Ns, &Class);
+	}
+
+	// Return the object as Ns + Class
+	FString GetFullName() const
+	{
+		return "&" + Ns + ";" + Class;
+	}
+
+	// Set from full name (e.g &log;SemanticMapPerception)
+	void Set(FString FullName)
+	{
+		// Remove ampersand from namespace
+		FullName.RemoveFromStart("&");
+		// Split into Ns and Class
+		FullName.Split(";", &Ns, &Class);
+	}
+
+	// Set from namespace and class
+	void Set(const FString InNs, const FString InClass)
+	{
+		Ns = InNs;
+		Class = InClass;
+	}
+};
+
+
+/**
+*	IndividualName, e.g. &log;SemanticMapPerception_XWRm
+*   "& + Namespace + ; + Class + _ + Id"
+*/
+USTRUCT(BlueprintType)
+struct SEMLOG_API FOwlIndividualName
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -232,25 +141,23 @@ struct SEMLOG_API FOwlObject
 	FString Id;
 
 	// Default constructor
-	FOwlObject()
-	{
-	}
+	FOwlIndividualName()
+	{}
 
 	// Constructor from Namespace, Class, and Id
-	FOwlObject(FString InNs, FString InClass, FString InId)
+	FOwlIndividualName(const FString InNs, const FString InClass, const FString InId)
 		: Ns(InNs), Class(InClass), Id(InId)
-	{
-	}
+	{}
 
 	// Constructor from Namespace and Name (e.g. log, UnrealExperiment_8uFQ)
-	FOwlObject(FString InNs, FString InName)
+	FOwlIndividualName(const FString InNs, const FString InName)
 		: Ns(InNs)
 	{
-		InName.Split("_", &Class, &Id);		
+		InName.Split("_", &Class, &Id);
 	}
 
 	// Constructor from FullName (e.g. &log;UnrealExperiment_8uFQ)
-	FOwlObject(FString FullName)
+	FOwlIndividualName(FString FullName)
 	{
 		// Remove ampersand from namespace
 		FullName.RemoveFromStart("&");
@@ -262,65 +169,47 @@ struct SEMLOG_API FOwlObject
 	}
 
 	// Return the object as Ns + Class + Id
-	FString GetFullName()
+	FString GetFullName() const
 	{
 		return "&" + Ns + ";" + Class + "_" + Id;
 	}
 
 	// Return as Class + Id
-	FString GetName()
+	FString GetName() const
 	{
 		return Class + "_" + Id;
 	}
 
 	// Set from full name
-	bool Set(FString FullName)
+	void Set(FString FullName)
 	{
 		// Remove ampersand from namespace
-		if (FullName.RemoveFromStart("&"))
-		{
-			// Split into Ns and Name
-			FString Name;
-			if (FullName.Split(";", &Ns, &Name))
-			{
-				// Split Name into Class and Id
-				if (Name.Split("_", &Class, &Id))
-				{
-					return true;
-				}
-			}
-		}
-		return false;
+		FullName.RemoveFromStart("&");
+		// Split into Ns and Name
+		FString Name;
+		FullName.Split(";", &Ns, &Name);
+		// Split Name into Class and Id
+		Name.Split("_", &Class, &Id);
 	}
 
 	// Set from namespace and name
-	bool Set(FString InNs, FString InName)
+	void Set(FString InNs, FString InName)
 	{
-		// Set the class 
-		if (!InNs.IsEmpty() && InName.Split("_", &Class, &Id))
-		{
-			Ns = InNs;
-			return true;
-		}
-		return false;
+		Ns = InNs;
+		InName.Split("_", &Class, &Id);
 	}
 
 	// Set from namespace, class and id
-	bool Set(FString InNs, FString InClass, FString InId)
+	void Set(const FString InNs, const FString InClass, const FString InId)
 	{
-		if (!InNs.IsEmpty() && !InClass.IsEmpty() && !InId.IsEmpty())
-		{
-			Ns = InNs;
-			Class = InClass;
-			Id = InId;
-			return true;
-		}
-		return false;
+		Ns = InNs;
+		Class = InClass;
+		Id = InId;
 	}
 };
 
 /**
-*
+*	OwlTriple, e.g. <knowrob:objectActedOn rdf:resource="&log;ButtonOven_5CRX"/>
 */
 USTRUCT(BlueprintType)
 struct SEMLOG_API FOwlTriple
@@ -352,15 +241,27 @@ struct SEMLOG_API FOwlTriple
 		: Subject(InSubject), Predicate(InPredicate), Object(InObject), Value(InValue)
 	{}
 
-	// Constructor using FOwlObject
-	FOwlTriple(FString InSubject, FString InPredicate, FOwlObject InObject, FString InValue = "")
-		: Subject(InSubject), Predicate(InPredicate), Object(InObject.GetFullName()), Value(InValue)
+	// Constructor using FOwlPrefixName and FOwlIndividualName
+	FOwlTriple(FOwlPrefixName InSubject, FOwlPrefixName InPredicate, FOwlIndividualName InObject, FString InValue = "")
+		: Subject(InSubject.GetFullName()), Predicate(InPredicate.GetFullName()), Object(InObject.GetFullName()), Value(InValue)
+	{}
+
+	// Constructor using FOwlPrefixName and FOwlClass
+	FOwlTriple(FOwlPrefixName InSubject, FOwlPrefixName InPredicate, FOwlClass InObject, FString InValue = "")
+		: Subject(InSubject.GetFullName()), Predicate(InPredicate.GetFullName()), Object(InObject.GetFullName()), Value(InValue)
 	{}
 
 	// Set subject and return self
 	FOwlTriple& SetSubject(FString InSubject)
 	{
 		Subject = InSubject;
+		return *this;
+	}
+
+	// Set subject as FOwlPrefixName and return self
+	FOwlTriple& SetSubject(FOwlPrefixName InSubject)
+	{
+		Subject = InSubject.GetFullName();
 		return *this;
 	}
 
@@ -371,10 +272,31 @@ struct SEMLOG_API FOwlTriple
 		return *this;
 	}
 
+	// Set predicate as FOwlPrefixName and return self
+	FOwlTriple& SetPredicate(FOwlPrefixName InPredicate)
+	{
+		Predicate = InPredicate.GetFullName();
+		return *this;
+	}
+
 	// Set object and return self
 	FOwlTriple& SetObject(FString InObject)
 	{
 		Object = InObject;
+		return *this;
+	}
+
+	// Set object as FOwlIndividualName  and return self
+	FOwlTriple& SetObject(FOwlIndividualName InObject)
+	{
+		Object = InObject.GetFullName();
+		return *this;
+	}
+
+	// Set object as FOwlClass  and return self
+	FOwlTriple& SetObject(FOwlClass InObject)
+	{
+		Object = InObject.GetFullName();
 		return *this;
 	}
 
@@ -403,7 +325,10 @@ struct SEMLOG_API FOwlTriple
 };
 
 /**
-*
+*	OwlNode e.g.
+*	<owl:NamedIndividual rdf:about="&u-map;SemanticMapPerception_XAL4">
+*		<rdf:type rdf:resource="&knowrob;SemanticMapPerception"/>
+*	</owl:NamedIndividual>
 */
 USTRUCT(BlueprintType)
 struct SEMLOG_API FOwlNode
@@ -439,15 +364,32 @@ struct SEMLOG_API FOwlNode
 		: Name(InName), Attribute(InAttribute), AttributeValue(InAttributeValue), Comment(InComment)
 	{}
 
+	// Constructor with name and attribute using FOwlPrefixName and FOwlIndividualName
+	FOwlNode(FOwlPrefixName InName, FOwlPrefixName InAttribute, FOwlIndividualName InAttributeValue, FString InComment = "")
+		: Name(InName.GetFullName()), Attribute(InAttribute.GetFullName()), AttributeValue(InAttributeValue.GetFullName()), Comment(InComment)
+	{}
+
 	// Constructor with properties
 	FOwlNode(FString InName, FString InAttribute, FString InAttributeValue, const TArray<FOwlTriple>& InProperties, FString InComment = "")
 		: Name(InName), Attribute(InAttribute), AttributeValue(InAttributeValue), Properties(InProperties), Comment(InComment)
+	{}
+
+	// Constructor with properties using FOwlPrefixName and FOwlIndividualName
+	FOwlNode(FOwlPrefixName InName, FOwlPrefixName InAttribute, FOwlIndividualName InAttributeValue, const TArray<FOwlTriple>& InProperties, FString InComment = "")
+		: Name(InName.GetFullName()), Attribute(InAttribute.GetFullName()), AttributeValue(InAttributeValue.GetFullName()), Properties(InProperties), Comment(InComment)
 	{}
 		
 	// Set name and return self
 	FOwlNode& SetName(FString InName)
 	{
 		Name = InName;
+		return *this;
+	}
+
+	// Set name and return self using FOwlPrefixName
+	FOwlNode& SetName(FOwlPrefixName InName)
+	{
+		Name = InName.GetFullName();
 		return *this;
 	}
 
@@ -458,10 +400,24 @@ struct SEMLOG_API FOwlNode
 		return *this;
 	}
 
+	// Set attribute and return self using FOwlPrefixName
+	FOwlNode& SetAttribute(FOwlPrefixName InAttribute)
+	{
+		Attribute = InAttribute.GetFullName();
+		return *this;
+	}
+
 	// Set attribute and return self
 	FOwlNode& SetAttributeValue(FString InAttributeValue)
 	{
 		Attribute = InAttributeValue;
+		return *this;
+	}
+
+	// Set attribute and return self using FOwlIndividualName
+	FOwlNode& SetAttributeValue(FOwlIndividualName InAttributeValue)
+	{
+		Attribute = InAttributeValue.GetFullName();
 		return *this;
 	}
 
@@ -510,7 +466,7 @@ struct SEMLOG_API FOwlNode
 };
 
 /**
-*
+* OwlDocument
 */
 USTRUCT(BlueprintType)
 struct SEMLOG_API FOwlDocument
@@ -531,8 +487,7 @@ struct SEMLOG_API FOwlDocument
 
 	// Constructor.
 	FOwlDocument()
-	{
-	}
+	{}
 	
 	// Constructor.
 	FOwlDocument(
@@ -542,8 +497,7 @@ struct SEMLOG_API FOwlDocument
 		: DoctypeAttributes(InDoctypeAttributes),
 		RdfAttributes(InRdfAttributes),
 		Nodes(InNodes)
-	{
-	}
+	{}
 
 	// Write as XML String
 	FString ToXmlString() const

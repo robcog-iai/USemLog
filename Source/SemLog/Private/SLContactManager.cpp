@@ -76,8 +76,8 @@ void USLContactManager::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AAct
 		Properties.Add(FOwlTriple("rdf:type", "rdf:resource", "&knowrob_u;TouchingSituation"));
 		Properties.Add(FOwlTriple("knowrob:taskContext", "rdf:datatype", "&xsd;string",
 			"Contact-" + ParentName + "-" + OtherName));
-		Properties.Add(FOwlTriple("knowrob_u:inContact", "rdf:resource", FOwlObject("&log;", ParentName)));
-		Properties.Add(FOwlTriple("knowrob_u:inContact", "rdf:resource", FOwlObject("&log;", OtherName)));
+		Properties.Add(FOwlTriple(FOwlPrefixName("knowrob_u", "inContact"), FOwlPrefixName("rdf", "resource"), FOwlIndividualName("&log;", ParentClass, ParentId)));
+		Properties.Add(FOwlTriple(FOwlPrefixName("knowrob_u", "inContact"), FOwlPrefixName("rdf", "resource"), FOwlIndividualName("&log;", OtherClass, OtherId)));
 
 		// Start the event with the given properties
 		SemLogRuntimeManager->StartEvent("log", "TouchingSituation", FSLUtils::GenerateRandomFString(4),
