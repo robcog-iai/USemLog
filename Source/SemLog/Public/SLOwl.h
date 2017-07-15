@@ -124,17 +124,9 @@ struct SEMLOG_API FOwlClass
 *   "& + Namespace + ; + Class + _ + Id"
 */
 USTRUCT(BlueprintType)
-struct SEMLOG_API FOwlIndividualName
+struct SEMLOG_API FOwlIndividualName : public FOwlClass
 {
 	GENERATED_USTRUCT_BODY()
-
-	/** Namespace of the object (e.g. log)*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-	FString Ns;
-
-	/** Class of the object (e.g. UnrealExperiment)*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-	FString Class;
 
 	/** Unique Id of the object (e.g. 8uFQ)*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
@@ -146,13 +138,13 @@ struct SEMLOG_API FOwlIndividualName
 
 	// Constructor from Namespace, Class, and Id
 	FOwlIndividualName(const FString InNs, const FString InClass, const FString InId)
-		: Ns(InNs), Class(InClass), Id(InId)
+		: FOwlClass(InNs, InClass), Id(InId)
 	{}
 
 	// Constructor from Namespace and Name (e.g. log, UnrealExperiment_8uFQ)
 	FOwlIndividualName(const FString InNs, const FString InName)
-		: Ns(InNs)
 	{
+		Ns = InNs;
 		InName.Split("_", &Class, &Id);
 	}
 

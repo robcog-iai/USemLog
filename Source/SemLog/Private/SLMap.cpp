@@ -96,15 +96,8 @@ bool USLMap::WriteToFile(bool bOverwrite)
 // Set document default values
 void USLMap::SetDefaultValues()
 {
-	// 
-	Class = "SemanticEnvironmentMap";
-	Id = FSLUtils::GenerateRandomFString(4);
-	Name = Class + "_" + Id;
-	Ns = "u-map";
-	FullName = "&" + Ns + ";" + Name;
-
 	// Set as FOwlObject
-	OwlObject.Set(FullName);
+	SemMapIndividual.Set("u-map", "SemanticEnvironmentMap", FSLUtils::GenerateRandomFString(4));
 
 	// Remove previous default attributes
 	OwlDocument.DoctypeAttributes.Empty();
@@ -168,7 +161,7 @@ void USLMap::SetDefaultValues()
 	SemMapOwlProperties.Emplace(
 		FOwlTriple("rdf:type", "rdf:resource", "&knowrob;SemanticEnvironmentMap"));
 
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", FullName,
+	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", SemMapIndividual.GetFullName(),
 		SemMapOwlProperties,
 		"Semantic Environment Map"));
 
@@ -272,7 +265,7 @@ void USLMap::InsertIndividual(
 	IndividualProperties.Emplace(FOwlTriple("knowrob:pathToCadModel", "rdf:datatype",
 		"&xsd;string", "package://robcog/" + IndividualClass + ".dae"));
 	IndividualProperties.Emplace(FOwlTriple(
-		"knowrob:describedInMap", "rdf:resource", FullName));
+		"knowrob:describedInMap", "rdf:resource", SemMapIndividual.GetFullName()));
 
 	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", "&log;" + IndividualName,
 		IndividualProperties,

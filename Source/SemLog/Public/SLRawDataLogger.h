@@ -32,7 +32,7 @@ struct FUniqueNameAndLocation
 		: UniqueName(InUniqueName), Location(InLocation)
 	{};
 
-	// Id of the entity
+	// UNique name of the entity
 	FString UniqueName;
 
 	// Previous location 
