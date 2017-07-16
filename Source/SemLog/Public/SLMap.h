@@ -47,18 +47,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SL)
 	FOwlIndividualName SemMapIndividual;
 
-	//// Class name of the semantic map
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SL)
-	//FString Class;
-
-	//// Unique ID of the semantic map
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SL)
-	//FString Id;
-
-	//// Namespace of the semantic map
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SL)
-	//FString Ns;
-
 	// Semantic map document as owl representation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = SL)
 	FOwlDocument OwlDocument;
@@ -70,11 +58,6 @@ public:
 	uint8 bOwlDefaultValuesSet : 1;
 
 private:
-	//// Full name of the semantic map, Class + Id 
-	//FString Name;
-
-	//// Full name of the semantic map, Ns + Name
-	//FString FullName;
 
 	// Set document default values
 	void SetDefaultValues();

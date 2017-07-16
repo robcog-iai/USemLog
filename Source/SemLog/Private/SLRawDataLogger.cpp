@@ -4,6 +4,7 @@
 #include "SLRawDataLogger.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "TagStatics.h"
+#include "SLDelegates.h"
 //#include "PlatformFilemanager.h"
 //#include "FileManager.h"
 //#include "FileHelper.h"
@@ -67,6 +68,13 @@ void USLRawDataLogger::InitLogAll()
 	{
 		USLRawDataLogger::InsertJsonContentToFile(JsonOutputString);
 	}
+	else
+	{
+		if (RawDataBroadcaster.IsBound())
+		{
+			RawDataBroadcaster.Broadcast(JsonOutputString);
+		}
+	}
 }
 
 // Get the dynamic and static entities as json string
@@ -78,7 +86,6 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 	}
 
 	// Create Json root object
-	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
 	// Set timestamp
 	JsonRootObj->SetNumberField("timestamp", World->GetTimeSeconds());
@@ -91,14 +98,17 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 
 	for (const auto& ActItr : StaticActors)
 	{
-		const FString Id = FTagStatics::GetKeyValue(ActItr, "SemLog", "Id");
-		if (!Id.IsEmpty())
+		int32 TagIndex = FTagStatics::GetTagTypeIndex(ActItr, "SemLog");
+		if (TagIndex != INDEX_NONE)
 		{
-			const FString UniqueName = FTagStatics::GetKeyValue(ActItr, "SemLog", "Class") + "_" + Id;
-			FVector VirtualPreviousLocation(-99999.9f);
-
-			USLRawDataLogger::AddActorToJsonArray(
-				JsonActorArr, ActItr, UniqueName, VirtualPreviousLocation);
+			const FString Id = FTagStatics::GetKeyValue(ActItr->Tags[TagIndex], "Id");
+			const FString Class = FTagStatics::GetKeyValue(ActItr->Tags[TagIndex], "Class");
+			if (!Id.IsEmpty() && !Class.IsEmpty())
+			{
+				// Location is init automatically to -INF
+				FUniqueNameAndLocation UniqueNameAndInitLoc(Class + "_" + Id);
+				USLRawDataLogger::AddActorToJsonArray(JsonActorArr, ActItr, UniqueNameAndInitLoc);
+			}
 		}
 	}
 
@@ -117,14 +127,16 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 
 	for (const auto& CompItr : StaticSceneComponents)
 	{
-		const FString Id = FTagStatics::GetKeyValue(CompItr, "SemLog", "Id");
-		if (!Id.IsEmpty())
+		int32 TagIndex = FTagStatics::GetTagTypeIndex(CompItr, "SemLog");
+		if (TagIndex != INDEX_NONE)
 		{
-			const FString UniqueName = FTagStatics::GetKeyValue(CompItr, "SemLog", "Class") + "_" + Id;
-			FVector VirtualPreviousLocation(-99999.9f);
-
-			USLRawDataLogger::AddComponentToJsonArray(
-				JsonActorArr, CompItr, UniqueName, VirtualPreviousLocation);
+			const FString Id = FTagStatics::GetKeyValue(CompItr->ComponentTags[TagIndex], "Id");
+			const FString Class = FTagStatics::GetKeyValue(CompItr->ComponentTags[TagIndex], "Class");
+			if (!Id.IsEmpty() && !Class.IsEmpty())
+			{
+				FUniqueNameAndLocation UniqueNameAndInitLoc(Class + "_" + Id);
+				USLRawDataLogger::AddComponentToJsonArray(JsonActorArr, CompItr, UniqueNameAndInitLoc);
+			}
 		}
 	}
 
@@ -134,17 +146,22 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 
 	for (const auto& DynActItr : DynamicActors)
 	{
-		const FString Id = FTagStatics::GetKeyValue(DynActItr, "SemLog", "Id");
-		if (!Id.IsEmpty())
+		int32 TagIndex = FTagStatics::GetTagTypeIndex(DynActItr, "SemLog");
+		if (TagIndex != INDEX_NONE)
 		{
-			const FString UniqueName = FTagStatics::GetKeyValue(DynActItr, "SemLog", "Class") + "_" + Id;
-			FVector VirtualPreviousLocation(-99999.9f);
-			USLRawDataLogger::AddActorToJsonArray(
-				JsonActorArr, DynActItr, UniqueName, VirtualPreviousLocation);
+			const FString Id = FTagStatics::GetKeyValue(DynActItr->Tags[TagIndex], "Id");
+			const FString Class = FTagStatics::GetKeyValue(DynActItr->Tags[TagIndex], "Class");
+			if (!Id.IsEmpty() && !Class.IsEmpty())
+			{
+				// Location is init automatically to -INF
+				const FString UniqueName = Class + "_" + Id;
+				FUniqueNameAndLocation UniqueNameAndInitLoc(UniqueName);
+				USLRawDataLogger::AddActorToJsonArray(JsonActorArr, DynActItr, UniqueNameAndInitLoc);
 
-			// Store the UniqueName and the Location of the dynamic entity
-			DynamicActorsWithData.Add(DynActItr,
-				FUniqueNameAndLocation(UniqueName, DynActItr->GetActorLocation()));
+				// Store the UniqueName and the Location of the dynamic entity
+				DynamicActorsWithData.Add(DynActItr,
+					FUniqueNameAndLocation(UniqueName, DynActItr->GetActorLocation()));
+			}
 		}
 	}
 
@@ -163,17 +180,22 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 
 	for (const auto& DynCompItr : DynamicSceneComponents)
 	{
-		const FString Id = FTagStatics::GetKeyValue(DynCompItr, "SemLog", "Id");
-		if (!Id.IsEmpty())
+		int32 TagIndex = FTagStatics::GetTagTypeIndex(DynCompItr, "SemLog");
+		if (TagIndex != INDEX_NONE)
 		{
-			const FString UniqueName = FTagStatics::GetKeyValue(DynCompItr, "SemLog", "Class") + "_" + Id;
-			FVector VirtualPreviousLocation(-99999.9f);
-			USLRawDataLogger::AddComponentToJsonArray(
-				JsonActorArr, DynCompItr, UniqueName, VirtualPreviousLocation);
+			const FString Id = FTagStatics::GetKeyValue(DynCompItr->ComponentTags[TagIndex], "Id");
+			const FString Class = FTagStatics::GetKeyValue(DynCompItr->ComponentTags[TagIndex], "Class");
+			if (!Id.IsEmpty() && !Class.IsEmpty())
+			{
+				// Location is init automatically to -INF
+				const FString UniqueName = Class + "_" + Id;
+				FUniqueNameAndLocation UniqueNameAndInitLoc(UniqueName);
+				USLRawDataLogger::AddComponentToJsonArray(JsonActorArr, DynCompItr, UniqueNameAndInitLoc);
 
-			// Store the UniqueName and the Location of the dynamic entity
-			DynamicComponentsWithData.Add(DynCompItr,
-				FUniqueNameAndLocation(UniqueName, DynCompItr->GetComponentLocation()));
+				// Store the UniqueName and the Location of the dynamic entity
+				DynamicComponentsWithData.Add(DynCompItr,
+					FUniqueNameAndLocation(UniqueName, DynCompItr->GetComponentLocation()));
+			}
 		}
 	}
 
@@ -199,6 +221,13 @@ void USLRawDataLogger::LogDynamic()
 	{
 		USLRawDataLogger::InsertJsonContentToFile(DynamicJsonOutputString);
 	}
+	else
+	{
+		if (RawDataBroadcaster.IsBound())
+		{
+			RawDataBroadcaster.Broadcast(DynamicJsonOutputString);
+		}
+	}
 }
 
 // Get logged dynamic entities as json string
@@ -215,14 +244,14 @@ bool USLRawDataLogger::GetDynamicEntitiesAsJson(FString& DynamicJsonEntry)
 	for (auto& ActWithDataItr : DynamicActorsWithData)
 	{
 		USLRawDataLogger::AddActorToJsonArray(JsonActorArr,
-			ActWithDataItr.Key, ActWithDataItr.Value.UniqueName, ActWithDataItr.Value.Location);
+			ActWithDataItr.Key, ActWithDataItr.Value);
 	}
 
 	// Iterate and log dynamic components
 	for (auto& CompWithDataItr : DynamicComponentsWithData)
 	{
 		USLRawDataLogger::AddComponentToJsonArray(JsonActorArr,
-			CompWithDataItr.Key, CompWithDataItr.Value.UniqueName, CompWithDataItr.Value.Location);
+			CompWithDataItr.Key, CompWithDataItr.Value);
 	}
 
 	// Avoid appending emtpy entries
@@ -302,20 +331,19 @@ FORCEINLINE TSharedPtr<FJsonObject> USLRawDataLogger::CreateNameLocRotJsonObject
 void USLRawDataLogger::AddActorToJsonArray(
 	TArray<TSharedPtr<FJsonValue>>& OutJsonArray,
 	AActor* Actor,
-	const FString& UniqueName,
-	FVector& PreviousLocation)
+	FUniqueNameAndLocation &UniqueNameAndLocation)
 {
 	// Get entity current location
 	const FVector CurrLocation = Actor->GetActorLocation();
 	// Write raw data if distance larger than threshold
-	if (FVector::DistSquared(CurrLocation, PreviousLocation) > SquaredDistanceThreshold)
+	if (FVector::DistSquared(CurrLocation, UniqueNameAndLocation.Location) > SquaredDistanceThreshold)
 	{
 		// Update previous location
-		PreviousLocation = CurrLocation;
+		UniqueNameAndLocation.Location = CurrLocation;
 
 		// Json actor object with name location and rotation
 		TSharedPtr<FJsonObject> JsonActorObj = USLRawDataLogger::CreateNameLocRotJsonObject(
-			UniqueName, CurrLocation * 0.01f, Actor->GetActorQuat());
+			UniqueNameAndLocation.UniqueName, CurrLocation * 0.01f, Actor->GetActorQuat());
 
 		// Check if actor is skeletal
 		if (Actor->IsA(ASkeletalMeshActor::StaticClass()))
@@ -357,20 +385,19 @@ void USLRawDataLogger::AddActorToJsonArray(
 void USLRawDataLogger::AddComponentToJsonArray(
 	TArray<TSharedPtr<FJsonValue>>& OutJsonArray,
 	USceneComponent* Component,
-	const FString& UniqueName,
-	FVector& PreviousLocation)
+	FUniqueNameAndLocation &UniqueNameAndLocation)
 {
 	// Get entity current location
 	const FVector CurrLocation = Component->GetComponentLocation();
 	// Write raw data if distance larger than threshold
-	if (FVector::DistSquared(CurrLocation, PreviousLocation) > SquaredDistanceThreshold)
+	if (FVector::DistSquared(CurrLocation, UniqueNameAndLocation.Location) > SquaredDistanceThreshold)
 	{
 		// Update previous location
-		PreviousLocation = CurrLocation;
+		UniqueNameAndLocation.Location = CurrLocation;
 
 		// Json actor object with name location and rotation
 		TSharedPtr<FJsonObject> JsonActorObj = USLRawDataLogger::CreateNameLocRotJsonObject(
-			UniqueName, CurrLocation * 0.01f, Component->GetComponentQuat());
+			UniqueNameAndLocation.UniqueName, CurrLocation * 0.01f, Component->GetComponentQuat());
 
 		// Add actor to Json array
 		OutJsonArray.Add(MakeShareable(new FJsonValueObject(JsonActorObj)));

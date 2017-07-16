@@ -7,28 +7,24 @@
 #include "UObject/NoExportTypes.h"
 #include "JsonObject.h"
 //#include "GenericPlatform/GenericPlatformFile.h"
+#include "SLDelegates.h"
 #include "SLRawDataLogger.generated.h"
 
-
 /**
-*
+* Unique name and location of the entities to be logged by the raw data logger
+* location is used for calculating the distance between then and now
 */
 USTRUCT()
 struct FUniqueNameAndLocation
 {
 	GENERATED_USTRUCT_BODY()
-
-	// Default constructor
-	FUniqueNameAndLocation() 
-	{};
 	
-	// Constructor with Id
-	FUniqueNameAndLocation(FString InUniqueName) 
-		: UniqueName(InUniqueName)
+	// Default constructor
+	FUniqueNameAndLocation()
 	{};
 
 	// Constructor with Id and Location
-	FUniqueNameAndLocation(FString InUniqueName, FVector InLocation)
+	FUniqueNameAndLocation(FString InUniqueName, FVector InLocation = FVector(-INFINITY))
 		: UniqueName(InUniqueName), Location(InLocation)
 	{};
 
@@ -40,7 +36,7 @@ struct FUniqueNameAndLocation
 };
 
 /**
- * 
+ * Semnatic logger of raw data (location, rotation of semantically anotated entities in the world)
  */
 UCLASS()
 class SEMLOG_API USLRawDataLogger : public UObject
@@ -100,15 +96,13 @@ private:
 	void AddActorToJsonArray(
 		TArray<TSharedPtr<FJsonValue>>& OutJsonArray,
 		AActor* Actor,
-		const FString& UniqueName,
-		FVector& PreviousLocation);
+		FUniqueNameAndLocation &UniqueNameAndLocation);
 
 	// Add component's data to the json array
 	void AddComponentToJsonArray(
 		TArray<TSharedPtr<FJsonValue>>& OutJsonArray,
 		USceneComponent* Component,
-		const FString& UniqueName,
-		FVector& PreviousLocation);
+		FUniqueNameAndLocation &UniqueNameAndLocation);
 
 	// Distance threshold (squared for faster comparisons)
 	float SquaredDistanceThreshold;
@@ -130,4 +124,7 @@ private:
 
 	// Logging to file
 	bool bLogToFile;
+
+	// If enabled, broadcasts every time new data is available
+	FSLDelegates::FSLOnNewRawDataSignature RawDataBroadcaster;
 };
