@@ -19,7 +19,7 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
  
 
 .h 
-``` 
+```cpp
 #pragma once
 
 #include "CoreMinimal.h"
@@ -47,7 +47,7 @@ private:
 ```
 
 .cpp
-```
+```cpp
 #include "RawDataDelegateListener.h"
 #include "SLRuntimeManager.h"
 #include "EngineUtils.h"
