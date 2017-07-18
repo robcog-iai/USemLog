@@ -5,9 +5,7 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "TagStatics.h"
 #include "SLDelegates.h"
-//#include "PlatformFilemanager.h"
-//#include "FileManager.h"
-//#include "FileHelper.h"
+
 
 // Constructor
 USLRawDataLogger::USLRawDataLogger()
@@ -15,6 +13,7 @@ USLRawDataLogger::USLRawDataLogger()
 	// Default values
 	bIsInit = false;
 	bLogToFile = false;
+	bBroadcastData = false;
 }
 
 // Destructor
@@ -43,7 +42,7 @@ bool USLRawDataLogger::Init(UWorld* InWorld, const float DistanceThreshold)
 // Set file handle for appending log data to file every update
 void USLRawDataLogger::InitFileHandle(const FString EpisodeId, const FString LogDirectoryPath)
 {
-	// Create filehandle to incrementally append json logs to file
+	// Create file handle to incrementally append json logs to file
 	const FString Filename = "RawData_" + EpisodeId + ".json";
 	const FString EpisodesDirPath = LogDirectoryPath.EndsWith("/") ?
 		(LogDirectoryPath + "Episodes/") : (LogDirectoryPath + "/Episodes/");
@@ -56,23 +55,50 @@ void USLRawDataLogger::InitFileHandle(const FString EpisodeId, const FString Log
 	bLogToFile = (FileHandle != nullptr);
 }
 
-// Log dynamic and static entities to file
-void USLRawDataLogger::InitLogAll()
+// Allow broadcasting the data as events
+void USLRawDataLogger::InitBroadcaster()
 {
-	// String to store the json entry
-	FString JsonOutputString;
-	USLRawDataLogger::GetAllEntitiesAsJson(JsonOutputString);
+	bBroadcastData = true;
+}
 
-	// Append to file if set
-	if (bLogToFile)
+// Log dynamic and static entities to file
+void USLRawDataLogger::LogFirstEntry()
+{
+	// Get the dynamic entities data as json
+	FString FristEntryJsonOutputString;
+	if (USLRawDataLogger::GetAllEntitiesAsJson(FristEntryJsonOutputString))
 	{
-		USLRawDataLogger::InsertJsonContentToFile(JsonOutputString);
-	}
-	else
-	{
-		if (RawDataBroadcaster.IsBound())
+		// Append json to file 
+		if (bLogToFile)
 		{
-			RawDataBroadcaster.Broadcast(JsonOutputString);
+			USLRawDataLogger::InsertJsonContentToFile(FristEntryJsonOutputString);
+		}
+
+		// Broadcast json
+		if (bBroadcastData)
+		{
+			USLRawDataLogger::BroadcastJsonContent(FristEntryJsonOutputString);
+		}
+	}
+}
+
+// Log dynamic entities
+void USLRawDataLogger::LogDynamic()
+{
+	// Get the dynamic entities data as json
+	FString DynamicJsonOutputString;
+	if (USLRawDataLogger::GetDynamicEntitiesAsJson(DynamicJsonOutputString))
+	{
+		// Append json to file 
+		if (bLogToFile)
+		{
+			USLRawDataLogger::InsertJsonContentToFile(DynamicJsonOutputString);
+		}
+
+		// Broadcast json
+		if (bBroadcastData)
+		{
+			USLRawDataLogger::BroadcastJsonContent(DynamicJsonOutputString);
 		}
 	}
 }
@@ -209,27 +235,6 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 	return (!FirstJsonEntry.IsEmpty());
 }
 
-// Log dynamic entities
-void USLRawDataLogger::LogDynamic()
-{
-	// String to store the json entry
-	FString DynamicJsonOutputString;
-	USLRawDataLogger::GetDynamicEntitiesAsJson(DynamicJsonOutputString);
-
-	// Append to file if set
-	if (bLogToFile)
-	{
-		USLRawDataLogger::InsertJsonContentToFile(DynamicJsonOutputString);
-	}
-	else
-	{
-		if (RawDataBroadcaster.IsBound())
-		{
-			RawDataBroadcaster.Broadcast(DynamicJsonOutputString);
-		}
-	}
-}
-
 // Get logged dynamic entities as json string
 bool USLRawDataLogger::GetDynamicEntitiesAsJson(FString& DynamicJsonEntry)
 {
@@ -276,7 +281,7 @@ bool USLRawDataLogger::GetDynamicEntitiesAsJson(FString& DynamicJsonEntry)
 }
 
 // Append string to the file
-bool USLRawDataLogger::InsertJsonContentToFile(FString& JsonString)
+bool USLRawDataLogger::InsertJsonContentToFile(const FString& JsonString)
 {
 	if (!FileHandle)
 	{
@@ -284,6 +289,12 @@ bool USLRawDataLogger::InsertJsonContentToFile(FString& JsonString)
 	}
 	// Write string to file
 	return FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonString), JsonString.Len());
+}
+
+// Broadcast json content
+void USLRawDataLogger::BroadcastJsonContent(const FString& JsonString)
+{
+	OnNewData.Broadcast(JsonString);
 }
 
 // Create Json object with a 3d location

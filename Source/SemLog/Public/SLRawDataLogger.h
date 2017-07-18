@@ -6,9 +6,11 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "JsonObject.h"
-//#include "GenericPlatform/GenericPlatformFile.h"
-#include "SLDelegates.h"
 #include "SLRawDataLogger.generated.h"
+
+/** Delegate type for new raw data */
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLOnNewRawDataSignature, const FString&);
+DECLARE_DELEGATE_OneParam(FStringDelegate, FString);
 
 /**
 * Unique name and location of the entities to be logged by the raw data logger
@@ -28,7 +30,7 @@ struct FUniqueNameAndLocation
 		: UniqueName(InUniqueName), Location(InLocation)
 	{};
 
-	// UNique name of the entity
+	// Unique name of the entity
 	FString UniqueName;
 
 	// Previous location 
@@ -57,30 +59,38 @@ public:
 	// Set file handle for appending log data to file every update
 	UFUNCTION(BlueprintCallable, Category = SL)
 	void InitFileHandle(const FString EpisodeId, const FString LogDirectoryPath);
+
+	// Allow broadcasting the data as events
+	UFUNCTION(BlueprintCallable, Category = SL)
+	void InitBroadcaster();
 	
 	// Log dynamic and static entities to file
 	UFUNCTION(BlueprintCallable, Category = SL)
-	void InitLogAll();
-
-	// Get the dynamic and static entities as json string
-	UFUNCTION(BlueprintCallable, Category = SL)
-	bool GetAllEntitiesAsJson(FString& FirstJsonEntry);
+	void LogFirstEntry();
 
 	// Log dynamic entities
 	UFUNCTION(BlueprintCallable, Category = SL)
 	void LogDynamic();
 
-	// Log dynamic entities and return them as json string
-	UFUNCTION(BlueprintCallable, Category = SL)
-	bool GetDynamicEntitiesAsJson(FString& DynamicJsonEntry);
-
 	// See if logger initialized
 	UFUNCTION(BlueprintCallable, Category = SL)
 	bool IsInit() const { return bIsInit; }
 
+	// Delegate to publish the data
+	FSLOnNewRawDataSignature OnNewData;
+
 private:
-	// Add string to file
-	bool InsertJsonContentToFile(FString& JsonString);
+	// Get the dynamic and static entities as json string
+	bool GetAllEntitiesAsJson(FString& FirstJsonEntry);
+
+	// Log dynamic entities and return them as json string
+	bool GetDynamicEntitiesAsJson(FString& DynamicJsonEntry);
+
+	// Add json content to file
+	bool InsertJsonContentToFile(const FString& JsonString);
+
+	// Broadcast json content
+	void BroadcastJsonContent(const FString& JsonString);
 
 	// Create Json object with a 3d location
 	FORCEINLINE TSharedPtr<FJsonObject> CreateLocationJsonObject(const FVector& Location);
@@ -90,7 +100,7 @@ private:
 
 	// Create Json object with name location and rotation
 	FORCEINLINE TSharedPtr<FJsonObject> CreateNameLocRotJsonObject(
-	const FString& Name, const FVector& Location, const FQuat& Rotation);
+		const FString& Name, const FVector& Location, const FQuat& Rotation);
 
 	// Add actors data to the json array
 	void AddActorToJsonArray(
@@ -125,6 +135,6 @@ private:
 	// Logging to file
 	bool bLogToFile;
 
-	// If enabled, broadcasts every time new data is available
-	FSLDelegates::FSLOnNewRawDataSignature RawDataBroadcaster;
+	// Broadcast data
+	bool bBroadcastData;
 };
