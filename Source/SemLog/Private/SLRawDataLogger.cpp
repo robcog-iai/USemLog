@@ -4,7 +4,6 @@
 #include "SLRawDataLogger.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "TagStatics.h"
-#include "SLDelegates.h"
 
 
 // Constructor

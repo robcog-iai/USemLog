@@ -38,8 +38,10 @@ class SEMLOG_API USLContactManager : public UBoxComponent
 	// Called when spawned or level started
 	virtual void BeginPlay() override;
 
+	#if WITH_EDITOR 
 	// Setting contact area size depending on the selected type
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+	#endif 
 
 	// The type of the contact area
 	UPROPERTY(EditAnywhere, Category = SL)
@@ -64,6 +66,7 @@ class SEMLOG_API USLContactManager : public UBoxComponent
 		int32 OtherBodyIndex);
 
 private:
+	#if WITH_EDITOR 
 	// Update contact area
 	void UpdateContactArea();
 
@@ -75,6 +78,7 @@ private:
 
 	// Calculate wrapper area
 	void CalculateAreaAsWrapper();
+	#endif 
 
 	// Parent class
 	FString ParentClass;

@@ -10,7 +10,6 @@
 
 /** Delegate type for new raw data */
 DECLARE_MULTICAST_DELEGATE_OneParam(FSLOnNewRawDataSignature, const FString&);
-DECLARE_DELEGATE_OneParam(FStringDelegate, FString);
 
 /**
 * Unique name and location of the entities to be logged by the raw data logger
@@ -38,7 +37,8 @@ struct FUniqueNameAndLocation
 };
 
 /**
- * Semnatic logger of raw data (location, rotation of semantically anotated entities in the world)
+ * Semantic logger of raw data 
+ * (location, rotation of semantically annotated entities in the world)
  */
 UCLASS()
 class SEMLOG_API USLRawDataLogger : public UObject
