@@ -32,6 +32,9 @@ public:
 	// Get raw data logger
 	USLRawDataLogger* GetRawDataLogger() { return RawDataLogger; };
 
+	// Get event data logger
+	USLEventDataLogger* GetEventDataLogger() { return EventDataLogger; };
+
 	// Add finished event
 	bool AddFinishedEvent(
 		const FString Namespace,
@@ -108,31 +111,37 @@ private:
 	FString LogDirectory;
 
 	// Log raw data
-	UPROPERTY(EditAnywhere, Category = "SL")
+	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger")
 	bool bLogRawData;
 
 	// Update rate in seconds (if 0.f or smaller than the Tick's DeltaTime, it will update every tick)
-	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogRawData"), meta = (ClampMin = 0))
+	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"), meta = (ClampMin = 0))
 	float RawDataUpdateRate;
 
 	// Write data to file
-	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogRawData"))
+	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"))
 	bool bWriteRawDataToFile;
 
-	// Publish raw data as event
-	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogRawData"))
+	// Broadcast data
+	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"))
 	bool bBroadcastRawData;
 
+	// Log semantic events
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger")
+	bool bLogEventData;
+
+	// Write data to file
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	bool bWriteEventDataToFile;
+
+	// Broadcast data
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	bool bBroadcastEventData;
+
 	// Raw data logger
-	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogRawData"))
 	USLRawDataLogger* RawDataLogger;
 
-	// Log semantic events
-	UPROPERTY(EditAnywhere, Category = "SL")
-	bool bLogEventData;
-	
 	// Event data logger
-	UPROPERTY(EditAnywhere, Category = "SL", meta = (editcondition = "bLogEventData"))
 	USLEventDataLogger* EventDataLogger;
 
 	// Amount of time passed since last update (used for the raw data update rate)

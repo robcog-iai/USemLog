@@ -4,7 +4,6 @@
 #include "SLRuntimeManager.h"
 #include "SLUtils.h"
 
-
 // Sets default values
 ASLRuntimeManager::ASLRuntimeManager()
 {
@@ -21,10 +20,8 @@ ASLRuntimeManager::ASLRuntimeManager()
 	bBroadcastRawData = false;
 	
 	bLogEventData = true;
-
-	// Create UObjects
-	EventDataLogger = CreateDefaultSubobject<USLEventDataLogger>(TEXT("EventDataLogger"));
-	RawDataLogger = CreateDefaultSubobject<USLRawDataLogger>(TEXT("RawDataLogger"));
+	bWriteEventDataToFile = true;
+	bBroadcastEventData = false;
 }
 
 // Called when the game starts or when spawned
@@ -40,11 +37,12 @@ void ASLRuntimeManager::BeginPlay()
 	{
 		EpisodeId = FSLUtils::GenerateRandomFString(4);
 	}
-
-	if (bLogRawData && RawDataLogger)
+	
+	// Setup raw data logger
+	if (bLogRawData)
 	{
-		// Enable tick for raw data logging
-		SetActorTickEnabled(true);
+		// Create raw data logger UObject
+		RawDataLogger = NewObject<USLRawDataLogger>(this, TEXT("RawDataLogger"));		
 		
 		// Init logger 
 		RawDataLogger->Init(GetWorld(), 0.1f);
@@ -54,6 +52,7 @@ void ASLRuntimeManager::BeginPlay()
 		{
 			RawDataLogger->InitFileHandle(EpisodeId, LogDirectory);
 		}
+
 		if (bBroadcastRawData)
 		{
 			RawDataLogger->InitBroadcaster();
@@ -61,12 +60,21 @@ void ASLRuntimeManager::BeginPlay()
 
 		// Log the first entry (static and dynamic entities)
 		RawDataLogger->LogFirstEntry();
-	}
 
-	if (bLogEventData && EventDataLogger)
+		// Enable tick for raw data logging
+		SetActorTickEnabled(true);
+	}
+	
+	// Setup event data logger
+	if (bLogEventData)
 	{
+		// Create event data logger UObject
+		EventDataLogger = NewObject<USLEventDataLogger>(this, TEXT("EventDataLogger"));
+
 		// Initialize the event data
 		EventDataLogger->InitLogger(EpisodeId);
+
+		// Start logger
 		EventDataLogger->StartLogger(GetWorld()->GetTimeSeconds());
 	}
 }
@@ -76,8 +84,18 @@ void ASLRuntimeManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if(bLogEventData && EventDataLogger)
 	{
+		// Finish up the logger - Terminate idle events
 		EventDataLogger->FinishLogger(GetWorld()->GetTimeSeconds());
-		EventDataLogger->WriteEventsToFile(LogDirectory);
+
+		if (bWriteEventDataToFile)
+		{
+			EventDataLogger->WriteEventsToFile(LogDirectory);
+		}
+
+		if (bBroadcastEventData)
+		{
+			EventDataLogger->BroadcastFinishedEvents();
+		}
 	}
 }
 
@@ -92,7 +110,7 @@ void ASLRuntimeManager::Tick(float DeltaTime)
 	if (RawDataUpdateRate < TimePassedSinceLastUpdate)
 	{
 		// Log the raw data of the dynamic entities
-		RawDataLogger->LogDynamic();
+		RawDataLogger->LogDynamicEntities();
 		TimePassedSinceLastUpdate = 0.f;
 	}
 }

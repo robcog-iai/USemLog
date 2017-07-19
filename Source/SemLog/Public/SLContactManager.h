@@ -8,7 +8,6 @@
 #include "SLRuntimeManager.h"
 #include "SLContactManager.generated.h"
 
-
 /**
 * Area type of the contact box
 */

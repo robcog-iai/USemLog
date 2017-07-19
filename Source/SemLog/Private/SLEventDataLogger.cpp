@@ -86,6 +86,19 @@ bool USLEventDataLogger::WriteEventsToFile(const FString LogDirectoryPath)
 	return FFileHelper::SaveStringToFile(OwlDocument.ToXmlString(), *FilePath);
 }
 
+// Broadcast document
+UFUNCTION(BlueprintCallable, Category = SL)
+bool USLEventDataLogger::BroadcastFinishedEvents()
+{
+	if (!bIsFinished)
+	{
+		return false;
+	}
+
+	OnEventsFinished.Broadcast(OwlDocument.ToXmlString());
+	return true;
+}
+
 // Get the events document as a string
 bool USLEventDataLogger::GetEventsAsString(FString& OutStringDocument)
 {

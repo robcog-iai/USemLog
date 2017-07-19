@@ -70,7 +70,7 @@ public:
 
 	// Log dynamic entities
 	UFUNCTION(BlueprintCallable, Category = SL)
-	void LogDynamic();
+	void LogDynamicEntities();
 
 	// See if logger initialized
 	UFUNCTION(BlueprintCallable, Category = SL)

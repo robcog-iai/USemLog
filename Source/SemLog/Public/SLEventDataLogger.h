@@ -8,8 +8,13 @@
 #include "SLOwl.h"
 #include "SLEventDataLogger.generated.h"
 
+
+/** Delegate type for the finished events */
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLOnEventsFinishedSignature, const FString&);
+
 /**
- * 
+* Semantic logger of event data
+* (important contacts, various high level events etc.)
  */
 UCLASS()
 class SEMLOG_API USLEventDataLogger : public UObject
@@ -39,6 +44,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = SL)
 	bool WriteEventsToFile(const FString InLogDirectoryPath);
 
+	// Broadcast document
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool BroadcastFinishedEvents();
+
 	// Get document as a string
 	UFUNCTION(BlueprintCallable, Category = SL)
 	bool GetEventsAsString(FString& OutStringDocument);
@@ -66,6 +75,9 @@ public:
 	// Insert finished event
 	UFUNCTION(BlueprintCallable, Category = SL)
 	bool InsertFinishedEvent();
+
+	// Delegate to publish the finished events
+	FSLOnEventsFinishedSignature OnEventsFinished;
 
 private:
 	// Set document default values

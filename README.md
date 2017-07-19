@@ -40,9 +40,15 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	// Called when new raw data is received
 	UFUNCTION()
-	void OnReceiveRawData(const FString& NewData);
+	void OnReceiveRawData(const FString& RawData);
+
+	// Called when the event data is finished
+	UFUNCTION()
+	void OnReceiveFinishedEventsData(const FString& EventData);
 };
+
 
 ```
 
@@ -57,7 +63,6 @@ ARawDataDelegateListener::ARawDataDelegateListener()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-
 }
 
 // Called when the game starts or when spawned
@@ -70,16 +75,31 @@ void ARawDataDelegateListener::BeginPlay()
 		// Get the raw data logger
 		if (USLRawDataLogger* RawDataLogger = RM->GetRawDataLogger())
 		{
-			// Bind the new data envents
+			// Listen for new data
 			RawDataLogger->OnNewData.AddUObject(this,
 				&ARawDataDelegateListener::OnReceiveRawData);
+		}
+
+		// Get the event data logger
+		if (USLEventDataLogger* EventDataLogger = RM->GetEventDataLogger())
+		{
+			// Listen for when the events are finished
+			EventDataLogger->OnEventsFinished.AddUObject(this,
+				&ARawDataDelegateListener::OnReceiveFinishedEventsData);
 		}
 	}
 }
 
+// Called when new raw data is received
 void ARawDataDelegateListener::OnReceiveRawData(const FString& RawData)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Data: %s"), *RawData);
+}
+
+// Called when the event data is finished
+void ARawDataDelegateListener::OnReceiveFinishedEventsData(const FString& EventData)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Data: %s"), *EventData);
 }
 ```
  

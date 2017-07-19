@@ -82,7 +82,7 @@ void USLRawDataLogger::LogFirstEntry()
 }
 
 // Log dynamic entities
-void USLRawDataLogger::LogDynamic()
+void USLRawDataLogger::LogDynamicEntities()
 {
 	// Get the dynamic entities data as json
 	FString DynamicJsonOutputString;
