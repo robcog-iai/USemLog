@@ -37,67 +37,20 @@ public:
 
 	// Add finished event
 	bool AddFinishedEvent(
-		const FString Namespace,
-		const FString Class,
-		const FString Id,		
-		const float StartTime,
-		const float EndTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
-	
-	// Add finished event, Name = Class + Id
-	bool AddFinishedEvent(
-		const FString Namespace,
-		const FString Name,
-		const float StartTime,
-		const float EndTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
-
-	// Add finished event, FullName = Namespace + Class + Id
-	bool AddFinishedEvent(
-		const FString FullName,
+		const FOwlIndividualName EventIndividualName,
 		const float StartTime,
 		const float EndTime,
 		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
 
 	// Start an event
 	bool StartEvent(
-		const FString Namespace,
-		const FString Class,
-		const FString Id,
+		const FOwlIndividualName EventIndividualName,
 		const float StartTime,
 		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
 
-	// Start an event, Name = Class + Id
-	bool StartEvent(
-		const FString Namespace,
-		const FString Name,
-		const float StartTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
-
-	// Start an event, FullName = Namespace + Class + Id
-	bool StartEvent(
-		const FString FullName,
-		const float StartTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
-
-	// Start an event
+	// Finish an event
 	bool FinishEvent(
-		const FString Namespace,
-		const FString Class,
-		const FString Id,
-		const float EndTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
-
-	// Start an event, Name = Class + Id
-	bool FinishEvent(
-		const FString Namespace,
-		const FString Name,
-		const float EndTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
-
-	// Start an event, FullName = Namespace + Class + Id
-	bool FinishEvent(
-		const FString FullName,
+		const FOwlIndividualName EventIndividualName,
 		const float EndTime,
 		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
 
@@ -114,7 +67,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger")
 	bool bLogRawData;
 
-	// Update rate in seconds (if 0.f or smaller than the Tick's DeltaTime, it will update every tick)
+	// Update rate in seconds (if 0, or smaller than the Tick's DeltaTime, it will update every tick)
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"), meta = (ClampMin = 0))
 	float RawDataUpdateRate;
 

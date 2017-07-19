@@ -78,15 +78,12 @@ private:
 	// Calculate wrapper area
 	void CalculateAreaAsWrapper();
 	#endif 
+	
+	// Individual name of the parent (Ns + Class + Id);
+	FOwlIndividualName ParentIndividual;
 
-	// Parent class
-	FString ParentClass;
-
-	// Parent id
-	FString ParentId;
-
-	// Parent name
-	FString ParentName;
+	// Map of other actor to individual name of the contact event
+	TMap<AActor*, FOwlIndividualName> OtherActorToContactEventIndividualName;
 
 	// Semantic events runtime manager
 	ASLRuntimeManager* SemLogRuntimeManager;

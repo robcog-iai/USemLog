@@ -117,30 +117,7 @@ void ASLRuntimeManager::Tick(float DeltaTime)
 
 // Add finished event
 bool ASLRuntimeManager::AddFinishedEvent(
-	const FString Namespace,
-	const FString Class,
-	const FString Id,
-	const float StartTime,
-	const float EndTime,
-	const TArray<FOwlTriple>& Properties)
-{
-	return ASLRuntimeManager::AddFinishedEvent("&" + Namespace + ";" + Class + "_" + Id, StartTime, EndTime, Properties);
-}
-
-// Add finished event, Name = Class + Id
-bool ASLRuntimeManager::AddFinishedEvent(
-	const FString Namespace,
-	const FString Name,
-	const float StartTime,
-	const float EndTime,
-	const TArray<FOwlTriple>& Properties)
-{
-	return ASLRuntimeManager::AddFinishedEvent("&" + Namespace + ";" + Name, StartTime, EndTime, Properties);
-}
-
-// Add finished event, FullName = Namespace + Class + Id
-bool ASLRuntimeManager::AddFinishedEvent(
-	const FString FullName,
+	const FOwlIndividualName EventIndividualName,
 	const float StartTime,
 	const float EndTime,
 	const TArray<FOwlTriple>& Properties)
@@ -155,28 +132,7 @@ bool ASLRuntimeManager::AddFinishedEvent(
 
 // Start an event
 bool ASLRuntimeManager::StartEvent(
-	const FString Namespace,
-	const FString Class,
-	const FString Id,
-	const float StartTime,
-	const TArray<FOwlTriple>& Properties)
-{
-	return ASLRuntimeManager::StartEvent("&" + Namespace + ";" + Class + "_" + Id, StartTime, Properties);
-}
-
-// Start an event, Name = Class + Id
-bool ASLRuntimeManager::StartEvent(
-	const FString Namespace,
-	const FString Name,
-	const float StartTime,
-	const TArray<FOwlTriple>& Properties)
-{
-	return ASLRuntimeManager::StartEvent("&" + Namespace + ";" + Name, StartTime, Properties);
-}
-
-// Start an event, FullName = Namespace + Class + Id
-bool ASLRuntimeManager::StartEvent(
-	const FString FullName,
+	const FOwlIndividualName EventIndividualName,
 	const float StartTime,
 	const TArray<FOwlTriple>& Properties)
 {
@@ -188,30 +144,9 @@ bool ASLRuntimeManager::StartEvent(
 	return false;
 }
 
-// Start an event
+// Finish an event
 bool ASLRuntimeManager::FinishEvent(
-	const FString Namespace,
-	const FString Class,
-	const FString Id,
-	const float EndTime,
-	const TArray<FOwlTriple>& Properties) 
-{
-	return ASLRuntimeManager::FinishEvent("&" + Namespace + ";" + Class + "_" + Id, EndTime, Properties);
-}
-
-// Start an event, Name = Class + Id
-bool ASLRuntimeManager::FinishEvent(
-	const FString Namespace,
-	const FString Name,
-	const float EndTime,
-	const TArray<FOwlTriple>& Properties)
-{
-	return ASLRuntimeManager::FinishEvent("&" + Namespace + ";" + Name, EndTime, Properties);
-}
-
-// Start an event, FullName = Namespace + Class + Id
-bool ASLRuntimeManager::FinishEvent(
-	const FString FullName,
+	const FOwlIndividualName EventIndividualName,
 	const float EndTime,
 	const TArray<FOwlTriple>& Properties)
 {
