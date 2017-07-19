@@ -1,21 +1,19 @@
-# USemLog
+# USemLog - development branch
 
 Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data to a KnowRob compatible format.
 
 # Actor tags example:
 
 	SemLog;Class,HelaCurryKetchup;LogType,Dynamic;
-
-# Development branch
-
-	Unreal editor mode
 	
-# Code snippets
+# Code snippets:
 
-## Broadcast and read published raw data:
+## Broadcast and read published raw and events data:
 
- * enable `bBroadcastRawData` in your `ASLRuntimeManager`;
- * create a new actor where to listen to the events in this case `ARawDataDelegateListener`:
+ * Add an `ASLRuntimeManager` actor to your world
+ * Enable `bBroadcastRawData` and `bLogEventData` in your `ASLRuntimeManager`;
+ * The example actor (`ARawDataDelegateListener`) below subscribes to the broadcasted events and prints them to the log:
+ 
  
 
 .h 
