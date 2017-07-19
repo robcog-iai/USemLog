@@ -113,4 +113,16 @@ private:
 
 	// Shows if the default values of the owl document have been set
 	uint8 bOwlDefaultValuesSet : 1;
+
+	// Metadata event
+	FOwlNode MetaEvent;
+
+	// Array of all the finished events
+	TArray<FOwlNode> FinishedEvents;
+
+	// Map of opened events
+	TMap<FOwlIndividualName, FOwlNode> NameToOpenedEvent;
+
+	// TODO AddUnqiue, or using TSet; since time individuals might repeat;
+	TArray<FOwlNode> ObjectIndividuals;
 };
