@@ -18,8 +18,11 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
     where
 
      `SemLog;` is the `TagType`
+	 
      `Class,HelaCurryKetchup;` - represents the semantic class of the object
+	 
      `Runtime,Dynamic;` - represents the raw logging type of the object (static or dynamic)
+	 
      `Id,gPP9;` - represents the unique ID for each entity to be logged
 
 
