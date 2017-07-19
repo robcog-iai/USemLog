@@ -1,17 +1,31 @@
 # USemLog - development branch
 
 Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data to a KnowRob compatible format.
-
-# Actor tags example:
-
-[`SemLog;Class,HelaCurryKetchup;Runtime,Dynamic;Id,gPP9;`]
-* See [UTags](https://github.com/robcog-iai/UTags) for more details.
 	
 # Usage:
 
--   Add the plugin to your project (e.g `MyProject/Plugins/USemLog`) 
+#### Include the plugin to your project
+* Add the plugin to your project (e.g `MyProject/Plugins/USemLog`)
 
-## Broadcast and read published raw and events data:
+#### Tag semantic components (see [UTags](https://github.com/robcog-iai/UTags) for more details)
+
+* Tag your actors / components that you want to semantically log:
+
+  * Tag example:
+
+    [`SemLog;Class,HelaCurryKetchup;Runtime,Dynamic;Id,gPP9;`]
+
+    where
+
+     `SemLog;` is the `TagType`
+     `Class,HelaCurryKetchup;` - represents the semantic class of the object
+     `Runtime,Dynamic;` - represents the raw logging type of the object (static or dynamic)
+     `Id,gPP9;` - represents the unique ID for each entity to be logged
+
+
+# Tutorials
+
+#### How to broadcast and read published raw and events data:
 
  * Add the module dependency to your module (Project/Plugin); In the `MyModule.Build.cs` file:  
 
