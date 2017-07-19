@@ -4,20 +4,30 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 
 # Actor tags example:
 
-	[`SemLog;Class,HelaCurryKetchup;Runtime,Dynamic;Id,gPP9;`]
-	
-	* See (UTags)[https://github.com/robcog-iai/UTags] for more details on how to store data in tags.
+[`SemLog;Class,HelaCurryKetchup;Runtime,Dynamic;Id,gPP9;`]
+* See [UTags](https://github.com/robcog-iai/UTags) for more details.
 	
 # Usage:
 
+-   Add the plugin to your project (e.g `MyProject/Plugins/USemLog`) 
+
 ## Broadcast and read published raw and events data:
 
+ * Add the module dependency to your module (Project/Plugin); In the `MyModule.Build.cs` file:  
+
+		PublicDependencyModuleNames.AddRange(  
+		new string[]  
+		{  
+		...  
+		"SemLog",  
+		...  
+		}  
+		);  
+ 
  * Add an `ASLRuntimeManager` actor to your world
  * Enable `bBroadcastRawData` and `bLogEventData` in your `ASLRuntimeManager`;
  * The example actor (`ARawDataDelegateListener`) below subscribes to the broadcasted events and prints them to the log:
  
- 
-
 .h 
 ```cpp
 #pragma once
