@@ -117,14 +117,14 @@ void ASLRuntimeManager::Tick(float DeltaTime)
 
 // Add finished event
 bool ASLRuntimeManager::AddFinishedEvent(
-	const FOwlIndividualName EventIndividualName,
+	const TSharedPtr<FOwlIndividualName> EventIndividualName,
 	const float StartTime,
 	const float EndTime,
 	const TArray<FOwlTriple>& Properties)
 {
 	if (bLogEventData && EventDataLogger && EventDataLogger->IsStarted())
 	{		
-		EventDataLogger->InsertFinishedEvent();
+		EventDataLogger->InsertFinishedEvent(EventIndividualName, StartTime, EndTime, Properties);
 		return true;
 	}
 	return false;
@@ -132,13 +132,13 @@ bool ASLRuntimeManager::AddFinishedEvent(
 
 // Start an event
 bool ASLRuntimeManager::StartEvent(
-	const FOwlIndividualName EventIndividualName,
+	const TSharedPtr<FOwlIndividualName> EventIndividualName,
 	const float StartTime,
 	const TArray<FOwlTriple>& Properties)
 {
 	if (bLogEventData && EventDataLogger && EventDataLogger->IsStarted())
 	{
-		EventDataLogger->StartAnEvent();
+		EventDataLogger->StartAnEvent(EventIndividualName, StartTime, Properties);
 		return true;
 	}
 	return false;
@@ -146,13 +146,13 @@ bool ASLRuntimeManager::StartEvent(
 
 // Finish an event
 bool ASLRuntimeManager::FinishEvent(
-	const FOwlIndividualName EventIndividualName,
+	const TSharedPtr<FOwlIndividualName> EventIndividualName,
 	const float EndTime,
 	const TArray<FOwlTriple>& Properties)
 {
 	if (bLogEventData && EventDataLogger && EventDataLogger->IsStarted())
 	{
-		EventDataLogger->FinishAnEvent();
+		EventDataLogger->FinishAnEvent(EventIndividualName, EndTime, Properties);
 		return true;
 	}
 	return false;

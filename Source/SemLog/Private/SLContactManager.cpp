@@ -82,7 +82,7 @@ void USLContactManager::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AAct
 		// Owl classes
 		const FOwlClass XsdString("xsd", "string");
 		const FOwlClass TouchingSituation("knowrob_u", "TouchingSituation");
-				
+
 		// Add the event properties
 		TArray <FOwlTriple> Properties;
 		Properties.Add(FOwlTriple(RdfType, RdfResource, TouchingSituation));
@@ -92,7 +92,8 @@ void USLContactManager::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AAct
 		Properties.Add(FOwlTriple(InContact, RdfResource, OtherIndividual));
 
 		// Create contact event individual name and add it to the map
-		FOwlIndividualName ContactEvent("log", "TouchingSituation", FSLUtils::GenerateRandomFString(4));
+		TSharedPtr<FOwlIndividualName> ContactEvent = 
+			MakeShareable(new FOwlIndividualName("log", "TouchingSituation", FSLUtils::GenerateRandomFString(4)));
 		OtherActorToContactEventIndividualName.Emplace(OtherActor, ContactEvent);
 
 		// Start the event with the given properties
@@ -108,7 +109,7 @@ void USLContactManager::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor
 	if (OtherActorToContactEventIndividualName.Contains(OtherActor))
 	{
 		// End the event
-		SemLogRuntimeManager->StartEvent(
+		SemLogRuntimeManager->FinishEvent(
 			OtherActorToContactEventIndividualName[OtherActor], GetWorld()->GetTimeSeconds());
 	}
 

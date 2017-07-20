@@ -54,7 +54,7 @@ public:
 
 	// Check if the logger is initialized
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool IsInit() const { return bIsLoggerInit; };
+	bool IsInit() const { return bIsInit; };
 
 	// Check if the logger is started
 	UFUNCTION(BlueprintCallable, Category = SL)
@@ -63,18 +63,28 @@ public:
 	// Check if the logger is finished
 	UFUNCTION(BlueprintCallable, Category = SL)
 	bool IsFinished() const { return bIsFinished; };
+	
+	// Insert finished event
+	//UFUNCTION(BlueprintCallable, Category = SL)
+	bool InsertFinishedEvent(
+		const TSharedPtr<FOwlIndividualName> EventIndividualName,
+		const float StartTime,
+		const float EndTime,
+		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
 
 	// Start an event
-	UFUNCTION(BlueprintCallable, Category = SL)
-	bool StartAnEvent();
+	//UFUNCTION(BlueprintCallable, Category = SL)
+	bool StartAnEvent(
+		const TSharedPtr<FOwlIndividualName> EventIndividualName,
+		const float StartTime,
+		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
 
 	// Finish an event
-	UFUNCTION(BlueprintCallable, Category = SL)
-	bool FinishAnEvent();
-
-	// Insert finished event
-	UFUNCTION(BlueprintCallable, Category = SL)
-	bool InsertFinishedEvent();
+	//UFUNCTION(BlueprintCallable, Category = SL)
+	bool FinishAnEvent(
+		const TSharedPtr<FOwlIndividualName> EventIndividualName,
+		const float EndTime,
+		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
 
 	// Delegate to publish the finished events
 	FSLOnEventsFinishedSignature OnEventsFinished;
@@ -93,7 +103,7 @@ private:
 	bool FinishMetadataEvent(const float Timestamp);
 
 	// Terminate all idling events
-	bool FinishAllIdleEvents(const float Timestamp);
+	bool FinishOpenedEvents(const float Timestamp);
 
 	// Event logs document as owl representation
 	UPROPERTY(EditAnywhere, Category = SL)
@@ -103,7 +113,7 @@ private:
 	FString EpisodeId;
 
 	// Logger initialized
-	uint8 bIsLoggerInit : 1;
+	uint8 bIsInit : 1;
 
 	// Logger started
 	uint8 bIsStarted : 1;
@@ -121,7 +131,7 @@ private:
 	TArray<FOwlNode> FinishedEvents;
 
 	// Map of opened events
-	TMap<FOwlIndividualName, FOwlNode> NameToOpenedEvent;
+	TMap<TSharedPtr<FOwlIndividualName>, FOwlNode> NameToOpenedEvent;
 
 	// TODO AddUnqiue, or using TSet; since time individuals might repeat;
 	TArray<FOwlNode> ObjectIndividuals;

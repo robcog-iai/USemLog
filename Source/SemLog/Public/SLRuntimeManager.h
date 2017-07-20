@@ -37,20 +37,20 @@ public:
 
 	// Add finished event
 	bool AddFinishedEvent(
-		const FOwlIndividualName EventIndividualName,
+		const TSharedPtr<FOwlIndividualName> EventIndividualName,
 		const float StartTime,
 		const float EndTime,
 		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
 
 	// Start an event
 	bool StartEvent(
-		const FOwlIndividualName EventIndividualName,
+		const TSharedPtr<FOwlIndividualName> EventIndividualName,
 		const float StartTime,
 		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
 
 	// Finish an event
 	bool FinishEvent(
-		const FOwlIndividualName EventIndividualName,
+		const TSharedPtr<FOwlIndividualName> EventIndividualName,
 		const float EndTime,
 		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
 

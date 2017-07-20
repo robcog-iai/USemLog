@@ -12,7 +12,7 @@ USLEventDataLogger::USLEventDataLogger()
 {
 	// Default values
 	bOwlDefaultValuesSet = false;
-	bIsLoggerInit = false;
+	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
 }
@@ -25,41 +25,51 @@ USLEventDataLogger::~USLEventDataLogger()
 // Initialize logger
 bool USLEventDataLogger::InitLogger(const FString InEpisodeId)
 {
-	EpisodeId = InEpisodeId;
+	if (!bIsInit)
+	{
+		EpisodeId = InEpisodeId;
 
-	USLEventDataLogger::SetDefaultValues();
+		USLEventDataLogger::SetDefaultValues();
 
-	bIsLoggerInit = true;
-	return true;
+		bIsInit = true;
+		return true;
+	}
+	return false;
 }
 
 // Start logger
 bool USLEventDataLogger::StartLogger(const float Timestamp)
 {
-	if (!bIsLoggerInit)
+	if (bIsInit && !bIsStarted)
 	{
-		return false;
+		USLEventDataLogger::StartMetadataEvent(Timestamp);
+
+		bIsStarted = true;
+		return true;
 	}
-
-	USLEventDataLogger::StartMetadataEvent(Timestamp);
-
-	bIsStarted = true;
-	return true;
+	return false;
 }
 
 // Finish logger
 bool USLEventDataLogger::FinishLogger(const float Timestamp)
 {
-	if (!bIsStarted)
+	if (bIsStarted && !bIsFinished)
 	{
-		return false;
+		USLEventDataLogger::FinishOpenedEvents(Timestamp);
+		USLEventDataLogger::FinishMetadataEvent(Timestamp);
+
+		UE_LOG(LogTemp, Warning, TEXT("IDLE events nr: %i"), NameToOpenedEvent.Num());
+		UE_LOG(LogTemp, Warning, TEXT("FINISHED events nr: %i"), FinishedEvents.Num());
+		for (const auto& FinishedEventsItr : FinishedEvents)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("\t \t Ev: %s"), *FinishedEventsItr.AttributeValue);
+		}
+
+		bIsStarted = false;
+		bIsFinished = true;
+		return true;
 	}
-
-	USLEventDataLogger::FinishAllIdleEvents(Timestamp);
-	USLEventDataLogger::FinishMetadataEvent(Timestamp);
-
-	bIsFinished = true;
-	return true;
+	return false;
 }
 
 // Write document to file
@@ -87,7 +97,6 @@ bool USLEventDataLogger::WriteEventsToFile(const FString LogDirectoryPath)
 }
 
 // Broadcast document
-UFUNCTION(BlueprintCallable, Category = SL)
 bool USLEventDataLogger::BroadcastFinishedEvents()
 {
 	if (!bIsFinished)
@@ -191,35 +200,70 @@ void USLEventDataLogger::RemoveDefaultValues()
 	bOwlDefaultValuesSet = false;
 }
 
-// Start an event
-bool USLEventDataLogger::StartAnEvent()
+// Insert finished event
+bool USLEventDataLogger::InsertFinishedEvent(
+	const TSharedPtr<FOwlIndividualName> EventIndividualName,
+	const float StartTime,
+	const float EndTime,
+	const TArray<FOwlTriple>& Properties)
 {
-	if (!bIsStarted)
+	if (bIsStarted)
 	{
-		return false;
+		FinishedEvents.Emplace(
+			FOwlNode("owl:NamedIndividual", "rdf:about", EventIndividualName->GetFullName(), Properties));
+		UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
+			*FString(__FUNCTION__), *EventIndividualName->GetFullName());
+		return true;
 	}
-	return true;
+	return false;
+}
+
+// Start an event
+bool USLEventDataLogger::StartAnEvent(
+	const TSharedPtr<FOwlIndividualName> EventIndividualName,
+	const float StartTime,
+	const TArray<FOwlTriple>& Properties)
+{
+	if (bIsStarted)
+	{
+		//// Add start time to the properties
+		//Properties.Emplace(FOwlTriple(
+		//	"knowrob:StartTime",
+		//	"rdf:resource",
+		//	"&log;timepoint_" + FString::SanitizeFloat(StartTime)));
+		
+		// Add event to the opened events map
+		NameToOpenedEvent.Emplace(
+			EventIndividualName,
+			FOwlNode("owl:NamedIndividual", "rdf:about", EventIndividualName->GetFullName(),
+			Properties));	
+		UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
+			*FString(__FUNCTION__), *EventIndividualName->GetFullName());
+		return true;
+	}
+	return false;
 };
 
 // Finish an event
-bool USLEventDataLogger::FinishAnEvent()
+bool USLEventDataLogger::FinishAnEvent(
+	const TSharedPtr<FOwlIndividualName> EventIndividualName,
+	const float EndTime,
+	const TArray<FOwlTriple>& Properties)
 {
-	if (!bIsStarted)
+	if (bIsStarted && NameToOpenedEvent.Contains(EventIndividualName))
 	{
-		return false;
+		FOwlNode ToBeFinishedEvent;
+		NameToOpenedEvent.RemoveAndCopyValue(EventIndividualName, ToBeFinishedEvent);
+		ToBeFinishedEvent.Properties.Append(Properties);
+		FinishedEvents.Emplace(ToBeFinishedEvent);
+
+		UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
+			*FString(__FUNCTION__), *EventIndividualName->GetFullName());
+		return true;
 	}
-	return true;
+	return false;
 }
 
-// Insert finished event
-bool USLEventDataLogger::InsertFinishedEvent()
-{
-	if (!bIsStarted)
-	{
-		return false;
-	}
-	return true;
-}
 
 // Start metadata event
 bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
@@ -242,11 +286,20 @@ bool USLEventDataLogger::FinishMetadataEvent(const float Timestamp)
 }
 
 // Terminate all idling events
-bool USLEventDataLogger::FinishAllIdleEvents(const float Timestamp)
+bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
 {
-	if (!bIsStarted)
+	if (bIsStarted)
 	{
-		return false;
+		UE_LOG(LogTemp, Warning, TEXT(" FINSIHEING OPENED EVENTS"));
+		for (auto MapItr(NameToOpenedEvent.CreateIterator()); MapItr; ++MapItr)
+		{	
+			FinishedEvents.Emplace((*MapItr).Value);
+			MapItr.RemoveCurrent();
+			//(*MapItr).Value.Properties.Emplace(FOwlTriple;
+			UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
+				*FString(__FUNCTION__), *(*MapItr).Key->GetFullName());
+		}
+		return true;		
 	}
-	return true;
+	return false;
 }
