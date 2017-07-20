@@ -201,6 +201,7 @@ struct SEMLOG_API FOwlIndividualName : public FOwlClass
 
 /**
 *	OwlTriple, e.g. <knowrob:objectActedOn rdf:resource="&log;ButtonOven_5CRX"/>
+*   Subject - Predicate - Object
 */
 USTRUCT(BlueprintType)
 struct SEMLOG_API FOwlTriple
@@ -218,7 +219,6 @@ struct SEMLOG_API FOwlTriple
 	/** Triple Object, e.g. &log;UnrealExperiment_8uFQ */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
 	FString Object;
-	//FOwlObject Object;
 
 	/** Triple Value, e.g. "<..>Grasp-LeftHand_BRmZ-Bowl3_9w2Y</..> */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
@@ -229,17 +229,26 @@ struct SEMLOG_API FOwlTriple
 
 	// Constructor.
 	FOwlTriple(FString InSubject, FString InPredicate, FString InObject, FString InValue = "")
-		: Subject(InSubject), Predicate(InPredicate), Object(InObject), Value(InValue)
+		: Subject(InSubject)
+		, Predicate(InPredicate)
+		, Object(InObject)
+		, Value(InValue)
 	{}
 
 	// Constructor using FOwlPrefixName and FOwlIndividualName
 	FOwlTriple(FOwlPrefixName InSubject, FOwlPrefixName InPredicate, FOwlIndividualName InObject, FString InValue = "")
-		: Subject(InSubject.GetFullName()), Predicate(InPredicate.GetFullName()), Object(InObject.GetFullName()), Value(InValue)
+		: Subject(InSubject.GetFullName())
+		, Predicate(InPredicate.GetFullName())
+		, Object(InObject.GetFullName())
+		, Value(InValue)
 	{}
 
 	// Constructor using FOwlPrefixName and FOwlClass
 	FOwlTriple(FOwlPrefixName InSubject, FOwlPrefixName InPredicate, FOwlClass InObject, FString InValue = "")
-		: Subject(InSubject.GetFullName()), Predicate(InPredicate.GetFullName()), Object(InObject.GetFullName()), Value(InValue)
+		: Subject(InSubject.GetFullName())
+		, Predicate(InPredicate.GetFullName())
+		, Object(InObject.GetFullName())
+		, Value(InValue)
 	{}
 
 	// Set subject and return self
@@ -316,7 +325,7 @@ struct SEMLOG_API FOwlTriple
 };
 
 /**
-*	OwlNode e.g.
+*	OwlNode e.g. Subject - Predicate - Object - Properties
 *	<owl:NamedIndividual rdf:about="&u-map;SemanticMapPerception_XAL4">
 *		<rdf:type rdf:resource="&knowrob;SemanticMapPerception"/>
 *	</owl:NamedIndividual>
@@ -326,17 +335,17 @@ struct SEMLOG_API FOwlNode
 {
 	GENERATED_USTRUCT_BODY()
 
-	/** Node name, e.g. owl:NamedIndividual */
+	/** Node subject name, e.g. owl:NamedIndividual */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-	FString Name;
+	FString Subject;
 
-	/** Node attribute, e.g. rdf:about*/
+	/** Node predicate name, e.g. rdf:about*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-	FString Attribute;
+	FString Predicate;
 
 	/** Attribute value, e.g. "&u-map;USemMap_mhpb"*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-	FString AttributeValue;
+	FString Object;
 
 	/** Node triples */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
@@ -351,64 +360,78 @@ struct SEMLOG_API FOwlNode
 	{}
 
 	// Constructor with name and attribute
-	FOwlNode(FString InName, FString InAttribute, FString InAttributeValue, FString InComment = "")
-		: Name(InName), Attribute(InAttribute), AttributeValue(InAttributeValue), Comment(InComment)
+	FOwlNode(FString InSubject, FString InPredicate, FString InObject, FString InComment = "")
+		: Subject(InSubject)
+		, Predicate(InPredicate)
+		, Object(InObject)
+		, Comment(InComment)
 	{}
 
 	// Constructor with name and attribute using FOwlPrefixName and FOwlIndividualName
-	FOwlNode(FOwlPrefixName InName, FOwlPrefixName InAttribute, FOwlIndividualName InAttributeValue, FString InComment = "")
-		: Name(InName.GetFullName()), Attribute(InAttribute.GetFullName()), AttributeValue(InAttributeValue.GetFullName()), Comment(InComment)
+	FOwlNode(FOwlPrefixName InSubject, FOwlPrefixName InPredicate, FOwlIndividualName InObject, FString InComment = "")
+		: Subject(InSubject.GetFullName())
+		, Predicate(InPredicate.GetFullName())
+		, Object(InObject.GetFullName())
+		, Comment(InComment)
 	{}
 
 	// Constructor with properties
-	FOwlNode(FString InName, FString InAttribute, FString InAttributeValue, const TArray<FOwlTriple>& InProperties, FString InComment = "")
-		: Name(InName), Attribute(InAttribute), AttributeValue(InAttributeValue), Properties(InProperties), Comment(InComment)
+	FOwlNode(FString InSubject, FString InPredicate, FString InObject, const TArray<FOwlTriple>& InProperties, FString InComment = "")
+		: Subject(InSubject)
+		, Predicate(InPredicate)
+		, Object(InObject)
+		, Properties(InProperties)
+		, Comment(InComment)
 	{}
 
 	// Constructor with properties using FOwlPrefixName and FOwlIndividualName
-	FOwlNode(FOwlPrefixName InName, FOwlPrefixName InAttribute, FOwlIndividualName InAttributeValue, const TArray<FOwlTriple>& InProperties, FString InComment = "")
-		: Name(InName.GetFullName()), Attribute(InAttribute.GetFullName()), AttributeValue(InAttributeValue.GetFullName()), Properties(InProperties), Comment(InComment)
+	FOwlNode(FOwlPrefixName InSubject, FOwlPrefixName InPredicate, FOwlIndividualName InObject, const TArray<FOwlTriple>& InProperties, FString InComment = "")
+		: Subject(InSubject.GetFullName())
+		, Predicate(InPredicate.GetFullName())
+		, Object(InObject.GetFullName())
+		, Properties(InProperties)
+		, Comment(InComment)
 	{}
 		
 	// Set name and return self
-	FOwlNode& SetName(FString InName)
+	FOwlNode& SetName(FString InSubject)
 	{
-		Name = InName;
+		Subject = InSubject;
 		return *this;
 	}
 
 	// Set name and return self using FOwlPrefixName
-	FOwlNode& SetName(FOwlPrefixName InName)
+	FOwlNode& SetName(FOwlPrefixName InSubject)
 	{
-		Name = InName.GetFullName();
+		Subject = InSubject.GetFullName();
 		return *this;
 	}
 
 	// Set attribute and return self
-	FOwlNode& SetAttribute(FString InAttribute)
+	FOwlNode& SetAttribute(FString InPredicate)
 	{
-		Attribute = InAttribute;
+		Predicate = InPredicate;
 		return *this;
 	}
 
 	// Set attribute and return self using FOwlPrefixName
-	FOwlNode& SetAttribute(FOwlPrefixName InAttribute)
+	FOwlNode& SetAttribute(FOwlPrefixName InPredicate)
 	{
-		Attribute = InAttribute.GetFullName();
+		Predicate = InPredicate.GetFullName();
 		return *this;
 	}
 
 	// Set attribute and return self
-	FOwlNode& SetAttributeValue(FString InAttributeValue)
+	FOwlNode& SetAttributeValue(FString InObject)
 	{
-		Attribute = InAttributeValue;
+		Predicate = InObject;
 		return *this;
 	}
 
 	// Set attribute and return self using FOwlIndividualName
-	FOwlNode& SetAttributeValue(FOwlIndividualName InAttributeValue)
+	FOwlNode& SetAttributeValue(FOwlIndividualName InObject)
 	{
-		Attribute = InAttributeValue.GetFullName();
+		Predicate = InObject.GetFullName();
 		return *this;
 	}
 
@@ -439,18 +462,18 @@ struct SEMLOG_API FOwlNode
 		if (Properties.Num() > 0)
 		{
 			// Start node
-			XmlString += "\t<" + Name + " " + Attribute + "=\"" + AttributeValue + "\">\n";
+			XmlString += "\t<" + Subject + " " + Predicate + "=\"" + Object + "\">\n";
 			// Add triple properties
 			for (const auto& Triple : Properties)
 			{
 				XmlString += "\t\t" + Triple.ToXmlString();
 			}
 			// Close node
-			XmlString += "\t</" + Name + ">\n";
+			XmlString += "\t</" + Subject + ">\n";
 		}
 		else
 		{
-			XmlString += "\t<" + Name + " " + Attribute + "=\"" + AttributeValue + "\"/>\n";
+			XmlString += "\t<" + Subject + " " + Predicate + "=\"" + Object + "\"/>\n";
 		}
 		return XmlString;
 	}
@@ -473,8 +496,7 @@ struct SEMLOG_API FOwlDocument
 	TMap<FString, FString> RdfAttributes;
 
 	/** Nodes */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = OWL)
-	TArray<FOwlNode> Nodes;
+	TArray<TSharedPtr<FOwlNode>> Nodes;
 
 	// Constructor.
 	FOwlDocument()
@@ -484,10 +506,10 @@ struct SEMLOG_API FOwlDocument
 	FOwlDocument(
 		const TMap<FString, FString>& InDoctypeAttributes,
 		const TMap<FString, FString>& InRdfAttributes,
-		const TArray<FOwlNode>& InNodes = TArray<FOwlNode>())
-		: DoctypeAttributes(InDoctypeAttributes),
-		RdfAttributes(InRdfAttributes),
-		Nodes(InNodes)
+		const TArray<TSharedPtr<FOwlNode>> & InNodes = TArray<TSharedPtr<FOwlNode>>())
+		: DoctypeAttributes(InDoctypeAttributes)
+		, RdfAttributes(InRdfAttributes)
+		, Nodes(InNodes)
 	{}
 
 	// Write as XML String
@@ -520,7 +542,7 @@ struct SEMLOG_API FOwlDocument
 		// Add nodes
 		for (const auto& NodeItr : Nodes)
 		{
-			XmlString += NodeItr.ToXmlString();
+			XmlString += NodeItr->ToXmlString();
 		}
 
 		// End rdf document

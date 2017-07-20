@@ -83,7 +83,7 @@ private:
 	FOwlIndividualName ParentIndividual;
 
 	// Map of other actor to individual name of the contact event
-	TMap<AActor*, TSharedPtr<FOwlIndividualName>> OtherActorToContactEventIndividualName;
+	TMap<AActor*, TSharedPtr<FOwlNode>> OtherActorToEvent;
 
 	// Semantic events runtime manager
 	ASLRuntimeManager* SemLogRuntimeManager;

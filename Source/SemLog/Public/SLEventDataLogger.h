@@ -66,25 +66,14 @@ public:
 	
 	// Insert finished event
 	//UFUNCTION(BlueprintCallable, Category = SL)
-	bool InsertFinishedEvent(
-		const TSharedPtr<FOwlIndividualName> EventIndividualName,
-		const float StartTime,
-		const float EndTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
+	bool InsertFinishedEvent(const TSharedPtr<FOwlNode> Event);
 
 	// Start an event
-	//UFUNCTION(BlueprintCallable, Category = SL)
-	bool StartAnEvent(
-		const TSharedPtr<FOwlIndividualName> EventIndividualName,
-		const float StartTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
+	bool StartAnEvent(const TSharedPtr<FOwlNode> Event);
 
 	// Finish an event
 	//UFUNCTION(BlueprintCallable, Category = SL)
-	bool FinishAnEvent(
-		const TSharedPtr<FOwlIndividualName> EventIndividualName,
-		const float EndTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
+	bool FinishAnEvent(const TSharedPtr<FOwlNode> Event);
 
 	// Delegate to publish the finished events
 	FSLOnEventsFinishedSignature OnEventsFinished;
@@ -125,13 +114,13 @@ private:
 	uint8 bOwlDefaultValuesSet : 1;
 
 	// Metadata event
-	FOwlNode MetaEvent;
+	TSharedPtr<FOwlNode> MetaEvent;
 
 	// Array of all the finished events
-	TArray<FOwlNode> FinishedEvents;
+	TArray<TSharedPtr<FOwlNode>> FinishedEvents;
 
-	// Map of opened events
-	TMap<TSharedPtr<FOwlIndividualName>, FOwlNode> NameToOpenedEvent;
+	// Set of opened events
+	TSet<TSharedPtr<FOwlNode>> OpenedEvents;
 
 	// TODO AddUnqiue, or using TSet; since time individuals might repeat;
 	TArray<FOwlNode> ObjectIndividuals;

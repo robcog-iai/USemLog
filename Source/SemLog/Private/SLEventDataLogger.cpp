@@ -42,10 +42,8 @@ bool USLEventDataLogger::StartLogger(const float Timestamp)
 {
 	if (bIsInit && !bIsStarted)
 	{
-		USLEventDataLogger::StartMetadataEvent(Timestamp);
-
 		bIsStarted = true;
-		return true;
+		return USLEventDataLogger::StartMetadataEvent(Timestamp);
 	}
 	return false;
 }
@@ -58,12 +56,14 @@ bool USLEventDataLogger::FinishLogger(const float Timestamp)
 		USLEventDataLogger::FinishOpenedEvents(Timestamp);
 		USLEventDataLogger::FinishMetadataEvent(Timestamp);
 
-		UE_LOG(LogTemp, Warning, TEXT("IDLE events nr: %i"), NameToOpenedEvent.Num());
+		UE_LOG(LogTemp, Warning, TEXT("IDLE events nr: %i"), OpenedEvents.Num());
 		UE_LOG(LogTemp, Warning, TEXT("FINISHED events nr: %i"), FinishedEvents.Num());
 		for (const auto& FinishedEventsItr : FinishedEvents)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("\t \t Ev: %s"), *FinishedEventsItr.AttributeValue);
+			UE_LOG(LogTemp, Warning, TEXT("\t \t Ev: %s"), *FinishedEventsItr->Object);
 		}
+
+		OwlDocument.Nodes.Append(FinishedEvents);
 
 		bIsStarted = false;
 		bIsFinished = true;
@@ -159,31 +159,31 @@ void USLEventDataLogger::SetDefaultValues()
 		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
 	OntologyOwlProperties.Emplace(FOwlTriple(
 		"owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_u.owl"));
-	FOwlNode OntologyOwlNode("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl",
+	TSharedPtr<FOwlNode> OntologyOwlNode = MakeShareable(new FOwlNode("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl",
 		OntologyOwlProperties,
-		"Ontologies");
+		"Ontologies"));
 	OwlDocument.Nodes.Insert(OntologyOwlNode, 0);
 
 	// Add object property definitions 
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;taskContext",
-		"Property Definitions"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;taskSuccess"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;startTime"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;endTime"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;experiment"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;inContact"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;semanticMap"));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;taskContext",
+		"Property Definitions")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;taskSuccess")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;startTime")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;endTime")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;experiment")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;inContact")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;semanticMap")));
 
 	// Add class definitions
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob;GraspingSomething",
-		"Class Definitions"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob_u;UnrealExperiment"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob_u;TouchingSituation"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob_u;KitchenEpisode"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob_u;FurnitureStateClosed"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob_u;FurnitureStateHalfClosed"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob_u;FurnitureStateOpened"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateHalfOpened"));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob;GraspingSomething",
+		"Class Definitions")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;UnrealExperiment")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;TouchingSituation")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;KitchenEpisode")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateClosed")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateHalfClosed")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateOpened")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;FurnitureStateHalfOpened")));
 
 	// Mark that default values have been set
 	bOwlDefaultValuesSet = true;
@@ -201,88 +201,80 @@ void USLEventDataLogger::RemoveDefaultValues()
 }
 
 // Insert finished event
-bool USLEventDataLogger::InsertFinishedEvent(
-	const TSharedPtr<FOwlIndividualName> EventIndividualName,
-	const float StartTime,
-	const float EndTime,
-	const TArray<FOwlTriple>& Properties)
+bool USLEventDataLogger::InsertFinishedEvent(const TSharedPtr<FOwlNode> Event)
 {
 	if (bIsStarted)
 	{
-		FinishedEvents.Emplace(
-			FOwlNode("owl:NamedIndividual", "rdf:about", EventIndividualName->GetFullName(), Properties));
+		FinishedEvents.Emplace(Event);
 		UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
-			*FString(__FUNCTION__), *EventIndividualName->GetFullName());
+			*FString(__FUNCTION__), *Event->Object);
 		return true;
 	}
 	return false;
 }
 
 // Start an event
-bool USLEventDataLogger::StartAnEvent(
-	const TSharedPtr<FOwlIndividualName> EventIndividualName,
-	const float StartTime,
-	const TArray<FOwlTriple>& Properties)
+bool USLEventDataLogger::StartAnEvent(const TSharedPtr<FOwlNode> Event)
 {
 	if (bIsStarted)
-	{
-		//// Add start time to the properties
-		//Properties.Emplace(FOwlTriple(
-		//	"knowrob:StartTime",
-		//	"rdf:resource",
-		//	"&log;timepoint_" + FString::SanitizeFloat(StartTime)));
-		
+	{		
 		// Add event to the opened events map
-		NameToOpenedEvent.Emplace(
-			EventIndividualName,
-			FOwlNode("owl:NamedIndividual", "rdf:about", EventIndividualName->GetFullName(),
-			Properties));	
+		OpenedEvents.Emplace(Event);
 		UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
-			*FString(__FUNCTION__), *EventIndividualName->GetFullName());
+			*FString(__FUNCTION__), *Event->Object);
 		return true;
 	}
 	return false;
 };
 
 // Finish an event
-bool USLEventDataLogger::FinishAnEvent(
-	const TSharedPtr<FOwlIndividualName> EventIndividualName,
-	const float EndTime,
-	const TArray<FOwlTriple>& Properties)
+bool USLEventDataLogger::FinishAnEvent(const TSharedPtr<FOwlNode> Event)
 {
-	if (bIsStarted && NameToOpenedEvent.Contains(EventIndividualName))
+	if (bIsStarted && OpenedEvents.Contains(Event))
 	{
-		FOwlNode ToBeFinishedEvent;
-		NameToOpenedEvent.RemoveAndCopyValue(EventIndividualName, ToBeFinishedEvent);
-		ToBeFinishedEvent.Properties.Append(Properties);
-		FinishedEvents.Emplace(ToBeFinishedEvent);
+		// Add event to the finished ones
+		FinishedEvents.Emplace(Event);
+		// Remove event as opened
+		OpenedEvents.Remove(Event);
 
 		UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
-			*FString(__FUNCTION__), *EventIndividualName->GetFullName());
+			*FString(__FUNCTION__), *Event->Object);
 		return true;
 	}
 	return false;
 }
 
-
 // Start metadata event
 bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
 {
-	if (!bIsStarted)
+	if (bIsStarted)
 	{
-		return false;
+		MetaEvent = MakeShareable(new FOwlNode(
+			"owl:NamedIndividual", "rdf:about", "&log;UnrealExperiment_" + EpisodeId));
+		// Add event start time
+		MetaEvent->Properties.Emplace(FOwlTriple(
+			"knowrob:startTime",
+			"rdf:resource",
+			"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
+		return true;
 	}
-	return true;
+	return false;
 }
 
 // Start metadata event
 bool USLEventDataLogger::FinishMetadataEvent(const float Timestamp)
 {
-	if (!bIsStarted)
+	if (bIsStarted && MetaEvent.IsValid())
 	{
-		return false;
+		// Add event end time
+		MetaEvent->Properties.Emplace(FOwlTriple(
+			"knowrob:startEnd",
+			"rdf:resource",
+			"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
+		FinishedEvents.Emplace(MetaEvent);
+		return true;
 	}
-	return true;
+	return false;
 }
 
 // Terminate all idling events
@@ -290,14 +282,18 @@ bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
 {
 	if (bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT(" FINSIHEING OPENED EVENTS"));
-		for (auto MapItr(NameToOpenedEvent.CreateIterator()); MapItr; ++MapItr)
-		{	
-			FinishedEvents.Emplace((*MapItr).Value);
-			MapItr.RemoveCurrent();
-			//(*MapItr).Value.Properties.Emplace(FOwlTriple;
-			//UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
-			//	*FString(__FUNCTION__), *(*MapItr).Key->GetFullName());
+		UE_LOG(LogTemp, Warning, TEXT(" Finishing OPENED EVENTS: "));
+		for (auto EventItr(OpenedEvents.CreateIterator()); EventItr; ++EventItr)
+		{
+			// Add event end time
+			(*EventItr)->Properties.Emplace(FOwlTriple(
+				"knowrob:endTime",
+				"rdf:resource",
+				"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
+			// Add event to the finished ones
+			FinishedEvents.Emplace(*EventItr);
+			// Remove event from the opened ones
+			EventItr.RemoveCurrent();
 		}
 		return true;		
 	}

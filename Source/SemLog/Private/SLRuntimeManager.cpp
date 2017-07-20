@@ -116,44 +116,41 @@ void ASLRuntimeManager::Tick(float DeltaTime)
 }
 
 // Add finished event
-bool ASLRuntimeManager::AddFinishedEvent(
-	const TSharedPtr<FOwlIndividualName> EventIndividualName,
-	const float StartTime,
-	const float EndTime,
-	const TArray<FOwlTriple>& Properties)
+bool ASLRuntimeManager::AddFinishedEvent(TSharedPtr<FOwlNode> Event)
 {
-	if (bLogEventData && EventDataLogger && EventDataLogger->IsStarted())
+	if (bLogEventData && EventDataLogger)
 	{		
-		EventDataLogger->InsertFinishedEvent(EventIndividualName, StartTime, EndTime, Properties);
-		return true;
+		return EventDataLogger->InsertFinishedEvent(Event);
 	}
 	return false;
 }
 
 // Start an event
-bool ASLRuntimeManager::StartEvent(
-	const TSharedPtr<FOwlIndividualName> EventIndividualName,
-	const float StartTime,
-	const TArray<FOwlTriple>& Properties)
+bool ASLRuntimeManager::StartEvent(TSharedPtr<FOwlNode> Event)
 {
-	if (bLogEventData && EventDataLogger && EventDataLogger->IsStarted())
+	if (bLogEventData && EventDataLogger)
 	{
-		EventDataLogger->StartAnEvent(EventIndividualName, StartTime, Properties);
-		return true;
+		// Add event start time
+		Event->Properties.Emplace(FOwlTriple(
+			"knowrob:startTime", 
+			"rdf:resource",
+			"&log;timepoint_" + FString::SanitizeFloat(GetWorld()->GetTimeSeconds())));
+		return EventDataLogger->StartAnEvent(Event);
 	}
 	return false;
 }
 
 // Finish an event
-bool ASLRuntimeManager::FinishEvent(
-	const TSharedPtr<FOwlIndividualName> EventIndividualName,
-	const float EndTime,
-	const TArray<FOwlTriple>& Properties)
+bool ASLRuntimeManager::FinishEvent(TSharedPtr<FOwlNode> Event)
 {
-	if (bLogEventData && EventDataLogger && EventDataLogger->IsStarted())
+	if (bLogEventData && EventDataLogger)
 	{
-		EventDataLogger->FinishAnEvent(EventIndividualName, EndTime, Properties);
-		return true;
+		// Add event end time
+		Event->Properties.Emplace(FOwlTriple(
+			"knowrob:endTime",
+			"rdf:resource",
+			"&log;timepoint_" + FString::SanitizeFloat(GetWorld()->GetTimeSeconds())));
+		return EventDataLogger->FinishAnEvent(Event);
 	}
 	return false;
 }

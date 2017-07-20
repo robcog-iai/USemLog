@@ -130,40 +130,40 @@ void USLMap::SetDefaultValues()
 		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
 	OntologyOwlProperties.Emplace(FOwlTriple(
 		"owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_u.owl"));
-	FOwlNode OntologyOwlNode("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl",
+	TSharedPtr<FOwlNode> OntologyOwlNode = MakeShareable(new FOwlNode("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl",
 		OntologyOwlProperties,
-		"Ontologies");
+		"Ontologies"));
 	OwlDocument.Nodes.Insert(OntologyOwlNode, 0);
 
 	// Add object property definitions 
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;describedInMap",
-		"Property Definitions"));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;describedInMap",
+		"Property Definitions")));
 
 	// Add datatype property definitions
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;depthOfObject",
-		"Datatype Definitions"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;heightOfObject"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about",	"&knowrob;widthOfObject"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;vectorX"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about",	"&knowrob;vectorY"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;vectorZ"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:DatatypeProperty", "rdf:about",	"&knowrob;pathToCadModel"));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;depthOfObject",
+		"Datatype Definitions")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;heightOfObject")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;widthOfObject")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;vectorX")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;vectorY")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;vectorZ")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;pathToCadModel")));
 
 	// Add class definitions
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob;SemanticEnvironmentMap",
-		"Class Definitions"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class", "rdf:about", "&knowrob;SLMapPerception"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob;TimePoint"));
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:Class",	"rdf:about", "&knowrob;Vector"));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob;SemanticEnvironmentMap",
+		"Class Definitions")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob;SLMapPerception")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob;TimePoint")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob;Vector")));
 		
 	// Add semantic map individual
 	TArray<FOwlTriple> SemMapOwlProperties;
 	SemMapOwlProperties.Emplace(
 		FOwlTriple("rdf:type", "rdf:resource", "&knowrob;SemanticEnvironmentMap"));
 
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", SemMapIndividual.GetFullName(),
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:NamedIndividual", "rdf:about", SemMapIndividual.GetFullName(),
 		SemMapOwlProperties,
-		"Semantic Environment Map"));
+		"Semantic Environment Map")));
 
 	// Mark that default values have been set
 	bOwlDefaultValuesSet = true;
@@ -267,9 +267,9 @@ void USLMap::InsertIndividual(
 	IndividualProperties.Emplace(FOwlTriple(
 		"knowrob:describedInMap", "rdf:resource", SemMapIndividual.GetFullName()));
 
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", "&log;" + IndividualName,
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:NamedIndividual", "rdf:about", "&log;" + IndividualName,
 		IndividualProperties,
-		"Object " + IndividualName));
+		"Object " + IndividualName)));
 
 	// Add perception event for localization
 	TArray<FOwlTriple> PerceptionProperties;
@@ -282,8 +282,8 @@ void USLMap::InsertIndividual(
 	PerceptionProperties.Emplace(FOwlTriple(
 		"knowrob:objectActedOn", "rdf:resource", "&log;" + IndividualName));
 
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", "&u-map;SemanticMapPerception_" + PerceptionId,
-		PerceptionProperties));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:NamedIndividual", "rdf:about", "&u-map;SemanticMapPerception_" + PerceptionId,
+		PerceptionProperties)));
 
 	// Add transform for the perception event
 	TArray<FOwlTriple> TransfProperties;
@@ -294,6 +294,6 @@ void USLMap::InsertIndividual(
 	TransfProperties.Emplace(FOwlTriple(
 		"knowrob:translation", "rdf:datatype", "&xsd;string", LocStr));
 
-	OwlDocument.Nodes.Emplace(FOwlNode("owl:NamedIndividual", "rdf:about", "&u-map;Transformation_" + TransfId,
-		TransfProperties));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:NamedIndividual", "rdf:about", "&u-map;Transformation_" + TransfId,
+		TransfProperties)));
 }

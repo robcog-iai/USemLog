@@ -36,23 +36,13 @@ public:
 	USLEventDataLogger* GetEventDataLogger() { return EventDataLogger; };
 
 	// Add finished event
-	bool AddFinishedEvent(
-		const TSharedPtr<FOwlIndividualName> EventIndividualName,
-		const float StartTime,
-		const float EndTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
+	bool AddFinishedEvent(TSharedPtr<FOwlNode> Event);
 
 	// Start an event
-	bool StartEvent(
-		const TSharedPtr<FOwlIndividualName> EventIndividualName,
-		const float StartTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
+	bool StartEvent(TSharedPtr<FOwlNode> Event);
 
 	// Finish an event
-	bool FinishEvent(
-		const TSharedPtr<FOwlIndividualName> EventIndividualName,
-		const float EndTime,
-		const TArray<FOwlTriple>& Properties = TArray<FOwlTriple>());
+	bool FinishEvent(TSharedPtr<FOwlNode> Event);
 
 private:
 	// Episode Id (be default will be auto generated)
