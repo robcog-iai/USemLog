@@ -296,8 +296,8 @@ bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
 			FinishedEvents.Emplace((*MapItr).Value);
 			MapItr.RemoveCurrent();
 			//(*MapItr).Value.Properties.Emplace(FOwlTriple;
-			UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
-				*FString(__FUNCTION__), *(*MapItr).Key->GetFullName());
+			//UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
+			//	*FString(__FUNCTION__), *(*MapItr).Key->GetFullName());
 		}
 		return true;		
 	}
