@@ -73,6 +73,12 @@ public:
 	// Finish an event
 	bool FinishAnEvent(const TSharedPtr<FOwlNode> Event);
 
+	// Add object individual
+	bool AddObjectIndividual(TSharedPtr<FOwlNode> Object);
+
+	// Add time individual
+	bool AddTimeIndividual(TSharedPtr<FOwlNode> Object);
+
 	// Add metadata property
 	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
 
@@ -80,12 +86,6 @@ public:
 	FSLOnEventsFinishedSignature OnEventsFinished;
 
 private:
-	// Set document default values
-	void SetDefaultValues();
-
-	// Remove document default values
-	void RemoveDefaultValues();
-
 	// Start metadata event
 	bool StartMetadataEvent(const float Timestamp);
 
@@ -94,6 +94,12 @@ private:
 
 	// Terminate all idling events
 	bool FinishOpenedEvents(const float Timestamp);
+
+	// Set document default values
+	void SetDefaultValues();
+
+	// Remove document default values
+	void RemoveDefaultValues();
 
 	// Event logs document as owl representation
 	UPROPERTY(EditAnywhere, Category = SL)
@@ -123,6 +129,9 @@ private:
 	// Set of opened events
 	TSet<TSharedPtr<FOwlNode>> OpenedEvents;
 
-	// TODO AddUnqiue, or using TSet; since time individuals might repeat;
-	TArray<FOwlNode> ObjectIndividuals;
+	// Set of object individuals
+	TSet<TSharedPtr<FOwlNode>> ObjectIndividuals;
+
+	// Set of time individuals
+	TSet<TSharedPtr<FOwlNode>> TimeIndividuals;
 };

@@ -359,6 +359,10 @@ struct SEMLOG_API FOwlNode
 	FOwlNode()
 	{}
 
+	// Constructor only with comment
+	FOwlNode(FString InComment) : Comment(InComment)
+	{}
+
 	// Constructor with name and attribute
 	FOwlNode(FString InSubject, FString InPredicate, FString InObject, FString InComment = "")
 		: Subject(InSubject)
@@ -471,7 +475,7 @@ struct SEMLOG_API FOwlNode
 			// Close node
 			XmlString += "\t</" + Subject + ">\n";
 		}
-		else
+		else if(!Subject.IsEmpty())
 		{
 			XmlString += "\t<" + Subject + " " + Predicate + "=\"" + Object + "\"/>\n";
 		}

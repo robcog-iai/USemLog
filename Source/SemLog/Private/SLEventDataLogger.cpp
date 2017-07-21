@@ -43,6 +43,12 @@ bool USLEventDataLogger::StartLogger(const float Timestamp)
 	if (bIsInit && !bIsStarted)
 	{
 		bIsStarted = true;
+		
+		// Add comment nodes
+		FinishedEvents.EmplaceAt(0, MakeShareable(new FOwlNode("Event Individuals")));
+		// TODO see for workaround if comments are wanted here
+		//ObjectIndividuals.EmplaceAt(0, MakeShareable(new FOwlNode("Object Individuals")));
+
 		return USLEventDataLogger::StartMetadataEvent(Timestamp);
 	}
 	return false;
@@ -63,6 +69,8 @@ bool USLEventDataLogger::FinishLogger(const float Timestamp)
 			UE_LOG(LogTemp, Warning, TEXT("\t \t Ev: %s"), *FinishedEventsItr->Object);
 		}
 
+		OwlDocument.Nodes.Append(ObjectIndividuals.Array());
+		OwlDocument.Nodes.Append(TimeIndividuals.Array());
 		OwlDocument.Nodes.Append(FinishedEvents);
 
 		bIsStarted = false;
@@ -119,6 +127,140 @@ bool USLEventDataLogger::GetEventsAsString(FString& OutStringDocument)
 	// Get document as string
 	OutStringDocument = OwlDocument.ToXmlString();
 	return true;
+}
+
+// Insert finished event
+bool USLEventDataLogger::InsertFinishedEvent(const TSharedPtr<FOwlNode> Event)
+{
+	if (bIsStarted)
+	{
+		FinishedEvents.Emplace(Event);
+		return true;
+	}
+	return false;
+}
+
+// Start an event
+bool USLEventDataLogger::StartAnEvent(const TSharedPtr<FOwlNode> Event)
+{
+	if (bIsStarted)
+	{		
+		// Add event to the opened events map
+		OpenedEvents.Emplace(Event);
+		return true;
+	}
+	return false;
+};
+
+// Finish an event
+bool USLEventDataLogger::FinishAnEvent(const TSharedPtr<FOwlNode> Event)
+{
+	if (bIsStarted && OpenedEvents.Contains(Event))
+	{
+		// Add event to the finished ones
+		FinishedEvents.Emplace(Event);
+		// Remove event as opened
+		OpenedEvents.Remove(Event);
+		return true;
+	}
+	return false;
+}
+
+// Add object individual
+bool USLEventDataLogger::AddObjectIndividual(TSharedPtr<FOwlNode> Object)
+{
+	if (bIsStarted)
+	{
+		ObjectIndividuals.Emplace(Object);
+		return true;
+	}
+	return false;
+}
+
+// Add object individual
+bool USLEventDataLogger::AddTimeIndividual(TSharedPtr<FOwlNode> Object)
+{
+	if (bIsStarted)
+	{
+		TimeIndividuals.Emplace(Object);
+		return true;
+	}
+	return false;
+}
+
+// Add metadata property
+bool USLEventDataLogger::AddMetadataProperty(TSharedPtr<FOwlTriple> Property)
+{
+	if (bIsStarted && MetaEvent.IsValid())
+	{
+		// Add metadata property
+		MetaEvent->Properties.Emplace(*Property);
+		return true;
+	}
+	return false;
+}
+
+// Start metadata event
+bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
+{
+	if (bIsStarted)
+	{
+		MetaEvent = MakeShareable(new FOwlNode(
+			"owl:NamedIndividual", "rdf:about", "&log;UnrealExperiment_" + EpisodeId,
+			"Metadata Individual"));
+		// Add event class
+		MetaEvent->Properties.Emplace(FOwlTriple(
+			"rdf:type", "rdf:resource", "&knowrob_u;UnrealExperiment"));
+		// Add episode unique Id
+		MetaEvent->Properties.Emplace(FOwlTriple(
+			"knowrob:experiment", "rdf:datatype", "&xsd;string", EpisodeId));
+		// Add event start time
+		MetaEvent->Properties.Emplace(FOwlTriple(
+			"knowrob:startTime",
+			"rdf:resource",
+			"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
+		return true;
+	}
+	return false;
+}
+
+// Start metadata event
+bool USLEventDataLogger::FinishMetadataEvent(const float Timestamp)
+{
+	if (bIsStarted && MetaEvent.IsValid())
+	{
+		// Add event end time
+		MetaEvent->Properties.Emplace(FOwlTriple(
+			"knowrob:startEnd",
+			"rdf:resource",
+			"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
+		FinishedEvents.Emplace(MetaEvent);
+		return true;
+	}
+	return false;
+}
+
+// Terminate all idling events
+bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
+{
+	if (bIsStarted)
+	{
+		UE_LOG(LogTemp, Warning, TEXT(" Finishing OPENED EVENTS: "));
+		for (auto EventItr(OpenedEvents.CreateIterator()); EventItr; ++EventItr)
+		{
+			// Add event end time
+			(*EventItr)->Properties.Emplace(FOwlTriple(
+				"knowrob:endTime",
+				"rdf:resource",
+				"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
+			// Add event to the finished ones
+			FinishedEvents.Emplace(*EventItr);
+			// Remove event from the opened ones
+			EventItr.RemoveCurrent();
+		}
+		return true;		
+	}
+	return false;
 }
 
 // Set document default values
@@ -198,122 +340,4 @@ void USLEventDataLogger::RemoveDefaultValues()
 
 	// Mark that default values have been removed
 	bOwlDefaultValuesSet = false;
-}
-
-// Insert finished event
-bool USLEventDataLogger::InsertFinishedEvent(const TSharedPtr<FOwlNode> Event)
-{
-	if (bIsStarted)
-	{
-		FinishedEvents.Emplace(Event);
-		UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
-			*FString(__FUNCTION__), *Event->Object);
-		return true;
-	}
-	return false;
-}
-
-// Start an event
-bool USLEventDataLogger::StartAnEvent(const TSharedPtr<FOwlNode> Event)
-{
-	if (bIsStarted)
-	{		
-		// Add event to the opened events map
-		OpenedEvents.Emplace(Event);
-		UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
-			*FString(__FUNCTION__), *Event->Object);
-		return true;
-	}
-	return false;
-};
-
-// Finish an event
-bool USLEventDataLogger::FinishAnEvent(const TSharedPtr<FOwlNode> Event)
-{
-	if (bIsStarted && OpenedEvents.Contains(Event))
-	{
-		// Add event to the finished ones
-		FinishedEvents.Emplace(Event);
-		// Remove event as opened
-		OpenedEvents.Remove(Event);
-
-		UE_LOG(LogTemp, Warning, TEXT("%s : EventIndividualName: %s"),
-			*FString(__FUNCTION__), *Event->Object);
-		return true;
-	}
-	return false;
-}
-
-// Add metadata property
-bool USLEventDataLogger::AddMetadataProperty(TSharedPtr<FOwlTriple> Property)
-{
-	if (bIsStarted && MetaEvent.IsValid())
-	{
-		// Add metadata property
-		MetaEvent->Properties.Emplace(*Property);
-		return true;
-	}
-	return false;
-}
-
-// Start metadata event
-bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
-{
-	if (bIsStarted)
-	{
-		MetaEvent = MakeShareable(new FOwlNode(
-			"owl:NamedIndividual", "rdf:about", "&log;UnrealExperiment_" + EpisodeId));
-		// Add event class
-		MetaEvent->Properties.Emplace(FOwlTriple(
-			"rdf:type", "rdf:resource", "&knowrob_u;UnrealExperiment"));
-		// Add episode unique Id
-		MetaEvent->Properties.Emplace(FOwlTriple(
-			"knowrob:experiment", "rdf:datatype", "&xsd;string", EpisodeId));
-		// Add event start time
-		MetaEvent->Properties.Emplace(FOwlTriple(
-			"knowrob:startTime",
-			"rdf:resource",
-			"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
-		return true;
-	}
-	return false;
-}
-
-// Start metadata event
-bool USLEventDataLogger::FinishMetadataEvent(const float Timestamp)
-{
-	if (bIsStarted && MetaEvent.IsValid())
-	{
-		// Add event end time
-		MetaEvent->Properties.Emplace(FOwlTriple(
-			"knowrob:startEnd",
-			"rdf:resource",
-			"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
-		FinishedEvents.Emplace(MetaEvent);
-		return true;
-	}
-	return false;
-}
-
-// Terminate all idling events
-bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
-{
-	if (bIsStarted)
-	{
-		UE_LOG(LogTemp, Warning, TEXT(" Finishing OPENED EVENTS: "));
-		for (auto EventItr(OpenedEvents.CreateIterator()); EventItr; ++EventItr)
-		{
-			// Add event end time
-			(*EventItr)->Properties.Emplace(FOwlTriple(
-				"knowrob:endTime",
-				"rdf:resource",
-				"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
-			// Add event to the finished ones
-			FinishedEvents.Emplace(*EventItr);
-			// Remove event from the opened ones
-			EventItr.RemoveCurrent();
-		}
-		return true;		
-	}
-	return false;
 }
