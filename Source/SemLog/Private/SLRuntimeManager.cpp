@@ -24,10 +24,10 @@ ASLRuntimeManager::ASLRuntimeManager()
 	bBroadcastEventData = false;
 }
 
-// Called when the game starts or when spawned
-void ASLRuntimeManager::BeginPlay()
+// Make sure the manager is started before event publishers call BeginPlay
+void ASLRuntimeManager::PostInitializeComponents()
 {
-	Super::BeginPlay();
+	Super::PostInitializeComponents();
 
 	// No tick by default
 	SetActorTickEnabled(false);
@@ -37,13 +37,13 @@ void ASLRuntimeManager::BeginPlay()
 	{
 		EpisodeId = FSLUtils::GenerateRandomFString(4);
 	}
-	
+
 	// Setup raw data logger
 	if (bLogRawData)
 	{
 		// Create raw data logger UObject
-		RawDataLogger = NewObject<USLRawDataLogger>(this, TEXT("RawDataLogger"));		
-		
+		RawDataLogger = NewObject<USLRawDataLogger>(this, TEXT("RawDataLogger"));
+
 		// Init logger 
 		RawDataLogger->Init(GetWorld(), 0.1f);
 
@@ -64,7 +64,7 @@ void ASLRuntimeManager::BeginPlay()
 		// Enable tick for raw data logging
 		SetActorTickEnabled(true);
 	}
-	
+
 	// Setup event data logger
 	if (bLogEventData)
 	{
@@ -77,6 +77,12 @@ void ASLRuntimeManager::BeginPlay()
 		// Start logger
 		EventDataLogger->StartLogger(GetWorld()->GetTimeSeconds());
 	}
+}
+
+// Called when the game starts or when spawned
+void ASLRuntimeManager::BeginPlay()
+{
+	Super::BeginPlay();
 }
 
 // Called when actor removed from game or game ended
@@ -151,6 +157,16 @@ bool ASLRuntimeManager::FinishEvent(TSharedPtr<FOwlNode> Event)
 			"rdf:resource",
 			"&log;timepoint_" + FString::SanitizeFloat(GetWorld()->GetTimeSeconds())));
 		return EventDataLogger->FinishAnEvent(Event);
+	}
+	return false;
+}
+
+// Add metadata property
+bool ASLRuntimeManager::AddMetadataProperty(TSharedPtr<FOwlTriple> Property)
+{
+	if (bLogEventData && EventDataLogger)
+	{
+		return EventDataLogger->AddMetadataProperty(Property);
 	}
 	return false;
 }

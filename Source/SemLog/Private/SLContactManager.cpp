@@ -58,6 +58,16 @@ void USLContactManager::BeginPlay()
 		// Bind overlap begin and end events
 		OnComponentBeginOverlap.AddDynamic(this, &USLContactManager::OnOverlapBegin);
 		OnComponentEndOverlap.AddDynamic(this, &USLContactManager::OnOverlapEnd);
+
+		// Get currently overlapping actors (these are not detected by the OnComponentBeginOverlap)
+		TSet<AActor*> CurrOverlapingActors;
+		GetOverlappingActors(CurrOverlapingActors);
+
+		// Start contact events with the currently overlapping actors
+		for (const auto& ActItr : CurrOverlapingActors)
+		{
+			USLContactManager::StartContactEvent(ActItr);
+		}
 	}
 }
 
@@ -65,27 +75,42 @@ void USLContactManager::BeginPlay()
 void USLContactManager::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	// Check if the colliding actor has a semantic description
+	// Start event
+	USLContactManager::StartContactEvent(OtherActor);
+}
+
+// Called on overlap end events
+void USLContactManager::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	// Finish event if started
+	USLContactManager::FinishContactEvent(OtherActor);
+}
+
+// Start contact event
+bool USLContactManager::StartContactEvent(AActor* OtherActor)
+{
+	// Check if actor has a semantic description
 	int32 TagIndex = FTagStatics::GetTagTypeIndex(OtherActor->Tags, "SemLog");
 
 	// If tag type exist, read the Class and the Id
 	if (TagIndex != INDEX_NONE)
 	{
-		// Get the Class and Id from the tags
+		// Get the Class and Id from the semantic description
 		const FString OtherActorClass = FTagStatics::GetKeyValue(OtherActor->Tags[TagIndex], "Class");
 		const FString OtherActorId = FTagStatics::GetKeyValue(OtherActor->Tags[TagIndex], "Id");
 
+		// Example of a contact event represented in OWL:
 		/********************************************************************
-		Example of a contact event represented in OWL:
 		<!-- Event node described with a FOwlTriple (Subject-Predicate-Object) and Properties: -->
 		<owl:NamedIndividual rdf:about="&log;TouchingSituation_icaO">
-		<!-- List of the event properties as FOwlTriple (Subject-Predicate-Object): -->
-		<rdf:type rdf:resource = "&knowrob_u;TouchingSituation"/>
-		<knowrob:taskContext rdf:datatype = "&xsd;string">Contact-IslandDrawerTopLeft_o5Ol-Bowl3_9w2Y</knowrob:taskContext>
-		<knowrob:startTime rdf:resource="&log;timepoint_0.302039"/>
-		<knowrob_u:inContact rdf:resource="&log;IslandDrawerTopLeft_o5Ol"/>
-		<knowrob_u:inContact rdf:resource="&log;Bowl3_9w2Y"/>
-		<knowrob:endTime rdf:resource="&log;timepoint_0.331089"/>
+			<!-- List of the event properties as FOwlTriple (Subject-Predicate-Object): -->
+			<rdf:type rdf:resource = "&knowrob_u;TouchingSituation"/>
+			<knowrob:taskContext rdf:datatype = "&xsd;string">Contact-IslandDrawerTopLeft_o5Ol-Bowl3_9w2Y</knowrob:taskContext>
+			<knowrob:startTime rdf:resource="&log;timepoint_0.302039"/>
+			<knowrob_u:inContact rdf:resource="&log;IslandDrawerTopLeft_o5Ol"/>
+			<knowrob_u:inContact rdf:resource="&log;Bowl3_9w2Y"/>
+			<knowrob:endTime rdf:resource="&log;timepoint_0.331089"/>
 		</owl:NamedIndividual>
 		*********************************************************************/
 
@@ -112,29 +137,37 @@ void USLContactManager::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AAct
 		Properties.Add(FOwlTriple(InContact, RdfResource, ParentIndividual));
 		Properties.Add(FOwlTriple(InContact, RdfResource, OtherIndividual));
 
-		// Create contact event add it to the map
+		// Create the contact event
 		TSharedPtr<FOwlNode> ContactEvent = MakeShareable(new FOwlNode(
-			OwlNamedIndividual, RdfAbout, ContactIndividual));
-		OtherActorToEvent.Emplace(OtherActor, ContactEvent);
+			OwlNamedIndividual, RdfAbout, ContactIndividual, Properties));		
 
 		// Start the event with the given properties
-		SemLogRuntimeManager->StartEvent(ContactEvent);
+		if (SemLogRuntimeManager->StartEvent(ContactEvent))
+		{
+			// Add event to the local map of started events
+			OtherActorToEvent.Emplace(OtherActor, ContactEvent);
+			return true;
+		}
 	}
+	return false;
 }
 
-// Called on overlap end events
-void USLContactManager::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+// Finish contact event
+bool USLContactManager::FinishContactEvent(AActor* OtherActor)
 {
-	// Check if other actor is in the map (contact event was started)
-	if (OtherActorToEvent.Contains(OtherActor))
+	// Pointer to the possible started event
+	TSharedPtr<FOwlNode>CopyOfStartedEvent;
+
+	// Check if event started, if yes remove and copy value
+	if (OtherActorToEvent.RemoveAndCopyValue(OtherActor, CopyOfStartedEvent))
 	{
-		// End the event
-		SemLogRuntimeManager->FinishEvent(OtherActorToEvent[OtherActor]);
+		return SemLogRuntimeManager->FinishEvent(CopyOfStartedEvent);
 	}
+	return false;
 }
 
 #if WITH_EDITOR  
+// Called when a property changed in the editor
 void USLContactManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	// Call the base class version  

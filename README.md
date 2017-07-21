@@ -96,11 +96,12 @@ ARawDataDelegateListener::ARawDataDelegateListener()
 void ARawDataDelegateListener::BeginPlay()
 {
 	Super::BeginPlay();
-	// Get the runtime manager
-	if (ASLRuntimeManager* RM = *TActorIterator<ASLRuntimeManager>(GetWorld()))
+	
+	// Iterate the runtime managers from the world
+	for (TActorIterator<ASLRuntimeManager>RMItr(GetWorld()); RMItr; ++RMItr)
 	{
 		// Get the raw data logger
-		if (USLRawDataLogger* RawDataLogger = RM->GetRawDataLogger())
+		if (USLRawDataLogger* RawDataLogger = (*RMItr)->GetRawDataLogger())
 		{
 			// Listen for new data
 			RawDataLogger->OnNewData.AddUObject(this,
@@ -108,12 +109,14 @@ void ARawDataDelegateListener::BeginPlay()
 		}
 
 		// Get the event data logger
-		if (USLEventDataLogger* EventDataLogger = RM->GetEventDataLogger())
+		if (USLEventDataLogger* EventDataLogger = (*RMItr)->GetEventDataLogger())
 		{
 			// Listen for when the events are finished
 			EventDataLogger->OnEventsFinished.AddUObject(this,
 				&ARawDataDelegateListener::OnReceiveFinishedEventsData);
 		}
+		// Break loop, there should only be one manager
+		break;
 	}
 }
 

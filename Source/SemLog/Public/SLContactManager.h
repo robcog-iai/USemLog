@@ -38,7 +38,7 @@ class SEMLOG_API USLContactManager : public UBoxComponent
 	virtual void BeginPlay() override;
 
 	#if WITH_EDITOR 
-	// Setting contact area size depending on the selected type
+	// Called when a property changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	#endif 
 
@@ -65,6 +65,12 @@ class SEMLOG_API USLContactManager : public UBoxComponent
 		int32 OtherBodyIndex);
 
 private:
+	// Start contact event
+	bool StartContactEvent(AActor* OtherActor);
+
+	// Finish contact event
+	bool FinishContactEvent(AActor* OtherActor);
+
 	#if WITH_EDITOR 
 	// Update contact area
 	void UpdateContactArea();

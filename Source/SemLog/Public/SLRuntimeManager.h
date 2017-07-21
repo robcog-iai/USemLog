@@ -19,6 +19,9 @@ public:
 	ASLRuntimeManager();
 
 protected:
+	// Make sure the manager is started before event publishers call BeginPlay
+	virtual void PostInitializeComponents() override;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -43,6 +46,9 @@ public:
 
 	// Finish an event
 	bool FinishEvent(TSharedPtr<FOwlNode> Event);
+
+	// Add metadata property
+	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
 
 private:
 	// Episode Id (be default will be auto generated)

@@ -244,6 +244,18 @@ bool USLEventDataLogger::FinishAnEvent(const TSharedPtr<FOwlNode> Event)
 	return false;
 }
 
+// Add metadata property
+bool USLEventDataLogger::AddMetadataProperty(TSharedPtr<FOwlTriple> Property)
+{
+	if (bIsStarted && MetaEvent.IsValid())
+	{
+		// Add metadata property
+		MetaEvent->Properties.Emplace(*Property);
+		return true;
+	}
+	return false;
+}
+
 // Start metadata event
 bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
 {
@@ -251,6 +263,12 @@ bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
 	{
 		MetaEvent = MakeShareable(new FOwlNode(
 			"owl:NamedIndividual", "rdf:about", "&log;UnrealExperiment_" + EpisodeId));
+		// Add event class
+		MetaEvent->Properties.Emplace(FOwlTriple(
+			"rdf:type", "rdf:resource", "&knowrob_u;UnrealExperiment"));
+		// Add episode unique Id
+		MetaEvent->Properties.Emplace(FOwlTriple(
+			"knowrob:experiment", "rdf:datatype", "&xsd;string", EpisodeId));
 		// Add event start time
 		MetaEvent->Properties.Emplace(FOwlTriple(
 			"knowrob:startTime",

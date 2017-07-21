@@ -65,15 +65,16 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 	
 	// Insert finished event
-	//UFUNCTION(BlueprintCallable, Category = SL)
 	bool InsertFinishedEvent(const TSharedPtr<FOwlNode> Event);
 
 	// Start an event
 	bool StartAnEvent(const TSharedPtr<FOwlNode> Event);
 
 	// Finish an event
-	//UFUNCTION(BlueprintCallable, Category = SL)
 	bool FinishAnEvent(const TSharedPtr<FOwlNode> Event);
+
+	// Add metadata property
+	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
 
 	// Delegate to publish the finished events
 	FSLOnEventsFinishedSignature OnEventsFinished;
