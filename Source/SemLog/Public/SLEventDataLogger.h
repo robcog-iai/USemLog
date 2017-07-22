@@ -95,6 +95,10 @@ private:
 	// Terminate all idling events
 	bool FinishOpenedEvents(const float Timestamp);
 
+	// @TODO Temp solution
+	// Set objects, time events and metadata subActions
+	void SetObjectsAndMetaSubActions();
+
 	// Set document default values
 	void SetDefaultValues();
 

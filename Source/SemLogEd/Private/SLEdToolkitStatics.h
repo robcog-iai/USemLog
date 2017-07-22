@@ -10,6 +10,7 @@
 #include "EngineUtils.h"
 #include "SLMap.h"
 #include "SLRuntimeManager.h"
+#include "SLLevelInfo.h"
 #include "SLUtils.h"
 #include "TagStatics.h"
 
@@ -48,6 +49,21 @@ struct FSLEdToolkitStatics
 	static FReply AddRuntimeManager()
 	{
 		GEditor->GetEditorWorldContext().World()->SpawnActor(ASLRuntimeManager::StaticClass());
+		return FReply::Handled();
+	}
+
+	static bool NoLevelInfoInTheWorld()
+	{
+		if (TActorIterator<ASLLevelInfo>(GEditor->GetEditorWorldContext().World()))
+		{
+			return false;
+		}
+		return true;
+	}
+
+	static FReply AddLevelinfo()
+	{
+		GEditor->GetEditorWorldContext().World()->SpawnActor(ASLLevelInfo::StaticClass());
 		return FReply::Handled();
 	}
 

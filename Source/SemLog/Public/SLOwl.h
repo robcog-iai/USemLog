@@ -117,7 +117,6 @@ struct SEMLOG_API FOwlClass
 	}
 };
 
-
 /**
 *	IndividualName, e.g. &log;SemanticMapPerception_XWRm
 *   "& + Namespace + ; + Class + _ + Id"
@@ -169,6 +168,12 @@ struct SEMLOG_API FOwlIndividualName : public FOwlClass
 	FString GetName() const
 	{
 		return Class + "_" + Id;
+	}
+
+	// Return the object as Ns + Class
+	FString GetClassName() const
+	{
+		return "&" + Ns + ";" + Class;
 	}
 
 	// Set from full name
@@ -515,6 +520,18 @@ struct SEMLOG_API FOwlDocument
 		, RdfAttributes(InRdfAttributes)
 		, Nodes(InNodes)
 	{}
+
+	// Append nodes
+	void AppendNodes(const TArray<TSharedPtr<FOwlNode>>& InNodes, const FString Comment = "")
+	{
+		if (!Comment.IsEmpty())
+		{
+			// Add comment before appending the array
+			Nodes.Add(MakeShareable(new FOwlNode(Comment)));
+		}
+		// Append nodes array
+		Nodes.Append(InNodes);
+	}
 
 	// Write as XML String
 	FString ToXmlString() const

@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLRuntimeManager.h"
+#include "SLLevelInfo.h"
 #include "SLUtils.h"
 
 // Sets default values
@@ -76,6 +77,16 @@ void ASLRuntimeManager::PostInitializeComponents()
 
 		// Start logger
 		EventDataLogger->StartLogger(GetWorld()->GetTimeSeconds());
+
+		// Add level info to the metadata
+		for (TActorIterator<ASLLevelInfo> InfoItr(GetWorld()); InfoItr; ++InfoItr)
+		{
+			for (const auto& PropItr : InfoItr->LevelProperties)
+			{
+				EventDataLogger->AddMetadataProperty(MakeShareable(new FOwlTriple(PropItr)));
+			}
+			break;
+		}
 	}
 }
 

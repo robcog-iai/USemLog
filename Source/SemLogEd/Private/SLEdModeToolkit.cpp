@@ -79,6 +79,15 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 				.HAlign(HAlign_Center)
 				[
 					SNew(SButton)
+					.Text(LOCTEXT("AddLevelInfo", "Add Level Info"))
+				.IsEnabled_Static(&FSLEdToolkitStatics::NoLevelInfoInTheWorld)
+				.OnClicked_Static(&FSLEdToolkitStatics::AddLevelinfo)
+				]
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.HAlign(HAlign_Center)
+				[
+					SNew(SButton)
 					.Text(LOCTEXT("GenerateNewIds", "Generate New Ids"))
 					.IsEnabled(true)
 					.OnClicked_Static(&FSLEdToolkitStatics::GenerateNewIds)

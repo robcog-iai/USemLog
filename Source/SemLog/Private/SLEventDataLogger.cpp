@@ -43,12 +43,6 @@ bool USLEventDataLogger::StartLogger(const float Timestamp)
 	if (bIsInit && !bIsStarted)
 	{
 		bIsStarted = true;
-		
-		// Add comment nodes
-		FinishedEvents.EmplaceAt(0, MakeShareable(new FOwlNode("Event Individuals")));
-		// TODO see for workaround if comments are wanted here
-		//ObjectIndividuals.EmplaceAt(0, MakeShareable(new FOwlNode("Object Individuals")));
-
 		return USLEventDataLogger::StartMetadataEvent(Timestamp);
 	}
 	return false;
@@ -59,20 +53,20 @@ bool USLEventDataLogger::FinishLogger(const float Timestamp)
 {
 	if (bIsStarted && !bIsFinished)
 	{
+		// Close and move all opened events to the finished ones
 		USLEventDataLogger::FinishOpenedEvents(Timestamp);
+
+		// Set object/time individuals, and sub-actions
+		USLEventDataLogger::SetObjectsAndMetaSubActions();
+
+		// Add events to the owl document
+		OwlDocument.AppendNodes(FinishedEvents, "Event Individuals");
+		OwlDocument.AppendNodes(ObjectIndividuals.Array(), "Object Individuals");
+		OwlDocument.AppendNodes(TimeIndividuals.Array(), "Time Individuals");
+
+		// Close and move the metadata event to the finished ones
 		USLEventDataLogger::FinishMetadataEvent(Timestamp);
-
-		UE_LOG(LogTemp, Warning, TEXT("IDLE events nr: %i"), OpenedEvents.Num());
-		UE_LOG(LogTemp, Warning, TEXT("FINISHED events nr: %i"), FinishedEvents.Num());
-		for (const auto& FinishedEventsItr : FinishedEvents)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("\t \t Ev: %s"), *FinishedEventsItr->Object);
-		}
-
-		OwlDocument.Nodes.Append(ObjectIndividuals.Array());
-		OwlDocument.Nodes.Append(TimeIndividuals.Array());
-		OwlDocument.Nodes.Append(FinishedEvents);
-
+		
 		bIsStarted = false;
 		bIsFinished = true;
 		return true;
@@ -234,18 +228,17 @@ bool USLEventDataLogger::FinishMetadataEvent(const float Timestamp)
 			"knowrob:startEnd",
 			"rdf:resource",
 			"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
-		FinishedEvents.Emplace(MetaEvent);
+		OwlDocument.Nodes.Emplace(MetaEvent);
 		return true;
 	}
 	return false;
 }
 
-// Terminate all idling events
+// Terminate all opened events
 bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
 {
 	if (bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT(" Finishing OPENED EVENTS: "));
 		for (auto EventItr(OpenedEvents.CreateIterator()); EventItr; ++EventItr)
 		{
 			// Add event end time
@@ -261,6 +254,39 @@ bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
 		return true;		
 	}
 	return false;
+}
+
+// @TODO Temp solution
+// Set objects, time events and metadata subActions
+void USLEventDataLogger::SetObjectsAndMetaSubActions()
+{
+	// Iterate all closed events
+	for (const auto& EvItr : FinishedEvents)
+	{
+		// Add event as a sub-action property in the metadata
+		MetaEvent->Properties.Add(FOwlTriple("knowrob:subAction", "rdf:resource", EvItr->Object));
+		
+		// Iterate properties and check for keywords in the subject		
+		for (const auto& PropertyItr : EvItr->Properties)
+		{
+			if (PropertyItr.Subject.Contains("Time"))
+			{
+				// Create time individual
+				TimeIndividuals.Emplace(MakeShareable(new FOwlNode(
+					"owl:NamedIndividual", "rdf:about", PropertyItr.Object,
+					TArray<FOwlTriple>{ FOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint") })));
+			}
+			else if (PropertyItr.Subject.Contains("inContact") 
+				|| PropertyItr.Subject.Contains("objectActedOn")
+				|| PropertyItr.Subject.Contains("performedBy"))
+			{
+				// Create object individual
+				ObjectIndividuals.Emplace(MakeShareable(new FOwlNode(
+					"owl:NamedIndividual", "rdf:about", PropertyItr.Object,
+					TArray<FOwlTriple>{ FOwlTriple("rdf:type", "rdf:resource", "&knowrob;" + FOwlIndividualName(PropertyItr.Object).Class) })));
+			}
+		}
+	}
 }
 
 // Set document default values
