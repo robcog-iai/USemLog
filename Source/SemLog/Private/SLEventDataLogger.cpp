@@ -61,8 +61,16 @@ bool USLEventDataLogger::FinishLogger(const float Timestamp)
 
 		// Add events to the owl document
 		OwlDocument.AppendNodes(FinishedEvents, "Event Individuals");
-		OwlDocument.AppendNodes(ObjectIndividuals.Array(), "Object Individuals");
-		OwlDocument.AppendNodes(TimeIndividuals.Array(), "Time Individuals");
+
+		// Add object individuals do the document
+		TArray<TSharedPtr<FOwlNode>> GeneratedObjIndividuals;
+		ObjectIndividualsMap.GenerateValueArray(GeneratedObjIndividuals);
+		OwlDocument.AppendNodes(GeneratedObjIndividuals, "Object Individuals");
+		
+		// Add time individuals to the document
+		TArray<TSharedPtr<FOwlNode>> GeneratedTimeIndividuals;
+		TimeIndividualsMap.GenerateValueArray(GeneratedTimeIndividuals);
+		OwlDocument.AppendNodes(GeneratedTimeIndividuals, "Time Individuals");
 
 		// Close and move the metadata event to the finished ones
 		USLEventDataLogger::FinishMetadataEvent(Timestamp);
@@ -161,22 +169,22 @@ bool USLEventDataLogger::FinishAnEvent(const TSharedPtr<FOwlNode> Event)
 }
 
 // Add object individual
-bool USLEventDataLogger::AddObjectIndividual(TSharedPtr<FOwlNode> Object)
+bool USLEventDataLogger::AddObjectIndividual(const FString Id, TSharedPtr<FOwlNode> Object)
 {
 	if (bIsStarted)
 	{
-		ObjectIndividuals.Emplace(Object);
+		ObjectIndividualsMap.Emplace(Id, Object);
 		return true;
 	}
 	return false;
 }
 
-// Add object individual
-bool USLEventDataLogger::AddTimeIndividual(TSharedPtr<FOwlNode> Object)
+// Add time individual
+bool USLEventDataLogger::AddTimeIndividual(const FString Id, TSharedPtr<FOwlNode> Object)
 {
 	if (bIsStarted)
 	{
-		TimeIndividuals.Emplace(Object);
+		TimeIndividualsMap.Emplace(Id, Object);
 		return true;
 	}
 	return false;
@@ -272,7 +280,7 @@ void USLEventDataLogger::SetObjectsAndMetaSubActions()
 			if (PropertyItr.Subject.Contains("Time"))
 			{
 				// Create time individual
-				TimeIndividuals.Emplace(MakeShareable(new FOwlNode(
+				TimeIndividualsMap.Emplace(FOwlIndividualName(PropertyItr.Object).Id, MakeShareable(new FOwlNode(
 					"owl:NamedIndividual", "rdf:about", PropertyItr.Object,
 					TArray<FOwlTriple>{ FOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint") })));
 			}
@@ -281,9 +289,9 @@ void USLEventDataLogger::SetObjectsAndMetaSubActions()
 				|| PropertyItr.Subject.Contains("performedBy"))
 			{
 				// Create object individual
-				ObjectIndividuals.Emplace(MakeShareable(new FOwlNode(
-					"owl:NamedIndividual", "rdf:about", PropertyItr.Object,
-					TArray<FOwlTriple>{ FOwlTriple("rdf:type", "rdf:resource", "&knowrob;" + FOwlIndividualName(PropertyItr.Object).Class) })));
+				ObjectIndividualsMap.Emplace(FOwlIndividualName(PropertyItr.Object).Id,	MakeShareable(new FOwlNode(
+						"owl:NamedIndividual", "rdf:about", PropertyItr.Object,
+						TArray<FOwlTriple>{ FOwlTriple("rdf:type", "rdf:resource", "&knowrob;" + FOwlIndividualName(PropertyItr.Object).Class) })));
 			}
 		}
 	}

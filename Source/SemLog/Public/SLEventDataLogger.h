@@ -74,10 +74,10 @@ public:
 	bool FinishAnEvent(const TSharedPtr<FOwlNode> Event);
 
 	// Add object individual
-	bool AddObjectIndividual(TSharedPtr<FOwlNode> Object);
+	bool AddObjectIndividual(const FString Id, TSharedPtr<FOwlNode> Object);
 
 	// Add time individual
-	bool AddTimeIndividual(TSharedPtr<FOwlNode> Object);
+	bool AddTimeIndividual(const FString Id, TSharedPtr<FOwlNode> Object);
 
 	// Add metadata property
 	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
@@ -133,9 +133,9 @@ private:
 	// Set of opened events
 	TSet<TSharedPtr<FOwlNode>> OpenedEvents;
 
-	// Set of object individuals
-	TSet<TSharedPtr<FOwlNode>> ObjectIndividuals;
+	// Map id to object individuals
+	TMap <FString, TSharedPtr<FOwlNode>> ObjectIndividualsMap;
 
-	// Set of time individuals
-	TSet<TSharedPtr<FOwlNode>> TimeIndividuals;
+	// Map of id to time individuals
+	TMap <FString, TSharedPtr<FOwlNode>> TimeIndividualsMap;
 };

@@ -242,7 +242,7 @@ bool USLRawDataLogger::GetDynamicEntitiesAsJson(FString& DynamicJsonEntry)
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
 
 	// Json array of actors
-	TArray< TSharedPtr<FJsonValue> > JsonActorArr;
+	TArray<TSharedPtr<FJsonValue>> JsonActorArr;
 
 	// Iterate and log dynamic actors
 	for (auto& ActWithDataItr : DynamicActorsWithData)
@@ -258,7 +258,7 @@ bool USLRawDataLogger::GetDynamicEntitiesAsJson(FString& DynamicJsonEntry)
 			CompWithDataItr.Key, CompWithDataItr.Value);
 	}
 
-	// Avoid appending emtpy entries
+	// Avoid appending empty entries
 	if (JsonActorArr.Num() > 0)
 	{
 		// Set timestamp

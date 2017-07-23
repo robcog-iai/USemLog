@@ -225,14 +225,15 @@ void USLContactManager::UpdateContactArea()
 // Calculate surface area
 void USLContactManager::CaclulateAreaAsTop()
 {
-	UE_LOG(LogTemp, Error, TEXT("USLContactManager %s type: SURFACE"), *GetName());
+	UE_LOG(LogTemp, Log, TEXT("%s %s's selected contact listener type: SURFACE"), 
+		*FString(__FUNCTION__), *GetName());
 
 	// Get the bounding box of the mesh
 	const FBox SMBox = ParentStaticMeshComponent->GetStaticMesh()->GetBoundingBox();
 	const FVector SMExtent = SMBox.GetExtent();
 
 	// Set box extent
-	SetBoxExtent(FVector(SMExtent.X, SMExtent.Y, 2.f), false);
+	SetBoxExtent(FVector(SMExtent.X, SMExtent.Y, 0.5f), false);
 
 	// Set the location and the rotation
 	SetWorldLocation(ParentStaticMeshComponent->GetComponentLocation() + FVector(0.f, 0.f, SMExtent.Z));
@@ -242,14 +243,15 @@ void USLContactManager::CaclulateAreaAsTop()
 // Calculate inner area
 void USLContactManager::CalculateAreaAsBottom()
 {
-	UE_LOG(LogTemp, Error, TEXT("USLContactManager %s type: INNER"), *GetName());
+	UE_LOG(LogTemp, Log, TEXT("%s %s's selected contact listener type: INNER"),
+		*FString(__FUNCTION__), *GetName());
 
 	// Get the bounding box of the mesh
 	const FBox SMBox = ParentStaticMeshComponent->GetStaticMesh()->GetBoundingBox();
 	const FVector SMExtent = SMBox.GetExtent();
 
 	// Set box extent
-	SetBoxExtent(FVector(SMExtent.X, SMExtent.Y, 2.f), false);
+	SetBoxExtent(FVector(SMExtent.X - 2.f, SMExtent.Y - 2.f, 0.5f), false);
 
 	// Set the location and the rotation
 	SetWorldLocation(ParentStaticMeshComponent->GetComponentLocation() - FVector(0.f, 0.f, SMExtent.Z));
@@ -259,14 +261,15 @@ void USLContactManager::CalculateAreaAsBottom()
 // Calculate wrapper area
 void USLContactManager::CalculateAreaAsWrapper()
 {
-	UE_LOG(LogTemp, Error, TEXT("USLContactManager %s type: WRAPPER"), *GetName());
+	UE_LOG(LogTemp, Log, TEXT("%s %s's selected contact listener type: Wrapper"),
+		*FString(__FUNCTION__), *GetName());
 
 	// Get the bounding box of the mesh
 	const FBox SMBox = ParentStaticMeshComponent->GetStaticMesh()->GetBoundingBox();
 	const FVector SMExtent = SMBox.GetExtent();
 
 	// Set box extent
-	SetBoxExtent(SMExtent + FVector(2.f), false);
+	SetBoxExtent(SMExtent + FVector(0.5f), false);
 
 	// Set the location and the rotation
 	SetWorldLocation(ParentStaticMeshComponent->GetComponentLocation());
