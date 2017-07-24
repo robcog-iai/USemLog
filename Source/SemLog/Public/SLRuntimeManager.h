@@ -63,6 +63,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger")
 	bool bLogRawData;
 
+	// Distance threshold for logging raw data
+	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"), meta = (ClampMin = 0))
+	float RawDataDistanceThreshold;
+
 	// Update rate in seconds (if 0, or smaller than the Tick's DeltaTime, it will update every tick)
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"), meta = (ClampMin = 0))
 	float RawDataUpdateRate;

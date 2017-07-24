@@ -90,7 +90,8 @@ bool USLEventDataLogger::WriteEventsToFile(const FString LogDirectoryPath)
 		return false;
 	}
 
-	const FString Filename = "EventData_" + EpisodeId + ".owl";
+	//const FString Filename = "EventData_" + EpisodeId + ".owl";
+	const FString Filename = FString("EventData_").Append(EpisodeId).Append(FString(".owl"));
 	const FString FilePath = LogDirectoryPath.EndsWith("/") ?
 		(LogDirectoryPath + "Episodes/" + Filename) : (LogDirectoryPath + "/Episodes/" + Filename);
 
