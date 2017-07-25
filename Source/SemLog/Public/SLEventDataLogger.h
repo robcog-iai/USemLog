@@ -42,7 +42,7 @@ public:
 
 	// Write document to file
 	UFUNCTION(BlueprintCallable, Category = SL)
-	bool WriteEventsToFile(const FString InLogDirectoryPath);
+	bool WriteEventsToFile(const FString InLogDirectoryPath, bool bWriteTimelines = true);
 
 	// Broadcast document
 	UFUNCTION(BlueprintCallable, Category = SL)
@@ -98,6 +98,9 @@ private:
 	// @TODO Temp solution
 	// Set objects, time events and metadata subActions
 	void SetObjectsAndMetaSubActions();
+
+	// Write timelines
+	void WriteTimelines(const FString LogDirectoryPath);
 
 	// Set document default values
 	void SetDefaultValues();

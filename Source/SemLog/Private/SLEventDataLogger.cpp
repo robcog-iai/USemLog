@@ -83,17 +83,17 @@ bool USLEventDataLogger::FinishLogger(const float Timestamp)
 }
 
 // Write document to file
-bool USLEventDataLogger::WriteEventsToFile(const FString LogDirectoryPath)
+bool USLEventDataLogger::WriteEventsToFile(const FString LogDirectoryPath, bool bWriteTimelines)
 {
 	if (!bIsFinished)
 	{
 		return false;
 	}
 
-	//const FString Filename = "EventData_" + EpisodeId + ".owl";
-	const FString Filename = FString("EventData_").Append(EpisodeId).Append(FString(".owl"));
-	const FString FilePath = LogDirectoryPath.EndsWith("/") ?
-		(LogDirectoryPath + "Episodes/" + Filename) : (LogDirectoryPath + "/Episodes/" + Filename);
+	const FString Filename = "EventData_" + EpisodeId + ".owl";
+	const FString FilePath = LogDirectoryPath.EndsWith("/") 
+		? (LogDirectoryPath + "Episodes/EventData_" + EpisodeId + "/" + Filename) 
+		: (LogDirectoryPath + "/Episodes/EventData_" + EpisodeId + "/" + Filename);
 
 	// Return false if file already exists
 	if (IFileManager::Get().FileExists(*FilePath))
@@ -103,8 +103,14 @@ bool USLEventDataLogger::WriteEventsToFile(const FString LogDirectoryPath)
 		return false;
 	}
 
+	if (bWriteTimelines)
+	{
+		USLEventDataLogger::WriteTimelines(LogDirectoryPath);
+	}
+
 	// Creates directory tree as well
 	return FFileHelper::SaveStringToFile(OwlDocument.ToXmlString(), *FilePath);
+
 }
 
 // Broadcast document
@@ -213,7 +219,7 @@ bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
 			"Metadata Individual"));
 		// Add event class
 		MetaEvent->Properties.Emplace(FOwlTriple(
-			"rdf:type", "rdf:resource", "&knowrob_u;UnrealExperiment"));
+			"rdf:type", "rdf:resource", "&knowrob;UnrealExperiment"));
 		// Add episode unique Id
 		MetaEvent->Properties.Emplace(FOwlTriple(
 			"knowrob:experiment", "rdf:datatype", "&xsd;string", EpisodeId));
@@ -298,6 +304,50 @@ void USLEventDataLogger::SetObjectsAndMetaSubActions()
 	}
 }
 
+// Write timelines
+void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
+{
+	const FString TLFilename = "Timeline_" + EpisodeId + ".html";
+	const FString TLFilePath = LogDirectoryPath.EndsWith("/")
+		? (LogDirectoryPath + "Episodes/Ep_" + EpisodeId + "/" + TLFilename)
+		: (LogDirectoryPath + "/Episodes/Ep_" + EpisodeId + "/" + TLFilename);
+	
+	FString TimelineStr = 
+		"<html>\n"
+		"<script type=\"text/javascript\" src=\"https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization',\n"
+		"\t'version':'1','packages':['timeline']}]}\"></script>\n"
+		"<script type=\"text/javascript\">\n"
+		"google.setOnLoadCallback(drawChart);\n"
+		"\n"
+		"function drawChart() {\n"
+		"  var container = document.getElementById('EventsTimelines');\n\n"
+		"  var chart = new google.visualization.Timeline(container);\n\n"
+		"  var dataTable = new google.visualization.DataTable();\n\n"
+
+		"  dataTable.addColumn({ type: 'string', id: 'Event' });\n"
+		"  dataTable.addColumn({ type: 'number', id: 'Start' });\n"
+		"  dataTable.addColumn({ type: 'number', id: 'End' });\n\n"
+		"  dataTable.addRows([\n";
+
+	for (const auto& EventItr : FinishedEvents)
+	{
+			//TimelineStr.Append("    [ '" + EventItr->UniqueName + "', "
+			//	+ FString::SanitizeFloat(EventItr->Start) + ", "
+			//	+ FString::SanitizeFloat(EventItr->End) + "],\n");
+	}
+
+	TimelineStr.Append(
+		"  ]); \n\n"
+		"  chart.draw(dataTable);\n"
+		"}\n"
+		"</script>\n"
+		"<div id=\"sim_timeline_ex\" style=\"width: 1300px; height: 900px;\"></div>\n\n"
+		"</html>"
+	);
+	// Creates directory tree as well
+	FFileHelper::SaveStringToFile(TimelineStr, *TLFilePath);
+}
+
 // Set document default values
 void USLEventDataLogger::SetDefaultValues()
 {
@@ -313,8 +363,9 @@ void USLEventDataLogger::SetDefaultValues()
 
 	// Default doctype attributes for the semantic map
 	OwlDocument.DoctypeAttributes.Add("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns");
-	OwlDocument.DoctypeAttributes.Add("rdfs", "http://www.w3.org/2002/07/owl");
-	OwlDocument.DoctypeAttributes.Add("owl", "http://www.w3.org/2001/XMLSchema#");
+	OwlDocument.DoctypeAttributes.Add("rdfs", "http://www.w3.org/2000/01/rdf-schema");
+	OwlDocument.DoctypeAttributes.Add("owl", "http://www.w3.org/2002/07/owl");
+	OwlDocument.DoctypeAttributes.Add("xsd", "http://www.w3.org/2001/XMLSchema#");
 	OwlDocument.DoctypeAttributes.Add("knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	OwlDocument.DoctypeAttributes.Add("knowrob_u", "http://knowrob.org/kb/knowrob_u.owl#");
 	OwlDocument.DoctypeAttributes.Add("log", "http://knowrob.org/kb/unreal_log.owl#");
@@ -322,6 +373,7 @@ void USLEventDataLogger::SetDefaultValues()
 
 	// Default rdf attributes for the semantic map
 	OwlDocument.RdfAttributes.Add("xmlns:computable", "http://knowrob.org/kb/computable.owl#");
+	OwlDocument.RdfAttributes.Add("xmlns:swrl", "http://www.w3.org/2003/11/swrl#");
 	OwlDocument.RdfAttributes.Add("xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 	OwlDocument.RdfAttributes.Add("xmlns:rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	OwlDocument.RdfAttributes.Add("xmlns:owl", "http://www.w3.org/2002/07/owl#");

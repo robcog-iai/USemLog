@@ -23,6 +23,7 @@ ASLRuntimeManager::ASLRuntimeManager()
 	
 	bLogEventData = true;
 	bWriteEventDataToFile = true;
+	bWriteEventTimelines = false;
 	bBroadcastEventData = false;
 }
 
@@ -107,7 +108,7 @@ void ASLRuntimeManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 		if (bWriteEventDataToFile)
 		{
-			EventDataLogger->WriteEventsToFile(LogDirectory);
+			EventDataLogger->WriteEventsToFile(LogDirectory, bWriteEventTimelines);
 		}
 
 		if (bBroadcastEventData)

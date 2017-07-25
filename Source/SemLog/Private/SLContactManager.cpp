@@ -133,7 +133,7 @@ bool USLContactManager::StartContactEvent(AActor* OtherActor)
 		TArray <FOwlTriple> Properties;
 		Properties.Add(FOwlTriple(RdfType, RdfResource, TouchingSituation));
 		Properties.Add(FOwlTriple(TaskContext, RdfDatatype, XsdString,
-			"Contact-" + ParentIndividual.GetName() + "-" + OtherIndividual.GetName()));
+			"Contact-" + OtherIndividual.GetName() + "-" + ParentIndividual.GetName()));
 		Properties.Add(FOwlTriple(InContact, RdfResource, ParentIndividual));
 		Properties.Add(FOwlTriple(InContact, RdfResource, OtherIndividual));
 

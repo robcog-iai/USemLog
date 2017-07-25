@@ -87,6 +87,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	bool bWriteEventDataToFile;
 
+	// Write event data as timelines as well
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	bool bWriteEventTimelines;
+
 	// Broadcast data
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	bool bBroadcastEventData;
