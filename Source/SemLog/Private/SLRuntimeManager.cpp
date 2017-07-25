@@ -16,6 +16,7 @@ ASLRuntimeManager::ASLRuntimeManager()
 	
 	bLogRawData = true;
 	RawDataUpdateRate = 0.f;
+	RawDataDistanceThreshold = 0.5f;
 	TimePassedSinceLastUpdate = 0.f;
 	bWriteRawDataToFile = true;
 	bBroadcastRawData = false;
@@ -46,7 +47,7 @@ void ASLRuntimeManager::PostInitializeComponents()
 		RawDataLogger = NewObject<USLRawDataLogger>(this, TEXT("RawDataLogger"));
 
 		// Init logger 
-		RawDataLogger->Init(GetWorld(), 0.1f);
+		RawDataLogger->Init(GetWorld(), RawDataDistanceThreshold);
 
 		// Set logging type
 		if (bWriteRawDataToFile)
