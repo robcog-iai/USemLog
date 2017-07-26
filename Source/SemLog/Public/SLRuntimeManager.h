@@ -50,6 +50,9 @@ public:
 	// Add metadata property
 	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
 
+	// Get episode ID
+	FString GetEpisodeId() const { return EpisodeId; };
+
 private:
 	// Episode Id (be default will be auto generated)
 	UPROPERTY(EditAnywhere, Category = "SL")

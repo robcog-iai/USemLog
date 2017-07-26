@@ -61,6 +61,8 @@ void ASLRuntimeManager::PostInitializeComponents()
 			RawDataLogger->InitBroadcaster();
 		}
 
+		// @TODO Test where to put this, since it might happen that the first broadcast is missed
+		// Make sure you subscribe this before begin play
 		// Log the first entry (static and dynamic entities)
 		RawDataLogger->LogFirstEntry();
 
