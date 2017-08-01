@@ -102,6 +102,33 @@ void USLRawDataLogger::LogDynamicEntities()
 	}
 }
 
+// Add new dynamic entity for logging
+void USLRawDataLogger::AddNewDynamicEntity(AActor* Actor)
+{
+	int32 TagIndex = FTagStatics::GetTagTypeIndex(Actor, "SemLog");
+	if (TagIndex != INDEX_NONE)
+	{
+		const FString Id = FTagStatics::GetKeyValue(Actor->Tags[TagIndex], "Id");
+		const FString Class = FTagStatics::GetKeyValue(Actor->Tags[TagIndex], "Class");
+		if (!Id.IsEmpty() && !Class.IsEmpty())
+		{
+			// Location is init automatically to -INF
+			const FString UniqueName = Class + "_" + Id;
+			FUniqueNameAndLocation UniqueNameAndInitLoc(UniqueName);
+
+			// Store the UniqueName and the Location of the dynamic entity
+			DynamicActorsWithData.Add(Actor,
+				FUniqueNameAndLocation(UniqueName, Actor->GetActorLocation()));
+		}
+	}
+}
+
+// Remove dynamic entity from logging
+void USLRawDataLogger::RemoveDynamicEntity(AActor* Actor)
+{
+	DynamicActorsWithData.Remove(Actor);
+}
+
 // Get the dynamic and static entities as json string
 bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 {

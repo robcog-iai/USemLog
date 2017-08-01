@@ -50,6 +50,12 @@ public:
 	// Add metadata property
 	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
 
+	// Add new item to be logged during runtime
+	void AddNewEntity(AActor* Actor);
+
+	// Stop logging the entity
+	void RemoveEntity(AActor* Actor);
+
 	// Get episode ID
 	FString GetEpisodeId() const { return EpisodeId; };
 

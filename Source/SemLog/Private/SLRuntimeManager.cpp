@@ -186,3 +186,39 @@ bool ASLRuntimeManager::AddMetadataProperty(TSharedPtr<FOwlTriple> Property)
 	}
 	return false;
 }
+
+// Add new entity to be logged
+void ASLRuntimeManager::AddNewEntity(AActor* Actor)
+{
+	if (bLogRawData && RawDataLogger)
+	{
+		// Add new entity to be logged
+		RawDataLogger->AddNewDynamicEntity(Actor);
+	}
+
+	if (bLogEventData && EventDataLogger)
+	{
+		// @TODO
+		// Add event for removing an entity 
+		TSharedPtr<FOwlNode> AddEntityEvent = MakeShareable(new FOwlNode("Remove entity event"));
+		EventDataLogger->InsertFinishedEvent(AddEntityEvent);
+	}
+}
+
+// Remove entity from logging
+void ASLRuntimeManager::RemoveEntity(AActor* Actor)
+{
+	if (bLogRawData && RawDataLogger)
+	{
+		// Add new entity to be logged
+		RawDataLogger->RemoveDynamicEntity(Actor);
+	}
+
+	if (bLogEventData && EventDataLogger)
+	{
+		// @TODO
+		// Add event for removing an entity 
+		TSharedPtr<FOwlNode> RemoveEntityEvent = MakeShareable(new FOwlNode("Remove entity event"));
+		EventDataLogger->InsertFinishedEvent(RemoveEntityEvent);
+	}
+}

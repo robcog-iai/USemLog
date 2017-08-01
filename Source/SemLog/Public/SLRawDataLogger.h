@@ -72,6 +72,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = SL)
 	void LogDynamicEntities();
 
+	// Add new dynamic entity for logging
+	UFUNCTION(BlueprintCallable, Category = SL)
+	void AddNewDynamicEntity(AActor* Actor);
+
+	// Remove dynamic entity from logging
+	UFUNCTION(BlueprintCallable, Category = SL)
+	void RemoveDynamicEntity(AActor* Actor);
+
 	// See if logger initialized
 	UFUNCTION(BlueprintCallable, Category = SL)
 	bool IsInit() const { return bIsInit; }
