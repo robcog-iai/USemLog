@@ -61,11 +61,6 @@ void ASLRuntimeManager::PostInitializeComponents()
 			RawDataLogger->InitBroadcaster();
 		}
 
-		// @TODO Test where to put this, since it might happen that the first broadcast is missed
-		// Make sure you subscribe this before begin play
-		// Log the first entry (static and dynamic entities)
-		RawDataLogger->LogFirstEntry();
-
 		// Enable tick for raw data logging
 		SetActorTickEnabled(true);
 	}
@@ -98,6 +93,12 @@ void ASLRuntimeManager::PostInitializeComponents()
 void ASLRuntimeManager::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (bLogRawData && RawDataLogger)
+	{
+		// Log the first entry (static and dynamic entities) of the raw data
+		RawDataLogger->LogFirstEntry();
+	}
 }
 
 // Called when actor removed from game or game ended
