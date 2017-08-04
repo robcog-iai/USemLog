@@ -32,6 +32,24 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// Init loggers
+	void Init();
+
+	// Start loggers
+	void Start();
+
+	// Finish loggers
+	void Finish();
+
+	// Check if init
+	bool IsInit() const { return bIsInit; };
+
+	// Check if started
+	bool IsStarted() const { return bIsStarted; };
+
+	// Check if finished
+	bool IsFinished() const { return bIsFinished; };
+
 	// Get raw data logger
 	USLRawDataLogger* GetRawDataLogger() { return RawDataLogger; };
 
@@ -68,6 +86,19 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL")
 	FString LogDirectory;
 
+	// Start at load time
+	UPROPERTY(EditAnywhere, Category = "SL")
+	uint8 bStartAtLoadTime : 1;
+
+	// Logger init
+	uint8 bIsInit : 1;
+
+	// Logger started
+	uint8 bIsStarted : 1;
+
+	// Logger finished
+	uint8 bIsFinished : 1;
+
 	// Log raw data
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger")
 	bool bLogRawData;
@@ -82,27 +113,27 @@ private:
 
 	// Write data to file
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"))
-	bool bWriteRawDataToFile;
+	uint8 bWriteRawDataToFile : 1;
 
 	// Broadcast data
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"))
-	bool bBroadcastRawData;
+	uint8 bBroadcastRawData : 1;
 
 	// Log semantic events
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger")
-	bool bLogEventData;
+	uint8 bLogEventData : 1;
 
 	// Write data to file
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
-	bool bWriteEventDataToFile;
+	uint8 bWriteEventDataToFile : 1;
 
 	// Write event data as timelines as well
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
-	bool bWriteEventTimelines;
+	uint8 bWriteEventTimelines : 1;
 
 	// Broadcast data
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
-	bool bBroadcastEventData;
+	uint8 bBroadcastEventData : 1;
 
 	// Raw data logger
 	UPROPERTY()
