@@ -82,43 +82,90 @@ void ASLFurnitureStateManager::InitStates()
 void ASLFurnitureStateManager::CheckStates()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Checking furniture state"));
-	//for (auto& ConstrToStateItr : ConstraintsToFurnitureState)
-	//{
-	//	EFurnitureState CurrState = ASLFurnitureStateManager::GetState(ConstrToStateItr.Key);
-	//	// Check if current state differs of the previous one
-	//	
-	//	if (CurrState != ConstrToStateItr.Value)
-	//	{
-	//		// Terminate event
+	for (auto& FurnitureItr : FurnitureToState)
+	{
+		AActor* const CurrFurniture = FurnitureItr.Key;
 
-	//		// Start new event
-	//	}
-	//}
+		EFurnitureState CurrState = ASLFurnitureStateManager::GetState(CurrFurniture);
+
+		// Check if current state differs of the previous one		
+		if (CurrState != FurnitureItr.Value)
+		{
+			// Terminate event
+			ASLFurnitureStateManager::FinishEvent(CurrFurniture);
+
+			// Start new event			
+			FOwlIndividualName CurrFurnitureIndividual = FurnitureToIndividual[CurrFurniture];
+			ASLFurnitureStateManager::StartEvent(CurrFurniture, CurrFurnitureIndividual, CurrState);
+			FurnitureItr.Value =  CurrState;
+		}
+	}
 }
 
 // Get the current state of the furniture
 EFurnitureState ASLFurnitureStateManager::GetState(AActor* FurnitureActor)
 {
+	// Check for furniture type
+	if (DrawerToInitLoc.Contains(FurnitureActor))
+	{
+		const FVector InitLoc = DrawerToInitLoc[FurnitureActor];
+		const float ConstraintLimit = DrawerToLimit[FurnitureActor];
+		const float Distance = InitLoc.Distance(InitLoc, FurnitureActor->GetActorLocation());
 
-	//if (DrawerToInitLoc->Contains(FurnitureActor))
-	//{
-	//	FurnitureActor->GetActorLocation();
-	//}
+		// Closed limit
+		if (Distance < ConstraintLimit * 0.1)
+		{
+			return EFurnitureState::Closed;
+		}
+		// Half closed limit
+		else if (Distance > ConstraintLimit * 0.1 
+			&& Distance < ConstraintLimit * 0.5)
+		{
+			return EFurnitureState::HalfClosed;
+		}
+		// Half opened limit
+		else if (Distance > ConstraintLimit * 0.5 
+			&& Distance < ConstraintLimit - (ConstraintLimit * 0.1))
+		{
+			return EFurnitureState::HalfOpened;
+		}
+		// Opened limit
+		else if (Distance > ConstraintLimit - (ConstraintLimit * 0.1))
+		{
+			return EFurnitureState::Opened;
+		}
+	}
+	else if (DoorToConstraintComp.Contains(FurnitureActor))
+	{
+		UPhysicsConstraintComponent* CurrConstr = DoorToConstraintComp[FurnitureActor];		
+		FConstraintInstance CurrConstrInst = CurrConstr->ConstraintInstance;
 
-	//// TODO hardcoded for XLinear and Swing1 and Swing2 motions
-	//if (ConstrInst.GetLinearXMotion() == ELinearConstraintMotion::LCM_Limited)
-	//{
-	//	ConstrInst->get
-	//}
-	//else if (ConstrInst.GetAngularSwing1Motion() == EAngularConstraintMotion::ACM_Limited)
-	//{
+		if (CurrConstrInst.GetAngularSwing1Motion() == EAngularConstraintMotion::ACM_Limited)
+		{
+			const float LimitRad = FMath::DegreesToRadians(CurrConstrInst.GetAngularSwing1Limit());
+			const float OffsetRad = FMath::DegreesToRadians(CurrConstrInst.AngularRotationOffset.Yaw);
 
-	//}
-	//else if (ConstrInst.GetAngularSwing2Motion() == EAngularConstraintMotion::ACM_Limited)
-	//{
+			const float MinRad = OffsetRad - LimitRad * 2;
+			const float MaxRad = MinRad + LimitRad;
 
-	//}
 
+			UE_LOG(LogTemp, Warning, TEXT("\t \t Limit = %f, Offset = %f CurrSwing1 = %f"),
+				LimitRad, OffsetRad, CurrConstrInst.GetCurrentSwing1());
+		}
+		else if (CurrConstrInst.GetAngularSwing2Motion() == EAngularConstraintMotion::ACM_Limited)
+		{
+			const float AngularLimit = CurrConstrInst.GetAngularSwing2Limit();
+			UE_LOG(LogTemp, Warning, TEXT("\t \t Limit = %f, CurrSwing2 = %f"), AngularLimit, CurrConstrInst.GetCurrentSwing2());
+		}
+	}
+	else
+	{
+		if (FurnitureToState.Contains(FurnitureActor))
+		{
+			return FurnitureToState[FurnitureActor];
+		}
+	}
+	// Default state
 	return EFurnitureState::Closed;
 }
 
@@ -150,10 +197,10 @@ void ASLFurnitureStateManager::StartEvent(AActor* FurnitureActor, FOwlIndividual
 	const FOwlPrefixName OwlNamedIndividual("owl", "NamedIndividual");
 	// Owl classes
 	const FOwlClass XsdString("xsd", "string");
-	const FOwlClass StateClosed("knowrob", "FurnitureStateClosed");
-	const FOwlClass StateHalfClosed("knowrob", "FurnitureStateHalfClosed");
-	const FOwlClass StateHalfOpened("knowrob", "FurnitureStateHalfOpened");
-	const FOwlClass StateOpened("knowrob", "FurnitureStateOpened");
+	const FOwlClass StateClosed("knowrob_u", "FurnitureStateClosed");
+	const FOwlClass StateHalfClosed("knowrob_u", "FurnitureStateHalfClosed");
+	const FOwlClass StateHalfOpened("knowrob_u", "FurnitureStateHalfOpened");
+	const FOwlClass StateOpened("knowrob_u", "FurnitureStateOpened");
 
 	// Add the event properties
 	TArray <FOwlTriple> Properties;
