@@ -309,40 +309,76 @@ void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
 {
 	const FString TLFilename = "Timeline_" + EpisodeId + ".html";
 	const FString TLFilePath = LogDirectoryPath.EndsWith("/")
-		? (LogDirectoryPath + "Episodes/Ep_" + EpisodeId + "/" + TLFilename)
-		: (LogDirectoryPath + "/Episodes/Ep_" + EpisodeId + "/" + TLFilename);
+		? (LogDirectoryPath + "Episodes/EventData_" + EpisodeId + "/" + TLFilename)
+		: (LogDirectoryPath + "/Episodes/EventData_" + EpisodeId + "/" + TLFilename);
 	
-	FString TimelineStr = 
-		"<html>\n"
-		"<script type=\"text/javascript\" src=\"https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization',\n"
-		"\t'version':'1','packages':['timeline']}]}\"></script>\n"
-		"<script type=\"text/javascript\">\n"
-		"google.setOnLoadCallback(drawChart);\n"
+	FString TimelineStr =
+		"<script type=\"text/javascript\" src=\"https://www.gstatic.com/charts/loader.js\"></script>\n"
 		"\n"
-		"function drawChart() {\n"
-		"  var container = document.getElementById('EventsTimelines');\n\n"
-		"  var chart = new google.visualization.Timeline(container);\n\n"
-		"  var dataTable = new google.visualization.DataTable();\n\n"
+		"<script type=\"text/javascript\">\n"
+		"\t google.charts.load(\"current\", {packages:[\"timeline\"]});\n"
+		"\t google.charts.setOnLoadCallback(drawChart);\n"
+		"\t function drawChart() {\n"
+		"\t\t var container = document.getElementById('event_tl');\n"
+		"\t\t var chart = new google.visualization.Timeline(container);\n"
+		"\t\t var dataTable = new google.visualization.DataTable();\n"
+		"\n "
+		"\t\t dataTable.addColumn({ type: 'string', id: 'Nr' });\n"
+		"\t\t dataTable.addColumn({ type: 'string', id: 'Event' });\n"
+		"\t\t dataTable.addColumn({ type: 'number', id: 'Start' });\n"
+		"\t\t dataTable.addColumn({ type: 'number', id: 'End' });\n"
+		"\n"
+		"\t\t dataTable.addRows([\n"
+		"\n";
+	
 
-		"  dataTable.addColumn({ type: 'string', id: 'Event' });\n"
-		"  dataTable.addColumn({ type: 'number', id: 'Start' });\n"
-		"  dataTable.addColumn({ type: 'number', id: 'End' });\n\n"
-		"  dataTable.addRows([\n";
-
-	for (const auto& EventItr : FinishedEvents)
+	// Iterate all closed events
+	for (const auto& EvItr : FinishedEvents)
 	{
-			//TimelineStr.Append("    [ '" + EventItr->UniqueName + "', "
-			//	+ FString::SanitizeFloat(EventItr->Start) + ", "
-			//	+ FString::SanitizeFloat(EventItr->End) + "],\n");
+		FString StartTime;
+		FString EndTime;
+		FString EventName;
+
+		// Iterate properties and check for keywords in the subject		
+		for (const auto& PropertyItr : EvItr->Properties)
+		{
+			if (PropertyItr.Subject.Contains("startTime"))
+			{				
+				PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);
+				UE_LOG(LogTemp, Warning, TEXT(" * * * START TIME: %s %s"), *PropertyItr.Object, *StartTime);
+			}
+			else if (PropertyItr.Subject.Contains("endTime"))
+			{				
+				PropertyItr.Object.Split("_", (FString*)nullptr, &EndTime);
+				UE_LOG(LogTemp, Warning, TEXT(" * * * END TIME: %s %s"), *PropertyItr.Object, *EndTime);
+			}
+		}
+
+		if (!StartTime.IsEmpty())
+		{
+			EventName = EvItr->Object;
+		}
 	}
 
 	TimelineStr.Append(
-		"  ]); \n\n"
-		"  chart.draw(dataTable);\n"
-		"}\n"
+		"\t\t [ '1', 'George Washington', 1000, 5000 ],\n"
+		"\t\t [ '2', 'John Adams',        5000, 7000 ],\n"
+		"\t\t [ '3', 'Thomas Jefferson',  3000, 15000 ],\n"
+	);
+
+
+	TimelineStr.Append(
+		"\n"
+		"\t\t]);\n"
+		"\n"
+		"\t\t var options = {\n"
+		"\t\t\t timeline: { showRowLabels: false }\n"
+		"\t\t };\n"
+		"\n"
+		"\t\t chart.draw(dataTable, options);\n"
+		"\t}\n"
 		"</script>\n"
-		"<div id=\"sim_timeline_ex\" style=\"width: 1300px; height: 900px;\"></div>\n\n"
-		"</html>"
+		"<div id=\"event_tl\" style=\"height:900px;\"></div>"
 	);
 	// Creates directory tree as well
 	FFileHelper::SaveStringToFile(TimelineStr, *TLFilePath);
