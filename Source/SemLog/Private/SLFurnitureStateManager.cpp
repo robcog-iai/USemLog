@@ -142,20 +142,63 @@ EFurnitureState ASLFurnitureStateManager::GetState(AActor* FurnitureActor)
 
 		if (CurrConstrInst.GetAngularSwing1Motion() == EAngularConstraintMotion::ACM_Limited)
 		{
-			const float LimitRad = FMath::DegreesToRadians(CurrConstrInst.GetAngularSwing1Limit());
+			const float LimitRad = FMath::DegreesToRadians(CurrConstrInst.GetAngularSwing1Limit()) * 2.f;
 			const float OffsetRad = FMath::DegreesToRadians(CurrConstrInst.AngularRotationOffset.Yaw);
+			const float MinRad = 0.f - OffsetRad;
+			const float MaxRad = LimitRad - OffsetRad;
+			const float CurrSwing1 = CurrConstrInst.GetCurrentSwing1();
 
-			const float MinRad = OffsetRad - LimitRad * 2;
-			const float MaxRad = MinRad + LimitRad;
-
-
-			UE_LOG(LogTemp, Warning, TEXT("\t \t Limit = %f, Offset = %f CurrSwing1 = %f"),
-				LimitRad, OffsetRad, CurrConstrInst.GetCurrentSwing1());
+			if (CurrSwing1 < MinRad + (LimitRad * 0.1))
+			{
+				return EFurnitureState::Closed;
+			}
+			// Half closed limit
+			else if (CurrSwing1 > MinRad + (LimitRad * 0.1)
+				&& CurrSwing1 < MinRad + (LimitRad * 0.5))
+			{
+				return EFurnitureState::HalfClosed;
+			}
+			// Half opened limit
+			else if (CurrSwing1 > MinRad + (LimitRad * 0.5)
+				&& CurrSwing1 < MaxRad - (LimitRad * 0.1))
+			{
+				return EFurnitureState::HalfOpened;
+			}
+			// Opened limit
+			else if (CurrSwing1 > MaxRad - (LimitRad * 0.1))
+			{
+				return EFurnitureState::Opened;
+			}
 		}
 		else if (CurrConstrInst.GetAngularSwing2Motion() == EAngularConstraintMotion::ACM_Limited)
 		{
-			const float AngularLimit = CurrConstrInst.GetAngularSwing2Limit();
-			UE_LOG(LogTemp, Warning, TEXT("\t \t Limit = %f, CurrSwing2 = %f"), AngularLimit, CurrConstrInst.GetCurrentSwing2());
+			const float LimitRad = FMath::DegreesToRadians(CurrConstrInst.GetAngularSwing2Limit()) * 2.f;
+			const float OffsetRad = FMath::DegreesToRadians(CurrConstrInst.AngularRotationOffset.Pitch);
+			const float MinRad = 0.f - OffsetRad;
+			const float MaxRad = LimitRad - OffsetRad;
+			const float CurrSwing2 = CurrConstrInst.GetCurrentSwing2();
+
+			// TODO no general rule found, for swing2 with the given offset and initial position the state ordering is switched
+			if (CurrSwing2 < MinRad + (LimitRad * 0.1))
+			{
+				return EFurnitureState::Opened;
+			}
+			else if (CurrSwing2 > MinRad + (LimitRad * 0.1)
+				&& CurrSwing2 < MinRad + (LimitRad * 0.5))
+			{
+				return EFurnitureState::HalfOpened;
+			}
+			// Half opened limit
+			else if (CurrSwing2 > MinRad + (LimitRad * 0.5)
+				&& CurrSwing2 < MaxRad - (LimitRad * 0.1))
+			{
+				return EFurnitureState::HalfClosed;
+			}
+			// Opened limit
+			else if (CurrSwing2 > MaxRad - (LimitRad * 0.1))
+			{
+				return EFurnitureState::Closed;
+			}
 		}
 	}
 	else
