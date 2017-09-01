@@ -81,7 +81,6 @@ void ASLFurnitureStateManager::InitStates()
 // Check drawer states
 void ASLFurnitureStateManager::CheckStates()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Checking furniture state"));
 	for (auto& FurnitureItr : FurnitureToState)
 	{
 		AActor* const CurrFurniture = FurnitureItr.Key;

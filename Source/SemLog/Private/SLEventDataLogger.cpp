@@ -331,40 +331,47 @@ void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
 		"\t\t dataTable.addRows([\n"
 		"\n";
 	
-
+	uint32 CurrLine = 0;
 	// Iterate all closed events
 	for (const auto& EvItr : FinishedEvents)
 	{
 		FString StartTime;
 		FString EndTime;
-		FString EventName;
+		FString TaskContext;
 
 		// Iterate properties and check for keywords in the subject		
 		for (const auto& PropertyItr : EvItr->Properties)
 		{
 			if (PropertyItr.Subject.Contains("startTime"))
 			{				
-				PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);
-				UE_LOG(LogTemp, Warning, TEXT(" * * * START TIME: %s %s"), *PropertyItr.Object, *StartTime);
+				PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);				
 			}
 			else if (PropertyItr.Subject.Contains("endTime"))
 			{				
 				PropertyItr.Object.Split("_", (FString*)nullptr, &EndTime);
-				UE_LOG(LogTemp, Warning, TEXT(" * * * END TIME: %s %s"), *PropertyItr.Object, *EndTime);
+			}
+			else if (PropertyItr.Subject.Contains("taskContext"))
+			{
+				TaskContext = PropertyItr.Value;
 			}
 		}
 
-		if (!StartTime.IsEmpty())
+		if (!StartTime.IsEmpty() && !EndTime.IsEmpty() && !TaskContext.IsEmpty())
 		{
-			EventName = EvItr->Object;
+			//FString::SanitizeFloat(FCString::Atof(StartTime) * 1000));
+
+			TimelineStr.Append(
+				"\t\t [ " + FString::FromInt(++CurrLine) + " , " + TaskContext + " , " + StartTime + " , " + EndTime + "],\n"
+			);
 		}
+
 	}
 
-	TimelineStr.Append(
-		"\t\t [ '1', 'George Washington', 1000, 5000 ],\n"
-		"\t\t [ '2', 'John Adams',        5000, 7000 ],\n"
-		"\t\t [ '3', 'Thomas Jefferson',  3000, 15000 ],\n"
-	);
+	//TimelineStr.Append(
+	//	"\t\t [ '1', 'George Washington', 1000, 5000 ],\n"
+	//	"\t\t [ '2', 'John Adams',        5000, 7000 ],\n"
+	//	"\t\t [ '3', 'Thomas Jefferson',  3000, 15000 ],\n"
+	//);
 
 
 	TimelineStr.Append(
