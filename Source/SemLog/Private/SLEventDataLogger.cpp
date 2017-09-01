@@ -331,7 +331,7 @@ void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
 		"\t\t dataTable.addRows([\n"
 		"\n";
 	
-	uint32 CurrLine = 0;
+
 	// Iterate all closed events
 	for (const auto& EvItr : FinishedEvents)
 	{
@@ -359,7 +359,7 @@ void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
 		if (!StartTime.IsEmpty() && !EndTime.IsEmpty() && !TaskContext.IsEmpty())
 		{
 			TimelineStr.Append(
-				"\t\t [ \'"	+ FString::FromInt(++CurrLine) + "\' , \'" 
+				"\t\t [ \'"	+ TaskContext + "\' , \'"
 							+ TaskContext + "\' , " 
 							+ FString::SanitizeFloat(FCString::Atof(*StartTime) * 1000) + " , " 
 							+ FString::SanitizeFloat(FCString::Atof(*EndTime) * 1000) + " ],\n"
