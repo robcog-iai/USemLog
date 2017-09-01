@@ -240,7 +240,7 @@ bool USLEventDataLogger::FinishMetadataEvent(const float Timestamp)
 	{
 		// Add event end time
 		MetaEvent->Properties.Emplace(FOwlTriple(
-			"knowrob:startEnd",
+			"knowrob:endTime",
 			"rdf:resource",
 			"&log;timepoint_" + FString::SanitizeFloat(Timestamp)));
 		OwlDocument.Nodes.Emplace(MetaEvent);
