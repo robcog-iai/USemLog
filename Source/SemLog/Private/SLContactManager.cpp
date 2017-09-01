@@ -131,11 +131,11 @@ bool USLContactManager::StartContactEvent(AActor* OtherActor)
 
 		// Add the event properties
 		TArray <FOwlTriple> Properties;
-		Properties.Add(FOwlTriple(RdfType, RdfResource, TouchingSituation));
-		Properties.Add(FOwlTriple(TaskContext, RdfDatatype, XsdString,
+		Properties.Emplace(FOwlTriple(RdfType, RdfResource, TouchingSituation));
+		Properties.Emplace(FOwlTriple(TaskContext, RdfDatatype, XsdString,
 			"Contact-" + OtherIndividual.GetName() + "-" + ParentIndividual.GetName()));
-		Properties.Add(FOwlTriple(InContact, RdfResource, ParentIndividual));
-		Properties.Add(FOwlTriple(InContact, RdfResource, OtherIndividual));
+		Properties.Emplace(FOwlTriple(InContact, RdfResource, ParentIndividual));
+		Properties.Emplace(FOwlTriple(InContact, RdfResource, OtherIndividual));
 
 		// Create the contact event
 		TSharedPtr<FOwlNode> ContactEvent = MakeShareable(new FOwlNode(

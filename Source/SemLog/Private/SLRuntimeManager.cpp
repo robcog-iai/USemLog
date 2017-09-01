@@ -246,10 +246,63 @@ void ASLRuntimeManager::AddNewEntity(AActor* Actor)
 
 	if (bLogEventData && EventDataLogger)
 	{
-		// @TODO
-		// Add event for removing an entity 
-		TSharedPtr<FOwlNode> AddEntityEvent = MakeShareable(new FOwlNode("Remove entity event"));
-		EventDataLogger->InsertFinishedEvent(AddEntityEvent);
+		// Check if actor has a semantic description
+		int32 TagIndex = FTagStatics::GetTagTypeIndex(Actor->Tags, "SemLog");
+
+		// If tag type exist, read the Class and the Id
+		if (TagIndex != INDEX_NONE)
+		{
+			// Get the Class and Id from the semantic description
+			const FString OtherActorClass = FTagStatics::GetKeyValue(Actor->Tags[TagIndex], "Class");
+			const FString OtherActorId = FTagStatics::GetKeyValue(Actor->Tags[TagIndex], "Id");
+
+			// Example event
+			/********************************************************************
+			<!-- Event node described with a FOwlTriple (Subject-Predicate-Object) and Properties: -->
+			<owl:NamedIndividual rdf:about="&log;CreateEntity_OhnU">
+			<!-- List of the event properties as FOwlTriple (Subject-Predicate-Object): -->
+				<rdf:type rdf:resource="&knowrob_u;CreateEntity"/>
+				<knowrob:taskContext rdf:datatype="&xsd;string">CreateEntity-SliceTomato_o5Ol</knowrob:taskContext>
+				<knowrob:objectActedOn rdf:resource="&log;SliceTomato_o5Ol"/>
+				<knowrob:startTime rdf:resource="&log;timepoint_11.263422"/>
+				<knowrob:endTime rdf:resource="&log;timepoint_11.263422"/>
+			</owl:NamedIndividual>
+			*********************************************************************/
+
+			// Create event
+			const FOwlIndividualName OtherIndividual("log", OtherActorClass, OtherActorId);
+			const FOwlIndividualName CreateEntityIndividual("log", "CreateEntity", FSLUtils::GenerateRandomFString(4));
+
+			// Owl prefixed names
+			const FOwlPrefixName RdfType("rdf", "type");
+			const FOwlPrefixName RdfAbout("rdf", "about");
+			const FOwlPrefixName RdfResource("rdf", "resource");
+			const FOwlPrefixName RdfDatatype("rdf", "datatype");
+			const FOwlPrefixName TaskContext("knowrob", "taskContext");
+			const FOwlPrefixName ObjectActedOn("knowrob", "objectActedOn");
+			const FOwlPrefixName OwlNamedIndividual("owl", "NamedIndividual");
+
+			// Owl classes
+			const FOwlClass XsdString("xsd", "string");
+			const FOwlClass CreateEntity("knowrob_u", "CreateEntity");
+
+			// Add the event properties
+			TArray <FOwlTriple> Properties;
+			Properties.Emplace(FOwlTriple(RdfType, RdfResource, CreateEntity));
+			Properties.Emplace(FOwlTriple(TaskContext, RdfDatatype, XsdString,
+				"CreateEntity-" + OtherIndividual.GetName()));
+			Properties.Emplace(FOwlTriple(ObjectActedOn, RdfResource, OtherIndividual));
+			Properties.Emplace(FOwlTriple("knowrob:startTime", "rdf:resource",
+				"&log;timepoint_" + FString::SanitizeFloat(GetWorld()->GetTimeSeconds())));
+			Properties.Emplace(FOwlTriple("knowrob:endTime", "rdf:resource",
+				"&log;timepoint_" + FString::SanitizeFloat(GetWorld()->GetTimeSeconds())));
+
+			// Create the event
+			TSharedPtr<FOwlNode> CreateEntityEvent = MakeShareable(new FOwlNode(
+				OwlNamedIndividual, RdfAbout, CreateEntityIndividual, Properties));
+
+			EventDataLogger->InsertFinishedEvent(CreateEntityEvent);
+		}
 	}
 }
 
@@ -258,15 +311,68 @@ void ASLRuntimeManager::RemoveEntity(AActor* Actor)
 {
 	if (bLogRawData && RawDataLogger)
 	{
-		// Add new entity to be logged
+		// Remove entity from logging
 		RawDataLogger->RemoveDynamicEntity(Actor);
 	}
 
 	if (bLogEventData && EventDataLogger)
 	{
-		// @TODO
-		// Add event for removing an entity 
-		TSharedPtr<FOwlNode> RemoveEntityEvent = MakeShareable(new FOwlNode("Remove entity event"));
-		EventDataLogger->InsertFinishedEvent(RemoveEntityEvent);
+		// Check if actor has a semantic description
+		int32 TagIndex = FTagStatics::GetTagTypeIndex(Actor->Tags, "SemLog");
+
+		// If tag type exist, read the Class and the Id
+		if (TagIndex != INDEX_NONE)
+		{
+			// Get the Class and Id from the semantic description
+			const FString OtherActorClass = FTagStatics::GetKeyValue(Actor->Tags[TagIndex], "Class");
+			const FString OtherActorId = FTagStatics::GetKeyValue(Actor->Tags[TagIndex], "Id");
+
+			// Example event
+			/********************************************************************
+			<!-- Event node described with a FOwlTriple (Subject-Predicate-Object) and Properties: -->
+			<owl:NamedIndividual rdf:about="&log;DestroyEntity_OhnU">
+			<!-- List of the event properties as FOwlTriple (Subject-Predicate-Object): -->
+				<rdf:type rdf:resource="&knowrob_u;DestroyEntity"/>
+				<knowrob:taskContext rdf:datatype="&xsd;string">DestroyEntity-Tomato_o5Ol</knowrob:taskContext>
+				<knowrob:objectActedOn rdf:resource="&log;Tomato_o5Ol"/>
+				<knowrob:startTime rdf:resource="&log;timepoint_11.263422"/>
+				<knowrob:endTime rdf:resource="&log;timepoint_11.263422"/>
+			</owl:NamedIndividual>
+			*********************************************************************/
+
+			// Create event
+			const FOwlIndividualName OtherIndividual("log", OtherActorClass, OtherActorId);
+			const FOwlIndividualName DestroyEntityIndividual("log", "DestroyEntity", FSLUtils::GenerateRandomFString(4));
+
+			// Owl prefixed names
+			const FOwlPrefixName RdfType("rdf", "type");
+			const FOwlPrefixName RdfAbout("rdf", "about");
+			const FOwlPrefixName RdfResource("rdf", "resource");
+			const FOwlPrefixName RdfDatatype("rdf", "datatype");
+			const FOwlPrefixName TaskContext("knowrob", "taskContext");
+			const FOwlPrefixName ObjectActedOn("knowrob", "objectActedOn");
+			const FOwlPrefixName OwlNamedIndividual("owl", "NamedIndividual");
+
+			// Owl classes
+			const FOwlClass XsdString("xsd", "string");
+			const FOwlClass DestroyEntity("knowrob_u", "DestroyEntity");
+
+			// Add the event properties
+			TArray <FOwlTriple> Properties;
+			Properties.Emplace(FOwlTriple(RdfType, RdfResource, DestroyEntity));
+			Properties.Emplace(FOwlTriple(TaskContext, RdfDatatype, XsdString,
+				"DestroyEntity-" + OtherIndividual.GetName()));
+			Properties.Emplace(FOwlTriple(ObjectActedOn, RdfResource, OtherIndividual));
+			Properties.Emplace(FOwlTriple("knowrob:startTime", "rdf:resource",
+				"&log;timepoint_" + FString::SanitizeFloat(GetWorld()->GetTimeSeconds())));
+			Properties.Emplace(FOwlTriple("knowrob:endTime", "rdf:resource",
+				"&log;timepoint_" + FString::SanitizeFloat(GetWorld()->GetTimeSeconds())));
+
+			// Create the event
+			TSharedPtr<FOwlNode> DestroyEntityEvent = MakeShareable(new FOwlNode(
+				OwlNamedIndividual, RdfAbout, DestroyEntityIndividual, Properties));
+
+			EventDataLogger->InsertFinishedEvent(DestroyEntityEvent);
+		}
 	}
 }

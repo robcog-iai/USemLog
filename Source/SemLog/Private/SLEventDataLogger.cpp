@@ -460,6 +460,8 @@ void USLEventDataLogger::SetDefaultValues()
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;GraspingMulitpleItems")));
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;AddTopping")));
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;CutItem")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;CreateEntity")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:Class", "rdf:about", "&knowrob_u;DestroyEntity")));
 
 	// Mark that default values have been set
 	bOwlDefaultValuesSet = true;

@@ -59,17 +59,17 @@ void ASLFurnitureStateManager::InitStates()
 				// Check if actor is of required furniture type
 				if (Class.Contains("Drawer"))
 				{
-					FurnitureToIndividual.Add(CurrFurnitureActor, FurnitureIndividual);
-					DrawerToInitLoc.Add(CurrFurnitureActor, CurrFurnitureActor->GetActorLocation());
-					DrawerToLimit.Add(CurrFurnitureActor, CurrConstrComp->ConstraintInstance.GetLinearLimit());
-					FurnitureToState.Add(CurrFurnitureActor, EFurnitureState::Closed);
+					FurnitureToIndividual.Emplace(CurrFurnitureActor, FurnitureIndividual);
+					DrawerToInitLoc.Emplace(CurrFurnitureActor, CurrFurnitureActor->GetActorLocation());
+					DrawerToLimit.Emplace(CurrFurnitureActor, CurrConstrComp->ConstraintInstance.GetLinearLimit());
+					FurnitureToState.Emplace(CurrFurnitureActor, EFurnitureState::Closed);
 					StartEvent(CurrFurnitureActor, FurnitureIndividual, EFurnitureState::Closed);
 				}
 				else if(Class.Contains("Door"))
 				{
-					FurnitureToIndividual.Add(CurrFurnitureActor, FurnitureIndividual);
-					DoorToConstraintComp.Add(CurrFurnitureActor, CurrConstrComp);
-					FurnitureToState.Add(CurrFurnitureActor, EFurnitureState::Closed);
+					FurnitureToIndividual.Emplace(CurrFurnitureActor, FurnitureIndividual);
+					DoorToConstraintComp.Emplace(CurrFurnitureActor, CurrConstrComp);
+					FurnitureToState.Emplace(CurrFurnitureActor, EFurnitureState::Closed);
 					StartEvent(CurrFurnitureActor, FurnitureIndividual, EFurnitureState::Closed);
 				}
 			}
@@ -216,7 +216,7 @@ EFurnitureState ASLFurnitureStateManager::GetState(AActor* FurnitureActor)
 // Start event
 void ASLFurnitureStateManager::StartEvent(AActor* FurnitureActor, FOwlIndividualName FurnitureIndividual, EFurnitureState State)
 {
-	// Example of a contact event represented in OWL:
+	// Example event
 	/********************************************************************
 	<!-- Event node described with a FOwlTriple (Subject-Predicate-Object) and Properties: -->
 	<owl:NamedIndividual rdf:about="&log;FurnitureStateHalfOpened_OhnU">
@@ -236,7 +236,6 @@ void ASLFurnitureStateManager::StartEvent(AActor* FurnitureActor, FOwlIndividual
 	const FOwlPrefixName RdfResource("rdf", "resource");
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
 	const FOwlPrefixName TaskContext("knowrob", "taskContext");
-	const FOwlPrefixName PerformedBy("knowrob", "performedBy");
 	const FOwlPrefixName ObjectActedOn("knowrob", "objectActedOn");
 	const FOwlPrefixName OwlNamedIndividual("owl", "NamedIndividual");
 	// Owl classes
@@ -252,30 +251,30 @@ void ASLFurnitureStateManager::StartEvent(AActor* FurnitureActor, FOwlIndividual
 	{
 		case EFurnitureState::Closed : 
 			FurnitureEventIndividual.Set("log", "FurnitureStateClosed", FSLUtils::GenerateRandomFString(4));
-			Properties.Add(FOwlTriple(RdfType, RdfResource, StateClosed));
-			Properties.Add(FOwlTriple(TaskContext, RdfDatatype, XsdString,
+			Properties.Emplace(FOwlTriple(RdfType, RdfResource, StateClosed));
+			Properties.Emplace(FOwlTriple(TaskContext, RdfDatatype, XsdString,
 				"FurnitureStateClosed-" + FurnitureIndividual.GetName()));
 			break;
 		case EFurnitureState::HalfClosed :
 			FurnitureEventIndividual.Set("log", "FurnitureStateHalfClosed", FSLUtils::GenerateRandomFString(4));
-			Properties.Add(FOwlTriple(RdfType, RdfResource, StateHalfClosed));
-			Properties.Add(FOwlTriple(TaskContext, RdfDatatype, XsdString,
+			Properties.Emplace(FOwlTriple(RdfType, RdfResource, StateHalfClosed));
+			Properties.Emplace(FOwlTriple(TaskContext, RdfDatatype, XsdString,
 				"FurnitureStateHalfClosed-" + FurnitureIndividual.GetName()));
 			break;
 		case EFurnitureState::HalfOpened :
 			FurnitureEventIndividual.Set("log", "FurnitureStateHalfOpened", FSLUtils::GenerateRandomFString(4));
-			Properties.Add(FOwlTriple(RdfType, RdfResource, StateHalfOpened));
-			Properties.Add(FOwlTriple(TaskContext, RdfDatatype, XsdString,
+			Properties.Emplace(FOwlTriple(RdfType, RdfResource, StateHalfOpened));
+			Properties.Emplace(FOwlTriple(TaskContext, RdfDatatype, XsdString,
 				"FurnitureStateHalfOpened-" + FurnitureIndividual.GetName()));
 			break;
 		case EFurnitureState::Opened :
 			FurnitureEventIndividual.Set("log", "FurnitureStateOpened", FSLUtils::GenerateRandomFString(4));
-			Properties.Add(FOwlTriple(RdfType, RdfResource, StateOpened));
-			Properties.Add(FOwlTriple(TaskContext, RdfDatatype, XsdString,
+			Properties.Emplace(FOwlTriple(RdfType, RdfResource, StateOpened));
+			Properties.Emplace(FOwlTriple(TaskContext, RdfDatatype, XsdString,
 				"FurnitureStateOpened-" + FurnitureIndividual.GetName()));
 			break;
 	}	
-	Properties.Add(FOwlTriple(ObjectActedOn, RdfResource, FurnitureIndividual));
+	Properties.Emplace(FOwlTriple(ObjectActedOn, RdfResource, FurnitureIndividual));
 
 	// Create the furniture event
 	TSharedPtr<FOwlNode> FurnitureEvent = MakeShareable(new FOwlNode(
@@ -284,7 +283,7 @@ void ASLFurnitureStateManager::StartEvent(AActor* FurnitureActor, FOwlIndividual
 	// Start the event with the given properties
 	if (SemLogRuntimeManager->StartEvent(FurnitureEvent))
 	{
-		ActorToEvent.Add(FurnitureActor, FurnitureEvent);
+		ActorToEvent.Emplace(FurnitureActor, FurnitureEvent);
 	}
 }
 
