@@ -358,10 +358,11 @@ void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
 
 		if (!StartTime.IsEmpty() && !EndTime.IsEmpty() && !TaskContext.IsEmpty())
 		{
-			//FString::SanitizeFloat(FCString::Atof(StartTime) * 1000));
-
 			TimelineStr.Append(
-				"\t\t [ " + FString::FromInt(++CurrLine) + " , " + TaskContext + " , " + StartTime + " , " + EndTime + "],\n"
+				"\t\t [ \'"	+ FString::FromInt(++CurrLine) + "\' , \'" 
+							+ TaskContext + "\' , " 
+							+ FString::SanitizeFloat(FCString::Atof(*StartTime) * 1000) + " , " 
+							+ FString::SanitizeFloat(FCString::Atof(*EndTime) * 1000) + " ],\n"
 			);
 		}
 

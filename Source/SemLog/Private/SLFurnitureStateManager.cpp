@@ -26,10 +26,11 @@ void ASLFurnitureStateManager::BeginPlay()
 
 	if (SemLogRuntimeManager)
 	{
+		ASLFurnitureStateManager::InitStates();
 		// TODO run with a delay to make sure the runtime manager is init
 		// Init constraints and states
-		FTimerHandle DelayTimer;
-		GetWorldTimerManager().SetTimer(DelayTimer, this, &ASLFurnitureStateManager::InitStates, 0.2f, false);
+		//FTimerHandle DelayTimer;
+		//GetWorldTimerManager().SetTimer(DelayTimer, this, &ASLFurnitureStateManager::InitStates, 0.05f, false);
 	}
 }
 

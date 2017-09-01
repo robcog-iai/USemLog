@@ -41,18 +41,18 @@ void ASLRuntimeManager::PostInitializeComponents()
 
 	// Init manager
 	ASLRuntimeManager::Init();
-}
-
-// Called when the game starts or when spawned
-void ASLRuntimeManager::BeginPlay()
-{
-	Super::BeginPlay();
 
 	// Start manager at load time
 	if (bStartAtLoadTime)
 	{
 		ASLRuntimeManager::Start();
 	}
+}
+
+// Called when the game starts or when spawned
+void ASLRuntimeManager::BeginPlay()
+{
+	Super::BeginPlay();
 }
 
 // Called when actor removed from game or game ended
