@@ -26,11 +26,10 @@ void ASLFurnitureStateManager::BeginPlay()
 
 	if (SemLogRuntimeManager)
 	{
+		// TODO run with a delay to make sure the runtime manager is init
 		// Init constraints and states
-		ASLFurnitureStateManager::InitStates();
-
-		// Check drawer states with the given update rate (add delay until the drawers are closed)
-		GetWorldTimerManager().SetTimer(FurnitureStateTimerHandle, this, &ASLFurnitureStateManager::CheckStates, UpdateRate, true);
+		FTimerHandle DelayTimer;
+		GetWorldTimerManager().SetTimer(DelayTimer, this, &ASLFurnitureStateManager::InitStates, 0.2f, false);
 	}
 }
 
@@ -76,6 +75,9 @@ void ASLFurnitureStateManager::InitStates()
 			}
 		}
 	}
+
+	// Check drawer states with the given update rate (add delay until the drawers are closed)
+	GetWorldTimerManager().SetTimer(FurnitureStateTimerHandle, this, &ASLFurnitureStateManager::CheckStates, UpdateRate, true);
 }
 
 // Check drawer states
