@@ -82,6 +82,9 @@ public:
 	// Add metadata property
 	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
 
+	// Init filter parameters
+	void InitFilterParameters(bool bInFilterEvents, float MinDuration, bool bInFilterAll = true, const TArray<FString>& InFilterKeywords = TArray<FString>());
+
 	// Delegate to publish the finished events
 	FSLOnEventsFinishedSignature OnEventsFinished;
 
@@ -94,6 +97,9 @@ private:
 
 	// Terminate all idling events
 	bool FinishOpenedEvents(const float Timestamp);
+
+	// Filter events
+	void FilterEvents();
 
 	// @TODO Temp solution
 	// Set objects, time events and metadata subActions
@@ -141,4 +147,17 @@ private:
 
 	// Map of id to time individuals
 	TMap <FString, TSharedPtr<FOwlNode>> TimeIndividualsMap;
+
+	/** Filter parameters **/
+	// Flag to filter events
+	bool bFilterEvents;
+
+	// Minimum duration 
+	float MinDurationFilter;
+
+	// Filter all
+	bool bFilterAll;
+
+	// Filter only events with the given keywords in the TaskContext property
+	TArray<FString> FilterKeywords;
 };

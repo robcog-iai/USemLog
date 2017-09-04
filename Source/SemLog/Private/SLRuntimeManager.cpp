@@ -29,6 +29,11 @@ ASLRuntimeManager::ASLRuntimeManager()
 	bWriteEventDataToFile = true;
 	bWriteEventTimelines = false;
 	bBroadcastEventData = false;
+
+	// Event filter
+	bFilterEvents = false;
+	bFilterAll = false;
+	MinDurationFilter = 0.1;
 }
 
 // Make sure the manager is started before event publishers call BeginPlay
@@ -144,13 +149,15 @@ void ASLRuntimeManager::Start()
 			EventDataLogger->StartLogger(GetWorld()->GetTimeSeconds());
 
 			// Add level info to the metadata
-			for (TActorIterator<ASLLevelInfo> InfoItr(GetWorld()); InfoItr; ++InfoItr)
+			for (TActorIterator<ASLLevelInfo> LevelInfoItr(GetWorld()); LevelInfoItr; ++LevelInfoItr)
 			{
-				for (const auto& PropItr : InfoItr->LevelProperties)
+				if (LevelInfoItr->LevelKeyToProperties.Contains(LevelInfoItr->LevelKey))
 				{
-					EventDataLogger->AddMetadataProperty(MakeShareable(new FOwlTriple(PropItr)));
+					for (const auto& PropItr : LevelInfoItr->LevelKeyToProperties[LevelInfoItr->LevelKey].LevelProperties)
+					{
+						EventDataLogger->AddMetadataProperty(MakeShareable(new FOwlTriple(PropItr)));
+					}
 				}
-				break;
 			}
 		}
 

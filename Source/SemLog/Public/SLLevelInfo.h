@@ -9,6 +9,19 @@
 #include "SLLevelInfo.generated.h"
 
 /**
+*
+*/
+USTRUCT()
+struct FSLLevelProperties
+{
+	GENERATED_USTRUCT_BODY()
+
+	// Metadata properties of the level
+	UPROPERTY(EditAnywhere, Category = SL)
+	TArray<FOwlTriple> LevelProperties;
+};
+
+/**
  * 
  */
 UCLASS()
@@ -17,7 +30,11 @@ class SEMLOG_API ASLLevelInfo : public AInfo
 	GENERATED_BODY()
 
 public:
-	// Metadata properties of the level
+	// Selected episode index
 	UPROPERTY(EditAnywhere, Category = SL)
-	TArray<FOwlTriple> LevelProperties;
+	FString LevelKey;
+
+	// Map of level description to array of properties
+	UPROPERTY(EditAnywhere, Category = SL)
+	TMap<FString, FSLLevelProperties> LevelKeyToProperties;
 };

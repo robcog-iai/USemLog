@@ -113,27 +113,43 @@ private:
 
 	// Write data to file
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"))
-	uint8 bWriteRawDataToFile : 1;
+	uint32 bWriteRawDataToFile : 1;
 
 	// Broadcast data
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogRawData"))
-	uint8 bBroadcastRawData : 1;
+	uint32 bBroadcastRawData : 1;
 
 	// Log semantic events
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger")
-	uint8 bLogEventData : 1;
+	uint32 bLogEventData : 1;
 
 	// Write data to file
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
-	uint8 bWriteEventDataToFile : 1;
+	uint32 bWriteEventDataToFile : 1;
 
 	// Write event data as timelines as well
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
-	uint8 bWriteEventTimelines : 1;
+	uint32 bWriteEventTimelines : 1;
 
 	// Broadcast data
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
-	uint8 bBroadcastEventData : 1;
+	uint32 bBroadcastEventData : 1;
+
+	// Filter data
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	uint32 bFilterEvents : 1;
+
+	// Filter all data
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	uint32 bFilterAll : 1;
+
+	// Minimum duration 
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"), meta = (ClampMin = 0))
+	float MinDurationFilter;
+
+	// Filter only events with the given keywords in the TaskContext property
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	TArray<FString> FilterKeywords;
 
 	// Raw data logger
 	UPROPERTY()

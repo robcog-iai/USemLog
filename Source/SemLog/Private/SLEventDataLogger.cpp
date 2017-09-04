@@ -15,6 +15,7 @@ USLEventDataLogger::USLEventDataLogger()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
+	bFilterEvents = false;
 }
 
 // Destructor
@@ -55,6 +56,9 @@ bool USLEventDataLogger::FinishLogger(const float Timestamp)
 	{
 		// Close and move all opened events to the finished ones
 		USLEventDataLogger::FinishOpenedEvents(Timestamp);
+
+		// Filter event (remove concatenate events)
+		USLEventDataLogger::FilterEvents();
 
 		// Set object/time individuals, and sub-actions
 		USLEventDataLogger::SetObjectsAndMetaSubActions();
@@ -209,6 +213,16 @@ bool USLEventDataLogger::AddMetadataProperty(TSharedPtr<FOwlTriple> Property)
 	return false;
 }
 
+// Init filter parameters
+void USLEventDataLogger::InitFilterParameters(bool bInFilterEvents, float MinDuration, bool bInFilterAll, const TArray<FString>& InFilterKeywords)
+{
+	bFilterEvents = bInFilterEvents;
+	MinDurationFilter = MinDuration;
+	bFilterAll = bInFilterAll;
+	FilterKeywords = InFilterKeywords;
+}
+
+
 // Start metadata event
 bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
 {
@@ -269,6 +283,12 @@ bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
 		return true;		
 	}
 	return false;
+}
+
+// Filter events
+void USLEventDataLogger::FilterEvents()
+{
+
 }
 
 // @TODO Temp solution
