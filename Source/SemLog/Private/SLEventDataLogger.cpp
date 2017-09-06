@@ -213,8 +213,8 @@ bool USLEventDataLogger::AddMetadataProperty(TSharedPtr<FOwlTriple> Property)
 	return false;
 }
 
-// Init filter parameters
-void USLEventDataLogger::InitFilterParameters(bool bInFilterEvents, float MinDuration, bool bInFilterAll, const TArray<FString>& InFilterKeywords)
+// Set filter parameters
+void USLEventDataLogger::SetFilterParameters(bool bInFilterEvents, float MinDuration, bool bInFilterAll, const TArray<FString>& InFilterKeywords)
 {
 	bFilterEvents = bInFilterEvents;
 	MinDurationFilter = MinDuration;
@@ -288,7 +288,100 @@ bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
 // Filter events
 void USLEventDataLogger::FilterEvents()
 {
+	if (!bFilterEvents)
+	{
+		return;
+	}
 
+	FinishedEvents.RemoveAll([&](TSharedPtr<FOwlNode> Event) { 
+		FString StartTime;
+		FString EndTime;
+		FString TaskContext;
+		// Iterate properties and check for keywords in the subject		
+		for (const auto& PropertyItr : Event->Properties)
+		{
+			if (PropertyItr.Subject.Contains("startTime"))
+			{
+				PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);
+			}
+			else if (PropertyItr.Subject.Contains("endTime"))
+			{
+				PropertyItr.Object.Split("_", (FString*)nullptr, &EndTime);
+			}
+			else if (PropertyItr.Subject.Contains("taskContext"))
+			{
+				TaskContext = PropertyItr.Value;
+			}
+		}
+
+		if (bFilterAll)
+		{
+			if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime) < MinDurationFilter)
+			{
+				return true;
+			}
+		}
+		else
+		{
+			for (const auto& KeyWord : FilterKeywords)
+			{
+				if (TaskContext.Contains(KeyWord))
+				{
+					if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime) < MinDurationFilter)
+					{
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	});
+
+
+	//// Iterate finished events
+	//for (auto FinishedEvItr(FinishedEvents.CreateIterator()); FinishedEvItr; ++FinishedEvItr)
+	//{
+	//	FString StartTime;
+	//	FString EndTime;
+	//	FString TaskContext;
+	//	// Iterate properties and check for keywords in the subject		
+	//	for (const auto& PropertyItr : (*FinishedEvItr)->Properties)
+	//	{
+	//		if (PropertyItr.Subject.Contains("startTime"))
+	//		{
+	//			PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);
+	//		}
+	//		else if (PropertyItr.Subject.Contains("endTime"))
+	//		{
+	//			PropertyItr.Object.Split("_", (FString*)nullptr, &EndTime);
+	//		}
+	//		else if (PropertyItr.Subject.Contains("taskContext"))
+	//		{
+	//			TaskContext = PropertyItr.Value;
+	//		}
+	//	}
+
+	//	if (bFilterAll)
+	//	{
+	//		if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime))
+	//		{
+	//			//
+	//		}
+	//	}
+	//	else
+	//	{
+	//		for (const auto& KeyWord : FilterKeywords)
+	//		{
+	//			if (TaskContext.Contains(KeyWord))
+	//			{
+	//				if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime))
+	//				{
+	//					//FinishedEvItr.RemoveCurrent();
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 }
 
 // @TODO Temp solution
@@ -351,6 +444,39 @@ void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
 		"\t\t dataTable.addRows([\n"
 		"\n";
 	
+	// Add metadata as first line
+	{
+		FString StartTime;
+		FString EndTime;
+		FString TaskContext;
+
+		// Iterate properties and check for keywords in the subject		
+		for (const auto& PropertyItr : MetaEvent->Properties)
+		{
+			if (PropertyItr.Subject.Contains("startTime"))
+			{
+				PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);
+			}
+			else if (PropertyItr.Subject.Contains("endTime"))
+			{
+				PropertyItr.Object.Split("_", (FString*)nullptr, &EndTime);
+			}
+			else if (PropertyItr.Subject.Contains("taskContext"))
+			{
+				TaskContext = PropertyItr.Value;
+			}
+		}
+
+		if (!StartTime.IsEmpty() && !EndTime.IsEmpty() && !TaskContext.IsEmpty())
+		{
+			TimelineStr.Append(
+				"\t\t [ \'" + TaskContext + "\' , \'"
+				+ TaskContext + "\' , "
+				+ FString::SanitizeFloat(FCString::Atof(*StartTime) * 1000) + " , "
+				+ FString::SanitizeFloat(FCString::Atof(*EndTime) * 1000) + " ],\n"
+			);
+		}
+	}
 
 	// Iterate all closed events
 	for (const auto& EvItr : FinishedEvents)
@@ -387,12 +513,6 @@ void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
 		}
 
 	}
-
-	//TimelineStr.Append(
-	//	"\t\t [ '1', 'George Washington', 1000, 5000 ],\n"
-	//	"\t\t [ '2', 'John Adams',        5000, 7000 ],\n"
-	//	"\t\t [ '3', 'Thomas Jefferson',  3000, 15000 ],\n"
-	//);
 
 
 	TimelineStr.Append(

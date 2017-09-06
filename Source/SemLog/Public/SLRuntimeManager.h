@@ -140,15 +140,15 @@ private:
 	uint32 bFilterEvents : 1;
 
 	// Filter all data
-	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bFilterEvents"))
 	uint32 bFilterAll : 1;
 
 	// Minimum duration 
-	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"), meta = (ClampMin = 0))
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bFilterEvents"), meta = (ClampMin = 0))
 	float MinDurationFilter;
 
 	// Filter only events with the given keywords in the TaskContext property
-	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bFilterEvents"))
 	TArray<FString> FilterKeywords;
 
 	// Raw data logger

@@ -122,6 +122,9 @@ void ASLRuntimeManager::Init()
 
 			// Initialize the event data
 			EventDataLogger->InitLogger(EpisodeId);
+
+			// Set filter parameters
+			EventDataLogger->SetFilterParameters(bFilterEvents, MinDurationFilter, bFilterAll, FilterKeywords);
 		}
 
 		// Set the manager as initialized

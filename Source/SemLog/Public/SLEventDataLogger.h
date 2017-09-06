@@ -83,7 +83,7 @@ public:
 	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
 
 	// Init filter parameters
-	void InitFilterParameters(bool bInFilterEvents, float MinDuration, bool bInFilterAll = true, const TArray<FString>& InFilterKeywords = TArray<FString>());
+	void SetFilterParameters(bool bInFilterEvents, float MinDuration, bool bInFilterAll = true, const TArray<FString>& InFilterKeywords = TArray<FString>());
 
 	// Delegate to publish the finished events
 	FSLOnEventsFinishedSignature OnEventsFinished;
