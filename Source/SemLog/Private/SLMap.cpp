@@ -56,6 +56,82 @@ bool USLMap::Generate(UWorld* World)
 	const TMap<AActor*, TMap<FString, FString>> ActorToTagProperties =
 		FTagStatics::GetActorsToKeyValuePairs(World, "SemLog");
 	
+
+	// Check for parent-child properties
+	for (const auto& ActorToTagItr : ActorToTagProperties)
+	{
+		// Parent actor
+		AActor* const ParentActor = ActorToTagItr.Key;
+		// Get attached actors
+		TArray<AActor*> AttachedActors;
+		ParentActor->GetAttachedActors(AttachedActors);
+				
+		// Check if any child is semantically annotated
+		for (const auto& AttActItr : AttachedActors)
+		{
+			// If child is semantically annotated add parent-child properties to the actors
+			if (ActorToTagProperties.Contains(AttActItr))
+			{
+				const FString ParentIndividual = "&log;"
+					+ *ActorToTagItr.Value.Find("Class") + "_"
+					+ *ActorToTagItr.Value.Find("Id");
+
+				const FString ChildIndividual = "&log;"
+					+ *ActorToTagProperties[AttActItr].Find("Class") + "_"
+					+ *ActorToTagProperties[AttActItr].Find("Id");
+
+				FOwlTriple ParentProperty("knowrob_u:attachedChild", "rdf:resource", "&log;" + ChildIndividual);
+				FOwlTriple ChildProperty("knowrob_u:attachedParent", "rdf:resource", "&log;" + ParentIndividual);
+
+				// Lambda to add the extra properties
+				auto AddExtraPropertyLambda = [this](AActor* Actor, FOwlTriple Property)
+				{
+					// Check if parent is already in the map
+					if (ActorToExtraProperties.Contains(Actor))
+					{
+						ActorToExtraProperties[Actor].Add(Property);
+					}
+					else
+					{
+						TArray<FOwlTriple> ExtraProperties;
+						ExtraProperties.Add(Property);
+						ActorToExtraProperties.Add(Actor, ExtraProperties);
+					}
+				};
+				// Call the lambda for the parent and the child
+				AddExtraPropertyLambda(ParentActor, ParentProperty);
+				AddExtraPropertyLambda(AttActItr, ChildProperty);
+
+
+				//// Check if parent is already in the map
+				//if (ActorToExtraProperties.Contains(ParentActor))
+				//{
+				//	ActorToExtraProperties[ParentActor].Add(FOwlTriple());
+				//}
+				//else
+				//{
+				//	TArray<FOwlTriple> ExtraProperties;
+				//	ExtraProperties.Add(FOwlTriple());
+				//	ActorToExtraProperties.Add(ParentActor, ExtraProperties);
+				//}
+
+				//// Check if child is already in the map
+				//if (ActorToExtraProperties.Contains(AttActItr))
+				//{
+				//	ActorToExtraProperties[AttActItr].Add(FOwlTriple());
+				//}
+				//else
+				//{
+				//	TArray<FOwlTriple> ExtraProperties;
+				//	ExtraProperties.Add(FOwlTriple());
+				//	ActorToExtraProperties.Add(AttActItr, ExtraProperties);
+				//}
+				
+			}
+		}
+	}
+
+
 	// Iterate all correctly tagged actors and add them to the semantic map
 	for (const auto& ActorToTagItr : ActorToTagProperties)
 	{
@@ -126,10 +202,8 @@ void USLMap::SetDefaultValues()
 
 	// Create and insert the ontologies node at the beginning
 	TArray<FOwlTriple> OntologyOwlProperties;
-	OntologyOwlProperties.Emplace(FOwlTriple(
-		"owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
-	OntologyOwlProperties.Emplace(FOwlTriple(
-		"owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_u.owl"));
+	OntologyOwlProperties.Emplace(FOwlTriple("owl:imports", "rdf:resource", "package://knowrob_common/owl/knowrob.owl"));
+	OntologyOwlProperties.Emplace(FOwlTriple("owl:imports", "rdf:resource", "package://knowrob_robcog/owl/knowrob_u.owl"));
 	TSharedPtr<FOwlNode> OntologyOwlNode = MakeShareable(new FOwlNode("owl:Ontology", "rdf:about", "http://knowrob.org/kb/u_map.owl",
 		OntologyOwlProperties,
 		"Ontologies"));
@@ -138,6 +212,8 @@ void USLMap::SetDefaultValues()
 	// Add object property definitions 
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;describedInMap",
 		"Property Definitions")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;attachedChild")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;attachedParent")));
 
 	// Add datatype property definitions
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;depthOfObject",
@@ -181,19 +257,27 @@ void USLMap::RemoveDefaultValues()
 }
 
 // Insert actor individual to the map with its 3D transform
-void USLMap::InsertActorIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties)
+void USLMap::InsertActorIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithTagProperties)
 {
-	const FString IndividualClass = ActorWithProperties.Value.Contains("Class")
-		? *ActorWithProperties.Value.Find("Class") : FString("DefaultClass");
-	const FString IndividualId = ActorWithProperties.Value.Contains("Id")
-		? *ActorWithProperties.Value.Find("Id") : FString("DefaultId");
+	const FString IndividualClass = ActorWithTagProperties.Value.Contains("Class")
+		? *ActorWithTagProperties.Value.Find("Class") : FString("DefaultClass");
+	const FString IndividualId = ActorWithTagProperties.Value.Contains("Id")
+		? *ActorWithTagProperties.Value.Find("Id") : FString("DefaultId");
 
-	const FVector Loc = ActorWithProperties.Key->GetActorLocation();
-	const FQuat Quat = ActorWithProperties.Key->GetActorQuat();
-	const FVector Box = ActorWithProperties.Key->GetComponentsBoundingBox().GetSize();
+	const FVector Loc = ActorWithTagProperties.Key->GetActorLocation();
+	const FQuat Quat = ActorWithTagProperties.Key->GetActorQuat();
+	const FVector Box = ActorWithTagProperties.Key->GetComponentsBoundingBox().GetSize();
 
-	// Add to map
-	USLMap::InsertIndividual(IndividualClass, IndividualId, Loc, Quat, Box);
+
+	// Add to map with or without extra properties
+	if (ActorToExtraProperties.Contains(ActorWithTagProperties.Key))
+	{		
+		USLMap::InsertIndividual(IndividualClass, IndividualId, Loc, Quat, Box, ActorToExtraProperties[ActorWithTagProperties.Key]);
+	}
+	else
+	{
+		USLMap::InsertIndividual(IndividualClass, IndividualId, Loc, Quat, Box);
+	}
 }
 
 // Insert individual to the map with its 3D transform
@@ -224,6 +308,7 @@ void USLMap::InsertIndividual(
 	const FVector Location,
 	const FQuat Quat,
 	const FVector BoundingBox,
+	const TArray<FOwlTriple>& ExtraProperties,
 	bool bSaveAsRightHandedCoordinate)
 {
 	const FString IndividualName = IndividualClass + "_" + IndividualId;
@@ -264,6 +349,13 @@ void USLMap::InsertIndividual(
 		"&xsd;double", FString::SanitizeFloat(BoundingBox.Z / 100.f)));
 	IndividualProperties.Emplace(FOwlTriple("knowrob:pathToCadModel", "rdf:datatype",
 		"&xsd;string", "package://robcog/" + IndividualClass + ".dae"));
+	if (ExtraProperties.Num() > 0)
+	{
+		for (const auto& PropItr : ExtraProperties)
+		{
+			IndividualProperties.Emplace(PropItr);
+		}
+	}
 	IndividualProperties.Emplace(FOwlTriple(
 		"knowrob:describedInMap", "rdf:resource", SemMapIndividual.GetFullName()));
 

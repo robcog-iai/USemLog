@@ -58,6 +58,8 @@ public:
 	uint8 bOwlDefaultValuesSet : 1;
 
 private:
+	// Map of extra properties of the actors
+	TMap<AActor*, TArray<FOwlTriple>> ActorToExtraProperties;
 
 	// Set document default values
 	void SetDefaultValues();
@@ -69,7 +71,7 @@ private:
 	void InsertActorIndividual(const TPair<AActor*, TMap<FString, FString>>& ActorWithProperties);
 
 	// Insert component individual to the map with its 3D transform
-	void InsertComponentIndividual(const TPair<UActorComponent*, TMap<FString, FString>>& ComponentWithProperties);
+	void InsertComponentIndividual(const TPair<UActorComponent*, TMap<FString, FString>>& ComponentWithTagProperties);
 
 	// Insert individual to the document
 	void InsertIndividual(
@@ -78,5 +80,6 @@ private:
 		const FVector Location,
 		const FQuat Quat,
 		const FVector BoundingBox,
+		const TArray<FOwlTriple>& ExtraProperties = TArray<FOwlTriple>(),
 		bool bSaveAsRightHandedCoordinate = true);
 };
