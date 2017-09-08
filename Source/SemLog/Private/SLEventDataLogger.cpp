@@ -16,6 +16,8 @@ USLEventDataLogger::USLEventDataLogger()
 	bIsStarted = false;
 	bIsFinished = false;
 	bFilterEvents = false;
+	bConcatenateEvents = false;
+	bConcatenateFirst = false;
 }
 
 // Destructor
@@ -57,8 +59,35 @@ bool USLEventDataLogger::FinishLogger(const float Timestamp)
 		// Close and move all opened events to the finished ones
 		USLEventDataLogger::FinishOpenedEvents(Timestamp);
 
-		// Filter event (remove concatenate events)
-		USLEventDataLogger::FilterEvents();
+		// Check to run concatenation or removal of various events
+		if (bConcatenateFirst)
+		{
+			// Concatenate events
+			if (bConcatenateEvents)
+			{
+				USLEventDataLogger::ConcatenateEvents();
+			}
+
+			// Filter event (remove events)
+			if (bFilterEvents)
+			{
+				USLEventDataLogger::FilterEvents();
+			}
+		}
+		else
+		{
+			// Filter event (remove events)
+			if (bFilterEvents)
+			{
+				USLEventDataLogger::FilterEvents();
+			}
+
+			// Concatenate events
+			if (bConcatenateEvents)
+			{
+				USLEventDataLogger::ConcatenateEvents();
+			}
+		}
 
 		// Set object/time individuals, and sub-actions
 		USLEventDataLogger::SetObjectsAndMetaSubActions();
@@ -222,6 +251,15 @@ void USLEventDataLogger::SetFilterParameters(bool bInFilterEvents, float MinDura
 	FilterKeywords = InFilterKeywords;
 }
 
+// Set concatenate events parameters
+void USLEventDataLogger::SetConcatenateParameters(bool bInConcatenateEvents, float MinDuration, bool bInConcatenateFirst, bool bInConcatenateAll, const TArray<FString>& InConcatenateKeywords)
+{
+	bConcatenateEvents = bInConcatenateEvents;
+	MinDurationConcatenate = MinDuration;
+	bConcatenateFirst = bInConcatenateFirst;
+	bConcatenateAll = bInConcatenateAll;
+	ConcatenateKeywords = InConcatenateKeywords;
+}
 
 // Start metadata event
 bool USLEventDataLogger::StartMetadataEvent(const float Timestamp)
@@ -288,30 +326,31 @@ bool USLEventDataLogger::FinishOpenedEvents(const float Timestamp)
 // Filter events
 void USLEventDataLogger::FilterEvents()
 {
-	if (!bFilterEvents)
-	{
-		return;
-	}
-
-	FinishedEvents.RemoveAll([&](TSharedPtr<FOwlNode> Event) { 
+	FinishedEvents.RemoveAll([&](TSharedPtr<FOwlNode> Event) 
+	{ 
 		FString StartTime;
 		FString EndTime;
 		FString TaskContext;
 		// Iterate properties and check for keywords in the subject		
-		for (const auto& PropertyItr : Event->Properties)
+		for (const auto& PropItr : Event->Properties)
 		{
-			if (PropertyItr.Subject.Contains("startTime"))
+			if (PropItr.Subject.Contains("startTime"))
 			{
-				PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);
+				PropItr.Object.Split("_", (FString*)nullptr, &StartTime);
 			}
-			else if (PropertyItr.Subject.Contains("endTime"))
+			else if (PropItr.Subject.Contains("endTime"))
 			{
-				PropertyItr.Object.Split("_", (FString*)nullptr, &EndTime);
+				PropItr.Object.Split("_", (FString*)nullptr, &EndTime);
 			}
-			else if (PropertyItr.Subject.Contains("taskContext"))
+			else if (PropItr.Subject.Contains("taskContext"))
 			{
-				TaskContext = PropertyItr.Value;
+				TaskContext = PropItr.Value;
 			}
+		}
+
+		if (StartTime.IsEmpty() || EndTime.IsEmpty())
+		{
+			return false;
 		}
 
 		if (bFilterAll)
@@ -336,52 +375,115 @@ void USLEventDataLogger::FilterEvents()
 		}
 		return false;
 	});
+}
+
+// Concatenate events
+void USLEventDataLogger::ConcatenateEvents()
+{
+	// Iterate finished events and add them to a multi map with the task context as key
+	TMap<FString, TArray<TSharedPtr<FOwlNode>>> ContextToEvents;
+	for (const auto& EvItr : FinishedEvents)
+	{
+		// Iterate properties and check for keywords in the subject		
+		for (const auto& PropItr : EvItr->Properties)
+		{
+			if (PropItr.Subject.Contains("taskContext"))
+			{
+				if (ContextToEvents.Contains(PropItr.Value))
+				{
+					ContextToEvents[PropItr.Value].Add(EvItr);
+					break;
+				}
+				else
+				{
+					TArray<TSharedPtr<FOwlNode>> Events;
+					Events.Add(EvItr);
+					ContextToEvents.Add(PropItr.Value, Events);
+					break;
+				}
+			}
+		}
+	}
+
+	// Concatenate events
+	for (auto& CtxToEvsItr : ContextToEvents)
+	{
+		// Check that we have at least 2 events with the same name
+		if (CtxToEvsItr.Value.Num() > 1)
+		{
+			UE_LOG(LogTemp, Warning, TEXT(" *** Context: %s %i"), *CtxToEvsItr.Key, CtxToEvsItr.Value.Num());
+
+			 // Sort the array of the events
+			CtxToEvsItr.Value.Sort([](const TSharedPtr<FOwlNode>& LHS, const TSharedPtr<FOwlNode>& RHS) -> bool	{
+				// Get the end times of both events
+				FString LHSEndTime;
+				FString RHSEndTime;
+				// Iterate properties and check for keywords in the subject		
+				for (const auto& PropItr : LHS->Properties)
+				{
+					if (PropItr.Subject.Contains("endTime"))
+					{
+						PropItr.Object.Split("_", (FString*)nullptr, &LHSEndTime);
+						break;
+					}
+				}
+				for (const auto& PropItr : RHS->Properties)
+				{
+					if (PropItr.Subject.Contains("endTime"))
+					{
+						PropItr.Object.Split("_", (FString*)nullptr, &RHSEndTime);
+						break;
+					}
+				}
+				return (FCString::Atof(*LHSEndTime) > FCString::Atof(*RHSEndTime));
+			});
 
 
-	//// Iterate finished events
-	//for (auto FinishedEvItr(FinishedEvents.CreateIterator()); FinishedEvItr; ++FinishedEvItr)
-	//{
-	//	FString StartTime;
-	//	FString EndTime;
-	//	FString TaskContext;
-	//	// Iterate properties and check for keywords in the subject		
-	//	for (const auto& PropertyItr : (*FinishedEvItr)->Properties)
-	//	{
-	//		if (PropertyItr.Subject.Contains("startTime"))
-	//		{
-	//			PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);
-	//		}
-	//		else if (PropertyItr.Subject.Contains("endTime"))
-	//		{
-	//			PropertyItr.Object.Split("_", (FString*)nullptr, &EndTime);
-	//		}
-	//		else if (PropertyItr.Subject.Contains("taskContext"))
-	//		{
-	//			TaskContext = PropertyItr.Value;
-	//		}
-	//	}
+			
+			// Iterate events of the same type
+			for (const auto& EvItr : CtxToEvsItr.Value)
+			{				
+				FString StartTime;
+				FString EndTime;
+				// Iterate properties and check for keywords in the subject		
+				for (const auto& PropItr : EvItr->Properties)
+				{
+					if (PropItr.Subject.Contains("startTime"))
+					{
+						PropItr.Object.Split("_", (FString*)nullptr, &StartTime);
+					}
+					else if (PropItr.Subject.Contains("endTime"))
+					{
+						PropItr.Object.Split("_", (FString*)nullptr, &EndTime);
+					}
+				}
+				UE_LOG(LogTemp, Warning, TEXT(" \t \t End: %s"), *EndTime);
+				//if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime) < MinDurationFilter)
+			}
 
-	//	if (bFilterAll)
-	//	{
-	//		if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime))
-	//		{
-	//			//
-	//		}
-	//	}
-	//	else
-	//	{
-	//		for (const auto& KeyWord : FilterKeywords)
-	//		{
-	//			if (TaskContext.Contains(KeyWord))
-	//			{
-	//				if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime))
-	//				{
-	//					//FinishedEvItr.RemoveCurrent();
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+			UE_LOG(LogTemp, Warning, TEXT(" \t \t ====================== "));
+
+			for (int32 Index = CtxToEvsItr.Value.Num() - 1; Index > 0; --Index)
+			{
+				FString StartTime;
+				FString EndTime;
+				// Iterate properties and check for keywords in the subject		
+				for (const auto& PropItr : CtxToEvsItr.Value[Index]->Properties)
+				{
+					if (PropItr.Subject.Contains("startTime"))
+					{
+						PropItr.Object.Split("_", (FString*)nullptr, &StartTime);
+					}
+					else if (PropItr.Subject.Contains("endTime"))
+					{
+						PropItr.Object.Split("_", (FString*)nullptr, &EndTime);
+					}
+				}
+				UE_LOG(LogTemp, Warning, TEXT(" \t \t End: %s"), *EndTime);
+			}
+			UE_LOG(LogTemp, Warning, TEXT(" \t \t ====================== "));
+		}		
+	}
 }
 
 // @TODO Temp solution
@@ -395,23 +497,23 @@ void USLEventDataLogger::SetObjectsAndMetaSubActions()
 		MetaEvent->Properties.Add(FOwlTriple("knowrob:subAction", "rdf:resource", EvItr->Object));
 		
 		// Iterate properties and check for keywords in the subject		
-		for (const auto& PropertyItr : EvItr->Properties)
+		for (const auto& PropItr : EvItr->Properties)
 		{
-			if (PropertyItr.Subject.Contains("Time"))
+			if (PropItr.Subject.Contains("Time"))
 			{
 				// Create time individual
-				TimeIndividualsMap.Emplace(FOwlIndividualName(PropertyItr.Object).Id, MakeShareable(new FOwlNode(
-					"owl:NamedIndividual", "rdf:about", PropertyItr.Object,
+				TimeIndividualsMap.Emplace(FOwlIndividualName(PropItr.Object).Id, MakeShareable(new FOwlNode(
+					"owl:NamedIndividual", "rdf:about", PropItr.Object,
 					TArray<FOwlTriple>{ FOwlTriple("rdf:type", "rdf:resource", "&knowrob;TimePoint") })));
 			}
-			else if (PropertyItr.Subject.Contains("inContact") 
-				|| PropertyItr.Subject.Contains("objectActedOn")
-				|| PropertyItr.Subject.Contains("performedBy"))
+			else if (PropItr.Subject.Contains("inContact") 
+				|| PropItr.Subject.Contains("objectActedOn")
+				|| PropItr.Subject.Contains("performedBy"))
 			{
 				// Create object individual
-				ObjectIndividualsMap.Emplace(FOwlIndividualName(PropertyItr.Object).Id,	MakeShareable(new FOwlNode(
-						"owl:NamedIndividual", "rdf:about", PropertyItr.Object,
-						TArray<FOwlTriple>{ FOwlTriple("rdf:type", "rdf:resource", "&knowrob;" + FOwlIndividualName(PropertyItr.Object).Class) })));
+				ObjectIndividualsMap.Emplace(FOwlIndividualName(PropItr.Object).Id,	MakeShareable(new FOwlNode(
+						"owl:NamedIndividual", "rdf:about", PropItr.Object,
+						TArray<FOwlTriple>{ FOwlTriple("rdf:type", "rdf:resource", "&knowrob;" + FOwlIndividualName(PropItr.Object).Class) })));
 			}
 		}
 	}
@@ -451,19 +553,19 @@ void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
 		FString TaskContext;
 
 		// Iterate properties and check for keywords in the subject		
-		for (const auto& PropertyItr : MetaEvent->Properties)
+		for (const auto& PropItr : MetaEvent->Properties)
 		{
-			if (PropertyItr.Subject.Contains("startTime"))
+			if (PropItr.Subject.Contains("startTime"))
 			{
-				PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);
+				PropItr.Object.Split("_", (FString*)nullptr, &StartTime);
 			}
-			else if (PropertyItr.Subject.Contains("endTime"))
+			else if (PropItr.Subject.Contains("endTime"))
 			{
-				PropertyItr.Object.Split("_", (FString*)nullptr, &EndTime);
+				PropItr.Object.Split("_", (FString*)nullptr, &EndTime);
 			}
-			else if (PropertyItr.Subject.Contains("taskContext"))
+			else if (PropItr.Subject.Contains("taskContext"))
 			{
-				TaskContext = PropertyItr.Value;
+				TaskContext = PropItr.Value;
 			}
 		}
 
@@ -486,19 +588,19 @@ void USLEventDataLogger::WriteTimelines(const FString LogDirectoryPath)
 		FString TaskContext;
 
 		// Iterate properties and check for keywords in the subject		
-		for (const auto& PropertyItr : EvItr->Properties)
+		for (const auto& PropItr : EvItr->Properties)
 		{
-			if (PropertyItr.Subject.Contains("startTime"))
+			if (PropItr.Subject.Contains("startTime"))
 			{				
-				PropertyItr.Object.Split("_", (FString*)nullptr, &StartTime);				
+				PropItr.Object.Split("_", (FString*)nullptr, &StartTime);				
 			}
-			else if (PropertyItr.Subject.Contains("endTime"))
+			else if (PropItr.Subject.Contains("endTime"))
 			{				
-				PropertyItr.Object.Split("_", (FString*)nullptr, &EndTime);
+				PropItr.Object.Split("_", (FString*)nullptr, &EndTime);
 			}
-			else if (PropertyItr.Subject.Contains("taskContext"))
+			else if (PropItr.Subject.Contains("taskContext"))
 			{
-				TaskContext = PropertyItr.Value;
+				TaskContext = PropItr.Value;
 			}
 		}
 

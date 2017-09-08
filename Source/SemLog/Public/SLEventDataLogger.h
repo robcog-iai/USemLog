@@ -82,9 +82,12 @@ public:
 	// Add metadata property
 	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
 
-	// Init filter parameters
+	// Set filter parameters
 	void SetFilterParameters(bool bInFilterEvents, float MinDuration, bool bInFilterAll = true, const TArray<FString>& InFilterKeywords = TArray<FString>());
 
+	// Set concatenate events parameters
+	void SetConcatenateParameters(bool bInConcatenateEvents, float MinDuration, bool bInConcatenateFirst = false, bool bInConcatenateAll = true, const TArray<FString>& InConcatenateKeywords = TArray<FString>());
+	
 	// Delegate to publish the finished events
 	FSLOnEventsFinishedSignature OnEventsFinished;
 
@@ -100,6 +103,9 @@ private:
 
 	// Filter events
 	void FilterEvents();
+
+	// Concatenate events
+	void ConcatenateEvents();
 
 	// @TODO Temp solution
 	// Set objects, time events and metadata subActions
@@ -148,16 +154,31 @@ private:
 	// Map of id to time individuals
 	TMap <FString, TSharedPtr<FOwlNode>> TimeIndividualsMap;
 
-	/** Filter parameters **/
+	/** Event filter/concatenate parameters **/
 	// Flag to filter events
 	bool bFilterEvents;
 
-	// Minimum duration 
+	// Minimum duration of an event in order not to be removed
 	float MinDurationFilter;
 
 	// Filter all
 	bool bFilterAll;
 
-	// Filter only events with the given keywords in the TaskContext property
+	// Filter only events with the given keywords in the taskContext property
 	TArray<FString> FilterKeywords;
+
+	// Flag to concatenate events
+	bool bConcatenateEvents;
+
+	// Concatenate events before filtering them
+	bool bConcatenateFirst;
+
+	// Concatenate all
+	bool bConcatenateAll;
+
+	// Minimum duration between the events in order no to be concatenated
+	float MinDurationConcatenate;
+
+	// Concatenate only events with the given keywords in the taskContext property
+	TArray<FString> ConcatenateKeywords;
 };

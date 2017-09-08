@@ -100,33 +100,7 @@ bool USLMap::Generate(UWorld* World)
 				};
 				// Call the lambda for the parent and the child
 				AddExtraPropertyLambda(ParentActor, ParentProperty);
-				AddExtraPropertyLambda(AttActItr, ChildProperty);
-
-
-				//// Check if parent is already in the map
-				//if (ActorToExtraProperties.Contains(ParentActor))
-				//{
-				//	ActorToExtraProperties[ParentActor].Add(FOwlTriple());
-				//}
-				//else
-				//{
-				//	TArray<FOwlTriple> ExtraProperties;
-				//	ExtraProperties.Add(FOwlTriple());
-				//	ActorToExtraProperties.Add(ParentActor, ExtraProperties);
-				//}
-
-				//// Check if child is already in the map
-				//if (ActorToExtraProperties.Contains(AttActItr))
-				//{
-				//	ActorToExtraProperties[AttActItr].Add(FOwlTriple());
-				//}
-				//else
-				//{
-				//	TArray<FOwlTriple> ExtraProperties;
-				//	ExtraProperties.Add(FOwlTriple());
-				//	ActorToExtraProperties.Add(AttActItr, ExtraProperties);
-				//}
-				
+				AddExtraPropertyLambda(AttActItr, ChildProperty);			
 			}
 		}
 	}

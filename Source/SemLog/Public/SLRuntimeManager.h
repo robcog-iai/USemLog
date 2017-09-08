@@ -135,21 +135,41 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	uint32 bBroadcastEventData : 1;
 
-	// Filter data
+	// Filter events
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	uint32 bFilterEvents : 1;
 
-	// Filter all data
+	// Filter all events
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bFilterEvents"))
 	uint32 bFilterAll : 1;
 
-	// Minimum duration 
+	// Minimum duration of an event in order not to be removed
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bFilterEvents"), meta = (ClampMin = 0))
 	float MinDurationFilter;
 
 	// Filter only events with the given keywords in the TaskContext property
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bFilterEvents"))
 	TArray<FString> FilterKeywords;
+
+	// Concatenate events
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	uint32 bConcatenateEvents : 1;
+
+	// Concatenate first (run before filtering the events)
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bConcatenateEvents"))
+	uint32 bConcatenateFirst : 1;
+
+	// Concatenate all events
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bConcatenateEvents"))
+	uint32 bConcatenateAll : 1;
+
+	// Minimum duration between the events in order no to be concatenated
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bConcatenateEvents"), meta = (ClampMin = 0))
+	float MinDurationConcatenate;
+
+	// Concatenate only events with the given keywords in the TaskContext property
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bConcatenateEvents"))
+	TArray<FString> ConcatenateKeywords;
 
 	// Raw data logger
 	UPROPERTY()

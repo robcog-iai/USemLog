@@ -34,6 +34,12 @@ ASLRuntimeManager::ASLRuntimeManager()
 	bFilterEvents = false;
 	bFilterAll = false;
 	MinDurationFilter = 0.1;
+
+	// Concatenate events
+	bConcatenateEvents = false;
+	bConcatenateFirst = false;
+	bConcatenateAll = false;
+	MinDurationConcatenate = 0.1;
 }
 
 // Make sure the manager is started before event publishers call BeginPlay
@@ -125,6 +131,9 @@ void ASLRuntimeManager::Init()
 
 			// Set filter parameters
 			EventDataLogger->SetFilterParameters(bFilterEvents, MinDurationFilter, bFilterAll, FilterKeywords);
+
+			// Set concatenate parameters
+			EventDataLogger->SetConcatenateParameters(bConcatenateEvents, MinDurationConcatenate, bConcatenateFirst, bConcatenateAll, ConcatenateKeywords);
 		}
 
 		// Set the manager as initialized
