@@ -357,6 +357,7 @@ void USLEventDataLogger::FilterEvents()
 		{
 			if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime) < MinDurationFilter)
 			{
+				//UE_LOG(LogTemp, Warning, TEXT(" *** Filtering out an event with taskContext: %s"), *TaskContext);
 				return true;
 			}
 		}
@@ -368,6 +369,7 @@ void USLEventDataLogger::FilterEvents()
 				{
 					if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime) < MinDurationFilter)
 					{
+						//UE_LOG(LogTemp, Warning, TEXT(" *** Filtering out an event with taskContext: %s"), *TaskContext);
 						return true;
 					}
 				}
@@ -411,14 +413,14 @@ void USLEventDataLogger::ConcatenateEvents()
 		// Check that we have at least 2 events with the same name
 		if (CtxToEvsItr.Value.Num() > 1)
 		{
-			UE_LOG(LogTemp, Warning, TEXT(" *** Context: %s %i"), *CtxToEvsItr.Key, CtxToEvsItr.Value.Num());
+			//UE_LOG(LogTemp, Warning, TEXT(" *** Context: %s, Num: %i"), *CtxToEvsItr.Key, CtxToEvsItr.Value.Num());
 
 			 // Sort the array of the events
 			CtxToEvsItr.Value.Sort([](const TSharedPtr<FOwlNode>& LHS, const TSharedPtr<FOwlNode>& RHS) -> bool	{
 				// Get the end times of both events
 				FString LHSEndTime;
 				FString RHSEndTime;
-				// Iterate properties and check for keywords in the subject		
+				// Get the end time of the left hand side event		
 				for (const auto& PropItr : LHS->Properties)
 				{
 					if (PropItr.Subject.Contains("endTime"))
@@ -427,6 +429,7 @@ void USLEventDataLogger::ConcatenateEvents()
 						break;
 					}
 				}
+				// Get the end time of the right hand side event
 				for (const auto& PropItr : RHS->Properties)
 				{
 					if (PropItr.Subject.Contains("endTime"))
@@ -435,53 +438,67 @@ void USLEventDataLogger::ConcatenateEvents()
 						break;
 					}
 				}
-				return (FCString::Atof(*LHSEndTime) > FCString::Atof(*RHSEndTime));
+				return (FCString::Atof(*LHSEndTime) < FCString::Atof(*RHSEndTime));
 			});
 
-
-			
-			// Iterate events of the same type
-			for (const auto& EvItr : CtxToEvsItr.Value)
-			{				
-				FString StartTime;
-				FString EndTime;
-				// Iterate properties and check for keywords in the subject		
-				for (const auto& PropItr : EvItr->Properties)
-				{
-					if (PropItr.Subject.Contains("startTime"))
-					{
-						PropItr.Object.Split("_", (FString*)nullptr, &StartTime);
-					}
-					else if (PropItr.Subject.Contains("endTime"))
-					{
-						PropItr.Object.Split("_", (FString*)nullptr, &EndTime);
-					}
-				}
-				UE_LOG(LogTemp, Warning, TEXT(" \t \t End: %s"), *EndTime);
-				//if (FCString::Atof(*EndTime) - FCString::Atof(*StartTime) < MinDurationFilter)
-			}
-
-			UE_LOG(LogTemp, Warning, TEXT(" \t \t ====================== "));
-
+			// Iterate the sorted events backwards
 			for (int32 Index = CtxToEvsItr.Value.Num() - 1; Index > 0; --Index)
 			{
-				FString StartTime;
-				FString EndTime;
-				// Iterate properties and check for keywords in the subject		
+				// Local variables pointing to the start end time of the current and the event before
+				FString CurrEvStartTime;
+				FString CurrEvEndTime;
+				FString BeforeEvStartTime;
+				FString BeforeEvEndTime;
+
+				// Get the start and end time of the current event
 				for (const auto& PropItr : CtxToEvsItr.Value[Index]->Properties)
 				{
 					if (PropItr.Subject.Contains("startTime"))
 					{
-						PropItr.Object.Split("_", (FString*)nullptr, &StartTime);
+						PropItr.Object.Split("_", (FString*)nullptr, &CurrEvStartTime);
 					}
 					else if (PropItr.Subject.Contains("endTime"))
 					{
-						PropItr.Object.Split("_", (FString*)nullptr, &EndTime);
+						PropItr.Object.Split("_", (FString*)nullptr, &CurrEvEndTime);
 					}
 				}
-				UE_LOG(LogTemp, Warning, TEXT(" \t \t End: %s"), *EndTime);
+
+				// Get the start and end time of the one before the current event
+				for (const auto& PropItr : CtxToEvsItr.Value[Index - 1]->Properties)
+				{
+					if (PropItr.Subject.Contains("startTime"))
+					{
+						PropItr.Object.Split("_", (FString*)nullptr, &BeforeEvStartTime);
+					}
+					else if (PropItr.Subject.Contains("endTime"))
+					{
+						PropItr.Object.Split("_", (FString*)nullptr, &BeforeEvEndTime);
+					}
+				}
+
+				// Check duration between the two events
+				if (FCString::Atof(*CurrEvStartTime) - FCString::Atof(*BeforeEvEndTime) < MinDurationConcatenate)
+				{
+					// Remove the current event from the finished ones
+					FinishedEvents.Remove(CtxToEvsItr.Value[Index]);
+					// Remove the current event from the ordered array
+					CtxToEvsItr.Value.RemoveAt(Index, 1, false);
+					// Set the end time of the event before the current one, to the current one
+					for (auto& PropItr : CtxToEvsItr.Value[Index - 1]->Properties)
+					{
+						if (PropItr.Subject.Contains("endTime"))
+						{
+							PropItr.Object.Reset();
+							PropItr.Object = "&log;timepoint_" + CurrEvEndTime;
+							break;
+						}
+					}
+
+					//UE_LOG(LogTemp, Warning, TEXT(" \t \t ----[%s, %s]---[%s, %s]---- ==>  ----[%s, %s]---"),
+					//	*BeforeEvStartTime, *BeforeEvEndTime, *CurrEvStartTime, *CurrEvEndTime,
+					//	*BeforeEvStartTime, *CurrEvEndTime);
+				}
 			}
-			UE_LOG(LogTemp, Warning, TEXT(" \t \t ====================== "));
 		}		
 	}
 }

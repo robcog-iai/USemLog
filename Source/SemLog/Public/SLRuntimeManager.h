@@ -157,7 +157,7 @@ private:
 
 	// Concatenate first (run before filtering the events)
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bConcatenateEvents"))
-	uint32 bConcatenateFirst : 1;
+	uint32 bConcatenateBeforeFilter : 1;
 
 	// Concatenate all events
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger", meta = (editcondition = "bConcatenateEvents"))

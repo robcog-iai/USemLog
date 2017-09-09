@@ -37,7 +37,7 @@ ASLRuntimeManager::ASLRuntimeManager()
 
 	// Concatenate events
 	bConcatenateEvents = false;
-	bConcatenateFirst = false;
+	bConcatenateBeforeFilter = false;
 	bConcatenateAll = false;
 	MinDurationConcatenate = 0.1;
 }
@@ -133,7 +133,7 @@ void ASLRuntimeManager::Init()
 			EventDataLogger->SetFilterParameters(bFilterEvents, MinDurationFilter, bFilterAll, FilterKeywords);
 
 			// Set concatenate parameters
-			EventDataLogger->SetConcatenateParameters(bConcatenateEvents, MinDurationConcatenate, bConcatenateFirst, bConcatenateAll, ConcatenateKeywords);
+			EventDataLogger->SetConcatenateParameters(bConcatenateEvents, MinDurationConcatenate, bConcatenateBeforeFilter, bConcatenateAll, ConcatenateKeywords);
 		}
 
 		// Set the manager as initialized
