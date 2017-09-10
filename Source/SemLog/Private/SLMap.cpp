@@ -56,55 +56,11 @@ bool USLMap::Generate(UWorld* World)
 	const TMap<AActor*, TMap<FString, FString>> ActorToTagProperties =
 		FTagStatics::GetActorsToKeyValuePairs(World, "SemLog");
 	
-
 	// Check for parent-child properties
-	for (const auto& ActorToTagItr : ActorToTagProperties)
-	{
-		// Parent actor
-		AActor* const ParentActor = ActorToTagItr.Key;
-		// Get attached actors
-		TArray<AActor*> AttachedActors;
-		ParentActor->GetAttachedActors(AttachedActors);
-				
-		// Check if any child is semantically annotated
-		for (const auto& AttActItr : AttachedActors)
-		{
-			// If child is semantically annotated add parent-child properties to the actors
-			if (ActorToTagProperties.Contains(AttActItr))
-			{
-				const FString ParentIndividual = "&log;"
-					+ *ActorToTagItr.Value.Find("Class") + "_"
-					+ *ActorToTagItr.Value.Find("Id");
+	USLMap::AddParentChildAttachmentProperties(ActorToTagProperties);
 
-				const FString ChildIndividual = "&log;"
-					+ *ActorToTagProperties[AttActItr].Find("Class") + "_"
-					+ *ActorToTagProperties[AttActItr].Find("Id");
-
-				FOwlTriple ParentProperty("knowrob_u:attachedChild", "rdf:resource", "&log;" + ChildIndividual);
-				FOwlTriple ChildProperty("knowrob_u:attachedParent", "rdf:resource", "&log;" + ParentIndividual);
-
-				// Lambda to add the extra properties
-				auto AddExtraPropertyLambda = [this](AActor* Actor, FOwlTriple Property)
-				{
-					// Check if parent is already in the map
-					if (ActorToExtraProperties.Contains(Actor))
-					{
-						ActorToExtraProperties[Actor].Add(Property);
-					}
-					else
-					{
-						TArray<FOwlTriple> ExtraProperties;
-						ExtraProperties.Add(Property);
-						ActorToExtraProperties.Add(Actor, ExtraProperties);
-					}
-				};
-				// Call the lambda for the parent and the child
-				AddExtraPropertyLambda(ParentActor, ParentProperty);
-				AddExtraPropertyLambda(AttActItr, ChildProperty);			
-			}
-		}
-	}
-
+	// Check skeletal mesh properties
+	USLMap::AddSkeletalMeshProperties(ActorToTagProperties);
 
 	// Iterate all correctly tagged actors and add them to the semantic map
 	for (const auto& ActorToTagItr : ActorToTagProperties)
@@ -141,6 +97,83 @@ bool USLMap::WriteToFile(bool bOverwrite)
 
 	// Creates directory tree as well
 	return FFileHelper::SaveStringToFile(OwlDocument.ToXmlString(), *FilePath);
+}
+
+// Check parent-child attachment properties
+void USLMap::AddParentChildAttachmentProperties(const TMap<AActor*, TMap<FString, FString>>& ActorToTagProperties)
+{
+	for (const auto& ActorToTagItr : ActorToTagProperties)
+	{
+		// Parent actor
+		AActor* const ParentActor = ActorToTagItr.Key;
+		// Get attached actors
+		TArray<AActor*> AttachedActors;
+		ParentActor->GetAttachedActors(AttachedActors);
+
+		// Check if any child is semantically annotated
+		for (const auto& AttActItr : AttachedActors)
+		{
+			// If child is semantically annotated add parent-child properties to the actors
+			if (ActorToTagProperties.Contains(AttActItr))
+			{
+				const FString ParentIndividual = "&log;"
+					+ *ActorToTagItr.Value.Find("Class") + "_"
+					+ *ActorToTagItr.Value.Find("Id");
+
+				const FString ChildIndividual = "&log;"
+					+ *ActorToTagProperties[AttActItr].Find("Class") + "_"
+					+ *ActorToTagProperties[AttActItr].Find("Id");
+
+				FOwlTriple ParentProperty("knowrob_u:attachedChild", "rdf:resource", ChildIndividual);
+				FOwlTriple ChildProperty("knowrob_u:attachedParent", "rdf:resource", ParentIndividual);
+
+				// Lambda to add the extra properties
+				auto AddExtraPropertyLambda = [this](AActor* Actor, FOwlTriple Property)
+				{
+					// Check if parent is already in the map
+					if (ActorToExtraProperties.Contains(Actor))
+					{
+						ActorToExtraProperties[Actor].Add(Property);
+					}
+					else
+					{
+						TArray<FOwlTriple> ExtraProperties;
+						ExtraProperties.Add(Property);
+						ActorToExtraProperties.Add(Actor, ExtraProperties);
+					}
+				};
+				// Call the lambda for the parent and the child
+				AddExtraPropertyLambda(ParentActor, ParentProperty);
+				AddExtraPropertyLambda(AttActItr, ChildProperty);
+			}
+		}
+	}
+}
+
+// Check skeletal mesh properties
+void USLMap::AddSkeletalMeshProperties(const TMap<AActor*, TMap<FString, FString>>& ActorToTagProperties)
+{
+	for (const auto& ActorToTagItr : ActorToTagProperties)
+	{
+		// Check if skeletal mesh tag is present
+		if (ActorToTagItr.Value.Contains("PathToSkeletalMesh"))
+		{
+			FOwlTriple SkelMeshProperty(
+				"knowrob_u:pathToSkeletalMesh", "rdf:datatype", "&xsd;string", ActorToTagItr.Value["PathToSkeletalMesh"]);
+
+			// Check if parent is already in the map
+			if (ActorToExtraProperties.Contains(ActorToTagItr.Key))
+			{
+				ActorToExtraProperties[ActorToTagItr.Key].Add(SkelMeshProperty);
+			}
+			else
+			{
+				TArray<FOwlTriple> ExtraProperties;
+				ExtraProperties.Add(SkelMeshProperty);
+				ActorToExtraProperties.Add(ActorToTagItr.Key, ExtraProperties);
+			}
+		}
+	}
 }
 
 // Set document default values
@@ -188,6 +221,7 @@ void USLMap::SetDefaultValues()
 		"Property Definitions")));
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;attachedChild")));
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;attachedParent")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;pathToSkeletalMesh")));
 
 	// Add datatype property definitions
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:DatatypeProperty", "rdf:about", "&knowrob;depthOfObject",
