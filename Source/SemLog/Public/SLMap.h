@@ -61,11 +61,15 @@ private:
 	// Map of extra properties of the actors
 	TMap<AActor*, TArray<FOwlTriple>> ActorToExtraProperties;
 
+	// Map of extra properties of the components
+	TMap<UActorComponent*, TArray<FOwlTriple>> ComponentToExtraProperties;
+
 	// Check parent-child attachment properties
 	void AddParentChildAttachmentProperties(const TMap<AActor*, TMap<FString, FString>>& ActorToTagProperties);
 
 	// Check skeletal mesh properties
-	void AddSkeletalMeshProperties(const TMap<AActor*, TMap<FString, FString>>& ActorToTagProperties);
+	void AddExtraProperties(const TMap<AActor*, TMap<FString, FString>>& ActorToTagProperties,
+		const TMap<UActorComponent*, TMap<FString, FString>>& ComponentToTagProperties);
 
 	// Set document default values
 	void SetDefaultValues();

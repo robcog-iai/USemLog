@@ -55,22 +55,22 @@ bool USLMap::Generate(UWorld* World)
 	// Get the map of actors to their tag properties
 	const TMap<AActor*, TMap<FString, FString>> ActorToTagProperties =
 		FTagStatics::GetActorsToKeyValuePairs(World, "SemLog");
+
+	// Get the map of components to their tag properties
+	const TMap<UActorComponent*, TMap<FString, FString>> ComponentToTagProperties =
+		FTagStatics::GetComponentsToKeyValuePairs(World, "SemLog");
 	
 	// Check for parent-child properties
 	USLMap::AddParentChildAttachmentProperties(ActorToTagProperties);
 
-	// Check skeletal mesh properties
-	USLMap::AddSkeletalMeshProperties(ActorToTagProperties);
+	// Check various extra properties
+	USLMap::AddExtraProperties(ActorToTagProperties, ComponentToTagProperties);
 
 	// Iterate all correctly tagged actors and add them to the semantic map
 	for (const auto& ActorToTagItr : ActorToTagProperties)
 	{
 		USLMap::InsertActorIndividual(ActorToTagItr);
 	}
-
-	// Get the map of components to their tag properties
-	const TMap<UActorComponent*, TMap<FString, FString>> ComponentToTagProperties =
-		FTagStatics::GetComponentsToKeyValuePairs(World, "SemLog");
 
 	// Iterate all correctly tagged actors and add them to the semantic map
 	for (const auto& ComponentToTagItr : ComponentToTagProperties)
@@ -151,8 +151,10 @@ void USLMap::AddParentChildAttachmentProperties(const TMap<AActor*, TMap<FString
 }
 
 // Check skeletal mesh properties
-void USLMap::AddSkeletalMeshProperties(const TMap<AActor*, TMap<FString, FString>>& ActorToTagProperties)
+void USLMap::AddExtraProperties(const TMap<AActor*, TMap<FString, FString>>& ActorToTagProperties,
+	const TMap<UActorComponent*, TMap<FString, FString>>& ComponentToTagProperties)
 {
+	// Iterate actors
 	for (const auto& ActorToTagItr : ActorToTagProperties)
 	{
 		// Check if skeletal mesh tag is present
@@ -171,6 +173,66 @@ void USLMap::AddSkeletalMeshProperties(const TMap<AActor*, TMap<FString, FString
 				TArray<FOwlTriple> ExtraProperties;
 				ExtraProperties.Add(SkelMeshProperty);
 				ActorToExtraProperties.Add(ActorToTagItr.Key, ExtraProperties);
+			}
+		}
+
+		// Check if object movement is static or dynamic
+		if (ActorToTagItr.Value.Contains("Runtime"))
+		{
+			FOwlTriple MovementProperty;
+			if (ActorToTagItr.Value["Runtime"].Equals("Dynamic"))
+			{
+				MovementProperty = FOwlTriple(
+					"knowrob_u:dynamicEntity", "rdf:datatype", "&xsd;boolean", "1");
+			}
+			else if (ActorToTagItr.Value["Runtime"].Equals("Static"))
+			{
+				MovementProperty = FOwlTriple(
+					"knowrob_u:dynamicEntity", "rdf:datatype", "&xsd;boolean", "0");
+			}
+
+			// Check if parent is already in the map
+			if (ActorToExtraProperties.Contains(ActorToTagItr.Key))
+			{
+				ActorToExtraProperties[ActorToTagItr.Key].Add(MovementProperty);
+			}
+			else
+			{
+				TArray<FOwlTriple> ExtraProperties;
+				ExtraProperties.Add(MovementProperty);
+				ActorToExtraProperties.Add(ActorToTagItr.Key, ExtraProperties);
+			}
+		}
+	}
+
+	// Iterate components
+	for (const auto& CompToTagItr : ComponentToTagProperties)
+	{
+		// Check if object movement is static or dynamic
+		if (CompToTagItr.Value.Contains("Runtime"))
+		{
+			FOwlTriple MovementProperty;
+			if (CompToTagItr.Value["Runtime"].Equals("Dynamic"))
+			{
+				MovementProperty = FOwlTriple(
+					"knowrob_u:dynamicEntity", "rdf:datatype", "&xsd;boolean", "1");
+			}
+			else if (CompToTagItr.Value["Runtime"].Equals("Static"))
+			{
+				MovementProperty = FOwlTriple(
+					"knowrob_u:dynamicEntity", "rdf:datatype", "&xsd;boolean", "0");
+			}
+
+			// Check if parent is already in the map
+			if (ComponentToExtraProperties.Contains(CompToTagItr.Key))
+			{
+				ComponentToExtraProperties[CompToTagItr.Key].Add(MovementProperty);
+			}
+			else
+			{
+				TArray<FOwlTriple> ExtraProperties;
+				ExtraProperties.Add(MovementProperty);
+				ComponentToExtraProperties.Add(CompToTagItr.Key, ExtraProperties);
 			}
 		}
 	}
@@ -219,6 +281,7 @@ void USLMap::SetDefaultValues()
 	// Add object property definitions 
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob;describedInMap",
 		"Property Definitions")));
+	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u:dynamicEntity")));
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;attachedChild")));
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;attachedParent")));
 	OwlDocument.Nodes.Emplace(MakeShareable(new FOwlNode("owl:ObjectProperty", "rdf:about", "&knowrob_u;pathToSkeletalMesh")));
@@ -302,10 +365,17 @@ void USLMap::InsertComponentIndividual(const TPair<UActorComponent*, TMap<FStrin
 
 		const FVector Loc = SceneComp->GetComponentLocation();
 		const FQuat Quat = SceneComp->GetComponentQuat();
-		const FVector Box = SceneComp->Bounds.BoxExtent;		
+		const FVector Box = SceneComp->Bounds.BoxExtent;
 
-		// Add to map
-		USLMap::InsertIndividual(IndividualClass, IndividualId, Loc, Quat, Box);
+		// Add to map with or without extra properties
+		if (ComponentToExtraProperties.Contains(ComponentWithProperties.Key))
+		{
+			USLMap::InsertIndividual(IndividualClass, IndividualId, Loc, Quat, Box, ComponentToExtraProperties[ComponentWithProperties.Key]);
+		}
+		else
+		{
+			USLMap::InsertIndividual(IndividualClass, IndividualId, Loc, Quat, Box);
+		}
 	}
 }
 
