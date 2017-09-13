@@ -160,8 +160,11 @@ void USLMap::AddExtraProperties(const TMap<AActor*, TMap<FString, FString>>& Act
 		// Check if skeletal mesh tag is present
 		if (ActorToTagItr.Value.Contains("PathToSkeletalMesh"))
 		{
+			const FString Path = ActorToTagItr.Value["PathToSkeletalMesh"].EndsWith("/") ?
+				ActorToTagItr.Value["PathToSkeletalMesh"] : ActorToTagItr.Value["PathToSkeletalMesh"] + "/";
+
 			FOwlTriple SkelMeshProperty(
-				"knowrob_u:pathToSkeletalMesh", "rdf:datatype", "&xsd;string", ActorToTagItr.Value["PathToSkeletalMesh"]);
+				"knowrob_u:pathToSkeletalMesh", "rdf:datatype", "&xsd;string", Path);
 
 			// Check if parent is already in the map
 			if (ActorToExtraProperties.Contains(ActorToTagItr.Key))
