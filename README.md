@@ -25,6 +25,11 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 	 
      `Id,gPP9;` - represents the unique ID for each entity to be logged
 
+# Rules:
+
+ * All meshes/items/actor/components need to have the scale set to `1,1,1` in Unreal
+ * The center of the objects should be in the center of mass.
+
 
 # Tutorials
 
