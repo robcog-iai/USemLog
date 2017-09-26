@@ -4,4 +4,4 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 
 # Usage
 
-See repository branches for various versions.
+Latest version [0.2](https://github.com/robcog-iai/USemLog/tree/0.2)
