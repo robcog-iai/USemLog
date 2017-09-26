@@ -1,3 +1,6 @@
+![Alt text](https://raw.githubusercontent.com/robcog-iai/USemLog/master/SemLog.png "USemLog")
+
+
 # USemLog
 
 Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data to a KnowRob compatible format.
