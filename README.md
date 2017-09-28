@@ -1,4 +1,4 @@
-# USemLog - development branch
+# USemLog 
 
 Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data to a KnowRob compatible format.
 	
