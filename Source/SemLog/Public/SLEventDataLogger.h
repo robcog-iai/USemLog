@@ -1,0 +1,184 @@
+// Copyright 2017, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
+#include "SLOwl.h"
+#include "SLEventDataLogger.generated.h"
+
+
+/** Delegate type for the finished events */
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLOnEventsFinishedSignature, const FString&);
+
+/**
+* Semantic logger of event data
+* (important contacts, various high level events etc.)
+ */
+UCLASS()
+class SEMLOG_API USLEventDataLogger : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	// Default constructor
+	USLEventDataLogger();
+
+	// Destructor
+	~USLEventDataLogger();
+
+	// Initialize logger
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool InitLogger(const FString InEpisodeId);
+
+	// Start logger
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool StartLogger(const float Timestamp);
+
+	// Finish logger
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool FinishLogger(const float Timestamp);
+
+	// Write document to file
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool WriteEventsToFile(const FString InLogDirectoryPath, bool bWriteTimelines = true);
+
+	// Broadcast document
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool BroadcastFinishedEvents();
+
+	// Get document as a string
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool GetEventsAsString(FString& OutStringDocument);
+
+	// Check if the logger is initialized
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool IsInit() const { return bIsInit; };
+
+	// Check if the logger is started
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool IsStarted() const { return bIsStarted; };
+
+	// Check if the logger is finished
+	UFUNCTION(BlueprintCallable, Category = SL)
+	bool IsFinished() const { return bIsFinished; };
+	
+	// Insert finished event
+	bool InsertFinishedEvent(const TSharedPtr<FOwlNode> Event);
+
+	// Start an event
+	bool StartAnEvent(const TSharedPtr<FOwlNode> Event);
+
+	// Finish an event
+	bool FinishAnEvent(const TSharedPtr<FOwlNode> Event);
+
+	// Add object individual
+	bool AddObjectIndividual(const FString Id, TSharedPtr<FOwlNode> Object);
+
+	// Add time individual
+	bool AddTimeIndividual(const FString Id, TSharedPtr<FOwlNode> Object);
+
+	// Add metadata property
+	bool AddMetadataProperty(TSharedPtr<FOwlTriple> Property);
+
+	// Set filter parameters
+	void SetFilterParameters(bool bInFilterEvents, float MinDuration, bool bInFilterAll = true, const TArray<FString>& InFilterKeywords = TArray<FString>());
+
+	// Set concatenate events parameters
+	void SetConcatenateParameters(bool bInConcatenateEvents, float MinDuration, bool bInConcatenateFirst = false, bool bInConcatenateAll = true, const TArray<FString>& InConcatenateKeywords = TArray<FString>());
+	
+	// Delegate to publish the finished events
+	FSLOnEventsFinishedSignature OnEventsFinished;
+
+private:
+	// Start metadata event
+	bool StartMetadataEvent(const float Timestamp);
+
+	// Start metadata event
+	bool FinishMetadataEvent(const float Timestamp);
+
+	// Terminate all idling events
+	bool FinishOpenedEvents(const float Timestamp);
+
+	// Filter events
+	void FilterEvents();
+
+	// Concatenate events
+	void ConcatenateEvents();
+
+	// @TODO Temp solution
+	// Set objects, time events and metadata subActions
+	void SetObjectsAndMetaSubActions();
+
+	// Write timelines
+	void WriteTimelines(const FString LogDirectoryPath);
+
+	// Set document default values
+	void SetDefaultValues();
+
+	// Remove document default values
+	void RemoveDefaultValues();
+
+	// Event logs document as owl representation
+	UPROPERTY(EditAnywhere, Category = SL)
+	FOwlDocument OwlDocument;
+
+	// Id of the log file
+	FString EpisodeId;
+
+	// Logger initialized
+	uint8 bIsInit : 1;
+
+	// Logger started
+	uint8 bIsStarted : 1;
+
+	// Logger finished
+	uint8 bIsFinished : 1;
+
+	// Shows if the default values of the owl document have been set
+	uint8 bOwlDefaultValuesSet : 1;
+
+	// Metadata event
+	TSharedPtr<FOwlNode> MetaEvent;
+
+	// Array of all the finished events
+	TArray<TSharedPtr<FOwlNode>> FinishedEvents;
+
+	// Set of opened events
+	TSet<TSharedPtr<FOwlNode>> OpenedEvents;
+
+	// Map id to object individuals
+	TMap <FString, TSharedPtr<FOwlNode>> ObjectIndividualsMap;
+
+	// Map of id to time individuals
+	TMap <FString, TSharedPtr<FOwlNode>> TimeIndividualsMap;
+
+	/** Event filter/concatenate parameters **/
+	// Flag to filter events
+	bool bFilterEvents;
+
+	// Minimum duration of an event in order not to be removed
+	float MinDurationFilter;
+
+	// Filter all
+	bool bFilterAll;
+
+	// Filter only events with the given keywords in the taskContext property
+	TArray<FString> FilterKeywords;
+
+	// Flag to concatenate events
+	bool bConcatenateEvents;
+
+	// Concatenate events before filtering them
+	bool bConcatenateFirst;
+
+	// Concatenate all
+	bool bConcatenateAll;
+
+	// Minimum duration between the events in order no to be concatenated
+	float MinDurationConcatenate;
+
+	// Concatenate only events with the given keywords in the taskContext property
+	TArray<FString> ConcatenateKeywords;
+};
