@@ -211,6 +211,28 @@ void USLMap::AddExtraProperties(const TMap<AActor*, TMap<FString, FString>>& Act
 	// Iterate components
 	for (const auto& CompToTagItr : ComponentToTagProperties)
 	{
+		// Check if skeletal mesh tag is present
+		if (CompToTagItr.Value.Contains("PathToSkeletalMesh"))
+		{
+			const FString Path = CompToTagItr.Value["PathToSkeletalMesh"].EndsWith("/") ?
+				CompToTagItr.Value["PathToSkeletalMesh"] : CompToTagItr.Value["PathToSkeletalMesh"] + "/";
+
+			FOwlTriple SkelMeshProperty(
+				"knowrob_u:pathToSkeletalMesh", "rdf:datatype", "&xsd;string", Path);
+
+			// Check if parent is already in the map
+			if (ComponentToExtraProperties.Contains(CompToTagItr.Key))
+			{
+				ComponentToExtraProperties[CompToTagItr.Key].Add(SkelMeshProperty);
+			}
+			else
+			{
+				TArray<FOwlTriple> ExtraProperties;
+				ExtraProperties.Add(SkelMeshProperty);
+				ComponentToExtraProperties.Add(CompToTagItr.Key, ExtraProperties);
+			}
+		}
+
 		// Check if object movement is static or dynamic
 		if (CompToTagItr.Value.Contains("Runtime"))
 		{
