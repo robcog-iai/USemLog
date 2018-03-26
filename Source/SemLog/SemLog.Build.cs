@@ -44,6 +44,7 @@ public class SemLog : ModuleRules
                 "Json",
                 "JsonUtilities",
 				"UTags",
+                "libmongo"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

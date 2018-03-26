@@ -4,6 +4,10 @@
 #include "SLRawDataLogger.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "TagStatics.h"
+#ifdef WITH_MONGO
+#include "mongoc.h"
+#include "bson.h"
+#endif //WITH_MONGO
 
 
 // Constructor

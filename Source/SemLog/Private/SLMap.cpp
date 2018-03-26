@@ -124,27 +124,27 @@ void USLMap::AddParentChildAttachmentProperties(const TMap<AActor*, TMap<FString
 					+ *ActorToTagProperties[AttActItr].Find("Class") + "_"
 					+ *ActorToTagProperties[AttActItr].Find("Id");
 
-				FOwlTriple ParentProperty("knowrob_u:attachedChild", "rdf:resource", ChildIndividual);
-				FOwlTriple ChildProperty("knowrob_u:attachedParent", "rdf:resource", ParentIndividual);
+				//FOwlTriple ParentProperty("knowrob_u:attachedChild", "rdf:resource", ChildIndividual);
+				//FOwlTriple ChildProperty("knowrob_u:attachedParent", "rdf:resource", ParentIndividual);
 
-				// Lambda to add the extra properties
-				auto AddExtraPropertyLambda = [this](AActor* Actor, FOwlTriple Property)
-				{
-					// Check if parent is already in the map
-					if (ActorToExtraProperties.Contains(Actor))
-					{
-						ActorToExtraProperties[Actor].Add(Property);
-					}
-					else
-					{
-						TArray<FOwlTriple> ExtraProperties;
-						ExtraProperties.Add(Property);
-						ActorToExtraProperties.Add(Actor, ExtraProperties);
-					}
-				};
-				// Call the lambda for the parent and the child
-				AddExtraPropertyLambda(ParentActor, ParentProperty);
-				AddExtraPropertyLambda(AttActItr, ChildProperty);
+				//// Lambda to add the extra properties
+				//auto AddExtraPropertyLambda = [this](AActor* Actor, FOwlTriple Property)
+				//{
+				//	// Check if parent is already in the map
+				//	if (ActorToExtraProperties.Contains(Actor))
+				//	{
+				//		ActorToExtraProperties[Actor].Add(Property);
+				//	}
+				//	else
+				//	{
+				//		TArray<FOwlTriple> ExtraProperties;
+				//		ExtraProperties.Add(Property);
+				//		ActorToExtraProperties.Add(Actor, ExtraProperties);
+				//	}
+				//};
+				//// Call the lambda for the parent and the child
+				//AddExtraPropertyLambda(ParentActor, ParentProperty);
+				//AddExtraPropertyLambda(AttActItr, ChildProperty);
 			}
 		}
 	}
@@ -180,15 +180,15 @@ void USLMap::AddExtraProperties(const TMap<AActor*, TMap<FString, FString>>& Act
 		}
 
 		// Check if object movement is static or dynamic
-		if (ActorToTagItr.Value.Contains("Runtime"))
+		if (ActorToTagItr.Value.Contains("LogType"))
 		{
 			FOwlTriple MovementProperty;
-			if (ActorToTagItr.Value["Runtime"].Equals("Dynamic"))
+			if (ActorToTagItr.Value["LogType"].Equals("Dynamic"))
 			{
 				MovementProperty = FOwlTriple(
 					"knowrob_u:dynamicEntity", "rdf:datatype", "&xsd;boolean", "1");
 			}
-			else if (ActorToTagItr.Value["Runtime"].Equals("Static"))
+			else if (ActorToTagItr.Value["LogType"].Equals("Static"))
 			{
 				MovementProperty = FOwlTriple(
 					"knowrob_u:dynamicEntity", "rdf:datatype", "&xsd;boolean", "0");
@@ -234,15 +234,15 @@ void USLMap::AddExtraProperties(const TMap<AActor*, TMap<FString, FString>>& Act
 		}
 
 		// Check if object movement is static or dynamic
-		if (CompToTagItr.Value.Contains("Runtime"))
+		if (CompToTagItr.Value.Contains("LogType"))
 		{
 			FOwlTriple MovementProperty;
-			if (CompToTagItr.Value["Runtime"].Equals("Dynamic"))
+			if (CompToTagItr.Value["LogType"].Equals("Dynamic"))
 			{
 				MovementProperty = FOwlTriple(
 					"knowrob_u:dynamicEntity", "rdf:datatype", "&xsd;boolean", "1");
 			}
-			else if (CompToTagItr.Value["Runtime"].Equals("Static"))
+			else if (CompToTagItr.Value["LogType"].Equals("Static"))
 			{
 				MovementProperty = FOwlTriple(
 					"knowrob_u:dynamicEntity", "rdf:datatype", "&xsd;boolean", "0");
