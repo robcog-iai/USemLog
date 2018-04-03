@@ -150,7 +150,7 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 
 	// Log static entities (logged only once at init)
 	TArray<AActor*> StaticActors = FTagStatics::GetActorsWithKeyValuePair(
-		World, "SemLog", "Runtime", "Static");
+		World, "SemLog", "LogType", "Static");
 
 	for (const auto& ActItr : StaticActors)
 	{
@@ -170,7 +170,7 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 
 	// Get all static components and cast them to USceneComponent
 	TArray<UActorComponent*> StaticActorComponents = FTagStatics::GetComponentsWithKeyValuePair(
-		World, "SemLog", "Runtime", "Static");
+		World, "SemLog", "LogType", "Static");
 	// Array to cast to
 	TArray<USceneComponent*> StaticSceneComponents;
 	for (const auto& StaticActCompItr : StaticActorComponents)
@@ -198,7 +198,7 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 
 	// Setup and log dynamic entities
 	TArray<AActor*> DynamicActors = FTagStatics::GetActorsWithKeyValuePair(
-		World, "SemLog", "Runtime", "Dynamic");
+		World, "SemLog", "LogType", "Dynamic");
 
 	for (const auto& DynActItr : DynamicActors)
 	{
@@ -223,7 +223,7 @@ bool USLRawDataLogger::GetAllEntitiesAsJson(FString& FirstJsonEntry)
 
 	// Get all static components and cast them to USceneComponent
 	TArray<UActorComponent*> DynamicActorComponents = FTagStatics::GetComponentsWithKeyValuePair(
-		World, "SemLog", "Runtime", "Dynamic");
+		World, "SemLog", "LogType", "Dynamic");
 	// Array to cast to
 	TArray<USceneComponent*> DynamicSceneComponents;
 	for (const auto& DynamicActCompItr : DynamicActorComponents)
