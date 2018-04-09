@@ -1,4 +1,4 @@
-// Copyright 2017, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 using UnrealBuildTool;
@@ -6,10 +6,10 @@ using UnrealBuildTool;
 public class SemLogEd : ModuleRules
 {
 	public SemLogEd(ReadOnlyTargetRules Target) : base(Target)
-    {
-        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+	{
+		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicIncludePaths.AddRange(
+		PublicIncludePaths.AddRange(
 			new string[] {
 				"SemLogEd/Public"
 				// ... add public include paths required here ...
@@ -46,9 +46,9 @@ public class SemLogEd : ModuleRules
 				"InputCore",
 				"UnrealEd",
 				"LevelEditor",
-                "Projects",
+				"Projects",
 				// ... add private dependencies that you statically link with here ...
-            }
+			}
 			);
 		
 		

@@ -15,15 +15,15 @@
   "IsBetaVersion": false,
   "Installed": false,
   "Modules": [
-    {
-      "Name": "SemLog",
-      "Type": "Runtime",
-      "LoadingPhase": "Default"
-    },
-    {
-      "Name": "SemLogEd",
-      "Type": "Editor"
-    }
+	{
+	  "Name": "SemLog",
+	  "Type": "Runtime",
+	  "LoadingPhase": "Default"
+	},
+	{
+	  "Name": "SemLogEd",
+	  "Type": "Editor"
+	}
   ],
   "Plugins": [
 		{

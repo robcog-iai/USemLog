@@ -1,4 +1,4 @@
-// Copyright 2017, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 using UnrealBuildTool;
@@ -6,10 +6,10 @@ using UnrealBuildTool;
 public class SemLog : ModuleRules
 {
 	public SemLog(ReadOnlyTargetRules Target) : base(Target)
-    {
-        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+	{
+		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicIncludePaths.AddRange(
+		PublicIncludePaths.AddRange(
 			new string[] {
 				"SemLog/Public"
 				// ... add public include paths required here ...
@@ -41,10 +41,10 @@ public class SemLog : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-                "Json",
-                "JsonUtilities",
+				"Json",
+				"JsonUtilities",
 				"UTags",
-                "libmongo"
+				"libmongo"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
