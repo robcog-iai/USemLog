@@ -92,6 +92,15 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.IsEnabled(true)
 					.OnClicked_Static(&FSLEdToolkitStatics::GenerateNewIds)
 				]
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.HAlign(HAlign_Center)
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("ClearIds", "Clear Ids"))
+				.IsEnabled(true)
+				.OnClicked_Static(&FSLEdToolkitStatics::ClearIds)
+				]
 		];
 		
 	FModeToolkit::Init(InitToolkitHost);

@@ -8,6 +8,8 @@
 #include "FileManager.h"
 #include "FileHelper.h"
 
+const FString COLLADA_PATH = TEXT("refills/");
+
 // Constructor, set default values
 USLMap::USLMap()
 {
@@ -430,15 +432,15 @@ void USLMap::InsertIndividual(
 
 	// Get orientation as string in right(ROS) or left (UE4) hand coordinate system
 	const FString QuatStr = bSaveAsRightHandedCoordinate ?
-		(FString::SanitizeFloat(Quat.W) + " "
-			+ FString::SanitizeFloat(-Quat.X) + " "
+		(FString::SanitizeFloat(-Quat.X) + " "
 			+ FString::SanitizeFloat(Quat.Y) + " "
-			+ FString::SanitizeFloat(-Quat.Z))
+			+ FString::SanitizeFloat(-Quat.Z) + " "
+			+ FString::SanitizeFloat(Quat.W))
 		:
-		(FString::SanitizeFloat(Quat.W) + " "
-			+ FString::SanitizeFloat(Quat.X) + " "
+		(FString::SanitizeFloat(Quat.X) + " "
 			+ FString::SanitizeFloat(Quat.Y) + " "
-			+ FString::SanitizeFloat(Quat.Z));
+			+ FString::SanitizeFloat(Quat.Z) + " "
+			+ FString::SanitizeFloat(Quat.W));
 
 	// Add object individual
 	TArray<FOwlTriple> IndividualProperties;
@@ -451,7 +453,7 @@ void USLMap::InsertIndividual(
 	IndividualProperties.Emplace(FOwlTriple("knowrob:heightOfObject", "rdf:datatype",
 		"&xsd;double", FString::SanitizeFloat(BoundingBox.Z / 100.f)));
 	IndividualProperties.Emplace(FOwlTriple("knowrob:pathToCadModel", "rdf:datatype",
-		"&xsd;string", "package://robcog/" + IndividualClass + ".dae"));
+		"&xsd;string", "package://robcog/"+ COLLADA_PATH + IndividualClass + "/" + IndividualClass + ".dae"));
 	if (ExtraProperties.Num() > 0)
 	{
 		for (const auto& PropItr : ExtraProperties)

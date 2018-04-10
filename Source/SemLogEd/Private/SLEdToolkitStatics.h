@@ -92,7 +92,11 @@ struct FSLEdToolkitStatics
 		return FReply::Handled();
 	}
 
-
+	static FReply ClearIds()
+	{
+		FTagStatics::RemoveKeyValuePairs(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
+		return FReply::Handled();
+	}
 
 	// Create semantic logs directory
 	static bool SetupLoggingDirectory(const FString& DirectoryName)
