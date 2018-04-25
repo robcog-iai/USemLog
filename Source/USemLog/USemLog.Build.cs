@@ -3,15 +3,15 @@
 
 using UnrealBuildTool;
 
-public class SemLog : ModuleRules
+public class USemLog : ModuleRules
 {
-	public SemLog(ReadOnlyTargetRules Target) : base(Target)
+	public USemLog(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
-				"SemLog/Public"
+				"USemLog/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -19,7 +19,7 @@ public class SemLog : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"SemLog/Private",
+				"USemLog/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -44,6 +44,7 @@ public class SemLog : ModuleRules
 				"Json",
 				"JsonUtilities",
 				"UTags",
+				"UIds",
 				"libmongo"
 				// ... add private dependencies that you statically link with here ...	
 			}

@@ -1,16 +1,16 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLEdModule.h"
+#include "USemLogEd.h"
 #include "SLEdMode.h"
 #include "SLEdStyle.h"
 
 // Define logging types
-DEFINE_LOG_CATEGORY(LogSLEd);
+DEFINE_LOG_CATEGORY(LogSemLogEd);
 
-#define LOCTEXT_NAMESPACE "FSemLogEdModule"
+#define LOCTEXT_NAMESPACE "FUSemLogEd"
 
-void FSLEdModule::StartupModule()
+void FUSemLogEd::StartupModule()
 {
 	// Register slate style overrides
 	FSLEdStyle::Initialize();
@@ -24,7 +24,7 @@ void FSLEdModule::StartupModule()
 		true);
 }
 
-void FSLEdModule::ShutdownModule()
+void FUSemLogEd::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
@@ -33,4 +33,4 @@ void FSLEdModule::ShutdownModule()
 
 #undef LOCTEXT_NAMESPACE
 	
-IMPLEMENT_MODULE(FSLEdModule, SemLogEd)
+IMPLEMENT_MODULE(FUSemLogEd, USemLogEd)

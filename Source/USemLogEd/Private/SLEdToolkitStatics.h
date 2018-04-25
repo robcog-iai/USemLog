@@ -8,11 +8,11 @@
 #include "FileManager.h"
 #include "FileHelper.h"
 #include "EngineUtils.h"
-#include "SLMap.h"
-#include "SLRuntimeManager.h"
-#include "SLLevelInfo.h"
-#include "SLUtils.h"
-#include "TagStatics.h"
+#include "Ids.h"
+#include "Tags.h"
+//#include "SLMap.h"
+//#include "SLRuntimeManager.h"
+//#include "SLLevelInfo.h"
 
 struct FSLEdToolkitStatics
 {
@@ -26,12 +26,12 @@ struct FSLEdToolkitStatics
 
 	static FReply GenerateSemanticMap()
 	{
-		USLMap* SemMap = NewObject<USLMap>();
-		if (SemMap)
-		{
-			SemMap->Generate(GEditor->GetEditorWorldContext().World());
-			SemMap->WriteToFile();
-		}
+		//USLMap* SemMap = NewObject<USLMap>();
+		//if (SemMap)
+		//{
+		//	SemMap->Generate(GEditor->GetEditorWorldContext().World());
+		//	SemMap->WriteToFile();
+		//}
 		//SemMap->BeginDestroy();
 		return FReply::Handled();
 	}
@@ -39,31 +39,31 @@ struct FSLEdToolkitStatics
 
 	static bool NoRuntimeManagerInTheWorld()
 	{
-		if (TActorIterator<ASLRuntimeManager>(GEditor->GetEditorWorldContext().World()))
-		{
-			return false;
-		}
+		//if (TActorIterator<ASLRuntimeManager>(GEditor->GetEditorWorldContext().World()))
+		//{
+		//	return false;
+		//}
 		return true;		
 	}
 
 	static FReply AddRuntimeManager()
 	{
-		GEditor->GetEditorWorldContext().World()->SpawnActor(ASLRuntimeManager::StaticClass());
+		//GEditor->GetEditorWorldContext().World()->SpawnActor(ASLRuntimeManager::StaticClass());
 		return FReply::Handled();
 	}
 
 	static bool NoLevelInfoInTheWorld()
 	{
-		if (TActorIterator<ASLLevelInfo>(GEditor->GetEditorWorldContext().World()))
-		{
-			return false;
-		}
+		//if (TActorIterator<ASLLevelInfo>(GEditor->GetEditorWorldContext().World()))
+		//{
+		//	return false;
+		//}
 		return true;
 	}
 
 	static FReply AddLevelinfo()
 	{
-		GEditor->GetEditorWorldContext().World()->SpawnActor(ASLLevelInfo::StaticClass());
+		//GEditor->GetEditorWorldContext().World()->SpawnActor(ASLLevelInfo::StaticClass());
 		return FReply::Handled();
 	}
 
@@ -71,21 +71,21 @@ struct FSLEdToolkitStatics
 	{
 		for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 		{
-			int32 TagIndex = FTagStatics::GetTagTypeIndex(*ActItr, "SemLog");
+			int32 TagIndex = FTags::GetTagTypeIndex(*ActItr, "SemLog");
 			if (TagIndex != INDEX_NONE)
 			{
-				FTagStatics::AddKeyValuePair(
-					ActItr->Tags[TagIndex], "Id", FSLUtils::GenerateRandomFString(4));
+				FTags::AddKeyValuePair(
+					ActItr->Tags[TagIndex], "Id", FIds::NewGuidInBase64());
 			}
 
 			// Check component tags as well
 			for (const auto& CompItr : ActItr->GetComponents())
 			{
-				int32 TagIndex = FTagStatics::GetTagTypeIndex(CompItr, "SemLog");
+				int32 TagIndex = FTags::GetTagTypeIndex(CompItr, "SemLog");
 				if (TagIndex != INDEX_NONE)
 				{
-					FTagStatics::AddKeyValuePair(
-						CompItr->ComponentTags[TagIndex], "Id", FSLUtils::GenerateRandomFString(4));
+					FTags::AddKeyValuePair(
+						CompItr->ComponentTags[TagIndex], "Id", FIds::NewGuidInBase64());
 				}
 			}
 		}
@@ -94,7 +94,7 @@ struct FSLEdToolkitStatics
 
 	static FReply ClearIds()
 	{
-		FTagStatics::RemoveKeyValuePairs(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
+		FTags::RemoveKeyValuePairs(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
 		return FReply::Handled();
 	}
 

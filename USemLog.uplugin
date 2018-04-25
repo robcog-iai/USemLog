@@ -15,19 +15,19 @@
   "IsBetaVersion": false,
   "Installed": false,
   "Modules": [
-	{
-	  "Name": "SemLog",
-	  "Type": "Runtime",
-	  "LoadingPhase": "Default"
-	},
-	{
-	  "Name": "SemLogEd",
-	  "Type": "Editor"
-	}
-  ],
+		{
+			"Name": "USemLog",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "USemLogEd",
+			"Type": "Editor"
+		}
+	],
   "Plugins": [
 		{
-			"Name": "UTags",
+			"Name": "UUtils",
 			"Enabled": true,
 			"MarketplaceURL": "http://robcog.org/"
 		},

@@ -3,15 +3,15 @@
 
 using UnrealBuildTool;
 
-public class SemLogEd : ModuleRules
+public class USemLogEd : ModuleRules
 {
-	public SemLogEd(ReadOnlyTargetRules Target) : base(Target)
+	public USemLogEd(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
-				"SemLogEd/Public"
+				"USemLogEd/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -19,7 +19,7 @@ public class SemLogEd : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"SemLogEd/Private",
+				"USemLogEd/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -29,8 +29,9 @@ public class SemLogEd : ModuleRules
 			new string[]
 			{
 				"Core",
-				"SemLog",
+				"USemLog",
 				"UTags",
+				"UIds",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
