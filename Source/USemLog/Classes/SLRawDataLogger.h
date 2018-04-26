@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "SLRawDataAsyncWorker.h"
 #include "SLRawDataLogger.generated.h"
 
 /**
@@ -60,6 +61,9 @@ private:
 
 	// Log current state of the world (dynamic objects that moved more than the distance threshold)
 	void LogCurrentState();
+
+	// Raw data async worker
+	FAsyncTask<SLRawDataAsyncWorker>* RawDataLogWorker;
 
 	// File handle to write the raw data to file
 	IFileHandle* FileHandle;

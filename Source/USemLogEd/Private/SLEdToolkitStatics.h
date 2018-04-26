@@ -75,7 +75,7 @@ struct FSLEdToolkitStatics
 			if (TagIndex != INDEX_NONE)
 			{
 				FTags::AddKeyValuePair(
-					ActItr->Tags[TagIndex], "Id", FIds::NewGuidInBase64());
+					ActItr->Tags[TagIndex], "Id", FIds::NewGuidInBase64Url());
 			}
 
 			// Check component tags as well

@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLRawDataLogger.h"
-#include "SLRawDataAsyncWorker.h"
 #include "Tags.h"
 #include "Misc/Paths.h"
 #include "HAL/PlatformFilemanager.h"
@@ -15,6 +14,12 @@ USLRawDataLogger::USLRawDataLogger()
 // Destructor
 USLRawDataLogger::~USLRawDataLogger()
 {
+	// Delete async worker
+	if (RawDataLogWorker)
+	{
+		RawDataLogWorker->EnsureCompletion();
+		delete RawDataLogWorker;
+	}
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
@@ -44,8 +49,7 @@ void USLRawDataLogger::Start(UWorld* InWorld, const FString& InLogDirectory, con
 	
 	// Set logger to update on tick or on custom update rate using a timer
 	SetLoggerUpdateRate(UpdateRate);
-
-
+	
 	// TODO move to LogToJson/Bson/Mongo
 	// Set file handle for writing data to file
 	if (bLogToJson || bLogToBson)
@@ -123,54 +127,33 @@ TStatId USLRawDataLogger::GetStatId() const
 
 // Log initial state of the world (static and dynamic entities)
 void USLRawDataLogger::LogInitialState()
-{
-	FAsyncTask<SLRawDataAsyncWorker>* MyTask = new FAsyncTask<SLRawDataAsyncWorker>(World);
-	MyTask->StartBackgroundTask();
+{	
+	// Create async worker with the raw data objects
+	RawDataLogWorker = new FAsyncTask<SLRawDataAsyncWorker>(GetWorld());
 
-	////--or --
+	// Log all semantically annotated objects 
+	RawDataLogWorker->GetTask().SetAllSemanticallyLoggedObjects();
 
-	//MyTask->StartSynchronousTask();
+	// Start async worker
+	RawDataLogWorker->StartBackgroundTask();
+	
+	// Wait for worker to complete (we only use the blocking wait for the initial state log)
+	RawDataLogWorker->EnsureCompletion();
 
-	////to just do it now on this thread
-	////Check if the task is done :
-
-	FPlatformProcess::Sleep(0.1f);
-
-	if (MyTask->IsDone())
-	{
-		UE_LOG(LogTemp, Error, TEXT("[%s][%d] *** *** Task done"), TEXT(__FUNCTION__), __LINE__);
-	}
-
-	////Spinning on IsDone is not acceptable( see EnsureCompletion ), but it is ok to check once a frame.
-	////Ensure the task is done, doing the task on the current thread if it has not been started, waiting until completion in all cases.
-
-	MyTask->EnsureCompletion();
-	delete MyTask;
+	// Remove all non-dynamic objects from worker
+	RawDataLogWorker->GetTask().RemoveAllNonDynamicObjects();
 }
 
 // Log current state of the world (dynamic objects that moved more than the distance threshold)
 void USLRawDataLogger::LogCurrentState()
 {
-	FAsyncTask<SLRawDataAsyncWorker>* MyTask = new FAsyncTask<SLRawDataAsyncWorker>(World);
-	MyTask->StartBackgroundTask();
-
-	////--or --
-
-	//MyTask->StartSynchronousTask();
-
-	////to just do it now on this thread
-	////Check if the task is done :
-
-	FPlatformProcess::Sleep(0.01f);
-
-	if (MyTask->IsDone())
+	// Start async worker
+	if (RawDataLogWorker->IsDone())
 	{
-		UE_LOG(LogTemp, Error, TEXT("[%s][%d] !!! Task done"), TEXT(__FUNCTION__), __LINE__);
+		RawDataLogWorker->StartBackgroundTask();
 	}
-
-	////Spinning on IsDone is not acceptable( see EnsureCompletion ), but it is ok to check once a frame.
-	////Ensure the task is done, doing the task on the current thread if it has not been started, waiting until completion in all cases.
-
-	MyTask->EnsureCompletion();
-	delete MyTask;
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d] SKIP new task "), TEXT(__FUNCTION__), __LINE__);
+	}
 }
