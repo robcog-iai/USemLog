@@ -10,6 +10,7 @@
 
 /**
  * Raw (subsymbolic) data logger
+ * Inherit from FTickableGameObject to have it's own tick
  */
 UCLASS()
 class USEMLOG_API USLRawDataLogger : public UObject, public FTickableGameObject
@@ -23,27 +24,30 @@ public:
 	// Destructor
 	~USLRawDataLogger();
 
-	// Log data to json file
-	void LogToJson(bool bInLogToJson);
-
-	// Log data to bson file
-	void LogToBson(bool bInLogToBson);
-
-	// Log data to mongodb
-	void LogToMongo(bool bInLogToMongo, const FString& InMongoIP, uint16 MongoPort);
+	// Init Logger
+	void Init(const float DistanceThreshold);
 
 	// Start logger
-	void Start(UWorld* InWorld, const FString& LogDirectory, const FString& InEpisodeId, const float UpdateRate, const float DistanceThreshold);
+	void Start(const float UpdateRate);
+
+	// Stop logger
+	void Stop();
+
+	// Log data to json file
+	void SetLogToJson(const FString& InLogDirectory, const FString& InEpisodeId);
+
+	// Log data to bson file
+	void SetLogToBson(const FString& InLogDirectory, const FString& InEpisodeId);
+
+	// Log data to mongodb
+	void SetLogToMongo(const FString& InLogDB, const FString& InEpisodeId, const FString& InMongoIP, uint16 MongoPort);
 
 private:
 	// Set update rate by binding to tick or a custom update rate using a timer callback
-	void SetLoggerUpdateRate(const float UpdateRate);
-
-	// Set the file handle for the logger
-	void SetLoggerFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
+	void SetUpdateRate(const float UpdateRate);
 
 	// Timer callback (timer tick)
-	void TimerCallback();
+	void TimerTick();
 
 	/** Begin FTickableGameObject interface */
 	// Called after ticking all actors, DeltaTime is the time passed since the last call.
@@ -57,32 +61,14 @@ private:
 	/** End FTickableGameObject interface */
 
 	// Log initial state of the world (static and dynamic entities)
-	void LogInitialState();
+	void LogInitialWorldState();
 
 	// Log current state of the world (dynamic objects that moved more than the distance threshold)
-	void LogCurrentState();
+	void LogCurrentWorldState();
 
-	// Raw data async worker
-	FAsyncTask<SLRawDataAsyncWorker>* RawDataLogWorker;
-
-	// File handle to write the raw data to file
-	IFileHandle* FileHandle;
-
-	// Pointer to world
-	UWorld* World;
-
-	// True if the object can be ticked
+	// True if the object can be ticked (used by FTickableGameObject)
 	bool bIsTickable;
 
-	// Squared distance threshold for logging movable objects
-	float DistanceThresholdSquared;
-
-	// Log data to json file
-	bool bLogToJson;
-
-	// Log data to bson file
-	bool bLogToBson;
-
-	// Log data to mongodb
-	bool bLogToMongo;
+	// Async worker to log the raw data
+	FAsyncTask<FSLRawDataAsyncWorker>* AsyncWorker;
 };

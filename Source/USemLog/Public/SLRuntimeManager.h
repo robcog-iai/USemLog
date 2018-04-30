@@ -18,8 +18,8 @@ public:
 	// Sets default values for this actor's properties
 	ASLRuntimeManager();
 
-	// Start manager
-	void Start();
+	// Destructor
+	~ASLRuntimeManager();
 
 protected:
 	// Called when the game starts or when spawned
@@ -28,9 +28,15 @@ protected:
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-//public:
-//	// Called every frame
-//	virtual void Tick(float DeltaTime) override;
+public:
+	// Init manager
+	void Init();
+
+	// Start manager
+	void Start();
+
+	// Stop manager
+	void Stop();
 	
 private:
 	/* Semantic logger */
@@ -46,7 +52,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL")
 	bool bStartAtBeginPlay;
 
-	/* Raw data */
+
+	/* Begin raw logger */
 	// Log raw data
 	UPROPERTY(EditAnywhere, Category = "SL")
 	bool bLogRawData;
@@ -79,10 +86,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL|Raw Data Logger", meta = (editcondition = "bLogToMongo"), meta = (ClampMin = 0, ClampMax = 65535))
 	uint16 MongoPort;
 
-	// Flags
-	bool bIsStarted;
-
-	// Raw data logger
+	// Raw data logger, use UPROPERTY to avoid GC
+	UPROPERTY()
 	class USLRawDataLogger* RawDataLogger;
+	/* End raw logger */
 
+	
+	// Set when manager is initialized
+	bool bIsInit;
+
+	// Set when manager is started
+	bool bIsStarted;
 };

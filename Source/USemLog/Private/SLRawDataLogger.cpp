@@ -3,8 +3,6 @@
 
 #include "SLRawDataLogger.h"
 #include "Tags.h"
-#include "Misc/Paths.h"
-#include "HAL/PlatformFilemanager.h"
 
 // Constructor
 USLRawDataLogger::USLRawDataLogger()
@@ -14,102 +12,96 @@ USLRawDataLogger::USLRawDataLogger()
 // Destructor
 USLRawDataLogger::~USLRawDataLogger()
 {
-	// Delete async worker
-	if (RawDataLogWorker)
-	{
-		RawDataLogWorker->EnsureCompletion();
-		delete RawDataLogWorker;
-	}
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+	USLRawDataLogger::Stop();
 }
 
-// Log data to json file
-void USLRawDataLogger::LogToJson(bool bInLogToJson)
+// Init logger
+void USLRawDataLogger::Init(const float InDistanceThreshold)
 {
-	bLogToJson = bInLogToJson;
-}
+	// Create async worker to log on a separate thread
+	AsyncWorker = new FAsyncTask<FSLRawDataAsyncWorker>();
 
-// Log data to bson file
-void USLRawDataLogger::LogToBson(bool bInLogToBson)
-{
-	bLogToBson = bInLogToBson;
-}
-
-// Log data to mongodb
-void USLRawDataLogger::LogToMongo(bool bInLogToMongo, const FString& InMongoIP, uint16 MongoPort)
-{
-	bLogToMongo = bInLogToMongo;
+	// Init async worker
+	AsyncWorker->GetTask().Init(GetWorld(), InDistanceThreshold);
 }
 
 // Start logger
-void USLRawDataLogger::Start(UWorld* InWorld, const FString& InLogDirectory, const FString& InEpisodeId, const float UpdateRate, const float InDistanceThreshold)
+void USLRawDataLogger::Start(const float UpdateRate)
 {
-	World = InWorld;
-	DistanceThresholdSquared = InDistanceThreshold * InDistanceThreshold;
-	
-	// Set logger to update on tick or on custom update rate using a timer
-	SetLoggerUpdateRate(UpdateRate);
-	
-	// TODO move to LogToJson/Bson/Mongo
-	// Set file handle for writing data to file
-	if (bLogToJson || bLogToBson)
-	{
-		SetLoggerFileHandle(InLogDirectory, InEpisodeId);
-	}
-	// Set connection to mongodb
-	if (bLogToMongo)
-	{
-		// SetLoggerMongoConnection(
-	}
+	// Log initial state of the world
+	LogInitialWorldState();
 
-	LogInitialState();
+	// Set logger to update on tick or on custom update rate using a timer
+	SetUpdateRate(UpdateRate);
+}
+
+// Stop logger
+void USLRawDataLogger::Stop()
+{
+	if (AsyncWorker)
+	{
+		// Wait for worker to complete before deleting it
+		AsyncWorker->EnsureCompletion();
+		delete AsyncWorker;
+		AsyncWorker = nullptr;
+	}
+}
+
+// Log data to json file
+void USLRawDataLogger::SetLogToJson(const FString& InLogDirectory, const FString& InEpisodeId)
+{
+	if (AsyncWorker)
+	{
+		AsyncWorker->GetTask().SetLogToJson(InLogDirectory, InEpisodeId);
+	}
+}
+
+// Log data to bson file
+void USLRawDataLogger::SetLogToBson(const FString& InLogDirectory, const FString& InEpisodeId)
+{
+	if (AsyncWorker)
+	{
+		AsyncWorker->GetTask().SetLogToBson(InLogDirectory, InEpisodeId);
+	}
+}
+
+// Log data to mongodb
+void USLRawDataLogger::SetLogToMongo(const FString& InLogDB, const FString& InEpisodeId, const FString& InMongoIP, uint16 MongoPort)
+{
+	if (AsyncWorker)
+	{
+		AsyncWorker->GetTask().SetLogToMongo(InLogDB, InEpisodeId, InMongoIP, MongoPort);
+	}
 }
 
 // Set update rate by binding to tick or a custom update rate using a timer callback
-void USLRawDataLogger::SetLoggerUpdateRate(const float UpdateRate)
+void USLRawDataLogger::SetUpdateRate(const float UpdateRate)
 {
-	// Set logger to update on tick or on custom update rate using a timer
 	if (UpdateRate > 0.0f)
 	{
-		if (World)
-		{
-			FTimerHandle TimerHandle;
-			World->GetTimerManager().SetTimer(TimerHandle, this, &USLRawDataLogger::TimerCallback, UpdateRate, true);
-		}
+		// Update logger on custom timer tick (does not guarantees the UpdateRate value,
+		// since it will be eventually triggered from the game thread tick
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &USLRawDataLogger::TimerTick, UpdateRate, true);
 	}
 	else
 	{
+		// Update logger on tick (updates every game thread tick, update rate can vary)
 		bIsTickable = true;
 	}
 }
 
-// Set the file handle for the logger
-void USLRawDataLogger::SetLoggerFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
-{
-	const FString Filename = TEXT("RawData_") + InEpisodeId + TEXT(".json");
-	FString EpisodesDirPath = FPaths::ProjectDir() + LogDirectory + TEXT("/Episodes/");
-	FPaths::RemoveDuplicateSlashes(EpisodesDirPath);
-
-	const FString FilePath = EpisodesDirPath + Filename;
-
-	// Create logging directory path and the filehandle
-	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*EpisodesDirPath);
-	FileHandle = FPlatformFileManager::Get().GetPlatformFile().OpenWrite(*FilePath, true);
-}
-
 // Timer callback (timer tick)
-void USLRawDataLogger::TimerCallback()
+void USLRawDataLogger::TimerTick()
 {
-	//UE_LOG(LogTemp, Error, TEXT("[%s][%d] World name=%s"), TEXT(__FUNCTION__), __LINE__, *World->GetName());
-	LogCurrentState();
+	LogCurrentWorldState();
 }
 
 /** Begin FTickableGameObject interface */
 // Called after ticking all actors, DeltaTime is the time passed since the last call.
 void USLRawDataLogger::Tick(float DeltaTime)
 {
-	//UE_LOG(LogTemp, Error, TEXT("[%s][%d] World name=%s"), TEXT(__FUNCTION__), __LINE__, *World->GetName());
-	LogCurrentState();
+	LogCurrentWorldState();
 }
 
 // Return if object is ready to be ticked
@@ -126,31 +118,25 @@ TStatId USLRawDataLogger::GetStatId() const
 /** End FTickableGameObject interface */
 
 // Log initial state of the world (static and dynamic entities)
-void USLRawDataLogger::LogInitialState()
-{	
-	// Create async worker with the raw data objects
-	RawDataLogWorker = new FAsyncTask<SLRawDataAsyncWorker>(GetWorld());
-
-	// Log all semantically annotated objects 
-	RawDataLogWorker->GetTask().SetAllSemanticallyLoggedObjects();
-
+void USLRawDataLogger::LogInitialWorldState()
+{
 	// Start async worker
-	RawDataLogWorker->StartBackgroundTask();
+	AsyncWorker->StartBackgroundTask();
 	
 	// Wait for worker to complete (we only use the blocking wait for the initial state log)
-	RawDataLogWorker->EnsureCompletion();
+	AsyncWorker->EnsureCompletion();
 
 	// Remove all non-dynamic objects from worker
-	RawDataLogWorker->GetTask().RemoveAllNonDynamicObjects();
+	AsyncWorker->GetTask().RemoveAllNonDynamicObjects();
 }
 
 // Log current state of the world (dynamic objects that moved more than the distance threshold)
-void USLRawDataLogger::LogCurrentState()
+void USLRawDataLogger::LogCurrentWorldState()
 {
-	// Start async worker
-	if (RawDataLogWorker->IsDone())
+	// Start task if worker is done with its previous work
+	if (AsyncWorker->IsDone())
 	{
-		RawDataLogWorker->StartBackgroundTask();
+		AsyncWorker->StartBackgroundTask();
 	}
 	else
 	{

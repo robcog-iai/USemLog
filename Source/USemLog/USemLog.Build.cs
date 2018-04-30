@@ -45,6 +45,7 @@ public class USemLog : ModuleRules
 				"JsonUtilities",
 				"UTags",
 				"UIds",
+				"UConversions",
 				"libmongo"
 				// ... add private dependencies that you statically link with here ...	
 			}

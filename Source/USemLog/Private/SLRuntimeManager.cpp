@@ -8,10 +8,12 @@
 // Sets default values
 ASLRuntimeManager::ASLRuntimeManager()
 {
+	// Disable tick on actor
 	PrimaryActorTick.bCanEverTick = false;
 
 	// Flags
-	bIsStarted = false;
+	bIsInit = false;
+	bIsStarted = false;	
 
 	// Semantic logger default values
 	EpisodeId = TEXT("autogen");
@@ -29,19 +31,21 @@ ASLRuntimeManager::ASLRuntimeManager()
 	MongoPort = 27017;	
 }
 
+// Sets default values
+ASLRuntimeManager::~ASLRuntimeManager()
+{
+	ASLRuntimeManager::Stop();
+}
+
 // Called when the game starts or when spawned
 void ASLRuntimeManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (EpisodeId.Equals(TEXT("autogen")))
-	{
-		EpisodeId = FIds::NewGuidInBase64Url();
-	}
-
 	if (bStartAtBeginPlay)
 	{
-		Start();
+		ASLRuntimeManager::Init();
+		ASLRuntimeManager::Start();
 	}
 }
 
@@ -49,22 +53,75 @@ void ASLRuntimeManager::BeginPlay()
 void ASLRuntimeManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
+
+	ASLRuntimeManager::Stop();
+}
+
+// Init manager
+void ASLRuntimeManager::Init()
+{
+	if (!bIsInit)
+	{
+		if (EpisodeId.Equals(TEXT("autogen")))
+		{
+			// Generate unique id for the episode
+			EpisodeId = FIds::NewGuidInBase64Url();
+		}
+				
+		if (bLogRawData)
+		{
+			// Create and init raw data logger
+			RawDataLogger = NewObject<USLRawDataLogger>(this);
+			RawDataLogger->Init(DistanceThreshold);
+
+			// Set log type
+			if (bLogToJson)
+			{
+				RawDataLogger->SetLogToJson(LogDirectory, EpisodeId);
+			}
+			if (bLogToBson)
+			{
+				RawDataLogger->SetLogToBson(LogDirectory, EpisodeId);
+			}
+			if (bLogToMongo)
+			{
+				RawDataLogger->SetLogToMongo(LogDirectory, EpisodeId, MongoIP, MongoPort);
+			}
+		}
+
+		// Mark manager as initialized
+		bIsInit = true;
+	}
 }
 
 // Start manager
 void ASLRuntimeManager::Start()
 {
-	if (!bIsStarted)
+	if (!bIsStarted && bIsInit)
 	{
+		// Start raw data logger
 		if (bLogRawData)
 		{
-			RawDataLogger = NewObject<USLRawDataLogger>(this, TEXT("RawDataLogger"));
-			if (bLogToJson)
-			{
-				RawDataLogger->LogToJson(true);
-			}
-			RawDataLogger->Start(GetWorld(), LogDirectory, EpisodeId, UpdateRate, DistanceThreshold);
+			RawDataLogger->Start(UpdateRate);
 		}
+
+		// Mark manager as started
 		bIsStarted = true;
+	}
+}
+
+// Stop manager
+void ASLRuntimeManager::Stop()
+{
+	if (bIsStarted)
+	{
+		if (RawDataLogger)
+		{
+			RawDataLogger->Stop();
+		}
+
+		// Set manager as stopped
+		bIsStarted = false;
+		bIsInit = false;
 	}
 }
