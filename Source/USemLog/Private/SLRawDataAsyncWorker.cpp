@@ -2,22 +2,16 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLRawDataAsyncWorker.h"
-#include "Misc/Paths.h"
-#include "HAL/PlatformFilemanager.h"
-#include "Animation/SkeletalMeshActor.h"
-#include "Conversions.h"
 #include "Tags.h"
 
 // Constructor
 FSLRawDataAsyncWorker::FSLRawDataAsyncWorker()
 {
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Destructor
 FSLRawDataAsyncWorker::~FSLRawDataAsyncWorker()
 {
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init worker, load models to log from world
@@ -73,6 +67,7 @@ void FSLRawDataAsyncWorker::SetLogToBson(const FString& InLogDirectory, const FS
 // Log data to mongodb
 void FSLRawDataAsyncWorker::SetLogToMongo(const FString& InLogDB, const FString& InEpisodeId, const FString& InMongoIP, uint16 MongoPort)
 {
+	Writer = MakeShareable(new FSLRawDataWriterMongo(this, InLogDB, InEpisodeId, InMongoIP, MongoPort));
 }
 
 // Remove all non-dynamic objects from arrays

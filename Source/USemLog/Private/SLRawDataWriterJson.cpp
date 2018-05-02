@@ -2,7 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLRawDataWriterJson.h"
-#include "SLRawDataAsyncWorker.h"
+#include "Animation/SkeletalMeshActor.h"
+#include "HAL/PlatformFilemanager.h"
+#include "Conversions.h"
 
 // Constr
 FSLRawDataWriterJson::FSLRawDataWriterJson()

@@ -39,6 +39,9 @@ public:
 	void Stop();
 	
 private:
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent);
+
 	/* Semantic logger */
 	// Episode Id (be default will be auto generated)
 	UPROPERTY(EditAnywhere, Category = "SL")

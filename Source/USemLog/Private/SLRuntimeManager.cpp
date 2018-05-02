@@ -125,3 +125,45 @@ void ASLRuntimeManager::Stop()
 		bIsInit = false;
 	}
 }
+
+#if WITH_EDITOR
+// Called when a property is changed in the editor
+void ASLRuntimeManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property name
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+		PropertyChangedEvent.Property->GetFName() : NAME_None;
+
+	// Radio button style between bLogToJson, bLogToBson, bLogToMongo
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLRuntimeManager, bLogToJson)) 
+	{
+		if (bLogToJson)
+		{
+			// Set bLogToBson and bLogToMongo to false (radio button style)
+			bLogToBson = false;
+			bLogToMongo = false;
+		}
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLRuntimeManager, bLogToBson))
+	{
+		if (bLogToBson)
+		{
+			bLogToJson = false;
+			bLogToMongo = false;
+		}
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLRuntimeManager, bLogToMongo))
+	{
+		if (bLogToMongo)
+		{
+			bLogToJson = false;
+			bLogToBson = false;
+		}
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+	}
+}
+#endif // WITH_EDITOR

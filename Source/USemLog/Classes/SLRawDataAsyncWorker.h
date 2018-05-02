@@ -7,6 +7,7 @@
 #include "SLRawDataWriter.h"
 #include "SLRawDataWriterJson.h"
 #include "SLRawDataWriterBson.h"
+#include "SLRawDataWriterMongo.h"
 
 /**
 * Raw data structure for the logged entities
@@ -54,6 +55,7 @@ class FSLRawDataAsyncWorker : public FNonAbandonableTask
 	// Writer needs access to the private data of this class (world, data arrays etc.)
 	friend class FSLRawDataWriterJson;
 	friend class FSLRawDataWriterBson;
+	friend class FSLRawDataWriterMongo;
 
 
 public:
