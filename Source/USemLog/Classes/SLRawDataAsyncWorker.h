@@ -4,7 +4,9 @@
 #pragma once
 
 #include "Async/AsyncWork.h"
-#include "Tags.h"
+#include "SLRawDataWriter.h"
+#include "SLRawDataWriterJson.h"
+#include "SLRawDataWriterBson.h"
 
 /**
 * Raw data structure for the logged entities
@@ -45,9 +47,14 @@ struct TSLRawDataEntity
  */
 class FSLRawDataAsyncWorker : public FNonAbandonableTask
 {
-	// Needed in order for DoWork() to access to private data from this class
+	// Needed if DoWork() needs access private data from this class
 	friend class FAsyncTask<FSLRawDataAsyncWorker>;
 	//friend class FAutoDeleteAsyncTask<SLRawDataAsyncWorker>;
+	
+	// Writer needs access to the private data of this class (world, data arrays etc.)
+	friend class FSLRawDataWriterJson;
+	friend class FSLRawDataWriterBson;
+
 
 public:
 	// Constructor
@@ -72,40 +79,8 @@ public:
 	void RemoveAllNonDynamicObjects();
 
 private:
-	// Set file handle
-	void SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId, const FString& InFileExt);
-	
-	//// Set mongo connection
-	//void SetMongoConnection(const FString& LogDirectory, const FString& InEpisodeId, const FString& InFileExt);
-	
 	// FAsyncTask - async work done here
 	void DoWork();
-
-	/* Begin LogTo_ function declarations */
-	// Function pointer type declaration
-	typedef void(FSLRawDataAsyncWorker::*LogToFunctionPointerType)();
-
-	// Function pointer definition
-	LogToFunctionPointerType LogToFunctionPointer;
-
-	// Log to nothing
-	void LogTo_Default();
-
-	// Log to json
-	void LogTo_Json();
-
-	// Log to bson
-	void LogTo_Bson();
-
-	// Log to mongo
-	void LogTo_Mongo();
-	/* End LogTo_ function declarations */
-
-	// Get entry as json object
-	TSharedPtr<FJsonObject> GetAsJsonEntry(const FString& InId,
-		const FString& InClass,
-		const FVector& InLoc,
-		const FQuat& InQuat);
 
 	// Needed by unreal internally
 	FORCEINLINE TStatId GetStatId() const;
@@ -122,6 +97,6 @@ private:
 	// Pointer to world
 	UWorld* World;
 
-	// File handle to write the raw data to file
-	IFileHandle* FileHandle;
+	// Raw data writer
+	TSharedPtr<FSLRawDataWriter> Writer;
 };

@@ -29,7 +29,7 @@ void USLRawDataLogger::Init(const float InDistanceThreshold)
 void USLRawDataLogger::Start(const float UpdateRate)
 {
 	// Log initial state of the world
-	LogInitialWorldState();
+	USLRawDataLogger::LogInitialWorldState();
 
 	// Set logger to update on tick or on custom update rate using a timer
 	SetUpdateRate(UpdateRate);
