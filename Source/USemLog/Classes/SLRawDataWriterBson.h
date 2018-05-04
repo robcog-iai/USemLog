@@ -10,7 +10,7 @@
 class FSLRawDataAsyncWorker;
 
 /**
- * 
+ * Raw data logger to bson format
  */
 class FSLRawDataWriterBson : public FSLRawDataWriter
 {

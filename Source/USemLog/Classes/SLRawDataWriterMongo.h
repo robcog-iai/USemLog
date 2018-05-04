@@ -10,7 +10,7 @@
 class FSLRawDataAsyncWorker;
 
 /**
- * 
+ * Raw data logger to a mongo database
  */
 class FSLRawDataWriterMongo : public FSLRawDataWriter
 {
