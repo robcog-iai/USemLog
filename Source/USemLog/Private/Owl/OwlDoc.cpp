@@ -13,6 +13,17 @@ FOwlDoc::FOwlDoc()
 {
 }
 
+// Init constructor
+FOwlDoc::FOwlDoc(const FString& InDeclaration,
+	const FEntityDTD& InEntityDTD,
+	const FOwlNode& InRoot) :
+	Declaration(InDeclaration),
+	EntityDTD(InEntityDTD),
+	Root(InRoot)
+{
+
+}
+
 // Destructor
 FOwlDoc::~FOwlDoc()
 {
@@ -21,5 +32,6 @@ FOwlDoc::~FOwlDoc()
 // Return document as string
 FString FOwlDoc::ToString() const
 {
-	return FString();
+	FString Doc = Declaration + TEXT("\n\n");
+	return Doc;
 }

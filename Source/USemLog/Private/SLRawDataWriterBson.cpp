@@ -5,7 +5,7 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Conversions.h"
-//#include "bson.h"
+#include "bson.h"
 
 // Constr
 FSLRawDataWriterBson::FSLRawDataWriterBson()

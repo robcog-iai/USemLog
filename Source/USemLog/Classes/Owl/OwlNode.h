@@ -36,7 +36,34 @@ namespace SLOwl
 		~FOwlNode();
 
 		// Get node name
-		FString GetName() const { return Name.ToString(); }
+		FPrefixName GetName() const { return Name; }
+
+		// Set node name
+		void SetName(const FPrefixName& InName) { Name = InName; }
+
+		// Get node value
+		FString GetValue () const { return Value; }
+
+		// Set node value
+		void SetName(const FString& InValue) { Name = InValue; }
+
+		// Get attributes
+		const TArray<FAttribute>& GetAttributes() const { return Attributes; }
+
+		// Add attribute
+		void AddAttribute(const FAttribute& InAttribute) { Attributes.Add(InAttribute); }
+
+		// Get child nodes
+		const TArray<FOwlNode>& GetChildNodes() const { return ChildNodes; }
+
+		// Add child node
+		void AddChildNode(const FOwlNode& InChildNode) { ChildNodes.Add(InChildNode); }
+
+		// Get comment
+		FString GetComment() const { return Comment; }
+
+		// Set comment
+		void SetComment(const FString& InComment) { Comment = InComment; }
 
 		// Return node as string
 		FString ToString() const;
@@ -53,6 +80,9 @@ namespace SLOwl
 
 		// Nodes
 		TArray<FOwlNode> ChildNodes;
+
+		// Comment
+		FString Comment;
 	};
 
 } // namespace SLOwl

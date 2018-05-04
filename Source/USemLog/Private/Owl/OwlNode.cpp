@@ -48,35 +48,54 @@ FOwlNode::~FOwlNode()
 // Return node as string
 FString FOwlNode::ToString() const
 {
-	FString NodeStr = FOwlDoc::Indent + TEXT("<") + Name.ToString();
+	FString NodeStr;
+	// Add comment
+	if (!Comment.IsEmpty())
+	{
+		NodeStr += FOwlDoc::Indent + TEXT("<!--") + Comment + TEXT("-->\n");
+	}
 
+	// Add node name
+	NodeStr += FOwlDoc::Indent + TEXT("<") + Name.ToString();
+
+	// Add attributes to tag
 	for (const auto& AttrItr : Attributes)
 	{
 		NodeStr += TEXT(" ") + AttrItr.ToString();
 	}
 
+	// Check node data (children/value)
 	bool bNoChildren = ChildNodes.Num() == 0;
 	bool bNoValue = Value.IsEmpty();
 
 	if (bNoChildren && bNoValue)
 	{
-		// If no children and no value
+		// No children or value, close tag
 		NodeStr += TEXT("/>\n");
-		return NodeStr;
 	}
 	else if (!bNoValue)
 	{
+		// Node has a value, add value
 		NodeStr += TEXT(">") + Value + TEXT("</") + Name.ToString() + TEXT(">");
 	}
 	else if(!bNoChildren)
 	{
+		// Node has children, add children
 		NodeStr += TEXT(">\n");
+
+		// Increase indentation
 		FOwlDoc::Indent += INDENT_STEP;
+
+		// Iterate and add nodes
 		for (const auto& ChildItr : ChildNodes)
 		{
 			NodeStr += ChildItr.ToString();
 		}
+
+		// Decrease indentation
 		FOwlDoc::Indent.RemoveFromEnd(INDENT_STEP);
+
+		// Close tag
 		NodeStr += TEXT(">") + Value + TEXT("</") + Name.ToString() + TEXT(">");
 	}
 	return NodeStr;

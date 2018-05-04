@@ -4,12 +4,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Owl/Owl.h"
+#include "Owl/OwlNode.h"
 
 namespace SLOwl
 {
-	// Indent step
-	static const FString INDENT_STEP = TEXT("\t");
-
 	/**
 	 * 
 	 */
@@ -22,11 +21,26 @@ namespace SLOwl
 		// Default constructor
 		FOwlDoc();
 
+		// Init constructor
+		FOwlDoc(const FString& InDeclaration,
+			const FEntityDTD& InEntityDTD,
+			const FOwlNode& InRoot);
+
 		// Destructor
 		~FOwlDoc();
 
 		// Return document as string
 		FString ToString() const;
+	
+	private:
+		// Declaration ("<?xml version="1.0" encoding="utf-8"?>")
+		FString Declaration;
+
+		// Document Type Definition (DTD) for Entity Declaration
+		FEntityDTD EntityDTD;
+
+		// Root (including namespace declarations as attributes)
+		FOwlNode Root;
 	};
 
 } // namespace SLOwl

@@ -7,6 +7,9 @@
 
 namespace SLOwl
 {
+	// Indent step
+	static const FString INDENT_STEP = TEXT("\t");
+
 	/**
 	 *  Example: "owl:Class", "rdf:resource"
 	 *  Prefix:  "rdf", "owl" (expansion "http://www.w3.org/1999/02/22-rdf-syntax-ns#", "http://www.w3.org/2002/07/owl#")
@@ -24,19 +27,12 @@ namespace SLOwl
 		// Init constructor without prefix
 		FPrefixName(const FString& InLocalName) : LocalName(InLocalName) {}
 
-		// Get prefix
-		FString GetPrefix() const { return Prefix; }
-
-		// Get local name
-		FString GetLocalName() const { return LocalName; }
-
 		// Get name as string
 		FString ToString() const
 		{
 			return Prefix.IsEmpty() ? LocalName : FString(Prefix + TEXT(":") + LocalName);
 		}
 
-	private:
 		// Prefix 
 		FString Prefix;
 
@@ -61,27 +57,19 @@ namespace SLOwl
 		// Init constructor without ns
 		FAttributeValue(const FString& InLocalValue) : LocalValue(InLocalValue) {}
 
-		// Get prefix
-		FString GetNs() const { return Ns; }
-
-		// Get local name
-		FString GetLocalValue() const { return LocalValue; }
-
 		// Get value as string
 		FString ToString() const
 		{
 			return Ns.IsEmpty() ? LocalValue : FString(TEXT("\"&") + Ns + TEXT(";") + LocalValue);
 		}
 
-	private:
 		// Namespace
 		FString Ns;
 
 		// Value
 		FString LocalValue;
 	};
-
-
+	
 	/**
 	*  Example: "rdf:about="&log;RightHand_vqDR""
 	*  Key:  ""rdf:about"
@@ -102,13 +90,55 @@ namespace SLOwl
 			return Key.ToString() + TEXT("=") + Value.ToString();
 		}
 
-	private:
 		// Key 
 		FPrefixName Key;
 
 		// Value
 		FAttributeValue Value;
 	};
+	
+	/**
+	* Document Type Definition (DTD) for Entity Declaration
+	*  Example:
+	*	"<!DOCTYPE rdf:RDF [
+	*	<!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns">
+	*	<!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema">
+	*	<!ENTITY owl "http://www.w3.org/2002/07/owl">
+	*	]>"
+	*  Root:  "rdf:RDF"
+	*  Key1: "rdf"
+	*  Value1: "http://www.w3.org/1999/02/22-rdf-syntax-ns"
+	*/
+	struct FEntityDTD
+	{
+		// Default constr
+		FEntityDTD() {}
+
+		// Init constr
+		FEntityDTD(const FPrefixName& InRoot,
+			const TMap<FString, FString>& InEntityPairs) :
+			Root(InRoot),
+			EntityPairs(InEntityPairs)
+		{}
+
+		// Get entity declaration string
+		FString ToString() const
+		{
+			FString DTDStr = TEXT("<!DOCTYPE ") + Root.ToString() + TEXT("[\n");
+			for (const auto& EntityItr : EntityPairs)
+			{
+				DTDStr += INDENT_STEP + TEXT("<!ENTITY ") + EntityItr.Key +
+					TEXT("\"") + EntityItr.Value + TEXT("\">\n");
+			}
+			DTDStr += TEXT("]>\n");
+			return DTDStr;
+		}
+
+		// Root
+		FPrefixName Root;
+
+		// Array of the "!ENTITY" Key-Value pairs
+		TMap<FString, FString> EntityPairs;
+	};
 
 } // namespace SLOwl
-
