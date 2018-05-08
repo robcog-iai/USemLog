@@ -1,22 +1,22 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Owl/OwlDoc.h"
+#include "Owl/Doc.h"
 
 using namespace SLOwl;
 
 // Init the document indent
-FString FOwlDoc::Indent = TEXT("");
+FString FDoc::Indent = TEXT("");
 
 // Default constructor
-FOwlDoc::FOwlDoc()
+FDoc::FDoc()
 {
 }
 
 // Init constructor
-FOwlDoc::FOwlDoc(const FString& InDeclaration,
+FDoc::FDoc(const FString& InDeclaration,
 	const FEntityDTD& InEntityDTD,
-	const FOwlNode& InRoot) :
+	const FNode& InRoot) :
 	Declaration(InDeclaration),
 	EntityDTD(InEntityDTD),
 	Root(InRoot)
@@ -25,13 +25,18 @@ FOwlDoc::FOwlDoc(const FString& InDeclaration,
 }
 
 // Destructor
-FOwlDoc::~FOwlDoc()
+FDoc::~FDoc()
 {
 }
 
 // Return document as string
-FString FOwlDoc::ToString() const
+FString FDoc::ToString() const
 {
 	FString Doc = Declaration + TEXT("\n\n");
+
+	Doc += EntityDTD.ToString();
+
+	Doc += Root.ToString();
+
 	return Doc;
 }

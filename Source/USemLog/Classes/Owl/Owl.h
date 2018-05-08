@@ -60,7 +60,8 @@ namespace SLOwl
 		// Get value as string
 		FString ToString() const
 		{
-			return Ns.IsEmpty() ? LocalValue : FString(TEXT("\"&") + Ns + TEXT(";") + LocalValue);
+			return Ns.IsEmpty() ? TEXT("\"") + LocalValue + TEXT("\"")
+				: FString(TEXT("\"&") + Ns + TEXT(";") + LocalValue + TEXT("\""));
 		}
 
 		// Namespace
@@ -124,13 +125,16 @@ namespace SLOwl
 		// Get entity declaration string
 		FString ToString() const
 		{
+			if (EntityPairs.Num() == 0)
+				return FString();
+
 			FString DTDStr = TEXT("<!DOCTYPE ") + Root.ToString() + TEXT("[\n");
 			for (const auto& EntityItr : EntityPairs)
 			{
 				DTDStr += INDENT_STEP + TEXT("<!ENTITY ") + EntityItr.Key +
 					TEXT("\"") + EntityItr.Value + TEXT("\">\n");
 			}
-			DTDStr += TEXT("]>\n");
+			DTDStr += TEXT("]>\n\n");
 			return DTDStr;
 		}
 

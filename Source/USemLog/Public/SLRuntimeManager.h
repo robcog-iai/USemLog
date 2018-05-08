@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS(meta=(DisplayName = "SL Runtime Manager"))
+UCLASS(meta=(DisplayName = "Semantic Logger Runtime Manager"))
 class USEMLOG_API ASLRuntimeManager : public AInfo
 {
 	GENERATED_BODY()

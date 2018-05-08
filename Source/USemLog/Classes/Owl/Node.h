@@ -12,28 +12,42 @@ namespace SLOwl
 	 * Owl/Xml node
 	 * node will not have Value and Children
 	 */
-	class FOwlNode
+	class FNode
 	{
 	public:
 		// Default constructor
-		FOwlNode();
+		FNode();
 
 		// Init constructor, NO Value and Children
-		FOwlNode(const FPrefixName& InName,
+		FNode(const FPrefixName& InName,
 			const TArray<FAttribute>& InAttributes);
 
+		// Init constructor, NO Value and Children, one attribute
+		FNode(const FPrefixName& InName,
+			const FAttribute& InAttribute);
+
 		// Init constructor, NO Value
-		FOwlNode(const FPrefixName& InName,
+		FNode(const FPrefixName& InName,
 			const TArray<FAttribute>& InAttributes,
-			const TArray<FOwlNode>& InChildNodes);
+			const TArray<FNode>& InChildNodes);
+
+		// Init constructor, NO Value, one attribute
+		FNode(const FPrefixName& InName,
+			const FAttribute& InAttribute,
+			const TArray<FNode>& InChildNodes);
 
 		// Init constructor, NO Children
-		FOwlNode(const FPrefixName& InName,
+		FNode(const FPrefixName& InName,
 			const TArray<FAttribute>& InAttributes,
 			const FString& InValue);
 
+		// Init constructor, NO Children, one attribute
+		FNode(const FPrefixName& InName,
+			const FAttribute& InAttribute,
+			const FString& InValue);
+
 		// Destructor
-		~FOwlNode();
+		~FNode();
 
 		// Get node name
 		FPrefixName GetName() const { return Name; }
@@ -53,11 +67,17 @@ namespace SLOwl
 		// Add attribute
 		void AddAttribute(const FAttribute& InAttribute) { Attributes.Add(InAttribute); }
 
+		// Add attributes
+		void AddAttributes(const TArray<FAttribute>& InAttributes) { Attributes.Append(InAttributes); }
+
 		// Get child nodes
-		const TArray<FOwlNode>& GetChildNodes() const { return ChildNodes; }
+		const TArray<FNode>& GetChildNodes() const { return ChildNodes; }
 
 		// Add child node
-		void AddChildNode(const FOwlNode& InChildNode) { ChildNodes.Add(InChildNode); }
+		void AddChildNode(const FNode& InChildNode) { ChildNodes.Add(InChildNode); }
+
+		// Add child nodes
+		void AddChildNodes(const TArray<FNode>& InChildNodes) { ChildNodes.Append(InChildNodes); }
 
 		// Get comment
 		FString GetComment() const { return Comment; }
@@ -79,7 +99,7 @@ namespace SLOwl
 		TArray<FAttribute> Attributes;
 
 		// Nodes
-		TArray<FOwlNode> ChildNodes;
+		TArray<FNode> ChildNodes;
 
 		// Comment
 		FString Comment;
