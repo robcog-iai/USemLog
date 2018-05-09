@@ -74,23 +74,39 @@ FNode::~FNode()
 }
 
 // Return node as string
-FString FNode::ToString() const
+FString FNode::ToString(FString& Indent)
 {
 	FString NodeStr;
 	// Add comment
 	if (!Comment.IsEmpty())
 	{
-		NodeStr += FDoc::Indent + TEXT("<!--") + Comment + TEXT("-->\n");
+		NodeStr += TEXT("\n") + Indent + TEXT("<!-- ") + Comment + TEXT(" -->\n");
 	}
 
 	// Add node name
-	NodeStr += FDoc::Indent + TEXT("<") + Name.ToString();
+	NodeStr += Indent + TEXT("<") + Name.ToString();
 
 	// Add attributes to tag
-	for (const auto& AttrItr : Attributes)
+	for (int32 i = 0; i < Attributes.Num(); ++i)
 	{
-		NodeStr += TEXT(" ") + AttrItr.ToString();
+		if (Attributes.Num() == 1)
+		{
+			NodeStr += TEXT(" ") + Attributes[i].ToString();
+		}
+		else
+		{
+			if (i < (Attributes.Num() - 1))
+			{
+				NodeStr += TEXT(" ") + Attributes[i].ToString() + TEXT("\n") + Indent + INDENT_STEP;
+			}
+			else
+			{
+				// Last attribute does not have new line
+				NodeStr += TEXT(" ") + Attributes[i].ToString();
+			}
+		}
 	}
+
 
 	// Check node data (children/value)
 	bool bHasChildren = ChildNodes.Num() != 0;
@@ -100,12 +116,12 @@ FString FNode::ToString() const
 	if (!bHasChildren && !bHasValue)
 	{
 		// No children nor value, close tag
-		NodeStr += TEXT("/>\n\n");
+		NodeStr += TEXT("/>\n");
 	}
 	else if (bHasValue)
 	{
 		// Node has a value, add value
-		NodeStr += TEXT(">") + Value + TEXT("</") + Name.ToString() + TEXT(">\n\n");
+		NodeStr += TEXT(">") + Value + TEXT("</") + Name.ToString() + TEXT(">\n");
 	}
 	else if(bHasChildren)
 	{
@@ -113,19 +129,19 @@ FString FNode::ToString() const
 		NodeStr += TEXT(">\n");
 
 		// Increase indentation
-		FDoc::Indent += INDENT_STEP;
+		Indent += INDENT_STEP;
 
-		// Iterate and add nodes
-		for (const auto& ChildItr : ChildNodes)
+		// Iterate children and add nodes
+		for (auto& ChildItr : ChildNodes)
 		{
-			NodeStr += ChildItr.ToString();
+			NodeStr += ChildItr.ToString(Indent);
 		}
 
 		// Decrease indentation
-		FDoc::Indent.RemoveFromEnd(INDENT_STEP);
+		Indent.RemoveFromEnd(INDENT_STEP);
 
 		// Close tag
-		NodeStr += FDoc::Indent + Value + TEXT("</") + Name.ToString() + TEXT(">\n");
+		NodeStr += Indent + Value + TEXT("</") + Name.ToString() + TEXT(">\n");
 	}
 	return NodeStr;
 }

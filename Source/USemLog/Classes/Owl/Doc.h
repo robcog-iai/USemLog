@@ -15,9 +15,6 @@ namespace SLOwl
 	class FDoc
 	{
 	public:
-		// Current state of the indentation
-		static FString Indent;
-
 		// Default constructor
 		FDoc();
 
@@ -54,7 +51,7 @@ namespace SLOwl
 		void SetRoot(const FNode& InRoot) { Root = InRoot; };
 
 		// Return document as string
-		FString ToString() const;
+		FString ToString();
 	
 	private:
 		// Declaration ("<?xml version="1.0" encoding="utf-8"?>")
@@ -65,6 +62,9 @@ namespace SLOwl
 
 		// Root (including namespace declarations as attributes)
 		FNode Root;
+
+		// Current state of the indentation
+		FString Indent;
 	};
 
 } // namespace SLOwl

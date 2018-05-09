@@ -1,49 +1,42 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLRawDataWriterMongo.h"
+#include "RawData/SLRawDataWriterBson.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "HAL/PlatformFilemanager.h"
 #include "Conversions.h"
-//#include "bson.h"
-//#include "mongoc.h"
+#include "bson.h"
 
 // Constr
-FSLRawDataWriterMongo::FSLRawDataWriterMongo()
+FSLRawDataWriterBson::FSLRawDataWriterBson()
 {
 }
 
 // Constr with Init
-FSLRawDataWriterMongo::FSLRawDataWriterMongo(FSLRawDataAsyncWorker* InWorkerParent,
-	const FString& InLogDB,
-	const FString& InEpisodeId,
-	const FString& InMongoIP,
-	uint16 MongoPort)
+FSLRawDataWriterBson::FSLRawDataWriterBson(FSLRawDataAsyncWorker* InWorkerParent, const FString& LogDirectory, const FString& EpisodeId)
 {
-	Init(InWorkerParent, InLogDB, InEpisodeId, InMongoIP, MongoPort);
+	Init(InWorkerParent, LogDirectory, EpisodeId);
 }
 
 // Destr
-FSLRawDataWriterMongo::~FSLRawDataWriterMongo()
+FSLRawDataWriterBson::~FSLRawDataWriterBson()
 {
-	// Disconnect mongo
+	if (FileHandle)
+	{
+		delete FileHandle;
+	}
 }
 
 // Init
-void FSLRawDataWriterMongo::Init(FSLRawDataAsyncWorker* InWorkerParent,
-	const FString& InLogDB,
-	const FString& InEpisodeId,
-	const FString& InMongoIP,
-	uint16 MongoPort)
+void FSLRawDataWriterBson::Init(FSLRawDataAsyncWorker* InWorkerParent, const FString& LogDirectory, const FString& EpisodeId)
 {
 	WorkerParent = InWorkerParent;
-	ConnectToMongo(InLogDB, InEpisodeId, InMongoIP, MongoPort);
+	SetFileHandle(LogDirectory, EpisodeId);
 }
 
 // Called to write the data
-void FSLRawDataWriterMongo::WriteData()
+void FSLRawDataWriterBson::WriteData()
 {
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
-
 	//bson_t bson;
 
 	//bson_init(&bson);
@@ -82,7 +75,6 @@ void FSLRawDataWriterMongo::WriteData()
 	//UE_LOG(LogTemp, Error, TEXT("[%s][%d] BsonStr=%s"), TEXT(__FUNCTION__), __LINE__, *BsonStr);
 	
 
-
 	//bson_writer_t *writer;
 	//uint8_t *buf = NULL;
 	//size_t buflen = 0;
@@ -99,16 +91,21 @@ void FSLRawDataWriterMongo::WriteData()
 }
 
 // Set the file handle for the logger
-bool FSLRawDataWriterMongo::ConnectToMongo(const FString& InLogDB,
-	const FString& InEpisodeId,
-	const FString& InMongoIP,
-	uint16 MongoPort)
+void FSLRawDataWriterBson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
-	return true;
+	const FString Filename = TEXT("RawData_") + InEpisodeId + TEXT(".bson");
+	FString EpisodesDirPath = FPaths::ProjectDir() + LogDirectory + TEXT("/Episodes/");
+	FPaths::RemoveDuplicateSlashes(EpisodesDirPath);
+
+	const FString FilePath = EpisodesDirPath + Filename;
+
+	// Create logging directory path and the filehandle
+	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*EpisodesDirPath);
+	FileHandle = FPlatformFileManager::Get().GetPlatformFile().OpenWrite(*FilePath, true);
 }
 
 // Add actors
-void FSLRawDataWriterMongo::AddActors(TArray<TSharedPtr<FJsonValue>>& OutBsonEntitiesArr)
+void FSLRawDataWriterBson::AddActors(TArray<TSharedPtr<FJsonValue>>& OutBsonEntitiesArr)
 {
 	// Iterate actors
 	for (auto RawDataActItr(WorkerParent->RawDataActors.CreateIterator()); RawDataActItr; ++RawDataActItr)
@@ -125,7 +122,7 @@ void FSLRawDataWriterMongo::AddActors(TArray<TSharedPtr<FJsonValue>>& OutBsonEnt
 				RawDataActItr->PrevLoc = CurrLoc;
 
 				// Get current entry as Bson object
-				TSharedPtr<FJsonObject> BsonActorEntry = FSLRawDataWriterMongo::GetAsBsonEntry(
+				TSharedPtr<FJsonObject> BsonActorEntry = FSLRawDataWriterBson::GetAsBsonEntry(
 					RawDataActItr->Id, RawDataActItr->Class, CurrLoc, CurrQuat);
 
 				// If actor is skeletal, save bones data as well
@@ -148,7 +145,7 @@ void FSLRawDataWriterMongo::AddActors(TArray<TSharedPtr<FJsonValue>>& OutBsonEnt
 						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(BoneName);
 
 						// Get current entry as Bson object
-						TSharedPtr<FJsonObject> BsonBoneEntry = FSLRawDataWriterMongo::GetAsBsonEntry(
+						TSharedPtr<FJsonObject> BsonBoneEntry = FSLRawDataWriterBson::GetAsBsonEntry(
 							TEXT(""), BoneName.ToString(), CurrLoc, CurrQuat);
 
 						// Add bone to Bson array
@@ -169,7 +166,7 @@ void FSLRawDataWriterMongo::AddActors(TArray<TSharedPtr<FJsonValue>>& OutBsonEnt
 }
 
 // Add components
-void FSLRawDataWriterMongo::AddComponents(TArray<TSharedPtr<FJsonValue>>& OutBsonEntitiesArr)
+void FSLRawDataWriterBson::AddComponents(TArray<TSharedPtr<FJsonValue>>& OutBsonEntitiesArr)
 {
 	// Iterate components
 	for (auto RawDataCompItr(WorkerParent->RawDataComponents.CreateIterator()); RawDataCompItr; ++RawDataCompItr)
@@ -185,7 +182,7 @@ void FSLRawDataWriterMongo::AddComponents(TArray<TSharedPtr<FJsonValue>>& OutBso
 				RawDataCompItr->PrevLoc = CurrLoc;
 
 				// Get current entry as Bson object
-				TSharedPtr<FJsonObject> BsonCompEntry = FSLRawDataWriterMongo::GetAsBsonEntry(
+				TSharedPtr<FJsonObject> BsonCompEntry = FSLRawDataWriterBson::GetAsBsonEntry(
 					RawDataCompItr->Id, RawDataCompItr->Class, CurrLoc, CurrQuat);
 
 				// If comp is skeletal, save bones data as well
@@ -205,7 +202,7 @@ void FSLRawDataWriterMongo::AddComponents(TArray<TSharedPtr<FJsonValue>>& OutBso
 						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(BoneName);
 
 						// Get current entry as Bson object
-						TSharedPtr<FJsonObject> BsonBoneEntry = FSLRawDataWriterMongo::GetAsBsonEntry(
+						TSharedPtr<FJsonObject> BsonBoneEntry = FSLRawDataWriterBson::GetAsBsonEntry(
 							TEXT(""), BoneName.ToString(), CurrLoc, CurrQuat);
 
 						// Add bone to Bson array
@@ -225,8 +222,8 @@ void FSLRawDataWriterMongo::AddComponents(TArray<TSharedPtr<FJsonValue>>& OutBso
 	}
 }
 
-// Get entry as bson object
-TSharedPtr<FJsonObject> FSLRawDataWriterMongo::GetAsBsonEntry(const FString& InId,
+// Get entry as Bson object
+TSharedPtr<FJsonObject> FSLRawDataWriterBson::GetAsBsonEntry(const FString& InId,
 	const FString& InClass,
 	const FVector& InLoc,
 	const FQuat& InQuat)
@@ -265,13 +262,17 @@ TSharedPtr<FJsonObject> FSLRawDataWriterMongo::GetAsBsonEntry(const FString& InI
 	return BsonObj;
 }
 
-// Write entry to db
-void FSLRawDataWriterMongo::WriteToMongo(const TSharedPtr<FJsonObject>& InRootObj)
+// Write entry to file
+void FSLRawDataWriterBson::WriteToFile(const TSharedPtr<FJsonObject>& InRootObj)
 {
 	// Transform to string
 	FString BsonString;
 	TSharedRef<TJsonWriter<>> BsonWriter = TJsonWriterFactory<>::Create(&BsonString);
 	FJsonSerializer::Serialize(InRootObj.ToSharedRef(), BsonWriter);
 
-	// Write to db
+	// Write to file
+	if (FileHandle)
+	{
+		FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*BsonString), BsonString.Len());
+	}
 }

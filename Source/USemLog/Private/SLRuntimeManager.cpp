@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLRuntimeManager.h"
-#include "SLRawDataLogger.h"
+#include "RawData/SLRawDataLogger.h"
 #include "Ids.h"
 
 // Sets default values

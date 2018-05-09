@@ -86,7 +86,7 @@ namespace SLOwl
 		void SetComment(const FString& InComment) { Comment = InComment; }
 
 		// Return node as string
-		FString ToString() const;
+		FString ToString(FString& Indent);
 
 	private:
 		// Node prefixed name
@@ -100,7 +100,7 @@ namespace SLOwl
 
 		// Nodes
 		TArray<FNode> ChildNodes;
-
+		
 		// Comment
 		FString Comment;
 	};

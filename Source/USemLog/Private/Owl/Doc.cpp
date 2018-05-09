@@ -5,9 +5,6 @@
 
 using namespace SLOwl;
 
-// Init the document indent
-FString FDoc::Indent = TEXT("");
-
 // Default constructor
 FDoc::FDoc()
 {
@@ -21,7 +18,6 @@ FDoc::FDoc(const FString& InDeclaration,
 	EntityDTD(InEntityDTD),
 	Root(InRoot)
 {
-
 }
 
 // Destructor
@@ -30,13 +26,10 @@ FDoc::~FDoc()
 }
 
 // Return document as string
-FString FDoc::ToString() const
+FString FDoc::ToString()
 {
 	FString Doc = Declaration + TEXT("\n\n");
-
 	Doc += EntityDTD.ToString();
-
-	Doc += Root.ToString();
-
+	Doc += Root.ToString(Indent);
 	return Doc;
 }
