@@ -4,8 +4,21 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Owl/Owl.h"
 #include "Owl/Doc.h"
+#include "SemanticMap/MapTemplateDefault.h"
+#include "SemanticMap/MapTemplateIAIKitchen.h"
+
+/**
+* Semantic map template types
+*/
+UENUM(BlueprintType)
+enum class EMapTemplateType : uint8
+{
+	NONE					UMETA(DisplayName = "None"),
+	Default					UMETA(DisplayName = "Default"),
+	IAIKitchen  			UMETA(DisplayName = "IAI Kitchen"),
+	IAISupermarket     		UMETA(DisplayName = "IAI Supermarket"),
+};
 
 /**
  * 
@@ -17,52 +30,47 @@ public:
 	FSLSemanticMap();
 
 	// Constructor with map generation
-	FSLSemanticMap(UWorld* World, const FString& InDirectory = TEXT("SemLog"));
+	FSLSemanticMap(UWorld* World, 
+		EMapTemplateType TemplateType = EMapTemplateType::NONE,
+		const FString& InDirectory = TEXT("SemLog"));
 
 	// Destructor
 	~FSLSemanticMap();
 
 	// Generate semantic map from world
-	void Generate(UWorld* World);
+	void Generate(UWorld* World, EMapTemplateType TemplateType = EMapTemplateType::NONE);
+
+	// Set log directory
+	void SetLogDirectory(const FString& InDirectory) { LogDirectory = InDirectory; }
 
 	// Export semantic map to file
 	bool WriteToFile(const FString& Filename = TEXT("SemanticMap"));
 
+	// To string
+	FString ToString() const;
+
 private:
-	// Get default document type definitions
-	void GetDefaultDTD(SLOwl::FEntityDTD& OutDTD);
-
-	// Get default namespaces
-	void GetDefaultNamespaces(TArray<SLOwl::FAttribute>& OutAttributes);
-
-	// Get default ontology imports
-	void GetDefaultOntologyImports(SLOwl::FNode& OutImports);
-
-	// Get default property definitions
-	void GetDefaultPropertyDefinitions(TArray<SLOwl::FNode>& OutNodes);
-
-	// Get default datatype definitions
-	void GetDefaultDatatypeDefinitions(TArray<SLOwl::FNode>& OutNodes);
-
-	// Get default class definitions
-	void GetDefaultClassDefinitions(TArray<SLOwl::FNode>& OutNodes);
+	// To document
+	SLOwl::FDoc ToDoc() const;
 
 	// Add semantic map entries
 	void AddEntries(UWorld* World);
 
-	// Add actor entry
-	void AddActorEntry(AActor* Actor, const FString& Id, const FString& Class);
+	// Add entry
+	void AddEntry(UObject* Object,
+		const FString& Id,
+		const FString& Class,
+		const TMap<UObject*, TMap<FString, FString>> ObjectsToTagsMap);
 
-	// Add scene component entry
-	void AddComponentEntry(USceneComponent* Component, const FString& Id, const FString& Class);
+	// Create a pose entry
+	SLOwl::FNode CreatePoseEntry(const FVector& InLoc, const FQuat& InQuat, const FString& InId);
 
 	// Path for saving the semantic map
 	FString LogDirectory;
 
-	// Semantic map as owl document
-	SLOwl::FDoc SemMap;
+	// XML Declaration
+	FString Declaration;
 
-	/** TODO **/
 	// Entity definitions
 	SLOwl::FEntityDTD EntityDefinitions; // TODO use namespace shortcuts
 
@@ -70,7 +78,7 @@ private:
 	TArray<SLOwl::FAttribute> Namespaces;
 
 	// Ontology imports 
-	FNode OntologyImports;
+	SLOwl::FNode OntologyImports;
 
 	// Property definitions
 	TArray<SLOwl::FNode> PropertyDefinitions;

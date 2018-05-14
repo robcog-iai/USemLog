@@ -116,9 +116,9 @@ namespace SLOwl
 		FEntityDTD() {}
 
 		// Init constr
-		FEntityDTD(const FPrefixName& InRoot,
+		FEntityDTD(const FPrefixName& InName,
 			const TMap<FString, FString>& InEntityPairs) :
-			Root(InRoot),
+			Name(InName),
 			EntityPairs(InEntityPairs)
 		{}
 
@@ -128,7 +128,7 @@ namespace SLOwl
 			if (EntityPairs.Num() == 0)
 				return FString();
 
-			FString DTDStr = TEXT("<!DOCTYPE ") + Root.ToString() + TEXT("[\n");
+			FString DTDStr = TEXT("<!DOCTYPE ") + Name.ToString() + TEXT("[\n");
 			for (const auto& EntityItr : EntityPairs)
 			{
 				DTDStr += INDENT_STEP + TEXT("<!ENTITY ") + EntityItr.Key +
@@ -139,7 +139,7 @@ namespace SLOwl
 		}
 
 		// Root
-		FPrefixName Root;
+		FPrefixName Name;
 
 		// Array of the "!ENTITY" Key-Value pairs
 		TMap<FString, FString> EntityPairs;

@@ -12,53 +12,42 @@ namespace SLOwl
 	/**
 	 * 
 	 */
-	class FDoc
+	struct FDoc
 	{
 	public:
 		// Default constructor
-		FDoc();
+		FDoc() {}
 
 		// Init constructor
 		FDoc(const FString& InDeclaration,
-			const FEntityDTD& InEntityDTD,
-			const FNode& InRoot);
+			const FEntityDTD& InEntityDefinitions,
+			const FNode& InRoot) :
+			Declaration(InDeclaration),
+			EntityDefinitions(InEntityDefinitions),
+			Root(InRoot)
+		{}
 
 		// Destructor
-		~FDoc();
-
-		// Get doc declaration
-		FPrefixName GetDeclaration() const { return Declaration; }
-
-		// Set doc declaration
-		void SetDeclaration(const FString& InDeclaration) { Declaration = InDeclaration; }
-
-		// Get entity document type definition
-		FEntityDTD& GetEntityDTD() { return EntityDTD; }
-
-		// Get entity document type definition
-		const FEntityDTD& GetEntityDTD() const { return EntityDTD; }
-
-		// Set entity document type definition
-		void SetEntityDTD(const FEntityDTD& InEntityDTD) { EntityDTD = InEntityDTD; }
-
-		// Get root node
-		FNode& GetRoot() { return Root; }
-
-		// Get root node
-		const FNode& GetRoot() const { return Root; }
-
-		// Set root node
-		void SetRoot(const FNode& InRoot) { Root = InRoot; };
+		~FDoc() {}
 
 		// Return document as string
-		FString ToString();
-	
-	private:
+		FString ToString()
+		{
+			FString DocStr;
+			if (!Declaration.IsEmpty())
+			{
+				DocStr += Declaration + TEXT("\n\n");
+			}
+			DocStr += EntityDefinitions.ToString();
+			DocStr += Root.ToString(Indent);
+			return DocStr;
+		}
+
 		// Declaration ("<?xml version="1.0" encoding="utf-8"?>")
 		FString Declaration;
 
 		// Document Type Definition (DTD) for Entity Declaration
-		FEntityDTD EntityDTD;
+		FEntityDTD EntityDefinitions;
 
 		// Root (including namespace declarations as attributes)
 		FNode Root;

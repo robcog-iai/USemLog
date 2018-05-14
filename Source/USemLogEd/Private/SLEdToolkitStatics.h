@@ -10,7 +10,7 @@
 #include "EngineUtils.h"
 #include "Ids.h"
 #include "Tags.h"
-#include "SLSemanticMap.h"
+#include "SemanticMap/SLSemanticMap.h"
 //#include "SLMap.h"
 //#include "SLRuntimeManager.h"
 //#include "SLLevelInfo.h"
@@ -29,22 +29,17 @@ struct FSLEdToolkitStatics
 	{
 		FSLSemanticMap SemMapExporter;
 
-		SemMapExporter.Generate(GEditor->GetEditorWorldContext().World());
+		SemMapExporter.Generate(
+			GEditor->GetEditorWorldContext().World(), EMapTemplateType::Default);
+
+		//SemMapExporter.Generate(
+		//	GEditor->GetEditorWorldContext().World(), EMapTemplateType::IAIKitchen);
 
 		if (SemMapExporter.WriteToFile())
 		{
 			UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 		}
 
-		
-
-		//USLMap* SemMap = NewObject<USLMap>();
-		//if (SemMap)
-		//{
-		//	SemMap->Generate(GEditor->GetEditorWorldContext().World());
-		//	SemMap->WriteToFile();
-		//}
-		//SemMap->BeginDestroy();
 		return FReply::Handled();
 	}
 
