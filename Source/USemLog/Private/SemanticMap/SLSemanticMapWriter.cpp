@@ -1,35 +1,39 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SemanticMap/SLSemanticMap.h"
+#include "SemanticMap/SLSemanticMapWriter.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 #include "Tags.h"
 #include "Ids.h"
 #include "Conversions.h"
 
+#include "Owl/SemanticMapIAI.h"
+#include "Owl/SemanticMapIAIKitchen.h"
+#include "Owl/SemanticMapIAISupermarket.h"
+
 using namespace SLOwl;
 
 // Constructor
-FSLSemanticMap::FSLSemanticMap()
+FSLSemanticMapWriter::FSLSemanticMapWriter()
 {
 	SetLogDirectory(TEXT("SemLog"));
 }
 
 // Constructor with init
-FSLSemanticMap::FSLSemanticMap(UWorld* World, EMapTemplateType TemplateType, const FString& InDirectory)
+FSLSemanticMapWriter::FSLSemanticMapWriter(UWorld* World, EMapTemplateType TemplateType, const FString& InDirectory)
 {
 	SetLogDirectory(InDirectory);
 	Generate(World, TemplateType);
 }
 
 // Destructor
-FSLSemanticMap::~FSLSemanticMap()
+FSLSemanticMapWriter::~FSLSemanticMapWriter()
 {
 }
 
 // Generate semantic map from world
-void FSLSemanticMap::Generate(UWorld* World, EMapTemplateType TemplateType)
+void FSLSemanticMapWriter::Generate(UWorld* World, EMapTemplateType TemplateType)
 {
 	if (TemplateType == EMapTemplateType::Default)
 	{
@@ -37,6 +41,8 @@ void FSLSemanticMap::Generate(UWorld* World, EMapTemplateType TemplateType)
 		FMapTemplateDefault(Declaration, EntityDefinitions, Namespaces,
 			OntologyImports, PropertyDefinitions, DatatypeDefinitions,
 			ClassDefinitions, Entries);
+
+		SemMap = MakeShareable(new FSemanticMapIAI());
 	}
 	else if (TemplateType == EMapTemplateType::IAIKitchen)
 	{
@@ -44,14 +50,26 @@ void FSLSemanticMap::Generate(UWorld* World, EMapTemplateType TemplateType)
 		FMapTemplateIAIKitchen(Declaration, EntityDefinitions, Namespaces,
 			OntologyImports, PropertyDefinitions, DatatypeDefinitions,
 			ClassDefinitions, Entries);
+
+		SemMap = MakeShareable(new FSemanticMapIAIKitchen());
 	}
+	else if (TemplateType == EMapTemplateType::IAISupermarket)
+	{
+		// Generate default template
+		FMapTemplateIAIKitchen(Declaration, EntityDefinitions, Namespaces,
+			OntologyImports, PropertyDefinitions, DatatypeDefinitions,
+			ClassDefinitions, Entries);
+
+		SemMap = MakeShareable(new FSemanticMapIAIKitchen());
+	}
+
 
 	// Add entries
 	AddEntries(World);
 }
 
 // Add semantic map entries
-void FSLSemanticMap::AddEntries(UWorld* World)
+void FSLSemanticMapWriter::AddEntries(UWorld* World)
 {
 	// Prefix name constants
 	const FPrefixName RdfAbout("rdf", "about");
@@ -78,7 +96,7 @@ void FSLSemanticMap::AddEntries(UWorld* World)
 }
 
 // Add actor entry
-void FSLSemanticMap::AddEntry(UObject* Object,
+void FSLSemanticMapWriter::AddEntry(UObject* Object,
 	const FString& Id,
 	const FString& Class,
 	const TMap<UObject*, TMap<FString, FString>> ObjectsToTagsMap)
@@ -99,12 +117,12 @@ void FSLSemanticMap::AddEntry(UObject* Object,
 	FNode EntryPose(KbPose, FAttribute(RdfResource, FAttributeValue("log", PoseId)));
 	Individual.ChildNodes.Add(EntryPose);
 
-	Entries.Add(Individual);
+	SemMap->Entries.Add(Individual);
 	
 	if (AActor* ActEntry = Cast<AActor>(Object))
 	{
 		// Create and add pose entry
-		Entries.Add(CreatePoseEntry(ActEntry->GetActorLocation(), ActEntry->GetActorQuat(), PoseId));
+		SemMap->Entries.Add(CreatePoseEntry(ActEntry->GetActorLocation(), ActEntry->GetActorQuat(), PoseId));
 
 		//if (AActor* AttachedParent = ActEntry->GetAttachParentActor())
 		//{
@@ -119,13 +137,13 @@ void FSLSemanticMap::AddEntry(UObject* Object,
 	else if (USceneComponent* CompEntry = Cast<USceneComponent>(Object))
 	{
 		// Create and add pose entry
-		Entries.Add(CreatePoseEntry(CompEntry->GetComponentLocation(), CompEntry->GetComponentQuat(), PoseId));
+		SemMap->Entries.Add(CreatePoseEntry(CompEntry->GetComponentLocation(), CompEntry->GetComponentQuat(), PoseId));
 
 	}
 }
 
 // Create a pose entry
-FNode FSLSemanticMap::CreatePoseEntry(const FVector& InLoc, const FQuat& InQuat, const FString& InId)
+FNode FSLSemanticMapWriter::CreatePoseEntry(const FVector& InLoc, const FQuat& InQuat, const FString& InId)
 {
 	// Prefix name constants
 	const FPrefixName RdfAbout("rdf", "about");
@@ -161,7 +179,7 @@ FNode FSLSemanticMap::CreatePoseEntry(const FVector& InLoc, const FQuat& InQuat,
 }
 
 // Write semantic map to file
-bool FSLSemanticMap::WriteToFile(const FString& Filename)
+bool FSLSemanticMapWriter::WriteToFile(const FString& Filename)
 {
 	FString FullFilePath = FPaths::ProjectDir() +
 		LogDirectory + TEXT("/") + Filename + TEXT(".owl");
@@ -170,19 +188,21 @@ bool FSLSemanticMap::WriteToFile(const FString& Filename)
 }
 
 // To string
-FString FSLSemanticMap::ToString() const
+FString FSLSemanticMapWriter::ToString() const
 {
-	return ToDoc().ToString();
+	return SemMap->ToString();
+	//return ToDoc().ToString();
 }
 
 // Create map from the data
-FDoc FSLSemanticMap::ToDoc() const
+FDoc FSLSemanticMapWriter::ToDoc() const
 {
-	FNode Root(FPrefixName("rdf", "RDF"), Namespaces);
-	Root.ChildNodes.Add(OntologyImports);
-	Root.ChildNodes.Append(PropertyDefinitions);
-	Root.ChildNodes.Append(DatatypeDefinitions);
-	Root.ChildNodes.Append(ClassDefinitions);
-	Root.ChildNodes.Append(Entries);
-	return FDoc(Declaration, EntityDefinitions, Root);
+	return SemMap->ToDoc();
+	//FNode Root(FPrefixName("rdf", "RDF"), Namespaces);
+	//Root.ChildNodes.Add(OntologyImports);
+	//Root.ChildNodes.Append(PropertyDefinitions);
+	//Root.ChildNodes.Append(DatatypeDefinitions);
+	//Root.ChildNodes.Append(ClassDefinitions);
+	//Root.ChildNodes.Append(Entries);
+	//return FDoc(Declaration, EntityDefinitions, Root);
 }

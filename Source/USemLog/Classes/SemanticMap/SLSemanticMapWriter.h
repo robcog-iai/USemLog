@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Owl/Doc.h"
+#include "Owl/SemanticMap.h"
 #include "SemanticMap/MapTemplateDefault.h"
 #include "SemanticMap/MapTemplateIAIKitchen.h"
 
@@ -23,19 +24,19 @@ enum class EMapTemplateType : uint8
 /**
  * 
  */
-class USEMLOG_API FSLSemanticMap
+class USEMLOG_API FSLSemanticMapWriter
 {
 public:
 	// Constructor
-	FSLSemanticMap();
+	FSLSemanticMapWriter();
 
 	// Constructor with map generation
-	FSLSemanticMap(UWorld* World, 
+	FSLSemanticMapWriter(UWorld* World, 
 		EMapTemplateType TemplateType = EMapTemplateType::NONE,
 		const FString& InDirectory = TEXT("SemLog"));
 
 	// Destructor
-	~FSLSemanticMap();
+	~FSLSemanticMapWriter();
 
 	// Generate semantic map from world
 	void Generate(UWorld* World, EMapTemplateType TemplateType = EMapTemplateType::NONE);
@@ -91,4 +92,8 @@ private:
 
 	// Entity entries
 	TArray<SLOwl::FNode> Entries;
+
+
+	////
+	TSharedPtr<SLOwl::FSemanticMap> SemMap;
 };

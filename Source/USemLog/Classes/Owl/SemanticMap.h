@@ -4,8 +4,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Owl/Owl.h"
-#include "Owl/Node.h"
 #include "Owl/Doc.h"
 
 namespace SLOwl
@@ -26,7 +24,7 @@ namespace SLOwl
 			const TArray<SLOwl::FNode>& InPropertyDefinitions,
 			const TArray<SLOwl::FNode>& InDatatypeDefinitions,
 			const TArray<SLOwl::FNode>& InClassDefinitions,
-			TArray<SLOwl::FNode>& InEntries)) :
+			TArray<SLOwl::FNode>& InEntries) :
 			EntityDefinitions(InEntityDefinitions),
 			Namespaces(InNamespaces),
 			OntologyImports(InOntologyImports),
@@ -48,7 +46,7 @@ namespace SLOwl
 			Root.ChildNodes.Append(DatatypeDefinitions);
 			Root.ChildNodes.Append(ClassDefinitions);
 			Root.ChildNodes.Append(Entries);
-			const FString Declaration = Declaration = 
+			const FString Declaration =  
 				TEXT("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
 			return FDoc(Declaration, EntityDefinitions, Root);
 		}
