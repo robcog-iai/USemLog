@@ -10,7 +10,9 @@
 #include "EngineUtils.h"
 #include "Ids.h"
 #include "Tags.h"
-#include "SemanticMap/SLSemanticMapWriter.h"
+#include "SLSemanticMapWriter.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "PhysicsEngine/PhysicsConstraintActor.h"
 //#include "SLMap.h"
 //#include "SLRuntimeManager.h"
 //#include "SLLevelInfo.h"
@@ -102,6 +104,48 @@ struct FSLEdToolkitStatics
 	static FReply ClearIds()
 	{
 		FTags::RemoveKeyValuePairs(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
+		return FReply::Handled();
+	}
+
+	static FReply TagSemanticConstraints()
+	{
+		// Check constraint components
+		for (TObjectIterator<UPhysicsConstraintComponent> ConstrItr; ConstrItr; ++ConstrItr)
+		{
+			// Check if constraint is not already tagged
+			if (!FTags::HasType(*ConstrItr, "SemLog") &&
+				ConstrItr->ConstraintActor1 != nullptr &&
+				ConstrItr->ConstraintActor2 != nullptr)
+			{
+				// Check if constrained actors are tagged with a class
+				if (FTags::HasKey(ConstrItr->ConstraintActor1, "SemLog", "Class") &&
+					FTags::HasKey(ConstrItr->ConstraintActor2, "SemLog", "Class"))
+				{
+					const FString ConstraintTag = FString("SemLog;Id," + FIds::NewGuidInBase64Url() + ";");
+					ConstrItr->ComponentTags.Add(*ConstraintTag);
+				}
+			}
+		}
+
+		//// Check constraint actors
+		//for (TActorIterator<APhysicsConstraintActor> ConstrActItr(GEditor->GetEditorWorldContext().World()); ConstrActItr; ++ConstrActItr)
+		//{
+		//	// Check if constraint is not already tagged
+		//	if (!FTags::HasType(*ConstrActItr, "SemLog") &&
+		//		ConstrActItr->GetConstraintComp()->ConstraintActor1 != nullptr &&
+		//		ConstrActItr->GetConstraintComp()->ConstraintActor2 != nullptr)
+		//	{
+		//		UE_LOG(LogTemp, Error, TEXT("ConstrActItr is: %s"), *ConstrActItr->GetName());
+		//		// Check if constrained actors are tagged with a class
+		//		if (FTags::HasKey(ConstrActItr->GetConstraintComp()->ConstraintActor1, "SemLog", "Class") &&
+		//			FTags::HasKey(ConstrActItr->GetConstraintComp()->ConstraintActor2, "SemLog", "Class"))
+		//		{
+		//			UE_LOG(LogTemp, Error, TEXT("\t Add tag ConstrActItr is: %s"), *ConstrActItr->GetName());
+		//			const FString ConstraintTag = "SemLog;Id," + FIds::NewGuidInBase64Url() + ";";
+		//			ConstrActItr->Tags.Add(*ConstraintTag);
+		//		}
+		//	}
+		//}
 		return FReply::Handled();
 	}
 

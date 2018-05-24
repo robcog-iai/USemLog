@@ -101,6 +101,15 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 				.IsEnabled(true)
 				.OnClicked_Static(&FSLEdToolkitStatics::ClearIds)
 				]
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.HAlign(HAlign_Center)
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("TagSemanticContraints", "Tag Semantic Constraints"))
+				.IsEnabled(true)
+				.OnClicked_Static(&FSLEdToolkitStatics::TagSemanticConstraints)
+				]
 		];
 		
 	FModeToolkit::Init(InitToolkitHost);

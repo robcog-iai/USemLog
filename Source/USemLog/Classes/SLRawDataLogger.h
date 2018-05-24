@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "SLRawDataAsyncWorker.h"
+#include "RawData/SLRawDataAsyncWorker.h"
 #include "SLRawDataLogger.generated.h"
 
 /**

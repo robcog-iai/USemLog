@@ -6,8 +6,6 @@
 #include "CoreMinimal.h"
 #include "Owl/Doc.h"
 #include "Owl/SemanticMap.h"
-#include "SemanticMap/MapTemplateDefault.h"
-#include "SemanticMap/MapTemplateIAIKitchen.h"
 
 /**
 * Semantic map template types
@@ -47,53 +45,36 @@ public:
 	// Export semantic map to file
 	bool WriteToFile(const FString& Filename = TEXT("SemanticMap"));
 
-	// To string
-	FString ToString() const;
-
 private:
-	// To document
-	SLOwl::FDoc ToDoc() const;
-
 	// Add semantic map entries
 	void AddEntries(UWorld* World);
 
 	// Add entry
-	void AddEntry(UObject* Object,
-		const FString& Id,
-		const FString& Class,
-		const TMap<UObject*, TMap<FString, FString>> ObjectsToTagsMap);
+	void AddObjectEntry(UObject* Object,
+		const FString& InId,
+		const FString& InClass);
 
-	// Create a pose entry
-	SLOwl::FNode CreatePoseEntry(const FVector& InLoc, const FQuat& InQuat, const FString& InId);
+	// Create an object individual
+	SLOwl::FNode CreateObjectIndividual(const FString& Id, const FString& Class);
+
+	// Create class property
+	SLOwl::FNode CreateClassProperty(const FString& InClass);
+
+	// Create pose property
+	SLOwl::FNode CreatePoseProperty(const FString& InId);
+
+	// Create a pose individual
+	SLOwl::FNode CreatePoseIndividual(const FString& InId, const FVector& InLoc, const FQuat& InQuat);
+
+	// Create a location property
+	SLOwl::FNode CreateLocationProperty(const FVector& InLoc);
+
+	// Create a quaternion property
+	SLOwl::FNode CreateQuaternionProperty(const FQuat& InQuat);
 
 	// Path for saving the semantic map
 	FString LogDirectory;
 
-	// XML Declaration
-	FString Declaration;
-
-	// Entity definitions
-	SLOwl::FEntityDTD EntityDefinitions; // TODO use namespace shortcuts
-
-	// Namespace declarations
-	TArray<SLOwl::FAttribute> Namespaces;
-
-	// Ontology imports 
-	SLOwl::FNode OntologyImports;
-
-	// Property definitions
-	TArray<SLOwl::FNode> PropertyDefinitions;
-
-	// Datatype definitions
-	TArray<SLOwl::FNode> DatatypeDefinitions;
-
-	// Class definitions
-	TArray<SLOwl::FNode> ClassDefinitions;
-
-	// Entity entries
-	TArray<SLOwl::FNode> Entries;
-
-
-	////
+	// Semantic map pointer
 	TSharedPtr<SLOwl::FSemanticMap> SemMap;
 };
