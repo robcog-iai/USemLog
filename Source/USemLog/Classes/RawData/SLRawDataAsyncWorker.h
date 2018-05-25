@@ -55,7 +55,7 @@ class FSLRawDataAsyncWorker : public FNonAbandonableTask
 	// Writer needs access to the private data of this class (world, data arrays etc.)
 	friend class FSLRawDataWriterJson;
 	friend class FSLRawDataWriterBson;
-	friend class FSLRawDataWriterMongo;
+	friend class FSLRawDataWriterMongo; 
 
 
 public:
