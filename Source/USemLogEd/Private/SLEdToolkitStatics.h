@@ -29,18 +29,21 @@ struct FSLEdToolkitStatics
 
 	static FReply GenerateSemanticMap()
 	{
-		FSLSemanticMapWriter SemMapWriter;
+		//FSLSemanticMapWriter SemMapWriter;
+
+		////SemMapWriter.Generate(
+		////	GEditor->GetEditorWorldContext().World(), EMapTemplateType::Default);
 
 		//SemMapWriter.Generate(
-		//	GEditor->GetEditorWorldContext().World(), EMapTemplateType::Default);
+		//	GEditor->GetEditorWorldContext().World(), EMapTemplateType::IAISupermarket);
 
-		SemMapWriter.Generate(
-			GEditor->GetEditorWorldContext().World(), EMapTemplateType::IAISupermarket);
+		//if (SemMapWriter.WriteToFile())
+		//{
+		//	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+		//}
 
-		if (SemMapWriter.WriteToFile())
-		{
-			UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
-		}
+		FSLSemanticMapWriter::WriteToFile(GEditor->GetEditorWorldContext().World(),
+			EMapTemplateType::IAISupermarket, TEXT("SemLog"), TEXT("SemanticMap"));
 
 		return FReply::Handled();
 	}

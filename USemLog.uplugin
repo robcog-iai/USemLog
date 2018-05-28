@@ -23,6 +23,11 @@
 		{
 			"Name": "USemLogEd",
 			"Type": "Editor"
+		},
+		{
+			"Name": "UOwl",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	],
   "Plugins": [

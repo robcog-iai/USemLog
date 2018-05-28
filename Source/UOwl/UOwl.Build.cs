@@ -3,15 +3,15 @@
 
 using UnrealBuildTool;
 
-public class USemLog : ModuleRules
+public class UOwl : ModuleRules
 {
-	public USemLog(ReadOnlyTargetRules Target) : base(Target)
+	public UOwl(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
-				"USemLog/Public"
+				"UOwl/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -19,7 +19,7 @@ public class USemLog : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"USemLog/Private",
+				"UOwl/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -29,7 +29,6 @@ public class USemLog : ModuleRules
 			new string[]
 			{
 				"Core",
-				"UOwl",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -40,14 +39,6 @@ public class USemLog : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
-				"Slate",
-				"SlateCore",
-				"Json",
-				"JsonUtilities",
-				"UTags",
-				"UIds",
-				"UConversions",
-				"libmongo"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

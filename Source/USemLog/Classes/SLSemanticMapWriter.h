@@ -4,8 +4,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Owl/Doc.h"
-#include "Owl/SemanticMap.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "Owl.h"
 
 /**
 * Semantic map template types
@@ -45,36 +45,55 @@ public:
 	// Export semantic map to file
 	bool WriteToFile(const FString& Filename = TEXT("SemanticMap"));
 
+	// Write semantic map to file
+	static bool WriteToFile(UWorld* World,
+		EMapTemplateType TemplateType = EMapTemplateType::NONE,
+		const FString& InDirectory = TEXT("SemLog"),
+		const FString& InFilename = TEXT("SemanticMap"));
+
 private:
+	// Create semantic map template
+	static TSharedPtr<FOwlSemanticMap> CreateSemanticMapTemplate(EMapTemplateType TemplateType);
+
+	// Add entries to the semantic map
+	static void AddAllEntries(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World);
+
+	// Add object entry to the semantic map
+	static void AddObjectEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
+		UObject* Object,
+		const FString& InId,
+		const FString& InClass);
+
+	// Add constraint entry
+	static void AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
+		UPhysicsConstraintComponent* ConstraintComp,
+		const FString& InId);
+
+	// Get object semantically annotated children ids (only direct children, no grandchildren etc.)
+	static TArray<FString> GetAllChildIds(UObject* Object);
+
+	// Get object semantically annotated parent id (empty string if none)
+	static FString GetParentId(UObject* Object);
+
+
+
+
 	// Add semantic map entries
 	void AddEntries(UWorld* World);
 
-	// Add entry
+	// Add object entry
 	void AddObjectEntry(UObject* Object,
 		const FString& InId,
 		const FString& InClass);
 
-	// Create an object individual
-	SLOwl::FNode CreateObjectIndividual(const FString& Id, const FString& Class);
+	// Add constraint entry
+	void AddConstraintEntry(UPhysicsConstraintComponent* ConstraintComp, const FString& InId);
 
-	// Create class property
-	SLOwl::FNode CreateClassProperty(const FString& InClass);
 
-	// Create pose property
-	SLOwl::FNode CreatePoseProperty(const FString& InId);
-
-	// Create a pose individual
-	SLOwl::FNode CreatePoseIndividual(const FString& InId, const FVector& InLoc, const FQuat& InQuat);
-
-	// Create a location property
-	SLOwl::FNode CreateLocationProperty(const FVector& InLoc);
-
-	// Create a quaternion property
-	SLOwl::FNode CreateQuaternionProperty(const FQuat& InQuat);
 
 	// Path for saving the semantic map
 	FString LogDirectory;
 
 	// Semantic map pointer
-	TSharedPtr<SLOwl::FSemanticMap> SemMap;
+	TSharedPtr<FOwlSemanticMap> SemMap;
 };
