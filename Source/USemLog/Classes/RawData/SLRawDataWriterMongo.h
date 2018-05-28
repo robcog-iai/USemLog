@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "SLRawDataWriter.h"
+#include "mongoc.h"
 
 // Forward declaration
 class FSLRawDataAsyncWorker;
@@ -43,23 +44,30 @@ private:
 	bool ConnectToMongo(const FString& InLogDB,
 		const FString& InEpisodeId,
 		const FString& InMongoIP,
-		uint16 MongoPort);
+		uint16 MongoPort=27017);
 
 	// Add actors
-	void AddActors(TArray<TSharedPtr<FJsonValue>>& OutBsonEntitiesArr);
+	void AddActors(bson_t& OutBsonEntitiesArr);
 
 	// Add components
-	void AddComponents(TArray<TSharedPtr<FJsonValue>>& OutBsonEntitiesArr);
+	void AddComponents(bson_t& OutBsonEntitiesArr);
 
 	// Get entry as Bson object
-	TSharedPtr<FJsonObject> GetAsBsonEntry(const FString& InId,
+	bson_t GetAsBsonEntry(const FString& InId,
 		const FString& InClass,
 		const FVector& InLoc,
 		const FQuat& InQuat);
 
 	// Write entry to db
-	void WriteToMongo(const TSharedPtr<FJsonObject>& InRootObj);
+	void WriteToMongo(bson_t*& InRootObj, mongoc_collection_t* &collection);
 
 	// Pointer to worker parent (access to raw data structure)
 	FSLRawDataAsyncWorker* WorkerParent;
+
+	bool bConnect;
+
+	// Pointer to monge database
+	mongoc_client_t *client;
+	mongoc_database_t *database;
+	mongoc_collection_t *collection;
 };

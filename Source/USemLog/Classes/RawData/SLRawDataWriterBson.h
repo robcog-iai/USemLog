@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "SLRawDataWriter.h"
+#include "bson.h"
 
 // Forward declaration
 class FSLRawDataAsyncWorker;
@@ -35,23 +36,26 @@ private:
 	void SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
 
 	// Add actors
-	void AddActors(TArray<TSharedPtr<FJsonValue>>& OutBsonEntitiesArr);
+	void AddActors(bson_t& OutBsonEntitiesArr);
 
 	// Add components
-	void AddComponents(TArray<TSharedPtr<FJsonValue>>& OutBsonEntitiesArr);
+	void AddComponents(bson_t& OutBsonEntitiesArr);
 
 	// Get entry as Bson object
-	TSharedPtr<FJsonObject> GetAsBsonEntry(const FString& InId,
+	bson_t GetAsBsonEntry(const FString& InId,
 		const FString& InClass,
 		const FVector& InLoc,
 		const FQuat& InQuat);
 
 	// Write entry to file
-	void WriteToFile(const TSharedPtr<FJsonObject>& InRootObj);
+	void WriteToFile(uint8* memorybuffer, int64 bufferlen);
 
 	// Pointer to worker parent (access to raw data structure)
 	FSLRawDataAsyncWorker* WorkerParent;
 
 	// File handle to write the raw data to file
 	IFileHandle* FileHandle;
+
+	
+
 };
