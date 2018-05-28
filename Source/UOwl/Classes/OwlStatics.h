@@ -10,7 +10,7 @@
 */
 struct UOWL_API FOwlStatics
 {
-	/* Owl individuals creation */
+	/* Owl individuals / definitions creation */
 	// Create an object individual
 	static FOwlNode CreateObjectIndividual(const FString& Id, const FString& Class);
 
@@ -20,10 +20,34 @@ struct UOWL_API FOwlStatics
 	// Create a constraint individual
 	static FOwlNode CreateConstraintIndividual();
 
+	// Create a constraint individual
+	static FOwlNode CreateClassDefinition(const FString& Class);
+
 
 	/* Owl properties creation */
 	// Create class property
 	static FOwlNode CreateClassProperty(const FString& InClass);
+
+	// Create subclass property
+	static FOwlNode CreateSubClassProperty(const FString& InSubClass);
+
+	// Create subclass - depth property
+	static FOwlNode CreateDepthProperty(float Value);
+
+	// Create subclass - height property
+	static FOwlNode CreateHeightProperty(float Value);
+
+	// Create subclass - width property
+	static FOwlNode CreateWidthProperty(float Value);
+
+	// Create owl:onProperty meta property
+	static FOwlNode CreateOnProperty(const FString& InProperty);
+
+	// Create owl:hasValue float property
+	static FOwlNode CreateHasValueFloat(float Value);
+
+	// Create owl:hasValue string property
+	static FOwlNode CreateHasValueString(const FString& InValue);
 
 	// Create pose property
 	static FOwlNode CreatePoseProperty(const FString& InId);

@@ -4,7 +4,7 @@
 #include "UOwl.h"
 
 // Define logging types
-DEFINE_LOG_CATEGORY(LogSemLog);
+DEFINE_LOG_CATEGORY(LogSL);
 
 #define LOCTEXT_NAMESPACE "FUOwl"
 

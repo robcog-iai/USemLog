@@ -16,6 +16,17 @@ public:
 	// Default constructor
 	FOwlNode() {}
 
+	// Init constructor, NO Value, Attributes or Children
+	FOwlNode(const FOwlPrefixName& InName) : Name(InName)
+	{}
+
+	// Init constructor, NO Value or Attributes 
+	FOwlNode(const FOwlPrefixName& InName,
+		const TArray<FOwlNode>& InChildNodes) :
+		Name(InName),
+		ChildNodes(InChildNodes)
+	{}
+
 	// Init constructor, NO Value and Children
 	FOwlNode(const FOwlPrefixName& InName,
 		const TArray<FOwlAttribute>& InAttributes) :
