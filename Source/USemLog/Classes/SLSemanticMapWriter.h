@@ -48,7 +48,7 @@ private:
 	static void AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
 		UObject* Object,
 		const FString& InClass,
-		const FString& InSubClass = TEXT(""));
+		const FString& InParentClass = TEXT(""));
 
 	// Add constraint entry
 	static void AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemMap,

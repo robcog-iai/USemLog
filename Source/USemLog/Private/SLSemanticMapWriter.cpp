@@ -5,6 +5,7 @@
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "Components/PrimitiveComponent.h"
 #include "Engine/StaticMeshActor.h"
+#include "Animation/SkeletalMeshActor.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 
@@ -87,9 +88,9 @@ void FSLSemanticMapWriter::AddAllEntries(TSharedPtr<FOwlSemanticMap> InSemMap, U
 		// Add class entries (Id not mandatory)
 		if (!Class.IsEmpty())
 		{
-			const FString SubClass = ObjToTagsItr.Value.Contains("SubClass") ?
-				ObjToTagsItr.Value["SubClass"] : TEXT("");
-			AddClassDefinition(InSemMap, ObjToTagsItr.Key, Class, SubClass);
+			const FString ParentClass = ObjToTagsItr.Value.Contains("ParentClass") ?
+				ObjToTagsItr.Value["ParentClass"] : TEXT("");
+			AddClassDefinition(InSemMap, ObjToTagsItr.Key, Class, ParentClass);
 		}
 	}
 }
@@ -121,8 +122,14 @@ void FSLSemanticMapWriter::AddObjectEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
 	{
 		// Generate unique id for the pose individual
 		const FString PoseId = FIds::NewGuidInBase64Url();
+
+		// Add properties
 		ObjIndividual.ChildNodes.Add(FOwlStatics::CreatePoseProperty(PoseId));
+
+		// Add entries 
 		InSemMap->Entries.Add(ObjIndividual);
+
+		// Create pose entry
 		const FVector ROSLoc = FConversions::UToROS(ActEntry->GetActorLocation());
 		const FQuat ROSQuat = FConversions::UToROS(ActEntry->GetActorQuat());
 		InSemMap->Entries.Add(FOwlStatics::CreatePoseIndividual(PoseId, ROSLoc, ROSQuat));
@@ -131,8 +138,14 @@ void FSLSemanticMapWriter::AddObjectEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
 	{
 		// Generate unique id for the pose individual
 		const FString PoseId = FIds::NewGuidInBase64Url();
+
+		// Add properties
 		ObjIndividual.ChildNodes.Add(FOwlStatics::CreatePoseProperty(PoseId));
+		
+		// Add entries 
 		InSemMap->Entries.Add(ObjIndividual);
+
+		// Create pose entry
 		const FVector ROSLoc = FConversions::UToROS(CompEntry->GetComponentLocation());
 		const FQuat ROSQuat = FConversions::UToROS(CompEntry->GetComponentQuat());
 		InSemMap->Entries.Add(FOwlStatics::CreatePoseIndividual(PoseId, ROSLoc, ROSQuat));
@@ -144,12 +157,11 @@ void FSLSemanticMapWriter::AddObjectEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
 	}
 }
 
-
 // Add class entry
 void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
 	UObject* Object,
 	const FString& InClass,
-	const FString& InSubClass)
+	const FString& InParentClass)
 {
 	// Return if class was already defined
 	for (const auto& ClassDef : InSemMap->ClassDefinitions)
@@ -170,9 +182,9 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 	ClassDefinition.Comment = TEXT("Class ") + InClass;
 
 	// Check if subclass is known
-	if (!InSubClass.IsEmpty())
+	if (!InParentClass.IsEmpty())
 	{
-		ClassDefinition.ChildNodes.Add(FOwlStatics::CreateSubClassProperty(InSubClass));
+		ClassDefinition.ChildNodes.Add(FOwlStatics::CreateSubClassOfProperty(InParentClass));
 	}
 
 	// Add bounds if available
@@ -188,6 +200,48 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 				ClassDefinition.ChildNodes.Add(FOwlStatics::CreateWidthProperty(BBSize.Y));
 				ClassDefinition.ChildNodes.Add(FOwlStatics::CreateHeightProperty(BBSize.Z));
 			}
+		}
+	}
+	else if (ASkeletalMeshActor* ObjAsSkelAct = Cast<ASkeletalMeshActor>(Object))
+	{
+		if (USkeletalMeshComponent* SkelComp = ObjAsSkelAct->GetSkeletalMeshComponent())
+		{
+			const FVector BBSize = FConversions::CmToM(
+				SkelComp->Bounds.GetBox().GetSize());
+			if (!BBSize.IsZero())
+			{
+				ClassDefinition.ChildNodes.Add(FOwlStatics::CreateDepthProperty(BBSize.X));
+				ClassDefinition.ChildNodes.Add(FOwlStatics::CreateWidthProperty(BBSize.Y));
+				ClassDefinition.ChildNodes.Add(FOwlStatics::CreateHeightProperty(BBSize.Z));
+			}
+
+			TArray<FName> BoneNames;
+			SkelComp->GetBoneNames(BoneNames);
+			for (const auto& BoneName : BoneNames)
+			{
+				ClassDefinition.ChildNodes.Add(
+					FOwlStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
+			}
+
+		}
+	}
+	else if (USkeletalMeshComponent* ObjAsSkelComp = Cast<USkeletalMeshComponent>(Object))
+	{
+		const FVector BBSize = FConversions::CmToM(
+			ObjAsSkelComp->Bounds.GetBox().GetSize());
+		if (!BBSize.IsZero())
+		{
+			ClassDefinition.ChildNodes.Add(FOwlStatics::CreateDepthProperty(BBSize.X));
+			ClassDefinition.ChildNodes.Add(FOwlStatics::CreateWidthProperty(BBSize.Y));
+			ClassDefinition.ChildNodes.Add(FOwlStatics::CreateHeightProperty(BBSize.Z));
+		}
+
+		TArray<FName> BoneNames;
+		ObjAsSkelComp->GetBoneNames(BoneNames);
+		for (const auto& BoneName : BoneNames)
+		{
+			ClassDefinition.ChildNodes.Add(
+				FOwlStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
 		}
 	}
 	else if(UPrimitiveComponent* ObjAsPrimComp = Cast<UPrimitiveComponent>(Object))
@@ -209,7 +263,69 @@ void FSLSemanticMapWriter::AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemM
 	UPhysicsConstraintComponent* ConstraintComp,
 	const FString& InId)
 {
+	AActor* ParentAct = ConstraintComp->ConstraintActor1;
+	AActor* ChildAct = ConstraintComp->ConstraintActor2;
+	if (ParentAct && ChildAct)
+	{
+		const FString ParentId = FTags::GetKeyValue(ParentAct, "SemLog", "Id");
+		const FString ChildId = FTags::GetKeyValue(ChildAct, "SemLog", "Id");
+		if (!ParentId.IsEmpty() && !ChildId.IsEmpty())
+		{
+			// Create the object individual
+			FOwlNode ConstrIndividual = FOwlStatics::CreateConstraintIndividual(InId, ParentId, ChildId);
 
+			// Generate unique ids 
+			const FString PoseId = FIds::NewGuidInBase64Url();
+			const FString LinId = FIds::NewGuidInBase64Url();
+			const FString AngId = FIds::NewGuidInBase64Url();
+
+			// Add properties
+			ConstrIndividual.ChildNodes.Add(FOwlStatics::CreatePoseProperty(PoseId));
+			ConstrIndividual.ChildNodes.Add(FOwlStatics::CreateLinearConstraintProperty(LinId));
+			ConstrIndividual.ChildNodes.Add(FOwlStatics::CreateAngularConstraintProperty(AngId));
+			
+			// Add entries to the map
+			InSemMap->Entries.Add(ConstrIndividual);
+
+			// Create pose entry
+			const FVector ROSLoc = FConversions::UToROS(ConstraintComp->GetComponentLocation());
+			const FQuat ROSQuat = FConversions::UToROS(ConstraintComp->GetComponentQuat());
+			InSemMap->Entries.Add(FOwlStatics::CreatePoseIndividual(PoseId, ROSLoc, ROSQuat));
+
+			// Create linear constraint entry
+			const uint8 LinXMotion = ConstraintComp->ConstraintInstance.GetLinearXMotion();
+			const uint8 LinYMotion = ConstraintComp->ConstraintInstance.GetLinearYMotion();
+			const uint8 LinZMotion = ConstraintComp->ConstraintInstance.GetLinearZMotion();
+			const float LinLimit = FConversions::CmToM(ConstraintComp->ConstraintInstance.GetLinearLimit());
+			const bool bLinSoftConstraint = false; // ConstraintComp->ConstraintInstance.ProfileInstance.
+			const float LinStiffness = 0.f; // ConstraintComp->ConstraintInstance.ProfileInstance.
+			const float LinDamping = 0.f; // ConstraintComp->ConstraintInstance.ProfileInstance.
+
+			InSemMap->Entries.Add(FOwlStatics::CreateLinearConstraintProperties(
+				LinId, LinXMotion, LinYMotion, LinZMotion, LinLimit, 
+				bLinSoftConstraint, LinStiffness, LinDamping));
+
+			// Create angular constraint entry
+			const uint8 AngSwing1Motion = ConstraintComp->ConstraintInstance.GetAngularSwing1Motion();
+			const uint8 AngSwing2Motion = ConstraintComp->ConstraintInstance.GetAngularSwing2Motion();
+			const uint8 AngTwistMotion = ConstraintComp->ConstraintInstance.GetAngularTwistMotion();
+			const float AngSwing1Limit = FMath::DegreesToRadians(ConstraintComp->ConstraintInstance.GetAngularSwing1Limit());
+			const float AngSwing2Limit = FMath::DegreesToRadians(ConstraintComp->ConstraintInstance.GetAngularSwing2Limit());
+			const float AngTwistLimit = FMath::DegreesToRadians(ConstraintComp->ConstraintInstance.GetAngularTwistLimit());
+			const bool bAngSoftSwingConstraint = false;
+			const float AngSwingStiffness = 0.f;
+			const float AngSwingDamping = 0.f;
+			const bool bAngSoftTwistConstraint = false;
+			const float AngTwistStiffness = 0.f;
+			const float AngTwistDamping = 0.f;
+
+			InSemMap->Entries.Add(FOwlStatics::CreateAngularConstraintProperties(
+				AngId, AngSwing1Motion, AngSwing2Motion, AngTwistMotion,
+				AngSwing1Limit, AngSwing2Limit, AngTwistLimit, bAngSoftSwingConstraint,
+				AngSwingStiffness, AngSwingDamping, bAngSoftTwistConstraint,
+				AngTwistStiffness, AngTwistDamping));
+		}
+	}
 }
 
 // Get children ids (only direct children, no grandchildren etc.)
