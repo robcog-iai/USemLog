@@ -42,7 +42,8 @@ struct FSLEdToolkitStatics
 		//	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 		//}
 
-		FSLSemanticMapWriter::WriteToFile(GEditor->GetEditorWorldContext().World(),
+		FSLSemanticMapWriter SemMapWriter;
+		SemMapWriter.WriteToFile(GEditor->GetEditorWorldContext().World(),
 			EMapTemplateType::IAISupermarket, TEXT("SemLog"), TEXT("SemanticMap"));
 
 		return FReply::Handled();

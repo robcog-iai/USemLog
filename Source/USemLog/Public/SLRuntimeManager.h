@@ -56,7 +56,7 @@ private:
 	bool bStartAtBeginPlay;
 
 
-	/* Begin raw logger */
+	/* Begin raw data logger properties */
 	// Log raw data
 	UPROPERTY(EditAnywhere, Category = "SL")
 	bool bLogRawData;
@@ -92,7 +92,7 @@ private:
 	// Raw data logger, use UPROPERTY to avoid GC
 	UPROPERTY()
 	class USLRawDataLogger* RawDataLogger;
-	/* End raw logger */
+	/* End raw data logger properties */
 
 	
 	// Set when manager is initialized

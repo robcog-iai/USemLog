@@ -18,6 +18,11 @@
 #include "Ids.h"
 #include "Conversions.h"
 
+// Default constructor
+FSLSemanticMapWriter::FSLSemanticMapWriter()
+{
+}
+
 // Write semantic map to file
 bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 	EMapTemplateType TemplateType,
@@ -103,7 +108,7 @@ void FSLSemanticMapWriter::AddObjectEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
 {
 	// Create the object individual
 	FOwlNode ObjIndividual = FOwlStatics::CreateObjectIndividual(InId, InClass);
-
+	
 	// Add parent property
 	const FString ParentId = GetParentId(Object);
 	if (!ParentId.IsEmpty())
@@ -222,7 +227,6 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 				ClassDefinition.ChildNodes.Add(
 					FOwlStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
 			}
-
 		}
 	}
 	else if (USkeletalMeshComponent* ObjAsSkelComp = Cast<USkeletalMeshComponent>(Object))

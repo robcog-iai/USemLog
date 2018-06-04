@@ -9,31 +9,33 @@
 /**
 * 
 */
-struct FOwlSemanticMap
+struct FOwlEvents
 {
 public:
 	// Default constructor
-	FOwlSemanticMap() {}
+	FOwlEvents() {}
 
 	// Init constructor
-	FOwlSemanticMap(const FOwlEntityDTD& InEntityDefinitions,
+	FOwlEvents(const FOwlEntityDTD& InEntityDefinitions,
 		const TArray<FOwlAttribute>& InNamespaces,
 		const FOwlNode& InOntologyImports,
 		const TArray<FOwlNode>& InPropertyDefinitions,
 		const TArray<FOwlNode>& InDatatypeDefinitions,
 		const TArray<FOwlNode>& InClassDefinitions,
-		const TArray<FOwlNode>& InEntries) :
+		const TArray<FOwlNode>& InEntries,
+		const FOwlNode& InMetadata) :
 		EntityDefinitions(InEntityDefinitions),
 		Namespaces(InNamespaces),
 		OntologyImports(InOntologyImports),
 		PropertyDefinitions(InPropertyDefinitions),
 		DatatypeDefinitions(InDatatypeDefinitions),
 		ClassDefinitions(InClassDefinitions),
-		Entries(InEntries)
+		Entries(InEntries),
+		Metadata(InMetadata)
 	{}
 
 	// Destructor
-	~FOwlSemanticMap() {}
+	~FOwlEvents() {}
 
 	// Return semantic map as owl document
 	FOwlDoc ToDoc()
@@ -75,4 +77,7 @@ public:
 
 	// Entity entries
 	TArray<FOwlNode> Entries;
+	
+	// Metadata
+	FOwlNode Metadata;
 };

@@ -25,39 +25,42 @@ enum class EMapTemplateType : uint8
 struct USEMLOG_API FSLSemanticMapWriter
 {
 public:
+	// Default constructor
+	FSLSemanticMapWriter();
+
 	// Write semantic map to file
-	static bool WriteToFile(UWorld* World,
+	bool WriteToFile(UWorld* World,
 		EMapTemplateType TemplateType = EMapTemplateType::NONE,
 		const FString& InDirectory = TEXT("SemLog"),
 		const FString& InFilename = TEXT("SemanticMap"));
 
 private:
 	// Create semantic map template
-	static TSharedPtr<FOwlSemanticMap> CreateSemanticMapTemplate(EMapTemplateType TemplateType);
+	TSharedPtr<FOwlSemanticMap> CreateSemanticMapTemplate(EMapTemplateType TemplateType);
 
 	// Add entries to the semantic map
-	static void AddAllEntries(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World);
+	void AddAllEntries(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World);
 
 	// Add object entry to the semantic map
-	static void AddObjectEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
+	void AddObjectEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
 		UObject* Object,
 		const FString& InId,
 		const FString& InClass);
 
 	// Add class definition entry
-	static void AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
+	void AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
 		UObject* Object,
 		const FString& InClass,
 		const FString& InParentClass = TEXT(""));
 
 	// Add constraint entry
-	static void AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
+	void AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
 		UPhysicsConstraintComponent* ConstraintComp,
 		const FString& InId);
 
 	// Get object semantically annotated children ids (only direct children, no grandchildren etc.)
-	static TArray<FString> GetAllChildIds(UObject* Object);
+	TArray<FString> GetAllChildIds(UObject* Object);
 
 	// Get object semantically annotated parent id (empty string if none)
-	static FString GetParentId(UObject* Object);
+	FString GetParentId(UObject* Object);
 };

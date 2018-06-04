@@ -4,22 +4,22 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "OwlSemanticMap.h"
+#include "OwlEvents.h"
 
 /**
 * 
 */
-struct FOwlSemanticMapIAI : public FOwlSemanticMap
+struct FOwlEventsIAI : public FOwlEvents
 {
 public:
 	// Default constructor
-	FOwlSemanticMapIAI() 
+	FOwlEventsIAI() 
 	{
 		AddDefaultValues();
 	}
 
 protected:
-	// Add default values to the map
+	// Add default values to the document
 	void AddDefaultValues()
 	{
 		AddEntityDefinitions();
