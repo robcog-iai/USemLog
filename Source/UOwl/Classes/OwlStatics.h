@@ -12,18 +12,29 @@ struct UOWL_API FOwlStatics
 {
 	/* Owl individuals / definitions creation */
 	// Create an object individual
-	static FOwlNode CreateObjectIndividual(const FString& Id, const FString& Class);
+	static FOwlNode CreateObjectIndividual(
+		const FString& InMapPrefix, 
+		const FString& Id, 
+		const FString& Class);
 
 	// Create a pose individual
-	static FOwlNode CreatePoseIndividual(const FString& InId, const FVector& InLoc, const FQuat& InQuat);
+	static FOwlNode CreatePoseIndividual(
+		const FString& InMapPrefix, 
+		const FString& InId,
+		const FVector& InLoc,
+		const FQuat& InQuat);
 
 	// Create a constraint individual
-	static FOwlNode CreateConstraintIndividual(const FString& InId,
+	static FOwlNode CreateConstraintIndividual(
+		const FString& InMapPrefix, 
+		const FString& InId,
 		const FString& ParentId,
 		const FString& ChildId);
 
 	// Create linear constraint properties individual
-	static FOwlNode CreateLinearConstraintProperties(const FString& InId,
+	static FOwlNode CreateLinearConstraintProperties(
+		const FString& InMapPrefix, 
+		const FString& InId,
 		uint8 XMotion,
 		uint8 YMotion,
 		uint8 ZMotion,
@@ -33,7 +44,9 @@ struct UOWL_API FOwlStatics
 		float Damping);
 
 	// Create angular constraint properties individual
-	static FOwlNode CreateAngularConstraintProperties(const FString& InId,
+	static FOwlNode CreateAngularConstraintProperties(
+		const FString& InMapPrefix,
+		const FString& InId,
 		uint8 Swing1Motion,
 		uint8 Swing2Motion,
 		uint8 TwistMotion,
@@ -90,19 +103,19 @@ struct UOWL_API FOwlStatics
 	static FOwlNode CreateStringValueProperty(const FOwlPrefixName& InPrefixName, const FString& InValue);
 
 	// Create pose property
-	static FOwlNode CreatePoseProperty(const FString& InId);
+	static FOwlNode CreatePoseProperty(const FString& InMapPrefix, const FString& InId);
 
 	// Create linear constraint property
-	static FOwlNode CreateLinearConstraintProperty(const FString& InId);
+	static FOwlNode CreateLinearConstraintProperty(const FString& InMapPrefix, const FString& InId);
 
 	// Create angular constraint property
-	static FOwlNode CreateAngularConstraintProperty(const FString& InId);
+	static FOwlNode CreateAngularConstraintProperty(const FString& InMapPrefix, const FString& InId);
 
 	// Create child property
-	static FOwlNode CreateChildProperty(const FString& InId);
+	static FOwlNode CreateChildProperty(const FString& InMapPrefix, const FString& InId);
 
 	// Create parent property
-	static FOwlNode CreateParentProperty(const FString& InId);
+	static FOwlNode CreateParentProperty(const FString& InMapPrefix, const FString& InId);
 
 	// Create a location property
 	static FOwlNode CreateLocationProperty(const FVector& InLoc);

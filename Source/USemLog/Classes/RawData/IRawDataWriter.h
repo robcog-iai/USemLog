@@ -3,20 +3,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
 /**
- * Base class for raw data writer
+ * Abstract class for raw data writer
  */
-class FSLRawDataWriter
+class IRawDataWriter
 {
 public:
-	// Constr
-	FSLRawDataWriter();
-
-	// Destr
-	virtual ~FSLRawDataWriter();
-
 	// Called to write the data
-	virtual void WriteData();
+	virtual void WriteData() = 0;
 };

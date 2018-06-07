@@ -5,20 +5,27 @@
 
 /* Owl individuals creation */
 // Create an object entry
-FOwlNode FOwlStatics::CreateObjectIndividual(const FString& Id, const FString& Class)
+FOwlNode FOwlStatics::CreateObjectIndividual(
+	const FString& InMapPrefix, 
+	const FString& Id,
+	const FString& Class)
 {
 	// Prefix name constants
 	const FOwlPrefixName RdfAbout("rdf", "about");
 	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 
-	FOwlNode ObjectIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue("log", Id)));
+	FOwlNode ObjectIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, Id)));
 	ObjectIndividual.Comment = TEXT("Object " + Class + " " + Id);
 	ObjectIndividual.ChildNodes.Add(FOwlStatics::CreateClassProperty(Class));
 	return ObjectIndividual;
 }
 
 // Create a pose entry
-FOwlNode FOwlStatics::CreatePoseIndividual(const FString& InId, const FVector& InLoc, const FQuat& InQuat)
+FOwlNode FOwlStatics::CreatePoseIndividual(
+	const FString& InMapPrefix,
+	const FString& InId,
+	const FVector& InLoc,
+	const FQuat& InQuat)
 {
 	// Prefix name constants
 	const FOwlPrefixName RdfAbout("rdf", "about");
@@ -31,7 +38,7 @@ FOwlNode FOwlStatics::CreatePoseIndividual(const FString& InId, const FVector& I
 	const FOwlAttributeValue AttrValString("xsd", "string");
 
 	// Pose individual
-	FOwlNode PoseIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue("log", InId)));
+	FOwlNode PoseIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, InId)));
 	FOwlNode PoseProperty(RdfType, FOwlAttribute(RdfResource, AttrValPose));
 	PoseIndividual.ChildNodes.Add(PoseProperty);
 	PoseIndividual.ChildNodes.Add(FOwlStatics::CreateQuaternionProperty(InQuat));
@@ -40,24 +47,28 @@ FOwlNode FOwlStatics::CreatePoseIndividual(const FString& InId, const FVector& I
 }
 
 // Create a constraint individual
-FOwlNode FOwlStatics::CreateConstraintIndividual(const FString& InId,
+FOwlNode FOwlStatics::CreateConstraintIndividual(
+	const FString& InMapPrefix,
+	const FString& InId,
 	const FString& ParentId,
 	const FString& ChildId)
 {
 	const FOwlPrefixName RdfAbout("rdf", "about");
 	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 
-	FOwlNode ObjectIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue("log", InId)));
+	FOwlNode ObjectIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, InId)));
 	ObjectIndividual.Comment = TEXT("Constraint " + InId);
 	ObjectIndividual.ChildNodes.Add(FOwlStatics::CreateClassProperty("Constraint"));
-	ObjectIndividual.ChildNodes.Add(FOwlStatics::CreateParentProperty(ParentId));
-	ObjectIndividual.ChildNodes.Add(FOwlStatics::CreateChildProperty(ChildId));
+	ObjectIndividual.ChildNodes.Add(FOwlStatics::CreateParentProperty(InMapPrefix, ParentId));
+	ObjectIndividual.ChildNodes.Add(FOwlStatics::CreateChildProperty(InMapPrefix, ChildId));
 
 	return ObjectIndividual;
 }
 
 // Create constraint linear limits individual
-FOwlNode FOwlStatics::CreateLinearConstraintProperties(const FString& InId,
+FOwlNode FOwlStatics::CreateLinearConstraintProperties(
+	const FString& InMapPrefix, 
+	const FString& InId,
 	uint8 XMotion,
 	uint8 YMotion,
 	uint8 ZMotion,
@@ -69,7 +80,7 @@ FOwlNode FOwlStatics::CreateLinearConstraintProperties(const FString& InId,
 	const FOwlPrefixName RdfAbout("rdf", "about");
 	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 
-	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue("log", InId)));
+	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, InId)));
 	ConstrPropIndividual.ChildNodes.Add(FOwlStatics::CreateClassProperty("LinearConstraint"));
 	ConstrPropIndividual.ChildNodes.Add(FOwlStatics::CreateIntValueProperty(
 		FOwlPrefixName("knowrob", "xMotion"), XMotion));
@@ -90,7 +101,9 @@ FOwlNode FOwlStatics::CreateLinearConstraintProperties(const FString& InId,
 }
 
 // Create constraint angular limits individual
-FOwlNode FOwlStatics::CreateAngularConstraintProperties(const FString& InId,
+FOwlNode FOwlStatics::CreateAngularConstraintProperties(
+	const FString& InMapPrefix,
+	const FString& InId,
 	uint8 Swing1Motion,
 	uint8 Swing2Motion,
 	uint8 TwistMotion,
@@ -107,7 +120,7 @@ FOwlNode FOwlStatics::CreateAngularConstraintProperties(const FString& InId,
 	const FOwlPrefixName RdfAbout("rdf", "about");
 	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 
-	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue("log", InId)));
+	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, InId)));
 	ConstrPropIndividual.ChildNodes.Add(FOwlStatics::CreateClassProperty("AngularConstraint"));
 	ConstrPropIndividual.ChildNodes.Add(FOwlStatics::CreateIntValueProperty(
 		FOwlPrefixName("knowrob","swing1Motion"), Swing1Motion));
@@ -274,48 +287,48 @@ FOwlNode FOwlStatics::CreateStringValueProperty(const FOwlPrefixName& InPrefixNa
 }
 
 // Create pose property
-FOwlNode FOwlStatics::CreatePoseProperty(const FString& InId)
+FOwlNode FOwlStatics::CreatePoseProperty(const FString& InMapPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbPose("knowrob", "pose");
 	const FOwlPrefixName RdfResource("rdf", "resource");
 
-	return FOwlNode(KbPose, FOwlAttribute(RdfResource, FOwlAttributeValue("log", InId)));
+	return FOwlNode(KbPose, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
 }
 
 // Create linear constraint property
-FOwlNode FOwlStatics::CreateLinearConstraintProperty(const FString& InId)
+FOwlNode FOwlStatics::CreateLinearConstraintProperty(const FString& InMapPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbLinearConstr("knowrob", "linearConstraint");
 	const FOwlPrefixName RdfResource("rdf", "resource");
 
-	return FOwlNode(KbLinearConstr, FOwlAttribute(RdfResource, FOwlAttributeValue("log", InId)));
+	return FOwlNode(KbLinearConstr, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
 }
 
 // Create angular constraint property
-FOwlNode FOwlStatics::CreateAngularConstraintProperty(const FString& InId)
+FOwlNode FOwlStatics::CreateAngularConstraintProperty(const FString& InMapPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbAngularConstr("knowrob", "angularConstraint");
 	const FOwlPrefixName RdfResource("rdf", "resource");
 
-	return FOwlNode(KbAngularConstr, FOwlAttribute(RdfResource, FOwlAttributeValue("log", InId)));
+	return FOwlNode(KbAngularConstr, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
 }
 
 // Create child property
-FOwlNode FOwlStatics::CreateChildProperty(const FString& InId)
+FOwlNode FOwlStatics::CreateChildProperty(const FString& InMapPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbChild("knowrob", "child");
 	const FOwlPrefixName RdfResource("rdf", "resource");
 
-	return FOwlNode(KbChild, FOwlAttribute(RdfResource, FOwlAttributeValue("log", InId)));
+	return FOwlNode(KbChild, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
 }
 
 // Create parent property
-FOwlNode FOwlStatics::CreateParentProperty(const FString& InId)
+FOwlNode FOwlStatics::CreateParentProperty(const FString& InMapPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbParent("knowrob", "parent");
 	const FOwlPrefixName RdfResource("rdf", "resource");
 
-	return FOwlNode(KbParent, FOwlAttribute(RdfResource, FOwlAttributeValue("log", InId)));
+	return FOwlNode(KbParent, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
 }
 
 // Create a location node

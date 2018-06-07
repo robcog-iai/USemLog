@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
+#include "SLRawDataLogger.h"
+#include "SLEventDataLogger.h"
 #include "SLRuntimeManager.generated.h"
 
 /**
@@ -29,19 +31,20 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
-	// Init manager
+	// Init loggers
 	void Init();
 
-	// Start manager
+	// Start loggers
 	void Start();
 
-	// Stop manager
-	void Stop();
+	// Finish loggers
+	void Finish();
 	
 private:
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent);
 
+private:
 	/* Semantic logger */
 	// Episode Id (be default will be auto generated)
 	UPROPERTY(EditAnywhere, Category = "SL")
@@ -55,8 +58,14 @@ private:
 	UPROPERTY(EditAnywhere, Category = "SL")
 	bool bStartAtBeginPlay;
 
+	// Set when manager is initialized
+	bool bIsInit;
 
-	/* Begin raw data logger properties */
+	// Set when manager is started
+	bool bIsStarted;
+
+
+	/* Raw data logger properties */
 	// Log raw data
 	UPROPERTY(EditAnywhere, Category = "SL")
 	bool bLogRawData;
@@ -91,13 +100,20 @@ private:
 
 	// Raw data logger, use UPROPERTY to avoid GC
 	UPROPERTY()
-	class USLRawDataLogger* RawDataLogger;
-	/* End raw data logger properties */
+	USLRawDataLogger* RawDataLogger;
 
-	
-	// Set when manager is initialized
-	bool bIsInit;
 
-	// Set when manager is started
-	bool bIsStarted;
+
+	/* Event data logger properties */
+	// Log event data
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger")
+	bool bLogEventData;
+
+	// Owl template
+	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger")
+	EEventsTemplate EventsTemplateType;
+
+	// Event data logger, use UPROPERTY to avoid GC
+	UPROPERTY()
+	USLEventDataLogger* EventDataLogger;
 };

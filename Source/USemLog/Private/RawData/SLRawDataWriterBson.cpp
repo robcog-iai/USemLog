@@ -76,7 +76,7 @@ void FSLRawDataWriterBson::WriteData()
 		bson_writer_end(BsonWriter);
 
 		// write memory to file
-		FSLRawDataWriterBson::WriteToFile((uint8*)buf, (int64)buflen);
+		FSLRawDataWriterBson::WriteData((uint8*)buf, (int64)buflen);
 
 		//free bson writer buffer
 		bson_free(buf);		
@@ -291,7 +291,7 @@ bson_t FSLRawDataWriterBson::GetAsBsonEntry(const FString& InId,
 }
 
 // Write entry to file
-void FSLRawDataWriterBson::WriteToFile(uint8* memorybuffer, int64 bufferlen)
+void FSLRawDataWriterBson::WriteData(uint8* memorybuffer, int64 bufferlen)
 {
 
 	if (FileHandle)

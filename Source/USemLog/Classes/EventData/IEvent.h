@@ -11,5 +11,12 @@
 class IEvent
 {
 public:
+	// Start time of the event
+	float Start;
+
+	// End time of the event
+	float End;
+
+	// Create owl representation of the event
 	virtual FOwlNode ToOwlNode() const = 0;
 };

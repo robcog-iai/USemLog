@@ -6,7 +6,7 @@
 #include "Misc/FileHelper.h"
 
 // UOwl
-#include "OwlEventsIAI.h"
+//#include "Templates/OwlEventsIAI.h"
 
 // UUtils
 #include "Tags.h"
@@ -23,26 +23,27 @@ bool FSLEventsWriter::WriteToFile(EEventsTemplateType TemplateType,
 	const FString& InDirectory,
 	const FString& InFilename)
 {
-	// Create the semantic map template
-	TSharedPtr<FOwlEvents> EventsDoc = CreateEventsDocTemplate(TemplateType);
+	return true;
+	//// Create the semantic map template
+	//TSharedPtr<FOwlEvents> EventsDoc = CreateEventsDocTemplate(TemplateType);
 
-	// Write doc to file
-	FString FullFilePath = FPaths::ProjectDir() +
-		InDirectory + TEXT("/") + InFilename + TEXT(".owl");
-	FPaths::RemoveDuplicateSlashes(FullFilePath);
-	return FFileHelper::SaveStringToFile(EventsDoc->ToString(), *FullFilePath);
+	//// Write doc to file
+	//FString FullFilePath = FPaths::ProjectDir() +
+	//	InDirectory + TEXT("/") + InFilename + TEXT(".owl");
+	//FPaths::RemoveDuplicateSlashes(FullFilePath);
+	//return FFileHelper::SaveStringToFile(EventsDoc->ToString(), *FullFilePath);
 }
 
 // Create semantic map template
 TSharedPtr<FOwlEvents> FSLEventsWriter::CreateEventsDocTemplate(EEventsTemplateType TemplateType)
 {
-	if (TemplateType == EEventsTemplateType::Default)
-	{
-		return MakeShareable(new FOwlEvents());
-	}
-	else if (TemplateType == EEventsTemplateType::IAI)
-	{
-		return MakeShareable(new FOwlEventsIAI());
-	}
+	//if (TemplateType == EEventsTemplateType::Default)
+	//{
+	//	return MakeShareable(new FOwlEvents());
+	//}
+	//else if (TemplateType == EEventsTemplateType::IAI)
+	//{
+	//	return MakeShareable(new FOwlEventsIAI());
+	//}
 	return MakeShareable(new FOwlEvents());
 }

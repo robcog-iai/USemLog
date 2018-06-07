@@ -11,12 +11,12 @@
 * Semantic map template types
 */
 UENUM(BlueprintType)
-enum class EMapTemplateType : uint8
+enum class EMapTemplate : uint8
 {
 	NONE					UMETA(DisplayName = "None"),
 	Default					UMETA(DisplayName = "Default"),
-	IAIKitchen  			UMETA(DisplayName = "IAI Kitchen"),
-	IAISupermarket     		UMETA(DisplayName = "IAI Supermarket"),
+	IAIKitchen				UMETA(DisplayName = "IAI Kitchen"),
+	IAISupermarket			UMETA(DisplayName = "IAI Supermarket"),
 };
 
 /**
@@ -30,13 +30,13 @@ public:
 
 	// Write semantic map to file
 	bool WriteToFile(UWorld* World,
-		EMapTemplateType TemplateType = EMapTemplateType::NONE,
+		EMapTemplate TemplateType = EMapTemplate::NONE,
 		const FString& InDirectory = TEXT("SemLog"),
 		const FString& InFilename = TEXT("SemanticMap"));
 
 private:
 	// Create semantic map template
-	TSharedPtr<FOwlSemanticMap> CreateSemanticMapTemplate(EMapTemplateType TemplateType);
+	TSharedPtr<FOwlSemanticMap> CreateSemanticMapTemplate(EMapTemplate TemplateType);
 
 	// Add entries to the semantic map
 	void AddAllEntries(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World);

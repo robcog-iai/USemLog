@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLRawDataWriter.h"
+#include "IRawDataWriter.h"
 #include "bson.h"
 
 // Forward declaration
@@ -13,7 +13,7 @@ class FSLRawDataAsyncWorker;
 /**
  * Raw data logger to bson format
  */
-class FSLRawDataWriterBson : public FSLRawDataWriter
+class FSLRawDataWriterBson : public IRawDataWriter
 {
 public:
 	// Default constr
@@ -48,14 +48,11 @@ private:
 		const FQuat& InQuat);
 
 	// Write entry to file
-	void WriteToFile(uint8* memorybuffer, int64 bufferlen);
+	void WriteData(uint8* memorybuffer, int64 bufferlen);
 
 	// Pointer to worker parent (access to raw data structure)
 	FSLRawDataAsyncWorker* WorkerParent;
 
 	// File handle to write the raw data to file
 	IFileHandle* FileHandle;
-
-	
-
 };

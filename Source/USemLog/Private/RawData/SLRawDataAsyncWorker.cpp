@@ -2,6 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "RawData/SLRawDataAsyncWorker.h"
+#include "RawData/SLRawDataWriterJson.h"
+#include "RawData/SLRawDataWriterBson.h"
+#include "RawData/SLRawDataWriterMongo.h"
 #include "Tags.h"
 
 // Constructor
@@ -17,9 +20,6 @@ FSLRawDataAsyncWorker::~FSLRawDataAsyncWorker()
 // Init worker, load models to log from world
 void FSLRawDataAsyncWorker::Init(UWorld* InWorld, const float DistanceThreshold)
 {
-	// Create default writer
-	Writer = MakeShareable(new FSLRawDataWriter());
-
 	// Set pointer to world (access to current timestamp)
 	World = InWorld;
 
@@ -111,7 +111,10 @@ void FSLRawDataAsyncWorker::RemoveAllNonDynamicObjects()
 // Async work done here
 void FSLRawDataAsyncWorker::DoWork()
 {
-	Writer->WriteData();
+	if (Writer.IsValid())
+	{
+		Writer->WriteData();
+	}
 }
 
 // Needed by the engine API

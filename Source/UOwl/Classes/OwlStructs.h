@@ -5,6 +5,9 @@
 
 #include "CoreMinimal.h"
 
+// Pair of strings typedef
+typedef TPair<FString, FString> TPairString;
+
 // Indent step
 static const FString INDENT_STEP = TEXT("\t");
 
@@ -15,6 +18,14 @@ static const FString INDENT_STEP = TEXT("\t");
 	*/
 struct FOwlPrefixName
 {
+public:
+	// Prefix 
+	FString Prefix;
+
+	// Local name
+	FString LocalName;
+
+public:
 	// Default constr
 	FOwlPrefixName() {}
 
@@ -22,20 +33,14 @@ struct FOwlPrefixName
 	FOwlPrefixName(const FString& InPrefix, const FString& InLocalName) : 
 		Prefix(InPrefix), LocalName(InLocalName) {}
 	
-	// Init constructor without prefix
-	FOwlPrefixName(const FString& InLocalName) : LocalName(InLocalName) {}
+	// Init constructor without local name
+	FOwlPrefixName(const FString& InPrefix) : Prefix(InPrefix) {}
 
 	// Get name as string
 	FString ToString() const
 	{
-		return Prefix.IsEmpty() ? LocalName : FString(Prefix + TEXT(":") + LocalName);
+		return LocalName.IsEmpty() ? Prefix : FString(Prefix + TEXT(":") + LocalName);
 	}
-
-	// Prefix 
-	FString Prefix;
-
-	// Local name
-	FString LocalName;
 };
 
 /**
@@ -45,6 +50,14 @@ struct FOwlPrefixName
 */
 struct FOwlAttributeValue
 {
+public:
+	// Namespace
+	FString Ns;
+
+	// Value
+	FString LocalValue;
+
+public:
 	// Default constr
 	FOwlAttributeValue() {}
 
@@ -61,12 +74,6 @@ struct FOwlAttributeValue
 		return Ns.IsEmpty() ? TEXT("\"") + LocalValue + TEXT("\"")
 			: FString(TEXT("\"&") + Ns + TEXT(";") + LocalValue + TEXT("\""));
 	}
-
-	// Namespace
-	FString Ns;
-
-	// Value
-	FString LocalValue;
 };
 	
 /**
@@ -76,6 +83,14 @@ struct FOwlAttributeValue
 */
 struct FOwlAttribute
 {
+public:
+	// Key 
+	FOwlPrefixName Key;
+
+	// Value
+	FOwlAttributeValue Value;
+
+public:
 	// Default constr
 	FOwlAttribute() {}
 
@@ -88,12 +103,6 @@ struct FOwlAttribute
 	{
 		return Key.ToString() + TEXT("=") + Value.ToString();
 	}
-
-	// Key 
-	FOwlPrefixName Key;
-
-	// Value
-	FOwlAttributeValue Value;
 };
 	
 /**
@@ -110,15 +119,41 @@ struct FOwlAttribute
 */
 struct FOwlEntityDTD
 {
+public:
+	// Root name
+	FOwlPrefixName Name;
+
+	// Array of the "!ENTITY" Key-Value pairs
+	TArray<TPairString> EntityPairs;
+
+public:
 	// Default constr
-	FOwlEntityDTD() {}
+	FOwlEntityDTD() : Name(FOwlPrefixName("rdf", "RDF")) {}
+
+	// Init constr with default name
+	FOwlEntityDTD(const TArray<TPairString>& InEntityPairs) :
+		Name(FOwlPrefixName("rdf", "RDF")),
+		EntityPairs(InEntityPairs)
+	{}
 
 	// Init constr
 	FOwlEntityDTD(const FOwlPrefixName& InName,
-		const TMap<FString, FString>& InEntityPairs) :
+		const TArray<TPairString>& InEntityPairs) :
 		Name(InName),
 		EntityPairs(InEntityPairs)
 	{}
+
+	// Add pair
+	void AddPair(const TPairString& InPair)
+	{
+		EntityPairs.Add(InPair);
+	}
+
+	// Add pairs
+	void AddPairs(const TArray<TPairString>& InPairs)
+	{
+		EntityPairs.Append(InPairs);
+	}
 
 	// Get entity declaration string
 	FString ToString() const
@@ -135,10 +170,4 @@ struct FOwlEntityDTD
 		DTDStr += TEXT("]>\n\n");
 		return DTDStr;
 	}
-
-	// Root
-	FOwlPrefixName Name;
-
-	// Array of the "!ENTITY" Key-Value pairs
-	TMap<FString, FString> EntityPairs;
 };

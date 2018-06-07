@@ -4,10 +4,7 @@
 #pragma once
 
 #include "Async/AsyncWork.h"
-#include "SLRawDataWriter.h"
-#include "SLRawDataWriterJson.h"
-#include "SLRawDataWriterBson.h"
-#include "SLRawDataWriterMongo.h"
+#include "IRawDataWriter.h"
 
 /**
 * Raw data structure for the logged entities
@@ -100,5 +97,5 @@ private:
 	UWorld* World;
 
 	// Raw data writer
-	TSharedPtr<FSLRawDataWriter> Writer;
+	TSharedPtr<IRawDataWriter> Writer;
 };

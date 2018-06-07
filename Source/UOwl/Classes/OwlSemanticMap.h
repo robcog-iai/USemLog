@@ -7,72 +7,63 @@
 #include "OwlDoc.h"
 
 /**
-* 
+* Semantic map document in OWL
 */
-struct FOwlSemanticMap
+struct FOwlSemanticMap : public FOwlDoc
 {
+public:
+	// SemanticEnvironmentMap individual
+	FOwlNode SemMapIndividual;
+
+	// Map prefix (e.g. ue-def from rdf:about="&ue-def;4dfw4smiMD9ne1">)
+	FString MapPrefix;
+
+	// Map name (e.g UE-DefaultMap, from "http://knowrob.org/kb/UE-DefaultMap.owl#")
+	FString MapName;
+
+	// Map unique Id
+	FString MapId;
+
 public:
 	// Default constructor
 	FOwlSemanticMap() {}
 
 	// Init constructor
-	FOwlSemanticMap(const FOwlEntityDTD& InEntityDefinitions,
-		const TArray<FOwlAttribute>& InNamespaces,
-		const FOwlNode& InOntologyImports,
-		const TArray<FOwlNode>& InPropertyDefinitions,
-		const TArray<FOwlNode>& InDatatypeDefinitions,
-		const TArray<FOwlNode>& InClassDefinitions,
-		const TArray<FOwlNode>& InEntries) :
-		EntityDefinitions(InEntityDefinitions),
-		Namespaces(InNamespaces),
-		OntologyImports(InOntologyImports),
-		PropertyDefinitions(InPropertyDefinitions),
-		DatatypeDefinitions(InDatatypeDefinitions),
-		ClassDefinitions(InClassDefinitions),
-		Entries(InEntries)
-	{}
-
-	// Destructor
-	~FOwlSemanticMap() {}
-
-	// Return semantic map as owl document
-	FOwlDoc ToDoc()
+	FOwlSemanticMap(const FString& InMapPrefix,
+		const FString& InMapName,
+		const FString& InMapId) :
+		MapPrefix(InMapPrefix),
+		MapName(InMapName),
+		MapId(InMapId)
 	{
+		SetSemanticMapNode(InMapPrefix, InMapId);
+		SetOntologyNode(InMapName);
+	}
+	
+	// Create semantic map node individual
+	void SetSemanticMapNode(const FString& InMapPrefix, const FString& InMapId)
+	{
+		const FOwlPrefixName OwlNI("owl", "NamedIndividual");
+		const FOwlPrefixName RdfAbout("rdf", "about");
+		const FOwlAttributeValue SemMapInd(InMapPrefix, InMapId);
+
+		SemMapIndividual.Name = OwlNI;
+		SemMapIndividual.AddAttribute(FOwlAttribute(RdfAbout, SemMapInd));
+	}
+
+	// To string
+	virtual FString ToString() override
+	{
+		FString DocStr = TEXT("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n");
+		DocStr += EntityDefinitions.ToString();
 		FOwlNode Root(FOwlPrefixName("rdf", "RDF"), Namespaces);
-		Root.ChildNodes.Add(OntologyImports);
-		Root.ChildNodes.Append(PropertyDefinitions);
-		Root.ChildNodes.Append(DatatypeDefinitions);
-		Root.ChildNodes.Append(ClassDefinitions);
-		Root.ChildNodes.Append(Entries);
-		const FString Declaration =  
-			TEXT("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-		return FOwlDoc(Declaration, EntityDefinitions, Root);
+		Root.AddChildNode(OntologyImports);
+		Root.AddChildNodes(PropertyDefinitions);
+		Root.AddChildNodes(DatatypeDefinitions);
+		Root.AddChildNodes(ClassDefinitions);
+		Root.AddChildNode(SemMapIndividual);
+		Root.AddChildNodes(Entries);
+		DocStr += Root.ToString(Indent);
+		return DocStr;
 	}
-
-	// Return semantic map as string
-	FString ToString()
-	{
-		return ToDoc().ToString();
-	}
-
-	// Entity definitions
-	FOwlEntityDTD EntityDefinitions; 
-
-	// Namespace declarations
-	TArray<FOwlAttribute> Namespaces;
-
-	// Ontology imports 
-	FOwlNode OntologyImports;
-
-	// Property definitions
-	TArray<FOwlNode> PropertyDefinitions;
-
-	// Datatype definitions
-	TArray<FOwlNode> DatatypeDefinitions;
-
-	// Class definitions
-	TArray<FOwlNode> ClassDefinitions;
-
-	// Entity entries
-	TArray<FOwlNode> Entries;
 };

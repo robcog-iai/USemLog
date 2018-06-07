@@ -12,7 +12,7 @@ USLRawDataLogger::USLRawDataLogger()
 // Destructor
 USLRawDataLogger::~USLRawDataLogger()
 {
-	USLRawDataLogger::Stop();
+	USLRawDataLogger::Finish();
 }
 
 // Init logger
@@ -35,8 +35,8 @@ void USLRawDataLogger::Start(const float UpdateRate)
 	SetUpdateRate(UpdateRate);
 }
 
-// Stop logger
-void USLRawDataLogger::Stop()
+// Finish logger
+void USLRawDataLogger::Finish()
 {
 	if (AsyncWorker)
 	{

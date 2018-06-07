@@ -9,11 +9,11 @@
 * Dummy event class
 */
 
-class DummyEvent : public IEvent
+class FDummyEvent : public IEvent
 {
 public:
 	// Default constructor
-	DummyEvent();
+	FDummyEvent();
 
 	/* Begin IEvent interface */
 	// To an owl representation of the event

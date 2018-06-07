@@ -13,12 +13,27 @@
 struct FOwlNode
 {
 public:
+	// Node prefixed name
+	FOwlPrefixName Name;
+
+	// Node value
+	FString Value;
+
+	// Attributes
+	TArray<FOwlAttribute> Attributes;
+
+	// Nodes
+	TArray<FOwlNode> ChildNodes;
+
+	// Comment
+	FString Comment;
+
 	// Default constructor
 	FOwlNode() {}
 
+public:
 	// Init constructor, NO Value, Attributes or Children
-	FOwlNode(const FOwlPrefixName& InName) : Name(InName)
-	{}
+	FOwlNode(const FOwlPrefixName& InName) : Name(InName) {}
 
 	// Init constructor, NO Value or Attributes 
 	FOwlNode(const FOwlPrefixName& InName,
@@ -80,6 +95,30 @@ public:
 		Attributes.Add(InAttribute);
 	}
 
+	// Add child node
+	void AddChildNode(const FOwlNode& InChildNode)
+	{
+		ChildNodes.Add(InChildNode);
+	}
+
+	// Add child nodes
+	void AddChildNodes(const TArray<FOwlNode>& InChildNodes)
+	{
+		ChildNodes.Append(InChildNodes);
+	}
+
+	// Add attribute
+	void AddAttribute(const FOwlAttribute& InAttribute)
+	{
+		Attributes.Add(InAttribute);
+	}
+
+	// Add attributes
+	void AddAttributes(const TArray<FOwlAttribute>& InAttributes)
+	{
+		Attributes.Append(InAttributes);
+	}
+
 	// Destructor
 	~FOwlNode() {}
 
@@ -91,6 +130,12 @@ public:
 		if (!Comment.IsEmpty())
 		{
 			NodeStr += TEXT("\n") + Indent + TEXT("<!-- ") + Comment + TEXT(" -->\n");
+		}
+
+		// Comment only OR empty node
+		if (Name.ToString().IsEmpty())
+		{
+			return NodeStr;
 		}
 
 		// Add node name
@@ -154,19 +199,4 @@ public:
 		}
 		return NodeStr;
 	}
-
-	// Node prefixed name
-	FOwlPrefixName Name;
-
-	// Node value
-	FString Value;
-
-	// Attributes
-	TArray<FOwlAttribute> Attributes;
-
-	// Nodes
-	TArray<FOwlNode> ChildNodes;
-		
-	// Comment
-	FString Comment;
 };

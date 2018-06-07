@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLRawDataWriter.h"
+#include "IRawDataWriter.h"
 #include "mongoc.h"
 
 // Forward declaration
@@ -13,7 +13,7 @@ class FSLRawDataAsyncWorker;
 /**
  * Raw data logger to a mongo database
  */
-class FSLRawDataWriterMongo : public FSLRawDataWriter
+class FSLRawDataWriterMongo : public IRawDataWriter
 {
 public:
 	// Default constr

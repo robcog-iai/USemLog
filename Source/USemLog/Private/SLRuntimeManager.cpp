@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLRuntimeManager.h"
-#include "SLRawDataLogger.h"
 #include "Ids.h"
 
 // Sets default values
@@ -28,13 +27,17 @@ ASLRuntimeManager::ASLRuntimeManager()
 	bLogToBson = false;
 	bLogToMongo = false;
 	MongoIP = TEXT("127.0.0.1.");
-	MongoPort = 27017;	
+	MongoPort = 27017;
+
+	// Events logger default values
+	bLogEventData = true;
+	EventsTemplateType = EEventsTemplate::Default;
 }
 
 // Sets default values
 ASLRuntimeManager::~ASLRuntimeManager()
 {
-	ASLRuntimeManager::Stop();
+	ASLRuntimeManager::Finish();
 }
 
 // Called when the game starts or when spawned
@@ -54,10 +57,10 @@ void ASLRuntimeManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	ASLRuntimeManager::Stop();
+	ASLRuntimeManager::Finish();
 }
 
-// Init manager
+// Init loggers
 void ASLRuntimeManager::Init()
 {
 	if (!bIsInit)
@@ -89,20 +92,33 @@ void ASLRuntimeManager::Init()
 			}
 		}
 
+		if (bLogEventData)
+		{
+			// Create and init event data logger
+			EventDataLogger = NewObject<USLEventDataLogger>(this);
+			EventDataLogger->Init(LogDirectory, EpisodeId, EventsTemplateType);
+		}
+
 		// Mark manager as initialized
 		bIsInit = true;
 	}
 }
 
-// Start manager
+// Start loggers
 void ASLRuntimeManager::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
 		// Start raw data logger
-		if (bLogRawData)
+		if (bLogRawData && RawDataLogger)
 		{
 			RawDataLogger->Start(UpdateRate);
+		}
+
+		// Start event data logger
+		if (bLogEventData && EventDataLogger)
+		{
+			EventDataLogger->Start();
 		}
 
 		// Mark manager as started
@@ -110,17 +126,22 @@ void ASLRuntimeManager::Start()
 	}
 }
 
-// Stop manager
-void ASLRuntimeManager::Stop()
+// Finish loggers
+void ASLRuntimeManager::Finish()
 {
-	if (bIsStarted)
+	if (bIsStarted || bIsInit)
 	{
 		if (RawDataLogger)
 		{
-			RawDataLogger->Stop();
+			RawDataLogger->Finish();
 		}
 
-		// Set manager as stopped
+		if (EventDataLogger)
+		{
+			EventDataLogger->Finish();
+		}
+
+		// Mark manager as finished
 		bIsStarted = false;
 		bIsInit = false;
 	}
@@ -145,7 +166,6 @@ void ASLRuntimeManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 			bLogToBson = false;
 			bLogToMongo = false;
 		}
-		UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLRuntimeManager, bLogToBson))
 	{
@@ -154,7 +174,6 @@ void ASLRuntimeManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 			bLogToJson = false;
 			bLogToMongo = false;
 		}
-		UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLRuntimeManager, bLogToMongo))
 	{
@@ -163,7 +182,6 @@ void ASLRuntimeManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 			bLogToJson = false;
 			bLogToBson = false;
 		}
-		UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 	}
 }
 #endif // WITH_EDITOR

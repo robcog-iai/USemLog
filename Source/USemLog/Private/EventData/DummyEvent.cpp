@@ -4,12 +4,14 @@
 #include "EventData/DummyEvent.h"
 
 // Default constructor
-DummyEvent::DummyEvent();
+FDummyEvent::FDummyEvent()
+{
+}
 
 
 /* Begin IEvent interface */
 // Get an owl representation of the event
-FOwlNode DummyEvent::ToOwlNode() const
+FOwlNode FDummyEvent::ToOwlNode() const
 {
 	return FOwlNode();
 }

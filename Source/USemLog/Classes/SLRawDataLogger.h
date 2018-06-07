@@ -30,8 +30,8 @@ public:
 	// Start logger
 	void Start(const float UpdateRate);
 
-	// Stop logger
-	void Stop();
+	// Finish logger
+	void Finish();
 
 	// Log data to json file
 	void SetLogToJson(const FString& InLogDirectory, const FString& InEpisodeId);
