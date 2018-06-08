@@ -36,34 +36,26 @@ public:
 		MapName(InMapName),
 		MapId(InMapId)
 	{
-		SetSemanticMapNode(InMapPrefix, InMapId);
 		SetOntologyNode(InMapName);
 	}
 	
 	// Create semantic map node individual
-	void SetSemanticMapNode(const FString& InMapPrefix, const FString& InMapId)
+	void AddSemanticMapIndividual(const FString& InMapPrefix, const FString& InMapId)
 	{
 		const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 		const FOwlPrefixName RdfAbout("rdf", "about");
+		const FOwlPrefixName RdfType("rdf", "type");
+		const FOwlPrefixName RdfResource("rdf", "resource");
 		const FOwlAttributeValue SemMapInd(InMapPrefix, InMapId);
 
+		// Create semantic map individual
 		SemMapIndividual.Name = OwlNI;
 		SemMapIndividual.AddAttribute(FOwlAttribute(RdfAbout, SemMapInd));
-	}
+		SemMapIndividual.AddChildNode(FOwlNode(RdfType, FOwlAttribute(
+			RdfResource, FOwlAttributeValue("knowrob", "SemanticEnvironmentMap"))));
+		SemMapIndividual.Comment = "Semantic Map " + InMapId;
 
-	// To string
-	virtual FString ToString() override
-	{
-		FString DocStr = TEXT("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n");
-		DocStr += EntityDefinitions.ToString();
-		FOwlNode Root(FOwlPrefixName("rdf", "RDF"), Namespaces);
-		Root.AddChildNode(OntologyImports);
-		Root.AddChildNodes(PropertyDefinitions);
-		Root.AddChildNodes(DatatypeDefinitions);
-		Root.AddChildNodes(ClassDefinitions);
-		Root.AddChildNode(SemMapIndividual);
-		Root.AddChildNodes(Entries);
-		DocStr += Root.ToString(Indent);
-		return DocStr;
+		// Add map to the document individuals
+		Individuals.Add(SemMapIndividual);
 	}
 };

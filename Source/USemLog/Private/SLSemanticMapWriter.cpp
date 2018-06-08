@@ -11,8 +11,6 @@
 
 // UOwl
 #include "OwlSemanticMapStatics.h"
-//#include "Templates/OwlSemanticMapIAIKitchen.h"
-//#include "Templates/OwlSemanticMapIAISupermarket.h"
 
 // UUtils
 #include "Tags.h"
@@ -33,8 +31,8 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 	// Create the semantic map template
 	TSharedPtr<FOwlSemanticMap> SemMap = CreateSemanticMapTemplate(TemplateType);
 
-	// Add entries to map
-	AddAllEntries(SemMap, World);
+	// Add individuals to map
+	AddAllIndividuals(SemMap, World);
 
 	// Write map to file
 	FString FullFilePath = FPaths::ProjectDir() +
@@ -44,9 +42,10 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 }
 
 // Create semantic map template
-TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapTemplate(EMapTemplate TemplateType)
+TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapTemplate(EMapTemplate TemplateType, const FString& InMapId)
 {
-	const FString MapId = FIds::NewGuidInBase64Url();
+	const FString MapId = InMapId.IsEmpty() ? FIds::NewGuidInBase64Url() : InMapId;
+
 	if (TemplateType == EMapTemplate::Default)
 	{
 		return FOwlSemanticMapStatics::CreateDefaultSemanticMap(MapId);
@@ -62,8 +61,8 @@ TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapTemplate(EMap
 	return MakeShareable(new FOwlSemanticMap());
 }
 
-// Add entries to the semantic map
-void FSLSemanticMapWriter::AddAllEntries(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World)
+// Add individuals to the semantic map
+void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World)
 {
 	// Iterate objects with SemLog tag key
 	for (const auto& ObjToTagsItr : FTags::GetObjectsToKeyValuePairs(World, "SemLog"))
@@ -77,22 +76,21 @@ void FSLSemanticMapWriter::AddAllEntries(TSharedPtr<FOwlSemanticMap> InSemMap, U
 		// Take into account only objects with an id
 		if (!Id.IsEmpty())
 		{
-			// Check if 
 			if (!Class.IsEmpty())
 			{				
-				AddObjectEntry(InSemMap, ObjToTagsItr.Key, Id, Class);
+				AddObjectIndividual(InSemMap, ObjToTagsItr.Key, Id, Class);
 			}
 			else if (APhysicsConstraintActor* ConstrAct = Cast<APhysicsConstraintActor>(ObjToTagsItr.Key))
 			{
-				AddConstraintEntry(InSemMap, ConstrAct->GetConstraintComp(), Id);
+				AddConstraintIndividual(InSemMap, ConstrAct->GetConstraintComp(), Id);
 			}
 			else if (UPhysicsConstraintComponent* ConstrComp = Cast<UPhysicsConstraintComponent>(ObjToTagsItr.Key))
 			{
-				AddConstraintEntry(InSemMap, ConstrComp, Id);
+				AddConstraintIndividual(InSemMap, ConstrComp, Id);
 			}
 		}
 
-		// Add class entries (Id not mandatory)
+		// Add class individuals (Id not mandatory)
 		if (!Class.IsEmpty())
 		{
 			const FString ParentClass = ObjToTagsItr.Value.Contains("ParentClass") ?
@@ -102,77 +100,98 @@ void FSLSemanticMapWriter::AddAllEntries(TSharedPtr<FOwlSemanticMap> InSemMap, U
 	}
 }
 
-// Add object entry to the semantic map
-void FSLSemanticMapWriter::AddObjectEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
+// Add object individual to the semantic map
+void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
 	UObject* Object,
 	const FString& InId,
 	const FString& InClass)
 {
+	// Get map data
 	const FString MapPrefix = InSemMap->MapPrefix;
+	const FString MapId = InSemMap->MapId;
+
 	// Create the object individual
-	FOwlNode ObjIndividual = FOwlStatics::CreateObjectIndividual(
+	FOwlNode ObjIndividual = FOwlSemanticMapStatics::CreateObjectIndividual(
 		MapPrefix, InId, InClass);
+
+	// Add describedInMap property
+	ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreateDescribedInMapProperty(
+		MapPrefix, MapId));
 	
 	// Add parent property
 	const FString ParentId = GetParentId(Object);
 	if (!ParentId.IsEmpty())
 	{
-		ObjIndividual.AddChildNode(FOwlStatics::CreateParentProperty(
+		ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreateParentProperty(
 			MapPrefix, ParentId));
 	}
 
 	// Add children properties
 	for (const auto& ChildId : GetAllChildIds(Object))
 	{
-		ObjIndividual.AddChildNode(FOwlStatics::CreateChildProperty(
+		ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreateChildProperty(
 			MapPrefix, ChildId));
 	}
 
 	// Add pose individual to map
-	if (AActor* ActEntry = Cast<AActor>(Object))
+	if (AActor* ObjAsAct = Cast<AActor>(Object))
 	{
 		// Generate unique id for the pose individual
 		const FString PoseId = FIds::NewGuidInBase64Url();
 
 		// Add properties
-		ObjIndividual.AddChildNode(FOwlStatics::CreatePoseProperty(
+		ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreatePoseProperty(
 			MapPrefix, PoseId));
 
-		// Add entries 
-		InSemMap->AddEntry(ObjIndividual);
+		// If static mesh, add pathToCadModel property
+		if (AStaticMeshActor* ActAsSMAct = Cast<AStaticMeshActor>(ObjAsAct))
+		{
+			ObjIndividual.AddChildNode(
+				FOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
+		}
 
-		// Create pose entry
-		const FVector ROSLoc = FConversions::UToROS(ActEntry->GetActorLocation());
-		const FQuat ROSQuat = FConversions::UToROS(ActEntry->GetActorQuat());
-		InSemMap->AddEntry(FOwlStatics::CreatePoseIndividual(
+		// Add individuals 
+		InSemMap->AddIndividual(ObjIndividual);
+
+		// Create pose individual
+		const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+		const FQuat ROSQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+		InSemMap->AddIndividual(FOwlSemanticMapStatics::CreatePoseIndividual(
 			MapPrefix, PoseId, ROSLoc, ROSQuat));
 	}
-	else if (USceneComponent* CompEntry = Cast<USceneComponent>(Object))
+	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
 	{
 		// Generate unique id for the pose individual
 		const FString PoseId = FIds::NewGuidInBase64Url();
 
 		// Add properties
-		ObjIndividual.AddChildNode(FOwlStatics::CreatePoseProperty(
+		ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreatePoseProperty(
 			MapPrefix, PoseId));
-		
-		// Add entries 
-		InSemMap->AddEntry(ObjIndividual);
 
-		// Create pose entry
-		const FVector ROSLoc = FConversions::UToROS(CompEntry->GetComponentLocation());
-		const FQuat ROSQuat = FConversions::UToROS(CompEntry->GetComponentQuat());
-		InSemMap->AddEntry(FOwlStatics::CreatePoseIndividual(
+		// If static mesh, add pathToCadModel property
+		if (UStaticMeshComponent* CompAsSMComp = Cast<UStaticMeshComponent>(ObjAsSceneComp))
+		{
+			ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreatePathToCadModelProperty(
+				InClass));
+		}
+		
+		// Add individuals 
+		InSemMap->AddIndividual(ObjIndividual);
+
+		// Create pose individual
+		const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+		const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+		InSemMap->AddIndividual(FOwlSemanticMapStatics::CreatePoseIndividual(
 			MapPrefix, PoseId, ROSLoc, ROSQuat));
 	}
 	else
 	{
 		// Obj has no pose info
-		InSemMap->AddEntry(ObjIndividual);
+		InSemMap->AddIndividual(ObjIndividual);
 	}
 }
 
-// Add class entry
+// Add class individual
 void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
 	UObject* Object,
 	const FString& InClass,
@@ -192,14 +211,14 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 		}
 	}
 
-	// Create class definition entry
-	FOwlNode ClassDefinition = FOwlStatics::CreateClassDefinition(InClass);
+	// Create class definition individual
+	FOwlNode ClassDefinition = FOwlSemanticMapStatics::CreateClassDefinition(InClass);
 	ClassDefinition.Comment = TEXT("Class ") + InClass;
 
 	// Check if subclass is known
 	if (!InParentClass.IsEmpty())
 	{
-		ClassDefinition.AddChildNode(FOwlStatics::CreateSubClassOfProperty(InParentClass));
+		ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateSubClassOfProperty(InParentClass));
 	}
 
 	// Add bounds if available
@@ -211,9 +230,9 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 				SMComp->Bounds.GetBox().GetSize());
 			if (!BBSize.IsZero())
 			{
-				ClassDefinition.AddChildNode(FOwlStatics::CreateDepthProperty(BBSize.X));
-				ClassDefinition.AddChildNode(FOwlStatics::CreateWidthProperty(BBSize.Y));
-				ClassDefinition.AddChildNode(FOwlStatics::CreateHeightProperty(BBSize.Z));
+				ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
+				ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateWidthProperty(BBSize.Y));
+				ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateHeightProperty(BBSize.Z));
 			}
 		}
 	}
@@ -225,9 +244,9 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 				SkelComp->Bounds.GetBox().GetSize());
 			if (!BBSize.IsZero())
 			{
-				ClassDefinition.AddChildNode(FOwlStatics::CreateDepthProperty(BBSize.X));
-				ClassDefinition.AddChildNode(FOwlStatics::CreateWidthProperty(BBSize.Y));
-				ClassDefinition.AddChildNode(FOwlStatics::CreateHeightProperty(BBSize.Z));
+				ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
+				ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateWidthProperty(BBSize.Y));
+				ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateHeightProperty(BBSize.Z));
 			}
 
 			TArray<FName> BoneNames;
@@ -235,7 +254,7 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 			for (const auto& BoneName : BoneNames)
 			{
 				ClassDefinition.AddChildNode(
-					FOwlStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
+					FOwlSemanticMapStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
 			}
 		}
 	}
@@ -245,9 +264,9 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 			ObjAsSkelComp->Bounds.GetBox().GetSize());
 		if (!BBSize.IsZero())
 		{
-			ClassDefinition.AddChildNode(FOwlStatics::CreateDepthProperty(BBSize.X));
-			ClassDefinition.AddChildNode(FOwlStatics::CreateWidthProperty(BBSize.Y));
-			ClassDefinition.AddChildNode(FOwlStatics::CreateHeightProperty(BBSize.Z));
+			ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
+			ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateWidthProperty(BBSize.Y));
+			ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateHeightProperty(BBSize.Z));
 		}
 
 		TArray<FName> BoneNames;
@@ -255,7 +274,7 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 		for (const auto& BoneName : BoneNames)
 		{
 			ClassDefinition.AddChildNode(
-				FOwlStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
+				FOwlSemanticMapStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
 		}
 	}
 	else if(UPrimitiveComponent* ObjAsPrimComp = Cast<UPrimitiveComponent>(Object))
@@ -264,16 +283,16 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 			ObjAsPrimComp->Bounds.GetBox().GetSize());
 		if (!BBSize.IsZero())
 		{
-			ClassDefinition.AddChildNode(FOwlStatics::CreateDepthProperty(BBSize.X));
-			ClassDefinition.AddChildNode(FOwlStatics::CreateWidthProperty(BBSize.Y));
-			ClassDefinition.AddChildNode(FOwlStatics::CreateHeightProperty(BBSize.Z));
+			ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
+			ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateWidthProperty(BBSize.Y));
+			ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateHeightProperty(BBSize.Z));
 		}
 	}
 	InSemMap->ClassDefinitions.Add(ClassDefinition);
 }
 
-// Add constraint entry
-void FSLSemanticMapWriter::AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
+// Add constraint individual
+void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
 	UPhysicsConstraintComponent* ConstraintComp,
 	const FString& InId)
 {
@@ -287,7 +306,7 @@ void FSLSemanticMapWriter::AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemM
 		if (!ParentId.IsEmpty() && !ChildId.IsEmpty())
 		{
 			// Create the object individual
-			FOwlNode ConstrIndividual = FOwlStatics::CreateConstraintIndividual(
+			FOwlNode ConstrIndividual = FOwlSemanticMapStatics::CreateConstraintIndividual(
 				MapPrefix, InId, ParentId, ChildId);
 
 			// Generate unique ids 
@@ -296,23 +315,23 @@ void FSLSemanticMapWriter::AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemM
 			const FString AngId = FIds::NewGuidInBase64Url();
 
 			// Add properties
-			ConstrIndividual.AddChildNode(FOwlStatics::CreatePoseProperty(
+			ConstrIndividual.AddChildNode(FOwlSemanticMapStatics::CreatePoseProperty(
 				MapPrefix, PoseId));
-			ConstrIndividual.AddChildNode(FOwlStatics::CreateLinearConstraintProperty(
+			ConstrIndividual.AddChildNode(FOwlSemanticMapStatics::CreateLinearConstraintProperty(
 				MapPrefix, LinId));
-			ConstrIndividual.AddChildNode(FOwlStatics::CreateAngularConstraintProperty(
+			ConstrIndividual.AddChildNode(FOwlSemanticMapStatics::CreateAngularConstraintProperty(
 				MapPrefix, AngId));
 			
-			// Add entries to the map
-			InSemMap->AddEntry(ConstrIndividual);
+			// Add individuals to the map
+			InSemMap->AddIndividual(ConstrIndividual);
 
-			// Create pose entry
+			// Create pose individual
 			const FVector ROSLoc = FConversions::UToROS(ConstraintComp->GetComponentLocation());
 			const FQuat ROSQuat = FConversions::UToROS(ConstraintComp->GetComponentQuat());
-			InSemMap->AddEntry(FOwlStatics::CreatePoseIndividual(
+			InSemMap->AddIndividual(FOwlSemanticMapStatics::CreatePoseIndividual(
 				MapPrefix, PoseId, ROSLoc, ROSQuat));
 
-			// Create linear constraint entry
+			// Create linear constraint individual
 			const uint8 LinXMotion = ConstraintComp->ConstraintInstance.GetLinearXMotion();
 			const uint8 LinYMotion = ConstraintComp->ConstraintInstance.GetLinearYMotion();
 			const uint8 LinZMotion = ConstraintComp->ConstraintInstance.GetLinearZMotion();
@@ -321,11 +340,11 @@ void FSLSemanticMapWriter::AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemM
 			const float LinStiffness = 0.f; // ConstraintComp->ConstraintInstance.ProfileInstance.
 			const float LinDamping = 0.f; // ConstraintComp->ConstraintInstance.ProfileInstance.
 
-			InSemMap->AddEntry(FOwlStatics::CreateLinearConstraintProperties(
+			InSemMap->AddIndividual(FOwlSemanticMapStatics::CreateLinearConstraintProperties(
 				MapPrefix, LinId, LinXMotion, LinYMotion, LinZMotion, LinLimit, 
 				bLinSoftConstraint, LinStiffness, LinDamping));
 
-			// Create angular constraint entry
+			// Create angular constraint individual
 			const uint8 AngSwing1Motion = ConstraintComp->ConstraintInstance.GetAngularSwing1Motion();
 			const uint8 AngSwing2Motion = ConstraintComp->ConstraintInstance.GetAngularSwing2Motion();
 			const uint8 AngTwistMotion = ConstraintComp->ConstraintInstance.GetAngularTwistMotion();
@@ -339,7 +358,7 @@ void FSLSemanticMapWriter::AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemM
 			const float AngTwistStiffness = 0.f;
 			const float AngTwistDamping = 0.f;
 
-			InSemMap->AddEntry(FOwlStatics::CreateAngularConstraintProperties(
+			InSemMap->AddIndividual(FOwlSemanticMapStatics::CreateAngularConstraintProperties(
 				MapPrefix, AngId, AngSwing1Motion, AngSwing2Motion, AngTwistMotion,
 				AngSwing1Limit, AngSwing2Limit, AngTwistLimit, bAngSoftSwingConstraint,
 				AngSwingStiffness, AngSwingDamping, bAngSoftTwistConstraint,

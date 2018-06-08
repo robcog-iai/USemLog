@@ -30,8 +30,8 @@ public:
 	// Class definitions
 	TArray<FOwlNode> ClassDefinitions;
 
-	// Document node entries
-	TArray<FOwlNode> Entries;
+	// Document node individuals
+	TArray<FOwlNode> Individuals;
 
 protected:
 	// Current state of the indentation for writing to string
@@ -40,21 +40,6 @@ protected:
 public:
 	// Default constructor
 	FOwlDoc() {}
-
-	//// Init constructor
-	//FOwlDoc(const TArray<TPairString>& InEntityDefinitions,
-	//	const TArray<FOwlAttribute>& InNamespaces,
-	//	const FOwlNode& InOntologyImports,
-	//	const TArray<FOwlNode>& InPropertyDefinitions,
-	//	const TArray<FOwlNode>& InDatatypeDefinitions,
-	//	const TArray<FOwlNode>& InClassDefinitions,
-	//	const TArray<FOwlNode>& InEntries) :
-	//	OntologyImports(InOntologyImports),
-	//	PropertyDefinitions(InPropertyDefinitions),
-	//	DatatypeDefinitions(InDatatypeDefinitions),
-	//	ClassDefinitions(InClassDefinitions),
-	//	Entries(InEntries)
-	//{}
 	
 	// Destructor
 	virtual ~FOwlDoc() {}
@@ -117,7 +102,7 @@ public:
 		OntologyImports.Comment = TEXT("Ontologies");
 	}
 
-	// Add ontology import child nodes
+	// Add ontology import child node
 	void AddOntologyImport(const FString& Import)
 	{
 		const FOwlPrefixName OwlImports("owl", "imports");
@@ -132,7 +117,13 @@ public:
 	{
 		const FOwlPrefixName RdfAbout("rdf", "about");
 		const FOwlPrefixName OwlOP("owl", "ObjectProperty");
-		PropertyDefinitions.Add(FOwlNode(OwlOP, FOwlAttribute(RdfAbout, FOwlAttributeValue(InNs, InName))));
+		AddPropertyDefinition(FOwlNode(OwlOP, FOwlAttribute(RdfAbout, FOwlAttributeValue(InNs, InName))));
+	}
+
+	// Add property definition
+	void AddPropertyDefinition(const FOwlNode& InNode)
+	{
+		PropertyDefinitions.Add(InNode);
 	}
 
 	// Add datatype definition
@@ -140,7 +131,13 @@ public:
 	{
 		const FOwlPrefixName RdfAbout("rdf", "about");
 		const FOwlPrefixName OwlDP("owl", "DatatypeProperty");
-		DatatypeDefinitions.Add(FOwlNode(OwlDP, FOwlAttribute(RdfAbout, FOwlAttributeValue(InNs, InName))));
+		AddDatatypeDefinition(FOwlNode(OwlDP, FOwlAttribute(RdfAbout, FOwlAttributeValue(InNs, InName))));
+	}
+
+	// Add datatype definition
+	void AddDatatypeDefinition(const FOwlNode& InNode)
+	{
+		DatatypeDefinitions.Add(InNode);
 	}
 
 	// Add class definition
@@ -148,23 +145,29 @@ public:
 	{
 		const FOwlPrefixName RdfAbout("rdf", "about");
 		const FOwlPrefixName OwlClass("owl", "Class");
-		ClassDefinitions.Add(FOwlNode(OwlClass, FOwlAttribute(RdfAbout, FOwlAttributeValue(InNs, InName))));
-	}
-	
-	// Add entry node to the document
-	void AddEntry(const FOwlNode& InChildNode)
-	{
-		Entries.Add(InChildNode);
+		AddClassDefinition(FOwlNode(OwlClass, FOwlAttribute(RdfAbout, FOwlAttributeValue(InNs, InName))));
 	}
 
-	// Add entries to the document
-	void AddEntries(const TArray<FOwlNode>& InChildNodes)
+	// Add class definition
+	void AddClassDefinition(const FOwlNode& InNode)
 	{
-		Entries.Append(InChildNodes);
+		ClassDefinitions.Add(InNode);
+	}
+	
+	// Add individual node to the document
+	void AddIndividual(const FOwlNode& InChildNode)
+	{
+		Individuals.Add(InChildNode);
+	}
+
+	// Add individuals to the document
+	void AddIndividuals(const TArray<FOwlNode>& InChildNodes)
+	{
+		Individuals.Append(InChildNodes);
 	}
 
 	// Return document as string
-	virtual FString ToString()
+	FString ToString()
 	{
 		FString DocStr = TEXT("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n");
 		DocStr += EntityDefinitions.ToString();
@@ -173,7 +176,7 @@ public:
 		Root.AddChildNodes(PropertyDefinitions);
 		Root.AddChildNodes(DatatypeDefinitions);
 		Root.AddChildNodes(ClassDefinitions);
-		Root.AddChildNodes(Entries);
+		Root.AddChildNodes(Individuals);
 		DocStr += Root.ToString(Indent);
 		return DocStr;
 	}

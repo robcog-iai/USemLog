@@ -6,5 +6,3 @@
 #include "OwlSemanticMap.h"
 #include "OwlEvents.h"
 #include "OwlStructs.h"
-#include "OwlStatics.h"
-

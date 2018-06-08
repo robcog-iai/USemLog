@@ -36,25 +36,27 @@ public:
 
 private:
 	// Create semantic map template
-	TSharedPtr<FOwlSemanticMap> CreateSemanticMapTemplate(EMapTemplate TemplateType);
+	TSharedPtr<FOwlSemanticMap> CreateSemanticMapTemplate(
+		EMapTemplate TemplateType,
+		const FString& MapId = "");
 
-	// Add entries to the semantic map
-	void AddAllEntries(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World);
+	// Add individuals to the semantic map
+	void AddAllIndividuals(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World);
 
-	// Add object entry to the semantic map
-	void AddObjectEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
+	// Add object individual to the semantic map
+	void AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
 		UObject* Object,
 		const FString& InId,
 		const FString& InClass);
 
-	// Add class definition entry
+	// Add class definition individual
 	void AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
 		UObject* Object,
 		const FString& InClass,
 		const FString& InParentClass = TEXT(""));
 
-	// Add constraint entry
-	void AddConstraintEntry(TSharedPtr<FOwlSemanticMap> InSemMap,
+	// Add constraint individual
+	void AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
 		UPhysicsConstraintComponent* ConstraintComp,
 		const FString& InId);
 

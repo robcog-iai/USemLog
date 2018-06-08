@@ -28,10 +28,10 @@ public:
 	// Comment
 	FString Comment;
 
+public:
 	// Default constructor
 	FOwlNode() {}
 
-public:
 	// Init constructor, NO Value, Attributes or Children
 	FOwlNode(const FOwlPrefixName& InName) : Name(InName) {}
 
@@ -198,5 +198,15 @@ public:
 			NodeStr += Indent + Value + TEXT("</") + Name.ToString() + TEXT(">\n");
 		}
 		return NodeStr;
+	}
+};
+
+// Overloads the constructor to set directly the comment
+struct FOwlCommentNode : public FOwlNode
+{
+	// Default constructor
+	FOwlCommentNode(const FString& InComment)
+	{
+		Comment = InComment;
 	}
 };
