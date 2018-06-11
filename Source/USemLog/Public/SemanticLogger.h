@@ -6,22 +6,22 @@
 #include "GameFramework/Info.h"
 #include "SLRawDataLogger.h"
 #include "SLEventDataLogger.h"
-#include "SLRuntimeManager.generated.h"
+#include "SemanticLogger.generated.h"
 
 /**
  * 
  */
-UCLASS(meta=(DisplayName = "Semantic Logger Runtime Manager"))
-class USEMLOG_API ASLRuntimeManager : public AInfo
+UCLASS()
+class USEMLOG_API ASemanticLogger : public AInfo
 {
 	GENERATED_BODY()
 	
 public:
 	// Sets default values for this actor's properties
-	ASLRuntimeManager();
+	ASemanticLogger();
 
 	// Destructor
-	~ASLRuntimeManager();
+	~ASemanticLogger();
 
 protected:
 	// Called when the game starts or when spawned

@@ -47,18 +47,18 @@ private:
 	// Write events to file
 	bool WriteToFile();
 
-	// Create events document template
-	TSharedPtr<FOwlEvents> CreateEventsTemplate(EEventsTemplate TemplateType);
-
 	// Directory where to log
 	FString LogDirectory;
 
 	// Unique id of the episode
 	FString EpisodeId;
 
-	// Array of pending events
-	//TArray<IEvent> Events;
+	// Type of owl template to write the events to
+	EEventsTemplate OwlDocTemplate;
 
-	// Owl document of the finished events
-	TSharedPtr<FOwlEvents> EventsDoc;
+	//// Array of pending events
+	////TArray<IEvent> Events;
+
+	//// Owl document of the finished events
+	//TSharedPtr<FOwlEvents> EventsDoc;
 };

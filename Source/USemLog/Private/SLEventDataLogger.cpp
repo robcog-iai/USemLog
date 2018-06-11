@@ -4,7 +4,7 @@
 #include "SLEventDataLogger.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
-//#include "Templates/OwlEventsIAI.h"
+#include "OwlEventsStatics.h"
 
 // Constructor
 USLEventDataLogger::USLEventDataLogger()
@@ -21,7 +21,7 @@ void USLEventDataLogger::Init(const FString& InLogDirectory, const FString& InEp
 {
 	LogDirectory = InLogDirectory;
 	EpisodeId = InEpisodeId;
-	EventsDoc = CreateEventsTemplate(TemplateType);
+	OwlDocTemplate = TemplateType;
 }
 
 // Start logger
@@ -33,7 +33,8 @@ void USLEventDataLogger::Start()
 // Finish logger
 void USLEventDataLogger::Finish()
 {
-
+	// Write events to file
+	WriteToFile();
 }
 
 // Write to file
@@ -50,16 +51,16 @@ bool USLEventDataLogger::WriteToFile()
 	//return FFileHelper::SaveStringToFile(EventsDoc->ToString(), *FullFilePath);
 }
 
-// Create events doc template
-TSharedPtr<FOwlEvents> USLEventDataLogger::CreateEventsTemplate(EEventsTemplate TemplateType)
-{
-	//if (TemplateType == EEventsTemplate::Default)
-	//{
-	//	return MakeShareable(new FOwlEvents());
-	//}
-	//else if (TemplateType == EEventsTemplate::IAI)
-	//{
-	//	return MakeShareable(new FOwlEventsIAI());
-	//}
-	return MakeShareable(new FOwlEvents());
-}
+//// Create events doc template
+//TSharedPtr<FOwlEvents> USLEventDataLogger::CreateEventsTemplate(EEventsTemplate TemplateType)
+//{
+//	//if (TemplateType == EEventsTemplate::Default)
+//	//{
+//	//	return MakeShareable(new FOwlEvents());
+//	//}
+//	//else if (TemplateType == EEventsTemplate::IAI)
+//	//{
+//	//	return MakeShareable(new FOwlEventsIAI());
+//	//}
+//	return MakeShareable(new FOwlEvents());
+//}

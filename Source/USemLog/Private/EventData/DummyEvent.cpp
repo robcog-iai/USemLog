@@ -6,6 +6,8 @@
 // Default constructor
 FDummyEvent::FDummyEvent()
 {
+	Start = 0.2f;
+	End = 1231.f;
 }
 
 

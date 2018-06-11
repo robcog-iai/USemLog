@@ -1,11 +1,11 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLRuntimeManager.h"
+#include "SemanticLogger.h"
 #include "Ids.h"
 
 // Sets default values
-ASLRuntimeManager::ASLRuntimeManager()
+ASemanticLogger::ASemanticLogger()
 {
 	// Disable tick on actor
 	PrimaryActorTick.bCanEverTick = false;
@@ -35,33 +35,33 @@ ASLRuntimeManager::ASLRuntimeManager()
 }
 
 // Sets default values
-ASLRuntimeManager::~ASLRuntimeManager()
+ASemanticLogger::~ASemanticLogger()
 {
-	ASLRuntimeManager::Finish();
+	ASemanticLogger::Finish();
 }
 
 // Called when the game starts or when spawned
-void ASLRuntimeManager::BeginPlay()
+void ASemanticLogger::BeginPlay()
 {
 	Super::BeginPlay();
 
 	if (bStartAtBeginPlay)
 	{
-		ASLRuntimeManager::Init();
-		ASLRuntimeManager::Start();
+		ASemanticLogger::Init();
+		ASemanticLogger::Start();
 	}
 }
 
 // Called when actor removed from game or game ended
-void ASLRuntimeManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void ASemanticLogger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	ASLRuntimeManager::Finish();
+	ASemanticLogger::Finish();
 }
 
 // Init loggers
-void ASLRuntimeManager::Init()
+void ASemanticLogger::Init()
 {
 	if (!bIsInit)
 	{
@@ -105,7 +105,7 @@ void ASLRuntimeManager::Init()
 }
 
 // Start loggers
-void ASLRuntimeManager::Start()
+void ASemanticLogger::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -127,7 +127,7 @@ void ASLRuntimeManager::Start()
 }
 
 // Finish loggers
-void ASLRuntimeManager::Finish()
+void ASemanticLogger::Finish()
 {
 	if (bIsStarted || bIsInit)
 	{
@@ -149,7 +149,7 @@ void ASLRuntimeManager::Finish()
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
-void ASLRuntimeManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void ASemanticLogger::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -158,7 +158,7 @@ void ASLRuntimeManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	// Radio button style between bLogToJson, bLogToBson, bLogToMongo
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLRuntimeManager, bLogToJson)) 
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASemanticLogger, bLogToJson)) 
 	{
 		if (bLogToJson)
 		{
@@ -167,7 +167,7 @@ void ASLRuntimeManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 			bLogToMongo = false;
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLRuntimeManager, bLogToBson))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASemanticLogger, bLogToBson))
 	{
 		if (bLogToBson)
 		{
@@ -175,7 +175,7 @@ void ASLRuntimeManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 			bLogToMongo = false;
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLRuntimeManager, bLogToMongo))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASemanticLogger, bLogToMongo))
 	{
 		if (bLogToMongo)
 		{
