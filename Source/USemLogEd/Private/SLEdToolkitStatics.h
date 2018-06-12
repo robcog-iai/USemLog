@@ -109,7 +109,7 @@ struct FSLEdToolkitStatics
 
 	static FReply ClearIds()
 	{
-		FTags::RemoveKeyValuePairs(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
+		FTags::RemoveAllKeyValuePairs(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
 		return FReply::Handled();
 	}
 
