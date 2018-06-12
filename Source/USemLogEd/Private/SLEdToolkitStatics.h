@@ -11,6 +11,8 @@
 #include "Ids.h"
 #include "Tags.h"
 #include "SLSemanticMapWriter.h"
+#include "Engine/StaticMeshActor.h"
+#include "Components/StaticMeshComponent.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 //#include "SLMap.h"
@@ -152,6 +154,81 @@ struct FSLEdToolkitStatics
 		//}
 		return FReply::Handled();
 	}
+
+	static FReply TagSemanticClasses()
+	{
+
+		for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+		{
+			// Check if actor is not already tagged
+			if (!FTags::HasKey(*ActItr, "SemLog", "Class"))
+			{
+				// Check if any of the components are tagged
+				TArray<UStaticMeshComponent*> StaticComps;
+				ActItr->GetComponents<UStaticMeshComponent>(StaticComps);
+				
+				bool bComponentTagged = false;
+				bool bTagComponent = false;
+				FString MeshName;
+				for (auto& StaticMeshComponent : StaticComps)
+				{
+					MeshName = StaticMeshComponent->GetStaticMesh()->GetFullName();
+					int32 Index;
+					// remove path information
+					MeshName.FindLastChar('.', Index);
+					MeshName.RemoveAt(0, Index + 1);
+
+					//remove SM
+					MeshName.RemoveFromStart(TEXT("SM_"));					
+					
+					if (FTags::HasKey(StaticMeshComponent, "SemLog", "Class"))
+					{
+						bComponentTagged = true;
+					} 
+					else if(FTags::HasType(StaticMeshComponent, "SemLog"))
+					{
+						bTagComponent = true;
+					}
+
+					if (bTagComponent)
+					{
+						// tag component but not actor
+						FTags::AddKeyValuePair(StaticMeshComponent, "SemLog", "Class", MeshName);
+						FTags::AddKeyValuePair(StaticMeshComponent, "SemLog", "LogType", "Dynamic");
+					} 
+					else if (!bComponentTagged) 
+					{
+						// tag actor not his component
+						FTags::AddKeyValuePair(*ActItr, "SemLog", "Class", MeshName);
+						FTags::AddKeyValuePair(*ActItr, "SemLog", "LogType", "Dynamic");
+					}
+				}
+
+				
+			}
+
+		}
+
+		return FReply::Handled();
+	}
+
+	static FReply ClearClasses()
+	{
+		for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+		{
+			FTags::RemoveKeyValuePair(*ActItr, "SemLog", "Class");
+
+			TArray<UStaticMeshComponent*> StaticComps;
+			ActItr->GetComponents<UStaticMeshComponent>(StaticComps);
+			for (auto& StaticMeshComponent : StaticComps)
+			{
+				FTags::RemoveKeyValuePair(StaticMeshComponent, "SemLog", "Class");
+			}
+		}
+
+		return FReply::Handled();
+	}
+
 
 	// Create semantic logs directory
 	static bool SetupLoggingDirectory(const FString& DirectoryName)
