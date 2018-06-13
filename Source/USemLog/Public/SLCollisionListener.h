@@ -28,13 +28,16 @@ private:
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
-	// End of UObject interface
+	
+	// USceneComponent interface
+	// Called when this component is moved in the editor
+	virtual void PostEditComponentMove(bool bFinished);
 
-	// Read values from tags
-	bool LoadParameters(const TArray<FName>& InTags, FVector& OutExtent, FTransform& OutRelTransf);
+	// Load cached parameters from tags, and apply them
+	bool LoadAndApplyParameters();
 
-	// Save values to tags
-	void SaveParameters(TArray<FName>& OutTags, const FVector& InExtent, const FTransform& InRelTransf);
+	// Apply and save parameters to tags
+	bool ApplyAndSaveParameters(UStaticMeshComponent* SMComp);
 
 private:
 	//// Bottom collision area
