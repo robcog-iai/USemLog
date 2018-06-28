@@ -149,31 +149,31 @@ bool USLContactListener::LoadStoredParameters()
 
 	if (TagKeyValMap.Num() == 0){return false;}
 
-	if (TagKeyValMap.Contains("ExtX")){BoxExtent.X = FCString::Atof(*TagKeyValMap["ExtX"]);}
-	else{return false;}
-	if (TagKeyValMap.Contains("ExtY")){BoxExtent.Y = FCString::Atof(*TagKeyValMap["ExtY"]);}
-	else{return false;}
-	if (TagKeyValMap.Contains("ExtZ")){BoxExtent.Z = FCString::Atof(*TagKeyValMap["ExtZ"]);}
-	else{return false;}
+	if (FString* ValPtr = TagKeyValMap.Find("ExtX")) { BoxExtent.X = FCString::Atof(**ValPtr); }
+	else { return false; }
+	if (FString* ValPtr = TagKeyValMap.Find("ExtY")) { BoxExtent.Y = FCString::Atof(**ValPtr); }
+	else { return false; }
+	if (FString* ValPtr = TagKeyValMap.Find("ExtZ")) { BoxExtent.Z = FCString::Atof(**ValPtr); }
+	else { return false; }
 
 	FVector RelLoc;
-	if (TagKeyValMap.Contains("LocX")){RelLoc.X = FCString::Atof(*TagKeyValMap["LocX"]);}
-	else{return false;}
-	if (TagKeyValMap.Contains("LocY")){RelLoc.Y = FCString::Atof(*TagKeyValMap["LocY"]);}
-	else{return false;}
-	if (TagKeyValMap.Contains("LocZ")){	RelLoc.Z = FCString::Atof(*TagKeyValMap["LocZ"]);}
-	else{return false;}
-		
+	if (FString* ValPtr = TagKeyValMap.Find("LocX")) { RelLoc.X = FCString::Atof(**ValPtr); }
+	else { return false; }
+	if (FString* ValPtr = TagKeyValMap.Find("LocY")) { RelLoc.Y = FCString::Atof(**ValPtr); }
+	else { return false; }
+	if (FString* ValPtr = TagKeyValMap.Find("LocZ")) { RelLoc.Z = FCString::Atof(**ValPtr); }
+	else { return false; }
+
 	FQuat RelQuat;
-	if (TagKeyValMap.Contains("QuatW")) { RelQuat.W = FCString::Atof(*TagKeyValMap["QuatW"]); }
+	if (FString* ValPtr = TagKeyValMap.Find("QuatW")) { RelQuat.W = FCString::Atof(**ValPtr); }
 	else { return false; }
-	if (TagKeyValMap.Contains("QuatX")) { RelQuat.X = FCString::Atof(*TagKeyValMap["QuatX"]); }
+	if (FString* ValPtr = TagKeyValMap.Find("QuatX")) { RelQuat.X = FCString::Atof(**ValPtr); }
 	else { return false; }
-	if (TagKeyValMap.Contains("QuatY")) { RelQuat.Y = FCString::Atof(*TagKeyValMap["QuatY"]); }
+	if (FString* ValPtr = TagKeyValMap.Find("QuatY")) { RelQuat.Y = FCString::Atof(**ValPtr); }
 	else { return false; }
-	if (TagKeyValMap.Contains("QuatZ")) { RelQuat.Z = FCString::Atof(*TagKeyValMap["QuatZ"]); }
+	if (FString* ValPtr = TagKeyValMap.Find("QuatZ")) { RelQuat.Z = FCString::Atof(**ValPtr); }
 	else { return false; }
-	
+
 	SetRelativeTransform(FTransform(RelQuat, RelLoc));
 	return true;
 }

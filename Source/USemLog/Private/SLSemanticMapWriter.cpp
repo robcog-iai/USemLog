@@ -67,35 +67,33 @@ void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FOwlSemanticMap> InSemMa
 	// Iterate objects with SemLog tag key
 	for (const auto& ObjToTagsItr : FTags::GetObjectsToKeyValuePairs(World, "SemLog"))
 	{
-		// Cache some tag id results
-		const FString Id = ObjToTagsItr.Value.Contains("Id") ?
-			ObjToTagsItr.Value["Id"] : TEXT("");
-		const FString Class = ObjToTagsItr.Value.Contains("Class") ?
-			ObjToTagsItr.Value["Class"] : TEXT("");
+		// Get Id and Class of items
+		const FString* IdPtr = ObjToTagsItr.Value.Find("Id");
+		const FString* ClassPtr = ObjToTagsItr.Value.Find("Class");
 
 		// Take into account only objects with an id
-		if (!Id.IsEmpty())
+		if (IdPtr)
 		{
-			if (!Class.IsEmpty())
-			{				
-				AddObjectIndividual(InSemMap, ObjToTagsItr.Key, Id, Class);
+			if (ClassPtr)
+			{
+				AddObjectIndividual(InSemMap, ObjToTagsItr.Key, *IdPtr, *ClassPtr);
 			}
 			else if (APhysicsConstraintActor* ConstrAct = Cast<APhysicsConstraintActor>(ObjToTagsItr.Key))
 			{
-				AddConstraintIndividual(InSemMap, ConstrAct->GetConstraintComp(), Id);
+				AddConstraintIndividual(InSemMap, ConstrAct->GetConstraintComp(), *IdPtr);
 			}
 			else if (UPhysicsConstraintComponent* ConstrComp = Cast<UPhysicsConstraintComponent>(ObjToTagsItr.Key))
 			{
-				AddConstraintIndividual(InSemMap, ConstrComp, Id);
+				AddConstraintIndividual(InSemMap, ConstrComp, *IdPtr);
 			}
 		}
 
 		// Add class individuals (Id not mandatory)
-		if (!Class.IsEmpty())
+		if (ClassPtr)
 		{
-			const FString ParentClass = ObjToTagsItr.Value.Contains("ParentClass") ?
-				ObjToTagsItr.Value["ParentClass"] : TEXT("");
-			AddClassDefinition(InSemMap, ObjToTagsItr.Key, Class, ParentClass);
+			const FString* ParentClassPtr = ObjToTagsItr.Value.Find("ParentClass");
+			const FString ParentClass = ParentClassPtr ? *ParentClassPtr : "";
+			AddClassDefinition(InSemMap, ObjToTagsItr.Key, *ClassPtr, ParentClass);
 		}
 	}
 }

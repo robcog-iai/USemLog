@@ -34,19 +34,19 @@ void FSLRawDataAsyncWorker::Init(UWorld* InWorld, const float DistanceThreshold)
 	for (const auto& ObjToKVP : ObjsToKeyValuePairs)
 	{
 		// Take into account only objects with an id and class value set
-		if (ObjToKVP.Value.Contains("Id") && ObjToKVP.Value.Contains("Class"))
+		const FString* IdPtr = ObjToKVP.Value.Find("Id");
+		const FString* ClassPtr = ObjToKVP.Value.Find("Class");
+		if (IdPtr && ClassPtr)
 		{
-			const FString Id = ObjToKVP.Value["Id"];
-			const FString Class = ObjToKVP.Value["Class"];
 			// Take into account only objects with transform data)
 			if (AActor* ObjAsActor = Cast<AActor>(ObjToKVP.Key))
 			{
 				//RawDataActors.Add(FSLRawDataActor(TWeakObjectPtr<AActor>(ObjAsActor), Id));
-				RawDataActors.Add(TSLRawDataEntity<AActor>(ObjAsActor, Id, Class));
+				RawDataActors.Add(TSLRawDataEntity<AActor>(ObjAsActor, *IdPtr, *ClassPtr));
 			}
 			else if (USceneComponent* ObjAsComp = Cast<USceneComponent>(ObjToKVP.Key))
 			{
-				RawDataComponents.Add(TSLRawDataEntity<USceneComponent>(ObjAsComp, Id, Class));
+				RawDataComponents.Add(TSLRawDataEntity<USceneComponent>(ObjAsComp, *IdPtr, *ClassPtr));
 			}
 		}
 	}
