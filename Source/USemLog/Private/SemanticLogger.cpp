@@ -65,6 +65,9 @@ void ASemanticLogger::Init()
 {
 	if (!bIsInit)
 	{
+		// Init the semantic items content singleton
+		FSLContentSingleton::GetInstance()->Init();
+
 		if (EpisodeId.Equals(TEXT("autogen")))
 		{
 			// Generate unique id for the episode
@@ -140,6 +143,9 @@ void ASemanticLogger::Finish()
 		{
 			EventDataLogger->Finish();
 		}
+
+		// Delete the semantic items content instance
+		FSLContentSingleton::DeleteInstance();
 
 		// Mark manager as finished
 		bIsStarted = false;

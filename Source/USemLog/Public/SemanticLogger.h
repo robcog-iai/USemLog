@@ -6,6 +6,7 @@
 #include "GameFramework/Info.h"
 #include "SLRawDataLogger.h"
 #include "SLEventDataLogger.h"
+#include "SLContentSingleton.h"
 #include "SemanticLogger.generated.h"
 
 /**

@@ -9,7 +9,8 @@
 #include "SLRawDataLogger.generated.h"
 
 /**
- * Raw (subsymbolic) data logger
+ * Raw (subsymbolic) data logger, 
+ * it synchronizes(ticks) the async worker on saving the world state at given timepoints.
  * Inherit from FTickableGameObject to have it's own tick
  */
 UCLASS()
