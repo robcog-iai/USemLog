@@ -33,7 +33,7 @@ void USLContactListener::BeginPlay()
 	
 	// Make sure there are no overlap events on the mesh as well
 	// (these will be calculated on the contact listener)
-	OuterMeshComp->bGenerateOverlapEvents = false;
+	OuterMeshComp->SetGenerateOverlapEvents(false);
 
 	if (OuterMeshComp && !OuterId.IsEmpty())
 	{

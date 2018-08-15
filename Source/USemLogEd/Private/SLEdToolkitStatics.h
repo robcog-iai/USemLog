@@ -174,11 +174,11 @@ struct FSLEdToolkitStatics
 				{
 					MeshName = StaticMeshComponent->GetStaticMesh()->GetFullName();
 					int32 Index;
-					// remove path information
+					// Remove path information
 					MeshName.FindLastChar('.', Index);
 					MeshName.RemoveAt(0, Index + 1);
 
-					//remove SM
+					// Remove SM
 					MeshName.RemoveFromStart(TEXT("SM_"));					
 					
 					if (FTags::HasKey(StaticMeshComponent, "SemLog", "Class"))
@@ -192,15 +192,15 @@ struct FSLEdToolkitStatics
 
 					if (bTagComponent)
 					{
-						// tag component but not actor
+						// Tag component but not actor
 						FTags::AddKeyValuePair(StaticMeshComponent, "SemLog", "Class", MeshName);
-						FTags::AddKeyValuePair(StaticMeshComponent, "SemLog", "LogType", "Dynamic");
+						FTags::AddKeyValuePair(StaticMeshComponent, "SemLog", "Mobility", "Dynamic");
 					} 
 					else if (!bComponentTagged) 
 					{
-						// tag actor not his component
+						// Tag actor not his component
 						FTags::AddKeyValuePair(*ActItr, "SemLog", "Class", MeshName);
-						FTags::AddKeyValuePair(*ActItr, "SemLog", "LogType", "Dynamic");
+						FTags::AddKeyValuePair(*ActItr, "SemLog", "Mobility", "Dynamic");
 					}
 				}
 

@@ -281,6 +281,23 @@ FOwlNode FOwlSemanticMapStatics::CreatePathToCadModelProperty(const FString& InC
 		AttrValString), Path);
 }
 
+// Create tagsData property
+FOwlNode FOwlSemanticMapStatics::CreateTagsDataProperty(const TArray<FName>& InTags)
+{
+	const FOwlPrefixName RdfDatatype("rdf", "datatype");
+	const FOwlPrefixName KbTagsData("knowrob", "tagsData");
+	const FOwlAttributeValue AttrValString("xsd", "string");
+	FString Data;
+	for (const auto Tag : InTags)
+	{
+		Data += Tag.ToString() + " ";
+	}
+	Data.RemoveFromEnd(" ");
+
+	return FOwlNode(KbTagsData, FOwlAttribute(RdfDatatype,
+		AttrValString), Data);
+}
+
 // Create subClassOf property
 FOwlNode FOwlSemanticMapStatics::CreateSubClassOfProperty(const FString& InSubClass)
 {

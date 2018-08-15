@@ -53,12 +53,13 @@ private:
 	void AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
 		UObject* Object,
 		const FString& InClass,
-		const FString& InParentClass = TEXT(""));
+		const FString& InSubClassOf = TEXT(""));
 
 	// Add constraint individual
 	void AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
 		UPhysicsConstraintComponent* ConstraintComp,
-		const FString& InId);
+		const FString& InId,
+		const TArray<FName>& InTags);
 
 	// Get object semantically annotated children ids (only direct children, no grandchildren etc.)
 	TArray<FString> GetAllChildIds(UObject* Object);

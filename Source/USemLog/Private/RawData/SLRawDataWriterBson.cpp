@@ -144,8 +144,6 @@ void FSLRawDataWriterBson::AddActors(bson_t& OutBsonEntitiesArr)
 					// Iterate through the bones of the skeletal mesh
 					for (const auto& BoneName : BoneNames)
 					{
-						
-
 						const FVector CurrLoc = SkelComp->GetBoneLocation(BoneName);
 						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(BoneName);
 

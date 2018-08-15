@@ -11,7 +11,7 @@ public class UOwl : ModuleRules
 
 		PublicIncludePaths.AddRange(
 			new string[] {
-				"UOwl/Public"
+				//"UOwl/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -19,7 +19,7 @@ public class UOwl : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"UOwl/Private",
+				//"UOwl/Private",
 				// ... add other private include paths required here ...
 			}
 			);

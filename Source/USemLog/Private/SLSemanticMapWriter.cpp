@@ -78,22 +78,23 @@ void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FOwlSemanticMap> InSemMa
 			{
 				AddObjectIndividual(InSemMap, ObjToTagsItr.Key, *IdPtr, *ClassPtr);
 			}
+			// Check for other types, e.g. constraints can be actors or components
 			else if (APhysicsConstraintActor* ConstrAct = Cast<APhysicsConstraintActor>(ObjToTagsItr.Key))
 			{
-				AddConstraintIndividual(InSemMap, ConstrAct->GetConstraintComp(), *IdPtr);
+				AddConstraintIndividual(InSemMap, ConstrAct->GetConstraintComp(), *IdPtr, ConstrAct->Tags);
 			}
 			else if (UPhysicsConstraintComponent* ConstrComp = Cast<UPhysicsConstraintComponent>(ObjToTagsItr.Key))
 			{
-				AddConstraintIndividual(InSemMap, ConstrComp, *IdPtr);
+				AddConstraintIndividual(InSemMap, ConstrComp, *IdPtr, ConstrComp->ComponentTags);
 			}
 		}
 
 		// Add class individuals (Id not mandatory)
 		if (ClassPtr)
 		{
-			const FString* ParentClassPtr = ObjToTagsItr.Value.Find("ParentClass");
-			const FString ParentClass = ParentClassPtr ? *ParentClassPtr : "";
-			AddClassDefinition(InSemMap, ObjToTagsItr.Key, *ClassPtr, ParentClass);
+			const FString* SubClassOfPtr = ObjToTagsItr.Value.Find("SubClassOf");
+			const FString SubClassOf = SubClassOfPtr ? *SubClassOfPtr : "";
+			AddClassDefinition(InSemMap, ObjToTagsItr.Key, *ClassPtr, SubClassOf);
 		}
 	}
 }
@@ -134,10 +135,11 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSem
 	// Add pose individual to map
 	if (AActor* ObjAsAct = Cast<AActor>(Object))
 	{
-		// Generate unique id for the pose individual
+		// Generate unique id for the properties
 		const FString PoseId = FIds::NewGuidInBase64Url();
 
-		// Add properties
+		/* Add properties */
+		// Pose property
 		ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreatePoseProperty(
 			MapPrefix, PoseId));
 
@@ -147,6 +149,10 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSem
 			ObjIndividual.AddChildNode(
 				FOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
 		}
+
+		// Add tags data property
+		ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreateTagsDataProperty(
+			ObjAsAct->Tags));
 
 		// Add individuals 
 		InSemMap->AddIndividual(ObjIndividual);
@@ -159,8 +165,9 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSem
 	}
 	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
 	{
-		// Generate unique id for the pose individual
+		// Generate unique id for the properties
 		const FString PoseId = FIds::NewGuidInBase64Url();
+		const FString TagsId = FIds::NewGuidInBase64Url();
 
 		// Add properties
 		ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreatePoseProperty(
@@ -172,6 +179,10 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSem
 			ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreatePathToCadModelProperty(
 				InClass));
 		}
+
+		// Add tags data property
+		ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreateTagsDataProperty(
+			ObjAsSceneComp->ComponentTags));
 		
 		// Add individuals 
 		InSemMap->AddIndividual(ObjIndividual);
@@ -193,7 +204,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSem
 void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
 	UObject* Object,
 	const FString& InClass,
-	const FString& InParentClass)
+	const FString& InSubClassOf)
 {
 	// Return if class was already defined
 	for (const auto& ClassDef : InSemMap->ClassDefinitions)
@@ -214,9 +225,9 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 	ClassDefinition.Comment = TEXT("Class ") + InClass;
 
 	// Check if subclass is known
-	if (!InParentClass.IsEmpty())
+	if (!InSubClassOf.IsEmpty())
 	{
-		ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateSubClassOfProperty(InParentClass));
+		ClassDefinition.AddChildNode(FOwlSemanticMapStatics::CreateSubClassOfProperty(InSubClassOf));
 	}
 
 	// Add bounds if available
@@ -292,7 +303,8 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 // Add constraint individual
 void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
 	UPhysicsConstraintComponent* ConstraintComp,
-	const FString& InId)
+	const FString& InId,
+	const TArray<FName>& InTags)
 {
 	const FString MapPrefix = InSemMap->MapPrefix;
 	AActor* ParentAct = ConstraintComp->ConstraintActor1;
@@ -306,6 +318,10 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> I
 			// Create the object individual
 			FOwlNode ConstrIndividual = FOwlSemanticMapStatics::CreateConstraintIndividual(
 				MapPrefix, InId, ParentId, ChildId);
+
+			// Add tags data property
+			ConstrIndividual.AddChildNode(FOwlSemanticMapStatics::CreateTagsDataProperty(
+				InTags));
 
 			// Generate unique ids 
 			const FString PoseId = FIds::NewGuidInBase64Url();

@@ -82,6 +82,12 @@ struct UOWL_API FOwlSemanticMapStatics
 	// Create a constraint individual
 	static FOwlNode CreateClassDefinition(const FString& Class);
 
+	// Create Tags individual
+	static FOwlNode CreateTagsIndividual(
+		const FString& InMapPrefix,
+		const FString& Id,
+		const FString& Class);
+
 	
 	/* Owl properties creation */
 	// Create generic property
@@ -97,6 +103,9 @@ struct UOWL_API FOwlSemanticMapStatics
 
 	// Create pathToCadModel property
 	static FOwlNode CreatePathToCadModelProperty(const FString& InClass);
+
+	// Create tagsData property
+	static FOwlNode CreateTagsDataProperty(const TArray<FName>& InTags);
 
 	// Create subClassOf property
 	static FOwlNode CreateSubClassOfProperty(const FString& InSubClassOf);

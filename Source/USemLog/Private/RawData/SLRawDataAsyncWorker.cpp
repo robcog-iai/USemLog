@@ -78,7 +78,7 @@ void FSLRawDataAsyncWorker::RemoveAllNonDynamicObjects()
 	{
 		if (RawDataActItr->Entity.IsValid())
 		{
-			if (!FTags::HasKeyValuePair(RawDataActItr->Entity.Get(), "SemLog", "LogType", "Dynamic"))
+			if (!FTags::HasKeyValuePair(RawDataActItr->Entity.Get(), "SemLog", "Mobility", "Dynamic"))
 			{
 				RawDataActItr.RemoveCurrent();
 			}
@@ -95,7 +95,7 @@ void FSLRawDataAsyncWorker::RemoveAllNonDynamicObjects()
 	{
 		if (RawDataCompItr->Entity.IsValid())
 		{
-			if (!FTags::HasKeyValuePair(RawDataCompItr->Entity.Get(), "SemLog", "LogType", "Dynamic"))
+			if (!FTags::HasKeyValuePair(RawDataCompItr->Entity.Get(), "SemLog", "Mobility", "Dynamic"))
 			{
 				RawDataCompItr.RemoveCurrent();
 			}
