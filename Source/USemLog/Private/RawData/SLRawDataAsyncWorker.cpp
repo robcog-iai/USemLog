@@ -28,7 +28,7 @@ void FSLRawDataAsyncWorker::Init(UWorld* InWorld, const float DistanceThreshold)
 
 	// Get all objects with the SemLog tag type 
 	TMap<UObject*, TMap<FString, FString>> ObjsToKeyValuePairs =
-		FTags::GetObjectsToKeyValuePairs(InWorld, TEXT("SemLog"));
+		FTags::GetObjectKeyValuePairsMap(InWorld, TEXT("SemLog"));
 
 	// Add static and dynamic objects with transform data
 	for (const auto& ObjToKVP : ObjsToKeyValuePairs)
