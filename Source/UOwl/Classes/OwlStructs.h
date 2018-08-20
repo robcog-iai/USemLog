@@ -41,6 +41,19 @@ public:
 	{
 		return LocalName.IsEmpty() ? Prefix : FString(Prefix + TEXT(":") + LocalName);
 	}
+
+	// True if all data is empty
+	bool IsEmpty() const
+	{
+		return Prefix.IsEmpty() && LocalName.IsEmpty();
+	}
+
+	// Clear all data
+	void Empty()
+	{
+		Prefix.Empty();
+		LocalName.Empty();
+	}
 };
 
 /**
@@ -74,6 +87,19 @@ public:
 		return Ns.IsEmpty() ? TEXT("\"") + LocalValue + TEXT("\"")
 			: FString(TEXT("\"&") + Ns + TEXT(";") + LocalValue + TEXT("\""));
 	}
+
+	// True if all data is empty
+	bool IsEmpty() const
+	{
+		return Ns.IsEmpty() && LocalValue.IsEmpty();
+	}
+
+	// Clear all data
+	void Empty()
+	{
+		Ns.Empty();
+		LocalValue.Empty();
+	}
 };
 	
 /**
@@ -102,6 +128,19 @@ public:
 	FString ToString() const 
 	{
 		return Key.ToString() + TEXT("=") + Value.ToString();
+	}
+
+	// True if all data is empty
+	bool IsEmpty() const
+	{
+		return Key.IsEmpty() && Value.IsEmpty();
+	}
+
+	// Clear all data
+	void Empty()
+	{
+		Key.Empty();
+		Value.Empty();
 	}
 };
 	
@@ -169,5 +208,18 @@ public:
 		}
 		DTDStr += TEXT("]>\n\n");
 		return DTDStr;
+	}
+
+	// True if all data is empty
+	bool IsEmpty() const
+	{
+		return Name.IsEmpty() && EntityPairs.Num() == 0;
+	}
+
+	// Clear all data
+	void Emtpy()
+	{
+		Name.Empty();
+		EntityPairs.Empty();
 	}
 };

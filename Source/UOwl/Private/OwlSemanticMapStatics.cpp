@@ -8,10 +8,10 @@
 TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateDefaultSemanticMap(
 	const FString& InMapId,
 	const FString& InMapPrefix,
-	const FString& InMapName)
+	const FString& InMapOntologyName)
 {
-	// Create map document
-	TSharedPtr<FOwlSemanticMap> SemMap = MakeShareable(new FOwlSemanticMap(InMapPrefix, InMapName, InMapId));
+	// Create map document (with init)
+	TSharedPtr<FOwlSemanticMap> SemMap = MakeShareable(new FOwlSemanticMap(InMapPrefix, InMapOntologyName, InMapId));
 
 	// Add definitions
 	SemMap->AddEntityDefintion("owl", "http://www.w3.org/2002/07/owl#");
@@ -19,20 +19,19 @@ TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateDefaultSemanticMap(
 	SemMap->AddEntityDefintion("knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	SemMap->AddEntityDefintion("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	SemMap->AddEntityDefintion("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	SemMap->AddEntityDefintion(InMapPrefix, "http://knowrob.org/kb/" + InMapName + ".owl#");
+	SemMap->AddEntityDefintion(InMapPrefix, "http://knowrob.org/kb/" + InMapOntologyName + ".owl#");
 
 	// Add namespaces
-	SemMap->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InMapName + ".owl#");
-	SemMap->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InMapName + ".owl#");
+	SemMap->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InMapOntologyName + ".owl#");
+	SemMap->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InMapOntologyName + ".owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "owl", "http://www.w3.org/2002/07/owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "xsd", "http://www.w3.org/2001/XMLSchema#");
 	SemMap->AddNamespaceDeclaration("xmlns", "knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	SemMap->AddNamespaceDeclaration("xmlns", "rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	SemMap->AddNamespaceDeclaration("xmlns", InMapPrefix, "http://knowrob.org/kb/" + InMapName + ".owl#");
+	SemMap->AddNamespaceDeclaration("xmlns", InMapPrefix, "http://knowrob.org/kb/" + InMapOntologyName + ".owl#");
 
-	// Set and add imports
-	SemMap->SetOntologyNode(InMapName);
+	// Add imports
 	SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob.owl");
 
 	// Add property definitions
@@ -61,10 +60,10 @@ TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateDefaultSemanticMap(
 TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
 	const FString& InMapId,
 	const FString& InMapPrefix,
-	const FString& InMapName)
+	const FString& InMapOntologyName)
 {
 	TSharedPtr<FOwlSemanticMap> SemMap = FOwlSemanticMapStatics::CreateDefaultSemanticMap(
-		InMapId, InMapPrefix, InMapName);
+		InMapId, InMapPrefix, InMapOntologyName);
 
 	SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_kitchen_ue.owl");
 
@@ -75,10 +74,10 @@ TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
 TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(
 	const FString& InMapId,
 	const FString& InMapPrefix,
-	const FString& InMapName)
+	const FString& InMapOntologyName)
 {
 	TSharedPtr<FOwlSemanticMap> SemMap = FOwlSemanticMapStatics::CreateDefaultSemanticMap(
-		InMapId, InMapPrefix, InMapName);
+		InMapId, InMapPrefix, InMapOntologyName);
 
 	SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_supermarket_ue.owl");
 

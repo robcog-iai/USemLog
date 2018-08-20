@@ -29,7 +29,7 @@ public:
 	FString Comment;
 
 public:
-	// Default constructor
+	// Default constructor (emtpy node)
 	FOwlNode() {}
 
 	// Init constructor, NO Value, Attributes or Children
@@ -119,6 +119,26 @@ public:
 		Attributes.Append(InAttributes);
 	}
 
+	// True if all data is empty
+	bool IsEmpty() const
+	{
+		return Name.IsEmpty() &&
+			Value.IsEmpty() &&
+			Attributes.Num() == 0 &&
+			ChildNodes.Num() == 0 &&
+			Comment.IsEmpty();
+	}
+
+	// Clear all data
+	void Emtpy()
+	{
+		Name.Empty();
+		Value.Empty();
+		Attributes.Empty();
+		ChildNodes.Empty();
+		Comment.Empty();
+	}
+
 	// Destructor
 	~FOwlNode() {}
 
@@ -160,8 +180,8 @@ public:
 					NodeStr += TEXT(" ") + Attributes[i].ToString();
 				}
 			}
-		}	
-			
+		}
+
 		// Check node data (children/value)
 		bool bHasChildren = ChildNodes.Num() != 0;
 		bool bHasValue = !Value.IsEmpty();

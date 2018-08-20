@@ -14,19 +14,19 @@ struct UOWL_API FOwlSemanticMapStatics
 	static TSharedPtr<FOwlSemanticMap> CreateDefaultSemanticMap(
 		const FString& InMapId,
 		const FString& InMapPrefix = "ue-def",
-		const FString& InMapName = "UE-DefaultMap");
+		const FString& InMapOntologyName = "UE-DefaultMap");
 
 	// Create IAI Kitchen semantic map
 	static TSharedPtr<FOwlSemanticMap> CreateIAIKitchenSemanticMap(
 		const FString& InMapId,
 		const FString& InMapPrefix = "ue-iai-kitchen",
-		const FString& InMapName = "UE-IAI-Kitchen");
+		const FString& InMapOntologyName = "UE-IAI-Kitchen");
 
 	// Create IAI Supermarket semantic map
 	static TSharedPtr<FOwlSemanticMap> CreateIAISupermarketSemanticMap(
 		const FString& InMapId,
 		const FString& InMapPrefix = "ue-iai-supermarket",
-		const FString& InMapName = "UE-IAI-Supermarket");
+		const FString& InMapOntologyName = "UE-IAI-Supermarket");
 		
 		
 	/* Owl individuals / definitions creation */

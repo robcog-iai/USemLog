@@ -7,77 +7,58 @@
 #include "OwlDoc.h"
 
 /**
-* 
+* Semantic events (experiment) document in owl
 */
-struct FOwlEvents
+struct FOwlEvents : FOwlDoc
 {
+public:
+	// Experiment individual
+	FOwlNode ExperimentIndividual;
+
+	// Event owl prefix (e.g. log from rdf:about="&log;abc123">")
+	FString ExperimentPrefix;
+
+	// Used for ontologies (e.g UE-Experiment, from "http://knowrob.org/kb/UE-Experiment.owl#")
+	FString ExperimentOntologyName;
+
+	// Experiment unique Id
+	FString ExperimentId;
+
 public:
 	// Default constructor
 	FOwlEvents() {}
 
-	//// Init constructor
-	//FOwlEvents(const FOwlEntityDTD& InEntityDefinitions,
-	//	const TArray<FOwlAttribute>& InNamespaces,
-	//	const FOwlNode& InOntologyImports,
-	//	const TArray<FOwlNode>& InPropertyDefinitions,
-	//	const TArray<FOwlNode>& InDatatypeDefinitions,
-	//	const TArray<FOwlNode>& InClassDefinitions,
-	//	const TArray<FOwlNode>& InEntries,
-	//	const FOwlNode& InMetadata) :
-	//	EntityDefinitions(InEntityDefinitions),
-	//	Namespaces(InNamespaces),
-	//	OntologyImports(InOntologyImports),
-	//	PropertyDefinitions(InPropertyDefinitions),
-	//	DatatypeDefinitions(InDatatypeDefinitions),
-	//	ClassDefinitions(InClassDefinitions),
-	//	Entries(InEntries),
-	//	Metadata(InMetadata)
-	//{}
+	// Init constructor
+	FOwlEvents(const FString& InExperimentPrefix,
+		const FString& InExperimentOntologyName,
+		const FString& InExperimentId) :
+		ExperimentPrefix(InExperimentPrefix),
+		ExperimentOntologyName(InExperimentOntologyName),
+		ExperimentId(InExperimentId)
+	{
+		SetOntologyNode(InExperimentOntologyName);
+	}
 
-	//// Destructor
-	//~FOwlEvents() {}
+	// Destructor
+	~FOwlEvents() {}
 
-	//// Return semantic map as owl document
-	//FOwlDoc ToDoc()
-	//{
-	//	FOwlNode Root(FOwlPrefixName("rdf", "RDF"), Namespaces);
-	//	Root.ChildNodes.Add(OntologyImports);
-	//	Root.ChildNodes.Append(PropertyDefinitions);
-	//	Root.ChildNodes.Append(DatatypeDefinitions);
-	//	Root.ChildNodes.Append(ClassDefinitions);
-	//	Root.ChildNodes.Append(Entries);
-	//	const FString Declaration =  
-	//		TEXT("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-	//	return FOwlDoc(Declaration, EntityDefinitions, Root);
-	//}
+	// Create experiment node individual
+	void AddExperimentIndividual(const FString& InExperimentPrefix, const FString& InExperimentId)
+	{
+		const FOwlPrefixName OwlNI("owl", "NamedIndividual");
+		const FOwlPrefixName RdfAbout("rdf", "about");
+		const FOwlPrefixName RdfType("rdf", "type");
+		const FOwlPrefixName RdfResource("rdf", "resource");
+		const FOwlAttributeValue SemMapInd(InExperimentPrefix, InExperimentId);
 
-	//// Return semantic map as string
-	//FString ToString()
-	//{
-	//	return ToDoc().ToString();
-	//}
+		// Create semantic map individual
+		ExperimentIndividual.Name = OwlNI;
+		ExperimentIndividual.AddAttribute(FOwlAttribute(RdfAbout, SemMapInd));
+		ExperimentIndividual.AddChildNode(FOwlNode(RdfType, FOwlAttribute(
+			RdfResource, FOwlAttributeValue("knowrob", "UnrealExperiment"))));
+		ExperimentIndividual.Comment = "Experiment Individual " + InExperimentId;
 
-	//// Entity definitions
-	//FOwlEntityDTD EntityDefinitions; 
-
-	//// Namespace declarations
-	//TArray<FOwlAttribute> Namespaces;
-
-	//// Ontology imports 
-	//FOwlNode OntologyImports;
-
-	//// Property definitions
-	//TArray<FOwlNode> PropertyDefinitions;
-
-	//// Datatype definitions
-	//TArray<FOwlNode> DatatypeDefinitions;
-
-	//// Class definitions
-	//TArray<FOwlNode> ClassDefinitions;
-
-	//// Entity entries
-	//TArray<FOwlNode> Entries;
-	//
-	//// Metadata
-	//FOwlNode Metadata;
+		// Add map to the document individuals
+		Individuals.Add(ExperimentIndividual);
+	}
 };

@@ -22,6 +22,9 @@ void USLEventDataLogger::Init(const FString& InLogDirectory, const FString& InEp
 	LogDirectory = InLogDirectory;
 	EpisodeId = InEpisodeId;
 	OwlDocTemplate = TemplateType;
+
+	// Create the document template
+	EventsDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
 }
 
 // Start logger
@@ -40,27 +43,39 @@ void USLEventDataLogger::Finish()
 // Write to file
 bool USLEventDataLogger::WriteToFile()
 {
-	return true;
-	//if (!EventsDoc.IsValid())
-	//	return false;
+	if (!EventsDoc.IsValid())
+		return false;
 
-	//// Write map to file
-	//FString FullFilePath = FPaths::ProjectDir() +
-	//	LogDirectory + TEXT("/Episodes/EventData_") + EpisodeId + TEXT(".owl");
-	//FPaths::RemoveDuplicateSlashes(FullFilePath);
-	//return FFileHelper::SaveStringToFile(EventsDoc->ToString(), *FullFilePath);
+	// Write map to file
+	FString FullFilePath = FPaths::ProjectDir() +
+		LogDirectory + TEXT("/Episodes/EventData_") + EpisodeId + TEXT(".owl");
+	FPaths::RemoveDuplicateSlashes(FullFilePath);
+	return FFileHelper::SaveStringToFile(EventsDoc->ToString(), *FullFilePath);
 }
 
-//// Create events doc template
-//TSharedPtr<FOwlEvents> USLEventDataLogger::CreateEventsTemplate(EEventsTemplate TemplateType)
-//{
-//	//if (TemplateType == EEventsTemplate::Default)
-//	//{
-//	//	return MakeShareable(new FOwlEvents());
-//	//}
-//	//else if (TemplateType == EEventsTemplate::IAI)
-//	//{
-//	//	return MakeShareable(new FOwlEventsIAI());
-//	//}
-//	return MakeShareable(new FOwlEvents());
-//}
+// Create events doc (experiment) template
+TSharedPtr<FOwlEvents> USLEventDataLogger::CreateEventsDocTemplate(EEventsTemplate TemplateType, const FString& InExperimentId)
+{
+	const FString ExperimentId = InExperimentId.IsEmpty() ? FIds::NewGuidInBase64Url() : InExperimentId;
+
+	if (TemplateType == EEventsTemplate::Default)
+	{
+		return FOwlEventsStatics::CreateDefaultExperiment(ExperimentId);
+	}
+	else if (TemplateType == EEventsTemplate::IAI)
+	{
+		return FOwlEventsStatics::CreateUEExperiment(ExperimentId);
+	}
+	return MakeShareable(new FOwlEvents());
+}
+
+// Finish the pending events at the current time
+void USLEventDataLogger::FinishPendingEvents(const float EndTime)
+{
+	for (const auto& PE : PendingEvents)
+	{
+		PE->End = EndTime;
+		FinishedEvents.Emplace(PE);
+	}
+	PendingEvents.Empty();
+}

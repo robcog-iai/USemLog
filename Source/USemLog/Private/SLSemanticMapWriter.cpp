@@ -29,7 +29,7 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 	const FString& InFilename)
 {
 	// Create the semantic map template
-	TSharedPtr<FOwlSemanticMap> SemMap = CreateSemanticMapTemplate(TemplateType);
+	TSharedPtr<FOwlSemanticMap> SemMap = CreateSemanticMapDocTemplate(TemplateType);
 
 	// Add individuals to map
 	AddAllIndividuals(SemMap, World);
@@ -42,7 +42,7 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 }
 
 // Create semantic map template
-TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapTemplate(EMapTemplate TemplateType, const FString& InMapId)
+TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate(EMapTemplate TemplateType, const FString& InMapId)
 {
 	const FString MapId = InMapId.IsEmpty() ? FIds::NewGuidInBase64Url() : InMapId;
 
@@ -311,8 +311,8 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> I
 	AActor* ChildAct = ConstraintComp->ConstraintActor2;
 	if (ParentAct && ChildAct)
 	{
-		const FString ParentId = FTags::GetKeyValue(ParentAct, "SemLog", "Id");
-		const FString ChildId = FTags::GetKeyValue(ChildAct, "SemLog", "Id");
+		const FString ParentId = FTags::GetValue(ParentAct, "SemLog", "Id");
+		const FString ChildId = FTags::GetValue(ChildAct, "SemLog", "Id");
 		if (!ParentId.IsEmpty() && !ChildId.IsEmpty())
 		{
 			// Create the object individual
@@ -395,7 +395,7 @@ TArray<FString> FSLSemanticMapWriter::GetAllChildIds(UObject* Object)
 		ObjAsActor->GetAllChildActors(ChildActors, false);
 		for (const auto& ChildAct : ChildActors)
 		{
-			const FString ChildId = FTags::GetKeyValue(ChildAct, "SemLog", "Id");
+			const FString ChildId = FTags::GetValue(ChildAct, "SemLog", "Id");
 			if (!ChildId.IsEmpty() && FTags::HasKey(ChildAct, "SemLog", "Class"))
 			{
 				Ids.Add(ChildId);
@@ -407,7 +407,7 @@ TArray<FString> FSLSemanticMapWriter::GetAllChildIds(UObject* Object)
 		ObjAsActor->GetComponents(ChildComponents, false);
 		for (const auto& ChildComp : ChildComponents)
 		{
-			const FString ChildId = FTags::GetKeyValue(ChildComp, "SemLog", "Id");
+			const FString ChildId = FTags::GetValue(ChildComp, "SemLog", "Id");
 			if (!ChildId.IsEmpty() && FTags::HasKey(ChildComp, "SemLog", "Class"))
 			{
 				Ids.Add(ChildId);
@@ -422,7 +422,7 @@ TArray<FString> FSLSemanticMapWriter::GetAllChildIds(UObject* Object)
 		ObjAsSceneComp->GetChildrenComponents(false, ChildComponents);
 		for (const auto& ChildComp : ChildComponents)
 		{
-			const FString ChildId = FTags::GetKeyValue(ChildComp, "SemLog", "Id");
+			const FString ChildId = FTags::GetValue(ChildComp, "SemLog", "Id");
 			if (!ChildId.IsEmpty() && FTags::HasKey(ChildComp, "SemLog", "Class"))
 			{
 				Ids.Add(ChildId);
@@ -439,7 +439,7 @@ FString FSLSemanticMapWriter::GetParentId(UObject* Object)
 	if (AActor* ObjAsAct = Cast<AActor>(Object))
 	{
 		AActor* ParentAct = ObjAsAct->GetParentActor();
-		const FString ParentActId = FTags::GetKeyValue(ParentAct, "SemLog", "Id");
+		const FString ParentActId = FTags::GetValue(ParentAct, "SemLog", "Id");
 		if (!ParentActId.IsEmpty() && FTags::HasKey(ParentAct, "SemLog", "Class"))
 		{
 			return ParentActId;
@@ -447,7 +447,7 @@ FString FSLSemanticMapWriter::GetParentId(UObject* Object)
 
 		// If this actor was created by a child actor component
 		UChildActorComponent* ParentComp = ObjAsAct->GetParentComponent();
-		const FString ParentCompId = FTags::GetKeyValue(ParentComp, "SemLog", "Id");
+		const FString ParentCompId = FTags::GetValue(ParentComp, "SemLog", "Id");
 		if (!ParentCompId.IsEmpty() && FTags::HasKey(ParentComp, "SemLog", "Class"))
 		{
 			return ParentCompId;
@@ -456,14 +456,14 @@ FString FSLSemanticMapWriter::GetParentId(UObject* Object)
 	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
 	{
 		USceneComponent* AttachComp = ObjAsSceneComp->GetAttachParent();
-		const FString AttachCompId = FTags::GetKeyValue(AttachComp, "SemLog", "Id");
+		const FString AttachCompId = FTags::GetValue(AttachComp, "SemLog", "Id");
 		if (!AttachCompId.IsEmpty() && FTags::HasKey(AttachComp, "SemLog", "Class"))
 		{
 			return AttachCompId;
 		}
 
 		AActor* ParentAct = ObjAsSceneComp->GetAttachmentRootActor();
-		const FString ParentActId = FTags::GetKeyValue(ParentAct, "SemLog", "Id");
+		const FString ParentActId = FTags::GetValue(ParentAct, "SemLog", "Id");
 		if (!ParentActId.IsEmpty() && FTags::HasKey(ParentAct, "SemLog", "Class"))
 		{
 			return ParentActId;
@@ -472,7 +472,7 @@ FString FSLSemanticMapWriter::GetParentId(UObject* Object)
 	else if (UActorComponent* ObjAsActComp = Cast<USceneComponent>(Object))
 	{
 		AActor* Owner = ObjAsActComp->GetOwner();
-		const FString OwnerId = FTags::GetKeyValue(Owner, "SemLog", "Id");
+		const FString OwnerId = FTags::GetValue(Owner, "SemLog", "Id");
 		if (!OwnerId.IsEmpty() && FTags::HasKey(Owner, "SemLog", "Class"))
 		{
 			return OwnerId;

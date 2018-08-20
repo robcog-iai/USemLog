@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "OwlEvents.h"
+#include "EventData/IEvent.h"
 #include "SLEventDataLogger.generated.h"
 
 /**
@@ -47,6 +48,13 @@ private:
 	// Write events to file
 	bool WriteToFile();
 
+	// Create events doc template
+	TSharedPtr<FOwlEvents> CreateEventsDocTemplate(
+		EEventsTemplate TemplateType, const FString& InExperimentId);
+
+	// Finish the pending events at the current time
+	void FinishPendingEvents(const float EndTime);
+
 	// Directory where to log
 	FString LogDirectory;
 
@@ -56,9 +64,12 @@ private:
 	// Type of owl template to write the events to
 	EEventsTemplate OwlDocTemplate;
 
-	//// Array of pending events
-	////TArray<IEvent> Events;
+	// Array of pending events
+	TArray<IEvent*> PendingEvents;
 
-	//// Owl document of the finished events
-	//TSharedPtr<FOwlEvents> EventsDoc;
+	// Array of pending events
+	TArray<IEvent*> FinishedEvents;
+
+	// Owl document of the finished events
+	TSharedPtr<FOwlEvents> EventsDoc;
 };

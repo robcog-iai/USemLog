@@ -8,9 +8,9 @@
 #include "SLContactListener.generated.h"
 
 /** Delegate for notification of start of overlap with a semantic entity */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBeginSemanticContactSignature, AActor*, OtherActor, const FString&, Id);
+DECLARE_DELEGATE_TwoParams(FBeginSemanticContactSignature, AActor*, const FString&);
 /** Delegate for notification of end of overlap with a semantic entity */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEndSemanticContactSignature, AActor*, OtherActor, const FString&, Id);
+DECLARE_DELEGATE_TwoParams(FEndSemanticContactSignature, AActor*, const FString&);
 
 
 /**
@@ -71,21 +71,14 @@ private:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
-	// Event called when a component hits (or is hit by) something solid
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComponent,
-		AActor* OtherActor,
-		UPrimitiveComponent* OtherComp,
-		FVector NormalImpulse,
-		const FHitResult& Hit);
+	//// Event called when a component hits (or is hit by) something solid
+	//UFUNCTION()
+	//void OnHit(UPrimitiveComponent* HitComponent,
+	//	AActor* OtherActor,
+	//	UPrimitiveComponent* OtherComp,
+	//	FVector NormalImpulse,
+	//	const FHitResult& Hit);
 
-	// Event called when the underlying physics objects is put to sleep
-	UFUNCTION()
-	void OnSleep(UPrimitiveComponent* SleepingComponent, FName BoneName);
-
-	// Event called when the underlying physics objects is woken up
-	UFUNCTION()
-	void OnWake(UPrimitiveComponent* WakingComponent, FName BoneName);
 
 public:
 	// Event called when two semantically annotated items are colliding

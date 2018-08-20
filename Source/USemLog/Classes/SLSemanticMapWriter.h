@@ -36,7 +36,7 @@ public:
 
 private:
 	// Create semantic map template
-	TSharedPtr<FOwlSemanticMap> CreateSemanticMapTemplate(
+	TSharedPtr<FOwlSemanticMap> CreateSemanticMapDocTemplate(
 		EMapTemplate TemplateType,
 		const FString& MapId = "");
 

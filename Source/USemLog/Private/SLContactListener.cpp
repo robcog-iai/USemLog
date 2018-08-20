@@ -5,12 +5,14 @@
 #include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "SLContentSingleton.h"
+#include "SLContactPoolSingleton.h"
 #include "DrawDebugHelpers.h"
 
 // UUTils
 #include "Tags.h"
 
-#define SL_COLL_SCALE_FACTOR 1.05f
+#define SL_COLL_SCALE_FACTOR 1.04f
+#define SL_COLL_TAGTYPE "SemLogColl"
 
 // Default constructor
 USLContactListener::USLContactListener()
@@ -28,11 +30,9 @@ void USLContactListener::BeginPlay()
 	// Set the unique Id of the outer
 	OuterId = GetOuterId();
 
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]Id=%s"), TEXT(__FUNCTION__), __LINE__, *OuterId);
-
-	
 	// Make sure there are no overlap events on the mesh as well
 	// (these will be calculated on the contact listener)
+	// TODO this will cause problems with grasping objects
 	OuterMeshComp->SetGenerateOverlapEvents(false);
 
 	if (OuterMeshComp && !OuterId.IsEmpty())
@@ -40,10 +40,11 @@ void USLContactListener::BeginPlay()
 		// Bind event delegates
 		OnComponentBeginOverlap.AddDynamic(this, &USLContactListener::OnOverlapBegin);
 		OnComponentEndOverlap.AddDynamic(this, &USLContactListener::OnOverlapEnd);
-		OnComponentHit.AddDynamic(this, &USLContactListener::OnHit);
-		OnComponentSleep.AddDynamic(this, &USLContactListener::OnSleep);
-		OnComponentWake.AddDynamic(this, &USLContactListener::OnWake);
+		//OnComponentHit.AddDynamic(this, &USLContactListener::OnHit);
 	}
+
+	// Register listener to the pool
+	USLContactPoolSingleton::GetInstance()->Register(this);
 }
 
 // Called after the C++ constructor and after the properties have been initialized
@@ -55,7 +56,7 @@ void  USLContactListener::PostInitProperties()
 	{
 		ComputeAndStoreParameters(GetOuterMesh());
 	}
-	ShapeColor = FColor::Emerald;
+	ShapeColor = FColor::Blue;
 }
 
 #if WITH_EDITOR
@@ -74,17 +75,17 @@ void USLContactListener::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 	{
 		if (PropertyName == FName("X"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), "SemLogColl", "ExtX",
+			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "ExtX",
 				FString::SanitizeFloat(BoxExtent.X));
 		}
 		else if (PropertyName == FName("Y"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), "SemLogColl", "ExtY",
+			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "ExtY",
 				FString::SanitizeFloat(BoxExtent.Y));
 		}
 		else if (PropertyName == FName("Z"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), "SemLogColl", "ExtY",
+			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "ExtY",
 				FString::SanitizeFloat(BoxExtent.Y));
 		}
 	}
@@ -92,17 +93,17 @@ void USLContactListener::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 	{
 		if (PropertyName == FName("X"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), "SemLogColl", "LocX",
+			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "LocX",
 				FString::SanitizeFloat(RelativeLocation.X));
 		}
 		else if (PropertyName == FName("Y"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), "SemLogColl", "LocY",
+			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "LocY",
 				FString::SanitizeFloat(RelativeLocation.Y));
 		}
 		else if (PropertyName == FName("Z"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), "SemLogColl", "LocZ",
+			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "LocZ",
 				FString::SanitizeFloat(RelativeLocation.Y));
 		}
 	}
@@ -114,7 +115,7 @@ void USLContactListener::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 		KeyValMap.Add("QuatX", FString::SanitizeFloat(RelQuat.X));
 		KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
 		KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
-		FTags::AddKeyValuePairs(GetOuter(), "SemLogColl", KeyValMap);
+		FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 	}
 }
 
@@ -137,7 +138,7 @@ void USLContactListener::PostEditComponentMove(bool bFinished)
 	KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
 	KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
 
-	FTags::AddKeyValuePairs(GetOuter(), "SemLogColl", KeyValMap);
+	FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 }
 #endif // WITH_EDITOR
 
@@ -145,7 +146,7 @@ void USLContactListener::PostEditComponentMove(bool bFinished)
 bool USLContactListener::LoadStoredParameters()
 {
 	TMap<FString, FString> TagKeyValMap = 
-		FTags::GetKeyValuePairs(GetOuter(), "SemLogColl");
+		FTags::GetKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE);
 
 	if (TagKeyValMap.Num() == 0){return false;}
 
@@ -186,14 +187,14 @@ bool USLContactListener::ComputeAndStoreParameters(UStaticMeshComponent* SMComp)
 		return false;
 	}
 
-	// Apply parameters
+	// Apply parameters to the contact listener area
 	SetBoxExtent(SMComp->Bounds.BoxExtent * SL_COLL_SCALE_FACTOR);
-
+	// Apply its location
 	FTransform BoundsTransf(FQuat::Identity, SMComp->Bounds.Origin);
 	BoundsTransf.SetToRelativeTransform(SMComp->GetComponentTransform());
 	SetRelativeTransform(BoundsTransf);
 
-	// Save parameters
+	// Store calculated parameters (size / rotation / location)
 	const FTransform RelTransf = GetRelativeTransform();
 	const FVector RelLoc = RelTransf.GetLocation();
 	const FQuat RelQuat = RelTransf.GetRotation();
@@ -213,7 +214,7 @@ bool USLContactListener::ComputeAndStoreParameters(UStaticMeshComponent* SMComp)
 	KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
 	KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
 	
-	return FTags::AddKeyValuePairs(GetOuter(), "SemLogColl", KeyValMap);
+	return FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 }
 
 // Get the outer (owner) mesh component
@@ -232,7 +233,7 @@ UStaticMeshComponent* USLContactListener::GetOuterMesh()
 // Get Id of outer (owner)
 FString USLContactListener::GetOuterId() const
 {
-	return FTags::GetKeyValue(GetOuter(), "SemLog", "Id");
+	return FTags::GetValue(GetOuter(), "SemLog", "Id");
 }
 
 // Called on overlap begin events
@@ -245,10 +246,10 @@ void USLContactListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 {
 	// TODO use USLContentSingleton
 	// Get the id of the other component
-	FString OtherId = FTags::GetKeyValue(OtherActor, "SemLog", "Id");
+	FString OtherId = FTags::GetValue(OtherActor, "SemLog", "Id");
 	if (OtherId.IsEmpty())
 	{
-		OtherId = FTags::GetKeyValue(OtherComp, "SemLog", "Id");
+		OtherId = FTags::GetValue(OtherComp, "SemLog", "Id");
 		// If no unique id is found, return
 		if (OtherId.IsEmpty()) return;
 	}
@@ -321,6 +322,9 @@ void USLContactListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	//
 	//UE_LOG(LogTemp, Error, TEXT("\t ****"));
 
+
+	
+	OnBeginSemanticContact.ExecuteIfBound(OtherActor, OtherId);
 }
 
 // Called on overlap end events
@@ -331,35 +335,19 @@ void USLContactListener::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 {
 }
 
-// Called on hit event
-void USLContactListener::OnHit(UPrimitiveComponent* HitComponent,
-	AActor* OtherActor,
-	UPrimitiveComponent* OtherComp,
-	FVector NormalImpulse,
-	const FHitResult& Hit)
-{
-	UE_LOG(LogTemp, Error, TEXT("[%f] Hit: %s"), GetWorld()->GetTimeSeconds(), *Hit.ToString());
-
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d] Other=%s, NormalImpulse=%s, HitNormal=%s, HitImpactNormal=%s, Hit.Distance=%f, Time=%f"),
-		TEXT(__FUNCTION__), __LINE__,
-		*OtherActor->GetName(),
-		*NormalImpulse.ToString(),
-		*Hit.Normal.ToString(),
-		*Hit.ImpactNormal.ToString(),
-		Hit.Distance,
-		GetOuter()->GetWorld()->GetTimeSeconds());
-}
-
-
-// Event called when the underlying physics objects is put to sleep
-void USLContactListener::OnSleep(UPrimitiveComponent* SleepingComponent, FName BoneName)
-{
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d] Sleep"), TEXT(__FUNCTION__), __LINE__);
-	
-}
-
-// Event called when the underlying physics objects is woken up
-void USLContactListener::OnWake(UPrimitiveComponent* WakingComponent, FName BoneName)
-{
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d] Wake"), TEXT(__FUNCTION__), __LINE__);
-}
+//// Called on hit event
+//void USLContactListener::OnHit(UPrimitiveComponent* HitComponent,
+//	AActor* OtherActor,
+//	UPrimitiveComponent* OtherComp,
+//	FVector NormalImpulse,
+//	const FHitResult& Hit)
+//{
+//	UE_LOG(LogTemp, Error, TEXT("[%s][%d] Other=%s, NormalImpulse=%s, HitNormal=%s, HitImpactNormal=%s, Hit.Distance=%f, Time=%f"),
+//		TEXT(__FUNCTION__), __LINE__,
+//		*OtherActor->GetName(),
+//		*NormalImpulse.ToString(),
+//		*Hit.Normal.ToString(),
+//		*Hit.ImpactNormal.ToString(),
+//		Hit.Distance,
+//		GetOuter()->GetWorld()->GetTimeSeconds());
+//}

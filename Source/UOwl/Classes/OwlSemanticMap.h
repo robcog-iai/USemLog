@@ -18,8 +18,8 @@ public:
 	// Map prefix (e.g. ue-def from rdf:about="&ue-def;4dfw4smiMD9ne1">)
 	FString MapPrefix;
 
-	// Map name (e.g UE-DefaultMap, from "http://knowrob.org/kb/UE-DefaultMap.owl#")
-	FString MapName;
+	// Used for ontologies (e.g UE-DefaultMap, from "http://knowrob.org/kb/UE-DefaultMap.owl#")
+	FString MapOntologyName;
 
 	// Map unique Id
 	FString MapId;
@@ -30,14 +30,17 @@ public:
 
 	// Init constructor
 	FOwlSemanticMap(const FString& InMapPrefix,
-		const FString& InMapName,
+		const FString& InMapOntologyName,
 		const FString& InMapId) :
 		MapPrefix(InMapPrefix),
-		MapName(InMapName),
+		MapOntologyName(InMapOntologyName),
 		MapId(InMapId)
 	{
-		SetOntologyNode(InMapName);
+		SetOntologyNode(InMapOntologyName);
 	}
+
+	// Destructor
+	~FOwlSemanticMap() {}
 	
 	// Create semantic map node individual
 	void AddSemanticMapIndividual(const FString& InMapPrefix, const FString& InMapId)
