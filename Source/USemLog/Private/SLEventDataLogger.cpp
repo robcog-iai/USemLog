@@ -16,12 +16,30 @@ USLEventDataLogger::~USLEventDataLogger()
 {
 }
 
+// 
+void USLEventDataLogger::BeginDestroy()
+{
+	Super::BeginDestroy();
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+
+}
+
+//
+void USLEventDataLogger::FinishDestroy()
+{
+	Super::FinishDestroy();
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+}
+
 // Init Logger
 void USLEventDataLogger::Init(const FString& InLogDirectory, const FString& InEpisodeId, EEventsTemplate TemplateType)
 {
 	LogDirectory = InLogDirectory;
 	EpisodeId = InEpisodeId;
 	OwlDocTemplate = TemplateType;
+
+	// Subscribe for semantic contact events
+	USLEventDataLogger::ListenToSemanticContactEvents();
 
 	// Create the document template
 	EventsDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
@@ -36,8 +54,23 @@ void USLEventDataLogger::Start()
 // Finish logger
 void USLEventDataLogger::Finish()
 {
+	USLContactPoolSingleton::GetInstance()->FinishPendingContactEvents();
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d] -- Get Pending Contacts -- "), TEXT(__FUNCTION__), __LINE__);
 	// Write events to file
 	WriteToFile();
+}
+
+// Register for semantic contact events
+void USLEventDataLogger::ListenToSemanticContactEvents()
+{
+	USLContactPoolSingleton::GetInstance()->OnSemanticContactEvent.BindUObject(
+		this, &USLEventDataLogger::OnSemanticContactEvent);
+}
+
+// Called when a semantic contact is finished
+void USLEventDataLogger::OnSemanticContactEvent(IEvent* Event)
+{
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Write to file

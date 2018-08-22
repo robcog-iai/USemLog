@@ -37,7 +37,8 @@ ASemanticLogger::ASemanticLogger()
 // Sets default values
 ASemanticLogger::~ASemanticLogger()
 {
-	ASemanticLogger::Finish();
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+	ASemanticLogger::FinishLogging();
 }
 
 // Called when the game starts or when spawned
@@ -47,8 +48,8 @@ void ASemanticLogger::BeginPlay()
 
 	if (bStartAtBeginPlay)
 	{
-		ASemanticLogger::Init();
-		ASemanticLogger::Start();
+		ASemanticLogger::InitLogging();
+		ASemanticLogger::StartLogging();
 	}
 }
 
@@ -57,11 +58,25 @@ void ASemanticLogger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	ASemanticLogger::Finish();
+	ASemanticLogger::FinishLogging();
+}
+
+// 
+void ASemanticLogger::BeginDestroy()
+{
+	Super::BeginDestroy();
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+}
+
+//
+void ASemanticLogger::FinishDestroy()
+{
+	Super::FinishDestroy();
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init loggers
-void ASemanticLogger::Init()
+void ASemanticLogger::InitLogging()
 {
 	if (!bIsInit)
 	{
@@ -108,7 +123,7 @@ void ASemanticLogger::Init()
 }
 
 // Start loggers
-void ASemanticLogger::Start()
+void ASemanticLogger::StartLogging()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -130,7 +145,7 @@ void ASemanticLogger::Start()
 }
 
 // Finish loggers
-void ASemanticLogger::Finish()
+void ASemanticLogger::FinishLogging()
 {
 	if (bIsStarted || bIsInit)
 	{

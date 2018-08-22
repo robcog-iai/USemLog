@@ -17,6 +17,9 @@ public:
 	// End time of the event
 	float End;
 
+	// Unique id of the event
+	FString Id;
+
 	// Create owl representation of the event
 	virtual FOwlNode ToOwlNode() const = 0;
 };

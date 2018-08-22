@@ -4,7 +4,24 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EventData/IEvent.h"
 #include "SLContactPoolSingleton.generated.h"
+
+
+/** Delegate for notification of start of overlap with a semantic entity */
+DECLARE_DELEGATE_OneParam(FSemanticContactEvent, IEvent*);
+
+/**
+* Semantic contact event structure
+*/
+struct FSemContact
+{
+	float Timestamp;
+	uint32 Obj1Id;
+	uint32 Obj2Id;
+	FString SemLogId;
+};
+
 
 /**
  * Listens to semantic contacts and resolves duplicates
@@ -39,16 +56,47 @@ public:
 	virtual TStatId GetStatId() const override;
 	/** End FTickableGameObject interface */
 
+	void Register(class USLContactListener* ContactListener);
+
+	// 
+	TArray<IEvent*> FinishPendingContactEvents();
+
+//protected:
+//	// 
+//	virtual void BeginDestroy() override;
+//
+//	//
+//	virtual void FinishDestroy() override;
+
+private:
+	// Resolve begin semantic contact duplicates
+	void ResolveBeginDuplicates();
+
+	// Resolve end semantic contact duplicates
+	void ResolveEndDuplicates();
+
+	// Publish finished semantic contact event
+	void PublishFinishedEvent();
+
+
 	void Foo();
 
-	void Register(class USLContactListener* ContactListener);
+
 
 	void OnNewBeginSemanticContact(AActor* OtherActor, const FString& Id);
 	
 	void OnNewEndSemanticContact(AActor* OtherActor, const FString& Id);
 
 
+public:
+	// Event called when a semantic contact event is finished
+	FSemanticContactEvent OnSemanticContactEvent;
+
 private:
 	// Set if new semantic contact event is triggered
 	bool bNewData;
+
+	bool bNewBeginContact;
+
+	bool bNewEndContact;
 };

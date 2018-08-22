@@ -7,6 +7,7 @@
 #include "UObject/NoExportTypes.h"
 #include "OwlEvents.h"
 #include "EventData/IEvent.h"
+#include "SLContactPoolSingleton.h"
 #include "SLEventDataLogger.generated.h"
 
 /**
@@ -35,6 +36,14 @@ public:
 	// Destructor
 	~USLEventDataLogger();
 
+protected:
+	// 
+	virtual void BeginDestroy() override;
+
+	//
+	virtual void FinishDestroy() override;
+
+public:
 	// Init Logger
 	void Init(const FString& InLogDirectory, const FString& InEpisodeId, EEventsTemplate TemplateType);
 
@@ -45,6 +54,12 @@ public:
 	void Finish();
 
 private:
+	// Register for semantic contact events
+	void ListenToSemanticContactEvents();
+
+	// Called when a semantic contact is finished
+	void OnSemanticContactEvent(IEvent* Event);
+
 	// Write events to file
 	bool WriteToFile();
 

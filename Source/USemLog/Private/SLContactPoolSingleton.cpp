@@ -8,10 +8,10 @@
 static USLContactPoolSingleton* StaticInstance = nullptr;
 
 // Constructor
-USLContactPoolSingleton::USLContactPoolSingleton()
+USLContactPoolSingleton::USLContactPoolSingleton() : 
+	bNewData(false), bNewBeginContact(false), bNewEndContact(false)
 {
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
-	bNewData = false;
 }
 
 // Destructor
@@ -38,6 +38,21 @@ void USLContactPoolSingleton::DeleteInstance()
 	StaticInstance->ConditionalBeginDestroy();
 }
 
+//// 
+//void USLContactPoolSingleton::BeginDestroy()
+//{
+//	Super::BeginDestroy();
+//	OnSemanticContactEvent.Execute(nullptr);
+//	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+//}
+//
+////
+//void USLContactPoolSingleton::FinishDestroy()
+//{
+//	Super::FinishDestroy();
+//	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+//}
+
 /** Begin FTickableGameObject interface */
 // Called after ticking all actors, DeltaTime is the time passed since the last call.
 void USLContactPoolSingleton::Tick(float DeltaTime)
@@ -46,6 +61,7 @@ void USLContactPoolSingleton::Tick(float DeltaTime)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 		bNewData = false;
+		OnSemanticContactEvent.Execute(nullptr);
 	}
 }
 
@@ -73,7 +89,14 @@ void USLContactPoolSingleton::Register(USLContactListener* ContactListener)
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d] Registering: %s"),
 		TEXT(__FUNCTION__), __LINE__, *ContactListener->GetName());
 
-	ContactListener->OnBeginSemanticContact.BindUObject(this, &USLContactPoolSingleton::OnNewBeginSemanticContact);
+	ContactListener->OnBeginSemanticContact.BindUObject(
+		this, &USLContactPoolSingleton::OnNewBeginSemanticContact);
+}
+
+// 
+TArray<IEvent*> USLContactPoolSingleton::FinishPendingContactEvents()
+{
+	return TArray<IEvent*>();
 }
 
 void USLContactPoolSingleton::OnNewBeginSemanticContact(AActor* OtherActor, const FString& Id)

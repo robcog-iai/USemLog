@@ -254,6 +254,9 @@ void USLContactListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 		if (OtherId.IsEmpty()) return;
 	}
 
+	OtherActor->GetUniqueID();
+	OtherComp->GetUniqueID();
+
 	// Check if other is a semantically annotated object
 	//USLContentSingleton::
 

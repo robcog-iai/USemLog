@@ -40,4 +40,6 @@ private:
 
 	// Map of actors to unique ids
 	TMap<AActor*, FString> ActorToIdMap;
+
+	TMap<uint32, FString> IdToSemLogId;
 };

@@ -31,15 +31,21 @@ protected:
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	// 
+	virtual void BeginDestroy() override;
+
+	//
+	virtual void FinishDestroy() override;
+
 public:
 	// Init loggers
-	void Init();
+	void InitLogging();
 
 	// Start loggers
-	void Start();
+	void StartLogging();
 
 	// Finish loggers
-	void Finish();
+	void FinishLogging();
 	
 private:
 	// Called when a property is changed in the editor
