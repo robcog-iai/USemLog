@@ -5,8 +5,6 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Conversions.h"
-#include "bson.h"
-
 
 // Constr
 FSLRawDataWriterBson::FSLRawDataWriterBson()
@@ -38,6 +36,7 @@ void FSLRawDataWriterBson::Init(FSLRawDataAsyncWorker* InWorkerParent, const FSt
 // Called to write the data
 void FSLRawDataWriterBson::WriteData()
 {
+#if USE_LIBMONGO
 	// Bson root object
 	bson_t* BsonRootObj=bson_new();
 
@@ -81,7 +80,7 @@ void FSLRawDataWriterBson::WriteData()
 		//free bson writer buffer
 		bson_free(buf);		
 	}
-
+#endif //USE_LIBMONGO
 }
 
 // Set the file handle for the logger
@@ -97,7 +96,7 @@ void FSLRawDataWriterBson::SetFileHandle(const FString& LogDirectory, const FStr
 	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*EpisodesDirPath);
 	FileHandle = FPlatformFileManager::Get().GetPlatformFile().OpenWrite(*FilePath, true);
 }
-
+#if USE_LIBMONGO
 // Add actors
 void FSLRawDataWriterBson::AddActors(bson_t& OutBsonEntitiesArr)
 {
@@ -297,3 +296,4 @@ void FSLRawDataWriterBson::WriteData(uint8* memorybuffer, int64 bufferlen)
 		FileHandle->Write(memorybuffer, bufferlen);
 	}
 }
+#endif //USE_LIBMONGO

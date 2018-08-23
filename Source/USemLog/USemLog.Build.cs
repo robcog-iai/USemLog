@@ -49,12 +49,15 @@ public class USemLog : ModuleRules
 				"UTags",
 				"UIds",
 				"UConversions",
-				"libmongo"
+				//"libmongo" // 4.20 has issues with libmongo
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-		
-		
+
+		// 4.20 has issues with libmongo, this flag will ignore the mongo code
+		PublicDefinitions.Add("USE_LIBMONGO=0");
+
+
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
 			{

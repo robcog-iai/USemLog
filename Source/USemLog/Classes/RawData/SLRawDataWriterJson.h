@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "IRawDataWriter.h"
+#include "ISLRawDataWriter.h"
 
 // Forward declaration
 class FSLRawDataAsyncWorker;
@@ -12,7 +12,7 @@ class FSLRawDataAsyncWorker;
 /**
  * Raw data logger to json format
  */
-class FSLRawDataWriterJson : public IRawDataWriter
+class FSLRawDataWriterJson : public ISLRawDataWriter
 {
 public:
 	// Default constr

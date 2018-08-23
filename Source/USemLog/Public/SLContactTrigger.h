@@ -5,25 +5,26 @@
 
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
-#include "SLContactListener.generated.h"
+#include "Engine/StaticMeshActor.h"
+#include "SLContactTrigger.generated.h"
 
 /** Delegate for notification of start of overlap with a semantic entity */
-DECLARE_DELEGATE_TwoParams(FBeginSemanticContactSignature, AActor*, const FString&);
+DECLARE_DELEGATE_TwoParams(FSLBeginContactSignature, AActor*, const FString&);
 /** Delegate for notification of end of overlap with a semantic entity */
-DECLARE_DELEGATE_TwoParams(FEndSemanticContactSignature, AActor*, const FString&);
+DECLARE_DELEGATE_TwoParams(FSLEndContactSignature, AActor*, const FString&);
 
 
 /**
  * Collision area listening for semantic collision events
  */
 UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent))
-class USEMLOG_API USLContactListener : public UBoxComponent
+class USEMLOG_API USLContactTrigger : public UBoxComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Default constructor
-	USLContactListener();
+	USLContactTrigger();
 
 protected:
 	// Called at level startup
@@ -53,7 +54,7 @@ private:
 	UStaticMeshComponent* GetOuterMesh();
 
 	// Get Id of outer (owner)
-	FString GetOuterId() const;
+	FString GetOuterSemLogId() const;
 	
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
@@ -82,17 +83,26 @@ private:
 
 public:
 	// Event called when two semantically annotated items are colliding
-	FBeginSemanticContactSignature OnBeginSemanticContact;
+	FSLBeginContactSignature OnBeginSemanticContact;
 
 	// Event called when two semantically annotated items end colliding
-	FEndSemanticContactSignature OnEndSemanticContact;
+	FSLEndContactSignature OnEndSemanticContact;
 
 private:
+	// Setup pointers to outer, check if semantically annotated
+	bool Init();
+
+	// Pointer to the outer (owner) mesh actor
+	AStaticMeshActor* OuterMeshAct;
+
 	// Pointer to the outer (owner) mesh component 
 	UStaticMeshComponent* OuterMeshComp;
 
-	// Unique Id of the outer (owner)
-	FString OuterId;
+	// Cache of the semlog id of the outer (owner)
+	FString OuterSemLogId;
+
+	// Cache of the outer (owner) unique id (unreal)
+	uint32 OuterUniqueId;
 
 	//// Bottom collision area
 	//UPROPERTY(EditAnywhere, Category = "SL")

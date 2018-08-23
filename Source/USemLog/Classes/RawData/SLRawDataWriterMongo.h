@@ -4,8 +4,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "IRawDataWriter.h"
+#include "ISLRawDataWriter.h"
+#if USE_LIBMONGO
 #include "mongoc.h"
+#endif //USE_LIBMONGO
 
 // Forward declaration
 class FSLRawDataAsyncWorker;
@@ -13,7 +15,7 @@ class FSLRawDataAsyncWorker;
 /**
  * Raw data logger to a mongo database
  */
-class FSLRawDataWriterMongo : public IRawDataWriter
+class FSLRawDataWriterMongo : public ISLRawDataWriter
 {
 public:
 	// Default constr
@@ -45,7 +47,7 @@ private:
 		const FString& InEpisodeId,
 		const FString& InMongoIP,
 		uint16 MongoPort=27017);
-
+#if USE_LIBMONGO
 	// Add actors
 	void AddActors(bson_t& OutBsonEntitiesArr);
 
@@ -60,14 +62,15 @@ private:
 
 	// Write entry to db
 	void WriteToMongo(bson_t*& InRootObj, mongoc_collection_t* &collection);
-
+#endif //USE_LIBMONGO
 	// Pointer to worker parent (access to raw data structure)
 	FSLRawDataAsyncWorker* WorkerParent;
 
 	bool bConnect;
-
+#if USE_LIBMONGO
 	// Pointer to monge database
 	mongoc_client_t *client;
 	mongoc_database_t *database;
 	mongoc_collection_t *collection;
+#endif //USE_LIBMONGO
 };

@@ -12,47 +12,47 @@ struct UOWL_API FOwlSemanticMapStatics
 	/* Semantic map template creation */
 	// Create Default semantic map
 	static TSharedPtr<FOwlSemanticMap> CreateDefaultSemanticMap(
-		const FString& InMapId,
-		const FString& InMapPrefix = "ue-def",
-		const FString& InMapOntologyName = "UE-DefaultMap");
+		const FString& InDocId,
+		const FString& InDocPrefix = "ue-def",
+		const FString& InDocOntologyName = "UE-DefaultMap");
 
 	// Create IAI Kitchen semantic map
 	static TSharedPtr<FOwlSemanticMap> CreateIAIKitchenSemanticMap(
-		const FString& InMapId,
-		const FString& InMapPrefix = "ue-iai-kitchen",
-		const FString& InMapOntologyName = "UE-IAI-Kitchen");
+		const FString& InDocId,
+		const FString& InDocPrefix = "ue-iai-kitchen",
+		const FString& InDocOntologyName = "UE-IAI-Kitchen");
 
 	// Create IAI Supermarket semantic map
 	static TSharedPtr<FOwlSemanticMap> CreateIAISupermarketSemanticMap(
-		const FString& InMapId,
-		const FString& InMapPrefix = "ue-iai-supermarket",
-		const FString& InMapOntologyName = "UE-IAI-Supermarket");
+		const FString& InDocId,
+		const FString& InDocPrefix = "ue-iai-supermarket",
+		const FString& InDocOntologyName = "UE-IAI-Supermarket");
 		
 		
 	/* Owl individuals / definitions creation */
 	// Create an object individual
 	static FOwlNode CreateObjectIndividual(
-		const FString& InMapPrefix, 
+		const FString& InDocPrefix, 
 		const FString& Id, 
 		const FString& Class);
 
 	// Create a pose individual
 	static FOwlNode CreatePoseIndividual(
-		const FString& InMapPrefix, 
+		const FString& InDocPrefix, 
 		const FString& InId,
 		const FVector& InLoc,
 		const FQuat& InQuat);
 
 	// Create a constraint individual
 	static FOwlNode CreateConstraintIndividual(
-		const FString& InMapPrefix, 
+		const FString& InDocPrefix, 
 		const FString& InId,
 		const FString& ParentId,
 		const FString& ChildId);
 
 	// Create linear constraint properties individual
 	static FOwlNode CreateLinearConstraintProperties(
-		const FString& InMapPrefix, 
+		const FString& InDocPrefix, 
 		const FString& InId,
 		uint8 XMotion,
 		uint8 YMotion,
@@ -64,7 +64,7 @@ struct UOWL_API FOwlSemanticMapStatics
 
 	// Create angular constraint properties individual
 	static FOwlNode CreateAngularConstraintProperties(
-		const FString& InMapPrefix,
+		const FString& InDocPrefix,
 		const FString& InId,
 		uint8 Swing1Motion,
 		uint8 Swing2Motion,
@@ -84,7 +84,7 @@ struct UOWL_API FOwlSemanticMapStatics
 
 	// Create Tags individual
 	static FOwlNode CreateTagsIndividual(
-		const FString& InMapPrefix,
+		const FString& InDocPrefix,
 		const FString& Id,
 		const FString& Class);
 
@@ -99,7 +99,7 @@ struct UOWL_API FOwlSemanticMapStatics
 
 	// Create describedInMap property
 	static FOwlNode CreateDescribedInMapProperty(
-		const FString& InMapPrefix, const FString& InMapId);
+		const FString& InDocPrefix, const FString& InDocId);
 
 	// Create pathToCadModel property
 	static FOwlNode CreatePathToCadModelProperty(const FString& InClass);
@@ -138,19 +138,19 @@ struct UOWL_API FOwlSemanticMapStatics
 	static FOwlNode CreateStringValueProperty(const FOwlPrefixName& InPrefixName, const FString& InValue);
 
 	// Create pose property
-	static FOwlNode CreatePoseProperty(const FString& InMapPrefix, const FString& InId);
+	static FOwlNode CreatePoseProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create linear constraint property
-	static FOwlNode CreateLinearConstraintProperty(const FString& InMapPrefix, const FString& InId);
+	static FOwlNode CreateLinearConstraintProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create angular constraint property
-	static FOwlNode CreateAngularConstraintProperty(const FString& InMapPrefix, const FString& InId);
+	static FOwlNode CreateAngularConstraintProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create child property
-	static FOwlNode CreateChildProperty(const FString& InMapPrefix, const FString& InId);
+	static FOwlNode CreateChildProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create parent property
-	static FOwlNode CreateParentProperty(const FString& InMapPrefix, const FString& InId);
+	static FOwlNode CreateParentProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create a location property
 	static FOwlNode CreateLocationProperty(const FVector& InLoc);

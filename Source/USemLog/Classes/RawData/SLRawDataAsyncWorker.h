@@ -4,7 +4,7 @@
 #pragma once
 
 #include "Async/AsyncWork.h"
-#include "IRawDataWriter.h"
+#include "ISLRawDataWriter.h"
 
 /**
 * Raw data structure for the logged entities
@@ -97,5 +97,5 @@ private:
 	UWorld* World;
 
 	// Raw data writer
-	TSharedPtr<IRawDataWriter> Writer;
+	TSharedPtr<ISLRawDataWriter> Writer;
 };

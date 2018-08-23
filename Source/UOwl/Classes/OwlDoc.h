@@ -90,7 +90,7 @@ public:
 	}
 	
 	// Create ontology imports node
-	void SetOntologyNode(const FString& InMapName)
+	void SetOntologyNode(const FString& InDocOntologyName)
 	{
 		const FOwlPrefixName RdfAbout("rdf", "about");
 		const FOwlPrefixName OwlOntology("owl", "Ontology");
@@ -98,7 +98,7 @@ public:
 		// Create ontology import node
 		OntologyImports.Name = OwlOntology;
 		OntologyImports.AddAttribute(FOwlAttribute(RdfAbout,
-			FOwlAttributeValue("http://knowrob.org/kb/" + InMapName + ".owl")));
+			FOwlAttributeValue("http://knowrob.org/kb/" + InDocOntologyName + ".owl")));
 		OntologyImports.Comment = TEXT("Ontologies");
 	}
 

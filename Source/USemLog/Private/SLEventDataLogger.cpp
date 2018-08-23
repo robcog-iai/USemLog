@@ -5,6 +5,7 @@
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 #include "OwlEventsStatics.h"
+#include "Ids.h"
 
 // Constructor
 USLEventDataLogger::USLEventDataLogger()
@@ -32,7 +33,7 @@ void USLEventDataLogger::FinishDestroy()
 }
 
 // Init Logger
-void USLEventDataLogger::Init(const FString& InLogDirectory, const FString& InEpisodeId, EEventsTemplate TemplateType)
+void USLEventDataLogger::Init(const FString& InLogDirectory, const FString& InEpisodeId, ESLEventsTemplate TemplateType)
 {
 	LogDirectory = InLogDirectory;
 	EpisodeId = InEpisodeId;
@@ -68,7 +69,7 @@ void USLEventDataLogger::ListenToSemanticContactEvents()
 }
 
 // Called when a semantic contact is finished
-void USLEventDataLogger::OnSemanticContactEvent(IEvent* Event)
+void USLEventDataLogger::OnSemanticContactEvent(FSLContactEvent* Event)
 {
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
@@ -87,17 +88,17 @@ bool USLEventDataLogger::WriteToFile()
 }
 
 // Create events doc (experiment) template
-TSharedPtr<FOwlEvents> USLEventDataLogger::CreateEventsDocTemplate(EEventsTemplate TemplateType, const FString& InExperimentId)
+TSharedPtr<FOwlEvents> USLEventDataLogger::CreateEventsDocTemplate(ESLEventsTemplate TemplateType, const FString& InDocId)
 {
-	const FString ExperimentId = InExperimentId.IsEmpty() ? FIds::NewGuidInBase64Url() : InExperimentId;
+	const FString DocId = InDocId.IsEmpty() ? FIds::NewGuidInBase64Url() : InDocId;
 
-	if (TemplateType == EEventsTemplate::Default)
+	if (TemplateType == ESLEventsTemplate::Default)
 	{
-		return FOwlEventsStatics::CreateDefaultExperiment(ExperimentId);
+		return FOwlEventsStatics::CreateDefaultExperiment(DocId);
 	}
-	else if (TemplateType == EEventsTemplate::IAI)
+	else if (TemplateType == ESLEventsTemplate::IAI)
 	{
-		return FOwlEventsStatics::CreateUEExperiment(ExperimentId);
+		return FOwlEventsStatics::CreateUEExperiment(DocId);
 	}
 	return MakeShareable(new FOwlEvents());
 }

@@ -16,47 +16,47 @@ public:
 	FOwlNode SemMapIndividual;
 
 	// Map prefix (e.g. ue-def from rdf:about="&ue-def;4dfw4smiMD9ne1">)
-	FString MapPrefix;
+	FString DocPrefix;
 
 	// Used for ontologies (e.g UE-DefaultMap, from "http://knowrob.org/kb/UE-DefaultMap.owl#")
-	FString MapOntologyName;
+	FString DocOntologyName;
 
 	// Map unique Id
-	FString MapId;
+	FString DocId;
 
 public:
 	// Default constructor
 	FOwlSemanticMap() {}
 
 	// Init constructor
-	FOwlSemanticMap(const FString& InMapPrefix,
-		const FString& InMapOntologyName,
-		const FString& InMapId) :
-		MapPrefix(InMapPrefix),
-		MapOntologyName(InMapOntologyName),
-		MapId(InMapId)
+	FOwlSemanticMap(const FString& InDocPrefix,
+		const FString& InDocOntologyName,
+		const FString& InDocId) :
+		DocPrefix(InDocPrefix),
+		DocOntologyName(InDocOntologyName),
+		DocId(InDocId)
 	{
-		SetOntologyNode(InMapOntologyName);
+		SetOntologyNode(InDocOntologyName);
 	}
 
 	// Destructor
 	~FOwlSemanticMap() {}
 	
 	// Create semantic map node individual
-	void AddSemanticMapIndividual(const FString& InMapPrefix, const FString& InMapId)
+	void AddSemanticMapIndividual(const FString& InDocPrefix, const FString& InDocId)
 	{
 		const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 		const FOwlPrefixName RdfAbout("rdf", "about");
 		const FOwlPrefixName RdfType("rdf", "type");
 		const FOwlPrefixName RdfResource("rdf", "resource");
-		const FOwlAttributeValue SemMapInd(InMapPrefix, InMapId);
+		const FOwlAttributeValue SemMapInd(InDocPrefix, InDocId);
 
 		// Create semantic map individual
 		SemMapIndividual.Name = OwlNI;
 		SemMapIndividual.AddAttribute(FOwlAttribute(RdfAbout, SemMapInd));
 		SemMapIndividual.AddChildNode(FOwlNode(RdfType, FOwlAttribute(
 			RdfResource, FOwlAttributeValue("knowrob", "SemanticEnvironmentMap"))));
-		SemMapIndividual.Comment = "Semantic Map " + InMapId;
+		SemMapIndividual.Comment = "Semantic Map " + InDocId;
 
 		// Add map to the document individuals
 		Individuals.Add(SemMapIndividual);

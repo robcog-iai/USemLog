@@ -6,7 +6,7 @@
 /**
  * Abstract class for raw data writer
  */
-class IRawDataWriter
+class ISLRawDataWriter
 {
 public:
 	// Called to write the data

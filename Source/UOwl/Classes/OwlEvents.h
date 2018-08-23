@@ -15,48 +15,50 @@ public:
 	// Experiment individual
 	FOwlNode ExperimentIndividual;
 
+	// TODO Start these can be moved in the OwlDoc base class
 	// Event owl prefix (e.g. log from rdf:about="&log;abc123">")
-	FString ExperimentPrefix;
+	FString DocPrefix;
 
 	// Used for ontologies (e.g UE-Experiment, from "http://knowrob.org/kb/UE-Experiment.owl#")
-	FString ExperimentOntologyName;
+	FString DocOntologyName;
 
 	// Experiment unique Id
-	FString ExperimentId;
+	FString DocId;
+	// TODO End these can be moved in the OwlDoc base class
 
 public:
 	// Default constructor
 	FOwlEvents() {}
 
 	// Init constructor
-	FOwlEvents(const FString& InExperimentPrefix,
-		const FString& InExperimentOntologyName,
-		const FString& InExperimentId) :
-		ExperimentPrefix(InExperimentPrefix),
-		ExperimentOntologyName(InExperimentOntologyName),
-		ExperimentId(InExperimentId)
+	FOwlEvents(const FString& InDocPrefix,
+		const FString& InDocOntologyName,
+		const FString& InDocId) :
+		DocPrefix(InDocPrefix),
+		DocOntologyName(InDocOntologyName),
+		DocId(InDocId)
 	{
-		SetOntologyNode(InExperimentOntologyName);
+		SetOntologyNode(InDocOntologyName);
 	}
 
 	// Destructor
 	~FOwlEvents() {}
 
 	// Create experiment node individual
-	void AddExperimentIndividual(const FString& InExperimentPrefix, const FString& InExperimentId)
+	void AddExperimentIndividual(const FString& InDocPrefix, const FString& InDocId)
 	{
 		const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 		const FOwlPrefixName RdfAbout("rdf", "about");
 		const FOwlPrefixName RdfType("rdf", "type");
 		const FOwlPrefixName RdfResource("rdf", "resource");
-		const FOwlAttributeValue SemMapInd(InExperimentPrefix, InExperimentId);
+		const FOwlAttributeValue SemMapInd(InDocPrefix, InDocId);
 
 		// Create semantic map individual
 		ExperimentIndividual.Name = OwlNI;
 		ExperimentIndividual.AddAttribute(FOwlAttribute(RdfAbout, SemMapInd));
 		ExperimentIndividual.AddChildNode(FOwlNode(RdfType, FOwlAttribute(
 			RdfResource, FOwlAttributeValue("knowrob", "UnrealExperiment"))));
-		ExperimentIndividual.Comment = "Experiment Individual " + InExperimentId;
+		ExperimentIndividual.Comment = "Experiment Individual " + InDocId;
 
 		// Add map to the document individuals
 		Individuals.Add(ExperimentIndividual);

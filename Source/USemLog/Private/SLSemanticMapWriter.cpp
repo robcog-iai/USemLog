@@ -42,21 +42,21 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 }
 
 // Create semantic map template
-TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate(EMapTemplate TemplateType, const FString& InMapId)
+TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate(EMapTemplate TemplateType, const FString& InDocId)
 {
-	const FString MapId = InMapId.IsEmpty() ? FIds::NewGuidInBase64Url() : InMapId;
+	const FString DocId = InDocId.IsEmpty() ? FIds::NewGuidInBase64Url() : InDocId;
 
 	if (TemplateType == EMapTemplate::Default)
 	{
-		return FOwlSemanticMapStatics::CreateDefaultSemanticMap(MapId);
+		return FOwlSemanticMapStatics::CreateDefaultSemanticMap(DocId);
 	}
 	else if (TemplateType == EMapTemplate::IAIKitchen)
 	{
-		return FOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(MapId);
+		return FOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(DocId);
 	}
 	else if (TemplateType == EMapTemplate::IAISupermarket)
 	{
-		return FOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(MapId);
+		return FOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(DocId);
 	}
 	return MakeShareable(new FOwlSemanticMap());
 }
@@ -106,8 +106,8 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSem
 	const FString& InClass)
 {
 	// Get map data
-	const FString MapPrefix = InSemMap->MapPrefix;
-	const FString MapId = InSemMap->MapId;
+	const FString MapPrefix = InSemMap->DocPrefix;
+	const FString DocId = InSemMap->DocId;
 
 	// Create the object individual
 	FOwlNode ObjIndividual = FOwlSemanticMapStatics::CreateObjectIndividual(
@@ -115,7 +115,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSem
 
 	// Add describedInMap property
 	ObjIndividual.AddChildNode(FOwlSemanticMapStatics::CreateDescribedInMapProperty(
-		MapPrefix, MapId));
+		MapPrefix, DocId));
 	
 	// Add parent property
 	const FString ParentId = GetParentId(Object);
@@ -306,7 +306,7 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> I
 	const FString& InId,
 	const TArray<FName>& InTags)
 {
-	const FString MapPrefix = InSemMap->MapPrefix;
+	const FString MapPrefix = InSemMap->DocPrefix;
 	AActor* ParentAct = ConstraintComp->ConstraintActor1;
 	AActor* ChildAct = ConstraintComp->ConstraintActor2;
 	if (ParentAct && ChildAct)

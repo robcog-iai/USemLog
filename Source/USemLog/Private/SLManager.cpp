@@ -1,11 +1,13 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SemanticLogger.h"
+#include "SLManager.h"
+#include "SLMappings.h"
+#include "SLContentSingleton.h"
 #include "Ids.h"
 
 // Sets default values
-ASemanticLogger::ASemanticLogger()
+ASLManager::ASLManager()
 {
 	// Disable tick on actor
 	PrimaryActorTick.bCanEverTick = false;
@@ -31,57 +33,59 @@ ASemanticLogger::ASemanticLogger()
 
 	// Events logger default values
 	bLogEventData = true;
-	EventsTemplateType = EEventsTemplate::Default;
+	EventsTemplateType = ESLEventsTemplate::Default;
 }
 
 // Sets default values
-ASemanticLogger::~ASemanticLogger()
+ASLManager::~ASLManager()
 {
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
-	ASemanticLogger::FinishLogging();
+	ASLManager::Finish();
 }
 
 // Called when the game starts or when spawned
-void ASemanticLogger::BeginPlay()
+void ASLManager::BeginPlay()
 {
 	Super::BeginPlay();
 
 	if (bStartAtBeginPlay)
 	{
-		ASemanticLogger::InitLogging();
-		ASemanticLogger::StartLogging();
+		ASLManager::Init();
+		ASLManager::Start();
 	}
 }
 
 // Called when actor removed from game or game ended
-void ASemanticLogger::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	ASemanticLogger::FinishLogging();
+	ASLManager::Finish();
 }
 
 // 
-void ASemanticLogger::BeginDestroy()
+void ASLManager::BeginDestroy()
 {
 	Super::BeginDestroy();
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
 //
-void ASemanticLogger::FinishDestroy()
+void ASLManager::FinishDestroy()
 {
 	Super::FinishDestroy();
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init loggers
-void ASemanticLogger::InitLogging()
+void ASLManager::Init()
 {
 	if (!bIsInit)
 	{
 		// Init the semantic items content singleton
-		FSLContentSingleton::GetInstance()->Init();
+		//FSLMappings::GetInstance()->LoadData(GetWorld());
+		//FSLMappings::GetInstance();
+		//FSLContentSingleton::GetInstance();
 
 		if (EpisodeId.Equals(TEXT("autogen")))
 		{
@@ -123,7 +127,7 @@ void ASemanticLogger::InitLogging()
 }
 
 // Start loggers
-void ASemanticLogger::StartLogging()
+void ASLManager::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -145,7 +149,7 @@ void ASemanticLogger::StartLogging()
 }
 
 // Finish loggers
-void ASemanticLogger::FinishLogging()
+void ASLManager::Finish()
 {
 	if (bIsStarted || bIsInit)
 	{
@@ -170,7 +174,7 @@ void ASemanticLogger::FinishLogging()
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
-void ASemanticLogger::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -179,7 +183,7 @@ void ASemanticLogger::PostEditChangeProperty(struct FPropertyChangedEvent& Prope
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	// Radio button style between bLogToJson, bLogToBson, bLogToMongo
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASemanticLogger, bLogToJson)) 
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogToJson)) 
 	{
 		if (bLogToJson)
 		{
@@ -188,7 +192,7 @@ void ASemanticLogger::PostEditChangeProperty(struct FPropertyChangedEvent& Prope
 			bLogToMongo = false;
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASemanticLogger, bLogToBson))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogToBson))
 	{
 		if (bLogToBson)
 		{
@@ -196,7 +200,7 @@ void ASemanticLogger::PostEditChangeProperty(struct FPropertyChangedEvent& Prope
 			bLogToMongo = false;
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASemanticLogger, bLogToMongo))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogToMongo))
 	{
 		if (bLogToMongo)
 		{

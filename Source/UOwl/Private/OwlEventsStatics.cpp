@@ -1,18 +1,20 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
+#pragma once
+
 #include "OwlEventsStatics.h"
 
 /* Semantic map template creation */
 // Create Default semantic map
 TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateDefaultExperiment(
-	const FString& InExperimentId,
-	const FString& InExperimentPrefix,
-	const FString& InExperimentOntologyName)
+	const FString& InDocId,
+	const FString& InDocPrefix,
+	const FString& InDocOntologyName)
 {
 	// Create map document
 	TSharedPtr<FOwlEvents> Experiment = MakeShareable(
-		new FOwlEvents(InExperimentPrefix, InExperimentOntologyName, InExperimentId));
+		new FOwlEvents(InDocPrefix, InDocOntologyName, InDocId));
 
 	// Add definitions
 	Experiment->AddEntityDefintion("owl", "http://www.w3.org/2002/07/owl#");
@@ -20,17 +22,17 @@ TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateDefaultExperiment(
 	Experiment->AddEntityDefintion("knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	Experiment->AddEntityDefintion("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	Experiment->AddEntityDefintion("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	Experiment->AddEntityDefintion(InExperimentPrefix, "http://knowrob.org/kb/" + InExperimentOntologyName + ".owl#");
+	Experiment->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add namespaces
-	Experiment->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InExperimentOntologyName + ".owl#");
-	Experiment->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InExperimentOntologyName + ".owl#");
+	Experiment->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	Experiment->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 	Experiment->AddNamespaceDeclaration("xmlns", "owl", "http://www.w3.org/2002/07/owl#");
 	Experiment->AddNamespaceDeclaration("xmlns", "xsd", "http://www.w3.org/2001/XMLSchema#");
 	Experiment->AddNamespaceDeclaration("xmlns", "knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	Experiment->AddNamespaceDeclaration("xmlns", "rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	Experiment->AddNamespaceDeclaration("xmlns", "rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	Experiment->AddNamespaceDeclaration("xmlns", InExperimentPrefix, "http://knowrob.org/kb/" + InExperimentOntologyName + ".owl#");
+	Experiment->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Set and add imports
 	Experiment->AddOntologyImport("package://knowrob_common/owl/knowrob.owl");
@@ -59,72 +61,62 @@ TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateDefaultExperiment(
 
 	// Add individuals comment
 	Experiment->AddIndividual(FOwlCommentNode("Event Individuals"));
-	Experiment->AddExperimentIndividual(InExperimentPrefix, InExperimentId);
+	Experiment->AddExperimentIndividual(InDocPrefix, InDocId);
 
 	return Experiment;
 }
 
 // Create IAI Kitchen semantic map
 TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateUEExperiment(
-	const FString& InExperimentId,
-	const FString& InExperimentPrefix,
-	const FString& InExperimentOntologyName)
+	const FString& InDocId,
+	const FString& InDocPrefix,
+	const FString& InDocOntologyName)
 {
 	TSharedPtr<FOwlEvents> Experiment = FOwlEventsStatics::CreateDefaultExperiment(
-		InExperimentId, InExperimentPrefix, InExperimentOntologyName);
+		InDocId, InDocPrefix, InDocOntologyName);
 
 	Experiment->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_kitchen_ue.owl");
 
 	return Experiment;
 }
 
-//
-///* Owl individuals creation */
-//// Create an object individual
-//FOwlNode FOwlEventsStatics::CreateObjectIndividual(
-//	const FString& InMapPrefix, 
-//	const FString& Id,
-//	const FString& Class)
-//{
-//	// Prefix name constants
-//	const FOwlPrefixName RdfAbout("rdf", "about");
-//	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
-//
-//	FOwlNode ObjectIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, Id)));
-//	ObjectIndividual.Comment = TEXT("Individual " + Class + " " + Id);
-//	ObjectIndividual.AddChildNode(FOwlEventsStatics::CreateClassProperty(Class));
-//	return ObjectIndividual;
-//}
-//
-//// Create a pose individual
-//FOwlNode FOwlEventsStatics::CreatePoseIndividual(
-//	const FString& InMapPrefix,
-//	const FString& InId,
-//	const FVector& InLoc,
-//	const FQuat& InQuat)
-//{
-//	// Prefix name constants
-//	const FOwlPrefixName RdfAbout("rdf", "about");
-//	const FOwlPrefixName RdfType("rdf", "type");
-//	const FOwlPrefixName RdfResource("rdf", "resource");
-//	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
-//
-//	// Attribute values constants
-//	const FOwlAttributeValue AttrValPose("knowrob", "Pose");
-//	const FOwlAttributeValue AttrValString("xsd", "string");
-//
-//	// Pose individual
-//	FOwlNode PoseIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, InId)));
-//	FOwlNode PoseProperty(RdfType, FOwlAttribute(RdfResource, AttrValPose));
-//	PoseIndividual.AddChildNode(PoseProperty);
-//	PoseIndividual.AddChildNode(FOwlEventsStatics::CreateQuaternionProperty(InQuat));
-//	PoseIndividual.AddChildNode(FOwlEventsStatics::CreateLocationProperty(InLoc));
-//	return PoseIndividual;
-//}
-//
+
+/* Owl individuals creation */
+// Create an object individual
+FOwlNode FOwlEventsStatics::CreateEventIndividual(
+	const FString& InDocPrefix,
+	const FString& Id,
+	const FString& Class)
+{
+	// Prefix name constants
+	const FOwlPrefixName RdfAbout("rdf", "about");
+	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
+
+	FOwlNode Individual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(
+		InDocPrefix, Id)));
+	Individual.AddChildNode(FOwlEventsStatics::CreateClassProperty(Class));
+	return Individual;
+}
+
+// Create a timepoint individual
+FOwlNode FOwlEventsStatics::CreateTimepointIndividual(
+	const FString& InDocPrefix,
+	const float Timepoint)
+{
+	// Prefix name constants
+	const FOwlPrefixName RdfAbout("rdf", "about");
+	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
+
+	const FString Id = "timepoint_" + FString::SanitizeFloat(Timepoint);
+	FOwlNode Individual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(
+		InDocPrefix, Id)));
+	Individual.AddChildNode(FOwlEventsStatics::CreateClassProperty("Timepoint"));
+	return Individual;
+}
+
 //// Create a constraint individual
 //FOwlNode FOwlEventsStatics::CreateConstraintIndividual(
-//	const FString& InMapPrefix,
+//	const FString& InDocPrefix,
 //	const FString& InId,
 //	const FString& ParentId,
 //	const FString& ChildId)
@@ -132,18 +124,18 @@ TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateUEExperiment(
 //	const FOwlPrefixName RdfAbout("rdf", "about");
 //	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 //
-//	FOwlNode ObjectIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, InId)));
+//	FOwlNode ObjectIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InDocPrefix, InId)));
 //	ObjectIndividual.Comment = TEXT("Constraint " + InId);
 //	ObjectIndividual.AddChildNode(FOwlEventsStatics::CreateClassProperty("Constraint"));
-//	ObjectIndividual.AddChildNode(FOwlEventsStatics::CreateParentProperty(InMapPrefix, ParentId));
-//	ObjectIndividual.AddChildNode(FOwlEventsStatics::CreateChildProperty(InMapPrefix, ChildId));
+//	ObjectIndividual.AddChildNode(FOwlEventsStatics::CreateParentProperty(InDocPrefix, ParentId));
+//	ObjectIndividual.AddChildNode(FOwlEventsStatics::CreateChildProperty(InDocPrefix, ChildId));
 //
 //	return ObjectIndividual;
 //}
 //
 //// Create constraint linear limits individual
 //FOwlNode FOwlEventsStatics::CreateLinearConstraintProperties(
-//	const FString& InMapPrefix, 
+//	const FString& InDocPrefix, 
 //	const FString& InId,
 //	uint8 XMotion,
 //	uint8 YMotion,
@@ -156,7 +148,7 @@ TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateUEExperiment(
 //	const FOwlPrefixName RdfAbout("rdf", "about");
 //	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 //
-//	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, InId)));
+//	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InDocPrefix, InId)));
 //	ConstrPropIndividual.AddChildNode(FOwlEventsStatics::CreateClassProperty("LinearConstraint"));
 //	ConstrPropIndividual.AddChildNode(FOwlEventsStatics::CreateIntValueProperty(
 //		FOwlPrefixName("knowrob", "xMotion"), XMotion));
@@ -178,7 +170,7 @@ TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateUEExperiment(
 //
 //// Create constraint angular limits individual
 //FOwlNode FOwlEventsStatics::CreateAngularConstraintProperties(
-//	const FString& InMapPrefix,
+//	const FString& InDocPrefix,
 //	const FString& InId,
 //	uint8 Swing1Motion,
 //	uint8 Swing2Motion,
@@ -196,7 +188,7 @@ TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateUEExperiment(
 //	const FOwlPrefixName RdfAbout("rdf", "about");
 //	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 //
-//	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InMapPrefix, InId)));
+//	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InDocPrefix, InId)));
 //	ConstrPropIndividual.AddChildNode(FOwlEventsStatics::CreateClassProperty("AngularConstraint"));
 //	ConstrPropIndividual.AddChildNode(FOwlEventsStatics::CreateIntValueProperty(
 //		FOwlPrefixName("knowrob","swing1Motion"), Swing1Motion));
@@ -235,32 +227,47 @@ TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateUEExperiment(
 //
 //	return FOwlNode(OwlClass, FOwlAttribute(RdfAbout, FOwlAttributeValue("knowrob", InClass)));
 //}
-//
-///* Owl properties creation */
-//// Create property
-//FOwlNode FOwlEventsStatics::CreateGenericProperty(const FOwlPrefixName& InPrefixName,
-//	const FOwlAttributeValue& InAttributeValue)
-//{
-//	return FOwlNode();
-//}
-//
-//// Create class property
-//FOwlNode FOwlEventsStatics::CreateClassProperty(const FString& InClass)
-//{
-//	const FOwlPrefixName RdfResource("rdf", "resource");
-//	const FOwlPrefixName RdfType("rdf", "type");
-//
-//	return FOwlNode(RdfType, FOwlAttribute(RdfResource, FOwlAttributeValue("knowrob", InClass)));
-//}
-//
+
+/* Owl properties creation */
+// Create class property
+FOwlNode FOwlEventsStatics::CreateClassProperty(const FString& InClass)
+{
+	const FOwlPrefixName RdfResource("rdf", "resource");
+	const FOwlPrefixName RdfType("rdf", "type");
+
+	return FOwlNode(RdfType, FOwlAttribute(RdfResource, FOwlAttributeValue("knowrob", InClass)));
+}
+
+// Create startTime property
+FOwlNode FOwlEventsStatics::CreateStartTimeProperty(const FString& InDocPrefix, const float Timepoint)
+{
+	const FOwlPrefixName RdfResource("rdf", "resource");
+	const FOwlPrefixName KbStartTime("knowrob", "startTime");
+
+	const FString Id = "timepoint_" + FString::SanitizeFloat(Timepoint);
+	return FOwlNode(KbStartTime, FOwlAttribute(
+		RdfResource, FOwlAttributeValue(InDocPrefix, Id)));
+}
+
+// Create endTime property
+FOwlNode FOwlEventsStatics::CreateEndTimeProperty(const FString& InDocPrefix, const float Timepoint)
+{
+	const FOwlPrefixName RdfResource("rdf", "resource");
+	const FOwlPrefixName KbEndTime("knowrob", "endTime");
+
+	const FString Id = "timepoint_" + FString::SanitizeFloat(Timepoint);
+	return FOwlNode(KbEndTime, FOwlAttribute(
+		RdfResource, FOwlAttributeValue(InDocPrefix, Id)));
+}
+
 //// Create describedInMap property
 //FOwlNode FOwlEventsStatics::CreateDescribedInMapProperty(
-//	const FString& InMapPrefix, const FString& InMapId)
+//	const FString& InDocPrefix, const FString& InDocId)
 //{
 //	const FOwlPrefixName RdfResource("rdf", "resource");
 //	const FOwlPrefixName KbDescribedInMap("knowrob", "describedInMap");
 //
-//	return FOwlNode(KbDescribedInMap, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InMapId)));
+//	return FOwlNode(KbDescribedInMap, FOwlAttribute(RdfResource, FOwlAttributeValue(InDocPrefix, InDocId)));
 //}
 //
 //// Create pathToCadModel property
@@ -385,48 +392,48 @@ TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateUEExperiment(
 //}
 //
 //// Create pose property
-//FOwlNode FOwlEventsStatics::CreatePoseProperty(const FString& InMapPrefix, const FString& InId)
+//FOwlNode FOwlEventsStatics::CreatePoseProperty(const FString& InDocPrefix, const FString& InId)
 //{
 //	const FOwlPrefixName KbPose("knowrob", "pose");
 //	const FOwlPrefixName RdfResource("rdf", "resource");
 //
-//	return FOwlNode(KbPose, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
+//	return FOwlNode(KbPose, FOwlAttribute(RdfResource, FOwlAttributeValue(InDocPrefix, InId)));
 //}
 //
 //// Create linear constraint property
-//FOwlNode FOwlEventsStatics::CreateLinearConstraintProperty(const FString& InMapPrefix, const FString& InId)
+//FOwlNode FOwlEventsStatics::CreateLinearConstraintProperty(const FString& InDocPrefix, const FString& InId)
 //{
 //	const FOwlPrefixName KbLinearConstr("knowrob", "linearConstraint");
 //	const FOwlPrefixName RdfResource("rdf", "resource");
 //
-//	return FOwlNode(KbLinearConstr, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
+//	return FOwlNode(KbLinearConstr, FOwlAttribute(RdfResource, FOwlAttributeValue(InDocPrefix, InId)));
 //}
 //
 //// Create angular constraint property
-//FOwlNode FOwlEventsStatics::CreateAngularConstraintProperty(const FString& InMapPrefix, const FString& InId)
+//FOwlNode FOwlEventsStatics::CreateAngularConstraintProperty(const FString& InDocPrefix, const FString& InId)
 //{
 //	const FOwlPrefixName KbAngularConstr("knowrob", "angularConstraint");
 //	const FOwlPrefixName RdfResource("rdf", "resource");
 //
-//	return FOwlNode(KbAngularConstr, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
+//	return FOwlNode(KbAngularConstr, FOwlAttribute(RdfResource, FOwlAttributeValue(InDocPrefix, InId)));
 //}
 //
 //// Create child property
-//FOwlNode FOwlEventsStatics::CreateChildProperty(const FString& InMapPrefix, const FString& InId)
+//FOwlNode FOwlEventsStatics::CreateChildProperty(const FString& InDocPrefix, const FString& InId)
 //{
 //	const FOwlPrefixName KbChild("knowrob", "child");
 //	const FOwlPrefixName RdfResource("rdf", "resource");
 //
-//	return FOwlNode(KbChild, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
+//	return FOwlNode(KbChild, FOwlAttribute(RdfResource, FOwlAttributeValue(InDocPrefix, InId)));
 //}
 //
 //// Create parent property
-//FOwlNode FOwlEventsStatics::CreateParentProperty(const FString& InMapPrefix, const FString& InId)
+//FOwlNode FOwlEventsStatics::CreateParentProperty(const FString& InDocPrefix, const FString& InId)
 //{
 //	const FOwlPrefixName KbParent("knowrob", "parent");
 //	const FOwlPrefixName RdfResource("rdf", "resource");
 //
-//	return FOwlNode(KbParent, FOwlAttribute(RdfResource, FOwlAttributeValue(InMapPrefix, InId)));
+//	return FOwlNode(KbParent, FOwlAttribute(RdfResource, FOwlAttributeValue(InDocPrefix, InId)));
 //}
 //
 //// Create a location node

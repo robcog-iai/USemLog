@@ -4,17 +4,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EventData/IEvent.h"
+#include "EventData/SLContactEvent.h"
 #include "SLContactPoolSingleton.generated.h"
 
 
 /** Delegate for notification of start of overlap with a semantic entity */
-DECLARE_DELEGATE_OneParam(FSemanticContactEvent, IEvent*);
+DECLARE_DELEGATE_OneParam(FSLContactEventSignature, FSLContactEvent*);
 
 /**
 * Semantic contact event structure
 */
-struct FSemContact
+struct FSLContactData
 {
 	float Timestamp;
 	uint32 Obj1Id;
@@ -56,10 +56,10 @@ public:
 	virtual TStatId GetStatId() const override;
 	/** End FTickableGameObject interface */
 
-	void Register(class USLContactListener* ContactListener);
+	void Register(class USLContactTrigger* ContactListener);
 
 	// 
-	TArray<IEvent*> FinishPendingContactEvents();
+	TArray<FSLContactEvent*> FinishPendingContactEvents();
 
 //protected:
 //	// 
@@ -90,7 +90,7 @@ private:
 
 public:
 	// Event called when a semantic contact event is finished
-	FSemanticContactEvent OnSemanticContactEvent;
+	FSLContactEventSignature OnSemanticContactEvent;
 
 private:
 	// Set if new semantic contact event is triggered

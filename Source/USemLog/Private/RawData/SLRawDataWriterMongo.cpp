@@ -4,10 +4,11 @@
 #include "RawData/SLRawDataWriterMongo.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Conversions.h"
+#if USE_LIBMONGO
 #include "mongoc.h"
 #include "bson.h"
 #include "string"
-
+#endif //USE_LIBMONGO
 
 // Constr
 FSLRawDataWriterMongo::FSLRawDataWriterMongo()
@@ -48,6 +49,7 @@ void FSLRawDataWriterMongo::Init(FSLRawDataAsyncWorker* InWorkerParent,
 // Called to write the data
 void FSLRawDataWriterMongo::WriteData()
 {
+#if USE_LIBMONGO
 	if (bConnect)
 	{
 		// Bson root object
@@ -79,7 +81,7 @@ void FSLRawDataWriterMongo::WriteData()
 
 		bson_destroy(BsonRootObj);
 	}
-
+#endif //USE_LIBMONGO
 }
 
 // Set the file handle for the logger
@@ -88,6 +90,7 @@ bool FSLRawDataWriterMongo::ConnectToMongo(const FString& InLogDB,
 	const FString& InMongoIP,
 	uint16 MongoPort)
 {	
+#if USE_LIBMONGO
 	// set the uri address
 	FString Furi_str = TEXT("mongodb://")+ InMongoIP+TEXT(":") + FString::FromInt(MongoPort);
 	
@@ -122,10 +125,12 @@ bool FSLRawDataWriterMongo::ConnectToMongo(const FString& InLogDB,
 		UE_LOG(LogTemp, Warning, TEXT("Database connection failed"));
 		return false;
 	}
-
-	
+#else
+	return false;
+#endif //USE_LIBMONGO	
 }
 
+#if USE_LIBMONGO
 // Add actors
 void FSLRawDataWriterMongo::AddActors(bson_t& OutBsonEntitiesArr)
 {
@@ -326,3 +331,4 @@ void FSLRawDataWriterMongo::WriteToMongo(bson_t*& InRootObj, mongoc_collection_t
 		UE_LOG(LogTemp,Warning, TEXT("Data has been stored in mongo."));
 	}
 }
+#endif //USE_LIBMONGO

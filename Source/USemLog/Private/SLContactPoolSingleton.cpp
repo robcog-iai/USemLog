@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLContactPoolSingleton.h"
-#include "SLContactListener.h"
+#include "SLContactTrigger.h"
 
 //static TSharedPtr<USLContactPoolSingleton> USLContactPoolSingleton::StaticInstance = nullptr;
 static USLContactPoolSingleton* StaticInstance = nullptr;
@@ -84,7 +84,7 @@ void USLContactPoolSingleton::Foo()
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
-void USLContactPoolSingleton::Register(USLContactListener* ContactListener)
+void USLContactPoolSingleton::Register(USLContactTrigger* ContactListener)
 {
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d] Registering: %s"),
 		TEXT(__FUNCTION__), __LINE__, *ContactListener->GetName());
@@ -94,9 +94,9 @@ void USLContactPoolSingleton::Register(USLContactListener* ContactListener)
 }
 
 // 
-TArray<IEvent*> USLContactPoolSingleton::FinishPendingContactEvents()
+TArray<FSLContactEvent*> USLContactPoolSingleton::FinishPendingContactEvents()
 {
-	return TArray<IEvent*>();
+	return TArray<FSLContactEvent*>();
 }
 
 void USLContactPoolSingleton::OnNewBeginSemanticContact(AActor* OtherActor, const FString& Id)

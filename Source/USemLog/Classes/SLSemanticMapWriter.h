@@ -38,7 +38,7 @@ private:
 	// Create semantic map template
 	TSharedPtr<FOwlSemanticMap> CreateSemanticMapDocTemplate(
 		EMapTemplate TemplateType,
-		const FString& MapId = "");
+		const FString& DocId = "");
 
 	// Add individuals to the semantic map
 	void AddAllIndividuals(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World);

@@ -6,23 +6,22 @@
 #include "GameFramework/Info.h"
 #include "SLRawDataLogger.h"
 #include "SLEventDataLogger.h"
-#include "SLContentSingleton.h"
-#include "SemanticLogger.generated.h"
+#include "SLManager.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class USEMLOG_API ASemanticLogger : public AInfo
+class USEMLOG_API ASLManager : public AInfo
 {
 	GENERATED_BODY()
 	
 public:
 	// Sets default values for this actor's properties
-	ASemanticLogger();
+	ASLManager();
 
 	// Destructor
-	~ASemanticLogger();
+	~ASLManager();
 
 protected:
 	// Called when the game starts or when spawned
@@ -39,13 +38,13 @@ protected:
 
 public:
 	// Init loggers
-	void InitLogging();
+	void Init();
 
 	// Start loggers
-	void StartLogging();
+	void Start();
 
 	// Finish loggers
-	void FinishLogging();
+	void Finish();
 	
 private:
 	// Called when a property is changed in the editor
@@ -110,7 +109,6 @@ private:
 	USLRawDataLogger* RawDataLogger;
 
 
-
 	/* Event data logger properties */
 	// Log event data
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger")
@@ -118,7 +116,7 @@ private:
 
 	// Owl template
 	UPROPERTY(EditAnywhere, Category = "SL|Event Data Logger")
-	EEventsTemplate EventsTemplateType;
+	ESLEventsTemplate EventsTemplateType;
 
 	// Event data logger, use UPROPERTY to avoid GC
 	UPROPERTY()
