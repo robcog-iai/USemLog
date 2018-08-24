@@ -43,6 +43,7 @@ private:
 	// USceneComponent interface
 	// Called when this component is moved in the editor
 	virtual void PostEditComponentMove(bool bFinished);
+#endif // WITH_EDITOR
 
 	// Load and apply cached parameters from tags
 	bool LoadAndApplyTriggerAreaSize();
@@ -52,7 +53,7 @@ private:
 
 	// Save parameters to tags
 	bool StoreTriggerAreaSize(const FTransform& InTransform, const FVector& InBoxExtent);
-#endif // WITH_EDITOR
+
 
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
 	bool RuntimeInit();
