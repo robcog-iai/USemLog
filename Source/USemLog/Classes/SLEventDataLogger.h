@@ -6,7 +6,6 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "OwlEvents.h"
-#include "SLContactPoolSingleton.h"
 #include "EventData/SLContactEvent.h"
 #include "SLEventDataLogger.generated.h"
 
@@ -61,7 +60,7 @@ private:
 	void ListenToSemanticContactEvents();
 
 	// Called when a semantic contact is finished
-	void OnSemanticContactEvent(FSLContactEvent* Event);
+	void OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event);
 
 	// Write events to file
 	bool WriteToFile();
@@ -83,10 +82,10 @@ private:
 	ESLEventsTemplate OwlDocTemplate;
 
 	// Array of pending events
-	TArray<ISLEvent*> PendingEvents;
+	TArray<TSharedPtr<ISLEvent>> PendingEvents;
 
 	// Array of pending events
-	TArray<ISLEvent*> FinishedEvents;
+	TArray<TSharedPtr<ISLEvent>> FinishedEvents;
 
 	// Owl document of the finished events
 	TSharedPtr<FOwlEvents> EventsDoc;

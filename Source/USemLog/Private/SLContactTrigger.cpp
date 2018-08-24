@@ -2,14 +2,11 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLContactTrigger.h"
-#include "Components/StaticMeshComponent.h"
-//#include "DrawDebugHelpers.h"
-#include "SLContentSingleton.h"
-#include "SLContactPoolSingleton.h"
 #include "SLMappings.h"
 
 // UUTils
 #include "Tags.h"
+#include "Ids.h"
 
 #define SL_COLL_SCALE_FACTOR 1.04f
 #define SL_COLL_TAGTYPE "SemLogColl"
@@ -25,16 +22,20 @@ void USLContactTrigger::BeginPlay()
 	Super::BeginPlay();
 
 	// Check if initialization is successful
-	if (Init())
+	if (RuntimeInit())
 	{
 		// Bind event delegates
 		OnComponentBeginOverlap.AddDynamic(this, &USLContactTrigger::OnOverlapBegin);
 		OnComponentEndOverlap.AddDynamic(this, &USLContactTrigger::OnOverlapEnd);
-		//OnComponentHit.AddDynamic(this, &USLContactListener::OnHit);
 	}
+}
 
-	//// Register listener to the pool
-	//USLContactPoolSingleton::GetInstance()->Register(this);
+// Called when actor removed from game or game ended
+void USLContactTrigger::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	// Terminate and publish pending contact events
+	FinishRemainingPendingEvents();
 }
 
 // Called after the C++ constructor and after the properties have been initialized
@@ -42,9 +43,9 @@ void  USLContactTrigger::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	if (!LoadStoredParameters())
+	if (!LoadAndApplyTriggerAreaSize())
 	{
-		ComputeAndStoreParameters(GetOuterMesh());
+		CalculateAndApplyTriggerAreaSize();
 	}
 	ShapeColor = FColor::Blue;
 }
@@ -130,22 +131,24 @@ void USLContactTrigger::PostEditComponentMove(bool bFinished)
 
 	FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 }
-#endif // WITH_EDITOR
 
 // Read values from tags
-bool USLContactTrigger::LoadStoredParameters()
+bool USLContactTrigger::LoadAndApplyTriggerAreaSize()
 {
 	TMap<FString, FString> TagKeyValMap = 
 		FTags::GetKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE);
 
 	if (TagKeyValMap.Num() == 0){return false;}
 
-	if (FString* ValPtr = TagKeyValMap.Find("ExtX")) { BoxExtent.X = FCString::Atof(**ValPtr); }
+	FVector BoxExt;
+	if (FString* ValPtr = TagKeyValMap.Find("ExtX")) { BoxExt.X = FCString::Atof(**ValPtr); }
 	else { return false; }
-	if (FString* ValPtr = TagKeyValMap.Find("ExtY")) { BoxExtent.Y = FCString::Atof(**ValPtr); }
+	if (FString* ValPtr = TagKeyValMap.Find("ExtY")) { BoxExt.Y = FCString::Atof(**ValPtr); }
 	else { return false; }
-	if (FString* ValPtr = TagKeyValMap.Find("ExtZ")) { BoxExtent.Z = FCString::Atof(**ValPtr); }
+	if (FString* ValPtr = TagKeyValMap.Find("ExtZ")) { BoxExt.Z = FCString::Atof(**ValPtr); }
 	else { return false; }
+
+	SetBoxExtent(BoxExt);
 
 	FVector RelLoc;
 	if (FString* ValPtr = TagKeyValMap.Find("LocX")) { RelLoc.X = FCString::Atof(**ValPtr); }
@@ -169,31 +172,39 @@ bool USLContactTrigger::LoadStoredParameters()
 	return true;
 }
 
-// Save values to tags
-bool USLContactTrigger::ComputeAndStoreParameters(UStaticMeshComponent* SMComp)
+// Calculate trigger area size
+bool USLContactTrigger::CalculateAndApplyTriggerAreaSize()
 {
-	if (SMComp == nullptr)
+	// Get the static mesh component
+	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
 	{
-		return false;
+		UStaticMeshComponent* SMComp = OuterAsSMAct->GetStaticMeshComponent();
+
+		// Apply parameters to the contact listener area
+		SetBoxExtent(SMComp->Bounds.BoxExtent * SL_COLL_SCALE_FACTOR);
+		// Apply its location
+		FTransform BoundsTransf(FQuat::Identity, SMComp->Bounds.Origin);
+		BoundsTransf.SetToRelativeTransform(SMComp->GetComponentTransform());
+		SetRelativeTransform(BoundsTransf);
+
+		// Save calculated data
+		StoreTriggerAreaSize(GetRelativeTransform(), BoxExtent);
+		return true;
 	}
+	return false;
+}
 
-	// Apply parameters to the contact listener area
-	SetBoxExtent(SMComp->Bounds.BoxExtent * SL_COLL_SCALE_FACTOR);
-	// Apply its location
-	FTransform BoundsTransf(FQuat::Identity, SMComp->Bounds.Origin);
-	BoundsTransf.SetToRelativeTransform(SMComp->GetComponentTransform());
-	SetRelativeTransform(BoundsTransf);
-
-	// Store calculated parameters (size / rotation / location)
-	const FTransform RelTransf = GetRelativeTransform();
-	const FVector RelLoc = RelTransf.GetLocation();
-	const FQuat RelQuat = RelTransf.GetRotation();
+// Save values to tags
+bool USLContactTrigger::StoreTriggerAreaSize(const FTransform& InTransform, const FVector& InBoxExtent)
+{
+	const FVector RelLoc = InTransform.GetLocation();
+	const FQuat RelQuat = InTransform.GetRotation();
 
 	TMap<FString, FString> KeyValMap;
 	
-	KeyValMap.Add("ExtX", FString::SanitizeFloat(BoxExtent.X));
-	KeyValMap.Add("ExtY", FString::SanitizeFloat(BoxExtent.Y));
-	KeyValMap.Add("ExtZ", FString::SanitizeFloat(BoxExtent.Z));
+	KeyValMap.Add("ExtX", FString::SanitizeFloat(InBoxExtent.X));
+	KeyValMap.Add("ExtY", FString::SanitizeFloat(InBoxExtent.Y));
+	KeyValMap.Add("ExtZ", FString::SanitizeFloat(InBoxExtent.Z));
 	
 	KeyValMap.Add("LocX", FString::SanitizeFloat(RelLoc.X));
 	KeyValMap.Add("LocY", FString::SanitizeFloat(RelLoc.Y));
@@ -206,9 +217,10 @@ bool USLContactTrigger::ComputeAndStoreParameters(UStaticMeshComponent* SMComp)
 	
 	return FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 }
+#endif // WITH_EDITOR
 
 // Setup pointers to outer, check if semantically annotated
-bool USLContactTrigger::Init()
+bool USLContactTrigger::RuntimeInit()
 {
 	// Make sure outer is a static mesh actor
 	if (AStaticMeshActor* OuterMeshAsAct = Cast<AStaticMeshActor>(GetOuter()))
@@ -236,24 +248,51 @@ bool USLContactTrigger::Init()
 	return false;
 }
 
-// Get the outer (owner) mesh component
-UStaticMeshComponent* USLContactTrigger::GetOuterMesh()
+// Start new contact event
+void USLContactTrigger::AddNewPendingContactEvent(const FString& InOtherSemLogId)
 {
-	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
-	{
-		OuterMeshAct = OuterAsSMAct;
-		return OuterAsSMAct->GetStaticMeshComponent();
-	}
-	else
-	{
-		return Cast<UStaticMeshComponent>(GetOuter());
-	}
+	// Start a semantic contact event
+	TSharedPtr<FSLContactEvent> Event = MakeShareable(new FSLContactEvent);
+	Event->Id = FIds::NewGuidInBase64Url();
+	Event->Obj1Id = OuterSemLogId;
+	Event->Obj2Id = InOtherSemLogId;
+	Event->Start = GetWorld()->GetTimeSeconds();
+	// Add event to the pending contacts array
+	PendingContactEvents.Emplace(Event);
 }
 
-// Get Id of outer (owner)
-FString USLContactTrigger::GetOuterSemLogId() const
+// Publish finished event
+bool USLContactTrigger::PublishFinishedContactEvent(const FString& InOtherSemLogId)
 {
-	return FTags::GetValue(GetOuter(), "SemLog", "Id");
+	// Use iterator to be able to remove the entry from the array
+	for (auto EventItr(PendingContactEvents.CreateIterator()); EventItr; ++EventItr)
+	{
+		if ((*EventItr)->Obj2Id.Equals(InOtherSemLogId))
+		{
+			// Set end time
+			(*EventItr)->End = GetWorld()->GetTimeSeconds();
+			// Publish event
+			OnSemanticContactEvent.ExecuteIfBound(*EventItr);
+			// Remove event from the pending list
+			EventItr.RemoveCurrent();
+			return true;
+		}
+	}
+	return false;
+}
+
+// Terminate and publish pending contact events (this usually is called at end play)
+void USLContactTrigger::FinishRemainingPendingEvents()
+{
+	const float EndTime = GetWorld()->GetTimeSeconds();
+	for (auto& Ev : PendingContactEvents)
+	{
+		// Set end time for the event
+		Ev->End = EndTime;
+		// Publish event
+		OnSemanticContactEvent.ExecuteIfBound(Ev);
+	}
+	PendingContactEvents.Empty();
 }
 
 // Called on overlap begin events
@@ -264,108 +303,53 @@ void USLContactTrigger::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
-	const uint32 OtherUniqueId = OtherActor->GetUniqueID();
-	// Check if other actor is semantically annotated
-	//const FString OtherSemLogId = FSLMappings::GetInstance()->GetSemLogId(OtherUniqueId);
-	FSLContentSingleton::GetInstance();
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d] !! OVERLAP BEGIN !! ME - OTHER : %s - %s"),
+		TEXT(__FUNCTION__), __LINE__, *OuterMeshAct->GetName(), *OtherActor->GetName());
 
-	// Check if collision with another semantic contact trigger volume
-	if (OtherComp->IsA(USLContactTrigger::StaticClass()) 
-		&& (OtherUniqueId > OuterUniqueId))
+	// Ignore overlaps with itself
+	if (OtherActor == OuterMeshAct)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[%s][%d] **IsA SLContact** Sweep result: %s \n Other: %s %s %i \n this %s %s %i \n ** \n"),
-			TEXT(__FUNCTION__), __LINE__, *SweepResult.ToString(),
-			*OtherActor->GetName(), *OtherComp->GetName(), OtherActor->GetUniqueID(),
-			*OuterMeshAct->GetName(), *OverlappedComp->GetName(), OuterUniqueId);
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d] Ignoring self collision - ABORT"), TEXT(__FUNCTION__), __LINE__);
+		return;
 	}
 
+	// Check if other actor is semantically annotated
+	const uint32 OtherUniqueId = OtherActor->GetUniqueID();
+	const FString OtherSemLogId = FSLMappings::GetInstance()->GetSemLogId(OtherUniqueId);
+	if (OtherSemLogId.IsEmpty())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d] Other is not semantically annotated - ABORT"), TEXT(__FUNCTION__), __LINE__);
+		return;
+	}
 	
+	// If both areas are trigger areas, they will both concurrently trigger overlap events.
+	// To avoid this we consistently ignore one trigger event. This is chosen using
+	// the unique ids of the overlapping actors (GetUniqueID), we compare the two values 
+	// and consistently pick the event with a given (larger or smaller) value.
+	// This allows us to be in sync with the overlap end event 
+	// since the unique ids and the rule of ignoring the one event will not change
+	if (OtherComp->IsA(USLContactTrigger::StaticClass()))
+	{
+		if (OtherUniqueId > OuterUniqueId)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[%s][%d] Add contact **TriggerArea** OtherId: %s"),
+				TEXT(__FUNCTION__), __LINE__, *OtherSemLogId);
 
+			// Create a new contact event
+			AddNewPendingContactEvent(OtherSemLogId);
+			return;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("[%s][%d] Other is a trigger area, avoiding double contact trigger - ABORT"), TEXT(__FUNCTION__), __LINE__);
+			return;
+		}
+	}
 
-	//// TODO use USLContentSingleton
-	//// Get the id of the other component
-	//FString OtherId = FTags::GetValue(OtherActor, "SemLog", "Id");
-	//if (OtherId.IsEmpty())
-	//{
-	//	OtherId = FTags::GetValue(OtherComp, "SemLog", "Id");
-	//	// If no unique id is found, return
-	//	if (OtherId.IsEmpty()) return;
-	//}
-
-	//OtherActor->GetUniqueID();
-	//OtherComp->GetUniqueID();
-
-	//// Check if other is a semantically annotated object
-	////USLContentSingleton::
-
-	////// If other 
-	////if (Cast<USLContactListener>(OtherComp))
-	////{
-
-	////}
-	//UE_LOG(LogTemp, Error, TEXT("\t OVERLAP Outer=%s, this=%s <--> Other=%s || %f || OtherId=%s -- MyId=%s"),
-	//	*GetOuter()->GetName(),
-	//	*GetName(),
-	//	*OtherActor->GetName(),
-	//	GetWorld()->GetTimeSeconds(),
-	//	*OtherId,
-	//	*OuterId);
-
-	////// TODO 
-	////// if OtherComp is SLContactListener --> avoid two contact events triggering
-
-	//////UE_LOG(LogTemp, Error, TEXT("[%s][%d] Other=%s, Normal=%s, ImpactNormal=%s, bFromSweep=%d, Time=%f"),
-	//////	TEXT(__FUNCTION__), __LINE__,
-	//////	*OtherActor->GetName(),
-	//////	*SweepResult.Normal.ToString(),
-	//////	*SweepResult.ImpactNormal.ToString(),
-	//////	bFromSweep,
-	//////	GetOuter()->GetWorld()->GetTimeSeconds());
-
-	//////UE_LOG(LogTemp, Error, TEXT("\t\t SweepResult: %s"), *SweepResult.ToString());
-
-	//////UE_LOG(LogTemp, Error, TEXT("\t\t this->GetComponentVelocity: %s"), *GetComponentVelocity().ToString());
-	//////UE_LOG(LogTemp, Error, TEXT("\t\t OverlappedComp->GetComponentVelocity(): %s"), *OverlappedComp->GetComponentVelocity().ToString());
-	//////UE_LOG(LogTemp, Error, TEXT("\t\t OuterMeshComp->GetComponentVelocity: %s"), *OuterMeshComp->GetComponentVelocity().ToString());
-	//////
-	//////GetOuter()->GetVel
-	////
-	////FHitResult OutHit;
-	////FCollisionShape B;
-	////if (SweepComponent(OutHit,
-	////	GetComponentLocation(),
-	////	GetComponentLocation() + OuterMeshComp->GetComponentVelocity(),
-	////	GetComponentQuat(), B, true))
-	////{
-	////	UE_LOG(LogTemp, Error, TEXT("\t OutHit: %s"), *OutHit.ToString());
-
-	////	DrawDebugPoint(GetWorld(), OutHit.ImpactPoint, 10.f, FColor::Red, true);
-	////	//DrawDebugPoint(GetWorld(), OutHit.Location, 10.f, FColor::Cyan, true);
-
-	////	DrawDebugDirectionalArrow(GetWorld(), OutHit.ImpactPoint, OutHit.ImpactPoint + OutHit.ImpactNormal, 1.f, FColor::Red, true);
-	////	//DrawDebugDirectionalArrow(GetWorld(), OutHit.Location, OutHit.Location + OutHit.Normal, 10.f, FColor::Cyan, true);
-
-	////	//DrawDebugCoordinateSystem(GetWorld(),
-	////	//	OutHit.Location,
-	////	//	OverlappedComp->GetComponentRotation(),
-	////	//	10.f,
-	////	//	true);
-
-	////	//DrawDebugLine(
-	////	//	GetWorld(),
-	////	//	OutHit.Location,
-	////	//	OutHit.ImpactPoint,
-	////	//	10.f,
-	////	//	FColor::Blue,
-	////	//	true,
-	////	//	5);
-	////}
-	////
-	////UE_LOG(LogTemp, Error, TEXT("\t ****"));
-
-
-	//
-	//OnBeginSemanticContact.ExecuteIfBound(OtherActor, OtherId);
+	UE_LOG(LogTemp, Warning, TEXT("[%s][%d] Add contact SM OtherId: %s"),
+		TEXT(__FUNCTION__), __LINE__, *OtherSemLogId);
+	// Create a new contact event
+	AddNewPendingContactEvent(OtherSemLogId);
 }
 
 // Called on overlap end events
@@ -374,33 +358,57 @@ void USLContactTrigger::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
-	const uint32 OtherUniqueId = OtherActor->GetUniqueID();
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d] !! OVERLAP END !! ME - OTHER : %s - %s"),
+		TEXT(__FUNCTION__), __LINE__, *OuterMeshAct->GetName(), *OtherActor->GetName());
 
-	// Check if collision with another semantic contact trigger volume
-	if (OtherComp->IsA(USLContactTrigger::StaticClass())
-		&& (OtherUniqueId > OuterUniqueId))
+	// Ignore overlaps with itself
+	if (OtherActor == OuterMeshAct)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[%s][%d] **IsA SLContact** \n Other: %s %s %i \n this %s %s %i \n ** \n "),
-			TEXT(__FUNCTION__), __LINE__, 
-			*OtherActor->GetName(), *OtherComp->GetName(), OtherActor->GetUniqueID(),
-			*OuterMeshAct->GetName(), *OverlappedComp->GetName(), OuterUniqueId);
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d] Ignoring self collision - ABORT"), TEXT(__FUNCTION__), __LINE__);
+		return;
 	}
 
-}
+	// Check if other actor is semantically annotated
+	const uint32 OtherUniqueId = OtherActor->GetUniqueID();
+	const FString OtherSemLogId = FSLMappings::GetInstance()->GetSemLogId(OtherUniqueId);
+	if (OtherSemLogId.IsEmpty())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d] Other is not semantically annotated - ABORT"), TEXT(__FUNCTION__), __LINE__);
+		return;
+	}
 
-//// Called on hit event
-//void USLContactListener::OnHit(UPrimitiveComponent* HitComponent,
-//	AActor* OtherActor,
-//	UPrimitiveComponent* OtherComp,
-//	FVector NormalImpulse,
-//	const FHitResult& Hit)
-//{
-//	UE_LOG(LogTemp, Error, TEXT("[%s][%d] Other=%s, NormalImpulse=%s, HitNormal=%s, HitImpactNormal=%s, Hit.Distance=%f, Time=%f"),
-//		TEXT(__FUNCTION__), __LINE__,
-//		*OtherActor->GetName(),
-//		*NormalImpulse.ToString(),
-//		*Hit.Normal.ToString(),
-//		*Hit.ImpactNormal.ToString(),
-//		Hit.Distance,
-//		GetOuter()->GetWorld()->GetTimeSeconds());
-//}
+	// If both areas are trigger areas, they will both concurrently trigger overlap events.
+	// To avoid this we consistently ignore one trigger event. This is chosen using
+	// the unique ids of the overlapping actors (GetUniqueID), we compare the two values 
+	// and consistently pick the event with a given (larger or smaller) value.
+	// This allows us to be in sync with the overlap end event 
+	// since the unique ids and the rule of ignoring the one event will not change
+	if (OtherComp->IsA(USLContactTrigger::StaticClass()))
+	{
+		if (OtherUniqueId > OuterUniqueId)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[%s][%d] Finish contact **TriggerArea** OtherId: %s"),
+				TEXT(__FUNCTION__), __LINE__, *OtherSemLogId);
+
+			// Publish finished contact event
+			if (!PublishFinishedContactEvent(OtherSemLogId))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[%s][%d] Cold not finish the semantic event OtherId: %s"),
+					TEXT(__FUNCTION__), __LINE__, *OtherSemLogId);
+			}
+			return;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("[%s][%d] Other is a trigger area, avoiding double contact trigger - ABORT"), TEXT(__FUNCTION__), __LINE__);
+			return;
+		}
+	}
+
+	// Publish finished contact event
+	if (!PublishFinishedContactEvent(OtherSemLogId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[%s][%d] Cold not finish the semantic event OtherSemLogId=%s"),
+			TEXT(__FUNCTION__), __LINE__, *OtherSemLogId);
+	}
+}

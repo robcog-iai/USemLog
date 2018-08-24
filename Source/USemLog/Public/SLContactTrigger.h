@@ -6,13 +6,11 @@
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
+#include "EventData/SLContactEvent.h"
 #include "SLContactTrigger.generated.h"
 
-/** Delegate for notification of start of overlap with a semantic entity */
-DECLARE_DELEGATE_TwoParams(FSLBeginContactSignature, AActor*, const FString&);
-/** Delegate for notification of end of overlap with a semantic entity */
-DECLARE_DELEGATE_TwoParams(FSLEndContactSignature, AActor*, const FString&);
-
+/** Delegate for notification of finished semantic contact event */
+DECLARE_DELEGATE_OneParam(FSLContactEventSignature, TSharedPtr<FSLContactEvent>);
 
 /**
  * Collision area listening for semantic collision events
@@ -30,6 +28,9 @@ protected:
 	// Called at level startup
 	virtual void BeginPlay() override;
 
+	// Called when actor removed from game or game ended
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 private:
 	// UObject interface
 	// Called after the C++ constructor and after the properties have been initialized
@@ -42,20 +43,29 @@ private:
 	// USceneComponent interface
 	// Called when this component is moved in the editor
 	virtual void PostEditComponentMove(bool bFinished);
-#endif // WITH_EDITOR
 
 	// Load and apply cached parameters from tags
-	bool LoadStoredParameters();
+	bool LoadAndApplyTriggerAreaSize();
 
-	// Apply and save parameters to tags
-	bool ComputeAndStoreParameters(UStaticMeshComponent* SMComp);
+	// Calculate and apply trigger area size
+	bool CalculateAndApplyTriggerAreaSize();
 
-	// Get the outer (owner) mesh component (can be nullptr)
-	UStaticMeshComponent* GetOuterMesh();
+	// Save parameters to tags
+	bool StoreTriggerAreaSize(const FTransform& InTransform, const FVector& InBoxExtent);
+#endif // WITH_EDITOR
 
-	// Get Id of outer (owner)
-	FString GetOuterSemLogId() const;
-	
+	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
+	bool RuntimeInit();
+
+	// Start new contact event
+	void AddNewPendingContactEvent(const FString& InOtherSemLogId);
+
+	// Publish finished event
+	bool PublishFinishedContactEvent(const FString& InOtherSemLogId);
+
+	// Terminate and publish pending contact events (this usually is called at end play)
+	void FinishRemainingPendingEvents();
+
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
@@ -72,25 +82,13 @@ private:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
-	//// Event called when a component hits (or is hit by) something solid
-	//UFUNCTION()
-	//void OnHit(UPrimitiveComponent* HitComponent,
-	//	AActor* OtherActor,
-	//	UPrimitiveComponent* OtherComp,
-	//	FVector NormalImpulse,
-	//	const FHitResult& Hit);
-
-
 public:
-	// Event called when two semantically annotated items are colliding
-	FSLBeginContactSignature OnBeginSemanticContact;
-
-	// Event called when two semantically annotated items end colliding
-	FSLEndContactSignature OnEndSemanticContact;
+	// Event called when a semantic contact event is finished
+	FSLContactEventSignature OnSemanticContactEvent;
 
 private:
-	// Setup pointers to outer, check if semantically annotated
-	bool Init();
+	// Array of started contact events
+	TArray<TSharedPtr<FSLContactEvent>> PendingContactEvents;
 
 	// Pointer to the outer (owner) mesh actor
 	AStaticMeshActor* OuterMeshAct;

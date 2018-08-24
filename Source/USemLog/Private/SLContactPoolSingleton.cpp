@@ -89,8 +89,8 @@ void USLContactPoolSingleton::Register(USLContactTrigger* ContactListener)
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d] Registering: %s"),
 		TEXT(__FUNCTION__), __LINE__, *ContactListener->GetName());
 
-	ContactListener->OnBeginSemanticContact.BindUObject(
-		this, &USLContactPoolSingleton::OnNewBeginSemanticContact);
+	//ContactListener->OnBeginSemanticContact.BindUObject(
+	//	this, &USLContactPoolSingleton::OnNewBeginSemanticContact);
 }
 
 // 

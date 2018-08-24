@@ -4,7 +4,9 @@
 #include "SLEventDataLogger.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
+#include "EngineUtils.h"
 #include "OwlEventsStatics.h"
+#include "SLContactTrigger.h"
 #include "Ids.h"
 
 // Constructor
@@ -55,8 +57,6 @@ void USLEventDataLogger::Start()
 // Finish logger
 void USLEventDataLogger::Finish()
 {
-	USLContactPoolSingleton::GetInstance()->FinishPendingContactEvents();
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d] -- Get Pending Contacts -- "), TEXT(__FUNCTION__), __LINE__);
 	// Write events to file
 	WriteToFile();
 }
@@ -64,14 +64,20 @@ void USLEventDataLogger::Finish()
 // Register for semantic contact events
 void USLEventDataLogger::ListenToSemanticContactEvents()
 {
-	USLContactPoolSingleton::GetInstance()->OnSemanticContactEvent.BindUObject(
-		this, &USLEventDataLogger::OnSemanticContactEvent);
+	// Iterate all contact trigger components, and bind to their events publisher
+	for (TObjectIterator<USLContactTrigger> Itr; Itr; ++Itr)
+	{
+		Itr->OnSemanticContactEvent.BindUObject(
+			this, &USLEventDataLogger::OnSemanticContactEvent);
+	}
 }
 
 // Called when a semantic contact is finished
-void USLEventDataLogger::OnSemanticContactEvent(FSLContactEvent* Event)
+void USLEventDataLogger::OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event)
 {
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+	FinishedEvents.Add(Event);
+	UE_LOG(LogTemp, Warning, TEXT("[%s][%d] !!! [O1-O2]=[%s-%s]"),
+		TEXT(__FUNCTION__), __LINE__, *Event->Obj1Id, *Event->Obj2Id);
 }
 
 // Write to file
@@ -79,6 +85,11 @@ bool USLEventDataLogger::WriteToFile()
 {
 	if (!EventsDoc.IsValid())
 		return false;
+
+	for (const auto& Ev : FinishedEvents)
+	{
+		Ev->AddToOwlDoc(EventsDoc.Get());
+	}
 
 	// Write map to file
 	FString FullFilePath = FPaths::ProjectDir() +
@@ -90,8 +101,10 @@ bool USLEventDataLogger::WriteToFile()
 // Create events doc (experiment) template
 TSharedPtr<FOwlEvents> USLEventDataLogger::CreateEventsDocTemplate(ESLEventsTemplate TemplateType, const FString& InDocId)
 {
+	// Create unique semlog id for the document
 	const FString DocId = InDocId.IsEmpty() ? FIds::NewGuidInBase64Url() : InDocId;
 
+	// Fill document with template values
 	if (TemplateType == ESLEventsTemplate::Default)
 	{
 		return FOwlEventsStatics::CreateDefaultExperiment(DocId);

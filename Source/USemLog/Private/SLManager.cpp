@@ -3,7 +3,6 @@
 
 #include "SLManager.h"
 #include "SLMappings.h"
-#include "SLContentSingleton.h"
 #include "Ids.h"
 
 // Sets default values
@@ -34,6 +33,9 @@ ASLManager::ASLManager()
 	// Events logger default values
 	bLogEventData = true;
 	EventsTemplateType = ESLEventsTemplate::Default;
+
+	// Make sprite smaller
+	SpriteScale = 0.5;
 }
 
 // Sets default values
@@ -48,6 +50,8 @@ void ASLManager::BeginPlay()
 {
 	Super::BeginPlay();
 
+	
+
 	if (bStartAtBeginPlay)
 	{
 		ASLManager::Init();
@@ -59,18 +63,18 @@ void ASLManager::BeginPlay()
 void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 	ASLManager::Finish();
 }
 
-// 
+// Called before destroying the object
 void ASLManager::BeginDestroy()
 {
 	Super::BeginDestroy();
 	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
-//
+// Called to finish destroying the object
 void ASLManager::FinishDestroy()
 {
 	Super::FinishDestroy();
@@ -83,9 +87,8 @@ void ASLManager::Init()
 	if (!bIsInit)
 	{
 		// Init the semantic items content singleton
-		//FSLMappings::GetInstance()->LoadData(GetWorld());
-		//FSLMappings::GetInstance();
-		//FSLContentSingleton::GetInstance();
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+		FSLMappings::GetInstance()->LoadData(GetWorld());
 
 		if (EpisodeId.Equals(TEXT("autogen")))
 		{

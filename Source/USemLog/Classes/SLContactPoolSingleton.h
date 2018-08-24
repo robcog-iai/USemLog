@@ -9,7 +9,7 @@
 
 
 /** Delegate for notification of start of overlap with a semantic entity */
-DECLARE_DELEGATE_OneParam(FSLContactEventSignature, FSLContactEvent*);
+DECLARE_DELEGATE_OneParam(FSLContactEventSignature2, FSLContactEvent*);
 
 /**
 * Semantic contact event structure
@@ -90,7 +90,7 @@ private:
 
 public:
 	// Event called when a semantic contact event is finished
-	FSLContactEventSignature OnSemanticContactEvent;
+	FSLContactEventSignature2 OnSemanticContactEvent;
 
 private:
 	// Set if new semantic contact event is triggered

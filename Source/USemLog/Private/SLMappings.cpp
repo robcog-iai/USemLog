@@ -14,7 +14,6 @@ FSLMappings::FSLMappings()
 // Destructor
 FSLMappings::~FSLMappings()
 {
-	IdSemLogIdMap.Empty();
 }
 
 // Get singleton
@@ -22,7 +21,7 @@ FSLMappings* FSLMappings::GetInstance()
 {
 	if (!StaticInstance.IsValid())
 	{
-		StaticInstance = MakeShareable(new FSLContentSingleton());
+		StaticInstance = MakeShareable(new FSLMappings());
 	}
 	return StaticInstance.Get();
 }
@@ -39,6 +38,12 @@ void FSLMappings::LoadData(UWorld* World)
 	// Clear any previous data
 	IdSemLogIdMap.Empty();
 	IdSemLogIdMap = FTags::GetObjectsIdToKeyValue(World, "SemLog", "Id");
+	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
+	for (const auto& Pair : IdSemLogIdMap)
+	{
+		UE_LOG(LogTemp, Error, TEXT("\t\t[%s][%d] Pair: %i - %s"),
+			TEXT(__FUNCTION__), __LINE__, Pair.Key, *Pair.Value);
+	}
 }
 
 // Get semantic id, from unique id
