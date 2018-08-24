@@ -30,12 +30,6 @@ protected:
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	// Called before destroying the object
-	virtual void BeginDestroy() override;
-
-	// Called to finish destroying the object
-	virtual void FinishDestroy() override;
-
 public:
 	// Init loggers
 	void Init();
@@ -47,8 +41,10 @@ public:
 	void Finish();
 	
 private:
+#if WITH_EDITOR
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent);
+#endif // WITH_EDITOR
 
 private:
 	/* Semantic logger */

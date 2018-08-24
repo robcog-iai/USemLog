@@ -54,7 +54,6 @@ private:
 	// Save parameters to tags
 	bool StoreTriggerAreaSize(const FTransform& InTransform, const FVector& InBoxExtent);
 
-
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
 	bool RuntimeInit();
 

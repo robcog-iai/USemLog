@@ -42,16 +42,13 @@ ASLManager::ASLManager()
 // Sets default values
 ASLManager::~ASLManager()
 {
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 	ASLManager::Finish();
 }
 
 // Called when the game starts or when spawned
 void ASLManager::BeginPlay()
 {
-	Super::BeginPlay();
-
-	
+	Super::BeginPlay();	
 
 	if (bStartAtBeginPlay)
 	{
@@ -64,22 +61,7 @@ void ASLManager::BeginPlay()
 void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 	ASLManager::Finish();
-}
-
-// Called before destroying the object
-void ASLManager::BeginDestroy()
-{
-	Super::BeginDestroy();
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
-}
-
-// Called to finish destroying the object
-void ASLManager::FinishDestroy()
-{
-	Super::FinishDestroy();
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init loggers
@@ -88,7 +70,6 @@ void ASLManager::Init()
 	if (!bIsInit)
 	{
 		// Init the semantic items content singleton
-		UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
 		FSLMappings::GetInstance()->LoadData(GetWorld());
 
 		if (EpisodeId.Equals(TEXT("autogen")))

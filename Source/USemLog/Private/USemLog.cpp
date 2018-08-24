@@ -4,7 +4,7 @@
 #include "USemLog.h"
 
 // Define logging types
-DEFINE_LOG_CATEGORY(LogSL);
+DEFINE_LOG_CATEGORY(LogSemLog);
 
 #define LOCTEXT_NAMESPACE "FUSemLog"
 
