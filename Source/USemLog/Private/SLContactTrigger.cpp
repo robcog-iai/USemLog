@@ -131,6 +131,7 @@ void USLContactTrigger::PostEditComponentMove(bool bFinished)
 
 	FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 }
+#endif // WITH_EDITOR
 
 // Read values from tags
 bool USLContactTrigger::LoadAndApplyTriggerAreaSize()
@@ -217,7 +218,6 @@ bool USLContactTrigger::StoreTriggerAreaSize(const FTransform& InTransform, cons
 	
 	return FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 }
-#endif // WITH_EDITOR
 
 // Setup pointers to outer, check if semantically annotated
 bool USLContactTrigger::RuntimeInit()

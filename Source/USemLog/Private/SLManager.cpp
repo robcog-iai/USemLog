@@ -33,9 +33,10 @@ ASLManager::ASLManager()
 	// Events logger default values
 	bLogEventData = true;
 	EventsTemplateType = ESLEventsTemplate::Default;
-
+#if WITH_EDITOR
 	// Make sprite smaller
 	SpriteScale = 0.5;
+#endif // WITH_EDITOR
 }
 
 // Sets default values
@@ -167,7 +168,7 @@ void ASLManager::Finish()
 		}
 
 		// Delete the semantic items content instance
-		FSLContentSingleton::DeleteInstance();
+		FSLMappings::DeleteInstance();
 
 		// Mark manager as finished
 		bIsStarted = false;
