@@ -35,6 +35,7 @@ TSharedPtr<FOwlEvents> FOwlEventsStatics::CreateDefaultExperiment(
 	Experiment->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Set and add imports
+	Experiment->AddOntologyNode();
 	Experiment->AddOntologyImport("package://knowrob_common/owl/knowrob.owl");
 
 	// Add property definitions

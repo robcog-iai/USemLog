@@ -101,13 +101,11 @@ void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FOwlSemanticMap> InSemMa
 
 // Add object individual to the semantic map
 void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
-	UObject* Object,
-	const FString& InId,
-	const FString& InClass)
+	UObject* Object, const FString& InId, const FString& InClass)
 {
 	// Get map data
-	const FString MapPrefix = InSemMap->DocPrefix;
-	const FString DocId = InSemMap->DocId;
+	const FString MapPrefix = InSemMap->Prefix;
+	const FString DocId = InSemMap->Id;
 
 	// Create the object individual
 	FOwlNode ObjIndividual = FOwlSemanticMapStatics::CreateObjectIndividual(
@@ -306,7 +304,7 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> I
 	const FString& InId,
 	const TArray<FName>& InTags)
 {
-	const FString MapPrefix = InSemMap->DocPrefix;
+	const FString MapPrefix = InSemMap->Prefix;
 	AActor* ParentAct = ConstraintComp->ConstraintActor1;
 	AActor* ChildAct = ConstraintComp->ConstraintActor2;
 	if (ParentAct && ChildAct)

@@ -33,6 +33,15 @@ public:
 	// Document node individuals
 	TArray<FOwlNode> Individuals;
 
+	// Prefix (e.g. &log from rdf:about="&log;abc123">")
+	FString Prefix;
+	
+	// Ontology name (e.g UE-Experiment, from "http://knowrob.org/kb/UE-Experiment.owl#")
+	FString OntologyName;
+	
+	// Id of the document
+	FString Id;
+
 protected:
 	// Current state of the indentation for writing to string
 	FString Indent;
@@ -40,6 +49,15 @@ protected:
 public:
 	// Default constructor
 	FOwlDoc() {}
+
+	// Doc init constructor
+	FOwlDoc(const FString& InPrefix,
+		const FString& InOntologyName,
+		const FString& InId) :
+		Prefix(InPrefix),
+		OntologyName(InOntologyName),
+		Id(InId)
+	{}
 	
 	// Destructor
 	virtual ~FOwlDoc() {}
@@ -90,7 +108,7 @@ public:
 	}
 	
 	// Create ontology imports node
-	void SetOntologyNode(const FString& InDocOntologyName)
+	void AddOntologyNode()
 	{
 		const FOwlPrefixName RdfAbout("rdf", "about");
 		const FOwlPrefixName OwlOntology("owl", "Ontology");
@@ -98,7 +116,7 @@ public:
 		// Create ontology import node
 		OntologyImports.Name = OwlOntology;
 		OntologyImports.AddAttribute(FOwlAttribute(RdfAbout,
-			FOwlAttributeValue("http://knowrob.org/kb/" + InDocOntologyName + ".owl")));
+			FOwlAttributeValue("http://knowrob.org/kb/" + OntologyName + ".owl")));
 		OntologyImports.Comment = TEXT("Ontologies");
 	}
 

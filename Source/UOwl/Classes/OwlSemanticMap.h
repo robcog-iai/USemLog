@@ -15,15 +15,6 @@ public:
 	// SemanticEnvironmentMap individual
 	FOwlNode SemMapIndividual;
 
-	// Map prefix (e.g. ue-def from rdf:about="&ue-def;4dfw4smiMD9ne1">)
-	FString DocPrefix;
-
-	// Used for ontologies (e.g UE-DefaultMap, from "http://knowrob.org/kb/UE-DefaultMap.owl#")
-	FString DocOntologyName;
-
-	// Map unique Id
-	FString DocId;
-
 public:
 	// Default constructor
 	FOwlSemanticMap() {}
@@ -32,12 +23,8 @@ public:
 	FOwlSemanticMap(const FString& InDocPrefix,
 		const FString& InDocOntologyName,
 		const FString& InDocId) :
-		DocPrefix(InDocPrefix),
-		DocOntologyName(InDocOntologyName),
-		DocId(InDocId)
-	{
-		SetOntologyNode(InDocOntologyName);
-	}
+		FOwlDoc(InDocPrefix, InDocOntologyName, InDocId)
+	{}
 
 	// Destructor
 	~FOwlSemanticMap() {}

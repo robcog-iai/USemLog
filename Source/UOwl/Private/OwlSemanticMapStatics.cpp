@@ -32,6 +32,7 @@ TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateDefaultSemanticMap(
 	SemMap->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add imports
+	SemMap->AddOntologyNode();
 	SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob.owl");
 
 	// Add property definitions

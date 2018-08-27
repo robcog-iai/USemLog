@@ -15,17 +15,6 @@ public:
 	// Experiment individual
 	FOwlNode ExperimentIndividual;
 
-	// TODO Start these can be moved in the OwlDoc base class
-	// Event owl prefix (e.g. log from rdf:about="&log;abc123">")
-	FString DocPrefix;
-
-	// Used for ontologies (e.g UE-Experiment, from "http://knowrob.org/kb/UE-Experiment.owl#")
-	FString DocOntologyName;
-
-	// Experiment unique Id
-	FString DocId;
-	// TODO End these can be moved in the OwlDoc base class
-
 public:
 	// Default constructor
 	FOwlEvents() {}
@@ -34,12 +23,8 @@ public:
 	FOwlEvents(const FString& InDocPrefix,
 		const FString& InDocOntologyName,
 		const FString& InDocId) :
-		DocPrefix(InDocPrefix),
-		DocOntologyName(InDocOntologyName),
-		DocId(InDocId)
-	{
-		SetOntologyNode(InDocOntologyName);
-	}
+		FOwlDoc(InDocPrefix, InDocOntologyName, InDocId)
+	{}
 
 	// Destructor
 	~FOwlEvents() {}
