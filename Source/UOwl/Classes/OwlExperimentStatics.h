@@ -4,22 +4,22 @@
 #pragma once
 
 #include "EngineMinimal.h"
-#include "OwlEvents.h"
+#include "OwlExperiment.h"
 
 /**
-* Helper functions for generating owl events documents
+* Helper functions for generating owl experiment documents
 */
-struct UOWL_API FOwlEventsStatics
+struct UOWL_API FOwlExperimentStatics
 {
 	/* Events doc (experiment) template creation */
 	// Create Default experiment
-	static TSharedPtr<FOwlEvents> CreateDefaultExperiment(
+	static TSharedPtr<FOwlExperiment> CreateDefaultExperiment(
 		const FString& InDocId,
 		const FString& InDocPrefix = "log",
 		const FString& InDocOntologyName = "Experiment");
 
 	// Create UE experiment
-	static TSharedPtr<FOwlEvents> CreateUEExperiment(
+	static TSharedPtr<FOwlExperiment> CreateUEExperiment(
 		const FString& InDocId,
 		const FString& InDocPrefix = "log",
 		const FString& InDocOntologyName = "UE-Experiment");
@@ -29,54 +29,22 @@ struct UOWL_API FOwlEventsStatics
 	// Create an event individual
 	static FOwlNode CreateEventIndividual(
 		const FString& InDocPrefix, 
-		const FString& Id, 
-		const FString& Class);
+		const FString& InId,
+		const FString& InClass);
 
 	// Create a timepoint individual
 	static FOwlNode CreateTimepointIndividual(
 		const FString& InDocPrefix,
 		const float Timepoint);
 
-	//// Create a constraint individual
-	//static FOwlNode CreateConstraintIndividual(
-	//	const FString& InDocPrefix, 
-	//	const FString& InId,
-	//	const FString& ParentId,
-	//	const FString& ChildId);
+	// Create an object individual
+	static FOwlNode CreateObjectIndividual(
+		const FString& InDocPrefix,
+		const FString& InId,
+		const FString& InClass);
 
-	//// Create linear constraint properties individual
-	//static FOwlNode CreateLinearConstraintProperties(
-	//	const FString& InDocPrefix, 
-	//	const FString& InId,
-	//	uint8 XMotion,
-	//	uint8 YMotion,
-	//	uint8 ZMotion,
-	//	float Limit,
-	//	bool bSoftConsraint,
-	//	float Stiffness,
-	//	float Damping);
 
-	//// Create angular constraint properties individual
-	//static FOwlNode CreateAngularConstraintProperties(
-	//	const FString& InDocPrefix,
-	//	const FString& InId,
-	//	uint8 Swing1Motion,
-	//	uint8 Swing2Motion,
-	//	uint8 TwistMotion,
-	//	float Swing1Limit,
-	//	float Swing2Limit,
-	//	float TwistLimit,
-	//	bool bSoftSwingConstraint,
-	//	float SwingStiffness,
-	//	float SwingDamping,
-	//	bool bSoftTwistConstraint,
-	//	float TwistStiffness,
-	//	float TwistDamping);
 
-	//// Create a constraint individual
-	//static FOwlNode CreateClassDefinition(const FString& Class);
-
-	
 	/* Owl properties creation */
 	// Create class property
 	static FOwlNode CreateClassProperty(const FString& InClass);
@@ -88,6 +56,10 @@ struct UOWL_API FOwlEventsStatics
 	// Create endTime property
 	static FOwlNode CreateEndTimeProperty(
 		const FString& InDocPrefix, const float Timepoint);
+
+	// Create inContact property
+	static FOwlNode CreateInContactProperty(
+		const FString& InDocPrefix, const FString& InObjId);
 
 	//// Create pathToCadModel property
 	//static FOwlNode CreatePathToCadModelProperty(const FString& InClass);

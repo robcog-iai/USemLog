@@ -5,7 +5,7 @@
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 #include "EngineUtils.h"
-#include "OwlEventsStatics.h"
+#include "OwlExperimentStatics.h"
 #include "SLContactTrigger.h"
 #include "Ids.h"
 
@@ -19,21 +19,6 @@ USLEventDataLogger::~USLEventDataLogger()
 {
 }
 
-// 
-void USLEventDataLogger::BeginDestroy()
-{
-	Super::BeginDestroy();
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
-
-}
-
-//
-void USLEventDataLogger::FinishDestroy()
-{
-	Super::FinishDestroy();
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
-}
-
 // Init Logger
 void USLEventDataLogger::Init(const FString& InLogDirectory, const FString& InEpisodeId, ESLEventsTemplate TemplateType)
 {
@@ -41,22 +26,38 @@ void USLEventDataLogger::Init(const FString& InLogDirectory, const FString& InEp
 	EpisodeId = InEpisodeId;
 	OwlDocTemplate = TemplateType;
 
-	// Subscribe for semantic contact events
-	USLEventDataLogger::ListenToSemanticContactEvents();
-
 	// Create the document template
-	EventsDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
+	ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
 }
 
 // Start logger
 void USLEventDataLogger::Start()
 {
-
+	// Subscribe for semantic contact events
+	USLEventDataLogger::ListenToSemanticContactEvents();
 }
 
 // Finish logger
 void USLEventDataLogger::Finish()
 {
+	if (!ExperimentDoc.IsValid())
+		return;
+
+	// Add finished events to doc
+	for (const auto& Ev : FinishedEvents)
+	{
+		Ev->AddToOwlDoc(ExperimentDoc.Get());
+	}
+
+	// Add stored unique timepoints to doc
+	ExperimentDoc->AddTimepointIndividuals();
+
+	// Add stored unique objects to doc
+	ExperimentDoc->AddObjectIndividuals();
+
+	// Add experiment individual to doc
+	ExperimentDoc->AddExperimentIndividual();
+
 	// Write events to file
 	WriteToFile();
 }
@@ -83,23 +84,18 @@ void USLEventDataLogger::OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Even
 // Write to file
 bool USLEventDataLogger::WriteToFile()
 {
-	if (!EventsDoc.IsValid())
+	if (!ExperimentDoc.IsValid())
 		return false;
-
-	for (const auto& Ev : FinishedEvents)
-	{
-		Ev->AddToOwlDoc(EventsDoc.Get());
-	}
 
 	// Write map to file
 	FString FullFilePath = FPaths::ProjectDir() +
 		LogDirectory + TEXT("/Episodes/EventData_") + EpisodeId + TEXT(".owl");
 	FPaths::RemoveDuplicateSlashes(FullFilePath);
-	return FFileHelper::SaveStringToFile(EventsDoc->ToString(), *FullFilePath);
+	return FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);
 }
 
 // Create events doc (experiment) template
-TSharedPtr<FOwlEvents> USLEventDataLogger::CreateEventsDocTemplate(ESLEventsTemplate TemplateType, const FString& InDocId)
+TSharedPtr<FOwlExperiment> USLEventDataLogger::CreateEventsDocTemplate(ESLEventsTemplate TemplateType, const FString& InDocId)
 {
 	// Create unique semlog id for the document
 	const FString DocId = InDocId.IsEmpty() ? FIds::NewGuidInBase64Url() : InDocId;
@@ -107,13 +103,13 @@ TSharedPtr<FOwlEvents> USLEventDataLogger::CreateEventsDocTemplate(ESLEventsTemp
 	// Fill document with template values
 	if (TemplateType == ESLEventsTemplate::Default)
 	{
-		return FOwlEventsStatics::CreateDefaultExperiment(DocId);
+		return FOwlExperimentStatics::CreateDefaultExperiment(DocId);
 	}
 	else if (TemplateType == ESLEventsTemplate::IAI)
 	{
-		return FOwlEventsStatics::CreateUEExperiment(DocId);
+		return FOwlExperimentStatics::CreateUEExperiment(DocId);
 	}
-	return MakeShareable(new FOwlEvents());
+	return MakeShareable(new FOwlExperiment());
 }
 
 // Finish the pending events at the current time

@@ -11,7 +11,7 @@
 */
 struct FOwlSemanticMap : public FOwlDoc
 {
-public:
+protected:
 	// SemanticEnvironmentMap individual
 	FOwlNode SemMapIndividual;
 

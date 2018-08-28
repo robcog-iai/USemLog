@@ -7,12 +7,12 @@
 TSharedPtr<FSLMappings> FSLMappings::StaticInstance;
 
 // Constructor
-FSLMappings::FSLMappings()
+FSLMappings::FSLMappings() : bIsInit(false) 
 {
 }
 
 // Destructor
-FSLMappings::~FSLMappings()
+FSLMappings::~FSLMappings() 
 {
 }
 
@@ -36,25 +36,39 @@ void FSLMappings::DeleteInstance()
 void FSLMappings::LoadData(UWorld* World)
 {
 	// Clear any previous data
-	IdSemLogIdMap.Empty();
-	IdSemLogIdMap = FTags::GetObjectsIdToKeyValue(World, "SemLog", "Id");
-	UE_LOG(LogTemp, Error, TEXT("[%s][%d]"), TEXT(__FUNCTION__), __LINE__);
-	for (const auto& Pair : IdSemLogIdMap)
-	{
-		UE_LOG(LogTemp, Error, TEXT("\t\t[%s][%d] Pair: %i - %s"),
-			TEXT(__FUNCTION__), __LINE__, Pair.Key, *Pair.Value);
-	}
+	IdSemIdMap.Empty();
+	IdClassMap.Empty();
+	
+	IdSemIdMap = FTags::GetObjectsIdToKeyValue(World, "SemLog", "Id");
+	IdClassMap = FTags::GetObjectsIdToKeyValue(World, "SemLog", "Class");
+
+	// Mark as initialized
+	bIsInit = true;
 }
 
 // Get semantic id, from unique id
-FString FSLMappings::GetSemLogId(uint32 UniqueId) const
+FString FSLMappings::GetSemanticId(uint32 UniqueId) const
 {
-	if (const FString* SemLogId = IdSemLogIdMap.Find(UniqueId))
+	if (const FString* SemId = IdSemIdMap.Find(UniqueId))
 	{
-		return *SemLogId;
+		return *SemId;
 	}
 	else
 	{
 		return FString();
 	}
 }
+
+// Get semantic class, from unique id
+FString FSLMappings::GetSemanticClass(uint32 UniqueId) const
+{
+	if (const FString* Class = IdClassMap.Find(UniqueId))
+	{
+		return *Class;
+	}
+	else
+	{
+		return FString();
+	}
+}
+

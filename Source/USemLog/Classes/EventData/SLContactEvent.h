@@ -19,13 +19,29 @@ public:
 		float InStart,
 		float InEnd,
 		const FString& InObj1Id,
-		const FString& InObj2Id);
+		const FString& InObj1Class,
+		const uint32 InObj1UniqueId,
+		const FString& InObj2Id,
+		const FString& InObj2Class,
+		const uint32 InObj2UniqueId);
 
 	// Semantic id of the first object
 	FString Obj1Id;
 
+	// Unique id of the first object
+	uint32 Obj1UniqueId;
+
+	// Semantic Class of the first object
+	FString Obj1Class;
+
 	// Semantic id of the second object
 	FString Obj2Id;
+
+	// Semantic Class of the second object
+	FString Obj2Class;
+
+	// Unique id of the second object
+	uint32 Obj2UniqueId;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

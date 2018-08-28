@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "OwlEvents.h"
+#include "OwlExperiment.h"
 #include "EventData/SLContactEvent.h"
 #include "SLEventDataLogger.generated.h"
 
@@ -38,13 +38,6 @@ public:
 	// Destructor
 	~USLEventDataLogger();
 
-protected:
-	// 
-	virtual void BeginDestroy() override;
-
-	//
-	virtual void FinishDestroy() override;
-
 public:
 	// Init Logger
 	void Init(const FString& InLogDirectory, const FString& InEpisodeId, ESLEventsTemplate TemplateType);
@@ -66,7 +59,7 @@ private:
 	bool WriteToFile();
 
 	// Create events doc template
-	TSharedPtr<FOwlEvents> CreateEventsDocTemplate(
+	TSharedPtr<FOwlExperiment> CreateEventsDocTemplate(
 		ESLEventsTemplate TemplateType, const FString& InDocId);
 
 	// Finish the pending events at the current time
@@ -88,5 +81,5 @@ private:
 	TArray<TSharedPtr<ISLEvent>> FinishedEvents;
 
 	// Owl document of the finished events
-	TSharedPtr<FOwlEvents> EventsDoc;
+	TSharedPtr<FOwlExperiment> ExperimentDoc;
 };

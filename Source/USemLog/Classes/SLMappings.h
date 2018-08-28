@@ -25,13 +25,25 @@ public:
 	// Init data / load mappings
 	void LoadData(UWorld* World);
 
-	// Get semantic id, from unique id
-	FString GetSemLogId(uint32 UniqueId) const;
+	// Get semantic id from unique id
+	FString GetSemanticId(uint32 UniqueId) const;
+
+	// Get semantic class from unique id
+	FString GetSemanticClass(uint32 UniqueId) const;
+
+	// Check if data is loaded
+	bool IsInit() const { return bIsInit; }
 
 private:
 	// Instance of the singleton
 	static TSharedPtr<FSLMappings> StaticInstance;
 
+	// Flag showing the data has been init
+	bool bIsInit;
+
 	// Unreal unique id to SemLog unique id map
-	TMap<uint32, FString> IdSemLogIdMap;
+	TMap<uint32, FString> IdSemIdMap;
+
+	// Unreal unique id to semantic class map
+	TMap<uint32, FString> IdClassMap;
 };

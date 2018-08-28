@@ -70,8 +70,12 @@ void ASLManager::Init()
 	if (!bIsInit)
 	{
 		// Init the semantic items content singleton
-		FSLMappings::GetInstance()->LoadData(GetWorld());
+		if (!FSLMappings::GetInstance()->IsInit())
+		{
+			FSLMappings::GetInstance()->LoadData(GetWorld());
+		}
 
+		// If none given, generate new unique semantic identifier
 		if (EpisodeId.Equals(TEXT("autogen")))
 		{
 			// Generate unique id for the episode

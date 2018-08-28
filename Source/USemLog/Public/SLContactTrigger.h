@@ -58,10 +58,13 @@ private:
 	bool RuntimeInit();
 
 	// Start new contact event
-	void AddNewPendingContactEvent(const FString& InOtherSemLogId);
+	void AddNewPendingContactEvent(
+		const uint32 InOtherUniqueId,
+		const FString& InOtherSemId,
+		const FString& InOtherClass);
 
 	// Publish finished event
-	bool PublishFinishedContactEvent(const FString& InOtherSemLogId);
+	bool PublishFinishedContactEvent(const FString& InOtherSemId);
 
 	// Terminate and publish pending contact events (this usually is called at end play)
 	void FinishRemainingPendingEvents();
@@ -97,10 +100,13 @@ private:
 	UStaticMeshComponent* OuterMeshComp;
 
 	// Cache of the semlog id of the outer (owner)
-	FString OuterSemLogId;
+	FString OuterSemId;
+
+	// Cache of the semantic class of the outer (owner)
+	FString OuterClass;
 
 	// Cache of the outer (owner) unique id (unreal)
-	uint32 OuterUniqueId;
+	uint32 OuterId;
 
 	//// Bottom collision area
 	//UPROPERTY(EditAnywhere, Category = "SL")
