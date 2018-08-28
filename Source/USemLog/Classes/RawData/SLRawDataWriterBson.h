@@ -5,9 +5,9 @@
 
 #include "CoreMinimal.h"
 #include "ISLRawDataWriter.h"
-#if USE_LIBMONGO
+#if WITH_LIBMONGO
 #include "bson.h"
-#endif //USE_LIBMONGO
+#endif //WITH_LIBMONGO
 
 // Forward declaration
 class FSLRawDataAsyncWorker;
@@ -36,7 +36,7 @@ public:
 private:
 	// Set the file handle for the logger
 	void SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
-#if USE_LIBMONGO
+#if WITH_LIBMONGO
 	// Add actors
 	void AddActors(bson_t& OutBsonEntitiesArr);
 
@@ -51,7 +51,7 @@ private:
 
 	// Write entry to file
 	void WriteData(uint8* memorybuffer, int64 bufferlen);
-#endif //USE_LIBMONGO
+#endif //WITH_LIBMONGO
 	// Pointer to worker parent (access to raw data structure)
 	FSLRawDataAsyncWorker* WorkerParent;
 

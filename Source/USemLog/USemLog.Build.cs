@@ -55,7 +55,7 @@ public class USemLog : ModuleRules
 			);
 
 		// 4.20 has issues with libmongo, this flag will ignore the mongo code
-		PublicDefinitions.Add("USE_LIBMONGO=0");
+		PublicDefinitions.Add("WITH_LIBMONGO=0");
 
 
 		DynamicallyLoadedModuleNames.AddRange(
