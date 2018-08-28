@@ -282,9 +282,29 @@ FOwlNode FOwlExperimentStatics::CreateEndTimeProperty(const FString& InDocPrefix
 FOwlNode FOwlExperimentStatics::CreateInContactProperty(const FString& InDocPrefix, const FString& InObjId)
 {
 	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName KbEndTime("knowrob", "inContact");
+	const FOwlPrefixName KbInContact("knowrob", "inContact");
 
-	return FOwlNode(KbEndTime, FOwlAttribute(
+	return FOwlNode(KbInContact, FOwlAttribute(
+		RdfResource, FOwlAttributeValue(InDocPrefix, InObjId)));
+}
+
+// Create isSupported property
+FOwlNode FOwlExperimentStatics::CreateIsSupportedProperty(const FString& InDocPrefix, const FString& InObjId)
+{
+	const FOwlPrefixName RdfResource("rdf", "resource");
+	const FOwlPrefixName KbIsSupported("knowrob", "isSupported");
+
+	return FOwlNode(KbIsSupported, FOwlAttribute(
+		RdfResource, FOwlAttributeValue(InDocPrefix, InObjId)));
+}
+
+// Create supports property
+FOwlNode FOwlExperimentStatics::CreateSupportsProperty(const FString& InDocPrefix, const FString& InObjId)
+{
+	const FOwlPrefixName RdfResource("rdf", "resource");
+	const FOwlPrefixName KbSupports("knowrob", "supports");
+
+	return FOwlNode(KbSupports, FOwlAttribute(
 		RdfResource, FOwlAttributeValue(InDocPrefix, InObjId)));
 }
 

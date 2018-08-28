@@ -50,10 +50,13 @@ public:
 
 private:
 	// Register for semantic contact events
-	void ListenToSemanticContactEvents();
+	void ListenToSemanticContactRelatedEvents();
 
 	// Called when a semantic contact is finished
 	void OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event);
+
+	// Called when a semantic supported by event is finished
+	void OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event);
 
 	// Write events to file
 	bool WriteToFile();

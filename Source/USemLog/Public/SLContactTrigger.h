@@ -7,10 +7,14 @@
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "EventData/SLContactEvent.h"
+#include "EventData/SLSupportedByEvent.h"
 #include "SLContactTrigger.generated.h"
 
 /** Delegate for notification of finished semantic contact event */
 DECLARE_DELEGATE_OneParam(FSLContactEventSignature, TSharedPtr<FSLContactEvent>);
+
+/** Delegate for notification of finished semantic supported by event */
+DECLARE_DELEGATE_OneParam(FSLSupportedByEventSignature, TSharedPtr<FSLSupportedByEvent>);
 
 /**
  * Collision area listening for semantic collision events
@@ -58,16 +62,25 @@ private:
 	bool RuntimeInit();
 
 	// Start new contact event
-	void AddNewPendingContactEvent(
+	void AddStartedContactEvent(
 		const uint32 InOtherUniqueId,
 		const FString& InOtherSemId,
 		const FString& InOtherClass);
 
-	// Publish finished event
-	bool PublishFinishedContactEvent(const FString& InOtherSemId);
+	// Start new supported by event
+	void AddStartedSupportedByEvent(
+		const uint32 InOtherUniqueId,
+		const FString& InOtherSemId,
+		const FString& InOtherClass);
 
-	// Terminate and publish pending contact events (this usually is called at end play)
-	void FinishRemainingPendingEvents();
+	// Publish finished contact event
+	bool FinishAndPublishContactEvent(const FString& InOtherSemId);
+
+	// Publish finished supported by event
+	bool FinishAndPublishSupportedByEvent(const FString& InOtherSemId);
+
+	// Terminate and publish started events (this usually is called at end play)
+	void FinishAndPublishAllStartedEvents();
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
@@ -89,9 +102,18 @@ public:
 	// Event called when a semantic contact event is finished
 	FSLContactEventSignature OnSemanticContactEvent;
 
+	// Event called when a supported by event is finished
+	FSLSupportedByEventSignature OnSemanticSupportedByEvent;
+
 private:
 	// Array of started contact events
-	TArray<TSharedPtr<FSLContactEvent>> PendingContactEvents;
+	TArray<TSharedPtr<FSLContactEvent>> StartedContactEvents;
+
+	// Candidates for supported by event
+	TArray<TSharedPtr<FSLSupportedByEvent>> CandidatesForSupportedByEvent;
+
+	// Array of started supported by events
+	TArray<TSharedPtr<FSLSupportedByEvent>> StartedSupportedByEvents;
 
 	// Pointer to the outer (owner) mesh actor
 	AStaticMeshActor* OuterMeshAct;

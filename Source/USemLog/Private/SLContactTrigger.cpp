@@ -45,8 +45,8 @@ void USLContactTrigger::BeginPlay()
 void USLContactTrigger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	// Terminate and publish pending contact events
-	FinishRemainingPendingEvents();
+	// Terminate and publish pending events
+	FinishAndPublishAllStartedEvents();
 }
 
 // Called after the C++ constructor and after the properties have been initialized
@@ -267,7 +267,7 @@ bool USLContactTrigger::RuntimeInit()
 }
 
 // Start new contact event
-void USLContactTrigger::AddNewPendingContactEvent(
+void USLContactTrigger::AddStartedContactEvent(
 	const uint32 InOtherUniqueId,
 	const FString& InOtherSemId,
 	const FString& InOtherClass)
@@ -283,20 +283,39 @@ void USLContactTrigger::AddNewPendingContactEvent(
 	ContactEvent->Obj2Class = InOtherClass;
 	ContactEvent->Start = GetWorld()->GetTimeSeconds();
 	// Add event to the pending contacts array
-	PendingContactEvents.Emplace(ContactEvent);
+	StartedContactEvents.Emplace(ContactEvent);
+}
+
+// Start new supported by event
+void USLContactTrigger::AddStartedSupportedByEvent(
+	const uint32 InOtherUniqueId,
+	const FString& InOtherSemId,
+	const FString& InOtherClass)
+{
+	// Start a semantic contact event
+	TSharedPtr<FSLSupportedByEvent> SupportedByEvent = MakeShareable(new FSLSupportedByEvent);
+	SupportedByEvent->Id = FIds::NewGuidInBase64Url();
+	SupportedByEvent->Obj1UniqueId = OuterId;
+	SupportedByEvent->Obj1Id = OuterSemId;
+	SupportedByEvent->Obj1Class = OuterClass;
+	SupportedByEvent->Obj2UniqueId = InOtherUniqueId;
+	SupportedByEvent->Obj2Id = InOtherSemId;
+	SupportedByEvent->Obj2Class = InOtherClass;
+	SupportedByEvent->Start = GetWorld()->GetTimeSeconds();
+	// Add event to the pending contacts array
+	StartedSupportedByEvents.Emplace(SupportedByEvent);
 }
 
 // Publish finished event
-bool USLContactTrigger::PublishFinishedContactEvent(const FString& InOtherSemId)
+bool USLContactTrigger::FinishAndPublishContactEvent(const FString& InOtherSemId)
 {
 	// Use iterator to be able to remove the entry from the array
-	for (auto EventItr(PendingContactEvents.CreateIterator()); EventItr; ++EventItr)
+	for (auto EventItr(StartedContactEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		if ((*EventItr)->Obj2Id.Equals(InOtherSemId))
 		{
-			// Set end time
+			// Set end time and publish event
 			(*EventItr)->End = GetWorld()->GetTimeSeconds();
-			// Publish event
 			OnSemanticContactEvent.ExecuteIfBound(*EventItr);
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
@@ -306,18 +325,47 @@ bool USLContactTrigger::PublishFinishedContactEvent(const FString& InOtherSemId)
 	return false;
 }
 
+// Publish finished event
+bool USLContactTrigger::FinishAndPublishSupportedByEvent(const FString& InOtherSemId)
+{
+	// Use iterator to be able to remove the entry from the array
+	for (auto EventItr(StartedSupportedByEvents.CreateIterator()); EventItr; ++EventItr)
+	{
+		if ((*EventItr)->Obj2Id.Equals(InOtherSemId))
+		{
+			// Set end time and publish event
+			(*EventItr)->End = GetWorld()->GetTimeSeconds();			
+			OnSemanticSupportedByEvent.ExecuteIfBound(*EventItr);
+			// Remove event from the pending list
+			EventItr.RemoveCurrent();
+			return true;
+		}
+	}
+	return false;
+}
+
 // Terminate and publish pending contact events (this usually is called at end play)
-void USLContactTrigger::FinishRemainingPendingEvents()
+void USLContactTrigger::FinishAndPublishAllStartedEvents()
 {
 	const float EndTime = GetWorld()->GetTimeSeconds();
-	for (auto& Ev : PendingContactEvents)
+
+	// Finish contact events
+	for (auto& Ev : StartedContactEvents)
 	{
-		// Set end time for the event
+		// Set end time and publish event
 		Ev->End = EndTime;
-		// Publish event
 		OnSemanticContactEvent.ExecuteIfBound(Ev);
 	}
-	PendingContactEvents.Empty();
+	StartedContactEvents.Empty();
+
+	// Finish supported by events
+	for (auto& Ev : StartedSupportedByEvents)
+	{
+		// Set end time and publish event
+		Ev->End = EndTime;
+		OnSemanticSupportedByEvent.ExecuteIfBound(Ev);
+	}
+	StartedSupportedByEvents.Empty();
 }
 
 // Called on overlap begin events
@@ -354,13 +402,15 @@ void USLContactTrigger::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 		if (OtherUniqueId > OuterId)
 		{
 			// Create a new contact event
-			AddNewPendingContactEvent(OtherUniqueId, OtherSemId, OtherClass);
+			AddStartedContactEvent(OtherUniqueId, OtherSemId, OtherClass);
+			AddStartedSupportedByEvent(OtherUniqueId, OtherSemId, OtherClass);
 			return;
 		}
 	}
 
 	// Create a new contact event
-	AddNewPendingContactEvent(OtherUniqueId, OtherSemId, OtherClass);
+	AddStartedContactEvent(OtherUniqueId, OtherSemId, OtherClass);
+	AddStartedSupportedByEvent(OtherUniqueId, OtherSemId, OtherClass);
 }
 
 // Called on overlap end events
@@ -395,11 +445,13 @@ void USLContactTrigger::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		if (OtherUniqueId > OuterId)
 		{
 			// Publish finished contact event
-			PublishFinishedContactEvent(OtherSemId);
+			FinishAndPublishContactEvent(OtherSemId);
+			FinishAndPublishSupportedByEvent(OtherSemId);
 			return;
 		}
 	}
 
 	// Publish finished contact event
-	PublishFinishedContactEvent(OtherSemId);
+	FinishAndPublishContactEvent(OtherSemId);
+	FinishAndPublishSupportedByEvent(OtherSemId);
 }

@@ -34,7 +34,7 @@ void USLEventDataLogger::Init(const FString& InLogDirectory, const FString& InEp
 void USLEventDataLogger::Start()
 {
 	// Subscribe for semantic contact events
-	USLEventDataLogger::ListenToSemanticContactEvents();
+	USLEventDataLogger::ListenToSemanticContactRelatedEvents();
 }
 
 // Finish logger
@@ -63,13 +63,15 @@ void USLEventDataLogger::Finish()
 }
 
 // Register for semantic contact events
-void USLEventDataLogger::ListenToSemanticContactEvents()
+void USLEventDataLogger::ListenToSemanticContactRelatedEvents()
 {
 	// Iterate all contact trigger components, and bind to their events publisher
 	for (TObjectIterator<USLContactTrigger> Itr; Itr; ++Itr)
 	{
 		Itr->OnSemanticContactEvent.BindUObject(
 			this, &USLEventDataLogger::OnSemanticContactEvent);
+		Itr->OnSemanticSupportedByEvent.BindUObject(
+			this, &USLEventDataLogger::OnSemanticSupportedByEvent);
 	}
 }
 
@@ -77,8 +79,12 @@ void USLEventDataLogger::ListenToSemanticContactEvents()
 void USLEventDataLogger::OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event)
 {
 	FinishedEvents.Add(Event);
-	UE_LOG(LogTemp, Warning, TEXT("[%s][%d] !!! [O1-O2]=[%s-%s]"),
-		TEXT(__FUNCTION__), __LINE__, *Event->Obj1Id, *Event->Obj2Id);
+}
+
+// Called when a semantic supported by event is finished
+void USLEventDataLogger::OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event)
+{
+	FinishedEvents.Add(Event);
 }
 
 // Write to file

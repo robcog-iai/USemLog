@@ -61,6 +61,14 @@ struct UOWL_API FOwlExperimentStatics
 	static FOwlNode CreateInContactProperty(
 		const FString& InDocPrefix, const FString& InObjId);
 
+	// Create isSupported property
+	static FOwlNode CreateIsSupportedProperty(
+		const FString& InDocPrefix, const FString& InObjId);
+
+	// Create supports property
+	static FOwlNode CreateSupportsProperty(
+		const FString& InDocPrefix, const FString& InObjId);
+
 	//// Create pathToCadModel property
 	//static FOwlNode CreatePathToCadModelProperty(const FString& InClass);
 
