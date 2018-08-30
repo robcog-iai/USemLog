@@ -299,12 +299,12 @@ FOwlNode FOwlExperimentStatics::CreateIsSupportedProperty(const FString& InDocPr
 }
 
 // Create supports property
-FOwlNode FOwlExperimentStatics::CreateSupportsProperty(const FString& InDocPrefix, const FString& InObjId)
+FOwlNode FOwlExperimentStatics::CreateIsSupportingProperty(const FString& InDocPrefix, const FString& InObjId)
 {
 	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName KbSupports("knowrob", "supports");
+	const FOwlPrefixName KbIsSupporting("knowrob", "isSupporting");
 
-	return FOwlNode(KbSupports, FOwlAttribute(
+	return FOwlNode(KbIsSupporting, FOwlAttribute(
 		RdfResource, FOwlAttributeValue(InDocPrefix, InObjId)));
 }
 

@@ -4,6 +4,50 @@
 #include "EventData/SLSupportedByEvent.h"
 #include "OwlExperimentStatics.h"
 
+	// Default constructor
+FSLSupportedByEvent::FSLSupportedByEvent()
+{
+}
+
+// Constructor with initialization
+FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId,
+	const float InStart,
+	const float InEnd,
+	const uint32 InSupportedObjId,
+	const FString& InSupportedObjSemId,
+	const FString& InSupportedObjClass,
+	const uint32 InSupportingObjId,
+	const FString& InSupportingObjSemId,
+	const FString& InSupportingObjClass) :
+	ISLEvent(InId, InStart, InEnd),
+	SupportedObjId(InSupportedObjId),
+	SupportedObjSemId(InSupportedObjSemId),
+	SupportedObjClass(InSupportedObjClass),
+	SupportingObjId(InSupportingObjId),
+	SupportingObjSemId(InSupportingObjSemId),
+	SupportingObjClass(InSupportingObjClass)
+{
+}
+
+// Constructor with initialization without end time
+FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId,
+	const float InStart,
+	const uint32 InSupportedObjId,
+	const FString& InSupportedObjSemId,
+	const FString& InSupportedObjClass,
+	const uint32 InSupportingObjId,
+	const FString& InSupportingObjSemId,
+	const FString& InSupportingObjClass) :
+	ISLEvent(InId, InStart),
+	SupportedObjId(InSupportedObjId),
+	SupportedObjSemId(InSupportedObjSemId),
+	SupportedObjClass(InSupportedObjClass),
+	SupportingObjId(InSupportingObjId),
+	SupportingObjSemId(InSupportingObjSemId),
+	SupportingObjClass(InSupportingObjClass)
+{
+}
+
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
 FOwlNode FSLSupportedByEvent::ToOwlNode() const
@@ -13,8 +57,8 @@ FOwlNode FSLSupportedByEvent::ToOwlNode() const
 		"log", Id, "SupportedBySituation");
 	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateEndTimeProperty("log", End));
-	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateIsSupportedProperty("log", Obj1Id));
-	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateSupportsProperty("log", Obj2Id));
+	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateIsSupportedProperty("log", SupportedObjSemId));
+	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateIsSupportingProperty("log", SupportingObjSemId));
 	return EventIndividual;
 }
 
@@ -30,10 +74,10 @@ void FSLSupportedByEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 		Start, FOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
 		End, FOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(Obj1UniqueId,
-		FOwlExperimentStatics::CreateObjectIndividual("log", Obj1Id, Obj1Class));
-	EventsDoc->AddObjectIndividual(Obj2UniqueId,
-		FOwlExperimentStatics::CreateObjectIndividual("log", Obj2Id, Obj2Class));
+	EventsDoc->AddObjectIndividual(
+		SupportedObjId, FOwlExperimentStatics::CreateObjectIndividual("log", SupportedObjSemId, SupportedObjClass));
+	EventsDoc->AddObjectIndividual(
+		SupportingObjId, FOwlExperimentStatics::CreateObjectIndividual("log", SupportingObjSemId, SupportingObjClass));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 /* End ISLEvent interface */

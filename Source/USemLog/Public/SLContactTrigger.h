@@ -63,24 +63,27 @@ private:
 
 	// Start new contact event
 	void AddStartedContactEvent(
-		const uint32 InOtherUniqueId,
+		const uint32 InOtherId,
 		const FString& InOtherSemId,
 		const FString& InOtherClass);
 
 	// Start new supported by event
 	void AddStartedSupportedByEvent(
-		const uint32 InOtherUniqueId,
+		const uint32 InOtherId,
 		const FString& InOtherSemId,
 		const FString& InOtherClass);
 
 	// Publish finished contact event
-	bool FinishAndPublishContactEvent(const FString& InOtherSemId);
+	bool FinishAndPublishContactEvent(const uint32 InOtherId);
 
 	// Publish finished supported by event
-	bool FinishAndPublishSupportedByEvent(const FString& InOtherSemId);
+	bool FinishAndPublishSupportedByEvent(const uint32 InOtherId);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAndPublishAllStartedEvents();
+
+	// Check for supported by event
+	bool IsASupportedByEvent(UPrimitiveComponent* InComp1, UPrimitiveComponent* InComp2);
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()

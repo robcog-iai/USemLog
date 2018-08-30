@@ -11,21 +11,40 @@ FSLContactEvent::FSLContactEvent()
 
 // Constructor with initialization
 FSLContactEvent::FSLContactEvent(const FString& InId,
-	float InStart,
-	float InEnd,
-	const FString& InObj1Id,
+	const float InStart,
+	const float InEnd,
+	const uint32 InObj1Id,
+	const FString& InObj1SemId,
 	const FString& InObj1Class,
-	const uint32 InObj1UniqueId,
-	const FString& InObj2Id,
-	const FString& InObj2Class,
-	const uint32 InObj2UniqueId) :
+	const uint32 InObj2Id,
+	const FString& InObj2SemId,
+	const FString& InObj2Class) :
 	ISLEvent(InId, InStart, InEnd),
 	Obj1Id(InObj1Id),
+	Obj1SemId(InObj1SemId),
 	Obj1Class(InObj1Class),
-	Obj1UniqueId(InObj1UniqueId),
 	Obj2Id(InObj2Id),
-	Obj2Class(InObj2Class),
-	Obj2UniqueId(InObj2UniqueId)
+	Obj2SemId(InObj2SemId),
+	Obj2Class(InObj2Class)
+{
+}
+
+// Constructor initialization without End
+FSLContactEvent::FSLContactEvent(const FString& InId,
+	const float InStart,
+	const uint32 InObj1Id,
+	const FString& InObj1SemId,
+	const FString& InObj1Class,
+	const uint32 InObj2Id,
+	const FString& InObj2SemId,
+	const FString& InObj2Class) :
+	ISLEvent(InId, InStart),
+	Obj1Id(InObj1Id),
+	Obj1SemId(InObj1SemId),
+	Obj1Class(InObj1Class),
+	Obj2Id(InObj2Id),
+	Obj2SemId(InObj2SemId),
+	Obj2Class(InObj2Class)
 {
 }
 
@@ -38,8 +57,8 @@ FOwlNode FSLContactEvent::ToOwlNode() const
 		"log", Id, "TouchingSituation");
 	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateEndTimeProperty("log", End));
-	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateInContactProperty("log", Obj1Id));
-	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateInContactProperty("log", Obj2Id));
+	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateInContactProperty("log", Obj1SemId));
+	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateInContactProperty("log", Obj2SemId));
 	return EventIndividual;
 }
 
@@ -55,10 +74,10 @@ void FSLContactEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 		Start, FOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
 		End, FOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(Obj1UniqueId,
-		FOwlExperimentStatics::CreateObjectIndividual("log", Obj1Id, Obj1Class));
-	EventsDoc->AddObjectIndividual(Obj2UniqueId,
-		FOwlExperimentStatics::CreateObjectIndividual("log", Obj2Id, Obj2Class));
+	EventsDoc->AddObjectIndividual(Obj1Id,
+		FOwlExperimentStatics::CreateObjectIndividual("log", Obj1SemId, Obj1Class));
+	EventsDoc->AddObjectIndividual(Obj2Id,
+		FOwlExperimentStatics::CreateObjectIndividual("log", Obj2SemId, Obj2Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 /* End ISLEvent interface */

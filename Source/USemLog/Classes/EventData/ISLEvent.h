@@ -15,8 +15,12 @@ public:
 	ISLEvent() {};
 	
 	// Init constructor
-	ISLEvent(const FString& InId, float InStart, float InEnd) 
+	ISLEvent(const FString& InId, const float InStart, const float InEnd) 
 		: Id(InId), Start(InStart), End(InEnd) {};
+
+	// Init without end constructor
+	ISLEvent(const FString& InId, const float InStart)
+		: Id(InId), Start(InStart) {};
 
 	// Virtual destructor
 	virtual ~ISLEvent() {};

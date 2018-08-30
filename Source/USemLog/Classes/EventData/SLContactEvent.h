@@ -16,32 +16,42 @@ public:
 
 	// Constructor with initialization
 	FSLContactEvent(const FString& InId,
-		float InStart,
-		float InEnd,
-		const FString& InObj1Id,
+		const float InStart,
+		const float InEnd,
+		const uint32 InObj1Id,
+		const FString& InObj1SemId,
 		const FString& InObj1Class,
-		const uint32 InObj1UniqueId,
-		const FString& InObj2Id,
-		const FString& InObj2Class,
-		const uint32 InObj2UniqueId);
+		const uint32 InObj2Id,
+		const FString& InObj2SemId,
+		const FString& InObj2Class);
 
-	// Semantic id of the first object
-	FString Obj1Id;
+	// Constructor initialization without End
+	FSLContactEvent(const FString& InId,
+		const float InStart,
+		const uint32 InObj1Id,
+		const FString& InObj1SemId,
+		const FString& InObj1Class,
+		const uint32 InObj2Id,
+		const FString& InObj2SemId,
+		const FString& InObj2Class);
 
 	// Unique id of the first object
-	uint32 Obj1UniqueId;
+	uint32 Obj1Id;
+
+	// Semantic id of the first object
+	FString Obj1SemId;
 
 	// Semantic Class of the first object
 	FString Obj1Class;
 
+	// Unique id of the second object
+	uint32 Obj2Id;
+
 	// Semantic id of the second object
-	FString Obj2Id;
+	FString Obj2SemId;
 
 	// Semantic Class of the second object
 	FString Obj2Class;
-
-	// Unique id of the second object
-	uint32 Obj2UniqueId;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

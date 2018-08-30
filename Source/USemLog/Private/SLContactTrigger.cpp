@@ -3,6 +3,7 @@
 
 #include "SLContactTrigger.h"
 #include "SLMappings.h"
+#include "DrawDebugHelpers.h"
 
 // UUTils
 #include "Tags.h"
@@ -34,6 +35,9 @@ void USLContactTrigger::BeginPlay()
 			USLContactTrigger::OnOverlapBegin(
 				this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 		}
+
+		/*this->GetClosestPointOnCollision();*/
+		//this->GetDistanceToCollision()
 
 		// Bind event delegates
 		OnComponentBeginOverlap.AddDynamic(this, &USLContactTrigger::OnOverlapBegin);
@@ -245,7 +249,7 @@ bool USLContactTrigger::RuntimeInit()
 		{
 			// Make sure there are no overlap events on the mesh as well
 			// (these will be calculated on the contact listener)
-			// TODO this will cause problems with grasping objects
+			// TODO this might cause problems with grasping objects
 			OuterMeshComp->SetGenerateOverlapEvents(false);
 
 			// Init the semantic items content singleton
@@ -268,51 +272,43 @@ bool USLContactTrigger::RuntimeInit()
 
 // Start new contact event
 void USLContactTrigger::AddStartedContactEvent(
-	const uint32 InOtherUniqueId,
+	const uint32 InOtherId,
 	const FString& InOtherSemId,
 	const FString& InOtherClass)
 {
 	// Start a semantic contact event
-	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent);
-	ContactEvent->Id = FIds::NewGuidInBase64Url();
-	ContactEvent->Obj1UniqueId = OuterId;
-	ContactEvent->Obj1Id = OuterSemId;
-	ContactEvent->Obj1Class = OuterClass;
-	ContactEvent->Obj2UniqueId = InOtherUniqueId;
-	ContactEvent->Obj2Id = InOtherSemId;
-	ContactEvent->Obj2Class = InOtherClass;
-	ContactEvent->Start = GetWorld()->GetTimeSeconds();
+	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
+		FIds::NewGuidInBase64Url(),
+		GetWorld()->GetTimeSeconds(),
+		OuterId, OuterSemId, OuterClass,
+		InOtherId, InOtherSemId, InOtherClass));
 	// Add event to the pending contacts array
 	StartedContactEvents.Emplace(ContactEvent);
 }
 
 // Start new supported by event
 void USLContactTrigger::AddStartedSupportedByEvent(
-	const uint32 InOtherUniqueId,
+	const uint32 InOtherId,
 	const FString& InOtherSemId,
 	const FString& InOtherClass)
 {
 	// Start a semantic contact event
-	TSharedPtr<FSLSupportedByEvent> SupportedByEvent = MakeShareable(new FSLSupportedByEvent);
-	SupportedByEvent->Id = FIds::NewGuidInBase64Url();
-	SupportedByEvent->Obj1UniqueId = OuterId;
-	SupportedByEvent->Obj1Id = OuterSemId;
-	SupportedByEvent->Obj1Class = OuterClass;
-	SupportedByEvent->Obj2UniqueId = InOtherUniqueId;
-	SupportedByEvent->Obj2Id = InOtherSemId;
-	SupportedByEvent->Obj2Class = InOtherClass;
-	SupportedByEvent->Start = GetWorld()->GetTimeSeconds();
+	TSharedPtr<FSLSupportedByEvent> SupportedByEvent = MakeShareable(new FSLSupportedByEvent(
+		FIds::NewGuidInBase64Url(),
+		GetWorld()->GetTimeSeconds(),
+		OuterId, OuterSemId, OuterClass,
+		InOtherId, InOtherSemId, InOtherClass));
 	// Add event to the pending contacts array
 	StartedSupportedByEvents.Emplace(SupportedByEvent);
 }
 
 // Publish finished event
-bool USLContactTrigger::FinishAndPublishContactEvent(const FString& InOtherSemId)
+bool USLContactTrigger::FinishAndPublishContactEvent(const uint32 InOtherId)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedContactEvents.CreateIterator()); EventItr; ++EventItr)
 	{
-		if ((*EventItr)->Obj2Id.Equals(InOtherSemId))
+		if ((*EventItr)->Obj2Id == InOtherId)
 		{
 			// Set end time and publish event
 			(*EventItr)->End = GetWorld()->GetTimeSeconds();
@@ -326,12 +322,12 @@ bool USLContactTrigger::FinishAndPublishContactEvent(const FString& InOtherSemId
 }
 
 // Publish finished event
-bool USLContactTrigger::FinishAndPublishSupportedByEvent(const FString& InOtherSemId)
+bool USLContactTrigger::FinishAndPublishSupportedByEvent(const uint32 InOtherId)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedSupportedByEvents.CreateIterator()); EventItr; ++EventItr)
 	{
-		if ((*EventItr)->Obj2Id.Equals(InOtherSemId))
+		if ((*EventItr)->SupportingObjId == InOtherId)
 		{
 			// Set end time and publish event
 			(*EventItr)->End = GetWorld()->GetTimeSeconds();			
@@ -368,6 +364,70 @@ void USLContactTrigger::FinishAndPublishAllStartedEvents()
 	StartedSupportedByEvents.Empty();
 }
 
+// Check for supported by event
+bool USLContactTrigger::IsASupportedByEvent(UPrimitiveComponent* InComp1, UPrimitiveComponent* InComp2)
+{
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d Check isSupportedBy [C1,C2]=[%s,%s]"),
+		TEXT(__FUNCTION__), __LINE__, *InComp1->GetOwner()->GetName(), *InComp2->GetOwner()->GetName());
+
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d Velocities: Ac1Comp1=[%s::%s] and Ac2Comp2=[%s::%s]"),
+		TEXT(__FUNCTION__), __LINE__,
+		*InComp1->GetOwner()->GetVelocity().ToString(), *InComp1->GetComponentVelocity().ToString(),
+		*InComp2->GetOwner()->GetVelocity().ToString(), *InComp2->GetComponentVelocity().ToString());
+
+
+
+	FVector C1Ext = InComp1->GetCollisionShape().GetExtent();
+	FVector C2Ext = InComp2->GetCollisionShape().GetExtent();
+
+	DrawDebugBox(GetWorld(), InComp1->GetComponentLocation(), C1Ext, FColor::Red, true, 1000.f, (uint8)'\000', 0.5f);
+	DrawDebugBox(GetWorld(), InComp2->GetComponentLocation(), C2Ext, FColor::Blue, true, 1000.f, (uint8)'\000', 0.75f);
+
+	//GetWorld()->Trace
+
+	
+	//// BLUE
+	//FVector Comp1Loc = InComp1->GetComponentLocation();
+	//FQuat Comp1Quat = InComp1->GetComponentQuat();
+
+	//// RED
+	//FVector Comp2Loc = InComp2->GetComponentLocation();
+	//FQuat Comp2Quat = InComp2->GetComponentQuat();
+
+	//// BLUE->RED
+	//FHitResult HitResult12;
+	//InComp1->SweepComponent(HitResult12, Comp1Loc, Comp2Loc, Comp1Quat, InComp1->GetCollisionShape());
+	//// RED->BLUE
+	//FHitResult HitResult21;
+	//InComp2->SweepComponent(HitResult21, Comp2Loc, Comp1Loc, Comp2Quat, InComp2->GetCollisionShape());
+
+	//UE_LOG(LogTemp, Warning, TEXT(">> %s::%d \n \t Sweep12 = %s \n \t Sweep21 = %s \n Sweep done!"),
+	//	TEXT(__FUNCTION__), __LINE__, *HitResult12.ToString(), *HitResult21.ToString());
+
+	//// GREEN 1-2 Trace START-END
+	//DrawDebugLine(GetWorld(), HitResult12.TraceStart, HitResult12.TraceEnd, FColor::Green, true, 1000.f, (uint8)'\000', 0.5f);
+
+	//// Yellow 2-1 Trace START-END
+	//DrawDebugLine(GetWorld(), HitResult21.TraceStart, HitResult12.TraceEnd, FColor::Green, true, 1000.f, (uint8)'\000', 0.75f);
+
+
+	//// CYAN Normal
+	//DrawDebugDirectionalArrow(GetWorld(), HitResult12.ImpactPoint, HitResult12.ImpactPoint + HitResult12.ImpactNormal,
+	//	2.f, FColor::Cyan, true, 1000.f, (uint8)'\000', 1.0f);
+
+	////// YELLOW Two components lines
+	////DrawDebugLine(GetWorld(), Comp1Loc, Comp2Loc, FColor::Yellow, true, 1000.f, (uint8)'\000', 1.f);
+
+	//// BLUE Component location
+	//DrawDebugPoint(GetWorld(), Comp1Loc, 2.f, FColor::Blue, true, 1000.f);
+
+	//// RED Component location
+	//DrawDebugPoint(GetWorld(), Comp2Loc, 2.f, FColor::Red, true, 1000.f);
+
+	return true;
+}
+
+
 // Called on overlap begin events
 void USLContactTrigger::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
@@ -383,9 +443,9 @@ void USLContactTrigger::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if other actor is semantically annotated
-	const uint32 OtherUniqueId = OtherActor->GetUniqueID();
-	const FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherUniqueId);
-	const FString OtherClass = FSLMappings::GetInstance()->GetSemanticClass(OtherUniqueId);
+	const uint32 OtherId = OtherActor->GetUniqueID();
+	const FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+	const FString OtherClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
 	if (OtherSemId.IsEmpty() || OtherClass.IsEmpty())
 	{
 		return;
@@ -399,18 +459,23 @@ void USLContactTrigger::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	// since the unique ids and the rule of ignoring the one event will not change
 	if (OtherComp->IsA(USLContactTrigger::StaticClass()))
 	{
-		if (OtherUniqueId > OuterId)
+		if (OtherId > OuterId)
 		{
 			// Create a new contact event
-			AddStartedContactEvent(OtherUniqueId, OtherSemId, OtherClass);
-			AddStartedSupportedByEvent(OtherUniqueId, OtherSemId, OtherClass);
+			AddStartedContactEvent(OtherId, OtherSemId, OtherClass);
+
+
+			// Check for supported by case
+			IsASupportedByEvent(OtherComp, OuterMeshComp);
+			//AddStartedSupportedByEvent(OtherId, OtherSemId, OtherClass);
 			return;
 		}
 	}
 
 	// Create a new contact event
-	AddStartedContactEvent(OtherUniqueId, OtherSemId, OtherClass);
-	AddStartedSupportedByEvent(OtherUniqueId, OtherSemId, OtherClass);
+	AddStartedContactEvent(OtherId, OtherSemId, OtherClass);
+	IsASupportedByEvent(OtherComp, OuterMeshComp);
+	//AddStartedSupportedByEvent(OtherId, OtherSemId, OtherClass);
 }
 
 // Called on overlap end events
@@ -426,9 +491,9 @@ void USLContactTrigger::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if other actor is semantically annotated
-	const uint32 OtherUniqueId = OtherActor->GetUniqueID();
-	const FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherUniqueId);
-	const FString OtherClass = FSLMappings::GetInstance()->GetSemanticClass(OtherUniqueId);
+	const uint32 OtherId = OtherActor->GetUniqueID();
+	const FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+	const FString OtherClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
 	if (OtherSemId.IsEmpty() || OtherClass.IsEmpty())
 	{
 		return;
@@ -442,16 +507,16 @@ void USLContactTrigger::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	// since the unique ids and the rule of ignoring the one event will not change
 	if (OtherComp->IsA(USLContactTrigger::StaticClass()))
 	{
-		if (OtherUniqueId > OuterId)
+		if (OtherId > OuterId)
 		{
 			// Publish finished contact event
-			FinishAndPublishContactEvent(OtherSemId);
-			FinishAndPublishSupportedByEvent(OtherSemId);
+			FinishAndPublishContactEvent(OtherId);
+			FinishAndPublishSupportedByEvent(OtherId);
 			return;
 		}
 	}
 
 	// Publish finished contact event
-	FinishAndPublishContactEvent(OtherSemId);
-	FinishAndPublishSupportedByEvent(OtherSemId);
+	FinishAndPublishContactEvent(OtherId);
+	FinishAndPublishSupportedByEvent(OtherId);
 }

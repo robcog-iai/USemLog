@@ -13,7 +13,6 @@ public class USemLog : ModuleRules
 
 		PublicIncludePaths.AddRange(
 			new string[] {
-				//"USemLog/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -21,7 +20,6 @@ public class USemLog : ModuleRules
 
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				//"USemLog/Private",
 				// ... add other private include paths required here ...
 			}
 			);
