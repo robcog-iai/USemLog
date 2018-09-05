@@ -1,16 +1,16 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "EventData/SLSupportedByEvent.h"
+#include "EventData/SLPushedEvent.h"
 #include "OwlExperimentStatics.h"
 
 	// Default constructor
-FSLSupportedByEvent::FSLSupportedByEvent()
+FSLPushedEvent::FSLPushedEvent()
 {
 }
 
 // Constructor with initialization
-FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId,
+FSLPushedEvent::FSLPushedEvent(const FString& InId,
 	const float InStart,
 	const float InEnd,
 	const uint32 InSupportedObjId,
@@ -30,7 +30,7 @@ FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId,
 }
 
 // Constructor with initialization without end time
-FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId,
+FSLPushedEvent::FSLPushedEvent(const FString& InId,
 	const float InStart,
 	const uint32 InSupportedObjId,
 	const FString& InSupportedObjSemId,
@@ -50,7 +50,7 @@ FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId,
 
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
-FOwlNode FSLSupportedByEvent::ToOwlNode() const
+FOwlNode FSLPushedEvent::ToOwlNode() const
 {
 	// Create the contact event node
 	FOwlNode EventIndividual = FOwlExperimentStatics::CreateEventIndividual(
@@ -63,7 +63,7 @@ FOwlNode FSLSupportedByEvent::ToOwlNode() const
 }
 
 // Add the owl representation of the event to the owl document
-void FSLSupportedByEvent::AddToOwlDoc(FOwlDoc* OutDoc)
+void FSLPushedEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 {
 	// Add timepoint and object individuals
 	// We know that the document is of type FOwlExperiment,
@@ -82,8 +82,8 @@ void FSLSupportedByEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 }
 
 // Get event context data as string (ToString equivalent)
-FString FSLSupportedByEvent::Context() const
+FString FSLPushedEvent::Context() const
 {
-	return FString("SupportedByEvent");
+	return FString("PushedEvent");
 }
 /* End ISLEvent interface */

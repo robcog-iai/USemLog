@@ -16,7 +16,8 @@ ASLManager::ASLManager()
 	bIsStarted = false;	
 
 	// Semantic logger default values
-	EpisodeId = TEXT("autogen");
+	bEditEpisodeId = false;
+	EpisodeId = TEXT("DefaultEpisodeId");
 	LogDirectory = TEXT("SemLog");
 	bStartAtBeginPlay = true;
 
@@ -32,7 +33,8 @@ ASLManager::ASLManager()
 
 	// Events logger default values
 	bLogEventData = true;
-	EventsTemplateType = ESLEventsTemplate::Default;
+	bWriteTimelines = true;
+	ExperimentTemplateType = EOwlExperimentTemplate::Default;
 #if WITH_EDITOR
 	// Make sprite smaller
 	SpriteScale = 0.5;
@@ -75,8 +77,8 @@ void ASLManager::Init()
 			FSLMappings::GetInstance()->LoadData(GetWorld());
 		}
 
-		// If none given, generate new unique semantic identifier
-		if (EpisodeId.Equals(TEXT("autogen")))
+		// If the episode Id is not manually added, generate new unique id
+		if (!bEditEpisodeId)
 		{
 			// Generate unique id for the episode
 			EpisodeId = FIds::NewGuidInBase64Url();
@@ -107,7 +109,7 @@ void ASLManager::Init()
 		{
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventDataLogger>(this);
-			EventDataLogger->Init(LogDirectory, EpisodeId, EventsTemplateType);
+			EventDataLogger->Init(LogDirectory, EpisodeId, ExperimentTemplateType, bWriteTimelines);
 		}
 
 		// Mark manager as initialized
@@ -195,6 +197,13 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 		{
 			bLogToJson = false;
 			bLogToBson = false;
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEventData))
+	{
+		if (!bLogEventData)
+		{
+			bWriteTimelines = false;
 		}
 	}
 }

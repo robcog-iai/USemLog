@@ -6,7 +6,8 @@
 #include "Misc/FileHelper.h"
 #include "EngineUtils.h"
 #include "OwlExperimentStatics.h"
-#include "SLContactTrigger.h"
+#include "SLOverlapArea.h"
+#include "SLGoogleCharts.h"
 #include "Ids.h"
 
 // Constructor
@@ -20,11 +21,15 @@ USLEventDataLogger::~USLEventDataLogger()
 }
 
 // Init Logger
-void USLEventDataLogger::Init(const FString& InLogDirectory, const FString& InEpisodeId, ESLEventsTemplate TemplateType)
+void USLEventDataLogger::Init(const FString& InLogDirectory,
+	const FString& InEpisodeId,
+	EOwlExperimentTemplate TemplateType,
+	bool bInWriteTimelines)
 {
 	LogDirectory = InLogDirectory;
 	EpisodeId = InEpisodeId;
 	OwlDocTemplate = TemplateType;
+	bWriteTimelines = bInWriteTimelines;
 
 	// Create the document template
 	ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
@@ -66,52 +71,67 @@ void USLEventDataLogger::Finish()
 void USLEventDataLogger::ListenToSemanticContactRelatedEvents()
 {
 	// Iterate all contact trigger components, and bind to their events publisher
-	for (TObjectIterator<USLContactTrigger> Itr; Itr; ++Itr)
+	for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
 	{
-		Itr->OnSemanticContactEvent.BindUObject(
-			this, &USLEventDataLogger::OnSemanticContactEvent);
-		Itr->OnSemanticSupportedByEvent.BindUObject(
-			this, &USLEventDataLogger::OnSemanticSupportedByEvent);
+		if (Itr->SLContactPub.IsValid())
+		{
+			Itr->SLContactPub->OnSemanticContactEvent.BindUObject(
+				this, &USLEventDataLogger::OnSemanticContactEvent);
+		}
+
+		if (Itr->SLSupportedByPub.IsValid())
+		{
+			Itr->SLSupportedByPub->OnSupportedByEvent.BindUObject(
+				this, &USLEventDataLogger::OnSemanticSupportedByEvent);
+		}
 	}
 }
 
 // Called when a semantic contact is finished
 void USLEventDataLogger::OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event)
 {
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d OOooOOoOOoo"), TEXT(__FUNCTION__), __LINE__);
 	FinishedEvents.Add(Event);
 }
 
 // Called when a semantic supported by event is finished
 void USLEventDataLogger::OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event)
 {
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 	FinishedEvents.Add(Event);
 }
 
 // Write to file
 bool USLEventDataLogger::WriteToFile()
 {
+	// Write events timelines to file
+	if (bWriteTimelines)
+	{
+		FSLGoogleCharts::WriteTimelines(FinishedEvents, LogDirectory, EpisodeId);
+	}
+
 	if (!ExperimentDoc.IsValid())
 		return false;
 
-	// Write map to file
+	// Write experiment to file
 	FString FullFilePath = FPaths::ProjectDir() +
-		LogDirectory + TEXT("/Episodes/EventData_") + EpisodeId + TEXT(".owl");
+		LogDirectory + TEXT("/Episodes/") + EpisodeId + TEXT("_ED.owl");
 	FPaths::RemoveDuplicateSlashes(FullFilePath);
 	return FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);
 }
 
 // Create events doc (experiment) template
-TSharedPtr<FOwlExperiment> USLEventDataLogger::CreateEventsDocTemplate(ESLEventsTemplate TemplateType, const FString& InDocId)
+TSharedPtr<FOwlExperiment> USLEventDataLogger::CreateEventsDocTemplate(EOwlExperimentTemplate TemplateType, const FString& InDocId)
 {
 	// Create unique semlog id for the document
 	const FString DocId = InDocId.IsEmpty() ? FIds::NewGuidInBase64Url() : InDocId;
 
 	// Fill document with template values
-	if (TemplateType == ESLEventsTemplate::Default)
+	if (TemplateType == EOwlExperimentTemplate::Default)
 	{
 		return FOwlExperimentStatics::CreateDefaultExperiment(DocId);
 	}
-	else if (TemplateType == ESLEventsTemplate::IAI)
+	else if (TemplateType == EOwlExperimentTemplate::IAI)
 	{
 		return FOwlExperimentStatics::CreateUEExperiment(DocId);
 	}

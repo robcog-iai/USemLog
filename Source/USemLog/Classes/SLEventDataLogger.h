@@ -7,21 +7,13 @@
 #include "UObject/NoExportTypes.h"
 #include "OwlExperiment.h"
 #include "EventData/SLContactEvent.h"
+#include "EventData/SLSupportedByEvent.h"
+#include "EventData/SLSlidingEvent.h"
+#include "EventData/SLPushedEvent.h"
 #include "SLEventDataLogger.generated.h"
 
 // Forward declaration
 class ISLEvent;
-
-/**
-* Events owl document template types
-*/
-UENUM(BlueprintType)
-enum class ESLEventsTemplate : uint8
-{
-	NONE					UMETA(DisplayName = "None"),
-	Default					UMETA(DisplayName = "Default"),
-	IAI						UMETA(DisplayName = "IAI"),
-};
 
 /**
  * Event (symbolic) data logger
@@ -40,7 +32,10 @@ public:
 
 public:
 	// Init Logger
-	void Init(const FString& InLogDirectory, const FString& InEpisodeId, ESLEventsTemplate TemplateType);
+	void Init(const FString& InLogDirectory,
+		const FString& InEpisodeId,
+		EOwlExperimentTemplate TemplateType,
+		bool bInWriteTimelines);
 
 	// Start logger
 	void Start();
@@ -63,7 +58,7 @@ private:
 
 	// Create events doc template
 	TSharedPtr<FOwlExperiment> CreateEventsDocTemplate(
-		ESLEventsTemplate TemplateType, const FString& InDocId);
+		EOwlExperimentTemplate TemplateType, const FString& InDocId);
 
 	// Finish the pending events at the current time
 	void FinishPendingEvents(const float EndTime);
@@ -75,7 +70,10 @@ private:
 	FString EpisodeId;
 
 	// Type of owl template to write the events to
-	ESLEventsTemplate OwlDocTemplate;
+	EOwlExperimentTemplate OwlDocTemplate;
+
+	// Save events to timelines
+	bool bWriteTimelines;
 
 	// Array of pending events
 	TArray<TSharedPtr<ISLEvent>> PendingEvents;

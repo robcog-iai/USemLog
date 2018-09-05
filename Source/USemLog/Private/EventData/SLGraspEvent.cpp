@@ -1,10 +1,10 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "EventData/SLDummyEvent.h"
+#include "EventData/SLGraspEvent.h"
 
 // Default constructor
-FSLDummyEvent::FSLDummyEvent()
+FSLGraspEvent::FSLGraspEvent()
 {
 	Start = 0.2f;
 	End = 1231.f;
@@ -13,20 +13,20 @@ FSLDummyEvent::FSLDummyEvent()
 
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
-FOwlNode FSLDummyEvent::ToOwlNode(/*ESLEventsTemplate TemplateType*/) const
+FOwlNode FSLGraspEvent::ToOwlNode(/*ESLEventsTemplate TemplateType*/) const
 {
 	return FOwlNode();
 }
 
 // Add the owl representation of the event to the owl document
-void FSLDummyEvent::AddToOwlDoc(FOwlDoc* OutDoc)
+void FSLGraspEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 {
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
 // Get event context data as string (ToString equivalent)
-FString FSLDummyEvent::Context() const
+FString FSLGraspEvent::Context() const
 {
-	return FString("DummyEvent");
+	return FString("GraspEvent");
 }
 /* End ISLEvent interface */

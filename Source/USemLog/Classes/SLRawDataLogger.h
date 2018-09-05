@@ -67,6 +67,15 @@ private:
 	// Log current state of the world (dynamic objects that moved more than the distance threshold)
 	void LogCurrentWorldState();
 
+private:
+	// Update rate of raw data logging (0.f means logging on every tick)
+	UPROPERTY(EditAnywhere, Category = "Raw Data Logger", meta = (ClampMin = 0))
+	float UpdateRate2;
+
+	// Distance (cm) threshold difference for logging a given item
+	UPROPERTY(EditAnywhere, Category = "Raw Data Logger", meta = (ClampMin = 0))
+	float DistanceThreshold2;
+
 	// True if the object can be ticked (used by FTickableGameObject)
 	bool bIsTickable;
 

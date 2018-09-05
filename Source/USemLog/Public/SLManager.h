@@ -48,8 +48,12 @@ private:
 
 private:
 	/* Semantic logger */
-	// Episode Id (be default will be auto generated)
+	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bEditEpisodeId;
+
+	// Episode Id (be default will be auto generated)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bEditEpisodeId"))
 	FString EpisodeId;
 
 	// Log directory (or the database name if saving to mongodb)
@@ -67,7 +71,7 @@ private:
 	bool bIsStarted;
 
 
-	/* Raw data logger properties */
+	/* Begin raw data logger properties */
 	// Log raw data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogRawData;
@@ -103,18 +107,24 @@ private:
 	// Raw data logger, use UPROPERTY to avoid GC
 	UPROPERTY()
 	USLRawDataLogger* RawDataLogger;
+	/* End raw data logger properties */
 
 
-	/* Event data logger properties */
+	/* Begin event data logger properties */
 	// Log event data
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogEventData;
 
-	// Owl template
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger")
-	ESLEventsTemplate EventsTemplateType;
+	// Write event data as timelines
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	bool bWriteTimelines;
+
+	// Owl experiment template
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	EOwlExperimentTemplate ExperimentTemplateType;
 
 	// Event data logger, use UPROPERTY to avoid GC
 	UPROPERTY()
 	USLEventDataLogger* EventDataLogger;
+	/* End event data logger properties */
 };

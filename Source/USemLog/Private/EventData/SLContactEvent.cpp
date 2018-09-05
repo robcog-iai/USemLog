@@ -80,4 +80,10 @@ void FSLContactEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 		FOwlExperimentStatics::CreateObjectIndividual("log", Obj2SemId, Obj2Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
+
+// Get event context data as string (ToString equivalent)
+FString FSLContactEvent::Context() const
+{
+	return FString("ContactEvent_") + Id;
+}
 /* End ISLEvent interface */

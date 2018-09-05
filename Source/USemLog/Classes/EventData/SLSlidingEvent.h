@@ -6,16 +6,16 @@
 #include "EventData/ISLEvent.h"
 
 /**
-* Supported by event class
+* Object is sliding event class
 */
-class FSLSupportedByEvent : public ISLEvent
+class FSLSlidingEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLSupportedByEvent();
+	FSLSlidingEvent();
 
 	// Constructor with initialization
-	FSLSupportedByEvent(const FString& InId,
+	FSLSlidingEvent(const FString& InId,
 		const float InStart,
 		const float InEnd,
 		const uint32 InSupportedObjId,
@@ -26,7 +26,7 @@ public:
 		const FString& InSupportingObjClass);
 
 	// Constructor with initialization without end time
-	FSLSupportedByEvent(const FString& InId,
+	FSLSlidingEvent(const FString& InId,
 		const float InStart,
 		const uint32 InSupportedObjId,
 		const FString& InSupportedObjSemId,

@@ -24,7 +24,7 @@ FSLSemanticMapWriter::FSLSemanticMapWriter()
 
 // Write semantic map to file
 bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
-	EMapTemplate TemplateType,
+	EOwlSemanticMapTemplate TemplateType,
 	const FString& InDirectory,
 	const FString& InFilename)
 {
@@ -42,19 +42,19 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 }
 
 // Create semantic map template
-TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate(EMapTemplate TemplateType, const FString& InDocId)
+TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate(EOwlSemanticMapTemplate TemplateType, const FString& InDocId)
 {
 	const FString DocId = InDocId.IsEmpty() ? FIds::NewGuidInBase64Url() : InDocId;
 
-	if (TemplateType == EMapTemplate::Default)
+	if (TemplateType == EOwlSemanticMapTemplate::Default)
 	{
 		return FOwlSemanticMapStatics::CreateDefaultSemanticMap(DocId);
 	}
-	else if (TemplateType == EMapTemplate::IAIKitchen)
+	else if (TemplateType == EOwlSemanticMapTemplate::IAIKitchen)
 	{
 		return FOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(DocId);
 	}
-	else if (TemplateType == EMapTemplate::IAISupermarket)
+	else if (TemplateType == EOwlSemanticMapTemplate::IAISupermarket)
 	{
 		return FOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(DocId);
 	}

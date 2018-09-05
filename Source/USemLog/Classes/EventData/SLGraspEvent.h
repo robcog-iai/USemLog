@@ -9,11 +9,11 @@
 * Dummy event class
 */
 
-class FSLDummyEvent : public ISLEvent
+class FSLGraspEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLDummyEvent();
+	FSLGraspEvent();
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

@@ -5,22 +5,10 @@
 
 #include "CoreMinimal.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
-#include "Owl.h"
+#include "OwlSemanticMap.h"
 
 /**
-* Semantic map template types
-*/
-UENUM(BlueprintType)
-enum class EMapTemplate : uint8
-{
-	NONE					UMETA(DisplayName = "None"),
-	Default					UMETA(DisplayName = "Default"),
-	IAIKitchen				UMETA(DisplayName = "IAI Kitchen"),
-	IAISupermarket			UMETA(DisplayName = "IAI Supermarket"),
-};
-
-/**
- * 
+ * Class for exporting the semantic map in an OWL format
  */
 struct USEMLOG_API FSLSemanticMapWriter
 {
@@ -30,14 +18,14 @@ public:
 
 	// Write semantic map to file
 	bool WriteToFile(UWorld* World,
-		EMapTemplate TemplateType = EMapTemplate::NONE,
+		EOwlSemanticMapTemplate TemplateType = EOwlSemanticMapTemplate::NONE,
 		const FString& InDirectory = TEXT("SemLog"),
 		const FString& InFilename = TEXT("SemanticMap"));
 
 private:
 	// Create semantic map template
 	TSharedPtr<FOwlSemanticMap> CreateSemanticMapDocTemplate(
-		EMapTemplate TemplateType,
+		EOwlSemanticMapTemplate TemplateType,
 		const FString& DocId = "");
 
 	// Add individuals to the semantic map

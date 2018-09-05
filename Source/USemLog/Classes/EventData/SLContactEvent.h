@@ -59,5 +59,8 @@ public:
 
 	// Add the owl representation of the event to the owl document
 	virtual void AddToOwlDoc(FOwlDoc* OutDoc) override;
+
+	// Get event context data as string (ToString equivalent)
+	virtual FString Context() const override;
 	/* End IEvent interface */
 };

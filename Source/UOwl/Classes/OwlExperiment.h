@@ -7,6 +7,17 @@
 #include "OwlDoc.h"
 
 /**
+* Events owl document template types
+*/
+UENUM(BlueprintType)
+enum class EOwlExperimentTemplate : uint8
+{
+	NONE					UMETA(DisplayName = "None"),
+	Default					UMETA(DisplayName = "Default"),
+	IAI						UMETA(DisplayName = "IAI"),
+};
+
+/**
 * Semantic events (experiment) document in owl
 */
 struct FOwlExperiment : FOwlDoc

@@ -7,6 +7,18 @@
 #include "OwlDoc.h"
 
 /**
+* Semantic map template types
+*/
+UENUM(BlueprintType)
+enum class EOwlSemanticMapTemplate : uint8
+{
+	NONE					UMETA(DisplayName = "None"),
+	Default					UMETA(DisplayName = "Default"),
+	IAIKitchen				UMETA(DisplayName = "IAI Kitchen"),
+	IAISupermarket			UMETA(DisplayName = "IAI Supermarket"),
+};
+
+/**
 * Semantic map document in OWL
 */
 struct FOwlSemanticMap : public FOwlDoc

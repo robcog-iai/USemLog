@@ -65,7 +65,7 @@ void FSLRawDataWriterJson::WriteData()
 // Set the file handle for the logger
 void FSLRawDataWriterJson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
-	const FString Filename = TEXT("RawData_") + InEpisodeId + TEXT(".json");
+	const FString Filename = InEpisodeId + TEXT("_RD.json");
 	FString EpisodesDirPath = FPaths::ProjectDir() + LogDirectory + TEXT("/Episodes/");
 	FPaths::RemoveDuplicateSlashes(EpisodesDirPath);
 
