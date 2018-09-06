@@ -12,7 +12,7 @@
 
 
 /** Delegate to notify that a contact happened between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_FiveParams(FSLBeginOverlapSignature, const uint32 /*OtherId*/, const FString& /*OtherSemId*/, const FString& /*OtherSemClass*/, float /*StartTime*/,  bool /*bIsSLOverlapArea*/);
+DECLARE_MULTICAST_DELEGATE_SixParams(FSLBeginOverlapSignature, UStaticMeshComponent* /*OtherStaticMeshComp*/, const uint32 /*OtherId*/, const FString& /*OtherSemId*/, const FString& /*OtherSemClass*/, float /*StartTime*/,  bool /*bIsSLOverlapArea*/);
 
 /** Delegate to notify that a contact happened between two semantically annotated objects */
 DECLARE_MULTICAST_DELEGATE_FiveParams(FSLEndOverlapSignature, const uint32 /*OtherId*/, const FString& /*OtherSemId*/, const FString& /*OtherSemClass*/, float /*EndTime*/, bool /*bIsSLOverlapArea*/);

@@ -7,6 +7,9 @@
 // UUtils
 #include "Ids.h"
 
+#define SL_SB_VERT_SPEED_TH 0.5f // Supported by event vertical speed threshold
+#define SL_SB_UPDATE_RATE_CB 0.3f // Update rate for the timer callback
+
 // Default constructor
 FSLSupportedByPublisher::FSLSupportedByPublisher(USLOverlapArea* InSLOverlapArea)
 {
@@ -19,15 +22,17 @@ void FSLSupportedByPublisher::Init()
 	Parent->OnBeginSLOverlap.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapBegin);
 	Parent->OnEndSLOverlap.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapEnd);
 
-	//// Start timer for checking the supported by event candidates
+	// Start timer for checking the supported by event candidates
 	//TimerDelegateNextTick.BindUObject(this, &USLOverlapArea::NextTickCb);
 	//GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);
 	//FTimerDelegate TD;
 	//TD.BindLambda([this] {UE_LOG(LogTemp, Warning, TEXT(">> %s::%d LAMBDA TS:%f"), TEXT(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds()); });
 	//GetWorld()->GetTimerManager().SetTimerForNextTick(TD);
 
-	//// Start timer (will be directly paused if no candidates are available)
-	//GetWorld()->GetTimerManager().SetTimer(TimerHandleSupportedBy, this, &USLOverlapArea::SupportedByTimerCb, 0.3f, true);
+	// Start timer (will be directly paused if no candidates are available)
+	TimerDelegate.BindRaw(this, &FSLSupportedByPublisher::CheckCandidatesTimerCb);
+	Parent->GetWorld()->GetTimerManager().SetTimer(TimerHandle,
+		TimerDelegate, SL_SB_UPDATE_RATE_CB, true);
 }
 
 
@@ -35,11 +40,13 @@ void FSLSupportedByPublisher::Init()
 void FSLSupportedByPublisher::Finish(float EndTime)
 {
 	FSLSupportedByPublisher::FinishAndPublishStartedEvents(EndTime);
+	Parent->GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 }
 
 
 // Add supported by candidate (other)
-void FSLSupportedByPublisher::AddCandidate(uint32 OtherId,
+void FSLSupportedByPublisher::AddCandidate(UStaticMeshComponent* OtherStaticMeshComp,
+	uint32 OtherId,
 	const FString& OtherSemId,
 	const FString& OtherSemClass,
 	bool bCanOnlyBeSupporting)
@@ -49,18 +56,11 @@ void FSLSupportedByPublisher::AddCandidate(uint32 OtherId,
 	SBCandidate.Id = OtherId;
 	SBCandidate.SemId = OtherSemId;
 	SBCandidate.SemClass = OtherSemClass;
-	//SBCandidate.StaticMeshComp = OtherContactTrigger->OwnerStaticMeshComp;
-	SBCandidate.bCanOnlyBeSupporting = false;
+	SBCandidate.StaticMeshComp = OtherStaticMeshComp;
+	SBCandidate.bCanOnlyBeSupporting = bCanOnlyBeSupporting;
 
 	// Add the created candidate
 	Candidates.Emplace(SBCandidate);
-
-	//// Make sure the timer is running
-	//if (GetWorld()->GetTimerManager().IsTimerPaused(TimerHandleSupportedBy))
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d UnPauseTimer"), TEXT(__FUNCTION__), __LINE__);
-	//	GetWorld()->GetTimerManager().UnPauseTimer(TimerHandleSupportedBy);
-	//}
 }
 
 // Check if other obj is a supported by candidate
@@ -82,20 +82,65 @@ bool FSLSupportedByPublisher::IsACandidate(const uint32 InOtherId, bool bRemoveI
 	return false; // Not in list
 }
 
-// Start new contact event
-void FSLSupportedByPublisher::StartAndAddEvent(
-	const uint32 InOtherId,
-	const FString& InOtherSemId,
-	const FString& InOtherSemClass,
-	float StartTime)
+// Check candidates vertical relative speed
+void FSLSupportedByPublisher::CheckCandidatesTimerCb()
 {
-	// Start a semantic contact event
-	TSharedPtr<FSLSupportedByEvent> ContactEvent = MakeShareable(new FSLSupportedByEvent(
-		FIds::NewGuidInBase64Url(), StartTime,
-		Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass,
-		InOtherId, InOtherSemId, InOtherSemClass));
-	// Add event to the pending contacts array
-	StartedEvents.Emplace(ContactEvent);
+	float StartTime = Parent->GetWorld()->GetTimeSeconds();
+
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d CANDIDATES: "), TEXT(__FUNCTION__), __LINE__);
+
+	for (auto CandidateItr(Candidates.CreateIterator()); CandidateItr; ++CandidateItr)
+	{
+		// Get relative vertical speed
+		const float RelVerticalSpeed = FMath::Abs(Parent->OwnerStaticMeshComp->GetComponentVelocity().Z -
+			CandidateItr->StaticMeshComp->GetComponentVelocity().Z);
+
+		UE_LOG(LogTemp, Warning, TEXT("\t \t %s, Vel[Outer,Other]=[%s,%s], RelVerticalSpeed=%f"),
+			*(*CandidateItr).SemId,
+			*Parent->OwnerStaticMeshComp->GetComponentVelocity().ToString(),
+			*(*CandidateItr).StaticMeshComp->GetComponentVelocity().ToString(),
+			RelVerticalSpeed);
+
+		if (RelVerticalSpeed < SL_SB_VERT_SPEED_TH)
+		{
+			if (CandidateItr->bCanOnlyBeSupporting)
+			{
+				StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
+					FIds::NewGuidInBase64Url(), StartTime,
+					Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass, // supported
+					CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass))); // supporting
+
+			}
+			else // Check which is supporting and which is supported
+			{
+				// TODO simple height comparison for now
+				if (Parent->OwnerStaticMeshComp->GetComponentLocation().Z >
+					CandidateItr->StaticMeshComp->GetComponentLocation().Z)
+				{
+					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
+						FIds::NewGuidInBase64Url(), StartTime,
+						Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass, // supported
+						CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass))); // supporting
+				}
+				else
+				{
+					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
+						FIds::NewGuidInBase64Url(), StartTime,
+						CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass, // supported
+						Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass))); // supporting
+				}
+			}
+			// Remove candidate, it is now part of a started event
+			CandidateItr.RemoveCurrent();
+		}
+	}
+
+	// Pause timer
+	if (Candidates.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d No candidates, pause timer"), TEXT(__FUNCTION__), __LINE__);
+		Parent->GetWorld()->GetTimerManager().PauseTimer(TimerHandle);
+	}
 }
 
 // Publish finished event
@@ -104,7 +149,8 @@ bool FSLSupportedByPublisher::FinishAndPublishEvent(const uint32 InOtherId, floa
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
-		if ((*EventItr)->SupportingObjId == InOtherId)
+		if (((*EventItr)->SupportingObjId == InOtherId) && ((*EventItr)->SupportedObjId == Parent->OwnerId) ||
+			((*EventItr)->SupportedObjId == InOtherId) && ((*EventItr)->SupportingObjId == Parent->OwnerId))
 		{
 			// Set end time and publish event
 			(*EventItr)->End = EndTime;
@@ -130,15 +176,22 @@ void FSLSupportedByPublisher::FinishAndPublishStartedEvents(float EndTime)
 	StartedEvents.Empty();
 }
 
-
 // Event called when a semantic overlap event begins
-void FSLSupportedByPublisher::OnSLOverlapBegin(const uint32 OtherId,
+void FSLSupportedByPublisher::OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMeshComp,
+	uint32 OtherId,
 	const FString& OtherSemId,
 	const FString& OtherSemClass,
 	float StartTime,
 	bool bIsSLOverlapArea)
 {
-	FSLSupportedByPublisher::StartAndAddEvent(OtherId, OtherSemId, OtherSemClass, StartTime);
+	FSLSupportedByPublisher::AddCandidate(OtherStaticMeshComp, OtherId, OtherSemId, OtherSemClass, !bIsSLOverlapArea);
+	
+	// If paused, unpause timer
+	if (Parent->GetWorld()->GetTimerManager().IsTimerPaused(TimerHandle))
+	{
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d UnPauseTimer"), TEXT(__FUNCTION__), __LINE__);
+		Parent->GetWorld()->GetTimerManager().UnPauseTimer(TimerHandle);
+	}
 }
 
 // Event called when a semantic overlap event ends
@@ -157,37 +210,6 @@ void FSLSupportedByPublisher::OnSLOverlapEnd(const uint32 OtherId,
 }
 
 
-//void USLOverlapArea::SupportedByTimerCb()
-//{
-//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Candidates: TS:%f"), TEXT(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
-//	for (auto CandidateItr(SupportedByCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
-//	{
-//		// Get relative velocity
-//		const FVector RelativeVelocity = OwnerStaticMeshComp->GetComponentVelocity() - (*CandidateItr).StaticMeshComp->GetComponentVelocity();
-//		const float SpeedSquared = RelativeVelocity.SizeSquared();
-//
-//		UE_LOG(LogTemp, Warning, TEXT("\t \t %s, Vel[Outer,Other]=[%s,%s], SpeedSq=%f"),
-//			*(*CandidateItr).SemId,
-//			*OwnerStaticMeshComp->GetComponentVelocity().ToString(),
-//			*(*CandidateItr).StaticMeshComp->GetComponentVelocity().ToString(),
-//			SpeedSquared);
-//
-//		if (SpeedSquared < SL_SUPPORTEDBY_SQ_SPEED_THRESHOLD)
-//		{
-//			UE_LOG(LogTemp, Warning, TEXT(">> %s::%d SUPPORTED BY"), TEXT(__FUNCTION__), __LINE__);
-//			CandidateItr.RemoveCurrent();
-//		}
-//	}
-//
-//	// Pause timer
-//	if (SupportedByCandidates.Num() == 0)
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d PauseTimer"), TEXT(__FUNCTION__), __LINE__);
-//		GetWorld()->GetTimerManager().PauseTimer(TimerHandleSupportedBy);
-//	}
-//}
-//
-//// 
 //void USLOverlapArea::NextTickCb()
 //{
 //	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d TS:%f"), TEXT(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());

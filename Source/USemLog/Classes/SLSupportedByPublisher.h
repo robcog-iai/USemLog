@@ -14,6 +14,9 @@ DECLARE_DELEGATE_OneParam(FSLSupportedByEventSignature, TSharedPtr<FSLSupportedB
  */
 struct FSLSupportedByCandidateData
 {
+	// Pointer to the static mesh component
+	UStaticMeshComponent* StaticMeshComp;
+
 	// Unique id of the object bound to the semantic data
 	uint32 Id;
 
@@ -22,9 +25,6 @@ struct FSLSupportedByCandidateData
 
 	// Semantic class of the component
 	FString SemClass;
-
-	// Pointer to the static mesh component
-	UStaticMeshComponent* StaticMeshComp;
 
 	// Object can only support others
 	bool bCanOnlyBeSupporting;
@@ -47,7 +47,8 @@ public:
 
 private:
 	// Add supported by candidate (other)
-	void AddCandidate(uint32 OtherId,
+	void AddCandidate(UStaticMeshComponent* OtherStaticMeshComp,
+		uint32 OtherId,
 		const FString& OtherSemId,
 		const FString& OtherSemClass,
 		bool bCanOnlyBeSupporting);
@@ -55,12 +56,8 @@ private:
 	// Check if other obj is a supported by candidate
 	bool IsACandidate(const uint32 InOtherId, bool bRemoveIfFound = false);
 
-	// Start new contact event
-	void StartAndAddEvent(
-		const uint32 InOtherId,
-		const FString& InOtherSemId,
-		const FString& InOtherSemClass,
-		float StartTime);
+	// Check if candidates are in a supported by event (triggered periodically)
+	void CheckCandidatesTimerCb();
 
 	// Finish then publish the event
 	bool FinishAndPublishEvent(const uint32 InOtherId, float EndTime);
@@ -69,7 +66,8 @@ private:
 	void FinishAndPublishStartedEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLOverlapBegin(const uint32 OtherId,
+	void OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMeshComp,
+		const uint32 OtherId,
 		const FString& OtherSemId,
 		const FString& OtherSemClass,
 		float StartTime,
@@ -89,12 +87,21 @@ public:
 private:
 	// Parent semantic overlap area
 	class USLOverlapArea* Parent;
+
+	// Pointer to the world (access to elapsed time)
+	UWorld* World;
 	
 	// Candidates for supported by event
 	TArray<FSLSupportedByCandidateData> Candidates;
 
 	// Array of started supported by events
 	TArray<TSharedPtr<FSLSupportedByEvent>> StartedEvents;
+
+	// Timer handle to trigger callback to check if candidates are in a supported by event
+	FTimerHandle TimerHandle;
+
+	// Timer delegate to be able to bind against non UObject functions
+	FTimerDelegate TimerDelegate;
 
 
 

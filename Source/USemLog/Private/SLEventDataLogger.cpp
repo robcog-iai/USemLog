@@ -90,14 +90,14 @@ void USLEventDataLogger::ListenToSemanticContactRelatedEvents()
 // Called when a semantic contact is finished
 void USLEventDataLogger::OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event)
 {
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d OOooOOoOOoo"), TEXT(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Context());
 	FinishedEvents.Add(Event);
 }
 
 // Called when a semantic supported by event is finished
 void USLEventDataLogger::OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event)
 {
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Context());
 	FinishedEvents.Add(Event);
 }
 

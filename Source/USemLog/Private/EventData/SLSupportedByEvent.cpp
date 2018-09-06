@@ -84,6 +84,6 @@ void FSLSupportedByEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 // Get event context data as string (ToString equivalent)
 FString FSLSupportedByEvent::Context() const
 {
-	return FString("SupportedByEvent");
+	return FString("SupportedByEvent_") + Id;
 }
 /* End ISLEvent interface */

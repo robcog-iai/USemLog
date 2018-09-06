@@ -10,7 +10,10 @@
 struct FSLGoogleCharts
 {
 	// Write google charts timeline html page from the events
-	static bool WriteTimelines(const TArray<TSharedPtr<ISLEvent>>& InEvents, const FString& InLogDir, const FString& InEpId)
+	static bool WriteTimelines(const TArray<TSharedPtr<ISLEvent>>& InEvents,
+		const FString& InLogDir,
+		const FString& InEpId,
+		bool bIncludeLegend = true)
 	{
 		// Timeline boilerplate 
 		FString TimelineStr =
@@ -57,10 +60,26 @@ struct FSLGoogleCharts
 			"<div id=\"event_tl\" style=\"height:900px;\"></div>"
 		);
 
+		if (bIncludeLegend)
+		{
+			TimelineStr.Append(FSLGoogleCharts::GetLengend(InEvents));
+		}
+
 		// Write map to file
 		FString FullFilePath = FPaths::ProjectDir() +
 			InLogDir + TEXT("/Episodes/") + InEpId + TEXT("_TL.html");
 		FPaths::RemoveDuplicateSlashes(FullFilePath);
 		return FFileHelper::SaveStringToFile(TimelineStr, *FullFilePath);
+	}
+
+private:
+
+	// Table showing the legend of the symbols
+	static FString GetLengend(const TArray<TSharedPtr<ISLEvent>>& InEvents)
+	{
+		FString Legend =
+			"\n"
+			"\n";
+		return Legend;
 	}
 };

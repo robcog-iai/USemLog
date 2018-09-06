@@ -9,14 +9,14 @@
 #include "Tags.h"
 #include "Ids.h"
 
-#define SL_COLL_SCALE_FACTOR 1.04f
+#define SL_COLL_SCALE_FACTOR 1.03f
 #define SL_COLL_TAGTYPE "SemLogColl"
-#define SL_SUPPORTEDBY_SQ_SPEED_THRESHOLD 0.1f
 
 // Default constructor
 USLOverlapArea::USLOverlapArea()
 {
 	bListenForContactEvents = true;
+	bListenForSupportedByEvents = true;
 }
 
 // Called at level startup
@@ -309,6 +309,17 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 		return;
 	}
 
+	UStaticMeshComponent* OtherSMComp = nullptr;
+	// Ignore if other actor is not a static mesh actor, or does not have a static mesh component
+	if (AStaticMeshActor* OtherAsSMAct = Cast<AStaticMeshActor>(OtherActor))
+	{
+		OtherSMComp = OtherAsSMAct->GetStaticMeshComponent();
+		if (OtherSMComp == nullptr)
+		{
+			return;
+		}
+	}
+
 	// Check if other actor is semantically annotated
 	const uint32 OtherId = OtherActor->GetUniqueID();
 	const FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
@@ -338,13 +349,13 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 		if (OtherId > OwnerId)
 		{
 			// Broadcast begin of semantic overlap event
-			OnBeginSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsSLOverlapArea);
+			OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsSLOverlapArea);
 			return;
 		}
 	}
 
 	// Broadcast begin of semantic overlap event
-	OnBeginSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsSLOverlapArea);
+	OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsSLOverlapArea);
 }
 
 // Called on overlap end events

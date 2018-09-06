@@ -77,7 +77,8 @@ void FSLContactPublisher::FinishAndPublishStartedEvents(float EndTime)
 
 
 // Event called when a semantic overlap event begins
-void FSLContactPublisher::OnSLOverlapBegin(const uint32 OtherId,
+void FSLContactPublisher::OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMeshComp,
+	const uint32 OtherId,
 	const FString& OtherSemId,
 	const FString& OtherSemClass,
 	float StartTime,
