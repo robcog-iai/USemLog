@@ -22,14 +22,22 @@ public:
 	ISLEvent(const FString& InId, const float InStart)
 		: Id(InId), Start(InStart) {};
 
+	// Init constructor with pair id
+	ISLEvent(const uint64 InPairId, const FString& InId, const float InStart, const float InEnd)
+		: PairId(InPairId), Id(InId), Start(InStart), End(InEnd) {};
+
+	// Init without end constructor and with pair id
+	ISLEvent(const uint64 InPairId, const FString& InId, const float InStart)
+		: PairId(InPairId), Id(InId), Start(InStart) {};
+
 	// Virtual destructor
 	virtual ~ISLEvent() {};
 
-	// Unique id of the event
-	FString Id;
-
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
+
+	// Unique id of the event
+	FString Id;
 
 	// Start time of the event
 	float Start;

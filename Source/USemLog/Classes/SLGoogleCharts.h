@@ -27,8 +27,8 @@ struct FSLGoogleCharts
 			"\t\t var chart = new google.visualization.Timeline(container);\n"
 			"\t\t var dataTable = new google.visualization.DataTable();\n"
 			"\n "
-			"\t\t dataTable.addColumn({ type: 'string', id: 'Nr' });\n"
-			"\t\t dataTable.addColumn({ type: 'string', id: 'Event' });\n"
+			"\t\t dataTable.addColumn({ type: 'string', id: 'EventType' });\n"
+			"\t\t dataTable.addColumn({ type: 'string', id: 'EventId' });\n"
 			"\t\t dataTable.addColumn({ type: 'number', id: 'Start' });\n"
 			"\t\t dataTable.addColumn({ type: 'number', id: 'End' });\n"
 			"\n"
@@ -39,8 +39,8 @@ struct FSLGoogleCharts
 		for (const auto& Ev : InEvents)
 		{
 			TimelineStr.Append(
-				"\t\t [ \'" + Ev->Id + "\' , \'"
-				+ Ev->Context() + "\' , "
+				"\t\t [ \'" + Ev->Context()+ "\' , \'"
+				+ Ev->Id + "\' , "
 				+ FString::SanitizeFloat(Ev->Start * 1000.f) + " , " // google charts needs millisecods
 				+ FString::SanitizeFloat(Ev->End * 1000.f) + " ],\n" // google charts needs millisecods
 			);

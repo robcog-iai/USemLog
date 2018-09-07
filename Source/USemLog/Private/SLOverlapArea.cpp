@@ -357,7 +357,6 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 			// Broadcast begin of semantic overlap event
 			FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, StartTime,
 				bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-			SemanticOverlapResult.PairId = FIds::PairEncodeCantor(OtherId, OwnerId);
 			OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
 			OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsASemanticOverlapArea);
 			return;
@@ -367,7 +366,6 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	// Broadcast begin of semantic overlap event
 	FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, StartTime,
 		bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-	SemanticOverlapResult.PairId = FIds::PairEncodeCantor(OtherId, OwnerId);
 	OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
 	OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsASemanticOverlapArea);
 }
@@ -431,8 +429,7 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 			// Broadcast end of semantic overlap event
 			FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, EndTime,
 				bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-			SemanticOverlapResult.PairId = FIds::PairEncodeCantor(OtherId, OwnerId);
-			OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
+			OnEndSLOverlap2.Broadcast(SemanticOverlapResult);
 			OnEndSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, EndTime, bOtherIsASemanticOverlapArea);
 			return;
 		}
@@ -441,8 +438,7 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	// Broadcast end of semantic overlap event
 	FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, EndTime,
 		bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-	SemanticOverlapResult.PairId = FIds::PairEncodeCantor(OtherId, OwnerId);
-	OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
+	OnEndSLOverlap2.Broadcast(SemanticOverlapResult);
 	OnEndSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, EndTime, bOtherIsASemanticOverlapArea);
 }
 

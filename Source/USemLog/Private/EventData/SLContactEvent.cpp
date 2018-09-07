@@ -48,6 +48,47 @@ FSLContactEvent::FSLContactEvent(const FString& InId,
 {
 }
 
+// Constructor with initialization with pair id
+FSLContactEvent::FSLContactEvent(const uint64 InPairId,
+	const FString& InId,
+	const float InStart,
+	const float InEnd,
+	const uint32 InObj1Id,
+	const FString& InObj1SemId,
+	const FString& InObj1Class,
+	const uint32 InObj2Id,
+	const FString& InObj2SemId,
+	const FString& InObj2Class) :
+	ISLEvent(InPairId, InId, InStart, InEnd),
+	Obj1Id(InObj1Id),
+	Obj1SemId(InObj1SemId),
+	Obj1Class(InObj1Class),
+	Obj2Id(InObj2Id),
+	Obj2SemId(InObj2SemId),
+	Obj2Class(InObj2Class)
+{
+}
+
+// Constructor initialization without End with pair id
+FSLContactEvent::FSLContactEvent(const uint64 InPairId,
+	const FString& InId,
+	const float InStart,
+	const uint32 InObj1Id,
+	const FString& InObj1SemId,
+	const FString& InObj1Class,
+	const uint32 InObj2Id,
+	const FString& InObj2SemId,
+	const FString& InObj2Class) :
+	ISLEvent(InPairId, InId, InStart),
+	Obj1Id(InObj1Id),
+	Obj1SemId(InObj1SemId),
+	Obj1Class(InObj1Class),
+	Obj2Id(InObj2Id),
+	Obj2SemId(InObj2SemId),
+	Obj2Class(InObj2Class)
+{
+}
+
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
 FOwlNode FSLContactEvent::ToOwlNode() const
@@ -84,6 +125,7 @@ void FSLContactEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 // Get event context data as string (ToString equivalent)
 FString FSLContactEvent::Context() const
 {
-	return FString("ContactEvent_") + Id;
+	//return FString("ContactEvent_") + Id;
+	return FString::Printf(TEXT("ContactEvent_%lld"), PairId);
 }
 /* End ISLEvent interface */

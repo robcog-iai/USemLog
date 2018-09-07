@@ -46,39 +46,25 @@ struct FSLOverlapResult
 	FSLOverlapResult() {};
 
 	// Helper constructor
-	FSLOverlapResult(uint32 InId,
-		const FString& InSemId,
-		const FString& InSemClass,
-		float Time,
-		bool bIsSemanticOverlapArea) :
-		Id(InId),
-		SemId(InSemId),
-		SemClass(InSemClass),
-		TriggerTime(Time),
+	FSLOverlapResult(uint32 InId, const FString& InSemId, const FString& InSemClass,
+		float Time,	bool bIsSemanticOverlapArea) :
+		Id(InId), SemId(InSemId), SemClass(InSemClass), TriggerTime(Time), 
 		bIsSemanticOverlapArea(bIsSemanticOverlapArea)
 	{};
 
 	// Helper constructor with static mesh actor and component
-	FSLOverlapResult(uint32 InId,
-		const FString& InSemId,
-		const FString& InSemClass,
-		float Time,
-		bool bIsSemanticOverlapArea,
-		AStaticMeshActor* InStaticMeshActor,
-		UStaticMeshComponent* InStaticMeshComponent) :
-		Id(InId),
-		SemId(InSemId),
-		SemClass(InSemClass),
-		TriggerTime(Time),
-		bIsSemanticOverlapArea(bIsSemanticOverlapArea),
-		StaticMeshActor(InStaticMeshActor),
-		StaticMeshComponent(InStaticMeshComponent)
+	FSLOverlapResult(uint32 InId, const FString& InSemId, const FString& InSemClass,
+		float Time, bool bIsSemanticOverlapArea,
+		AStaticMeshActor* InStaticMeshActor, UStaticMeshComponent* InStaticMeshComponent) :
+		Id(InId), SemId(InSemId), SemClass(InSemClass),
+		TriggerTime(Time), bIsSemanticOverlapArea(bIsSemanticOverlapArea),
+		StaticMeshActor(InStaticMeshActor), StaticMeshComponent(InStaticMeshComponent)
 	{};
 
 	// Get result as string
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Id:%d SemId:%s SemClass:%s TriggerTime:%f bIsSemanticOverlapArea:%s StaticMeshActor:%s StaticMeshComponent:%s"),
+		return FString::Printf(TEXT("Id:%ld SemId:%s SemClass:%s TriggerTime:%f bIsSemanticOverlapArea:%s StaticMeshActor:%s StaticMeshComponent:%s"),
 			Id, *SemId, *SemClass, TriggerTime,
 			bIsSemanticOverlapArea == true ? TEXT("True") : TEXT("False"),
 			StaticMeshActor.IsValid() ? *StaticMeshActor->GetName() : TEXT("None"),

@@ -13,7 +13,7 @@ class FSLSupportedByEvent : public ISLEvent
 public:
 	// Default constructor
 	FSLSupportedByEvent();
-
+	
 	// Constructor with initialization
 	FSLSupportedByEvent(const FString& InId,
 		const float InStart,
@@ -27,6 +27,29 @@ public:
 
 	// Constructor with initialization without end time
 	FSLSupportedByEvent(const FString& InId,
+		const float InStart,
+		const uint32 InSupportedObjId,
+		const FString& InSupportedObjSemId,
+		const FString& InSupportedObjClass,
+		const uint32 InSupportingObjId,
+		const FString& InSupportingObjSemId,
+		const FString& InSupportingObjClass);
+
+	// Constructor with initialization with pair id
+	FSLSupportedByEvent(const uint64 InPairId,
+		const FString& InId,
+		const float InStart,
+		const float InEnd,
+		const uint32 InSupportedObjId,
+		const FString& InSupportedObjSemId,
+		const FString& InSupportedObjClass,
+		const uint32 InSupportingObjId,
+		const FString& InSupportingObjSemId,
+		const FString& InSupportingObjClass);
+
+	// Constructor with initialization without end time with pair id
+	FSLSupportedByEvent(const uint64 InPairId,
+		const FString& InId,
 		const float InStart,
 		const uint32 InSupportedObjId,
 		const FString& InSupportedObjSemId,
