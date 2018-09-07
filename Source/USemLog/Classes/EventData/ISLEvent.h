@@ -28,6 +28,9 @@ public:
 	// Unique id of the event
 	FString Id;
 
+	// Pair id of the event (combination of two unique runtime ids)
+	uint64 PairId;
+
 	// Start time of the event
 	float Start;
 

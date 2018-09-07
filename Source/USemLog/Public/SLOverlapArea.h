@@ -10,12 +10,91 @@
 #include "SLSupportedByPublisher.h"
 #include "SLOverlapArea.generated.h"
 
+/**
+ * Structure containing information about the semantic overlap event
+ */
+USTRUCT()
+struct FSLOverlapResult
+{
+	GENERATED_USTRUCT_BODY()
+
+	// Unique UObjcet id of other
+	uint32 Id;
+
+	// Cantor pair unique id of the parent and other
+	uint64 PairId;
+
+	// Semantic id of other
+	FString SemId;
+
+	// Semantic class of other
+	FString SemClass;
+
+	// Timestamp in seconds of the event triggering
+	float TriggerTime;
+
+	// Flag showing if Other is also of type Semantic Overlap Area
+	bool bIsSemanticOverlapArea;
+
+	// Other Actor overlapping
+	TWeakObjectPtr<AStaticMeshActor> StaticMeshActor;
+
+	// Other Component overlapping
+	TWeakObjectPtr<UStaticMeshComponent> StaticMeshComponent;
+
+	// Default ctor
+	FSLOverlapResult() {};
+
+	// Helper constructor
+	FSLOverlapResult(uint32 InId,
+		const FString& InSemId,
+		const FString& InSemClass,
+		float Time,
+		bool bIsSemanticOverlapArea) :
+		Id(InId),
+		SemId(InSemId),
+		SemClass(InSemClass),
+		TriggerTime(Time),
+		bIsSemanticOverlapArea(bIsSemanticOverlapArea)
+	{};
+
+	// Helper constructor with static mesh actor and component
+	FSLOverlapResult(uint32 InId,
+		const FString& InSemId,
+		const FString& InSemClass,
+		float Time,
+		bool bIsSemanticOverlapArea,
+		AStaticMeshActor* InStaticMeshActor,
+		UStaticMeshComponent* InStaticMeshComponent) :
+		Id(InId),
+		SemId(InSemId),
+		SemClass(InSemClass),
+		TriggerTime(Time),
+		bIsSemanticOverlapArea(bIsSemanticOverlapArea),
+		StaticMeshActor(InStaticMeshActor),
+		StaticMeshComponent(InStaticMeshComponent)
+	{};
+
+	// Get result as string
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Id:%d SemId:%s SemClass:%s TriggerTime:%f bIsSemanticOverlapArea:%s StaticMeshActor:%s StaticMeshComponent:%s"),
+			Id, *SemId, *SemClass, TriggerTime,
+			bIsSemanticOverlapArea == true ? TEXT("True") : TEXT("False"),
+			StaticMeshActor.IsValid() ? *StaticMeshActor->GetName() : TEXT("None"),
+			StaticMeshComponent.IsValid() ? *StaticMeshComponent->GetName() : TEXT("None"));
+	}
+};
 
 /** Delegate to notify that a contact happened between two semantically annotated objects */
 DECLARE_MULTICAST_DELEGATE_SixParams(FSLBeginOverlapSignature, UStaticMeshComponent* /*OtherStaticMeshComp*/, const uint32 /*OtherId*/, const FString& /*OtherSemId*/, const FString& /*OtherSemClass*/, float /*StartTime*/,  bool /*bIsSLOverlapArea*/);
 
 /** Delegate to notify that a contact happened between two semantically annotated objects */
 DECLARE_MULTICAST_DELEGATE_FiveParams(FSLEndOverlapSignature, const uint32 /*OtherId*/, const FString& /*OtherSemId*/, const FString& /*OtherSemClass*/, float /*EndTime*/, bool /*bIsSLOverlapArea*/);
+
+/** Delegate to notify that a contact happened between two semantically annotated objects */
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLOverlapSignature, const FSLOverlapResult&);
+
 
 /**
  * Collision area listening for semantic collision events
@@ -105,6 +184,12 @@ private:
 	// Event called when a semantic overlap ends
 	FSLEndOverlapSignature OnEndSLOverlap;
 
+	// Event called when a semantic overlap begins
+	FSLOverlapSignature OnBeginSLOverlap2;
+
+	// Event called when a semantic overlap ends
+	FSLOverlapSignature OnEndSLOverlap2;
+
 	// Listen for contact events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bListenForContactEvents;
@@ -122,7 +207,7 @@ private:
 	//bool bListenForPushedByEvents;
 
 	// Pointer to the outer (owner) mesh actor
-	AStaticMeshActor* OwnerAsStaticMeshAct;
+	AStaticMeshActor* OwnerStaticMeshAct;
 
 	// Pointer to the outer (owner) mesh component 
 	UStaticMeshComponent* OwnerStaticMeshComp;

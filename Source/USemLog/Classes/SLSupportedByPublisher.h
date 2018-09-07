@@ -9,6 +9,9 @@
 /** Delegate for notification of finished semantic contact event */
 DECLARE_DELEGATE_OneParam(FSLSupportedByEventSignature, TSharedPtr<FSLSupportedByEvent>);
 
+// Forward declarations
+struct FSLOverlapResult;
+
 /**
  * SupportedBy data of the other object
  */
@@ -31,7 +34,7 @@ struct FSLSupportedByCandidateData
 };
 
 /**
- * Semantic contact publisher
+ * Supported by publisher
  */
 class FSLSupportedByPublisher
 {
@@ -66,6 +69,7 @@ private:
 	void FinishAndPublishStartedEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
+	void OnSLOverlapBegin2(const FSLOverlapResult& SemanticOverlapBeginResult);
 	void OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMeshComp,
 		const uint32 OtherId,
 		const FString& OtherSemId,
@@ -74,6 +78,7 @@ private:
 		bool bIsSLOverlapArea);
 
 	// Event called when a semantic overlap event ends
+	void OnSLOverlapEnd2(const FSLOverlapResult& SemanticOverlapEndResult);
 	void OnSLOverlapEnd(const uint32 OtherIdId,
 		const FString& SemOtherSemIdId,
 		const FString& OtherSemClass,
@@ -93,6 +98,7 @@ private:
 	
 	// Candidates for supported by event
 	TArray<FSLSupportedByCandidateData> Candidates;
+	TArray<FSLOverlapResult> Candidates2;
 
 	// Array of started supported by events
 	TArray<TSharedPtr<FSLSupportedByEvent>> StartedEvents;

@@ -21,6 +21,9 @@ void FSLSupportedByPublisher::Init()
 {
 	Parent->OnBeginSLOverlap.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapBegin);
 	Parent->OnEndSLOverlap.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapEnd);
+	Parent->OnBeginSLOverlap2.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapBegin2);
+	Parent->OnEndSLOverlap2.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapEnd2);
+
 
 	// Start timer for checking the supported by event candidates
 	//TimerDelegateNextTick.BindUObject(this, &USLOverlapArea::NextTickCb);
@@ -177,6 +180,11 @@ void FSLSupportedByPublisher::FinishAndPublishStartedEvents(float EndTime)
 }
 
 // Event called when a semantic overlap event begins
+void FSLSupportedByPublisher::OnSLOverlapBegin2(const FSLOverlapResult& SemanticOverlapBeginResult)
+{
+	Candidates2.Emplace(SemanticOverlapBeginResult);
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d BEGIN %s"), TEXT(__FUNCTION__), __LINE__, *SemanticOverlapBeginResult.ToString());
+}
 void FSLSupportedByPublisher::OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMeshComp,
 	uint32 OtherId,
 	const FString& OtherSemId,
@@ -195,6 +203,10 @@ void FSLSupportedByPublisher::OnSLOverlapBegin(UStaticMeshComponent* OtherStatic
 }
 
 // Event called when a semantic overlap event ends
+void FSLSupportedByPublisher::OnSLOverlapEnd2(const FSLOverlapResult& SemanticOverlapEndResult)
+{
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d END %s"), TEXT(__FUNCTION__), __LINE__, *SemanticOverlapEndResult.ToString());
+}
 void FSLSupportedByPublisher::OnSLOverlapEnd(const uint32 OtherId,
 	const FString& SemOtherSemId,
 	const FString& OtherSemClass,
@@ -202,11 +214,10 @@ void FSLSupportedByPublisher::OnSLOverlapEnd(const uint32 OtherId,
 	bool bIsSLOverlapArea)
 {
 	// Check if other is still a candidate, or the event can be finished and published
-	/*if (!IsASupportedByCandidate(OtherId))
+	if (!IsACandidate(OtherId))
 	{
-		FinishAndPublishSupportedByEvent(OtherId);
-	}*/
-	FSLSupportedByPublisher::FinishAndPublishEvent(OtherId, EndTime);
+		FSLSupportedByPublisher::FinishAndPublishEvent(OtherId, EndTime);
+	}
 }
 
 

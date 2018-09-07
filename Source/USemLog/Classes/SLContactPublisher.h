@@ -8,6 +8,9 @@
 /** Delegate for notification of finished semantic contact event */
 DECLARE_DELEGATE_OneParam(FSLContactEventSignature, TSharedPtr<FSLContactEvent>);
 
+// Forward declarations
+struct FSLOverlapResult;
+
 /**
  * Semantic contact publisher
  */
@@ -38,6 +41,7 @@ private:
 	void FinishAndPublishStartedEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
+	void OnSLOverlapBegin2(const FSLOverlapResult& SemanticOverlapBeginResult);
 	void OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMeshComp, 
 		const uint32 OtherId,
 		const FString& OtherSemId,
@@ -46,6 +50,7 @@ private:
 		bool bIsSLOverlapArea);
 
 	// Event called when a semantic overlap event ends
+	void OnSLOverlapEnd2(const FSLOverlapResult& SemanticOverlapEndResult);
 	void OnSLOverlapEnd(const uint32 OtherIdId,
 		const FString& SemOtherSemIdId,
 		const FString& OtherSemClass,

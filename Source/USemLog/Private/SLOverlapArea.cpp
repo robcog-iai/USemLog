@@ -264,10 +264,10 @@ bool USLOverlapArea::RuntimeInit()
 	// Make sure outer is a static mesh actor
 	if (AStaticMeshActor* CastToSMAct = Cast<AStaticMeshActor>(GetOwner()))
 	{
-		OwnerAsStaticMeshAct = CastToSMAct;
-		OwnerId = OwnerAsStaticMeshAct->GetUniqueID();
+		OwnerStaticMeshAct = CastToSMAct;
+		OwnerId = OwnerStaticMeshAct->GetUniqueID();
 
-		OwnerStaticMeshComp = OwnerAsStaticMeshAct->GetStaticMeshComponent();
+		OwnerStaticMeshComp = OwnerStaticMeshAct->GetStaticMeshComponent();
 		// Make sure it has a valid mesh component
 		if (OwnerStaticMeshComp)
 		{
@@ -304,23 +304,29 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	const FHitResult& SweepResult)
 {
 	// Ignore self overlaps (area with static mesh)
-	if (OtherActor == OwnerAsStaticMeshAct)
+	if (OtherActor == OwnerStaticMeshAct)
 	{
 		return;
 	}
 
+	// Make sure other is a static mesh actor with a valid static mesh component
+	AStaticMeshActor* OtherSMAct = Cast<AStaticMeshActor>(OtherActor);
 	UStaticMeshComponent* OtherSMComp = nullptr;
 	// Ignore if other actor is not a static mesh actor, or does not have a static mesh component
-	if (AStaticMeshActor* OtherAsSMAct = Cast<AStaticMeshActor>(OtherActor))
+	if (OtherSMAct)
 	{
-		OtherSMComp = OtherAsSMAct->GetStaticMeshComponent();
+		OtherSMComp = OtherSMAct->GetStaticMeshComponent();
 		if (OtherSMComp == nullptr)
 		{
 			return;
 		}
 	}
+	else
+	{
+		return;
+	}
 
-	// Check if other actor is semantically annotated
+	// Make sure other is semantically annotated
 	const uint32 OtherId = OtherActor->GetUniqueID();
 	const FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
 	const FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
@@ -330,7 +336,7 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Set by default that the other component is not an semantic overlap area (this will be checked further)
-	bool bOtherIsSLOverlapArea = false;
+	bool bOtherIsASemanticOverlapArea = false;
 	// Get the time of the event in second
 	float StartTime = GetWorld()->GetTimeSeconds();
 	
@@ -343,19 +349,27 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	if (USLOverlapArea* OtherContactTrigger = Cast<USLOverlapArea>(OtherComp))
 	{
 		// Other is a semantic overlap component
-		bOtherIsSLOverlapArea = true;
+		bOtherIsASemanticOverlapArea = true;
 
 		// Filter out one of the trigger areas
 		if (OtherId > OwnerId)
 		{
 			// Broadcast begin of semantic overlap event
-			OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsSLOverlapArea);
+			FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, StartTime,
+				bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
+			SemanticOverlapResult.PairId = FIds::PairEncodeCantor(OtherId, OwnerId);
+			OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
+			OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsASemanticOverlapArea);
 			return;
 		}
 	}
 
 	// Broadcast begin of semantic overlap event
-	OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsSLOverlapArea);
+	FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, StartTime,
+		bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
+	SemanticOverlapResult.PairId = FIds::PairEncodeCantor(OtherId, OwnerId);
+	OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
+	OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsASemanticOverlapArea);
 }
 
 // Called on overlap end events
@@ -365,7 +379,24 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	int32 OtherBodyIndex)
 {
 	// Ignore overlaps with itself
-	if (OtherActor == OwnerAsStaticMeshAct)
+	if (OtherActor == OwnerStaticMeshAct)
+	{
+		return;
+	}
+
+	// Make sure other is a static mesh actor with a valid static mesh component
+	AStaticMeshActor* OtherSMAct = Cast<AStaticMeshActor>(OtherActor);
+	UStaticMeshComponent* OtherSMComp = nullptr;
+	// Ignore if other actor is not a static mesh actor, or does not have a static mesh component
+	if (OtherSMAct)
+	{
+		OtherSMComp = OtherSMAct->GetStaticMeshComponent();
+		if (OtherSMComp == nullptr)
+		{
+			return;
+		}
+	}
+	else
 	{
 		return;
 	}
@@ -380,7 +411,7 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Set by default that the other component is not an semantic overlap area (this will be checked further)
-	bool bOtherIsSLOverlapArea = false;
+	bool bOtherIsASemanticOverlapArea = false;
 	// Get the time of the event in second
 	float EndTime = GetWorld()->GetTimeSeconds();
 
@@ -393,18 +424,26 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	if (OtherComp->IsA(USLOverlapArea::StaticClass()))
 	{
 		// Other is a semantic overlap component
-		bOtherIsSLOverlapArea = true;
+		bOtherIsASemanticOverlapArea = true;
 
 		if (OtherId > OwnerId)
 		{
 			// Broadcast end of semantic overlap event
-			OnEndSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, EndTime, bOtherIsSLOverlapArea);
+			FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, EndTime,
+				bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
+			SemanticOverlapResult.PairId = FIds::PairEncodeCantor(OtherId, OwnerId);
+			OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
+			OnEndSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, EndTime, bOtherIsASemanticOverlapArea);
 			return;
 		}
 	}
 
 	// Broadcast end of semantic overlap event
-	OnEndSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, EndTime, bOtherIsSLOverlapArea);
+	FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, EndTime,
+		bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
+	SemanticOverlapResult.PairId = FIds::PairEncodeCantor(OtherId, OwnerId);
+	OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
+	OnEndSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, EndTime, bOtherIsASemanticOverlapArea);
 }
 
 //// Called on hit event

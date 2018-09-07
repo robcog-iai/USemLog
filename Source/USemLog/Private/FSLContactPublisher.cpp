@@ -18,6 +18,8 @@ void FSLContactPublisher::Init()
 {
 	Parent->OnBeginSLOverlap.AddRaw(this, &FSLContactPublisher::OnSLOverlapBegin);
 	Parent->OnEndSLOverlap.AddRaw(this, &FSLContactPublisher::OnSLOverlapEnd);
+	Parent->OnBeginSLOverlap2.AddRaw(this, &FSLContactPublisher::OnSLOverlapBegin2);
+	Parent->OnEndSLOverlap2.AddRaw(this, &FSLContactPublisher::OnSLOverlapEnd2);
 }
 
 
@@ -77,6 +79,9 @@ void FSLContactPublisher::FinishAndPublishStartedEvents(float EndTime)
 
 
 // Event called when a semantic overlap event begins
+void FSLContactPublisher::OnSLOverlapBegin2(const FSLOverlapResult& SemanticOverlapBeginResult)
+{
+}
 void FSLContactPublisher::OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMeshComp,
 	const uint32 OtherId,
 	const FString& OtherSemId,
@@ -88,6 +93,9 @@ void FSLContactPublisher::OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMesh
 }
 
 // Event called when a semantic overlap event ends
+void FSLContactPublisher::OnSLOverlapEnd2(const FSLOverlapResult& SemanticOverlapBeginResult)
+{
+}
 void FSLContactPublisher::OnSLOverlapEnd(const uint32 OtherId,
 	const FString& SemOtherSemId,
 	const FString& OtherSemClass,
