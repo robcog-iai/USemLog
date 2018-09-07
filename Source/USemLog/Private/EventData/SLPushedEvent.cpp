@@ -86,4 +86,10 @@ FString FSLPushedEvent::Context() const
 {
 	return FString("PushedEvent");
 }
+
+// Get the tooltip data
+FString FSLPushedEvent::Tooltip() const
+{
+	return FString("PushedEvent");;
+}
 /* End ISLEvent interface */

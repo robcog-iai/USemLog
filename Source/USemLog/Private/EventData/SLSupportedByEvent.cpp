@@ -9,86 +9,25 @@ FSLSupportedByEvent::FSLSupportedByEvent()
 {
 }
 
-// Constructor with initialization
-FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId,
-	const float InStart,
-	const float InEnd,
-	const uint32 InSupportedObjId,
-	const FString& InSupportedObjSemId,
-	const FString& InSupportedObjClass,
-	const uint32 InSupportingObjId,
-	const FString& InSupportingObjSemId,
-	const FString& InSupportingObjClass) :
-	ISLEvent(InId, InStart, InEnd),
-	SupportedObjId(InSupportedObjId),
-	SupportedObjSemId(InSupportedObjSemId),
-	SupportedObjClass(InSupportedObjClass),
-	SupportingObjId(InSupportingObjId),
-	SupportingObjSemId(InSupportingObjSemId),
-	SupportingObjClass(InSupportingObjClass)
+// Constructor with initialization 
+FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
+	const uint32 InSupportedObjId, const FString& InSupportedObjSemId, const FString& InSupportedObjClass,
+	const uint32 InSupportingObjId, const FString& InSupportingObjSemId, const FString& InSupportingObjClass) :
+	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
+	SupportedObjId(InSupportedObjId), SupportedObjSemId(InSupportedObjSemId), SupportedObjClass(InSupportedObjClass),
+	SupportingObjId(InSupportingObjId), SupportingObjSemId(InSupportingObjSemId), SupportingObjClass(InSupportingObjClass)
 {
 }
 
-// Constructor with initialization without end time
-FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId,
-	const float InStart,
-	const uint32 InSupportedObjId,
-	const FString& InSupportedObjSemId,
-	const FString& InSupportedObjClass,
-	const uint32 InSupportingObjId,
-	const FString& InSupportingObjSemId,
-	const FString& InSupportingObjClass) :
-	ISLEvent(InId, InStart),
-	SupportedObjId(InSupportedObjId),
-	SupportedObjSemId(InSupportedObjSemId),
-	SupportedObjClass(InSupportedObjClass),
-	SupportingObjId(InSupportingObjId),
-	SupportingObjSemId(InSupportingObjSemId),
-	SupportingObjClass(InSupportingObjClass)
+// Constructor with initialization without end time 
+FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId, const float InStart, const uint64 InPairId,
+	const uint32 InSupportedObjId, const FString& InSupportedObjSemId, const FString& InSupportedObjClass,
+	const uint32 InSupportingObjId, const FString& InSupportingObjSemId, const FString& InSupportingObjClass) :
+	ISLEvent(InId, InStart), PairId(InPairId),
+	SupportedObjId(InSupportedObjId), SupportedObjSemId(InSupportedObjSemId), SupportedObjClass(InSupportedObjClass),
+	SupportingObjId(InSupportingObjId), SupportingObjSemId(InSupportingObjSemId), SupportingObjClass(InSupportingObjClass)
 {
 }
-
-// Constructor with initialization with pair id
-FSLSupportedByEvent::FSLSupportedByEvent(const uint64 InPairId,
-	const FString& InId,
-	const float InStart,
-	const float InEnd,
-	const uint32 InSupportedObjId,
-	const FString& InSupportedObjSemId,
-	const FString& InSupportedObjClass,
-	const uint32 InSupportingObjId,
-	const FString& InSupportingObjSemId,
-	const FString& InSupportingObjClass) :
-	ISLEvent(InPairId, InId, InStart, InEnd),
-	SupportedObjId(InSupportedObjId),
-	SupportedObjSemId(InSupportedObjSemId),
-	SupportedObjClass(InSupportedObjClass),
-	SupportingObjId(InSupportingObjId),
-	SupportingObjSemId(InSupportingObjSemId),
-	SupportingObjClass(InSupportingObjClass)
-{
-}
-
-// Constructor with initialization without end time with pair id
-FSLSupportedByEvent::FSLSupportedByEvent(const uint64 InPairId,
-	const FString& InId,
-	const float InStart,
-	const uint32 InSupportedObjId,
-	const FString& InSupportedObjSemId,
-	const FString& InSupportedObjClass,
-	const uint32 InSupportingObjId,
-	const FString& InSupportingObjSemId,
-	const FString& InSupportingObjClass) :
-	ISLEvent(InPairId, InId, InStart),
-	SupportedObjId(InSupportedObjId),
-	SupportedObjSemId(InSupportedObjSemId),
-	SupportedObjClass(InSupportedObjClass),
-	SupportingObjId(InSupportingObjId),
-	SupportingObjSemId(InSupportingObjSemId),
-	SupportingObjClass(InSupportingObjClass)
-{
-}
-
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
 FOwlNode FSLSupportedByEvent::ToOwlNode() const
@@ -125,6 +64,13 @@ void FSLSupportedByEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 // Get event context data as string (ToString equivalent)
 FString FSLSupportedByEvent::Context() const
 {
-	return FString("SupportedByEvent_") + Id;
+	return FString::Printf(TEXT("SupportedByEvent - %lld"), PairId);
+}
+
+// Get the tooltip data
+FString FSLSupportedByEvent::Tooltip() const
+{
+	return FString::Printf(TEXT("\'SupportingObjClass\',\'%s\',\'SupportingObjId\',\'%s\',\'SupportedObjClass\',\'%s\',\'SupportedObjId\',\'%s\',\'EventId\',\'%s\'"),
+		*SupportingObjClass, *SupportingObjSemId, *SupportedObjClass, *SupportedObjSemId, *Id);
 }
 /* End ISLEvent interface */

@@ -15,48 +15,17 @@ public:
 	FSLContactEvent();
 
 	// Constructor with initialization
-	FSLContactEvent(const FString& InId,
-		const float InStart,
-		const float InEnd,
-		const uint32 InObj1Id,
-		const FString& InObj1SemId,
-		const FString& InObj1Class,
-		const uint32 InObj2Id,
-		const FString& InObj2SemId,
-		const FString& InObj2Class);
+	FSLContactEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId, 
+		const uint32 InObj1Id, const FString& InObj1SemId, const FString& InObj1Class,
+		const uint32 InObj2Id, const FString& InObj2SemId, const FString& InObj2Class);
 
-	// Constructor initialization without End
-	FSLContactEvent(const FString& InId,
-		const float InStart,
-		const uint32 InObj1Id,
-		const FString& InObj1SemId,
-		const FString& InObj1Class,
-		const uint32 InObj2Id,
-		const FString& InObj2SemId,
-		const FString& InObj2Class);
-
-	// Constructor with initialization with pair id
-	FSLContactEvent(const uint64 InPairId,
-		const FString& InId,
-		const float InStart,
-		const float InEnd,
-		const uint32 InObj1Id,
-		const FString& InObj1SemId,
-		const FString& InObj1Class,
-		const uint32 InObj2Id,
-		const FString& InObj2SemId,
-		const FString& InObj2Class);
-
-	// Constructor initialization without End with pair Id
-	FSLContactEvent(const uint64 InPairId,
-		const FString& InId,
-		const float InStart,
-		const uint32 InObj1Id,
-		const FString& InObj1SemId,
-		const FString& InObj1Class,
-		const uint32 InObj2Id,
-		const FString& InObj2SemId,
-		const FString& InObj2Class);
+	// Constructor initialization without end time
+	FSLContactEvent(const FString& InId, const float InStart, const uint64 InPairId,
+		const uint32 InObj1Id, const FString& InObj1SemId, const FString& InObj1Class,
+		const uint32 InObj2Id, const FString& InObj2SemId, const FString& InObj2Class);
+	
+	// Pair id of the event (combination of two unique runtime ids)
+	uint64 PairId;
 
 	// Unique id of the first object
 	uint32 Obj1Id;
@@ -83,7 +52,10 @@ public:
 	// Add the owl representation of the event to the owl document
 	virtual void AddToOwlDoc(FOwlDoc* OutDoc) override;
 
-	// Get event context data as string (ToString equivalent)
+	// Get event context data as string
 	virtual FString Context() const override;
+
+	// Get the tooltip data
+	virtual FString Tooltip() const override;
 	/* End IEvent interface */
 };

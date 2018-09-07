@@ -10,82 +10,22 @@ FSLContactEvent::FSLContactEvent()
 }
 
 // Constructor with initialization
-FSLContactEvent::FSLContactEvent(const FString& InId,
-	const float InStart,
-	const float InEnd,
-	const uint32 InObj1Id,
-	const FString& InObj1SemId,
-	const FString& InObj1Class,
-	const uint32 InObj2Id,
-	const FString& InObj2SemId,
-	const FString& InObj2Class) :
-	ISLEvent(InId, InStart, InEnd),
-	Obj1Id(InObj1Id),
-	Obj1SemId(InObj1SemId),
-	Obj1Class(InObj1Class),
-	Obj2Id(InObj2Id),
-	Obj2SemId(InObj2SemId),
-	Obj2Class(InObj2Class)
-{
-}
-
-// Constructor initialization without End
-FSLContactEvent::FSLContactEvent(const FString& InId,
-	const float InStart,
-	const uint32 InObj1Id,
-	const FString& InObj1SemId,
-	const FString& InObj1Class,
-	const uint32 InObj2Id,
-	const FString& InObj2SemId,
-	const FString& InObj2Class) :
-	ISLEvent(InId, InStart),
-	Obj1Id(InObj1Id),
-	Obj1SemId(InObj1SemId),
-	Obj1Class(InObj1Class),
-	Obj2Id(InObj2Id),
-	Obj2SemId(InObj2SemId),
-	Obj2Class(InObj2Class)
-{
-}
-
-// Constructor with initialization with pair id
-FSLContactEvent::FSLContactEvent(const uint64 InPairId,
-	const FString& InId,
-	const float InStart,
-	const float InEnd,
-	const uint32 InObj1Id,
-	const FString& InObj1SemId,
-	const FString& InObj1Class,
-	const uint32 InObj2Id,
-	const FString& InObj2SemId,
-	const FString& InObj2Class) :
-	ISLEvent(InPairId, InId, InStart, InEnd),
-	Obj1Id(InObj1Id),
-	Obj1SemId(InObj1SemId),
-	Obj1Class(InObj1Class),
-	Obj2Id(InObj2Id),
-	Obj2SemId(InObj2SemId),
-	Obj2Class(InObj2Class)
+FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
+	const uint32 InObj1Id, const FString& InObj1SemId, const FString& InObj1Class,
+	const uint32 InObj2Id, const FString& InObj2SemId, const FString& InObj2Class) :
+	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
+	Obj1Id(InObj1Id), Obj1SemId(InObj1SemId), Obj1Class(InObj1Class),
+	Obj2Id(InObj2Id), Obj2SemId(InObj2SemId), Obj2Class(InObj2Class)
 {
 }
 
 // Constructor initialization without End with pair id
-FSLContactEvent::FSLContactEvent(const uint64 InPairId,
-	const FString& InId,
-	const float InStart,
-	const uint32 InObj1Id,
-	const FString& InObj1SemId,
-	const FString& InObj1Class,
-	const uint32 InObj2Id,
-	const FString& InObj2SemId,
-	const FString& InObj2Class) :
-	ISLEvent(InPairId, InId, InStart),
-	Obj1Id(InObj1Id),
-	Obj1SemId(InObj1SemId),
-	Obj1Class(InObj1Class),
-	Obj2Id(InObj2Id),
-	Obj2SemId(InObj2SemId),
-	Obj2Class(InObj2Class)
+FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const uint64 InPairId,
+	const uint32 InObj1Id, const FString& InObj1SemId, const FString& InObj1Class,
+	const uint32 InObj2Id, const FString& InObj2SemId, const FString& InObj2Class) :
+	ISLEvent(InId, InStart), PairId(InPairId),
+	Obj1Id(InObj1Id), Obj1SemId(InObj1SemId), Obj1Class(InObj1Class),
+	Obj2Id(InObj2Id), Obj2SemId(InObj2SemId), Obj2Class(InObj2Class)
 {
 }
 
@@ -125,7 +65,13 @@ void FSLContactEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 // Get event context data as string (ToString equivalent)
 FString FSLContactEvent::Context() const
 {
-	//return FString("ContactEvent_") + Id;
-	return FString::Printf(TEXT("ContactEvent_%lld"), PairId);
+	return FString::Printf(TEXT("ContactEvent - %lld"), PairId);
+}
+
+// Get the tooltip data
+FString FSLContactEvent::Tooltip() const
+{
+	return FString::Printf(TEXT("\'Obj1Class\',\'%s\',\'Obj1Id\',\'%s\',\'Obj2Class\',\'%s\',\'Obj2Id\',\'%s\',\'EventId\',\'%s\'"),
+		*Obj1Class, *Obj1SemId, *Obj2Class, *Obj2SemId, *Id);
 }
 /* End ISLEvent interface */

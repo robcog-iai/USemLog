@@ -90,14 +90,14 @@ void USLEventDataLogger::ListenToSemanticContactRelatedEvents()
 // Called when a semantic contact is finished
 void USLEventDataLogger::OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event)
 {
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Context());
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Tooltip());
 	FinishedEvents.Add(Event);
 }
 
 // Called when a semantic supported by event is finished
 void USLEventDataLogger::OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event)
 {
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Context());
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Tooltip());
 	FinishedEvents.Add(Event);
 }
 
@@ -107,7 +107,9 @@ bool USLEventDataLogger::WriteToFile()
 	// Write events timelines to file
 	if (bWriteTimelines)
 	{
-		FSLGoogleCharts::WriteTimelines(FinishedEvents, LogDirectory, EpisodeId);
+		FSLGoogleChartsParameters Params;
+		Params.bTooltips = true;
+		FSLGoogleCharts::WriteTimelines(FinishedEvents, LogDirectory, EpisodeId, Params);
 	}
 
 	if (!ExperimentDoc.IsValid())

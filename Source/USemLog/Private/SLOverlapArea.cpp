@@ -25,7 +25,7 @@ void USLOverlapArea::BeginPlay()
 	Super::BeginPlay();
 
 	// Check if component is ready for runtime
-	if (RuntimeInit())
+	if (Init())
 	{
 		// If objects are already overlapping at begin play, they will not be triggered
 		// Here we do a manual overlap check and forward them to OnOverlapBegin
@@ -82,9 +82,9 @@ void  USLOverlapArea::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	if (!ReadAndApplyTriggerAreaSize())
+	if (!ReadAndUpdateArea())
 	{
-		CalculateAndApplyTriggerAreaSize();
+		UpdateArea();
 	}
 	ShapeColor = FColor::Blue;
 }
@@ -173,7 +173,7 @@ void USLOverlapArea::PostEditComponentMove(bool bFinished)
 #endif // WITH_EDITOR
 
 // Read values from tags
-bool USLOverlapArea::ReadAndApplyTriggerAreaSize()
+bool USLOverlapArea::ReadAndUpdateArea()
 {
 	TMap<FString, FString> TagKeyValMap = 
 		FTags::GetKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE);
@@ -213,7 +213,7 @@ bool USLOverlapArea::ReadAndApplyTriggerAreaSize()
 }
 
 // Calculate trigger area size
-bool USLOverlapArea::CalculateAndApplyTriggerAreaSize()
+bool USLOverlapArea::UpdateArea()
 {
 	// Get the static mesh component
 	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
@@ -228,23 +228,24 @@ bool USLOverlapArea::CalculateAndApplyTriggerAreaSize()
 		SetRelativeTransform(BoundsTransf);
 
 		// Save calculated data
-		SaveTriggerAreaSize(GetRelativeTransform(), BoxExtent);
+		SaveArea();
 		return true;
 	}
 	return false;
 }
 
 // Save values to tags
-bool USLOverlapArea::SaveTriggerAreaSize(const FTransform& InTransform, const FVector& InBoxExtent)
+bool USLOverlapArea::SaveArea()
 {
-	const FVector RelLoc = InTransform.GetLocation();
-	const FQuat RelQuat = InTransform.GetRotation();
+	const FTransform RelTransf = GetRelativeTransform();
+	const FVector RelLoc = RelTransf.GetLocation();
+	const FQuat RelQuat = RelTransf.GetRotation();
 
 	TMap<FString, FString> KeyValMap;
 	
-	KeyValMap.Add("ExtX", FString::SanitizeFloat(InBoxExtent.X));
-	KeyValMap.Add("ExtY", FString::SanitizeFloat(InBoxExtent.Y));
-	KeyValMap.Add("ExtZ", FString::SanitizeFloat(InBoxExtent.Z));
+	KeyValMap.Add("ExtX", FString::SanitizeFloat(BoxExtent.X));
+	KeyValMap.Add("ExtY", FString::SanitizeFloat(BoxExtent.Y));
+	KeyValMap.Add("ExtZ", FString::SanitizeFloat(BoxExtent.Z));
 	
 	KeyValMap.Add("LocX", FString::SanitizeFloat(RelLoc.X));
 	KeyValMap.Add("LocY", FString::SanitizeFloat(RelLoc.Y));
@@ -259,7 +260,7 @@ bool USLOverlapArea::SaveTriggerAreaSize(const FTransform& InTransform, const FV
 }
 
 // Setup pointers to outer, check if semantically annotated
-bool USLOverlapArea::RuntimeInit()
+bool USLOverlapArea::Init()
 {
 	// Make sure outer is a static mesh actor
 	if (AStaticMeshActor* CastToSMAct = Cast<AStaticMeshActor>(GetOwner()))
@@ -357,8 +358,7 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 			// Broadcast begin of semantic overlap event
 			FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, StartTime,
 				bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-			OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
-			OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsASemanticOverlapArea);
+			OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
 			return;
 		}
 	}
@@ -366,8 +366,7 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	// Broadcast begin of semantic overlap event
 	FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, StartTime,
 		bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-	OnBeginSLOverlap2.Broadcast(SemanticOverlapResult);
-	OnBeginSLOverlap.Broadcast(OtherSMComp, OtherId, OtherSemId, OtherSemClass, StartTime, bOtherIsASemanticOverlapArea);
+	OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
 }
 
 // Called on overlap end events
@@ -429,8 +428,7 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 			// Broadcast end of semantic overlap event
 			FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, EndTime,
 				bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-			OnEndSLOverlap2.Broadcast(SemanticOverlapResult);
-			OnEndSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, EndTime, bOtherIsASemanticOverlapArea);
+			OnEndSLOverlap.Broadcast(SemanticOverlapResult);
 			return;
 		}
 	}
@@ -438,8 +436,7 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	// Broadcast end of semantic overlap event
 	FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, EndTime,
 		bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-	OnEndSLOverlap2.Broadcast(SemanticOverlapResult);
-	OnEndSLOverlap.Broadcast(OtherId, OtherSemId, OtherSemClass, EndTime, bOtherIsASemanticOverlapArea);
+	OnEndSLOverlap.Broadcast(SemanticOverlapResult);
 }
 
 //// Called on hit event

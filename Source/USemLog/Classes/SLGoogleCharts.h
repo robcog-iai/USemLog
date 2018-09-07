@@ -5,6 +5,24 @@
 #pragma once
 
 /**
+* Structure holding the parameters of creating the google charts
+*/
+struct FSLGoogleChartsParameters
+{
+	// Should include legend at the bottom
+	uint8 bLegend : 1;
+
+	// Use tooltips
+	uint8 bTooltips : 1;
+
+	// Default constructor
+	FSLGoogleChartsParameters() :
+		bLegend(false),
+		bTooltips(false)
+	{};
+};
+
+/**
  * Function for exporting as html google charts
  */
 struct FSLGoogleCharts
@@ -13,7 +31,7 @@ struct FSLGoogleCharts
 	static bool WriteTimelines(const TArray<TSharedPtr<ISLEvent>>& InEvents,
 		const FString& InLogDir,
 		const FString& InEpId,
-		bool bIncludeLegend = true)
+		const FSLGoogleChartsParameters& Params = FSLGoogleChartsParameters())
 	{
 		// Timeline boilerplate 
 		FString TimelineStr =
@@ -27,23 +45,38 @@ struct FSLGoogleCharts
 			"\t\t var chart = new google.visualization.Timeline(container);\n"
 			"\t\t var dataTable = new google.visualization.DataTable();\n"
 			"\n "
-			"\t\t dataTable.addColumn({ type: 'string', id: 'EventType' });\n"
-			"\t\t dataTable.addColumn({ type: 'string', id: 'EventId' });\n"
-			"\t\t dataTable.addColumn({ type: 'number', id: 'Start' });\n"
-			"\t\t dataTable.addColumn({ type: 'number', id: 'End' });\n"
+			"\t\t dataTable.addColumn({ type: 'string', id: 'context' });\n"
+			"\t\t dataTable.addColumn({ type: 'string', id: 'event_id' });\n"
+		;
+
+		if (Params.bTooltips)
+		{
+			TimelineStr.Append("\t\t dataTable.addColumn({ type: 'string', role: 'tooltip', 'p': {'html': true} });\n");
+		}
+
+		TimelineStr.Append(
+			"\t\t dataTable.addColumn({ type: 'number', id: 'start' });\n"
+			"\t\t dataTable.addColumn({ type: 'number', id: 'end' });\n"
 			"\n"
 			"\t\t dataTable.addRows([\n"
-			"\n";
+			"\n"
+		);
 
 		// Add event times
 		for (const auto& Ev : InEvents)
 		{
 			TimelineStr.Append(
-				"\t\t [ \'" + Ev->Context()+ "\' , \'"
-				+ Ev->Id + "\' , "
-				+ FString::SanitizeFloat(Ev->Start * 1000.f) + " , " // google charts needs millisecods
-				+ FString::SanitizeFloat(Ev->End * 1000.f) + " ],\n" // google charts needs millisecods
-			);
+				"\t\t [ \'" + Ev->Context() + "\' , \'" + Ev->Id + "\' , " );
+			if (Params.bTooltips)
+			{
+				TimelineStr.Append(
+					"createTooltipHTMLContent("
+					+ FString::SanitizeFloat(Ev->Start) + ", " 
+					+ FString::SanitizeFloat(Ev->End) + ", "
+					+ Ev->Tooltip() + "), " );
+			}
+			TimelineStr.Append(FString::SanitizeFloat(Ev->Start * 1000.f) + " , " 
+				+ FString::SanitizeFloat(Ev->End * 1000.f) + " ],\n");  // google charts needs millisecods
 		}
 
 		TimelineStr.Append(
@@ -51,16 +84,31 @@ struct FSLGoogleCharts
 			"\t\t]);\n"
 			"\n"
 			"\t\t var options = {\n"
-			"\t\t\t timeline: { showRowLabels: false }\n"
+			"\t\t\t timeline: {showRowLabels: true, colorByRowLabel: true},\n"
+			"\t\t\t avoidOverlappingGridLines: false,\n"
+			"\t\t\t tooltip: {isHtml: true}\n"
 			"\t\t };\n"
-			"\n"
 			"\t\t chart.draw(dataTable, options);\n"
-			"\t}\n"
-			"</script>\n"
-			"<div id=\"event_tl\" style=\"height:900px;\"></div>"
-		);
+			"\t }\n");
 
-		if (bIncludeLegend)
+		if (Params.bTooltips)
+		{
+			TimelineStr.Append(
+				"\t function createTooltipHTMLContent(Start,End,Key1,Val1,Key2,Val2,Key3,Val3,Key4,Val4,Key5,Val5){\n"
+				"\t\t return '<font size=\"3\"><p><strong>Duration:</strong> ' + (End - Start).toFixed(3) + ' seconds (' + Start + 's - ' + End + 's)<hr/></p></font>' +\n"
+				"\t\t\t '<font size=\"2\"><p><strong>' + Key1 + ':</strong> ' + Val1 + '</p>' + \n"
+				"\t\t\t '<p><strong>' + Key2 + ':</strong> ' + Val2 + '<hr/></p>' + \n"
+				"\t\t\t '<p><strong>' + Key3 + ':</strong> ' + Val3 + '</p>' + \n"
+				"\t\t\t '<p><strong>' + Key4 + ':</strong> ' + Val4 + '<hr/></p>' + \n"
+				"\t\t\t '<p><strong>' + Key5 + ':</strong> ' + Val5 + '</p></font>'\n"
+				"\t }");
+		}
+
+		TimelineStr.Append(			
+			"</script>\n"
+			"<div id=\"event_tl\" style=\"height:900px;\"></div>");
+
+		if (Params.bLegend)
 		{
 			TimelineStr.Append(FSLGoogleCharts::GetLengend(InEvents));
 		}

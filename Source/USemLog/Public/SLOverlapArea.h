@@ -21,9 +21,6 @@ struct FSLOverlapResult
 	// Unique UObjcet id of other
 	uint32 Id;
 
-	// Cantor pair unique id of the parent and other
-	uint64 PairId;
-
 	// Semantic id of other
 	FString SemId;
 
@@ -73,14 +70,7 @@ struct FSLOverlapResult
 };
 
 /** Delegate to notify that a contact happened between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_SixParams(FSLBeginOverlapSignature, UStaticMeshComponent* /*OtherStaticMeshComp*/, const uint32 /*OtherId*/, const FString& /*OtherSemId*/, const FString& /*OtherSemClass*/, float /*StartTime*/,  bool /*bIsSLOverlapArea*/);
-
-/** Delegate to notify that a contact happened between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_FiveParams(FSLEndOverlapSignature, const uint32 /*OtherId*/, const FString& /*OtherSemId*/, const FString& /*OtherSemClass*/, float /*EndTime*/, bool /*bIsSLOverlapArea*/);
-
-/** Delegate to notify that a contact happened between two semantically annotated objects */
 DECLARE_MULTICAST_DELEGATE_OneParam(FSLOverlapSignature, const FSLOverlapResult&);
-
 
 /**
  * Collision area listening for semantic collision events
@@ -121,16 +111,16 @@ private:
 #endif // WITH_EDITOR
 
 	// Load and apply cached parameters from tags
-	bool ReadAndApplyTriggerAreaSize();
+	bool ReadAndUpdateArea();
 
 	// Calculate and apply trigger area size
-	bool CalculateAndApplyTriggerAreaSize();
+	bool UpdateArea();
 
-	// Save parameters to tags
-	bool SaveTriggerAreaSize(const FTransform& InTransform, const FVector& InBoxExtent);
+	// Save current parameters to tags
+	bool SaveArea();
 
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
-	bool RuntimeInit();
+	bool Init();
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
@@ -165,16 +155,10 @@ public:
 
 private:
 	// Event called when a semantic overlap begins
-	FSLBeginOverlapSignature OnBeginSLOverlap;
+	FSLOverlapSignature OnBeginSLOverlap;
 
 	// Event called when a semantic overlap ends
-	FSLEndOverlapSignature OnEndSLOverlap;
-
-	// Event called when a semantic overlap begins
-	FSLOverlapSignature OnBeginSLOverlap2;
-
-	// Event called when a semantic overlap ends
-	FSLOverlapSignature OnEndSLOverlap2;
+	FSLOverlapSignature OnEndSLOverlap;
 
 	// Listen for contact events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

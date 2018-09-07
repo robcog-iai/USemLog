@@ -62,5 +62,8 @@ public:
 
 	// Get event context data as string (ToString equivalent)
 	virtual FString Context() const override;
+
+	// Get the tooltip data
+	virtual FString Tooltip() const override;
 	/* End IEvent interface */
 };

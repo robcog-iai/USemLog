@@ -21,8 +21,6 @@ void FSLSupportedByPublisher::Init()
 {
 	Parent->OnBeginSLOverlap.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapBegin);
 	Parent->OnEndSLOverlap.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapEnd);
-	Parent->OnBeginSLOverlap2.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapBegin2);
-	Parent->OnEndSLOverlap2.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapEnd2);
 
 
 	// Start timer for checking the supported by event candidates
@@ -33,7 +31,7 @@ void FSLSupportedByPublisher::Init()
 	//GetWorld()->GetTimerManager().SetTimerForNextTick(TD);
 
 	// Start timer (will be directly paused if no candidates are available)
-	TimerDelegate.BindRaw(this, &FSLSupportedByPublisher::CheckCandidatesTimerCb);
+	TimerDelegate.BindRaw(this, &FSLSupportedByPublisher::AddEventsTimerCb);
 	Parent->GetWorld()->GetTimerManager().SetTimer(TimerHandle,
 		TimerDelegate, SL_SB_UPDATE_RATE_CB, true);
 }
@@ -42,28 +40,8 @@ void FSLSupportedByPublisher::Init()
 // Terminate listener, finish and publish remaining events
 void FSLSupportedByPublisher::Finish(float EndTime)
 {
-	FSLSupportedByPublisher::FinishAndPublishStartedEvents(EndTime);
+	FSLSupportedByPublisher::FinishAllEvents(EndTime);
 	Parent->GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
-}
-
-
-// Add supported by candidate (other)
-void FSLSupportedByPublisher::AddCandidate(UStaticMeshComponent* OtherStaticMeshComp,
-	uint32 OtherId,
-	const FString& OtherSemId,
-	const FString& OtherSemClass,
-	bool bCanOnlyBeSupporting)
-{
-	// Add the other as a potential supported by event candidate
-	FSLSupportedByCandidateData SBCandidate;
-	SBCandidate.Id = OtherId;
-	SBCandidate.SemId = OtherSemId;
-	SBCandidate.SemClass = OtherSemClass;
-	SBCandidate.StaticMeshComp = OtherStaticMeshComp;
-	SBCandidate.bCanOnlyBeSupporting = bCanOnlyBeSupporting;
-
-	// Add the created candidate
-	Candidates.Emplace(SBCandidate);
 }
 
 // Check if other obj is a supported by candidate
@@ -86,52 +64,48 @@ bool FSLSupportedByPublisher::IsACandidate(const uint32 InOtherId, bool bRemoveI
 }
 
 // Check candidates vertical relative speed
-void FSLSupportedByPublisher::CheckCandidatesTimerCb()
+void FSLSupportedByPublisher::AddEventsTimerCb()
 {
 	float StartTime = Parent->GetWorld()->GetTimeSeconds();
-
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d CANDIDATES: "), TEXT(__FUNCTION__), __LINE__);
-
+	
 	for (auto CandidateItr(Candidates.CreateIterator()); CandidateItr; ++CandidateItr)
 	{
 		// Get relative vertical speed
 		const float RelVerticalSpeed = FMath::Abs(Parent->OwnerStaticMeshComp->GetComponentVelocity().Z -
-			CandidateItr->StaticMeshComp->GetComponentVelocity().Z);
-
-		UE_LOG(LogTemp, Warning, TEXT("\t \t %s, Vel[Outer,Other]=[%s,%s], RelVerticalSpeed=%f"),
-			*(*CandidateItr).SemId,
-			*Parent->OwnerStaticMeshComp->GetComponentVelocity().ToString(),
-			*(*CandidateItr).StaticMeshComp->GetComponentVelocity().ToString(),
-			RelVerticalSpeed);
-
+			CandidateItr->StaticMeshComponent->GetComponentVelocity().Z);
+		
 		if (RelVerticalSpeed < SL_SB_VERT_SPEED_TH)
 		{
-			if (CandidateItr->bCanOnlyBeSupporting)
+			const uint64 PairId = FIds::PairEncodeCantor(CandidateItr->Id, Parent->OwnerId);
+			const FString SemId = FIds::NewGuidInBase64Url();
+			if (CandidateItr->bIsSemanticOverlapArea)
 			{
-				StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
-					FIds::NewGuidInBase64Url(), StartTime,
-					Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass, // supported
-					CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass))); // supporting
-
-			}
-			else // Check which is supporting and which is supported
-			{
+				// Check which is supporting and which is supported
 				// TODO simple height comparison for now
 				if (Parent->OwnerStaticMeshComp->GetComponentLocation().Z >
-					CandidateItr->StaticMeshComp->GetComponentLocation().Z)
+					CandidateItr->StaticMeshComponent->GetComponentLocation().Z)
 				{
 					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
-						FIds::NewGuidInBase64Url(), StartTime,
+						SemId, StartTime, PairId,
 						Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass, // supported
 						CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass))); // supporting
 				}
 				else
 				{
 					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
-						FIds::NewGuidInBase64Url(), StartTime,
+						SemId, StartTime, PairId,
 						CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass, // supported
 						Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass))); // supporting
 				}
+			}
+			else 
+			{
+				// Can only support
+				StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
+					SemId, StartTime, PairId,
+					Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass, // supported
+					CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass))); // supporting
+
 			}
 			// Remove candidate, it is now part of a started event
 			CandidateItr.RemoveCurrent();
@@ -141,19 +115,17 @@ void FSLSupportedByPublisher::CheckCandidatesTimerCb()
 	// Pause timer
 	if (Candidates.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d No candidates, pause timer"), TEXT(__FUNCTION__), __LINE__);
 		Parent->GetWorld()->GetTimerManager().PauseTimer(TimerHandle);
 	}
 }
 
 // Publish finished event
-bool FSLSupportedByPublisher::FinishAndPublishEvent(const uint32 InOtherId, float EndTime)
+bool FSLSupportedByPublisher::FinishEvent(const uint64 InPairId, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
-		if (((*EventItr)->SupportingObjId == InOtherId) && ((*EventItr)->SupportedObjId == Parent->OwnerId) ||
-			((*EventItr)->SupportedObjId == InOtherId) && ((*EventItr)->SupportingObjId == Parent->OwnerId))
+		if ((*EventItr)->PairId == InPairId)
 		{
 			// Set end time and publish event
 			(*EventItr)->End = EndTime;
@@ -167,7 +139,7 @@ bool FSLSupportedByPublisher::FinishAndPublishEvent(const uint32 InOtherId, floa
 }
 
 // Terminate and publish pending contact events (this usually is called at end play)
-void FSLSupportedByPublisher::FinishAndPublishStartedEvents(float EndTime)
+void FSLSupportedByPublisher::FinishAllEvents(float EndTime)
 {
 	// Finish contact events
 	for (auto& Ev : StartedEvents)
@@ -180,43 +152,26 @@ void FSLSupportedByPublisher::FinishAndPublishStartedEvents(float EndTime)
 }
 
 // Event called when a semantic overlap event begins
-void FSLSupportedByPublisher::OnSLOverlapBegin2(const FSLOverlapResult& SemanticOverlapBeginResult)
+void FSLSupportedByPublisher::OnSLOverlapBegin(const FSLOverlapResult& SemanticOverlapBeginResult)
 {
-	Candidates2.Emplace(SemanticOverlapBeginResult);
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d BEGIN %s"), TEXT(__FUNCTION__), __LINE__, *SemanticOverlapBeginResult.ToString());
-}
-void FSLSupportedByPublisher::OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMeshComp,
-	uint32 OtherId,
-	const FString& OtherSemId,
-	const FString& OtherSemClass,
-	float StartTime,
-	bool bIsSLOverlapArea)
-{
-	FSLSupportedByPublisher::AddCandidate(OtherStaticMeshComp, OtherId, OtherSemId, OtherSemClass, !bIsSLOverlapArea);
-	
+	Candidates.Emplace(SemanticOverlapBeginResult);
+
 	// If paused, unpause timer
 	if (Parent->GetWorld()->GetTimerManager().IsTimerPaused(TimerHandle))
 	{
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d UnPauseTimer"), TEXT(__FUNCTION__), __LINE__);
 		Parent->GetWorld()->GetTimerManager().UnPauseTimer(TimerHandle);
 	}
 }
 
 // Event called when a semantic overlap event ends
-void FSLSupportedByPublisher::OnSLOverlapEnd2(const FSLOverlapResult& SemanticOverlapEndResult)
+void FSLSupportedByPublisher::OnSLOverlapEnd(const FSLOverlapResult& SemanticOverlapEndResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d END %s"), TEXT(__FUNCTION__), __LINE__, *SemanticOverlapEndResult.ToString());
-}
-void FSLSupportedByPublisher::OnSLOverlapEnd(const uint32 OtherId,
-	const FString& SemOtherSemId,
-	const FString& OtherSemClass,
-	float EndTime,
-	bool bIsSLOverlapArea)
-{
-	// Check if other is still a candidate, or the event can be finished and published
-	if (!IsACandidate(OtherId))
+	// Remove from candidate list
+	if (!IsACandidate(SemanticOverlapEndResult.Id, true))
 	{
-		FSLSupportedByPublisher::FinishAndPublishEvent(OtherId, EndTime);
+		// If not in candidate list, check if it is a started event, and finish it
+		const uint64 PairId = FIds::PairEncodeCantor(SemanticOverlapEndResult.Id, Parent->OwnerId);
+		FSLSupportedByPublisher::FinishEvent(PairId, SemanticOverlapEndResult.TriggerTime);
 	}
 }
 

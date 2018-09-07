@@ -13,27 +13,6 @@ DECLARE_DELEGATE_OneParam(FSLSupportedByEventSignature, TSharedPtr<FSLSupportedB
 struct FSLOverlapResult;
 
 /**
- * SupportedBy data of the other object
- */
-struct FSLSupportedByCandidateData
-{
-	// Pointer to the static mesh component
-	UStaticMeshComponent* StaticMeshComp;
-
-	// Unique id of the object bound to the semantic data
-	uint32 Id;
-
-	// Semantic id of the component
-	FString SemId;
-
-	// Semantic class of the component
-	FString SemClass;
-
-	// Object can only support others
-	bool bCanOnlyBeSupporting;
-};
-
-/**
  * Supported by publisher
  */
 class FSLSupportedByPublisher
@@ -49,41 +28,23 @@ public:
 	void Finish(float EndTime);
 
 private:
-	// Add supported by candidate (other)
-	void AddCandidate(UStaticMeshComponent* OtherStaticMeshComp,
-		uint32 OtherId,
-		const FString& OtherSemId,
-		const FString& OtherSemClass,
-		bool bCanOnlyBeSupporting);
+	// Timer callback for creating events from the candidates list
+	void AddEventsTimerCb();
 
 	// Check if other obj is a supported by candidate
 	bool IsACandidate(const uint32 InOtherId, bool bRemoveIfFound = false);
 
-	// Check if candidates are in a supported by event (triggered periodically)
-	void CheckCandidatesTimerCb();
-
 	// Finish then publish the event
-	bool FinishAndPublishEvent(const uint32 InOtherId, float EndTime);
+	bool FinishEvent(const uint64 InPairId, float EndTime);
 
 	// Terminate and publish started events (this usually is called at end play)
-	void FinishAndPublishStartedEvents(float EndTime);
+	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLOverlapBegin2(const FSLOverlapResult& SemanticOverlapBeginResult);
-	void OnSLOverlapBegin(UStaticMeshComponent* OtherStaticMeshComp,
-		const uint32 OtherId,
-		const FString& OtherSemId,
-		const FString& OtherSemClass,
-		float StartTime,
-		bool bIsSLOverlapArea);
+	void OnSLOverlapBegin(const FSLOverlapResult& SemanticOverlapBeginResult);
 
 	// Event called when a semantic overlap event ends
-	void OnSLOverlapEnd2(const FSLOverlapResult& SemanticOverlapEndResult);
-	void OnSLOverlapEnd(const uint32 OtherIdId,
-		const FString& SemOtherSemIdId,
-		const FString& OtherSemClass,
-		float EndTime,
-		bool bIsSLOverlapArea);
+	void OnSLOverlapEnd(const FSLOverlapResult& SemanticOverlapEndResult);
 
 public:
 	// Event called when a supported by event is finished
@@ -92,13 +53,9 @@ public:
 private:
 	// Parent semantic overlap area
 	class USLOverlapArea* Parent;
-
-	// Pointer to the world (access to elapsed time)
-	UWorld* World;
 	
 	// Candidates for supported by event
-	TArray<FSLSupportedByCandidateData> Candidates;
-	TArray<FSLOverlapResult> Candidates2;
+	TArray<FSLOverlapResult> Candidates;
 
 	// Array of started supported by events
 	TArray<TSharedPtr<FSLSupportedByEvent>> StartedEvents;

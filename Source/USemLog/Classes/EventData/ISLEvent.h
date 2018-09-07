@@ -22,19 +22,8 @@ public:
 	ISLEvent(const FString& InId, const float InStart)
 		: Id(InId), Start(InStart) {};
 
-	// Init constructor with pair id
-	ISLEvent(const uint64 InPairId, const FString& InId, const float InStart, const float InEnd)
-		: PairId(InPairId), Id(InId), Start(InStart), End(InEnd) {};
-
-	// Init without end constructor and with pair id
-	ISLEvent(const uint64 InPairId, const FString& InId, const float InStart)
-		: PairId(InPairId), Id(InId), Start(InStart) {};
-
 	// Virtual destructor
 	virtual ~ISLEvent() {};
-
-	// Pair id of the event (combination of two unique runtime ids)
-	uint64 PairId;
 
 	// Unique id of the event
 	FString Id;
@@ -51,6 +40,9 @@ public:
 	// Add the owl representation of the event to the owl document
 	virtual void AddToOwlDoc(FOwlDoc* OutDoc) = 0;
 
-	// Get event context data as string (ToString equivalent)
-	virtual FString Context()  const = 0;
+	// Get event context data (unique name that can repeat of the event type, e.g. Contact_BetweenTheseTwo)
+	virtual FString Context() const = 0;
+
+	// Get the tooltip data (extra info that can appear in the google charts)
+	virtual FString Tooltip() const = 0;
 };

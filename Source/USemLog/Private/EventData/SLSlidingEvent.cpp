@@ -86,4 +86,10 @@ FString FSLSlidingEvent::Context() const
 {
 	return FString("SlidingEvent");
 }
+
+// Get the tooltip data
+FString FSLSlidingEvent::Tooltip() const
+{
+	return FString("SlidingEvent");;
+}
 /* End ISLEvent interface */
