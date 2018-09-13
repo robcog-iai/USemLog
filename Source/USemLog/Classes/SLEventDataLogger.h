@@ -6,10 +6,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "OwlExperiment.h"
-#include "EventData/SLContactEvent.h"
-#include "EventData/SLSupportedByEvent.h"
-#include "EventData/SLSlidingEvent.h"
-#include "EventData/SLPushedEvent.h"
+#include "EventData/Events.h"
 #include "SLEventDataLogger.generated.h"
 
 // Forward declaration
@@ -44,14 +41,17 @@ public:
 	void Finish();
 
 private:
-	// Register for semantic contact events
-	void ListenToSemanticContactRelatedEvents();
+	// Register for various semantic events
+	void ListenToSemanticEvents();
 
 	// Called when a semantic contact is finished
 	void OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event);
 
 	// Called when a semantic supported by event is finished
 	void OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event);
+
+	// Called when a grasp is finished
+	void OnSemanticGraspEvent(TSharedPtr<FSLGraspEvent> Event);
 
 	// Write events to file
 	bool WriteToFile();

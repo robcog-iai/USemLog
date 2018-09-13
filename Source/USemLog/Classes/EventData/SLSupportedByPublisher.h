@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "EventData/SLSupportedByEvent.h"
+#include "SLSupportedByEvent.h"
 
 /** Delegate for notification of finished semantic contact event */
 DECLARE_DELEGATE_OneParam(FSLSupportedByEventSignature, TSharedPtr<FSLSupportedByEvent>);
@@ -19,7 +19,7 @@ class FSLSupportedByPublisher
 {
 public:
 	// Constructor 
-	FSLSupportedByPublisher(class USLOverlapArea* InSLOverlapArea);
+	FSLSupportedByPublisher(class USLOverlapArea* InParent);
 
 	// Init
 	void Init();
@@ -29,7 +29,10 @@ public:
 
 private:
 	// Timer callback for creating events from the candidates list
-	void AddEventsTimerCb();
+	void InspectCandidatesCb();
+
+	// Is a supported by event, returns nullptr if not an event
+	bool IsPartOfASupportedByEvent(FSLOverlapResult& InCandidate, float Time, TSharedPtr<FSLSupportedByEvent> OutEvent);
 
 	// Check if other obj is a supported by candidate
 	bool IsACandidate(const uint32 InOtherId, bool bRemoveIfFound = false);
@@ -41,10 +44,10 @@ private:
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLOverlapBegin(const FSLOverlapResult& SemanticOverlapBeginResult);
+	void OnSLOverlapBegin(const FSLOverlapResult& InResult);
 
 	// Event called when a semantic overlap event ends
-	void OnSLOverlapEnd(const FSLOverlapResult& SemanticOverlapEndResult);
+	void OnSLOverlapEnd(uint32 OtherId, float Time);
 
 public:
 	// Event called when a supported by event is finished
@@ -65,14 +68,7 @@ private:
 
 	// Timer delegate to be able to bind against non UObject functions
 	FTimerDelegate TimerDelegate;
-
-
-
-	//////////////////////////////////////////////////////////////////////////
-	//// Check if a supported by event started from the candidates
-	//void SupportedByTimerCb();
-
-	////
-	//FTimerDelegate TimerDelegateNextTick;
-	//void NextTickCb();
+	
+	// Re-enable the overlap events in the next tick
+	FTimerDelegate TimerDelegateNextTick;
 };

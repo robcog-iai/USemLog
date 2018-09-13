@@ -47,6 +47,7 @@ public class USemLog : ModuleRules
 				"UTags",
 				"UIds",
 				"UConversions",
+				//"UPhysicsBasedMC",
 				//"libmongo" // 4.20 has issues with libmongo
 				// ... add private dependencies that you statically link with here ...	
 			}
@@ -54,7 +55,7 @@ public class USemLog : ModuleRules
 
 		// 4.20 has issues with libmongo, this flag will ignore the mongo code
 		PublicDefinitions.Add("WITH_LIBMONGO=0");
-
+		PublicDefinitions.Add("WITH_PHYSICS_BASED_MC=1");
 
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]

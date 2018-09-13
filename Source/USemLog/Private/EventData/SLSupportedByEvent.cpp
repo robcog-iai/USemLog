@@ -70,7 +70,7 @@ FString FSLSupportedByEvent::Context() const
 // Get the tooltip data
 FString FSLSupportedByEvent::Tooltip() const
 {
-	return FString::Printf(TEXT("\'SupportingObjClass\',\'%s\',\'SupportingObjId\',\'%s\',\'SupportedObjClass\',\'%s\',\'SupportedObjId\',\'%s\',\'EventId\',\'%s\'"),
+	return FString::Printf(TEXT("\'SupportingO\',\'%s\',\'Id\',\'%s\',\'SupportedO\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
 		*SupportingObjClass, *SupportingObjSemId, *SupportedObjClass, *SupportedObjSemId, *Id);
 }
 /* End ISLEvent interface */

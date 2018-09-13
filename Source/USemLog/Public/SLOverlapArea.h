@@ -6,8 +6,8 @@
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
-#include "SLContactPublisher.h"
-#include "SLSupportedByPublisher.h"
+#include "EventData/SLContactPublisher.h"
+#include "EventData/SLSupportedByPublisher.h"
 #include "SLOverlapArea.generated.h"
 
 /**
@@ -33,11 +33,8 @@ struct FSLOverlapResult
 	// Flag showing if Other is also of type Semantic Overlap Area
 	bool bIsSemanticOverlapArea;
 
-	// Other Actor overlapping
-	TWeakObjectPtr<AStaticMeshActor> StaticMeshActor;
-
-	// Other Component overlapping
-	TWeakObjectPtr<UStaticMeshComponent> StaticMeshComponent;
+	// The mesh of the other overlapping component
+	TWeakObjectPtr<UMeshComponent> MeshComponent;
 
 	// Default ctor
 	FSLOverlapResult() {};
@@ -51,11 +48,9 @@ struct FSLOverlapResult
 
 	// Helper constructor with static mesh actor and component
 	FSLOverlapResult(uint32 InId, const FString& InSemId, const FString& InSemClass,
-		float Time, bool bIsSemanticOverlapArea,
-		AStaticMeshActor* InStaticMeshActor, UStaticMeshComponent* InStaticMeshComponent) :
+		float Time, bool bIsSemanticOverlapArea, UMeshComponent* InMeshComponent) :
 		Id(InId), SemId(InSemId), SemClass(InSemClass),
-		TriggerTime(Time), bIsSemanticOverlapArea(bIsSemanticOverlapArea),
-		StaticMeshActor(InStaticMeshActor), StaticMeshComponent(InStaticMeshComponent)
+		TriggerTime(Time), bIsSemanticOverlapArea(bIsSemanticOverlapArea), MeshComponent(InMeshComponent)
 	{};
 
 	// Get result as string
@@ -64,13 +59,15 @@ struct FSLOverlapResult
 		return FString::Printf(TEXT("Id:%ld SemId:%s SemClass:%s TriggerTime:%f bIsSemanticOverlapArea:%s StaticMeshActor:%s StaticMeshComponent:%s"),
 			Id, *SemId, *SemClass, TriggerTime,
 			bIsSemanticOverlapArea == true ? TEXT("True") : TEXT("False"),
-			StaticMeshActor.IsValid() ? *StaticMeshActor->GetName() : TEXT("None"),
-			StaticMeshComponent.IsValid() ? *StaticMeshComponent->GetName() : TEXT("None"));
+			MeshComponent.IsValid() ? *MeshComponent->GetName() : TEXT("None"));
 	}
 };
 
-/** Delegate to notify that a contact happened between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLOverlapSignature, const FSLOverlapResult&);
+/** Delegate to notify that a contact begins between two semantically annotated objects */
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLOverlapBeginSignature, const FSLOverlapResult&);
+
+/** Delegate to notify that a contact ended between two semantically annotated objects */
+DECLARE_MULTICAST_DELEGATE_TwoParams(FSLOverlapEndSignature, uint32 /*OtherId*/, float /*Time*/);
 
 /**
  * Collision area listening for semantic collision events
@@ -97,30 +94,33 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
+#if WITH_EDITOR
 	// UObject interface
 	// Called after the C++ constructor and after the properties have been initialized
 	virtual void PostInitProperties() override;
 
-#if WITH_EDITOR
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	
 	// USceneComponent interface
 	// Called when this component is moved in the editor
 	virtual void PostEditComponentMove(bool bFinished);
-#endif // WITH_EDITOR
 
 	// Load and apply cached parameters from tags
-	bool ReadAndUpdateArea();
+	bool LoadAreaParameters();
 
 	// Calculate and apply trigger area size
-	bool UpdateArea();
+	bool CalculateAreaParameters();
 
 	// Save current parameters to tags
-	bool SaveArea();
+	bool SaveAreaParameters();
+#endif // WITH_EDITOR
 
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
 	bool Init();
+
+	// Publish currently overlapping components
+	void TriggerInitialOverlaps();
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
@@ -138,14 +138,6 @@ private:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
-	//// Event called when a blocking hit event occurs
-	//UFUNCTION()
-	//void OnHit(UPrimitiveComponent* HitComponent,
-	//	AActor* OtherActor,
-	//	UPrimitiveComponent* OtherComp,
-	//	FVector NormalImpulse,
-	//	const FHitResult& Hit);
-
 public:
 	// Contact publisher
 	TSharedPtr<FSLContactPublisher> SLContactPub;
@@ -155,10 +147,10 @@ public:
 
 private:
 	// Event called when a semantic overlap begins
-	FSLOverlapSignature OnBeginSLOverlap;
+	FSLOverlapBeginSignature OnBeginSLOverlap;
 
 	// Event called when a semantic overlap ends
-	FSLOverlapSignature OnEndSLOverlap;
+	FSLOverlapEndSignature OnEndSLOverlap;
 
 	// Listen for contact events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -176,11 +168,8 @@ private:
 	//UPROPERTY(EditAnywhere)
 	//bool bListenForPushedByEvents;
 
-	// Pointer to the outer (owner) mesh actor
-	AStaticMeshActor* OwnerStaticMeshAct;
-
 	// Pointer to the outer (owner) mesh component 
-	UStaticMeshComponent* OwnerStaticMeshComp;
+	UMeshComponent* OwnerMeshComp;
 
 	// Cache of the outer (owner) unique id (unreal)
 	uint32 OwnerId;

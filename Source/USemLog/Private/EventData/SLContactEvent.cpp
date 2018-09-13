@@ -71,7 +71,7 @@ FString FSLContactEvent::Context() const
 // Get the tooltip data
 FString FSLContactEvent::Tooltip() const
 {
-	return FString::Printf(TEXT("\'Obj1Class\',\'%s\',\'Obj1Id\',\'%s\',\'Obj2Class\',\'%s\',\'Obj2Id\',\'%s\',\'EventId\',\'%s\'"),
+	return FString::Printf(TEXT("\'O1\',\'%s\',\'Id\',\'%s\',\'O2\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
 		*Obj1Class, *Obj1SemId, *Obj2Class, *Obj2SemId, *Id);
 }
 /* End ISLEvent interface */

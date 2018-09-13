@@ -5,8 +5,10 @@
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 #include "EngineUtils.h"
+
 #include "OwlExperimentStatics.h"
 #include "SLOverlapArea.h"
+#include "SLGraspTrigger.h"
 #include "SLGoogleCharts.h"
 #include "Ids.h"
 
@@ -38,8 +40,8 @@ void USLEventDataLogger::Init(const FString& InLogDirectory,
 // Start logger
 void USLEventDataLogger::Start()
 {
-	// Subscribe for semantic contact events
-	USLEventDataLogger::ListenToSemanticContactRelatedEvents();
+	// Subscribe for various semantic events
+	USLEventDataLogger::ListenToSemanticEvents();
 }
 
 // Finish logger
@@ -68,7 +70,7 @@ void USLEventDataLogger::Finish()
 }
 
 // Register for semantic contact events
-void USLEventDataLogger::ListenToSemanticContactRelatedEvents()
+void USLEventDataLogger::ListenToSemanticEvents()
 {
 	// Iterate all contact trigger components, and bind to their events publisher
 	for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
@@ -85,6 +87,16 @@ void USLEventDataLogger::ListenToSemanticContactRelatedEvents()
 				this, &USLEventDataLogger::OnSemanticSupportedByEvent);
 		}
 	}
+
+	// Iterate all grasp listeners
+	for (TObjectIterator<USLGraspTrigger> Itr; Itr; ++Itr)
+	{
+		if (Itr->SLGraspPub.IsValid())
+		{
+			Itr->SLGraspPub->OnSemanticGraspEvent.BindUObject(
+				this, &USLEventDataLogger::OnSemanticGraspEvent);
+		}
+	}
 }
 
 // Called when a semantic contact is finished
@@ -96,6 +108,13 @@ void USLEventDataLogger::OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Even
 
 // Called when a semantic supported by event is finished
 void USLEventDataLogger::OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event)
+{
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Tooltip());
+	FinishedEvents.Add(Event);
+}
+
+// Called when a semantic supported by event is finished
+void USLEventDataLogger::OnSemanticGraspEvent(TSharedPtr<FSLGraspEvent> Event)
 {
 	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Tooltip());
 	FinishedEvents.Add(Event);

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "EventData/ISLEvent.h"
+#include "ISLEvent.h"
 
 /**
 * Dummy event class

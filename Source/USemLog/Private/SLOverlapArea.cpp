@@ -3,13 +3,14 @@
 
 #include "SLOverlapArea.h"
 #include "SLMappings.h"
-#include "DrawDebugHelpers.h"
+//#include "DrawDebugHelpers.h"
 
 // UUTils
 #include "Tags.h"
 #include "Ids.h"
 
 #define SL_COLL_SCALE_FACTOR 1.03f
+#define SL_COLL_SCALE_SIZE 0.25f
 #define SL_COLL_TAGTYPE "SemLogColl"
 
 // Default constructor
@@ -25,23 +26,8 @@ void USLOverlapArea::BeginPlay()
 	Super::BeginPlay();
 
 	// Check if component is ready for runtime
-	if (Init())
+	if (USLOverlapArea::Init())
 	{
-		// If objects are already overlapping at begin play, they will not be triggered
-		// Here we do a manual overlap check and forward them to OnOverlapBegin
-		TSet<UPrimitiveComponent*> CurrOverlappingComponents;
-		GetOverlappingComponents(CurrOverlappingComponents);
-		FHitResult Dummy;
-		for (const auto& CompItr : CurrOverlappingComponents)
-		{
-			USLOverlapArea::OnOverlapBegin(
-				this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
-		}
-
-		// Bind event delegates
-		OnComponentBeginOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapBegin);
-		OnComponentEndOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapEnd);
-
 		// Listen and publish semantic contact events
 		if (bListenForContactEvents)
 		{
@@ -55,6 +41,13 @@ void USLOverlapArea::BeginPlay()
 			SLSupportedByPub = MakeShareable(new FSLSupportedByPublisher(this));
 			SLSupportedByPub->Init();
 		}
+
+		// Broadcast currently overlapping components
+		USLOverlapArea::TriggerInitialOverlaps();
+
+		// Bind event delegates
+		OnComponentBeginOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapEnd);
 	}
 }
 
@@ -77,19 +70,19 @@ void USLOverlapArea::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
+#if WITH_EDITOR
 // Called after the C++ constructor and after the properties have been initialized
 void  USLOverlapArea::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	if (!ReadAndUpdateArea())
+	if (!LoadAreaParameters())
 	{
-		UpdateArea();
+		CalculateAreaParameters();
 	}
 	ShapeColor = FColor::Blue;
 }
 
-#if WITH_EDITOR
 // Called when a property is changed in the editor
 void USLOverlapArea::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
@@ -170,10 +163,9 @@ void USLOverlapArea::PostEditComponentMove(bool bFinished)
 
 	FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 }
-#endif // WITH_EDITOR
 
 // Read values from tags
-bool USLOverlapArea::ReadAndUpdateArea()
+bool USLOverlapArea::LoadAreaParameters()
 {
 	TMap<FString, FString> TagKeyValMap = 
 		FTags::GetKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE);
@@ -213,7 +205,7 @@ bool USLOverlapArea::ReadAndUpdateArea()
 }
 
 // Calculate trigger area size
-bool USLOverlapArea::UpdateArea()
+bool USLOverlapArea::CalculateAreaParameters()
 {
 	// Get the static mesh component
 	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
@@ -221,21 +213,21 @@ bool USLOverlapArea::UpdateArea()
 		UStaticMeshComponent* SMComp = OuterAsSMAct->GetStaticMeshComponent();
 
 		// Apply parameters to the contact listener area
-		SetBoxExtent(SMComp->Bounds.BoxExtent * SL_COLL_SCALE_FACTOR);
+		//SetBoxExtent(SMComp->Bounds.BoxExtent * SL_COLL_SCALE_FACTOR);
+		SetBoxExtent(SMComp->Bounds.BoxExtent + FVector(SL_COLL_SCALE_SIZE));
 		// Apply its location
 		FTransform BoundsTransf(FQuat::Identity, SMComp->Bounds.Origin);
 		BoundsTransf.SetToRelativeTransform(SMComp->GetComponentTransform());
 		SetRelativeTransform(BoundsTransf);
 
 		// Save calculated data
-		SaveArea();
-		return true;
+		return SaveAreaParameters();
 	}
 	return false;
 }
 
 // Save values to tags
-bool USLOverlapArea::SaveArea()
+bool USLOverlapArea::SaveAreaParameters()
 {
 	const FTransform RelTransf = GetRelativeTransform();
 	const FVector RelLoc = RelTransf.GetLocation();
@@ -258,41 +250,64 @@ bool USLOverlapArea::SaveArea()
 	
 	return FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 }
+#endif // WITH_EDITOR
 
 // Setup pointers to outer, check if semantically annotated
 bool USLOverlapArea::Init()
 {
-	// Make sure outer is a static mesh actor
+	// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
+	// Make sure it has a semantic unique id and class
+	OwnerId = GetOwner()->GetUniqueID();
+	// Init the semantic items mappings singleton
+	if (!FSLMappings::GetInstance()->IsInit())
+	{
+		FSLMappings::GetInstance()->LoadData(GetWorld());
+	}
+	OwnerSemId = FSLMappings::GetInstance()->GetSemanticId(OwnerId);
+	OwnerSemClass = FSLMappings::GetInstance()->GetSemanticClass(OwnerId);	
+	// Check that owner is semantically annotated
+	if (OwnerSemId.IsEmpty() || OwnerSemClass.IsEmpty())
+	{
+		return false;
+	}
+
+	// Make sure the mesh (static/skeletal) component is valid
 	if (AStaticMeshActor* CastToSMAct = Cast<AStaticMeshActor>(GetOwner()))
 	{
-		OwnerStaticMeshAct = CastToSMAct;
-		OwnerId = OwnerStaticMeshAct->GetUniqueID();
-
-		OwnerStaticMeshComp = OwnerStaticMeshAct->GetStaticMeshComponent();
-		// Make sure it has a valid mesh component
-		if (OwnerStaticMeshComp)
-		{
-			// Make sure there are no overlap events on the mesh as well
-			// (these will be calculated on the contact listener)
-			// TODO this might cause problems with grasping objects
-			OwnerStaticMeshComp->SetGenerateOverlapEvents(false);
-
-			// Init the semantic items content singleton
-			if (!FSLMappings::GetInstance()->IsInit())
-			{
-				FSLMappings::GetInstance()->LoadData(GetWorld());
-			}
-			// Make sure it has a semantic unique id and class
-			OwnerSemId = FSLMappings::GetInstance()->GetSemanticId(OwnerId);
-			OwnerSemClass = FSLMappings::GetInstance()->GetSemanticClass(OwnerId);
-
-			if (!OwnerSemId.IsEmpty() && !OwnerSemClass.IsEmpty())
-			{
-				return true;
-			}
-		}
+		OwnerMeshComp = CastToSMAct->GetStaticMeshComponent();
 	}
-	return false;
+	else if (ASkeletalMeshActor* CastToSkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
+	{
+		OwnerMeshComp = CastToSkelAct->GetSkeletalMeshComponent();
+	}
+
+	if (OwnerMeshComp)
+	{
+		// Make sure there are no overlap events on the mesh as well
+		// (these will be calculated on the contact listener)
+		// TODO this might cause problems with grasping objects
+		OwnerMeshComp->SetGenerateOverlapEvents(false);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+// Publish currently overlapping components
+void USLOverlapArea::TriggerInitialOverlaps()
+{
+	// If objects are already overlapping at begin play, they will not be triggered
+	// Here we do a manual overlap check and forward them to OnOverlapBegin
+	TSet<UPrimitiveComponent*> CurrOverlappingComponents;
+	GetOverlappingComponents(CurrOverlappingComponents);
+	FHitResult Dummy;
+	for (const auto& CompItr : CurrOverlappingComponents)
+	{
+		USLOverlapArea::OnOverlapBegin(
+			this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
+	}
 }
 
 
@@ -304,69 +319,66 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
+	//UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Time=%f, OuterId=%ld, OuterName=%s, OtherId=%ld, OtherName=%s, ActId=%ld, ActName=%s"),
+	//	TEXT(__FUNCTION__), __LINE__,
+	//	GetWorld()->GetTimeSeconds(),
+	//	OtherComp->GetOuter()->GetUniqueID(),
+	//	*OtherComp->GetOuter()->GetName(),
+	//	OtherComp->GetUniqueID(),
+	//	*OtherComp->GetName(),
+	//	OtherActor->GetUniqueID(),
+	//	*OtherActor->GetName());
+
 	// Ignore self overlaps (area with static mesh)
-	if (OtherActor == OwnerStaticMeshAct)
+	if (OtherActor == GetOwner())
 	{
 		return;
 	}
 
-	// Make sure other is a static mesh actor with a valid static mesh component
-	AStaticMeshActor* OtherSMAct = Cast<AStaticMeshActor>(OtherActor);
-	UStaticMeshComponent* OtherSMComp = nullptr;
-	// Ignore if other actor is not a static mesh actor, or does not have a static mesh component
-	if (OtherSMAct)
+	// Check if the component or its outer is semantically annotated
+	uint32 OtherId = OtherComp->GetUniqueID();
+	FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+	FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
+	if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 	{
-		OtherSMComp = OtherSMAct->GetStaticMeshComponent();
-		if (OtherSMComp == nullptr)
+		// Check if outer is semantically annotated
+		OtherId = OtherComp->GetOuter()->GetUniqueID();
+		OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+		OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
+		if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 		{
 			return;
 		}
 	}
-	else
-	{
-		return;
-	}
 
-	// Make sure other is semantically annotated
-	const uint32 OtherId = OtherActor->GetUniqueID();
-	const FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
-	const FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
-	if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
-	{
-		return;
-	}
-
-	// Set by default that the other component is not an semantic overlap area (this will be checked further)
-	bool bOtherIsASemanticOverlapArea = false;
 	// Get the time of the event in second
 	float StartTime = GetWorld()->GetTimeSeconds();
-	
-	// If both areas are trigger areas, they will both concurrently trigger overlap events.
-	// To avoid this we consistently ignore one trigger event. This is chosen using
-	// the unique ids of the overlapping actors (GetUniqueID), we compare the two values 
-	// and consistently pick the event with a given (larger or smaller) value.
-	// This allows us to be in sync with the overlap end event 
-	// since the unique ids and the rule of ignoring the one event will not change
-	if (USLOverlapArea* OtherContactTrigger = Cast<USLOverlapArea>(OtherComp))
-	{
-		// Other is a semantic overlap component
-		bOtherIsASemanticOverlapArea = true;
 
-		// Filter out one of the trigger areas
+	// Check the type of the other component
+	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
+	{
+		// Broadcast begin of semantic overlap event
+		FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, 
+			StartTime, false, OtherAsMeshComp);
+		OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
+	}
+	else if (USLOverlapArea* OtherContactTrigger = Cast<USLOverlapArea>(OtherComp))
+	{
+		// If both areas are trigger areas, they will both concurrently trigger overlap events.
+		// To avoid this we consistently ignore one trigger event. This is chosen using
+		// the unique ids of the overlapping actors (GetUniqueID), we compare the two values 
+		// and consistently pick the event with a given (larger or smaller) value.
+		// This allows us to be in sync with the overlap end event 
+		// since the unique ids and the rule of ignoring the one event will not change
+		// Filter out one of the trigger areas (compare unique ids)
 		if (OtherId > OwnerId)
 		{
 			// Broadcast begin of semantic overlap event
-			FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, StartTime,
-				bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
+			FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass,
+				StartTime, true, OtherContactTrigger->OwnerMeshComp);
 			OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
-			return;
 		}
 	}
-
-	// Broadcast begin of semantic overlap event
-	FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, StartTime,
-		bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-	OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
 }
 
 // Called on overlap end events
@@ -375,83 +387,51 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
-	// Ignore overlaps with itself
-	if (OtherActor == OwnerStaticMeshAct)
+	// Ignore self overlaps (area with static mesh)
+	if (OtherActor == GetOwner())
 	{
 		return;
 	}
 
-	// Make sure other is a static mesh actor with a valid static mesh component
-	AStaticMeshActor* OtherSMAct = Cast<AStaticMeshActor>(OtherActor);
-	UStaticMeshComponent* OtherSMComp = nullptr;
-	// Ignore if other actor is not a static mesh actor, or does not have a static mesh component
-	if (OtherSMAct)
+	// Check if the component or its outer is semantically annotated
+	uint32 OtherId = OtherComp->GetUniqueID();
+	FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+	FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
+	if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 	{
-		OtherSMComp = OtherSMAct->GetStaticMeshComponent();
-		if (OtherSMComp == nullptr)
+		// Check if outer is semantically annotated
+		OtherId = OtherComp->GetOuter()->GetUniqueID();
+		FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+		FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
+		if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 		{
 			return;
 		}
 	}
-	else
-	{
-		return;
-	}
 
-	// Check if other actor is semantically annotated
-	const uint32 OtherId = OtherActor->GetUniqueID();
-	const FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
-	const FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
-	if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
-	{
-		return;
-	}
-
-	// Set by default that the other component is not an semantic overlap area (this will be checked further)
-	bool bOtherIsASemanticOverlapArea = false;
 	// Get the time of the event in second
 	float EndTime = GetWorld()->GetTimeSeconds();
 
-	// If both areas are trigger areas, they will both concurrently trigger overlap events.
-	// To avoid this we consistently ignore one trigger event. This is chosen using
-	// the unique ids of the overlapping actors (GetUniqueID), we compare the two values 
-	// and consistently pick the event with a given (larger or smaller) value.
-	// This allows us to be in sync with the overlap end event 
-	// since the unique ids and the rule of ignoring the one event will not change
-	if (OtherComp->IsA(USLOverlapArea::StaticClass()))
+	// Check the type of the other component
+	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
-		// Other is a semantic overlap component
-		bOtherIsASemanticOverlapArea = true;
-
+		// Broadcast end of semantic overlap event
+		OnEndSLOverlap.Broadcast(OtherId, EndTime);
+	}
+	else if (USLOverlapArea* OtherContactTrigger = Cast<USLOverlapArea>(OtherComp))
+	{
+		// If both areas are trigger areas, they will both concurrently trigger overlap events.
+		// To avoid this we consistently ignore one trigger event. This is chosen using
+		// the unique ids of the overlapping actors (GetUniqueID), we compare the two values 
+		// and consistently pick the event with a given (larger or smaller) value.
+		// This allows us to be in sync with the overlap end event 
+		// since the unique ids and the rule of ignoring the one event will not change
+		// Filter out one of the trigger areas (compare unique ids)
 		if (OtherId > OwnerId)
 		{
 			// Broadcast end of semantic overlap event
-			FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, EndTime,
-				bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-			OnEndSLOverlap.Broadcast(SemanticOverlapResult);
-			return;
+			OnEndSLOverlap.Broadcast(OtherId, EndTime);
 		}
 	}
-
-	// Broadcast end of semantic overlap event
-	FSLOverlapResult SemanticOverlapResult(OtherId, OtherSemId, OtherSemClass, EndTime,
-		bOtherIsASemanticOverlapArea, OtherSMAct, OtherSMComp);
-	OnEndSLOverlap.Broadcast(SemanticOverlapResult);
 }
 
-//// Called on hit event
-//void USLContactTrigger::OnHit(UPrimitiveComponent* HitComponent,
-//	AActor* OtherActor,
-//	UPrimitiveComponent* OtherComp,
-//	FVector NormalImpulse,
-//	const FHitResult& Hit)
-//{
-//	
-//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d This-Other: %s-%s TS: %f"),
-//		TEXT(__FUNCTION__), __LINE__,
-//		*HitComponent->GetOwner()->GetName(), *OtherActor->GetName(),
-//		GetWorld()->GetTimeSeconds());
-//
-//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d \n \t HIT: %s \n \t Normal Impulse: %s \n **"),
-//		TEXT(__FUNCTION__), __LINE__, *Hit.ToString(), *NormalImpulse.ToString());
-//}

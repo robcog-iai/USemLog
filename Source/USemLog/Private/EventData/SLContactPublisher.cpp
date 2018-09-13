@@ -1,16 +1,16 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLContactPublisher.h"
+#include "EventData/SLContactPublisher.h"
 #include "SLOverlapArea.h"
 
 // UUtils
 #include "Ids.h"
 
-// Default constructor
-FSLContactPublisher::FSLContactPublisher(USLOverlapArea* InSLOverlapArea)
+// Constructor
+FSLContactPublisher::FSLContactPublisher(USLOverlapArea* InParent)
 {
-	Parent = InSLOverlapArea;
+	Parent = InParent;
 }
 
 // Init
@@ -30,7 +30,7 @@ void FSLContactPublisher::Finish(float EndTime)
 void FSLContactPublisher::AddNewEvent(const FSLOverlapResult& InResult)
 {
 	// Start a semantic contact event
-	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(		
+	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
 		FIds::NewGuidInBase64Url(),	InResult.TriggerTime, FIds::PairEncodeCantor(InResult.Id, Parent->OwnerId),
 		Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass,
 		InResult.Id, InResult.SemId, InResult.SemClass));
@@ -79,7 +79,7 @@ void FSLContactPublisher::OnSLOverlapBegin(const FSLOverlapResult& SemanticOverl
 }
 
 // Event called when a semantic overlap event ends
-void FSLContactPublisher::OnSLOverlapEnd(const FSLOverlapResult& SemanticOverlapResult)
+void FSLContactPublisher::OnSLOverlapEnd(uint32 OtherId, float Time)
 {
-	FSLContactPublisher::FinishEvent(SemanticOverlapResult.Id, SemanticOverlapResult.TriggerTime);
+	FSLContactPublisher::FinishEvent(OtherId, Time);
 }

@@ -3,7 +3,7 @@
 # USemLog
 
 Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data to a KnowRob compatible format.
-	
+
 # Usage:
 
 #### Include the plugin to your project
@@ -19,14 +19,12 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 
     where
 
-     `SemLog;` is the `TagType`
+    `SemLog;` is the `TagType`
 
-	 `SubClassOf,KetchupBottle;` - represents the parent of the semantic class
-	 
-     `Class,HelaCurryKetchup;` - represents the semantic class of the object
+	  `SubClassOf,KetchupBottle;` - represents the parent of the semantic class
 
-     `Mobility,Dynamic;` - represents the raw logging type of the object (Static or Dynamic)
-	 
-     `Id,y6dnf3eQsUK9pPKAzo90yA;` - unique id in UUID in Base64Url
+    `Class,HelaCurryKetchup;` - represents the semantic class of the object
 
+    `Mobility,Dynamic;` - represents the raw logging type of the object (Static or Dynamic)
 
+    `Id,y6dnf3eQsUK9pPKAzo90yA;` - unique id in UUID in Base64Url

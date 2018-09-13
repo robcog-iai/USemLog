@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "EventData/SLContactEvent.h"
+#include "SLContactEvent.h"
 
 /** Delegate for notification of finished semantic contact event */
 DECLARE_DELEGATE_OneParam(FSLContactEventSignature, TSharedPtr<FSLContactEvent>);
@@ -18,7 +18,7 @@ class FSLContactPublisher
 {
 public:
 	// Constructor 
-	FSLContactPublisher(class USLOverlapArea* InSLOverlapArea);
+	FSLContactPublisher(class USLOverlapArea* InParent);
 
 	// Init
 	void Init();
@@ -28,7 +28,7 @@ public:
 
 private:
 	// Start new contact event
-	void AddNewEvent(const FSLOverlapResult& SemanticOverlapBeginResult);
+	void AddNewEvent(const FSLOverlapResult& InResult);
 
 	// Finish then publish the event
 	bool FinishEvent(const uint32 InOtherId, float EndTime);
@@ -37,10 +37,10 @@ private:
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLOverlapBegin(const FSLOverlapResult& SemanticOverlapBeginResult);
+	void OnSLOverlapBegin(const FSLOverlapResult& InResult);
 	
 	// Event called when a semantic overlap event ends
-	void OnSLOverlapEnd(const FSLOverlapResult& SemanticOverlapEndResult);
+	void OnSLOverlapEnd(uint32 OtherId, float Time);
 
 public:
 	// Event called when a semantic contact event is finished

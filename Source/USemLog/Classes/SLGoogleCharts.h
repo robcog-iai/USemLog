@@ -94,13 +94,25 @@ struct FSLGoogleCharts
 		if (Params.bTooltips)
 		{
 			TimelineStr.Append(
-				"\t function createTooltipHTMLContent(Start,End,Key1,Val1,Key2,Val2,Key3,Val3,Key4,Val4,Key5,Val5){\n"
-				"\t\t return '<font size=\"3\"><p><strong>Duration:</strong> ' + (End - Start).toFixed(3) + ' seconds (' + Start + 's - ' + End + 's)<hr/></p></font>' +\n"
-				"\t\t\t '<font size=\"2\"><p><strong>' + Key1 + ':</strong> ' + Val1 + '</p>' + \n"
-				"\t\t\t '<p><strong>' + Key2 + ':</strong> ' + Val2 + '<hr/></p>' + \n"
-				"\t\t\t '<p><strong>' + Key3 + ':</strong> ' + Val3 + '</p>' + \n"
-				"\t\t\t '<p><strong>' + Key4 + ':</strong> ' + Val4 + '<hr/></p>' + \n"
-				"\t\t\t '<p><strong>' + Key5 + ':</strong> ' + Val5 + '</p></font>'\n"
+				"\t function createTooltipHTMLContent(Start, End, Key1, Val1, Key2, Val2, Key3, Val3, Key4, Val4, Key5, Val5){\n"
+				"\t\t return '<center>' +\n"
+				"\t\t\t '<font size=\"3\">' +\n"
+				"\t\t\t '<p><strong>Duration:</strong> ' + (End - Start).toFixed(3) + 's</p>' +\n"
+				"\t\t\t '<p>' + Start + 's - ' + End + 's</p>' +\n"
+				"\t\t\t '<hr/>' +\n"
+				"\t\t\t '</font>' +\n"
+				"\t\t\t '<font size=\"2\">' +\n"
+				"\t\t\t '<p><strong>' + Key1 + ':</strong> ' + Val1 + '</p>' +\n"
+				"\t\t\t '<p><strong>' + Key2 + ':</strong> ' + Val2 + '</p>' +\n"
+				"\t\t\t '<hr/>' +\n"
+				"\t\t\t '<p><strong>' + Key3 + ':</strong> ' + Val3 + '</p>' +\n"
+				"\t\t\t '<p><strong>' + Key4 + ':</strong> ' + Val4 + '</p>' +\n"
+				"\t\t\t '<hr/>' +\n"
+				"\t\t\t '</font>' +\n"
+				"\t\t\t '<font size=\"1\">' +\n"
+				"\t\t\t '<p><strong>' + Key5 + ':</strong> ' + Val5 + '</p>' +\n"
+				"\t\t\t '</font>' +\n"
+				"\t\t\t '</center>'"
 				"\t }");
 		}
 

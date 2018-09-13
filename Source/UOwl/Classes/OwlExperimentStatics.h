@@ -44,7 +44,6 @@ struct UOWL_API FOwlExperimentStatics
 		const FString& InClass);
 
 
-
 	/* Owl properties creation */
 	// Create class property
 	static FOwlNode CreateClassProperty(const FString& InClass);
@@ -68,58 +67,11 @@ struct UOWL_API FOwlExperimentStatics
 	// Create supports property
 	static FOwlNode CreateIsSupportingProperty(
 		const FString& InDocPrefix, const FString& InObjId);
+	
+	// Create performedBy property
+	static FOwlNode CreatePerformedByProperty(
+		const FString& InDocPrefix, const FString& InObjId);
 
-	//// Create pathToCadModel property
-	//static FOwlNode CreatePathToCadModelProperty(const FString& InClass);
-
-	//// Create subClassOf property
-	//static FOwlNode CreateSubClassOfProperty(const FString& InSubClassOf);
-
-	//// Create skeletal bone property
-	//static FOwlNode CreateSkeletalBoneProperty(const FString& InBone);
-
-	//// Create subclass - depth property
-	//static FOwlNode CreateDepthProperty(float Value);
-
-	//// Create subclass - height property
-	//static FOwlNode CreateHeightProperty(float Value);
-
-	//// Create subclass - width property
-	//static FOwlNode CreateWidthProperty(float Value);
-
-	//// Create owl:onProperty meta property
-	//static FOwlNode CreateOnProperty(const FString& InProperty);
-
-	//// Create a property with a bool value
-	//static FOwlNode CreateBoolValueProperty(const FOwlPrefixName& InPrefixName, bool bValue);
-
-	//// Create a property with a int value
-	//static FOwlNode CreateIntValueProperty(const FOwlPrefixName& InPrefixName, int32 Value);
-
-	//// Create a property with a float value
-	//static FOwlNode CreateFloatValueProperty(const FOwlPrefixName& InPrefixName, float Value);
-
-	//// Create a property with a string value
-	//static FOwlNode CreateStringValueProperty(const FOwlPrefixName& InPrefixName, const FString& InValue);
-
-	//// Create pose property
-	//static FOwlNode CreatePoseProperty(const FString& InDocPrefix, const FString& InId);
-
-	//// Create linear constraint property
-	//static FOwlNode CreateLinearConstraintProperty(const FString& InDocPrefix, const FString& InId);
-
-	//// Create angular constraint property
-	//static FOwlNode CreateAngularConstraintProperty(const FString& InDocPrefix, const FString& InId);
-
-	//// Create child property
-	//static FOwlNode CreateChildProperty(const FString& InDocPrefix, const FString& InId);
-
-	//// Create parent property
-	//static FOwlNode CreateParentProperty(const FString& InDocPrefix, const FString& InId);
-
-	//// Create a location property
-	//static FOwlNode CreateLocationProperty(const FVector& InLoc);
-
-	//// Create a quaternion property
-	//static FOwlNode CreateQuaternionProperty(const FQuat& InQuat);
+	// Create objectActedOn property
+	static FOwlNode CreateObjectActedOnProperty(const FString& InDocPrefix, const FString& InObjId);
 };
