@@ -66,7 +66,7 @@ TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
 	TSharedPtr<FOwlSemanticMap> SemMap = FOwlSemanticMapStatics::CreateDefaultSemanticMap(
 		InDocId, InDocPrefix, InDocOntologyName);
 
-	SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_kitchen_ue.owl");
+	//SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_kitchen_ue.owl");
 
 	return SemMap;
 }

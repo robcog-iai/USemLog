@@ -229,6 +229,37 @@ struct FSLEdToolkitStatics
 		return FReply::Handled();
 	}
 
+	// Replace text in tags
+	static FReply ReplaceText()
+	{
+		// What to replace
+		const FString SearchText = "LogType";
+		// With what
+		const FString ReplaceText = "Mobility";
+
+		for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+		{
+			for (auto& T : ActItr->Tags)
+			{
+				FString TagAsString = T.ToString();
+				TagAsString.ReplaceInline(*SearchText, *ReplaceText);
+				T = FName(*TagAsString);
+			}
+			// Iterate actor components
+			TArray<UActorComponent*> Comps;
+			ActItr->GetComponents<UActorComponent>(Comps);
+			for (auto& C : Comps)
+			{
+				for (auto& T : C->ComponentTags)
+				{
+					FString TagAsString = T.ToString();
+					TagAsString.ReplaceInline(*SearchText, *ReplaceText);
+					T = FName(*TagAsString);
+				}
+			}
+		}
+		return FReply::Handled();
+	}
 
 	// Create semantic logs directory
 	static bool SetupLoggingDirectory(const FString& DirectoryName)

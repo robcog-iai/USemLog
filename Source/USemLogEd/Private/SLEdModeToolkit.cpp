@@ -128,6 +128,15 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.IsEnabled(true)
 					.OnClicked_Static(&FSLEdToolkitStatics::ClearClasses)
 					]
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("ReplaceText", "Replace Text"))
+					.IsEnabled(true)
+					.OnClicked_Static(&FSLEdToolkitStatics::ReplaceText)
+					]
 		];
 		
 	FModeToolkit::Init(InitToolkitHost);
