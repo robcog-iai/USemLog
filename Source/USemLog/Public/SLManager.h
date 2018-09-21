@@ -50,10 +50,10 @@ private:
 	/* Semantic logger */
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bEditEpisodeId;
+	bool bUseCustomEpisodeId;
 
 	// Episode Id (be default will be auto generated)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bEditEpisodeId"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomEpisodeId"))
 	FString EpisodeId;
 
 	// Log directory (or the database name if saving to mongodb)

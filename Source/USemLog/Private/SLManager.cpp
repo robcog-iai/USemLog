@@ -16,8 +16,8 @@ ASLManager::ASLManager()
 	bIsStarted = false;	
 
 	// Semantic logger default values
-	bEditEpisodeId = false;
-	EpisodeId = TEXT("DefaultEpisodeId");
+	bUseCustomEpisodeId = false;
+	EpisodeId = TEXT("autogen");
 	LogDirectory = TEXT("SemLog");
 	bStartAtBeginPlay = true;
 
@@ -78,7 +78,7 @@ void ASLManager::Init()
 		}
 
 		// If the episode Id is not manually added, generate new unique id
-		if (!bEditEpisodeId)
+		if (!bUseCustomEpisodeId)
 		{
 			// Generate unique id for the episode
 			EpisodeId = FIds::NewGuidInBase64Url();

@@ -7,7 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "SLVisionActor.generated.h"
 
-UCLASS()
+UCLASS(ClassGroup = (SL), hidecategories = (HLOD, Mobile, Cooking, AssetUserData))
 class USEMLOGVISION_API ASLVisionActor : public AActor
 {
 	GENERATED_BODY()
@@ -24,6 +24,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	
+private:
+	// Semantic vision logger component
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	class USLVisionComponent* SLVisionComponent;
 	
 };

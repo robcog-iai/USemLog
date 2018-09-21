@@ -305,8 +305,11 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> I
 	const TArray<FName>& InTags)
 {
 	const FString MapPrefix = InSemMap->Prefix;
+	const FString DocId = InSemMap->Id;
+
 	AActor* ParentAct = ConstraintComp->ConstraintActor1;
 	AActor* ChildAct = ConstraintComp->ConstraintActor2;
+
 	if (ParentAct && ChildAct)
 	{
 		const FString ParentId = FTags::GetValue(ParentAct, "SemLog", "Id");
@@ -316,6 +319,10 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> I
 			// Create the object individual
 			FOwlNode ConstrIndividual = FOwlSemanticMapStatics::CreateConstraintIndividual(
 				MapPrefix, InId, ParentId, ChildId);
+
+			// Add describedInMap property
+			ConstrIndividual.AddChildNode(FOwlSemanticMapStatics::CreateDescribedInMapProperty(
+				MapPrefix, DocId));
 
 			// Add tags data property
 			ConstrIndividual.AddChildNode(FOwlSemanticMapStatics::CreateTagsDataProperty(

@@ -2,14 +2,20 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisionActor.h"
+#include "SLVisionComponent.h"
 
 
 // Sets default values
 ASLVisionActor::ASLVisionActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
+	
+	// Create the semantic vision logging component
+	SLVisionComponent = CreateDefaultSubobject<USLVisionComponent>(TEXT("SLVisionComponent"));
 
+	// Set as root component
+	RootComponent = SLVisionComponent;
 }
 
 // Called when the game starts or when spawned

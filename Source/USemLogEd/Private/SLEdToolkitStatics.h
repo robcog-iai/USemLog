@@ -261,6 +261,24 @@ struct FSLEdToolkitStatics
 		return FReply::Handled();
 	}
 
+	// Replace text in tags
+	static FReply ClearAllTags()
+	{
+		for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+		{
+			ActItr->Tags.Empty();
+
+			// Iterate actor components
+			TArray<UActorComponent*> Comps;
+			ActItr->GetComponents<UActorComponent>(Comps);
+			for (auto& C : Comps)
+			{
+				C->ComponentTags.Empty();
+			}
+		}
+		return FReply::Handled();
+	}
+
 	// Create semantic logs directory
 	static bool SetupLoggingDirectory(const FString& DirectoryName)
 	{
