@@ -172,7 +172,7 @@ void ASLManager::Init()
 			for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 			{
 				// Iterate components of the actor, check for vision capture manager
-				for (const auto& CompItr : ActorItr->GetComponents())
+				for (auto& CompItr : ActorItr->GetComponents())
 				{
 					if (USLVisManager* VisMan = Cast<USLVisManager>(CompItr))
 					{

@@ -4,17 +4,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "SLVisActor.generated.h"
+#include "Camera/CameraActor.h"
+#include "SLVisCamera.generated.h"
 
 UCLASS(ClassGroup = (SL), hidecategories = (HLOD, Mobile, Cooking, AssetUserData), meta = (DisplayName = "SL Vision Actor"))
-class USEMLOGVIS_API ASLVisActor : public AActor
+class USEMLOGVIS_API ASLVisCamera : public ACameraActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASLVisActor();
+	ASLVisCamera();
 
 protected:
 	// Called when the game starts or when spawned
@@ -28,5 +28,4 @@ private:
 	// Semantic Vis logger component
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	class USLVisManager* SLVisManager;
-	
 };

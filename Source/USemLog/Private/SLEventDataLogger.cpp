@@ -103,7 +103,7 @@ void USLEventDataLogger::Finish()
 		ExperimentDoc->AddExperimentIndividual();
 
 		// Write events to file
-		WriteToFile();
+		USLEventDataLogger::WriteToFile();
 
 		// Mark finished
 		bIsStarted = false;

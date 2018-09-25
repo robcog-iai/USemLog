@@ -40,6 +40,11 @@ USLVisManager::USLVisManager()
 	bCaptureDepth = true;
 	bCaptureMask = true;
 	bCaptureNormal = true;
+
+	ImgTickCount = 0;
+
+	// Setup capture components
+	USLVisManager::CreateCaptureComponents();
 }
 
 // Destructor
@@ -51,13 +56,11 @@ USLVisManager::~USLVisManager()
 	}
 }
 
-
 // Called when the game starts
 void USLVisManager::BeginPlay()
 {
 	Super::BeginPlay();
 }
-
 
 // Called every frame
 void USLVisManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -76,8 +79,12 @@ void USLVisManager::Init(const FString& InLogDir, const FString& InEpisodeId)
 		LogDirectory = InLogDir;
 		EpisodeId = InEpisodeId;
 	
+		// Init capture components
+		USLVisManager::InitCaptureComponents();
+
 		// Mark manager as initialized
 		bIsInit = true;
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 	}
 }
 
@@ -100,6 +107,7 @@ void USLVisManager::Start()
 		
 		// Mark manager as started
 		bIsStarted = true;
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 	}
 }
 
@@ -118,11 +126,497 @@ void USLVisManager::Finish()
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 	}
 }
 
 // Called either from tick, or from the timer
 void USLVisManager::Update()
 {
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
+	if (PixelFence.IsFenceComplete())
+	{
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Fence complete"), TEXT(__FUNCTION__), __LINE__);
+		// Read the image data
+		USLVisManager::ReadData();
+
+		// Save the image data
+		USLVisManager::SaveData();
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Fence NOT complete"), TEXT(__FUNCTION__), __LINE__);
+}
+
+// Read the image data
+void USLVisManager::ReadData()
+{
+	/* Color */
+	if (bCaptureColor)
+	{
+		FReadSurfaceDataFlags ReadSurfaceDataFlags;
+		ReadSurfaceDataFlags.SetLinearToGamma(false);
+
+		if (bCaptureColorFromViewport)
+		{
+			ColorViewport->Draw();
+			//ColorViewport->ReadPixels(ColorImage);
+			USLVisManager::ReadPixelsFromViewport(ColorImage);
+		}
+		else // Capture from scene capture component
+		{
+			FTextureRenderTargetResource* ColorRenderResource = ColorSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
+			USLVisManager::ReadPixels(ColorRenderResource, ColorImage, ReadSurfaceDataFlags);
+		}
+
+		PixelFence.BeginFence();
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Color"), TEXT(__FUNCTION__), __LINE__);
+	}
+
+	/* Depth */
+	if (bCaptureDepth)
+	{
+		FReadSurfaceDataFlags ReadSurfaceDataFlags;
+		ReadSurfaceDataFlags.SetLinearToGamma(false);
+
+		FTextureRenderTargetResource* DepthRenderResource = DepthSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
+		USLVisManager::ReadPixels(DepthRenderResource, DepthImage, ReadSurfaceDataFlags);
+		PixelFence.BeginFence();
+
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Depth"), TEXT(__FUNCTION__), __LINE__);
+	}
+
+	/* Mask */
+	if (bCaptureMask)
+	{
+		FReadSurfaceDataFlags ReadSurfaceDataFlags;
+		ReadSurfaceDataFlags.SetLinearToGamma(false);
+
+		FTextureRenderTargetResource* MaskRenderResource = MaskSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
+		ReadPixels(MaskRenderResource, MaskImage, ReadSurfaceDataFlags);
+		PixelFence.BeginFence();
+
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Mask"), TEXT(__FUNCTION__), __LINE__);
+	}
+
+	/* Normal */
+	if (bCaptureNormal)
+	{
+		FReadSurfaceDataFlags ReadSurfaceDataFlags;
+		ReadSurfaceDataFlags.SetLinearToGamma(false);
+		FTextureRenderTargetResource* NormalRenderResource = NormalSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
+		ReadPixels(NormalRenderResource, NormalImage, ReadSurfaceDataFlags);
+		PixelFence.BeginFence();
+
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Normal"), TEXT(__FUNCTION__), __LINE__);
+	}
+}
+
+// Read from viewport
+void USLVisManager::ReadPixelsFromViewport(TArray<FColor>& OutImageData, FReadSurfaceDataFlags InFlags)
+{
+	FIntRect IntRect(0, 0, ColorViewport->GetSizeXY().X, ColorViewport->GetSizeXY().Y);
+
+	struct FReadSurfaceContext
+	{
+		FRenderTarget* SrcRenderTarget;
+		TArray<FColor>* OutData;
+		FIntRect Rect;
+		FReadSurfaceDataFlags Flags;
+	};
+
+	// Clear previous data
+	OutImageData.Reset();
+
+	FReadSurfaceContext ReadSurfaceContext =
+	{
+		ColorViewport,
+		&OutImageData,
+		IntRect,
+		InFlags,
+	};
+
+	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
+		ReadSurfaceCommand,
+		FReadSurfaceContext, Context, ReadSurfaceContext,
+		{
+			RHICmdList.ReadSurfaceData(
+				Context.SrcRenderTarget->GetRenderTargetTexture(),
+				Context.Rect,
+				*Context.OutData,
+				Context.Flags
+			);
+		});
+}
+
+// Read from scene capture component
+void USLVisManager::ReadPixels(FTextureRenderTargetResource*& RenderResource, TArray<FColor>& OutImageData, FReadSurfaceDataFlags InFlags)
+{
+	FIntRect IntRect(0, 0, RenderResource->GetSizeXY().X, RenderResource->GetSizeXY().Y);
+
+	struct FReadSurfaceContext
+	{
+		FRenderTarget* SrcRenderTarget;
+		TArray<FColor>* OutData;
+		FIntRect Rect;
+		FReadSurfaceDataFlags Flags;
+	};
+
+	// Clear previous data
+	OutImageData.Reset();
+
+	FReadSurfaceContext ReadSurfaceContext =
+	{
+		RenderResource,
+		&OutImageData,
+		IntRect,
+		InFlags,
+	};
+
+	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
+		ReadSurfaceCommand,
+		FReadSurfaceContext, Context, ReadSurfaceContext,
+		{
+			RHICmdList.ReadSurfaceData(
+				Context.SrcRenderTarget->GetRenderTargetTexture(),
+				Context.Rect,
+				*Context.OutData,
+				Context.Flags
+			);
+		});
+}
+
+// Save the image data
+void USLVisManager::SaveData()
+{
+	/* Color */
+	if (bCaptureColor)
+	{
+		ImageWrapper->SetRaw(ColorImage.GetData(), ColorImage.GetAllocatedSize(), Width, Height, ERGBFormat::BGRA, 8);
+
+		TArray<uint8> CompressedData = ImageWrapper->GetCompressed();
+
+		FString FullFilePath = FPaths::ProjectDir() + LogDirectory + TEXT("/Imgs/") +
+			EpisodeId + TEXT("_color_") + FString::FromInt(ImgTickCount) + ".jpg";
+		FPaths::RemoveDuplicateSlashes(FullFilePath);
+
+		FFileHelper::SaveArrayToFile(CompressedData, *FullFilePath);
+	}
+
+	/* Depth */
+	if (bCaptureDepth)
+	{
+		ImageWrapper->SetRaw(DepthImage.GetData(), DepthImage.GetAllocatedSize(), Width, Height, ERGBFormat::BGRA, 8);
+
+		TArray<uint8> CompressedData = ImageWrapper->GetCompressed();
+
+		FString FullFilePath = FPaths::ProjectDir() + LogDirectory + TEXT("/Imgs/") +
+			EpisodeId + TEXT("_depth_") + FString::FromInt(ImgTickCount) + ".jpg";
+		FPaths::RemoveDuplicateSlashes(FullFilePath);
+
+		FFileHelper::SaveArrayToFile(CompressedData, *FullFilePath);
+	}
+
+	/* Mask */
+	if (bCaptureMask)
+	{
+		ImageWrapper->SetRaw(MaskImage.GetData(), MaskImage.GetAllocatedSize(), Width, Height, ERGBFormat::BGRA, 8);
+
+		TArray<uint8> CompressedData = ImageWrapper->GetCompressed();
+
+		FString FullFilePath = FPaths::ProjectDir() + LogDirectory + TEXT("/Imgs/") +
+			EpisodeId + TEXT("_mask_") + FString::FromInt(ImgTickCount) + ".jpg";
+		FPaths::RemoveDuplicateSlashes(FullFilePath);
+
+		FFileHelper::SaveArrayToFile(CompressedData, *FullFilePath);
+	}
+
+	/* Normal */
+	if (bCaptureNormal)
+	{
+		ImageWrapper->SetRaw(NormalImage.GetData(), NormalImage.GetAllocatedSize(), Width, Height, ERGBFormat::BGRA, 8);
+
+		TArray<uint8> CompressedData = ImageWrapper->GetCompressed();
+
+		FString FullFilePath = FPaths::ProjectDir() + LogDirectory + TEXT("/Imgs/") + 
+			EpisodeId + TEXT("_normal_") + FString::FromInt(ImgTickCount) + ".jpg";
+		FPaths::RemoveDuplicateSlashes(FullFilePath);
+
+		FFileHelper::SaveArrayToFile(CompressedData, *FullFilePath);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d ************** Tick: %d"), TEXT(__FUNCTION__), __LINE__, ImgTickCount);
+	++ImgTickCount;
+}
+
+// Create capture components
+void USLVisManager::CreateCaptureComponents()
+{	
+	/* Color */
+	USLVisManager::CreateColorCaptureComponent();
+
+	/* Depth */
+	USLVisManager::CreateDepthCaptureComponent();
+
+	/* Mask */
+	USLVisManager::CreateMaskCaptureComponent();
+
+	/* Normal */
+	USLVisManager::CreateNormalCaptureComponent();
+}
+
+// Create color capture component
+void USLVisManager::CreateColorCaptureComponent()
+{
+	ColorSceneCaptureComp = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("ColorCapture"));
+	ColorSceneCaptureComp->SetupAttachment(this);
+	ColorSceneCaptureComp->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	ColorSceneCaptureComp->TextureTarget = CreateDefaultSubobject<UTextureRenderTarget2D>(TEXT("ColorTarget"));
+	ColorSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
+	ColorSceneCaptureComp->FOVAngle = FOV;
+
+	ColorSceneCaptureComp->SetHiddenInGame(true);
+	ColorSceneCaptureComp->Deactivate();
+}
+
+// Create depth capture component
+void USLVisManager::CreateDepthCaptureComponent()
+{
+	DepthSceneCaptureComp = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("DepthCapture"));
+	DepthSceneCaptureComp->SetupAttachment(this);
+	DepthSceneCaptureComp->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	DepthSceneCaptureComp->TextureTarget = CreateDefaultSubobject<UTextureRenderTarget2D>(TEXT("DepthTarget"));
+	DepthSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
+	DepthSceneCaptureComp->FOVAngle = FOV;
+
+	// Get depth scene material for post-processing
+	ConstructorHelpers::FObjectFinder<UMaterial> MaterialDepthFinder(TEXT("Material'/USemLog/M_SceneDepthWorldUnits.M_SceneDepthWorldUnits'"));
+	if (MaterialDepthFinder.Object != nullptr)
+	{
+		//MaterialDepthInstance = UMaterialInstanceDynamic::Create(MaterialDepthFinder.Object, DepthSceneCaptureComp);
+		MaterialDepthInstance = (UMaterial*)MaterialDepthFinder.Object;
+		if (MaterialDepthInstance != nullptr)
+		{
+			// Store previous ShowFlags
+			FEngineShowFlags PreviousShowFlags(DepthSceneCaptureComp->ShowFlags); 
+
+			DepthSceneCaptureComp->ShowFlags = FEngineShowFlags(EShowFlagInitMode::ESFIM_All0);
+			DepthSceneCaptureComp->ShowFlags.SetRendering(true);
+			DepthSceneCaptureComp->ShowFlags.SetStaticMeshes(true);
+
+			// Important for the correctness of tree leaves.
+			DepthSceneCaptureComp->ShowFlags.SetMaterials(true);
+
+			// These are minimal setting
+			DepthSceneCaptureComp->ShowFlags.SetPostProcessing(true);
+			DepthSceneCaptureComp->ShowFlags.SetPostProcessMaterial(true);
+
+			// This option will change object material to vertex color material, which don't produce surface normal
+			// ShowFlags.SetVertexColors(true);
+
+			GVertexColorViewMode = EVertexColorViewMode::Color;
+
+			// Store the visibility of the scene, such as folliage and landscape.
+			DepthSceneCaptureComp->ShowFlags.SetStaticMeshes(PreviousShowFlags.StaticMeshes);
+			DepthSceneCaptureComp->ShowFlags.SetLandscape(PreviousShowFlags.Landscape);
+
+			DepthSceneCaptureComp->ShowFlags.SetInstancedFoliage(PreviousShowFlags.InstancedFoliage);
+			DepthSceneCaptureComp->ShowFlags.SetInstancedGrass(PreviousShowFlags.InstancedGrass);
+			DepthSceneCaptureComp->ShowFlags.SetInstancedStaticMeshes(PreviousShowFlags.InstancedStaticMeshes);
+
+			DepthSceneCaptureComp->ShowFlags.SetSkeletalMeshes(PreviousShowFlags.SkeletalMeshes);
+
+			DepthSceneCaptureComp->PostProcessSettings.AddBlendable(MaterialDepthInstance, 1);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load depth asset!"), TEXT(__FUNCTION__), __LINE__);
+	}
+
+	DepthSceneCaptureComp->SetHiddenInGame(true);
+	DepthSceneCaptureComp->Deactivate();
+}
+
+// Create mask capture component
+void USLVisManager::CreateMaskCaptureComponent()
+{
+	MaskSceneCaptureComp = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MaskCapture"));
+	MaskSceneCaptureComp->SetupAttachment(this);
+	MaskSceneCaptureComp->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	MaskSceneCaptureComp->TextureTarget = CreateDefaultSubobject<UTextureRenderTarget2D>(TEXT("MaskTarget"));
+	MaskSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
+	MaskSceneCaptureComp->FOVAngle = FOV;
+
+	FEngineShowFlags PreviousShowFlags(MaskSceneCaptureComp->ShowFlags); // Store previous ShowFlags
+	ApplyViewMode(VMI_Lit, true, MaskSceneCaptureComp->ShowFlags);
+
+	// From MeshPaintEdMode.cpp:2942
+	MaskSceneCaptureComp->ShowFlags.SetMaterials(false);
+	MaskSceneCaptureComp->ShowFlags.SetLighting(false);
+	MaskSceneCaptureComp->ShowFlags.SetBSPTriangles(true);
+	MaskSceneCaptureComp->ShowFlags.SetVertexColors(true);
+	MaskSceneCaptureComp->ShowFlags.SetPostProcessing(false);
+	MaskSceneCaptureComp->ShowFlags.SetHMDDistortion(false);
+	MaskSceneCaptureComp->ShowFlags.SetTonemapper(false); // This won't take effect here
+
+	GVertexColorViewMode = EVertexColorViewMode::Color;
+
+	 // Store the visibility of the scene, such as folliage and landscape.
+	MaskSceneCaptureComp->ShowFlags.SetStaticMeshes(PreviousShowFlags.StaticMeshes);
+	MaskSceneCaptureComp->ShowFlags.SetLandscape(PreviousShowFlags.Landscape);
+
+	MaskSceneCaptureComp->ShowFlags.SetInstancedFoliage(PreviousShowFlags.InstancedFoliage);
+	MaskSceneCaptureComp->ShowFlags.SetInstancedGrass(PreviousShowFlags.InstancedGrass);
+	MaskSceneCaptureComp->ShowFlags.SetInstancedStaticMeshes(PreviousShowFlags.InstancedStaticMeshes);
+
+	MaskSceneCaptureComp->ShowFlags.SetSkeletalMeshes(PreviousShowFlags.SkeletalMeshes);
+
+	MaskSceneCaptureComp->SetHiddenInGame(true);
+	MaskSceneCaptureComp->Deactivate();
+}
+
+// Create normal capture component
+void USLVisManager::CreateNormalCaptureComponent()
+{
+	NormalSceneCaptureComp = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("NormalCapture"));
+	NormalSceneCaptureComp->SetupAttachment(this);
+	NormalSceneCaptureComp->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	NormalSceneCaptureComp->TextureTarget = CreateDefaultSubobject<UTextureRenderTarget2D>(TEXT("NormalTarget"));
+	NormalSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
+	NormalSceneCaptureComp->FOVAngle = FOV;
+
+	// Get Normal scene material for postprocessing
+	ConstructorHelpers::FObjectFinder<UMaterial> MaterialNormalFinder(TEXT("Material'/USemLog/M_WorldNormal.M_WorldNormal'"));
+	if (MaterialNormalFinder.Object != nullptr)
+	{
+		MaterialNormalInstance = (UMaterial*)MaterialNormalFinder.Object;
+		if (MaterialNormalInstance != nullptr)
+		{
+			FEngineShowFlags PreviousShowFlags(NormalSceneCaptureComp->ShowFlags); // Store previous ShowFlags
+			
+			NormalSceneCaptureComp->ShowFlags = FEngineShowFlags(EShowFlagInitMode::ESFIM_All0);
+			NormalSceneCaptureComp->ShowFlags.SetRendering(true);
+			NormalSceneCaptureComp->ShowFlags.SetStaticMeshes(true);
+			// Important for the correctness of tree leaves.
+			NormalSceneCaptureComp->ShowFlags.SetMaterials(true); 
+
+
+			// These are minimal setting
+			NormalSceneCaptureComp->ShowFlags.SetPostProcessing(true);
+			NormalSceneCaptureComp->ShowFlags.SetPostProcessMaterial(true);
+			// This option will change object material to vertex color material, which don't produce surface normal
+			// ShowFlags.SetVertexColors(true); 
+
+			GVertexColorViewMode = EVertexColorViewMode::Color;
+
+			// Store the visibility of the scene, such as folliage and landscape.
+			NormalSceneCaptureComp->ShowFlags.SetStaticMeshes(PreviousShowFlags.StaticMeshes);
+			NormalSceneCaptureComp->ShowFlags.SetLandscape(PreviousShowFlags.Landscape);
+
+			NormalSceneCaptureComp->ShowFlags.SetInstancedFoliage(PreviousShowFlags.InstancedFoliage);
+			NormalSceneCaptureComp->ShowFlags.SetInstancedGrass(PreviousShowFlags.InstancedGrass);
+			NormalSceneCaptureComp->ShowFlags.SetInstancedStaticMeshes(PreviousShowFlags.InstancedStaticMeshes);
+
+			NormalSceneCaptureComp->ShowFlags.SetSkeletalMeshes(PreviousShowFlags.SkeletalMeshes);
+
+			NormalSceneCaptureComp->PostProcessSettings.AddBlendable(MaterialNormalInstance, 1);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load normal asset!"), TEXT(__FUNCTION__), __LINE__);
+	}
+
+	NormalSceneCaptureComp->SetHiddenInGame(true);
+	NormalSceneCaptureComp->Deactivate();
+}
+
+// Init capture components
+void USLVisManager::InitCaptureComponents()
+{
+	static IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
+	ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::JPEG);
+
+	// Read viewport resolution
+	if (!bUseCustomResolution)
+	{
+		ColorViewport = GetWorld()->GetGameViewport()->Viewport;
+		Width = ColorViewport->GetRenderTargetTextureSizeXY().X;
+		Height = ColorViewport->GetRenderTargetTextureSizeXY().Y;
+	}
+
+	/* Color */
+	if (bCaptureColor)
+	{
+		USLVisManager::InitColorCaptureComponent();
+	}
+
+	/* Depth */
+	if (bCaptureDepth)
+	{
+		USLVisManager::InitDepthCaptureComponent();
+	}
+
+	/* Mask */
+	if (bCaptureMask)
+	{
+		USLVisManager::InitMaskCaptureComponent();
+	}
+
+	/* Normal */
+	if (bCaptureNormal)
+	{
+		USLVisManager::InitNormalCaptureComponent();
+	}
+}
+
+// Init color capture component
+void USLVisManager::InitColorCaptureComponent()
+{
+	ColorSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
+	ColorImage.AddZeroed(Width*Height);
+
+	//ColorSceneCaptureComp->TextureTarget->TargetGamma = 1.4;
+	ColorSceneCaptureComp->TextureTarget->TargetGamma = GEngine->GetDisplayGamma();
+	ColorSceneCaptureComp->SetHiddenInGame(false);
+	ColorSceneCaptureComp->Activate();
+}
+
+// Init depth capture component
+void USLVisManager::InitDepthCaptureComponent()
+{
+	DepthSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
+	DepthImage.AddZeroed(Width*Height);
+
+	DepthSceneCaptureComp->TextureTarget->TargetGamma = 1.0;
+	DepthSceneCaptureComp->SetHiddenInGame(false);
+	DepthSceneCaptureComp->Activate();
+}
+
+// Init mask capture component
+void USLVisManager::InitMaskCaptureComponent()
+{
+	// Create masks for the objects
+	for (TActorIterator<AStaticMeshActor> ActItr(GetWorld()); ActItr; ++ActItr)
+	{
+		GEditor->SelectActor(*ActItr, true, true);
+	}
+
+
+	MaskSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
+	MaskImage.AddZeroed(Width*Height);
+
+	MaskSceneCaptureComp->TextureTarget->TargetGamma = 1.0;
+	MaskSceneCaptureComp->SetHiddenInGame(false);
+	MaskSceneCaptureComp->Activate();
+}
+
+// Init normal capture component
+void USLVisManager::InitNormalCaptureComponent()
+{
+	NormalSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
+	NormalImage.AddZeroed(Width*Height);
+
+	NormalSceneCaptureComp->TextureTarget->TargetGamma = 1.0;
+	NormalSceneCaptureComp->SetHiddenInGame(false);
+	NormalSceneCaptureComp->Activate();
 }

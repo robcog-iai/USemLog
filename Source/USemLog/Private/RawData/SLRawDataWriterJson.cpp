@@ -14,7 +14,7 @@ FSLRawDataWriterJson::FSLRawDataWriterJson()
 // Constr with Init
 FSLRawDataWriterJson::FSLRawDataWriterJson(FSLRawDataAsyncWorker* InWorkerParent, const FString& LogDirectory, const FString& EpisodeId)
 {
-	Init(InWorkerParent, LogDirectory, EpisodeId);
+	FSLRawDataWriterJson::Init(InWorkerParent, LogDirectory, EpisodeId);
 }
 
 // Destr
