@@ -15,11 +15,19 @@
 // Constructor
 USLEventDataLogger::USLEventDataLogger()
 {
+	// Flags
+	bIsInit = false;
+	bIsStarted = false;
+	bIsFinished = false;
 }
 
 // Destructor
 USLEventDataLogger::~USLEventDataLogger()
 {
+	if (!bIsFinished)
+	{
+		USLEventDataLogger::Finish();
+	}
 }
 
 // Init Logger
@@ -28,45 +36,80 @@ void USLEventDataLogger::Init(const FString& InLogDirectory,
 	EOwlExperimentTemplate TemplateType,
 	bool bInWriteTimelines)
 {
-	LogDirectory = InLogDirectory;
-	EpisodeId = InEpisodeId;
-	OwlDocTemplate = TemplateType;
-	bWriteTimelines = bInWriteTimelines;
+	if (!bIsInit)
+	{
+		LogDirectory = InLogDirectory;
+		EpisodeId = InEpisodeId;
+		OwlDocTemplate = TemplateType;
+		bWriteTimelines = bInWriteTimelines;
 
-	// Create the document template
-	ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
+		// Create the document template
+		ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
+
+		// TODO cache this for calling finish and start without re-iterating
+		// Init all contact trigger components
+		for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
+		{
+			Itr->Init();
+		}
+
+		// Mark as initialized
+		bIsInit = true;
+	}
 }
 
 // Start logger
 void USLEventDataLogger::Start()
 {
-	// Subscribe for various semantic events
-	USLEventDataLogger::ListenToSemanticEvents();
+	if (!bIsStarted && bIsInit)
+	{
+		// Subscribe for various semantic events
+		USLEventDataLogger::ListenToSemanticEvents();
+
+		// Mark as started
+		bIsStarted = true;
+	}
 }
 
 // Finish logger
 void USLEventDataLogger::Finish()
 {
-	if (!ExperimentDoc.IsValid())
-		return;
-
-	// Add finished events to doc
-	for (const auto& Ev : FinishedEvents)
+	if (bIsStarted || bIsInit)
 	{
-		Ev->AddToOwlDoc(ExperimentDoc.Get());
+		if (!ExperimentDoc.IsValid())
+			return;
+
+		// TODO check if the publishers arrive on time with the finished pending events from calling finish
+		// make sure they arrive and then finish, call e.g. post finish
+		// Init all contact trigger components
+		for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
+		{
+			Itr->Finish();
+		}
+
+		// Add finished events to doc
+		for (const auto& Ev : FinishedEvents)
+		{
+			Ev->AddToOwlDoc(ExperimentDoc.Get());
+		}
+
+		// Add stored unique timepoints to doc
+		ExperimentDoc->AddTimepointIndividuals();
+
+		// Add stored unique objects to doc
+		ExperimentDoc->AddObjectIndividuals();
+
+		// Add experiment individual to doc
+		ExperimentDoc->AddExperimentIndividual();
+
+		// Write events to file
+		WriteToFile();
+
+		// Mark finished
+		bIsStarted = false;
+		bIsInit = false;
+		bIsFinished = true;
 	}
-
-	// Add stored unique timepoints to doc
-	ExperimentDoc->AddTimepointIndividuals();
-
-	// Add stored unique objects to doc
-	ExperimentDoc->AddObjectIndividuals();
-
-	// Add experiment individual to doc
-	ExperimentDoc->AddExperimentIndividual();
-
-	// Write events to file
-	WriteToFile();
 }
 
 // Register for semantic contact events

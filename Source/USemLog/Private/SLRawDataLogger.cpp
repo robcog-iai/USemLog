@@ -7,43 +7,84 @@
 // Constructor
 USLRawDataLogger::USLRawDataLogger()
 {
+	bIsInit = false;
+	bIsStarted = false;
+	bIsFinished = false;
 }
 
 // Destructor
 USLRawDataLogger::~USLRawDataLogger()
 {
-	USLRawDataLogger::Finish();
+	if (!bIsFinished)
+	{
+		USLRawDataLogger::Finish();
+	}
 }
 
 // Init logger
 void USLRawDataLogger::Init(const float InDistanceThreshold)
 {
-	// Create async worker to log on a separate thread
-	AsyncWorker = new FAsyncTask<FSLRawDataAsyncWorker>();
+	if (!bIsInit)
+	{
+		// Create async worker to log on a separate thread
+		AsyncWorker = new FAsyncTask<FSLRawDataAsyncWorker>();
 
-	// Init async worker
-	AsyncWorker->GetTask().Init(GetWorld(), InDistanceThreshold);
+		// Init async worker
+		AsyncWorker->GetTask().Init(GetWorld(), InDistanceThreshold);
+
+		// Flag as init
+		bIsInit = true;
+	}
 }
 
 // Start logger
 void USLRawDataLogger::Start(const float UpdateRate)
 {
-	// Log initial state of the world
-	USLRawDataLogger::LogInitialWorldState();
+	if (!bIsStarted && bIsInit)
+	{
+		// Log initial state of the world
+		USLRawDataLogger::LogInitialWorldState();
 
-	// Set logger to update on tick or on custom update rate using a timer
-	SetUpdateRate(UpdateRate);
+		// Start updating
+		if (UpdateRate > 0.0f)
+		{
+			// Update logger on custom timer tick (does not guarantees the UpdateRate value,
+			// since it will be eventually triggered from the game thread tick
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &USLRawDataLogger::Update, UpdateRate, true);
+		}
+		else
+		{
+			// Update logger on tick (updates every game thread tick, update rate can vary)
+			bIsTickable = true;
+		}
+
+		// Set flags
+		bIsStarted = true;
+	}
 }
 
 // Finish logger
 void USLRawDataLogger::Finish()
 {
-	if (AsyncWorker)
+	if (bIsStarted || bIsInit)
 	{
-		// Wait for worker to complete before deleting it
-		AsyncWorker->EnsureCompletion();
-		delete AsyncWorker;
-		AsyncWorker = nullptr;
+		if (AsyncWorker)
+		{
+			// Wait for worker to complete before deleting it
+			AsyncWorker->EnsureCompletion();
+			delete AsyncWorker;
+			AsyncWorker = nullptr;
+		}
+		// Stop update timer;
+		if (TimerHandle.IsValid())
+		{
+			GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+		}
+
+		// Mark logger as finished
+		bIsStarted = false;
+		bIsInit = false;
+		bIsFinished = true;
 	}
 }
 
@@ -74,34 +115,11 @@ void USLRawDataLogger::SetLogToMongo(const FString& InLogDB, const FString& InEp
 	}
 }
 
-// Set update rate by binding to tick or a custom update rate using a timer callback
-void USLRawDataLogger::SetUpdateRate(const float UpdateRate)
-{
-	if (UpdateRate > 0.0f)
-	{
-		// Update logger on custom timer tick (does not guarantees the UpdateRate value,
-		// since it will be eventually triggered from the game thread tick
-		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &USLRawDataLogger::TimerTick, UpdateRate, true);
-	}
-	else
-	{
-		// Update logger on tick (updates every game thread tick, update rate can vary)
-		bIsTickable = true;
-	}
-}
-
-// Timer callback (timer tick)
-void USLRawDataLogger::TimerTick()
-{
-	LogCurrentWorldState();
-}
-
 /** Begin FTickableGameObject interface */
 // Called after ticking all actors, DeltaTime is the time passed since the last call.
 void USLRawDataLogger::Tick(float DeltaTime)
 {
-	LogCurrentWorldState();
+	USLRawDataLogger::Update();
 }
 
 // Return if object is ready to be ticked
@@ -131,7 +149,7 @@ void USLRawDataLogger::LogInitialWorldState()
 }
 
 // Log current state of the world (dynamic objects that moved more than the distance threshold)
-void USLRawDataLogger::LogCurrentWorldState()
+void USLRawDataLogger::Update()
 {
 	// Start task if worker is done with its previous work
 	if (AsyncWorker->IsDone())
@@ -140,6 +158,6 @@ void USLRawDataLogger::LogCurrentWorldState()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("[%s][%d] SKIP new task "), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("[%s][%d] Previous task not finished, SKIPPING new task.."), TEXT(__FUNCTION__), __LINE__);
 	}
 }

@@ -7,9 +7,9 @@
 #include "ModuleManager.h"
 
 // Declare logging types
-DECLARE_LOG_CATEGORY_EXTERN(LogSemLogVision, All, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSemLogVis, All, All);
 
-class FUSemLogVision : public IModuleInterface
+class FUSemLogVis : public IModuleInterface
 {
 public:
 

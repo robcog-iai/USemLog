@@ -5,18 +5,20 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
-#include "Components/SceneCaptureComponent2D.h"
-#include "SLVisionComponent.generated.h"
+#include "SLVisManager.generated.h"
 
 
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics, Collision, LOD, AssetUserData))
-class USEMLOGVISION_API USLVisionComponent : public USceneComponent
+class USEMLOGVIS_API USLVisManager : public USceneComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	USLVisionComponent();
+	USLVisManager();
+
+	// Destructor
+	~USLVisManager();
 
 protected:
 	// Called when the game starts
@@ -27,30 +29,35 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	// Init component
-	void Init();
+	void Init(const FString& InLogDir, const FString& InEpisodeId);
 
 	// Start capturing
 	void Start();
 
 	// Stop recording
 	void Finish();
+	
+private:
+	// Called either from tick, or from the timer
+	void Update();
 
 private:
+	// Set when manager is initialized
+	bool bIsInit;
+
+	// Set when manager is started
+	bool bIsStarted;
+
+	// Set when manager is finished
+	bool bIsFinished;
+
 #if WITH_EDITOR
 	// Location and orientation visualization of the component
 	class UArrowComponent* ArrowVis;
 #endif // WITH_EDITOR
 
-	// Set to true in order to edit the episode id
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bUseCustomCameraId;
-
-	// Camera name
-	UPROPERTY(EditAnywhere, Category = "Vision Settings", meta = (editcondition = "bUseCustomCameraId"))
-	FString CameraId;
-
 	// If false the viewport resolution will be used
-	UPROPERTY(EditAnywhere, Category = "Vision Settings")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bUseCustomResolution;
 
 	// Camera Width
@@ -89,17 +96,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Capture Mode")
 	bool bCaptureNormal;
 
+	// Directory where to log
+	FString LogDirectory;
 
-	// Camera capture component for color images (RGB)
-	FViewport* ColorViewport;
-	USceneCaptureComponent2D* ColorImgCaptureComp;
+	// Unique id of the episode
+	FString EpisodeId;
 
-	// Camera capture component for depth images (Depth)
-	USceneCaptureComponent2D* DepthImgCaptureComp;
+	// Camera name
+	FString CameraId;
 
-	// Camera capture component for object mask
-	USceneCaptureComponent2D* MaskImgCaptureComp;
-
-	// Camera capture component for Normal images (Normal)
-	USceneCaptureComponent2D* NormalImgCaptureComp;
+	// Timer handle for custom update rate
+	FTimerHandle TimerHandle;
 };

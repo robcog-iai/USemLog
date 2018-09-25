@@ -11,7 +11,7 @@
 /**
  * Semantic logging manager (controls the logging in the world)
  */
-UCLASS(hidecategories = (Actor, LOD, Cooking, Transform) )
+UCLASS(ClassGroup = (SL), hidecategories = (Actor, LOD, Cooking, Transform) )
 class USEMLOG_API ASLManager : public AInfo
 {
 	GENERATED_BODY()
@@ -24,11 +24,19 @@ public:
 	~ASLManager();
 
 protected:
+	// Allow actors to initialize themselves on the C++ side
+	virtual void PostInitializeComponents() override;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent);
+#endif // WITH_EDITOR
 
 public:
 	// Init loggers
@@ -39,14 +47,17 @@ public:
 
 	// Finish loggers
 	void Finish();
-	
-private:
-#if WITH_EDITOR
-	// Called when a property is changed in the editor
-	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent);
-#endif // WITH_EDITOR
 
 private:
+	// Set when manager is initialized
+	bool bIsInit;
+
+	// Set when manager is started
+	bool bIsStarted;
+
+	// Set when manager is finished
+	bool bIsFinished;
+
 	/* Semantic logger */
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -64,12 +75,17 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartAtBeginPlay;
 
-	// Set when manager is initialized
-	bool bIsInit;
+	// Start after begin play, in the first tick
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bStartAtFirstTick;
 
-	// Set when manager is started
-	bool bIsStarted;
+	// Start after a given delay
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bStartWithDelay;
 
+	// Start after a given delay
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartWithDelay"))
+	float StartDelay;
 
 	/* Begin raw data logger properties */
 	// Log raw data
@@ -127,4 +143,15 @@ private:
 	UPROPERTY()
 	USLEventDataLogger* EventDataLogger;
 	/* End event data logger properties */
+
+	/* Begin vision data logger properties */
+	// Log vision data
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bLogVisionData;
+
+#if WITH_SL_VIS
+	// Vision data loggers
+	TArray<class USLVisManager*> VisionDataLoggerManagers;
+	/* End vision data logger properties */
+#endif //WITH_SL_VIS
 };

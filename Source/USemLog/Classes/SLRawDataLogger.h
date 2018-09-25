@@ -43,13 +43,7 @@ public:
 	// Log data to mongodb
 	void SetLogToMongo(const FString& InLogDB, const FString& InEpisodeId, const FString& InMongoIP, uint16 MongoPort);
 
-private:
-	// Set update rate by binding to tick or a custom update rate using a timer callback
-	void SetUpdateRate(const float UpdateRate);
-
-	// Timer callback (timer tick)
-	void TimerTick();
-
+protected:
 	/** Begin FTickableGameObject interface */
 	// Called after ticking all actors, DeltaTime is the time passed since the last call.
 	virtual void Tick(float DeltaTime) override;
@@ -61,23 +55,28 @@ private:
 	virtual TStatId GetStatId() const override;
 	/** End FTickableGameObject interface */
 
+private:
 	// Log initial state of the world (static and dynamic entities)
 	void LogInitialWorldState();
 
 	// Log current state of the world (dynamic objects that moved more than the distance threshold)
-	void LogCurrentWorldState();
+	void Update();
 
 private:
-	// Update rate of raw data logging (0.f means logging on every tick)
-	UPROPERTY(EditAnywhere, Category = "Raw Data Logger", meta = (ClampMin = 0))
-	float UpdateRate2;
+	// Set when logger is initialized
+	bool bIsInit;
 
-	// Distance (cm) threshold difference for logging a given item
-	UPROPERTY(EditAnywhere, Category = "Raw Data Logger", meta = (ClampMin = 0))
-	float DistanceThreshold2;
+	// Set when logger is started
+	bool bIsStarted;
+
+	// Set when logger is finished
+	bool bIsFinished;
 
 	// True if the object can be ticked (used by FTickableGameObject)
 	bool bIsTickable;
+
+	// Timer handle for custom update rate
+	FTimerHandle TimerHandle;
 
 	// Async worker to log the raw data
 	FAsyncTask<FSLRawDataAsyncWorker>* AsyncWorker;

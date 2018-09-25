@@ -63,6 +63,16 @@ private:
 	// Finish the pending events at the current time
 	void FinishPendingEvents(const float EndTime);
 
+private:
+	// Set when initialized
+	bool bIsInit;
+
+	// Set when started
+	bool bIsStarted;
+
+	// Set when finished
+	bool bIsFinished;
+
 	// Directory where to log
 	FString LogDirectory;
 

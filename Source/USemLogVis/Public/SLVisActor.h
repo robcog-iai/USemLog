@@ -5,16 +5,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "SLVisionActor.generated.h"
+#include "SLVisActor.generated.h"
 
-UCLASS(ClassGroup = (SL), hidecategories = (HLOD, Mobile, Cooking, AssetUserData))
-class USEMLOGVISION_API ASLVisionActor : public AActor
+UCLASS(ClassGroup = (SL), hidecategories = (HLOD, Mobile, Cooking, AssetUserData), meta = (DisplayName = "SL Vision Actor"))
+class USEMLOGVIS_API ASLVisActor : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASLVisionActor();
+	ASLVisActor();
 
 protected:
 	// Called when the game starts or when spawned
@@ -25,8 +25,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	// Semantic vision logger component
+	// Semantic Vis logger component
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	class USLVisionComponent* SLVisionComponent;
+	class USLVisManager* SLVisManager;
 	
 };

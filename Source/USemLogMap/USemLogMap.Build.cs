@@ -3,33 +3,30 @@
 
 using UnrealBuildTool;
 
-public class USemLog : ModuleRules
+public class USemLogMap : ModuleRules
 {
-	public USemLog(ReadOnlyTargetRules Target) : base(Target)
+	public USemLogMap(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
-		bEnableUndefinedIdentifierWarnings = false;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
 				// ... add public include paths required here ...
 			}
 			);
-
-
+				
+		
 		PrivateIncludePaths.AddRange(
 			new string[] {
 				// ... add other private include paths required here ...
 			}
 			);
-
-
+			
+		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
 				"Core",
-				"UOwl",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -39,23 +36,10 @@ public class USemLog : ModuleRules
 			new string[]
 			{
 				"CoreUObject",
-				"Engine",
-				"Slate",
-				"SlateCore",
-				"Json",
-				"JsonUtilities",
-				"USemLogVis",
-				"USemLogMap",
 				"UTags",
-				"UIds",
-				"UConversions",
-				//"libmongo" // 4.20 has issues with libmongo
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-
-		// 4.20 has issues with libmongo, this flag will ignore the mongo code
-		PublicDefinitions.Add("WITH_LIBMONGO=0");
 
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]

@@ -86,6 +86,18 @@ public:
 	// Default constructor
 	USLOverlapArea();
 
+	// Dtor
+	~USLOverlapArea();
+
+	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
+	void Init();
+
+	// Start overlap events, trigger currently overlapping objects
+	void Start();
+
+	// Stop publishing overlap events
+	void Finish();
+
 protected:
 	// Called at level startup
 	virtual void BeginPlay() override;
@@ -116,9 +128,6 @@ private:
 	bool SaveAreaParameters();
 #endif // WITH_EDITOR
 
-	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
-	bool Init();
-
 	// Publish currently overlapping components
 	void TriggerInitialOverlaps();
 
@@ -146,6 +155,15 @@ public:
 	TSharedPtr<FSLSupportedByPublisher> SLSupportedByPub;
 
 private:
+	// Set when manager is initialized
+	bool bIsInit;
+
+	// Set when manager is started
+	bool bIsStarted;
+
+	// Set when manager is finished
+	bool bIsFinished;
+
 	// Event called when a semantic overlap begins
 	FSLOverlapBeginSignature OnBeginSLOverlap;
 
@@ -159,6 +177,10 @@ private:
 	// Listen for supported by events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bListenForSupportedByEvents;
+
+	// Init and start at begin play
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bStartAtBeginPlay;
 
 	//// Listen for sliding events
 	//UPROPERTY(EditAnywhere)

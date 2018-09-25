@@ -4,25 +4,25 @@
 #pragma once
 
 /**
- * Singleton storing mappings between the unreal objects and the semantic data
+ * Singleton storing Map between the unreal objects and the semantic data
  */
-class USEMLOG_API FSLMappings
+class USEMLOGMAP_API FSLMap
 {
 private:
 	// Constructor
-	FSLMappings();
+	FSLMap();
 
 public:
 	// Destructor
-	~FSLMappings();
+	~FSLMap();
 
 	// Get singleton
-	static FSLMappings* GetInstance();
+	static FSLMap* GetInstance();
 
 	// Delete instance
 	static void DeleteInstance();
 
-	// Init data / load mappings
+	// Init data / load Map
 	void LoadData(UWorld* World);
 
 	// Get semantic id from unique id
@@ -36,7 +36,7 @@ public:
 
 private:
 	// Instance of the singleton
-	static TSharedPtr<FSLMappings> StaticInstance;
+	static TSharedPtr<FSLMap> StaticInstance;
 
 	// Flag showing the data has been init
 	bool bIsInit;

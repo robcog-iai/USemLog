@@ -3,9 +3,9 @@
 
 using UnrealBuildTool;
 
-public class USemLogVision : ModuleRules
+public class USemLogVis : ModuleRules
 {
-	public USemLogVision(ReadOnlyTargetRules Target) : base(Target)
+	public USemLogVis(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -46,7 +46,8 @@ public class USemLogVision : ModuleRules
 			);
 			
 		PublicDefinitions.Add("WITH_LIBMONGO=0");
-		
+		PublicDefinitions.Add("WITH_SL_VIS=1");
+
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
 			{

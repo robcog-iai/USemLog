@@ -19,9 +19,14 @@
 			"Name": "USemLog",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "USemLogMap",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		},		
 		{
-			"Name": "USemLogVision",
+			"Name": "USemLogVis",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		},

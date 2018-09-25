@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLOverlapArea.h"
-#include "SLMappings.h"
+#include "SLMap.h"
 //#include "DrawDebugHelpers.h"
 
 // UUTils
@@ -16,8 +16,30 @@
 // Default constructor
 USLOverlapArea::USLOverlapArea()
 {
+	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
+	// off to improve performance if you don't need them.
+	PrimaryComponentTick.bCanEverTick = false;
+
+	// State flags
+	bIsInit = false;
+	bIsStarted = false;
+	bIsFinished = false;
+
+	// TODO Start externally by default
+	bStartAtBeginPlay = true;
+
+	// Events flags
 	bListenForContactEvents = true;
 	bListenForSupportedByEvents = true;
+}
+
+// Destructor
+USLOverlapArea::~USLOverlapArea()
+{
+	if (!bIsFinished)
+	{
+		USLOverlapArea::Finish();
+	}
 }
 
 // Called at level startup
@@ -25,29 +47,10 @@ void USLOverlapArea::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Check if component is ready for runtime
-	if (USLOverlapArea::Init())
+	if (bStartAtBeginPlay)
 	{
-		// Listen and publish semantic contact events
-		if (bListenForContactEvents)
-		{
-			SLContactPub = MakeShareable(new FSLContactPublisher(this));
-			SLContactPub->Init();
-		}
-
-		// Listen and publish supported by events
-		if (bListenForSupportedByEvents)
-		{
-			SLSupportedByPub = MakeShareable(new FSLSupportedByPublisher(this));
-			SLSupportedByPub->Init();
-		}
-
-		// Broadcast currently overlapping components
-		USLOverlapArea::TriggerInitialOverlaps();
-
-		// Bind event delegates
-		OnComponentBeginOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapBegin);
-		OnComponentEndOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapEnd);
+		USLOverlapArea::Init();
+		USLOverlapArea::Start();
 	}
 }
 
@@ -56,23 +59,121 @@ void USLOverlapArea::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	float EndTime = GetWorld()->GetTimeSeconds();
-
-	// Terminate and publish pending events
-	if (SLContactPub.IsValid())
+	if (!bIsFinished)
 	{
-		SLContactPub->Finish(EndTime);
+		USLOverlapArea::Finish();
 	}
+}
 
-	if (SLSupportedByPub.IsValid())
+// Setup pointers to outer, check if semantically annotated
+void USLOverlapArea::Init()
+{
+	if (!bIsInit)
 	{
-		SLSupportedByPub->Finish(EndTime);
+		// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
+		// Make sure it has a semantic unique id and class
+		OwnerId = GetOwner()->GetUniqueID();
+		// Init the semantic items mappings singleton
+		if (!FSLMap::GetInstance()->IsInit())
+		{
+			FSLMap::GetInstance()->LoadData(GetWorld());
+		}
+		OwnerSemId = FSLMap::GetInstance()->GetSemanticId(OwnerId);
+		OwnerSemClass = FSLMap::GetInstance()->GetSemanticClass(OwnerId);
+		// Check that owner is semantically annotated
+		if (OwnerSemId.IsEmpty() || OwnerSemClass.IsEmpty())
+		{
+			// Not init
+			return;
+		}
+
+		// Make sure the mesh (static/skeletal) component is valid
+		if (AStaticMeshActor* CastToSMAct = Cast<AStaticMeshActor>(GetOwner()))
+		{
+			OwnerMeshComp = CastToSMAct->GetStaticMeshComponent();
+		}
+		else if (ASkeletalMeshActor* CastToSkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
+		{
+			OwnerMeshComp = CastToSkelAct->GetSkeletalMeshComponent();
+		}
+
+		if (OwnerMeshComp)
+		{
+			// Make sure there are no overlap events on the mesh as well
+			// (these will be calculated on the contact listener)
+			// TODO this might cause problems with grasping objects
+			OwnerMeshComp->SetGenerateOverlapEvents(false);
+
+			// Listen and publish semantic contact events
+			if (bListenForContactEvents)
+			{
+				SLContactPub = MakeShareable(new FSLContactPublisher(this));
+				SLContactPub->Init();
+			}
+
+			// Listen and publish supported by events
+			if (bListenForSupportedByEvents)
+			{
+				SLSupportedByPub = MakeShareable(new FSLSupportedByPublisher(this));
+				SLSupportedByPub->Init();
+			}
+
+			// Mark as initialized
+			bIsInit = true;
+		}
+		else
+		{
+			// Not init
+			return;
+		}
+	}
+}
+
+// Start overlap events, trigger currently overlapping objects
+void USLOverlapArea::Start()
+{
+	if (!bIsStarted && bIsInit)
+	{
+		// Broadcast currently overlapping components
+		USLOverlapArea::TriggerInitialOverlaps();
+
+		// Bind future overlapping event delegates
+		OnComponentBeginOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapEnd);
+
+		// Mark as started
+		bIsStarted = true;
+	}
+}
+
+// Stop publishing overlap events
+void USLOverlapArea::Finish()
+{
+	if (bIsStarted || bIsInit)
+	{
+		float EndTime = GetWorld()->GetTimeSeconds();
+
+		// Terminate and publish pending events
+		if (SLContactPub.IsValid())
+		{
+			SLContactPub->Finish(EndTime);
+		}
+
+		if (SLSupportedByPub.IsValid())
+		{
+			SLSupportedByPub->Finish(EndTime);
+		}
+
+		// Mark as finished
+		bIsStarted = false;
+		bIsInit = false;
+		bIsFinished = true;
 	}
 }
 
 #if WITH_EDITOR
 // Called after the C++ constructor and after the properties have been initialized
-void  USLOverlapArea::PostInitProperties()
+void USLOverlapArea::PostInitProperties()
 {
 	Super::PostInitProperties();
 
@@ -252,49 +353,6 @@ bool USLOverlapArea::SaveAreaParameters()
 }
 #endif // WITH_EDITOR
 
-// Setup pointers to outer, check if semantically annotated
-bool USLOverlapArea::Init()
-{
-	// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
-	// Make sure it has a semantic unique id and class
-	OwnerId = GetOwner()->GetUniqueID();
-	// Init the semantic items mappings singleton
-	if (!FSLMappings::GetInstance()->IsInit())
-	{
-		FSLMappings::GetInstance()->LoadData(GetWorld());
-	}
-	OwnerSemId = FSLMappings::GetInstance()->GetSemanticId(OwnerId);
-	OwnerSemClass = FSLMappings::GetInstance()->GetSemanticClass(OwnerId);	
-	// Check that owner is semantically annotated
-	if (OwnerSemId.IsEmpty() || OwnerSemClass.IsEmpty())
-	{
-		return false;
-	}
-
-	// Make sure the mesh (static/skeletal) component is valid
-	if (AStaticMeshActor* CastToSMAct = Cast<AStaticMeshActor>(GetOwner()))
-	{
-		OwnerMeshComp = CastToSMAct->GetStaticMeshComponent();
-	}
-	else if (ASkeletalMeshActor* CastToSkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
-	{
-		OwnerMeshComp = CastToSkelAct->GetSkeletalMeshComponent();
-	}
-
-	if (OwnerMeshComp)
-	{
-		// Make sure there are no overlap events on the mesh as well
-		// (these will be calculated on the contact listener)
-		// TODO this might cause problems with grasping objects
-		OwnerMeshComp->SetGenerateOverlapEvents(false);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
 // Publish currently overlapping components
 void USLOverlapArea::TriggerInitialOverlaps()
 {
@@ -337,14 +395,14 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 
 	// Check if the component or its outer is semantically annotated
 	uint32 OtherId = OtherComp->GetUniqueID();
-	FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
-	FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
+	FString OtherSemId = FSLMap::GetInstance()->GetSemanticId(OtherId);
+	FString OtherSemClass = FSLMap::GetInstance()->GetSemanticClass(OtherId);
 	if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 	{
 		// Check if outer is semantically annotated
 		OtherId = OtherComp->GetOuter()->GetUniqueID();
-		OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
-		OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
+		OtherSemId = FSLMap::GetInstance()->GetSemanticId(OtherId);
+		OtherSemClass = FSLMap::GetInstance()->GetSemanticClass(OtherId);
 		if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 		{
 			return;
@@ -395,14 +453,14 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 
 	// Check if the component or its outer is semantically annotated
 	uint32 OtherId = OtherComp->GetUniqueID();
-	FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
-	FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
+	FString OtherSemId = FSLMap::GetInstance()->GetSemanticId(OtherId);
+	FString OtherSemClass = FSLMap::GetInstance()->GetSemanticClass(OtherId);
 	if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 	{
 		// Check if outer is semantically annotated
 		OtherId = OtherComp->GetOuter()->GetUniqueID();
-		FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
-		FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
+		FString OtherSemId = FSLMap::GetInstance()->GetSemanticId(OtherId);
+		FString OtherSemClass = FSLMap::GetInstance()->GetSemanticClass(OtherId);
 		if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 		{
 			return;
