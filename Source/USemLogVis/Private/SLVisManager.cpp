@@ -2,6 +2,11 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisManager.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Engine/StaticMeshActor.h"
+#include "EngineUtils.h"
+#include "Misc/FileHelper.h"
+#include "IImageWrapperModule.h"
 #if WITH_EDITOR
 #include "Components/ArrowComponent.h"
 #endif // WITH_EDITOR
@@ -15,13 +20,17 @@ USLVisManager::USLVisManager()
 	// Disable tick, if needed, it will be enabled when the framerate is set
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
-#if WITH_EDITOR
-	// Location and orientation visualization of the component
-	ArrowVis = CreateDefaultSubobject<UArrowComponent>(TEXT("SLVisArrowComponent"));
-	ArrowVis->SetupAttachment(this);
-	ArrowVis->ArrowSize = 1.0f;
-	ArrowVis->ArrowColor = FColor::Blue;
-#endif // WITH_EDITOR
+#if WITH_EDITORONLY_DATA
+	ArrowVis = CreateEditorOnlyDefaultSubobject<UArrowComponent>(TEXT("SLVisArrowComponent"));
+	if (ArrowVis)
+	{
+		ArrowVis->SetupAttachment(this);
+		ArrowVis->ArrowColor = FColor::Red;
+		ArrowVis->bTreatAsASprite = true;
+		ArrowVis->bLightAttachment = true;
+		ArrowVis->bIsScreenSizeScaled = true;
+	}
+#endif // WITH_EDITORONLY_DATA
 
 	// Flags
 	bIsInit = false;
@@ -166,9 +175,7 @@ void USLVisManager::ReadData()
 			FTextureRenderTargetResource* ColorRenderResource = ColorSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
 			USLVisManager::ReadPixels(ColorRenderResource, ColorImage, ReadSurfaceDataFlags);
 		}
-
 		PixelFence.BeginFence();
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Color"), TEXT(__FUNCTION__), __LINE__);
 	}
 
 	/* Depth */
@@ -180,8 +187,6 @@ void USLVisManager::ReadData()
 		FTextureRenderTargetResource* DepthRenderResource = DepthSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
 		USLVisManager::ReadPixels(DepthRenderResource, DepthImage, ReadSurfaceDataFlags);
 		PixelFence.BeginFence();
-
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Depth"), TEXT(__FUNCTION__), __LINE__);
 	}
 
 	/* Mask */
@@ -193,8 +198,6 @@ void USLVisManager::ReadData()
 		FTextureRenderTargetResource* MaskRenderResource = MaskSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
 		ReadPixels(MaskRenderResource, MaskImage, ReadSurfaceDataFlags);
 		PixelFence.BeginFence();
-
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Mask"), TEXT(__FUNCTION__), __LINE__);
 	}
 
 	/* Normal */
@@ -205,8 +208,6 @@ void USLVisManager::ReadData()
 		FTextureRenderTargetResource* NormalRenderResource = NormalSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
 		ReadPixels(NormalRenderResource, NormalImage, ReadSurfaceDataFlags);
 		PixelFence.BeginFence();
-
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Normal"), TEXT(__FUNCTION__), __LINE__);
 	}
 }
 
@@ -342,8 +343,6 @@ void USLVisManager::SaveData()
 
 		FFileHelper::SaveArrayToFile(CompressedData, *FullFilePath);
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d ************** Tick: %d"), TEXT(__FUNCTION__), __LINE__, ImgTickCount);
 	++ImgTickCount;
 }
 
@@ -596,10 +595,7 @@ void USLVisManager::InitDepthCaptureComponent()
 void USLVisManager::InitMaskCaptureComponent()
 {
 	// Create masks for the objects
-	for (TActorIterator<AStaticMeshActor> ActItr(GetWorld()); ActItr; ++ActItr)
-	{
-		GEditor->SelectActor(*ActItr, true, true);
-	}
+	USLVisManager::InitMaskColors();
 
 
 	MaskSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
@@ -619,4 +615,164 @@ void USLVisManager::InitNormalCaptureComponent()
 	NormalSceneCaptureComp->TextureTarget->TargetGamma = 1.0;
 	NormalSceneCaptureComp->SetHiddenInGame(false);
 	NormalSceneCaptureComp->Activate();
+}
+
+// Create various colors for each object
+void USLVisManager::InitMaskColors()
+{
+	TMap<AStaticMeshActor*, FColor> ActorColorMap;
+	// All objects need to be selected in order for the mask to be active
+	// see https://github.com/unrealcv/unrealcv/issues/98
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
+		{
+			GEditor->SelectActor(*ActItr, true, true);
+			ActorColorMap.Add(*ActItr, FColor::Black);
+		}
+
+		// Create a unique color for each actor in world
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d WORLD"), TEXT(__FUNCTION__), __LINE__);
+		USLVisManager::SetUniqueMaskColors(ActorColorMap);
+
+		for (auto& ActorColorPair : ActorColorMap)
+		{
+
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d NO WORLD"), TEXT(__FUNCTION__), __LINE__);
+	}
+
+
+}
+
+// Create an array of different colors
+void USLVisManager::SetUniqueMaskColors(TMap<AStaticMeshActor*, FColor>& OutActorColorMap)
+{
+	const uint32 NrOfColors = OutActorColorMap.Num();
+	const uint32 MaxHue = 50;
+	// It shifts the next Hue value used, so that colors next to each other are not very similar.
+	// this is only important for the human eye
+	const uint32 ShiftHue = 11;
+	const float MinSat = 0.65;
+	const float MinVal = 0.65;
+	
+	uint32 HueCount = MaxHue;
+	uint32 SatCount = 1;
+	uint32 ValCount = 1;
+
+	// Compute how many different Saturations and Values are needed
+	int32_t left = FMath::Max<int32_t>(0, NrOfColors - HueCount);
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d left=%d"), TEXT(__FUNCTION__), __LINE__, left);
+	while (left > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d left=%d"), TEXT(__FUNCTION__), __LINE__, left);
+		if (left > 0)
+		{
+			++ValCount;
+			left = NrOfColors - SatCount * ValCount * HueCount;
+		}
+		if (left > 0)
+		{
+			++SatCount;
+			left = NrOfColors - SatCount * ValCount * HueCount;
+		}
+	}
+
+
+	// Compute how many different saturations and values are needed
+	int32 Remaining = FMath::Max<int32>(0, NrOfColors - HueCount);
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Remaining=%d, NRofCol=%d"),
+		TEXT(__FUNCTION__), __LINE__, Remaining, NrOfColors);
+	while (Remaining > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Remaining=%d, NRofCol=%d"),
+			TEXT(__FUNCTION__), __LINE__, Remaining, NrOfColors);
+		if (Remaining > 0)
+		{
+			++ValCount;
+			Remaining = NrOfColors - SatCount * ValCount * HueCount;
+		}
+		if (Remaining > 0)
+		{
+			++SatCount;
+			Remaining = NrOfColors - SatCount * ValCount * HueCount;
+		}
+	}
+
+	const float StepHue = 360.0f / HueCount;
+	const float StepSat = (1.0f - MinSat) / FMath::Max(1.0f, SatCount - 1.0f);
+	const float StepVal = (1.0f - MinVal) / FMath::Max(1.0f, ValCount - 1.0f);
+
+	TArray<FColor> Colors;
+	Colors.Reserve(SatCount * ValCount * HueCount);
+
+	FLinearColor HSVColor;
+	for (uint32 S = 0; S < SatCount; ++S)
+	{
+		HSVColor.G = 1.0f - S * StepSat;
+		for (uint32 V = 0; V < ValCount; ++V)
+		{
+			HSVColor.B = 1.0f - V * StepVal;
+			for (uint32 H = 0; H < HueCount; ++H)
+			{
+				HSVColor.R = ((H * ShiftHue) % MaxHue) * StepHue;
+				Colors.Add(HSVColor.HSVToLinearRGB().ToFColor(false));
+			}
+		}
+	}
+
+	// TODO merge these two steps, add the color directly to the map
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d NR cols: %d , NR Acts: %d"),
+		TEXT(__FUNCTION__), __LINE__, Colors.Num(), OutActorColorMap.Num());
+	if (Colors.Num() >= OutActorColorMap.Num())
+	{
+		for (auto& ActorColorPair : OutActorColorMap)
+		{
+			if (UStaticMeshComponent* SMComp = ActorColorPair.Key->GetStaticMeshComponent())
+			{
+				if (UStaticMesh* SM = SMComp->GetStaticMesh())
+				{
+					uint32 MeshLODIndex = 0;
+					uint32 NumLODLevel = SM->RenderData->LODResources.Num();
+					//check(NumLODLevel == 1);
+					FStaticMeshLODResources &LODModel = SM->RenderData->LODResources[MeshLODIndex];
+					SMComp->SetLODDataCount(1, SMComp->LODData.Num());
+					FStaticMeshComponentLODInfo *InstanceMeshLODInfo = &SMComp->LODData[MeshLODIndex];
+
+					// PaintingMeshLODIndex + 1 is the minimum requirement, enlarge if not satisfied
+
+					InstanceMeshLODInfo->PaintedVertices.Empty();
+
+					InstanceMeshLODInfo->OverrideVertexColors = new FColorVertexBuffer;
+
+					InstanceMeshLODInfo->OverrideVertexColors->InitFromSingleColor(FColor::Green, LODModel.GetNumVertices());
+
+
+					uint32 NumVertices = LODModel.GetNumVertices();
+					//check(InstanceMeshLODInfo->OverrideVertexColors);
+					//check(NumVertices <= InstanceMeshLODInfo->OverrideVertexColors->GetNumVertices());
+
+
+					for (uint32 ColorIndex = 0; ColorIndex < NumVertices; ColorIndex++)
+					{
+						//uint32 NumOverrideVertexColors = InstanceMeshLODInfo->OverrideVertexColors->GetNumVertices();
+						//uint32 NumPaintedVertices = InstanceMeshLODInfo->PaintedVertices.Num();
+						InstanceMeshLODInfo->OverrideVertexColors->VertexColor(ColorIndex) = ActorColorPair.Value;
+					}
+					BeginInitResource(InstanceMeshLODInfo->OverrideVertexColors);
+
+					SMComp->MarkRenderStateDirty();
+				}
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Not engough colors for each actor, skipping mask setup."),
+			TEXT(__FUNCTION__), __LINE__);
+	}
 }

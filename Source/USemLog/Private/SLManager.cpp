@@ -168,7 +168,13 @@ void ASLManager::Init()
 #if WITH_SL_VIS
 		if (bLogVisionData)
 		{
-			// Check for all vision components from the world
+			// Cache and init all vision logger components
+
+			//for (TObjectIterator<USLVisManager> ObjItr; ObjItr; ++ObjItr)
+			//{
+			//	ObjItr->Init(LogDirectory, EpisodeId);
+			//	VisionDataLoggerManagers.Add(*ObjItr);
+			//}
 			for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 			{
 				// Iterate components of the actor, check for vision capture manager
@@ -177,7 +183,7 @@ void ASLManager::Init()
 					if (USLVisManager* VisMan = Cast<USLVisManager>(CompItr))
 					{
 						VisMan->Init(LogDirectory, EpisodeId);
-						VisionDataLoggerManagers.Emplace(VisMan);
+						VisionDataLoggerManagers.Add(VisMan);
 					}
 				}
 			}

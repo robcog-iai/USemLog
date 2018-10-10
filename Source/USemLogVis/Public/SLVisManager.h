@@ -87,6 +87,12 @@ private:
 	// Init normal capture component
 	void InitNormalCaptureComponent();
 
+	// Add a mask color for each object
+	void InitMaskColors();
+
+	// Create an array of different colors
+	void SetUniqueMaskColors(TMap<AStaticMeshActor*, FColor>& OutActorColorMap);
+
 private:
 	// Set when manager is initialized
 	bool bIsInit;
@@ -97,10 +103,11 @@ private:
 	// Set when manager is finished
 	bool bIsFinished;
 
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	// Location and orientation visualization of the component
+	UPROPERTY()
 	class UArrowComponent* ArrowVis;
-#endif // WITH_EDITOR
+#endif // WITH_EDITORONLY_DATA
 
 	// If false the viewport resolution will be used
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

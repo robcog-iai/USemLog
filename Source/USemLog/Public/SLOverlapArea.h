@@ -106,6 +106,8 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
+
+
 #if WITH_EDITOR
 	// UObject interface
 	// Called after the C++ constructor and after the properties have been initialized
@@ -113,10 +115,12 @@ private:
 
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-	
+	// End of UObject interface
+
 	// USceneComponent interface
 	// Called when this component is moved in the editor
 	virtual void PostEditComponentMove(bool bFinished);
+	// End of USceneComponent interface
 
 	// Load and apply cached parameters from tags
 	bool LoadAreaParameters();

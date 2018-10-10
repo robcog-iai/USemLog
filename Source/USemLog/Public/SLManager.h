@@ -35,7 +35,7 @@ protected:
 
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
-	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent);
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
 public:
