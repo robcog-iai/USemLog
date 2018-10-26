@@ -6,6 +6,7 @@
 #include "GameFramework/Info.h"
 #include "SLRawDataLogger.h"
 #include "SLEventDataLogger.h"
+#include "SLOwlDocDataAsset.h"
 #include "SLManager.generated.h"
 
 /**
@@ -148,6 +149,10 @@ private:
 	// Log vision data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogVisionData;
+
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	USLOwlDocDataAsset* OwlDataAsset;
 
 #if WITH_SL_VIS
 	// Vision data loggers

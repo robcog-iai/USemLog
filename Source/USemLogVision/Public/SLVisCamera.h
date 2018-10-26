@@ -8,7 +8,7 @@
 #include "SLVisCamera.generated.h"
 
 UCLASS(ClassGroup = (SL), hidecategories = (HLOD, Mobile, Cooking, AssetUserData), meta = (DisplayName = "SL Vision Actor"))
-class USEMLOGVIS_API ASLVisCamera : public ACameraActor
+class USEMLOGVISION_API ASLVisCamera : public ACameraActor
 {
 	GENERATED_BODY()
 	

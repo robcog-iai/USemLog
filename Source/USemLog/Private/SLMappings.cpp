@@ -1,39 +1,39 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLMap.h"
+#include "SLMappings.h"
 #include "Tags.h"
 
-TSharedPtr<FSLMap> FSLMap::StaticInstance;
+TSharedPtr<FSLMappings> FSLMappings::StaticInstance;
 
 // Constructor
-FSLMap::FSLMap() : bIsInit(false) 
+FSLMappings::FSLMappings() : bIsInit(false) 
 {
 }
 
 // Destructor
-FSLMap::~FSLMap() 
+FSLMappings::~FSLMappings() 
 {
 }
 
 // Get singleton
-FSLMap* FSLMap::GetInstance()
+FSLMappings* FSLMappings::GetInstance()
 {
 	if (!StaticInstance.IsValid())
 	{
-		StaticInstance = MakeShareable(new FSLMap());
+		StaticInstance = MakeShareable(new FSLMappings());
 	}
 	return StaticInstance.Get();
 }
 
 // Delete instance
-void FSLMap::DeleteInstance()
+void FSLMappings::DeleteInstance()
 {
 	StaticInstance.Reset();
 }
 
 // Init data
-void FSLMap::LoadData(UWorld* World)
+void FSLMappings::LoadData(UWorld* World)
 {
 	// Clear any previous data
 	IdSemIdMap.Empty();
@@ -47,7 +47,7 @@ void FSLMap::LoadData(UWorld* World)
 }
 
 // Get semantic id, from unique id
-FString FSLMap::GetSemanticId(uint32 UniqueId) const
+FString FSLMappings::GetSemanticId(uint32 UniqueId) const
 {
 	if (const FString* SemId = IdSemIdMap.Find(UniqueId))
 	{
@@ -60,7 +60,7 @@ FString FSLMap::GetSemanticId(uint32 UniqueId) const
 }
 
 // Get semantic class, from unique id
-FString FSLMap::GetSemanticClass(uint32 UniqueId) const
+FString FSLMappings::GetSemanticClass(uint32 UniqueId) const
 {
 	if (const FString* Class = IdClassMap.Find(UniqueId))
 	{

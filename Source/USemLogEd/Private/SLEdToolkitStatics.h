@@ -15,7 +15,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
-//#include "SLMap.h"
+//#include "SLMappings.h"
 //#include "SLRuntimeManager.h"
 //#include "SLLevelInfo.h"
 

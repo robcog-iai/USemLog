@@ -3,9 +3,9 @@
 
 using UnrealBuildTool;
 
-public class USemLogVis : ModuleRules
+public class USemLogVision : ModuleRules
 {
-	public USemLogVis(ReadOnlyTargetRules Target) : base(Target)
+	public USemLogVision(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 

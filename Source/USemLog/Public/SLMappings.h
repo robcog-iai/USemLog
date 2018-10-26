@@ -6,18 +6,18 @@
 /**
  * Singleton storing Map between the unreal objects and the semantic data
  */
-class USEMLOGMAP_API FSLMap
+class USEMLOG_API FSLMappings
 {
 private:
 	// Constructor
-	FSLMap();
+	FSLMappings();
 
 public:
 	// Destructor
-	~FSLMap();
+	~FSLMappings();
 
 	// Get singleton
-	static FSLMap* GetInstance();
+	static FSLMappings* GetInstance();
 
 	// Delete instance
 	static void DeleteInstance();
@@ -36,7 +36,7 @@ public:
 
 private:
 	// Instance of the singleton
-	static TSharedPtr<FSLMap> StaticInstance;
+	static TSharedPtr<FSLMappings> StaticInstance;
 
 	// Flag showing the data has been init
 	bool bIsInit;

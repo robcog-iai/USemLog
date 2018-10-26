@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLOverlapArea.h"
-#include "SLMap.h"
+#include "SLMappings.h"
 //#include "DrawDebugHelpers.h"
 
 // UUTils
@@ -74,12 +74,12 @@ void USLOverlapArea::Init()
 		// Make sure it has a semantic unique id and class
 		OwnerId = GetOwner()->GetUniqueID();
 		// Init the semantic items mappings singleton
-		if (!FSLMap::GetInstance()->IsInit())
+		if (!FSLMappings::GetInstance()->IsInit())
 		{
-			FSLMap::GetInstance()->LoadData(GetWorld());
+			FSLMappings::GetInstance()->LoadData(GetWorld());
 		}
-		OwnerSemId = FSLMap::GetInstance()->GetSemanticId(OwnerId);
-		OwnerSemClass = FSLMap::GetInstance()->GetSemanticClass(OwnerId);
+		OwnerSemId = FSLMappings::GetInstance()->GetSemanticId(OwnerId);
+		OwnerSemClass = FSLMappings::GetInstance()->GetSemanticClass(OwnerId);
 		// Check that owner is semantically annotated
 		if (OwnerSemId.IsEmpty() || OwnerSemClass.IsEmpty())
 		{
@@ -395,14 +395,14 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 
 	// Check if the component or its outer is semantically annotated
 	uint32 OtherId = OtherComp->GetUniqueID();
-	FString OtherSemId = FSLMap::GetInstance()->GetSemanticId(OtherId);
-	FString OtherSemClass = FSLMap::GetInstance()->GetSemanticClass(OtherId);
+	FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+	FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
 	if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 	{
 		// Check if outer is semantically annotated
 		OtherId = OtherComp->GetOuter()->GetUniqueID();
-		OtherSemId = FSLMap::GetInstance()->GetSemanticId(OtherId);
-		OtherSemClass = FSLMap::GetInstance()->GetSemanticClass(OtherId);
+		OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+		OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
 		if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 		{
 			return;
@@ -453,14 +453,14 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 
 	// Check if the component or its outer is semantically annotated
 	uint32 OtherId = OtherComp->GetUniqueID();
-	FString OtherSemId = FSLMap::GetInstance()->GetSemanticId(OtherId);
-	FString OtherSemClass = FSLMap::GetInstance()->GetSemanticClass(OtherId);
+	FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+	FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
 	if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 	{
 		// Check if outer is semantically annotated
 		OtherId = OtherComp->GetOuter()->GetUniqueID();
-		FString OtherSemId = FSLMap::GetInstance()->GetSemanticId(OtherId);
-		FString OtherSemClass = FSLMap::GetInstance()->GetSemanticClass(OtherId);
+		FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+		FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
 		if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 		{
 			return;

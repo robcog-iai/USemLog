@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLManager.h"
-#include "SLMap.h"
+#include "SLMappings.h"
 #include "Ids.h"
 #if WITH_SL_VIS
 #include "SLVisManager.h"
@@ -124,9 +124,9 @@ void ASLManager::Init()
 	if (!bIsInit)
 	{
 		// Init the semantic items content singleton
-		if (!FSLMap::GetInstance()->IsInit())
+		if (!FSLMappings::GetInstance()->IsInit())
 		{
-			FSLMap::GetInstance()->LoadData(GetWorld());
+			FSLMappings::GetInstance()->LoadData(GetWorld());
 		}
 
 		// If the episode Id is not manually added, generate new unique id
@@ -248,7 +248,7 @@ void ASLManager::Finish()
 #endif //WITH_SL_VIS
 		
 		// Delete the semantic items content instance
-		FSLMap::DeleteInstance();
+		FSLMappings::DeleteInstance();
 
 		// Mark manager as finished
 		bIsStarted = false;

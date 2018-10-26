@@ -11,7 +11,7 @@
 
 
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics, Collision, LOD, AssetUserData))
-class USEMLOGVIS_API USLVisManager : public USceneComponent
+class USEMLOGVISION_API USLVisManager : public USceneComponent
 {
 	GENERATED_BODY()
 

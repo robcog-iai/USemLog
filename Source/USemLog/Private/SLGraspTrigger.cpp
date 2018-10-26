@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLGraspTrigger.h"
-#include "SLMap.h"
+#include "SLMappings.h"
 //#include "SLOverlapArea.h"
 
 // UUTils
@@ -18,8 +18,8 @@ USLGraspTrigger::USLGraspTrigger()
 bool USLGraspTrigger::Init(USkeletalMeshComponent* InHand)
 {
 	OwnerId = InHand->GetUniqueID();
-	OwnerSemId = FSLMap::GetInstance()->GetSemanticId(OwnerId);
-	OwnerSemClass = FSLMap::GetInstance()->GetSemanticClass(OwnerId);
+	OwnerSemId = FSLMappings::GetInstance()->GetSemanticId(OwnerId);
+	OwnerSemClass = FSLMappings::GetInstance()->GetSemanticClass(OwnerId);
 	if (OwnerSemId.IsEmpty() || OwnerSemClass.IsEmpty())
 	{
 		SLGraspPub = MakeShareable(new FSLGraspPublisher(this));
@@ -44,8 +44,8 @@ void USLGraspTrigger::BeginGrasp(AStaticMeshActor* Other, float Time)
 {
 	// Check if other actor is semantically annotated
 	const uint32 OtherId = Other->GetUniqueID();
-	const FString OtherSemId = FSLMap::GetInstance()->GetSemanticId(OtherId);
-	const FString OtherSemClass = FSLMap::GetInstance()->GetSemanticClass(OtherId);
+	const FString OtherSemId = FSLMappings::GetInstance()->GetSemanticId(OtherId);
+	const FString OtherSemClass = FSLMappings::GetInstance()->GetSemanticClass(OtherId);
 	if (OtherSemId.IsEmpty() || OtherSemClass.IsEmpty())
 	{
 		// Broadcast the result
