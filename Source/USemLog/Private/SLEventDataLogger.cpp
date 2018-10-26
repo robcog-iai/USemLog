@@ -6,7 +6,7 @@
 #include "Misc/FileHelper.h"
 #include "EngineUtils.h"
 
-#include "OwlExperimentStatics.h"
+#include "SLOwlExperimentStatics.h"
 #include "SLOverlapArea.h"
 #include "SLGraspTrigger.h"
 #include "SLGoogleCharts.h"
@@ -193,11 +193,11 @@ TSharedPtr<FOwlExperiment> USLEventDataLogger::CreateEventsDocTemplate(EOwlExper
 	// Fill document with template values
 	if (TemplateType == EOwlExperimentTemplate::Default)
 	{
-		return FOwlExperimentStatics::CreateDefaultExperiment(DocId);
+		return FSLOwlExperimentStatics::CreateDefaultExperiment(DocId);
 	}
 	else if (TemplateType == EOwlExperimentTemplate::IAI)
 	{
-		return FOwlExperimentStatics::CreateUEExperiment(DocId);
+		return FSLOwlExperimentStatics::CreateUEExperiment(DocId);
 	}
 	return MakeShareable(new FOwlExperiment());
 }

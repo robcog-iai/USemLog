@@ -3,15 +3,15 @@
 
 using UnrealBuildTool;
 
-public class UOwl : ModuleRules
+public class USemLogOwl : ModuleRules
 {
-	public UOwl(ReadOnlyTargetRules Target) : base(Target)
+	public USemLogOwl(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
-				//"UOwl/Public"
+				//"USemLogOwl/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -19,7 +19,7 @@ public class UOwl : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				//"UOwl/Private",
+				//"USemLogOwl/Private",
 				// ... add other private include paths required here ...
 			}
 			);

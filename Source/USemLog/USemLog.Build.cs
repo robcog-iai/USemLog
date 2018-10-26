@@ -29,7 +29,7 @@ public class USemLog : ModuleRules
 			new string[]
 			{
 				"Core",
-				"UOwl",
+				"USemLogOwl",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

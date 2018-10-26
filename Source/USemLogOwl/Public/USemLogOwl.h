@@ -9,7 +9,7 @@
 // Declare logging types
 DECLARE_LOG_CATEGORY_EXTERN(LogOwl, All, All);
 
-class FUOwl : public IModuleInterface
+class FUSemLogOwl : public IModuleInterface
 {
 public:
 

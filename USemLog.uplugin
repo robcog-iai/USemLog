@@ -29,9 +29,9 @@
 			"Name": "USemLogVision",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
-		}
+		},
 		{
-			"Name": "UOwl",
+			"Name": "USemLogOwl",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}

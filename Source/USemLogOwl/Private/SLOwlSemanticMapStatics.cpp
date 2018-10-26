@@ -1,11 +1,11 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "OwlSemanticMapStatics.h"
+#include "SLOwlSemanticMapStatics.h"
 
 /* Semantic map template creation */
 // Create Default semantic map
-TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateDefaultSemanticMap(
+TSharedPtr<FOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
 	const FString& InDocId,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
@@ -58,12 +58,12 @@ TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateDefaultSemanticMap(
 }
 
 // Create IAI Kitchen semantic map
-TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
+TSharedPtr<FOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
 	const FString& InDocId,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
 {
-	TSharedPtr<FOwlSemanticMap> SemMap = FOwlSemanticMapStatics::CreateDefaultSemanticMap(
+	TSharedPtr<FOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
 		InDocId, InDocPrefix, InDocOntologyName);
 
 	//SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_kitchen_ue.owl");
@@ -72,12 +72,12 @@ TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
 }
 
 // Create IAI Supermarket semantic map
-TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(
+TSharedPtr<FOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(
 	const FString& InDocId,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
 {
-	TSharedPtr<FOwlSemanticMap> SemMap = FOwlSemanticMapStatics::CreateDefaultSemanticMap(
+	TSharedPtr<FOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
 		InDocId, InDocPrefix, InDocOntologyName);
 
 	SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_supermarket_ue.owl");
@@ -87,7 +87,7 @@ TSharedPtr<FOwlSemanticMap> FOwlSemanticMapStatics::CreateIAISupermarketSemantic
 
 /* Owl individuals creation */
 // Create an object individual
-FOwlNode FOwlSemanticMapStatics::CreateObjectIndividual(
+FOwlNode FSLOwlSemanticMapStatics::CreateObjectIndividual(
 	const FString& InDocPrefix, 
 	const FString& Id,
 	const FString& Class)
@@ -98,12 +98,12 @@ FOwlNode FOwlSemanticMapStatics::CreateObjectIndividual(
 
 	FOwlNode ObjectIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InDocPrefix, Id)));
 	ObjectIndividual.Comment = TEXT("Individual " + Class + " " + Id);
-	ObjectIndividual.AddChildNode(FOwlSemanticMapStatics::CreateClassProperty(Class));
+	ObjectIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateClassProperty(Class));
 	return ObjectIndividual;
 }
 
 // Create a pose individual
-FOwlNode FOwlSemanticMapStatics::CreatePoseIndividual(
+FOwlNode FSLOwlSemanticMapStatics::CreatePoseIndividual(
 	const FString& InDocPrefix,
 	const FString& InId,
 	const FVector& InLoc,
@@ -123,13 +123,13 @@ FOwlNode FOwlSemanticMapStatics::CreatePoseIndividual(
 	FOwlNode PoseIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InDocPrefix, InId)));
 	FOwlNode PoseProperty(RdfType, FOwlAttribute(RdfResource, AttrValPose));
 	PoseIndividual.AddChildNode(PoseProperty);
-	PoseIndividual.AddChildNode(FOwlSemanticMapStatics::CreateQuaternionProperty(InQuat));
-	PoseIndividual.AddChildNode(FOwlSemanticMapStatics::CreateLocationProperty(InLoc));
+	PoseIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateQuaternionProperty(InQuat));
+	PoseIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateLocationProperty(InLoc));
 	return PoseIndividual;
 }
 
 // Create a constraint individual
-FOwlNode FOwlSemanticMapStatics::CreateConstraintIndividual(
+FOwlNode FSLOwlSemanticMapStatics::CreateConstraintIndividual(
 	const FString& InDocPrefix,
 	const FString& InId,
 	const FString& ParentId,
@@ -140,15 +140,15 @@ FOwlNode FOwlSemanticMapStatics::CreateConstraintIndividual(
 
 	FOwlNode ObjectIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InDocPrefix, InId)));
 	ObjectIndividual.Comment = TEXT("Constraint " + InId);
-	ObjectIndividual.AddChildNode(FOwlSemanticMapStatics::CreateClassProperty("Constraint"));
-	ObjectIndividual.AddChildNode(FOwlSemanticMapStatics::CreateParentProperty(InDocPrefix, ParentId));
-	ObjectIndividual.AddChildNode(FOwlSemanticMapStatics::CreateChildProperty(InDocPrefix, ChildId));
+	ObjectIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateClassProperty("Constraint"));
+	ObjectIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateParentProperty(InDocPrefix, ParentId));
+	ObjectIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateChildProperty(InDocPrefix, ChildId));
 
 	return ObjectIndividual;
 }
 
 // Create constraint linear limits individual
-FOwlNode FOwlSemanticMapStatics::CreateLinearConstraintProperties(
+FOwlNode FSLOwlSemanticMapStatics::CreateLinearConstraintProperties(
 	const FString& InDocPrefix, 
 	const FString& InId,
 	uint8 XMotion,
@@ -163,27 +163,27 @@ FOwlNode FOwlSemanticMapStatics::CreateLinearConstraintProperties(
 	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 
 	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InDocPrefix, InId)));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateClassProperty("LinearConstraint"));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateIntValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateClassProperty("LinearConstraint"));
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateIntValueProperty(
 		FOwlPrefixName("knowrob", "xMotion"), XMotion));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateIntValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateIntValueProperty(
 		FOwlPrefixName("knowrob", "yMotion"), YMotion));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateIntValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateIntValueProperty(
 		FOwlPrefixName("knowrob", "zMotion"), ZMotion));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "limit"), Limit));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateBoolValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateBoolValueProperty(
 		FOwlPrefixName("knowrob", "softConstraint"), bSoftConsraint));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "stiffness"), Stiffness));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "damping"), Damping));
 
 	return ConstrPropIndividual;
 }
 
 // Create constraint angular limits individual
-FOwlNode FOwlSemanticMapStatics::CreateAngularConstraintProperties(
+FOwlNode FSLOwlSemanticMapStatics::CreateAngularConstraintProperties(
 	const FString& InDocPrefix,
 	const FString& InId,
 	uint8 Swing1Motion,
@@ -203,37 +203,37 @@ FOwlNode FOwlSemanticMapStatics::CreateAngularConstraintProperties(
 	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
 
 	FOwlNode ConstrPropIndividual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(InDocPrefix, InId)));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateClassProperty("AngularConstraint"));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateIntValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateClassProperty("AngularConstraint"));
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateIntValueProperty(
 		FOwlPrefixName("knowrob","swing1Motion"), Swing1Motion));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateIntValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateIntValueProperty(
 		FOwlPrefixName("knowrob", "swing2Motion"), Swing2Motion));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateIntValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateIntValueProperty(
 		FOwlPrefixName("knowrob", "twistMotion"), TwistMotion));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "swing1Limit"), Swing1Limit));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "swing2Limit"), Swing2Limit));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "twistLimit"), TwistLimit));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateBoolValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateBoolValueProperty(
 		FOwlPrefixName("knowrob", "softSwingConstraint"), bSoftSwingConstraint));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "swingStiffness"), SwingStiffness));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "swingDamping"), SwingDamping));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateBoolValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateBoolValueProperty(
 		FOwlPrefixName("knowrob", "softTwistConstraint"), bSoftTwistConstraint));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "twistStiffness"), TwistStiffness));
-	ConstrPropIndividual.AddChildNode(FOwlSemanticMapStatics::CreateFloatValueProperty(
+	ConstrPropIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateFloatValueProperty(
 		FOwlPrefixName("knowrob", "twistDamping"), TwistDamping));
 
 	return ConstrPropIndividual;
 }
 
 // Create a class individual
-FOwlNode FOwlSemanticMapStatics::CreateClassDefinition(const FString& InClass)
+FOwlNode FSLOwlSemanticMapStatics::CreateClassDefinition(const FString& InClass)
 {
 	// Prefix name constants
 	const FOwlPrefixName RdfAbout("rdf", "about");
@@ -244,14 +244,14 @@ FOwlNode FOwlSemanticMapStatics::CreateClassDefinition(const FString& InClass)
 
 /* Owl properties creation */
 // Create property
-FOwlNode FOwlSemanticMapStatics::CreateGenericProperty(const FOwlPrefixName& InPrefixName,
+FOwlNode FSLOwlSemanticMapStatics::CreateGenericProperty(const FOwlPrefixName& InPrefixName,
 	const FOwlAttributeValue& InAttributeValue)
 {
 	return FOwlNode();
 }
 
 // Create class property
-FOwlNode FOwlSemanticMapStatics::CreateClassProperty(const FString& InClass)
+FOwlNode FSLOwlSemanticMapStatics::CreateClassProperty(const FString& InClass)
 {
 	const FOwlPrefixName RdfResource("rdf", "resource");
 	const FOwlPrefixName RdfType("rdf", "type");
@@ -260,7 +260,7 @@ FOwlNode FOwlSemanticMapStatics::CreateClassProperty(const FString& InClass)
 }
 
 // Create describedInMap property
-FOwlNode FOwlSemanticMapStatics::CreateDescribedInMapProperty(
+FOwlNode FSLOwlSemanticMapStatics::CreateDescribedInMapProperty(
 	const FString& InDocPrefix, const FString& InDocId)
 {
 	const FOwlPrefixName RdfResource("rdf", "resource");
@@ -270,7 +270,7 @@ FOwlNode FOwlSemanticMapStatics::CreateDescribedInMapProperty(
 }
 
 // Create pathToCadModel property
-FOwlNode FOwlSemanticMapStatics::CreatePathToCadModelProperty(const FString& InClass)
+FOwlNode FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(const FString& InClass)
 {
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
 	const FOwlPrefixName KbPathToCadModel("knowrob", "pathToCadModel");
@@ -282,7 +282,7 @@ FOwlNode FOwlSemanticMapStatics::CreatePathToCadModelProperty(const FString& InC
 }
 
 // Create tagsData property
-FOwlNode FOwlSemanticMapStatics::CreateTagsDataProperty(const TArray<FName>& InTags)
+FOwlNode FSLOwlSemanticMapStatics::CreateTagsDataProperty(const TArray<FName>& InTags)
 {
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
 	const FOwlPrefixName KbTagsData("knowrob", "tagsData");
@@ -299,7 +299,7 @@ FOwlNode FOwlSemanticMapStatics::CreateTagsDataProperty(const TArray<FName>& InT
 }
 
 // Create subClassOf property
-FOwlNode FOwlSemanticMapStatics::CreateSubClassOfProperty(const FString& InSubClass)
+FOwlNode FSLOwlSemanticMapStatics::CreateSubClassOfProperty(const FString& InSubClass)
 {
 	const FOwlPrefixName RdfResource("rdf", "resource");
 	const FOwlPrefixName RdfsSubClassOf("rdfs", "subClassOf");
@@ -308,7 +308,7 @@ FOwlNode FOwlSemanticMapStatics::CreateSubClassOfProperty(const FString& InSubCl
 }
 
 // Create skeletal bone property
-FOwlNode FOwlSemanticMapStatics::CreateSkeletalBoneProperty(const FString& InBone)
+FOwlNode FSLOwlSemanticMapStatics::CreateSkeletalBoneProperty(const FString& InBone)
 {
 	const FOwlPrefixName KbSkelBone("knowrob", "skeletalBone");
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
@@ -318,7 +318,7 @@ FOwlNode FOwlSemanticMapStatics::CreateSkeletalBoneProperty(const FString& InBon
 }
 
 // Create subclass - depth property
-FOwlNode FOwlSemanticMapStatics::CreateDepthProperty(float Value) 
+FOwlNode FSLOwlSemanticMapStatics::CreateDepthProperty(float Value) 
 {
 	const FOwlPrefixName RdfsSubClass("rdfs", "subClassOf");
 	const FOwlPrefixName OwlRestriction("owl", "Restriction");
@@ -333,7 +333,7 @@ FOwlNode FOwlSemanticMapStatics::CreateDepthProperty(float Value)
 }
 
 // Create subclass - height property
-FOwlNode FOwlSemanticMapStatics::CreateHeightProperty(float Value) 
+FOwlNode FSLOwlSemanticMapStatics::CreateHeightProperty(float Value) 
 {
 	const FOwlPrefixName RdfsSubClass("rdfs", "subClassOf");
 	const FOwlPrefixName OwlRestriction("owl", "Restriction");
@@ -348,7 +348,7 @@ FOwlNode FOwlSemanticMapStatics::CreateHeightProperty(float Value)
 }
 
 // Create subclass - width property
-FOwlNode FOwlSemanticMapStatics::CreateWidthProperty(float Value) 
+FOwlNode FSLOwlSemanticMapStatics::CreateWidthProperty(float Value) 
 {
 	const FOwlPrefixName RdfsSubClass("rdfs", "subClassOf");
 	const FOwlPrefixName OwlRestriction("owl", "Restriction");
@@ -363,7 +363,7 @@ FOwlNode FOwlSemanticMapStatics::CreateWidthProperty(float Value)
 }
 
 // Create owl:onProperty meta property
-FOwlNode FOwlSemanticMapStatics::CreateOnProperty(const FString& InProperty)
+FOwlNode FSLOwlSemanticMapStatics::CreateOnProperty(const FString& InProperty)
 {
 	const FOwlPrefixName OwlOnProp("owl", "onProperty");
 	const FOwlPrefixName RdfResource("rdf", "resource");
@@ -372,7 +372,7 @@ FOwlNode FOwlSemanticMapStatics::CreateOnProperty(const FString& InProperty)
 }
 
 // Create a property with a bool value
-FOwlNode FOwlSemanticMapStatics::CreateBoolValueProperty(const FOwlPrefixName& InPrefixName, bool bValue)
+FOwlNode FSLOwlSemanticMapStatics::CreateBoolValueProperty(const FOwlPrefixName& InPrefixName, bool bValue)
 {
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
 	const FOwlAttributeValue AttrValBool("xsd", "boolean");
@@ -381,7 +381,7 @@ FOwlNode FOwlSemanticMapStatics::CreateBoolValueProperty(const FOwlPrefixName& I
 }
 
 // Create a property with an integer value
-FOwlNode FOwlSemanticMapStatics::CreateIntValueProperty(const FOwlPrefixName& InPrefixName, int32 Value)
+FOwlNode FSLOwlSemanticMapStatics::CreateIntValueProperty(const FOwlPrefixName& InPrefixName, int32 Value)
 {
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
 	const FOwlAttributeValue AttrValInt("xsd", "integer");
@@ -390,7 +390,7 @@ FOwlNode FOwlSemanticMapStatics::CreateIntValueProperty(const FOwlPrefixName& In
 }
 
 // Create a property with a float value
-FOwlNode FOwlSemanticMapStatics::CreateFloatValueProperty(const FOwlPrefixName& InPrefixName, float Value)
+FOwlNode FSLOwlSemanticMapStatics::CreateFloatValueProperty(const FOwlPrefixName& InPrefixName, float Value)
 {
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
 	const FOwlAttributeValue AttrValFloat("xsd", "float");
@@ -399,7 +399,7 @@ FOwlNode FOwlSemanticMapStatics::CreateFloatValueProperty(const FOwlPrefixName& 
 }
 
 // Create a property with a string value
-FOwlNode FOwlSemanticMapStatics::CreateStringValueProperty(const FOwlPrefixName& InPrefixName, const FString& InValue)
+FOwlNode FSLOwlSemanticMapStatics::CreateStringValueProperty(const FOwlPrefixName& InPrefixName, const FString& InValue)
 {
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
 	const FOwlAttributeValue AttrValString("xsd", "string");
@@ -408,7 +408,7 @@ FOwlNode FOwlSemanticMapStatics::CreateStringValueProperty(const FOwlPrefixName&
 }
 
 // Create pose property
-FOwlNode FOwlSemanticMapStatics::CreatePoseProperty(const FString& InDocPrefix, const FString& InId)
+FOwlNode FSLOwlSemanticMapStatics::CreatePoseProperty(const FString& InDocPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbPose("knowrob", "pose");
 	const FOwlPrefixName RdfResource("rdf", "resource");
@@ -417,7 +417,7 @@ FOwlNode FOwlSemanticMapStatics::CreatePoseProperty(const FString& InDocPrefix, 
 }
 
 // Create linear constraint property
-FOwlNode FOwlSemanticMapStatics::CreateLinearConstraintProperty(const FString& InDocPrefix, const FString& InId)
+FOwlNode FSLOwlSemanticMapStatics::CreateLinearConstraintProperty(const FString& InDocPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbLinearConstr("knowrob", "linearConstraint");
 	const FOwlPrefixName RdfResource("rdf", "resource");
@@ -426,7 +426,7 @@ FOwlNode FOwlSemanticMapStatics::CreateLinearConstraintProperty(const FString& I
 }
 
 // Create angular constraint property
-FOwlNode FOwlSemanticMapStatics::CreateAngularConstraintProperty(const FString& InDocPrefix, const FString& InId)
+FOwlNode FSLOwlSemanticMapStatics::CreateAngularConstraintProperty(const FString& InDocPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbAngularConstr("knowrob", "angularConstraint");
 	const FOwlPrefixName RdfResource("rdf", "resource");
@@ -435,7 +435,7 @@ FOwlNode FOwlSemanticMapStatics::CreateAngularConstraintProperty(const FString& 
 }
 
 // Create child property
-FOwlNode FOwlSemanticMapStatics::CreateChildProperty(const FString& InDocPrefix, const FString& InId)
+FOwlNode FSLOwlSemanticMapStatics::CreateChildProperty(const FString& InDocPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbChild("knowrob", "child");
 	const FOwlPrefixName RdfResource("rdf", "resource");
@@ -444,7 +444,7 @@ FOwlNode FOwlSemanticMapStatics::CreateChildProperty(const FString& InDocPrefix,
 }
 
 // Create parent property
-FOwlNode FOwlSemanticMapStatics::CreateParentProperty(const FString& InDocPrefix, const FString& InId)
+FOwlNode FSLOwlSemanticMapStatics::CreateParentProperty(const FString& InDocPrefix, const FString& InId)
 {
 	const FOwlPrefixName KbParent("knowrob", "parent");
 	const FOwlPrefixName RdfResource("rdf", "resource");
@@ -453,7 +453,7 @@ FOwlNode FOwlSemanticMapStatics::CreateParentProperty(const FString& InDocPrefix
 }
 
 // Create a location node
-FOwlNode FOwlSemanticMapStatics::CreateLocationProperty(const FVector& InLoc)
+FOwlNode FSLOwlSemanticMapStatics::CreateLocationProperty(const FVector& InLoc)
 {
 	const FOwlPrefixName KbTransl("knowrob", "translation");
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
@@ -465,7 +465,7 @@ FOwlNode FOwlSemanticMapStatics::CreateLocationProperty(const FVector& InLoc)
 }
 
 // Create a quaternion node
-FOwlNode FOwlSemanticMapStatics::CreateQuaternionProperty(const FQuat& InQuat)
+FOwlNode FSLOwlSemanticMapStatics::CreateQuaternionProperty(const FQuat& InQuat)
 {
 	const FOwlPrefixName RdfDatatype("rdf", "datatype");
 	const FOwlPrefixName KbQuat("knowrob", "quaternion");

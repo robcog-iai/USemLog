@@ -7,7 +7,7 @@
 /**
 * Helper functions for generating semantic maps
 */
-struct UOWL_API FOwlSemanticMapStatics
+struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 {
 	/* Semantic map template creation */
 	// Create Default semantic map

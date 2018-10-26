@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "EventData/SLContactEvent.h"
-#include "OwlExperimentStatics.h"
+#include "SLOwlExperimentStatics.h"
 
 // Default constructor
 FSLContactEvent::FSLContactEvent() 
@@ -34,12 +34,12 @@ FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const
 FOwlNode FSLContactEvent::ToOwlNode() const
 {
 	// Create the contact event node
-	FOwlNode EventIndividual = FOwlExperimentStatics::CreateEventIndividual(
+	FOwlNode EventIndividual = FSLOwlExperimentStatics::CreateEventIndividual(
 		"log", Id, "TouchingSituation");
-	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateStartTimeProperty("log", Start));
-	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateEndTimeProperty("log", End));
-	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateInContactProperty("log", Obj1SemId));
-	EventIndividual.AddChildNode(FOwlExperimentStatics::CreateInContactProperty("log", Obj2SemId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInContactProperty("log", Obj1SemId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInContactProperty("log", Obj2SemId));
 	return EventIndividual;
 }
 
@@ -52,13 +52,13 @@ void FSLContactEvent::AddToOwlDoc(FOwlDoc* OutDoc)
 	// if (FOwlEvents* EventsDoc = dynamic_cast<FOwlEvents*>(OutDoc))
 	FOwlExperiment* EventsDoc = static_cast<FOwlExperiment*>(OutDoc);
 	EventsDoc->AddTimepointIndividual(
-		Start, FOwlExperimentStatics::CreateTimepointIndividual("log", Start));
+		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
-		End, FOwlExperimentStatics::CreateTimepointIndividual("log", End));
+		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
 	EventsDoc->AddObjectIndividual(Obj1Id,
-		FOwlExperimentStatics::CreateObjectIndividual("log", Obj1SemId, Obj1Class));
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Obj1SemId, Obj1Class));
 	EventsDoc->AddObjectIndividual(Obj2Id,
-		FOwlExperimentStatics::CreateObjectIndividual("log", Obj2SemId, Obj2Class));
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Obj2SemId, Obj2Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 

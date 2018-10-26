@@ -1,19 +1,19 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "UOwl.h"
+#include "USemLogOwl.h"
 
 // Define logging types
 DEFINE_LOG_CATEGORY(LogOwl);
 
-#define LOCTEXT_NAMESPACE "FUOwl"
+#define LOCTEXT_NAMESPACE "FUSemLogOwl"
 
-void FUOwl::StartupModule()
+void FUSemLogOwl::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 }
 
-void FUOwl::ShutdownModule()
+void FUSemLogOwl::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
@@ -21,4 +21,4 @@ void FUOwl::ShutdownModule()
 
 #undef LOCTEXT_NAMESPACE
 	
-IMPLEMENT_MODULE(FUOwl, UOwl)
+IMPLEMENT_MODULE(FUSemLogOwl, USemLogOwl)

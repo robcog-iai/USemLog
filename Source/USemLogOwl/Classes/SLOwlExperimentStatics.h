@@ -9,7 +9,7 @@
 /**
 * Helper functions for generating owl experiment documents
 */
-struct UOWL_API FOwlExperimentStatics
+struct USEMLOGOWL_API FSLOwlExperimentStatics
 {
 	/* Events doc (experiment) template creation */
 	// Create Default experiment

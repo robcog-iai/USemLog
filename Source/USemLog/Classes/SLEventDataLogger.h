@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "OwlExperiment.h"
-#include "EventData/Events.h"
+#include "EventData/SLEvents.h"
 #include "SLEventDataLogger.generated.h"
 
 // Forward declaration
