@@ -43,22 +43,26 @@ public class USemLog : ModuleRules
 				"Slate",
 				"SlateCore",
 				"Json",
-				"JsonUtilities",
-				"USemLogVision",	// WITH_SL_VIS
-				"UMCGrasp",			// WITH_MC_GRASP
+				"JsonUtilities",				
 				"UTags",
 				"UIds",
 				"UConversions",
+				"UMCGrasp",			// WITH_MC_GRASP
 				//"libmongo"		// WITH_LIBMONGO , TODO 4.20 has issues with libmongo
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
 
+		// SL Vision currently works in developer mode (https://docs.unrealengine.com/en-us/Programming/UnrealBuildSystem/TargetFiles)
+		if(Target.Type == TargetRules.TargetType.Editor)
+		//if(Target.Type == TargetRules.TargetType.Program)
+		{
+			PrivateDependencyModuleNames.Add("USemLogVision");			
+			PublicDefinitions.Add("WITH_SL_VIS=1");
+		}
+
 		// 4.20 has issues with libmongo, this flag will ignore the mongo code
 		PublicDefinitions.Add("WITH_LIBMONGO=0");
-		
-		// Include semantic vision logging
-		PublicDefinitions.Add("WITH_SL_VIS=1");
 
 		// Include listening for physics based movement events
 		PublicDefinitions.Add("WITH_MC_GRASP=1");

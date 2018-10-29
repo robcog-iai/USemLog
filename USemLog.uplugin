@@ -21,13 +21,12 @@
 			"LoadingPhase": "Default"
 		},
 		{
-			"Name": "USemLogMap",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},		
+			"Name": "USemLogEd",
+			"Type": "Editor"
+		},
 		{
 			"Name": "USemLogVision",
-			"Type": "Runtime",
+			"Type": "Developer",
 			"LoadingPhase": "Default"
 		},
 		{
@@ -39,6 +38,11 @@
 	"Plugins": [
 		{
 			"Name": "UUtils",
+			"Enabled": true,
+			"MarketplaceURL": "http://robcog.org/"
+		},
+		{
+			"Name": "UPhysicsBasedMC",
 			"Enabled": true,
 			"MarketplaceURL": "http://robcog.org/"
 		}

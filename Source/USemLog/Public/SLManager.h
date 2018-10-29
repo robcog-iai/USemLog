@@ -93,31 +93,31 @@ private:
 	bool bLogWorldState;
 
 	// Update rate of world state logging (0.f means logging on every tick)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
 	float UpdateRate;
 
 	// Distance (cm) threshold difference for logging a given item
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
 	float DistanceThreshold;
 
 	// Log data to json file
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
 	bool bLogToJson;
 
 	// Log data to bson file
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
 	bool bLogToBson;
 
 	// Log data to mongodb
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
 	bool bLogToMongo;
 
 	// Mongodb server IP
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogToMongo"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogToMongo"))
 	FString MongoIP;
 
 	// Mongodb server PORT
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogToMongo"), meta = (ClampMin = 0, ClampMax = 65535))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogToMongo"), meta = (ClampMin = 0, ClampMax = 65535))
 	uint16 MongoPort;
 
 	// world state logger, use UPROPERTY to avoid GC
@@ -149,13 +149,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogVisionData;
 
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	USLOwlDocDataAsset* OwlDataAsset;
-
 #if WITH_SL_VIS
 	// Vision data loggers
-	TArray<class USLVisManager*> VisionDataLoggerManagers;
+	TArray<class USLVisManager*> VisionDataLoggers;
 	/* End vision data logger properties */
 #endif //WITH_SL_VIS
 };
