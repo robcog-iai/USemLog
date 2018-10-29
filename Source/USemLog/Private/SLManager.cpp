@@ -28,8 +28,8 @@ ASLManager::ASLManager()
 	bStartWithDelay = false;
 	StartDelay = 0.5f;
 
-	// Raw data logger default values
-	bLogRawData = true;
+	// World state logger default values
+	bLogWorldState = true;
 	UpdateRate = 0.0f;
 	DistanceThreshold = 0.5f;
 	bLogToJson = true;
@@ -136,31 +136,31 @@ void ASLManager::Init()
 			EpisodeId = FIds::NewGuidInBase64Url();
 		}
 				
-		if (bLogRawData)
+		if (bLogWorldState)
 		{
-			// Create and init raw data logger
-			RawDataLogger = NewObject<USLRawDataLogger>(this);
-			RawDataLogger->Init(DistanceThreshold);
+			// Create and init world state logger
+			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
+			WorldStateLogger->Init(DistanceThreshold);
 
 			// Set log type
 			if (bLogToJson)
 			{
-				RawDataLogger->SetLogToJson(LogDirectory, EpisodeId);
+				WorldStateLogger->SetLogToJson(LogDirectory, EpisodeId);
 			}
 			if (bLogToBson)
 			{
-				RawDataLogger->SetLogToBson(LogDirectory, EpisodeId);
+				WorldStateLogger->SetLogToBson(LogDirectory, EpisodeId);
 			}
 			if (bLogToMongo)
 			{
-				RawDataLogger->SetLogToMongo(LogDirectory, EpisodeId, MongoIP, MongoPort);
+				WorldStateLogger->SetLogToMongo(LogDirectory, EpisodeId, MongoIP, MongoPort);
 			}
 		}
 
 		if (bLogEventData)
 		{
 			// Create and init event data logger
-			EventDataLogger = NewObject<USLEventDataLogger>(this);
+			EventDataLogger = NewObject<USLEventLogger>(this);
 			EventDataLogger->Init(LogDirectory, EpisodeId, ExperimentTemplateType, bWriteTimelines);
 			// TODO init all listeners here and not on their own (begin play etc.)
 		}
@@ -200,10 +200,10 @@ void ASLManager::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		// Start raw data logger
-		if (bLogRawData && RawDataLogger)
+		// Start world state logger
+		if (bLogWorldState && WorldStateLogger)
 		{
-			RawDataLogger->Start(UpdateRate);
+			WorldStateLogger->Start(UpdateRate);
 		}
 
 		// Start event data logger
@@ -230,9 +230,9 @@ void ASLManager::Finish()
 {
 	if (bIsInit || bIsStarted)
 	{
-		if (RawDataLogger)
+		if (WorldStateLogger)
 		{
-			RawDataLogger->Finish();
+			WorldStateLogger->Finish();
 		}
 
 		if (EventDataLogger)

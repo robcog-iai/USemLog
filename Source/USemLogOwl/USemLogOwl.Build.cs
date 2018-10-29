@@ -3,14 +3,15 @@
 
 using UnrealBuildTool;
 
-public class USemLogVision : ModuleRules
+public class USemLogOwl : ModuleRules
 {
-	public USemLogVision(ReadOnlyTargetRules Target) : base(Target)
+	public USemLogOwl(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
+				//"USemLogOwl/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -18,6 +19,7 @@ public class USemLogVision : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
+				//"USemLogOwl/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -37,16 +39,11 @@ public class USemLogVision : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
-				"RHI",
-				"RenderCore",
-				"UnrealEd",
-				//"libmongo",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-			
-		PublicDefinitions.Add("WITH_LIBMONGO=0");
-
+		
+		
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
 			{

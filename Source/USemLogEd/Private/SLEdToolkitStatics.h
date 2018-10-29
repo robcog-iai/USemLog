@@ -46,7 +46,7 @@ struct FSLEdToolkitStatics
 
 		FSLSemanticMapWriter SemMapWriter;
 		SemMapWriter.WriteToFile(GEditor->GetEditorWorldContext().World(),
-			EOwlSemanticMapTemplate::IAIKitchen, TEXT("SemLog"), TEXT("SemanticMap"));
+			ESLOwlSemanticMapTemplate::IAIKitchen, TEXT("SemLog"), TEXT("SemanticMap"));
 
 		return FReply::Handled();
 	}

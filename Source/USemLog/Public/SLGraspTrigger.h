@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EventData/SLGraspPublisher.h"
+#include "Publishers/SLGraspPublisher.h"
 #include "Engine/StaticMeshActor.h"
 #include "SLGraspTrigger.generated.h"
 

@@ -29,7 +29,7 @@ public class USemLog : ModuleRules
 			new string[]
 			{
 				"Core",
-				"UOwl",
+				"USemLogOwl",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -44,17 +44,24 @@ public class USemLog : ModuleRules
 				"SlateCore",
 				"Json",
 				"JsonUtilities",
-				"USemLogVision",
+				"USemLogVision",	// WITH_SL_VIS
+				"UMCGrasp",			// WITH_MC_GRASP
 				"UTags",
 				"UIds",
 				"UConversions",
-				//"libmongo" // 4.20 has issues with libmongo
+				//"libmongo"		// WITH_LIBMONGO , TODO 4.20 has issues with libmongo
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
 
 		// 4.20 has issues with libmongo, this flag will ignore the mongo code
 		PublicDefinitions.Add("WITH_LIBMONGO=0");
+		
+		// Include semantic vision logging
+		PublicDefinitions.Add("WITH_SL_VIS=1");
+
+		// Include listening for physics based movement events
+		PublicDefinitions.Add("WITH_MC_GRASP=1");
 
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]

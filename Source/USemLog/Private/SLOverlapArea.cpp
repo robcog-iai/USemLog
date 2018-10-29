@@ -3,6 +3,7 @@
 
 #include "SLOverlapArea.h"
 #include "SLMappings.h"
+#include "Animation/SkeletalMeshActor.h"
 //#include "DrawDebugHelpers.h"
 
 // UUTils

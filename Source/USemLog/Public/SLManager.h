@@ -4,9 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "SLRawDataLogger.h"
-#include "SLEventDataLogger.h"
-#include "SLOwlDocDataAsset.h"
+#include "SLWorldStateLogger.h"
+#include "SLEventLogger.h"
 #include "SLManager.generated.h"
 
 /**
@@ -88,43 +87,43 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartWithDelay"))
 	float StartDelay;
 
-	/* Begin raw data logger properties */
-	// Log raw data
+	/* Begin world state logger properties */
+	// Log world state
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bLogRawData;
+	bool bLogWorldState;
 
-	// Update rate of raw data logging (0.f means logging on every tick)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Raw Data Logger", meta = (editcondition = "bLogRawData"), meta = (ClampMin = 0))
+	// Update rate of world state logging (0.f means logging on every tick)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
 	float UpdateRate;
 
 	// Distance (cm) threshold difference for logging a given item
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Raw Data Logger", meta = (editcondition = "bLogRawData"), meta = (ClampMin = 0))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
 	float DistanceThreshold;
 
 	// Log data to json file
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Raw Data Logger", meta = (editcondition = "bLogRawData"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"))
 	bool bLogToJson;
 
 	// Log data to bson file
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Raw Data Logger", meta = (editcondition = "bLogRawData"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"))
 	bool bLogToBson;
 
 	// Log data to mongodb
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Raw Data Logger", meta = (editcondition = "bLogRawData"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogWorldState"))
 	bool bLogToMongo;
 
 	// Mongodb server IP
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Raw Data Logger", meta = (editcondition = "bLogToMongo"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogToMongo"))
 	FString MongoIP;
 
 	// Mongodb server PORT
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Raw Data Logger", meta = (editcondition = "bLogToMongo"), meta = (ClampMin = 0, ClampMax = 65535))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|world state Logger", meta = (editcondition = "bLogToMongo"), meta = (ClampMin = 0, ClampMax = 65535))
 	uint16 MongoPort;
 
-	// Raw data logger, use UPROPERTY to avoid GC
+	// world state logger, use UPROPERTY to avoid GC
 	UPROPERTY()
-	USLRawDataLogger* RawDataLogger;
-	/* End raw data logger properties */
+	USLWorldStateLogger* WorldStateLogger;
+	/* End world state logger properties */
 
 
 	/* Begin event data logger properties */
@@ -142,7 +141,7 @@ private:
 
 	// Event data logger, use UPROPERTY to avoid GC
 	UPROPERTY()
-	USLEventDataLogger* EventDataLogger;
+	USLEventLogger* EventDataLogger;
 	/* End event data logger properties */
 
 	/* Begin vision data logger properties */
