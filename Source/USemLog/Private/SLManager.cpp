@@ -183,7 +183,7 @@ void ASLManager::Init()
 					if (USLVisManager* VisMan = Cast<USLVisManager>(CompItr))
 					{
 						VisMan->Init(LogDirectory, EpisodeId);
-						VisionDataLoggerManagers.Add(VisMan);
+						VisionDataLoggers.Add(VisMan);
 					}
 				}
 			}
@@ -214,7 +214,7 @@ void ASLManager::Start()
 
 #if WITH_SL_VIS
 		// Start vision loggers
-		for (auto& VisMan : VisionDataLoggerManagers)
+		for (auto& VisMan : VisionDataLoggers)
 		{
 			VisMan->Start();
 		}
@@ -241,7 +241,7 @@ void ASLManager::Finish()
 		}
 
 #if WITH_SL_VIS
-		for (auto& VisMan : VisionDataLoggerManagers)
+		for (auto& VisMan : VisionDataLoggers)
 		{
 			VisMan->Finish();
 		}
