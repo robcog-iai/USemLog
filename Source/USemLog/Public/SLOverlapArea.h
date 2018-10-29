@@ -6,8 +6,8 @@
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
-#include "EventData/SLContactPublisher.h"
-#include "EventData/SLSupportedByPublisher.h"
+#include "Publishers/SLContactPublisher.h"
+#include "Publishers/SLSupportedByPublisher.h"
 #include "SLOverlapArea.generated.h"
 
 /**
@@ -33,7 +33,7 @@ struct FSLOverlapResult
 	// Flag showing if Other is also of type Semantic Overlap Area
 	bool bIsSemanticOverlapArea;
 
-	// The mesh of the other overlapping component
+	// The mesh (static or skeletal) of the other overlapping component
 	TWeakObjectPtr<UMeshComponent> MeshComponent;
 
 	// Default ctor

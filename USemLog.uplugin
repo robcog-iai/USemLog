@@ -36,14 +36,9 @@
 			"LoadingPhase": "Default"
 		}
 	],
-  "Plugins": [
+	"Plugins": [
 		{
 			"Name": "UUtils",
-			"Enabled": true,
-			"MarketplaceURL": "http://robcog.org/"
-		},
-		{
-			"Name": "libmongo",
 			"Enabled": true,
 			"MarketplaceURL": "http://robcog.org/"
 		}

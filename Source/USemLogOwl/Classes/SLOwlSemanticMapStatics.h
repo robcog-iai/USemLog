@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "EngineMinimal.h"
-#include "OwlSemanticMap.h"
+#include "SLOwlSemanticMap.h"
 
 /**
 * Helper functions for generating semantic maps
@@ -11,19 +11,19 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 {
 	/* Semantic map template creation */
 	// Create Default semantic map
-	static TSharedPtr<FOwlSemanticMap> CreateDefaultSemanticMap(
+	static TSharedPtr<FSLOwlSemanticMap> CreateDefaultSemanticMap(
 		const FString& InDocId,
 		const FString& InDocPrefix = "ue-def",
 		const FString& InDocOntologyName = "UE-DefaultMap");
 
 	// Create IAI Kitchen semantic map
-	static TSharedPtr<FOwlSemanticMap> CreateIAIKitchenSemanticMap(
+	static TSharedPtr<FSLOwlSemanticMap> CreateIAIKitchenSemanticMap(
 		const FString& InDocId,
 		const FString& InDocPrefix = "ue-iai-kitchen",
 		const FString& InDocOntologyName = "UE-IAI-Kitchen");
 
 	// Create IAI Supermarket semantic map
-	static TSharedPtr<FOwlSemanticMap> CreateIAISupermarketSemanticMap(
+	static TSharedPtr<FSLOwlSemanticMap> CreateIAISupermarketSemanticMap(
 		const FString& InDocId,
 		const FString& InDocPrefix = "ue-iai-supermarket",
 		const FString& InDocOntologyName = "UE-IAI-Supermarket");
@@ -31,27 +31,27 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 		
 	/* Owl individuals / definitions creation */
 	// Create an object individual
-	static FOwlNode CreateObjectIndividual(
+	static FSLOwlNode CreateObjectIndividual(
 		const FString& InDocPrefix, 
 		const FString& Id, 
 		const FString& Class);
 
 	// Create a pose individual
-	static FOwlNode CreatePoseIndividual(
+	static FSLOwlNode CreatePoseIndividual(
 		const FString& InDocPrefix, 
 		const FString& InId,
 		const FVector& InLoc,
 		const FQuat& InQuat);
 
 	// Create a constraint individual
-	static FOwlNode CreateConstraintIndividual(
+	static FSLOwlNode CreateConstraintIndividual(
 		const FString& InDocPrefix, 
 		const FString& InId,
 		const FString& ParentId,
 		const FString& ChildId);
 
 	// Create linear constraint properties individual
-	static FOwlNode CreateLinearConstraintProperties(
+	static FSLOwlNode CreateLinearConstraintProperties(
 		const FString& InDocPrefix, 
 		const FString& InId,
 		uint8 XMotion,
@@ -63,7 +63,7 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 		float Damping);
 
 	// Create angular constraint properties individual
-	static FOwlNode CreateAngularConstraintProperties(
+	static FSLOwlNode CreateAngularConstraintProperties(
 		const FString& InDocPrefix,
 		const FString& InId,
 		uint8 Swing1Motion,
@@ -80,10 +80,10 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 		float TwistDamping);
 
 	// Create a constraint individual
-	static FOwlNode CreateClassDefinition(const FString& Class);
+	static FSLOwlNode CreateClassDefinition(const FString& Class);
 
 	// Create Tags individual
-	static FOwlNode CreateTagsIndividual(
+	static FSLOwlNode CreateTagsIndividual(
 		const FString& InDocPrefix,
 		const FString& Id,
 		const FString& Class);
@@ -91,70 +91,70 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 	
 	/* Owl properties creation */
 	// Create generic property
-	static FOwlNode CreateGenericProperty(const FOwlPrefixName& InPrefixName,
-		const FOwlAttributeValue& InAttributeValue);
+	static FSLOwlNode CreateGenericProperty(const FSLOwlPrefixName& InPrefixName,
+		const FSLOwlAttributeValue& InAttributeValue);
 	
 	// Create class property
-	static FOwlNode CreateClassProperty(const FString& InClass);
+	static FSLOwlNode CreateClassProperty(const FString& InClass);
 
 	// Create describedInMap property
-	static FOwlNode CreateDescribedInMapProperty(
+	static FSLOwlNode CreateDescribedInMapProperty(
 		const FString& InDocPrefix, const FString& InDocId);
 
 	// Create pathToCadModel property
-	static FOwlNode CreatePathToCadModelProperty(const FString& InClass);
+	static FSLOwlNode CreatePathToCadModelProperty(const FString& InClass);
 
 	// Create tagsData property
-	static FOwlNode CreateTagsDataProperty(const TArray<FName>& InTags);
+	static FSLOwlNode CreateTagsDataProperty(const TArray<FName>& InTags);
 
 	// Create subClassOf property
-	static FOwlNode CreateSubClassOfProperty(const FString& InSubClassOf);
+	static FSLOwlNode CreateSubClassOfProperty(const FString& InSubClassOf);
 
 	// Create skeletal bone property
-	static FOwlNode CreateSkeletalBoneProperty(const FString& InBone);
+	static FSLOwlNode CreateSkeletalBoneProperty(const FString& InBone);
 
 	// Create subclass - depth property
-	static FOwlNode CreateDepthProperty(float Value);
+	static FSLOwlNode CreateDepthProperty(float Value);
 
 	// Create subclass - height property
-	static FOwlNode CreateHeightProperty(float Value);
+	static FSLOwlNode CreateHeightProperty(float Value);
 
 	// Create subclass - width property
-	static FOwlNode CreateWidthProperty(float Value);
+	static FSLOwlNode CreateWidthProperty(float Value);
 
 	// Create owl:onProperty meta property
-	static FOwlNode CreateOnProperty(const FString& InProperty);
+	static FSLOwlNode CreateOnProperty(const FString& InProperty);
 
 	// Create a property with a bool value
-	static FOwlNode CreateBoolValueProperty(const FOwlPrefixName& InPrefixName, bool bValue);
+	static FSLOwlNode CreateBoolValueProperty(const FSLOwlPrefixName& InPrefixName, bool bValue);
 
 	// Create a property with a int value
-	static FOwlNode CreateIntValueProperty(const FOwlPrefixName& InPrefixName, int32 Value);
+	static FSLOwlNode CreateIntValueProperty(const FSLOwlPrefixName& InPrefixName, int32 Value);
 
 	// Create a property with a float value
-	static FOwlNode CreateFloatValueProperty(const FOwlPrefixName& InPrefixName, float Value);
+	static FSLOwlNode CreateFloatValueProperty(const FSLOwlPrefixName& InPrefixName, float Value);
 
 	// Create a property with a string value
-	static FOwlNode CreateStringValueProperty(const FOwlPrefixName& InPrefixName, const FString& InValue);
+	static FSLOwlNode CreateStringValueProperty(const FSLOwlPrefixName& InPrefixName, const FString& InValue);
 
 	// Create pose property
-	static FOwlNode CreatePoseProperty(const FString& InDocPrefix, const FString& InId);
+	static FSLOwlNode CreatePoseProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create linear constraint property
-	static FOwlNode CreateLinearConstraintProperty(const FString& InDocPrefix, const FString& InId);
+	static FSLOwlNode CreateLinearConstraintProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create angular constraint property
-	static FOwlNode CreateAngularConstraintProperty(const FString& InDocPrefix, const FString& InId);
+	static FSLOwlNode CreateAngularConstraintProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create child property
-	static FOwlNode CreateChildProperty(const FString& InDocPrefix, const FString& InId);
+	static FSLOwlNode CreateChildProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create parent property
-	static FOwlNode CreateParentProperty(const FString& InDocPrefix, const FString& InId);
+	static FSLOwlNode CreateParentProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create a location property
-	static FOwlNode CreateLocationProperty(const FVector& InLoc);
+	static FSLOwlNode CreateLocationProperty(const FVector& InLoc);
 
 	// Create a quaternion property
-	static FOwlNode CreateQuaternionProperty(const FQuat& InQuat);
+	static FSLOwlNode CreateQuaternionProperty(const FQuat& InQuat);
 };

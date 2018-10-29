@@ -46,7 +46,6 @@ public class USemLogVision : ModuleRules
 			);
 			
 		PublicDefinitions.Add("WITH_LIBMONGO=0");
-		PublicDefinitions.Add("WITH_SL_VIS=1");
 
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]

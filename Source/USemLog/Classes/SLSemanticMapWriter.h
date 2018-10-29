@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
-#include "OwlSemanticMap.h"
+#include "SLOwlSemanticMap.h"
 
 /**
  * Class for exporting the semantic map in an OWL format
@@ -18,33 +18,33 @@ public:
 
 	// Write semantic map to file
 	bool WriteToFile(UWorld* World,
-		EOwlSemanticMapTemplate TemplateType = EOwlSemanticMapTemplate::NONE,
+		ESLOwlSemanticMapTemplate TemplateType = ESLOwlSemanticMapTemplate::NONE,
 		const FString& InDirectory = TEXT("SemLog"),
 		const FString& InFilename = TEXT("SemanticMap"));
 
 private:
 	// Create semantic map template
-	TSharedPtr<FOwlSemanticMap> CreateSemanticMapDocTemplate(
-		EOwlSemanticMapTemplate TemplateType,
+	TSharedPtr<FSLOwlSemanticMap> CreateSemanticMapDocTemplate(
+		ESLOwlSemanticMapTemplate TemplateType,
 		const FString& DocId = "");
 
 	// Add individuals to the semantic map
-	void AddAllIndividuals(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World);
+	void AddAllIndividuals(TSharedPtr<FSLOwlSemanticMap> InSemMap, UWorld* World);
 
 	// Add object individual to the semantic map
-	void AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
+	void AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InSemMap,
 		UObject* Object,
 		const FString& InId,
 		const FString& InClass);
 
 	// Add class definition individual
-	void AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
+	void AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSemMap,
 		UObject* Object,
 		const FString& InClass,
 		const FString& InSubClassOf = TEXT(""));
 
 	// Add constraint individual
-	void AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
+	void AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap> InSemMap,
 		UPhysicsConstraintComponent* ConstraintComp,
 		const FString& InId,
 		const TArray<FName>& InTags);

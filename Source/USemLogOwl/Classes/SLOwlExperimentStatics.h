@@ -4,7 +4,7 @@
 #pragma once
 
 #include "EngineMinimal.h"
-#include "OwlExperiment.h"
+#include "SLOwlExperiment.h"
 
 /**
 * Helper functions for generating owl experiment documents
@@ -13,13 +13,13 @@ struct USEMLOGOWL_API FSLOwlExperimentStatics
 {
 	/* Events doc (experiment) template creation */
 	// Create Default experiment
-	static TSharedPtr<FOwlExperiment> CreateDefaultExperiment(
+	static TSharedPtr<FSLOwlExperiment> CreateDefaultExperiment(
 		const FString& InDocId,
 		const FString& InDocPrefix = "log",
 		const FString& InDocOntologyName = "Experiment");
 
 	// Create UE experiment
-	static TSharedPtr<FOwlExperiment> CreateUEExperiment(
+	static TSharedPtr<FSLOwlExperiment> CreateUEExperiment(
 		const FString& InDocId,
 		const FString& InDocPrefix = "log",
 		const FString& InDocOntologyName = "UE-Experiment");
@@ -27,18 +27,18 @@ struct USEMLOGOWL_API FSLOwlExperimentStatics
 		
 	/* Owl individuals / definitions creation */
 	// Create an event individual
-	static FOwlNode CreateEventIndividual(
+	static FSLOwlNode CreateEventIndividual(
 		const FString& InDocPrefix, 
 		const FString& InId,
 		const FString& InClass);
 
 	// Create a timepoint individual
-	static FOwlNode CreateTimepointIndividual(
+	static FSLOwlNode CreateTimepointIndividual(
 		const FString& InDocPrefix,
 		const float Timepoint);
 
 	// Create an object individual
-	static FOwlNode CreateObjectIndividual(
+	static FSLOwlNode CreateObjectIndividual(
 		const FString& InDocPrefix,
 		const FString& InId,
 		const FString& InClass);
@@ -46,32 +46,32 @@ struct USEMLOGOWL_API FSLOwlExperimentStatics
 
 	/* Owl properties creation */
 	// Create class property
-	static FOwlNode CreateClassProperty(const FString& InClass);
+	static FSLOwlNode CreateClassProperty(const FString& InClass);
 
 	// Create startTime property
-	static FOwlNode CreateStartTimeProperty(
+	static FSLOwlNode CreateStartTimeProperty(
 		const FString& InDocPrefix, const float Timepoint);
 
 	// Create endTime property
-	static FOwlNode CreateEndTimeProperty(
+	static FSLOwlNode CreateEndTimeProperty(
 		const FString& InDocPrefix, const float Timepoint);
 
 	// Create inContact property
-	static FOwlNode CreateInContactProperty(
+	static FSLOwlNode CreateInContactProperty(
 		const FString& InDocPrefix, const FString& InObjId);
 
 	// Create isSupported property
-	static FOwlNode CreateIsSupportedProperty(
+	static FSLOwlNode CreateIsSupportedProperty(
 		const FString& InDocPrefix, const FString& InObjId);
 
 	// Create supports property
-	static FOwlNode CreateIsSupportingProperty(
+	static FSLOwlNode CreateIsSupportingProperty(
 		const FString& InDocPrefix, const FString& InObjId);
 	
 	// Create performedBy property
-	static FOwlNode CreatePerformedByProperty(
+	static FSLOwlNode CreatePerformedByProperty(
 		const FString& InDocPrefix, const FString& InObjId);
 
 	// Create objectActedOn property
-	static FOwlNode CreateObjectActedOnProperty(const FString& InDocPrefix, const FString& InObjId);
+	static FSLOwlNode CreateObjectActedOnProperty(const FString& InDocPrefix, const FString& InObjId);
 };

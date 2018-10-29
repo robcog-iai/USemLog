@@ -24,12 +24,12 @@ FSLSemanticMapWriter::FSLSemanticMapWriter()
 
 // Write semantic map to file
 bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
-	EOwlSemanticMapTemplate TemplateType,
+	ESLOwlSemanticMapTemplate TemplateType,
 	const FString& InDirectory,
 	const FString& InFilename)
 {
 	// Create the semantic map template
-	TSharedPtr<FOwlSemanticMap> SemMap = CreateSemanticMapDocTemplate(TemplateType);
+	TSharedPtr<FSLOwlSemanticMap> SemMap = CreateSemanticMapDocTemplate(TemplateType);
 
 	// Add individuals to map
 	AddAllIndividuals(SemMap, World);
@@ -42,27 +42,27 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 }
 
 // Create semantic map template
-TSharedPtr<FOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate(EOwlSemanticMapTemplate TemplateType, const FString& InDocId)
+TSharedPtr<FSLOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate(ESLOwlSemanticMapTemplate TemplateType, const FString& InDocId)
 {
 	const FString DocId = InDocId.IsEmpty() ? FIds::NewGuidInBase64Url() : InDocId;
 
-	if (TemplateType == EOwlSemanticMapTemplate::Default)
+	if (TemplateType == ESLOwlSemanticMapTemplate::Default)
 	{
 		return FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(DocId);
 	}
-	else if (TemplateType == EOwlSemanticMapTemplate::IAIKitchen)
+	else if (TemplateType == ESLOwlSemanticMapTemplate::IAIKitchen)
 	{
 		return FSLOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(DocId);
 	}
-	else if (TemplateType == EOwlSemanticMapTemplate::IAISupermarket)
+	else if (TemplateType == ESLOwlSemanticMapTemplate::IAISupermarket)
 	{
 		return FSLOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(DocId);
 	}
-	return MakeShareable(new FOwlSemanticMap());
+	return MakeShareable(new FSLOwlSemanticMap());
 }
 
 // Add individuals to the semantic map
-void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FOwlSemanticMap> InSemMap, UWorld* World)
+void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FSLOwlSemanticMap> InSemMap, UWorld* World)
 {
 	// Iterate objects with SemLog tag key
 	for (const auto& ObjToTagsItr : FTags::GetObjectKeyValuePairsMap(World, "SemLog"))
@@ -100,7 +100,7 @@ void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FOwlSemanticMap> InSemMa
 }
 
 // Add object individual to the semantic map
-void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
+void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InSemMap,
 	UObject* Object, const FString& InId, const FString& InClass)
 {
 	// Get map data
@@ -108,7 +108,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSem
 	const FString DocId = InSemMap->Id;
 
 	// Create the object individual
-	FOwlNode ObjIndividual = FSLOwlSemanticMapStatics::CreateObjectIndividual(
+	FSLOwlNode ObjIndividual = FSLOwlSemanticMapStatics::CreateObjectIndividual(
 		MapPrefix, InId, InClass);
 
 	// Add describedInMap property
@@ -199,7 +199,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FOwlSemanticMap> InSem
 }
 
 // Add class individual
-void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemMap,
+void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSemMap,
 	UObject* Object,
 	const FString& InClass,
 	const FString& InSubClassOf)
@@ -219,7 +219,7 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 	}
 
 	// Create class definition individual
-	FOwlNode ClassDefinition = FSLOwlSemanticMapStatics::CreateClassDefinition(InClass);
+	FSLOwlNode ClassDefinition = FSLOwlSemanticMapStatics::CreateClassDefinition(InClass);
 	ClassDefinition.Comment = TEXT("Class ") + InClass;
 
 	// Check if subclass is known
@@ -299,7 +299,7 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FOwlSemanticMap> InSemM
 }
 
 // Add constraint individual
-void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> InSemMap,
+void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap> InSemMap,
 	UPhysicsConstraintComponent* ConstraintComp,
 	const FString& InId,
 	const TArray<FName>& InTags)
@@ -317,7 +317,7 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FOwlSemanticMap> I
 		if (!ParentId.IsEmpty() && !ChildId.IsEmpty())
 		{
 			// Create the object individual
-			FOwlNode ConstrIndividual = FSLOwlSemanticMapStatics::CreateConstraintIndividual(
+			FSLOwlNode ConstrIndividual = FSLOwlSemanticMapStatics::CreateConstraintIndividual(
 				MapPrefix, InId, ParentId, ChildId);
 
 			// Add describedInMap property

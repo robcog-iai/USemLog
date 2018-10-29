@@ -7,14 +7,14 @@
 
 /* Semantic map template creation */
 // Create default experiment document
-TSharedPtr<FOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
+TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	const FString& InDocId,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
 {
 	// Create map document
-	TSharedPtr<FOwlExperiment> Experiment = MakeShareable(
-		new FOwlExperiment(InDocPrefix, InDocOntologyName, InDocId));
+	TSharedPtr<FSLOwlExperiment> Experiment = MakeShareable(
+		new FSLOwlExperiment(InDocPrefix, InDocOntologyName, InDocId));
 
 	// Add definitions
 	Experiment->AddEntityDefintion("owl", "http://www.w3.org/2002/07/owl#");
@@ -68,12 +68,12 @@ TSharedPtr<FOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 }
 
 // Create UE experiment document
-TSharedPtr<FOwlExperiment> FSLOwlExperimentStatics::CreateUEExperiment(
+TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateUEExperiment(
 	const FString& InDocId,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
 {
-	TSharedPtr<FOwlExperiment> Experiment = FSLOwlExperimentStatics::CreateDefaultExperiment(
+	TSharedPtr<FSLOwlExperiment> Experiment = FSLOwlExperimentStatics::CreateDefaultExperiment(
 		InDocId, InDocPrefix, InDocOntologyName);
 
 	Experiment->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_kitchen_ue.owl");
@@ -84,48 +84,48 @@ TSharedPtr<FOwlExperiment> FSLOwlExperimentStatics::CreateUEExperiment(
 
 /* Owl individuals creation */
 // Create an object individual
-FOwlNode FSLOwlExperimentStatics::CreateEventIndividual(
+FSLOwlNode FSLOwlExperimentStatics::CreateEventIndividual(
 	const FString& InDocPrefix,
 	const FString& InId,
 	const FString& InClass)
 {
 	// Prefix name constants
-	const FOwlPrefixName RdfAbout("rdf", "about");
-	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
+	const FSLOwlPrefixName RdfAbout("rdf", "about");
+	const FSLOwlPrefixName OwlNI("owl", "NamedIndividual");
 
-	FOwlNode Individual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(
+	FSLOwlNode Individual(OwlNI, FSLOwlAttribute(RdfAbout, FSLOwlAttributeValue(
 		InDocPrefix, InId)));
 	Individual.AddChildNode(FSLOwlExperimentStatics::CreateClassProperty(InClass));
 	return Individual;
 }
 
 // Create a timepoint individual
-FOwlNode FSLOwlExperimentStatics::CreateTimepointIndividual(
+FSLOwlNode FSLOwlExperimentStatics::CreateTimepointIndividual(
 	const FString& InDocPrefix,
 	const float Timepoint)
 {
 	// Prefix name constants
-	const FOwlPrefixName RdfAbout("rdf", "about");
-	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
+	const FSLOwlPrefixName RdfAbout("rdf", "about");
+	const FSLOwlPrefixName OwlNI("owl", "NamedIndividual");
 
 	const FString Id = "timepoint_" + FString::SanitizeFloat(Timepoint);
-	FOwlNode Individual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(
+	FSLOwlNode Individual(OwlNI, FSLOwlAttribute(RdfAbout, FSLOwlAttributeValue(
 		InDocPrefix, Id)));
 	Individual.AddChildNode(FSLOwlExperimentStatics::CreateClassProperty("Timepoint"));
 	return Individual;
 }
 
 // Create an object individual
-FOwlNode FSLOwlExperimentStatics::CreateObjectIndividual(
+FSLOwlNode FSLOwlExperimentStatics::CreateObjectIndividual(
 	const FString& InDocPrefix,
 	const FString& InId,
 	const FString& InClass)
 {
 	// Prefix name constants
-	const FOwlPrefixName RdfAbout("rdf", "about");
-	const FOwlPrefixName OwlNI("owl", "NamedIndividual");
+	const FSLOwlPrefixName RdfAbout("rdf", "about");
+	const FSLOwlPrefixName OwlNI("owl", "NamedIndividual");
 
-	FOwlNode Individual(OwlNI, FOwlAttribute(RdfAbout, FOwlAttributeValue(
+	FSLOwlNode Individual(OwlNI, FSLOwlAttribute(RdfAbout, FSLOwlAttributeValue(
 		InDocPrefix, InId)));
 	Individual.AddChildNode(FSLOwlExperimentStatics::CreateClassProperty(InClass));
 	return Individual;
@@ -134,83 +134,83 @@ FOwlNode FSLOwlExperimentStatics::CreateObjectIndividual(
 
 /* Owl properties creation */
 // Create class property
-FOwlNode FSLOwlExperimentStatics::CreateClassProperty(const FString& InClass)
+FSLOwlNode FSLOwlExperimentStatics::CreateClassProperty(const FString& InClass)
 {
-	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName RdfType("rdf", "type");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName RdfType("rdf", "type");
 
-	return FOwlNode(RdfType, FOwlAttribute(
-		RdfResource, FOwlAttributeValue("knowrob", InClass)));
+	return FSLOwlNode(RdfType, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue("knowrob", InClass)));
 }
 
 // Create startTime property
-FOwlNode FSLOwlExperimentStatics::CreateStartTimeProperty(const FString& InDocPrefix, const float Timepoint)
+FSLOwlNode FSLOwlExperimentStatics::CreateStartTimeProperty(const FString& InDocPrefix, const float Timepoint)
 {
-	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName KbPrefix("knowrob", "startTime");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "startTime");
 
 	const FString Id = "timepoint_" + FString::SanitizeFloat(Timepoint);
-	return FOwlNode(KbPrefix, FOwlAttribute(
-		RdfResource, FOwlAttributeValue(InDocPrefix, Id)));
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, Id)));
 }
 
 // Create endTime property
-FOwlNode FSLOwlExperimentStatics::CreateEndTimeProperty(const FString& InDocPrefix, const float Timepoint)
+FSLOwlNode FSLOwlExperimentStatics::CreateEndTimeProperty(const FString& InDocPrefix, const float Timepoint)
 {
-	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName KbPrefix("knowrob", "endTime");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "endTime");
 
 	const FString Id = "timepoint_" + FString::SanitizeFloat(Timepoint);
-	return FOwlNode(KbPrefix, FOwlAttribute(
-		RdfResource, FOwlAttributeValue(InDocPrefix, Id)));
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, Id)));
 }
 
 // Create inContact property
-FOwlNode FSLOwlExperimentStatics::CreateInContactProperty(const FString& InDocPrefix, const FString& InObjId)
+FSLOwlNode FSLOwlExperimentStatics::CreateInContactProperty(const FString& InDocPrefix, const FString& InObjId)
 {
-	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName KbPrefix("knowrob", "inContact");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "inContact");
 
-	return FOwlNode(KbPrefix, FOwlAttribute(
-		RdfResource, FOwlAttributeValue(InDocPrefix, InObjId)));
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, InObjId)));
 }
 
 // Create isSupported property
-FOwlNode FSLOwlExperimentStatics::CreateIsSupportedProperty(const FString& InDocPrefix, const FString& InObjId)
+FSLOwlNode FSLOwlExperimentStatics::CreateIsSupportedProperty(const FString& InDocPrefix, const FString& InObjId)
 {
-	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName KbPrefix("knowrob", "isSupported");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "isSupported");
 
-	return FOwlNode(KbPrefix, FOwlAttribute(
-		RdfResource, FOwlAttributeValue(InDocPrefix, InObjId)));
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, InObjId)));
 }
 
 // Create supports property
-FOwlNode FSLOwlExperimentStatics::CreateIsSupportingProperty(const FString& InDocPrefix, const FString& InObjId)
+FSLOwlNode FSLOwlExperimentStatics::CreateIsSupportingProperty(const FString& InDocPrefix, const FString& InObjId)
 {
-	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName KbPrefix("knowrob", "isSupporting");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "isSupporting");
 
-	return FOwlNode(KbPrefix, FOwlAttribute(
-		RdfResource, FOwlAttributeValue(InDocPrefix, InObjId)));
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, InObjId)));
 }
 
 // Create performedBy property
-FOwlNode FSLOwlExperimentStatics::CreatePerformedByProperty(const FString& InDocPrefix, const FString& InObjId)
+FSLOwlNode FSLOwlExperimentStatics::CreatePerformedByProperty(const FString& InDocPrefix, const FString& InObjId)
 {
-	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName KbPrefix("knowrob", "performedBy");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "performedBy");
 
-	return FOwlNode(KbPrefix, FOwlAttribute(
-		RdfResource, FOwlAttributeValue(InDocPrefix, InObjId)));
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, InObjId)));
 }
 
 // Create objectActedOn property
-FOwlNode FSLOwlExperimentStatics::CreateObjectActedOnProperty(const FString& InDocPrefix, const FString& InObjId)
+FSLOwlNode FSLOwlExperimentStatics::CreateObjectActedOnProperty(const FString& InDocPrefix, const FString& InObjId)
 {
-	const FOwlPrefixName RdfResource("rdf", "resource");
-	const FOwlPrefixName KbPrefix("knowrob", "objectActedOn");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "objectActedOn");
 
-	return FOwlNode(KbPrefix, FOwlAttribute(
-		RdfResource, FOwlAttributeValue(InDocPrefix, InObjId)));
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, InObjId)));
 }
