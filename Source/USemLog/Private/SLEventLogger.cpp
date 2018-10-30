@@ -40,6 +40,9 @@ USLEventLogger::~USLEventLogger()
 void USLEventLogger::Init(const FString& InLogDirectory,
 	const FString& InEpisodeId,
 	ESLOwlExperimentTemplate TemplateType,
+	bool bInLogContactEvents,
+	bool bInLogSupportedByEvents,
+	bool bInLogGraspEvents,
 	bool bInWriteTimelines)
 {
 	if (!bIsInit)
@@ -61,27 +64,36 @@ void USLEventLogger::Init(const FString& InLogDirectory,
 			// Store the semantic overlap areas
 			SemanticOverlapAreas.Add(*Itr);
 
-			// Create a contact event handler 
-			TSharedPtr<FSLContactEventHandler> ContactEventHandler = MakeShareable(new FSLContactEventHandler());
-			ContactEventHandler->Init(*Itr);
-			EventHandlers.Add(ContactEventHandler);
+			if (bInLogContactEvents)
+			{
+				// Create a contact event handler 
+				TSharedPtr<FSLContactEventHandler> ContactEventHandler = MakeShareable(new FSLContactEventHandler());
+				ContactEventHandler->Init(*Itr);
+				EventHandlers.Add(ContactEventHandler);
+			}
 
-			// Create a supported-by event handler
-			TSharedPtr<FSLSupportedByEventHandler> SupportedByEventHandler = MakeShareable(new FSLSupportedByEventHandler());
-			SupportedByEventHandler->Init(*Itr);
-			EventHandlers.Add(SupportedByEventHandler);
+			if (bInLogSupportedByEvents)
+			{
+				// Create a supported-by event handler
+				TSharedPtr<FSLSupportedByEventHandler> SupportedByEventHandler = MakeShareable(new FSLSupportedByEventHandler());
+				SupportedByEventHandler->Init(*Itr);
+				EventHandlers.Add(SupportedByEventHandler);
+			}
 		}
 
-#if WITH_MC_GRASP
 		// Init grasp handlers
-		for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
+		if (bInLogGraspEvents)
 		{
-			// Create a grasp event handler 
-			TSharedPtr<FSLGraspEventHandler> GraspEventHandler = MakeShareable(new FSLGraspEventHandler());
-			GraspEventHandler->Init(*Itr);
-			EventHandlers.Add(GraspEventHandler);
-		}
+#if WITH_MC_GRASP
+			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
+			{
+				// Create a grasp event handler 
+				TSharedPtr<FSLGraspEventHandler> GraspEventHandler = MakeShareable(new FSLGraspEventHandler());
+				GraspEventHandler->Init(*Itr);
+				EventHandlers.Add(GraspEventHandler);
+			}
 #endif // WITH_MC_GRASP
+		}
 
 		// Mark as initialized
 		bIsInit = true;

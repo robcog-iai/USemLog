@@ -38,7 +38,7 @@ private:
 	void OnSLOverlapBegin(const FSLOverlapResult& InResult);
 	
 	// Event called when a semantic overlap event ends
-	void OnSLOverlapEnd(uint32 OtherId, float Time);
+	void OnSLOverlapEnd(uint32 SelfId, uint32 OtherId, float Time);
 
 private:
 	// Parent semantic overlap area

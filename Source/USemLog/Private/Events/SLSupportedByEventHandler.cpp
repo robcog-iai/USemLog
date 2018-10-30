@@ -18,7 +18,6 @@ void FSLSupportedByEventHandler::Init(UObject* InParent)
 		Parent = Cast<USLOverlapArea>(InParent);
 		if (Parent)
 		{
-			UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 			// Mark as initialized
 			bIsInit = true;
 		}
@@ -50,6 +49,7 @@ void FSLSupportedByEventHandler::Finish(float EndTime)
 {
 	if (bIsStarted || bIsInit)
 	{
+		// End and broadcast all started events
 		FSLSupportedByEventHandler::FinishAllEvents(EndTime);
 		Parent->GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 		// TODO use dynamic delegates to be able to unbind from them
@@ -69,7 +69,7 @@ bool FSLSupportedByEventHandler::IsACandidate(const uint32 InOtherId, bool bRemo
 	// Use iterator to be able to remove the entry from the array
 	for (auto CandidateItr(Candidates.CreateIterator()); CandidateItr; ++CandidateItr)
 	{
-		if ((*CandidateItr).Id == InOtherId)
+		if ((*CandidateItr).Other.Id == InOtherId)
 		{
 			if (bRemoveIfFound)
 			{
@@ -107,32 +107,32 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 		//}
 
 		// Get relative vertical speed
-		const float RelVerticalSpeed = FMath::Abs(Parent->OwnerMeshComp->GetComponentVelocity().Z -
-			CandidateItr->MeshComponent->GetComponentVelocity().Z);
+		const float RelVerticalSpeed = FMath::Abs(CandidateItr->SelfMeshComponent->GetComponentVelocity().Z -
+			CandidateItr->OtherMeshComponent->GetComponentVelocity().Z);
 		
 		// Check that the relative speed on Z between the two objects is smaller than the threshold
 		if (RelVerticalSpeed < SL_SB_VERT_SPEED_TH)
 		{
 			const FString SemId = FIds::NewGuidInBase64Url();
-			const uint64 PairId = FIds::PairEncodeCantor(CandidateItr->Id, Parent->OwnerId);
-			if (CandidateItr->bIsSemanticOverlapArea)
+			const uint64 PairId = FIds::PairEncodeCantor(CandidateItr->Self.Id, CandidateItr->Other.Id);
+			if (CandidateItr->bIsOtherASemanticOverlapArea)
 			{
 				// Check which is supporting and which is supported
 				// TODO simple height comparison for now
-				if (Parent->OwnerMeshComp->GetComponentLocation().Z >
-					CandidateItr->MeshComponent->GetComponentLocation().Z)
+				if (CandidateItr->SelfMeshComponent->GetComponentLocation().Z >
+					CandidateItr->OtherMeshComponent->GetComponentLocation().Z)
 				{
 					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
 						SemId, StartTime, PairId,
-						Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass, // supported
-						CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass))); // supporting
+						CandidateItr->Self.Id, CandidateItr->Self.SemId, CandidateItr->Self.Class,			// supported
+						CandidateItr->Other.Id, CandidateItr->Other.SemId, CandidateItr->Other.Class)));	// supporting
 				}
 				else
 				{
 					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
 						SemId, StartTime, PairId,
-						CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass, // supported
-						Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass))); // supporting
+						CandidateItr->Other.Id, CandidateItr->Other.SemId, CandidateItr->Other.Class,	// supported
+						CandidateItr->Self.Id, CandidateItr->Self.SemId, CandidateItr->Self.Class)));	// supporting
 				}
 			}
 			else 
@@ -140,8 +140,8 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 				// Can only support
 				StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
 					SemId, StartTime, PairId,
-					Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass, // supported
-					CandidateItr->Id, CandidateItr->SemId, CandidateItr->SemClass))); // supporting
+					CandidateItr->Self.Id, CandidateItr->Self.SemId, CandidateItr->Self.Class,			// supported
+					CandidateItr->Other.Id, CandidateItr->Other.SemId, CandidateItr->Other.Class)));	// supporting
 
 			}
 			// Remove candidate, it is now part of a started event
@@ -161,8 +161,8 @@ bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLOverlapResult& InC
 	float Time, TSharedPtr<FSLSupportedByEvent> OutEvent)
 {
 	// Get relative vertical speed
-	const float RelVerticalSpeed = FMath::Abs(Parent->OwnerMeshComp->GetComponentVelocity().Z -
-		InCandidate.MeshComponent->GetComponentVelocity().Z);
+	const float RelVerticalSpeed = FMath::Abs(InCandidate.SelfMeshComponent->GetComponentVelocity().Z -
+		InCandidate.OtherMeshComponent->GetComponentVelocity().Z);
 
 	// Check that the relative speed on Z between the two objects is smaller than the threshold
 	if (RelVerticalSpeed < SL_SB_VERT_SPEED_TH)
@@ -170,27 +170,27 @@ bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLOverlapResult& InC
 		// Disable overlaps until next tick
 		//if (Parent->OwnerStaticMeshComp->GetGenerateOverlapEvents())
 		//{
-			Parent->OwnerMeshComp->SetGenerateOverlapEvents(false);
+			InCandidate.SelfMeshComponent->SetGenerateOverlapEvents(false);
 
 			// Re-enable overlaps next tick
-			TimerDelegateNextTick.BindLambda([this]
+			TimerDelegateNextTick.BindLambda([InCandidate]
 			{
-				Parent->OwnerMeshComp->SetGenerateOverlapEvents(true);
+				InCandidate.SelfMeshComponent->SetGenerateOverlapEvents(true);
 			});
 			Parent->GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);
 		//}
 
 		FHitResult ParentMoveDownHit;
-		Parent->OwnerMeshComp->MoveComponent(FVector(0.f, 0.f, 20.5f),
-			Parent->OwnerMeshComp->GetComponentQuat(), true, &ParentMoveDownHit,
+		InCandidate.SelfMeshComponent->MoveComponent(FVector(0.f, 0.f, 20.5f),
+			InCandidate.SelfMeshComponent->GetComponentQuat(), true, &ParentMoveDownHit,
 			EMoveComponentFlags::MOVECOMP_DisableBlockingOverlapDispatch, ETeleportType::TeleportPhysics);
 		
 		//UE_LOG(LogTemp, Warning, TEXT(">> %s::%d PARENT MOVE DOWN HIT=\n\t%s"),
 		//	TEXT(__FUNCTION__), __LINE__, *ParentMoveDownHit.ToString());
 
 		FHitResult ParentMoveBackHit;
-		Parent->OwnerMeshComp->MoveComponent(FVector(0.f, 0.f, 10.5f),
-			Parent->OwnerMeshComp->GetComponentQuat(), true, &ParentMoveBackHit,
+		InCandidate.SelfMeshComponent->MoveComponent(FVector(0.f, 0.f, 10.5f),
+			InCandidate.SelfMeshComponent->GetComponentQuat(), true, &ParentMoveBackHit,
 			EMoveComponentFlags::MOVECOMP_DisableBlockingOverlapDispatch, ETeleportType::TeleportPhysics);
 
 		OutEvent = MakeShareable(new FSLSupportedByEvent());
@@ -254,13 +254,13 @@ void FSLSupportedByEventHandler::OnSLOverlapBegin(const FSLOverlapResult& InResu
 }
 
 // Event called when a semantic overlap event ends
-void FSLSupportedByEventHandler::OnSLOverlapEnd(uint32 OtherId, float Time)
+void FSLSupportedByEventHandler::OnSLOverlapEnd(uint32 SelfId, uint32 OtherId, float Time)
 {
 	// Remove from candidate list
 	if (!IsACandidate(OtherId, true))
 	{
 		// If not in candidate list, check if it is a started event, and finish it
-		const uint64 PairId = FIds::PairEncodeCantor(OtherId, Parent->OwnerId);
+		const uint64 PairId = FIds::PairEncodeCantor(SelfId, OtherId);
 		FSLSupportedByEventHandler::FinishEvent(PairId, Time);
 	}
 }
