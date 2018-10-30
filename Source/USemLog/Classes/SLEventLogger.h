@@ -32,6 +32,9 @@ public:
 	void Init(const FString& InLogDirectory,
 		const FString& InEpisodeId,
 		ESLOwlExperimentTemplate TemplateType,
+		bool bInLogContactEvents,
+		bool bInLogSupportedByEvents,
+		bool bInLogGraspEvents,
 		bool bInWriteTimelines);
 
 	// Start logger

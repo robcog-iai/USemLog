@@ -11,21 +11,15 @@ FSLContactEvent::FSLContactEvent()
 
 // Constructor with initialization
 FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const uint32 InObj1Id, const FString& InObj1SemId, const FString& InObj1Class,
-	const uint32 InObj2Id, const FString& InObj2SemId, const FString& InObj2Class) :
-	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
-	Obj1Id(InObj1Id), Obj1SemId(InObj1SemId), Obj1Class(InObj1Class),
-	Obj2Id(InObj2Id), Obj2SemId(InObj2SemId), Obj2Class(InObj2Class)
+	const FSLItem& InItem1, const FSLItem& InItem2) :
+	ISLEvent(InId, InStart, InEnd), PairId(InPairId), Item1(InItem1), Item2(InItem2)
 {
 }
 
-// Constructor initialization without End with pair id
+// Constructor initialization without end time
 FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const uint32 InObj1Id, const FString& InObj1SemId, const FString& InObj1Class,
-	const uint32 InObj2Id, const FString& InObj2SemId, const FString& InObj2Class) :
-	ISLEvent(InId, InStart), PairId(InPairId),
-	Obj1Id(InObj1Id), Obj1SemId(InObj1SemId), Obj1Class(InObj1Class),
-	Obj2Id(InObj2Id), Obj2SemId(InObj2SemId), Obj2Class(InObj2Class)
+	const FSLItem& InItem1, const FSLItem& InItem2) :
+	ISLEvent(InId, InStart), PairId(InPairId), Item1(InItem1), Item2(InItem2)
 {
 }
 
@@ -38,8 +32,8 @@ FSLOwlNode FSLContactEvent::ToOwlNode() const
 		"log", Id, "TouchingSituation");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInContactProperty("log", Obj1SemId));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInContactProperty("log", Obj2SemId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInContactProperty("log", Item1.SemId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInContactProperty("log", Item2.SemId));
 	return EventIndividual;
 }
 
@@ -55,10 +49,10 @@ void FSLContactEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
 		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(Obj1Id,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Obj1SemId, Obj1Class));
-	EventsDoc->AddObjectIndividual(Obj2Id,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Obj2SemId, Obj2Class));
+	EventsDoc->AddObjectIndividual(Item1.Id,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item1.SemId, Item2.Class));
+	EventsDoc->AddObjectIndividual(Item2.Id,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item2.SemId, Item2.Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
@@ -72,6 +66,6 @@ FString FSLContactEvent::Context() const
 FString FSLContactEvent::Tooltip() const
 {
 	return FString::Printf(TEXT("\'O1\',\'%s\',\'Id\',\'%s\',\'O2\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
-		*Obj1Class, *Obj1SemId, *Obj2Class, *Obj2SemId, *Id);
+		*Item1.Class, *Item1.SemId, *Item2.Class, *Item2.SemId, *Id);
 }
 /* End ISLEvent interface */

@@ -23,7 +23,7 @@ public:
 	static void DeleteInstance();
 
 	// Init data / load Map
-	void LoadData(UWorld* World);
+	void Init(UWorld* World);
 
 	// Get semantic id from unique id
 	FString GetSemanticId(uint32 UniqueId) const;

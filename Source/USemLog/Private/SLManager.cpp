@@ -40,6 +40,9 @@ ASLManager::ASLManager()
 
 	// Events logger default values
 	bLogEventData = true;
+	bLogContactEvents = true;
+	bLogSupportedByEvents = true;
+	bLogGraspEvents = true;
 	bWriteTimelines = true;
 	ExperimentTemplateType = ESLOwlExperimentTemplate::Default;
 
@@ -126,7 +129,7 @@ void ASLManager::Init()
 		// Init the semantic items content singleton
 		if (!FSLMappings::GetInstance()->IsInit())
 		{
-			FSLMappings::GetInstance()->LoadData(GetWorld());
+			FSLMappings::GetInstance()->Init(GetWorld());
 		}
 
 		// If the episode Id is not manually added, generate new unique id
@@ -161,8 +164,8 @@ void ASLManager::Init()
 		{
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
-			EventDataLogger->Init(LogDirectory, EpisodeId, ExperimentTemplateType, bWriteTimelines);
-			// TODO init all listeners here and not on their own (begin play etc.)
+			EventDataLogger->Init(LogDirectory, EpisodeId, ExperimentTemplateType,
+				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
 		}
 
 #if WITH_SL_VIS

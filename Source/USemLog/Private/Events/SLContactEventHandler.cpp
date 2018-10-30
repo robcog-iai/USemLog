@@ -15,7 +15,6 @@ void FSLContactEventHandler::Init(UObject* InParent)
 		Parent = Cast<USLOverlapArea>(InParent);
 		if (Parent)
 		{
-			UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 			// Mark as initialized
 			bIsInit = true;
 		}
@@ -27,7 +26,6 @@ void FSLContactEventHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 		Parent->OnBeginSLOverlap.AddRaw(this, &FSLContactEventHandler::OnSLOverlapBegin);
 		Parent->OnEndSLOverlap.AddRaw(this, &FSLContactEventHandler::OnSLOverlapEnd);
 
@@ -41,8 +39,8 @@ void FSLContactEventHandler::Finish(float EndTime)
 {
 	if (bIsStarted || bIsInit)
 	{
+		// End and broadcast all started events
 		FSLContactEventHandler::FinishAllEvents(EndTime);
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
@@ -60,9 +58,9 @@ void FSLContactEventHandler::AddNewEvent(const FSLOverlapResult& InResult)
 {
 	// Start a semantic contact event
 	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
-		FIds::NewGuidInBase64Url(),	InResult.TriggerTime, FIds::PairEncodeCantor(InResult.Id, Parent->OwnerId),
-		Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass,
-		InResult.Id, InResult.SemId, InResult.SemClass));
+		FIds::NewGuidInBase64Url(), InResult.Time,
+		FIds::PairEncodeCantor(InResult.Self.Id, InResult.Other.Id),
+		InResult.Self, InResult.Other));
 	// Add event to the pending contacts array
 	StartedEvents.Emplace(ContactEvent);
 }
@@ -74,7 +72,7 @@ bool FSLContactEventHandler::FinishEvent(const uint32 InOtherId, float EndTime)
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Obj2Id == InOtherId)
+		if ((*EventItr)->Item2.Id == InOtherId)
 		{
 			// Set end time and publish event
 			(*EventItr)->End = EndTime;
@@ -108,7 +106,7 @@ void FSLContactEventHandler::OnSLOverlapBegin(const FSLOverlapResult& SemanticOv
 }
 
 // Event called when a semantic overlap event ends
-void FSLContactEventHandler::OnSLOverlapEnd(uint32 OtherId, float Time)
+void FSLContactEventHandler::OnSLOverlapEnd(uint32 SelfId, uint32 OtherId, float Time)
 {
 	FSLContactEventHandler::FinishEvent(OtherId, Time);
 }

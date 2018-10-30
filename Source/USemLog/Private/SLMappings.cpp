@@ -33,7 +33,7 @@ void FSLMappings::DeleteInstance()
 }
 
 // Init data
-void FSLMappings::LoadData(UWorld* World)
+void FSLMappings::Init(UWorld* World)
 {
 	// Clear any previous data
 	IdSemIdMap.Empty();
