@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "SLOwlExperiment.h"
-#include "Events/SLEvents.h"
+#include "Events/ISLEventHandler.h"
 #include "SLEventLogger.generated.h"
 
 // Forward declaration
@@ -31,7 +31,7 @@ public:
 	// Init Logger
 	void Init(const FString& InLogDirectory,
 		const FString& InEpisodeId,
-		EOwlExperimentTemplate TemplateType,
+		ESLOwlExperimentTemplate TemplateType,
 		bool bInWriteTimelines);
 
 	// Start logger
@@ -41,24 +41,27 @@ public:
 	void Finish();
 
 private:
-	// Register for various semantic events
-	void ListenToSemanticEvents();
+	//// Register for various semantic events
+	//void ListenToSemanticEvents();
 
-	// Called when a semantic contact is finished
-	void OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event);
+	// Called when a semantic event is done
+	void OnSemanticEvent(TSharedPtr<ISLEvent> Event);
 
-	// Called when a semantic supported by event is finished
-	void OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event);
+	//// Called when a semantic contact is finished
+	//void OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event);
 
-	// Called when a grasp is finished
-	void OnSemanticGraspEvent(TSharedPtr<FSLGraspEvent> Event);
+	//// Called when a semantic supported by event is finished
+	//void OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event);
+
+	//// Called when a grasp is finished
+	//void OnSemanticGraspEvent(TSharedPtr<FSLGraspEvent> Event);
 
 	// Write events to file
 	bool WriteToFile();
 
 	// Create events doc template
 	TSharedPtr<FSLOwlExperiment> CreateEventsDocTemplate(
-		EOwlExperimentTemplate TemplateType, const FString& InDocId);
+		ESLOwlExperimentTemplate TemplateType, const FString& InDocId);
 
 	// Finish the pending events at the current time
 	void FinishPendingEvents(const float EndTime);
@@ -80,17 +83,20 @@ private:
 	FString EpisodeId;
 
 	// Type of owl template to write the events to
-	EOwlExperimentTemplate OwlDocTemplate;
+	ESLOwlExperimentTemplate OwlDocTemplate;
 
 	// Save events to timelines
 	bool bWriteTimelines;
 
-	// Array of pending events
+	// Array of started events
 	TArray<TSharedPtr<ISLEvent>> StartedEvents;
 
-	// Array of pending events
+	// Array of finished events
 	TArray<TSharedPtr<ISLEvent>> FinishedEvents;
 
 	// Owl document of the finished events
 	TSharedPtr<FSLOwlExperiment> ExperimentDoc;
+
+	// Semantic event handlers (takes input raw events, outputs finished semantic events)
+	TArray<TSharedPtr<ISLEventHandler>> EventHandlers;
 };

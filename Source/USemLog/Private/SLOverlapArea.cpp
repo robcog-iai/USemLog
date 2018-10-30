@@ -105,19 +105,20 @@ void USLOverlapArea::Init()
 			// TODO this might cause problems with grasping objects
 			OwnerMeshComp->SetGenerateOverlapEvents(false);
 
-			// Listen and publish semantic contact events
-			if (bListenForContactEvents)
-			{
-				SLContactPub = MakeShareable(new FSLContactPublisher(this));
-				SLContactPub->Init();
-			}
+			// TODO rm
+			//// Listen and publish semantic contact events
+			//if (bListenForContactEvents)
+			//{
+			//	SLContactPub = MakeShareable(new FSLContactPublisher(this));
+			//	SLContactPub->Init();
+			//}
 
-			// Listen and publish supported by events
-			if (bListenForSupportedByEvents)
-			{
-				SLSupportedByPub = MakeShareable(new FSLSupportedByPublisher(this));
-				SLSupportedByPub->Init();
-			}
+			//// Listen and publish supported by events
+			//if (bListenForSupportedByEvents)
+			//{
+			//	SLSupportedByPub = MakeShareable(new FSLSupportedByPublisher(this));
+			//	SLSupportedByPub->Init();
+			//}
 
 			// Mark as initialized
 			bIsInit = true;
@@ -154,16 +155,16 @@ void USLOverlapArea::Finish()
 	{
 		float EndTime = GetWorld()->GetTimeSeconds();
 
-		// Terminate and publish pending events
-		if (SLContactPub.IsValid())
-		{
-			SLContactPub->Finish(EndTime);
-		}
+		//// Terminate and publish pending events
+		//if (SLContactPub.IsValid())
+		//{
+		//	SLContactPub->Finish(EndTime);
+		//}
 
-		if (SLSupportedByPub.IsValid())
-		{
-			SLSupportedByPub->Finish(EndTime);
-		}
+		//if (SLSupportedByPub.IsValid())
+		//{
+		//	SLSupportedByPub->Finish(EndTime);
+		//}
 
 		// Mark as finished
 		bIsStarted = false;
@@ -368,7 +369,6 @@ void USLOverlapArea::TriggerInitialOverlaps()
 			this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
 }
-
 
 // Called on overlap begin events
 void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,

@@ -48,6 +48,15 @@ public:
 	// Finish loggers
 	void Finish();
 
+	// Get init state
+	bool IsInit() const { return bIsInit; };
+
+	// Get started state
+	bool IsStarted() const { return bIsStarted; };
+
+	// Get finished state
+	bool IsFinished() const { return bIsFinished; };
+
 private:
 	// Set when manager is initialized
 	bool bIsInit;
@@ -137,7 +146,7 @@ private:
 
 	// Owl experiment template
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
-	EOwlExperimentTemplate ExperimentTemplateType;
+	ESLOwlExperimentTemplate ExperimentTemplateType;
 
 	// Event data logger, use UPROPERTY to avoid GC
 	UPROPERTY()

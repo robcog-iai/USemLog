@@ -79,8 +79,11 @@ class USEMLOG_API USLOverlapArea : public UBoxComponent
 
 protected:
 	// Give access to private data
+	// TODO rm all these
 	friend class FSLContactPublisher;
 	friend class FSLSupportedByPublisher;
+	friend class FSLContactEventHandler;
+	friend class FSLSupportedByEventHandler;
 
 public:
 	// Default constructor
@@ -98,6 +101,15 @@ public:
 	// Stop publishing overlap events
 	void Finish();
 
+	// Get init state
+	bool IsInit() const { return bIsInit; };
+
+	// Get started state
+	bool IsStarted() const { return bIsStarted; };
+
+	// Get finished state
+	bool IsFinished() const { return bIsFinished; };
+
 protected:
 	// Called at level startup
 	virtual void BeginPlay() override;
@@ -106,8 +118,6 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-
-
 #if WITH_EDITOR
 	// UObject interface
 	// Called after the C++ constructor and after the properties have been initialized
@@ -152,11 +162,17 @@ private:
 		int32 OtherBodyIndex);
 
 public:
-	// Contact publisher
-	TSharedPtr<FSLContactPublisher> SLContactPub;
+	// Event called when a semantic overlap begins
+	FSLOverlapBeginSignature OnBeginSLOverlap;
 
-	// Supported by event publisher
-	TSharedPtr<FSLSupportedByPublisher> SLSupportedByPub;
+	// Event called when a semantic overlap ends
+	FSLOverlapEndSignature OnEndSLOverlap;
+
+	//// Contact publisher
+	//TSharedPtr<FSLContactPublisher> SLContactPub;
+
+	//// Supported by event publisher
+	//TSharedPtr<FSLSupportedByPublisher> SLSupportedByPub;
 
 private:
 	// Set when manager is initialized
@@ -168,12 +184,7 @@ private:
 	// Set when manager is finished
 	bool bIsFinished;
 
-	// Event called when a semantic overlap begins
-	FSLOverlapBeginSignature OnBeginSLOverlap;
-
-	// Event called when a semantic overlap ends
-	FSLOverlapEndSignature OnEndSLOverlap;
-
+	// TODO move these to the SemLogger?, use these as Override flag?
 	// Listen for contact events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bListenForContactEvents;
