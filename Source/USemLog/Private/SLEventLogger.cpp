@@ -6,19 +6,25 @@
 #include "Misc/FileHelper.h"
 #include "EngineUtils.h"
 
+#include "Events/SLContactEventHandler.h"
+#include "Events/SLSupportedByEventHandler.h"
+#include "Events/SLGraspEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLOverlapArea.h"
-#include "SLGraspTrigger.h"
 #include "SLGoogleCharts.h"
+
+// UUtils
 #include "Ids.h"
 
+
+#if WITH_MC_GRASP
+#include "MCFixationGrasp.h"
+#endif // WITH_MC_GRASP
+
+
 // Constructor
-USLEventLogger::USLEventLogger()
+USLEventLogger::USLEventLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
 {
-	// Flags
-	bIsInit = false;
-	bIsStarted = false;
-	bIsFinished = false;
 }
 
 // Destructor
@@ -33,7 +39,7 @@ USLEventLogger::~USLEventLogger()
 // Init Logger
 void USLEventLogger::Init(const FString& InLogDirectory,
 	const FString& InEpisodeId,
-	EOwlExperimentTemplate TemplateType,
+	ESLOwlExperimentTemplate TemplateType,
 	bool bInWriteTimelines)
 {
 	if (!bIsInit)
@@ -46,12 +52,36 @@ void USLEventLogger::Init(const FString& InLogDirectory,
 		// Create the document template
 		ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
 
-		// TODO cache this for calling finish and start without re-iterating
-		// Init all contact trigger components
+		// Init all contact trigger handlers
 		for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
 		{
+			// Init the semantic overlap area
 			Itr->Init();
+
+			// Store the semantic overlap areas
+			SemanticOverlapAreas.Add(*Itr);
+
+			// Create a contact event handler 
+			TSharedPtr<FSLContactEventHandler> ContactEventHandler = MakeShareable(new FSLContactEventHandler());
+			ContactEventHandler->Init(*Itr);
+			EventHandlers.Add(ContactEventHandler);
+
+			// Create a supported-by event handler
+			TSharedPtr<FSLSupportedByEventHandler> SupportedByEventHandler = MakeShareable(new FSLSupportedByEventHandler());
+			SupportedByEventHandler->Init(*Itr);
+			EventHandlers.Add(SupportedByEventHandler);
 		}
+
+#if WITH_MC_GRASP
+		// Init grasp handlers
+		for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
+		{
+			// Create a grasp event handler 
+			TSharedPtr<FSLGraspEventHandler> GraspEventHandler = MakeShareable(new FSLGraspEventHandler());
+			GraspEventHandler->Init(*Itr);
+			EventHandlers.Add(GraspEventHandler);
+		}
+#endif // WITH_MC_GRASP
 
 		// Mark as initialized
 		bIsInit = true;
@@ -63,8 +93,22 @@ void USLEventLogger::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		// Subscribe for various semantic events
-		USLEventLogger::ListenToSemanticEvents();
+		// Start handlers
+		for (auto& EvHandler : EventHandlers)
+		{
+			// Subscribe for given semantic events
+			EvHandler->Start();
+
+			// Bind resulting events
+			EvHandler->OnSemanticEvent.BindUObject(
+				this, &USLEventLogger::OnSemanticEvent);
+		}
+
+		// Start the semantic overlap areas
+		for (auto& SLOverlapArea : SemanticOverlapAreas)
+		{
+			SLOverlapArea->Start();
+		}
 
 		// Mark as started
 		bIsStarted = true;
@@ -76,16 +120,31 @@ void USLEventLogger::Finish()
 {
 	if (bIsStarted || bIsInit)
 	{
+		// Get end time
+		const float EndTime = GetWorld()->GetTimeSeconds();
+
+		// Finish handlers pending events
+		for (auto& EvHandler : EventHandlers)
+		{
+			EvHandler->Finish(EndTime);
+		}
+		EventHandlers.Empty();
+
+		// Finish semantic overlap events publishing
+		for (auto& SLOverlapArea : SemanticOverlapAreas)
+		{
+			SLOverlapArea->Finish();
+		}
+		SemanticOverlapAreas.Empty();
+
+		// Mark finished
+		bIsStarted = false;
+		bIsInit = false;
+		bIsFinished = true;
+
+		// Create the experiment owl doc
 		if (!ExperimentDoc.IsValid())
 			return;
-
-		// TODO check if the publishers arrive on time with the finished pending events from calling finish
-		// make sure they arrive and then finish, call e.g. post finish
-		// Init all contact trigger components
-		for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
-		{
-			Itr->Finish();
-		}
 
 		// Add finished events to doc
 		for (const auto& Ev : FinishedEvents)
@@ -104,60 +163,11 @@ void USLEventLogger::Finish()
 
 		// Write events to file
 		USLEventLogger::WriteToFile();
-
-		// Mark finished
-		bIsStarted = false;
-		bIsInit = false;
-		bIsFinished = true;
 	}
 }
 
-// Register for semantic contact events
-void USLEventLogger::ListenToSemanticEvents()
-{
-	// Iterate all contact trigger components, and bind to their events publisher
-	for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
-	{
-		if (Itr->SLContactPub.IsValid())
-		{
-			Itr->SLContactPub->OnSemanticContactEvent.BindUObject(
-				this, &USLEventLogger::OnSemanticContactEvent);
-		}
-
-		if (Itr->SLSupportedByPub.IsValid())
-		{
-			Itr->SLSupportedByPub->OnSupportedByEvent.BindUObject(
-				this, &USLEventLogger::OnSemanticSupportedByEvent);
-		}
-	}
-
-	// Iterate all grasp listeners
-	for (TObjectIterator<USLGraspTrigger> Itr; Itr; ++Itr)
-	{
-		if (Itr->SLGraspPub.IsValid())
-		{
-			Itr->SLGraspPub->OnSemanticGraspEvent.BindUObject(
-				this, &USLEventLogger::OnSemanticGraspEvent);
-		}
-	}
-}
-
-// Called when a semantic contact is finished
-void USLEventLogger::OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event)
-{
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Tooltip());
-	FinishedEvents.Add(Event);
-}
-
-// Called when a semantic supported by event is finished
-void USLEventLogger::OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event)
-{
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Tooltip());
-	FinishedEvents.Add(Event);
-}
-
-// Called when a semantic supported by event is finished
-void USLEventLogger::OnSemanticGraspEvent(TSharedPtr<FSLGraspEvent> Event)
+// Called when a semantic event is done
+void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 {
 	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Tooltip());
 	FinishedEvents.Add(Event);
@@ -185,30 +195,19 @@ bool USLEventLogger::WriteToFile()
 }
 
 // Create events doc (experiment) template
-TSharedPtr<FSLOwlExperiment> USLEventLogger::CreateEventsDocTemplate(EOwlExperimentTemplate TemplateType, const FString& InDocId)
+TSharedPtr<FSLOwlExperiment> USLEventLogger::CreateEventsDocTemplate(ESLOwlExperimentTemplate TemplateType, const FString& InDocId)
 {
 	// Create unique semlog id for the document
 	const FString DocId = InDocId.IsEmpty() ? FIds::NewGuidInBase64Url() : InDocId;
 
 	// Fill document with template values
-	if (TemplateType == EOwlExperimentTemplate::Default)
+	if (TemplateType == ESLOwlExperimentTemplate::Default)
 	{
 		return FSLOwlExperimentStatics::CreateDefaultExperiment(DocId);
 	}
-	else if (TemplateType == EOwlExperimentTemplate::IAI)
+	else if (TemplateType == ESLOwlExperimentTemplate::IAI)
 	{
 		return FSLOwlExperimentStatics::CreateUEExperiment(DocId);
 	}
 	return MakeShareable(new FSLOwlExperiment());
-}
-
-// Finish the pending events at the current time
-void USLEventLogger::FinishPendingEvents(const float EndTime)
-{
-	for (const auto& PE : StartedEvents)
-	{
-		PE->End = EndTime;
-		FinishedEvents.Emplace(PE);
-	}
-	StartedEvents.Empty();
 }

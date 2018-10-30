@@ -3,28 +3,26 @@
 
 #pragma once
 
+#include "Events/ISLEventHandler.h"
 #include "Events/SLContactEvent.h"
-
-/** Delegate for notification of finished semantic contact event */
-DECLARE_DELEGATE_OneParam(FSLContactEventSignature, TSharedPtr<FSLContactEvent>);
 
 // Forward declarations
 struct FSLOverlapResult;
 
 /**
- * Semantic contact publisher
+ * Listens to contact events input, and outputs finished semantic contact events
  */
-class FSLContactPublisher 
+class FSLContactEventHandler : public ISLEventHandler
 {
 public:
-	// Constructor 
-	FSLContactPublisher(class USLOverlapArea* InParent);
-
-	// Init
-	void Init();
+	// Init parent
+	void Init(UObject* InParent) override;
+	
+	// Start listening to input
+	void Start() override;
 
 	// Terminate listener, finish and publish remaining events
-	void Finish(float EndTime);
+	void Finish(float EndTime) override;
 
 private:
 	// Start new contact event
@@ -41,10 +39,6 @@ private:
 	
 	// Event called when a semantic overlap event ends
 	void OnSLOverlapEnd(uint32 OtherId, float Time);
-
-public:
-	// Event called when a semantic contact event is finished
-	FSLContactEventSignature OnSemanticContactEvent;
 
 private:
 	// Parent semantic overlap area

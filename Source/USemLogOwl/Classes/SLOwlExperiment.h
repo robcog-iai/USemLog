@@ -10,7 +10,7 @@
 * Events owl document template types
 */
 UENUM(BlueprintType)
-enum class EOwlExperimentTemplate : uint8
+enum class ESLOwlExperimentTemplate : uint8
 {
 	NONE					UMETA(DisplayName = "None"),
 	Default					UMETA(DisplayName = "Default"),

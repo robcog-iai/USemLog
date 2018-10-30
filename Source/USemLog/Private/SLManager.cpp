@@ -41,7 +41,7 @@ ASLManager::ASLManager()
 	// Events logger default values
 	bLogEventData = true;
 	bWriteTimelines = true;
-	ExperimentTemplateType = EOwlExperimentTemplate::Default;
+	ExperimentTemplateType = ESLOwlExperimentTemplate::Default;
 
 	// Vision data logger default values
 	bLogVisionData = true;

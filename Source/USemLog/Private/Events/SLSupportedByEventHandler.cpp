@@ -1,7 +1,7 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Publishers/SLSupportedByPublisher.h"
+#include "Events/SLSupportedByEventHandler.h"
 #include "SLOverlapArea.h"
 
 // UUtils
@@ -10,34 +10,61 @@
 #define SL_SB_VERT_SPEED_TH 0.5f // Supported by event vertical speed threshold
 #define SL_SB_UPDATE_RATE_CB 0.15f // Update rate for the timer callback
 
-// Default constructor
-FSLSupportedByPublisher::FSLSupportedByPublisher(USLOverlapArea* InParent)
+// Set parent
+void FSLSupportedByEventHandler::Init(UObject* InParent)
 {
-	Parent = InParent;
+	if (!bIsInit)
+	{		// Check if parent is of right type
+		Parent = Cast<USLOverlapArea>(InParent);
+		if (Parent)
+		{
+			UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
+			// Mark as initialized
+			bIsInit = true;
+		}
+	}
 }
 
-// Init
-void FSLSupportedByPublisher::Init()
-{
-	Parent->OnBeginSLOverlap.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapBegin);
-	Parent->OnEndSLOverlap.AddRaw(this, &FSLSupportedByPublisher::OnSLOverlapEnd);
 
-	// Start timer (will be directly paused if no candidates are available)
-	TimerDelegate.BindRaw(this, &FSLSupportedByPublisher::InspectCandidatesCb);
-	Parent->GetWorld()->GetTimerManager().SetTimer(TimerHandle,
-		TimerDelegate, SL_SB_UPDATE_RATE_CB, true);
+// Bind to input delegates
+void FSLSupportedByEventHandler::Start()
+{
+	if (!bIsStarted && bIsInit)
+	{
+		Parent->OnBeginSLOverlap.AddRaw(this, &FSLSupportedByEventHandler::OnSLOverlapBegin);
+		Parent->OnEndSLOverlap.AddRaw(this, &FSLSupportedByEventHandler::OnSLOverlapEnd);
+
+		// Start timer (will be directly paused if no candidates are available)
+		TimerDelegate.BindRaw(this, &FSLSupportedByEventHandler::InspectCandidatesCb);
+		Parent->GetWorld()->GetTimerManager().SetTimer(TimerHandle,
+			TimerDelegate, SL_SB_UPDATE_RATE_CB, true);
+
+		// Mark as started
+		bIsStarted = true;
+	}
 }
 
 
 // Terminate listener, finish and publish remaining events
-void FSLSupportedByPublisher::Finish(float EndTime)
+void FSLSupportedByEventHandler::Finish(float EndTime)
 {
-	FSLSupportedByPublisher::FinishAllEvents(EndTime);
-	Parent->GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+	if (bIsStarted || bIsInit)
+	{
+		FSLSupportedByEventHandler::FinishAllEvents(EndTime);
+		Parent->GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+		// TODO use dynamic delegates to be able to unbind from them
+		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
+		// this would mean that the handler will need to inherit from UObject		
+
+		// Mark finished
+		bIsStarted = false;
+		bIsInit = false;
+		bIsFinished = true;
+	}
 }
 
 // Check if other obj is a supported by candidate
-bool FSLSupportedByPublisher::IsACandidate(const uint32 InOtherId, bool bRemoveIfFound)
+bool FSLSupportedByEventHandler::IsACandidate(const uint32 InOtherId, bool bRemoveIfFound)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto CandidateItr(Candidates.CreateIterator()); CandidateItr; ++CandidateItr)
@@ -56,7 +83,7 @@ bool FSLSupportedByPublisher::IsACandidate(const uint32 InOtherId, bool bRemoveI
 }
 
 // Check candidates vertical relative speed
-void FSLSupportedByPublisher::InspectCandidatesCb()
+void FSLSupportedByEventHandler::InspectCandidatesCb()
 {
 	// Current start time
 	float StartTime = Parent->GetWorld()->GetTimeSeconds();
@@ -130,7 +157,7 @@ void FSLSupportedByPublisher::InspectCandidatesCb()
 }
 
 // Is a supported by event, returns nullptr if not an event
-bool FSLSupportedByPublisher::IsPartOfASupportedByEvent(FSLOverlapResult& InCandidate,
+bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLOverlapResult& InCandidate,
 	float Time, TSharedPtr<FSLSupportedByEvent> OutEvent)
 {
 	// Get relative vertical speed
@@ -181,7 +208,7 @@ bool FSLSupportedByPublisher::IsPartOfASupportedByEvent(FSLOverlapResult& InCand
 }
 
 // Publish finished event
-bool FSLSupportedByPublisher::FinishEvent(const uint64 InPairId, float EndTime)
+bool FSLSupportedByEventHandler::FinishEvent(const uint64 InPairId, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
@@ -191,7 +218,7 @@ bool FSLSupportedByPublisher::FinishEvent(const uint64 InPairId, float EndTime)
 		{
 			// Set end time and publish event
 			(*EventItr)->End = EndTime;
-			OnSupportedByEvent.ExecuteIfBound(*EventItr);
+			OnSemanticEvent.ExecuteIfBound(*EventItr);
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
 			return true;
@@ -201,20 +228,20 @@ bool FSLSupportedByPublisher::FinishEvent(const uint64 InPairId, float EndTime)
 }
 
 // Terminate and publish pending events (this usually is called at end play)
-void FSLSupportedByPublisher::FinishAllEvents(float EndTime)
+void FSLSupportedByEventHandler::FinishAllEvents(float EndTime)
 {
 	// Finish events
 	for (auto& Ev : StartedEvents)
 	{
 		// Set end time and publish event
 		Ev->End = EndTime;
-		OnSupportedByEvent.ExecuteIfBound(Ev);
+		OnSemanticEvent.ExecuteIfBound(Ev);
 	}
 	StartedEvents.Empty();
 }
 
 // Event called when a semantic overlap event begins
-void FSLSupportedByPublisher::OnSLOverlapBegin(const FSLOverlapResult& InResult)
+void FSLSupportedByEventHandler::OnSLOverlapBegin(const FSLOverlapResult& InResult)
 {
 	// Add as candidate
 	Candidates.Emplace(InResult);
@@ -227,13 +254,13 @@ void FSLSupportedByPublisher::OnSLOverlapBegin(const FSLOverlapResult& InResult)
 }
 
 // Event called when a semantic overlap event ends
-void FSLSupportedByPublisher::OnSLOverlapEnd(uint32 OtherId, float Time)
+void FSLSupportedByEventHandler::OnSLOverlapEnd(uint32 OtherId, float Time)
 {
 	// Remove from candidate list
 	if (!IsACandidate(OtherId, true))
 	{
 		// If not in candidate list, check if it is a started event, and finish it
 		const uint64 PairId = FIds::PairEncodeCantor(OtherId, Parent->OwnerId);
-		FSLSupportedByPublisher::FinishEvent(PairId, Time);
+		FSLSupportedByEventHandler::FinishEvent(PairId, Time);
 	}
 }
