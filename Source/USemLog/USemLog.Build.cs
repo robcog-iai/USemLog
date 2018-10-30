@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 using UnrealBuildTool;
-using System;
 
 public class USemLog : ModuleRules
 {

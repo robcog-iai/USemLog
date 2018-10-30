@@ -41,20 +41,8 @@ public:
 	void Finish();
 
 private:
-	//// Register for various semantic events
-	//void ListenToSemanticEvents();
-
 	// Called when a semantic event is done
 	void OnSemanticEvent(TSharedPtr<ISLEvent> Event);
-
-	//// Called when a semantic contact is finished
-	//void OnSemanticContactEvent(TSharedPtr<FSLContactEvent> Event);
-
-	//// Called when a semantic supported by event is finished
-	//void OnSemanticSupportedByEvent(TSharedPtr<FSLSupportedByEvent> Event);
-
-	//// Called when a grasp is finished
-	//void OnSemanticGraspEvent(TSharedPtr<FSLGraspEvent> Event);
 
 	// Write events to file
 	bool WriteToFile();
@@ -62,9 +50,6 @@ private:
 	// Create events doc template
 	TSharedPtr<FSLOwlExperiment> CreateEventsDocTemplate(
 		ESLOwlExperimentTemplate TemplateType, const FString& InDocId);
-
-	// Finish the pending events at the current time
-	void FinishPendingEvents(const float EndTime);
 
 private:
 	// Set when initialized
@@ -88,9 +73,6 @@ private:
 	// Save events to timelines
 	bool bWriteTimelines;
 
-	// Array of started events
-	TArray<TSharedPtr<ISLEvent>> StartedEvents;
-
 	// Array of finished events
 	TArray<TSharedPtr<ISLEvent>> FinishedEvents;
 
@@ -99,4 +81,7 @@ private:
 
 	// Semantic event handlers (takes input raw events, outputs finished semantic events)
 	TArray<TSharedPtr<ISLEventHandler>> EventHandlers;
+
+	// Cache of the semantic overlap areas
+	TArray<class USLOverlapArea*> SemanticOverlapAreas;
 };

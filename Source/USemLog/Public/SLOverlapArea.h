@@ -6,8 +6,7 @@
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
-#include "Publishers/SLContactPublisher.h"
-#include "Publishers/SLSupportedByPublisher.h"
+#include "SLStructs.h"
 #include "SLOverlapArea.generated.h"
 
 /**
@@ -216,4 +215,8 @@ private:
 
 	// Cache of the semantic class of the outer (owner)
 	FString OwnerSemClass;
+
+
+	// Semantic data of the owner
+	FSLItem SemanticOwner;
 };

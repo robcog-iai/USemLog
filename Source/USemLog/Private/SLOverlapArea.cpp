@@ -4,7 +4,6 @@
 #include "SLOverlapArea.h"
 #include "SLMappings.h"
 #include "Animation/SkeletalMeshActor.h"
-//#include "DrawDebugHelpers.h"
 
 // UUTils
 #include "Tags.h"
@@ -26,8 +25,8 @@ USLOverlapArea::USLOverlapArea()
 	bIsStarted = false;
 	bIsFinished = false;
 
-	// TODO Start externally by default
-	bStartAtBeginPlay = true;
+	// Is started by the event logger
+	bStartAtBeginPlay = false;
 
 	// Events flags
 	bListenForContactEvents = true;
@@ -79,13 +78,13 @@ void USLOverlapArea::Init()
 		{
 			FSLMappings::GetInstance()->LoadData(GetWorld());
 		}
+
+		// Check that owner is semantically annotated
 		OwnerSemId = FSLMappings::GetInstance()->GetSemanticId(OwnerId);
 		OwnerSemClass = FSLMappings::GetInstance()->GetSemanticClass(OwnerId);
-		// Check that owner is semantically annotated
 		if (OwnerSemId.IsEmpty() || OwnerSemClass.IsEmpty())
-		{
-			// Not init
-			return;
+		{		
+			return;	// Not init
 		}
 
 		// Make sure the mesh (static/skeletal) component is valid
@@ -105,21 +104,6 @@ void USLOverlapArea::Init()
 			// TODO this might cause problems with grasping objects
 			OwnerMeshComp->SetGenerateOverlapEvents(false);
 
-			// TODO rm
-			//// Listen and publish semantic contact events
-			//if (bListenForContactEvents)
-			//{
-			//	SLContactPub = MakeShareable(new FSLContactPublisher(this));
-			//	SLContactPub->Init();
-			//}
-
-			//// Listen and publish supported by events
-			//if (bListenForSupportedByEvents)
-			//{
-			//	SLSupportedByPub = MakeShareable(new FSLSupportedByPublisher(this));
-			//	SLSupportedByPub->Init();
-			//}
-
 			// Mark as initialized
 			bIsInit = true;
 		}
@@ -136,6 +120,9 @@ void USLOverlapArea::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
+		// Enable overlap events
+		SetGenerateOverlapEvents(true);
+
 		// Broadcast currently overlapping components
 		USLOverlapArea::TriggerInitialOverlaps();
 
@@ -153,18 +140,8 @@ void USLOverlapArea::Finish()
 {
 	if (bIsStarted || bIsInit)
 	{
-		float EndTime = GetWorld()->GetTimeSeconds();
-
-		//// Terminate and publish pending events
-		//if (SLContactPub.IsValid())
-		//{
-		//	SLContactPub->Finish(EndTime);
-		//}
-
-		//if (SLSupportedByPub.IsValid())
-		//{
-		//	SLSupportedByPub->Finish(EndTime);
-		//}
+		// Disable overlap events
+		SetGenerateOverlapEvents(false);
 
 		// Mark as finished
 		bIsStarted = false;
