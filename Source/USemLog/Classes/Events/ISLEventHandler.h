@@ -16,7 +16,7 @@ class ISLEventHandler
 {
 public:
 	// Default constructor 
-	ISLEventHandler() : bIsInit(false), bIsStarted(false), bIsFinished(false) {};
+	ISLEventHandler(){};
 
 	// Virtual destructor
 	virtual ~ISLEventHandler() {};
@@ -45,11 +45,11 @@ public:
 
 protected:
 	// Set when initialized
-	bool bIsInit;
+	bool bIsInit = false;
 
 	// Set when started
-	bool bIsStarted;
+	bool bIsStarted = false;
 
 	// Set when finished
-	bool bIsFinished;
+	bool bIsFinished = false;
 };

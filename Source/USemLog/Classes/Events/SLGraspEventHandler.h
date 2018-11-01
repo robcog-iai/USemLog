@@ -22,8 +22,8 @@ public:
 	void Finish(float EndTime) override;
 
 private:
-	//// Start new event
-	//void AddNewEvent(uint32 SelfId, uint32 OtherId, float /*Time*/);
+	// Start new grasp event
+	void AddNewEvent(const FSLItem& Self, const FSLItem& Other, float StartTime);
 
 	// Finish then publish the event
 	bool FinishEvent(const uint32 InOtherId, float EndTime);

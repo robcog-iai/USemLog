@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLGraspEventHandler.h"
-
+#include "SLMappings.h"
 #if WITH_MC_GRASP
 #include "MCFixationGrasp.h"
 #endif // WITH_MC_GRASP
@@ -10,11 +10,18 @@
 // UUtils
 #include "Ids.h"
 
+
 // Set parent
 void FSLGraspEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{
+		// Make sure the mappings singleton is initialized (the handler uses it)
+		if (!FSLMappings::GetInstance()->IsInit())
+		{
+			FSLMappings::GetInstance()->Init(InParent->GetWorld());
+		}
+
 #if WITH_MC_GRASP
 		// Check if parent is of right type
 		Parent = Cast<UMCFixationGrasp>(InParent);
@@ -63,18 +70,16 @@ void FSLGraspEventHandler::Finish(float EndTime)
 	}
 }
 
-//// Start new grasp event
-//void FSLGraspEventHandler::AddNewEvent(const FSLGraspResult& InBeginResult)
-//{
-//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d \t\t\t ADD NEW SL GRASP"), TEXT(__FUNCTION__), __LINE__);
-//	// Start a semantic grasp event
-//	TSharedPtr<FSLGraspEvent> Event = MakeShareable(new FSLGraspEvent(
-//		FIds::NewGuidInBase64Url(), InBeginResult.TriggerTime, FIds::PairEncodeCantor(InBeginResult.Id, Parent->OwnerId),
-//		Parent->OwnerId, Parent->OwnerSemId, Parent->OwnerSemClass,
-//		InBeginResult.Id, InBeginResult.SemId, InBeginResult.SemClass));
-//	// Add event to the pending array
-//	StartedEvents.Emplace(Event);
-//}
+// Start new grasp event
+void FSLGraspEventHandler::AddNewEvent(const FSLItem& Self, const FSLItem& Other, float StartTime)
+{
+	// Start a semantic grasp event
+	TSharedPtr<FSLGraspEvent> Event = MakeShareable(new FSLGraspEvent(
+		FIds::NewGuidInBase64Url(), StartTime, FIds::PairEncodeCantor(Self.Id, Other.Id),
+		Self, Other));
+	// Add event to the pending array
+	StartedEvents.Emplace(Event);
+}
 
 // Publish finished event
 bool FSLGraspEventHandler::FinishEvent(const uint32 InOtherId, float EndTime)
@@ -83,11 +88,10 @@ bool FSLGraspEventHandler::FinishEvent(const uint32 InOtherId, float EndTime)
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->OtherId == InOtherId)
+		if ((*EventItr)->Other.Id == InOtherId)
 		{
 			// Set end time and publish event
 			(*EventItr)->End = EndTime;
-			UE_LOG(LogTemp, Warning, TEXT(">> %s::%d \t\t\t FINISH SL GRASP"), TEXT(__FUNCTION__), __LINE__);
 			OnSemanticEvent.ExecuteIfBound(*EventItr);
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
@@ -115,12 +119,18 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 void FSLGraspEventHandler::OnSLGraspBegin(uint32 SelfId, uint32 OtherId, float Time)
 {
 	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
-	//FSLGraspEventHandler::AddNewEvent(GraspBeginResult);
+	// Check that the objects are semantically annotated
+	FSLItem Self = FSLMappings::GetInstance()->GetSemanticItem(SelfId);
+	FSLItem Other = FSLMappings::GetInstance()->GetSemanticItem(OtherId);
+	if (Self.IsValid() && Other.IsValid())
+	{
+		FSLGraspEventHandler::AddNewEvent(Self, Other, Time);
+	}
 }
 
 // Event called when a semantic grasp event ends
 void FSLGraspEventHandler::OnSLGraspEnd(uint32 SelfId, uint32 OtherId, float Time)
 {
 	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
-	//FSLGraspEventHandler::FinishEvent(OtherId, Time);
+	FSLGraspEventHandler::FinishEvent(OtherId, Time);
 }

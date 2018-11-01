@@ -124,15 +124,15 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 				{
 					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
 						SemId, StartTime, PairId,
-						CandidateItr->Self.Id, CandidateItr->Self.SemId, CandidateItr->Self.Class,			// supported
-						CandidateItr->Other.Id, CandidateItr->Other.SemId, CandidateItr->Other.Class)));	// supporting
+						CandidateItr->Self,			// supported
+						CandidateItr->Other)));		// supporting
 				}
 				else
 				{
 					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
 						SemId, StartTime, PairId,
-						CandidateItr->Other.Id, CandidateItr->Other.SemId, CandidateItr->Other.Class,	// supported
-						CandidateItr->Self.Id, CandidateItr->Self.SemId, CandidateItr->Self.Class)));	// supporting
+						CandidateItr->Other,	// supported
+						CandidateItr->Self)));	// supporting
 				}
 			}
 			else 
@@ -140,8 +140,8 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 				// Can only support
 				StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
 					SemId, StartTime, PairId,
-					CandidateItr->Self.Id, CandidateItr->Self.SemId, CandidateItr->Self.Class,			// supported
-					CandidateItr->Other.Id, CandidateItr->Other.SemId, CandidateItr->Other.Class)));	// supporting
+					CandidateItr->Self,			// supported
+					CandidateItr->Other)));		// supporting
 
 			}
 			// Remove candidate, it is now part of a started event

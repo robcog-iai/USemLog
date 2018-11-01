@@ -5,7 +5,7 @@
 #include "SLOwlExperimentStatics.h"
 
 // Default constructor
-FSLContactEvent::FSLContactEvent() 
+FSLContactEvent::FSLContactEvent()
 {
 }
 
@@ -59,7 +59,7 @@ void FSLContactEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 // Get event context data as string (ToString equivalent)
 FString FSLContactEvent::Context() const
 {
-	return FString::Printf(TEXT("ContactEvent - %lld"), PairId);
+	return FString::Printf(TEXT("Contact - %lld"), PairId);
 }
 
 // Get the tooltip data
