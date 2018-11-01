@@ -55,6 +55,12 @@ void USLEventLogger::Init(const FString& InLogDirectory,
 		// Create the document template
 		ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
 
+		// TODO create one handler for each event type
+		// bind all the objects to one handler
+		// Instead of Init -> AddParent
+		// Parent -> TArray Parents
+		// rename FSLContactEventHandler,FSLSupportedByEventHandler,FSLGraspEventHandler -> Events
+
 		// Init all contact trigger handlers
 		for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
 		{

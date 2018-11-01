@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+#include "SLStructs.h"
+
 /**
  * Singleton storing Map between the unreal objects and the semantic data
  */
@@ -25,6 +28,18 @@ public:
 	// Init data / load Map
 	void Init(UWorld* World);
 
+	// Clear data
+	void Clear();
+
+	// Remove item
+	bool RemoveItem(uint32 UniqueId);
+
+	// Remove item
+	bool AddItem(UObject* Object);
+
+	// Get semantic item structure, from unique id
+	FSLItem GetSemanticItem(uint32 UniqueId) const;
+
 	// Get semantic id from unique id
 	FString GetSemanticId(uint32 UniqueId) const;
 
@@ -41,9 +56,6 @@ private:
 	// Flag showing the data has been init
 	bool bIsInit;
 
-	// Unreal unique id to SemLog unique id map
-	TMap<uint32, FString> IdSemIdMap;
-
-	// Unreal unique id to semantic class map
-	TMap<uint32, FString> IdClassMap;
+	// Unique id to SL Item
+	TMap<uint32, FSLItem> IdItemMap;
 };

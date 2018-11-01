@@ -66,21 +66,17 @@ void USLOverlapArea::Init()
 {
 	if (!bIsInit)
 	{
-		// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
-		// Make sure it has a semantic unique id and class
-		OwnerItem.Id = GetOwner()->GetUniqueID();
-
 		// Init the semantic items mappings singleton
 		if (!FSLMappings::GetInstance()->IsInit())
 		{
 			FSLMappings::GetInstance()->Init(GetWorld());
 		}
 
-		// Check that owner is semantically annotated
-		OwnerItem.SemId = FSLMappings::GetInstance()->GetSemanticId(OwnerItem.Id);
-		OwnerItem.Class = FSLMappings::GetInstance()->GetSemanticClass(OwnerItem.Id);
+		// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
+		// Make sure owner is a valid semantic item
+		OwnerItem = FSLMappings::GetInstance()->GetSemanticItem(GetOwner()->GetUniqueID());
 		if (!OwnerItem.IsValid())
-		{		
+		{
 			return;
 		}
 
@@ -369,16 +365,11 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLItem OtherItem;
-	OtherItem.Id = OtherComp->GetUniqueID();
-	OtherItem.SemId = FSLMappings::GetInstance()->GetSemanticId(OtherItem.Id);
-	OtherItem.Class = FSLMappings::GetInstance()->GetSemanticClass(OtherItem.Id);
+	FSLItem OtherItem = FSLMappings::GetInstance()->GetSemanticItem(OtherComp->GetUniqueID());
 	if (!OtherItem.IsValid())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem.Id = OtherComp->GetOuter()->GetUniqueID();
-		OtherItem.SemId = FSLMappings::GetInstance()->GetSemanticId(OtherItem.Id);
-		OtherItem.Class = FSLMappings::GetInstance()->GetSemanticClass(OtherItem.Id);
+		OtherItem = FSLMappings::GetInstance()->GetSemanticItem(OtherComp->GetOuter()->GetUniqueID());
 		if (!OtherItem.IsValid())
 		{
 			return;
@@ -428,16 +419,11 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLItem OtherItem;
-	OtherItem.Id = OtherComp->GetUniqueID();
-	OtherItem.SemId = FSLMappings::GetInstance()->GetSemanticId(OtherItem.Id);
-	OtherItem.Class = FSLMappings::GetInstance()->GetSemanticClass(OtherItem.Id);
+	FSLItem OtherItem = FSLMappings::GetInstance()->GetSemanticItem(OtherComp->GetUniqueID());
 	if (!OtherItem.IsValid())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem.Id = OtherComp->GetOuter()->GetUniqueID();
-		OtherItem.SemId = FSLMappings::GetInstance()->GetSemanticId(OtherItem.Id);
-		OtherItem.Class = FSLMappings::GetInstance()->GetSemanticClass(OtherItem.Id);
+		OtherItem = FSLMappings::GetInstance()->GetSemanticItem(OtherComp->GetOuter()->GetUniqueID());
 		if (!OtherItem.IsValid())
 		{
 			return;

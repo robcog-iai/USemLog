@@ -11,21 +11,17 @@ FSLGraspEvent::FSLGraspEvent()
 
 // Constructor with initialization
 FSLGraspEvent::FSLGraspEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const uint32 InHandId, const FString& InHandSemId, const FString& InHandClass,
-	const uint32 InOtherId, const FString& InOtherSemId, const FString& InOtherClass) :
+	const FSLItem& InHand, const FSLItem& InOther) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
-	HandId(InHandId), HandSemId(InHandSemId), HandClass(InHandClass),
-	OtherId(InOtherId), OtherSemId(InOtherSemId), OtherClass(InOtherClass)
+	Hand(InHand), Other(InOther)
 {
 }
 
 // Constructor initialization without End with pair id
 FSLGraspEvent::FSLGraspEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const uint32 InHandId, const FString& InHandSemId, const FString& InHandClass,
-	const uint32 InOtherId, const FString& InOtherSemId, const FString& InOtherClass) :
+	const FSLItem& InHand, const FSLItem& InOther) :
 	ISLEvent(InId, InStart), PairId(InPairId),
-	HandId(InHandId), HandSemId(InHandSemId), HandClass(InHandClass),
-	OtherId(InOtherId), OtherSemId(InOtherSemId), OtherClass(InOtherClass)
+	Hand(InHand), Other(InOther)
 {
 }
 
@@ -38,8 +34,8 @@ FSLOwlNode FSLGraspEvent::ToOwlNode() const
 		"log", Id, "GraspingSomething");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", HandSemId));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", OtherSemId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Hand.SemId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", Other.SemId));
 	return EventIndividual;
 }
 
@@ -55,23 +51,23 @@ void FSLGraspEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
 		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(HandId,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", HandSemId, HandClass));
-	EventsDoc->AddObjectIndividual(OtherId,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", OtherSemId, OtherClass));
+	EventsDoc->AddObjectIndividual(Hand.Id,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Hand.SemId, Hand.Class));
+	EventsDoc->AddObjectIndividual(Other.Id,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Other.SemId, Other.Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
 // Get event context data as string (ToString equivalent)
 FString FSLGraspEvent::Context() const
 {
-	return FString::Printf(TEXT("GraspEvent - %lld"), PairId);
+	return FString::Printf(TEXT("Grasp - %lld"), PairId);
 }
 
 // Get the tooltip data
 FString FSLGraspEvent::Tooltip() const
 {
-	return FString::Printf(TEXT("\'Hand\',\'%s\',\'Id\',\'%s\',\'O\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
-		*HandClass, *HandSemId, *OtherClass, *OtherSemId, *Id);
+	return FString::Printf(TEXT("\'Hand\',\'%s\',\'Id\',\'%s\',\'Other\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
+		*Hand.Class, *Hand.SemId, *Other.Class, *Other.SemId, *Id);
 }
 /* End ISLEvent interface */

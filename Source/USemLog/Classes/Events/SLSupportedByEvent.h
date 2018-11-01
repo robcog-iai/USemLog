@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ISLEvent.h"
+#include "SLStructs.h"
 
 /**
 * Supported by event class
@@ -16,34 +17,20 @@ public:
 
 	// Constructor with initialization 
 	FSLSupportedByEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const uint32 InSupportedObjId, const FString& InSupportedObjSemId, const FString& InSupportedObjClass,
-		const uint32 InSupportingObjId, const FString& InSupportingObjSemId, const FString& InSupportingObjClass);
+		const FSLItem& InSupportedItem, const FSLItem& InSupportingItem);
 
 	// Constructor with initialization without end time 
 	FSLSupportedByEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const uint32 InSupportedObjId, const FString& InSupportedObjSemId, const FString& InSupportedObjClass,
-		const uint32 InSupportingObjId, const FString& InSupportingObjSemId, const FString& InSupportingObjClass);
+		const FSLItem& InSupportedItem, const FSLItem& InSupportingItem);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
-	// Unique id of the supported object
-	uint32 SupportedObjId;
+	// Supported item
+	FSLItem SupportedItem;
 
-	// Semantic id of the supported object
-	FString SupportedObjSemId;
-
-	// Semantic class of the supported object
-	FString SupportedObjClass;
-
-	// Unique id of the supported object
-	uint32 SupportingObjId;
-
-	// Semantic id of the supporting object
-	FString SupportingObjSemId;
-
-	// Semantic Class of the object supporting
-	FString SupportingObjClass;
+	// Supporting item
+	FSLItem SupportingItem;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event
