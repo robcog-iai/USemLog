@@ -68,4 +68,11 @@ FString FSLSupportedByEvent::Tooltip() const
 	return FString::Printf(TEXT("\'SupportingItem\',\'%s\',\'Id\',\'%s\',\'SupportedItem\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
 		*SupportingItem.Class, *SupportingItem.SemId, *SupportedItem.Class, *SupportedItem.SemId, *Id);
 }
+
+// Get the data as string
+FString FSLSupportedByEvent::ToString() const
+{
+	return FString::Printf(TEXT("SupportingItem:[%s] SupportedItem:[%s] PairId:%lld"),
+		*SupportingItem.ToString(), *SupportedItem.ToString(), PairId);
+}
 /* End ISLEvent interface */

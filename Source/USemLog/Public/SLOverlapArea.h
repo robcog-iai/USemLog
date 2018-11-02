@@ -38,13 +38,13 @@ struct FSLOverlapResult
 	// Default ctor
 	FSLOverlapResult() {};
 
-	// Helper constructor
+	// Init constructor
 	FSLOverlapResult(const FSLItem& InSelf, const FSLItem& InOther, float InTime, 
 		bool bIsSemanticOverlapArea) :
 		Self(InSelf), Other(InOther), 
 		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea) {};
 
-	// Helper constructor with mesh component (static/skeletal)
+	// Init constructor with mesh component (static/skeletal)
 	FSLOverlapResult(const FSLItem& InSelf, const FSLItem& InOther, float InTime, 
 		bool bIsSemanticOverlapArea, UMeshComponent* InSelfMeshComponent, UMeshComponent* InOtherMeshComponent) :
 		Self(InSelf), Other(InOther), 

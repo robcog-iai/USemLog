@@ -29,7 +29,6 @@ void FSLGraspEventHandler::Init(UObject* InParent)
 
 		if (Parent)
 		{
-			UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 			// Mark as initialized
 			bIsInit = true;
 		}
@@ -118,7 +117,6 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 // Event called when a semantic grasp event begins
 void FSLGraspEventHandler::OnSLGraspBegin(uint32 SelfId, uint32 OtherId, float Time)
 {
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 	// Check that the objects are semantically annotated
 	FSLItem Self = FSLMappings::GetInstance()->GetSemanticItem(SelfId);
 	FSLItem Other = FSLMappings::GetInstance()->GetSemanticItem(OtherId);
@@ -131,6 +129,5 @@ void FSLGraspEventHandler::OnSLGraspBegin(uint32 SelfId, uint32 OtherId, float T
 // Event called when a semantic grasp event ends
 void FSLGraspEventHandler::OnSLGraspEnd(uint32 SelfId, uint32 OtherId, float Time)
 {
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
 	FSLGraspEventHandler::FinishEvent(OtherId, Time);
 }

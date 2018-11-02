@@ -47,7 +47,7 @@ public class USemLog : ModuleRules
 				"UTags",
 				"UIds",
 				"UConversions",
-				"UMCGrasp",		// WITH_MC_GRASP
+				"UMCGrasp",			// WITH_MC_GRASP
 				//"libmongo"		// WITH_LIBMONGO , TODO 4.20 has issues with libmongo
 				// ... add private dependencies that you statically link with here ...	
 			}

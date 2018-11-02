@@ -127,10 +127,7 @@ void ASLManager::Init()
 	if (!bIsInit)
 	{
 		// Init the semantic items content singleton
-		if (!FSLMappings::GetInstance()->IsInit())
-		{
-			FSLMappings::GetInstance()->Init(GetWorld());
-		}
+		FSLMappings::GetInstance()->Init(GetWorld());
 
 		// If the episode Id is not manually added, generate new unique id
 		if (!bUseCustomEpisodeId)

@@ -45,5 +45,8 @@ public:
 
 	// Get the tooltip data
 	virtual FString Tooltip() const override;
+
+	// Get data as string
+	virtual FString ToString() const override;
 	/* End IEvent interface */
 };

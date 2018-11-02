@@ -92,4 +92,10 @@ FString FSLPushedEvent::Tooltip() const
 {
 	return FString("PushedEvent");;
 }
+
+// Get the data as string
+FString FSLPushedEvent::ToString() const
+{
+	return FString("PushedEvent");;
+}
 /* End ISLEvent interface */

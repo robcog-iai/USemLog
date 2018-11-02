@@ -76,7 +76,13 @@ void FSLMappings::Clear()
 	bIsInit = false;
 }
 
-// Remove item
+// Remove item from object
+bool FSLMappings::RemoveItem(UObject* Object)
+{
+	return FSLMappings::RemoveItem(Object->GetUniqueID());
+}
+
+// Remove item from unique id
 bool FSLMappings::RemoveItem(uint32 UniqueId)
 {
 	int32 NrOfRemovedItems = IdItemMap.Remove(UniqueId);
@@ -90,7 +96,7 @@ bool FSLMappings::RemoveItem(uint32 UniqueId)
 	}
 }
 
-// Remove item
+// Try to add the given object as a semantic item (return false if the item is not properly annotated)
 bool FSLMappings::AddItem(UObject* Object)
 {
 	// Add to map if key is found in the actor
@@ -107,6 +113,12 @@ bool FSLMappings::AddItem(UObject* Object)
 	}
 }
 
+// Get semantic item structure, from object
+FSLItem FSLMappings::GetSemanticItem(UObject* Object) const
+{
+	return FSLMappings::GetSemanticItem(Object->GetUniqueID());
+}
+
 // Get semantic item structure, from unique id
 FSLItem FSLMappings::GetSemanticItem(uint32 UniqueId) const
 {
@@ -118,6 +130,12 @@ FSLItem FSLMappings::GetSemanticItem(uint32 UniqueId) const
 	{
 		return FSLItem();
 	}
+}
+
+// Get semantic id from object
+FString FSLMappings::GetSemanticId(UObject* Object) const
+{
+	return FSLMappings::GetSemanticId(Object->GetUniqueID());
 }
 
 // Get semantic id, from unique id
@@ -133,6 +151,12 @@ FString FSLMappings::GetSemanticId(uint32 UniqueId) const
 	}
 }
 
+// Get semantic class from object
+FString FSLMappings::GetSemanticClass(UObject* Object) const
+{
+	return FSLMappings::GetSemanticClass(Object->GetUniqueID());
+}
+
 // Get semantic class, from unique id
 FString FSLMappings::GetSemanticClass(uint32 UniqueId) const
 {
@@ -144,4 +168,43 @@ FString FSLMappings::GetSemanticClass(uint32 UniqueId) const
 	{
 		return FString();
 	}
+}
+
+// Check is semantically item exists and is valid from object
+bool FSLMappings::HasValidItem(UObject* Object) const
+{
+	return FSLMappings::HasValidItem(Object->GetUniqueID());
+}
+
+// Check is semantically item exists and is valid from unique id
+bool FSLMappings::HasValidItem(uint32 UniqueId) const
+{
+	if (const FSLItem* Item = IdItemMap.Find(UniqueId))
+	{
+		return Item->IsValid();
+	}
+	else
+	{
+		return false;
+	}
+}
+
+// Check if object has a valid ancestor 
+bool FSLMappings::HasValidAncestor(UObject* Object, UObject* OutAncestor) const
+{
+	UObject* Child = Object;
+	while(UObject* Outer = Child->GetOuter())
+	{
+		if (FSLMappings::HasValidItem(Outer))
+		{
+			OutAncestor = Outer;
+			return true;
+		}
+		else
+		{
+			// Move up on the tree
+			Child = Outer;
+		}
+	}
+	return false;
 }

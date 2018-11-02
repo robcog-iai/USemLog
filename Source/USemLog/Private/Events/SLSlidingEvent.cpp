@@ -92,4 +92,10 @@ FString FSLSlidingEvent::Tooltip() const
 {
 	return FString("SlidingEvent");;
 }
+
+// Get the data as string
+FString FSLSlidingEvent::ToString() const
+{
+	return FString("SlidingEvent");;
+}
 /* End ISLEvent interface */

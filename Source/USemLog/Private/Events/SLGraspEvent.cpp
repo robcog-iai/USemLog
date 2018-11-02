@@ -70,4 +70,11 @@ FString FSLGraspEvent::Tooltip() const
 	return FString::Printf(TEXT("\'Hand\',\'%s\',\'Id\',\'%s\',\'Other\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
 		*Hand.Class, *Hand.SemId, *Other.Class, *Other.SemId, *Id);
 }
+
+// Get the data as string
+FString FSLGraspEvent::ToString() const
+{
+	return FString::Printf(TEXT("Hand:[%s] Other:[%s] PairId:%lld"),
+		*Hand.ToString(), *Other.ToString(), PairId);
+}
 /* End ISLEvent interface */

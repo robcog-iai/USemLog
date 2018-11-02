@@ -52,6 +52,9 @@ void USLEventLogger::Init(const FString& InLogDirectory,
 		OwlDocTemplate = TemplateType;
 		bWriteTimelines = bInWriteTimelines;
 
+		// Init the semantic mappings (if not already init)
+		FSLMappings::GetInstance()->Init(GetWorld());
+
 		// Create the document template
 		ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
 
@@ -64,6 +67,12 @@ void USLEventLogger::Init(const FString& InLogDirectory,
 		// Init all contact trigger handlers
 		for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
 		{
+			// Skip objects that do not have a semantically annotated ancestor
+			if (!FSLMappings::GetInstance()->HasValidAncestor(*Itr))
+			{
+				continue;
+			}
+
 			// Init the semantic overlap area
 			Itr->Init();
 
@@ -93,6 +102,12 @@ void USLEventLogger::Init(const FString& InLogDirectory,
 #if WITH_MC_GRASP
 			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
 			{
+				// Skip objects that do not have a semantically annotated ancestor
+				if (!FSLMappings::GetInstance()->HasValidAncestor(*Itr))
+				{
+					continue;
+				}
+
 				// Create a grasp event handler 
 				TSharedPtr<FSLGraspEventHandler> GraspEventHandler = MakeShareable(new FSLGraspEventHandler());
 				GraspEventHandler->Init(*Itr);
@@ -187,7 +202,7 @@ void USLEventLogger::Finish()
 // Called when a semantic event is done
 void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 {
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->Tooltip());
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
 }
 

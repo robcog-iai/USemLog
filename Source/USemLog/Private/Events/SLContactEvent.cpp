@@ -68,4 +68,11 @@ FString FSLContactEvent::Tooltip() const
 	return FString::Printf(TEXT("\'O1\',\'%s\',\'Id\',\'%s\',\'O2\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
 		*Item1.Class, *Item1.SemId, *Item2.Class, *Item2.SemId, *Id);
 }
+
+// Get the data as string
+FString FSLContactEvent::ToString() const
+{
+	return FString::Printf(TEXT("Item1:[%s] Item2:[%s] PairId:%lld"),
+		*Item1.ToString(), *Item2.ToString(), PairId);
+}
 /* End ISLEvent interface */
