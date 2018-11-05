@@ -56,13 +56,13 @@ public:
 	bool IsInit() const { return bIsInit; }
 
 	// Get the map of objects to the semantic items
-	TMap<UObject*, FSLItem>& GetItemMap() { return ObjItemMap; };
+	TMap<UObject*, FSLItem>& GetItemMap() { return ObjItemMap; }
 
 	// Get the array of semantically annotated objects
-	int32 GetObjects(TArray<UObject*>& OutArray) { return ObjItemMap.GetKeys(OutArray); };
+	int32 GetObjects(TArray<UObject*>& OutArray) { return ObjItemMap.GetKeys(OutArray); }
 
 	// Get the map of objects to the semantic items
-	void GenerateItemsArray(TArray<FSLItem>& OutArray) { ObjItemMap.GenerateValueArray(OutArray); };
+	void GenerateItemsArray(TArray<FSLItem>& OutArray) { ObjItemMap.GenerateValueArray(OutArray); }
 
 private:
 	// Instance of the singleton

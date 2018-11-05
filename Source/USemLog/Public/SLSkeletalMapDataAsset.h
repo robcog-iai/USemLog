@@ -5,13 +5,13 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "SLSkeletalMeshMapping.generated.h"
+#include "SLSkeletalMapDataAsset.generated.h"
 
 /**
  * Data asset containing the mapping of skeletal bones to their semantic names
  */
-UCLASS()
-class USEMLOG_API USLSkeletalMeshMapping : public UDataAsset
+UCLASS(ClassGroup = (SL), meta = (DisplayName = "SL Skeletal Map Data Asset"))
+class USEMLOG_API USLSkeletalMapDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 

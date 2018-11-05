@@ -109,7 +109,7 @@ void FSLWorldStateWriterBson::AddActors(bson_t& OutBsonEntitiesArr)
 			// Check if the entity moved more than the threshold
 			const FVector CurrLoc = WorldStateActItr->Entity->GetActorLocation();
 			const FQuat CurrQuat = WorldStateActItr->Entity->GetActorQuat();
-			if (FVector::DistSquared(CurrLoc, WorldStateActItr->PrevLoc) > WorkerParent->DistanceSquaredThreshold)
+			if (FVector::DistSquared(CurrLoc, WorldStateActItr->PrevLoc) > WorkerParent->DistanceStepSizeSquared)
 			{
 				// Update prev location
 				WorldStateActItr->PrevLoc = CurrLoc;
@@ -184,7 +184,7 @@ void FSLWorldStateWriterBson::AddComponents(bson_t& OutBsonEntitiesArr)
 			// Check if the entity moved more than the threshold
 			const FVector CurrLoc = WorldStateCompItr->Entity->GetComponentLocation();
 			const FQuat CurrQuat = WorldStateCompItr->Entity->GetComponentQuat();
-			if (FVector::DistSquared(CurrLoc, WorldStateCompItr->PrevLoc) > WorkerParent->DistanceSquaredThreshold)
+			if (FVector::DistSquared(CurrLoc, WorldStateCompItr->PrevLoc) > WorkerParent->DistanceStepSizeSquared)
 			{
 				// Update prev location
 				WorldStateCompItr->PrevLoc = CurrLoc;

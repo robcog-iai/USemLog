@@ -7,6 +7,17 @@
 #include "ISLWorldStateWriter.h"
 
 /**
+* Type of world state loggers
+*/
+UENUM()
+enum class ESLWorldStateWriterType : uint8
+{
+	Json					UMETA(DisplayName = "Json"),
+	Bson					UMETA(DisplayName = "Bson"),
+	Mongo					UMETA(DisplayName = "Mongo")
+};
+
+/**
 * Raw data structure for the logged entities
 */
 template <typename T> 
@@ -64,6 +75,12 @@ public:
 
 	// Init worker, load models to log from world
 	void Init(UWorld* InWorld, const float DistanceThreshold);
+	void Init(ESLWorldStateWriterType WriterType,
+		const float DistanceStepSize,
+		const FString& EpisodeId,
+		const FString& LocationName,
+		const FString& HostIp = FString(),
+		const uint16 HostPort = 0);
 
 	// Log data to json file
 	void SetLogToJson(const FString& InLogDirectory, const FString& InEpisodeId);
@@ -91,10 +108,13 @@ private:
 	TArray<TSLWorldStateEntity<USceneComponent>> WorldStateComponents;
 
 	// Distance squared threshold
-	float DistanceSquaredThreshold;
+	float DistanceStepSizeSquared;
 
 	// Pointer to world
 	UWorld* World;
+
+	// Writer type
+	ESLWorldStateWriterType WriterType;
 
 	// Raw data writer
 	TSharedPtr<ISLWorldStateWriter> Writer;
