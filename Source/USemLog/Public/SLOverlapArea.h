@@ -38,13 +38,13 @@ struct FSLOverlapResult
 	// Default ctor
 	FSLOverlapResult() {};
 
-	// Helper constructor
+	// Init constructor
 	FSLOverlapResult(const FSLItem& InSelf, const FSLItem& InOther, float InTime, 
 		bool bIsSemanticOverlapArea) :
 		Self(InSelf), Other(InOther), 
 		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea) {};
 
-	// Helper constructor with mesh component (static/skeletal)
+	// Init constructor with mesh component (static/skeletal)
 	FSLOverlapResult(const FSLItem& InSelf, const FSLItem& InOther, float InTime, 
 		bool bIsSemanticOverlapArea, UMeshComponent* InSelfMeshComponent, UMeshComponent* InOtherMeshComponent) :
 		Self(InSelf), Other(InOther), 
@@ -65,7 +65,7 @@ struct FSLOverlapResult
 DECLARE_MULTICAST_DELEGATE_OneParam(FSLOverlapBeginSignature, const FSLOverlapResult&);
 
 /** Delegate to notify that a contact ended between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLOverlapEndSignature, uint32 /*SelfId*/, uint32 /*OtherId*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLOverlapEndSignature, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
 
 /**
  * Collision area listening for semantic collision events

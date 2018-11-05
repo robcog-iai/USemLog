@@ -32,8 +32,8 @@ FSLOwlNode FSLSupportedByEvent::ToOwlNode() const
 		"log", Id, "SupportedBySituation");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportedProperty("log", SupportedItem.SemId));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportingProperty("log", SupportingItem.SemId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportedProperty("log", SupportedItem.Id));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportingProperty("log", SupportingItem.Id));
 	return EventIndividual;
 }
 
@@ -49,10 +49,10 @@ void FSLSupportedByEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(End,
 		FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(SupportedItem.Id,
-		 FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportedItem.SemId, SupportedItem.Class));
-	EventsDoc->AddObjectIndividual(SupportingItem.Id,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportingItem.SemId, SupportingItem.Class));
+	EventsDoc->AddObjectIndividual(SupportedItem.Obj,
+		 FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportedItem.Id, SupportedItem.Class));
+	EventsDoc->AddObjectIndividual(SupportingItem.Obj,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportingItem.Id, SupportingItem.Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
@@ -66,6 +66,13 @@ FString FSLSupportedByEvent::Context() const
 FString FSLSupportedByEvent::Tooltip() const
 {
 	return FString::Printf(TEXT("\'SupportingItem\',\'%s\',\'Id\',\'%s\',\'SupportedItem\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
-		*SupportingItem.Class, *SupportingItem.SemId, *SupportedItem.Class, *SupportedItem.SemId, *Id);
+		*SupportingItem.Class, *SupportingItem.Id, *SupportedItem.Class, *SupportedItem.Id, *Id);
+}
+
+// Get the data as string
+FString FSLSupportedByEvent::ToString() const
+{
+	return FString::Printf(TEXT("SupportingItem:[%s] SupportedItem:[%s] PairId:%lld"),
+		*SupportingItem.ToString(), *SupportedItem.ToString(), PairId);
 }
 /* End ISLEvent interface */

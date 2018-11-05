@@ -33,7 +33,7 @@ private:
 	bool IsPartOfASupportedByEvent(FSLOverlapResult& InCandidate, float Time, TSharedPtr<FSLSupportedByEvent> OutEvent);
 
 	// Check if other obj is a supported by candidate
-	bool IsACandidate(const uint32 InOtherId, bool bRemoveIfFound = false);
+	bool IsACandidate(UObject* InOther, bool bRemoveIfFound = false);
 
 	// Finish then publish the event
 	bool FinishEvent(const uint64 InPairId, float EndTime);
@@ -45,7 +45,7 @@ private:
 	void OnSLOverlapBegin(const FSLOverlapResult& InResult);
 
 	// Event called when a semantic overlap event ends
-	void OnSLOverlapEnd(uint32 SelfId, uint32 OtherId, float Time);
+	void OnSLOverlapEnd(UObject* Self, UObject* Other, float Time);
 
 private:
 	// Parent semantic overlap area

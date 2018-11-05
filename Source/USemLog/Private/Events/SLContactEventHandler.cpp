@@ -59,20 +59,20 @@ void FSLContactEventHandler::AddNewEvent(const FSLOverlapResult& InResult)
 	// Start a semantic contact event
 	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
 		FIds::NewGuidInBase64Url(), InResult.Time,
-		FIds::PairEncodeCantor(InResult.Self.Id, InResult.Other.Id),
+		FIds::PairEncodeCantor(InResult.Self.Obj->GetUniqueID(), InResult.Other.Obj->GetUniqueID()),
 		InResult.Self, InResult.Other));
 	// Add event to the pending contacts array
 	StartedEvents.Emplace(ContactEvent);
 }
 
 // Publish finished event
-bool FSLContactEventHandler::FinishEvent(const uint32 InOtherId, float EndTime)
+bool FSLContactEventHandler::FinishEvent(UObject* InOther, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Item2.Id == InOtherId)
+		if ((*EventItr)->Item2.Obj == InOther)
 		{
 			// Set end time and publish event
 			(*EventItr)->End = EndTime;
@@ -106,7 +106,7 @@ void FSLContactEventHandler::OnSLOverlapBegin(const FSLOverlapResult& SemanticOv
 }
 
 // Event called when a semantic overlap event ends
-void FSLContactEventHandler::OnSLOverlapEnd(uint32 SelfId, uint32 OtherId, float Time)
+void FSLContactEventHandler::OnSLOverlapEnd(UObject* Self, UObject* Other, float Time)
 {
-	FSLContactEventHandler::FinishEvent(OtherId, Time);
+	FSLContactEventHandler::FinishEvent(Other, Time);
 }

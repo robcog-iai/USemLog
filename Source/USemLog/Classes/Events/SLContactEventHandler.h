@@ -29,7 +29,7 @@ private:
 	void AddNewEvent(const FSLOverlapResult& InResult);
 
 	// Finish then publish the event
-	bool FinishEvent(const uint32 InOtherId, float EndTime);
+	bool FinishEvent(UObject* Other, float EndTime);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);
@@ -38,7 +38,7 @@ private:
 	void OnSLOverlapBegin(const FSLOverlapResult& InResult);
 	
 	// Event called when a semantic overlap event ends
-	void OnSLOverlapEnd(uint32 SelfId, uint32 OtherId, float Time);
+	void OnSLOverlapEnd(UObject* Self, UObject* Other, float Time);
 
 private:
 	// Parent semantic overlap area

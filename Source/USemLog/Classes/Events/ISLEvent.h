@@ -47,5 +47,5 @@ public:
 	virtual FString Tooltip() const = 0;
 		
 	// To string
-	//virtual FString ToString() const = 0; // TODO
+	virtual FString ToString() const = 0;
 };

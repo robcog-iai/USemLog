@@ -65,7 +65,7 @@ void FSLWorldStateWriterJson::WriteData()
 // Set the file handle for the logger
 void FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
-	const FString Filename = InEpisodeId + TEXT("_RD.json");
+	const FString Filename = InEpisodeId + TEXT("_WS.json");
 	FString EpisodesDirPath = FPaths::ProjectDir() + LogDirectory + TEXT("/Episodes/");
 	FPaths::RemoveDuplicateSlashes(EpisodesDirPath);
 

@@ -34,8 +34,8 @@ FSLOwlNode FSLGraspEvent::ToOwlNode() const
 		"log", Id, "GraspingSomething");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Hand.SemId));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", Other.SemId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Hand.Id));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", Other.Id));
 	return EventIndividual;
 }
 
@@ -51,10 +51,10 @@ void FSLGraspEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
 		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(Hand.Id,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Hand.SemId, Hand.Class));
-	EventsDoc->AddObjectIndividual(Other.Id,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Other.SemId, Other.Class));
+	EventsDoc->AddObjectIndividual(Hand.Obj,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Hand.Id, Hand.Class));
+	EventsDoc->AddObjectIndividual(Other.Obj,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Other.Id, Other.Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
@@ -68,6 +68,13 @@ FString FSLGraspEvent::Context() const
 FString FSLGraspEvent::Tooltip() const
 {
 	return FString::Printf(TEXT("\'Hand\',\'%s\',\'Id\',\'%s\',\'Other\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
-		*Hand.Class, *Hand.SemId, *Other.Class, *Other.SemId, *Id);
+		*Hand.Class, *Hand.Id, *Other.Class, *Other.Id, *Id);
+}
+
+// Get the data as string
+FString FSLGraspEvent::ToString() const
+{
+	return FString::Printf(TEXT("Hand:[%s] Other:[%s] PairId:%lld"),
+		*Hand.ToString(), *Other.ToString(), PairId);
 }
 /* End ISLEvent interface */

@@ -64,12 +64,12 @@ void FSLSupportedByEventHandler::Finish(float EndTime)
 }
 
 // Check if other obj is a supported by candidate
-bool FSLSupportedByEventHandler::IsACandidate(const uint32 InOtherId, bool bRemoveIfFound)
+bool FSLSupportedByEventHandler::IsACandidate(UObject* InOther, bool bRemoveIfFound)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto CandidateItr(Candidates.CreateIterator()); CandidateItr; ++CandidateItr)
 	{
-		if ((*CandidateItr).Other.Id == InOtherId)
+		if ((*CandidateItr).Other.Obj == InOther)
 		{
 			if (bRemoveIfFound)
 			{
@@ -113,8 +113,8 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 		// Check that the relative speed on Z between the two objects is smaller than the threshold
 		if (RelVerticalSpeed < SL_SB_VERT_SPEED_TH)
 		{
-			const FString SemId = FIds::NewGuidInBase64Url();
-			const uint64 PairId = FIds::PairEncodeCantor(CandidateItr->Self.Id, CandidateItr->Other.Id);
+			const FString Id = FIds::NewGuidInBase64Url();
+			const uint64 PairId = FIds::PairEncodeCantor(CandidateItr->Self.Obj->GetUniqueID(), CandidateItr->Other.Obj->GetUniqueID());
 			if (CandidateItr->bIsOtherASemanticOverlapArea)
 			{
 				// Check which is supporting and which is supported
@@ -123,14 +123,14 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 					CandidateItr->OtherMeshComponent->GetComponentLocation().Z)
 				{
 					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
-						SemId, StartTime, PairId,
+						Id, StartTime, PairId,
 						CandidateItr->Self,			// supported
 						CandidateItr->Other)));		// supporting
 				}
 				else
 				{
 					StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
-						SemId, StartTime, PairId,
+						Id, StartTime, PairId,
 						CandidateItr->Other,	// supported
 						CandidateItr->Self)));	// supporting
 				}
@@ -139,7 +139,7 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 			{
 				// Can only support
 				StartedEvents.Emplace(MakeShareable(new FSLSupportedByEvent(
-					SemId, StartTime, PairId,
+					Id, StartTime, PairId,
 					CandidateItr->Self,			// supported
 					CandidateItr->Other)));		// supporting
 
@@ -254,13 +254,13 @@ void FSLSupportedByEventHandler::OnSLOverlapBegin(const FSLOverlapResult& InResu
 }
 
 // Event called when a semantic overlap event ends
-void FSLSupportedByEventHandler::OnSLOverlapEnd(uint32 SelfId, uint32 OtherId, float Time)
+void FSLSupportedByEventHandler::OnSLOverlapEnd(UObject* Self, UObject* Other, float Time)
 {
 	// Remove from candidate list
-	if (!IsACandidate(OtherId, true))
+	if (!IsACandidate(Other, true))
 	{
 		// If not in candidate list, check if it is a started event, and finish it
-		const uint64 PairId = FIds::PairEncodeCantor(SelfId, OtherId);
+		const uint64 PairId = FIds::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID());
 		FSLSupportedByEventHandler::FinishEvent(PairId, Time);
 	}
 }
