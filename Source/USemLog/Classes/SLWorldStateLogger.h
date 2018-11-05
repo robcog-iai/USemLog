@@ -8,6 +8,7 @@
 #include "WorldState/SLWorldStateAsyncWorker.h"
 #include "SLWorldStateLogger.generated.h"
 
+
 /**
  * Raw (subsymbolic) data logger, 
  * it synchronizes(ticks) the async worker on saving the world state at given timepoints.
@@ -27,6 +28,12 @@ public:
 
 	// Init Logger
 	void Init(const float DistanceThreshold);
+	void Init(ESLWorldStateWriterType WriterType,
+		const float DistanceStepSize,
+		const FString& EpisodeId,
+		const FString& Location,
+		const FString& HostIp = FString(),
+		const uint16 HostPort = 0);
 
 	// Start logger
 	void Start(const float UpdateRate);
@@ -80,4 +87,7 @@ private:
 
 	// Async worker to log the raw data
 	FAsyncTask<FSLWorldStateAsyncWorker>* AsyncWorker;
+
+	// Writer type
+	ESLWorldStateWriterType WriterType;
 };

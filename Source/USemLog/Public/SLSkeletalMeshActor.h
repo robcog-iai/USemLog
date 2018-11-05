@@ -5,11 +5,11 @@
 
 #include "CoreMinimal.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "SLSkeletalMeshMapping.h"
+#include "SLSkeletalMapDataAsset.h"
 #include "SLSkeletalMeshActor.generated.h"
 
 /**
- * Subclass of ASkeletalMeshActor that contains a Data Asset component (USLSkeletalMeshMapping)
+ * Subclass of ASkeletalMeshActor that contains a data asset component
  * that holds the mapping of skeletal bone names to their semantic names
  */
 UCLASS()
@@ -19,10 +19,10 @@ class USEMLOG_API ASLSkeletalMeshActor : public ASkeletalMeshActor
 
 public:
 	// Get the semantic mapping data asset
-	USLSkeletalMeshMapping* GetMapping() const { return SkeletalMeshMappingDataAsset; };
+	USLSkeletalMapDataAsset* GetMapping() const { return SemanticSkeletalMap; }
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	USLSkeletalMeshMapping* SkeletalMeshMappingDataAsset;
+	USLSkeletalMapDataAsset* SemanticSkeletalMap;
 	
 };

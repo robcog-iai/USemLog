@@ -2,14 +2,17 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLWorldStateLogger.h"
-#include "Tags.h"
 
 // Constructor
 USLWorldStateLogger::USLWorldStateLogger()
 {
+	// State flags
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
+
+	// Default writer to local json file
+	WriterType = ESLWorldStateWriterType::Json;
 }
 
 // Destructor
@@ -31,6 +34,28 @@ void USLWorldStateLogger::Init(const float InDistanceThreshold)
 
 		// Init async worker
 		AsyncWorker->GetTask().Init(GetWorld(), InDistanceThreshold);
+
+		// Flag as init
+		bIsInit = true;
+	}
+}
+void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
+	const float DistanceStepSize,
+	const FString& EpisodeId,
+	const FString& Location,
+	const FString& HostIp,
+	const uint16 HostPort)
+{
+	// TODO
+	// Writer should be done here and added as parameter to the AsyncWorker Init();
+	// Should the writer should receive as input the array of items to pe logged?
+	if (!bIsInit)
+	{
+		// Create async worker to do the writing on a separate thread
+		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
+
+		// Init async worker
+		AsyncWorker->GetTask().Init(GetWorld(), DistanceStepSize);
 
 		// Flag as init
 		bIsInit = true;

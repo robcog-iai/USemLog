@@ -78,7 +78,7 @@ private:
 
 	// Log directory (or the database name if saving to mongodb)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString LogDirectory;
+	FString Location;
 
 	// Start at load time
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -107,7 +107,11 @@ private:
 
 	// Distance (cm) threshold difference for logging a given item
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
-	float DistanceThreshold;
+	float DistanceStepSize;
+
+	// Writer type
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
+	ESLWorldStateWriterType WriterType;
 
 	// Log data to json file
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
@@ -123,11 +127,11 @@ private:
 
 	// Mongodb server IP
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogToMongo"))
-	FString MongoIP;
+	FString HostIP;
 
 	// Mongodb server PORT
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogToMongo"), meta = (ClampMin = 0, ClampMax = 65535))
-	uint16 MongoPort;
+	uint16 HostPort;
 
 	// world state logger, use UPROPERTY to avoid GC
 	UPROPERTY()

@@ -22,7 +22,7 @@ ASLManager::ASLManager()
 	// Semantic logger default values
 	bUseCustomEpisodeId = false;
 	EpisodeId = TEXT("autogen");
-	LogDirectory = TEXT("SemLog");
+	Location = TEXT("SemLog");
 	bStartAtBeginPlay = true;
 	bStartAtFirstTick = false;
 	bStartWithDelay = false;
@@ -30,13 +30,14 @@ ASLManager::ASLManager()
 
 	// World state logger default values
 	bLogWorldState = true;
-	UpdateRate = 0.0f;
-	DistanceThreshold = 0.5f;
+	UpdateRate = 0.0f;	// every tick
+	DistanceStepSize = 0.5f;	// cm
+	WriterType = ESLWorldStateWriterType::Json;
 	bLogToJson = true;
 	bLogToBson = false;
 	bLogToMongo = false;
-	MongoIP = TEXT("127.0.0.1.");
-	MongoPort = 27017;
+	HostIP = TEXT("127.0.0.1.");
+	HostPort = 27017;
 
 	// Events logger default values
 	bLogEventData = true;
@@ -140,28 +141,29 @@ void ASLManager::Init()
 		{
 			// Create and init world state logger
 			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
-			WorldStateLogger->Init(DistanceThreshold);
+			WorldStateLogger->Init(DistanceStepSize);
 
 			// Set log type
 			if (bLogToJson)
 			{
-				WorldStateLogger->SetLogToJson(LogDirectory, EpisodeId);
+				WorldStateLogger->SetLogToJson(Location, EpisodeId);
 			}
 			if (bLogToBson)
 			{
-				WorldStateLogger->SetLogToBson(LogDirectory, EpisodeId);
+				WorldStateLogger->SetLogToBson(Location, EpisodeId);
 			}
 			if (bLogToMongo)
 			{
-				WorldStateLogger->SetLogToMongo(LogDirectory, EpisodeId, MongoIP, MongoPort);
+				WorldStateLogger->SetLogToMongo(Location, EpisodeId, HostIP, HostPort);
 			}
+			WorldStateLogger->Init(WriterType, DistanceStepSize, EpisodeId, Location, HostIP, HostPort);
 		}
 
 		if (bLogEventData)
 		{
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
-			EventDataLogger->Init(LogDirectory, EpisodeId, ExperimentTemplateType,
+			EventDataLogger->Init(Location, EpisodeId, ExperimentTemplateType,
 				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
 		}
 
@@ -182,7 +184,7 @@ void ASLManager::Init()
 				{
 					if (USLVisManager* VisMan = Cast<USLVisManager>(CompItr))
 					{
-						VisMan->Init(LogDirectory, EpisodeId);
+						VisMan->Init(Location, EpisodeId);
 						VisionDataLoggers.Add(VisMan);
 					}
 				}

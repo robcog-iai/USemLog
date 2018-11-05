@@ -3,7 +3,6 @@
 
 #include "WorldState/SLWorldStateAsyncWorker.h"
 #include "SLMappings.h"
-// TODO use interface
 #include "WorldState/SLWorldStateWriterJson.h"
 #include "WorldState/SLWorldStateWriterBson.h"
 #include "WorldState/SLWorldStateWriterMongo.h"
@@ -29,7 +28,7 @@ void FSLWorldStateAsyncWorker::Init(UWorld* InWorld, const float DistanceThresho
 	World = InWorld;
 
 	// Set the square of the distance threshold for objects to be logged
-	DistanceSquaredThreshold = DistanceThreshold * DistanceThreshold;
+	DistanceStepSizeSquared = DistanceThreshold * DistanceThreshold;
 
 	//// Get all objects with the SemLog tag type 
 	//TMap<UObject*, TMap<FString, FString>> ObjsToKeyValuePairs =
@@ -62,14 +61,23 @@ void FSLWorldStateAsyncWorker::Init(UWorld* InWorld, const float DistanceThresho
 		// Take into account only objects with transform data)
 		if (AActor* ObjAsActor = Cast<AActor>(ItemPair.Value.Obj))
 		{
-			//WorldStateActors.Add(FSLWorldStateActor(TWeakObjectPtr<AActor>(ObjAsActor), Id));
-			WorldStateActors.Add(TSLWorldStateEntity<AActor>(ObjAsActor, ItemPair.Value.Id, ItemPair.Value.Class));
+			WorldStateActors.Emplace(TSLWorldStateEntity<AActor>(ObjAsActor, ItemPair.Value.Id, ItemPair.Value.Class));
 		}
 		else if (USceneComponent* ObjAsComp = Cast<USceneComponent>(ItemPair.Value.Obj))
 		{
-			WorldStateComponents.Add(TSLWorldStateEntity<USceneComponent>(ObjAsComp, ItemPair.Value.Id, ItemPair.Value.Class));
+			WorldStateComponents.Emplace(TSLWorldStateEntity<USceneComponent>(ObjAsComp, ItemPair.Value.Id, ItemPair.Value.Class));
 		}
 	}
+}
+void FSLWorldStateAsyncWorker::Init(ESLWorldStateWriterType WriterType,
+	const float DistanceStepSize,
+	const FString& EpisodeId,
+	const FString& LocationName,
+	const FString& HostIp,
+	const uint16 HostPort)
+{
+	// Set the square of the distance threshold for objects to be logged
+	DistanceStepSizeSquared = DistanceStepSize * DistanceStepSize;
 }
 
 // Log data to json file
