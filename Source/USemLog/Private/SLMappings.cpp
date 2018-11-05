@@ -41,22 +41,23 @@ void FSLMappings::Init(UWorld* World)
 		for (TActorIterator<AActor> ActorItr(World); ActorItr; ++ActorItr)
 		{
 			// Add to map if key is found in the actor
-			FString ActSemId = FTags::GetValue(*ActorItr, "SemLog", "Id");
+			FString ActId = FTags::GetValue(*ActorItr, "SemLog", "Id");
 			FString ActClass = FTags::GetValue(*ActorItr, "SemLog", "Class");
-			if (!ActSemId.IsEmpty() && !ActClass.IsEmpty())
+			if (!ActId.IsEmpty() && !ActClass.IsEmpty())
 			{
-				IdItemMap.Emplace(ActorItr->GetUniqueID(), FSLItem(ActorItr->GetUniqueID(), ActSemId, ActClass));
+				
+				ObjItemMap.Emplace(*ActorItr, FSLItem(*ActorItr, ActId, ActClass));
 			}
 
 			// Iterate components of the actor
 			for (const auto& CompItr : ActorItr->GetComponents())
 			{
 				// Add to map if key is found in the actor
-				FString CompSemId = FTags::GetValue(CompItr, "SemLog", "Id");
-				FString CompSemClass = FTags::GetValue(CompItr, "SemLog", "Class");
-				if (!CompSemId.IsEmpty() && !CompSemId.IsEmpty())
-				{
-					IdItemMap.Emplace(CompItr->GetUniqueID(), FSLItem(CompItr->GetUniqueID(), CompSemId, CompSemClass));
+				FString CompId = FTags::GetValue(CompItr, "SemLog", "Id");
+				FString CompClass = FTags::GetValue(CompItr, "SemLog", "Class");
+				if (!CompId.IsEmpty() && !CompClass.IsEmpty())
+				{					
+					ObjItemMap.Emplace(CompItr, FSLItem(CompItr, CompId, CompClass));
 				}
 			}
 		}
@@ -70,7 +71,7 @@ void FSLMappings::Init(UWorld* World)
 void FSLMappings::Clear()
 {
 	// Clear any previous data
-	IdItemMap.Empty();
+	ObjItemMap.Empty();
 
 	// Mark as uninitialized
 	bIsInit = false;
@@ -79,13 +80,8 @@ void FSLMappings::Clear()
 // Remove item from object
 bool FSLMappings::RemoveItem(UObject* Object)
 {
-	return FSLMappings::RemoveItem(Object->GetUniqueID());
-}
-
-// Remove item from unique id
-bool FSLMappings::RemoveItem(uint32 UniqueId)
-{
-	int32 NrOfRemovedItems = IdItemMap.Remove(UniqueId);
+	//return FSLMappings::RemoveItem(Object->GetUniqueID());
+	int32 NrOfRemovedItems = ObjItemMap.Remove(Object);
 	if (NrOfRemovedItems > 0)
 	{
 		return true;
@@ -100,11 +96,11 @@ bool FSLMappings::RemoveItem(uint32 UniqueId)
 bool FSLMappings::AddItem(UObject* Object)
 {
 	// Add to map if key is found in the actor
-	FString SemId = FTags::GetValue(Object, "SemLog", "Id");
+	FString Id = FTags::GetValue(Object, "SemLog", "Id");
 	FString Class = FTags::GetValue(Object, "SemLog", "Class");
-	if (!SemId.IsEmpty() && !Class.IsEmpty())
+	if (!Id.IsEmpty() && !Class.IsEmpty())
 	{
-		IdItemMap.Emplace(Object->GetUniqueID(), FSLItem(Object->GetUniqueID(), SemId, Class));
+		ObjItemMap.Emplace(Object, FSLItem(Object, Id, Class));
 		return true;
 	}
 	else
@@ -114,15 +110,10 @@ bool FSLMappings::AddItem(UObject* Object)
 }
 
 // Get semantic item structure, from object
-FSLItem FSLMappings::GetSemanticItem(UObject* Object) const
+FSLItem FSLMappings::GetItem(UObject* Object) const
 {
-	return FSLMappings::GetSemanticItem(Object->GetUniqueID());
-}
-
-// Get semantic item structure, from unique id
-FSLItem FSLMappings::GetSemanticItem(uint32 UniqueId) const
-{
-	if (const FSLItem* Item = IdItemMap.Find(UniqueId))
+	//return FSLMappings::GetSemanticItem(Object->GetUniqueID());
+	if (const FSLItem* Item = ObjItemMap.Find(Object))
 	{
 		return *Item;
 	}
@@ -133,17 +124,12 @@ FSLItem FSLMappings::GetSemanticItem(uint32 UniqueId) const
 }
 
 // Get semantic id from object
-FString FSLMappings::GetSemanticId(UObject* Object) const
+FString FSLMappings::GetId(UObject* Object) const
 {
-	return FSLMappings::GetSemanticId(Object->GetUniqueID());
-}
-
-// Get semantic id, from unique id
-FString FSLMappings::GetSemanticId(uint32 UniqueId) const
-{
-	if (const FSLItem* Item = IdItemMap.Find(UniqueId))
+	//return FSLMappings::GetSemanticId(Object->GetUniqueID());
+	if (const FSLItem* Item = ObjItemMap.Find(Object))
 	{
-		return *Item->SemId;
+		return *Item->Id;
 	}
 	else
 	{
@@ -152,15 +138,10 @@ FString FSLMappings::GetSemanticId(uint32 UniqueId) const
 }
 
 // Get semantic class from object
-FString FSLMappings::GetSemanticClass(UObject* Object) const
+FString FSLMappings::GetClass(UObject* Object) const
 {
-	return FSLMappings::GetSemanticClass(Object->GetUniqueID());
-}
-
-// Get semantic class, from unique id
-FString FSLMappings::GetSemanticClass(uint32 UniqueId) const
-{
-	if (const FSLItem* Item = IdItemMap.Find(UniqueId))
+	//return FSLMappings::GetSemanticClass(Object->GetUniqueID());
+	if (const FSLItem* Item = ObjItemMap.Find(Object))
 	{
 		return *Item->Class;
 	}
@@ -173,13 +154,8 @@ FString FSLMappings::GetSemanticClass(uint32 UniqueId) const
 // Check is semantically item exists and is valid from object
 bool FSLMappings::HasValidItem(UObject* Object) const
 {
-	return FSLMappings::HasValidItem(Object->GetUniqueID());
-}
-
-// Check is semantically item exists and is valid from unique id
-bool FSLMappings::HasValidItem(uint32 UniqueId) const
-{
-	if (const FSLItem* Item = IdItemMap.Find(UniqueId))
+	//return FSLMappings::HasValidItem(Object->GetUniqueID());
+	if (const FSLItem* Item = ObjItemMap.Find(Object))
 	{
 		return Item->IsValid();
 	}

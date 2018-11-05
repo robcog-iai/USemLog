@@ -65,7 +65,7 @@ struct FSLOverlapResult
 DECLARE_MULTICAST_DELEGATE_OneParam(FSLOverlapBeginSignature, const FSLOverlapResult&);
 
 /** Delegate to notify that a contact ended between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLOverlapEndSignature, uint32 /*SelfId*/, uint32 /*OtherId*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLOverlapEndSignature, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
 
 /**
  * Collision area listening for semantic collision events

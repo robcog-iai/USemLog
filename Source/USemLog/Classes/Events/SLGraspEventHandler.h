@@ -26,16 +26,16 @@ private:
 	void AddNewEvent(const FSLItem& Self, const FSLItem& Other, float StartTime);
 
 	// Finish then publish the event
-	bool FinishEvent(const uint32 InOtherId, float EndTime);
+	bool FinishEvent(UObject* InOther, float EndTime);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLGraspBegin(uint32 SelfId, uint32 OtherId, float Time);
+	void OnSLGraspBegin(UObject* Self, UObject* Other, float Time);
 	
 	// Event called when a semantic overlap event ends
-	void OnSLGraspEnd(uint32 SelfId, uint32 OtherId, float Time);
+	void OnSLGraspEnd(UObject* Self, UObject* Other, float Time);
 
 private:
 	// Parent

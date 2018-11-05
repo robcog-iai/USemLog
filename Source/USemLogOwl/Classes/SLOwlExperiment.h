@@ -33,7 +33,7 @@ protected:
 	TArray<FSLOwlNode> ObjectIndividuals;
 
 	// Set of registered objects (in order to avoid multiple individual declaration)
-	TSet<uint32> RegisteredObjects;
+	TSet<UObject*> RegisteredObjects;
 
 	// Experiment individual
 	FSLOwlNode ExperimentIndividual;
@@ -66,12 +66,12 @@ public:
 	}
 
 	// Add object individual
-	bool AddObjectIndividual(const uint32 ObjUniqueId, const FSLOwlNode& InOwlNode)
+	bool AddObjectIndividual(UObject* Object, const FSLOwlNode& InOwlNode)
 	{
 		// Avoid logging the same individual multiple times
-		if (!RegisteredObjects.Contains(ObjUniqueId))
+		if (!RegisteredObjects.Contains(Object))
 		{
-			RegisteredObjects.Add(ObjUniqueId);
+			RegisteredObjects.Add(Object);
 			ObjectIndividuals.Emplace(InOwlNode);
 			return true;
 		}

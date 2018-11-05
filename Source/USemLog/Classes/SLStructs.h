@@ -9,11 +9,11 @@
 */
 struct FSLItem
 {
-	// Unique UObject id of item
-	uint32 Id;
+	// UObject of item
+	UObject* Obj;
 
 	// Semantic id of item
-	FString SemId;
+	FString Id;
 
 	// Semantic class of item
 	FString Class;
@@ -22,16 +22,16 @@ struct FSLItem
 	FSLItem() {};
 
 	// Init constructor
-	FSLItem(uint32 InId, const FString& InSemId, const FString& InSemClass) : 
-		Id(InId), SemId(InSemId), Class(InSemClass) {};
+	FSLItem(UObject* InObj, const FString& InId, const FString& InClass) :
+		Obj(InObj), Id(InId), Class(InClass) {};
 
 	// True if the unique id, the semantic id and the semantic class is not empty
-	bool IsValid() const { return Id > 0 && !SemId.IsEmpty() && !Class.IsEmpty(); }
+	bool IsValid() const { return Obj != nullptr && !Id.IsEmpty() && !Class.IsEmpty(); }
 
 	// Get result as string
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Id:%ld SemId:%s Class:%s"), Id, *SemId, *Class);
+		return FString::Printf(TEXT("UniqueID:%ld Id:%s Class:%s"), Obj->GetUniqueID(), *Id, *Class);
 	}
 };
 
