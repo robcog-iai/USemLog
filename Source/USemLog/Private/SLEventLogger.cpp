@@ -37,9 +37,9 @@ USLEventLogger::~USLEventLogger()
 }
 
 // Init Logger
-void USLEventLogger::Init(const FString& InLogDirectory,
+void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 	const FString& InEpisodeId,
-	ESLOwlExperimentTemplate TemplateType,
+	const FString& InLocation,
 	bool bInLogContactEvents,
 	bool bInLogSupportedByEvents,
 	bool bInLogGraspEvents,
@@ -47,7 +47,7 @@ void USLEventLogger::Init(const FString& InLogDirectory,
 {
 	if (!bIsInit)
 	{
-		LogDirectory = InLogDirectory;
+		LogDirectory = InLocation;
 		EpisodeId = InEpisodeId;
 		OwlDocTemplate = TemplateType;
 		bWriteTimelines = bInWriteTimelines;

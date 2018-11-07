@@ -62,3 +62,37 @@ struct FSLItemPair
 	}
 };
 
+
+/**
+* Raw data structure for the logged entities
+*/
+template <typename T>
+struct TSLItemState
+{
+	// The semantically annotated item
+	FSLItem Item;
+
+	// Its previous location
+	FVector PrevLoc;
+
+	// Its previous rotation
+	FQuat PrevQuat;
+
+	// Pointer to the actor/component/skeletal actor
+	TWeakObjectPtr<T> Entity;
+
+	// Default constructor
+	TSLItemState() {};
+
+	// Init constructor
+	TSLItemState(const FSLItem& InItem,
+		TWeakObjectPtr<T> InEntity,
+		FVector InPrevLoc = FVector(BIG_NUMBER),
+		FQuat InPrevQuat = FQuat::Identity) :
+		Item(InItem),
+		Entity(InEntity),
+		PrevLoc(InPrevLoc),
+		PrevQuat(InPrevQuat)
+	{};
+};
+

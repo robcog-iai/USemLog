@@ -7,14 +7,11 @@
 #include "Conversions.h"
 
 // Constr
-FSLWorldStateWriterBson::FSLWorldStateWriterBson()
+FSLWorldStateWriterBson::FSLWorldStateWriterBson(float DistanceStepSize, float RotationStepSize, 
+	const FString& Location, const FString& EpisodeId) : 
+	ISLWorldStateWriter(DistanceStepSize, RotationStepSize)
 {
-}
-
-// Constr with Init
-FSLWorldStateWriterBson::FSLWorldStateWriterBson(FSLWorldStateAsyncWorker* InWorkerParent, const FString& LogDirectory, const FString& EpisodeId)
-{
-	Init(InWorkerParent, LogDirectory, EpisodeId);
+	FSLWorldStateWriterBson::SetFileHandle(Location, EpisodeId);
 }
 
 // Destr
@@ -26,15 +23,11 @@ FSLWorldStateWriterBson::~FSLWorldStateWriterBson()
 	}
 }
 
-// Init
-void FSLWorldStateWriterBson::Init(FSLWorldStateAsyncWorker* InWorkerParent, const FString& LogDirectory, const FString& EpisodeId)
-{
-	WorkerParent = InWorkerParent;
-	SetFileHandle(LogDirectory, EpisodeId);
-}
-
 // Called to write the data
-void FSLWorldStateWriterBson::WriteData()
+void FSLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+	float Timestamp)
 {
 #if WITH_LIBMONGO
 	// Bson root object

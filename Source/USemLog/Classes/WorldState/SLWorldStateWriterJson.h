@@ -15,30 +15,34 @@ class FSLWorldStateAsyncWorker;
 class FSLWorldStateWriterJson : public ISLWorldStateWriter
 {
 public:
-	// Default constr
-	FSLWorldStateWriterJson();
-
-	// Constructor with init
-	FSLWorldStateWriterJson(FSLWorldStateAsyncWorker* InWorkerParent, const FString& LogDirectory, const FString& EpisodeId);
+	// Constructor
+	FSLWorldStateWriterJson(float DistanceStepSize, float RotationStepSize,
+		const FString& Location, const FString& EpisodeId);
 
 	// Destr
 	virtual ~FSLWorldStateWriterJson();
 
-	// Init
-	void Init(FSLWorldStateAsyncWorker* InWorkerParent, const FString& LogDirectory, const FString& EpisodeId);
-
-	// Called to write the data
-	virtual void WriteData() override;
+	// Write the data (it also removes invalid items from the array -- e.g. deleted ones)
+	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+		float Timestamp) override;
 
 private:
 	// Set the file handle for the logger
 	void SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
 
-	// Add actors
-	void AddActors(TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
+	// Add non skeletal actors to a json format
+	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
-	// Add components
-	void AddComponents(TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
+	// Add semantically annotated skeletal actors to a json format
+	void AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
+
+	// Add non skeletal components
+	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool, 
+		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
 	// Get entry as json object
 	TSharedPtr<FJsonObject> GetAsJsonEntry(const FString& InId,
@@ -48,9 +52,6 @@ private:
 
 	// Write entry to file
 	void WriteToFile(const TSharedPtr<FJsonObject>& InRootObj);
-
-	// Pointer to worker parent (access to raw data structure)
-	FSLWorldStateAsyncWorker* WorkerParent;
 
 	// File handle to write the raw data to file
 	IFileHandle* FileHandle;

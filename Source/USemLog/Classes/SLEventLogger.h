@@ -29,9 +29,9 @@ public:
 
 public:
 	// Init Logger
-	void Init(const FString& InLogDirectory,
+	void Init(ESLOwlExperimentTemplate TemplateType,
 		const FString& InEpisodeId,
-		ESLOwlExperimentTemplate TemplateType,
+		const FString& InLocation,
 		bool bInLogContactEvents,
 		bool bInLogSupportedByEvents,
 		bool bInLogGraspEvents,

@@ -19,19 +19,17 @@ class FSLWorldStateWriterBson : public ISLWorldStateWriter
 {
 public:
 	// Default constr
-	FSLWorldStateWriterBson();
-
-	// Constructor with init
-	FSLWorldStateWriterBson(FSLWorldStateAsyncWorker* InWorkerParent, const FString& LogDirectory, const FString& EpisodeId);
+	FSLWorldStateWriterBson(float DistanceStepSize, float RotationStepSize,
+		const FString& Location, const FString& EpisodeId);
 
 	// Destr
 	virtual ~FSLWorldStateWriterBson();
 
-	// Init
-	void Init(FSLWorldStateAsyncWorker* InWorkerParent, const FString& LogDirectory, const FString& EpisodeId);
-
 	// Called to write the data
-	virtual void WriteData() override;
+	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+		float Timestamp) override;
 
 private:
 	// Set the file handle for the logger

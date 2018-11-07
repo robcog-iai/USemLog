@@ -30,12 +30,10 @@ ASLManager::ASLManager()
 
 	// World state logger default values
 	bLogWorldState = true;
-	UpdateRate = 0.0f;	// every tick
-	DistanceStepSize = 0.5f;	// cm
+	UpdateRate = 0.0f;
+	DistanceStepSize = 0.5f;
+	RotationStepSize = 0.5f;
 	WriterType = ESLWorldStateWriterType::Json;
-	bLogToJson = true;
-	bLogToBson = false;
-	bLogToMongo = false;
 	HostIP = TEXT("127.0.0.1.");
 	HostPort = 27017;
 
@@ -51,7 +49,7 @@ ASLManager::ASLManager()
 	bLogVisionData = true;
 
 #if WITH_EDITOR
-	// Make sprite smaller
+	// Make manager sprite smaller
 	SpriteScale = 0.5;
 #endif // WITH_EDITOR
 }
@@ -141,35 +139,21 @@ void ASLManager::Init()
 		{
 			// Create and init world state logger
 			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
-			WorldStateLogger->Init(DistanceStepSize);
-
-			// Set log type
-			if (bLogToJson)
-			{
-				WorldStateLogger->SetLogToJson(Location, EpisodeId);
-			}
-			if (bLogToBson)
-			{
-				WorldStateLogger->SetLogToBson(Location, EpisodeId);
-			}
-			if (bLogToMongo)
-			{
-				WorldStateLogger->SetLogToMongo(Location, EpisodeId, HostIP, HostPort);
-			}
-			WorldStateLogger->Init(WriterType, DistanceStepSize, EpisodeId, Location, HostIP, HostPort);
+			WorldStateLogger->Init(WriterType, DistanceStepSize, RotationStepSize,
+				EpisodeId, Location, HostIP, HostPort);
 		}
 
 		if (bLogEventData)
 		{
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
-			EventDataLogger->Init(Location, EpisodeId, ExperimentTemplateType,
+			EventDataLogger->Init(ExperimentTemplateType, EpisodeId, Location,
 				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
 		}
 
-#if WITH_SL_VIS
 		if (bLogVisionData)
 		{
+#if WITH_SL_VIS
 			// Cache and init all vision logger components
 
 			//for (TObjectIterator<USLVisManager> ObjItr; ObjItr; ++ObjItr)
@@ -189,8 +173,8 @@ void ASLManager::Init()
 					}
 				}
 			}
-		}
 #endif //WITH_SL_VIS
+		}
 
 		// Mark manager as initialized
 		bIsInit = true;
@@ -269,22 +253,8 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
-	// Radio button style between bLogToJson, bLogToBson, bLogToMongo
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogToJson))
-	{
-		if (bLogToJson){bLogToBson = false; bLogToMongo = false;}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogToBson))
-	{
-		if (bLogToBson){bLogToJson = false; bLogToMongo = false;}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogToMongo))
-	{
-		if (bLogToMongo){bLogToJson = false; bLogToBson = false;}
-	}
-
 	// Radio button style between bStartAtBeginPlay, bStartAtFirstTick, bStartWithDelay
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtBeginPlay))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtBeginPlay))
 	{
 		if (bStartAtBeginPlay){bStartAtFirstTick = false; bStartWithDelay = false;}
 	}
@@ -309,5 +279,27 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 			bWriteTimelines = true;
 		}
 	}
+}
+
+// Called by the editor to query whether a property of this object is allowed to be modified.
+bool ASLManager::CanEditChange(const UProperty* InProperty) const
+{
+	// Get parent edit property
+	const bool ParentVal = Super::CanEditChange(InProperty);
+
+	// Get the property name
+	const FName PropertyName = InProperty->GetFName();
+
+	// HostIP and HostPort can only be edited if the world state writer is of type Mongo
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, HostIP))
+	{
+		return WriterType == ESLWorldStateWriterType::Mongo;
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, HostPort))
+	{
+		return WriterType == ESLWorldStateWriterType::Mongo;
+	}
+
+	return ParentVal;
 }
 #endif // WITH_EDITOR

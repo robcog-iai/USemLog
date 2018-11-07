@@ -74,6 +74,7 @@ public class USemLog : ModuleRules
 			PublicDefinitions.Add("WITH_LIBMONGO=1");
 		}
 
+		// TODO
 		// SL Vision currently only works in developer mode
 		// (https://docs.unrealengine.com/en-us/Programming/UnrealBuildSystem/TargetFiles)
 		if (Target.Type == TargetRules.TargetType.Editor)

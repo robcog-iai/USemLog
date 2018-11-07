@@ -19,27 +19,17 @@ class FSLWorldStateWriterMongo : public ISLWorldStateWriter
 {
 public:
 	// Default constr
-	FSLWorldStateWriterMongo();
-
-	// Constructor with init
-	FSLWorldStateWriterMongo(FSLWorldStateAsyncWorker* InWorkerParent,
-		const FString& InLogDB,
-		const FString& InEpisodeId,
-		const FString& InMongoIP,
-		uint16 MongoPort);
+	FSLWorldStateWriterMongo(float DistanceStepSize, float RotationStepSize, 
+		const FString& Location, const FString& EpisodeId, const FString& HostIP, uint16 HostPort);
 
 	// Destr
 	virtual ~FSLWorldStateWriterMongo();
 
-	// Init
-	void Init(FSLWorldStateAsyncWorker* InWorkerParent,
-		const FString& InLogDB,
-		const FString& InEpisodeId,
-		const FString& InMongoIP,
-		uint16 MongoPort);
-
-	// Called to write the data
-	virtual void WriteData() override;
+	// Write the data
+	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+		float Timestamp) override;
 
 private:
 	// Connect to mongo db

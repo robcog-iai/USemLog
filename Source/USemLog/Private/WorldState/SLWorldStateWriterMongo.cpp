@@ -11,18 +11,12 @@
 #endif //WITH_LIBMONGO
 
 // Constr
-FSLWorldStateWriterMongo::FSLWorldStateWriterMongo()
+FSLWorldStateWriterMongo::FSLWorldStateWriterMongo(float DistanceStepSize, float RotationStepSize, 
+	const FString& Location, const FString& EpisodeId,
+	const FString& HostIP, uint16 HostPort) :
+	ISLWorldStateWriter(DistanceStepSize, RotationStepSize)
 {
-}
-
-// Constr with Init
-FSLWorldStateWriterMongo::FSLWorldStateWriterMongo(FSLWorldStateAsyncWorker* InWorkerParent,
-	const FString& InLogDB,
-	const FString& InEpisodeId,
-	const FString& InMongoIP,
-	uint16 MongoPort)
-{
-	Init(InWorkerParent, InLogDB, InEpisodeId, InMongoIP, MongoPort);
+	bConnect = FSLWorldStateWriterMongo::ConnectToMongo(Location, EpisodeId, HostIP, HostPort);
 }
 
 // Destr
@@ -35,19 +29,11 @@ FSLWorldStateWriterMongo::~FSLWorldStateWriterMongo()
 	//mongoc_cleanup();
 }
 
-// Init
-void FSLWorldStateWriterMongo::Init(FSLWorldStateAsyncWorker* InWorkerParent,
-	const FString& InLogDB,
-	const FString& InEpisodeId,
-	const FString& InMongoIP,
-	uint16 MongoPort)
-{
-	WorkerParent = InWorkerParent;
-	bConnect = ConnectToMongo(InLogDB, InEpisodeId, InMongoIP, MongoPort);
-}
-
 // Called to write the data
-void FSLWorldStateWriterMongo::WriteData()
+void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+	float Timestamp)
 {
 #if WITH_LIBMONGO
 	if (bConnect)

@@ -5,6 +5,8 @@
 
 #include "Async/AsyncWork.h"
 #include "ISLWorldStateWriter.h"
+#include "SLStructs.h"
+#include "SLSkeletalMeshActor.h"
 
 /**
 * Type of world state loggers
@@ -18,40 +20,6 @@ enum class ESLWorldStateWriterType : uint8
 };
 
 /**
-* Raw data structure for the logged entities
-*/
-template <typename T> 
-struct TSLWorldStateEntity
-{
-	// Default constructor
-	TSLWorldStateEntity() {};
-
-	// Constructor with init
-	TSLWorldStateEntity(TWeakObjectPtr<T> InEntity,
-		const FString& InId,
-		const FString& InClass,
-		FVector InPrevLoc = FVector(BIG_NUMBER)) :
-		Entity(InEntity),
-		Id(InId),
-		Class(InClass),
-		PrevLoc(InPrevLoc)
-	{};
-
-	// Actor weak pointer
-	TWeakObjectPtr<T> Entity;
-
-	// Unique id of the actor
-	FString Id;
-
-	// Class of the actor
-	FString Class;
-
-	// Previous location 
-	FVector PrevLoc;
-};
-
-
-/**
  * Async worker to log raw data
  */
 class FSLWorldStateAsyncWorker : public FNonAbandonableTask
@@ -59,12 +27,6 @@ class FSLWorldStateAsyncWorker : public FNonAbandonableTask
 	// Needed if DoWork() needs access private data from this class
 	friend class FAsyncTask<FSLWorldStateAsyncWorker>;
 	//friend class FAutoDeleteAsyncTask<SLWorldStateAsyncWorker>;
-	
-	// Writer needs access to the private data of this class (world, data arrays etc.)
-	friend class FSLWorldStateWriterJson;
-	friend class FSLWorldStateWriterBson;
-	friend class FSLWorldStateWriterMongo; 
-
 
 public:
 	// Constructor
@@ -74,25 +36,17 @@ public:
 	~FSLWorldStateAsyncWorker();
 
 	// Init worker, load models to log from world
-	void Init(UWorld* InWorld, const float DistanceThreshold);
-	void Init(ESLWorldStateWriterType WriterType,
-		const float DistanceStepSize,
+	void Init(UWorld* InWorld, 
+		ESLWorldStateWriterType WriterType,
+		float DistanceStepSize,
+		float RotationStepSize,
 		const FString& EpisodeId,
-		const FString& LocationName,
+		const FString& Location,
 		const FString& HostIp = FString(),
 		const uint16 HostPort = 0);
 
-	// Log data to json file
-	void SetLogToJson(const FString& InLogDirectory, const FString& InEpisodeId);
-
-	// Log data to bson file
-	void SetLogToBson(const FString& InLogDirectory, const FString& InEpisodeId);
-
-	// Log data to mongodb
-	void SetLogToMongo(const FString& InLogDB, const FString& InEpisodeId, const FString& InMongoIP, uint16 MongoPort);
-	
-	// Remove all non-dynamic objects from array
-	void RemoveAllNonDynamicObjects();
+	// Remove all non-movable semantic items from the update pool
+	void RemoveStaticItems();
 
 private:
 	// FAsyncTask - async work done here
@@ -101,21 +55,27 @@ private:
 	// Needed by unreal internally
 	FORCEINLINE TStatId GetStatId() const;
 
-	// Array of semantically annotated actors to be logged
-	TArray<TSLWorldStateEntity<AActor>> WorldStateActors;
-
-	// Array of semantically annotated components to be logged
-	TArray<TSLWorldStateEntity<USceneComponent>> WorldStateComponents;
+private:
+	// Pointer to world (access to timestamps)
+	UWorld* World;
 
 	// Distance squared threshold
 	float DistanceStepSizeSquared;
 
-	// Pointer to world
-	UWorld* World;
-
-	// Writer type
-	ESLWorldStateWriterType WriterType;
-
 	// Raw data writer
 	TSharedPtr<ISLWorldStateWriter> Writer;
+
+	// Array of semantically annotated actors that are not skeletal
+	TArray<TSLItemState<AActor>> NonSkeletalActorPool;
+
+	// Array of semantically annotated skeletal actors
+	TArray<TSLItemState<ASLSkeletalMeshActor>> SkeletalActorPool;
+
+	// Array of semantically annotated components that are not skeletal
+	TArray<TSLItemState<USceneComponent>> NonSkeletalComponentPool;
+
+	// TODO USLSkeletalMeshComponent,
+	// could not find out how to dynamically change type to point to a SLSkeletalMapDataAsset
+	// Array of semantically annotated skeletal actors
+	//TArray<TSLItemState<USkeletalMeshComponent>> SkeletalComponentPool;
 };

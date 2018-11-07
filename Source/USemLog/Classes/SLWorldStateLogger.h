@@ -27,9 +27,9 @@ public:
 	~USLWorldStateLogger();
 
 	// Init Logger
-	void Init(const float DistanceThreshold);
 	void Init(ESLWorldStateWriterType WriterType,
-		const float DistanceStepSize,
+		float DistanceStepSize,
+		float RotationStepSize,
 		const FString& EpisodeId,
 		const FString& Location,
 		const FString& HostIp = FString(),
@@ -40,15 +40,6 @@ public:
 
 	// Finish logger
 	void Finish();
-
-	// Log data to json file
-	void SetLogToJson(const FString& InLogDirectory, const FString& InEpisodeId);
-
-	// Log data to bson file
-	void SetLogToBson(const FString& InLogDirectory, const FString& InEpisodeId);
-
-	// Log data to mongodb
-	void SetLogToMongo(const FString& InLogDB, const FString& InEpisodeId, const FString& InMongoIP, uint16 MongoPort);
 
 protected:
 	/** Begin FTickableGameObject interface */
@@ -64,7 +55,7 @@ protected:
 
 private:
 	// Log initial state of the world (static and dynamic entities)
-	void LogInitialWorldState();
+	void PreUpdate();
 
 	// Log current state of the world (dynamic objects that moved more than the distance threshold)
 	void Update();
@@ -85,9 +76,6 @@ private:
 	// Timer handle for custom update rate
 	FTimerHandle TimerHandle;
 
-	// Async worker to log the raw data
+	// Async worker to log the raw data on a separate thread
 	FAsyncTask<FSLWorldStateAsyncWorker>* AsyncWorker;
-
-	// Writer type
-	ESLWorldStateWriterType WriterType;
 };

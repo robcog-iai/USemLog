@@ -10,9 +10,6 @@ USLWorldStateLogger::USLWorldStateLogger()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
-
-	// Default writer to local json file
-	WriterType = ESLWorldStateWriterType::Json;
 }
 
 // Destructor
@@ -25,37 +22,22 @@ USLWorldStateLogger::~USLWorldStateLogger()
 }
 
 // Init logger
-void USLWorldStateLogger::Init(const float InDistanceThreshold)
-{
-	if (!bIsInit)
-	{
-		// Create async worker to log on a separate thread
-		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
-
-		// Init async worker
-		AsyncWorker->GetTask().Init(GetWorld(), InDistanceThreshold);
-
-		// Flag as init
-		bIsInit = true;
-	}
-}
 void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
-	const float DistanceStepSize,
+	float DistanceStepSize,
+	float RotationStepSize,
 	const FString& EpisodeId,
 	const FString& Location,
 	const FString& HostIp,
 	const uint16 HostPort)
 {
-	// TODO
-	// Writer should be done here and added as parameter to the AsyncWorker Init();
-	// Should the writer should receive as input the array of items to pe logged?
 	if (!bIsInit)
 	{
 		// Create async worker to do the writing on a separate thread
 		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
 
-		// Init async worker
-		AsyncWorker->GetTask().Init(GetWorld(), DistanceStepSize);
+		// Init async worker (create the writer and set logging parameters)
+		AsyncWorker->GetTask().Init(GetWorld(), WriterType, DistanceStepSize, RotationStepSize,
+			EpisodeId, Location, HostIp, HostPort);
 
 		// Flag as init
 		bIsInit = true;
@@ -67,15 +49,17 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 {
 	if (!bIsStarted && bIsInit)
 	{
-		// Log initial state of the world
-		USLWorldStateLogger::LogInitialWorldState();
+		// Call before binding the recurrent Update function
+		// this ensures the first world state is logged (static and movable semantic items)
+		USLWorldStateLogger::PreUpdate();
 
 		// Start updating
 		if (UpdateRate > 0.0f)
 		{
 			// Update logger on custom timer tick (does not guarantees the UpdateRate value,
 			// since it will be eventually triggered from the game thread tick
-			GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &USLWorldStateLogger::Update, UpdateRate, true);
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, this,
+				&USLWorldStateLogger::Update, UpdateRate, true);
 		}
 		else
 		{
@@ -104,6 +88,11 @@ void USLWorldStateLogger::Finish()
 		if (TimerHandle.IsValid())
 		{
 			GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+		}		
+		//  Disable tick
+		if (bIsTickable)
+		{
+			bIsTickable = false;
 		}
 
 		// Mark logger as finished
@@ -113,37 +102,11 @@ void USLWorldStateLogger::Finish()
 	}
 }
 
-// Log data to json file
-void USLWorldStateLogger::SetLogToJson(const FString& InLogDirectory, const FString& InEpisodeId)
-{
-	if (AsyncWorker)
-	{
-		AsyncWorker->GetTask().SetLogToJson(InLogDirectory, InEpisodeId);
-	}
-}
-
-// Log data to bson file
-void USLWorldStateLogger::SetLogToBson(const FString& InLogDirectory, const FString& InEpisodeId)
-{
-	if (AsyncWorker)
-	{
-		AsyncWorker->GetTask().SetLogToBson(InLogDirectory, InEpisodeId);
-	}
-}
-
-// Log data to mongodb
-void USLWorldStateLogger::SetLogToMongo(const FString& InLogDB, const FString& InEpisodeId, const FString& InMongoIP, uint16 MongoPort)
-{
-	if (AsyncWorker)
-	{
-		AsyncWorker->GetTask().SetLogToMongo(InLogDB, InEpisodeId, InMongoIP, MongoPort);
-	}
-}
-
 /** Begin FTickableGameObject interface */
 // Called after ticking all actors, DeltaTime is the time passed since the last call.
 void USLWorldStateLogger::Tick(float DeltaTime)
 {
+	// Call update on tick
 	USLWorldStateLogger::Update();
 }
 
@@ -161,7 +124,7 @@ TStatId USLWorldStateLogger::GetStatId() const
 /** End FTickableGameObject interface */
 
 // Log initial state of the world (static and dynamic entities)
-void USLWorldStateLogger::LogInitialWorldState()
+void USLWorldStateLogger::PreUpdate()
 {
 	// Start async worker
 	AsyncWorker->StartBackgroundTask();
@@ -170,7 +133,7 @@ void USLWorldStateLogger::LogInitialWorldState()
 	AsyncWorker->EnsureCompletion();
 
 	// Remove all non-dynamic objects from worker
-	AsyncWorker->GetTask().RemoveAllNonDynamicObjects();
+	AsyncWorker->GetTask().RemoveStaticItems();
 }
 
 // Log current state of the world (dynamic objects that moved more than the distance threshold)

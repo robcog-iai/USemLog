@@ -36,6 +36,9 @@ protected:
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+
+	// Called by the editor to query whether a property of this object is allowed to be modified.
+	virtual bool CanEditChange(const UProperty* InProperty) const override;
 #endif // WITH_EDITOR
 
 public:
@@ -109,31 +112,23 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
 	float DistanceStepSize;
 
+	// Rotation (radians) threshold difference for logging a given item
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
+	float RotationStepSize;
+
 	// Writer type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
 	ESLWorldStateWriterType WriterType;
 
-	// Log data to json file
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
-	bool bLogToJson;
-
-	// Log data to bson file
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
-	bool bLogToBson;
-
-	// Log data to mongodb
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
-	bool bLogToMongo;
-
 	// Mongodb server IP
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogToMongo"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger")
 	FString HostIP;
 
 	// Mongodb server PORT
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogToMongo"), meta = (ClampMin = 0, ClampMax = 65535))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (ClampMin = 0, ClampMax = 65535))
 	uint16 HostPort;
 
-	// world state logger, use UPROPERTY to avoid GC
+	// World state logger, use UPROPERTY to avoid GC
 	UPROPERTY()
 	USLWorldStateLogger* WorldStateLogger;
 	/* End world state logger properties */
