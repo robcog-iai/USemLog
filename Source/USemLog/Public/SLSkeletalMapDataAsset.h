@@ -21,6 +21,11 @@ protected:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
+public:
+	// Map of bones to their class names
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	TMap<FName, FString> BoneClassMap;	
+
 private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	UPhysicsAsset* PhysicsAsset;
@@ -30,7 +35,4 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	USkeletalMesh* SkeletalMesh;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FString, FString> BoneSemanticNameMap;	
 };

@@ -19,10 +19,9 @@ class USEMLOG_API ASLSkeletalMeshActor : public ASkeletalMeshActor
 
 public:
 	// Get the semantic mapping data asset
-	USLSkeletalMapDataAsset* GetMapping() const { return SemanticSkeletalMap; }
+	USLSkeletalMapDataAsset* GetSkeletalMapDataAsset() const { return SkeletalMapDataAsset; }
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	USLSkeletalMapDataAsset* SemanticSkeletalMap;
-	
+	USLSkeletalMapDataAsset* SkeletalMapDataAsset;
 };

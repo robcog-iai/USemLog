@@ -50,6 +50,10 @@ private:
 		const FVector& InLoc,
 		const FQuat& InQuat);
 
+	// Get entry as json object
+	TSharedPtr<FJsonObject> GetAsJsonEntry2(const TMap<FString, FString>& InKeyValMap,
+		const FVector& InLoc, const FQuat& InQuat);
+
 	// Write entry to file
 	void WriteToFile(const TSharedPtr<FJsonObject>& InRootObj);
 
