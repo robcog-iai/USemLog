@@ -33,7 +33,7 @@ void USLSkeletalMapDataAsset::PostEditChangeProperty(struct FPropertyChangedEven
 				FString NDName = Node.DisplayName;
 				UE_LOG(LogTemp, Warning, TEXT("\t\t %s::%d Name=%s, ParentName=%s, DisplayName=%s "),
 					TEXT(__FUNCTION__), __LINE__, *NName.ToString(), *NPName.ToString(), *NDName);
-				BoneSemanticNameMap.Add(Node.Name.ToString(), "NONE");			
+				BoneClassMap.Add(Node.Name, "NONE");			
 			}
 		}
 		
@@ -41,7 +41,7 @@ void USLSkeletalMapDataAsset::PostEditChangeProperty(struct FPropertyChangedEven
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalMapDataAsset, SkeletalMesh))
 	{
 		
-		BoneSemanticNameMap.Empty();
+		BoneClassMap.Empty();
 	}
 }
 #endif // WITH_EDITOR
