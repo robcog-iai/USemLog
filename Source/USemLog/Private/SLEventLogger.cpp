@@ -10,7 +10,7 @@
 #include "Events/SLSupportedByEventHandler.h"
 #include "Events/SLGraspEventHandler.h"
 #include "SLOwlExperimentStatics.h"
-#include "SLOverlapArea.h"
+#include "SLOverlapShape.h"
 #include "SLGoogleCharts.h"
 
 // UUtils
@@ -65,7 +65,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		// rename FSLContactEventHandler,FSLSupportedByEventHandler,FSLGraspEventHandler -> Events
 
 		// Init all contact trigger handlers
-		for (TObjectIterator<USLOverlapArea> Itr; Itr; ++Itr)
+		for (TObjectIterator<USLOverlapShape> Itr; Itr; ++Itr)
 		{
 			// Skip objects that do not have a semantically annotated ancestor
 			if (!FSLMappings::GetInstance()->HasValidAncestor(*Itr))
@@ -138,9 +138,9 @@ void USLEventLogger::Start()
 		}
 
 		// Start the semantic overlap areas
-		for (auto& SLOverlapArea : SemanticOverlapAreas)
+		for (auto& SLOverlapShape : SemanticOverlapAreas)
 		{
-			SLOverlapArea->Start();
+			SLOverlapShape->Start();
 		}
 
 		// Mark as started
@@ -164,9 +164,9 @@ void USLEventLogger::Finish()
 		EventHandlers.Empty();
 
 		// Finish semantic overlap events publishing
-		for (auto& SLOverlapArea : SemanticOverlapAreas)
+		for (auto& SLOverlapShape : SemanticOverlapAreas)
 		{
-			SLOverlapArea->Finish();
+			SLOverlapShape->Finish();
 		}
 		SemanticOverlapAreas.Empty();
 

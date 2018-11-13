@@ -86,5 +86,5 @@ private:
 	TArray<TSharedPtr<ISLEventHandler>> EventHandlers;
 
 	// Cache of the semantic overlap areas
-	TArray<class USLOverlapArea*> SemanticOverlapAreas;
+	TArray<class USLOverlapShape*> SemanticOverlapAreas;
 };

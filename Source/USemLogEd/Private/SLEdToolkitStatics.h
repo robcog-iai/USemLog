@@ -11,6 +11,7 @@
 #include "Ids.h"
 #include "Tags.h"
 #include "SLSemanticMapWriter.h"
+#include "SLOverlapShape.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
@@ -274,6 +275,39 @@ struct FSLEdToolkitStatics
 			for (auto& C : Comps)
 			{
 				C->ComponentTags.Empty();
+			}
+		}
+		return FReply::Handled();
+	}
+
+	// Replace text in tags
+	static FReply UpdateSLOverlapShapeColors()
+	{
+		for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+		{
+			bool bHasClass = FTags::HasKey(*ActItr, "SemLog", "Class");
+
+			// Iterate actor components
+			TArray<USLOverlapShape*> Comps;
+			ActItr->GetComponents<USLOverlapShape>(Comps);
+			for (auto& C : Comps)
+			{
+				if (bHasClass)
+				{
+					if (C->ShapeColor != FColor::Green)
+					{
+						C->ShapeColor = FColor::Green;
+						C->MarkRenderStateDirty();
+					}
+				}
+				else
+				{
+					if (C->ShapeColor != FColor::Red)
+					{
+						C->ShapeColor = FColor::Red;
+						C->MarkRenderStateDirty();
+					}
+				}
 			}
 		}
 		return FReply::Handled();

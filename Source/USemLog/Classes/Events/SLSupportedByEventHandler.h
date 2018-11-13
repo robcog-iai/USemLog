@@ -49,7 +49,7 @@ private:
 
 private:
 	// Parent semantic overlap area
-	class USLOverlapArea* Parent;
+	class USLOverlapShape* Parent;
 	
 	// Candidates for supported by event
 	TArray<FSLOverlapResult> Candidates;
