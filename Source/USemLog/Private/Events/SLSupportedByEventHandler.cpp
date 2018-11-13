@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLSupportedByEventHandler.h"
-#include "SLOverlapArea.h"
+#include "SLOverlapShape.h"
 
 // UUtils
 #include "Ids.h"
@@ -15,7 +15,7 @@ void FSLSupportedByEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{		// Check if parent is of right type
-		Parent = Cast<USLOverlapArea>(InParent);
+		Parent = Cast<USLOverlapShape>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized

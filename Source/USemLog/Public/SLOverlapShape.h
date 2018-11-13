@@ -7,7 +7,7 @@
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "SLStructs.h"
-#include "SLOverlapArea.generated.h"
+#include "SLOverlapShape.generated.h"
 
 /**
  * Structure containing information about the semantic overlap event
@@ -71,15 +71,15 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLOverlapEndSignature, UObject* /*Self*/
  * Collision area listening for semantic collision events
  */
 UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics))
-class USEMLOG_API USLOverlapArea : public UBoxComponent
+class USEMLOG_API USLOverlapShape : public UBoxComponent
 {
 	GENERATED_BODY()
 public:
 	// Default constructor
-	USLOverlapArea();
+	USLOverlapShape();
 
 	// Dtor
-	~USLOverlapArea();
+	~USLOverlapShape();
 
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
 	void Init();
@@ -122,13 +122,13 @@ private:
 	// End of USceneComponent interface
 
 	// Load and apply cached parameters from tags
-	bool LoadAreaParameters();
+	bool LoadShapeBounds();
 
 	// Calculate and apply trigger area size
-	bool CalculateAreaParameters();
+	bool CalcShapeBounds();
 
 	// Save current parameters to tags
-	bool SaveAreaParameters();
+	bool StoreShapeBounds();
 #endif // WITH_EDITOR
 
 	// Publish currently overlapping components

@@ -1,7 +1,7 @@
 // Copyright 2018, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLOverlapArea.h"
+#include "SLOverlapShape.h"
 #include "SLMappings.h"
 #include "Animation/SkeletalMeshActor.h"
 
@@ -14,7 +14,7 @@
 #define SL_COLL_TAGTYPE "SemLogColl"
 
 // Default constructor
-USLOverlapArea::USLOverlapArea()
+USLOverlapShape::USLOverlapShape()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -30,39 +30,39 @@ USLOverlapArea::USLOverlapArea()
 }
 
 // Destructor
-USLOverlapArea::~USLOverlapArea()
+USLOverlapShape::~USLOverlapShape()
 {
 	if (!bIsFinished)
 	{
-		USLOverlapArea::Finish();
+		USLOverlapShape::Finish();
 	}
 }
 
 // Called at level startup
-void USLOverlapArea::BeginPlay()
+void USLOverlapShape::BeginPlay()
 {
 	Super::BeginPlay();
 
 	if (bStartAtBeginPlay)
 	{
-		USLOverlapArea::Init();
-		USLOverlapArea::Start();
+		USLOverlapShape::Init();
+		USLOverlapShape::Start();
 	}
 }
 
 // Called when actor removed from game or game ended
-void USLOverlapArea::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void USLOverlapShape::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
 	if (!bIsFinished)
 	{
-		USLOverlapArea::Finish();
+		USLOverlapShape::Finish();
 	}
 }
 
 // Setup pointers to outer, check if semantically annotated
-void USLOverlapArea::Init()
+void USLOverlapShape::Init()
 {
 	if (!bIsInit)
 	{
@@ -109,7 +109,7 @@ void USLOverlapArea::Init()
 }
 
 // Start overlap events, trigger currently overlapping objects
-void USLOverlapArea::Start()
+void USLOverlapShape::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -117,11 +117,11 @@ void USLOverlapArea::Start()
 		SetGenerateOverlapEvents(true);
 
 		// Broadcast currently overlapping components
-		USLOverlapArea::TriggerInitialOverlaps();
+		USLOverlapShape::TriggerInitialOverlaps();
 
 		// Bind future overlapping event delegates
-		OnComponentBeginOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapBegin);
-		OnComponentEndOverlap.AddDynamic(this, &USLOverlapArea::OnOverlapEnd);
+		OnComponentBeginOverlap.AddDynamic(this, &USLOverlapShape::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLOverlapShape::OnOverlapEnd);
 
 		// Mark as started
 		bIsStarted = true;
@@ -129,7 +129,7 @@ void USLOverlapArea::Start()
 }
 
 // Stop publishing overlap events
-void USLOverlapArea::Finish()
+void USLOverlapShape::Finish()
 {
 	if (bIsStarted || bIsInit)
 	{
@@ -145,19 +145,37 @@ void USLOverlapArea::Finish()
 
 #if WITH_EDITOR
 // Called after the C++ constructor and after the properties have been initialized
-void USLOverlapArea::PostInitProperties()
+void USLOverlapShape::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	if (!LoadAreaParameters())
+	if (!USLOverlapShape::LoadShapeBounds())
 	{
-		CalculateAreaParameters();
+		USLOverlapShape::CalcShapeBounds();
+		USLOverlapShape::StoreShapeBounds();
 	}
-	ShapeColor = FColor::Blue;
+
+	// Set the default color of the shape
+	if (FTags::HasKey(GetOuter(), "SemLog", "Class"))
+	{
+		if (ShapeColor != FColor::Green)
+		{
+			ShapeColor = FColor::Green;
+			MarkRenderStateDirty();
+		}
+	}
+	else
+	{
+		if (ShapeColor != FColor::Red)
+		{
+			ShapeColor = FColor::Red;
+			MarkRenderStateDirty();
+		}
+	}
 }
 
 // Called when a property is changed in the editor
-void USLOverlapArea::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -167,7 +185,7 @@ void USLOverlapArea::PostEditChangeProperty(struct FPropertyChangedEvent& Proper
 	FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != NULL) ? 
 		PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLOverlapArea, BoxExtent))
+	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLOverlapShape, BoxExtent))
 	{
 		if (PropertyName == FName("X"))
 		{
@@ -185,7 +203,7 @@ void USLOverlapArea::PostEditChangeProperty(struct FPropertyChangedEvent& Proper
 				FString::SanitizeFloat(BoxExtent.Y));
 		}
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLOverlapArea, RelativeLocation))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLOverlapShape, RelativeLocation))
 	{
 		if (PropertyName == FName("X"))
 		{
@@ -203,7 +221,7 @@ void USLOverlapArea::PostEditChangeProperty(struct FPropertyChangedEvent& Proper
 				FString::SanitizeFloat(RelativeLocation.Y));
 		}
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLOverlapArea, RelativeRotation))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLOverlapShape, RelativeRotation))
 	{
 		const FQuat RelQuat = GetRelativeTransform().GetRotation();
 		TMap<FString, FString> KeyValMap;
@@ -216,7 +234,7 @@ void USLOverlapArea::PostEditChangeProperty(struct FPropertyChangedEvent& Proper
 }
 
 // Called when this component is moved in the editor
-void USLOverlapArea::PostEditComponentMove(bool bFinished)
+void USLOverlapShape::PostEditComponentMove(bool bFinished)
 {
 	// Update tags with the new transform
 	const FTransform RelTransf = GetRelativeTransform();
@@ -238,7 +256,7 @@ void USLOverlapArea::PostEditComponentMove(bool bFinished)
 }
 
 // Read values from tags
-bool USLOverlapArea::LoadAreaParameters()
+bool USLOverlapShape::LoadShapeBounds()
 {
 	TMap<FString, FString> TagKeyValMap = 
 		FTags::GetKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE);
@@ -278,7 +296,7 @@ bool USLOverlapArea::LoadAreaParameters()
 }
 
 // Calculate trigger area size
-bool USLOverlapArea::CalculateAreaParameters()
+bool USLOverlapShape::CalcShapeBounds()
 {
 	// Get the static mesh component
 	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
@@ -292,15 +310,13 @@ bool USLOverlapArea::CalculateAreaParameters()
 		FTransform BoundsTransf(FQuat::Identity, SMComp->Bounds.Origin);
 		BoundsTransf.SetToRelativeTransform(SMComp->GetComponentTransform());
 		SetRelativeTransform(BoundsTransf);
-
-		// Save calculated data
-		return SaveAreaParameters();
+		return true;
 	}
 	return false;
 }
 
 // Save values to tags
-bool USLOverlapArea::SaveAreaParameters()
+bool USLOverlapShape::StoreShapeBounds()
 {
 	const FTransform RelTransf = GetRelativeTransform();
 	const FVector RelLoc = RelTransf.GetLocation();
@@ -326,7 +342,7 @@ bool USLOverlapArea::SaveAreaParameters()
 #endif // WITH_EDITOR
 
 // Publish currently overlapping components
-void USLOverlapArea::TriggerInitialOverlaps()
+void USLOverlapShape::TriggerInitialOverlaps()
 {
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
@@ -335,13 +351,13 @@ void USLOverlapArea::TriggerInitialOverlaps()
 	FHitResult Dummy;
 	for (const auto& CompItr : CurrOverlappingComponents)
 	{
-		USLOverlapArea::OnOverlapBegin(
+		USLOverlapShape::OnOverlapBegin(
 			this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
 }
 
 // Called on overlap begin events
-void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
+void USLOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex,
@@ -377,7 +393,7 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 			StartTime, false, OwnerMeshComp, OtherAsMeshComp);
 		OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
 	}
-	else if (USLOverlapArea* OtherContactTrigger = Cast<USLOverlapArea>(OtherComp))
+	else if (USLOverlapShape* OtherContactTrigger = Cast<USLOverlapShape>(OtherComp))
 	{
 		// If both areas are trigger areas, they will both concurrently trigger overlap events.
 		// To avoid this we consistently ignore one trigger event. This is chosen using
@@ -397,7 +413,7 @@ void USLOverlapArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 }
 
 // Called on overlap end events
-void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
+void USLOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
@@ -429,7 +445,7 @@ void USLOverlapArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		// Broadcast end of semantic overlap event
 		OnEndSLOverlap.Broadcast(OwnerItem.Obj, OtherItem.Obj, EndTime);
 	}
-	else if (USLOverlapArea* OtherContactTrigger = Cast<USLOverlapArea>(OtherComp))
+	else if (USLOverlapShape* OtherContactTrigger = Cast<USLOverlapShape>(OtherComp))
 	{
 		// If both areas are trigger areas, they will both concurrently trigger overlap events.
 		// To avoid this we consistently ignore one trigger event. This is chosen using

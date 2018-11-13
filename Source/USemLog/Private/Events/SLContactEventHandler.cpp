@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLContactEventHandler.h"
-#include "SLOverlapArea.h"
+#include "SLOverlapShape.h"
 
 // UUtils
 #include "Ids.h"
@@ -12,7 +12,7 @@ void FSLContactEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{		// Check if parent is of right type
-		Parent = Cast<USLOverlapArea>(InParent);
+		Parent = Cast<USLOverlapShape>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized

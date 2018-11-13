@@ -124,6 +124,15 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.IsEnabled(true)
 					.OnClicked_Static(&FSLEdToolkitStatics::ClearAllTags)
 					]
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("UpdateSLOverlapShapeColors", "Update SL Overlap Shape Colors"))
+					.IsEnabled(true)
+					.OnClicked_Static(&FSLEdToolkitStatics::UpdateSLOverlapShapeColors)
+					]
 		];
 		
 	FModeToolkit::Init(InitToolkitHost);
