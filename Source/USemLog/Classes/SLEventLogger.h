@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "USemLog.h"
 #include "UObject/NoExportTypes.h"
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
@@ -41,7 +41,7 @@ public:
 	void Start();
 
 	// Finish logger
-	void Finish();
+	void Finish(const float Time);
 
 private:
 	// Called when a semantic event is done

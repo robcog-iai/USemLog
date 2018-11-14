@@ -7,7 +7,7 @@
 #include "ModuleManager.h"
 
 // Declare log types
-DECLARE_LOG_CATEGORY_EXTERN(LogSemLogEd, All, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSLEd, All, All);
 
 class FUSemLogEd : public IModuleInterface
 {

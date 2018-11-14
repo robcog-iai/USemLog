@@ -285,29 +285,12 @@ struct FSLEdToolkitStatics
 	{
 		for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 		{
-			bool bHasClass = FTags::HasKey(*ActItr, "SemLog", "Class");
-
 			// Iterate actor components
 			TArray<USLOverlapShape*> Comps;
 			ActItr->GetComponents<USLOverlapShape>(Comps);
 			for (auto& C : Comps)
 			{
-				if (bHasClass)
-				{
-					if (C->ShapeColor != FColor::Green)
-					{
-						C->ShapeColor = FColor::Green;
-						C->MarkRenderStateDirty();
-					}
-				}
-				else
-				{
-					if (C->ShapeColor != FColor::Red)
-					{
-						C->ShapeColor = FColor::Red;
-						C->MarkRenderStateDirty();
-					}
-				}
+				C->UpdateVisualColor();
 			}
 		}
 		return FReply::Handled();

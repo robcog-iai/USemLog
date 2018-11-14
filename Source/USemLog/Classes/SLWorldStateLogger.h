@@ -27,12 +27,13 @@ public:
 	~USLWorldStateLogger();
 
 	// Init Logger
-	void Init(ESLWorldStateWriterType WriterType,
+	void Init(bool bLogVisionData,
+		ESLWorldStateWriterType WriterType,
 		float DistanceStepSize,
 		float RotationStepSize,
 		const FString& EpisodeId,
 		const FString& Location,
-		const FString& HostIp = FString(),
+		const FString& HostIP = FString(),
 		const uint16 HostPort = 0);
 
 	// Start logger
@@ -78,4 +79,8 @@ private:
 
 	// Async worker to log the raw data on a separate thread
 	FAsyncTask<FSLWorldStateAsyncWorker>* AsyncWorker;
+
+#if WITH_SL_VIS
+	FString RecordingName;
+#endif // WITH_SL_VIS
 };

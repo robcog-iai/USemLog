@@ -16,7 +16,6 @@
 // UUtils
 #include "Ids.h"
 
-
 #if WITH_MC_GRASP
 #include "MCFixationGrasp.h"
 #endif // WITH_MC_GRASP
@@ -30,9 +29,11 @@ USLEventLogger::USLEventLogger() : bIsInit(false), bIsStarted(false), bIsFinishe
 // Destructor
 USLEventLogger::~USLEventLogger()
 {
-	if (!bIsFinished)
+	if (!bIsFinished && !IsTemplate())
 	{
-		USLEventLogger::Finish();
+		UE_LOG(LogSL, Error, TEXT(">>%s::%d Called in destructor finishing events with time -1.f"),
+			TEXT(__FUNCTION__), __LINE__);
+		USLEventLogger::Finish(-1.f);
 	}
 }
 
@@ -149,17 +150,14 @@ void USLEventLogger::Start()
 }
 
 // Finish logger
-void USLEventLogger::Finish()
+void USLEventLogger::Finish(const float Time)
 {
 	if (bIsStarted || bIsInit)
 	{
-		// Get end time
-		const float EndTime = GetWorld()->GetTimeSeconds();
-
 		// Finish handlers pending events
 		for (auto& EvHandler : EventHandlers)
 		{
-			EvHandler->Finish(EndTime);
+			EvHandler->Finish(Time);
 		}
 		EventHandlers.Empty();
 

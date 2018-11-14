@@ -4,7 +4,7 @@
 #include "USemLogOwl.h"
 
 // Define logging types
-DEFINE_LOG_CATEGORY(LogOwl);
+DEFINE_LOG_CATEGORY(LogSLOwl);
 
 #define LOCTEXT_NAMESPACE "FUSemLogOwl"
 
