@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 #pragma once
 
-#include "CoreMinimal.h"
+#include "USemLog.h"
 #include "GameFramework/Info.h"
 #include "SLWorldStateLogger.h"
 #include "SLEventLogger.h"
@@ -11,7 +11,7 @@
 /**
  * Semantic logging manager (controls the logging in the world)
  */
-UCLASS(ClassGroup = (SL), hidecategories = (Actor, LOD, Cooking, Transform) )
+UCLASS(ClassGroup = (SL), hidecategories = (Actor, LOD, Cooking, Transform), DisplayName="SL Manager" )
 class USEMLOG_API ASLManager : public AInfo
 {
 	GENERATED_BODY()
@@ -48,8 +48,8 @@ public:
 	// Start loggers
 	void Start();
 
-	// Finish loggers
-	void Finish();
+	// Finish loggers (forced if called from destructor)
+	void Finish(const float Time, bool bForced = false);
 
 	// Get init state
 	bool IsInit() const { return bIsInit; };
@@ -59,6 +59,16 @@ public:
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
+
+private:
+	// Bind user inputs
+	void SetupInputBindings();
+
+	// Start input binding
+	void StartFromInput();
+
+	// Start input binding
+	void FinishFromInput();
 
 private:
 	// Set when manager is initialized
@@ -99,10 +109,26 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartWithDelay"))
 	float StartDelay;
 
+	// Start from external user input
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bStartFromUserInput;
+
+	// Action name for starting from user input
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartFromUserInput"))
+	FName StartInputActionName;
+
+	// Action name for finishing from user input
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartFromUserInput"))
+	FName FinishInputActionName;
+
 	/* Begin world state logger properties */
 	// Log world state
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogWorldState;
+
+	// Log vision data (this will cause the episode to be replayed for logging image data)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
+	bool bLogVisionData;
 
 	// Update rate of world state logging (0.f means logging on every tick)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
@@ -171,15 +197,4 @@ private:
 	UPROPERTY()
 	USLEventLogger* EventDataLogger;
 	/* End event data logger properties */
-
-	/* Begin vision data logger properties */
-	// Log vision data
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bLogVisionData;
-
-#if WITH_SL_VIS
-	// Vision data loggers
-	TArray<class USLVisManager*> VisionDataLoggers;
-	/* End vision data logger properties */
-#endif //WITH_SL_VIS
 };

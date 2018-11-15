@@ -28,7 +28,7 @@ public:
 	virtual void Start() = 0;
 	
 	// Terminate handler, finish and publish remaining events
-	virtual void Finish(float EndTime) = 0;
+	virtual void Finish(float EndTime, bool bForced = false) = 0;
 
 	// Get init state
 	bool IsInit() const { return bIsInit; };

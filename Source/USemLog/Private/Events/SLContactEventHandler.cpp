@@ -35,7 +35,7 @@ void FSLContactEventHandler::Start()
 }
 
 // Terminate listener, finish and publish remaining events
-void FSLContactEventHandler::Finish(float EndTime)
+void FSLContactEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (bIsStarted || bIsInit)
 	{

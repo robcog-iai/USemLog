@@ -6,7 +6,7 @@
 #include "SLEdStyle.h"
 
 // Define logging types
-DEFINE_LOG_CATEGORY(LogSemLogEd);
+DEFINE_LOG_CATEGORY(LogSLEd);
 
 #define LOCTEXT_NAMESPACE "FUSemLogEd"
 

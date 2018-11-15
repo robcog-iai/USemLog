@@ -52,7 +52,7 @@ void FSLGraspEventHandler::Start()
 }
 
 // Terminate listener, finish and publish remaining events
-void FSLGraspEventHandler::Finish(float EndTime)
+void FSLGraspEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (bIsStarted || bIsInit)
 	{

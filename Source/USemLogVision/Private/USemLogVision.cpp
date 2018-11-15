@@ -4,7 +4,7 @@
 #include "USemLogVision.h"
 
 // Define logging types
-DEFINE_LOG_CATEGORY(LogSemLogVision);
+DEFINE_LOG_CATEGORY(LogSLVis);
 
 #define LOCTEXT_NAMESPACE "FUSemLogVision"
 

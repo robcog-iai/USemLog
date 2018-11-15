@@ -34,7 +34,7 @@ USLOverlapShape::~USLOverlapShape()
 {
 	if (!bIsFinished)
 	{
-		USLOverlapShape::Finish();
+		USLOverlapShape::Finish(true);
 	}
 }
 
@@ -129,7 +129,7 @@ void USLOverlapShape::Start()
 }
 
 // Stop publishing overlap events
-void USLOverlapShape::Finish()
+void USLOverlapShape::Finish(bool bForced)
 {
 	if (bIsStarted || bIsInit)
 	{
@@ -155,23 +155,8 @@ void USLOverlapShape::PostInitProperties()
 		USLOverlapShape::StoreShapeBounds();
 	}
 
-	// Set the default color of the shape
-	if (FTags::HasKey(GetOuter(), "SemLog", "Class"))
-	{
-		if (ShapeColor != FColor::Green)
-		{
-			ShapeColor = FColor::Green;
-			MarkRenderStateDirty();
-		}
-	}
-	else
-	{
-		if (ShapeColor != FColor::Red)
-		{
-			ShapeColor = FColor::Red;
-			MarkRenderStateDirty();
-		}
-	}
+	// Set bounds visal corresponding color 
+	USLOverlapShape::UpdateVisualColor();
 }
 
 // Called when a property is changed in the editor
@@ -339,6 +324,29 @@ bool USLOverlapShape::StoreShapeBounds()
 	
 	return FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
 }
+
+// Update bounds visual (red/green -- parent is not/is semantically annotated)
+void USLOverlapShape::UpdateVisualColor()
+{
+	// Set the default color of the shape
+	if (FTags::HasKey(GetOuter(), "SemLog", "Class"))
+	{
+		if (ShapeColor != FColor::Green)
+		{
+			ShapeColor = FColor::Green;
+			MarkRenderStateDirty();
+		}
+	}
+	else
+	{
+		if (ShapeColor != FColor::Red)
+		{
+			ShapeColor = FColor::Red;
+			MarkRenderStateDirty();
+		}
+	}
+}
+
 #endif // WITH_EDITOR
 
 // Publish currently overlapping components

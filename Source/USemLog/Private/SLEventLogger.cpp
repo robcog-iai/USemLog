@@ -16,7 +16,6 @@
 // UUtils
 #include "Ids.h"
 
-
 #if WITH_MC_GRASP
 #include "MCFixationGrasp.h"
 #endif // WITH_MC_GRASP
@@ -30,9 +29,9 @@ USLEventLogger::USLEventLogger() : bIsInit(false), bIsStarted(false), bIsFinishe
 // Destructor
 USLEventLogger::~USLEventLogger()
 {
-	if (!bIsFinished)
+	if (!bIsFinished && !IsTemplate())
 	{
-		USLEventLogger::Finish();
+		USLEventLogger::Finish(-1.f, true);
 	}
 }
 
@@ -149,24 +148,22 @@ void USLEventLogger::Start()
 }
 
 // Finish logger
-void USLEventLogger::Finish()
+void USLEventLogger::Finish(const float Time, bool bForced)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("%s::%d Forced?%d"), TEXT(__FUNCTION__), __LINE__), bForced);
 	if (bIsStarted || bIsInit)
 	{
-		// Get end time
-		const float EndTime = GetWorld()->GetTimeSeconds();
-
 		// Finish handlers pending events
 		for (auto& EvHandler : EventHandlers)
 		{
-			EvHandler->Finish(EndTime);
+			EvHandler->Finish(Time, bForced);
 		}
 		EventHandlers.Empty();
 
 		// Finish semantic overlap events publishing
 		for (auto& SLOverlapShape : SemanticOverlapAreas)
 		{
-			SLOverlapShape->Finish();
+			SLOverlapShape->Finish(bForced);
 		}
 		SemanticOverlapAreas.Empty();
 
@@ -202,6 +199,7 @@ void USLEventLogger::Finish()
 // Called when a semantic event is done
 void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->ToString()));
 	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
 }

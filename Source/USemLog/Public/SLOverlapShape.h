@@ -88,7 +88,7 @@ public:
 	void Start();
 
 	// Stop publishing overlap events
-	void Finish();
+	void Finish(bool bForced = false);
 
 	// Get init state
 	bool IsInit() const { return bIsInit; };
@@ -106,8 +106,8 @@ protected:
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-private:
 #if WITH_EDITOR
+private:
 	// UObject interface
 	// Called after the C++ constructor and after the properties have been initialized
 	virtual void PostInitProperties() override;
@@ -129,8 +129,14 @@ private:
 
 	// Save current parameters to tags
 	bool StoreShapeBounds();
+
+public:
+	// Update bounds visual (red/green -- parent is not/is semantically annotated)
+	// it is public so it can be accessed from the editor panel for updates
+	void UpdateVisualColor();
 #endif // WITH_EDITOR
 
+private:
 	// Publish currently overlapping components
 	void TriggerInitialOverlaps();
 

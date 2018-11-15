@@ -27,6 +27,9 @@ ASLManager::ASLManager()
 	bStartAtFirstTick = false;
 	bStartWithDelay = false;
 	StartDelay = 0.5f;
+	bStartFromUserInput = false;
+	StartInputActionName = "SLStart";
+	FinishInputActionName = "SLFinish";
 
 	// World state logger default values
 	bLogWorldState = true;
@@ -57,9 +60,9 @@ ASLManager::ASLManager()
 // Sets default values
 ASLManager::~ASLManager()
 {
-	if (!bIsFinished)
+	if (!bIsFinished && !IsTemplate())
 	{
-		ASLManager::Finish();
+		ASLManager::Finish(-1.f, true);
 	}
 }
 
@@ -68,13 +71,8 @@ void ASLManager::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	// TODO test init here
-	// See if all other components are init when this is triggered (should be)
-	//ASLManager::Init();
-	
-	// use PrimaryComponentTick.bStartWithTickEnabled = false; 
-	// to avoid disabling tick on BeginPlay where the order of calls is not known
-	// see USLVisManager as example
+	// Init loggers
+	ASLManager::Init();
 }
 
 // Called when the game starts or when spawned
@@ -84,7 +82,6 @@ void ASLManager::BeginPlay()
 
 	if (bStartAtBeginPlay)
 	{
-		ASLManager::Init();
 		ASLManager::Start();
 	}
 	else if (bStartAtFirstTick)
@@ -92,7 +89,6 @@ void ASLManager::BeginPlay()
 		FTimerDelegate TimerDelegateNextTick;
 		TimerDelegateNextTick.BindLambda([this]
 		{
-			ASLManager::Init();
 			ASLManager::Start();
 		});
 		GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);
@@ -103,10 +99,14 @@ void ASLManager::BeginPlay()
 		FTimerDelegate TimerDelegateDelay;
 		TimerDelegateDelay.BindLambda([this]
 		{
-			ASLManager::Init();
 			ASLManager::Start();
 		});
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, StartDelay, false);
+	}
+	else if (bStartFromUserInput)
+	{
+		// Bind user input
+		ASLManager::SetupInputBindings();
 	}
 }
 
@@ -116,7 +116,7 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	if (!bIsFinished)
 	{
-		ASLManager::Finish();
+		ASLManager::Finish(GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -139,7 +139,7 @@ void ASLManager::Init()
 		{
 			// Create and init world state logger
 			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
-			WorldStateLogger->Init(WriterType, DistanceStepSize, RotationStepSize,
+			WorldStateLogger->Init(bLogVisionData, WriterType, DistanceStepSize, RotationStepSize,
 				EpisodeId, Location, HostIP, HostPort);
 		}
 
@@ -149,31 +149,6 @@ void ASLManager::Init()
 			EventDataLogger = NewObject<USLEventLogger>(this);
 			EventDataLogger->Init(ExperimentTemplateType, EpisodeId, Location,
 				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
-		}
-
-		if (bLogVisionData)
-		{
-#if WITH_SL_VIS
-			// Cache and init all vision logger components
-
-			//for (TObjectIterator<USLVisManager> ObjItr; ObjItr; ++ObjItr)
-			//{
-			//	ObjItr->Init(LogDirectory, EpisodeId);
-			//	VisionDataLoggerManagers.Add(*ObjItr);
-			//}
-			for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
-			{
-				// Iterate components of the actor, check for vision capture manager
-				for (auto& CompItr : ActorItr->GetComponents())
-				{
-					if (USLVisManager* VisMan = Cast<USLVisManager>(CompItr))
-					{
-						VisMan->Init(Location, EpisodeId);
-						VisionDataLoggers.Add(VisMan);
-					}
-				}
-			}
-#endif //WITH_SL_VIS
 		}
 
 		// Mark manager as initialized
@@ -198,41 +173,27 @@ void ASLManager::Start()
 			EventDataLogger->Start();
 		}
 
-#if WITH_SL_VIS
-		// Start vision loggers
-		for (auto& VisMan : VisionDataLoggers)
-		{
-			VisMan->Start();
-		}
-#endif //WITH_SL_VIS
-
 		// Mark manager as started
 		bIsStarted = true;
 	}
 }
 
 // Finish loggers
-void ASLManager::Finish()
+void ASLManager::Finish(const float Time, bool bForced)
 {
 	if (bIsInit || bIsStarted)
 	{
 		if (WorldStateLogger)
 		{
-			WorldStateLogger->Finish();
+			WorldStateLogger->Finish(bForced);
 		}
 
 		if (EventDataLogger)
 		{
-			EventDataLogger->Finish();
+			EventDataLogger->Finish(Time, bForced);
 		}
-
-#if WITH_SL_VIS
-		for (auto& VisMan : VisionDataLoggers)
-		{
-			VisMan->Finish();
-		}
-#endif //WITH_SL_VIS
 		
+		// TODO check if vis replay will use this
 		// Delete the semantic items content instance
 		FSLMappings::DeleteInstance();
 
@@ -253,31 +214,22 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
-	// Radio button style between bStartAtBeginPlay, bStartAtFirstTick, bStartWithDelay
+	// Radio button style between start flags
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtBeginPlay))
 	{
-		if (bStartAtBeginPlay){bStartAtFirstTick = false; bStartWithDelay = false;}
+		if (bStartAtBeginPlay) {bStartAtFirstTick = false; bStartWithDelay = false; bStartFromUserInput = false;}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtFirstTick))
 	{
-		if (bStartAtFirstTick){bStartAtBeginPlay = false; bStartWithDelay = false;}
+		if (bStartAtFirstTick) {bStartAtBeginPlay = false; bStartWithDelay = false; bStartFromUserInput = false;}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartWithDelay))
 	{
-		if (bStartWithDelay){bStartAtBeginPlay = false; bStartAtFirstTick = false;}
+		if (bStartWithDelay) {bStartAtBeginPlay = false; bStartAtFirstTick = false; bStartFromUserInput = false;}
 	}
-
-	// Writing timelines
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEventData))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartFromUserInput))
 	{
-		if (!bLogEventData){bWriteTimelines = false;}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEventData))
-	{
-		if (bLogEventData)
-		{
-			bWriteTimelines = true;
-		}
+		if (bStartFromUserInput) {bStartAtBeginPlay = false;  bStartWithDelay = false; bStartAtFirstTick = false;}
 	}
 }
 
@@ -303,3 +255,28 @@ bool ASLManager::CanEditChange(const UProperty* InProperty) const
 	return ParentVal;
 }
 #endif // WITH_EDITOR
+
+// Bind user inputs
+void ASLManager::SetupInputBindings()
+{
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		if (UInputComponent* IC = PC->InputComponent)
+		{
+			IC->BindAction(StartInputActionName, IE_Pressed, this, &ASLManager::StartFromInput);
+			IC->BindAction(FinishInputActionName, IE_Pressed, this, &ASLManager::FinishFromInput);
+		}
+	}
+}
+
+// Start input binding
+void ASLManager::StartFromInput()
+{
+	ASLManager::Start();
+}
+
+// Start input binding
+void ASLManager::FinishFromInput()
+{	
+	ASLManager::Finish(GetWorld()->GetTimeSeconds());
+}

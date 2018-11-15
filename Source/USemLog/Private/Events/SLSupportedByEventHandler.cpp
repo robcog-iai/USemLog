@@ -45,13 +45,16 @@ void FSLSupportedByEventHandler::Start()
 
 
 // Terminate listener, finish and publish remaining events
-void FSLSupportedByEventHandler::Finish(float EndTime)
+void FSLSupportedByEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (bIsStarted || bIsInit)
 	{
 		// End and broadcast all started events
 		FSLSupportedByEventHandler::FinishAllEvents(EndTime);
-		Parent->GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+		if (Parent->GetWorld())
+		{
+			Parent->GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+		}
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
 		// this would mean that the handler will need to inherit from UObject		

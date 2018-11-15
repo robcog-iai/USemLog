@@ -22,7 +22,7 @@ public:
 	void Start() override;
 
 	// Terminate listener, finish and publish remaining events
-	void Finish(float EndTime) override;
+	void Finish(float EndTime, bool bForced = false) override;
 
 private:
 	// Start new contact event
