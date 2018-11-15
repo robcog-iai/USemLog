@@ -48,8 +48,8 @@ public:
 	// Start loggers
 	void Start();
 
-	// Finish loggers
-	void Finish(const float Time);
+	// Finish loggers (forced if called from destructor)
+	void Finish(const float Time, bool bForced = false);
 
 	// Get init state
 	bool IsInit() const { return bIsInit; };

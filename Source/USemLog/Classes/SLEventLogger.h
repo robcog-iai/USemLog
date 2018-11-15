@@ -41,7 +41,7 @@ public:
 	void Start();
 
 	// Finish logger
-	void Finish(const float Time);
+	void Finish(const float Time, bool bForced = false);
 
 private:
 	// Called when a semantic event is done

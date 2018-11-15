@@ -62,9 +62,7 @@ ASLManager::~ASLManager()
 {
 	if (!bIsFinished && !IsTemplate())
 	{
-		UE_LOG(LogSL, Error, TEXT(">>%s::%d Called in destructor finishing events with time -1.f"),
-			TEXT(__FUNCTION__), __LINE__);
-		ASLManager::Finish(-1.f);
+		ASLManager::Finish(-1.f, true);
 	}
 }
 
@@ -125,10 +123,8 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 // Init loggers
 void ASLManager::Init()
 {
-	UE_LOG(LogSL, Warning, TEXT("%s %d"), TEXT(__FUNCTION__), __LINE__);
 	if (!bIsInit)
 	{
-		UE_LOG(LogSL, Warning, TEXT("\t\t%s %d"), TEXT(__FUNCTION__), __LINE__);
 		// Init the semantic items content singleton
 		FSLMappings::GetInstance()->Init(GetWorld());
 
@@ -163,11 +159,8 @@ void ASLManager::Init()
 // Start loggers
 void ASLManager::Start()
 {
-	UE_LOG(LogSL, Warning, TEXT("%s %d"), TEXT(__FUNCTION__), __LINE__);
 	if (!bIsStarted && bIsInit)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("START"));
-		UE_LOG(LogSL, Warning, TEXT("\t\t%s %d"), TEXT(__FUNCTION__), __LINE__);
 		// Start world state logger
 		if (bLogWorldState && WorldStateLogger)
 		{
@@ -186,25 +179,22 @@ void ASLManager::Start()
 }
 
 // Finish loggers
-void ASLManager::Finish(const float Time)
+void ASLManager::Finish(const float Time, bool bForced)
 {
-	UE_LOG(LogSL, Warning, TEXT("%s %d"), TEXT(__FUNCTION__), __LINE__);
 	if (bIsInit || bIsStarted)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("FINISH"));
-		UE_LOG(LogSL, Warning, TEXT("\t\t%s %d"), TEXT(__FUNCTION__), __LINE__);
 		if (WorldStateLogger)
 		{
-			WorldStateLogger->Finish();
+			WorldStateLogger->Finish(bForced);
 		}
 
 		if (EventDataLogger)
 		{
-			EventDataLogger->Finish(Time);
+			EventDataLogger->Finish(Time, bForced);
 		}
 		
+		// TODO check if vis replay will use this
 		// Delete the semantic items content instance
-		// TODO keep this because of the vision logger
 		FSLMappings::DeleteInstance();
 
 		// Mark manager as finished
@@ -269,7 +259,7 @@ bool ASLManager::CanEditChange(const UProperty* InProperty) const
 // Bind user inputs
 void ASLManager::SetupInputBindings()
 {
-	if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{
 		if (UInputComponent* IC = PC->InputComponent)
 		{

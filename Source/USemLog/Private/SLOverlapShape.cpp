@@ -34,7 +34,7 @@ USLOverlapShape::~USLOverlapShape()
 {
 	if (!bIsFinished)
 	{
-		USLOverlapShape::Finish();
+		USLOverlapShape::Finish(true);
 	}
 }
 
@@ -129,7 +129,7 @@ void USLOverlapShape::Start()
 }
 
 // Stop publishing overlap events
-void USLOverlapShape::Finish()
+void USLOverlapShape::Finish(bool bForced)
 {
 	if (bIsStarted || bIsInit)
 	{

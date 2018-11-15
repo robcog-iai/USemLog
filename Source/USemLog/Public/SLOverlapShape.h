@@ -88,7 +88,7 @@ public:
 	void Start();
 
 	// Stop publishing overlap events
-	void Finish();
+	void Finish(bool bForced = false);
 
 	// Get init state
 	bool IsInit() const { return bIsInit; };

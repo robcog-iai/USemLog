@@ -18,7 +18,7 @@ USLWorldStateLogger::~USLWorldStateLogger()
 {
 	if (!bIsFinished)
 	{
-		USLWorldStateLogger::Finish();
+		USLWorldStateLogger::Finish(true);
 	}
 }
 
@@ -41,13 +41,11 @@ void USLWorldStateLogger::Init(bool bLogVisionData,
 		AsyncWorker->GetTask().Init(GetWorld(), WriterType, DistanceStepSize, RotationStepSize,
 			EpisodeId, Location, HostIP, HostPort);
 
-		UE_LOG(LogSL, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 #if WITH_SL_VIS
 		if (bLogVisionData)
 		{
 			//VisionDataLogger->Init(GetWorld(), WriterType, EpisodeId, Location, HostIP, HostPort)
-			UE_LOG(LogSL, Warning, TEXT("\t\t%s::%d"), TEXT(__FUNCTION__), __LINE__);
-				RecordingName = EpisodeId + "_RP";
+			RecordingName = EpisodeId + "_RP";
 		}
 #endif // WITH_SL_VIS
 
@@ -83,10 +81,8 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 		if (!RecordingName.IsEmpty())
 		{
 			//VisionDataLogger->Init(GetWorld(), WriterType, EpisodeId, Location, HostIP, HostPort)
-			UE_LOG(LogSL, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 			if (UGameInstance* GI = GetWorld()->GetGameInstance())
 			{
-				UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d"), TEXT(__FUNCTION__), __LINE__);
 				GI->StartRecordingReplay(RecordingName, RecordingName);
 			}
 		}
@@ -98,7 +94,7 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 }
 
 // Finish logger
-void USLWorldStateLogger::Finish()
+void USLWorldStateLogger::Finish(bool bForced)
 {
 	if (bIsStarted || bIsInit)
 	{
@@ -122,19 +118,22 @@ void USLWorldStateLogger::Finish()
 		}
 
 #if WITH_SL_VIS
+		if (bForced)
+		{
+
+		}
 		if (!RecordingName.IsEmpty())
 		{
-			UE_LOG(LogSL, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 			if (GetWorld())
 			{
 				if (GetWorld()->IsPendingKill())
 				{
-					UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d  GetWorld IsPendingKill"), TEXT(__FUNCTION__), __LINE__);
+					//UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d  GetWorld IsPendingKill"), TEXT(__FUNCTION__), __LINE__);
 				}
 			}
 			else
 			{
-				UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d  GetWorld nullptr"), TEXT(__FUNCTION__), __LINE__);
+				//UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d  GetWorld nullptr"), TEXT(__FUNCTION__), __LINE__);
 			}
 
 			if (GetWorld())
@@ -143,12 +142,23 @@ void USLWorldStateLogger::Finish()
 				{
 					if (GI->IsPendingKill())
 					{
-						UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d GI->IsPendingKill"), TEXT(__FUNCTION__), __LINE__);
+						//UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d GI->IsPendingKill"), TEXT(__FUNCTION__), __LINE__);
 					}
 
 					GI->StopRecordingReplay();
 
-					GI->PlayReplay(RecordingName);
+					//GetWorld()->DemoNetDriver
+
+					GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("%s::%d WorldType?%d"), TEXT(__FUNCTION__), __LINE__, GetWorld()->WorldType));
+					if (GetWorld()->WorldType == EWorldType::Game)
+					{
+						GI->PlayReplay(RecordingName);
+					}
+					//else
+					//{
+					//	GI->PlayReplay(RecordingName);
+
+					//}
 				}
 			}
 		}
@@ -206,6 +216,6 @@ void USLWorldStateLogger::Update()
 	}
 	else
 	{
-		UE_LOG(LogSL, Error, TEXT("[%s][%d] Previous task not finished, SKIPPING new task.."), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogSL, Error, TEXT("%s::%d Previous task not finished, SKIPPING new task.."), TEXT(__FUNCTION__), __LINE__);
 	}
 }

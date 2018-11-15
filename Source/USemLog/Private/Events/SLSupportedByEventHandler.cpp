@@ -45,7 +45,7 @@ void FSLSupportedByEventHandler::Start()
 
 
 // Terminate listener, finish and publish remaining events
-void FSLSupportedByEventHandler::Finish(float EndTime)
+void FSLSupportedByEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (bIsStarted || bIsInit)
 	{

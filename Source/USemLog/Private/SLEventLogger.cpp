@@ -31,9 +31,7 @@ USLEventLogger::~USLEventLogger()
 {
 	if (!bIsFinished && !IsTemplate())
 	{
-		UE_LOG(LogSL, Error, TEXT(">>%s::%d Called in destructor finishing events with time -1.f"),
-			TEXT(__FUNCTION__), __LINE__);
-		USLEventLogger::Finish(-1.f);
+		USLEventLogger::Finish(-1.f, true);
 	}
 }
 
@@ -150,21 +148,22 @@ void USLEventLogger::Start()
 }
 
 // Finish logger
-void USLEventLogger::Finish(const float Time)
+void USLEventLogger::Finish(const float Time, bool bForced)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("%s::%d Forced?%d"), TEXT(__FUNCTION__), __LINE__), bForced);
 	if (bIsStarted || bIsInit)
 	{
 		// Finish handlers pending events
 		for (auto& EvHandler : EventHandlers)
 		{
-			EvHandler->Finish(Time);
+			EvHandler->Finish(Time, bForced);
 		}
 		EventHandlers.Empty();
 
 		// Finish semantic overlap events publishing
 		for (auto& SLOverlapShape : SemanticOverlapAreas)
 		{
-			SLOverlapShape->Finish();
+			SLOverlapShape->Finish(bForced);
 		}
 		SemanticOverlapAreas.Empty();
 
@@ -200,6 +199,7 @@ void USLEventLogger::Finish(const float Time)
 // Called when a semantic event is done
 void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->ToString()));
 	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
 }

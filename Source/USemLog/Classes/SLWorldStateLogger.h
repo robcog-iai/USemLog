@@ -40,7 +40,7 @@ public:
 	void Start(const float UpdateRate);
 
 	// Finish logger
-	void Finish();
+	void Finish(bool bForced = false);
 
 protected:
 	/** Begin FTickableGameObject interface */
