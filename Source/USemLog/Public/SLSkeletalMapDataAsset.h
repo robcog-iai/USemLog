@@ -28,11 +28,5 @@ public:
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	UPhysicsAsset* PhysicsAsset;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	USkeleton* Skeleton;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	USkeletalMesh* SkeletalMesh;
 };
