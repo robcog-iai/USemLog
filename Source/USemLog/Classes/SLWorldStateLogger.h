@@ -56,7 +56,7 @@ protected:
 
 private:
 	// Log initial state of the world (static and dynamic entities)
-	void PreUpdate();
+	void InitialUpdate();
 
 	// Log current state of the world (dynamic objects that moved more than the distance threshold)
 	void Update();
@@ -81,6 +81,6 @@ private:
 	FAsyncTask<FSLWorldStateAsyncWorker>* AsyncWorker;
 
 #if WITH_SL_VIS
-	FString RecordingName;
+	FString ReplayRecordingName;
 #endif // WITH_SL_VIS
 };

@@ -28,6 +28,9 @@ public:
 	// Init data / load Map
 	void Init(UWorld* World);
 
+	// Enable replication on the items
+	void SetReplicates(bool bReplicate);
+
 	// Clear data
 	void Clear();
 	

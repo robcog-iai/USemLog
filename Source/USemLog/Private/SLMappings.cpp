@@ -67,6 +67,25 @@ void FSLMappings::Init(UWorld* World)
 	}
 }
 
+// Enable replication on the items
+void FSLMappings::SetReplicates(bool bReplicate)
+{
+	for (auto& Pair : ObjItemMap)
+	{
+		if (AActor* ObjAsActor = Cast<AActor>(Pair.Key))
+		{
+			ObjAsActor->SetReplicates(bReplicate);
+			ObjAsActor->SetReplicateMovement(bReplicate);
+		}
+		else if (UActorComponent* ObjAsActorComponent = Cast<UActorComponent>(Pair.Key))
+		{
+			ObjAsActorComponent->SetIsReplicated(bReplicate);
+			ObjAsActorComponent->GetOwner()->SetReplicates(bReplicate);
+			ObjAsActorComponent->GetOwner()->SetReplicateMovement(bReplicate);
+		}		
+	}
+}
+
 // Clear data
 void FSLMappings::Clear()
 {

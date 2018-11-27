@@ -16,7 +16,7 @@ USLWorldStateLogger::USLWorldStateLogger()
 // Destructor
 USLWorldStateLogger::~USLWorldStateLogger()
 {
-	if (!bIsFinished)
+	if (!bIsFinished && !IsTemplate())
 	{
 		USLWorldStateLogger::Finish(true);
 	}
@@ -42,10 +42,15 @@ void USLWorldStateLogger::Init(bool bLogVisionData,
 			EpisodeId, Location, HostIP, HostPort);
 
 #if WITH_SL_VIS
+		// TODO make sure it is set ReplaySpectatorPlayerControllerClass
+		//GetWorld()->GetAuthGameMode()->ReplaySpectatorPlayerControllerClass
 		if (bLogVisionData)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 			//VisionDataLogger->Init(GetWorld(), WriterType, EpisodeId, Location, HostIP, HostPort)
-			RecordingName = EpisodeId + "_RP";
+			ReplayRecordingName = EpisodeId + "_RP";
+			//FSLMappings::GetInstance()->Init(GetWorld());
+			//FSLMappings::GetInstance()->SetReplicates(true);
 		}
 #endif // WITH_SL_VIS
 
@@ -60,8 +65,8 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 	if (!bIsStarted && bIsInit)
 	{
 		// Call before binding the recurrent Update function
-		// this ensures the first world state is logged (static and movable semantic items)
-		USLWorldStateLogger::PreUpdate();
+		// this ensures the initial world state is logged (static and movable semantic items)
+		USLWorldStateLogger::InitialUpdate();
 
 		// Start updating
 		if (UpdateRate > 0.0f)
@@ -78,12 +83,13 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 		}
 
 #if WITH_SL_VIS
-		if (!RecordingName.IsEmpty())
+		if (!ReplayRecordingName.IsEmpty())
 		{
 			//VisionDataLogger->Init(GetWorld(), WriterType, EpisodeId, Location, HostIP, HostPort)
 			if (UGameInstance* GI = GetWorld()->GetGameInstance())
 			{
-				GI->StartRecordingReplay(RecordingName, RecordingName);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+				GI->StartRecordingReplay(ReplayRecordingName, ReplayRecordingName);
 			}
 		}
 #endif // WITH_SL_VIS
@@ -118,47 +124,14 @@ void USLWorldStateLogger::Finish(bool bForced)
 		}
 
 #if WITH_SL_VIS
-		if (bForced)
+		if (!ReplayRecordingName.IsEmpty())
 		{
-
-		}
-		if (!RecordingName.IsEmpty())
-		{
-			if (GetWorld())
-			{
-				if (GetWorld()->IsPendingKill())
-				{
-					//UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d  GetWorld IsPendingKill"), TEXT(__FUNCTION__), __LINE__);
-				}
-			}
-			else
-			{
-				//UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d  GetWorld nullptr"), TEXT(__FUNCTION__), __LINE__);
-			}
-
 			if (GetWorld())
 			{
 				if (UGameInstance* GI = GetWorld()->GetGameInstance())
 				{
-					if (GI->IsPendingKill())
-					{
-						//UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d GI->IsPendingKill"), TEXT(__FUNCTION__), __LINE__);
-					}
-
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 					GI->StopRecordingReplay();
-
-					//GetWorld()->DemoNetDriver
-
-					GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("%s::%d WorldType?%d"), TEXT(__FUNCTION__), __LINE__, GetWorld()->WorldType));
-					if (GetWorld()->WorldType == EWorldType::Game)
-					{
-						GI->PlayReplay(RecordingName);
-					}
-					//else
-					//{
-					//	GI->PlayReplay(RecordingName);
-
-					//}
 				}
 			}
 		}
@@ -168,7 +141,6 @@ void USLWorldStateLogger::Finish(bool bForced)
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
-		UE_LOG(LogSL, Warning, TEXT(" \t\t %s::%d  MARKD DONE"), TEXT(__FUNCTION__), __LINE__);
 	}
 }
 
@@ -194,7 +166,7 @@ TStatId USLWorldStateLogger::GetStatId() const
 /** End FTickableGameObject interface */
 
 // Log initial state of the world (static and dynamic entities)
-void USLWorldStateLogger::PreUpdate()
+void USLWorldStateLogger::InitialUpdate()
 {
 	// Start async worker
 	AsyncWorker->StartBackgroundTask();

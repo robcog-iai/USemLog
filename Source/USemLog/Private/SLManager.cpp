@@ -6,6 +6,7 @@
 #include "Ids.h"
 #if WITH_SL_VIS
 #include "SLVisManager.h"
+#include "Engine/DemoNetDriver.h"
 #endif //WITH_SL_VIS
 
 // Sets default values
@@ -123,6 +124,17 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 // Init loggers
 void ASLManager::Init()
 {
+#if WITH_SL_VIS
+	// This might be called even if it is a replay, skip if it is the case
+	if (GetWorld()->DemoNetDriver)
+	{
+		if (GetWorld()->DemoNetDriver->IsPlaying())
+		{
+			return;
+		}
+	}
+#endif // WITH_SL_VIS
+
 	if (!bIsInit)
 	{
 		// Init the semantic items content singleton

@@ -150,7 +150,6 @@ void USLEventLogger::Start()
 // Finish logger
 void USLEventLogger::Finish(const float Time, bool bForced)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("%s::%d Forced?%d"), TEXT(__FUNCTION__), __LINE__), bForced);
 	if (bIsStarted || bIsInit)
 	{
 		// Finish handlers pending events
