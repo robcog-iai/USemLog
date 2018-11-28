@@ -11,7 +11,7 @@
 /**
  * Semantic logging manager (controls the logging in the world)
  */
-UCLASS(ClassGroup = (SL), hidecategories = (Actor, LOD, Cooking, Transform), DisplayName="SL Manager" )
+UCLASS(ClassGroup = (SL), hidecategories = (LOD, Cooking, Transform), DisplayName="SL Manager" )
 class USEMLOG_API ASLManager : public AInfo
 {
 	GENERATED_BODY()
