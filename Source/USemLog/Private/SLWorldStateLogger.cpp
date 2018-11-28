@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLWorldStateLogger.h"
-//#include "Engine/GameInstance.h"
 
 // Constructor
 USLWorldStateLogger::USLWorldStateLogger()
@@ -42,8 +41,6 @@ void USLWorldStateLogger::Init(bool bLogVisionData,
 			EpisodeId, Location, HostIP, HostPort);
 
 #if WITH_SL_VIS
-		// TODO make sure it is set ReplaySpectatorPlayerControllerClass
-		//GetWorld()->GetAuthGameMode()->ReplaySpectatorPlayerControllerClass
 		if (bLogVisionData)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
