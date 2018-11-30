@@ -5,6 +5,9 @@
 #include "EngineUtils.h"
 #include "Engine/DemoNetDriver.h"
 #include "SLVisManager.h"
+#include "GenericPlatform/GenericPlatformMisc.h"
+#include "ImageUtils.h"
+#include "UnrealClient.h"
 
 // Ctor
 ASLVisSpectatorPC::ASLVisSpectatorPC()
@@ -14,6 +17,8 @@ ASLVisSpectatorPC::ASLVisSpectatorPC()
 	bShouldPerformFullTickWhenPaused = true;
 	//bShowMouseCursor = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+
+	PBFinished = false;
 }
 
 // Called when the game starts or when spawned
@@ -22,7 +27,14 @@ void ASLVisSpectatorPC::BeginPlay()
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 
-	for (TObjectIterator<USLVisManager> Itr; Itr; ++Itr)
+	//for (TObjectIterator<USLVisManager> Itr; Itr; ++Itr)
+	//{
+	//	SLVisCameras.Add(*Itr);
+	//}
+	Path = FPaths::ProjectDir() + TEXT("SemLog/Screenshots/");
+	
+
+	for (TActorIterator<ASLVisCamera>Itr(GetWorld()); Itr; ++Itr)
 	{
 		SLVisCameras.Add(*Itr);
 	}
@@ -30,10 +42,11 @@ void ASLVisSpectatorPC::BeginPlay()
 	if (GetWorld()->DemoNetDriver)
 	{
 		GetWorld()->DemoNetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisSpectatorPC::PlaybackFinished);
-		GetWorld()->DemoNetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisSpectatorPC::Goto);
+		GetWorld()->DemoNetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisSpectatorPC::GotoCbRecursive);
+		GetWorld()->DemoNetDriver->GotoTimeInSeconds(0.f);
 	}
 
-	SetPause(true);
+	//SetPause2(true);
 }
 
 // Called to bind functionality to input
@@ -44,6 +57,7 @@ void ASLVisSpectatorPC::SetupInputComponent()
 	InputComponent->BindAction("SLVisPause", IE_Pressed, this, &ASLVisSpectatorPC::PauseToggle).bExecuteWhenPaused = true;
 	InputComponent->BindAction("SLVisStep", IE_Pressed, this, &ASLVisSpectatorPC::Step).bExecuteWhenPaused = true;
 	InputComponent->BindAction("SLVisNextView", IE_Pressed, this, &ASLVisSpectatorPC::NextView).bExecuteWhenPaused = true;
+	InputComponent->BindAction("SLVisStartCapture", IE_Pressed, this, &ASLVisSpectatorPC::StartCapture).bExecuteWhenPaused = true;
 
 }
 
@@ -89,6 +103,15 @@ void ASLVisSpectatorPC::SetupInputComponent()
 		// }
 
 	 //}
+	 //if (PBFinished)
+	 //{
+		// GetWorld()->Exec(GetWorld(), TEXT("demostop"));
+
+		// //if (GetWorld()->GetGameInstance())
+		// //{
+		//	// GetWorld()->GetGameInstance()->StopRecordingReplay();
+		// //}
+	 //}
  }
 
 
@@ -100,11 +123,89 @@ void ASLVisSpectatorPC::SetupInputComponent()
 		// GetWorld()->DemoNetDriver->GotoTimeInSeconds(0.f);
 		// Pause();
 	 //}
+	 PBFinished = true;
+
+	 //GetWorld()->Exec(GetWorld(), TEXT("demostop"));
+	 //GetWorld()->TimeSeconds = 0.f;
+
+	 //if (PBFinished)
+	 //{
+		// GetWorld()->Exec(GetWorld(), TEXT("demostop"));
+
+	 //ConsoleCommand(TEXT("demostop"));
+		 //if (GetWorld()->GetGameInstance())
+		 //{
+			// UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+			// GetWorld()->GetGameInstance()->StopRecordingReplay();
+		 //}
+	 //}
+	 //FGenericPlatformMisc::RequestExit(true);
  }
 
- void ASLVisSpectatorPC::Goto()
+ void ASLVisSpectatorPC::GotoCbRecursive()
  {
+	 if (CurrTime > GetWorld()->DemoNetDriver->DemoTotalTime)
+	 {
+		 UE_LOG(LogTemp, Error, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+		 return;
+	 }
+
+	 // Pause the replay
+	 SetPause2(true);
 	 UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+
+	 int32 CamNr = 0;
+	 // Save the images
+	 for (auto C : SLVisCameras)
+	 {
+		 SetViewTarget(C);
+		 UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Loc: %s"), TEXT(__FUNCTION__), __LINE__,
+			 *GetViewTarget()->GetActorLocation().ToString());
+
+		CurrFilename = FString::Printf(TEXT("Screenshot_%f_%d.png"), CurrTime, CamNr);
+		UGameViewportClient* ViewportClient = GetWorld()->GetGameViewport();
+		//ViewportClient->OnScreenshotCaptured().Clear();
+		ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLVisSpectatorPC::OnScrCb);
+
+		FString FilePath = Path + CurrFilename;
+		FScreenshotRequest::RequestScreenshot(FilePath, false, false);
+		ViewportClient->Viewport->TakeHighResScreenShot();
+
+		CamNr++;
+	 }
+
+
+	 // Unpause the replay and goto next position
+	 SetPause2(false);
+	 CurrTime += 0.02;
+	 GetWorld()->DemoNetDriver->GotoTimeInSeconds(CurrTime);
+
+	 //SetPause2(true);
+	 //UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+	 //if (CurrTime < GetWorld()->DemoNetDriver->DemoTotalTime)
+	 //{
+		// for (auto C : SLVisCameras)
+		// {
+		//	 //FVector Loc = C->GetComponentLocation();
+		//	 //FQuat Quat = C->GetComponentQuat();
+
+		//	 //if (APawn* Pawn = GetPawnOrSpectator())
+		//	 //{
+		//		// Pawn->SetActorLocationAndRotation(Loc, Quat);
+		//		// UE_LOG(LogTemp, Warning, TEXT("\t%s::%d %f/%f -- %s"), TEXT(__FUNCTION__), __LINE__,
+		//		//	 GetWorld()->DemoNetDriver->DemoCurrentTime, GetWorld()->DemoNetDriver->DemoTotalTime,
+		//		//	 *GetWorld()->DemoNetDriver->GetActiveReplayName());
+
+		//		 SetViewTarget(C);
+
+		//		 UGameViewportClient* ViewportClient = GetWorld()->GetGameViewport();
+		//		 ViewportClient->OnScreenshotCaptured().Clear();
+		//	 //}
+		// }
+		// //SetPause2(false);
+		// //CurrTime += 0.1;
+		// //GetWorld()->DemoNetDriver->GotoTimeInSeconds(CurrTime);
+	 //}
  }
 
  void ASLVisSpectatorPC::PauseToggle()
@@ -137,7 +238,7 @@ void ASLVisSpectatorPC::SetupInputComponent()
 	 }
  }
 
- void ASLVisSpectatorPC::SetPause(bool bPause)
+ void ASLVisSpectatorPC::SetPause2(bool bPause)
  {
 	 if (bPause)
 	 {
@@ -163,33 +264,59 @@ void ASLVisSpectatorPC::SetupInputComponent()
 
  void ASLVisSpectatorPC::Step()
  {
+	 SetPause2(false);
 	 UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 	 CurrTime += 0.1;
 	 GetWorld()->DemoNetDriver->GotoTimeInSeconds(CurrTime);
-	 SetPause(false);
-	 SetPause(true);
+
  }
 
  void ASLVisSpectatorPC::NextView()
  {
+	 //UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+	 //if (SLVisCameras.Num() > 0)
+	 //{
+		// FVector Loc = SLVisCameras[CameraIdx]->GetComponentLocation();
+		// FQuat Quat = SLVisCameras[CameraIdx]->GetComponentQuat();
+
+		// if (APawn* Pawn = GetPawnOrSpectator())
+		// {
+		//	 Pawn->SetActorLocationAndRotation(Loc, Quat);
+		//	 UE_LOG(LogTemp, Warning, TEXT("\t%s::%d %f/%f -- %s"), TEXT(__FUNCTION__), __LINE__,
+		//		 GetWorld()->DemoNetDriver->DemoCurrentTime, GetWorld()->DemoNetDriver->DemoTotalTime,
+		//		 *GetWorld()->DemoNetDriver->GetActiveReplayName());
+		// }
+
+	 //}
+	 //CameraIdx++;
+	 //if (CameraIdx > SLVisCameras.Num() - 1)
+	 //{
+		// CameraIdx = 0;
+	 //}
+ }
+
+ bool ASLVisSpectatorPC::TakeNextScreenshot()
+ {
+	 return true;
+ }
+
+ void ASLVisSpectatorPC::StartCapture()
+ {
+	 GetWorld()->DemoNetDriver->GotoTimeInSeconds(0.f);
+ }
+
+ void ASLVisSpectatorPC::OnScrCb(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
+ {
 	 UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
-	 if (SLVisCameras.Num() > 0)
-	 {
-		 FVector Loc = SLVisCameras[CameraIdx]->GetComponentLocation();
-		 FQuat Quat = SLVisCameras[CameraIdx]->GetComponentQuat();
 
-		 if (APawn* Pawn = GetPawnOrSpectator())
-		 {
-			 Pawn->SetActorLocationAndRotation(Loc, Quat);
-			 UE_LOG(LogTemp, Warning, TEXT("\t%s::%d %f/%f -- %s"), TEXT(__FUNCTION__), __LINE__,
-				 GetWorld()->DemoNetDriver->DemoCurrentTime, GetWorld()->DemoNetDriver->DemoTotalTime,
-				 *GetWorld()->DemoNetDriver->GetActiveReplayName());
-		 }
+	 // Make sure that all alpha values are opaque.
+	 TArray<FColor>& RefBitmap = const_cast<TArray<FColor>&>(Bitmap);
+	 for (auto& Color : RefBitmap)
+		 Color.A = 255;
 
-	 }
-	 CameraIdx++;
-	 if (CameraIdx > SLVisCameras.Num() - 1)
-	 {
-		 CameraIdx = 0;
-	 }
+	 TArray<uint8> CompressedBitmap;
+	 FImageUtils::CompressImageArray(SizeX, SizeY, RefBitmap, CompressedBitmap);
+	 FString FullPath = Path + CurrFilename;
+	 UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Path=%s"), TEXT(__FUNCTION__), __LINE__, *FullPath);
+	 FFileHelper::SaveArrayToFile(CompressedBitmap, *FullPath);
  }
