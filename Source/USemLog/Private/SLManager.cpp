@@ -173,6 +173,9 @@ void ASLManager::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
+		// Reset world time
+		GetWorld()->TimeSeconds = 0.f;
+
 		// Start world state logger
 		if (bLogWorldState && WorldStateLogger)
 		{

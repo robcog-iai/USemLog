@@ -29,15 +29,15 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
-	TArray<USLVisManager*> SLVisCameras;
+	TArray<ASLVisCamera*> SLVisCameras;
 
 private:
 	void PlaybackFinished();
-	void Goto();
+	void GotoCbRecursive();
 
 	void PauseToggle();
 
-	void SetPause(bool bPause);
+	void SetPause2(bool bPause);
 
 	void Step();
 	
@@ -46,5 +46,30 @@ private:
 	float CurrTime;
 
 	int32 CameraIdx;
+
+	bool PBFinished;
+
+	bool TakeNextScreenshot();
+
+	void StartCapture();
+
+	void OnScrCb(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
+
+	FString CurrFilename;
+	FString Path;
+
+	//
+	float CurrTime;
+	float TotalTime;
+	int32 CurrView;
+	int32 TotalViews;
+
+	// Go to next record step
+
+	// Go to prev record step
+
+	// Go to next view
+
+	// Take screenshot (curr view)
 
 };

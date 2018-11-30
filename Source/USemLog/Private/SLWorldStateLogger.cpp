@@ -46,8 +46,8 @@ void USLWorldStateLogger::Init(bool bLogVisionData,
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 			//VisionDataLogger->Init(GetWorld(), WriterType, EpisodeId, Location, HostIP, HostPort)
 			ReplayRecordingName = EpisodeId + "_RP";
-			//FSLMappings::GetInstance()->Init(GetWorld());
-			//FSLMappings::GetInstance()->SetReplicates(true);
+			FSLMappings::GetInstance()->Init(GetWorld());
+			FSLMappings::GetInstance()->SetReplicates(true);
 		}
 #endif // WITH_SL_VIS
 
