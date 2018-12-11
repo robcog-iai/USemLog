@@ -61,13 +61,13 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 private:
-	// Bind user inputs
+	// Setup user input bindings
 	void SetupInputBindings();
 
-	// Start input binding
+	// Call start from user input
 	void StartFromInput();
 
-	// Start input binding
+	// Call finish from user input
 	void FinishFromInput();
 
 private:
@@ -126,11 +126,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogWorldState;
 
-	// Log vision data (this will cause the episode to be replayed for logging image data)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
-	bool bLogVisionData;
-
-	// Update rate of world state logging (0.f means logging on every tick)
+	// Update rate (ms) of world state logging (0.f means logging on every tick) (not fixed nor guaranteed)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
 	float UpdateRate;
 
@@ -158,7 +154,6 @@ private:
 	UPROPERTY()
 	USLWorldStateLogger* WorldStateLogger;
 	/* End world state logger properties */
-
 
 	/* Begin event data logger properties */
 	// Log event data
@@ -197,4 +192,18 @@ private:
 	UPROPERTY()
 	USLEventLogger* EventDataLogger;
 	/* End event data logger properties */
+
+	/* Begin vision data logger properties */
+	// Log vision data (this will cause the episode to be replayed for logging image data)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger")
+	bool bLogVisionData;
+
+	// Maximum number of demo frames recorded per second
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))
+	float MaxRecordHz;
+
+	// Minimum number of demo frames recorded per second
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))
+	float MinRecordHz;
+	/* End vision data logger properties */
 };

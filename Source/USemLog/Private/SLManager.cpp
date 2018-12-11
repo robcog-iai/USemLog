@@ -5,8 +5,9 @@
 #include "SLMappings.h"
 #include "Ids.h"
 #if WITH_SL_VIS
-#include "SLVisManager.h"
+#include "SLVisRecordGameMode.h"
 #include "Engine/DemoNetDriver.h"
+#include "Kismet/GameplayStatics.h"
 #endif //WITH_SL_VIS
 
 // Sets default values
@@ -51,6 +52,9 @@ ASLManager::ASLManager()
 
 	// Vision data logger default values
 	bLogVisionData = true;
+	MaxRecordHz = 90.f;
+	MinRecordHz = 30.f;
+
 
 #if WITH_EDITOR
 	// Make manager sprite smaller
@@ -125,13 +129,10 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ASLManager::Init()
 {
 #if WITH_SL_VIS
-	// This might be called even if it is a replay, skip if it is the case
-	if (GetWorld()->DemoNetDriver)
+	// Init can be called even if it is a demo replay, skip if it is the case
+	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{
-		if (GetWorld()->DemoNetDriver->IsPlaying())
-		{
-			return;
-		}
+		return;
 	}
 #endif // WITH_SL_VIS
 
@@ -143,15 +144,14 @@ void ASLManager::Init()
 		// If the episode Id is not manually added, generate new unique id
 		if (!bUseCustomEpisodeId)
 		{
-			// Generate unique id for the episode
 			EpisodeId = FIds::NewGuidInBase64Url();
 		}
-				
+
 		if (bLogWorldState)
 		{
 			// Create and init world state logger
 			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
-			WorldStateLogger->Init(bLogVisionData, WriterType, DistanceStepSize, RotationStepSize,
+			WorldStateLogger->Init(WriterType, DistanceStepSize, RotationStepSize,
 				EpisodeId, Location, HostIP, HostPort);
 		}
 
@@ -162,6 +162,27 @@ void ASLManager::Init()
 			EventDataLogger->Init(ExperimentTemplateType, EpisodeId, Location,
 				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
 		}
+
+#if WITH_SL_VIS
+		if (bLogVisionData)
+		{
+			// Check is recording game mode is set, otherwise cancel vision logging
+			if (ASLVisRecordGameMode* SLGameMode = Cast<ASLVisRecordGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				// Set movement replications to objects
+				FSLMappings::GetInstance()->SetReplicates(true);
+
+				// Set update rates
+				IConsoleManager::Get().FindConsoleVariable(TEXT("demo.RecordHZ"))->Set(MaxRecordHz);
+				IConsoleManager::Get().FindConsoleVariable(TEXT("demo.MinRecordHZ"))->Set(MinRecordHz);
+			}
+			else
+			{
+				bLogVisionData = false;
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Game Mode not set, vision replay will not be recorded.."), TEXT(__FUNCTION__), __LINE__);
+			}
+		}
+#endif // WITH_SL_VIS
 
 		// Mark manager as initialized
 		bIsInit = true;
@@ -188,6 +209,18 @@ void ASLManager::Start()
 			EventDataLogger->Start();
 		}
 
+#if WITH_SL_VIS
+		if (bLogVisionData)
+		{
+			if (UGameInstance* GI = GetWorld()->GetGameInstance())
+			{
+				const FString RecName = EpisodeId + "_RP";
+				//TArray<FString> AdditionalOptions;
+				GI->StartRecordingReplay(RecName, RecName);
+			}
+		}
+#endif // WITH_SL_VIS
+
 		// Mark manager as started
 		bIsStarted = true;
 	}
@@ -196,7 +229,7 @@ void ASLManager::Start()
 // Finish loggers
 void ASLManager::Finish(const float Time, bool bForced)
 {
-	if (bIsInit || bIsStarted)
+	if (!bIsFinished && (bIsStarted || bIsInit))
 	{
 		if (WorldStateLogger)
 		{
@@ -208,7 +241,16 @@ void ASLManager::Finish(const float Time, bool bForced)
 			EventDataLogger->Finish(Time, bForced);
 		}
 		
-		// TODO check if vis replay will use this
+#if WITH_SL_VIS
+		if (bLogVisionData && !bForced)
+		{
+			if (UGameInstance* GI = GetWorld()->GetGameInstance())
+			{
+				GI->StopRecordingReplay();
+			}
+		}
+#endif // WITH_SL_VIS
+
 		// Delete the semantic items content instance
 		FSLMappings::DeleteInstance();
 

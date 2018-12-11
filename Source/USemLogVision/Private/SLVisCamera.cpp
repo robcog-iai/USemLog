@@ -9,11 +9,11 @@
 ASLVisCamera::ASLVisCamera()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	
-	// Create the semantic Vis logging component
-	SLVisManager = CreateDefaultSubobject<USLVisManager>(TEXT("SLVisManager"));
-	SLVisManager->SetupAttachment(GetRootComponent());
+	//// Create the semantic Vis logging component
+	//SLVisManager = CreateDefaultSubobject<USLVisManager>(TEXT("SLVisManager"));
+	//SLVisManager->SetupAttachment(GetRootComponent());
 }
 
 // Called when the game starts or when spawned

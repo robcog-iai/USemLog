@@ -123,7 +123,7 @@ void USLVisManager::Start()
 // Stop recording
 void USLVisManager::Finish()
 {
-	if (bIsStarted || bIsInit)
+	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		// Stop update timer;
 		if (TimerHandle.IsValid())

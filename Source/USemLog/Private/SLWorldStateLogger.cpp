@@ -22,8 +22,7 @@ USLWorldStateLogger::~USLWorldStateLogger()
 }
 
 // Init logger
-void USLWorldStateLogger::Init(bool bLogVisionData,
-	ESLWorldStateWriterType WriterType,
+void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
 	float DistanceStepSize,
 	float RotationStepSize,
 	const FString& EpisodeId,
@@ -39,17 +38,6 @@ void USLWorldStateLogger::Init(bool bLogVisionData,
 		// Init async worker (create the writer and set logging parameters)
 		AsyncWorker->GetTask().Init(GetWorld(), WriterType, DistanceStepSize, RotationStepSize,
 			EpisodeId, Location, HostIP, HostPort);
-
-#if WITH_SL_VIS
-		if (bLogVisionData)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
-			//VisionDataLogger->Init(GetWorld(), WriterType, EpisodeId, Location, HostIP, HostPort)
-			ReplayRecordingName = EpisodeId + "_RP";
-			FSLMappings::GetInstance()->Init(GetWorld());
-			FSLMappings::GetInstance()->SetReplicates(true);
-		}
-#endif // WITH_SL_VIS
 
 		// Flag as init
 		bIsInit = true;
@@ -79,18 +67,6 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 			bIsTickable = true;
 		}
 
-#if WITH_SL_VIS
-		if (!ReplayRecordingName.IsEmpty())
-		{
-			//VisionDataLogger->Init(GetWorld(), WriterType, EpisodeId, Location, HostIP, HostPort)
-			if (UGameInstance* GI = GetWorld()->GetGameInstance())
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
-				GI->StartRecordingReplay(ReplayRecordingName, ReplayRecordingName);
-			}
-		}
-#endif // WITH_SL_VIS
-
 		// Set flags
 		bIsStarted = true;
 	}
@@ -99,7 +75,7 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 // Finish logger
 void USLWorldStateLogger::Finish(bool bForced)
 {
-	if (bIsStarted || bIsInit)
+	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		if (AsyncWorker)
 		{
@@ -119,20 +95,6 @@ void USLWorldStateLogger::Finish(bool bForced)
 		{
 			bIsTickable = false;
 		}
-
-#if WITH_SL_VIS
-		if (!ReplayRecordingName.IsEmpty())
-		{
-			if (GetWorld())
-			{
-				if (UGameInstance* GI = GetWorld()->GetGameInstance())
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
-					GI->StopRecordingReplay();
-				}
-			}
-		}
-#endif // WITH_SL_VIS
 
 		// Mark logger as finished
 		bIsStarted = false;
