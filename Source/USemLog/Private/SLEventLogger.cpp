@@ -150,7 +150,7 @@ void USLEventLogger::Start()
 // Finish logger
 void USLEventLogger::Finish(const float Time, bool bForced)
 {
-	if (bIsStarted || bIsInit)
+	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		// Finish handlers pending events
 		for (auto& EvHandler : EventHandlers)

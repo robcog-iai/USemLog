@@ -27,8 +27,7 @@ public:
 	~USLWorldStateLogger();
 
 	// Init Logger
-	void Init(bool bLogVisionData,
-		ESLWorldStateWriterType WriterType,
+	void Init(ESLWorldStateWriterType WriterType,
 		float DistanceStepSize,
 		float RotationStepSize,
 		const FString& EpisodeId,

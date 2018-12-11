@@ -131,7 +131,7 @@ void USLOverlapShape::Start()
 // Stop publishing overlap events
 void USLOverlapShape::Finish(bool bForced)
 {
-	if (bIsStarted || bIsInit)
+	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		// Disable overlap events
 		SetGenerateOverlapEvents(false);

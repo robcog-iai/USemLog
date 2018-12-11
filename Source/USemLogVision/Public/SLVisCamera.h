@@ -24,8 +24,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-private:
-	// Semantic Vis logger component
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	class USLVisManager* SLVisManager;
+//private:
+//	// Semantic Vis logger component
+//	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+//	class USLVisManager* SLVisManager;
 };

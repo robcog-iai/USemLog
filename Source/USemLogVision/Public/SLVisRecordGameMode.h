@@ -5,19 +5,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
-#include "SLVisGameMode.generated.h"
+#include "SLVisRecordGameMode.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class USEMLOGVISION_API ASLVisGameMode : public AGameMode
+class USEMLOGVISION_API ASLVisRecordGameMode : public AGameMode
 {
 	GENERATED_BODY()
 	
 public:
 	// Ctor
-	ASLVisGameMode();
-	
-	
+	ASLVisRecordGameMode();	
 };
