@@ -3,16 +3,28 @@
 
 #include "SLEdModeToolkit.h"
 #include "SLEdMode.h"
-#include "SLEdToolkitStatics.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Input/SCheckBox.h"
 #include "EditorModeManager.h"
+#include "EngineUtils.h"
+#include "Engine/Selection.h"
+#include "Engine/StaticMeshActor.h"
+#include "Components/StaticMeshComponent.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "PhysicsEngine/PhysicsConstraintActor.h"
+#include "SLSemanticMapWriter.h"
+#include "SLOverlapShape.h"
+#include "Ids.h"
+#include "Tags.h"
 
 #define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"
 
+// Ctor
 FSLEdModeToolkit::FSLEdModeToolkit()
 {
+	bOverwriteSemanticMap = true;
+	bOverwriteExistingClassNames = true;
 }
 
 void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
@@ -22,119 +34,112 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 		.Padding(25)
 		[
 			SNew(SVerticalBox)
+				////
 				+ SVerticalBox::Slot()
-				.AutoHeight()
-				.HAlign(HAlign_Left)
-				[
-				SNew(SHorizontalBox)
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("GenSemMap", "Generate Semantic Map"))
-				.IsEnabled(true)
-				.OnClicked_Static(&FSLEdToolkitStatics::GenerateSemanticMap)
-				]
-				+ SHorizontalBox::Slot()
-				[
-					SNew(SCheckBox)
-					.ToolTipText(LOCTEXT("GenSemMap_Overwrite", "Overwrite"))
-				.IsChecked(ECheckBoxState::Checked)
-				.OnCheckStateChanged_Static(&FSLEdToolkitStatics::OnCheckedOverwriteSemanticMap)
-				]
-				]
-				+ SVerticalBox::Slot()
-				.AutoHeight()
-				.HAlign(HAlign_Center)
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("AddRuntimeManager", "Add Runtime Manager"))
-					.IsEnabled_Static(&FSLEdToolkitStatics::NoRuntimeManagerInTheWorld)
-					.OnClicked_Static(&FSLEdToolkitStatics::AddRuntimeManager)
-				]
-				+ SVerticalBox::Slot()
-				.AutoHeight()
-				.HAlign(HAlign_Center)
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("AddLevelInfo", "Add Level Info"))
-				.IsEnabled_Static(&FSLEdToolkitStatics::NoLevelInfoInTheWorld)
-				.OnClicked_Static(&FSLEdToolkitStatics::AddLevelinfo)
-				]
-				+ SVerticalBox::Slot()
-				.AutoHeight()
-				.HAlign(HAlign_Center)
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("GenerateNewIds", "Generate New Ids"))
-					.IsEnabled(true)
-					.OnClicked_Static(&FSLEdToolkitStatics::GenerateNewIds)
-				]
-				+ SVerticalBox::Slot()
-				.AutoHeight()
-				.HAlign(HAlign_Center)
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("ClearIds", "Clear Ids"))
-				.IsEnabled(true)
-				.OnClicked_Static(&FSLEdToolkitStatics::ClearIds)
-				]
-				+ SVerticalBox::Slot()
-				.AutoHeight()
-				.HAlign(HAlign_Center)
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("TagSemanticContraints", "Tag Semantic Constraints"))
-				.IsEnabled(true)
-				.OnClicked_Static(&FSLEdToolkitStatics::TagSemanticConstraints)
-				]
+					.AutoHeight()
+					.HAlign(HAlign_Left)
+					[
+					SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(SButton)
+								.Text(LOCTEXT("GenSemMap", "Generate Map"))
+								.IsEnabled(true)
+								.ToolTipText(NSLOCTEXT("GenSemMapTooltip", "Export semantic map"))
+								.OnClicked(this, &FSLEdModeToolkit::GenerateSemanticMap)
+							]
+						+ SHorizontalBox::Slot()
+							[
+								SNew(SCheckBox)
+								.ToolTipText(LOCTEXT("GenSemMap_Overwrite", "Overwrite"))
+								.IsChecked(ECheckBoxState::Checked)
+								.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteSemanticMap)
+							]
+					]
+				////
 				+ SVerticalBox::Slot()
 					.AutoHeight()
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("TagSemanticClasses", "Tag Semantic Classes"))
-					.IsEnabled(true)
-					.OnClicked_Static(&FSLEdToolkitStatics::TagSemanticClasses)
+						.Text(LOCTEXT("GenerateNewSemIds", "Generate New Ids"))
+						.IsEnabled(true)
+						.OnClicked(this, &FSLEdModeToolkit::GenerateNewSemanticIds)
+					]
+				////
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("RemoveSemIds", "Remove All Ids"))
+						.IsEnabled(true)
+						.OnClicked(this, &FSLEdModeToolkit::RemoveAllSemanticIds)
+					]
+				////
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("SemanticallyAnnotateConstraints", "Annotate Constraints"))
+						.IsEnabled(true)
+						.OnClicked(this, &FSLEdModeToolkit::SemanticallyAnnotateConstraints)
 					]
 				+ SVerticalBox::Slot()
 					.AutoHeight()
-					.HAlign(HAlign_Center)
+					.HAlign(HAlign_Left)
 					[
-						SNew(SButton)
-						.Text(LOCTEXT("ClearClasses", "Clear Classes"))
-					.IsEnabled(true)
-					.OnClicked_Static(&FSLEdToolkitStatics::ClearClasses)
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(SButton)
+								.Text(LOCTEXT("SetDefaultClassNames", "Set Class Names"))
+								.IsEnabled(true)
+								.OnClicked(this, &FSLEdModeToolkit::GenerateSemanticMap)
+							]
+						+ SHorizontalBox::Slot()
+							[
+								SNew(SCheckBox)
+								.ToolTipText(LOCTEXT("SetDefaultClassNames_Overwrite", "Overwrite"))
+							.IsChecked(ECheckBoxState::Checked)
+							.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteClassNames)
+							]
 					]
+				////
 				+ SVerticalBox::Slot()
 					.AutoHeight()
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("ReplaceText", "Replace Text"))
-					.IsEnabled(true)
-					.OnClicked_Static(&FSLEdToolkitStatics::ReplaceText)
+						.Text(LOCTEXT("ReplaceText", "Update Legacy Names"))
+						.IsEnabled(true)
+						.OnClicked(this, &FSLEdModeToolkit::UpdateLegacyNames)
 					]
+				////
 				+ SVerticalBox::Slot()
 					.AutoHeight()
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("ClearAllTags", "Clear All Tags"))
-					.IsEnabled(true)
-					.OnClicked_Static(&FSLEdToolkitStatics::ClearAllTags)
+						.Text(LOCTEXT("ClearAllTags", "Remove All Tags"))
+						.IsEnabled(true)
+						.OnClicked(this, &FSLEdModeToolkit::RemoveAllTags)
 					]
+				////
 				+ SVerticalBox::Slot()
 					.AutoHeight()
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("UpdateSLOverlapShapeColors", "Update SL Overlap Shape Colors"))
-					.IsEnabled(true)
-					.OnClicked_Static(&FSLEdToolkitStatics::UpdateSLOverlapShapeColors)
+						.Text(LOCTEXT("UpdateSLOverlapShapeColors", "Update Semantic Overlap Shape Visuals"))
+						.IsEnabled(true)
+						.OnClicked(this, &FSLEdModeToolkit::UpdateSLOverlapShapeColors)
 					]
 		];
-		
+
 	FModeToolkit::Init(InitToolkitHost);
 }
 
@@ -152,5 +157,222 @@ class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 {
 	return GLevelEditorModeTools().GetActiveMode(FSLEdMode::EM_SLEdModeId);
 }
-
 #undef LOCTEXT_NAMESPACE
+
+/** Callbacks */
+// Return true if any actors are selected in the viewport
+bool FSLEdModeToolkit::AreActorsSelected()
+{
+	return GEditor->GetSelectedActors()->Num() != 0;
+}
+
+// Generate semantic map from editor world
+FReply FSLEdModeToolkit::GenerateSemanticMap()
+{
+	// Create writer
+	FSLSemanticMapWriter SemMapWriter;
+
+	// TODO use bOverwriteSemanticMap
+
+	// Generate map and write to file
+	SemMapWriter.WriteToFile(GEditor->GetEditorWorldContext().World(),
+		ESLOwlSemanticMapTemplate::IAIKitchen, TEXT("SemLog"), TEXT("SemanticMap"));
+
+	return FReply::Handled();
+}
+
+// Set flag attribute depending on the check-box state
+void FSLEdModeToolkit::OnCheckedOverwriteSemanticMap(ECheckBoxState NewCheckedState)
+{
+	bOverwriteSemanticMap = (NewCheckedState == ECheckBoxState::Checked);
+}
+
+// Generate new semantic ids
+FReply FSLEdModeToolkit::GenerateNewSemanticIds()
+{
+	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	{
+		int32 TagIndex = FTags::GetTagTypeIndex(*ActItr, "SemLog");
+		if (TagIndex != INDEX_NONE)
+		{
+			FTags::AddKeyValuePair(
+				ActItr->Tags[TagIndex], "Id", FIds::NewGuidInBase64Url());
+		}
+
+		// Check component tags as well
+		for (const auto& CompItr : ActItr->GetComponents())
+		{
+			int32 TagIndex = FTags::GetTagTypeIndex(CompItr, "SemLog");
+			if (TagIndex != INDEX_NONE)
+			{
+				FTags::AddKeyValuePair(
+					CompItr->ComponentTags[TagIndex], "Id", FIds::NewGuidInBase64());
+			}
+		}
+	}
+	return FReply::Handled();
+}
+
+// Generate semantic ids for constraints
+FReply FSLEdModeToolkit::SemanticallyAnnotateConstraints()
+{
+	for (TObjectIterator<UPhysicsConstraintComponent> ConstrItr; ConstrItr; ++ConstrItr)
+	{
+		// Check if constraint is not already tagged
+		if (!FTags::HasType(*ConstrItr, "SemLog") &&
+			ConstrItr->ConstraintActor1 != nullptr &&
+			ConstrItr->ConstraintActor2 != nullptr)
+		{
+			// Check if constrained actors are tagged with a class
+			if (FTags::HasKey(ConstrItr->ConstraintActor1, "SemLog", "Class") &&
+				FTags::HasKey(ConstrItr->ConstraintActor2, "SemLog", "Class"))
+			{
+				FTags::AddKeyValuePair(*ConstrItr, "SemLog", "Id", FIds::NewGuidInBase64Url());
+			}
+		}
+	}
+	return FReply::Handled();
+}
+
+// Name semantic classes from asset name
+FReply FSLEdModeToolkit::SetClassNamesToDefault()
+{
+	// Iterate only static mesh actors
+	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	{
+		// Continue only is a valid mesh component is available
+		if (UStaticMeshComponent* SMC = ActItr->GetStaticMeshComponent())
+		{
+			// Ignore if actor is already tagged
+			if (!FTags::HasKey(*ActItr, "SemLog", "Class"))
+			{
+				// Ignore if component is already tagged
+				if (!FTags::HasKey(SMC, "SemLog", "Class"))
+				{
+					// Get the class name from the asset name
+					FString ClassName = SMC->GetStaticMesh()->GetFullName();
+					// Remove path info and prefix
+					int32 FindCharPos;
+					ClassName.FindLastChar(',', FindCharPos);
+					ClassName.RemoveAt(0, FindCharPos + 1);
+					ClassName.RemoveFromStart(TEXT("SM_"));
+
+					// Check if the class should be added to the actor or the component
+					if (FTags::HasType(*ActItr, "SemLog"))
+					{
+						// Tag the actor because it is semantically tagged but is missing the class name
+						FTags::AddKeyValuePair(*ActItr, "SemLog", "Class", ClassName);
+					}
+					else if (FTags::HasType(SMC, "SemLog"))
+					{
+						// Tag the component because it is semantically tagged but is missing the class name
+						FTags::AddKeyValuePair(SMC, "SemLog", "Class", ClassName);
+					}
+				}
+				else if (bOverwriteExistingClassNames)
+				{
+					// Get the class name from the asset name
+					FString ClassName = SMC->GetStaticMesh()->GetFullName();
+					// Remove path info and prefix
+					int32 FindCharPos;
+					ClassName.FindLastChar(',', FindCharPos);
+					ClassName.RemoveAt(0, FindCharPos + 1);
+					ClassName.RemoveFromStart(TEXT("SM_"));
+					FTags::AddKeyValuePair(SMC, "SemLog", "Class", ClassName);
+				}
+
+			}
+			else if (bOverwriteExistingClassNames)
+			{
+				// Get the class name from the asset name
+				FString ClassName = SMC->GetStaticMesh()->GetFullName();
+				// Remove path info and prefix
+				int32 FindCharPos;
+				ClassName.FindLastChar(',', FindCharPos);
+				ClassName.RemoveAt(0, FindCharPos + 1);
+				ClassName.RemoveFromStart(TEXT("SM_"));
+				FTags::AddKeyValuePair(*ActItr, "SemLog", "Class", ClassName);
+			}
+		}
+	}
+	return FReply::Handled();
+}
+
+// Set flag attribute depending on the checkbox state
+void FSLEdModeToolkit::OnCheckedOverwriteClassNames(ECheckBoxState NewCheckedState)
+{
+	bOverwriteExistingClassNames = (NewCheckedState == ECheckBoxState::Checked);
+}
+
+// Remove all semantic ids
+FReply FSLEdModeToolkit::RemoveAllSemanticIds()
+{
+	FTags::RemoveAllKeyValuePairs(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
+	return FReply::Handled();
+}
+
+// Update legacy namings from tags
+FReply FSLEdModeToolkit::UpdateLegacyNames()
+{
+	// What to replace
+	const FString SearchText = "LogType";
+	// With what
+	const FString ReplaceText = "Mobility";
+
+	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	{
+		for (auto& T : ActItr->Tags)
+		{
+			FString TagAsString = T.ToString();
+			TagAsString.ReplaceInline(*SearchText, *ReplaceText);
+			T = FName(*TagAsString);
+		}
+		// Iterate actor components
+		TArray<UActorComponent*> Comps;
+		ActItr->GetComponents<UActorComponent>(Comps);
+		for (auto& C : Comps)
+		{
+			for (auto& T : C->ComponentTags)
+			{
+				FString TagAsString = T.ToString();
+				TagAsString.ReplaceInline(*SearchText, *ReplaceText);
+				T = FName(*TagAsString);
+			}
+		}
+	}
+	return FReply::Handled();
+}
+
+// Remove all tags
+FReply FSLEdModeToolkit::RemoveAllTags()
+{
+	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	{
+		ActItr->Tags.Empty();
+
+		// Iterate actor components
+		TArray<UActorComponent*> Comps;
+		ActItr->GetComponents<UActorComponent>(Comps);
+		for (auto& C : Comps)
+		{
+			C->ComponentTags.Empty();
+		}
+	}
+	return FReply::Handled();
+}
+
+// Update semantic visual shape visuals
+FReply FSLEdModeToolkit::UpdateSLOverlapShapeColors()
+{
+	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	{
+		// Iterate actor components
+		TArray<USLOverlapShape*> Comps;
+		ActItr->GetComponents<USLOverlapShape>(Comps);
+		for (auto& C : Comps)
+		{
+			C->UpdateVisualColor();
+		}
+	}
+	return FReply::Handled();
+}

@@ -8,8 +8,9 @@
 #include "Styling/SlateTypes.h"
 #include "Interfaces/IPluginManager.h"
 
-TSharedPtr< FSlateStyleSet > FSLEdStyle::StyleSetInstance = NULL;
+TSharedPtr<FSlateStyleSet> FSLEdStyle::StyleSetInstance = NULL;
 
+// Create style singleton
 void FSLEdStyle::Initialize()
 {
 	if (!StyleSetInstance.IsValid())
@@ -19,6 +20,7 @@ void FSLEdStyle::Initialize()
 	}
 };
 
+// Destroy singleton
 void FSLEdStyle::Shutdown()
 {
 	if (StyleSetInstance.IsValid())
@@ -29,6 +31,13 @@ void FSLEdStyle::Shutdown()
 	}
 }
 
+// Get reference to the style singleton
+const ISlateStyle& FSLEdStyle::Get()
+{
+	return *StyleSetInstance;
+}
+
+// Style name
 FName FSLEdStyle::GetStyleSetName()
 {
 	static FName SemLogStyleName(TEXT("SemLogEdStyle"));
@@ -36,13 +45,13 @@ FName FSLEdStyle::GetStyleSetName()
 }
 
 #define IMAGE_BRUSH(RelativePath, ...) FSlateImageBrush(Style->RootToContentDir(RelativePath, TEXT(".png")), __VA_ARGS__)
-
-const FVector2D Icon20x20(20.0f, 20.0f);
-const FVector2D Icon40x40(40.0f, 40.0f);
-
+// Returns a new style
 TSharedRef< FSlateStyleSet > FSLEdStyle::Create()
 {
-	TSharedRef< FSlateStyleSet > Style = MakeShareable(new FSlateStyleSet(GetStyleSetName()));
+	const FVector2D Icon20x20(20.0f, 20.0f);
+	const FVector2D Icon40x40(40.0f, 40.0f);
+
+	TSharedRef<FSlateStyleSet> Style = MakeShareable(new FSlateStyleSet(GetStyleSetName()));
 	Style->SetContentRoot(IPluginManager::Get().FindPlugin(TEXT("USemLog"))->GetContentDir());
 
 	Style->Set("LevelEditor.SemLogEd", new IMAGE_BRUSH(TEXT("Icons/icon_Mode_SemLog_40px"), Icon40x40));
@@ -50,18 +59,13 @@ TSharedRef< FSlateStyleSet > FSLEdStyle::Create()
 
 	return Style;
 }
-
 #undef IMAGE_BRUSH
 
+// Reloads all texture resources from disk
 void FSLEdStyle::ReloadTextures()
 {
 	if (FSlateApplication::IsInitialized())
 	{
 		FSlateApplication::Get().GetRenderer()->ReloadTextureResources();
 	}
-}
-
-const ISlateStyle& FSLEdStyle::Get()
-{
-	return *StyleSetInstance;
 }
