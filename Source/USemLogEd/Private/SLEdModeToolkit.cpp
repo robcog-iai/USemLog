@@ -37,7 +37,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 				////
 				+ SVerticalBox::Slot()
 					.AutoHeight()
-					.HAlign(HAlign_Left)
+					.HAlign(HAlign_Center)
 					[
 					SNew(SHorizontalBox)
 						+ SHorizontalBox::Slot()
@@ -46,7 +46,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 								SNew(SButton)
 								.Text(LOCTEXT("GenSemMap", "Generate Map"))
 								.IsEnabled(true)
-								.ToolTipText(NSLOCTEXT("GenSemMapTooltip", "Export semantic map"))
+								.ToolTipText(LOCTEXT("GenSemMapTooltip", "Export semantic map"))
 								.OnClicked(this, &FSLEdModeToolkit::GenerateSemanticMap)
 							]
 						+ SHorizontalBox::Slot()
@@ -89,7 +89,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					]
 				+ SVerticalBox::Slot()
 					.AutoHeight()
-					.HAlign(HAlign_Left)
+					.HAlign(HAlign_Center)
 					[
 						SNew(SHorizontalBox)
 						+ SHorizontalBox::Slot()
