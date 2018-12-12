@@ -21,7 +21,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	UpdateRate = 0.5f;
+	UpdateRate = 0.2214f;
 	ViewIndex = -1;
 	DemoTimeSeconds = 0.f;
 	NumberOfSavedImages = -1;
@@ -134,7 +134,7 @@ void ASLVisLoggerSpectatorPC::Finish()
 
 		if (GEngine)
 		{
-			//GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
+			GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
 		}
 
 		// Flag as finished

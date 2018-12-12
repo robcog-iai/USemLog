@@ -8,23 +8,26 @@
 class FSLEdStyle
 {
 public:
+	// Create style singleton
 	static void Initialize();
 
+	// Destroy singleton
 	static void Shutdown();
 
+	// Get reference to the style singleton
+	static const ISlateStyle& Get();
+	
+	// Reloads all texture resources from disk
 	static void ReloadTextures();
 
-	static const ISlateStyle& Get();
-
+	// Style name
 	static FName GetStyleSetName();
 
 private:
-
-	static TSharedRef< class FSlateStyleSet > Create();
-
-	//static FString InContent(const FString& RelativePath, const ANSICHAR* Extension);
+	// Returns a new style
+	static TSharedRef<class FSlateStyleSet> Create();
 
 private:
-
-	static TSharedPtr< class FSlateStyleSet > StyleSetInstance;
+	// Style set singletone instance
+	static TSharedPtr<class FSlateStyleSet> StyleSetInstance;
 };
