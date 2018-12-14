@@ -88,8 +88,12 @@ void ASLVisLoggerSpectatorPC::Init()
 			// Disable noisy rendering;
 			ASLVisLoggerSpectatorPC::SetupRenderingProperties();
 
-			// Screenshot image size
+			// Set screenshot image and viewport resolution size
 			GetHighResScreenshotConfig().SetResolution(640, 480, 1.0f);
+			
+			// Set the display resolution for the current game view. Has no effect in the editor
+			// e.g. 1280x720w for windowed, 1920x1080f for fullscreen, 1920x1080wf for windowed fullscreen
+			IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetRes"))->Set(TEXT("640x480"));
 
 			// Set the array of the camera positions
 			for (TActorIterator<ASLVisCamera>Itr(GetWorld()); Itr; ++Itr)
@@ -385,33 +389,6 @@ bool ASLVisLoggerSpectatorPC::SetupViewType(FName ViewType)
 		}
 	}
 	return false;
-
-	//static IConsoleVariable* ICVarVisBuffer = IConsoleManager::Get().FindConsoleVariable(TEXT("ShowFlag.Visualizebuffer"));
-	//// Set rendering types
-	//if (ViewType == NAME_None)
-	//{
-	//	// Disable buffer rendering
-	//	if (ICVarVisBuffer->GetInt() != 0)
-	//	{
-	//		ICVarVisBuffer->Set(0);
-	//		return true;
-	//	}
-	//}
-	//else if (ICVarVisBuffer && ICVarVisTarget)
-	//{
-	//	// Enable buffer rendering
-	//	if (ICVarVisBuffer->GetInt() == 0)
-	//	{
-	//		ICVarVisBuffer->Set(1);
-	//		// Set buffer type
-	//		if (ViewportClient->GetEngineShowFlags())
-	//		{
-	//			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(ViewType == NAME_None ? false : true);
-	//			ViewportClient->GetEngineShowFlags()->SetTonemapper(ViewType == NAME_None ? false : true);
-	//		}
-	//	}
-	//}
-	//return false;
 }
 
 // Set the suffix of the file depending on the view type
