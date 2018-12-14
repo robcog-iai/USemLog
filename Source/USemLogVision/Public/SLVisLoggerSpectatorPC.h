@@ -52,6 +52,9 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 private:
+	// Set rendered image quality
+	void SetupRenderingProperties();
+
 	// Called after a successful scrub
 	void DemoGotoCB();
 
@@ -73,6 +76,18 @@ private:
 	// Sets the next view, returns false there are no more views
 	bool SetNextViewTarget();
 
+	// Sets the first visualization buffer type, false if none
+	bool SetFirstViewType();
+
+	// Sets the next visualization buffer type, returns false there are no more views
+	bool SetNextViewType();
+
+	// Setup the given view type
+	bool SetupViewType(FName ViewType);
+
+	// Set the suffix of the file depending on the view type
+	bool SetupFilenameSuffix(FName ViewType);
+
 private:
 	// Set when logger is initialized
 	bool bIsInit;
@@ -92,11 +107,20 @@ private:
 	// Array of the camera actors
 	TArray<class ASLVisCamera*> Cameras;
 
+	// Buffer types to render
+	TArray<FName> ViewTypes;
+
 	// Path of the episode folder
 	FString EpisodePath;
 
+	// Suffix of the filename
+	FString FilenameSuffix;
+
 	// Index of the current view
-	int32 ViewIndex;
+	int32 ViewTargetIndex;
+
+	// Index of the current view
+	int32 ViewTypeIndex;
 
 	// Update step size
 	float UpdateRate;
@@ -109,55 +133,4 @@ private:
 
 	// Total number of images to be saved
 	uint32 NumberOfTotalImages;
-
-
-	
-
-private:
-	//// User Input
-	//// Go to next record step
-	//void NextRecordStep();
-	//// Go to prev record step
-	//void PrevRecordStep();
-	//// Go to next view
-	//void NextCameraView();
-	//// Go to previous camera view
-	//void PrevCameraView();
-	//// Take screenshot (curr view)
-	//void RequestScreenshot();
-	//void UpdateView();
-//
-//
-//
-//private:
-//	//
-//	float CurrDemoTime;
-//	float TotalTime;
-//	float UpdateRate;
-//	int32 CurrViewIndex;
-//	int32 TotalViews;
-
-
-
-
-
-	//void GotoCbRecursive();
-
-//void PauseToggle();
-
-//void SetPause2(bool bPause);
-
-//void Step();
-//
-//void NextView();
-
-//
-
-
-//bool TakeNextScreenshot();
-
-//void StartCapture();
-
-//void OnScrCb(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
-
 };
