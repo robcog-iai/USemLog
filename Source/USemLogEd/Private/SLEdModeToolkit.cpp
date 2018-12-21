@@ -98,7 +98,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 								SNew(SButton)
 								.Text(LOCTEXT("SetDefaultClassNames", "Set Class Names"))
 								.IsEnabled(true)
-								.OnClicked(this, &FSLEdModeToolkit::GenerateSemanticMap)
+								.OnClicked(this, &FSLEdModeToolkit::SetClassNamesToDefault)
 							]
 						+ SHorizontalBox::Slot()
 							[
@@ -240,7 +240,7 @@ FReply FSLEdModeToolkit::SetClassNamesToDefault()
 	// Iterate only static mesh actors
 	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
-		// Continue only is a valid mesh component is available
+		// Continue only if a valid mesh component is available
 		if (UStaticMeshComponent* SMC = ActItr->GetStaticMeshComponent())
 		{
 			// Ignore if actor is already tagged
@@ -251,9 +251,10 @@ FReply FSLEdModeToolkit::SetClassNamesToDefault()
 				{
 					// Get the class name from the asset name
 					FString ClassName = SMC->GetStaticMesh()->GetFullName();
+
 					// Remove path info and prefix
 					int32 FindCharPos;
-					ClassName.FindLastChar(',', FindCharPos);
+					ClassName.FindLastChar('.', FindCharPos);
 					ClassName.RemoveAt(0, FindCharPos + 1);
 					ClassName.RemoveFromStart(TEXT("SM_"));
 
@@ -268,6 +269,12 @@ FReply FSLEdModeToolkit::SetClassNamesToDefault()
 						// Tag the component because it is semantically tagged but is missing the class name
 						FTags::AddKeyValuePair(SMC, "SemLog", "Class", ClassName);
 					}
+					else
+					{
+						// None have the semlog tag key, generate new one to the actor
+						FTags::AddTagType(*ActItr, "SemLog");
+						FTags::AddKeyValuePair(*ActItr, "SemLog", "Class", ClassName);
+					}
 				}
 				else if (bOverwriteExistingClassNames)
 				{
@@ -275,7 +282,7 @@ FReply FSLEdModeToolkit::SetClassNamesToDefault()
 					FString ClassName = SMC->GetStaticMesh()->GetFullName();
 					// Remove path info and prefix
 					int32 FindCharPos;
-					ClassName.FindLastChar(',', FindCharPos);
+					ClassName.FindLastChar('.', FindCharPos);
 					ClassName.RemoveAt(0, FindCharPos + 1);
 					ClassName.RemoveFromStart(TEXT("SM_"));
 					FTags::AddKeyValuePair(SMC, "SemLog", "Class", ClassName);
@@ -288,7 +295,7 @@ FReply FSLEdModeToolkit::SetClassNamesToDefault()
 				FString ClassName = SMC->GetStaticMesh()->GetFullName();
 				// Remove path info and prefix
 				int32 FindCharPos;
-				ClassName.FindLastChar(',', FindCharPos);
+				ClassName.FindLastChar('.', FindCharPos);
 				ClassName.RemoveAt(0, FindCharPos + 1);
 				ClassName.RemoveFromStart(TEXT("SM_"));
 				FTags::AddKeyValuePair(*ActItr, "SemLog", "Class", ClassName);

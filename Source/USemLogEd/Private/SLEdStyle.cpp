@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLEdStyle.h"
-#include "USemLogEd.h"
 #include "SlateGameResources.h"
 #include "IPluginManager.h"
 #include "Styling/SlateTypes.h"

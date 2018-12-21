@@ -24,6 +24,7 @@ public:
 	virtual class FEdMode* GetEditorMode() const override;
 	virtual TSharedPtr<class SWidget> GetInlineContent() const override { return ToolkitWidget; }
 
+private:
 	/** Callbacks */
 	// Return true if any actors are selected in the viewport
 	bool AreActorsSelected();
