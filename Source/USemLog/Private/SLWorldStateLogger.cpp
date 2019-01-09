@@ -36,11 +36,12 @@ void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
 		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
 
 		// Init async worker (create the writer and set logging parameters)
-		AsyncWorker->GetTask().Init(GetWorld(), WriterType, DistanceStepSize, RotationStepSize,
-			EpisodeId, Location, HostIP, HostPort);
-
-		// Flag as init
-		bIsInit = true;
+		if (AsyncWorker->GetTask().Create(GetWorld(), WriterType, DistanceStepSize, RotationStepSize,
+			EpisodeId, Location, HostIP, HostPort))
+		{
+			// Flag as init
+			bIsInit = true;
+		}
 	}
 }
 

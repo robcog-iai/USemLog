@@ -5,9 +5,10 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "Conversions.h"
 #if WITH_LIBMONGO
-#include "mongoc.h"
-#include "bson.h"
-#include "string"
+#include <mongocxx/instance.hpp>
+#include <mongocxx/uri.hpp>
+#include <bsoncxx/json.hpp>
+#include <string.h>
 #endif //WITH_LIBMONGO
 
 // Constr
@@ -16,17 +17,12 @@ FSLWorldStateWriterMongo::FSLWorldStateWriterMongo(float DistanceStepSize, float
 	const FString& HostIP, uint16 HostPort) :
 	ISLWorldStateWriter(DistanceStepSize, RotationStepSize)
 {
-	bConnect = FSLWorldStateWriterMongo::ConnectToMongo(Location, EpisodeId, HostIP, HostPort);
+	bIsReady = FSLWorldStateWriterMongo::Connect(Location, EpisodeId, HostIP, HostPort);
 }
 
 // Destr
 FSLWorldStateWriterMongo::~FSLWorldStateWriterMongo()
 {
-	// Disconnect mongo (do not need to disconnect,if disconnect, Play game for the seconde time will crash)
-	/*mongoc_collection_destroy(collection);
-	mongoc_database_destroy(database);
-	mongoc_client_destroy(client);*/
-	//mongoc_cleanup();
 }
 
 // Called to write the data
@@ -36,285 +32,107 @@ void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalAc
 	float Timestamp)
 {
 #if WITH_LIBMONGO
-	if (bConnect)
+	try
 	{
-		// Bson root object
-		bson_t* BsonRootObj;
-		BsonRootObj = bson_new();
+		// Bson document
+		auto bson_doc = bsoncxx::builder::basic::document{};
 
-		// Bson Array of entities
-		bson_t BsonEntitiesArr;
-		bson_init(&BsonEntitiesArr);
+		// Bson array
+		auto bson_arr = bsoncxx::builder::basic::array{};
 
-		// Add actors data to the bson array
-		FSLWorldStateWriterMongo::AddActors(BsonEntitiesArr);
+		// Add entities to the bson array
+		FSLWorldStateWriterMongo::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
+		FSLWorldStateWriterMongo::AddSkeletalActors(SkeletalActorPool, bson_arr);
+		FSLWorldStateWriterMongo::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
 
-		// Add components data to the bson array
-		FSLWorldStateWriterMongo::AddComponents(BsonEntitiesArr);
-
-		
-		if (sizeof(BsonEntitiesArr) > 0)
+		// Avoid inserting empty entries
+		if (!bson_arr.view().empty())
 		{
-			// set timestamp
-			BSON_APPEND_DOUBLE(BsonRootObj, "timestamp", WorkerParent->World->GetTimeSeconds());
-
-			// add entity array to root oject
-			BSON_APPEND_ARRAY(BsonRootObj, "entities", &BsonEntitiesArr);
+			bson_doc.append(bsoncxx::builder::basic::kvp("timestamp", bsoncxx::types::b_double{Timestamp}));
+			bson_doc.append(bsoncxx::builder::basic::kvp("entities", bson_arr));
+			mongo_coll.insert_one(bson_doc.view());
 		}
-		
-		// Write data in Mongo data base
-		FSLWorldStateWriterMongo::WriteToMongo(BsonRootObj,collection);
-
-		bson_destroy(BsonRootObj);
+	}
+	catch (const std::exception& xcp)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Exception: %s"),
+			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 	}
 #endif //WITH_LIBMONGO
 }
 
-// Set the file handle for the logger
-bool FSLWorldStateWriterMongo::ConnectToMongo(const FString& InLogDB,
-	const FString& InEpisodeId,
-	const FString& InMongoIP,
-	uint16 MongoPort)
-{	
+// Connect to the database
+bool FSLWorldStateWriterMongo::Connect(const FString& DB, const FString& EpisodeId, const FString& IP, uint16 Port)
+{
 #if WITH_LIBMONGO
-	// set the uri address
-	FString Furi_str = TEXT("mongodb://")+ InMongoIP+TEXT(":") + FString::FromInt(MongoPort);
-	
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *Furi_str);
-	//convert inputs FString to std::string
-	std::string uri_str(TCHAR_TO_UTF8(*Furi_str));
-	std::string database_name(TCHAR_TO_UTF8(*InLogDB));
-	std::string collection_name(TCHAR_TO_UTF8(*InEpisodeId));
+	try
+	{
+		// Get current mongo instance, or create a new one (static variable)
+		mongocxx::instance::current();
 
-	
+		// Create the connection URI
+		FString Uri = TEXT("mongodb://") + IP + TEXT(":") + FString::FromInt(Port);
+		mongocxx::uri mongo_uri(TCHAR_TO_UTF8(*Uri));
 
-	//Required to initialize libmongoc's internals
-	mongoc_init();
-	
-	//create a new client instance
-	client = mongoc_client_new(uri_str.c_str());
+		// Create the mongo client/connection
+		// drivers are designed to succeed during client construction,
+		// regardless of the state of servers
+		// i.e. can return true even if it is no connected to the server
+		mongo_conn = mongocxx::client {mongo_uri};
+		if (!mongo_conn)
+		{
+			return false;
+		}
 
-	//Register the application name so we can track it in the profile logs on the server
-	mongoc_client_set_appname(client, "Mongo_data");
+		mongo_db = mongo_conn[TCHAR_TO_UTF8(*DB)];
+		mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
 
-	//Get a handle on the database and collection 
-	database = mongoc_client_get_database(client, database_name.c_str());
-	collection = mongoc_client_get_collection(client, database_name.c_str(), collection_name.c_str());
+		bsoncxx::document::value document = 
+			bsoncxx::builder::basic::make_document(
+				bsoncxx::builder::basic::kvp(
+					"hello", "world"));
 
-	//connect mongo database
-	if (client) {
-		
-		UE_LOG(LogTemp, Warning, TEXT("Mongo Database has been connected"));
-		return true;
+		mongo_coll.insert_one({});
+		mongo_coll.insert_one(document.view());
 	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("Database connection failed"));
+	catch(const std::exception& xcp)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Exception: %s"),
+			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 		return false;
 	}
-#else
+	return true;
+#elif
 	return false;
-#endif //WITH_LIBMONGO	
+#endif //WITH_LIBMONGO
 }
 
 #if WITH_LIBMONGO
-// Add actors
-void FSLWorldStateWriterMongo::AddActors(bson_t& OutBsonEntitiesArr)
+// Get non skeletal actors as bson array
+void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+	bsoncxx::builder::basic::array& out_bson_arr)
 {
-	// Iterate actors
-	for (auto WorldStateActItr(WorkerParent->WorldStateActors.CreateIterator()); WorldStateActItr; ++WorldStateActItr)
-	{
-		// Check if pointer is valid
-		if (WorldStateActItr->Entity.IsValid(/*false, true*/))
-		{
-			// Check if the entity moved more than the threshold
-			const FVector CurrLoc = WorldStateActItr->Entity->GetActorLocation();
-			const FQuat CurrQuat = WorldStateActItr->Entity->GetActorQuat();
-			if (FVector::DistSquared(CurrLoc, WorldStateActItr->PrevLoc) > WorkerParent->DistanceStepSizeSquared)
-			{
-				// Update prev location
-				WorldStateActItr->PrevLoc = CurrLoc;
-
-				// Get current entry as Bson object
-				bson_t BsonActorEntry = FSLWorldStateWriterMongo::GetAsBsonEntry(
-					WorldStateActItr->Id, WorldStateActItr->Class, CurrLoc, CurrQuat);
-
-				// If actor is skeletal, save bones data as well
-				if (ASkeletalMeshActor* SkelAct = Cast<ASkeletalMeshActor>(WorldStateActItr->Entity))
-				{
-					// Bson array of bones
-					bson_t BsonBonesArr;
-					bson_init(&BsonBonesArr);
-
-					// automatic key generation 
-					const char* key;
-					char keybuf[16];
-					size_t keylen;
-					int keynum = 0;
-
-					// Get skeletal mesh component
-					USkeletalMeshComponent* SkelComp = SkelAct->GetSkeletalMeshComponent();
-
-					// Get bone names
-					TArray<FName> BoneNames;
-					SkelComp->GetBoneNames(BoneNames);
-
-					BSON_APPEND_ARRAY_BEGIN(&BsonActorEntry, "bones", &BsonBonesArr);
-
-					// Iterate through the bones of the skeletal mesh
-					for (const auto& BoneName : BoneNames)
-					{
-						const FVector CurrLoc = SkelComp->GetBoneLocation(BoneName);
-						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(BoneName);
-
-						// Get current entry as Bson object
-						bson_t BsonBoneEntry = FSLWorldStateWriterMongo::GetAsBsonEntry(
-							TEXT(""), BoneName.ToString(), CurrLoc, CurrQuat);
-
-						keylen = bson_uint32_to_string(keynum, &key, keybuf, sizeof keybuf);
-						bson_append_document(&BsonBonesArr, key, keylen, &BsonBoneEntry);
-						keynum++;
-
-					}
-					bson_append_array_end(&BsonActorEntry, &BsonBonesArr);
-
-				}
-				// Add entity to Bson array
-				bson_t BsonActorEntrydocument;
-				bson_init(&BsonActorEntrydocument);
-				BSON_APPEND_DOCUMENT(&BsonActorEntrydocument, "document", &BsonActorEntry);
-				bson_concat(&OutBsonEntitiesArr, &BsonActorEntrydocument);
-			}
-		}
-		else
-		{
-			WorldStateActItr.RemoveCurrent();
-		}
-	}
+	out_bson_arr.append("non_skeletal_actors");
 }
 
-// Add components
-void FSLWorldStateWriterMongo::AddComponents(bson_t& OutBsonEntitiesArr)
+// Get skeletal actors as bson array
+void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	bsoncxx::builder::basic::array& out_bson_arr)
 {
-	// Iterate components
-	for (auto WorldStateCompItr(WorkerParent->WorldStateComponents.CreateIterator()); WorldStateCompItr; ++WorldStateCompItr)
-	{
-		if (WorldStateCompItr->Entity.IsValid(/*false, true*/))
-		{
-			// Check if the entity moved more than the threshold
-			const FVector CurrLoc = WorldStateCompItr->Entity->GetComponentLocation();
-			const FQuat CurrQuat = WorldStateCompItr->Entity->GetComponentQuat();
-			if (FVector::DistSquared(CurrLoc, WorldStateCompItr->PrevLoc) > WorkerParent->DistanceStepSizeSquared)
-			{
-				// Update prev location
-				WorldStateCompItr->PrevLoc = CurrLoc;
-
-				// Get current entry as Bson object
-				bson_t BsonCompEntry = FSLWorldStateWriterMongo::GetAsBsonEntry(
-					WorldStateCompItr->Id, WorldStateCompItr->Class, CurrLoc, CurrQuat);
-
-				// If comp is skeletal, save bones data as well
-				if (USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(WorldStateCompItr->Entity))
-				{
-					// Bson array of bones
-					bson_t BsonBonesArr;
-					bson_init(&BsonBonesArr);
-
-					// automatic key generation 
-					const char* key;
-					char keybuf[16];
-					size_t keylen;
-					int keynum = 0;
-
-					// Get bone names
-					TArray<FName> BoneNames;
-					SkelComp->GetBoneNames(BoneNames);
-
-					BSON_APPEND_ARRAY_BEGIN(&BsonCompEntry, "bones", &BsonBonesArr);
-
-					// Iterate through the bones of the skeletal mesh
-					for (const auto& BoneName : BoneNames)
-					{
-						const FVector CurrLoc = SkelComp->GetBoneLocation(BoneName);
-						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(BoneName);
-
-						// Get current entry as Bson object
-						bson_t BsonBoneEntry = FSLWorldStateWriterMongo::GetAsBsonEntry(
-							TEXT(""), BoneName.ToString(), CurrLoc, CurrQuat);
-
-						//generate key for bson document automatically
-						keylen = bson_uint32_to_string(keynum, &key, keybuf, sizeof keybuf);
-						bson_append_document(&BsonBonesArr, key, keylen, &BsonBoneEntry);
-						keynum++;
-					}
-					bson_append_array_end(&BsonCompEntry, &BsonBonesArr);
-
-				}
-				// Add entity to Bson array
-				bson_t BsonCompEntrydocument;
-				bson_init(&BsonCompEntrydocument);
-				BSON_APPEND_DOCUMENT(&BsonCompEntrydocument, "document", &BsonCompEntry);
-				bson_concat(&OutBsonEntitiesArr, &BsonCompEntrydocument);
-			}
-		}
-		else
-		{
-			WorldStateCompItr.RemoveCurrent();
-		}
-	}
+	out_bson_arr.append("skeletal_actors");
 }
 
-// Get entry as bson object
-bson_t FSLWorldStateWriterMongo::GetAsBsonEntry(const FString& InId,
-	const FString& InClass,
-	const FVector& InLoc,
-	const FQuat& InQuat)
+// Get non skeletal components as bson array
+void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+	bsoncxx::builder::basic::array& out_bson_arr)
 {
-	// Switch to right handed ROS transformation
-	const FVector ROSLoc = FConversions::UToROS(InLoc);
-	const FQuat ROSQuat = FConversions::UToROS(InQuat);
-
-	// New Bson entity object
-	bson_t BsonObj;
-	bson_init(&BsonObj);
-
-	// Add "id" field if available (bones have no separate ids)
-	if (!InId.IsEmpty())
-	{
-		BSON_APPEND_UTF8(&BsonObj, "id", TCHAR_TO_UTF8(*InId));
-	}
-
-	// Add "class" field
-	BSON_APPEND_UTF8(&BsonObj, "class", TCHAR_TO_UTF8(*InClass));
-
-	// Create and add "loc" field
-	bson_t loc;
-	bson_init(&loc);
-	BSON_APPEND_DOUBLE(&loc, "x", ROSLoc.X);
-	BSON_APPEND_DOUBLE(&loc, "y", ROSLoc.Y);
-	BSON_APPEND_DOUBLE(&loc, "z", ROSLoc.Z);
-	BSON_APPEND_DOCUMENT(&BsonObj, "loc", &loc);
-
-	// Create and add "rot" field
-	bson_t rot;
-	bson_init(&rot);
-	BSON_APPEND_DOUBLE(&rot, "x", ROSQuat.X);
-	BSON_APPEND_DOUBLE(&rot, "y", ROSQuat.Y);
-	BSON_APPEND_DOUBLE(&rot, "z", ROSQuat.Z);
-	BSON_APPEND_DOCUMENT(&BsonObj, "rot", &rot);
-
-	return BsonObj;
+	out_bson_arr.append("non_skeletal_components");
 }
 
-// Write entry to db
-void FSLWorldStateWriterMongo::WriteToMongo(bson_t*& InRootObj, mongoc_collection_t* &collection)
-{
-	bson_error_t error;
-	//insert the BsonObject in to mongo database 
-	if (!mongoc_collection_insert_one(collection, InRootObj, NULL, NULL, &error)) {
-		fprintf(stderr, "%s\n", error.message);
-	}
-	else {
-		UE_LOG(LogTemp,Warning, TEXT("Data has been stored in mongo."));
-	}
-}
+//// Get key value pairs as bson entry
+//bsoncxx::builder::basic::sub_document FSLWorldStateWriterMongo::GetAsBsonEntry(const TMap<FString, FString>& InKeyValMap,
+//	const FVector& InLoc, const FQuat& InQuat)
+//{
+//	return bsoncxx::builder::basic::sub_document sub_doc;
+//}
 #endif //WITH_LIBMONGO

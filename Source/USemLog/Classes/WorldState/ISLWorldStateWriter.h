@@ -26,7 +26,13 @@ public:
 		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 		float Timestamp) = 0;
 
+	// True if the writer is valid
+	bool IsReady() const { return bIsReady; }
+
 protected:
+	// Flag to show if it is valid
+	bool bIsReady;
+
 	// Location step size (log items that moved at least this distance since the last log)
 	float DistanceStepSizeSquared;
 

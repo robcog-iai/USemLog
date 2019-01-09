@@ -11,7 +11,7 @@ FSLWorldStateWriterJson::FSLWorldStateWriterJson(float DistanceStepSize, float R
 	const FString& Location, const FString& EpisodeId) :
 	ISLWorldStateWriter(DistanceStepSize, RotationStepSize)
 {
-	FSLWorldStateWriterJson::SetFileHandle(Location, EpisodeId);
+	bIsReady = FSLWorldStateWriterJson::SetFileHandle(Location, EpisodeId);
 }
 
 // Destr
@@ -23,7 +23,7 @@ FSLWorldStateWriterJson::~FSLWorldStateWriterJson()
 	}
 }
 
-// Called to write the data (it also removes invalid item -- e.g. deleted ones)
+// Called to write the data (it also removes invalid item -> e.g. deleted ones)
 void FSLWorldStateWriterJson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
@@ -35,13 +35,9 @@ void FSLWorldStateWriterJson::Write(TArray<TSLItemState<AActor>>& NonSkeletalAct
 	// Out Json array of entities
 	TArray<TSharedPtr<FJsonValue>> JsonEntitiesArr;
 	
-	// Add non skeletal actors data to the json array
+	// Add entities to json array
 	FSLWorldStateWriterJson::AddNonSkeletalActors(NonSkeletalActorPool, JsonEntitiesArr);
-
-	// Add skeletal actors
 	FSLWorldStateWriterJson::AddSkeletalActors(SkeletalActorPool, JsonEntitiesArr);
-
-	// Add non skeletal components data to the json array
 	FSLWorldStateWriterJson::AddNonSkeletalComponents(NonSkeletalComponentPool, JsonEntitiesArr);
 
 	// Avoid appending empty entries
@@ -59,7 +55,7 @@ void FSLWorldStateWriterJson::Write(TArray<TSLItemState<AActor>>& NonSkeletalAct
 }
 
 // Set the file handle for the logger
-void FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
+bool FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
 	const FString Filename = InEpisodeId + TEXT("_WS.json");
 	FString EpisodesDirPath = FPaths::ProjectDir() + LogDirectory + TEXT("/Episodes/");
@@ -70,9 +66,11 @@ void FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const F
 	// Create logging directory path and the filehandle
 	FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*EpisodesDirPath);
 	FileHandle = FPlatformFileManager::Get().GetPlatformFile().OpenWrite(*FilePath, true);
+
+	return FileHandle != nullptr;
 }
 
-// Add non skeletal actors to a json format
+// Get non skeletal actors as json array
 void FSLWorldStateWriterJson::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
 {
@@ -96,7 +94,7 @@ void FSLWorldStateWriterJson::AddNonSkeletalActors(TArray<TSLItemState<AActor>>&
 				Itr->PrevQuat = CurrQuat;
 
 				// Get current entry as json object
-				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry2(
+				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
 					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
 					CurrLoc, CurrQuat);
 
@@ -112,7 +110,7 @@ void FSLWorldStateWriterJson::AddNonSkeletalActors(TArray<TSLItemState<AActor>>&
 	}
 }
 
-// Add semantically annotated skeletal actors to a json format
+// Get skeletal actors as json array
 void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
 {
@@ -136,7 +134,7 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 				Itr->PrevQuat = CurrQuat;
 
 				// Get current entry as json object
-				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry2(
+				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
 					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
 					CurrLoc, CurrQuat);
 				
@@ -155,7 +153,7 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 							const FQuat CurrQuat = SkelComp->GetBoneQuaternion(Pair.Key);
 
 							// Get current entry as json object
-							TSharedPtr<FJsonObject> JsonBoneEntry = FSLWorldStateWriterJson::GetAsJsonEntry2(
+							TSharedPtr<FJsonObject> JsonBoneEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
 								TMap<FString, FString>{ {"bone", Pair.Key.ToString()}, { "class", Pair.Value } },
 								CurrLoc, CurrQuat);
 
@@ -179,7 +177,7 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 	}
 }
 
-// Add non skeletal components
+// Get non skeletal components as json array
 void FSLWorldStateWriterJson::AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
 {
@@ -203,7 +201,7 @@ void FSLWorldStateWriterJson::AddNonSkeletalComponents(TArray<TSLItemState<UScen
 				Itr->PrevQuat = CurrQuat;
 
 				// Get current entry as json object
-				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry2(
+				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
 					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
 					CurrLoc, CurrQuat);
 
@@ -219,48 +217,8 @@ void FSLWorldStateWriterJson::AddNonSkeletalComponents(TArray<TSLItemState<UScen
 	}
 }
 
-// Get entry as json object
-TSharedPtr<FJsonObject> FSLWorldStateWriterJson::GetAsJsonEntry(const FString& InId,
-	const FString& InClass,
-	const FVector& InLoc,
-	const FQuat& InQuat)
-{
-	// Switch to right handed ROS transformation
-	const FVector ROSLoc = FConversions::UToROS(InLoc);
-	const FQuat ROSQuat = FConversions::UToROS(InQuat);
-
-	// New json entity object
-	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
-
-	// Add "id" field if available (bones have no separate ids)
-	if (!InId.IsEmpty())
-	{
-		JsonObj->SetStringField("id", InId);
-	}
-
-	// Add "class" field
-	JsonObj->SetStringField("class", InClass);
-
-	// Create and add "loc" field
-	TSharedPtr<FJsonObject> LocObj = MakeShareable(new FJsonObject);
-	LocObj->SetNumberField("x", ROSLoc.X);
-	LocObj->SetNumberField("y", ROSLoc.Y);
-	LocObj->SetNumberField("z", ROSLoc.Z);
-	JsonObj->SetObjectField("loc", LocObj);
-
-	// Create and add "rot" field
-	TSharedPtr<FJsonObject> QuatObj = MakeShareable(new FJsonObject);
-	QuatObj->SetNumberField("x", ROSQuat.X);
-	QuatObj->SetNumberField("y", ROSQuat.Y);
-	QuatObj->SetNumberField("z", ROSQuat.Z);
-	QuatObj->SetNumberField("w", ROSQuat.W);
-	JsonObj->SetObjectField("rot", QuatObj);
-
-	return JsonObj;
-}
-
-// Get entry as json object
-TSharedPtr<FJsonObject> FSLWorldStateWriterJson::GetAsJsonEntry2(const TMap<FString, FString>& InKeyValMap,
+// Get key value pairs as json entry
+TSharedPtr<FJsonObject> FSLWorldStateWriterJson::GetAsJsonEntry(const TMap<FString, FString>& InKeyValMap,
 	const FVector& InLoc, const FQuat& InQuat)
 {
 	// New json entity object

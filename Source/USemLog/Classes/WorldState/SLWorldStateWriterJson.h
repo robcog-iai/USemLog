@@ -30,28 +30,22 @@ public:
 
 private:
 	// Set the file handle for the logger
-	void SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
+	bool SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
 
-	// Add non skeletal actors to a json format
+	// Get non skeletal actors as json array
 	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
-	// Add semantically annotated skeletal actors to a json format
+	// Get skeletal actors as json array
 	void AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
-	// Add non skeletal components
+	// Get non skeletal components as json array
 	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool, 
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
-	// Get entry as json object
-	TSharedPtr<FJsonObject> GetAsJsonEntry(const FString& InId,
-		const FString& InClass,
-		const FVector& InLoc,
-		const FQuat& InQuat);
-
-	// Get entry as json object
-	TSharedPtr<FJsonObject> GetAsJsonEntry2(const TMap<FString, FString>& InKeyValMap,
+	// Get key value pairs as json entry
+	TSharedPtr<FJsonObject> GetAsJsonEntry(const TMap<FString, FString>& InKeyValMap,
 		const FVector& InLoc, const FQuat& InQuat);
 
 	// Write entry to file

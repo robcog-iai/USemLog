@@ -8,8 +8,6 @@ public class USemLog : ModuleRules
 	public USemLog(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-		
-		bEnableUndefinedIdentifierWarnings = false;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
@@ -43,12 +41,12 @@ public class USemLog : ModuleRules
 				"Slate",
 				"SlateCore",
 				"Json",
-				"JsonUtilities",				
+				"JsonUtilities",
 				"UTags",
 				"UIds",
 				"UConversions",
 				"UMCGrasp",			// WITH_MC_GRASP
-				//"libmongo"		// WITH_LIBMONGO , TODO 4.20 has issues with libmongo
+				"libmongo"			// WITH_LIBMONGO
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -72,6 +70,10 @@ public class USemLog : ModuleRules
 		else
 		{
 			PublicDefinitions.Add("WITH_LIBMONGO=1");
+			
+			// Needed to ignore various warnings from libmongo
+			bEnableUndefinedIdentifierWarnings = false;
+			bEnableExceptions = true;
 		}
 
 		// TODO

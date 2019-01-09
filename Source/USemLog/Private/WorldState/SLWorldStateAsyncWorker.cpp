@@ -19,7 +19,7 @@ FSLWorldStateAsyncWorker::~FSLWorldStateAsyncWorker()
 }
 
 // Init writer, load items from sl mapping singleton
-void FSLWorldStateAsyncWorker::Init(UWorld* InWorld,
+bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
 	ESLWorldStateWriterType WriterType,
 	float DistanceStepSize,
 	float RotationStepSize,
@@ -53,6 +53,12 @@ void FSLWorldStateAsyncWorker::Init(UWorld* InWorld,
 		Writer = MakeShareable(new FSLWorldStateWriterJson(
 			DistanceStepSize, RotationStepSize, Location, EpisodeId));
 		break;
+	}
+
+	// Writer could not be created
+	if (!Writer.IsValid() || !Writer->IsReady())
+	{
+		return false;
 	}
 
 	// Make sure the semantic items are initialized
@@ -89,6 +95,9 @@ void FSLWorldStateAsyncWorker::Init(UWorld* InWorld,
 			}
 		}
 	}
+
+	// Can start working
+	return true;
 }
 
 // Remove all items that are semantically marked as static
@@ -138,11 +147,8 @@ void FSLWorldStateAsyncWorker::RemoveStaticItems()
 // Async work done here
 void FSLWorldStateAsyncWorker::DoWork()
 {
-	if (Writer.IsValid())
-	{
-		Writer->Write(NonSkeletalActorPool, SkeletalActorPool, NonSkeletalComponentPool,
-			World->GetTimeSeconds());
-	}
+	Writer->Write(NonSkeletalActorPool, SkeletalActorPool, NonSkeletalComponentPool,
+		World->GetTimeSeconds());
 }
 
 // Needed by the engine API

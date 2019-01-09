@@ -36,7 +36,7 @@ public:
 	~FSLWorldStateAsyncWorker();
 
 	// Init worker, load models to log from world
-	void Init(UWorld* InWorld, 
+	bool Create(UWorld* InWorld, 
 		ESLWorldStateWriterType WriterType,
 		float DistanceStepSize,
 		float RotationStepSize,

@@ -39,7 +39,7 @@ ASLManager::ASLManager()
 	DistanceStepSize = 0.5f;
 	RotationStepSize = 0.5f;
 	WriterType = ESLWorldStateWriterType::Json;
-	HostIP = TEXT("127.0.0.1.");
+	HostIP = TEXT("127.0.0.1");
 	HostPort = 27017;
 
 	// Events logger default values
@@ -308,7 +308,6 @@ bool ASLManager::CanEditChange(const UProperty* InProperty) const
 	{
 		return WriterType == ESLWorldStateWriterType::Mongo;
 	}
-
 	return ParentVal;
 }
 #endif // WITH_EDITOR

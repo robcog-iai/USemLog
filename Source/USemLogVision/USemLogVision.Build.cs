@@ -44,8 +44,7 @@ public class USemLogVision : ModuleRules
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-			
-		PublicDefinitions.Add("WITH_LIBMONGO=0");
+
 
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]

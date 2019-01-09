@@ -80,6 +80,7 @@ private:
 	// Set when manager is finished
 	bool bIsFinished;
 
+
 	/* Semantic logger */
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -121,6 +122,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartFromUserInput"))
 	FName FinishInputActionName;
 
+
 	/* Begin world state logger properties */
 	// Log world state
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -154,6 +156,7 @@ private:
 	UPROPERTY()
 	USLWorldStateLogger* WorldStateLogger;
 	/* End world state logger properties */
+
 
 	/* Begin event data logger properties */
 	// Log event data
@@ -193,9 +196,10 @@ private:
 	USLEventLogger* EventDataLogger;
 	/* End event data logger properties */
 
+
 	/* Begin vision data logger properties */
 	// Log vision data (this will cause the episode to be replayed for logging image data)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogVisionData;
 
 	// Maximum number of demo frames recorded per second

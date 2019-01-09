@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 #include "ISLWorldStateWriter.h"
 #if WITH_LIBMONGO
-#include "mongoc.h"
+#include <mongocxx/client.hpp>
 #endif //WITH_LIBMONGO
 
 // Forward declaration
@@ -32,35 +32,38 @@ public:
 		float Timestamp) override;
 
 private:
-	// Connect to mongo db
-	bool ConnectToMongo(const FString& InLogDB,
-		const FString& InEpisodeId,
-		const FString& InMongoIP,
-		uint16 MongoPort=27017);
+	// Connect to the database
+	bool Connect(const FString& DB, const FString& EpisodeId, const FString& IP, uint16 Port = 27017);
+
+
 #if WITH_LIBMONGO
-	// Add actors
-	void AddActors(bson_t& OutBsonEntitiesArr);
+	// Get non skeletal actors as bson array
+	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+		bsoncxx::builder::basic::array& out_bson_arr);
 
-	// Add components
-	void AddComponents(bson_t& OutBsonEntitiesArr);
+	// Get skeletal actors as bson array
+	void AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		bsoncxx::builder::basic::array& out_bson_arr);
 
-	// Get entry as Bson object
-	bson_t GetAsBsonEntry(const FString& InId,
-		const FString& InClass,
-		const FVector& InLoc,
-		const FQuat& InQuat);
+	// Get non skeletal components as bson array
+	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+		bsoncxx::builder::basic::array& out_bson_arr);
 
-	// Write entry to db
-	void WriteToMongo(bson_t*& InRootObj, mongoc_collection_t* &collection);
-#endif //WITH_LIBMONGO
-	// Pointer to worker parent (access to raw data structure)
-	FSLWorldStateAsyncWorker* WorkerParent;
+	//// Get key value pairs as bson entry
+	//bsoncxx::builder::basic::sub_document GetAsBsonEntry(const TMap<FString, FString>& InKeyValMap,
+	//	const FVector& InLoc, const FQuat& InQuat);
 
-	bool bConnect;
-#if WITH_LIBMONGO
-	// Pointer to monge database
-	mongoc_client_t *client;
-	mongoc_database_t *database;
-	mongoc_collection_t *collection;
+private:
+	// Must be created before using the driver and and must remain alive for as long as the driver is in use
+	//mongocxx::instance mongo_inst;
+
+	// Mongo connection client
+	mongocxx::client mongo_conn;
+
+	// Database to access
+	mongocxx::database mongo_db;
+
+	// Database collection
+	mongocxx::collection mongo_coll;
 #endif //WITH_LIBMONGO
 };

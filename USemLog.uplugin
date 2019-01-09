@@ -38,13 +38,15 @@
 	"Plugins": [
 		{
 			"Name": "UUtils",
-			"Enabled": true,
-			"MarketplaceURL": "http://robcog.org/"
+			"Enabled": true
 		},
 		{
 			"Name": "UPhysicsBasedMC",
-			"Enabled": true,
-			"MarketplaceURL": "http://robcog.org/"
+			"Enabled": true
+		},
+		{
+			"Name": "libmongo",
+			"Enabled": true
 		}
 	]
 }
