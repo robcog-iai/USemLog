@@ -13,7 +13,7 @@
 class FSLWorldStateAsyncWorker;
 
 /**
- * Raw data logger to a mongo database
+ * Raw data logger to mongo database
  */
 class FSLWorldStateWriterMongo : public ISLWorldStateWriter
 {
@@ -49,12 +49,12 @@ private:
 	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
 
-	//// Get key value pairs as bson entry
-	//bsoncxx::builder::basic::sub_document GetAsBsonEntry(const TMap<FString, FString>& InKeyValMap,
-	//	const FVector& InLoc, const FQuat& InQuat);
+	// Get key value pairs as bson entry
+	bsoncxx::builder::basic::document GetAsBsonEntry(const TMap<FString, FString>& InKeyValMap,
+		const FVector& InLoc, const FQuat& InQuat);
 
 private:
-	// Must be created before using the driver and and must remain alive for as long as the driver is in use
+	// Must be created before using the driver and must remain alive for as long as the driver is in use
 	//mongocxx::instance mongo_inst;
 
 	// Mongo connection client

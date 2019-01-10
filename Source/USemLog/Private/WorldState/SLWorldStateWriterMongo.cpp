@@ -34,22 +34,22 @@ void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalAc
 #if WITH_LIBMONGO
 	try
 	{
-		// Bson document
-		auto bson_doc = bsoncxx::builder::basic::document{};
-
-		// Bson array
-		auto bson_arr = bsoncxx::builder::basic::array{};
+		// Create a bson document and array to store the entities
+		bsoncxx::builder::basic::document bson_doc{};
+		bsoncxx::builder::basic::array bson_arr{};
 
 		// Add entities to the bson array
 		FSLWorldStateWriterMongo::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
 		FSLWorldStateWriterMongo::AddSkeletalActors(SkeletalActorPool, bson_arr);
 		FSLWorldStateWriterMongo::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
 
+
 		// Avoid inserting empty entries
+		using bsoncxx::builder::basic::kvp;
 		if (!bson_arr.view().empty())
 		{
-			bson_doc.append(bsoncxx::builder::basic::kvp("timestamp", bsoncxx::types::b_double{Timestamp}));
-			bson_doc.append(bsoncxx::builder::basic::kvp("entities", bson_arr));
+			bson_doc.append(kvp("timestamp", bsoncxx::types::b_double{Timestamp}));
+			bson_doc.append(kvp("entities", bson_arr));
 			mongo_coll.insert_one(bson_doc.view());
 		}
 	}
@@ -73,6 +73,8 @@ bool FSLWorldStateWriterMongo::Connect(const FString& DB, const FString& Episode
 		// Create the connection URI
 		FString Uri = TEXT("mongodb://") + IP + TEXT(":") + FString::FromInt(Port);
 		mongocxx::uri mongo_uri(TCHAR_TO_UTF8(*Uri));
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Client URI=%s"),
+			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(mongo_uri.to_string().c_str()));
 
 		// Create the mongo client/connection
 		// drivers are designed to succeed during client construction,
@@ -81,19 +83,12 @@ bool FSLWorldStateWriterMongo::Connect(const FString& DB, const FString& Episode
 		mongo_conn = mongocxx::client {mongo_uri};
 		if (!mongo_conn)
 		{
+			// Something went wrong
 			return false;
 		}
 
 		mongo_db = mongo_conn[TCHAR_TO_UTF8(*DB)];
 		mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
-
-		bsoncxx::document::value document = 
-			bsoncxx::builder::basic::make_document(
-				bsoncxx::builder::basic::kvp(
-					"hello", "world"));
-
-		mongo_coll.insert_one({});
-		mongo_coll.insert_one(document.view());
 	}
 	catch(const std::exception& xcp)
 	{
@@ -112,7 +107,39 @@ bool FSLWorldStateWriterMongo::Connect(const FString& DB, const FString& Episode
 void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
-	out_bson_arr.append("non_skeletal_actors");
+	// Iterate items
+	for (auto Itr(NonSkeletalActorPool.CreateIterator()); Itr; ++Itr)
+	{
+		// Check if pointer is valid
+		if (Itr->Entity.IsValid(/*false, true*/))
+		{
+			// Check if the entity moved more than the threshold since the last logging
+			const FVector CurrLoc = Itr->Entity->GetActorLocation();
+			const FQuat CurrQuat = Itr->Entity->GetActorQuat();
+
+			const float Distance = FVector::DistSquared(CurrLoc, Itr->PrevLoc);
+
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
+				CurrQuat.AngularDistance(Itr->PrevQuat))
+			{
+				// Update prev state
+				Itr->PrevLoc = CurrLoc;
+				Itr->PrevQuat = CurrQuat;
+
+				// Get current entry as bson document
+				bsoncxx::builder::basic::document bson_doc_entry = FSLWorldStateWriterMongo::GetAsBsonEntry(
+					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
+					CurrLoc, CurrQuat);
+
+				out_bson_arr.append(bson_doc_entry);
+			}
+		}
+		else
+		{
+			Itr.RemoveCurrent();
+			FSLMappings::GetInstance()->RemoveItem(Itr->Entity.Get());
+		}
+	}
 }
 
 // Get skeletal actors as bson array
@@ -129,10 +156,39 @@ void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USce
 	out_bson_arr.append("non_skeletal_components");
 }
 
-//// Get key value pairs as bson entry
-//bsoncxx::builder::basic::sub_document FSLWorldStateWriterMongo::GetAsBsonEntry(const TMap<FString, FString>& InKeyValMap,
-//	const FVector& InLoc, const FQuat& InQuat)
-//{
-//	return bsoncxx::builder::basic::sub_document sub_doc;
-//}
+// Get key value pairs as bson entry
+bsoncxx::builder::basic::document FSLWorldStateWriterMongo::GetAsBsonEntry(const TMap<FString, FString>& InKeyValMap,
+	const FVector& InLoc, const FQuat& InQuat)
+{
+	using bsoncxx::builder::basic::kvp;
+	// New bson document
+	bsoncxx::builder::basic::document bson_doc{};
+
+	//// Add key values
+	//for (const auto& Pair : InKeyValMap)
+	//{
+	//	bson_doc.append(kvp(TCHAR_TO_UTF8(*Pair.Key), TCHAR_TO_UTF8(*Pair.Value)));
+	//}
+
+	// Switch to right handed ROS transformation
+	const FVector ROSLoc = FConversions::UToROS(InLoc);
+	const FQuat ROSQuat = FConversions::UToROS(InQuat);
+
+	// Create a loc document
+	bsoncxx::builder::basic::document bson_loc_doc{};
+	bson_loc_doc.append(kvp("x", bsoncxx::types::b_double{ROSLoc.X}));
+	bson_loc_doc.append(kvp("y", bsoncxx::types::b_double{ROSLoc.Y}));
+	bson_loc_doc.append(kvp("z", bsoncxx::types::b_double{ROSLoc.Z}));
+	bson_doc.append(kvp("loc", bson_loc_doc));
+
+	// Create a rot document
+	bsoncxx::builder::basic::document bson_rot_doc{};
+	bson_rot_doc.append(kvp("x", bsoncxx::types::b_double{ROSQuat.X}));
+	bson_rot_doc.append(kvp("y", bsoncxx::types::b_double{ROSQuat.Y}));
+	bson_rot_doc.append(kvp("z", bsoncxx::types::b_double{ROSQuat.Z}));
+	bson_rot_doc.append(kvp("w", bsoncxx::types::b_double{ROSQuat.W}));
+	bson_doc.append(kvp("rot", bson_rot_doc));
+
+	return bson_doc;
+}
 #endif //WITH_LIBMONGO

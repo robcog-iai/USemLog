@@ -224,7 +224,7 @@ TSharedPtr<FJsonObject> FSLWorldStateWriterJson::GetAsJsonEntry(const TMap<FStri
 	// New json entity object
 	TSharedPtr<FJsonObject> JsonObj = MakeShareable(new FJsonObject);
 
-	// Add key values
+	// Add key values pairs
 	for (const auto& Pair : InKeyValMap)
 	{
 		JsonObj->SetStringField(Pair.Key, Pair.Value);
