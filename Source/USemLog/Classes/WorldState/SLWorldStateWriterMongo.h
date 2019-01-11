@@ -34,8 +34,7 @@ public:
 private:
 	// Connect to the database
 	bool Connect(const FString& DB, const FString& EpisodeId, const FString& IP, uint16 Port = 27017);
-
-
+	
 #if WITH_LIBMONGO
 	// Get non skeletal actors as bson array
 	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
@@ -49,9 +48,9 @@ private:
 	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
 
-	// Get key value pairs as bson entry
-	bsoncxx::builder::basic::document GetAsBsonEntry(const TMap<FString, FString>& InKeyValMap,
-		const FVector& InLoc, const FQuat& InQuat);
+	// Add the pose information of the entity
+	void GetPoseAsBsonEntry(const FVector& InLoc, const FQuat& InQuat, 
+		bsoncxx::builder::basic::document& out_doc);
 
 private:
 	// Must be created before using the driver and must remain alive for as long as the driver is in use
