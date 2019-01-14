@@ -14,21 +14,28 @@ using bsoncxx::builder::basic::kvp;
 #endif //WITH_LIBMONGO
 
 // Constr
-FSLWorldStateWriterMongo::FSLWorldStateWriterMongo(float DistanceStepSize, float RotationStepSize, 
-	const FString& Location, const FString& EpisodeId,
-	const FString& HostIP, uint16 HostPort) :
-	ISLWorldStateWriter(DistanceStepSize, RotationStepSize)
+USLWorldStateWriterMongo::USLWorldStateWriterMongo()
 {
-	bIsReady = FSLWorldStateWriterMongo::Connect(Location, EpisodeId, HostIP, HostPort);
+	bIsInit = false;
 }
 
+
 // Destr
-FSLWorldStateWriterMongo::~FSLWorldStateWriterMongo()
+USLWorldStateWriterMongo::~USLWorldStateWriterMongo()
 {
+	UE_LOG(LogTemp, Error, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+}
+
+// Init
+void USLWorldStateWriterMongo::Init(const FSLWorldStateWriterParams& InParams)
+{
+	MinLinearDistanceSquared = InParams.LinearDistanceSquared;
+	MinAngularDistance = InParams.AngularDistance;
+	bIsInit = USLWorldStateWriterMongo::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
 }
 
 // Called to write the data
-void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+void USLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	float Timestamp)
@@ -39,9 +46,9 @@ void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalAc
 		bsoncxx::builder::basic::array bson_arr{};
 
 		// Add entities to the bson array
-		FSLWorldStateWriterMongo::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
-		FSLWorldStateWriterMongo::AddSkeletalActors(SkeletalActorPool, bson_arr);
-		FSLWorldStateWriterMongo::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
+		USLWorldStateWriterMongo::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
+		USLWorldStateWriterMongo::AddSkeletalActors(SkeletalActorPool, bson_arr);
+		USLWorldStateWriterMongo::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
 
 		// Avoid inserting empty entries
 		if (!bson_arr.view().empty())
@@ -61,8 +68,31 @@ void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalAc
 #endif //WITH_LIBMONGO
 }
 
+// Create indexes from the logged data, usually called after logging
+bool USLWorldStateWriterMongo::CreateIndexes()
+{
+	if (!bIsInit)
+	{
+		return false;
+	}
+
+	// Create indexes on the database
+	try
+	{
+		/*mongocxx::options::index index_options{};*/
+		mongo_coll.create_index(bsoncxx::builder::basic::make_document(kvp("timestamp", 1))/*, index_options*/);
+		return true;
+	}
+	catch (const std::exception& xcp)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
+			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+		return false;
+	}
+}
+
 // Connect to the database
-bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port)
+bool USLWorldStateWriterMongo::Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port)
 {
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
 		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *IP, Port);
@@ -132,7 +162,7 @@ bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& Epi
 
 #if WITH_LIBMONGO
 // Get non skeletal actors as bson array
-void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+void USLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -145,7 +175,7 @@ void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>
 			const FVector CurrLoc = Itr->Entity->GetActorLocation();
 			const FQuat CurrQuat = Itr->Entity->GetActorQuat();
 
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
 				// Update prev state
@@ -160,7 +190,7 @@ void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+				USLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Add document to array
 				out_bson_arr.append(bson_entity_doc);
@@ -175,7 +205,7 @@ void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>
 }
 
 // Get skeletal actors as bson array
-void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+void USLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -188,7 +218,7 @@ void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletal
 			const FVector CurrLoc = Itr->Entity->GetActorLocation();
 			const FQuat CurrQuat = Itr->Entity->GetActorQuat();
 
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
 				// Update prev state
@@ -203,7 +233,7 @@ void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletal
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+				USLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Array of bones
 				bsoncxx::builder::basic::array bson_bone_arr{};
@@ -226,7 +256,7 @@ void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletal
 							bson_bone_doc.append(kvp("class", TCHAR_TO_UTF8(*Pair.Value)));
 
 							// Add the pose information
-							FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_bone_doc);
+							USLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_bone_doc);
 
 							// Add bone to  array
 							bson_bone_arr.append(bson_bone_doc);
@@ -249,7 +279,7 @@ void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletal
 }
 
 // Get non skeletal components as bson array
-void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+void USLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -262,7 +292,7 @@ void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USce
 			const FVector CurrLoc = Itr->Entity->GetComponentLocation();
 			const FQuat CurrQuat = Itr->Entity->GetComponentQuat();
 
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
 				// Update prev state
@@ -277,7 +307,7 @@ void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USce
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+				USLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Add document to array
 				out_bson_arr.append(bson_entity_doc);
@@ -292,7 +322,7 @@ void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USce
 }
 
 // Get key value pairs as bson entry
-void FSLWorldStateWriterMongo::GetPoseAsBsonEntry(const FVector& InLoc, const FQuat& InQuat,
+void USLWorldStateWriterMongo::GetPoseAsBsonEntry(const FVector& InLoc, const FQuat& InQuat,
 	bsoncxx::builder::basic::document& out_doc)
 {
 	// Switch to right handed ROS transformation

@@ -19,44 +19,56 @@ FSLWorldStateAsyncWorker::~FSLWorldStateAsyncWorker()
 }
 
 // Init writer, load items from sl mapping singleton
-bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
+bool FSLWorldStateAsyncWorker::Create(UObject* InParent,
 	ESLWorldStateWriterType WriterType,
-	float DistanceStepSize,
-	float RotationStepSize,
-	const FString& EpisodeId,
+	float LinearDistance,
+	float AngularDistance,
 	const FString& Location,
-	const FString& HostIp,
-	const uint16 HostPort)
+	const FString& EpisodeId,
+	const FString& ServerIp,
+	const uint16 ServerPort)
 {
-	// Cache the world pointer
-	World = InWorld;
+	return FSLWorldStateAsyncWorker::Create(InParent, WriterType,
+		FSLWorldStateWriterParams(LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort));
+}
 
-	// Set the square of the distance threshold for objects to be logged
-	DistanceStepSizeSquared = DistanceStepSize * DistanceStepSize;
+// Init writer, load items from sl mapping singleton
+bool FSLWorldStateAsyncWorker::Create(UObject* InParent,
+	ESLWorldStateWriterType WriterType,
+	const FSLWorldStateWriterParams& InParams)
+{
+	if (!InParent || !InParent->GetWorld())
+	{
+		return false;
+	}
+
+	// Cache the world and parent pointer
+	Parent = InParent;
+	World = Parent->GetWorld();
 
 	// Create the writer object
 	switch(WriterType) 
 	{
 	case ESLWorldStateWriterType::Json:
-		Writer = MakeShareable(new FSLWorldStateWriterJson(
-			DistanceStepSize, RotationStepSize, Location, EpisodeId));
+		Writer = NewObject<USLWorldStateWriterJson>(Parent);
+		Writer->Init(InParams);
 		break;
 	case ESLWorldStateWriterType::Bson:
-		Writer = MakeShareable(new FSLWorldStateWriterBson(
-			DistanceStepSize, RotationStepSize, Location, EpisodeId));
+		Writer = NewObject<USLWorldStateWriterBson>(Parent);
+		Writer->Init(InParams);
 		break;
 	case ESLWorldStateWriterType::Mongo:
-		Writer = MakeShareable(new FSLWorldStateWriterMongo(
-			DistanceStepSize, RotationStepSize, Location, EpisodeId, HostIp, HostPort));
+		Writer = NewObject<USLWorldStateWriterMongo>(Parent);
+		Writer->Init(InParams);
 		break;
 	default:
-		Writer = MakeShareable(new FSLWorldStateWriterJson(
-			DistanceStepSize, RotationStepSize, Location, EpisodeId));
+		Writer = NewObject<USLWorldStateWriterJson>(Parent);
+		Writer->Init(InParams);
 		break;
 	}
 
 	// Writer could not be created
-	if (!Writer.IsValid() || !Writer->IsReady())
+	if (!Writer->IsInit())
 	{
 		return false;
 	}
@@ -142,6 +154,20 @@ void FSLWorldStateAsyncWorker::RemoveStaticItems()
 	//	}
 	//}
 	//SkeletalComponentPool.Shrink();
+}
+
+// Finish up worker
+void FSLWorldStateAsyncWorker::Finish(bool bForced)
+{
+	if (!bForced)
+	{
+		// Check if mongo writer
+		if (USLWorldStateWriterMongo* MongoWriter = Cast<USLWorldStateWriterMongo>(Writer))
+		{
+			// Create indexes
+			MongoWriter->CreateIndexes();
+		}
+	}
 }
 
 // Async work done here

@@ -7,15 +7,13 @@
 #include "Conversions.h"
 
 // Constr
-FSLWorldStateWriterBson::FSLWorldStateWriterBson(float DistanceStepSize, float RotationStepSize, 
-	const FString& Location, const FString& EpisodeId) : 
-	ISLWorldStateWriter(DistanceStepSize, RotationStepSize)
+USLWorldStateWriterBson::USLWorldStateWriterBson()
 {
-	bIsReady = FSLWorldStateWriterBson::SetFileHandle(Location, EpisodeId);
+	bIsInit = false;
 }
 
 // Destr
-FSLWorldStateWriterBson::~FSLWorldStateWriterBson()
+USLWorldStateWriterBson::~USLWorldStateWriterBson()
 {
 	if (FileHandle)
 	{
@@ -23,8 +21,16 @@ FSLWorldStateWriterBson::~FSLWorldStateWriterBson()
 	}
 }
 
+// Init
+void USLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
+{
+	MinLinearDistanceSquared = InParams.LinearDistanceSquared;
+	MinAngularDistance = InParams.AngularDistance;
+	bIsInit = USLWorldStateWriterBson::SetFileHandle(InParams.Location, InParams.EpisodeId);
+}
+
 // Called to write the data
-void FSLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+void USLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	float Timestamp)
@@ -35,7 +41,7 @@ void FSLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalAct
 }
 
 // Set the file handle for the logger
-bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
+bool USLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
 	const FString Filename = InEpisodeId + TEXT("_WS.bson");
 	FString EpisodesDirPath = FPaths::ProjectDir() + LogDirectory + TEXT("/Episodes/");
@@ -62,7 +68,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //			// Check if the entity moved more than the threshold
 //			const FVector CurrLoc = WorldStateActItr->Entity->GetActorLocation();
 //			const FQuat CurrQuat = WorldStateActItr->Entity->GetActorQuat();
-//			if (FVector::DistSquared(CurrLoc, WorldStateActItr->PrevLoc) > WorkerParent->DistanceStepSizeSquared)
+//			if (FVector::DistSquared(CurrLoc, WorldStateActItr->PrevLoc) > WorkerParent->LinearDistanceSquared)
 //			{
 //				// Update prev location
 //				WorldStateActItr->PrevLoc = CurrLoc;
@@ -137,7 +143,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //			// Check if the entity moved more than the threshold
 //			const FVector CurrLoc = WorldStateCompItr->Entity->GetComponentLocation();
 //			const FQuat CurrQuat = WorldStateCompItr->Entity->GetComponentQuat();
-//			if (FVector::DistSquared(CurrLoc, WorldStateCompItr->PrevLoc) > WorkerParent->DistanceStepSizeSquared)
+//			if (FVector::DistSquared(CurrLoc, WorldStateCompItr->PrevLoc) > WorkerParent->LinearDistanceSquared)
 //			{
 //				// Update prev location
 //				WorldStateCompItr->PrevLoc = CurrLoc;

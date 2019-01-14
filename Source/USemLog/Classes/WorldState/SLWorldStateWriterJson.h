@@ -4,7 +4,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ISLWorldStateWriter.h"
+#include "SLWorldStateWriterInterface.h"
+#include "SLWorldStateWriterJson.generated.h"
 
 // Forward declaration
 class FSLWorldStateAsyncWorker;
@@ -12,15 +13,20 @@ class FSLWorldStateAsyncWorker;
 /**
  * Raw data logger to json format
  */
-class FSLWorldStateWriterJson : public ISLWorldStateWriter
+UCLASS()
+class USLWorldStateWriterJson : public UObject, public ISLWorldStateWriterInterface
 {
+	GENERATED_BODY()
+
 public:
 	// Constructor
-	FSLWorldStateWriterJson(float DistanceStepSize, float RotationStepSize,
-		const FString& Location, const FString& EpisodeId);
+	USLWorldStateWriterJson();
 
 	// Destr
-	virtual ~FSLWorldStateWriterJson();
+	virtual ~USLWorldStateWriterJson();
+
+	// Init
+	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
 
 	// Write the data (it also removes invalid items from the array -- e.g. deleted ones)
 	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,

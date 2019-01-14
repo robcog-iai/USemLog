@@ -82,6 +82,14 @@ private:
 
 
 	/* Semantic logger */
+	// Enable custom location
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bUseCustomLocation;
+
+	// Log directory (or the database name if saving to mongodb)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomLocation"))
+	FString Location;
+
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bUseCustomEpisodeId;
@@ -89,10 +97,6 @@ private:
 	// Episode Id (be default will be auto generated)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomEpisodeId"))
 	FString EpisodeId;
-
-	// Log directory (or the database name if saving to mongodb)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString Location;
 
 	// Start at load time
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -134,11 +138,11 @@ private:
 
 	// Distance (cm) threshold difference for logging a given item
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
-	float DistanceStepSize;
+	float LinearDistance;
 
 	// Rotation (radians) threshold difference for logging a given item
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
-	float RotationStepSize;
+	float AngularDistance;
 
 	// Writer type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
@@ -146,11 +150,11 @@ private:
 
 	// Mongodb server IP
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger")
-	FString HostIP;
+	FString ServerIp;
 
 	// Mongodb server PORT
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (ClampMin = 0, ClampMax = 65535))
-	uint16 HostPort;
+	uint16 ServerPort;
 
 	// World state logger, use UPROPERTY to avoid GC
 	UPROPERTY()

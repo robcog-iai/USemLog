@@ -37,8 +37,8 @@ USLEventLogger::~USLEventLogger()
 
 // Init Logger
 void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
-	const FString& InEpisodeId,
 	const FString& InLocation,
+	const FString& InEpisodeId,
 	bool bInLogContactEvents,
 	bool bInLogSupportedByEvents,
 	bool bInLogGraspEvents,

@@ -23,12 +23,12 @@ USLWorldStateLogger::~USLWorldStateLogger()
 
 // Init logger
 void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
-	float DistanceStepSize,
-	float RotationStepSize,
-	const FString& EpisodeId,
+	float LinearDistance,
+	float AngularDistance,
 	const FString& Location,
-	const FString& HostIP,
-	const uint16 HostPort)
+	const FString& EpisodeId,
+	const FString& ServerIp,
+	const uint16 ServerPort)
 {
 	if (!bIsInit)
 	{
@@ -36,8 +36,8 @@ void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
 		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
 
 		// Init async worker (create the writer and set logging parameters)
-		if (AsyncWorker->GetTask().Create(GetWorld(), WriterType, DistanceStepSize, RotationStepSize,
-			EpisodeId, Location, HostIP, HostPort))
+		if (AsyncWorker->GetTask().Create(GetWorld(), WriterType, LinearDistance, AngularDistance,
+			Location, EpisodeId, ServerIp, ServerPort))
 		{
 			// Flag as init
 			bIsInit = true;
@@ -52,7 +52,7 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 	{
 		// Call before binding the recurrent Update function
 		// this ensures the initial world state is logged (static and movable semantic items)
-		USLWorldStateLogger::InitialUpdate();
+		USLWorldStateLogger::FirstUpdate();
 
 		// Start updating
 		if (UpdateRate > 0.0f)
@@ -80,8 +80,13 @@ void USLWorldStateLogger::Finish(bool bForced)
 	{
 		if (AsyncWorker)
 		{
-			// Wait for worker to complete before deleting it
+			// Wait for worker to complete 
 			AsyncWorker->EnsureCompletion();
+			
+			// Finish up (e.g. write mongo indexes)
+			AsyncWorker->GetTask().Finish(bForced);
+
+			// Deleting worker
 			delete AsyncWorker;
 			AsyncWorker = nullptr;
 		}
@@ -126,7 +131,7 @@ TStatId USLWorldStateLogger::GetStatId() const
 /** End FTickableGameObject interface */
 
 // Log initial state of the world (static and dynamic entities)
-void USLWorldStateLogger::InitialUpdate()
+void USLWorldStateLogger::FirstUpdate()
 {
 	// Start async worker
 	AsyncWorker->StartBackgroundTask();
@@ -134,7 +139,7 @@ void USLWorldStateLogger::InitialUpdate()
 	// Wait for worker to complete (we only use the blocking wait for the initial state log)
 	AsyncWorker->EnsureCompletion();
 
-	// Remove all non-dynamic objects from worker
+	// Static and movable entities have been logged, now remoev static objects
 	AsyncWorker->GetTask().RemoveStaticItems();
 }
 

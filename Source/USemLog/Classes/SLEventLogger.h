@@ -30,8 +30,8 @@ public:
 public:
 	// Init Logger
 	void Init(ESLOwlExperimentTemplate TemplateType,
-		const FString& InEpisodeId,
 		const FString& InLocation,
+		const FString& InEpisodeId,
 		bool bInLogContactEvents,
 		bool bInLogSupportedByEvents,
 		bool bInLogGraspEvents,

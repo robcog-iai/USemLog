@@ -4,10 +4,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ISLWorldStateWriter.h"
+#include "SLWorldStateWriterInterface.h"
 #if WITH_LIBMONGO
 #include <mongocxx/client.hpp>
 #endif //WITH_LIBMONGO
+#include "SLWorldStateWriterMongo.generated.h"
 
 // Forward declaration
 class FSLWorldStateAsyncWorker;
@@ -15,21 +16,29 @@ class FSLWorldStateAsyncWorker;
 /**
  * Raw data logger to mongo database
  */
-class FSLWorldStateWriterMongo : public ISLWorldStateWriter
+UCLASS()
+class USLWorldStateWriterMongo : public UObject, public ISLWorldStateWriterInterface
 {
+	GENERATED_BODY()
+
 public:
 	// Default constr
-	FSLWorldStateWriterMongo(float DistanceStepSize, float RotationStepSize, 
-		const FString& Location, const FString& EpisodeId, const FString& HostIP, uint16 HostPort);
+	USLWorldStateWriterMongo();
 
 	// Destr
-	virtual ~FSLWorldStateWriterMongo();
+	virtual ~USLWorldStateWriterMongo();
+
+	// Init
+	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
 
 	// Write the data
 	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 		float Timestamp) override;
+
+	// Create indexes from the logged data, usually called after logging
+	bool CreateIndexes();
 
 private:
 	// Connect to the database

@@ -4,13 +4,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ISLWorldStateWriter.h"
+#include "SLWorldStateWriterInterface.h"
 #if WITH_LIBMONGO
 #include <bsoncxx/builder/stream/array.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/types.hpp>
 #endif //WITH_LIBMONGO
+#include "SLWorldStateWriterBson.generated.h"
 
 // Forward declaration
 class FSLWorldStateAsyncWorker;
@@ -18,15 +19,20 @@ class FSLWorldStateAsyncWorker;
 /**
  * Raw data logger to bson format
  */
-class FSLWorldStateWriterBson : public ISLWorldStateWriter
+UCLASS()
+class USLWorldStateWriterBson : public UObject, public ISLWorldStateWriterInterface
 {
+	GENERATED_BODY()
+
 public:
 	// Default constr
-	FSLWorldStateWriterBson(float DistanceStepSize, float RotationStepSize,
-		const FString& Location, const FString& EpisodeId);
+	USLWorldStateWriterBson();
 
 	// Destr
-	virtual ~FSLWorldStateWriterBson();
+	virtual ~USLWorldStateWriterBson();
+
+	// Init
+	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
 
 	// Called to write the data
 	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,

@@ -22,9 +22,10 @@ ASLManager::ASLManager()
 	bIsFinished = false;
 
 	// Semantic logger default values
+	bUseCustomLocation = false;
+	Location = TEXT("SemLog");
 	bUseCustomEpisodeId = false;
 	EpisodeId = TEXT("autogen");
-	Location = TEXT("SemLog");
 	bStartAtBeginPlay = true;
 	bStartAtFirstTick = false;
 	bStartWithDelay = false;
@@ -36,11 +37,11 @@ ASLManager::ASLManager()
 	// World state logger default values
 	bLogWorldState = true;
 	UpdateRate = 0.0f;
-	DistanceStepSize = 0.5f;
-	RotationStepSize = 0.5f;
+	LinearDistance = 0.5f;
+	AngularDistance = 0.5f;
 	WriterType = ESLWorldStateWriterType::Json;
-	HostIP = TEXT("127.0.0.1");
-	HostPort = 27017;
+	ServerIp = TEXT("127.0.0.1");
+	ServerPort = 27017;
 
 	// Events logger default values
 	bLogEventData = true;
@@ -151,15 +152,15 @@ void ASLManager::Init()
 		{
 			// Create and init world state logger
 			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
-			WorldStateLogger->Init(WriterType, DistanceStepSize, RotationStepSize,
-				EpisodeId, Location, HostIP, HostPort);
+			WorldStateLogger->Init(WriterType, LinearDistance, AngularDistance,
+				Location, EpisodeId, ServerIp, ServerPort);
 		}
 
 		if (bLogEventData)
 		{
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
-			EventDataLogger->Init(ExperimentTemplateType, EpisodeId, Location,
+			EventDataLogger->Init(ExperimentTemplateType, Location, EpisodeId,
 				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
 		}
 
@@ -300,11 +301,11 @@ bool ASLManager::CanEditChange(const UProperty* InProperty) const
 	const FName PropertyName = InProperty->GetFName();
 
 	// HostIP and HostPort can only be edited if the world state writer is of type Mongo
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, HostIP))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerIp))
 	{
 		return WriterType == ESLWorldStateWriterType::Mongo;
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, HostPort))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerPort))
 	{
 		return WriterType == ESLWorldStateWriterType::Mongo;
 	}

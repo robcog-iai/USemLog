@@ -28,12 +28,12 @@ public:
 
 	// Init Logger
 	void Init(ESLWorldStateWriterType WriterType,
-		float DistanceStepSize,
-		float RotationStepSize,
-		const FString& EpisodeId,
+		float LinearDistance,
+		float AngularDistance,
 		const FString& Location,
-		const FString& HostIP = FString(),
-		const uint16 HostPort = 0);
+		const FString& EpisodeId,
+		const FString& ServerIp = "",
+		const uint16 ServerPort = 0);
 
 	// Start logger
 	void Start(const float UpdateRate);
@@ -55,7 +55,7 @@ protected:
 
 private:
 	// Log initial state of the world (static and dynamic entities)
-	void InitialUpdate();
+	void FirstUpdate();
 
 	// Log current state of the world (dynamic objects that moved more than the distance threshold)
 	void Update();
