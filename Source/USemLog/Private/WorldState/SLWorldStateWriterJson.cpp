@@ -84,8 +84,6 @@ void FSLWorldStateWriterJson::AddNonSkeletalActors(TArray<TSLItemState<AActor>>&
 			const FVector CurrLoc = Itr->Entity->GetActorLocation();
 			const FQuat CurrQuat = Itr->Entity->GetActorQuat();
 
-			const float Distance = FVector::DistSquared(CurrLoc, Itr->PrevLoc);
-
 			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
@@ -123,8 +121,6 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 			// Check if the entity moved more than the threshold since the last logging
 			const FVector CurrLoc = Itr->Entity->GetActorLocation();
 			const FQuat CurrQuat = Itr->Entity->GetActorQuat();
-
-			const float Distance = FVector::DistSquared(CurrLoc, Itr->PrevLoc);
 
 			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
@@ -190,8 +186,6 @@ void FSLWorldStateWriterJson::AddNonSkeletalComponents(TArray<TSLItemState<UScen
 			// Check if the entity moved more than the threshold since the last logging
 			const FVector CurrLoc = Itr->Entity->GetComponentLocation();
 			const FQuat CurrQuat = Itr->Entity->GetComponentQuat();
-
-			const float Distance = FVector::DistSquared(CurrLoc, Itr->PrevLoc);
 
 			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))

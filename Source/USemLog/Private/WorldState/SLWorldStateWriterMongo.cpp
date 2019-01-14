@@ -62,27 +62,41 @@ void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalAc
 }
 
 // Connect to the database
-bool FSLWorldStateWriterMongo::Connect(const FString& DB, const FString& EpisodeId, const FString& IP, uint16 Port)
+bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port)
 {
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
+		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *IP, Port);
 #if WITH_LIBMONGO
 	try
 	{
 		// Get current mongo instance, or create a new one (static variable)
 		mongocxx::instance::current();
 
-		// Create the connection URI
-		FString Uri = TEXT("mongodb://") + IP + TEXT(":") + FString::FromInt(Port);
+		// Client connection options
+		mongocxx::options::client client_options;
+		mongocxx::options::ssl ssl_options;
 
-		//std::string uri = "mongodb://127.0.0.1:27017";
-		//mongo_conn = mongocxx::client{ mongocxx::uri {uri} };
-		//mongo_conn = mongocxx::client{ mongocxx::uri {"mongodb://127.0.0.1:27017"} };
+		// If the server certificate is not signed by a well-known CA,
+		// you can set a custom CA file with the `ca_file` option.
+		// ssl_options.ca_file("/path/to/custom/cert.pem");
+
+		// If you want to disable certificate verification, you
+		// can set the `allow_invalid_certificates` option.
+		// ssl_options.allow_invalid_certificates(true);
+
+		client_options.ssl_opts(ssl_options);
+
+		// Create the connection URI
+		//FString Uri = TEXT("mongodb://") + IP + TEXT(":") + FString::FromInt(Port);
 
 		// Create the mongo client/connection
 		// drivers are designed to succeed during client construction,
 		// regardless of the state of servers
 		// i.e. can return true even if it is no connected to the server
-		mongo_conn = mongocxx::client { mongocxx::uri {TCHAR_TO_UTF8(*Uri)} };
-		//mongo_conn = mongocxx::client{ mongocxx::uri{"mongodb://127.0.0.1:27017?ssl=true"} };
+		mongo_conn = mongocxx::client{ mongocxx::uri {}};
+		//mongo_conn = mongocxx::client{ mongocxx::uri {}, client_options };
+		//mongo_conn = mongocxx::client { mongocxx::uri {TCHAR_TO_UTF8(*Uri)}, client_options};
+		//mongo_conn = mongocxx::client{ mongocxx::uri{"mongodb://127.0.0.1"}, client_options };
 		if (mongo_conn)
 		{
 			//FString MongoUri = FString(mongo_conn.uri().to_string().c_str());
@@ -95,9 +109,14 @@ bool FSLWorldStateWriterMongo::Connect(const FString& DB, const FString& Episode
 			return false;
 		}
 
+		// Dummy call to make sure that the server is online
+		mongo_conn.list_databases();
+
 		// Set/create the mongo database and collection
-		mongo_db = mongo_conn[TCHAR_TO_UTF8(*DB)];
+		mongo_db = mongo_conn[TCHAR_TO_UTF8(*DBName)];
 		mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
+		//mongo_db = mongo_conn["d1"];
+		//mongo_coll = mongo_db["c1"];
 	}
 	catch(const std::exception& xcp)
 	{
@@ -126,8 +145,6 @@ void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>
 			const FVector CurrLoc = Itr->Entity->GetActorLocation();
 			const FQuat CurrQuat = Itr->Entity->GetActorQuat();
 
-			const float Distance = FVector::DistSquared(CurrLoc, Itr->PrevLoc);
-
 			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
@@ -136,17 +153,17 @@ void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>
 				Itr->PrevQuat = CurrQuat;
 
 				// Create new local document to store the entity data
-				bsoncxx::builder::basic::document bson_arr_doc{};
+				bsoncxx::builder::basic::document bson_entity_doc{};
 					
 				// Add the id and class names
-				bson_arr_doc.append(kvp("id", TCHAR_TO_UTF8(*Itr->Item.Id)));
-				bson_arr_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
+				bson_entity_doc.append(kvp("id", TCHAR_TO_UTF8(*Itr->Item.Id)));
+				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_arr_doc);
+				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Add document to array
-				out_bson_arr.append(bson_arr_doc);
+				out_bson_arr.append(bson_entity_doc);
 			}
 		}
 		else
@@ -161,14 +178,117 @@ void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>
 void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
-	out_bson_arr.append("skeletal_actors");
+	// Iterate items
+	for (auto Itr(SkeletalActorPool.CreateIterator()); Itr; ++Itr)
+	{
+		// Check if pointer is valid
+		if (Itr->Entity.IsValid(/*false, true*/))
+		{
+			// Check if the entity moved more than the threshold since the last logging
+			const FVector CurrLoc = Itr->Entity->GetActorLocation();
+			const FQuat CurrQuat = Itr->Entity->GetActorQuat();
+
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
+				CurrQuat.AngularDistance(Itr->PrevQuat))
+			{
+				// Update prev state
+				Itr->PrevLoc = CurrLoc;
+				Itr->PrevQuat = CurrQuat;
+
+				// Create new local document to store the entity data
+				bsoncxx::builder::basic::document bson_entity_doc{};
+
+				// Add the id and class names
+				bson_entity_doc.append(kvp("id", TCHAR_TO_UTF8(*Itr->Item.Id)));
+				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
+
+				// Add the pose information
+				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+
+				// Array of bones
+				bsoncxx::builder::basic::array bson_bone_arr{};
+
+				// Check is the skeletal actor component is valid and has a class mapping of the bone
+				if (USLSkeletalMapDataAsset* SkelMapDataAsset = Itr->Entity->GetSkeletalMapDataAsset())
+				{
+					if (USkeletalMeshComponent* SkelComp = Itr->Entity->GetSkeletalMeshComponent())
+					{
+						// Iterate through the bones of the skeletal mesh
+						for (const auto& Pair : SkelMapDataAsset->BoneClassMap)
+						{
+							const FVector CurrLoc = SkelComp->GetBoneLocation(Pair.Key);
+							const FQuat CurrQuat = SkelComp->GetBoneQuaternion(Pair.Key);
+
+							bsoncxx::builder::basic::document bson_bone_doc{};
+
+							// Add the id and class names
+							bson_bone_doc.append(kvp("bone", TCHAR_TO_UTF8(*Pair.Key.ToString())));
+							bson_bone_doc.append(kvp("class", TCHAR_TO_UTF8(*Pair.Value)));
+
+							// Add the pose information
+							FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_bone_doc);
+
+							// Add bone to  array
+							bson_bone_arr.append(bson_bone_doc);
+						}
+					}
+				}
+				// Add bones to doc
+				bson_entity_doc.append(kvp("bones", bson_bone_arr));
+
+				// Add document to array
+				out_bson_arr.append(bson_entity_doc);
+			}
+		}
+		else
+		{
+			Itr.RemoveCurrent();
+			FSLMappings::GetInstance()->RemoveItem(Itr->Entity.Get());
+		}
+	}
 }
 
 // Get non skeletal components as bson array
 void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
-	out_bson_arr.append("non_skeletal_components");
+	// Iterate items
+	for (auto Itr(NonSkeletalComponentPool.CreateIterator()); Itr; ++Itr)
+	{
+		// Check if pointer is valid
+		if (Itr->Entity.IsValid(/*false, true*/))
+		{
+			// Check if the entity moved more than the threshold since the last logging
+			const FVector CurrLoc = Itr->Entity->GetComponentLocation();
+			const FQuat CurrQuat = Itr->Entity->GetComponentQuat();
+
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > DistanceStepSizeSquared ||
+				CurrQuat.AngularDistance(Itr->PrevQuat))
+			{
+				// Update prev state
+				Itr->PrevLoc = CurrLoc;
+				Itr->PrevQuat = CurrQuat;
+
+				// Create new local document to store the entity data
+				bsoncxx::builder::basic::document bson_entity_doc{};
+
+				// Add the id and class names
+				bson_entity_doc.append(kvp("id", TCHAR_TO_UTF8(*Itr->Item.Id)));
+				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
+
+				// Add the pose information
+				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+
+				// Add document to array
+				out_bson_arr.append(bson_entity_doc);
+			}
+		}
+		else
+		{
+			Itr.RemoveCurrent();
+			FSLMappings::GetInstance()->RemoveItem(Itr->Entity.Get());
+		}
+	}
 }
 
 // Get key value pairs as bson entry

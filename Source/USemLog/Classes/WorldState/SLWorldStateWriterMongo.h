@@ -33,7 +33,7 @@ public:
 
 private:
 	// Connect to the database
-	bool Connect(const FString& DB, const FString& EpisodeId, const FString& IP, uint16 Port = 27017);
+	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port = 27017);
 	
 #if WITH_LIBMONGO
 	// Get non skeletal actors as bson array
