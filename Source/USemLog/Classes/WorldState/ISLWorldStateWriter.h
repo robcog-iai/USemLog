@@ -3,13 +3,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "UObject/ObjectMacros.h"
-#include "UObject/Interface.h"
 #include "SLStructs.h"
 #include "SLSkeletalMeshActor.h"
-#include "SLWorldStateWriterInterface.generated.h"
-
 
 /**
 * Parameters for creating a world state data writer
@@ -53,21 +48,10 @@ struct FSLWorldStateWriterParams
 
 
 /**
-* Dummy class needed to support Cast<ISLWorldStateWriter>(Object). 
-*/
-UINTERFACE(Blueprintable)
-class USLWorldStateWriterInterface : public UInterface
-{
-	GENERATED_BODY()
-};
-
-/**
  * Base class for world state data writer
  */
-class ISLWorldStateWriterInterface
+class ISLWorldStateWriter
 {
-	GENERATED_BODY()
-
 public:
 	// Init the writer
 	virtual void Init(const FSLWorldStateWriterParams& InParams) = 0;

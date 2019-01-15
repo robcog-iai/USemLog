@@ -4,11 +4,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLWorldStateWriterInterface.h"
+#include "ISLWorldStateWriter.h"
 #if WITH_LIBMONGO
 #include <mongocxx/client.hpp>
 #endif //WITH_LIBMONGO
-#include "SLWorldStateWriterMongo.generated.h"
 
 // Forward declaration
 class FSLWorldStateAsyncWorker;
@@ -16,17 +15,17 @@ class FSLWorldStateAsyncWorker;
 /**
  * Raw data logger to mongo database
  */
-UCLASS()
-class USLWorldStateWriterMongo : public UObject, public ISLWorldStateWriterInterface
+class FSLWorldStateWriterMongo : public ISLWorldStateWriter
 {
-	GENERATED_BODY()
-
 public:
 	// Default constr
-	USLWorldStateWriterMongo();
+	FSLWorldStateWriterMongo();
+
+	// Init constr
+	FSLWorldStateWriterMongo(const FSLWorldStateWriterParams& InParams);
 
 	// Destr
-	virtual ~USLWorldStateWriterMongo();
+	virtual ~FSLWorldStateWriterMongo();
 
 	// Init
 	virtual void Init(const FSLWorldStateWriterParams& InParams) override;

@@ -115,8 +115,9 @@ private:
 	TArray<FName> ViewTypes;
 
 	// Saves the image data to file/database etc.
-	//UPROPERTY()
-	ISLVisImageWriterInterface* Writer;
+	UPROPERTY()
+	TScriptInterface<ISLVisImageWriterInterface> Writer;	
+	ISLVisImageWriterInterface* Writer2;
 
 	// Path of the episode folder
 	FString EpisodePath;

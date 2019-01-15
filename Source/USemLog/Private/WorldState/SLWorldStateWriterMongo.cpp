@@ -14,28 +14,34 @@ using bsoncxx::builder::basic::kvp;
 #endif //WITH_LIBMONGO
 
 // Constr
-USLWorldStateWriterMongo::USLWorldStateWriterMongo()
+FSLWorldStateWriterMongo::FSLWorldStateWriterMongo()
 {
 	bIsInit = false;
 }
 
+FSLWorldStateWriterMongo::FSLWorldStateWriterMongo(const FSLWorldStateWriterParams& InParams)
+{
+	bIsInit = false;
+	FSLWorldStateWriterMongo::Init(InParams);
+}
+
 
 // Destr
-USLWorldStateWriterMongo::~USLWorldStateWriterMongo()
+FSLWorldStateWriterMongo::~FSLWorldStateWriterMongo()
 {
 	UE_LOG(LogTemp, Error, TEXT("%s::%d !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init
-void USLWorldStateWriterMongo::Init(const FSLWorldStateWriterParams& InParams)
+void FSLWorldStateWriterMongo::Init(const FSLWorldStateWriterParams& InParams)
 {
 	MinLinearDistanceSquared = InParams.LinearDistanceSquared;
 	MinAngularDistance = InParams.AngularDistance;
-	bIsInit = USLWorldStateWriterMongo::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
+	bIsInit = FSLWorldStateWriterMongo::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
 }
 
 // Called to write the data
-void USLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	float Timestamp)
@@ -46,9 +52,9 @@ void USLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalAc
 		bsoncxx::builder::basic::array bson_arr{};
 
 		// Add entities to the bson array
-		USLWorldStateWriterMongo::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
-		USLWorldStateWriterMongo::AddSkeletalActors(SkeletalActorPool, bson_arr);
-		USLWorldStateWriterMongo::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
+		FSLWorldStateWriterMongo::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
+		FSLWorldStateWriterMongo::AddSkeletalActors(SkeletalActorPool, bson_arr);
+		FSLWorldStateWriterMongo::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
 
 		// Avoid inserting empty entries
 		if (!bson_arr.view().empty())
@@ -69,7 +75,7 @@ void USLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalAc
 }
 
 // Create indexes from the logged data, usually called after logging
-bool USLWorldStateWriterMongo::CreateIndexes()
+bool FSLWorldStateWriterMongo::CreateIndexes()
 {
 	if (!bIsInit)
 	{
@@ -92,7 +98,7 @@ bool USLWorldStateWriterMongo::CreateIndexes()
 }
 
 // Connect to the database
-bool USLWorldStateWriterMongo::Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port)
+bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port)
 {
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
 		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *IP, Port);
@@ -162,7 +168,7 @@ bool USLWorldStateWriterMongo::Connect(const FString& DBName, const FString& Epi
 
 #if WITH_LIBMONGO
 // Get non skeletal actors as bson array
-void USLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -190,7 +196,7 @@ void USLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				USLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Add document to array
 				out_bson_arr.append(bson_entity_doc);
@@ -205,7 +211,7 @@ void USLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>
 }
 
 // Get skeletal actors as bson array
-void USLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -233,7 +239,7 @@ void USLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletal
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				USLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Array of bones
 				bsoncxx::builder::basic::array bson_bone_arr{};
@@ -256,7 +262,7 @@ void USLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletal
 							bson_bone_doc.append(kvp("class", TCHAR_TO_UTF8(*Pair.Value)));
 
 							// Add the pose information
-							USLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_bone_doc);
+							FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_bone_doc);
 
 							// Add bone to  array
 							bson_bone_arr.append(bson_bone_doc);
@@ -279,7 +285,7 @@ void USLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletal
 }
 
 // Get non skeletal components as bson array
-void USLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -307,7 +313,7 @@ void USLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USce
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				USLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Add document to array
 				out_bson_arr.append(bson_entity_doc);
@@ -322,7 +328,7 @@ void USLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USce
 }
 
 // Get key value pairs as bson entry
-void USLWorldStateWriterMongo::GetPoseAsBsonEntry(const FVector& InLoc, const FQuat& InQuat,
+void FSLWorldStateWriterMongo::GetPoseAsBsonEntry(const FVector& InLoc, const FQuat& InQuat,
 	bsoncxx::builder::basic::document& out_doc)
 {
 	// Switch to right handed ROS transformation

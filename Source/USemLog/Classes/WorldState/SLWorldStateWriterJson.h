@@ -4,8 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLWorldStateWriterInterface.h"
-#include "SLWorldStateWriterJson.generated.h"
+#include "ISLWorldStateWriter.h"
 
 // Forward declaration
 class FSLWorldStateAsyncWorker;
@@ -13,17 +12,17 @@ class FSLWorldStateAsyncWorker;
 /**
  * Raw data logger to json format
  */
-UCLASS()
-class USLWorldStateWriterJson : public UObject, public ISLWorldStateWriterInterface
+class FSLWorldStateWriterJson : public ISLWorldStateWriter
 {
-	GENERATED_BODY()
-
 public:
 	// Constructor
-	USLWorldStateWriterJson();
+	FSLWorldStateWriterJson();
+
+	// Init constructor
+	FSLWorldStateWriterJson(const FSLWorldStateWriterParams& InParams);
 
 	// Destr
-	virtual ~USLWorldStateWriterJson();
+	virtual ~FSLWorldStateWriterJson();
 
 	// Init
 	virtual void Init(const FSLWorldStateWriterParams& InParams) override;

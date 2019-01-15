@@ -4,7 +4,7 @@
 #pragma once
 
 #include "Async/AsyncWork.h"
-#include "SLWorldStateWriterInterface.h"
+#include "ISLWorldStateWriter.h"
 #include "SLStructs.h"
 #include "SLSkeletalMeshActor.h"
 
@@ -36,7 +36,7 @@ public:
 	virtual ~FSLWorldStateAsyncWorker();
 
 	// Init worker, load models to log from world
-	bool Create(UObject* InParent,
+	bool Create(UWorld* InWorld,
 		ESLWorldStateWriterType WriterType,
 		float LinearDistance,
 		float AngularDistance,
@@ -46,16 +46,15 @@ public:
 		const uint16 ServerPort = 0);
 
 	// Init worker, load models to log from world
-	bool Create(UObject* InParent,
-		ESLWorldStateWriterType WriterType,
+	bool Create(UWorld* InWorld,
+		ESLWorldStateWriterType InWriterType,
 		const FSLWorldStateWriterParams& InParams);
-
 
 	// Remove all non-movable semantic items from the update pool
 	void RemoveStaticItems();
 
 	// Finish up worker
-	void Finish(bool bForced);
+	void Finish(bool bForced = false);
 
 private:
 	// FAsyncTask - async work done here
@@ -65,18 +64,17 @@ private:
 	FORCEINLINE TStatId GetStatId() const;
 
 private:
-	// Pointer to parent
-	UObject* Parent;
-
 	// Pointer to world (access to timestamps)
 	UWorld* World;
+
+	// Cache of the writer thy that is active
+	ESLWorldStateWriterType WriterType;
 
 	// Distance squared threshold
 	float LinearDistanceSquared;
 
 	// Raw data writer
-	UPROPERTY()
-	ISLWorldStateWriterInterface* Writer;
+	TSharedPtr<ISLWorldStateWriter> Writer;
 
 	// Array of semantically annotated actors that are not skeletal
 	TArray<TSLItemState<AActor>> NonSkeletalActorPool;

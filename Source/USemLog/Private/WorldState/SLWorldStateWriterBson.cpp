@@ -7,13 +7,20 @@
 #include "Conversions.h"
 
 // Constr
-USLWorldStateWriterBson::USLWorldStateWriterBson()
+FSLWorldStateWriterBson::FSLWorldStateWriterBson()
 {
 	bIsInit = false;
 }
 
+// Init constructor
+FSLWorldStateWriterBson::FSLWorldStateWriterBson(const FSLWorldStateWriterParams& InParams)
+{
+	bIsInit = false;
+	FSLWorldStateWriterBson::Init(InParams);
+}
+
 // Destr
-USLWorldStateWriterBson::~USLWorldStateWriterBson()
+FSLWorldStateWriterBson::~FSLWorldStateWriterBson()
 {
 	if (FileHandle)
 	{
@@ -22,15 +29,15 @@ USLWorldStateWriterBson::~USLWorldStateWriterBson()
 }
 
 // Init
-void USLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
+void FSLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
 {
 	MinLinearDistanceSquared = InParams.LinearDistanceSquared;
 	MinAngularDistance = InParams.AngularDistance;
-	bIsInit = USLWorldStateWriterBson::SetFileHandle(InParams.Location, InParams.EpisodeId);
+	bIsInit = FSLWorldStateWriterBson::SetFileHandle(InParams.Location, InParams.EpisodeId);
 }
 
 // Called to write the data
-void USLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+void FSLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	float Timestamp)
@@ -41,7 +48,7 @@ void USLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalAct
 }
 
 // Set the file handle for the logger
-bool USLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
+bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
 	const FString Filename = InEpisodeId + TEXT("_WS.bson");
 	FString EpisodesDirPath = FPaths::ProjectDir() + LogDirectory + TEXT("/Episodes/");

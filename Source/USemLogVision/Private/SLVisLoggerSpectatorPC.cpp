@@ -13,6 +13,8 @@
 //#include "GameDelegates.h"
 //#include "TimerManager.h"
 //#include "GenericPlatform/GenericPlatformMisc.h"
+#include "SLVisImageWriterMongo.h"
+#include "SLVisImageWriterFile.h"
 
 // Ctor
 ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
@@ -120,6 +122,9 @@ void ASLVisLoggerSpectatorPC::Init()
 			// Flag as initialized
 			bIsInit = true;
 		}
+
+		Writer = NewObject<USLVisImageWriterMongo>(this);
+		Writer2 = NewObject<USLVisImageWriterFile>(this);
 	}
 }
 
@@ -152,7 +157,7 @@ void ASLVisLoggerSpectatorPC::Finish()
 
 		if (GEngine)
 		{
-			GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
+			//GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
 		}
 
 		// Flag as finished

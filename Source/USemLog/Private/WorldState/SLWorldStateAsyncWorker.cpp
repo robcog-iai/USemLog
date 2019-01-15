@@ -17,11 +17,10 @@ FSLWorldStateAsyncWorker::FSLWorldStateAsyncWorker()
 FSLWorldStateAsyncWorker::~FSLWorldStateAsyncWorker()
 {
 	FSLWorldStateAsyncWorker::Finish(true);
-	UE_LOG(LogTemp, Error, TEXT("%s::%d !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init writer, load items from sl mapping singleton
-bool FSLWorldStateAsyncWorker::Create(UObject* InParent,
+bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
 	ESLWorldStateWriterType WriterType,
 	float LinearDistance,
 	float AngularDistance,
@@ -30,59 +29,39 @@ bool FSLWorldStateAsyncWorker::Create(UObject* InParent,
 	const FString& ServerIp,
 	const uint16 ServerPort)
 {
-	return FSLWorldStateAsyncWorker::Create(InParent, WriterType,
+	return FSLWorldStateAsyncWorker::Create(InWorld, WriterType,
 		FSLWorldStateWriterParams(LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort));
 }
 
 // Init writer, load items from sl mapping singleton
-bool FSLWorldStateAsyncWorker::Create(UObject* InParent,
-	ESLWorldStateWriterType WriterType,
+bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
+	ESLWorldStateWriterType InWriterType,
 	const FSLWorldStateWriterParams& InParams)
 {
-	if (!InParent || !InParent->GetWorld())
-	{
-		return false;
-	}
-
-	// Cache the world and parent pointer
-	Parent = InParent;
-	World = Parent->GetWorld();
+	// Pointer to the world
+	World = InWorld;
+	// Cache the writer type
+	WriterType = InWriterType;
 
 	// Create the writer object
-	switch(WriterType) 
+	switch(WriterType)
 	{
 	case ESLWorldStateWriterType::Json:
-		Writer = NewObject<USLWorldStateWriterJson>(Parent);
-		Writer->Init(InParams);
+		Writer = MakeShareable(new FSLWorldStateWriterJson(InParams));
 		break;
 	case ESLWorldStateWriterType::Bson:
-		Writer = NewObject<USLWorldStateWriterBson>(Parent);
-		Writer->Init(InParams);
+		Writer = MakeShareable(new FSLWorldStateWriterBson(InParams));
 		break;
 	case ESLWorldStateWriterType::Mongo:
-		Writer = NewObject<USLWorldStateWriterMongo>(Parent);
-		//Writer->Init(InParams);
+		Writer = MakeShareable(new FSLWorldStateWriterMongo(InParams));
 		break;
 	default:
-		Writer = NewObject<USLWorldStateWriterJson>(Parent);
-		Writer->Init(InParams);
+		Writer = MakeShareable(new FSLWorldStateWriterJson(InParams));
 		break;
 	}
 
-	// Avoid GC
-	if (UObject* WriterAsObj = Cast<UObject>(Writer))
-	{
-		WriterAsObj->SetInternalFlags(EInternalObjectFlags::Async);
-		WriterAsObj->AddToRoot();
-	}
-	else
-	{
-		return false;
-	}
-
-
 	// Writer could not be created
-	if (!Writer->IsInit())
+	if (!Writer.IsValid() || !Writer->IsInit())
 	{
 		return false;
 	}
@@ -121,7 +100,6 @@ bool FSLWorldStateAsyncWorker::Create(UObject* InParent,
 			}
 		}
 	}
-
 	// Can start working
 	return true;
 }
@@ -176,8 +154,9 @@ void FSLWorldStateAsyncWorker::Finish(bool bForced)
 	if (!bForced)
 	{
 		// Check if mongo writer
-		if (USLWorldStateWriterMongo* MongoWriter = Cast<USLWorldStateWriterMongo>(Writer))
+		if (Writer.IsValid() && WriterType == ESLWorldStateWriterType::Mongo)
 		{
+			TSharedPtr<FSLWorldStateWriterMongo> MongoWriter = StaticCastSharedPtr<FSLWorldStateWriterMongo>(Writer);
 			// Create indexes
 			MongoWriter->CreateIndexes();
 		}

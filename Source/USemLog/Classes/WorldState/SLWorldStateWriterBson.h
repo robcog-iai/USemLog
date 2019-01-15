@@ -4,14 +4,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLWorldStateWriterInterface.h"
+#include "ISLWorldStateWriter.h"
 #if WITH_LIBMONGO
 #include <bsoncxx/builder/stream/array.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/types.hpp>
 #endif //WITH_LIBMONGO
-#include "SLWorldStateWriterBson.generated.h"
 
 // Forward declaration
 class FSLWorldStateAsyncWorker;
@@ -19,17 +18,17 @@ class FSLWorldStateAsyncWorker;
 /**
  * Raw data logger to bson format
  */
-UCLASS()
-class USLWorldStateWriterBson : public UObject, public ISLWorldStateWriterInterface
+class FSLWorldStateWriterBson : public ISLWorldStateWriter
 {
-	GENERATED_BODY()
-
 public:
 	// Default constr
-	USLWorldStateWriterBson();
+	FSLWorldStateWriterBson();
+
+	// Init constructor
+	FSLWorldStateWriterBson(const FSLWorldStateWriterParams& InParams);
 
 	// Destr
-	virtual ~USLWorldStateWriterBson();
+	virtual ~FSLWorldStateWriterBson();
 
 	// Init
 	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
