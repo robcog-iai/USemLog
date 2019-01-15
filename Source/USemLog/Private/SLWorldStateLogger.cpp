@@ -15,6 +15,8 @@ USLWorldStateLogger::USLWorldStateLogger()
 // Destructor
 USLWorldStateLogger::~USLWorldStateLogger()
 {
+	UE_LOG(LogTemp, Error, TEXT("%s::%d !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
+
 	if (!bIsFinished && !IsTemplate())
 	{
 		USLWorldStateLogger::Finish(true);
@@ -36,7 +38,7 @@ void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
 		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
 
 		// Init async worker (create the writer and set logging parameters)
-		if (AsyncWorker->GetTask().Create(GetWorld(), WriterType, LinearDistance, AngularDistance,
+		if (AsyncWorker->GetTask().Create(this, WriterType, LinearDistance, AngularDistance,
 			Location, EpisodeId, ServerIp, ServerPort))
 		{
 			// Flag as init
@@ -139,7 +141,7 @@ void USLWorldStateLogger::FirstUpdate()
 	// Wait for worker to complete (we only use the blocking wait for the initial state log)
 	AsyncWorker->EnsureCompletion();
 
-	// Static and movable entities have been logged, now remoev static objects
+	// Static and movable entities have been logged, now remove static objects
 	AsyncWorker->GetTask().RemoveStaticItems();
 }
 

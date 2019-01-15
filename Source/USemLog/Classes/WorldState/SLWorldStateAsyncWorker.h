@@ -33,7 +33,7 @@ public:
 	FSLWorldStateAsyncWorker();
 
 	// Destructor
-	~FSLWorldStateAsyncWorker();
+	virtual ~FSLWorldStateAsyncWorker();
 
 	// Init worker, load models to log from world
 	bool Create(UObject* InParent,

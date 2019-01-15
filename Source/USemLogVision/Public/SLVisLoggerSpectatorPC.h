@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "SLVisImageWriterInterface.h"
 #include "SLVisLoggerSpectatorPC.generated.h"
 
 /**
@@ -88,6 +89,9 @@ private:
 	// Set the suffix of the file depending on the view type
 	bool SetupFilenameSuffix(FName ViewType);
 
+	// Connect to the database
+	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port);
+
 private:
 	// Set when logger is initialized
 	bool bIsInit;
@@ -109,6 +113,10 @@ private:
 
 	// Buffer types to render
 	TArray<FName> ViewTypes;
+
+	// Saves the image data to file/database etc.
+	//UPROPERTY()
+	ISLVisImageWriterInterface* Writer;
 
 	// Path of the episode folder
 	FString EpisodePath;
@@ -133,4 +141,18 @@ private:
 
 	// Total number of images to be saved
 	uint32 NumberOfTotalImages;
+//
+//#if WITH_LIBMONGO
+//	// Must be created before using the driver and must remain alive for as long as the driver is in use
+//	//mongocxx::instance mongo_inst;
+//
+//	// Mongo connection client
+//	mongocxx::client mongo_conn;
+//
+//	// Database to access
+//	mongocxx::database mongo_db;
+//
+//	// Database collection
+//	mongocxx::collection mongo_coll;
+//#endif //WITH_LIBMONGO
 };

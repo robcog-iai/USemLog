@@ -25,8 +25,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	ViewTargetIndex = -1;
 	ViewTypeIndex = -1;
 	DemoTimeSeconds = 0.f;
-	NumberOfSavedImages = -1;
-	NumberOfTotalImages = -1;
+	NumberOfSavedImages = 0;
+	NumberOfTotalImages = 0;
 	FilenameSuffix = TEXT("");
 }
 

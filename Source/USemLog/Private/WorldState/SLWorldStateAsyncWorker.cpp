@@ -16,6 +16,8 @@ FSLWorldStateAsyncWorker::FSLWorldStateAsyncWorker()
 // Destructor
 FSLWorldStateAsyncWorker::~FSLWorldStateAsyncWorker()
 {
+	FSLWorldStateAsyncWorker::Finish(true);
+	UE_LOG(LogTemp, Error, TEXT("%s::%d !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init writer, load items from sl mapping singleton
@@ -59,13 +61,25 @@ bool FSLWorldStateAsyncWorker::Create(UObject* InParent,
 		break;
 	case ESLWorldStateWriterType::Mongo:
 		Writer = NewObject<USLWorldStateWriterMongo>(Parent);
-		Writer->Init(InParams);
+		//Writer->Init(InParams);
 		break;
 	default:
 		Writer = NewObject<USLWorldStateWriterJson>(Parent);
 		Writer->Init(InParams);
 		break;
 	}
+
+	// Avoid GC
+	if (UObject* WriterAsObj = Cast<UObject>(Writer))
+	{
+		WriterAsObj->SetInternalFlags(EInternalObjectFlags::Async);
+		WriterAsObj->AddToRoot();
+	}
+	else
+	{
+		return false;
+	}
+
 
 	// Writer could not be created
 	if (!Writer->IsInit())

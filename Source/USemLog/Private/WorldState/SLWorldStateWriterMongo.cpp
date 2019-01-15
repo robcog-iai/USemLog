@@ -23,7 +23,7 @@ USLWorldStateWriterMongo::USLWorldStateWriterMongo()
 // Destr
 USLWorldStateWriterMongo::~USLWorldStateWriterMongo()
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Error, TEXT("%s::%d !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init
