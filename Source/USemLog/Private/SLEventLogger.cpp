@@ -16,9 +16,9 @@
 // UUtils
 #include "Ids.h"
 
-#if WITH_MC_GRASP
+#if SL_WITH_MC_GRASP
 #include "MCFixationGrasp.h"
-#endif // WITH_MC_GRASP
+#endif // SL_WITH_MC_GRASP
 
 
 // Constructor
@@ -98,7 +98,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		// Init grasp handlers
 		if (bInLogGraspEvents)
 		{
-#if WITH_MC_GRASP
+#if SL_WITH_MC_GRASP
 			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
 			{
 				// Skip objects that do not have a semantically annotated ancestor
@@ -112,7 +112,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				GraspEventHandler->Init(*Itr);
 				EventHandlers.Add(GraspEventHandler);
 			}
-#endif // WITH_MC_GRASP
+#endif // SL_WITH_MC_GRASP
 		}
 
 		// Mark as initialized

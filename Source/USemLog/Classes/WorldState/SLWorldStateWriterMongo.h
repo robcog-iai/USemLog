@@ -5,9 +5,9 @@
 
 #include "CoreMinimal.h"
 #include "ISLWorldStateWriter.h"
-#if WITH_LIBMONGO
+#if SL_WITH_LIBMONGO
 #include <mongocxx/client.hpp>
-#endif //WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO
 
 // Forward declaration
 class FSLWorldStateAsyncWorker;
@@ -43,7 +43,7 @@ private:
 	// Connect to the database
 	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port);
 	
-#if WITH_LIBMONGO
+#if SL_WITH_LIBMONGO
 	// Get non skeletal actors as bson array
 	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
@@ -72,5 +72,5 @@ private:
 
 	// Database collection
 	mongocxx::collection mongo_coll;
-#endif //WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO
 };

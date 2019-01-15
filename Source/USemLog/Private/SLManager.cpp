@@ -4,11 +4,11 @@
 #include "SLManager.h"
 #include "SLMappings.h"
 #include "Ids.h"
-#if WITH_SL_VIS
+#if SL_WITH_SLVIS
 #include "SLVisRecordGameMode.h"
 #include "Engine/DemoNetDriver.h"
 #include "Kismet/GameplayStatics.h"
-#endif //WITH_SL_VIS
+#endif //SL_WITH_SLVIS
 
 // Sets default values
 ASLManager::ASLManager()
@@ -129,13 +129,13 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 // Init loggers
 void ASLManager::Init()
 {
-#if WITH_SL_VIS
+#if SL_WITH_SLVIS
 	// Init can be called even if it is a demo replay, skip if it is the case
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{
 		return;
 	}
-#endif // WITH_SL_VIS
+#endif // SL_WITH_SLVIS
 
 	if (!bIsInit)
 	{
@@ -164,7 +164,7 @@ void ASLManager::Init()
 				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
 		}
 
-#if WITH_SL_VIS
+#if SL_WITH_SLVIS
 		if (bLogVisionData)
 		{
 			// Check is recording game mode is set, otherwise cancel vision logging
@@ -183,7 +183,7 @@ void ASLManager::Init()
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Game Mode not set, vision replay will not be recorded.."), TEXT(__FUNCTION__), __LINE__);
 			}
 		}
-#endif // WITH_SL_VIS
+#endif // SL_WITH_SLVIS
 
 		// Mark manager as initialized
 		bIsInit = true;
@@ -210,7 +210,7 @@ void ASLManager::Start()
 			EventDataLogger->Start();
 		}
 
-#if WITH_SL_VIS
+#if SL_WITH_SLVIS
 		if (bLogVisionData)
 		{
 			if (UGameInstance* GI = GetWorld()->GetGameInstance())
@@ -220,7 +220,7 @@ void ASLManager::Start()
 				GI->StartRecordingReplay(RecName, RecName);
 			}
 		}
-#endif // WITH_SL_VIS
+#endif // SL_WITH_SLVIS
 
 		// Mark manager as started
 		bIsStarted = true;
@@ -242,7 +242,7 @@ void ASLManager::Finish(const float Time, bool bForced)
 			EventDataLogger->Finish(Time, bForced);
 		}
 		
-#if WITH_SL_VIS
+#if SL_WITH_SLVIS
 		if (bLogVisionData && !bForced)
 		{
 			if (UGameInstance* GI = GetWorld()->GetGameInstance())
@@ -250,7 +250,7 @@ void ASLManager::Finish(const float Time, bool bForced)
 				GI->StopRecordingReplay();
 			}
 		}
-#endif // WITH_SL_VIS
+#endif // SL_WITH_SLVIS
 
 		// Delete the semantic items content instance
 		FSLMappings::DeleteInstance();

@@ -26,7 +26,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	UpdateRate = 0.2214f;
 	ViewTargetIndex = -1;
 	ViewTypeIndex = -1;
-	DemoTimeSeconds = 0.f;
+	DemoTimestamp = 0.f;
 	NumberOfSavedImages = 0;
 	NumberOfTotalImages = 0;
 	FilenameSuffix = TEXT("");
@@ -70,7 +70,7 @@ void ASLVisLoggerSpectatorPC::SetupInputComponent()
 	 {
 		 UE_LOG(LogTemp, Warning, TEXT("%s::%d Demo: %f/%f; Imgs: %d/%d; World: Play=%f; Real=%f"),
 			 TEXT(__FUNCTION__), __LINE__,
-			 DemoTimeSeconds, NetDriver->DemoTotalTime,
+			 DemoTimestamp, NetDriver->DemoTotalTime,
 			 NumberOfSavedImages, NumberOfTotalImages,
 			 GetWorld()->GetTimeSeconds(),
 			 GetWorld()->GetRealTimeSeconds());
@@ -87,15 +87,19 @@ void ASLVisLoggerSpectatorPC::Init()
 		ViewportClient = GetWorld()->GetGameViewport();
 		if (NetDriver && ViewportClient)
 		{
-			// Disable noisy rendering;
-			ASLVisLoggerSpectatorPC::SetupRenderingProperties();
+			// Create writer
+#if SLVIS_WITH_LIBMONGO
+			Writer = NewObject<USLVisImageWriterMongo>(this);
+			Writer->Init(FSLVisImageWriterParams(
+				"SemLog", GetWorld()->DemoNetDriver->GetActiveReplayName(), "127.0.0.1", 27017));
+#else
+			Writer = NewObject<USLVisImageWriterFile>(this);
+			Writer->Init(FSLVisImageWriterParams(
+				"SemLog", GetWorld()->DemoNetDriver->GetActiveReplayName()));
+#endif //SLVIS_WITH_LIBMONGO
 
-			// Set screenshot image and viewport resolution size
-			GetHighResScreenshotConfig().SetResolution(640, 480, 1.0f);
-			
-			// Set the display resolution for the current game view. Has no effect in the editor
-			// e.g. 1280x720w for windowed, 1920x1080f for fullscreen, 1920x1080wf for windowed fullscreen
-			IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetRes"))->Set(TEXT("640x480"));
+			// Set rendering parameters
+			ASLVisLoggerSpectatorPC::SetupRenderingProperties();
 
 			// Set the array of the camera positions
 			for (TActorIterator<ASLVisCamera>Itr(GetWorld()); Itr; ++Itr)
@@ -122,9 +126,6 @@ void ASLVisLoggerSpectatorPC::Init()
 			// Flag as initialized
 			bIsInit = true;
 		}
-
-		Writer = NewObject<USLVisImageWriterMongo>(this);
-		Writer2 = NewObject<USLVisImageWriterFile>(this);
 	}
 }
 
@@ -137,7 +138,7 @@ void ASLVisLoggerSpectatorPC::Start()
 		if (ASLVisLoggerSpectatorPC::SetFirstViewTarget() && ASLVisLoggerSpectatorPC::SetFirstViewType())
 		{
 			// Go to the beginning of the demo and start requesting screenshots
-			NetDriver->GotoTimeInSeconds(DemoTimeSeconds);
+			NetDriver->GotoTimeInSeconds(DemoTimestamp);
 		}
 
 		// Flag as started
@@ -170,6 +171,13 @@ void ASLVisLoggerSpectatorPC::Finish()
 // Set rendered image quality
 void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 {
+	// Set screenshot image and viewport resolution size
+	GetHighResScreenshotConfig().SetResolution(640, 480, 1.0f);
+
+	// Set the display resolution for the current game view. Has no effect in the editor
+	// e.g. 1280x720w for windowed, 1920x1080f for fullscreen, 1920x1080wf for windowed fullscreen
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetRes"))->Set(TEXT("640x480"));
+
 	// Which anti-aliasing mode is used by default
 	// 	AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AntiAliasing"))->Set(1);
@@ -234,8 +242,11 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	TArray<uint8> CompressedBitmap;
 	FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
 
+	// Write data
+	Writer->Write(CompressedBitmap, DemoTimestamp, ViewTypes[ViewTypeIndex], ViewTargetIndex);
+
 	// Set path and filename
-	FString Ts = FString::SanitizeFloat(DemoTimeSeconds).Replace(TEXT("."), TEXT("-"));
+	FString Ts = FString::SanitizeFloat(DemoTimestamp).Replace(TEXT("."), TEXT("-"));
 	FString CurrFilename = FString::Printf(TEXT("V%d_%s_%s.png"), ViewTargetIndex, *Ts, *FilenameSuffix);
 	FString CurrFullPath = EpisodePath + "/" + CurrFilename;
 	FPaths::RemoveDuplicateSlashes(CurrFullPath);
@@ -270,12 +281,12 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 			else
 			{
 				// Go back to the first camera target and advance in the demo
-				DemoTimeSeconds += UpdateRate;
+				DemoTimestamp += UpdateRate;
 				if (ASLVisLoggerSpectatorPC::SetFirstViewTarget())
 				{
 					// Unpause demo to be able to scrub
 					ASLVisLoggerSpectatorPC::DemoUnPause();
-					NetDriver->GotoTimeInSeconds(DemoTimeSeconds);
+					NetDriver->GotoTimeInSeconds(DemoTimestamp);
 				}
 			}
 		}

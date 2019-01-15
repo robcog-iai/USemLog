@@ -22,7 +22,8 @@ void USLVisImageWriterFile::Init(const FSLVisImageWriterParams& InParams)
 }
 
 // Write data
-void USLVisImageWriterFile::Write(const TArray<uint8>& InCompressedBitmap)
+void USLVisImageWriterFile::Write(const TArray<uint8>& InCompressedBitmap,
+	float Timestamp, FName ViewType, int32 TargetIndex)
 {
 
 }

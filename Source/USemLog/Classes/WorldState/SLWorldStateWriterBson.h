@@ -5,12 +5,12 @@
 
 #include "CoreMinimal.h"
 #include "ISLWorldStateWriter.h"
-#if WITH_LIBMONGO
+#if SL_WITH_LIBMONGO
 #include <bsoncxx/builder/stream/array.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/types.hpp>
-#endif //WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO
 
 // Forward declaration
 class FSLWorldStateAsyncWorker;
@@ -43,7 +43,7 @@ private:
 	// Set the file handle for the logger
 	bool SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
 
-#if WITH_LIBMONGO
+#if SL_WITH_LIBMONGO
 	//// Add actors
 	//void AddActors(bson_t& OutBsonEntitiesArr);
 
@@ -58,7 +58,7 @@ private:
 
 	//// Write entry to file
 	//void WriteData(uint8* memorybuffer, int64 bufferlen);
-#endif //WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO
 
 	// Pointer to worker parent (access to raw data structure)
 	FSLWorldStateAsyncWorker* WorkerParent;

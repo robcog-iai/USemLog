@@ -115,9 +115,8 @@ private:
 	TArray<FName> ViewTypes;
 
 	// Saves the image data to file/database etc.
-	UPROPERTY()
+	UPROPERTY() // TScriptInterface can be used with UPROPERTY to avoid GC
 	TScriptInterface<ISLVisImageWriterInterface> Writer;	
-	ISLVisImageWriterInterface* Writer2;
 
 	// Path of the episode folder
 	FString EpisodePath;
@@ -135,25 +134,14 @@ private:
 	float UpdateRate;
 	
 	// Current demo time
-	float DemoTimeSeconds;
+	float DemoTimestamp;
 
+	// TODO use ScopedSlowTask to show progress
 	// Number of saved images until now
 	uint32 NumberOfSavedImages;
 
 	// Total number of images to be saved
 	uint32 NumberOfTotalImages;
-//
-//#if WITH_LIBMONGO
-//	// Must be created before using the driver and must remain alive for as long as the driver is in use
-//	//mongocxx::instance mongo_inst;
-//
-//	// Mongo connection client
-//	mongocxx::client mongo_conn;
-//
-//	// Database to access
-//	mongocxx::database mongo_db;
-//
-//	// Database collection
-//	mongocxx::collection mongo_coll;
-//#endif //WITH_LIBMONGO
+
+	
 };

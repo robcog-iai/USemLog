@@ -58,7 +58,9 @@ public:
 	virtual void Init(const FSLVisImageWriterParams& InParams) = 0;
 
 	// Write the image
-	virtual void Write(const TArray<uint8>& InCompressedBitmap) = 0;
+	// TODO target index use a class/description/id?
+	virtual void Write(const TArray<uint8>& InCompressedBitmap,
+		float Timestamp, FName ViewType, int32 TargetIndex) = 0;
 
 	// True if the writer is valid
 	bool IsInit() const { return bIsInit; }

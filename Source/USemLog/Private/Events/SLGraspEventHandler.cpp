@@ -3,9 +3,9 @@
 
 #include "Events/SLGraspEventHandler.h"
 #include "SLMappings.h"
-#if WITH_MC_GRASP
+#if SL_WITH_MC_GRASP
 #include "MCFixationGrasp.h"
-#endif // WITH_MC_GRASP
+#endif // SL_WITH_MC_GRASP
 
 // UUtils
 #include "Ids.h"
@@ -22,10 +22,10 @@ void FSLGraspEventHandler::Init(UObject* InParent)
 			FSLMappings::GetInstance()->Init(InParent->GetWorld());
 		}
 
-#if WITH_MC_GRASP
+#if SL_WITH_MC_GRASP
 		// Check if parent is of right type
 		Parent = Cast<UMCFixationGrasp>(InParent);
-#endif // WITH_MC_GRASP
+#endif // SL_WITH_MC_GRASP
 
 		if (Parent)
 		{
@@ -40,11 +40,11 @@ void FSLGraspEventHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-#if WITH_MC_GRASP
+#if SL_WITH_MC_GRASP
 		// Subscribe to the forwarded semantically annotated grasping broadcasts
 		Parent->OnGraspBegin.AddRaw(this, &FSLGraspEventHandler::OnSLGraspBegin);
 		Parent->OnGraspEnd.AddRaw(this, &FSLGraspEventHandler::OnSLGraspEnd);
-#endif // WITH_MC_GRASP
+#endif // SL_WITH_MC_GRASP
 
 		// Mark as started
 		bIsStarted = true;

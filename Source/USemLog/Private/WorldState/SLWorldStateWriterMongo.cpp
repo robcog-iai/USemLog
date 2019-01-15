@@ -4,14 +4,14 @@
 #include "WorldState/SLWorldStateWriterMongo.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Conversions.h"
-#if WITH_LIBMONGO
+#if SL_WITH_LIBMONGO
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
 #include <bsoncxx/json.hpp>
 #include <string.h>
 #include <iostream>
 using bsoncxx::builder::basic::kvp;
-#endif //WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO
 
 // Constr
 FSLWorldStateWriterMongo::FSLWorldStateWriterMongo()
@@ -46,7 +46,7 @@ void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalAc
 	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	float Timestamp)
 {
-#if WITH_LIBMONGO
+#if SL_WITH_LIBMONGO
 		// Create a bson document and array to store the entities
 		bsoncxx::builder::basic::document bson_doc{};
 		bsoncxx::builder::basic::array bson_arr{};
@@ -71,12 +71,13 @@ void FSLWorldStateWriterMongo::Write(TArray<TSLItemState<AActor>>& NonSkeletalAc
 					TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 			}
 		}
-#endif //WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO
 }
 
 // Create indexes from the logged data, usually called after logging
 bool FSLWorldStateWriterMongo::CreateIndexes()
 {
+#if SL_WITH_LIBMONGO
 	if (!bIsInit)
 	{
 		return false;
@@ -95,14 +96,17 @@ bool FSLWorldStateWriterMongo::CreateIndexes()
 			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 		return false;
 	}
+#else
+	return false;
+#endif //SL_WITH_LIBMONGO
 }
 
 // Connect to the database
 bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
 		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *IP, Port);
-#if WITH_LIBMONGO
+#if SL_WITH_LIBMONGO
 	try
 	{
 		// Get current mongo instance, or create a new one (static variable)
@@ -161,12 +165,12 @@ bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& Epi
 		return false;
 	}
 	return true;
-#elif
+#else
 	return false;
-#endif //WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO
 }
 
-#if WITH_LIBMONGO
+#if SL_WITH_LIBMONGO
 // Get non skeletal actors as bson array
 void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
@@ -350,4 +354,4 @@ void FSLWorldStateWriterMongo::GetPoseAsBsonEntry(const FVector& InLoc, const FQ
 	bson_rot_doc.append(kvp("w", bsoncxx::types::b_double{ROSQuat.W}));
 	out_doc.append(kvp("rot", bson_rot_doc));
 }
-#endif //WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO

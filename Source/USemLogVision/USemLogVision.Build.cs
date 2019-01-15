@@ -40,7 +40,7 @@ public class USemLogVision : ModuleRules
 				"RHI",
 				"RenderCore",
 				"UnrealEd",
-				//"libmongo",
+				"libmongo", //SLVIS_WITH_LIBMONGO
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -52,5 +52,19 @@ public class USemLogVision : ModuleRules
 				// ... add any modules that your module loads dynamically here ...
 			}
 			);
+
+		string libmongo = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("libmongo"));
+		if (string.IsNullOrEmpty(libmongo))
+		{
+			PublicDefinitions.Add("SLVIS_WITH_LIBMONGO=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("SLVIS_WITH_LIBMONGO=1");
+
+			// Needed to ignore various warnings from libmongo
+			bEnableUndefinedIdentifierWarnings = false;
+			bEnableExceptions = true;
+		}
 	}
 }

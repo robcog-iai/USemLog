@@ -39,11 +39,11 @@ private:
 
 private:
 	// Parent
-#if WITH_MC_GRASP
+#if SL_WITH_MC_GRASP
 	class UMCFixationGrasp* Parent;
 #else
 	UObject* Parent;
-#endif // WITH_MC_GRASP
+#endif // SL_WITH_MC_GRASP
 
 	// Array of started events
 	TArray<TSharedPtr<FSLGraspEvent>> StartedEvents;

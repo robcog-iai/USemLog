@@ -27,5 +27,9 @@ public:
 	virtual void Init(const FSLVisImageWriterParams& InParams) override;
 
 	// Write data
-	virtual void Write(const TArray<uint8>& InCompressedBitmap) override;
+	virtual void Write(const TArray<uint8>& InCompressedBitmap,
+		float Timestamp, FName ViewType, int32 TargetIndex) override;
+
+private:
+
 };

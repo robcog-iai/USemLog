@@ -22,7 +22,8 @@ void USLVisImageWriterMongo::Init(const FSLVisImageWriterParams& InParams)
 }
 
 // Write data
-void USLVisImageWriterMongo::Write(const TArray<uint8>& InCompressedBitmap)
+void USLVisImageWriterMongo::Write(const TArray<uint8>& InCompressedBitmap,
+	float Timestamp, FName ViewType, int32 TargetIndex)
 {
 
 }

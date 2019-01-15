@@ -45,36 +45,11 @@ public class USemLog : ModuleRules
 				"UTags",
 				"UIds",
 				"UConversions",
-				"UMCGrasp",			// WITH_MC_GRASP
-				"libmongo"			// WITH_LIBMONGO
+				"UMCGrasp",			// SL_WITH_MC_GRASP
+				"libmongo"			// SL_WITH_LIBMONGO
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-
-		// Check included dependencies and set preprocessor flags accordingly
-		string UMCGrasp = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("UMCGrasp"));
-		if (string.IsNullOrEmpty(UMCGrasp))
-		{
-			PublicDefinitions.Add("WITH_MC_GRASP=0");
-		}
-		else
-		{
-			PublicDefinitions.Add("WITH_MC_GRASP=1");
-		}
-
-		string libmongo = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("libmongo"));
-		if (string.IsNullOrEmpty(libmongo))
-		{
-			PublicDefinitions.Add("WITH_LIBMONGO=0");
-		}
-		else
-		{
-			PublicDefinitions.Add("WITH_LIBMONGO=1");
-			
-			// Needed to ignore various warnings from libmongo
-			bEnableUndefinedIdentifierWarnings = false;
-			bEnableExceptions = true;
-		}
 
 		// TODO
 		// SL Vision currently only works in developer mode
@@ -83,7 +58,11 @@ public class USemLog : ModuleRules
 		//if(Target.Type == TargetRules.TargetType.Program)
 		{
 			PrivateDependencyModuleNames.Add("USemLogVision");			
-			PublicDefinitions.Add("WITH_SL_VIS=1");
+			PublicDefinitions.Add("SL_WITH_SLVIS=1");
+		}
+		else
+		{
+			PublicDefinitions.Add("SL_WITH_SLVIS=0");
 		}
 
 		DynamicallyLoadedModuleNames.AddRange(
@@ -92,5 +71,30 @@ public class USemLog : ModuleRules
 				// ... add any modules that your module loads dynamically here ...
 			}
 			);
+
+		// Check included dependencies and set preprocessor flags accordingly
+		string UMCGrasp = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("UMCGrasp"));
+		if (string.IsNullOrEmpty(UMCGrasp))
+		{
+			PublicDefinitions.Add("SL_WITH_MC_GRASP=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("SL_WITH_MC_GRASP=1");
+		}
+
+		string libmongo = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("libmongo"));
+		if (string.IsNullOrEmpty(libmongo))
+		{
+			PublicDefinitions.Add("SL_WITH_LIBMONGO=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("SL_WITH_LIBMONGO=0");
+			
+			// Needed to ignore various warnings from libmongo
+			bEnableUndefinedIdentifierWarnings = false;
+			bEnableExceptions = true;
+		}
 	}
 }
