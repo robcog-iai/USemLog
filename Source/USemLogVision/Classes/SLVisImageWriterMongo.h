@@ -31,9 +31,13 @@ public:
 
 	// Write data
 	virtual void Write(const TArray<uint8>& InCompressedBitmap, 
-		float Timestamp, FName ViewType, int32 TargetIndex) override;
+		const FSLVisImageMetadata& Metadata) override;
+
 private:
-	
+	// Connect to the database
+	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port);
+
+private:	
 #if SLVIS_WITH_LIBMONGO
 	// Must be created before using the driver and must remain alive for as long as the driver is in use
 	//mongocxx::instance mongo_inst;

@@ -2,17 +2,12 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisLoggerSpectatorPC.h"
-#include "SLVisCamera.h"
 #include "Engine/DemoNetDriver.h"
 #include "EngineUtils.h"
 #include "ImageUtils.h"
 #include "Async.h"
-#include "FileHelper.h"
 #include "HighResScreenshot.h"
-//#include "UnrealClient.h"
-//#include "GameDelegates.h"
-//#include "TimerManager.h"
-//#include "GenericPlatform/GenericPlatformMisc.h"
+#include "SLVisCameraView.h"
 #include "SLVisImageWriterMongo.h"
 #include "SLVisImageWriterFile.h"
 
@@ -23,13 +18,21 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	UpdateRate = 0.2214f;
-	ViewTargetIndex = -1;
-	ViewTypeIndex = -1;
+	DemoUpdateRate = 1.5f;
+	ActiveCameraViewIndex = 0;
+	ActiveViewTypeIndex = 0;
 	DemoTimestamp = 0.f;
-	NumberOfSavedImages = 0;
-	NumberOfTotalImages = 0;
-	FilenameSuffix = TEXT("");
+	NumImagesSaved = 0;
+	NumImagesToSave = 0;
+
+	// Add buffer types to visualize
+	ViewTypes.Add(NAME_None); // Default will be color
+	ViewTypes.Add("SceneDepth");
+	ViewTypes.Add("WorldNormal");
+
+	// Image size
+	ResX = 640;
+	ResY = 480;
 }
 
 // Called when the game starts or when spawned
@@ -71,7 +74,7 @@ void ASLVisLoggerSpectatorPC::SetupInputComponent()
 		 UE_LOG(LogTemp, Warning, TEXT("%s::%d Demo: %f/%f; Imgs: %d/%d; World: Play=%f; Real=%f"),
 			 TEXT(__FUNCTION__), __LINE__,
 			 DemoTimestamp, NetDriver->DemoTotalTime,
-			 NumberOfSavedImages, NumberOfTotalImages,
+			 NumImagesSaved, NumImagesToSave,
 			 GetWorld()->GetTimeSeconds(),
 			 GetWorld()->GetRealTimeSeconds());
 	 }
@@ -95,28 +98,31 @@ void ASLVisLoggerSpectatorPC::Init()
 #else
 			Writer = NewObject<USLVisImageWriterFile>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				"SemLog", GetWorld()->DemoNetDriver->GetActiveReplayName()));
+				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), GetWorld()->DemoNetDriver->GetActiveReplayName()));
 #endif //SLVIS_WITH_LIBMONGO
+
+			// Abort if writer is not valid
+			if (!Writer)
+			{
+				return;
+			}
 
 			// Set rendering parameters
 			ASLVisLoggerSpectatorPC::SetupRenderingProperties();
 
-			// Set the array of the camera positions
-			for (TActorIterator<ASLVisCamera>Itr(GetWorld()); Itr; ++Itr)
+			// Get camera views from the world
+			for (TActorIterator<ASLVisCameraView>Itr(GetWorld()); Itr; ++Itr)
 			{
-				Cameras.Add(*Itr);
+				CameraViews.Add(*Itr);
 			}
 
-			// Add buffer types to visualize
-			ViewTypes.Add(NAME_None); // Default will be color
-			ViewTypes.Add("SceneDepth");
-			ViewTypes.Add("WorldNormal");
+			// Calculate the total images to be saved
+			NumImagesToSave = (uint32)(NetDriver->DemoTotalTime / DemoUpdateRate) * CameraViews.Num() * ViewTypes.Num();
 
-			// Set path to store the images
-			EpisodePath = FPaths::ProjectDir() + TEXT("/SemLog/Episodes/") + GetWorld()->DemoNetDriver->GetActiveReplayName() + TEXT("/");
-			FPaths::RemoveDuplicateSlashes(EpisodePath);
-
-			NumberOfTotalImages = (uint32)(NetDriver->DemoTotalTime / UpdateRate) * Cameras.Num() * ViewTypes.Num();
+#if WITH_EDITOR
+			//ProgressBar = MakeUnique<FScopedSlowTask>(NumImagesToSave, FText::FromString(FString(TEXT("Saving images.."))));
+			//ProgressBar->MakeDialog(true, true);
+#endif //WITH_EDITOR
 
 			// Bind callback functions
 			NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::DemoGotoCB);
@@ -158,7 +164,7 @@ void ASLVisLoggerSpectatorPC::Finish()
 
 		if (GEngine)
 		{
-			//GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
+			GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
 		}
 
 		// Flag as finished
@@ -172,11 +178,12 @@ void ASLVisLoggerSpectatorPC::Finish()
 void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 {
 	// Set screenshot image and viewport resolution size
-	GetHighResScreenshotConfig().SetResolution(640, 480, 1.0f);
+	GetHighResScreenshotConfig().SetResolution(ResX, ResY, 1.0f);
 
 	// Set the display resolution for the current game view. Has no effect in the editor
 	// e.g. 1280x720w for windowed, 1920x1080f for fullscreen, 1920x1080wf for windowed fullscreen
-	IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetRes"))->Set(TEXT("640x480"));
+	FString ResolutionVal = FString::FromInt(ResX) + "x" + FString::FromInt(ResY);
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetRes"))->Set(*ResolutionVal);
 
 	// Which anti-aliasing mode is used by default
 	// 	AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
@@ -243,17 +250,18 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
 
 	// Write data
-	Writer->Write(CompressedBitmap, DemoTimestamp, ViewTypes[ViewTypeIndex], ViewTargetIndex);
+	Writer->Write(CompressedBitmap,
+		FSLVisImageMetadata(DemoTimestamp,
+			ViewTypes[ActiveViewTypeIndex],
+			CameraViews[ActiveCameraViewIndex]->GetCameraLabel(),
+			ResX, ResY));
 
-	// Set path and filename
-	FString Ts = FString::SanitizeFloat(DemoTimestamp).Replace(TEXT("."), TEXT("-"));
-	FString CurrFilename = FString::Printf(TEXT("V%d_%s_%s.png"), ViewTargetIndex, *Ts, *FilenameSuffix);
-	FString CurrFullPath = EpisodePath + "/" + CurrFilename;
-	FPaths::RemoveDuplicateSlashes(CurrFullPath);
+	// Update the number of saved images
+	NumImagesSaved++;
 
-	// Save to file
-	FFileHelper::SaveArrayToFile(CompressedBitmap, *CurrFullPath);
-	NumberOfSavedImages++;
+#if WITH_EDITOR
+	//ProgressBar->EnterProgressFrame();
+#endif //WITH_EDITOR
 
 	// Check if multiple view types are required
 	if (ASLVisLoggerSpectatorPC::SetNextViewType())
@@ -281,10 +289,10 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 			else
 			{
 				// Go back to the first camera target and advance in the demo
-				DemoTimestamp += UpdateRate;
+				DemoTimestamp += DemoUpdateRate;
 				if (ASLVisLoggerSpectatorPC::SetFirstViewTarget())
 				{
-					// Unpause demo to be able to scrub
+					// Unpause demo in order to scrub
 					ASLVisLoggerSpectatorPC::DemoUnPause();
 					NetDriver->GotoTimeInSeconds(DemoTimestamp);
 				}
@@ -328,10 +336,10 @@ bool ASLVisLoggerSpectatorPC::IsDemoPaused()
 // Sets the first view, returns false if there are no views at all
 bool ASLVisLoggerSpectatorPC::SetFirstViewTarget()
 {
-	ViewTargetIndex = 0;
-	if (Cameras.IsValidIndex(ViewTargetIndex))
+	ActiveCameraViewIndex = 0;
+	if (CameraViews.IsValidIndex(ActiveCameraViewIndex))
 	{
-		SetViewTarget(Cameras[ViewTargetIndex], FViewTargetTransitionParams());
+		SetViewTarget(CameraViews[ActiveCameraViewIndex], FViewTargetTransitionParams());
 		return true;
 	}
 	else
@@ -344,15 +352,14 @@ bool ASLVisLoggerSpectatorPC::SetFirstViewTarget()
 // Sets the next view, returns false there are no more views
 bool ASLVisLoggerSpectatorPC::SetNextViewTarget()
 {
-	ViewTargetIndex++;
-	if (Cameras.IsValidIndex(ViewTargetIndex))
+	ActiveCameraViewIndex++;
+	if (CameraViews.IsValidIndex(ActiveCameraViewIndex))
 	{
-		SetViewTarget(Cameras[ViewTargetIndex], FViewTargetTransitionParams());
+		SetViewTarget(CameraViews[ActiveCameraViewIndex], FViewTargetTransitionParams());
 		return true;
 	}
 	else
 	{
-		ViewTargetIndex = -1;
 		return false;
 	}
 }
@@ -360,10 +367,10 @@ bool ASLVisLoggerSpectatorPC::SetNextViewTarget()
 // Sets the first visualization buffer type, false if none
 bool ASLVisLoggerSpectatorPC::SetFirstViewType()
 {
-	ViewTypeIndex = 0;
-	if (ViewTypes.IsValidIndex(ViewTypeIndex))
+	ActiveViewTypeIndex = 0;
+	if (ViewTypes.IsValidIndex(ActiveViewTypeIndex))
 	{
-		return ASLVisLoggerSpectatorPC::SetupViewType(ViewTypes[ViewTypeIndex]);
+		return ASLVisLoggerSpectatorPC::ChangeViewType(ViewTypes[ActiveViewTypeIndex]);
 	}
 	else
 	{
@@ -375,20 +382,19 @@ bool ASLVisLoggerSpectatorPC::SetFirstViewType()
 // Sets the next visualization buffer type, returns false there are no more views
 bool ASLVisLoggerSpectatorPC::SetNextViewType()
 {
-	ViewTypeIndex++;
-	if (ViewTypes.IsValidIndex(ViewTypeIndex))
+	ActiveViewTypeIndex++;
+	if (ViewTypes.IsValidIndex(ActiveViewTypeIndex))
 	{
-		return ASLVisLoggerSpectatorPC::SetupViewType(ViewTypes[ViewTypeIndex]);
+		return ASLVisLoggerSpectatorPC::ChangeViewType(ViewTypes[ActiveViewTypeIndex]);
 	}
 	else
 	{
-		ViewTypeIndex = -1;
 		return false;
 	}
 }
 
 // Render the given view type
-bool ASLVisLoggerSpectatorPC::SetupViewType(FName ViewType)
+bool ASLVisLoggerSpectatorPC::ChangeViewType(const FName& ViewType)
 {
 	// Get the console variable for switching buffer views
 	static IConsoleVariable* ICVarVisTarget = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));
@@ -401,33 +407,8 @@ bool ASLVisLoggerSpectatorPC::SetupViewType(FName ViewType)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(ViewType == NAME_None ? false : true);
 			ViewportClient->GetEngineShowFlags()->SetTonemapper(ViewType == NAME_None ? false : true);
 			ICVarVisTarget->Set(*ViewType.ToString());
-			return ASLVisLoggerSpectatorPC::SetupFilenameSuffix(ViewType);
+			return true;
 		}
 	}
 	return false;
-}
-
-// Set the suffix of the file depending on the view type
-bool ASLVisLoggerSpectatorPC::SetupFilenameSuffix(FName ViewType)
-{
-	if (ViewType.IsEqual(NAME_None))
-	{
-		FilenameSuffix = "C"; // Color
-		return true;
-	}
-	else if (ViewType.IsEqual("SceneDepth"))
-	{
-		FilenameSuffix = "D"; // Depth
-		return true;
-	}
-	else if (ViewType.IsEqual("WorldNormal"))
-	{
-		FilenameSuffix = "N"; // Normal
-		return true;
-	}
-	else
-	{
-		// Unsupported buffer type
-		return false;
-	}
 }

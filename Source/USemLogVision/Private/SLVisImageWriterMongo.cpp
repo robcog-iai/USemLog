@@ -6,13 +6,11 @@
 // Ctor
 USLVisImageWriterMongo::USLVisImageWriterMongo()
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d !!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Dtor
 USLVisImageWriterMongo::~USLVisImageWriterMongo()
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d !!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init
@@ -23,7 +21,7 @@ void USLVisImageWriterMongo::Init(const FSLVisImageWriterParams& InParams)
 
 // Write data
 void USLVisImageWriterMongo::Write(const TArray<uint8>& InCompressedBitmap,
-	float Timestamp, FName ViewType, int32 TargetIndex)
+	const FSLVisImageMetadata& Metadata)
 {
 
 }

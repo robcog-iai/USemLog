@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Misc/ScopedSlowTask.h"
 #include "SLVisImageWriterInterface.h"
 #include "SLVisLoggerSpectatorPC.generated.h"
 
@@ -84,13 +85,7 @@ private:
 	bool SetNextViewType();
 
 	// Setup the given view type
-	bool SetupViewType(FName ViewType);
-
-	// Set the suffix of the file depending on the view type
-	bool SetupFilenameSuffix(FName ViewType);
-
-	// Connect to the database
-	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port);
+	bool ChangeViewType(const FName& ViewType);
 
 private:
 	// Set when logger is initialized
@@ -102,6 +97,10 @@ private:
 	// Set when logger is finished
 	bool bIsFinished;
 
+	// Saves the image data to file/database etc.
+	UPROPERTY() // TScriptInterface can be used with UPROPERTY to avoid GC
+	TScriptInterface<ISLVisImageWriterInterface> Writer;
+
 	// Pointer to the DemoNetDriver
 	class UDemoNetDriver* NetDriver;
 
@@ -109,39 +108,37 @@ private:
 	class UGameViewportClient* ViewportClient;
 
 	// Array of the camera actors
-	TArray<class ASLVisCamera*> Cameras;
+	TArray<class ASLVisCameraView*> CameraViews;
 
-	// Buffer types to render
+	// Rendering buffer types
 	TArray<FName> ViewTypes;
 
-	// Saves the image data to file/database etc.
-	UPROPERTY() // TScriptInterface can be used with UPROPERTY to avoid GC
-	TScriptInterface<ISLVisImageWriterInterface> Writer;	
-
-	// Path of the episode folder
-	FString EpisodePath;
-
-	// Suffix of the filename
-	FString FilenameSuffix;
-
 	// Index of the current view
-	int32 ViewTargetIndex;
+	int32 ActiveCameraViewIndex;
 
-	// Index of the current view
-	int32 ViewTypeIndex;
+	// Index of the current view type
+	int32 ActiveViewTypeIndex;
 
-	// Update step size
-	float UpdateRate;
+	// Image size X
+	int32 ResX;
+
+	// Image size Y
+	int32 ResY;
+
+	// Update rate in seconds
+	float DemoUpdateRate;
 	
 	// Current demo time
 	float DemoTimestamp;
 
-	// TODO use ScopedSlowTask to show progress
 	// Number of saved images until now
-	uint32 NumberOfSavedImages;
+	uint32 NumImagesSaved;
 
 	// Total number of images to be saved
-	uint32 NumberOfTotalImages;
+	uint32 NumImagesToSave;
 
-	
+#if WITH_EDITOR
+	// Progress bar
+	//TUniquePtr<FScopedSlowTask> ProgressBar;
+#endif //WITH_EDITOR
 };

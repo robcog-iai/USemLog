@@ -38,6 +38,42 @@ struct FSLVisImageWriterParams
 };
 
 /**
+* Image metadata
+*/
+struct FSLVisImageMetadata
+{
+	// Timestamp
+	float Timestamp;
+
+	// View type
+	FName ViewType;
+
+	// Camera name
+	FString CameraLabel;
+
+	// Image resolution X
+	int32 ResX;
+
+	// Image resolution Y
+	int32 ResY;
+
+	// Constructor
+	FSLVisImageMetadata(float InTimestamp,
+		const FName& InViewType,
+		const FString& InCameraLabel,
+		int32 InResX,
+		int32 InResY) :
+		Timestamp(InTimestamp),
+		ViewType(InViewType),
+		CameraLabel(InCameraLabel),
+		ResX(InResX),
+		ResY(InResY)
+	{};
+};
+
+
+
+/**
 * Dummy class needed to support Cast<ISLVisImageWriterInterface>(Object).
 */
 UINTERFACE(Blueprintable)
@@ -58,9 +94,8 @@ public:
 	virtual void Init(const FSLVisImageWriterParams& InParams) = 0;
 
 	// Write the image
-	// TODO target index use a class/description/id?
 	virtual void Write(const TArray<uint8>& InCompressedBitmap,
-		float Timestamp, FName ViewType, int32 TargetIndex) = 0;
+		const FSLVisImageMetadata& Metadata) = 0;
 
 	// True if the writer is valid
 	bool IsInit() const { return bIsInit; }

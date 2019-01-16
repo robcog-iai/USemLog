@@ -28,8 +28,15 @@ public:
 
 	// Write data
 	virtual void Write(const TArray<uint8>& InCompressedBitmap,
-		float Timestamp, FName ViewType, int32 TargetIndex) override;
+		const FSLVisImageMetadata& Metadata) override;
+private:
+	// Set the suffix of the file depending on the view type
+	FString GetSuffix(const FName& ViewType);
 
 private:
+	// Path where to save the images
+	FString DirPath;
 
+	// Suffix of the filename
+	FString FilenameSuffix;
 };

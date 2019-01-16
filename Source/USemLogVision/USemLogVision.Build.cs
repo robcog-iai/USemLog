@@ -40,7 +40,7 @@ public class USemLogVision : ModuleRules
 				"RHI",
 				"RenderCore",
 				"UnrealEd",
-				"libmongo", //SLVIS_WITH_LIBMONGO
+				//"libmongo", //SLVIS_WITH_LIBMONGO
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
