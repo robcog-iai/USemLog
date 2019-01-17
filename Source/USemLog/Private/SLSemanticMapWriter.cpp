@@ -1,4 +1,4 @@
-// Copyright 2018, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLSemanticMapWriter.h"
@@ -123,11 +123,21 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 			MapPrefix, ParentId));
 	}
 
-	// Add children properties
-	for (const auto& ChildId : GetAllChildIds(Object))
+	// Add child properties
+	TArray<FString> ChildIds;
+	GetChildIds(Object, ChildIds);
+	for (const auto& ChildId : ChildIds)
 	{
 		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateChildProperty(
 			MapPrefix, ChildId));
+	}
+
+	// Add mobility property
+	const FString Mobility = GetMobility(Object);
+	if (!Mobility.IsEmpty())
+	{
+		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateMobilityProperty(
+			MapPrefix, Mobility));
 	}
 
 	// Add pose individual to map
@@ -142,10 +152,24 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 			MapPrefix, PoseId));
 
 		// If static mesh, add pathToCadModel property
-		if (AStaticMeshActor* ActAsSMAct = Cast<AStaticMeshActor>(ObjAsAct))
+		if (AStaticMeshActor* ActAsSMA = Cast<AStaticMeshActor>(ObjAsAct))
 		{
-			ObjIndividual.AddChildNode(
-				FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
+			if (UStaticMeshComponent* SMC = ActAsSMA->GetStaticMeshComponent())
+			{
+				if (UStaticMesh* SM = SMC->GetStaticMesh())
+				{
+					// Remove path before and including "Models/", after and including ".", and the "SM_" prefixes 
+					FString Path = *SM->GetFullName();
+					const FString SubStr("Models/");
+					int32 FindIdx = Path.Find(SubStr, ESearchCase::CaseSensitive);
+					Path.RemoveAt(0, FindIdx + SubStr.Len());
+					Path.FindLastChar('.', FindIdx);
+					Path.RemoveAt(FindIdx, Path.Len() - FindIdx);
+					Path.ReplaceInline(*FString("SM_"), *FString(""));
+					ObjIndividual.AddChildNode(
+						FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(Path));
+				}
+			}
 		}
 
 		// Add tags data property
@@ -172,10 +196,21 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 			MapPrefix, PoseId));
 
 		// If static mesh, add pathToCadModel property
-		if (UStaticMeshComponent* CompAsSMComp = Cast<UStaticMeshComponent>(ObjAsSceneComp))
+		if (UStaticMeshComponent* CompAsSMC = Cast<UStaticMeshComponent>(ObjAsSceneComp))
 		{
-			ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(
-				InClass));
+			if (UStaticMesh* SM = CompAsSMC->GetStaticMesh())
+			{
+				// Remove path before and including "Models/", after and including ".", and the "SM_" prefixes 
+				FString Path = *SM->GetFullName();
+				const FString SubStr("Models/");
+				int32 FindIdx = Path.Find(SubStr, ESearchCase::CaseSensitive);
+				Path.RemoveAt(0, FindIdx + SubStr.Len());
+				Path.FindLastChar('.', FindIdx);
+				Path.RemoveAt(FindIdx, Path.Len() - FindIdx);
+				Path.ReplaceInline(*FString("SM_"), *FString(""));
+				ObjIndividual.AddChildNode(
+					FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(Path));
+			}
 		}
 
 		// Add tags data property
@@ -386,24 +421,98 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap>
 	}
 }
 
-// Get children ids (only direct children, no grandchildren etc.)
-TArray<FString> FSLSemanticMapWriter::GetAllChildIds(UObject* Object)
+// Get parent id (empty string if none)
+FString FSLSemanticMapWriter::GetParentId(UObject* Object)
 {
-	// Array of children ids
-	TArray<FString> Ids;
+	// Check object type
+	if (AActor* ObjAsAct = Cast<AActor>(Object))
+	{
+		if (AActor* ParentAct = ObjAsAct->GetParentActor())
+		{
+			const FString ParentId = FTags::GetValue(ParentAct, "SemLog", "Id");
+			if (!ParentId.IsEmpty() && FTags::HasKey(ParentAct, "SemLog", "Class"))
+			{
+				return ParentId;
+			}
+		}
 
+		if (AActor* ParentAttAct = ObjAsAct->GetAttachParentActor())
+		{
+			const FString Id = FTags::GetValue(ParentAttAct, "SemLog", "Id");
+			if (!Id.IsEmpty() && FTags::HasKey(ParentAttAct, "SemLog", "Class"))
+			{
+				return Id;
+			}
+		}
+		
+		if (UChildActorComponent* ParentComp = ObjAsAct->GetParentComponent())
+		{
+			const FString Id = FTags::GetValue(ParentComp, "SemLog", "Id");
+			if (!Id.IsEmpty() && FTags::HasKey(ParentComp, "SemLog", "Class"))
+			{
+				return Id;
+			}
+		}
+
+		if (USceneComponent* ParentSceneComp = ObjAsAct->GetDefaultAttachComponent())
+		{
+			const FString Id = FTags::GetValue(ParentSceneComp, "SemLog", "Id");
+			if (!Id.IsEmpty() && FTags::HasKey(ParentSceneComp, "SemLog", "Class"))
+			{
+				return Id;
+			}
+		}
+	}
+	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
+	{
+		if (USceneComponent* ParentAttComp = ObjAsSceneComp->GetAttachParent())
+		{
+			const FString Id = FTags::GetValue(ParentAttComp, "SemLog", "Id");
+			if (!Id.IsEmpty() && FTags::HasKey(ParentAttComp, "SemLog", "Class"))
+			{
+				return Id;
+			}
+		}
+
+		if (AActor* ParentAttRootAct = ObjAsSceneComp->GetAttachmentRootActor())
+		{
+			const FString Id = FTags::GetValue(ParentAttRootAct, "SemLog", "Id");
+			if (!Id.IsEmpty() && FTags::HasKey(ParentAttRootAct, "SemLog", "Class"))
+			{
+				return Id;
+			}
+		}
+	}
+	else if (UActorComponent* ObjAsActComp = Cast<UActorComponent>(Object))
+	{
+		if (AActor* Owner = ObjAsActComp->GetOwner())
+		{
+			const FString Id = FTags::GetValue(Owner, "SemLog", "Id");
+			if (!Id.IsEmpty() && FTags::HasKey(Owner, "SemLog", "Class"))
+			{
+				return Id;
+			}
+		}
+	}
+	// No parent
+	return FString();
+}
+
+// Get attachment ids parent/children (direct children, no grandchildren etc.)
+void FSLSemanticMapWriter::GetChildIds(UObject* Object, TArray<FString>& OutChildIds)
+{
 	// Check object type
 	if (AActor* ObjAsActor = Cast<AActor>(Object))
 	{
 		// Iterate child actors (only direct children, no grandchildren etc.)
-		TArray<AActor*> ChildActors;
-		ObjAsActor->GetAllChildActors(ChildActors, false);
-		for (const auto& ChildAct : ChildActors)
+		TArray<AActor*> AttachedActors;
+		ObjAsActor->GetAttachedActors(AttachedActors);
+		for (const auto& ChildAct : AttachedActors)
 		{
 			const FString ChildId = FTags::GetValue(ChildAct, "SemLog", "Id");
 			if (!ChildId.IsEmpty() && FTags::HasKey(ChildAct, "SemLog", "Class"))
 			{
-				Ids.Add(ChildId);
+				OutChildIds.AddUnique(ChildId);
 			}
 		}
 
@@ -415,7 +524,7 @@ TArray<FString> FSLSemanticMapWriter::GetAllChildIds(UObject* Object)
 			const FString ChildId = FTags::GetValue(ChildComp, "SemLog", "Id");
 			if (!ChildId.IsEmpty() && FTags::HasKey(ChildComp, "SemLog", "Class"))
 			{
-				Ids.Add(ChildId);
+				OutChildIds.AddUnique(ChildId);
 			}
 		}
 	}
@@ -430,59 +539,75 @@ TArray<FString> FSLSemanticMapWriter::GetAllChildIds(UObject* Object)
 			const FString ChildId = FTags::GetValue(ChildComp, "SemLog", "Id");
 			if (!ChildId.IsEmpty() && FTags::HasKey(ChildComp, "SemLog", "Class"))
 			{
-				Ids.Add(ChildId);
+				OutChildIds.AddUnique(ChildId);
 			}
 		}
 	}
-	return Ids;
 }
 
-// Get parent id (empty string if none)
-FString FSLSemanticMapWriter::GetParentId(UObject* Object)
+// Get mobility property
+FString FSLSemanticMapWriter::GetMobility(UObject* Object)
 {
 	// Check object type
 	if (AActor* ObjAsAct = Cast<AActor>(Object))
 	{
-		AActor* ParentAct = ObjAsAct->GetParentActor();
-		const FString ParentActId = FTags::GetValue(ParentAct, "SemLog", "Id");
-		if (!ParentActId.IsEmpty() && FTags::HasKey(ParentAct, "SemLog", "Class"))
+		if (ObjAsAct->IsRootComponentStatic())
 		{
-			return ParentActId;
+			return FString("static");
 		}
-
-		// If this actor was created by a child actor component
-		UChildActorComponent* ParentComp = ObjAsAct->GetParentComponent();
-		const FString ParentCompId = FTags::GetValue(ParentComp, "SemLog", "Id");
-		if (!ParentCompId.IsEmpty() && FTags::HasKey(ParentComp, "SemLog", "Class"))
+		else if (ObjAsAct->IsRootComponentStationary())
 		{
-			return ParentCompId;
+			return FString("stationary");
+		}
+		else if (ObjAsAct->IsRootComponentMovable())
+		{
+			// Check if kinematic (no physics) or dynamic (with physics)
+			if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(ObjAsAct))
+			{
+				if (UStaticMeshComponent* SMC = AsSMA->GetStaticMeshComponent())
+				{
+					if (SMC->IsSimulatingPhysics())
+					{
+						return FString("dynamic");
+					}
+					else
+					{
+						return FString("kinematic");
+					}
+				}
+				else
+				{
+					return FString("kinematic");
+				}
+			}
+			else
+			{
+				return FString("kinematic");
+			}
 		}
 	}
 	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
 	{
-		USceneComponent* AttachComp = ObjAsSceneComp->GetAttachParent();
-		const FString AttachCompId = FTags::GetValue(AttachComp, "SemLog", "Id");
-		if (!AttachCompId.IsEmpty() && FTags::HasKey(AttachComp, "SemLog", "Class"))
+		if(ObjAsSceneComp->Mobility == EComponentMobility::Static)
 		{
-			return AttachCompId;
+			return FString("static");
 		}
-
-		AActor* ParentAct = ObjAsSceneComp->GetAttachmentRootActor();
-		const FString ParentActId = FTags::GetValue(ParentAct, "SemLog", "Id");
-		if (!ParentActId.IsEmpty() && FTags::HasKey(ParentAct, "SemLog", "Class"))
+		else if (ObjAsSceneComp->Mobility == EComponentMobility::Stationary)
 		{
-			return ParentActId;
+			return FString("stationary");
 		}
-	}
-	else if (UActorComponent* ObjAsActComp = Cast<USceneComponent>(Object))
-	{
-		AActor* Owner = ObjAsActComp->GetOwner();
-		const FString OwnerId = FTags::GetValue(Owner, "SemLog", "Id");
-		if (!OwnerId.IsEmpty() && FTags::HasKey(Owner, "SemLog", "Class"))
+		else if (ObjAsSceneComp->Mobility == EComponentMobility::Movable)
 		{
-			return OwnerId;
+			if (ObjAsSceneComp->IsSimulatingPhysics())
+			{
+				return FString("dynamic");
+			}
+			else
+			{
+				return FString("kinematic");
+			}
 		}
 	}
-	// No parent
+	// No mobility
 	return FString();
 }

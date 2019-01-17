@@ -1,4 +1,4 @@
-// Copyright 2018, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "EngineMinimal.h"
@@ -102,7 +102,7 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 		const FString& InDocPrefix, const FString& InDocId);
 
 	// Create pathToCadModel property
-	static FSLOwlNode CreatePathToCadModelProperty(const FString& InClass);
+	static FSLOwlNode CreatePathToCadModelProperty(const FString& InPath);
 
 	// Create tagsData property
 	static FSLOwlNode CreateTagsDataProperty(const TArray<FName>& InTags);
@@ -146,11 +146,14 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 	// Create angular constraint property
 	static FSLOwlNode CreateAngularConstraintProperty(const FString& InDocPrefix, const FString& InId);
 
+	// Create parent property
+	static FSLOwlNode CreateParentProperty(const FString& InDocPrefix, const FString& InId);
+
 	// Create child property
 	static FSLOwlNode CreateChildProperty(const FString& InDocPrefix, const FString& InId);
 
-	// Create parent property
-	static FSLOwlNode CreateParentProperty(const FString& InDocPrefix, const FString& InId);
+	// Create mobility property
+	static FSLOwlNode CreateMobilityProperty(const FString& InDocPrefix, const FString& Mobility);
 
 	// Create a location property
 	static FSLOwlNode CreateLocationProperty(const FVector& InLoc);

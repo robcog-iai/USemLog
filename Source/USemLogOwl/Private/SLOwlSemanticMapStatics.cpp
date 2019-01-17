@@ -1,4 +1,4 @@
-// Copyright 2018, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLOwlSemanticMapStatics.h"
@@ -97,7 +97,7 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateObjectIndividual(
 	const FSLOwlPrefixName OwlNI("owl", "NamedIndividual");
 
 	FSLOwlNode ObjectIndividual(OwlNI, FSLOwlAttribute(RdfAbout, FSLOwlAttributeValue(InDocPrefix, Id)));
-	ObjectIndividual.Comment = TEXT("Individual " + Class + " " + Id);
+	ObjectIndividual.Comment = TEXT("Individual " + Class/* + " " + Id*/);
 	ObjectIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateClassProperty(Class));
 	return ObjectIndividual;
 }
@@ -139,7 +139,7 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateConstraintIndividual(
 	const FSLOwlPrefixName OwlNI("owl", "NamedIndividual");
 
 	FSLOwlNode ObjectIndividual(OwlNI, FSLOwlAttribute(RdfAbout, FSLOwlAttributeValue(InDocPrefix, InId)));
-	ObjectIndividual.Comment = TEXT("Constraint " + InId);
+	ObjectIndividual.Comment = TEXT("Constraint"/* + InId*/);
 	ObjectIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateClassProperty("Constraint"));
 	ObjectIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateParentProperty(InDocPrefix, ParentId));
 	ObjectIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateChildProperty(InDocPrefix, ChildId));
@@ -247,7 +247,8 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateClassDefinition(const FString& InClas
 FSLOwlNode FSLOwlSemanticMapStatics::CreateGenericProperty(const FSLOwlPrefixName& InPrefixName,
 	const FSLOwlAttributeValue& InAttributeValue)
 {
-	return FSLOwlNode();
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	return FSLOwlNode(InPrefixName, FSLOwlAttribute(RdfResource, InAttributeValue));
 }
 
 // Create class property
@@ -270,12 +271,12 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateDescribedInMapProperty(
 }
 
 // Create pathToCadModel property
-FSLOwlNode FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(const FString& InClass)
+FSLOwlNode FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(const FString& InPath)
 {
 	const FSLOwlPrefixName RdfDatatype("rdf", "datatype");
 	const FSLOwlPrefixName KbPathToCadModel("knowrob", "pathToCadModel");
 	const FSLOwlAttributeValue AttrValString("xsd", "string");
-	const FString Path = "package://robcog/" + InClass + "/" + InClass + ".dae";
+	const FString Path = "package://robcog/" + InPath + ".dae";
 
 	return FSLOwlNode(KbPathToCadModel, FSLOwlAttribute(RdfDatatype,
 		AttrValString), Path);
@@ -434,6 +435,15 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateAngularConstraintProperty(const FStri
 	return FSLOwlNode(KbAngularConstr, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, InId)));
 }
 
+// Create parent property
+FSLOwlNode FSLOwlSemanticMapStatics::CreateParentProperty(const FString& InDocPrefix, const FString& InId)
+{
+	const FSLOwlPrefixName KbChild("knowrob", "parent");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+
+	return FSLOwlNode(KbChild, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, InId)));
+}
+
 // Create child property
 FSLOwlNode FSLOwlSemanticMapStatics::CreateChildProperty(const FString& InDocPrefix, const FString& InId)
 {
@@ -443,13 +453,13 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateChildProperty(const FString& InDocPre
 	return FSLOwlNode(KbChild, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, InId)));
 }
 
-// Create parent property
-FSLOwlNode FSLOwlSemanticMapStatics::CreateParentProperty(const FString& InDocPrefix, const FString& InId)
+// Create mobility property
+FSLOwlNode FSLOwlSemanticMapStatics::CreateMobilityProperty(const FString& InDocPrefix, const FString& Mobility)
 {
-	const FSLOwlPrefixName KbParent("knowrob", "parent");
-	const FSLOwlPrefixName RdfResource("rdf", "resource");
-
-	return FSLOwlNode(KbParent, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, InId)));
+	const FSLOwlPrefixName KbMobility("knowrob", "mobility");
+	const FSLOwlPrefixName RdfDatatype("rdf", "datatype");
+	const FSLOwlAttributeValue AttrValString("xsd", "string");
+	return FSLOwlNode(KbMobility, FSLOwlAttribute(RdfDatatype, AttrValString), Mobility);
 }
 
 // Create a location node

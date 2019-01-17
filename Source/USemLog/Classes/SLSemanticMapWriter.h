@@ -1,4 +1,4 @@
-// Copyright 2018, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -49,9 +49,12 @@ private:
 		const FString& InId,
 		const TArray<FName>& InTags);
 
-	// Get object semantically annotated children ids (only direct children, no grandchildren etc.)
-	TArray<FString> GetAllChildIds(UObject* Object);
-
 	// Get object semantically annotated parent id (empty string if none)
 	FString GetParentId(UObject* Object);
+
+	// Get object semantically annotated children ids (only direct children, no grandchildren etc.)
+	void GetChildIds(UObject* Object, TArray<FString>& OutChildIds);
+
+	// Get mobility property
+	FString GetMobility(UObject* Object);
 };
