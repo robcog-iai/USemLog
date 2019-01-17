@@ -6,10 +6,12 @@
 #include "CoreMinimal.h"
 #include "ISLWorldStateWriter.h"
 #if SL_WITH_LIBMONGO
+THIRD_PARTY_INCLUDES_START
 #include <bsoncxx/builder/stream/array.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/types.hpp>
+THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO
 
 // Forward declaration

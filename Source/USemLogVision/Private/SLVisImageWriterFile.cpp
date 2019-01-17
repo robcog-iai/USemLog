@@ -7,13 +7,12 @@
 // Ctor
 USLVisImageWriterFile::USLVisImageWriterFile()
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d !!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
+	bIsInit = false;
 }
 
 // Dtor
 USLVisImageWriterFile::~USLVisImageWriterFile()
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d !!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init
@@ -22,6 +21,7 @@ void USLVisImageWriterFile::Init(const FSLVisImageWriterParams& InParams)
 	// Set path to store the images
 	DirPath = InParams.Location + InParams.EpisodeId + TEXT("/");
 	FPaths::RemoveDuplicateSlashes(DirPath);
+	bIsInit = true;
 }
 
 // Write data
@@ -36,10 +36,6 @@ void USLVisImageWriterFile::Write(const TArray<uint8>& InCompressedBitmap,
 		*USLVisImageWriterFile::GetSuffix(Metadata.ViewType));
 	FString ImgPath = DirPath + "/" + Filename;
 	FPaths::RemoveDuplicateSlashes(ImgPath);
-
-	UE_LOG(LogTemp, Error, TEXT("%s::%d !!!!!!!!!!! Path=%s"),
-		TEXT(__FUNCTION__), __LINE__, *ImgPath);
-
 	// Save to file
 	FFileHelper::SaveArrayToFile(InCompressedBitmap, *ImgPath);
 }

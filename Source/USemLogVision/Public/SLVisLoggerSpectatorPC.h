@@ -63,6 +63,9 @@ private:
 	// Called when screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
+	// Called when the demo reaches the last frame
+	void QuitEditor();
+
 	// Pause demo
 	void DemoPause();
 

@@ -34,6 +34,7 @@ private:
 	FString GetSuffix(const FName& ViewType);
 
 private:
+	
 	// Path where to save the images
 	FString DirPath;
 

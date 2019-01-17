@@ -18,7 +18,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	DemoUpdateRate = 1.5f;
+	DemoUpdateRate = 0.1f;
 	ActiveCameraViewIndex = 0;
 	ActiveViewTypeIndex = 0;
 	DemoTimestamp = 0.f;
@@ -42,6 +42,9 @@ void ASLVisLoggerSpectatorPC::BeginPlay()
 
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{
+		// Start paused
+		ASLVisLoggerSpectatorPC::DemoPause();
+
 		// Init logger
 		ASLVisLoggerSpectatorPC::Init();
 
@@ -54,14 +57,13 @@ void ASLVisLoggerSpectatorPC::BeginPlay()
 void ASLVisLoggerSpectatorPC::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	// Finish logger
-	ASLVisLoggerSpectatorPC::Finish();
+	//ASLVisLoggerSpectatorPC::Finish();
 }
 
 // Called to bind functionality to input
 void ASLVisLoggerSpectatorPC::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	//InputComponent->BindAction("FinishPlayback", IE_Pressed, this, &ASLVisLoggerSpectatorPC::Finish).bExecuteWhenPaused = true;
 }
 
 // Called every frame
@@ -71,7 +73,7 @@ void ASLVisLoggerSpectatorPC::SetupInputComponent()
 
 	 if (bIsInit)
 	 {
-		 UE_LOG(LogTemp, Warning, TEXT("%s::%d Demo: %f/%f; Imgs: %d/%d; World: Play=%f; Real=%f"),
+		 UE_LOG(LogTemp, Error, TEXT("%s::%d Demo: %f/%f; Imgs: %d/%d; World: Play=%f; Real=%f"),
 			 TEXT(__FUNCTION__), __LINE__,
 			 DemoTimestamp, NetDriver->DemoTotalTime,
 			 NumImagesSaved, NumImagesToSave,
@@ -94,43 +96,38 @@ void ASLVisLoggerSpectatorPC::Init()
 #if SLVIS_WITH_LIBMONGO
 			Writer = NewObject<USLVisImageWriterMongo>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				"SemLog", GetWorld()->DemoNetDriver->GetActiveReplayName(), "127.0.0.1", 27017));
+				TEXT("SemLog"), GetWorld()->DemoNetDriver->GetActiveReplayName(), "127.0.0.1", 27017));
 #else
 			Writer = NewObject<USLVisImageWriterFile>(this);
 			Writer->Init(FSLVisImageWriterParams(
 				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), GetWorld()->DemoNetDriver->GetActiveReplayName()));
 #endif //SLVIS_WITH_LIBMONGO
 
-			// Abort if writer is not valid
-			if (!Writer)
-			{
-				return;
-			}
-
-			// Set rendering parameters
-			ASLVisLoggerSpectatorPC::SetupRenderingProperties();
-
-			// Get camera views from the world
-			for (TActorIterator<ASLVisCameraView>Itr(GetWorld()); Itr; ++Itr)
-			{
-				CameraViews.Add(*Itr);
-			}
-
-			// Calculate the total images to be saved
-			NumImagesToSave = (uint32)(NetDriver->DemoTotalTime / DemoUpdateRate) * CameraViews.Num() * ViewTypes.Num();
-
 #if WITH_EDITOR
 			//ProgressBar = MakeUnique<FScopedSlowTask>(NumImagesToSave, FText::FromString(FString(TEXT("Saving images.."))));
 			//ProgressBar->MakeDialog(true, true);
 #endif //WITH_EDITOR
 
-			// Bind callback functions
-			NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::DemoGotoCB);
-			NetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::Finish);
-			ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLVisLoggerSpectatorPC::ScreenshotCB);
-
 			// Flag as initialized
-			bIsInit = true;
+			if (Writer && Writer->IsInit())
+			{
+				// Get camera views from the world
+				for (TActorIterator<ASLVisCameraView>Itr(GetWorld()); Itr; ++Itr)
+				{
+					CameraViews.Add(*Itr);
+				}
+				// Calculate the total images to be saved
+				NumImagesToSave = (uint32)(NetDriver->DemoTotalTime / DemoUpdateRate) * CameraViews.Num() * ViewTypes.Num();
+
+				// Set rendering parameters
+				ASLVisLoggerSpectatorPC::SetupRenderingProperties();
+
+				// Bind callback functions
+				NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::DemoGotoCB);
+				NetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::QuitEditor);
+				ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLVisLoggerSpectatorPC::ScreenshotCB);
+				bIsInit = true;
+			}
 		}
 	}
 }
@@ -140,6 +137,7 @@ void ASLVisLoggerSpectatorPC::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d START "), TEXT(__FUNCTION__), __LINE__);
 		// Set camera to first target and first rendering type
 		if (ASLVisLoggerSpectatorPC::SetFirstViewTarget() && ASLVisLoggerSpectatorPC::SetFirstViewType())
 		{
@@ -156,21 +154,15 @@ void ASLVisLoggerSpectatorPC::Start()
 void ASLVisLoggerSpectatorPC::Finish()
 {
 	if (!bIsFinished && (bIsStarted || bIsInit))
-	{	
-		//FGenericPlatformMisc::RequestExit(false);
-		//
-		//FGameDelegates::Get().GetExitCommandDelegate().Broadcast();
-		//FPlatformMisc::RequestExit(0);
-
-		if (GEngine)
-		{
-			GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
-		}
-
+	{
 		// Flag as finished
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
+
+		// Crashed when called from EndPlay
+		//// Try to quit editor
+		//ASLVisLoggerSpectatorPC::QuitEditor();
 	}
 }
 
@@ -298,6 +290,21 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 				}
 			}
 		}
+	}
+}
+
+// Called when the demo reaches the last frame
+void ASLVisLoggerSpectatorPC::QuitEditor()
+{
+	//FGenericPlatformMisc::RequestExit(false);
+	//
+	//FGameDelegates::Get().GetExitCommandDelegate().Broadcast();
+	//FPlatformMisc::RequestExit(0);
+
+	// Make sure you can quit even if Init or Start could not work out
+	if (GEngine)
+	{
+		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
 	}
 }
 

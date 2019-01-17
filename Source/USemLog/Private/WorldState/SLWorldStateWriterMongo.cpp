@@ -5,11 +5,13 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "Conversions.h"
 #if SL_WITH_LIBMONGO
+THIRD_PARTY_INCLUDES_START
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
 #include <bsoncxx/json.hpp>
 #include <string.h>
 #include <iostream>
+THIRD_PARTY_INCLUDES_END
 using bsoncxx::builder::basic::kvp;
 #endif //SL_WITH_LIBMONGO
 
@@ -29,7 +31,6 @@ FSLWorldStateWriterMongo::FSLWorldStateWriterMongo(const FSLWorldStateWriterPara
 // Destr
 FSLWorldStateWriterMongo::~FSLWorldStateWriterMongo()
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! "), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Init
@@ -102,10 +103,10 @@ bool FSLWorldStateWriterMongo::CreateIndexes()
 }
 
 // Connect to the database
-bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port)
+bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
-		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *IP, Port);
+		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
 #if SL_WITH_LIBMONGO
 	try
 	{
@@ -155,8 +156,6 @@ bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& Epi
 		// Set/create the mongo database and collection
 		mongo_db = mongo_conn[TCHAR_TO_UTF8(*DBName)];
 		mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
-		//mongo_db = mongo_conn["d1"];
-		//mongo_coll = mongo_db["c1"];
 	}
 	catch(const std::exception& xcp)
 	{

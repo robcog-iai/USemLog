@@ -90,7 +90,7 @@ public class USemLog : ModuleRules
 		}
 		else
 		{
-			PublicDefinitions.Add("SL_WITH_LIBMONGO=0");
+			PublicDefinitions.Add("SL_WITH_LIBMONGO=1");
 			
 			// Needed to ignore various warnings from libmongo
 			bEnableUndefinedIdentifierWarnings = false;

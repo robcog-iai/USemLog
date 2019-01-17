@@ -6,7 +6,9 @@
 #include "CoreMinimal.h"
 #include "ISLWorldStateWriter.h"
 #if SL_WITH_LIBMONGO
+THIRD_PARTY_INCLUDES_START
 #include <mongocxx/client.hpp>
+THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO
 
 // Forward declaration
@@ -41,7 +43,7 @@ public:
 
 private:
 	// Connect to the database
-	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& IP, uint16 Port);
+	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
 	
 #if SL_WITH_LIBMONGO
 	// Get non skeletal actors as bson array

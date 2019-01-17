@@ -37,8 +37,8 @@ ASLManager::ASLManager()
 	// World state logger default values
 	bLogWorldState = true;
 	UpdateRate = 0.0f;
-	LinearDistance = 0.5f;
-	AngularDistance = 0.5f;
+	LinearDistance = 0.5f; // cm
+	AngularDistance = 0.1f; // rad
 	WriterType = ESLWorldStateWriterType::Json;
 	ServerIp = TEXT("127.0.0.1");
 	ServerPort = 27017;
