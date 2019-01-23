@@ -94,9 +94,12 @@ void ASLVisLoggerSpectatorPC::Init()
 		{
 			// Create writer
 #if SLVIS_WITH_LIBMONGO
-			Writer = NewObject<USLVisImageWriterMongo>(this);
+			//Writer = NewObject<USLVisImageWriterMongo>(this);
+			//Writer->Init(FSLVisImageWriterParams(
+			//	TEXT("SemLog"), GetWorld()->DemoNetDriver->GetActiveReplayName(), "127.0.0.1", 27017));
+			Writer = NewObject<USLVisImageWriterFile>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				TEXT("SemLog"), GetWorld()->DemoNetDriver->GetActiveReplayName(), "127.0.0.1", 27017));
+				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), GetWorld()->DemoNetDriver->GetActiveReplayName()));
 #else
 			Writer = NewObject<USLVisImageWriterFile>(this);
 			Writer->Init(FSLVisImageWriterParams(
@@ -137,7 +140,6 @@ void ASLVisLoggerSpectatorPC::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d START "), TEXT(__FUNCTION__), __LINE__);
 		// Set camera to first target and first rendering type
 		if (ASLVisLoggerSpectatorPC::SetFirstViewTarget() && ASLVisLoggerSpectatorPC::SetFirstViewType())
 		{
@@ -170,12 +172,12 @@ void ASLVisLoggerSpectatorPC::Finish()
 void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 {
 	// Set screenshot image and viewport resolution size
-	GetHighResScreenshotConfig().SetResolution(ResX, ResY, 1.0f);
+	GetHighResScreenshotConfig().SetResolution(ResX, ResY, 10.0f);
 
 	// Set the display resolution for the current game view. Has no effect in the editor
 	// e.g. 1280x720w for windowed, 1920x1080f for fullscreen, 1920x1080wf for windowed fullscreen
-	FString ResolutionVal = FString::FromInt(ResX) + "x" + FString::FromInt(ResY);
-	IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetRes"))->Set(*ResolutionVal);
+	//FString ResStr = FString::FromInt(ResX) + "x" + FString::FromInt(ResY)/* + "f"*/;
+	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetRes"))->Set(*ResStr);
 
 	// Which anti-aliasing mode is used by default
 	// 	AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)

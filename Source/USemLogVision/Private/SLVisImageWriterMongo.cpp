@@ -38,7 +38,11 @@ void USLVisImageWriterMongo::Write(const TArray<uint8>& InCompressedBitmap,
 	// Create a bson document and array to store the entities
 	bsoncxx::builder::basic::document bson_doc{};
 	bson_doc.append(kvp("timestamp", bsoncxx::types::b_double{ Metadata.Timestamp }));
-	//bson_doc.append(kvp("data", bsoncxx::types::b_binary{ InCompressedBitmap }));
+	/*bson_doc.append(kvp("data", bsoncxx::types::b_binary{ InCompressedBitmap }));*/
+	bson_doc.append(kvp("data", bsoncxx::types::b_binary{
+		bsoncxx::binary_sub_type::k_binary,
+		static_cast<uint32_t>(InCompressedBitmap.Num()),
+		reinterpret_cast<const uint8_t*>(InCompressedBitmap.GetData()) }));
 	try
 	{
 		mongo_coll.insert_one(bson_doc.view());
@@ -100,11 +104,17 @@ bool USLVisImageWriterMongo::Connect(const FString& DBName, const FString& Episo
 		}
 
 		// Dummy call to make sure that the server is online
-		mongo_conn.list_databases();
+		mongo_conn.list_databases();		
 
 		// Set/create the mongo database and collection
 		mongo_db = mongo_conn[TCHAR_TO_UTF8(*DBName)];
+		if (!mongo_db.has_collection(TCHAR_TO_UTF8(*EpisodeId)))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Collestion %s does not exist in %s"),
+				TEXT(__FUNCTION__), __LINE__, *EpisodeId, *DBName);
+		}
 		mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
+
 	}
 	catch (const std::exception& xcp)
 	{

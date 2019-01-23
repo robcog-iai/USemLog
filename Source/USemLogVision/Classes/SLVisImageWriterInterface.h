@@ -7,6 +7,7 @@
 #include "UObject/Interface.h"
 #include "SLVisImageWriterInterface.generated.h"
 
+
 /**
 * Parameters for creating an image data writer
 */

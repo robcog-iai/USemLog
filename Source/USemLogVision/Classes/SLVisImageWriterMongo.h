@@ -32,7 +32,7 @@ public:
 	virtual void Init(const FSLVisImageWriterParams& InParams) override;
 
 	// Write data
-	virtual void Write(const TArray<uint8>& InCompressedBitmap, 
+	virtual void Write(const TArray<uint8>& InCompressedBitmap,
 		const FSLVisImageMetadata& Metadata) override;
 
 private:
