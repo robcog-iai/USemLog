@@ -5,9 +5,7 @@
 #include "SLMappings.h"
 #include "Ids.h"
 #if SL_WITH_SLVIS
-#include "SLVisRecordGameMode.h"
 #include "Engine/DemoNetDriver.h"
-#include "Kismet/GameplayStatics.h"
 #endif //SL_WITH_SLVIS
 
 // Sets default values
@@ -42,6 +40,7 @@ ASLManager::ASLManager()
 	WriterType = ESLWorldStateWriterType::Json;
 	ServerIp = TEXT("127.0.0.1");
 	ServerPort = 27017;
+	bIncludeAllData = false;
 
 	// Events logger default values
 	bLogEventData = true;
@@ -55,7 +54,6 @@ ASLManager::ASLManager()
 	bLogVisionData = true;
 	MaxRecordHz = 90.f;
 	MinRecordHz = 30.f;
-
 
 #if WITH_EDITOR
 	// Make manager sprite smaller
@@ -164,26 +162,12 @@ void ASLManager::Init()
 				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
 		}
 
-#if SL_WITH_SLVIS
 		if (bLogVisionData)
 		{
-			// Check is recording game mode is set, otherwise cancel vision logging
-			if (ASLVisRecordGameMode* SLGameMode = Cast<ASLVisRecordGameMode>(GetWorld()->GetAuthGameMode()))
-			{
-				// Set movement replications to objects
-				FSLMappings::GetInstance()->SetReplicates(true);
-
-				// Set update rates
-				IConsoleManager::Get().FindConsoleVariable(TEXT("demo.RecordHZ"))->Set(MaxRecordHz);
-				IConsoleManager::Get().FindConsoleVariable(TEXT("demo.MinRecordHZ"))->Set(MinRecordHz);
-			}
-			else
-			{
-				bLogVisionData = false;
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Game Mode not set, vision replay will not be recorded.."), TEXT(__FUNCTION__), __LINE__);
-			}
+			// Create and init vision logger
+			VisionDataLogger = NewObject<USLVisionLogger>(this);
+			VisionDataLogger->Init(MaxRecordHz, MinRecordHz);
 		}
-#endif // SL_WITH_SLVIS
 
 		// Mark manager as initialized
 		bIsInit = true;
@@ -210,17 +194,11 @@ void ASLManager::Start()
 			EventDataLogger->Start();
 		}
 
-#if SL_WITH_SLVIS
-		if (bLogVisionData)
+		// Start the vision data logger
+		if (bLogVisionData && VisionDataLogger)
 		{
-			if (UGameInstance* GI = GetWorld()->GetGameInstance())
-			{
-				const FString RecName = EpisodeId + "_RP";
-				//TArray<FString> AdditionalOptions;
-				GI->StartRecordingReplay(RecName, RecName);
-			}
+			VisionDataLogger->Start(EpisodeId);
 		}
-#endif // SL_WITH_SLVIS
 
 		// Mark manager as started
 		bIsStarted = true;
@@ -242,15 +220,10 @@ void ASLManager::Finish(const float Time, bool bForced)
 			EventDataLogger->Finish(Time, bForced);
 		}
 		
-#if SL_WITH_SLVIS
-		if (bLogVisionData && !bForced)
+		if (VisionDataLogger)
 		{
-			if (UGameInstance* GI = GetWorld()->GetGameInstance())
-			{
-				GI->StopRecordingReplay();
-			}
+			VisionDataLogger->Finish(bForced);
 		}
-#endif // SL_WITH_SLVIS
 
 		// Delete the semantic items content instance
 		FSLMappings::DeleteInstance();
@@ -308,6 +281,18 @@ bool ASLManager::CanEditChange(const UProperty* InProperty) const
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerPort))
 	{
 		return WriterType == ESLWorldStateWriterType::Mongo;
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bIncludeAllData))
+	{
+		return WriterType == ESLWorldStateWriterType::Mongo;
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogVisionData))
+	{
+#if SL_WITH_SLVIS
+		return true;
+#else
+		return false;
+#endif //SL_WITH_SLVIS
 	}
 	return ParentVal;
 }

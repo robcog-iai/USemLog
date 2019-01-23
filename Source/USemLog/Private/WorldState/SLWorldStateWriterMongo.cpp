@@ -113,57 +113,57 @@ bool FSLWorldStateWriterMongo::Connect(const FString& DBName, const FString& Epi
 		// Get current mongo instance, or create a new one (static variable)
 		mongocxx::instance::current();
 
-		// Client connection options
-		mongocxx::options::client client_options;
-		mongocxx::options::ssl ssl_options;
+		//// Client connection options
+		//mongocxx::options::client client_options;
+		//mongocxx::options::ssl ssl_options;
 
-		// If the server certificate is not signed by a well-known CA,
-		// you can set a custom CA file with the `ca_file` option.
-		// ssl_options.ca_file("/path/to/custom/cert.pem");
+		//// If the server certificate is not signed by a well-known CA,
+		//// you can set a custom CA file with the `ca_file` option.
+		//// ssl_options.ca_file("/path/to/custom/cert.pem");
 
-		// If you want to disable certificate verification, you
-		// can set the `allow_invalid_certificates` option.
-		// ssl_options.allow_invalid_certificates(true);
+		//// If you want to disable certificate verification, you
+		//// can set the `allow_invalid_certificates` option.
+		//// ssl_options.allow_invalid_certificates(true);
 
-		client_options.ssl_opts(ssl_options);
+		//client_options.ssl_opts(ssl_options);
 
-		// Create the connection URI
-		//FString Uri = TEXT("mongodb://") + IP + TEXT(":") + FString::FromInt(Port);
+		//// Create the connection URI
+		////FString Uri = TEXT("mongodb://") + IP + TEXT(":") + FString::FromInt(Port);
 
-		// Create the mongo client/connection
-		// drivers are designed to succeed during client construction,
-		// regardless of the state of servers
-		// i.e. can return true even if it is no connected to the server
-		mongo_conn = mongocxx::client{ mongocxx::uri {}};
-		//mongo_conn = mongocxx::client{ mongocxx::uri {}, client_options };
-		//mongo_conn = mongocxx::client { mongocxx::uri {TCHAR_TO_UTF8(*Uri)}, client_options};
-		//mongo_conn = mongocxx::client{ mongocxx::uri{"mongodb://127.0.0.1"}, client_options };
-		if (mongo_conn)
-		{
-			//FString MongoUri = FString(mongo_conn.uri().to_string().c_str());
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d Mongo client with URI: %s "),
-			//	TEXT(__FUNCTION__), __LINE__, *MongoUri);
-		}
-		else
-		{
-			// Something went wrong
-			return false;
-		}
+		//// Create the mongo client/connection
+		//// drivers are designed to succeed during client construction,
+		//// regardless of the state of servers
+		//// i.e. can return true even if it is no connected to the server
+		//mongo_conn = mongocxx::client{ mongocxx::uri {}};
+		////mongo_conn = mongocxx::client{ mongocxx::uri {}, client_options };
+		////mongo_conn = mongocxx::client { mongocxx::uri {TCHAR_TO_UTF8(*Uri)}, client_options};
+		////mongo_conn = mongocxx::client{ mongocxx::uri{"mongodb://127.0.0.1"}, client_options };
+		//if (mongo_conn)
+		//{
+		//	//FString MongoUri = FString(mongo_conn.uri().to_string().c_str());
+		//	//UE_LOG(LogTemp, Error, TEXT("%s::%d Mongo client with URI: %s "),
+		//	//	TEXT(__FUNCTION__), __LINE__, *MongoUri);
+		//}
+		//else
+		//{
+		//	// Something went wrong
+		//	return false;
+		//}
 
-		// Dummy call to make sure that the server is online
-		mongo_conn.list_databases();
+		//// Dummy call to make sure that the server is online
+		//mongo_conn.list_databases();
 
-		// Set/create the mongo database and collection
-		mongo_db = mongo_conn[TCHAR_TO_UTF8(*DBName)];
-		mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
+		//// Set/create the mongo database and collection
+		//mongo_db = mongo_conn[TCHAR_TO_UTF8(*DBName)];
+		//mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
 	}
 	catch(const std::exception& xcp)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
 			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
-		return false;
+		return true;
 	}
-	return true;
+	return false;
 #else
 	return false;
 #endif //SL_WITH_LIBMONGO

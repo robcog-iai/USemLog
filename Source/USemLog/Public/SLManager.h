@@ -6,6 +6,7 @@
 #include "GameFramework/Info.h"
 #include "SLWorldStateLogger.h"
 #include "SLEventLogger.h"
+#include "SLVisionLogger.h"
 #include "SLManager.generated.h"
 
 /**
@@ -156,6 +157,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (ClampMin = 0, ClampMax = 65535))
 	uint16 ServerPort;
 
+	// Include event and replay data to the database
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger")
+	bool bIncludeAllData;
+
 	// World state logger, use UPROPERTY to avoid GC
 	UPROPERTY()
 	USLWorldStateLogger* WorldStateLogger;
@@ -213,5 +218,9 @@ private:
 	// Minimum number of demo frames recorded per second
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))
 	float MinRecordHz;
+
+	// Vision data logger, use UPROPERTY to avoid GC
+	UPROPERTY()
+	USLVisionLogger* VisionDataLogger;
 	/* End vision data logger properties */
 };

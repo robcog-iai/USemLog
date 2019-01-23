@@ -2,7 +2,3 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLSkeletalMeshActor.h"
-
-
-
-

@@ -153,7 +153,10 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 	static FSLOwlNode CreateChildProperty(const FString& InDocPrefix, const FString& InId);
 
 	// Create mobility property
-	static FSLOwlNode CreateMobilityProperty(const FString& InDocPrefix, const FString& Mobility);
+	static FSLOwlNode CreateMobilityProperty(const FString& Mobility);
+
+	// Create physics properties
+	static TArray<FSLOwlNode> CreatePhysicsProperties(float Mass, bool bGenerateOverlapEvents, bool bGravity);
 
 	// Create a location property
 	static FSLOwlNode CreateLocationProperty(const FVector& InLoc);

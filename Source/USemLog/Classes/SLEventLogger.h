@@ -13,6 +13,13 @@
 class ISLEvent;
 
 /**
+* Event logger parameters
+*/
+struct FSLEventLoggerParams
+{
+};
+
+/**
  * Event (symbolic) data logger
  */
 UCLASS()
@@ -27,7 +34,6 @@ public:
 	// Destructor
 	~USLEventLogger();
 
-public:
 	// Init Logger
 	void Init(ESLOwlExperimentTemplate TemplateType,
 		const FString& InLocation,

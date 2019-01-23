@@ -9,6 +9,15 @@
 #include "SLWorldStateLogger.generated.h"
 
 
+
+/**
+* World state logger parameters
+*/
+struct FSLWorldStateLoggerParams
+{
+
+};
+
 /**
  * Raw (subsymbolic) data logger, 
  * it synchronizes(ticks) the async worker on saving the world state at given timepoints.

@@ -136,9 +136,16 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 	const FString Mobility = GetMobility(Object);
 	if (!Mobility.IsEmpty())
 	{
-		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateMobilityProperty(
-			MapPrefix, Mobility));
+		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateMobilityProperty(Mobility));
 	}
+
+	// Add physics properties (gravity, overlap events, mass)
+	TArray<FSLOwlNode> PhysicsProperties = GetIndividualPhysicsProperties(Object);
+	if (PhysicsProperties.Num() > 0)
+	{
+		ObjIndividual.AddChildNodes(PhysicsProperties);
+	}
+	
 
 	// Add pose individual to map
 	if (AActor* ObjAsAct = Cast<AActor>(Object))
@@ -419,6 +426,28 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap>
 				AngTwistStiffness, AngTwistDamping));
 		}
 	}
+}
+
+// Add individual physics properties
+TArray<FSLOwlNode> FSLSemanticMapWriter::GetIndividualPhysicsProperties(UObject* Object)
+{
+	// Check object type
+	if (AStaticMeshActor* ObjAsSMA = Cast<AStaticMeshActor>(Object))
+	{
+		if (UStaticMeshComponent* SMC = ObjAsSMA->GetStaticMeshComponent())
+		{
+			float Mass = SMC->IsSimulatingPhysics() ? SMC->GetMass() : SMC->CalculateMass();
+			return FSLOwlSemanticMapStatics::CreatePhysicsProperties(
+				Mass, SMC->GetGenerateOverlapEvents(), SMC->IsGravityEnabled());
+		}
+	}
+	else if (UStaticMeshComponent* ObjAsSMC = Cast<UStaticMeshComponent>(Object))
+	{
+		float Mass = ObjAsSMC->IsSimulatingPhysics() ? ObjAsSMC->GetMass() : ObjAsSMC->CalculateMass();
+		return FSLOwlSemanticMapStatics::CreatePhysicsProperties(
+			Mass, ObjAsSMC->GetGenerateOverlapEvents(), ObjAsSMC->IsGravityEnabled());
+	}
+	return TArray<FSLOwlNode>();
 }
 
 // Get parent id (empty string if none)

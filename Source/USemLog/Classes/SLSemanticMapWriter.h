@@ -49,6 +49,9 @@ private:
 		const FString& InId,
 		const TArray<FName>& InTags);
 
+	// Add individual physics properties
+	TArray<FSLOwlNode> GetIndividualPhysicsProperties(UObject* Object);
+	
 	// Get object semantically annotated parent id (empty string if none)
 	FString GetParentId(UObject* Object);
 
