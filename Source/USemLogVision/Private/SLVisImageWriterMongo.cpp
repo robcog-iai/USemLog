@@ -58,7 +58,7 @@ void USLVisImageWriterMongo::Write(float Timestamp, const TArray<FSLVisImageData
 
 		// Add camera label and type
 		bson_img_doc.append(kvp("label", TCHAR_TO_UTF8(*Img.Metadata.Label)));
-		bson_img_doc.append(kvp("type", TCHAR_TO_UTF8(*Img.Metadata.ViewType.ToString())));
+		bson_img_doc.append(kvp("type", TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(Img.Metadata.ViewType))));
 
 		// Add image resolution
 		bsoncxx::builder::basic::document bson_res_doc{};
@@ -72,11 +72,10 @@ void USLVisImageWriterMongo::Write(float Timestamp, const TArray<FSLVisImageData
 		//	static_cast<uint32_t>(Img.Data.Num()),
 		//	reinterpret_cast<const uint8_t*>(Img.Data.GetData())}));
 
-		mongocxx::options::gridfs::bucket img_bucket_options;
+		//mongocxx::options::gridfs::bucket img_bucket_options;
 		//img_bucket_options.bucket_name("a_name");
-
-
-		mongocxx::gridfs::bucket img_bucket = mongo_db.gridfs_bucket(img_bucket_options);
+		
+		mongocxx::gridfs::bucket img_bucket = mongo_db.gridfs_bucket(/*img_bucket_options*/);
 
 		mongocxx::gridfs::uploader img_uploader = img_bucket.open_upload_stream(
 			TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetImageFilename(
@@ -87,7 +86,6 @@ void USLVisImageWriterMongo::Write(float Timestamp, const TArray<FSLVisImageData
 		mongocxx::result::gridfs::upload upload_result = img_uploader.close();
 		
 		bson_img_doc.append(kvp("img_id", upload_result.id()));
-		
 
 		// Add to array
 		bson_arr.append(bson_img_doc);
@@ -171,9 +169,7 @@ bool USLVisImageWriterMongo::Connect(const FString& DBName, const FString& Episo
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Collestion %s does not exist in %s"),
 				TEXT(__FUNCTION__), __LINE__, *EpisodeId, *DBName);
 		}
-		//mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
-		mongo_coll = mongo_db["test"];
-
+		mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
 	}
 	catch (const std::exception& xcp)
 	{

@@ -105,7 +105,7 @@ private:
 	TScriptInterface<ISLVisImageWriterInterface> Writer;
 
 	// Images at a given timeslice
-	TArray<FSLVisImageData> ImagesInTimeslice;
+	TArray<FSLVisImageData> ImagesAtTimestamp;
 
 	// Pointer to the DemoNetDriver
 	class UDemoNetDriver* NetDriver;

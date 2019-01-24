@@ -18,7 +18,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	DemoUpdateRate = 3.98f;
+	DemoUpdateRate = 5.98f;
 	ActiveCameraViewIndex = 0;
 	ActiveViewTypeIndex = 0;
 	DemoTimestamp = 0.f;
@@ -28,7 +28,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	// Add buffer types to visualize
 	ViewTypes.Add(NAME_None); // Default will be color
 	ViewTypes.Add("SceneDepth");
-	ViewTypes.Add("WorldNormal");
+	//ViewTypes.Add("WorldNormal");
 
 	// Image size
 	ResX = 3840;
@@ -114,7 +114,9 @@ void ASLVisLoggerSpectatorPC::Init()
 					CameraViews.Add(*Itr);
 				}
 				// Calculate the total images to be saved
-				NumImagesToSave = (uint32)(NetDriver->DemoTotalTime / DemoUpdateRate) * CameraViews.Num() * ViewTypes.Num();
+				uint32 NumTimesteps = (uint32)(NetDriver->DemoTotalTime / DemoUpdateRate) + 1;
+				uint32 NumImages = CameraViews.Num() * ViewTypes.Num();
+				NumImagesToSave = NumTimesteps * NumImages;
 
 				// Set rendering parameters
 				ASLVisLoggerSpectatorPC::SetupRenderingProperties();
@@ -139,6 +141,7 @@ void ASLVisLoggerSpectatorPC::Start()
 		{
 			// Go to the beginning of the demo and start requesting screenshots
 			NetDriver->GotoTimeInSeconds(DemoTimestamp);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 		}
 
 		// Flag as started
@@ -174,10 +177,12 @@ void ASLVisLoggerSpectatorPC::Finish()
 
 // Set rendered image quality
 void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
-{
+{	
+	// TODO this probably causes an extra screenshot callback
 	// Set screenshot image and viewport resolution size
-	GetHighResScreenshotConfig().SetResolution(ResX, ResY, 10.0f);
-
+	GetHighResScreenshotConfig().SetResolution(ResX, ResY, 1.0f);
+	
+	// TODO this does not seem to have an effect
 	// Set the display resolution for the current game view. Has no effect in the editor
 	// e.g. 1280x720w for windowed, 1920x1080f for fullscreen, 1920x1080wf for windowed fullscreen
 	//FString ResStr = FString::FromInt(ResX) + "x" + FString::FromInt(ResY)/* + "f"*/;
@@ -253,11 +258,8 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
 
 	// Add image to the array in this timeslice
-	ImagesInTimeslice.Emplace(FSLVisImageData(FSLVisImageMetadata(ViewTypes[ActiveViewTypeIndex],
+	ImagesAtTimestamp.Emplace(FSLVisImageData(FSLVisImageMetadata(ViewTypes[ActiveViewTypeIndex],
 				CameraViews[ActiveCameraViewIndex]->GetCameraLabel(),ResX, ResY), CompressedBitmap));
-
-	// Update the number of saved images
-	NumImagesSaved++;
 
 #if WITH_EDITOR
 	//ProgressBar->EnterProgressFrame();
@@ -279,7 +281,7 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 		{
 			// Check if more views are available
 			if (ASLVisLoggerSpectatorPC::SetNextViewTarget())
-			{				
+			{
 				// Request screenshot on game thread
 				AsyncTask(ENamedThreads::GameThread,[this]() 
 				{
@@ -290,10 +292,14 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 			{
 				// We reached the last camera + view in this time slice
 				// Write data
-				Writer->Write(DemoTimestamp, ImagesInTimeslice);
+				Writer->Write(DemoTimestamp, ImagesAtTimestamp);
 
-				// Clear data array
-				ImagesInTimeslice.Empty();
+				// Update the number of saved images
+				NumImagesSaved += ImagesAtTimestamp.Num();
+				UE_LOG(LogTemp, Error, TEXT("%s::%d ++ "), TEXT(__FUNCTION__), __LINE__);
+
+				// Clear previous data array
+				ImagesAtTimestamp.Empty();
 
 				// Advance demo time
 				DemoTimestamp += DemoUpdateRate;
