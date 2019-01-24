@@ -36,6 +36,16 @@ void FSLWorldStateWriterJson::Init(const FSLWorldStateWriterParams& InParams)
 	bIsInit = FSLWorldStateWriterJson::SetFileHandle(InParams.Location, InParams.EpisodeId);
 }
 
+
+// Finish
+void FSLWorldStateWriterJson::Finish()
+{
+	if (bIsInit)
+	{
+		bIsInit = false;
+	}
+}
+
 // Called to write the data (it also removes invalid item -> e.g. deleted ones)
 void FSLWorldStateWriterJson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,

@@ -156,9 +156,10 @@ void FSLWorldStateAsyncWorker::Finish(bool bForced)
 		// Check if mongo writer
 		if (Writer.IsValid() && WriterType == ESLWorldStateWriterType::Mongo)
 		{
+			// We cannot cast dynamically if it is not an UObject
 			TSharedPtr<FSLWorldStateWriterMongo> MongoWriter = StaticCastSharedPtr<FSLWorldStateWriterMongo>(Writer);
-			// Create indexes
-			MongoWriter->CreateIndexes();
+			// Finish writer (create database indexes for example)
+			MongoWriter->Finish();
 		}
 	}
 }

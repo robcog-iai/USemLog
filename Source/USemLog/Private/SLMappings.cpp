@@ -45,7 +45,6 @@ void FSLMappings::Init(UWorld* World)
 			FString ActClass = FTags::GetValue(*ActorItr, "SemLog", "Class");
 			if (!ActId.IsEmpty() && !ActClass.IsEmpty())
 			{
-				
 				ObjItemMap.Emplace(*ActorItr, FSLItem(*ActorItr, ActId, ActClass));
 			}
 
@@ -72,17 +71,37 @@ void FSLMappings::SetReplicates(bool bReplicate)
 {
 	for (auto& Pair : ObjItemMap)
 	{
-		if (AActor* ObjAsActor = Cast<AActor>(Pair.Key))
+		//if (AActor* ObjAsActor = Cast<AActor>(Pair.Key))
+		//{
+		//	ObjAsActor->SetReplicates(bReplicate);
+		//	ObjAsActor->SetReplicateMovement(bReplicate);
+		//}
+		//else if (UActorComponent* ObjAsActorComponent = Cast<UActorComponent>(Pair.Key))
+		//{
+		//	ObjAsActorComponent->SetIsReplicated(bReplicate);
+		//	ObjAsActorComponent->GetOwner()->SetReplicates(bReplicate);
+		//	ObjAsActorComponent->GetOwner()->SetReplicateMovement(bReplicate);
+		//}
+
+		// Only replicate items with visuals
+		if (AActor* ObjAsSMA = Cast<AStaticMeshActor>(Pair.Key))
 		{
-			ObjAsActor->SetReplicates(bReplicate);
-			ObjAsActor->SetReplicateMovement(bReplicate);
+			if (ObjAsSMA->IsRootComponentMovable())
+			{
+				ObjAsSMA->SetReplicates(bReplicate);
+				ObjAsSMA->SetReplicateMovement(bReplicate);
+			}
 		}
-		else if (UActorComponent* ObjAsActorComponent = Cast<UActorComponent>(Pair.Key))
+		else if (UStaticMeshComponent* ObjAsSMC = Cast<UStaticMeshComponent>(Pair.Key))
 		{
-			ObjAsActorComponent->SetIsReplicated(bReplicate);
-			ObjAsActorComponent->GetOwner()->SetReplicates(bReplicate);
-			ObjAsActorComponent->GetOwner()->SetReplicateMovement(bReplicate);
-		}		
+			if (ObjAsSMC->Mobility == EComponentMobility::Movable)
+			{
+				ObjAsSMC->SetIsReplicated(bReplicate);
+				ObjAsSMC->GetOwner()->SetReplicates(bReplicate);
+				ObjAsSMC->GetOwner()->SetReplicateMovement(bReplicate);
+			}
+		}
+		// TODO see skeletal mesh comps and actors
 	}
 }
 

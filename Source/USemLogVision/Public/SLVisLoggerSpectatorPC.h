@@ -104,6 +104,9 @@ private:
 	UPROPERTY() // TScriptInterface can be used with UPROPERTY to avoid GC
 	TScriptInterface<ISLVisImageWriterInterface> Writer;
 
+	// Images at a given timeslice
+	TArray<FSLVisImageData> ImagesInTimeslice;
+
 	// Pointer to the DemoNetDriver
 	class UDemoNetDriver* NetDriver;
 

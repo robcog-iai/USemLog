@@ -26,15 +26,13 @@ public:
 	// Init
 	virtual void Init(const FSLVisImageWriterParams& InParams) override;
 
-	// Write data
-	virtual void Write(const TArray<uint8>& InCompressedBitmap,
-		const FSLVisImageMetadata& Metadata) override;
-private:
-	// Set the suffix of the file depending on the view type
-	FString GetSuffix(const FName& ViewType);
+	// Called when done writing
+	virtual void Finish() override;
 
-private:
-	
+	// Write the images at the timestamp
+	virtual void Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData) override;
+
+private:	
 	// Path where to save the images
 	FString DirPath;
 

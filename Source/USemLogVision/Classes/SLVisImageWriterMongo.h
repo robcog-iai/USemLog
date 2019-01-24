@@ -31,13 +31,18 @@ public:
 	// Init
 	virtual void Init(const FSLVisImageWriterParams& InParams) override;
 
-	// Write data
-	virtual void Write(const TArray<uint8>& InCompressedBitmap,
-		const FSLVisImageMetadata& Metadata) override;
+	// Called when done writing
+	virtual void Finish() override;
+	
+	// Write the images at the timestamp
+	virtual void Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData) override;
 
 private:
 	// Connect to the database
 	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
+
+	// Re-create the indexes
+	bool CreateIndexes();
 
 private:	
 #if SLVIS_WITH_LIBMONGO

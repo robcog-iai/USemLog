@@ -35,6 +35,9 @@ public:
 	// Init
 	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
 
+	// Finish
+	virtual void Finish() override;
+
 	// Called to write the data
 	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,

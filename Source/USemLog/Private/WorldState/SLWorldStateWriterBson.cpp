@@ -36,6 +36,15 @@ void FSLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
 	bIsInit = FSLWorldStateWriterBson::SetFileHandle(InParams.Location, InParams.EpisodeId);
 }
 
+// Finish
+void FSLWorldStateWriterBson::Finish()
+{
+	if (bIsInit)
+	{
+		bIsInit = false;
+	}
+}
+
 // Called to write the data
 void FSLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,

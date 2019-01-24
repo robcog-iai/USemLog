@@ -19,45 +19,33 @@ USLVisImageWriterFile::~USLVisImageWriterFile()
 void USLVisImageWriterFile::Init(const FSLVisImageWriterParams& InParams)
 {
 	// Set path to store the images
-	DirPath = InParams.Location + InParams.EpisodeId + TEXT("/");
+	DirPath = InParams.Location + InParams.EpisodeId + TEXT("_RP/");
 	FPaths::RemoveDuplicateSlashes(DirPath);
 	bIsInit = true;
 }
 
-// Write data
-void USLVisImageWriterFile::Write(const TArray<uint8>& InCompressedBitmap,
-	const FSLVisImageMetadata& Metadata)
+// Finish
+void USLVisImageWriterFile::Finish()
 {
-	// Set path and filename
-	FString TsStr = FString::SanitizeFloat(Metadata.Timestamp).Replace(TEXT("."), TEXT("-"));
-	FString Filename = FString::Printf(TEXT("SLVis_%s_%s_%s.png"),
-		*Metadata.CameraLabel,
-		*TsStr,
-		*USLVisImageWriterFile::GetSuffix(Metadata.ViewType));
-	FString ImgPath = DirPath + "/" + Filename;
-	FPaths::RemoveDuplicateSlashes(ImgPath);
-	// Save to file
-	FFileHelper::SaveArrayToFile(InCompressedBitmap, *ImgPath);
+	if (bIsInit)
+	{
+		bIsInit = false;
+	}
 }
 
-// Set the suffix of the file depending on the view type
-FString USLVisImageWriterFile::GetSuffix(const FName& ViewType)
+// Write the images at the timestamp
+void USLVisImageWriterFile::Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData)
 {
-	if (ViewType.IsEqual(NAME_None))
+	// Set path and filename
+	FString TsStr = FString::SanitizeFloat(Timestamp).Replace(TEXT("."), TEXT("-"));
+
+	// Iterate the images from the current timestamp
+	for (const auto& Img : ImagesData)
 	{
-		return FString("C"); // Color
-	}
-	else if (ViewType.IsEqual("SceneDepth"))
-	{
-		return FString("D"); // Depth
-	}
-	else if (ViewType.IsEqual("WorldNormal"))
-	{
-		return FString("N"); // Normal
-	}
-	else
-	{
-		// Unsupported buffer type
-		return FString("Unknown");
+		FString Filename = ISLVisImageWriterInterface::GetImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
+		FString ImgPath = DirPath + "/" + Filename;
+		FPaths::RemoveDuplicateSlashes(ImgPath);
+		// Save to file
+		FFileHelper::SaveArrayToFile(Img.Data, *ImgPath);
 	}
 }

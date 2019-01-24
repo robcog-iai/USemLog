@@ -43,14 +43,11 @@ struct FSLVisImageWriterParams
 */
 struct FSLVisImageMetadata
 {
-	// Timestamp
-	float Timestamp;
-
 	// View type
 	FName ViewType;
 
 	// Camera name
-	FString CameraLabel;
+	FString Label;
 
 	// Image resolution X
 	int32 ResX;
@@ -59,20 +56,33 @@ struct FSLVisImageMetadata
 	int32 ResY;
 
 	// Constructor
-	FSLVisImageMetadata(float InTimestamp,
-		const FName& InViewType,
+	FSLVisImageMetadata(const FName& InViewType,
 		const FString& InCameraLabel,
 		int32 InResX,
 		int32 InResY) :
-		Timestamp(InTimestamp),
 		ViewType(InViewType),
-		CameraLabel(InCameraLabel),
+		Label(InCameraLabel),
 		ResX(InResX),
 		ResY(InResY)
 	{};
 };
 
+/**
+* Images data with metadata
+*/
+struct FSLVisImageData
+{	
+	// Metadata
+	FSLVisImageMetadata Metadata;
 
+	// Data
+	TArray<uint8> Data;
+
+	// Ctor
+	FSLVisImageData(const FSLVisImageMetadata& InMetadata, const TArray<uint8>& InData) :
+		Metadata(InMetadata), Data(InData)
+	{};
+};
 
 /**
 * Dummy class needed to support Cast<ISLVisImageWriterInterface>(Object).
@@ -94,14 +104,69 @@ public:
 	// Init the writer
 	virtual void Init(const FSLVisImageWriterParams& InParams) = 0;
 
-	// Write the image
-	virtual void Write(const TArray<uint8>& InCompressedBitmap,
-		const FSLVisImageMetadata& Metadata) = 0;
+	// Called when done writing
+	virtual void Finish() = 0;
+
+	// Write the images at the timestamp
+	virtual void Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData) = 0;
 
 	// True if the writer is valid
 	bool IsInit() const { return bIsInit; }
+
+	// Get view type suffix
+	FORCEINLINE static FString GetViewTypeSuffix(const FName& ViewType);
+
+	// Get view type name
+	FORCEINLINE static FString GetViewTypeName(const FName& ViewType);
+
+	// Get image filename
+	FORCEINLINE static FString GetImageFilename(float Timestamp, const FString& Label, const FName& ViewType);
 
 protected:
 	// Flag to show if it is valid
 	bool bIsInit;
 };
+
+// Get view type suffix
+FString ISLVisImageWriterInterface::GetViewTypeSuffix(const FName& ViewType)
+{
+	if (ViewType.IsEqual(NAME_None))
+	{
+		return FString("C"); // Color
+	}
+	else if (ViewType.IsEqual("SceneDepth"))
+	{
+		return FString("D"); // Depth
+	}
+	else if (ViewType.IsEqual("WorldNormal"))
+	{
+		return FString("N"); // Normal
+	}
+	else
+	{
+		// Unsupported buffer type
+		return FString("Unknown");
+	}
+}
+
+// Get view type name
+FString ISLVisImageWriterInterface::GetViewTypeName(const FName& ViewType)
+{
+	if (ViewType.IsEqual(NAME_None))
+	{
+		return FString("Color"); // Color
+	}
+	else
+	{
+		return ViewType.ToString();
+	}
+}
+
+// Get image filename
+FString ISLVisImageWriterInterface::GetImageFilename(float Timestamp, const FString& Label, const FName& ViewType)
+{
+	return FString::Printf(TEXT("SLVis_%s_%s_%s.png"),
+		*Label,
+		*FString::SanitizeFloat(Timestamp).Replace(TEXT("."), TEXT("-")),
+		*ISLVisImageWriterInterface::GetViewTypeSuffix(ViewType));
+}

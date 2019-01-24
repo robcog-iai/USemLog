@@ -31,7 +31,7 @@ void USLVisionLogger::Init(float InMaxRecHz, float InMinRecHz)
 #if SL_WITH_SLVIS
 		// Check is recording game mode is set, otherwise cancel vision logging
 		if (ASLVisRecordGameMode* SLGameMode = Cast<ASLVisRecordGameMode>(GetWorld()->GetAuthGameMode()))
-		{
+		{ 
 			// Set movement replications to objects
 			FSLMappings::GetInstance()->SetReplicates(true);
 

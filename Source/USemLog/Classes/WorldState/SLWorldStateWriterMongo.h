@@ -32,18 +32,20 @@ public:
 	// Init
 	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
 
+	// Finish
+	virtual void Finish() override;
+
 	// Write the data
 	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
 		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 		float Timestamp) override;
-
-	// Create indexes from the logged data, usually called after logging
-	bool CreateIndexes();
-
 private:
 	// Connect to the database
 	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
+
+	// Create indexes from the logged data, usually called after logging
+	bool CreateIndexes();
 	
 #if SL_WITH_LIBMONGO
 	// Get non skeletal actors as bson array

@@ -18,7 +18,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	DemoUpdateRate = 0.1f;
+	DemoUpdateRate = 3.98f;
 	ActiveCameraViewIndex = 0;
 	ActiveViewTypeIndex = 0;
 	DemoTimestamp = 0.f;
@@ -31,8 +31,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	ViewTypes.Add("WorldNormal");
 
 	// Image size
-	ResX = 640;
-	ResY = 480;
+	ResX = 3840;
+	ResY = 2160;
 }
 
 // Called when the game starts or when spawned
@@ -70,16 +70,6 @@ void ASLVisLoggerSpectatorPC::SetupInputComponent()
  void ASLVisLoggerSpectatorPC::Tick(float DeltaTime)
  {
 	 Super::Tick(DeltaTime);
-
-	 if (bIsInit)
-	 {
-		 UE_LOG(LogTemp, Error, TEXT("%s::%d Demo: %f/%f; Imgs: %d/%d; World: Play=%f; Real=%f"),
-			 TEXT(__FUNCTION__), __LINE__,
-			 DemoTimestamp, NetDriver->DemoTotalTime,
-			 NumImagesSaved, NumImagesToSave,
-			 GetWorld()->GetTimeSeconds(),
-			 GetWorld()->GetRealTimeSeconds());
-	 }
  }
 
 // Init logger
@@ -92,18 +82,22 @@ void ASLVisLoggerSpectatorPC::Init()
 		ViewportClient = GetWorld()->GetGameViewport();
 		if (NetDriver && ViewportClient)
 		{
+			// Get episode id by removing suffix
+			FString EpisodeId = NetDriver->GetActiveReplayName();
+			EpisodeId.RemoveFromEnd("_RP");
+
 			// Create writer
 #if SLVIS_WITH_LIBMONGO
 			//Writer = NewObject<USLVisImageWriterMongo>(this);
 			//Writer->Init(FSLVisImageWriterParams(
-			//	TEXT("SemLog"), GetWorld()->DemoNetDriver->GetActiveReplayName(), "127.0.0.1", 27017));
+			//	TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
 			Writer = NewObject<USLVisImageWriterFile>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), GetWorld()->DemoNetDriver->GetActiveReplayName()));
+				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
 #else
 			Writer = NewObject<USLVisImageWriterFile>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), GetWorld()->DemoNetDriver->GetActiveReplayName()));
+				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
 #endif //SLVIS_WITH_LIBMONGO
 
 #if WITH_EDITOR
@@ -127,7 +121,7 @@ void ASLVisLoggerSpectatorPC::Init()
 
 				// Bind callback functions
 				NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::DemoGotoCB);
-				NetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::QuitEditor);
+				NetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::Finish);
 				ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLVisLoggerSpectatorPC::ScreenshotCB);
 				bIsInit = true;
 			}
@@ -157,14 +151,24 @@ void ASLVisLoggerSpectatorPC::Finish()
 {
 	if (!bIsFinished && (bIsStarted || bIsInit))
 	{
+		if (Writer)
+		{
+			Writer->Finish();
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Duration: %f/%f; Imgs: %d/%d;"),
+			TEXT(__FUNCTION__), __LINE__,
+			DemoTimestamp, NetDriver->DemoTotalTime,
+			NumImagesSaved, NumImagesToSave);
+
 		// Flag as finished
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
-
-		// Crashed when called from EndPlay
-		//// Try to quit editor
-		//ASLVisLoggerSpectatorPC::QuitEditor();
+	
+		// Crashes if called from EndPlay
+		// Try to quit editor
+		ASLVisLoggerSpectatorPC::QuitEditor();
 	}
 }
 
@@ -218,7 +222,12 @@ void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 
 // Called after a successful scrub
 void ASLVisLoggerSpectatorPC::DemoGotoCB()
-{	
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Duration: %f/%f; Imgs: %d/%d;"),
+		TEXT(__FUNCTION__), __LINE__,
+		DemoTimestamp, NetDriver->DemoTotalTime,
+		NumImagesSaved, NumImagesToSave);
+
 	// Pause the replay
 	ASLVisLoggerSpectatorPC::DemoPause();
 
@@ -243,12 +252,9 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	TArray<uint8> CompressedBitmap;
 	FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
 
-	// Write data
-	Writer->Write(CompressedBitmap,
-		FSLVisImageMetadata(DemoTimestamp,
-			ViewTypes[ActiveViewTypeIndex],
-			CameraViews[ActiveCameraViewIndex]->GetCameraLabel(),
-			ResX, ResY));
+	// Add image to the array in this timeslice
+	ImagesInTimeslice.Emplace(FSLVisImageData(FSLVisImageMetadata(ViewTypes[ActiveViewTypeIndex],
+				CameraViews[ActiveCameraViewIndex]->GetCameraLabel(),ResX, ResY), CompressedBitmap));
 
 	// Update the number of saved images
 	NumImagesSaved++;
@@ -282,8 +288,17 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 			}
 			else
 			{
-				// Go back to the first camera target and advance in the demo
+				// We reached the last camera + view in this time slice
+				// Write data
+				Writer->Write(DemoTimestamp, ImagesInTimeslice);
+
+				// Clear data array
+				ImagesInTimeslice.Empty();
+
+				// Advance demo time
 				DemoTimestamp += DemoUpdateRate;
+
+				// Go back to first view
 				if (ASLVisLoggerSpectatorPC::SetFirstViewTarget())
 				{
 					// Unpause demo in order to scrub
@@ -307,6 +322,7 @@ void ASLVisLoggerSpectatorPC::QuitEditor()
 	if (GEngine)
 	{
 		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
+
 	}
 }
 

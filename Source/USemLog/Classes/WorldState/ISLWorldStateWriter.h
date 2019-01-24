@@ -56,6 +56,9 @@ public:
 	// Init the writer
 	virtual void Init(const FSLWorldStateWriterParams& InParams) = 0;
 	
+	// Finish
+	virtual void Finish() = 0;
+
 	// Write data (it also removes invalid items from the array - e.g. destroyed actors)
 	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
