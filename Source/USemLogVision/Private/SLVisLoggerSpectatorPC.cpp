@@ -9,6 +9,7 @@
 #include "HighResScreenshot.h"
 #include "SLVisCameraView.h"
 #include "SLVisImageWriterMongo.h"
+#include "SLVisImageWriterMongoC.h"
 #include "SLVisImageWriterFile.h"
 
 // Ctor
@@ -28,7 +29,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	// Add buffer types to visualize
 	ViewTypes.Add(NAME_None); // Default will be color
 	ViewTypes.Add("SceneDepth");
-	//ViewTypes.Add("WorldNormal");
+	ViewTypes.Add("WorldNormal");
 
 	// Image size
 	ResX = 384;
@@ -88,9 +89,14 @@ void ASLVisLoggerSpectatorPC::Init()
 
 			// Create writer
 #if SLVIS_WITH_LIBMONGO
-			Writer = NewObject<USLVisImageWriterMongo>(this);
+			Writer = NewObject<USLVisImageWriterMongoC>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
+				TEXT("SemLog3"), EpisodeId, "127.0.0.1", 27017));
+
+			//Writer = NewObject<USLVisImageWriterMongo>(this);
+			//Writer->Init(FSLVisImageWriterParams(
+			//	TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
+
 			//Writer = NewObject<USLVisImageWriterFile>(this);
 			//Writer->Init(FSLVisImageWriterParams(
 			//	FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
@@ -448,14 +454,15 @@ bool ASLVisLoggerSpectatorPC::ChangeViewType(const FName& ViewType)
 // Skip the current timestamp (return false if not a mongo writer)
 bool ASLVisLoggerSpectatorPC::ShouldSkipThisTimestamp(float Timestamp)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 	if (Writer)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("\t%s::%d"), TEXT(__FUNCTION__), __LINE__);
 		if (USLVisImageWriterMongo* AsMongoWriter = Cast<USLVisImageWriterMongo>(Writer.GetObject()))
 		{
-			UE_LOG(LogTemp, Error, TEXT("\t\t%s::%d"), TEXT(__FUNCTION__), __LINE__);
 			return AsMongoWriter->ShouldSkipThisTimestamp(Timestamp);
+		}
+		else if (USLVisImageWriterMongoC* AsMongoCWriter = Cast<USLVisImageWriterMongoC>(Writer.GetObject()))
+		{
+			return AsMongoCWriter->ShouldSkipThisTimestamp(Timestamp);
 		}
 	}
 	return false;

@@ -65,6 +65,7 @@ public class USemLogVision : ModuleRules
 			// Needed to ignore various warnings from libmongo
 			bEnableUndefinedIdentifierWarnings = false;
 			bEnableExceptions = true;
+			//bUseRTTI = true;
 		}
 	}
 }
