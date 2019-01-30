@@ -18,7 +18,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	DemoUpdateRate = 5.98f;
+	DemoUpdateRate = 0.48f;
 	ActiveCameraViewIndex = 0;
 	ActiveViewTypeIndex = 0;
 	DemoTimestamp = 0.f;
@@ -31,8 +31,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	//ViewTypes.Add("WorldNormal");
 
 	// Image size
-	ResX = 3840;
-	ResY = 2160;
+	ResX = 384;
+	ResY = 216;
 }
 
 // Called when the game starts or when spawned
@@ -88,12 +88,12 @@ void ASLVisLoggerSpectatorPC::Init()
 
 			// Create writer
 #if SLVIS_WITH_LIBMONGO
-			//Writer = NewObject<USLVisImageWriterMongo>(this);
-			//Writer->Init(FSLVisImageWriterParams(
-			//	TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
-			Writer = NewObject<USLVisImageWriterFile>(this);
+			Writer = NewObject<USLVisImageWriterMongo>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
+				TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
+			//Writer = NewObject<USLVisImageWriterFile>(this);
+			//Writer->Init(FSLVisImageWriterParams(
+			//	FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
 #else
 			Writer = NewObject<USLVisImageWriterFile>(this);
 			Writer->Init(FSLVisImageWriterParams(
@@ -141,7 +141,6 @@ void ASLVisLoggerSpectatorPC::Start()
 		{
 			// Go to the beginning of the demo and start requesting screenshots
 			NetDriver->GotoTimeInSeconds(DemoTimestamp);
-			UE_LOG(LogTemp, Error, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 		}
 
 		// Flag as started
@@ -296,13 +295,15 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 
 				// Update the number of saved images
 				NumImagesSaved += ImagesAtTimestamp.Num();
-				UE_LOG(LogTemp, Error, TEXT("%s::%d ++ "), TEXT(__FUNCTION__), __LINE__);
 
 				// Clear previous data array
 				ImagesAtTimestamp.Empty();
 
-				// Advance demo time
-				DemoTimestamp += DemoUpdateRate;
+				// Check if images should be rendered for the given timestamp (false if not a mongo writer)
+				do 
+				{
+					DemoTimestamp += DemoUpdateRate;
+				} while (ASLVisLoggerSpectatorPC::ShouldSkipThisTimestamp(DemoTimestamp));
 
 				// Go back to first view
 				if (ASLVisLoggerSpectatorPC::SetFirstViewTarget())
@@ -439,6 +440,22 @@ bool ASLVisLoggerSpectatorPC::ChangeViewType(const FName& ViewType)
 			ViewportClient->GetEngineShowFlags()->SetTonemapper(ViewType == NAME_None ? false : true);
 			ICVarVisTarget->Set(*ViewType.ToString());
 			return true;
+		}
+	}
+	return false;
+}
+
+// Skip the current timestamp (return false if not a mongo writer)
+bool ASLVisLoggerSpectatorPC::ShouldSkipThisTimestamp(float Timestamp)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+	if (Writer)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("\t%s::%d"), TEXT(__FUNCTION__), __LINE__);
+		if (USLVisImageWriterMongo* AsMongoWriter = Cast<USLVisImageWriterMongo>(Writer.GetObject()))
+		{
+			UE_LOG(LogTemp, Error, TEXT("\t\t%s::%d"), TEXT(__FUNCTION__), __LINE__);
+			return AsMongoWriter->ShouldSkipThisTimestamp(Timestamp);
 		}
 	}
 	return false;

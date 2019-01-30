@@ -60,8 +60,8 @@ private:
 	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
 
-	// Add the pose information of the entity
-	void GetPoseAsBsonEntry(const FVector& InLoc, const FQuat& InQuat, 
+	// Add the pose information of the document
+	void AddPoseToDocument(const FVector& InLoc, const FQuat& InQuat, 
 		bsoncxx::builder::basic::document& out_doc);
 
 private:

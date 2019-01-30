@@ -204,7 +204,7 @@ public:
 		for (const auto& EntityItr : EntityPairs)
 		{
 			DTDStr += INDENT_STEP + TEXT("<!ENTITY ") + EntityItr.Key +
-				TEXT("\"") + EntityItr.Value + TEXT("\">\n");
+				TEXT(" \"") + EntityItr.Value + TEXT("\">\n");
 		}
 		DTDStr += TEXT("]>\n\n");
 		return DTDStr;

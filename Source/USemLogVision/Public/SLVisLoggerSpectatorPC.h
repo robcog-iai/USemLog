@@ -9,6 +9,7 @@
 #include "SLVisImageWriterInterface.h"
 #include "SLVisLoggerSpectatorPC.generated.h"
 
+
 /**
  * 
  */
@@ -89,6 +90,9 @@ private:
 
 	// Setup the given view type
 	bool ChangeViewType(const FName& ViewType);
+
+	// Skip the current timestamp (return false if not a mongo writer)
+	bool ShouldSkipThisTimestamp(float Timestamp);
 
 private:
 	// Set when logger is initialized

@@ -128,6 +128,9 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ASLManager::Init()
 {
 #if SL_WITH_SLVIS
+	// TODO see if the manager can be set not to replicate SetReplicateMovement and SetReplicates did not work
+	//SetReplicateMovement(false);
+	//SetReplicates(false);
 	// Init can be called even if it is a demo replay, skip if it is the case
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{

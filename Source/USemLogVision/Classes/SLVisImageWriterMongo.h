@@ -37,6 +37,9 @@ public:
 	// Write the images at the timestamp
 	virtual void Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData) override;
 
+	// Skip the current timestamp (images already inserted)
+	bool ShouldSkipThisTimestamp(float Timestamp);
+
 private:
 	// Connect to the database
 	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
@@ -44,7 +47,10 @@ private:
 	// Re-create the indexes
 	bool CreateIndexes();
 
-private:	
+private:
+	// Generate a new entry point for the images
+	bool bCreateNewDocument;
+
 #if SLVIS_WITH_LIBMONGO
 	// Must be created before using the driver and must remain alive for as long as the driver is in use
 	//mongocxx::instance mongo_inst;
@@ -57,5 +63,11 @@ private:
 
 	// Database collection
 	mongocxx::collection mongo_coll;
+
+	// Gridfs bucket to upload the image data
+	mongocxx::gridfs::bucket gridfs_bucket;
+
+	// Cached document _id for the next insertion
+	bsoncxx::types::b_oid insertion_doc_id;
 #endif //SLVIS_WITH_LIBMONGO
 };

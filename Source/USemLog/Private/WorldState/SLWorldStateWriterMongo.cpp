@@ -209,7 +209,7 @@ void FSLWorldStateWriterMongo::AddNonSkeletalActors(TArray<TSLItemState<AActor>>
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+				FSLWorldStateWriterMongo::AddPoseToDocument(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Add document to array
 				out_bson_arr.append(bson_entity_doc);
@@ -252,7 +252,7 @@ void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletal
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+				FSLWorldStateWriterMongo::AddPoseToDocument(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Array of bones
 				bsoncxx::builder::basic::array bson_bone_arr{};
@@ -275,7 +275,7 @@ void FSLWorldStateWriterMongo::AddSkeletalActors(TArray<TSLItemState<ASLSkeletal
 							bson_bone_doc.append(kvp("class", TCHAR_TO_UTF8(*Pair.Value)));
 
 							// Add the pose information
-							FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_bone_doc);
+							FSLWorldStateWriterMongo::AddPoseToDocument(CurrLoc, CurrQuat, bson_bone_doc);
 
 							// Add bone to  array
 							bson_bone_arr.append(bson_bone_doc);
@@ -326,7 +326,7 @@ void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USce
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongo::GetPoseAsBsonEntry(CurrLoc, CurrQuat, bson_entity_doc);
+				FSLWorldStateWriterMongo::AddPoseToDocument(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Add document to array
 				out_bson_arr.append(bson_entity_doc);
@@ -340,8 +340,8 @@ void FSLWorldStateWriterMongo::AddNonSkeletalComponents(TArray<TSLItemState<USce
 	}
 }
 
-// Get key value pairs as bson entry
-void FSLWorldStateWriterMongo::GetPoseAsBsonEntry(const FVector& InLoc, const FQuat& InQuat,
+// Add pose data to document
+void FSLWorldStateWriterMongo::AddPoseToDocument(const FVector& InLoc, const FQuat& InQuat,
 	bsoncxx::builder::basic::document& out_doc)
 {
 	// Switch to right handed ROS transformation

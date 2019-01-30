@@ -46,7 +46,7 @@ public class USemLog : ModuleRules
 				"UIds",
 				"UConversions",
 				"UMCGrasp",			// SL_WITH_MC_GRASP
-				"libmongo"			// SL_WITH_LIBMONGO
+				"libmongo",			// SL_WITH_LIBMONGO
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
