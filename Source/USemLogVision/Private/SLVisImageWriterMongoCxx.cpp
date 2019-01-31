@@ -1,7 +1,7 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLVisImageWriterMongo.h"
+#include "SLVisImageWriterMongoCxx.h"
 #if SLVIS_WITH_LIBMONGO
 THIRD_PARTY_INCLUDES_START
 #include <mongocxx/instance.hpp>
@@ -21,36 +21,36 @@ using bsoncxx::builder::basic::make_document;
 #define SLVIS_INSERT_TIME_TRESHOLD 4.5f
 
 // Ctor
-USLVisImageWriterMongo::USLVisImageWriterMongo()
+USLVisImageWriterMongoCxx::USLVisImageWriterMongoCxx()
 {
 	mongocxx::instance::current();
 	bIsInit = false;
 }
 
 // Dtor
-USLVisImageWriterMongo::~USLVisImageWriterMongo()
+USLVisImageWriterMongoCxx::~USLVisImageWriterMongoCxx()
 {
 }
 
 // Init
-void USLVisImageWriterMongo::Init(const FSLVisImageWriterParams& InParams)
+void USLVisImageWriterMongoCxx::Init(const FSLVisImageWriterParams& InParams)
 {
-	bIsInit = USLVisImageWriterMongo::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
+	bIsInit = USLVisImageWriterMongoCxx::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
 }
 
 // Finish
-void USLVisImageWriterMongo::Finish()
+void USLVisImageWriterMongoCxx::Finish()
 {
 	if (bIsInit)
 	{
 		// Re-create the indexes
-		USLVisImageWriterMongo::CreateIndexes();
+		USLVisImageWriterMongoCxx::CreateIndexes();
 		bIsInit = false;
 	}
 }
 
 // Write the images at the timestamp
-void USLVisImageWriterMongo::Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData)
+void USLVisImageWriterMongoCxx::Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData)
 {
 #if SLVIS_WITH_LIBMONGO
 	// Create a bson document and array to store the images
@@ -136,7 +136,7 @@ void USLVisImageWriterMongo::Write(float Timestamp, const TArray<FSLVisImageData
 }
 
 // Skip the current timestamp (images already inserted)
-bool USLVisImageWriterMongo::ShouldSkipThisTimestamp(float Timestamp)
+bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 {
 	// Check if a new entry should be created only for the images abs(world_state.ts - ts) > threshold
 	// if true, cache the result and use it in write
@@ -236,7 +236,7 @@ bool USLVisImageWriterMongo::ShouldSkipThisTimestamp(float Timestamp)
 }
 
 // Connect to the database (returns true if there is a server running and we are connected)
-bool USLVisImageWriterMongo::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
+bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
 		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
@@ -312,7 +312,7 @@ bool USLVisImageWriterMongo::Connect(const FString& DBName, const FString& Episo
 }
 
 // Re-create indexes
-bool USLVisImageWriterMongo::CreateIndexes()
+bool USLVisImageWriterMongoCxx::CreateIndexes()
 {
 #if SLVIS_WITH_LIBMONGO
 	if (!bIsInit)

@@ -16,7 +16,8 @@ enum class ESLWorldStateWriterType : uint8
 {
 	Json					UMETA(DisplayName = "Json"),
 	Bson					UMETA(DisplayName = "Bson"),
-	Mongo					UMETA(DisplayName = "Mongo")
+	MongoC					UMETA(DisplayName = "MongoC"),
+	MongoCxx					UMETA(DisplayName = "MongoCxx")
 };
 
 /**

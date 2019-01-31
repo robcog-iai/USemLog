@@ -59,15 +59,18 @@ private:
 
 #if SLVIS_WITH_LIBMONGO
 	// Server uri
-	mongoc_uri_t *uri;
+	mongoc_uri_t* uri;
 
 	// MongoC connection client
-	mongoc_client_t *client;
+	mongoc_client_t* client;
 
 	// Database to access
-	mongoc_database_t *database;
+	mongoc_database_t* database;
 
 	// Database collection
-	mongoc_collection_t *collection;
+	mongoc_collection_t* collection;
+
+	// _id of the object (world state) where to insert the images
+	const bson_oid_t* ws_id = nullptr;
 #endif //SLVIS_WITH_LIBMONGO
 };

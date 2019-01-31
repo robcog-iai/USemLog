@@ -279,15 +279,15 @@ bool ASLManager::CanEditChange(const UProperty* InProperty) const
 	// HostIP and HostPort can only be edited if the world state writer is of type Mongo
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerIp))
 	{
-		return WriterType == ESLWorldStateWriterType::Mongo;
+		return (WriterType == ESLWorldStateWriterType::MongoCxx) || (WriterType == ESLWorldStateWriterType::MongoC);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerPort))
 	{
-		return WriterType == ESLWorldStateWriterType::Mongo;
+		return (WriterType == ESLWorldStateWriterType::MongoCxx) || (WriterType == ESLWorldStateWriterType::MongoC);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bIncludeAllData))
 	{
-		return WriterType == ESLWorldStateWriterType::Mongo;
+		return (WriterType == ESLWorldStateWriterType::MongoCxx) || (WriterType == ESLWorldStateWriterType::MongoC);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogVisionData))
 	{

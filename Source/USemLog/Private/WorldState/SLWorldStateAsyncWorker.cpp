@@ -5,7 +5,8 @@
 #include "SLMappings.h"
 #include "WorldState/SLWorldStateWriterJson.h"
 #include "WorldState/SLWorldStateWriterBson.h"
-#include "WorldState/SLWorldStateWriterMongo.h"
+#include "WorldState/SLWorldStateWriterMongoC.h"
+#include "WorldState/SLWorldStateWriterMongoCxx.h"
 #include "Tags.h"
 
 // Constructor
@@ -52,8 +53,11 @@ bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
 	case ESLWorldStateWriterType::Bson:
 		Writer = MakeShareable(new FSLWorldStateWriterBson(InParams));
 		break;
-	case ESLWorldStateWriterType::Mongo:
-		Writer = MakeShareable(new FSLWorldStateWriterMongo(InParams));
+	case ESLWorldStateWriterType::MongoC:
+		Writer = MakeShareable(new FSLWorldStateWriterMongoC(InParams));
+		break;
+	case ESLWorldStateWriterType::MongoCxx:
+		Writer = MakeShareable(new FSLWorldStateWriterMongoCxx(InParams));
 		break;
 	default:
 		Writer = MakeShareable(new FSLWorldStateWriterJson(InParams));
@@ -154,10 +158,10 @@ void FSLWorldStateAsyncWorker::Finish(bool bForced)
 	if (!bForced)
 	{
 		// Check if mongo writer
-		if (Writer.IsValid() && WriterType == ESLWorldStateWriterType::Mongo)
+		if (Writer.IsValid() && WriterType == ESLWorldStateWriterType::MongoCxx)
 		{
 			// We cannot cast dynamically if it is not an UObject
-			TSharedPtr<FSLWorldStateWriterMongo> MongoWriter = StaticCastSharedPtr<FSLWorldStateWriterMongo>(Writer);
+			TSharedPtr<FSLWorldStateWriterMongoCxx> MongoWriter = StaticCastSharedPtr<FSLWorldStateWriterMongoCxx>(Writer);
 			// Finish writer (create database indexes for example)
 			MongoWriter->Finish();
 		}

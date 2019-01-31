@@ -17,17 +17,17 @@ class FSLWorldStateAsyncWorker;
 /**
  * Raw data logger to mongo database
  */
-class FSLWorldStateWriterMongo : public ISLWorldStateWriter
+class FSLWorldStateWriterMongoCxx : public ISLWorldStateWriter
 {
 public:
 	// Default constr
-	FSLWorldStateWriterMongo();
+	FSLWorldStateWriterMongoCxx();
 
 	// Init constr
-	FSLWorldStateWriterMongo(const FSLWorldStateWriterParams& InParams);
+	FSLWorldStateWriterMongoCxx(const FSLWorldStateWriterParams& InParams);
 
 	// Destr
-	virtual ~FSLWorldStateWriterMongo();
+	virtual ~FSLWorldStateWriterMongoCxx();
 
 	// Init
 	virtual void Init(const FSLWorldStateWriterParams& InParams) override;

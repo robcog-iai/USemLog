@@ -50,46 +50,58 @@ void USLVisImageWriterMongoC::Write(float Timestamp, const TArray<FSLVisImageDat
 		return;
 	}
 
+	if (ws_id)
+	{
+		char oidstr[25];
+		bson_oid_to_string(ws_id, oidstr);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d oid=%s"),
+			TEXT(__FUNCTION__), __LINE__, *FString(oidstr));
+	}
+	else 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d ws id invalid"), TEXT(__FUNCTION__), __LINE__);
+	}
+
+
 #if SLVIS_WITH_LIBMONGO
-	bson_error_t error;
-	bson_t* bson_doc = bson_new();
-	bson_t arr_child;
-	bson_t arr_obj_child;
-	bson_t res_child;
+	//bson_error_t error;
+	//bson_t* bson_doc = bson_new();
+	//bson_t arr_child;
+	//bson_t arr_obj_child;
+	//bson_t res_child;
 
-	// Add timestamp
-	BSON_APPEND_DOUBLE(bson_doc, "timestamp", Timestamp);
+	//// Add timestamp
+	//BSON_APPEND_DOUBLE(bson_doc, "timestamp", Timestamp);
 
-	// Add image sub-documents to array
-	BSON_APPEND_ARRAY_BEGIN(bson_doc, "images", &arr_child);
-	for (const auto& Img : ImagesData)
-	{
-		// Create image sub-doc
-		BSON_APPEND_DOCUMENT_BEGIN(&arr_child, "images", &arr_obj_child);
-		BSON_APPEND_UTF8(&arr_obj_child, "label", TCHAR_TO_UTF8(*Img.Metadata.Label));
-		BSON_APPEND_UTF8(&arr_obj_child, "type", TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(Img.Metadata.ViewType)));
+	//// Add image sub-documents to array
+	//BSON_APPEND_ARRAY_BEGIN(bson_doc, "images", &arr_child);
+	//for (const auto& Img : ImagesData)
+	//{
+	//	// Create image sub-doc
+	//	BSON_APPEND_DOCUMENT_BEGIN(&arr_child, "images", &arr_obj_child);
+	//	BSON_APPEND_UTF8(&arr_obj_child, "label", TCHAR_TO_UTF8(*Img.Metadata.Label));
+	//	BSON_APPEND_UTF8(&arr_obj_child, "type", TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(Img.Metadata.ViewType)));
 
-			// Add img resolution sub-sub-doc
-			BSON_APPEND_DOCUMENT_BEGIN(&arr_obj_child, "res", &res_child);
-			BSON_APPEND_DOUBLE(&res_child, "x", Img.Metadata.ResX);
-			BSON_APPEND_DOUBLE(&res_child, "y", Img.Metadata.ResY);
-			bson_append_document_end(&arr_obj_child, &res_child);
+	//		// Add img resolution sub-sub-doc
+	//		BSON_APPEND_DOCUMENT_BEGIN(&arr_obj_child, "res", &res_child);
+	//		BSON_APPEND_DOUBLE(&res_child, "x", Img.Metadata.ResX);
+	//		BSON_APPEND_DOUBLE(&res_child, "y", Img.Metadata.ResY);
+	//		bson_append_document_end(&arr_obj_child, &res_child);
 
-		bson_append_document_end(&arr_child, &arr_obj_child);
-	}
-	bson_append_array_end(bson_doc, &arr_child);
+	//	bson_append_document_end(&arr_child, &arr_obj_child);
+	//}
+	//bson_append_array_end(bson_doc, &arr_child);
 
-	// Insert img data
-	if (!mongoc_collection_insert_one(collection, bson_doc, NULL, NULL, &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d mongo insert err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
-	}
+	//// Insert img data
+	//if (!mongoc_collection_insert_one(collection, bson_doc, NULL, NULL, &error))
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d mongo insert err.: %s"),
+	//		TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+	//}
 
 
-	// Clean up allocated bson documents.
-	bson_destroy(bson_doc);
-
+	//// Clean up allocated bson documents.
+	//bson_destroy(bson_doc);
 #endif //SLVIS_WITH_LIBMONGO
 }
 
@@ -105,7 +117,93 @@ bool USLVisImageWriterMongoC::ShouldSkipThisTimestamp(float Timestamp)
 		 // if false, return false (we need to render the images) 
 			//  cache object id, this is where the images will be inserted	
 #if SLVIS_WITH_LIBMONGO
+	bson_t* filter_before;
+	bson_t* opts_before;
+	bson_t* filter_after;
+	bson_t* opts_after;
+	mongoc_cursor_t* cursor;
+	bson_iter_t iter;
+	const bson_t* world_state_doc;
 
+	//double DiffUntilBefore;
+	//double DiffUntilAfter;
+	//bool bIsWorldStateBeforeValid;
+	//bool bIsWorldStateAfterValid;
+	
+	// Query for the closest document before the given timestamp
+	filter_before = BCON_NEW("timestamp", "{", "$lte", BCON_DOUBLE(Timestamp), "}");
+	opts_before = BCON_NEW(
+		"limit", BCON_INT64(1),
+		"sort", "{", "timestamp", BCON_INT32(-1), "}"/*,
+		"projection", "{", "timestamp", BCON_BOOL(true), "}"*/
+		);
+
+	// Check the result of the query
+	cursor = mongoc_collection_find_with_opts(collection, filter_before, opts_before, NULL);
+	if(mongoc_cursor_next(cursor, &world_state_doc)) 
+	{
+		// Make sure the world state does not have any previous images stored
+		if (!bson_iter_init_find(&iter, world_state_doc, "images"))
+		{
+			if (bson_iter_init_find(&iter, world_state_doc, "timestamp") && BSON_ITER_HOLDS_DOUBLE(&iter))
+			{
+				double ts = bson_iter_double(&iter);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Ts=%f"),
+					TEXT(__FUNCTION__), __LINE__, ts);
+			}
+
+			if (bson_iter_init_find(&iter, world_state_doc, "_id") && BSON_ITER_HOLDS_OID(&iter))
+			{
+				char oidstr[25];
+				ws_id = bson_iter_oid(&iter);
+				bson_oid_to_string(ws_id, oidstr);
+
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d oid=%s"),
+					TEXT(__FUNCTION__), __LINE__, *FString(oidstr));
+			}
+		}
+	}
+
+	// Query for the closest document after the given timestamp
+	filter_after = BCON_NEW("timestamp", "{", "$gt", BCON_DOUBLE(Timestamp), "}");
+	opts_after = BCON_NEW(
+		"limit", BCON_INT64(1),
+		"sort", "{", "timestamp", BCON_INT32(1), "}"/*,
+		"projection", "{", "timestamp", BCON_BOOL(true), "}"*/
+	);
+
+	// Check the result of the query
+	cursor = mongoc_collection_find_with_opts(collection, filter_after, opts_after, NULL);
+	if (mongoc_cursor_next(cursor, &world_state_doc))
+	{
+		// Make sure the world state does not have any previous images stored
+		if (!bson_iter_init_find(&iter, world_state_doc, "images"))
+		{
+			if (bson_iter_init_find(&iter, world_state_doc, "timestamp") && BSON_ITER_HOLDS_DOUBLE(&iter))
+			{
+				double ts = bson_iter_double(&iter);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Ts=%f"),
+					TEXT(__FUNCTION__), __LINE__, ts);
+			}
+
+			if (bson_iter_init_find(&iter, world_state_doc, "_id") && BSON_ITER_HOLDS_OID(&iter))
+			{
+				ws_id = bson_iter_oid(&iter);
+				char oidstr[25];
+				bson_oid_to_string(ws_id, oidstr);
+
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d oid=%s"),
+					TEXT(__FUNCTION__), __LINE__, *FString(oidstr));
+			}
+		}
+	}
+
+	mongoc_cursor_destroy(cursor);
+	bson_destroy(filter_before);
+	bson_destroy(opts_before);
+	bson_destroy(filter_after);
+	bson_destroy(opts_after);
+	
 #endif //SLVIS_WITH_LIBMONGO
 	return false;
 }

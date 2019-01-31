@@ -11,22 +11,22 @@ THIRD_PARTY_INCLUDES_START
 #include "mongocxx/client.hpp"
 THIRD_PARTY_INCLUDES_END
 #endif //SLVIS_WITH_LIBMONGO
-#include "SLVisImageWriterMongo.generated.h"
+#include "SLVisImageWriterMongoCxx.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class USLVisImageWriterMongo : public UObject, public ISLVisImageWriterInterface
+class USLVisImageWriterMongoCxx : public UObject, public ISLVisImageWriterInterface
 {
 	GENERATED_BODY()
 	
 public:
 	// Ctor
-	USLVisImageWriterMongo();
+	USLVisImageWriterMongoCxx();
 
 	// Dtor
-	~USLVisImageWriterMongo();
+	~USLVisImageWriterMongoCxx();
 
 	// Init
 	virtual void Init(const FSLVisImageWriterParams& InParams) override;

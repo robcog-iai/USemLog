@@ -8,7 +8,7 @@
 #include "Async.h"
 #include "HighResScreenshot.h"
 #include "SLVisCameraView.h"
-#include "SLVisImageWriterMongo.h"
+#include "SLVisImageWriterMongoCxx.h"
 #include "SLVisImageWriterMongoC.h"
 #include "SLVisImageWriterFile.h"
 
@@ -91,9 +91,9 @@ void ASLVisLoggerSpectatorPC::Init()
 #if SLVIS_WITH_LIBMONGO
 			Writer = NewObject<USLVisImageWriterMongoC>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				TEXT("SemLog3"), EpisodeId, "127.0.0.1", 27017));
+				TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
 
-			//Writer = NewObject<USLVisImageWriterMongo>(this);
+			//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
 			//Writer->Init(FSLVisImageWriterParams(
 			//	TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
 
@@ -456,7 +456,7 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisTimestamp(float Timestamp)
 {
 	if (Writer)
 	{
-		if (USLVisImageWriterMongo* AsMongoWriter = Cast<USLVisImageWriterMongo>(Writer.GetObject()))
+		if (USLVisImageWriterMongoCxx* AsMongoWriter = Cast<USLVisImageWriterMongoCxx>(Writer.GetObject()))
 		{
 			return AsMongoWriter->ShouldSkipThisTimestamp(Timestamp);
 		}
