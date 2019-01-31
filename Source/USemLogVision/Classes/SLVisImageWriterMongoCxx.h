@@ -14,7 +14,7 @@ THIRD_PARTY_INCLUDES_END
 #include "SLVisImageWriterMongoCxx.generated.h"
 
 /**
- * 
+ *  * Writes image data to mongodb using the C++ driver
  */
 UCLASS()
 class USLVisImageWriterMongoCxx : public UObject, public ISLVisImageWriterInterface

@@ -19,8 +19,56 @@ THIRD_PARTY_INCLUDES_END
 #endif //SLVIS_WITH_LIBMONGO
 #include "SLVisImageWriterMongoC.generated.h"
 
+
 /**
- *
+* Parameters for creating an image data writer
+* data may be stale
+*/
+struct FSLVisWorldStateEntryParams
+{
+#if SLVIS_WITH_LIBMONGO
+	// If true, we know for sure there is no stale data
+	bool bAllDataIsValid;
+
+	// Entry timestamp
+	float Timestamp;
+
+	// Distance from query ts to entry ts
+	float TimeDistance;
+
+	// Contains images
+	bool bContainsImageData;
+
+	// _id of the entry as string
+	char oid_str[25];
+
+	// Default constructor
+	FSLVisWorldStateEntryParams()
+	{
+		bAllDataIsValid = false;
+		Timestamp = -1.f; // Negative represents stale data
+		TimeDistance = -1.f;
+		bContainsImageData = false;
+	};
+
+	// Return result as string
+	FString ToString() const 
+	{
+		//char oidstr[25];
+		//bson_oid_to_string(oid, oidstr);
+		return FString::Printf(TEXT("bAllDataIsValid:[%s] Timestamp:[%f] TimeDistance:[%f] bContainsImageData:[%s] oid[%s]"),
+			bAllDataIsValid ? TEXT("true") : TEXT("false"),
+			Timestamp,
+			TimeDistance,
+			bContainsImageData ? TEXT("true") : TEXT("false"),
+			*FString(oid_str)
+		);
+	}
+#endif //SLVIS_WITH_LIBMONGO
+};
+
+/**
+ * Writes image data to mongodb using the C driver
  */
 	UCLASS()
 	class USLVisImageWriterMongoC : public UObject, public ISLVisImageWriterInterface
@@ -50,12 +98,18 @@ private:
 	// Connect to the database
 	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
 
-	// Re-create the indexes
+	// Get parameters about the closest entry to the given timestamp
+	void GetWorldStateParamsAt(float InTimestamp, bool bSearchBeforeTimestamp, FSLVisWorldStateEntryParams& OutParams);
+
+	// Re-create the indexes (there could be new entries)
 	bool CreateIndexes();
 
 private:
 	// Generate a new entry point for the images
-	bool bCreateNewDocument;
+	bool bCreateNewEntry;
+
+	// Min time offset for a new db entry
+	float TimeRange;
 
 #if SLVIS_WITH_LIBMONGO
 	// Server uri
@@ -71,6 +125,6 @@ private:
 	mongoc_collection_t* collection;
 
 	// _id of the object (world state) where to insert the images
-	const bson_oid_t* ws_id = nullptr;
+	char* ws_oid_str;
 #endif //SLVIS_WITH_LIBMONGO
 };

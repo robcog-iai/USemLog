@@ -19,7 +19,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	DemoUpdateRate = 0.48f;
+	DemoUpdateRate = 0.18f;
+	NewEntryTimeRange = 0.12f; 
 	ActiveCameraViewIndex = 0;
 	ActiveViewTypeIndex = 0;
 	DemoTimestamp = 0.f;
@@ -32,8 +33,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	ViewTypes.Add("WorldNormal");
 
 	// Image size
-	ResX = 384;
-	ResY = 216;
+	ResX = 12;
+	ResY = 8;
 }
 
 // Called when the game starts or when spawned
@@ -78,6 +79,9 @@ void ASLVisLoggerSpectatorPC::Init()
 {
 	if (!bIsInit)
 	{
+		// Make sure the time offset is not larger than the replay update rate
+		FMath::Clamp(NewEntryTimeRange, 0.f, DemoUpdateRate);
+
 		// Continue only if driver and viewport is available
 		NetDriver = GetWorld()->DemoNetDriver;
 		ViewportClient = GetWorld()->GetGameViewport();
@@ -91,7 +95,7 @@ void ASLVisLoggerSpectatorPC::Init()
 #if SLVIS_WITH_LIBMONGO
 			Writer = NewObject<USLVisImageWriterMongoC>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
+				TEXT("SemLog"), EpisodeId, NewEntryTimeRange, "127.0.0.1", 27017));
 
 			//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
 			//Writer->Init(FSLVisImageWriterParams(

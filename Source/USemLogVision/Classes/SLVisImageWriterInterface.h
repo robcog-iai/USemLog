@@ -25,14 +25,19 @@ struct FSLVisImageWriterParams
 	// Server Port (optional)
 	uint16 ServerPort;
 
+	// Minimum time offset for a new entry
+	float NewEntryTimeRange;
+
 	// Constructor
 	FSLVisImageWriterParams(
 		const FString& InLocation,
 		const FString& InEpisodeId,
+		float InNewEntryTimeRange = 0.f,
 		const FString& InServerIp = "",
 		uint16 InServerPort = 0) :
 		Location(InLocation),
 		EpisodeId(InEpisodeId),
+		NewEntryTimeRange(InNewEntryTimeRange),
 		ServerIp(InServerIp),
 		ServerPort(InServerPort)
 	{};

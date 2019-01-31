@@ -18,7 +18,7 @@ using bsoncxx::builder::basic::make_document;
 
 #include <mongocxx/instance.hpp>
 
-#define SLVIS_INSERT_TIME_TRESHOLD 4.5f
+#define SLVIS_MIN_TIME_OFFSET 4.5f
 
 // Ctor
 USLVisImageWriterMongoCxx::USLVisImageWriterMongoCxx()
@@ -169,7 +169,7 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 			if (ts_el && ts_el.type() == bsoncxx::type::k_double)
 			{
 				float CurrDiff = FMath::Abs(Timestamp - ts_el.get_double());
-				if (CurrDiff < SLVIS_INSERT_TIME_TRESHOLD)
+				if (CurrDiff < SLVIS_MIN_TIME_OFFSET)
 				{
 					bsoncxx::document::element id_el = before_doc->view()["_id"];
 					if (id_el && id_el.type() == bsoncxx::type::k_oid)
@@ -202,7 +202,7 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 			if (ts_el && ts_el.type() == bsoncxx::type::k_double)
 			{
 				float CurrDiff = FMath::Abs(Timestamp - ts_el.get_double());
-				if (CurrDiff < SLVIS_INSERT_TIME_TRESHOLD)
+				if (CurrDiff < SLVIS_MIN_TIME_OFFSET)
 				{
 					bsoncxx::document::element id_el = after_doc->view()["_id"];
 					if (id_el && id_el.type() == bsoncxx::type::k_oid)

@@ -135,9 +135,12 @@ private:
 	// Image size Y
 	int32 ResY;
 
-	// Update rate in seconds
+	// Update rate of the replay in seconds
 	float DemoUpdateRate;
 	
+	// Minimum time offset to avoid generating new database entries (should be smaller than the update rate)
+	float NewEntryTimeRange;
+
 	// Current demo time
 	float DemoTimestamp;
 
