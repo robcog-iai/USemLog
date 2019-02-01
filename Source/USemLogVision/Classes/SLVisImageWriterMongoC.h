@@ -104,6 +104,11 @@ private:
 	// Re-create the indexes (there could be new entries)
 	bool CreateIndexes();
 
+#if SLVIS_WITH_LIBMONGO
+	// Write image data to gridfs, out param the oid of the file/entry, return true on success
+	bool SaveToGridFS(const FSLVisImageData& ImgData, bson_oid_t* out_oid);
+#endif //SLVIS_WITH_LIBMONGO
+
 private:
 	// Generate a new entry point for the images
 	bool bCreateNewEntry;

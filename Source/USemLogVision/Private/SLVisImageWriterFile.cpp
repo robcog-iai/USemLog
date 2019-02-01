@@ -42,7 +42,7 @@ void USLVisImageWriterFile::Write(float Timestamp, const TArray<FSLVisImageData>
 	// Iterate the images from the current timestamp
 	for (const auto& Img : ImagesData)
 	{
-		FString Filename = ISLVisImageWriterInterface::GetImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
+		FString Filename = ISLVisImageWriterInterface::CreateImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
 		FString ImgPath = DirPath + "/" + Filename;
 		FPaths::RemoveDuplicateSlashes(ImgPath);
 		// Save to file

@@ -109,7 +109,7 @@ private:
 	TScriptInterface<ISLVisImageWriterInterface> Writer;
 
 	// Images at a given timeslice
-	TArray<FSLVisImageData> ImagesAtTimestamp;
+	TArray<FSLVisImageData> CurrImagesData;
 
 	// Pointer to the DemoNetDriver
 	class UDemoNetDriver* NetDriver;
@@ -138,7 +138,7 @@ private:
 	// Update rate of the replay in seconds
 	float DemoUpdateRate;
 	
-	// Minimum time offset to avoid generating new database entries (should be smaller than the update rate)
+	// Avoid creating a new db entry if there is a world state in the given range [--- Ts ---]
 	float NewEntryTimeRange;
 
 	// Current demo time

@@ -85,7 +85,7 @@ void USLVisImageWriterMongoCxx::Write(float Timestamp, const TArray<FSLVisImageD
 			meta_doc.append(kvp("x_meta", bsoncxx::types::b_int32{ 32 }));
 			options::gridfs::upload upload_options;
 			upload_options.metadata(meta_doc.view());
-			FString ImageName = ISLVisImageWriterInterface::GetImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
+			FString ImageName = ISLVisImageWriterInterface::CreateImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
 			
 			// Create gridfs bucket uploader with options
 			gridfs::uploader gridfs_uploader = gridfs_bucket.open_upload_stream(TCHAR_TO_UTF8(*ImageName), upload_options);
@@ -95,7 +95,7 @@ void USLVisImageWriterMongoCxx::Write(float Timestamp, const TArray<FSLVisImageD
 
 			// Close uploader and write the id of the written data object
 			result::gridfs::upload upload_result = gridfs_uploader.close();
-			bson_img_doc.append(kvp("img_id", upload_result.id()));
+			bson_img_doc.append(kvp("img_file_id", upload_result.id()));
 		}
 		catch (const std::exception& xcp)
 		{

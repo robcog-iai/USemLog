@@ -60,15 +60,20 @@ struct FSLVisImageMetadata
 	// Image resolution Y
 	int32 ResY;
 
+	// World timestamp
+	float Timestamp;
+
 	// Constructor
 	FSLVisImageMetadata(const FName& InViewType,
 		const FString& InCameraLabel,
 		int32 InResX,
-		int32 InResY) :
+		int32 InResY,
+		float InTimestamp) :
 		ViewType(InViewType),
 		Label(InCameraLabel),
 		ResX(InResX),
-		ResY(InResY)
+		ResY(InResY),
+		Timestamp(InTimestamp)
 	{};
 };
 
@@ -125,7 +130,7 @@ public:
 	FORCEINLINE static FString GetViewTypeName(const FName& ViewType);
 
 	// Get image filename
-	FORCEINLINE static FString GetImageFilename(float Timestamp, const FString& Label, const FName& ViewType);
+	FORCEINLINE static FString CreateImageFilename(float Timestamp, const FString& Label, const FName& ViewType);
 
 protected:
 	// Flag to show if it is valid
@@ -168,7 +173,7 @@ FString ISLVisImageWriterInterface::GetViewTypeName(const FName& ViewType)
 }
 
 // Get image filename
-FString ISLVisImageWriterInterface::GetImageFilename(float Timestamp, const FString& Label, const FName& ViewType)
+FString ISLVisImageWriterInterface::CreateImageFilename(float Timestamp, const FString& Label, const FName& ViewType)
 {
 	return FString::Printf(TEXT("SLVis_%s_%s_%s.png"),
 		*Label,

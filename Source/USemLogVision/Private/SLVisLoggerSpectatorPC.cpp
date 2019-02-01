@@ -19,8 +19,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	DemoUpdateRate = 0.18f;
-	NewEntryTimeRange = 0.12f; 
+	DemoUpdateRate = 0.58f;
+	NewEntryTimeRange = 0.52f; 
 	ActiveCameraViewIndex = 0;
 	ActiveViewTypeIndex = 0;
 	DemoTimestamp = 0.f;
@@ -29,8 +29,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 
 	// Add buffer types to visualize
 	ViewTypes.Add(NAME_None); // Default will be color
-	ViewTypes.Add("SceneDepth");
-	ViewTypes.Add("WorldNormal");
+	//ViewTypes.Add("SceneDepth");
+	//ViewTypes.Add("WorldNormal");
 
 	// Image size
 	ResX = 12;
@@ -95,7 +95,7 @@ void ASLVisLoggerSpectatorPC::Init()
 #if SLVIS_WITH_LIBMONGO
 			Writer = NewObject<USLVisImageWriterMongoC>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				TEXT("SemLogGr"), EpisodeId, NewEntryTimeRange, "127.0.0.1", 27017));
+				TEXT("SemLog"), EpisodeId, NewEntryTimeRange, "127.0.0.1", 27017));
 
 			//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
 			//Writer->Init(FSLVisImageWriterParams(
@@ -190,6 +190,11 @@ void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 	// TODO this probably causes an extra screenshot callback
 	// Set screenshot image and viewport resolution size
 	GetHighResScreenshotConfig().SetResolution(ResX, ResY, 1.0f);
+	// Set res sets this to true, which triggers the callback, we set it back to false
+	GIsHighResScreenshot = false;
+
+	// TODO see if this is useful
+	//GetHighResScreenshotConfig().ParseConsoleCommand();
 	
 	// TODO this does not seem to have an effect
 	// Set the display resolution for the current game view. Has no effect in the editor
@@ -232,6 +237,9 @@ void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 	// This will adjust the luminance intensity of the image to accurately reproduce colors. Raising or lowering this value will result in the image mid-tones being washed-out or too dark. 
 	// Default 0.0f;
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.TonemapperGamma"))->Set(2.2f);
+
+	// Force highest LOD
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
 }
 
 // Called after a successful scrub
@@ -248,6 +256,8 @@ void ASLVisLoggerSpectatorPC::DemoGotoCB()
 	// Request screenshot on game thread
 	AsyncTask(ENamedThreads::GameThread, [this]()
 	{
+		GetHighResScreenshotConfig().FilenameOverride = ISLVisImageWriterInterface::CreateImageFilename(DemoTimestamp,
+			CameraViews[ActiveCameraViewIndex]->GetCameraLabel(), ViewTypes[ActiveViewTypeIndex]);
 		ViewportClient->Viewport->TakeHighResScreenShot();
 	});
 }
@@ -267,8 +277,8 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
 
 	// Add image to the array in this timeslice
-	ImagesAtTimestamp.Emplace(FSLVisImageData(FSLVisImageMetadata(ViewTypes[ActiveViewTypeIndex],
-				CameraViews[ActiveCameraViewIndex]->GetCameraLabel(),ResX, ResY), CompressedBitmap));
+	CurrImagesData.Emplace(FSLVisImageData(FSLVisImageMetadata(ViewTypes[ActiveViewTypeIndex],
+				CameraViews[ActiveCameraViewIndex]->GetCameraLabel(), ResX, ResY, DemoTimestamp), CompressedBitmap));
 
 #if WITH_EDITOR
 	//ProgressBar->EnterProgressFrame();
@@ -280,6 +290,8 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 		// Request screenshot on game thread
 		AsyncTask(ENamedThreads::GameThread, [this]()
 		{
+			GetHighResScreenshotConfig().FilenameOverride = ISLVisImageWriterInterface::CreateImageFilename(DemoTimestamp,
+				CameraViews[ActiveCameraViewIndex]->GetCameraLabel(), ViewTypes[ActiveViewTypeIndex]);
 			ViewportClient->Viewport->TakeHighResScreenShot();
 		});
 	}
@@ -294,26 +306,26 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 				// Request screenshot on game thread
 				AsyncTask(ENamedThreads::GameThread,[this]() 
 				{
+					GetHighResScreenshotConfig().FilenameOverride = ISLVisImageWriterInterface::CreateImageFilename(DemoTimestamp,
+						CameraViews[ActiveCameraViewIndex]->GetCameraLabel(), ViewTypes[ActiveViewTypeIndex]);
 					ViewportClient->Viewport->TakeHighResScreenShot();
 				});
 			}
 			else
 			{
-				// We reached the last camera + view in this time slice
-				// Write data
-				Writer->Write(DemoTimestamp, ImagesAtTimestamp);
+				// We reached the last img (camera + view) in this time slice, write data
+				Writer->Write(DemoTimestamp, CurrImagesData);
 
-				// Update the number of saved images
-				NumImagesSaved += ImagesAtTimestamp.Num();
+				// Check for next timeslice that should be rendered (only for mongo writers)
+				do {
+					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
+					NumImagesSaved += CurrImagesData.Num();
+					DemoTimestamp += DemoUpdateRate;
+				} while (DemoTimestamp < NetDriver->DemoTotalTime &&
+					ASLVisLoggerSpectatorPC::ShouldSkipThisTimestamp(DemoTimestamp));
 
 				// Clear previous data array
-				ImagesAtTimestamp.Empty();
-
-				// Check if images should be rendered for the given timestamp (false if not a mongo writer)
-				do 
-				{
-					DemoTimestamp += DemoUpdateRate;
-				} while (ASLVisLoggerSpectatorPC::ShouldSkipThisTimestamp(DemoTimestamp));
+				CurrImagesData.Empty();
 
 				// Go back to first view
 				if (ASLVisLoggerSpectatorPC::SetFirstViewTarget())
@@ -458,16 +470,20 @@ bool ASLVisLoggerSpectatorPC::ChangeViewType(const FName& ViewType)
 // Skip the current timestamp (return false if not a mongo writer)
 bool ASLVisLoggerSpectatorPC::ShouldSkipThisTimestamp(float Timestamp)
 {
-	if (Writer)
+	if (Writer && Writer->IsInit())
 	{
-		if (USLVisImageWriterMongoCxx* AsMongoWriter = Cast<USLVisImageWriterMongoCxx>(Writer.GetObject()))
-		{
-			return AsMongoWriter->ShouldSkipThisTimestamp(Timestamp);
+		// Check writer type
+		if (USLVisImageWriterMongoCxx* AsMongoCxxWriter = Cast<USLVisImageWriterMongoCxx>(Writer.GetObject()))
+		{			
+			return AsMongoCxxWriter->ShouldSkipThisTimestamp(Timestamp);
 		}
 		else if (USLVisImageWriterMongoC* AsMongoCWriter = Cast<USLVisImageWriterMongoC>(Writer.GetObject()))
 		{
 			return AsMongoCWriter->ShouldSkipThisTimestamp(Timestamp);
 		}
 	}
-	return false;
+
+	// No valid writer, skip frames
+	UE_LOG(LogTemp, Error, TEXT("%s::%d No valid writer, skip frames"), TEXT(__FUNCTION__), __LINE__);
+	return true;
 }
