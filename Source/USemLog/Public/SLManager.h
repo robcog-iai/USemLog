@@ -133,7 +133,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogWorldState;
 
-	// Update rate (ms) of world state logging (0.f means logging on every tick) (not fixed nor guaranteed)
+	// Update rate (s) of world state logging (0.f means logging on every tick) (not fixed nor guaranteed)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
 	float UpdateRate;
 

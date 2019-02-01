@@ -14,6 +14,7 @@ USLVisImageWriterMongoC::~USLVisImageWriterMongoC()
 {
 #if SLVIS_WITH_LIBMONGO
 	//Release our handles and clean up libmongoc
+	mongoc_gridfs_destroy(gridfs);
 	mongoc_collection_destroy(collection);
 	mongoc_database_destroy(database);
 	mongoc_uri_destroy(uri);
@@ -43,13 +44,109 @@ void USLVisImageWriterMongoC::Finish()
 // Write the images at the timestamp
 void USLVisImageWriterMongoC::Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData)
 {	
+	// Avoid inserting empty array entries
 	if (!(ImagesData.Num() > 0))
 	{
-		// Avoid writing empty images
 		return;
 	}
 
 #if SLVIS_WITH_LIBMONGO
+
+	bson_error_t error;
+
+	// Iterate images
+	for (const auto& Img : ImagesData)
+	{
+		//mongoc_stream_t *img_stream;
+		mongoc_gridfs_file_t *img_file;
+		mongoc_gridfs_file_opt_t img_file_opt = { 0 };
+		bson_t* img_metadata_doc;
+		//bson_value_t img_file_id;
+		const bson_value_t* img_file_id_val;
+		bson_oid_t img_file_oid;
+		mongoc_iovec_t iov;
+
+		//img_stream = mongoc_stream_file_new_for_path("C:/img.png", O_RDONLY, 0);
+		//stream = mongoc_stream_file_new(0);
+
+		img_metadata_doc = BCON_NEW(
+			"label", BCON_UTF8(TCHAR_TO_UTF8(*Img.Metadata.Label)),
+			"type", BCON_UTF8(TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(Img.Metadata.ViewType))),
+			"res","{",
+				"x", BCON_INT32(Img.Metadata.ResX),
+				"y", BCON_INT32(Img.Metadata.ResY),"}"
+		);
+
+		img_file_opt.filename = TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType));
+		img_file_opt.metadata = img_metadata_doc;
+
+		// The driver generates the file_id
+		//img_file = mongoc_gridfs_create_file_from_stream(gridfs, img_stream, &img_file_opt);
+		img_file = mongoc_gridfs_create_file(gridfs, &img_file_opt);
+		iov.iov_base = (char*)(Img.Data.GetData());
+		iov.iov_len = Img.Data.Num();
+
+		if (iov.iov_len != mongoc_gridfs_file_writev(img_file, &iov, 1, 0)) 
+		{
+			if (mongoc_gridfs_file_error(img_file, &error)) 
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
+					TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			}
+		}
+
+		//mongoc_gridfs_file_writev(img_file,)
+
+		//img_file_id.value_type = BSON_TYPE_INT32;
+		//img_file_id.value.v_int32 = 1;
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d id=%lld"), TEXT(__FUNCTION__), __LINE__, img_file_id.value.v_int32);
+
+		//// optional: the following method specifies a file_id of any BSON type
+		//if (!mongoc_gridfs_file_set_id(img_file, &img_file_id, &error)) 
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
+		//		TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		//	//continue;
+		//}
+
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d after id=%lld"), TEXT(__FUNCTION__), __LINE__, img_file_id.value.v_int32);
+
+
+		//img_id = mongoc_gridfs_file_get_id(img_file);
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d AAA after id=%lld"), TEXT(__FUNCTION__), __LINE__, img_id->value.v_int32);
+
+		// Save the data
+		if (!mongoc_gridfs_file_save(img_file)) 
+		{
+			mongoc_gridfs_file_error(img_file, &error);
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
+				TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		}
+		img_file_id_val = mongoc_gridfs_file_get_id(img_file);
+		//if (!img_file_id_val->value_type == BSON_TYPE_OID)
+		// err
+		bson_oid_copy(&img_file_id_val->value.v_oid, &img_file_oid);
+		
+		char oidstr[25];
+		bson_oid_to_string(&img_file_id_val->value.v_oid, oidstr);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d OID.:%s"),
+			TEXT(__FUNCTION__), __LINE__, *FString(oidstr));
+
+		// Clean up
+		bson_destroy(img_metadata_doc);
+		mongoc_gridfs_file_destroy(img_file);
+
+		UE_LOG(LogTemp, Warning, TEXT("\t\t %s::%d *** "), TEXT(__FUNCTION__), __LINE__);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("\t\t \t\t %s::%d  !!!! *** "), TEXT(__FUNCTION__), __LINE__);
+	//mongoc_stream_destroy(stream);
+	
+
+
+	/*********************************************************************/
+	/*
+	// Insert to a current entry or create a new one
 	if (bCreateNewEntry)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d NEW ENTRY SHALL BE CREATED"), TEXT(__FUNCTION__), __LINE__);
@@ -70,7 +167,8 @@ void USLVisImageWriterMongoC::Write(float Timestamp, const TArray<FSLVisImageDat
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d ws id invalid new entry shall be created"), TEXT(__FUNCTION__), __LINE__);
 		}
 	}
-
+	*/
+	/************************************************************************/
 
 
 	//bson_error_t error;
@@ -326,12 +424,11 @@ bool USLVisImageWriterMongoC::ShouldSkipThisTimestamp(float Timestamp)
 // Connect to the database (returns true if there is a server running and we are connected)
 bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
-		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
 #if SLVIS_WITH_LIBMONGO
 	// Required to initialize libmongoc's internals	
 	mongoc_init();
 
+	// Stores any arror that might appear during the connection
 	bson_error_t error;
 	
 	// Safely create a MongoDB URI object from the given string
@@ -339,7 +436,7 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 	uri = mongoc_uri_new_with_error(TCHAR_TO_UTF8(*Uri), &error);
 	if (!uri) 
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d failed to parse URI:%s, err msg:%s"),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
 			TEXT(__FUNCTION__), __LINE__, *Uri, *FString(error.message));
 		return false;
 	}
@@ -351,39 +448,38 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 		return false;
 	}
 
-	// Register the application name so we can track it in the profile logs
-	// on the server. This can also be done from the URI (see other examples).	 
-	mongoc_client_set_appname(client, "slvis");
+	// Register the application name so we can track it in the profile logs on the server
+	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SLVis_" + EpisodeId)));
 
 	// Get a handle on the database "db_name" and collection "coll_name"
 	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
 	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId));
 
 	// Check server. Ping the "admin" database
-	bson_t* command = BCON_NEW("ping", BCON_INT32(1));
-	bson_t reply;
-	bool retval = mongoc_client_command_simple(
-		client, "admin", command, NULL, &reply, &error);
-	if (!retval) 
+	bson_t* server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
+	//bson_t reply;
+	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
 			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
 		return false;
 	}
-	char* str = bson_as_json(&reply, NULL);
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Ret=%s"),
-		TEXT(__FUNCTION__), __LINE__, *FString(str));
 
-	bson_destroy(&reply);
-	bson_destroy(command);
-	bson_free(str);
+	// Create a gridfs handle in test prefixed by fs */
+	gridfs = mongoc_client_get_gridfs(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId), &error);
+	if (!gridfs)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+			TEXT(__FUNCTION__), __LINE__, *Uri, *FString(error.message));
+		return false;
+	}
 
+	bson_destroy(server_ping_cmd);
 	return true;
 #else
 	return false;
 #endif //SLVIS_WITH_LIBMONGO
 }
-
 
 // Get parameters about the closest entry to the given timestamp
 void USLVisImageWriterMongoC::GetWorldStateParamsAt(float InTimestamp, bool bSearchBeforeTimestamp, FSLVisWorldStateEntryParams& OutParams)
@@ -439,15 +535,15 @@ void USLVisImageWriterMongoC::GetWorldStateParamsAt(float InTimestamp, bool bSea
 #endif //SLVIS_WITH_LIBMONGO
 }
 
-// Re-create indexes (there could be new entries)
+// Not needed if the index already exists (it gets updated for every new entry)
 bool USLVisImageWriterMongoC::CreateIndexes()
 {
-#if SLVIS_WITH_LIBMONGO
 	if (!bIsInit)
 	{
 		return false;
 	}
 
+#if SLVIS_WITH_LIBMONGO
 	return false;
 #else
 	return false;

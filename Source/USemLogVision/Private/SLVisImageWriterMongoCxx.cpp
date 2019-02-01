@@ -311,18 +311,19 @@ bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& Ep
 #endif //SLVIS_WITH_LIBMONGO
 }
 
-// Re-create indexes
+// Not needed if the index already exists (it gets updated for every new entry)
 bool USLVisImageWriterMongoCxx::CreateIndexes()
 {
-#if SLVIS_WITH_LIBMONGO
 	if (!bIsInit)
 	{
 		return false;
 	}
 
-	// Create indexes on the database
+#if SLVIS_WITH_LIBMONGO
+	// Create indexes on timestamp
 	try
 	{
+		// todo check if index already exists
 		/*options::index index_options{};*/
 		mongo_coll.create_index(bsoncxx::builder::basic::make_document(kvp("timestamp", 1))/*, index_options*/);
 		return true;

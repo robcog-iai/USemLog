@@ -124,6 +124,10 @@ private:
 	// Database collection
 	mongoc_collection_t* collection;
 
+	// Gridfs handle to insert large binary data to the db
+	mongoc_gridfs_t *gridfs;
+	//mongoc_gridfs_bucket_t *bucket; // available starting 1.14
+
 	// _id of the object (world state) where to insert the images
 	char* ws_oid_str;
 #endif //SLVIS_WITH_LIBMONGO

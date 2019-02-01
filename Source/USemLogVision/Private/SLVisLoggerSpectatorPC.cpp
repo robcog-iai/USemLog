@@ -95,7 +95,7 @@ void ASLVisLoggerSpectatorPC::Init()
 #if SLVIS_WITH_LIBMONGO
 			Writer = NewObject<USLVisImageWriterMongoC>(this);
 			Writer->Init(FSLVisImageWriterParams(
-				TEXT("SemLog"), EpisodeId, NewEntryTimeRange, "127.0.0.1", 27017));
+				TEXT("SemLogGr"), EpisodeId, NewEntryTimeRange, "127.0.0.1", 27017));
 
 			//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
 			//Writer->Init(FSLVisImageWriterParams(
