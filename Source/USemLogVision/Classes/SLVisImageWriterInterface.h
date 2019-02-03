@@ -60,20 +60,20 @@ struct FSLVisImageMetadata
 	// Image resolution Y
 	int32 ResY;
 
-	// World timestamp
-	float Timestamp;
+	// Timestamp when the image was rendered in the replay
+	float ReplayTimestamp;
 
 	// Constructor
 	FSLVisImageMetadata(const FName& InViewType,
 		const FString& InCameraLabel,
 		int32 InResX,
 		int32 InResY,
-		float InTimestamp) :
+		float InReplayTimestamp) :
 		ViewType(InViewType),
 		Label(InCameraLabel),
 		ResX(InResX),
 		ResY(InResY),
-		Timestamp(InTimestamp)
+		ReplayTimestamp(InReplayTimestamp)
 	{};
 };
 

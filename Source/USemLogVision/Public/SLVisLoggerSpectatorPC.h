@@ -92,7 +92,7 @@ private:
 	bool ChangeViewType(const FName& ViewType);
 
 	// Skip the current timestamp (return false if not a mongo writer)
-	bool ShouldSkipThisTimestamp(float Timestamp);
+	bool ShouldSkipThisFrame(float Timestamp);
 
 private:
 	// Set when logger is initialized
@@ -145,10 +145,10 @@ private:
 	float DemoTimestamp;
 
 	// Number of saved images until now
-	uint32 NumImagesSaved;
+	uint32 NumImagesProcessed;
 
 	// Total number of images to be saved
-	uint32 NumImagesToSave;
+	uint32 NumImagesToProcess;
 
 #if WITH_EDITOR
 	// Progress bar

@@ -91,8 +91,8 @@ public:
 	// Write the images at the timestamp
 	virtual void Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData) override;
 
-	// Skip the current timestamp (images already inserted)
-	bool ShouldSkipThisTimestamp(float Timestamp);
+	// Check if the writer should skip this timestamp (varios reasons, img already inserted, ther are other images in the given range etc.)
+	bool ShouldSkipThisFrame(float Timestamp);
 
 private:
 	// Connect to the database
@@ -105,8 +105,11 @@ private:
 	bool CreateIndexes();
 
 #if SLVIS_WITH_LIBMONGO
+	// Save images to gridfs and return the bson entry
+	void SaveImagesReturnEntry(const TArray<FSLVisImageData>& ImagesData, bson_t* out_imgs_doc);
+
 	// Write image data to gridfs, out param the oid of the file/entry, return true on success
-	bool SaveToGridFS(const FSLVisImageData& ImgData, bson_oid_t* out_oid);
+	bool SaveImageToGridFS(const FSLVisImageData& ImgData, bson_oid_t* out_oid);
 #endif //SLVIS_WITH_LIBMONGO
 
 private:
@@ -134,6 +137,7 @@ private:
 	//mongoc_gridfs_bucket_t *bucket; // available starting 1.14
 
 	// _id of the object (world state) where to insert the images
-	char* ws_oid_str;
+	char ws_oid_str[25];
+	bson_oid_t* ws_oid2;
 #endif //SLVIS_WITH_LIBMONGO
 };

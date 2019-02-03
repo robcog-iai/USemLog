@@ -24,8 +24,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	ActiveCameraViewIndex = 0;
 	ActiveViewTypeIndex = 0;
 	DemoTimestamp = 0.f;
-	NumImagesSaved = 0;
-	NumImagesToSave = 0;
+	NumImagesProcessed = 0;
+	NumImagesToProcess = 0;
 
 	// Add buffer types to visualize
 	ViewTypes.Add(NAME_None); // Default will be color
@@ -79,6 +79,12 @@ void ASLVisLoggerSpectatorPC::Init()
 {
 	if (!bIsInit)
 	{
+		ActiveCameraViewIndex = 0;
+		ActiveViewTypeIndex = 0;
+		DemoTimestamp = 0.f;
+		NumImagesProcessed = 0;
+		NumImagesToProcess = 0;
+
 		// Make sure the time offset is not larger than the replay update rate
 		FMath::Clamp(NewEntryTimeRange, 0.f, DemoUpdateRate);
 
@@ -126,7 +132,16 @@ void ASLVisLoggerSpectatorPC::Init()
 				// Calculate the total images to be saved
 				uint32 NumTimesteps = (uint32)(NetDriver->DemoTotalTime / DemoUpdateRate) + 1;
 				uint32 NumImages = CameraViews.Num() * ViewTypes.Num();
-				NumImagesToSave = NumTimesteps * NumImages;
+				NumImagesToProcess = NumTimesteps * NumImages;
+
+				// Check which timestamp should be rendered first
+				while (DemoTimestamp < NetDriver->DemoTotalTime &&
+					ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(DemoTimestamp))
+				{
+					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
+					NumImagesProcessed += CurrImagesData.Num();
+					DemoTimestamp += DemoUpdateRate;
+				}
 
 				// Set rendering parameters
 				ASLVisLoggerSpectatorPC::SetupRenderingProperties();
@@ -151,10 +166,10 @@ void ASLVisLoggerSpectatorPC::Start()
 		{
 			// Go to the beginning of the demo and start requesting screenshots
 			NetDriver->GotoTimeInSeconds(DemoTimestamp);
-		}
 
-		// Flag as started
-		bIsStarted = true;
+			// Flag as started
+			bIsStarted = true;
+		}
 	}
 }
 
@@ -168,10 +183,10 @@ void ASLVisLoggerSpectatorPC::Finish()
 			Writer->Finish();
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Duration: %f/%f; Imgs: %d/%d;"),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Finished! Time=[%f/%f] Progress=[%d/%d]"),
 			TEXT(__FUNCTION__), __LINE__,
 			DemoTimestamp, NetDriver->DemoTotalTime,
-			NumImagesSaved, NumImagesToSave);
+			NumImagesProcessed, NumImagesToProcess);
 
 		// Flag as finished
 		bIsStarted = false;
@@ -245,11 +260,6 @@ void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 // Called after a successful scrub
 void ASLVisLoggerSpectatorPC::DemoGotoCB()
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Duration: %f/%f; Imgs: %d/%d;"),
-		TEXT(__FUNCTION__), __LINE__,
-		DemoTimestamp, NetDriver->DemoTotalTime,
-		NumImagesSaved, NumImagesToSave);
-
 	// Pause the replay
 	ASLVisLoggerSpectatorPC::DemoPause();
 
@@ -313,16 +323,21 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 			}
 			else
 			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Sending %d images.. Time=[%f/%f] Progress=[%d/%d]"),
+					TEXT(__FUNCTION__), __LINE__, CurrImagesData.Num(),
+					DemoTimestamp, NetDriver->DemoTotalTime,
+					NumImagesProcessed, NumImagesToProcess);
+
 				// We reached the last img (camera + view) in this time slice, write data
 				Writer->Write(DemoTimestamp, CurrImagesData);
 
 				// Check for next timeslice that should be rendered (only for mongo writers)
 				do {
 					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
-					NumImagesSaved += CurrImagesData.Num();
+					NumImagesProcessed += CurrImagesData.Num();
 					DemoTimestamp += DemoUpdateRate;
 				} while (DemoTimestamp < NetDriver->DemoTotalTime &&
-					ASLVisLoggerSpectatorPC::ShouldSkipThisTimestamp(DemoTimestamp));
+					ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(DemoTimestamp));
 
 				// Clear previous data array
 				CurrImagesData.Empty();
@@ -468,22 +483,49 @@ bool ASLVisLoggerSpectatorPC::ChangeViewType(const FName& ViewType)
 }
 
 // Skip the current timestamp (return false if not a mongo writer)
-bool ASLVisLoggerSpectatorPC::ShouldSkipThisTimestamp(float Timestamp)
+bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 {
 	if (Writer && Writer->IsInit())
 	{
 		// Check writer type
 		if (USLVisImageWriterMongoCxx* AsMongoCxxWriter = Cast<USLVisImageWriterMongoCxx>(Writer.GetObject()))
-		{			
-			return AsMongoCxxWriter->ShouldSkipThisTimestamp(Timestamp);
+		{
+			if (AsMongoCxxWriter->ShouldSkipThisTimestamp(Timestamp))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Skipping the current frame images.. Time=[%f/%f] Progress=[%d/%d]"),
+					TEXT(__FUNCTION__), __LINE__,
+					DemoTimestamp, NetDriver->DemoTotalTime,
+					NumImagesProcessed, NumImagesToProcess);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+			//return AsMongoCxxWriter->ShouldSkipThisTimestamp(Timestamp);
 		}
 		else if (USLVisImageWriterMongoC* AsMongoCWriter = Cast<USLVisImageWriterMongoC>(Writer.GetObject()))
 		{
-			return AsMongoCWriter->ShouldSkipThisTimestamp(Timestamp);
+			if (AsMongoCWriter->ShouldSkipThisFrame(Timestamp))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Skipping the current frame images.. Time=[%f/%f] Progress=[%d/%d]"),
+					TEXT(__FUNCTION__), __LINE__,
+					DemoTimestamp, NetDriver->DemoTotalTime,
+					NumImagesProcessed, NumImagesToProcess);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+			//return AsMongoCWriter->ShouldSkipThisTimestamp(Timestamp);
 		}
 	}
 
 	// No valid writer, skip frames
-	UE_LOG(LogTemp, Error, TEXT("%s::%d No valid writer, skip frames"), TEXT(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Skipping %d images.. Time=[%f/%f] Progress=[%d/%d]"),
+		TEXT(__FUNCTION__), __LINE__, CurrImagesData.Num(),
+		DemoTimestamp, NetDriver->DemoTotalTime,
+		NumImagesProcessed, NumImagesToProcess);
 	return true;
 }
