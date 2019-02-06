@@ -50,6 +50,12 @@ private:
 	// Set flag attribute depending on the checkbox state
 	void OnCheckedOverwriteClassNames(ECheckBoxState NewCheckedState);
 
+	// Set unique mask colors in hexa for the entities
+	FReply SetVisualMaskValues();
+
+	// Set flag attribute depending on the checkbox state
+	void OnCheckedOverwriteVisualMaskValues(ECheckBoxState NewCheckedState);
+
 	// Update legacy namings from tags
 	FReply UpdateLegacyNames();
 
@@ -69,6 +75,9 @@ private:
 
 	// If true, overwrite existing class names
 	bool bOverwriteExistingClassNames;
+
+	// If true, overwrite existing mask values
+	bool bOverwriteExistingVisualMaskValues;
 
 	// Apply changed to selected actors only
 	bool bOnlySelected;

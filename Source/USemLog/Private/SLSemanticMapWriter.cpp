@@ -146,8 +146,27 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		ObjIndividual.AddChildNodes(PhysicsProperties);
 	}
 	
+	// Add color property
+	FString ColorHex = FTags::GetValue(Object, "SemLog", "VisMask");
+	if (!ColorHex.IsEmpty())
+	{
+		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateMaskColorProperty(ColorHex));
+	}
 
-	// Add pose individual to map
+	// Lambda to remove path before and including "Models/", after and including ".", and the "SM_" prefixes 
+	auto GetPathToCadModelLambda = [](UObject* Obj)->FString
+	{
+		FString Path = Obj->GetFullName();
+		const FString SubStr("Models/");
+		int32 FindIdx = Path.Find(SubStr, ESearchCase::CaseSensitive);
+		Path.RemoveAt(0, FindIdx + SubStr.Len());
+		Path.FindLastChar('.', FindIdx);
+		Path.RemoveAt(FindIdx, Path.Len() - FindIdx);
+		Path.ReplaceInline(*FString("SM_"), *FString(""));
+		return Path;
+	};
+
+	// Add various properties
 	if (AActor* ObjAsAct = Cast<AActor>(Object))
 	{
 		// Generate unique id for the properties
@@ -158,6 +177,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePoseProperty(
 			MapPrefix, PoseId));
 
+
 		// If static mesh, add pathToCadModel property
 		if (AStaticMeshActor* ActAsSMA = Cast<AStaticMeshActor>(ObjAsAct))
 		{
@@ -165,16 +185,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 			{
 				if (UStaticMesh* SM = SMC->GetStaticMesh())
 				{
-					// Remove path before and including "Models/", after and including ".", and the "SM_" prefixes 
-					FString Path = *SM->GetFullName();
-					const FString SubStr("Models/");
-					int32 FindIdx = Path.Find(SubStr, ESearchCase::CaseSensitive);
-					Path.RemoveAt(0, FindIdx + SubStr.Len());
-					Path.FindLastChar('.', FindIdx);
-					Path.RemoveAt(FindIdx, Path.Len() - FindIdx);
-					Path.ReplaceInline(*FString("SM_"), *FString(""));
-					ObjIndividual.AddChildNode(
-						FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(Path));
+					ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
 				}
 			}
 		}
@@ -207,16 +218,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		{
 			if (UStaticMesh* SM = CompAsSMC->GetStaticMesh())
 			{
-				// Remove path before and including "Models/", after and including ".", and the "SM_" prefixes 
-				FString Path = *SM->GetFullName();
-				const FString SubStr("Models/");
-				int32 FindIdx = Path.Find(SubStr, ESearchCase::CaseSensitive);
-				Path.RemoveAt(0, FindIdx + SubStr.Len());
-				Path.FindLastChar('.', FindIdx);
-				Path.RemoveAt(FindIdx, Path.Len() - FindIdx);
-				Path.ReplaceInline(*FString("SM_"), *FString(""));
-				ObjIndividual.AddChildNode(
-					FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(Path));
+				ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
 			}
 		}
 

@@ -25,6 +25,7 @@ FSLEdModeToolkit::FSLEdModeToolkit()
 {
 	bOverwriteSemanticMap = true;
 	bOverwriteExistingClassNames = true;
+	bOverwriteExistingVisualMaskValues = true;
 }
 
 void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
@@ -87,6 +88,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 						.IsEnabled(true)
 						.OnClicked(this, &FSLEdModeToolkit::SemanticallyAnnotateConstraints)
 					]
+				/////
 				+ SVerticalBox::Slot()
 					.AutoHeight()
 					.HAlign(HAlign_Center)
@@ -106,6 +108,28 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 								.ToolTipText(LOCTEXT("SetDefaultClassNames_Overwrite", "Overwrite"))
 							.IsChecked(ECheckBoxState::Checked)
 							.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteClassNames)
+							]
+					]
+				/////
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SHorizontalBox)
+						+ SHorizontalBox::Slot()
+							.AutoWidth()
+							[
+								SNew(SButton)
+								.Text(LOCTEXT("SetVisualMaskValues", "Set Visual Mask Values"))
+							.IsEnabled(true)
+							.OnClicked(this, &FSLEdModeToolkit::SetVisualMaskValues)
+							]
+						+ SHorizontalBox::Slot()
+							[
+								SNew(SCheckBox)
+								.ToolTipText(LOCTEXT("SetVisualMaskValues_Overwrite", "Overwrite"))
+							.IsChecked(ECheckBoxState::Checked)
+							.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteVisualMaskValues)
 							]
 					]
 				////
@@ -308,7 +332,76 @@ FReply FSLEdModeToolkit::SetClassNamesToDefault()
 // Set flag attribute depending on the checkbox state
 void FSLEdModeToolkit::OnCheckedOverwriteClassNames(ECheckBoxState NewCheckedState)
 {
-	bOverwriteExistingClassNames = (NewCheckedState == ECheckBoxState::Checked);
+	// TODO now everything will be overwritten
+	bOverwriteExistingVisualMaskValues = true;
+	//bOverwriteExistingClassNames = (NewCheckedState == ECheckBoxState::Checked);
+}
+
+// Set unique mask colors in hexa for the entities
+FReply FSLEdModeToolkit::SetVisualMaskValues()
+{
+	// Keep all colors in an array to check for uniqueness;
+	TArray<FColor> MaskColors;
+
+	// Lambda for generating unique colors as hex string
+	auto GetUniqueRandomColorLambda = [&MaskColors]()->FString
+	{
+		FColor RandColor = FColor::MakeRandomColor();
+		if (MaskColors.Num() == 0)
+		{
+			MaskColors.Emplace(RandColor);
+			return RandColor.ToHex();
+		}
+		else
+		{
+			int32 NrOfTrials = 0;
+			while (MaskColors.AddUnique(RandColor) == INDEX_NONE)
+			{
+				RandColor = FColor::MakeRandomColor();
+				NrOfTrials++;
+				if (NrOfTrials > 10)
+				{
+					return FColor(ForceInit).ToHex();
+				}
+			}
+			return RandColor.ToHex();
+		}
+	};
+
+	// Iterate only static mesh actors
+	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	{
+		// Continue only if a valid mesh component is available
+		if (UStaticMeshComponent* SMC = ActItr->GetStaticMeshComponent())
+		{
+			if (bOverwriteExistingVisualMaskValues)
+			{
+				// Check if the actor or the component is semantically annotated
+				if (FTags::HasKey(*ActItr, "SemLog", "Class"))
+				{
+					FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", GetUniqueRandomColorLambda(), true);
+				}
+				else if (FTags::HasKey(SMC, "SemLog", "Class"))
+				{
+					FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", GetUniqueRandomColorLambda(), true);
+				}
+			}
+			else
+			{
+				// TODO not implemented
+				// Load all existing values into the array first
+				// then start adding new values with AddUnique
+			}
+		}
+
+	}
+	return FReply::Handled();
+}
+
+// Set flag attribute depending on the checkbox state
+void FSLEdModeToolkit::OnCheckedOverwriteVisualMaskValues(ECheckBoxState NewCheckedState)
+{
+	bOverwriteExistingVisualMaskValues = (NewCheckedState == ECheckBoxState::Checked);
 }
 
 // Remove all semantic ids

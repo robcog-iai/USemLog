@@ -8,6 +8,7 @@
 #include "Async.h"
 #include "HighResScreenshot.h"
 #include "SLVisCameraView.h"
+#include "SLVisMaskHelper.h"
 #include "SLVisImageWriterMongoCxx.h"
 #include "SLVisImageWriterMongoC.h"
 #include "SLVisImageWriterFile.h"
@@ -31,10 +32,26 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	ViewTypes.Add(NAME_None); // Default will be color
 	//ViewTypes.Add("SceneDepth");
 	//ViewTypes.Add("WorldNormal");
+	ViewTypes.Add("SLSceneDepth");
+	ViewTypes.Add("SLSceneDepthWorldUnits");
+	ViewTypes.Add("SLMask");
+
+	if (ViewTypes.Contains(FName("SLMask")))
+	{
+		// Dynamic loading
+		//UMaterialInterface* DefaultMaskMaterial = LoadObject<UMaterialInterface>(this,
+		//	TEXT("/Game/ThirdPersonBP/Vision/M_SLMaskEmpty.M_SLMaskEmpty"));
+		static ConstructorHelpers::FObjectFinder<UMaterialInterface> DefaultMaskMaterial(
+			TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask"));
+		if (DefaultMaskMaterial.Succeeded())
+		{
+			MaskVisHelper = MakeShareable(new FSLVisMaskHelper(DefaultMaskMaterial.Object));
+		}
+	}
 
 	// Image size
-	ResX = 12;
-	ResY = 8;
+	ResX = 640;
+	ResY = 480;
 }
 
 // Called when the game starts or when spawned
@@ -85,6 +102,11 @@ void ASLVisLoggerSpectatorPC::Init()
 		NumImagesProcessed = 0;
 		NumImagesToProcess = 0;
 
+		if (MaskVisHelper)
+		{
+			MaskVisHelper->Init(GetWorld());
+		}
+
 		// Make sure the time offset is not larger than the replay update rate
 		FMath::Clamp(NewEntryTimeRange, 0.f, DemoUpdateRate);
 
@@ -99,17 +121,17 @@ void ASLVisLoggerSpectatorPC::Init()
 
 			// Create writer
 #if SLVIS_WITH_LIBMONGO
-			Writer = NewObject<USLVisImageWriterMongoC>(this);
-			Writer->Init(FSLVisImageWriterParams(
-				TEXT("SemLog"), EpisodeId, NewEntryTimeRange, "127.0.0.1", 27017));
+			//Writer = NewObject<USLVisImageWriterMongoC>(this);
+			//Writer->Init(FSLVisImageWriterParams(
+			//	TEXT("SemLog"), EpisodeId, NewEntryTimeRange, "127.0.0.1", 27017));
 
 			//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
 			//Writer->Init(FSLVisImageWriterParams(
 			//	TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
 
-			//Writer = NewObject<USLVisImageWriterFile>(this);
-			//Writer->Init(FSLVisImageWriterParams(
-			//	FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
+			Writer = NewObject<USLVisImageWriterFile>(this);
+			Writer->Init(FSLVisImageWriterParams(
+				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
 #else
 			Writer = NewObject<USLVisImageWriterFile>(this);
 			Writer->Init(FSLVisImageWriterParams(
@@ -520,6 +542,9 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 			}
 			//return AsMongoCWriter->ShouldSkipThisTimestamp(Timestamp);
 		}
+
+		// For other wirters don't skip anything
+		return false;
 	}
 
 	// No valid writer, skip frames

@@ -9,7 +9,6 @@
 #include "SLVisImageWriterInterface.h"
 #include "SLVisLoggerSpectatorPC.generated.h"
 
-
 /**
  * 
  */
@@ -103,6 +102,9 @@ private:
 
 	// Set when logger is finished
 	bool bIsFinished;
+
+	// Mask image visualizer helper
+	TSharedPtr<struct FSLVisMaskHelper> MaskVisHelper;
 
 	// Saves the image data to file/database etc.
 	UPROPERTY() // TScriptInterface can be used with UPROPERTY to avoid GC

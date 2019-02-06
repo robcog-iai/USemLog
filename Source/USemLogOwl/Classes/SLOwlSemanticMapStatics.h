@@ -158,6 +158,9 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 	// Create physics properties
 	static TArray<FSLOwlNode> CreatePhysicsProperties(float Mass, bool bGenerateOverlapEvents, bool bGravity);
 
+	// Create mask color property
+	static FSLOwlNode CreateMaskColorProperty(const FString& HexColor);
+
 	// Create a location property
 	static FSLOwlNode CreateLocationProperty(const FVector& InLoc);
 

@@ -144,13 +144,17 @@ FString ISLVisImageWriterInterface::GetViewTypeSuffix(const FName& ViewType)
 	{
 		return FString("C"); // Color
 	}
-	else if (ViewType.IsEqual("SceneDepth"))
+	else if (ViewType.IsEqual("SceneDepth") || ViewType.IsEqual("SLSceneDepth") || ViewType.IsEqual("SLSceneDepthWorldUnits"))
 	{
 		return FString("D"); // Depth
 	}
 	else if (ViewType.IsEqual("WorldNormal"))
 	{
 		return FString("N"); // Normal
+	}
+	else if (ViewType.IsEqual("Mask"))
+	{
+		return FString("M"); // Normal
 	}
 	else
 	{

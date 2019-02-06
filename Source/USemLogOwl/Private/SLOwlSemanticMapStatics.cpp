@@ -480,6 +480,15 @@ TArray<FSLOwlNode> FSLOwlSemanticMapStatics::CreatePhysicsProperties(float Mass,
 	return PhysicsProperties;
 }
 
+// Create mask color property
+FSLOwlNode FSLOwlSemanticMapStatics::CreateMaskColorProperty(const FString& HexColor)
+{
+	const FSLOwlPrefixName KbMaskColor("knowrob", "maskColor");
+	const FSLOwlPrefixName RdfDatatype("rdf", "datatype");
+	const FSLOwlAttributeValue AttrValString("xsd", "string");
+	return FSLOwlNode(KbMaskColor, FSLOwlAttribute(RdfDatatype, AttrValString), HexColor);
+}
+
 // Create a location node
 FSLOwlNode FSLOwlSemanticMapStatics::CreateLocationProperty(const FVector& InLoc)
 {
