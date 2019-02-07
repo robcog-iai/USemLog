@@ -152,7 +152,7 @@ FString ISLVisImageWriterInterface::GetViewTypeSuffix(const FName& ViewType)
 	{
 		return FString("N"); // Normal
 	}
-	else if (ViewType.IsEqual("Mask"))
+	else if (ViewType.IsEqual("Mask") || ViewType.IsEqual("SLMask"))
 	{
 		return FString("M"); // Normal
 	}

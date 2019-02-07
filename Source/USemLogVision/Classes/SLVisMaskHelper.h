@@ -11,35 +11,37 @@
  */
 struct FSLVisMaskHelper
 {
-public:
+	// Cache of the original materials
+	TMap<UMeshComponent*, TArray<UMaterialInterface*>> MeshesOrigMaterials;
+
+	// Cache of the semantic mask values
+	TMap<UMeshComponent*, TArray<UMaterialInterface*>> MeshesMaskMaterials;
+
+	// Cache of the mesh components that are not semantically annotated (will be colored black)
+	TArray<UMeshComponent*> UnknownMeshes;
+
 	// Default constructor
 	FSLVisMaskHelper();
 
 	// Init material constructor
-	FSLVisMaskHelper(UMaterialInterface* InDefaultMaskMaterial);
-
-	// Cache of the semantic original materials
-	TMap<UMeshComponent*, TArray<UMaterialInterface*>> SemOrigMaterials;
-
-	// Cache of the semantic mask values
-	TMap<UMeshComponent*, TArray<UMaterialInterface*>> SemMaskMaterials;
-
-	// Cache of the non semantic original materials
-	TMap<UMeshComponent*, TArray<UMaterialInterface*>> NonSemOrigMaterials;
-
-	// Cache of the non semantic mask materials
-	TMap<UMeshComponent*, TArray<UMaterialInterface*>> NonSemMaskMaterials;
+	FSLVisMaskHelper(UMaterial* InDefaultMaskMaterial);
 
 	// Init
-	void Init(UWorld* World);
+	void Init(UObject* InParent);
 
 	// Check if it is init
 	bool IsInit() const { return bIsInit; };
+
+	// Apply mask materials
+	bool ApplyMaskMaterials();
+
+	// Apply original materials
+	bool ApplyOriginalMaterials();
 
 private:
 	// Set when logger is initialized
 	bool bIsInit;
 
 	// Material used if there is no semantic information on an entity (black)
-	UMaterialInterface* DefaultMaskMaterial;
+	UMaterial* DefaultMaskMaterial;
 };
