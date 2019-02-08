@@ -8,14 +8,10 @@
 #include "Async.h"
 #include "HighResScreenshot.h"
 #include "SLVisCameraView.h"
-#include "SLVisMaskHelper.h"
+#include "SLVisMaskVisualizer.h"
 #include "SLVisImageWriterMongoCxx.h"
 #include "SLVisImageWriterMongoC.h"
 #include "SLVisImageWriterFile.h"
-
-#include "Tags.h"
-#include "Materials/MaterialInstanceDynamic.h"
-#include "Animation/SkeletalMeshActor.h"
 
 // Ctor
 ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
@@ -24,8 +20,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	DemoUpdateRate = 0.28f;
-	NewEntryTimeRange = 0.22f; 
+	DemoUpdateRate = 0.08f;
+	NewEntryTimeRange = 0.02f; 
 	ActiveCameraViewIndex = 0;
 	ActiveViewTypeIndex = 0;
 	DemoTimestamp = 0.f;
@@ -36,29 +32,16 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	bIsFinished = false;
 	
 	bMaskMaterialsOn = false;
-	//bMaskInit = false;
 
 	// Add buffer types to visualize
-	ViewTypes.Add(NAME_None); // Default will be color
+	ViewTypes.Add(NAME_None); // NAME_None will be color
+	//ViewTypes.Add("Color");
+	ViewTypes.Add("SLSceneDepthWorldUnits");
+	ViewTypes.Add("SLMask");
 	////ViewTypes.Add("SceneDepth");
 	////ViewTypes.Add("WorldNormal");
 	//ViewTypes.Add("SLSceneDepth");
-	ViewTypes.Add("SLSceneDepthWorldUnits");
-	ViewTypes.Add("SLMask");
-	
-	//if (ViewTypes.Contains(FName("SLMask")))
-	//{
-	//	static ConstructorHelpers::FObjectFinder<UMaterial> DMM(
-	//		TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask"));
-	//	if (DMM.Succeeded())
-	//	{
-	//		MaskVisHelper = MakeShareable(new FSLVisMaskHelper(DMM.Object));
-	//	}
-	//	else
-	//	{
-	//		ViewTypes.Remove(FName("SLMask"));
-	//	}
-	//}
+
 
 	// Image size
 	//ResX = 640;
@@ -81,25 +64,12 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	//// sd
 	//ResX = 720;
 	//ResY = 480;
-
-
-	static ConstructorHelpers::FObjectFinder<UMaterial> DMM(
-		TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask"));
-	if (DMM.Succeeded())
-	{
-		DefaultMaskMaterial = DMM.Object;
-		DefaultMaskMaterial->bUsedWithStaticLighting = true;
-	}
-	bMaskMaterialsOn = false;
 }
 
 // Called when the game starts or when spawned
 void ASLVisLoggerSpectatorPC::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// Start logger
-	ASLVisLoggerSpectatorPC::MaskTimerInit();
 
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{
@@ -128,7 +98,7 @@ void ASLVisLoggerSpectatorPC::SetupInputComponent()
 }
 
 // Called every frame
- void ASLVisLoggerSpectatorPC::Tick(float DeltaTime)
+void ASLVisLoggerSpectatorPC::Tick(float DeltaTime)
  {
 	 Super::Tick(DeltaTime);
  }
@@ -144,13 +114,18 @@ void ASLVisLoggerSpectatorPC::Init()
 		NumImagesProcessed = 0;
 		NumImagesToProcess = 0;
 
-		if (MaskVisHelper)
-		{
-			MaskVisHelper->Init(this);
-		}
-
 		// Make sure the time offset is not larger than the replay update rate
 		FMath::Clamp(NewEntryTimeRange, 0.f, DemoUpdateRate);
+
+		if (ViewTypes.Contains(FName("SLMask")))
+		{
+			MaskVisualizer = NewObject<USLVisMaskVisualizer>(this);
+			MaskVisualizer->Init();
+			if (!MaskVisualizer->IsInit())
+			{
+				ViewTypes.Remove(FName("SLMask"));
+			}
+		}
 
 		// Continue only if driver and viewport is available
 		NetDriver = GetWorld()->DemoNetDriver;
@@ -533,35 +508,37 @@ bool ASLVisLoggerSpectatorPC::ChangeViewType(const FName& ViewType)
 	static IConsoleVariable* ICVarVisTarget = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));
 	
 	// Switch between buffer visualization and its types
-	if (ICVarVisTarget)
+	if (ICVarVisTarget && ViewportClient->GetEngineShowFlags())
 	{
-		if (ViewportClient->GetEngineShowFlags())
+		if (ViewType == NAME_None)
 		{
-			if (ViewType.IsEqual(FName("SLMask")))
+			if (MaskVisualizer && MaskVisualizer->AreMasksOn() /*bMaskMaterialsOn*/)
 			{
-				if (true/*&& MaskVisHelper && MaskVisHelper->ApplyMaskMaterials()*/)
-				{
-					ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-					//ViewportClient->GetEngineShowFlags()->SetTonemapper(true);
-					ICVarVisTarget->Set(TEXT("BaseColor"));
-
-					ASLVisLoggerSpectatorPC::SetMaskMaterials();
-					bMaskMaterialsOn = true;
-				}
+				MaskVisualizer->ApplyOriginalMaterials();
 			}
-			else
-			{
-				if (bMaskMaterialsOn /*&& MaskVisHelper*/ /*&& MaskVisHelper->ApplyOriginalMaterials()*/)
-				{
-					ASLVisLoggerSpectatorPC::SetOrigMaterials();
-					bMaskMaterialsOn = false;
-				}
-				ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(ViewType == NAME_None ? false : true);
-				//ViewportClient->GetEngineShowFlags()->SetTonemapper(ViewType == NAME_None ? false : true);
-				ICVarVisTarget->Set(*ViewType.ToString());
-			}
-			return true;
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 		}
+		else if (ViewType == "SLMask")
+		{
+			if (MaskVisualizer && MaskVisualizer->IsInit())
+			{
+				MaskVisualizer->ApplyMaskMaterials();
+				ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+				//ViewportClient->GetEngineShowFlags()->SetTonemapper(true);
+				ICVarVisTarget->Set(TEXT("BaseColor"));
+			}
+		}
+		else
+		{
+			if (MaskVisualizer && MaskVisualizer->AreMasksOn())
+			{
+				MaskVisualizer->ApplyOriginalMaterials();
+			}
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			//ViewportClient->GetEngineShowFlags()->SetTonemapper(true);
+			ICVarVisTarget->Set(*ViewType.ToString());
+		}
+		return true;
 	}
 	return false;
 }
@@ -616,347 +593,3 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 		NumImagesProcessed, NumImagesToProcess);
 	return true;
 }
-
-/////////////////////////////////////////////
-void ASLVisLoggerSpectatorPC::MaskTimerInit()
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Iterating SMAs"), TEXT(__FUNCTION__), __LINE__);
-
-	// Iterate static meshes from the world
-	for (TActorIterator<AStaticMeshActor> SMAItr(GetWorld()); SMAItr; ++SMAItr)
-	{
-		if (UStaticMeshComponent* SMC = SMAItr->GetStaticMeshComponent())
-		{
-			// Cache original materials
-			MeshesOrigMaterials.Add(SMC, SMC->GetMaterials());
-
-			FString ColorHex = FTags::GetValue(*SMAItr, "SemLog", "VisMask");
-			if (!ColorHex.IsEmpty())
-			{
-				UMaterialInstanceDynamic* DynamicMaskMat = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-				DynamicMaskMat->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(FColor::FromHex(ColorHex)));
-				MeshesMaskMaterials.Emplace(SMC, DynamicMaskMat);
-			}
-			else
-			{
-				ColorHex = FTags::GetValue(SMC, "SemLog", "VisMask");
-				if (!ColorHex.IsEmpty())
-				{
-					UMaterialInstanceDynamic* DynamicMaskMat = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-					DynamicMaskMat->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(FColor::FromHex(ColorHex)));
-					MeshesMaskMaterials.Emplace(SMC, DynamicMaskMat);
-				}
-				else
-				{
-					UnknownMeshes.Emplace(SMC);
-				}
-			}
-		}
-	}
-
-	// TODO include semantic data from skeletal meshes as well
-	// Iterate skeletal meshes
-	for (TActorIterator<ASkeletalMeshActor> SkMAItr(GetWorld()); SkMAItr; ++SkMAItr)
-	{
-		if (USkeletalMeshComponent* SkMC = SkMAItr->GetSkeletalMeshComponent())
-		{
-			// Add original materials
-			MeshesOrigMaterials.Add(SkMC, SkMC->GetMaterials());
-
-			// Check if the entity is annotated with a semantic color mask
-			// TODO how to read bone colors
-			FString ColorHex = FTags::GetValue(*SkMAItr, "SemLog", "VisMask");
-			if (!ColorHex.IsEmpty())
-			{
-				//AddDynamicMaskMaterialsLambda(SkMC, ColorHex, InParent);
-			}
-			else
-			{
-				ColorHex = FTags::GetValue(SkMC, "SemLog", "VisMask");
-				if (!ColorHex.IsEmpty())
-				{
-					//AddDynamicMaskMaterialsLambda(SkMC, ColorHex, InParent);
-				}
-				else
-				{
-					UnknownMeshes.Emplace(SkMC);
-				}
-			}
-		}
-	}
-
-	DynamicDefaultMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-	DynamicDefaultMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::Black);
-	//GetWorldTimerManager().SetTimer(MaterialSwitchTimerHandle, this, &ASLVisLoggerSpectatorPC::TimerSwitchMaterials, 1.f, true, 1.f);
-}
-
-void ASLVisLoggerSpectatorPC::TimerSwitchMaterials()
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Timer switch"), TEXT(__FUNCTION__), __LINE__);
-	if (!bMaskMaterialsOn)
-	{
-		// Put original materials back
-		ASLVisLoggerSpectatorPC::SetMaskMaterials();
-		bMaskMaterialsOn = true;
-	}
-	else
-	{
-		// Put mask materials on
-		ASLVisLoggerSpectatorPC::SetOrigMaterials();
-		bMaskMaterialsOn = false;
-	}
-}
-
-void ASLVisLoggerSpectatorPC::SetMaskMaterials()
-{
-	UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Setting mask materials.."), TEXT(__FUNCTION__), __LINE__);
-	for (auto& SMCMat : MeshesMaskMaterials)
-	{
-		
-		for (int32 MatIdx = 0; MatIdx < SMCMat.Key->GetNumMaterials(); ++MatIdx)
-		{
-			SMCMat.Key->SetMaterial(MatIdx, SMCMat.Value);
-		}
-	}
-
-	for (auto& Mesh : UnknownMeshes)
-	{
-		for (int32 Idx = 0; Idx < Mesh->GetNumMaterials(); ++Idx)
-		{
-			Mesh->SetMaterial(Idx, DefaultMaskMaterial);
-			//Mesh->SetMaterial(Idx, DynamicDefaultMaskMaterial);
-		}
-	}
-}
-
-void ASLVisLoggerSpectatorPC::SetOrigMaterials()
-{
-	UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Setting original materials.."), TEXT(__FUNCTION__), __LINE__);
-	for (auto& SMCMat : MeshesOrigMaterials)
-	{
-		int32 MatIdx = 0;
-		for (auto& OrigMat : SMCMat.Value)
-		{
-			SMCMat.Key->SetMaterial(MatIdx, OrigMat);
-			UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Set Idx=%d set"), TEXT(__FUNCTION__), __LINE__, MatIdx);
-			MatIdx++;
-		}
-	}
-}
-
-// Creates a new unique mask color
-FLinearColor ASLVisLoggerSpectatorPC::CreateNewMaskColor()
-{
-	FLinearColor RandColor = FLinearColor::MakeRandomColor();
-	//RandColor.ToFColor(true).ToHex();
-
-	// Add first color
-	if (MaskColors.Num() == 0)
-	{
-		MaskColors.Emplace(RandColor);
-		UE_LOG(LogTemp, Warning, TEXT("\t\t\t%s::%d Add first color %s"), TEXT(__FUNCTION__), __LINE__, *RandColor.ToString());
-		return RandColor;
-	}
-	else
-	{
-		int32 NrOfTrials = 0;
-		while (MaskColors.AddUnique(RandColor) == INDEX_NONE)
-		{
-			RandColor = FLinearColor::MakeRandomColor();
-			NrOfTrials++;
-			if (NrOfTrials > 100)
-			{
-				UE_LOG(LogTemp, Error, TEXT("\t\t\t\t%s::%d Could not generate a new random color (after 100 trials).."), TEXT(__FUNCTION__), __LINE__);
-				return FLinearColor(ForceInit);
-			}
-			UE_LOG(LogTemp, Error, TEXT("\t\t\t\t%s::%d Clash at trial=%d with Col=%s"), TEXT(__FUNCTION__), __LINE__, NrOfTrials, *RandColor.ToString());
-		}
-		//UE_LOG(LogTemp, Warning, TEXT("\t\t\t%s::%d Add unique color %s"), TEXT(__FUNCTION__), __LINE__, *RandColor.ToString());
-		return RandColor;
-	}
-}
-//////////////////////////////////////////////////
-//
-//// Init
-//void ASLVisLoggerSpectatorPC::MaskInit()
-//{
-//	UE_LOG(LogTemp, Warning, TEXT("%s::%d INIT"), TEXT(__FUNCTION__), __LINE__);
-//	if (!bMaskInit && DefaultMaskMaterial)
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("\t%s::%d IN INIT"), TEXT(__FUNCTION__), __LINE__);
-//		auto AddDynamicMaskMaterialsLambda = [&](UMeshComponent* MC, const FString& HexColorVal)
-//		{
-//			TArray<UMaterialInterface*> Materials;
-//			UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-//			for (int32 Idx = 0; Idx < MC->GetNumMaterials(); ++Idx)
-//			{
-//				DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
-//					FLinearColor(FColor::FromHex(HexColorVal)));
-//				Materials.Emplace(DynamicMaskMaterial);
-//				UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Add MASK. Entity=%s; DynMatName=%s; Hex=%s;"),
-//					TEXT(__FUNCTION__), __LINE__, *MC->GetOuter()->GetName(), *DynamicMaskMaterial->GetName(), *HexColorVal);
-//			}
-//			MeshesMaskMaterials.Emplace(MC, Materials);
-//		};
-//
-//		// Iterate static meshes from the world
-//		for (TActorIterator<AStaticMeshActor> SMAItr(GetWorld()); SMAItr; ++SMAItr)
-//		{
-//			if (UStaticMeshComponent* SMC = SMAItr->GetStaticMeshComponent())
-//			{
-//				// Cache original materials
-//				MeshesOrigMaterials.Add(SMC, SMC->GetMaterials());
-//
-//				// Check if the entity is annotated with a semantic color mask
-//				FString ColorHex = FTags::GetValue(*SMAItr, "SemLog", "VisMask");
-//				if (ColorHex.IsEmpty())
-//				{
-//					ColorHex = FTags::GetValue(SMC, "SemLog", "VisMask");
-//					if (ColorHex.IsEmpty())
-//					{
-//						UnknownMeshes.Emplace(SMC);
-//					}
-//					else
-//					{
-//						//AddDynamicMaskMaterialsLambda(SMC, ColorHex);
-//
-//						TArray<UMaterialInterface*> Materials;
-//						UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-//						for (int32 Idx = 0; Idx < SMC->GetNumMaterials(); ++Idx)
-//						{
-//							DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
-//								FLinearColor(FColor::FromHex(ColorHex)));
-//							Materials.Emplace(DynamicMaskMaterial);
-//							UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Add MASK. Entity=%s; DynMatName=%s; Hex=%s;"),
-//								TEXT(__FUNCTION__), __LINE__, *SMC->GetOuter()->GetName(), *DynamicMaskMaterial->GetName(), *ColorHex);
-//						}
-//						MeshesMaskMaterials.Emplace(SMC, Materials);
-//					}
-//				}
-//				else
-//				{
-//					//AddDynamicMaskMaterialsLambda(SMC, ColorHex);
-//
-//					TArray<UMaterialInterface*> Materials;
-//					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-//					for (int32 Idx = 0; Idx < SMC->GetNumMaterials(); ++Idx)
-//					{
-//						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
-//							FLinearColor(FColor::FromHex(ColorHex)));
-//						Materials.Emplace(DynamicMaskMaterial);
-//						UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Add MASK. Entity=%s; DynMatName=%s; Hex=%s;"),
-//							TEXT(__FUNCTION__), __LINE__, *SMC->GetOuter()->GetName(), *DynamicMaskMaterial->GetName(), *ColorHex);
-//					}
-//					MeshesMaskMaterials.Emplace(SMC, Materials);
-//				}
-//			}
-//		}
-//
-//		// TODO include semantic data from skeletal meshes as well
-//		// Iterate skeletal meshes
-//		for (TActorIterator<ASkeletalMeshActor> SkMAItr(GetWorld()); SkMAItr; ++SkMAItr)
-//		{
-//			if (USkeletalMeshComponent* SkMC = SkMAItr->GetSkeletalMeshComponent())
-//			{
-//				// Add original materials
-//				MeshesOrigMaterials.Add(SkMC, SkMC->GetMaterials());
-//
-//				// Check if the entity is annotated with a semantic color mask
-//				// TODO how to read bone colors
-//				FString ColorHex = FTags::GetValue(*SkMAItr, "SemLog", "VisMask");
-//				if (ColorHex.IsEmpty())
-//				{
-//					ColorHex = FTags::GetValue(SkMC, "SemLog", "VisMask");
-//					if (ColorHex.IsEmpty())
-//					{
-//						UnknownMeshes.Emplace(SkMC);
-//					}
-//					else
-//					{
-//						//AddDynamicMaskMaterialsLambda(SkMC, ColorHex, InParent);
-//					}
-//				}
-//				else
-//				{
-//					//AddDynamicMaskMaterialsLambda(SkMC, ColorHex, InParent);
-//				}
-//			}
-//		}
-//
-//		for (auto& MeshMatPair : MeshesMaskMaterials)
-//		{
-//			UE_LOG(LogTemp, Warning, TEXT("%s::%d VIEW mask of %s"),
-//				TEXT(__FUNCTION__), __LINE__, *MeshMatPair.Key->GetOuter()->GetName());
-//			
-//			for (int32 Idx = 0; Idx < MeshMatPair.Key->GetNumMaterials(); ++Idx)
-//			{
-//				UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Mat name=%s"),
-//					TEXT(__FUNCTION__), __LINE__, *Mat->GetName());
-//				MeshMatPair.Key->SetMaterial(Idx, Mat);				
-//			}
-//		}
-//
-//
-//		bMaskInit = true;
-//	}
-//}
-//
-//// Apply mask materials
-//bool ASLVisLoggerSpectatorPC::ApplyMaskMaterials()
-//{
-//	if (!bIsInit)
-//	{
-//		return false;
-//	}
-//
-//	UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Setting mask materials.."), TEXT(__FUNCTION__), __LINE__);
-//	for (auto& MeshMatPair : MeshesMaskMaterials)
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Apply mask to %s"),
-//			TEXT(__FUNCTION__), __LINE__, *MeshMatPair.Key->GetOuter()->GetName());
-//		for (int32 Idx = 0; Idx < MeshMatPair.Key->GetNumMaterials(); ++Idx)
-//		{
-//			UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Mat name=%s"),
-//				TEXT(__FUNCTION__), __LINE__, *Mat->GetName());
-//			MeshMatPair.Key->SetMaterial(Idx, Mat);
-//		}
-//	}
-//
-//	for (auto& Mesh : UnknownMeshes)
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Apply mask to %s"),
-//			TEXT(__FUNCTION__), __LINE__, *Mesh->GetOuter()->GetName());
-//		for (int32 Idx = 0; Idx < Mesh->GetNumMaterials(); ++Idx)
-//		{
-//			UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Mat name=%s"),
-//				TEXT(__FUNCTION__), __LINE__, *DefaultMaskMaterial->GetName());
-//			Mesh->SetMaterial(Idx, DefaultMaskMaterial);
-//		}
-//	}
-//	return true;
-//}
-//
-//// Apply original materials
-//bool ASLVisLoggerSpectatorPC::ApplyOriginalMaterials()
-//{
-//	if (!bIsInit)
-//	{
-//		return false;
-//	}
-//
-//	UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Setting orig materials.."), TEXT(__FUNCTION__), __LINE__);
-//	for (auto& MeshMatPair : MeshesMaskMaterials)
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Apply mask to %s"),
-//			TEXT(__FUNCTION__), __LINE__, *MeshMatPair.Key->GetOuter()->GetName());
-//		int32 MatIdx = 0;
-//		for (auto& Mat : MeshMatPair.Value)
-//		{
-//			UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Mat name=%s"),
-//				TEXT(__FUNCTION__), __LINE__, *Mat->GetName());
-//			//MeshMatPair.Key->SetMaterial(MatIdx, Mat);
-//			MatIdx++;
-//		}
-//	}
-//	return true;
-//}

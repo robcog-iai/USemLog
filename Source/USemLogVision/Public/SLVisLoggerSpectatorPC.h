@@ -7,11 +7,6 @@
 #include "GameFramework/PlayerController.h"
 #include "Misc/ScopedSlowTask.h"
 #include "SLVisImageWriterInterface.h"
-
-#include "Engine/StaticMeshActor.h"
-#include "Components/StaticMeshComponent.h"
-#include "Components/SkeletalMeshComponent.h"
-
 #include "SLVisLoggerSpectatorPC.generated.h"
 
 /**
@@ -111,12 +106,13 @@ private:
 	// True if the meshes have the mask materials on
 	bool bMaskMaterialsOn;
 
-	// Mask image visualizer helper
-	TSharedPtr<struct FSLVisMaskHelper> MaskVisHelper;
-
 	// Saves the image data to file/database etc.
-	UPROPERTY() // TScriptInterface can be used with UPROPERTY to avoid GC
-	TScriptInterface<ISLVisImageWriterInterface> Writer;
+	UPROPERTY() // TScriptInterface + UPROPERTY avoids GC on interfaces
+	TScriptInterface<ISLVisImageWriterInterface> Writer; 
+
+	// Mask image visualizer helper
+	UPROPERTY() // Avoid GC
+	class USLVisMaskVisualizer* MaskVisualizer;
 
 	// Images at a given timeslice
 	TArray<FSLVisImageData> CurrImagesData;
@@ -164,60 +160,4 @@ private:
 	// Progress bar
 	//TUniquePtr<FScopedSlowTask> ProgressBar;
 #endif //WITH_EDITOR
-
-private:
-	void MaskTimerInit();
-	void TimerSwitchMaterials();
-	void SetMaskMaterials();
-	void SetOrigMaterials();
-	FLinearColor CreateNewMaskColor();
-
-private:
-	// Material used if there is no semantic information on an entity (black)
-	UPROPERTY()
-	UMaterial* DefaultMaskMaterial;
-	UPROPERTY()
-	UMaterialInstanceDynamic* DynamicDefaultMaskMaterial;
-
-	TMap<UMeshComponent*, TArray<UMaterialInterface*>> MeshesOrigMaterials;
-
-	UPROPERTY()
-	TMap<UMeshComponent*, UMaterialInterface*> MeshesMaskMaterials;
-
-	TArray<UMeshComponent*> UnknownMeshes;
-
-//private:
-//	void TimerSwitchMaterials();
-//	// Creates a new unique mask color, if distance is 0.f it ignores checking distances between the colors
-//
-//
-//	void MaskInit();
-//
-//	// Apply mask materials
-//	bool ApplyMaskMaterials();
-//
-//	// Apply original materials
-//	bool ApplyOriginalMaterials();
-//
-//private:
-	FTimerHandle MaterialSwitchTimerHandle;
-//	//bool bMaskMaterialsOn;
-//	TMap<UStaticMeshComponent*, TArray<UMaterialInterface*>> SMCOrigMaterials;
-//	TMap<UStaticMeshComponent*, TArray<UMaterialInterface*>> SMCMaskMaterials;
-//
-//	// Cache of the currently occupied mask colors
-	TArray<FLinearColor> MaskColors;
-//
-//
-//	// Cache of the original materials
-//	TMap<UMeshComponent*, TArray<UMaterialInterface*>> MeshesOrigMaterials;
-//
-//	// Cache of the semantic mask values
-//	UPROPERTY()
-//	TMap<UMeshComponent*, UMaterialInterface*> MeshesMaskMaterials;
-//
-//	// Cache of the mesh components that are not semantically annotated (will be colored black)
-//	TArray<UMeshComponent*> UnknownMeshes;
-//
-//	bool bMaskInit;
 };
