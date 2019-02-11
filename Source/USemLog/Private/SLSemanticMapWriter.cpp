@@ -399,10 +399,10 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap>
 			const uint8 LinYMotion = ConstraintComp->ConstraintInstance.GetLinearYMotion();
 			const uint8 LinZMotion = ConstraintComp->ConstraintInstance.GetLinearZMotion();
 			const float LinLimit = FConversions::CmToM(ConstraintComp->ConstraintInstance.GetLinearLimit());
-			const bool bLinSoftConstraint = false; // ConstraintComp->ConstraintInstance.ProfileInstance.
-			const float LinStiffness = 0.f; // ConstraintComp->ConstraintInstance.ProfileInstance.
-			const float LinDamping = 0.f; // ConstraintComp->ConstraintInstance.ProfileInstance.
-
+			const bool bLinSoftConstraint = ConstraintComp->ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint;
+			const float LinStiffness = ConstraintComp->ConstraintInstance.ProfileInstance.LinearLimit.Stiffness;
+			const float LinDamping = ConstraintComp->ConstraintInstance.ProfileInstance.LinearLimit.Damping;
+			
 			InSemMap->AddIndividual(FSLOwlSemanticMapStatics::CreateLinearConstraintProperties(
 				MapPrefix, LinId, LinXMotion, LinYMotion, LinZMotion, LinLimit, 
 				bLinSoftConstraint, LinStiffness, LinDamping));
@@ -414,12 +414,12 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap>
 			const float AngSwing1Limit = FMath::DegreesToRadians(ConstraintComp->ConstraintInstance.GetAngularSwing1Limit());
 			const float AngSwing2Limit = FMath::DegreesToRadians(ConstraintComp->ConstraintInstance.GetAngularSwing2Limit());
 			const float AngTwistLimit = FMath::DegreesToRadians(ConstraintComp->ConstraintInstance.GetAngularTwistLimit());
-			const bool bAngSoftSwingConstraint = false;
-			const float AngSwingStiffness = 0.f;
-			const float AngSwingDamping = 0.f;
-			const bool bAngSoftTwistConstraint = false;
-			const float AngTwistStiffness = 0.f;
-			const float AngTwistDamping = 0.f;
+			const bool bAngSoftSwingConstraint = ConstraintComp->ConstraintInstance.ProfileInstance.ConeLimit.bSoftConstraint;
+			const float AngSwingStiffness = ConstraintComp->ConstraintInstance.ProfileInstance.ConeLimit.Stiffness;
+			const float AngSwingDamping = ConstraintComp->ConstraintInstance.ProfileInstance.ConeLimit.Damping;
+			const bool bAngSoftTwistConstraint = ConstraintComp->ConstraintInstance.ProfileInstance.TwistLimit.bSoftConstraint;
+			const float AngTwistStiffness = ConstraintComp->ConstraintInstance.ProfileInstance.TwistLimit.Stiffness;
+			const float AngTwistDamping = ConstraintComp->ConstraintInstance.ProfileInstance.TwistLimit.Damping;
 
 			InSemMap->AddIndividual(FSLOwlSemanticMapStatics::CreateAngularConstraintProperties(
 				MapPrefix, AngId, AngSwing1Motion, AngSwing2Motion, AngTwistMotion,
