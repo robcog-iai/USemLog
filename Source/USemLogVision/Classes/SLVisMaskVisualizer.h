@@ -10,6 +10,46 @@
 #include "SLVisMaskVisualizer.generated.h"
 
 /**
+* Information about the semantic color
+*/
+struct FSLVisSemanticColorInfo
+{
+	// Pointer to the semantically annotated UObject
+	UObject* Owner;
+
+	// Color in hex
+	FString ColorHex;
+
+	// Color
+	FColor Color;
+
+	// Semantic class it represents
+	FString Class;
+
+	// Unique ID
+	FString Id;
+
+	// Checks if all values are set
+	bool IsComplete() const { return Owner 
+		&& !ColorHex.IsEmpty() 
+		&& Color == FColor::FromHex(ColorHex) 
+		&& !Class.IsEmpty() 
+		&& !Id.IsEmpty(); };
+
+	// Write an output of the struct
+	FORCEINLINE FString ToString() const
+	{
+		return FString::Printf(TEXT("Owner=%s; ColorHex=%s; Color=%s; Class=%s; Id=%s;"),
+			*Owner->GetName(),
+			*ColorHex,
+			*Color.ToString(),
+			*Class,
+			*Id);
+	}
+};
+
+
+/**
  * 
  */
 UCLASS()
@@ -30,23 +70,33 @@ public:
 	bool IsInit() const { return bIsInit; };
 
 	// Returns true if the masks are currently active on the meshes
-	bool AreMasksOn() const { return bAreMaskMaterialsOn; };
+	bool AreMasksOn() const { return bMaskMaterialsOn; };
 
 	// Apply mask materials
-	void ApplyMaskMaterials();
+	bool ApplyMaskMaterials();
 
 	// Apply original materials
-	void ApplyOriginalMaterials();
+	bool ApplyOriginalMaterials();
 
 	// Toggle between the mask and original materials
-	void Toggle();
+	bool Toggle();
+
+	// Get semantic objects from view, true if succeeded
+	bool GetSemanticObjectsFromView(const TArray<FColor>& InBitmap, TArray<FSLVisSemanticColorInfo>& OutSemColorsInfo);
+
+private:
+	// Add information about the semantic color (return true if all the fields were filled)
+	bool AddSemanticColorInfo(FColor Color, const FString& ColorHex, UObject* Owner);
 
 private:
 	// Set when logger is initialized
 	bool bIsInit;
 
 	// true if the mask materials are currently are on the meshes
-	bool bAreMaskMaterialsOn;
+	bool bMaskMaterialsOn;
+
+	// Store the information about the semantic color
+	TMap<FColor, FSLVisSemanticColorInfo> SemanticColorsInfo;
 
 	// Material used if there is no semantic information on an entity (black)
 	UMaterial* DefaultMaskMaterial;

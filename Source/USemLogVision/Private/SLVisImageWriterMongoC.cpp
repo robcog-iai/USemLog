@@ -31,7 +31,7 @@ void USLVisImageWriterMongoC::Init(const FSLVisImageWriterParams& InParams)
 	//bson_free(ws_oid2);
 	//ws_oid2 = nullptr;
 	bCreateNewEntry = false;
-	TimeRange = InParams.NewEntryTimeRange;
+	TimeRange = InParams.SkipNewEntryTolerance;
 	bIsInit = USLVisImageWriterMongoC::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
 }
 
@@ -423,8 +423,8 @@ bool USLVisImageWriterMongoC::SaveImageToGridFS(const FSLVisImageData& ImgData, 
 	file = mongoc_gridfs_create_file(gridfs, &file_opt);
 
 	// Set data binary and length
-	iov.iov_base = (char*)(ImgData.Data.GetData());
-	iov.iov_len = ImgData.Data.Num();
+	iov.iov_base = (char*)(ImgData.BinaryData.GetData());
+	iov.iov_len = ImgData.BinaryData.Num();
 
 	// Write data to gridfs
 	if (iov.iov_len != mongoc_gridfs_file_writev(file, &iov, 1, 0))

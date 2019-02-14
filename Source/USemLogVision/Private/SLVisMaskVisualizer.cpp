@@ -12,7 +12,7 @@
 USLVisMaskVisualizer::USLVisMaskVisualizer()
 {
 	bIsInit = false;
-	bAreMaskMaterialsOn = false;
+	bMaskMaterialsOn = false;
 };
 
 // Dtor
@@ -41,17 +41,23 @@ void USLVisMaskVisualizer::Init()
 		}
 
 		// Cache original materials, and create mask materials for static meshes
-		for (TActorIterator<AStaticMeshActor> SkMAItr(GetWorld()); SkMAItr; ++SkMAItr)
+		for (TActorIterator<AStaticMeshActor> SMAItr(GetWorld()); SMAItr; ++SMAItr)
 		{
-			if (UStaticMeshComponent* SMC = SkMAItr->GetStaticMeshComponent())
+			if (UStaticMeshComponent* SMC = SMAItr->GetStaticMeshComponent())
 			{
 				OriginalMaterials.Emplace(SMC, SMC->GetMaterials());
 
-				FString ColorHex = FTags::GetValue(*SkMAItr, "SemLog", "VisMask");
+				FString ColorHex = FTags::GetValue(*SMAItr, "SemLog", "VisMask");
 				if (!ColorHex.IsEmpty())
 				{
+					FColor SemColor(FColor::FromHex(ColorHex));
+					if (!USLVisMaskVisualizer::AddSemanticColorInfo(SemColor, ColorHex, *SMAItr))
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d Color=[%s|%s] is missing semantic information.."),
+							TEXT(__FUNCTION__), __LINE__, *ColorHex, *SemColor.ToString());
+					}
 					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(FColor::FromHex(ColorHex)));
+					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(SemColor));
 					MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
 				}
 				else
@@ -59,8 +65,14 @@ void USLVisMaskVisualizer::Init()
 					ColorHex = FTags::GetValue(SMC, "SemLog", "VisMask");
 					if (!ColorHex.IsEmpty())
 					{
+						FColor SemColor(FColor::FromHex(ColorHex));
+						if (!USLVisMaskVisualizer::AddSemanticColorInfo(SemColor, ColorHex, SMC))
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d Color=[%s|%s] is missing semantic information.."),
+								TEXT(__FUNCTION__), __LINE__, *ColorHex, *SemColor.ToString());
+						}
 						UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(FColor::FromHex(ColorHex)));
+						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(SemColor));
 						MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
 					}
 					else
@@ -82,8 +94,14 @@ void USLVisMaskVisualizer::Init()
 				FString ColorHex = FTags::GetValue(*SkMAItr, "SemLog", "VisMask");
 				if (!ColorHex.IsEmpty())
 				{
+					FColor SemColor(FColor::FromHex(ColorHex));
+					if (!USLVisMaskVisualizer::AddSemanticColorInfo(SemColor, ColorHex, *SkMAItr))
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d Color=[%s|%s] is missing semantic information.."),
+							TEXT(__FUNCTION__), __LINE__, *ColorHex, *SemColor.ToString());
+					}
 					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(FColor::FromHex(ColorHex)));
+					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(SemColor));
 					MaskMaterials.Emplace(SkMC, DynamicMaskMaterial);
 				}
 				else
@@ -91,8 +109,14 @@ void USLVisMaskVisualizer::Init()
 					ColorHex = FTags::GetValue(SkMC, "SemLog", "VisMask");
 					if (!ColorHex.IsEmpty())
 					{
+						FColor SemColor(FColor::FromHex(ColorHex));
+						if (!USLVisMaskVisualizer::AddSemanticColorInfo(SemColor, ColorHex, SkMC))
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d Color=[%s|%s] is missing semantic information.."),
+								TEXT(__FUNCTION__), __LINE__, *ColorHex, *SemColor.ToString());
+						}
 						UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(FColor::FromHex(ColorHex)));
+						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(SemColor));
 						MaskMaterials.Emplace(SkMC, DynamicMaskMaterial);
 					}
 					else
@@ -107,49 +131,109 @@ void USLVisMaskVisualizer::Init()
 };
 
 // Apply mask materials
-void USLVisMaskVisualizer::ApplyMaskMaterials()
+bool USLVisMaskVisualizer::ApplyMaskMaterials()
 {
-	for (const auto& MeshMatPair : MaskMaterials)
+	if (bIsInit)
 	{
-		for (int32 Idx = 0; Idx < MeshMatPair.Key->GetNumMaterials(); ++Idx)
+		for (const auto& MeshMatPair : MaskMaterials)
 		{
-			MeshMatPair.Key->SetMaterial(Idx, MeshMatPair.Value);
+			for (int32 Idx = 0; Idx < MeshMatPair.Key->GetNumMaterials(); ++Idx)
+			{
+				MeshMatPair.Key->SetMaterial(Idx, MeshMatPair.Value);
+			}
 		}
-	}
-	for (auto& Mesh : IgnoredMeshes)
-	{
-		for (int32 Idx = 0; Idx < Mesh->GetNumMaterials(); ++Idx)
+		for (auto& Mesh : IgnoredMeshes)
 		{
-			Mesh->SetMaterial(Idx, DefaultMaskMaterial);
+			for (int32 Idx = 0; Idx < Mesh->GetNumMaterials(); ++Idx)
+			{
+				Mesh->SetMaterial(Idx, DefaultMaskMaterial);
+			}
 		}
+		bMaskMaterialsOn = true;
+		return true;
 	}
-	bAreMaskMaterialsOn = true;
+	return false;
 }
 
 // Apply original materials
-void USLVisMaskVisualizer::ApplyOriginalMaterials()
+bool USLVisMaskVisualizer::ApplyOriginalMaterials()
 {
-	for (const auto& MeshMatPair : OriginalMaterials)
+	if (bIsInit)
 	{
-		int32 Idx = 0;
-		for (auto& Mat : MeshMatPair.Value)
+		for (const auto& MeshMatPair : OriginalMaterials)
 		{
-			MeshMatPair.Key->SetMaterial(Idx, Mat);
-			Idx++;
+			int32 Idx = 0;
+			for (auto& Mat : MeshMatPair.Value)
+			{
+				MeshMatPair.Key->SetMaterial(Idx, Mat);
+				Idx++;
+			}
 		}
+		bMaskMaterialsOn = false;
+		return true;
 	}
-	bAreMaskMaterialsOn = false;
+	return false;
 }
 
 // Toggle between the mask and original materials
-void USLVisMaskVisualizer::Toggle()
+bool USLVisMaskVisualizer::Toggle()
 {
-	if (bAreMaskMaterialsOn)
+	if (bMaskMaterialsOn)
 	{
-		USLVisMaskVisualizer::ApplyOriginalMaterials();
+		return USLVisMaskVisualizer::ApplyOriginalMaterials();
 	}
 	else
 	{
-		USLVisMaskVisualizer::ApplyMaskMaterials();
+		return USLVisMaskVisualizer::ApplyMaskMaterials();
 	}
 }
+
+// Get semantic objects from view, true if succeeded
+bool USLVisMaskVisualizer::GetSemanticObjectsFromView(const TArray<FColor>& InBitmap, TArray<FSLVisSemanticColorInfo>& OutSemColorsInfo)
+{
+	if (bMaskMaterialsOn)
+	{
+		// Get all unique colors from image
+		TSet<FColor> UniqueColors;
+		for (const auto& Color : InBitmap)
+		{
+			if (!UniqueColors.Contains(Color))
+			{
+				UniqueColors.Add(Color);
+			}
+		}
+
+		// Iterate unique colors and add the semantic data to the output array
+		for (const auto& Color : UniqueColors)
+		{
+			if (SemanticColorsInfo.Contains(Color))
+			{
+				OutSemColorsInfo.Emplace(SemanticColorsInfo[Color]);
+			}
+			else
+			{
+				//UE_LOG(LogTemp, Error, TEXT("%s::%d Color=[%s] is missing semantic information.."),
+				//	TEXT(__FUNCTION__), __LINE__, *Color.ToString());
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
+
+// Add information about the semantic color (return true if all the fields were filled)
+bool USLVisMaskVisualizer::AddSemanticColorInfo(FColor Color, const FString& ColorHex, UObject* Owner)
+{
+	FSLVisSemanticColorInfo SemColInfo;
+	SemColInfo.Owner = Owner;
+	SemColInfo.ColorHex = ColorHex;
+	SemColInfo.Color = Color;
+	SemColInfo.Class = FTags::GetValue(Owner, "SemLog", "Class");
+	SemColInfo.Id = FTags::GetValue(Owner, "SemLog", "Id");
+
+	SemanticColorsInfo.Emplace(Color, SemColInfo);
+
+	return SemColInfo.IsComplete();
+}
+

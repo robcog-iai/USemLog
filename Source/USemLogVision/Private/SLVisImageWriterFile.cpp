@@ -46,6 +46,6 @@ void USLVisImageWriterFile::Write(float Timestamp, const TArray<FSLVisImageData>
 		FString ImgPath = DirPath + "/" + Filename;
 		FPaths::RemoveDuplicateSlashes(ImgPath);
 		// Save to file
-		FFileHelper::SaveArrayToFile(Img.Data, *ImgPath);
+		FFileHelper::SaveArrayToFile(Img.BinaryData, *ImgPath);
 	}
 }

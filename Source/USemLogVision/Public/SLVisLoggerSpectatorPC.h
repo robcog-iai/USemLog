@@ -28,9 +28,6 @@ protected:
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	// Setup user input bindings
-	virtual void SetupInputComponent() override;
-
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -93,6 +90,12 @@ private:
 	// Skip the current timestamp (return false if not a mongo writer)
 	bool ShouldSkipThisFrame(float Timestamp);
 
+	// Check if entities are in the frustum using bounding box checks
+	void ShallowFrustumCheck();
+
+	// Check if entities are rendered using the image masks
+	void MaskFrustumCheck();
+
 private:
 	// Set when logger is initialized
 	bool bIsInit;
@@ -102,9 +105,6 @@ private:
 
 	// Set when logger is finished
 	bool bIsFinished;
-	
-	// True if the meshes have the mask materials on
-	bool bMaskMaterialsOn;
 
 	// Saves the image data to file/database etc.
 	UPROPERTY() // TScriptInterface + UPROPERTY avoids GC on interfaces
@@ -127,13 +127,13 @@ private:
 	TArray<class ASLVisCameraView*> CameraViews;
 
 	// Rendering buffer types
-	TArray<FName> ViewTypes;
+	TArray<FName> RenderTypes;
 
 	// Index of the current view
 	int32 ActiveCameraViewIndex;
 
 	// Index of the current view type
-	int32 ActiveViewTypeIndex;
+	int32 ActiveRenderTypeIndex;
 
 	// Image size X
 	int32 ResX;
@@ -145,7 +145,7 @@ private:
 	float DemoUpdateRate;
 	
 	// Avoid creating a new db entry if there is a world state in the given range [--- Ts ---]
-	float NewEntryTimeRange;
+	float SkipNewEntryTolerance;
 
 	// Current demo time
 	float DemoTimestamp;

@@ -26,18 +26,18 @@ struct FSLVisImageWriterParams
 	uint16 ServerPort;
 
 	// Minimum time offset for a new entry
-	float NewEntryTimeRange;
+	float SkipNewEntryTolerance;
 
 	// Constructor
 	FSLVisImageWriterParams(
 		const FString& InLocation,
 		const FString& InEpisodeId,
-		float InNewEntryTimeRange = 0.f,
+		float InSkipNewEntryTolerance = 0.f,
 		const FString& InServerIp = "",
 		uint16 InServerPort = 0) :
 		Location(InLocation),
 		EpisodeId(InEpisodeId),
-		NewEntryTimeRange(InNewEntryTimeRange),
+		SkipNewEntryTolerance(InSkipNewEntryTolerance),
 		ServerIp(InServerIp),
 		ServerPort(InServerPort)
 	{};
@@ -85,12 +85,12 @@ struct FSLVisImageData
 	// Metadata
 	FSLVisImageMetadata Metadata;
 
-	// Data
-	TArray<uint8> Data;
+	// Binary data
+	TArray<uint8> BinaryData;
 
 	// Ctor
-	FSLVisImageData(const FSLVisImageMetadata& InMetadata, const TArray<uint8>& InData) :
-		Metadata(InMetadata), Data(InData)
+	FSLVisImageData(const FSLVisImageMetadata& InMetadata, const TArray<uint8>& InBinaryData) :
+		Metadata(InMetadata), BinaryData(InBinaryData)
 	{};
 };
 

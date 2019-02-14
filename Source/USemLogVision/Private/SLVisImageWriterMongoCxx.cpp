@@ -91,7 +91,7 @@ void USLVisImageWriterMongoCxx::Write(float Timestamp, const TArray<FSLVisImageD
 			gridfs::uploader gridfs_uploader = gridfs_bucket.open_upload_stream(TCHAR_TO_UTF8(*ImageName), upload_options);
 
 			// Write data to uploader
-			gridfs_uploader.write(reinterpret_cast<const uint8_t*>(Img.Data.GetData()), static_cast<uint32_t>(Img.Data.Num()));
+			gridfs_uploader.write(reinterpret_cast<const uint8_t*>(Img.BinaryData.GetData()), static_cast<uint32_t>(Img.BinaryData.Num()));
 
 			// Close uploader and write the id of the written data object
 			result::gridfs::upload upload_result = gridfs_uploader.close();

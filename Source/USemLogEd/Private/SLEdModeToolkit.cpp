@@ -340,32 +340,24 @@ void FSLEdModeToolkit::OnCheckedOverwriteClassNames(ECheckBoxState NewCheckedSta
 // Set unique mask colors in hexa for the entities
 FReply FSLEdModeToolkit::SetVisualMaskValues()
 {
-	// Keep all colors in an array to check for uniqueness;
-	TArray<FColor> MaskColors;
+	// Keep all colors in a set to ensure uniqueness;
+	TSet<FColor> TotalMaskColors;
 
 	// Lambda for generating unique colors as hex string
-	auto GetUniqueRandomColorLambda = [&MaskColors]()->FString
+	auto GetUniqueRandomColorLambda = [&TotalMaskColors]()->FString
 	{
-		FColor RandColor = FColor::MakeRandomColor();
-		if (MaskColors.Num() == 0)
+		// Iterate generating a random color until it is unique (and differs from black)
+		for (int32 Idx = 0; Idx < 10; ++Idx)
 		{
-			MaskColors.Emplace(RandColor);
-			return RandColor.ToHex();
-		}
-		else
-		{
-			int32 NrOfTrials = 0;
-			while (MaskColors.AddUnique(RandColor) == INDEX_NONE)
+			FColor RandColor = FColor::MakeRandomColor();
+			if (RandColor != FColor::Black && !TotalMaskColors.Contains(RandColor))
 			{
-				RandColor = FColor::MakeRandomColor();
-				NrOfTrials++;
-				if (NrOfTrials > 10)
-				{
-					return FColor(ForceInit).ToHex();
-				}
+				TotalMaskColors.Emplace(RandColor);
+				return RandColor.ToHex();
 			}
-			return RandColor.ToHex();
 		}
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a unique color, setting as black.."), TEXT(__FUNCTION__), __LINE__);
+		return FColor::Black.ToHex();
 	};
 
 	// Iterate only static mesh actors
