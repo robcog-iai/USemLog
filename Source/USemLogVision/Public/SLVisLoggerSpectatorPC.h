@@ -85,7 +85,7 @@ private:
 	bool SetNextViewType();
 
 	// Setup the given view type
-	bool ChangeViewType(const FName& ViewType);
+	bool ApplyViewType(const FName& ViewType);
 
 	// Skip the current timestamp (return false if not a mongo writer)
 	bool ShouldSkipThisFrame(float Timestamp);

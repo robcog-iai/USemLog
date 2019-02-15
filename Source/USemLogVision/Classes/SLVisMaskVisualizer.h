@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Math/UnrealMathUtility.h"
 #include "UObject/NoExportTypes.h"
 #include "Components/MeshComponent.h"
 #include "Materials/MaterialInterface.h"
@@ -39,7 +40,7 @@ struct FSLVisSemanticColorInfo
 	// Write an output of the struct
 	FORCEINLINE FString ToString() const
 	{
-		return FString::Printf(TEXT("Owner=%s; ColorHex=%s; Color=%s; Class=%s; Id=%s;"),
+		return FString::Printf(TEXT("Owner=%s; ColorHex=%s; Color=%s; Class=%s; Id=%s; NumPixels=%d"),
 			*Owner->GetName(),
 			*ColorHex,
 			*Color.ToString(),
@@ -88,12 +89,25 @@ private:
 	// Add information about the semantic color (return true if all the fields were filled)
 	bool AddSemanticColorInfo(FColor Color, const FString& ColorHex, UObject* Owner);
 
+	// Compare against the semantic colors, if found switch (update color info during)
+	bool SearchAndSwitchWithSemanticColor(FColor& OutColor);
+
+	// Compare the two FColor with a tolerance
+	FORCEINLINE bool CompareWithTolerance(const FColor& ColorA, const FColor& ColorB, uint8 Tolerance = 2) const
+	{
+		return FMath::Abs(ColorA.R - ColorB.R) < Tolerance && FMath::Abs(ColorA.G - ColorB.G) < Tolerance && FMath::Abs(ColorA.B - ColorB.B) < Tolerance;
+	}
+
+
 private:
 	// Set when logger is initialized
 	bool bIsInit;
 
 	// true if the mask materials are currently are on the meshes
 	bool bMaskMaterialsOn;
+
+	// Store the semantic colors
+	TArray<FColor> SemanticColors;
 
 	// Store the information about the semantic color
 	TMap<FColor, FSLVisSemanticColorInfo> SemanticColorsInfo;

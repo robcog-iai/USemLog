@@ -41,12 +41,12 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	RenderTypes.Add("SLMask");
 	//RenderTypes.Add("SceneDepth");
 	//RenderTypes.Add("WorldNormal");
-	RenderTypes.Add("SLSceneDepth");
+	//RenderTypes.Add("SLSceneDepth");
 
 
 	// Image size
-	ResX = 4800;
-	ResY = 3200;
+	ResX = 24;
+	ResY = 16;
 	//// 8k
 	//ResX = 7680;
 	//ResY = 4320;
@@ -71,6 +71,14 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 void ASLVisLoggerSpectatorPC::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Hide generated pawn from the scene
+	if (GetPawnOrSpectator())
+	{
+		GetPawnOrSpectator()->SetActorHiddenInGame(true);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d pawn/spec name=%s"), TEXT(__FUNCTION__), __LINE__, *GetPawnOrSpectator()->GetName());
+	}
+
 
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{
@@ -103,9 +111,6 @@ void ASLVisLoggerSpectatorPC::Init()
 {
 	if (!bIsInit)
 	{
-		// Hide generated pawn from the scene
-		GetPawnOrSpectator()->SetActorHiddenInGame(true);
-		
 		ActiveCameraViewIndex = 0;
 		ActiveRenderTypeIndex = 0;
 		DemoTimestamp = 0.f;
@@ -232,7 +237,7 @@ void ASLVisLoggerSpectatorPC::Finish()
 	
 		// Crashes if called from EndPlay
 		// Try to quit editor
-		ASLVisLoggerSpectatorPC::QuitEditor();
+		//ASLVisLoggerSpectatorPC::QuitEditor();
 	}
 }
 
@@ -242,6 +247,7 @@ void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 	// TODO this probably causes an extra screenshot callback
 	// Set screenshot image and viewport resolution size
 	GetHighResScreenshotConfig().SetResolution(ResX, ResY, 1.0f);
+	
 	// SetResolution() sets GIsHighResScreenshot to true, which triggers the callback, avoid this be re-setting the flat to false
 	GIsHighResScreenshot = false;
 
@@ -253,6 +259,8 @@ void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 	// e.g. 1280x720w for windowed, 1920x1080f for fullscreen, 1920x1080wf for windowed fullscreen
 	//FString ResStr = FString::FromInt(ResX) + "x" + FString::FromInt(ResY)/* + "f"*/;
 	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetRes"))->Set(*ResStr);
+
+	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SceneColorFormat"))->Set(PF_R8G8B8A8);
 
 	// Which anti-aliasing mode is used by default (if masking is used the AA should be turned off, otherwise the edge pixels will differ)
 	// 	AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
@@ -492,7 +500,7 @@ bool ASLVisLoggerSpectatorPC::SetFirstViewType()
 	ActiveRenderTypeIndex = 0;
 	if (RenderTypes.IsValidIndex(ActiveRenderTypeIndex))
 	{
-		return ASLVisLoggerSpectatorPC::ChangeViewType(RenderTypes[ActiveRenderTypeIndex]);
+		return ASLVisLoggerSpectatorPC::ApplyViewType(RenderTypes[ActiveRenderTypeIndex]);
 	}
 	else
 	{
@@ -507,7 +515,7 @@ bool ASLVisLoggerSpectatorPC::SetNextViewType()
 	ActiveRenderTypeIndex++;
 	if (RenderTypes.IsValidIndex(ActiveRenderTypeIndex))
 	{
-		return ASLVisLoggerSpectatorPC::ChangeViewType(RenderTypes[ActiveRenderTypeIndex]);
+		return ASLVisLoggerSpectatorPC::ApplyViewType(RenderTypes[ActiveRenderTypeIndex]);
 	}
 	else
 	{
@@ -516,7 +524,7 @@ bool ASLVisLoggerSpectatorPC::SetNextViewType()
 }
 
 // Render the given view type
-bool ASLVisLoggerSpectatorPC::ChangeViewType(const FName& ViewType)
+bool ASLVisLoggerSpectatorPC::ApplyViewType(const FName& ViewType)
 {
 	// Get the console variable for switching buffer views
 	static IConsoleVariable* BufferVisTargetCV = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));	
@@ -530,6 +538,9 @@ bool ASLVisLoggerSpectatorPC::ChangeViewType(const FName& ViewType)
 			{
 				MaskVisualizer->ApplyOriginalMaterials();
 				ViewportClient->GetEngineShowFlags()->SetPostProcessing(true);
+				//ViewportClient->GetEngineShowFlags()->SetLighting(true);
+				//ViewportClient->GetEngineShowFlags()->SetColorGrading(true);
+				//ViewportClient->GetEngineShowFlags()->SetTonemapper(true);
 			}
 			// Visualize original scene
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
@@ -540,14 +551,30 @@ bool ASLVisLoggerSpectatorPC::ChangeViewType(const FName& ViewType)
 			{
 				MaskVisualizer->ApplyMaskMaterials();
 				ViewportClient->GetEngineShowFlags()->SetPostProcessing(false);
+				//ViewportClient->GetEngineShowFlags()->SetLighting(false);
+				//ViewportClient->GetEngineShowFlags()->SetColorGrading(false);
+				//ViewportClient->GetEngineShowFlags()->SetTonemapper(false);
+				//ViewportClient->GetEngineShowFlags()->SetMaterials(false);
+				//ViewportClient->GetEngineShowFlags()->SetSceneColorFringe(false);
+			//	ViewportClient->GetEngineShowFlags()->SetAtmosphericFog(false);
+			//	ViewportClient->GetEngineShowFlags()->SetAntiAliasing(false);
+			//	//ViewportClient->GetEngineShowFlags()->SetGlobalIllumination(true);
+			//	//ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			//	//BufferVisTargetCV->Set(TEXT("BaseColor"));
+
+				//ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+				//BufferVisTargetCV->Set(TEXT("BaseColor"));
 			}
 		}
 		else
 		{
 			if (MaskVisualizer && MaskVisualizer->AreMasksOn())
 			{
-				MaskVisualizer->ApplyOriginalMaterials(); 
+				MaskVisualizer->ApplyOriginalMaterials();
 				ViewportClient->GetEngineShowFlags()->SetPostProcessing(true);
+				//ViewportClient->GetEngineShowFlags()->SetLighting(true);
+				//ViewportClient->GetEngineShowFlags()->SetColorGrading(true);
+				//ViewportClient->GetEngineShowFlags()->SetTonemapper(true);
 			}
 			// Select buffer to visualize
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
@@ -596,8 +623,7 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 			}
 			//return AsMongoCWriter->ShouldSkipThisTimestamp(Timestamp);
 		}
-
-		// For other wirters don't skip anything
+		// Don't skip anything
 		return false;
 	}
 

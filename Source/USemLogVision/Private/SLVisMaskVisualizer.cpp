@@ -57,7 +57,7 @@ void USLVisMaskVisualizer::Init()
 							TEXT(__FUNCTION__), __LINE__, *ColorHex, *SemColor.ToString());
 					}
 					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(SemColor));
+					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 					MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
 				}
 				else
@@ -72,7 +72,7 @@ void USLVisMaskVisualizer::Init()
 								TEXT(__FUNCTION__), __LINE__, *ColorHex, *SemColor.ToString());
 						}
 						UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(SemColor));
+						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 						MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
 					}
 					else
@@ -101,7 +101,7 @@ void USLVisMaskVisualizer::Init()
 							TEXT(__FUNCTION__), __LINE__, *ColorHex, *SemColor.ToString());
 					}
 					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(SemColor));
+					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 					MaskMaterials.Emplace(SkMC, DynamicMaskMaterial);
 				}
 				else
@@ -116,7 +116,7 @@ void USLVisMaskVisualizer::Init()
 								TEXT(__FUNCTION__), __LINE__, *ColorHex, *SemColor.ToString());
 						}
 						UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor(SemColor));
+						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 						MaskMaterials.Emplace(SkMC, DynamicMaskMaterial);
 					}
 					else
@@ -200,6 +200,8 @@ bool USLVisMaskVisualizer::GetSemanticObjectsFromView(const TArray<FColor>& InBi
 			if (!UniqueColors.Contains(Color))
 			{
 				UniqueColors.Add(Color);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Unique color in img=%s|%s"), TEXT(__FUNCTION__), __LINE__, 
+					*Color.ToString(), *Color.ToHex());
 			}
 		}
 
@@ -216,11 +218,24 @@ bool USLVisMaskVisualizer::GetSemanticObjectsFromView(const TArray<FColor>& InBi
 				//	TEXT(__FUNCTION__), __LINE__, *Color.ToString());
 			}
 		}
+
+		for (const auto& Color : InBitmap)
+		{
+			FColor MutableColor = Color;
+			UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Search and swithcing MutableColor=%s"),
+				TEXT(__FUNCTION__), __LINE__, *MutableColor.ToString());
+			if (USLVisMaskVisualizer::SearchAndSwitchWithSemanticColor(MutableColor))
+			{
+				UE_LOG(LogTemp, Error, TEXT("\t\t\t\t%s::%d MutableColor is now=%s"), TEXT(__FUNCTION__), __LINE__, 
+					*MutableColor.ToString());
+				continue;
+			}
+		}
+
 		return true;
 	}
 	return false;
 }
-
 
 // Add information about the semantic color (return true if all the fields were filled)
 bool USLVisMaskVisualizer::AddSemanticColorInfo(FColor Color, const FString& ColorHex, UObject* Owner)
@@ -232,8 +247,57 @@ bool USLVisMaskVisualizer::AddSemanticColorInfo(FColor Color, const FString& Col
 	SemColInfo.Class = FTags::GetValue(Owner, "SemLog", "Class");
 	SemColInfo.Id = FTags::GetValue(Owner, "SemLog", "Id");
 
+	// TODO check if redundancy should be kept
 	SemanticColorsInfo.Emplace(Color, SemColInfo);
+	SemanticColors.Emplace(Color);
+
+
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d SC=%s"), TEXT(__FUNCTION__), __LINE__, *SemColInfo.ToString());
+
+	FLinearColor FromPow = FLinearColor::FromPow22Color(Color);
+	FColor FromPowF = FromPow.ToFColor(false);
+	FColor FromPowSRGB = FromPow.ToFColor(true);
+
+	UE_LOG(LogTemp, Warning, TEXT("\t FromPow22: \n\t\t FColorLin=%s|%s \n\t\t FColorSRGB=%s|%s"),		
+		*FromPowF.ToString(),
+		*FromPowF.ToHex(),
+		*FromPowSRGB.ToString(),
+		*FromPowSRGB.ToHex());
+
+	FLinearColor FromSRGB = FLinearColor::FromSRGBColor(Color);
+	FColor FromSRGBF = FromSRGB.ToFColor(false);
+	FColor FromSRGBSRGB = FromSRGB.ToFColor(true);
+
+	UE_LOG(LogTemp, Warning, TEXT("\t FromSRGB: \n\t\t FColorLin=%s|%s \n\t\t FColorSRGB=%s|%s"),
+		*FromSRGBF.ToString(),
+		*FromSRGBF.ToHex(),
+		*FromSRGBSRGB.ToString(),
+		*FromSRGBSRGB.ToHex());
+
 
 	return SemColInfo.IsComplete();
+}
+
+// Compare against the semantic colors, if found switch (update color info during), returns true if the color has been switched
+bool USLVisMaskVisualizer::SearchAndSwitchWithSemanticColor(FColor& OutColor)
+{
+	// Lambda for the FindByPredicate function, checks if the two colors are similar 
+	auto FindPredicateLambda = [this, &OutColor](const FColor& SemColor)
+	{
+		return this->CompareWithTolerance(OutColor, SemColor);
+	};
+
+	// If the two colors are similar, apply the semantic value to it
+	if (FColor* FoundSemanticColor = SemanticColors.FindByPredicate(FindPredicateLambda))
+	{
+		// Do the switch
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Before the switch %s --> %s"),
+			TEXT(__FUNCTION__), __LINE__, *OutColor.ToString(), *FoundSemanticColor->ToString());
+			OutColor = *FoundSemanticColor;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Adfter the switch %s --> %s"), TEXT(__FUNCTION__), __LINE__,
+			*OutColor.ToString(), *FoundSemanticColor->ToString());
+			return true;
+	}
+	return false;
 }
 

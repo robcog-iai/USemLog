@@ -343,6 +343,7 @@ FReply FSLEdModeToolkit::SetVisualMaskValues()
 	// Keep all colors in a set to ensure uniqueness;
 	TSet<FColor> TotalMaskColors;
 
+	// TODO add a min difference between the colors (e.g. return Abs(R-r) > 5 || Abs(G-g) > 5 || Abs(B-b) > 5);
 	// Lambda for generating unique colors as hex string
 	auto GetUniqueRandomColorLambda = [&TotalMaskColors]()->FString
 	{
