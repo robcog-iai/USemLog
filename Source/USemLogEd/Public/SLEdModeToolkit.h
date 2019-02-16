@@ -51,10 +51,10 @@ private:
 	void OnCheckedOverwriteClassNames(ECheckBoxState NewCheckedState);
 
 	// Set unique mask colors in hexa for the entities
-	FReply SetVisualMaskValues();
+	FReply GenerateVisualMasks();
 
 	// Set flag attribute depending on the checkbox state
-	void OnCheckedOverwriteVisualMaskValues(ECheckBoxState NewCheckedState);
+	void OnCheckedOverwriteVisualMasks(ECheckBoxState NewCheckedState);
 
 	// Update legacy namings from tags
 	FReply UpdateLegacyNames();
@@ -64,7 +64,6 @@ private:
 
 	// Update semantic visual shape visuals
 	FReply UpdateSLOverlapShapeColors();
-
 
 private:
 	// Widget pointer
@@ -77,7 +76,7 @@ private:
 	bool bOverwriteExistingClassNames;
 
 	// If true, overwrite existing mask values
-	bool bOverwriteExistingVisualMaskValues;
+	bool bOverwriteVisualMaskValues;
 
 	// Apply changed to selected actors only
 	bool bOnlySelected;
