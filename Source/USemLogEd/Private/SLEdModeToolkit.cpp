@@ -214,6 +214,7 @@ void FSLEdModeToolkit::OnCheckedOverwriteSemanticMap(ECheckBoxState NewCheckedSt
 // Generate new semantic ids
 FReply FSLEdModeToolkit::GenerateNewSemanticIds()
 {
+	FScopedTransaction Transaction(LOCTEXT("GenerateNewSemanticIds", "Generate new Ids"));
 	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
 		int32 TagIndex = FTags::GetTagTypeIndex(*ActItr, "SemLog");
@@ -238,6 +239,7 @@ FReply FSLEdModeToolkit::GenerateNewSemanticIds()
 // Generate semantic ids for constraints
 FReply FSLEdModeToolkit::SemanticallyAnnotateConstraints()
 {
+	FScopedTransaction Transaction(LOCTEXT("SemanticallyAnnotateConstraints", "Semantically annotated constraints"));
 	for (TObjectIterator<UPhysicsConstraintComponent> ConstrItr; ConstrItr; ++ConstrItr)
 	{
 		// Check if constraint is not already tagged
