@@ -16,11 +16,11 @@ public:
 	// Sets default values for this actor's properties
 	ASLVisCameraView();
 
-	// Get camera label
-	FString GetCameraLabel() const { return CameraLabel; };
+	// Get camera view name
+	FString GetViewName() const { return ViewName; };
 
 private:
 	// Unique name of the camera
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString CameraLabel;
+	FString ViewName;
 };

@@ -220,7 +220,7 @@ FReply FSLEdModeToolkit::GenerateNewSemanticIds()
 		int32 TagIndex = FTags::GetTagTypeIndex(*ActItr, "SemLog");
 		if (TagIndex != INDEX_NONE)
 		{
-			FTags::AddKeyValuePair(ActItr->Tags[TagIndex], "Id", FIds::NewGuidInBase64Url());
+			FTags::AddKeyValuePair(ActItr->Tags[TagIndex], "Id", FIds::NewGuidInBase64Url(), true, *ActItr);
 		}
 
 		// Check component tags as well
@@ -229,7 +229,7 @@ FReply FSLEdModeToolkit::GenerateNewSemanticIds()
 			int32 TagIndex = FTags::GetTagTypeIndex(CompItr, "SemLog");
 			if (TagIndex != INDEX_NONE)
 			{
-				FTags::AddKeyValuePair(CompItr->ComponentTags[TagIndex], "Id", FIds::NewGuidInBase64());
+				FTags::AddKeyValuePair(CompItr->ComponentTags[TagIndex], "Id", FIds::NewGuidInBase64(), true, CompItr);
 			}
 		}
 	}

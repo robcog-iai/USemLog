@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Misc/ScopedSlowTask.h"
 #include "SLVisImageWriterInterface.h"
+#include "SLVisHelpers.h"
 #include "SLVisLoggerSpectatorPC.generated.h"
 
 /**
@@ -54,14 +55,14 @@ private:
 	// Set rendered image quality
 	void SetupRenderingProperties();
 
+	// Request a screenshot
+	void RequestScreenshot();
+
 	// Called after a successful scrub
-	void DemoGotoCB();
+	void ScrubCB();
 
 	// Called when screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
-
-	// Called when the demo reaches the last frame
-	void QuitEditor();
 
 	// Pause demo
 	void DemoPause();
@@ -69,23 +70,23 @@ private:
 	// Un-pause demo
 	void DemoUnPause();
 
-	// Check if demo is paused
-	bool IsDemoPaused();
-
 	// Sets the first view, returns false if there are no views at all
-	bool SetFirstViewTarget();
+	bool GotoInitialViewTarget();
 
 	// Sets the next view, returns false there are no more views
-	bool SetNextViewTarget();
+	bool GotoNextViewTarget();
 
 	// Sets the first visualization buffer type, false if none
-	bool SetFirstViewType();
+	bool GotoInitialRenderType();
 
 	// Sets the next visualization buffer type, returns false there are no more views
-	bool SetNextViewType();
+	bool GotoNextRenderType();
 
 	// Setup the given view type
-	bool ApplyViewType(const FName& ViewType);
+	bool ApplyRenderType(const FName& ViewType);
+
+	// Called when the demo reaches the last frame
+	void QuitEditor();
 
 	// Skip the current timestamp (return false if not a mongo writer)
 	bool ShouldSkipThisFrame(float Timestamp);
@@ -95,6 +96,9 @@ private:
 
 	// Check if entities are rendered using the image masks
 	void MaskFrustumCheck();
+
+	// Progress debug print
+	void LogProgress();
 
 private:
 	// Set when logger is initialized
@@ -114,7 +118,8 @@ private:
 	UPROPERTY() // Avoid GC
 	class USLVisMaskVisualizer* MaskVisualizer;
 
-	// Images at a given timeslice
+	// Data at rendered timestamp
+	FSLVisDataStamped StampedData;
 	TArray<FSLVisImageData> CurrImagesData;
 
 	// Pointer to the DemoNetDriver
@@ -130,10 +135,10 @@ private:
 	TArray<FName> RenderTypes;
 
 	// Index of the current view
-	int32 ActiveCameraViewIndex;
+	int32 CurrentViewIndex;
 
-	// Index of the current view type
-	int32 ActiveRenderTypeIndex;
+	// Index of the current render type
+	int32 CurrRenderIndex;
 
 	// Image size X
 	int32 ResX;
@@ -155,6 +160,13 @@ private:
 
 	// Total number of images to be saved
 	uint32 NumImagesToProcess;
+
+	// Progress logger helper class
+
+	// Process duration logger helper class
+	FSLVisDurationLogger DurationsLogger;
+
+
 
 #if WITH_EDITOR
 	// Progress bar

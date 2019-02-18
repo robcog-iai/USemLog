@@ -25,8 +25,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 
 	DemoUpdateRate = 0.88f;
 	SkipNewEntryTolerance = 0.02f; 
-	ActiveCameraViewIndex = 0;
-	ActiveRenderTypeIndex = 0;
+	CurrentViewIndex = 0;
+	CurrRenderIndex = 0;
 	DemoTimestamp = 0.f;
 	NumImagesProcessed = 0;
 	NumImagesToProcess = 0;
@@ -72,19 +72,8 @@ void ASLVisLoggerSpectatorPC::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Hide generated pawn from the scene
-	if (GetPawnOrSpectator())
-	{
-		GetPawnOrSpectator()->SetActorHiddenInGame(true);
-		UE_LOG(LogTemp, Error, TEXT("%s::%d pawn/spec name=%s"), TEXT(__FUNCTION__), __LINE__, *GetPawnOrSpectator()->GetName());
-	}
-
-
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{
-		// Start paused
-		ASLVisLoggerSpectatorPC::DemoPause();
-
 		// Init logger
 		ASLVisLoggerSpectatorPC::Init();
 
@@ -104,6 +93,13 @@ void ASLVisLoggerSpectatorPC::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ASLVisLoggerSpectatorPC::Tick(float DeltaTime)
  {
 	 Super::Tick(DeltaTime);
+
+	 // Hide generated pawn from the scene
+	 if (GetPawnOrSpectator())
+	 {
+		 GetPawnOrSpectator()->SetActorHiddenInGame(true);
+		 UE_LOG(LogTemp, Error, TEXT("%s::%d pawn/spec name=%s"), TEXT(__FUNCTION__), __LINE__, *GetPawnOrSpectator()->GetName());
+	 }
  }
 
 // Init logger
@@ -111,8 +107,8 @@ void ASLVisLoggerSpectatorPC::Init()
 {
 	if (!bIsInit)
 	{
-		ActiveCameraViewIndex = 0;
-		ActiveRenderTypeIndex = 0;
+		CurrentViewIndex = 0;
+		CurrRenderIndex = 0;
 		DemoTimestamp = 0.f;
 		NumImagesProcessed = 0;
 		NumImagesToProcess = 0;
@@ -189,7 +185,7 @@ void ASLVisLoggerSpectatorPC::Init()
 				ASLVisLoggerSpectatorPC::SetupRenderingProperties();
 
 				// Bind callback functions
-				NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::DemoGotoCB);
+				NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::ScrubCB);
 				NetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::Finish);
 				ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLVisLoggerSpectatorPC::ScreenshotCB);
 				bIsInit = true;
@@ -203,10 +199,17 @@ void ASLVisLoggerSpectatorPC::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
+		// Start durations logger
+		DurationsLogger.SetStartTime();
+
 		// Set camera to first target and first rendering type
-		if (ASLVisLoggerSpectatorPC::SetFirstViewTarget() && ASLVisLoggerSpectatorPC::SetFirstViewType())
+		if (ASLVisLoggerSpectatorPC::GotoInitialViewTarget() && ASLVisLoggerSpectatorPC::GotoInitialRenderType())
 		{
-			// Go to the beginning of the demo and start requesting screenshots
+			// Save the scrub request time
+			DurationsLogger.ScrubReq();
+
+			// Go to the beginning of the demo and start requesting screenshots, unpause demo in order to scrub
+			ASLVisLoggerSpectatorPC::DemoUnPause();
 			NetDriver->GotoTimeInSeconds(DemoTimestamp);
 
 			// Flag as started
@@ -225,10 +228,10 @@ void ASLVisLoggerSpectatorPC::Finish()
 			Writer->Finish();
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Finished! Time=[%f/%f] Progress=[%d/%d]"),
-			TEXT(__FUNCTION__), __LINE__,
-			DemoTimestamp, NetDriver->DemoTotalTime,
-			NumImagesProcessed, NumImagesToProcess);
+		ASLVisLoggerSpectatorPC::LogProgress();
+
+		// Log the duration of the vision logger
+		DurationsLogger.SetEndTime(true);
 
 		// Flag as finished
 		bIsStarted = false;
@@ -302,97 +305,93 @@ void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
 }
 
-// Called after a successful scrub
-void ASLVisLoggerSpectatorPC::DemoGotoCB()
+// Request a screenshot
+void ASLVisLoggerSpectatorPC::RequestScreenshot()
 {
-	// Pause the replay
-	ASLVisLoggerSpectatorPC::DemoPause();
-
 	// Request screenshot on game thread
 	AsyncTask(ENamedThreads::GameThread, [this]()
 	{
 		GetHighResScreenshotConfig().FilenameOverride = ISLVisImageWriterInterface::CreateImageFilename(DemoTimestamp,
-			CameraViews[ActiveCameraViewIndex]->GetCameraLabel(), RenderTypes[ActiveRenderTypeIndex]);
+			CameraViews[CurrentViewIndex]->GetViewName(), RenderTypes[CurrRenderIndex]);
 		ViewportClient->Viewport->TakeHighResScreenShot();
+
+		// Save the screenshot request time
+		DurationsLogger.ScreenshotReq();
 	});
+}
+
+// Called after a successful scrub
+void ASLVisLoggerSpectatorPC::ScrubCB()
+{
+	// Log the duration of the scrub
+	DurationsLogger.ScrubCb(true);
+
+	// Pause the replay
+	ASLVisLoggerSpectatorPC::DemoPause();
+
+	// Request a screenshot
+	ASLVisLoggerSpectatorPC::RequestScreenshot();
 }
 
 // Called when screenshot is captured
 void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
 {
+	// Log the duration of the screenshot processing
+	DurationsLogger.ScreenshotCb(true);
+
+	// Remove const-ness from image reference
+	TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
+
 	// Get the start time for calculating the img data processing duration
-	double ProcessingStartTime = FPlatformTime::Seconds();
 	if (MaskVisualizer && MaskVisualizer->AreMasksOn())
 	{
-		TArray<FSLVisSemanticColorInfo> SemanticColorsInfo;
-		MaskVisualizer->GetSemanticObjectsFromView(Bitmap, SemanticColorsInfo);
+		//TArray<FSLVisSemanticColorInfo> SemanticColorsInfo;
+		//MaskVisualizer->ProcessMaskImage(Bitmap, SemanticColorsInfo);
 
-		for (const auto& CI : SemanticColorsInfo)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d SemInfo=%s"), TEXT(__FUNCTION__), __LINE__, *CI.ToString());
-		}
+		//for (const auto& CI : SemanticColorsInfo)
+		//{
+		//	UE_LOG(LogTemp, Error, TEXT("%s::%d SemInfo=%s"), TEXT(__FUNCTION__), __LINE__, *CI.ToString());
+		//}
 	}
-	double UniqueColorCalcTime = FPlatformTime::Seconds();
 
 	// Compress image
 	TArray<uint8> CompressedBitmap;
-	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
-
-	// Duration of the image data processing
-	double ProcessingDuration = FPlatformTime::Seconds() - ProcessingStartTime;
-
-	UE_LOG(LogTemp, Warning, TEXT("\t%s::%d Img [Render=%s;Camera:%s;] ImgPrcs=%f; UCPrcs=%f"),
-		TEXT(__FUNCTION__), __LINE__, *RenderTypes[ActiveRenderTypeIndex].ToString(),
-		*CameraViews[ActiveCameraViewIndex]->GetCameraLabel(),
-		ProcessingDuration,
-		UniqueColorCalcTime - ProcessingStartTime);
+	FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
 
 	// Add image to the array in this timeslice
-	CurrImagesData.Emplace(FSLVisImageData(FSLVisImageMetadata(RenderTypes[ActiveRenderTypeIndex],
-				CameraViews[ActiveCameraViewIndex]->GetCameraLabel(), ResX, ResY, DemoTimestamp), CompressedBitmap));
+	CurrImagesData.Emplace(FSLVisImageData(FSLVisImageMetadata(RenderTypes[CurrRenderIndex],
+		CameraViews[CurrentViewIndex]->GetViewName(), ResX, ResY, DemoTimestamp), CompressedBitmap));
+
+	//StampedData.ViewsData.Contains(CameraViews[CurrentViewIndex]->GetViewName())
+
 
 #if WITH_EDITOR
 	//ProgressBar->EnterProgressFrame();
 #endif //WITH_EDITOR
 
 	// Check if multiple view types are required
-	if (ASLVisLoggerSpectatorPC::SetNextViewType())
+	if (ASLVisLoggerSpectatorPC::GotoNextRenderType())
 	{
-		// Request screenshot on game thread
-		AsyncTask(ENamedThreads::GameThread, [this]()
-		{
-			GetHighResScreenshotConfig().FilenameOverride = ISLVisImageWriterInterface::CreateImageFilename(DemoTimestamp,
-				CameraViews[ActiveCameraViewIndex]->GetCameraLabel(), RenderTypes[ActiveRenderTypeIndex]);
-			ViewportClient->Viewport->TakeHighResScreenShot();
-		});
+		ASLVisLoggerSpectatorPC::RequestScreenshot();
 	}
 	else
 	{
 		// Go back to the first view type
-		if (ASLVisLoggerSpectatorPC::SetFirstViewType())
+		if (ASLVisLoggerSpectatorPC::GotoInitialRenderType())
 		{
 			// Check if more views are available
-			if (ASLVisLoggerSpectatorPC::SetNextViewTarget())
+			if (ASLVisLoggerSpectatorPC::GotoNextViewTarget())
 			{
-				// Request screenshot on game thread
-				AsyncTask(ENamedThreads::GameThread,[this]() 
-				{
-					GetHighResScreenshotConfig().FilenameOverride = ISLVisImageWriterInterface::CreateImageFilename(DemoTimestamp,
-						CameraViews[ActiveCameraViewIndex]->GetCameraLabel(), RenderTypes[ActiveRenderTypeIndex]);
-					ViewportClient->Viewport->TakeHighResScreenShot();
-				});
+				ASLVisLoggerSpectatorPC::RequestScreenshot();
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Sending %d images.. Time=[%f/%f] Progress=[%d/%d]"),
-					TEXT(__FUNCTION__), __LINE__, CurrImagesData.Num(),
-					DemoTimestamp, NetDriver->DemoTotalTime,
-					NumImagesProcessed, NumImagesToProcess);
-
 				// We reached the last img (camera + view) in this time slice, write data
 				Writer->Write(DemoTimestamp, CurrImagesData);
 
-				// Check for next timeslice that should be rendered (only for mongo writers)
+				ASLVisLoggerSpectatorPC::LogProgress();
+
+				// Goto next timestamp that is worth processing
 				do {
 					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
 					NumImagesProcessed += CurrImagesData.Num();
@@ -404,7 +403,7 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 				CurrImagesData.Empty();
 
 				// Go back to first view
-				if (ASLVisLoggerSpectatorPC::SetFirstViewTarget())
+				if (ASLVisLoggerSpectatorPC::GotoInitialViewTarget())
 				{
 					// Unpause demo in order to scrub
 					ASLVisLoggerSpectatorPC::DemoUnPause();
@@ -415,61 +414,33 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	}
 }
 
-// Called when the demo reaches the last frame
-void ASLVisLoggerSpectatorPC::QuitEditor()
-{
-	//FGenericPlatformMisc::RequestExit(false);
-	//
-	//FGameDelegates::Get().GetExitCommandDelegate().Broadcast();
-	//FPlatformMisc::RequestExit(0);
-
-	// Make sure you can quit even if Init or Start could not work out
-	if (GEngine)
-	{
-		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
-
-	}
-}
-
 // Pause demo (needed to take the screenshot)
 void ASLVisLoggerSpectatorPC::DemoPause()
 {
-	// else, it is already paused
+	// Else, it is already paused
 	if (GetWorld()->GetWorldSettings()->Pauser == nullptr)
 	{
-		if (GetWorld()->DemoNetDriver != nullptr &&
-			GetWorld()->DemoNetDriver->ServerConnection != nullptr &&
-			GetWorld()->DemoNetDriver->ServerConnection->OwningActor != nullptr)
-		{
-			GetWorld()->GetWorldSettings()->Pauser = PlayerState;
-		}
+		GetWorld()->GetWorldSettings()->Pauser = PlayerState;
 	}
 }
 
 // Un-pause demo (needed to be able to move to another timestamp)
 void ASLVisLoggerSpectatorPC::DemoUnPause()
 {
-	// else, it is already un-paused
+	// Else, it is already running
 	if (GetWorld()->GetWorldSettings()->Pauser != nullptr)
 	{
 		GetWorld()->GetWorldSettings()->Pauser = nullptr;
 	}
 }
 
-// Check if demo is paused
-bool ASLVisLoggerSpectatorPC::IsDemoPaused()
-{
-	// Demo is paused if no player state is set as the Pauser
-	return GetWorld()->GetWorldSettings()->Pauser == nullptr;
-}
-
 // Sets the first view, returns false if there are no views at all
-bool ASLVisLoggerSpectatorPC::SetFirstViewTarget()
+bool ASLVisLoggerSpectatorPC::GotoInitialViewTarget()
 {
-	ActiveCameraViewIndex = 0;
-	if (CameraViews.IsValidIndex(ActiveCameraViewIndex))
+	CurrentViewIndex = 0;
+	if (CameraViews.IsValidIndex(CurrentViewIndex))
 	{
-		SetViewTarget(CameraViews[ActiveCameraViewIndex], FViewTargetTransitionParams());
+		SetViewTarget(CameraViews[CurrentViewIndex], FViewTargetTransitionParams());
 		return true;
 	}
 	else
@@ -480,12 +451,12 @@ bool ASLVisLoggerSpectatorPC::SetFirstViewTarget()
 }
 
 // Sets the next view, returns false there are no more views
-bool ASLVisLoggerSpectatorPC::SetNextViewTarget()
+bool ASLVisLoggerSpectatorPC::GotoNextViewTarget()
 {
-	ActiveCameraViewIndex++;
-	if (CameraViews.IsValidIndex(ActiveCameraViewIndex))
+	CurrentViewIndex++;
+	if (CameraViews.IsValidIndex(CurrentViewIndex))
 	{
-		SetViewTarget(CameraViews[ActiveCameraViewIndex], FViewTargetTransitionParams());
+		SetViewTarget(CameraViews[CurrentViewIndex], FViewTargetTransitionParams());
 		return true;
 	}
 	else
@@ -495,12 +466,12 @@ bool ASLVisLoggerSpectatorPC::SetNextViewTarget()
 }
 
 // Sets the first visualization buffer type, false if none
-bool ASLVisLoggerSpectatorPC::SetFirstViewType()
+bool ASLVisLoggerSpectatorPC::GotoInitialRenderType()
 {
-	ActiveRenderTypeIndex = 0;
-	if (RenderTypes.IsValidIndex(ActiveRenderTypeIndex))
+	CurrRenderIndex = 0;
+	if (RenderTypes.IsValidIndex(CurrRenderIndex))
 	{
-		return ASLVisLoggerSpectatorPC::ApplyViewType(RenderTypes[ActiveRenderTypeIndex]);
+		return ASLVisLoggerSpectatorPC::ApplyRenderType(RenderTypes[CurrRenderIndex]);
 	}
 	else
 	{
@@ -510,12 +481,12 @@ bool ASLVisLoggerSpectatorPC::SetFirstViewType()
 }
 
 // Sets the next visualization buffer type, returns false there are no more views
-bool ASLVisLoggerSpectatorPC::SetNextViewType()
+bool ASLVisLoggerSpectatorPC::GotoNextRenderType()
 {
-	ActiveRenderTypeIndex++;
-	if (RenderTypes.IsValidIndex(ActiveRenderTypeIndex))
+	CurrRenderIndex++;
+	if (RenderTypes.IsValidIndex(CurrRenderIndex))
 	{
-		return ASLVisLoggerSpectatorPC::ApplyViewType(RenderTypes[ActiveRenderTypeIndex]);
+		return ASLVisLoggerSpectatorPC::ApplyRenderType(RenderTypes[CurrRenderIndex]);
 	}
 	else
 	{
@@ -524,7 +495,7 @@ bool ASLVisLoggerSpectatorPC::SetNextViewType()
 }
 
 // Render the given view type
-bool ASLVisLoggerSpectatorPC::ApplyViewType(const FName& ViewType)
+bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FName& RenderType)
 {
 	// Get the console variable for switching buffer views
 	static IConsoleVariable* BufferVisTargetCV = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));	
@@ -532,7 +503,7 @@ bool ASLVisLoggerSpectatorPC::ApplyViewType(const FName& ViewType)
 	// Choose rendering type
 	if (BufferVisTargetCV && ViewportClient->GetEngineShowFlags())
 	{
-		if (ViewType == NAME_None)
+		if (RenderType == NAME_None)
 		{
 			if (MaskVisualizer && MaskVisualizer->AreMasksOn())
 			{
@@ -545,7 +516,7 @@ bool ASLVisLoggerSpectatorPC::ApplyViewType(const FName& ViewType)
 			// Visualize original scene
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 		}
-		else if (ViewType == "SLMask")
+		else if (RenderType == "SLMask")
 		{
 			if (MaskVisualizer && MaskVisualizer->IsInit())
 			{
@@ -578,11 +549,27 @@ bool ASLVisLoggerSpectatorPC::ApplyViewType(const FName& ViewType)
 			}
 			// Select buffer to visualize
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*ViewType.ToString());
+			BufferVisTargetCV->Set(*RenderType.ToString());
 		}
 		return true;
 	}
 	return false;
+}
+
+// Called when the demo reaches the last frame
+void ASLVisLoggerSpectatorPC::QuitEditor()
+{
+	//FGenericPlatformMisc::RequestExit(false);
+	//
+	//FGameDelegates::Get().GetExitCommandDelegate().Broadcast();
+	//FPlatformMisc::RequestExit(0);
+
+	// Make sure you can quit even if Init or Start could not work out
+	if (GEngine)
+	{
+		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
+
+	}
 }
 
 // Skip the current timestamp (return false if not a mongo writer)
@@ -628,10 +615,7 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 	}
 
 	// No valid writer, skip frames
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Skipping %d images.. Time=[%f/%f] Progress=[%d/%d]"),
-		TEXT(__FUNCTION__), __LINE__, CurrImagesData.Num(),
-		DemoTimestamp, NetDriver->DemoTotalTime,
-		NumImagesProcessed, NumImagesToProcess);
+	UE_LOG(LogTemp, Error, TEXT("%s::%d No valid writer found, skipping frames.."));
 	return true;
 }
 
@@ -642,8 +626,8 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d In game thread, continuing.. "), TEXT(__FUNCTION__), __LINE__);
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d RenderType=%s; TargetLabel:%s;\n World TimeSeconds=%f; DeltaTimeSeconds=%f;"),
-			TEXT(__FUNCTION__), __LINE__, *RenderTypes[ActiveRenderTypeIndex].ToString(),
-			*CameraViews[ActiveCameraViewIndex]->GetCameraLabel(),
+			TEXT(__FUNCTION__), __LINE__, *RenderTypes[CurrRenderIndex].ToString(),
+			*CameraViews[CurrentViewIndex]->GetViewName(),
 			GetWorld()->TimeSeconds, GetWorld()->DeltaTimeSeconds);
 	
 		for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
@@ -723,4 +707,15 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 	
 
 	UE_LOG(LogTemp, Error, TEXT("%s::%d  ** * * ** * * ** * * ** * * *"), TEXT(__FUNCTION__), __LINE__);
+}
+
+// Progress debug print
+void ASLVisLoggerSpectatorPC::LogProgress()
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Time=[%f/%f] Progress=[%d/%d]"),
+		TEXT(__FUNCTION__), __LINE__,
+		DemoTimestamp,
+		NetDriver->DemoTotalTime,
+		NumImagesProcessed,
+		NumImagesToProcess);
 }

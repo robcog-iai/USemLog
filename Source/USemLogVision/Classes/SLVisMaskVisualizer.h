@@ -83,14 +83,14 @@ public:
 	bool Toggle();
 
 	// Get semantic objects from view, true if succeeded
-	bool GetSemanticObjectsFromView(const TArray<FColor>& InBitmap, TArray<FSLVisSemanticColorInfo>& OutSemColorsInfo);
+	bool ProcessMaskImage(const TArray<FColor>& InBitmap, TArray<FSLVisSemanticColorInfo>& OutSemColorsInfo);
 
 private:
 	// Add information about the semantic color (return true if all the fields were filled)
 	bool AddSemanticColorInfo(FColor Color, const FString& ColorHex, UObject* Owner);
 
 	// Compare against the semantic colors, if found switch (update color info during)
-	bool SearchAndSwitchWithSemanticColor(FColor& OutColor);
+	bool SearchAndReplaceWithSemanticColor(FColor& OutColor);
 
 	// Compare the two FColor with a tolerance
 	FORCEINLINE bool CompareWithTolerance(const FColor& ColorA, const FColor& ColorB, uint8 Tolerance = 2) const

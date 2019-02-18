@@ -189,7 +189,7 @@ bool USLVisMaskVisualizer::Toggle()
 }
 
 // Get semantic objects from view, true if succeeded
-bool USLVisMaskVisualizer::GetSemanticObjectsFromView(const TArray<FColor>& InBitmap, TArray<FSLVisSemanticColorInfo>& OutSemColorsInfo)
+bool USLVisMaskVisualizer::ProcessMaskImage(const TArray<FColor>& InBitmap, TArray<FSLVisSemanticColorInfo>& OutSemColorsInfo)
 {
 	if (bMaskMaterialsOn)
 	{
@@ -224,7 +224,7 @@ bool USLVisMaskVisualizer::GetSemanticObjectsFromView(const TArray<FColor>& InBi
 			FColor MutableColor = Color;
 			UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Search and swithcing MutableColor=%s"),
 				TEXT(__FUNCTION__), __LINE__, *MutableColor.ToString());
-			if (USLVisMaskVisualizer::SearchAndSwitchWithSemanticColor(MutableColor))
+			if (USLVisMaskVisualizer::SearchAndReplaceWithSemanticColor(MutableColor))
 			{
 				UE_LOG(LogTemp, Error, TEXT("\t\t\t\t%s::%d MutableColor is now=%s"), TEXT(__FUNCTION__), __LINE__, 
 					*MutableColor.ToString());
@@ -258,7 +258,7 @@ bool USLVisMaskVisualizer::AddSemanticColorInfo(FColor Color, const FString& Col
 	FColor FromPowF = FromPow.ToFColor(false);
 	FColor FromPowSRGB = FromPow.ToFColor(true);
 
-	UE_LOG(LogTemp, Warning, TEXT("\t FromPow22: \n\t\t FColorLin=%s|%s \n\t\t FColorSRGB=%s|%s"),		
+	UE_LOG(LogTemp, Warning, TEXT("\t FromPow22: \n\t\t FColorLin=%s|%s \n\t\t FColorSRGB=%s|%s"),
 		*FromPowF.ToString(),
 		*FromPowF.ToHex(),
 		*FromPowSRGB.ToString(),
@@ -279,16 +279,16 @@ bool USLVisMaskVisualizer::AddSemanticColorInfo(FColor Color, const FString& Col
 }
 
 // Compare against the semantic colors, if found switch (update color info during), returns true if the color has been switched
-bool USLVisMaskVisualizer::SearchAndSwitchWithSemanticColor(FColor& OutColor)
+bool USLVisMaskVisualizer::SearchAndReplaceWithSemanticColor(FColor& OutColor)
 {
 	// Lambda for the FindByPredicate function, checks if the two colors are similar 
-	auto FindPredicateLambda = [this, &OutColor](const FColor& SemColor)
+	auto CompareWithTolerancePredicate = [this, &OutColor](const FColor& SemColor)
 	{
 		return this->CompareWithTolerance(OutColor, SemColor);
 	};
 
-	// If the two colors are similar, apply the semantic value to it
-	if (FColor* FoundSemanticColor = SemanticColors.FindByPredicate(FindPredicateLambda))
+	// If the two colors are similar, replace it with the semantic value
+	if (FColor* FoundSemanticColor = SemanticColors.FindByPredicate(CompareWithTolerancePredicate))
 	{
 		// Do the switch
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Before the switch %s --> %s"),

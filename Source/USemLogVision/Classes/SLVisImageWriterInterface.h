@@ -94,6 +94,72 @@ struct FSLVisImageData
 	{};
 };
 
+///////////////////////////////////////////////////////////////////////
+
+/**
+* Images data 
+*/
+struct FSLVisImageData2
+{
+	// Render type
+	FString RenderType;
+
+	// Binary data
+	TArray<uint8> BinaryData;
+};
+
+
+/**
+* Semantic entities data from the view
+*/
+struct FSLVisSemanticEntities
+{
+	// Unique id of the entity
+	FString Id;
+
+	// Class of the entity
+	FString  Class;
+
+	// Number of pixels belonging to the entity from the image
+	int32 NumPixels;
+
+	// Indexes of the color
+	TArray<int32> Indexes;
+};
+
+
+/**
+* Data data from the view
+*/
+struct FSLVisViewData
+{
+	// Name of the current view
+	FString ViewName;
+
+	// Image resolution
+	FVector2D Resolution;
+
+	// Data about the entities visible in the view
+	TArray<FSLVisSemanticEntities> SemanticEntities;
+
+	// Image data of the given render type
+	TArray<FSLVisImageData2> ImagesData;
+};
+
+
+/**
+* Collection of all the views data in the current rendered timestamp
+*/
+struct FSLVisDataStamped
+{
+	// Array of the camera views data
+	TMap<FString, FSLVisViewData> ViewsData;
+
+	// The timestamp when the images are rendered
+	float Timestamp;
+};
+
+
 /**
 * Dummy class needed to support Cast<ISLVisImageWriterInterface>(Object).
 */
