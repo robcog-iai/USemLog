@@ -44,63 +44,16 @@ struct FSLVisImageWriterParams
 };
 
 /**
-* Image metadata
-*/
-struct FSLVisImageMetadata
-{
-	// View type
-	FName ViewType;
-
-	// Camera name
-	FString Label;
-
-	// Image resolution X
-	int32 ResX;
-
-	// Image resolution Y
-	int32 ResY;
-
-	// Timestamp when the image was rendered in the replay
-	float ReplayTimestamp;
-
-	// Constructor
-	FSLVisImageMetadata(const FName& InViewType,
-		const FString& InCameraLabel,
-		int32 InResX,
-		int32 InResY,
-		float InReplayTimestamp) :
-		ViewType(InViewType),
-		Label(InCameraLabel),
-		ResX(InResX),
-		ResY(InResY),
-		ReplayTimestamp(InReplayTimestamp)
-	{};
-};
-
-/**
-* Images data with metadata
-*/
-struct FSLVisImageData
-{	
-	// Metadata
-	FSLVisImageMetadata Metadata;
-
-	// Binary data
-	TArray<uint8> BinaryData;
-
-	// Ctor
-	FSLVisImageData(const FSLVisImageMetadata& InMetadata, const TArray<uint8>& InBinaryData) :
-		Metadata(InMetadata), BinaryData(InBinaryData)
-	{};
-};
-
-///////////////////////////////////////////////////////////////////////
-
-/**
 * Images data 
 */
-struct FSLVisImageData2
+struct FSLVisImageData
 {
+	// Default ctor
+	FSLVisImageData() {};
+
+	// Init ctor
+	FSLVisImageData(const FString& InRenderType, const TArray<uint8>& InBinaryData) : RenderType(InRenderType), BinaryData(InBinaryData) {};
+
 	// Render type
 	FString RenderType;
 
@@ -112,13 +65,19 @@ struct FSLVisImageData2
 /**
 * Semantic entities data from the view
 */
-struct FSLVisSemanticEntities
+struct FSLVisEntitiyData
 {
+	// Color
+	FColor Color;
+
+	// Color in hex
+	FString ColorHex;
+
 	// Unique id of the entity
 	FString Id;
 
 	// Class of the entity
-	FString  Class;
+	FString Class;
 
 	// Number of pixels belonging to the entity from the image
 	int32 NumPixels;
@@ -137,26 +96,58 @@ struct FSLVisViewData
 	FString ViewName;
 
 	// Image resolution
-	FVector2D Resolution;
+	FIntPoint Resolution;
 
 	// Data about the entities visible in the view
-	TArray<FSLVisSemanticEntities> SemanticEntities;
+	TArray<FSLVisEntitiyData> SemanticEntities;
 
 	// Image data of the given render type
-	TArray<FSLVisImageData2> ImagesData;
+	TArray<FSLVisImageData> ImagesData;
+
+	// Get init state
+	bool IsInit() const { return bIsInit; };
+
+	// Init view data
+	void Init(const FString& InViewName, const FIntPoint& InResolution)
+	{
+		ViewName = InViewName;
+		Resolution = InResolution;
+		bIsInit = true;
+	}
+
+	// Clear all data
+	void Reset()
+	{
+		ViewName = FString();
+		Resolution = FIntPoint(ForceInitToZero);
+		SemanticEntities.Empty();
+		ImagesData.Empty();
+		bIsInit = false;
+	}
+
+private:
+	// Init state flag
+	bool bIsInit;
 };
 
 
 /**
 * Collection of all the views data in the current rendered timestamp
 */
-struct FSLVisDataStamped
+struct FSLVisStampedData
 {
 	// Array of the camera views data
-	TMap<FString, FSLVisViewData> ViewsData;
+	TArray<FSLVisViewData> ViewsData;
 
 	// The timestamp when the images are rendered
 	float Timestamp;
+
+	// Reset the data
+	void Reset()
+	{
+		Timestamp = 0.f;
+		ViewsData.Empty();
+	}
 };
 
 
@@ -184,19 +175,16 @@ public:
 	virtual void Finish() = 0;
 
 	// Write the images at the timestamp
-	virtual void Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData) = 0;
+	virtual void Write(const FSLVisStampedData& StampedData) = 0;
 
 	// True if the writer is valid
 	bool IsInit() const { return bIsInit; }
 
 	// Get view type suffix
-	FORCEINLINE static FString GetViewTypeSuffix(const FName& ViewType);
-
-	// Get view type name
-	FORCEINLINE static FString GetViewTypeName(const FName& ViewType);
+	FORCEINLINE static FString GetRenderTypeSuffix(const FString& RenderType);
 
 	// Get image filename
-	FORCEINLINE static FString CreateImageFilename(float Timestamp, const FString& Label, const FName& ViewType);
+	FORCEINLINE static FString CreateImageFilename(float Timestamp, const FString& ViewName, const FString& RenderType);
 
 protected:
 	// Flag to show if it is valid
@@ -204,21 +192,21 @@ protected:
 };
 
 // Get view type suffix
-FString ISLVisImageWriterInterface::GetViewTypeSuffix(const FName& ViewType)
+FString ISLVisImageWriterInterface::GetRenderTypeSuffix(const FString& RenderType)
 {
-	if (ViewType.IsEqual(NAME_None))
+	if (RenderType.Equals("Color"))
 	{
 		return FString("C"); // Color
 	}
-	else if (ViewType.IsEqual("SceneDepth") || ViewType.IsEqual("SLSceneDepth") || ViewType.IsEqual("SLSceneDepthWorldUnits"))
+	else if (RenderType.Equals("SceneDepth") || RenderType.Equals("SLSceneDepth") || RenderType.Equals("SLSceneDepthWorldUnits"))
 	{
 		return FString("D"); // Depth
 	}
-	else if (ViewType.IsEqual("WorldNormal"))
+	else if (RenderType.Equals("WorldNormal"))
 	{
 		return FString("N"); // Normal
 	}
-	else if (ViewType.IsEqual("Mask") || ViewType.IsEqual("SLMask"))
+	else if (RenderType.Equals("Mask") || RenderType.Equals("SLMask"))
 	{
 		return FString("M"); // Normal
 	}
@@ -229,24 +217,11 @@ FString ISLVisImageWriterInterface::GetViewTypeSuffix(const FName& ViewType)
 	}
 }
 
-// Get view type name
-FString ISLVisImageWriterInterface::GetViewTypeName(const FName& ViewType)
-{
-	if (ViewType.IsEqual(NAME_None))
-	{
-		return FString("Color"); // Color
-	}
-	else
-	{
-		return ViewType.ToString();
-	}
-}
-
 // Get image filename
-FString ISLVisImageWriterInterface::CreateImageFilename(float Timestamp, const FString& Label, const FName& ViewType)
+FString ISLVisImageWriterInterface::CreateImageFilename(float Timestamp, const FString& ViewName, const FString& RenderType)
 {
 	return FString::Printf(TEXT("SLVis_%s_%s_%s.png"),
-		*Label,
+		*ViewName,
 		*FString::SanitizeFloat(Timestamp).Replace(TEXT("."), TEXT("-")),
-		*ISLVisImageWriterInterface::GetViewTypeSuffix(ViewType));
+		*ISLVisImageWriterInterface::GetRenderTypeSuffix(RenderType));
 }

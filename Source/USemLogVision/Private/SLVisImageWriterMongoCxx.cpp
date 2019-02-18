@@ -50,88 +50,88 @@ void USLVisImageWriterMongoCxx::Finish()
 }
 
 // Write the images at the timestamp
-void USLVisImageWriterMongoCxx::Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData)
+void USLVisImageWriterMongoCxx::Write(const FSLVisStampedData& StampedData)
 {
 #if SLVIS_WITH_LIBMONGO
-	// Create a bson document and array to store the images
-	bsoncxx::builder::basic::document bson_doc{};
-	bsoncxx::builder::basic::array bson_arr{};
+	//// Create a bson document and array to store the images
+	//bsoncxx::builder::basic::document bson_doc{};
+	//bsoncxx::builder::basic::array bson_arr{};
 
-	// Add images array
-	for (const auto& Img : ImagesData)
-	{
-		// Create new local document to store the img data
-		bsoncxx::builder::basic::document bson_img_doc{};
+	//// Add images array
+	//for (const auto& Img : ImagesData)
+	//{
+	//	// Create new local document to store the img data
+	//	bsoncxx::builder::basic::document bson_img_doc{};
 
-		// Add camera label and type
-		bson_img_doc.append(kvp("label", TCHAR_TO_UTF8(*Img.Metadata.Label)));
-		bson_img_doc.append(kvp("type", TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(Img.Metadata.ViewType))));
+	//	// Add camera label and type
+	//	bson_img_doc.append(kvp("label", TCHAR_TO_UTF8(*Img.Metadata.Label)));
+	//	bson_img_doc.append(kvp("type", TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(Img.Metadata.ViewType))));
 
-		// Add image resolution
-		bsoncxx::builder::basic::document bson_res_doc{};
-		bson_res_doc.append(kvp("x", bsoncxx::types::b_int32{Img.Metadata.ResX}));
-		bson_res_doc.append(kvp("y", bsoncxx::types::b_int32{Img.Metadata.ResY}));
-		bson_img_doc.append(kvp("res", bson_res_doc));
+	//	// Add image resolution
+	//	bsoncxx::builder::basic::document bson_res_doc{};
+	//	bson_res_doc.append(kvp("x", bsoncxx::types::b_int32{Img.Metadata.ResX}));
+	//	bson_res_doc.append(kvp("y", bsoncxx::types::b_int32{Img.Metadata.ResY}));
+	//	bson_img_doc.append(kvp("res", bson_res_doc));
 
-		// Add binary data
-		//bson_img_doc.append(kvp("data", types::b_binary{
-		//	binary_sub_type::k_binary,
-		//	static_cast<uint32_t>(Img.Data.Num()),
-		//	reinterpret_cast<const uint8_t*>(Img.Data.GetData())}));
+	//	// Add binary data
+	//	//bson_img_doc.append(kvp("data", types::b_binary{
+	//	//	binary_sub_type::k_binary,
+	//	//	static_cast<uint32_t>(Img.Data.Num()),
+	//	//	reinterpret_cast<const uint8_t*>(Img.Data.GetData())}));
 
-		try
-		{
-			bsoncxx::builder::basic::document meta_doc{};
-			meta_doc.append(kvp("x_meta", bsoncxx::types::b_int32{ 32 }));
-			options::gridfs::upload upload_options;
-			upload_options.metadata(meta_doc.view());
-			FString ImageName = ISLVisImageWriterInterface::CreateImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
-			
-			// Create gridfs bucket uploader with options
-			gridfs::uploader gridfs_uploader = gridfs_bucket.open_upload_stream(TCHAR_TO_UTF8(*ImageName), upload_options);
+	//	try
+	//	{
+	//		bsoncxx::builder::basic::document meta_doc{};
+	//		meta_doc.append(kvp("x_meta", bsoncxx::types::b_int32{ 32 }));
+	//		options::gridfs::upload upload_options;
+	//		upload_options.metadata(meta_doc.view());
+	//		FString ImageName = ISLVisImageWriterInterface::CreateImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
+	//		
+	//		// Create gridfs bucket uploader with options
+	//		gridfs::uploader gridfs_uploader = gridfs_bucket.open_upload_stream(TCHAR_TO_UTF8(*ImageName), upload_options);
 
-			// Write data to uploader
-			gridfs_uploader.write(reinterpret_cast<const uint8_t*>(Img.BinaryData.GetData()), static_cast<uint32_t>(Img.BinaryData.Num()));
+	//		// Write data to uploader
+	//		gridfs_uploader.write(reinterpret_cast<const uint8_t*>(Img.BinaryData.GetData()), static_cast<uint32_t>(Img.BinaryData.Num()));
 
-			// Close uploader and write the id of the written data object
-			result::gridfs::upload upload_result = gridfs_uploader.close();
-			bson_img_doc.append(kvp("img_file_id", upload_result.id()));
-		}
-		catch (const std::exception& xcp)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-				TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
-		}
+	//		// Close uploader and write the id of the written data object
+	//		result::gridfs::upload upload_result = gridfs_uploader.close();
+	//		bson_img_doc.append(kvp("img_file_id", upload_result.id()));
+	//	}
+	//	catch (const std::exception& xcp)
+	//	{
+	//		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
+	//			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+	//	}
 
-		// Add to array
-		bson_arr.append(bson_img_doc);
-	}
+	//	// Add to array
+	//	bson_arr.append(bson_img_doc);
+	//}
 
-	// Avoid inserting empty entries
-	if (!bson_arr.view().empty())
-	{
-		// Write the timestamp
-		bson_doc.append(kvp("timestamp", bsoncxx::types::b_double{ Timestamp }));
-		bson_doc.append(kvp("images", bson_arr));
-		try
-		{
-			if (bCreateNewDocument)
-			{
-				mongo_coll.insert_one(bson_doc.view());
-			}
-			else
-			{
-				// TODO
-				// Insert at cached document _id
-				mongo_coll.insert_one(bson_doc.view());
-			}
-		}
-		catch (const std::exception& xcp)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-				TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
-		}
-	}
+	//// Avoid inserting empty entries
+	//if (!bson_arr.view().empty())
+	//{
+	//	// Write the timestamp
+	//	bson_doc.append(kvp("timestamp", bsoncxx::types::b_double{ Timestamp }));
+	//	bson_doc.append(kvp("images", bson_arr));
+	//	try
+	//	{
+	//		if (bCreateNewDocument)
+	//		{
+	//			mongo_coll.insert_one(bson_doc.view());
+	//		}
+	//		else
+	//		{
+	//			// TODO
+	//			// Insert at cached document _id
+	//			mongo_coll.insert_one(bson_doc.view());
+	//		}
+	//	}
+	//	catch (const std::exception& xcp)
+	//	{
+	//		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
+	//			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+	//	}
+	//}
 #endif //SLVIS_WITH_LIBMONGO
 }
 

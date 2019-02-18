@@ -6,12 +6,12 @@
 #include "CoreMinimal.h"
 
 /**
-* Stores and calculates various image processing durations
+* Keeps track of the vision logging processes duration
 */
-struct FSLVisDurationLogger
+struct FSLVisDurationsLogger
 {
 	// Ctor
-	FSLVisDurationLogger() 
+	FSLVisDurationsLogger() 
 	{
 		Reset();
 	};
@@ -21,10 +21,10 @@ struct FSLVisDurationLogger
 	{
 		ST = 0.0;
 		ET = 0.0;
-		ScrubRequest = 0.0;
-		ScrubCallback = 0.0;
-		ScreenshotRequest = 0.0;
-		ScreenshotCallback = 0.0;
+		ScrubReq = 0.0;
+		ScrubCb = 0.0;
+		ScreenshotReq = 0.0;
+		ScreenshotCb = 0.0;
 	}
 
 	// Total time
@@ -34,48 +34,34 @@ struct FSLVisDurationLogger
 	void LogTotalDuration() { UE_LOG(LogTemp, Warning, TEXT("%s::%d TotalDuration=%lf;"), TEXT(__FUNCTION__), __LINE__, TotalDuration()); };
 
 	// Scrub req to callback
-	void ScrubReq() { SetTime(ScrubRequest); };
-	void ScrubCb(bool bLogDuration = false) { SetTime(ScrubCallback); if (bLogDuration) { LogScrubDuration(); };};
-	double ScrubDuration() const {	return ScrubRequest - ScrubCallback; };
+	void SetScrubRequestTime() { SetTime(ScrubReq); };
+	void SetScrubCbTime(bool bLogDuration = false) { SetTime(ScrubCb); if (bLogDuration) { LogScrubDuration(); };};
+	double ScrubDuration() const {	return ScrubCb - ScrubReq; };
 	void LogScrubDuration() { UE_LOG(LogTemp, Warning, TEXT("%s::%d ScrubDuration=%lf;"), TEXT(__FUNCTION__), __LINE__, ScrubDuration()); };
 
 	// Screenshot req to callback
-	void ScreenshotReq() { SetTime(ScreenshotRequest); };
-	void ScreenshotCb(bool bLogDuration = false) { SetTime(ScreenshotCallback); if (bLogDuration) { LogScreenshotDuration(); }; };
-	double ScreenshotDuration() const {	return ScreenshotRequest - ScreenshotCallback; };
+	void SetScreenshotRequestTime() { SetTime(ScreenshotReq); };
+	void ScreenshotCbTime(bool bLogDuration = false) { SetTime(ScreenshotCb); if (bLogDuration) { LogScreenshotDuration(); }; };
+	double ScreenshotDuration() const {	return ScreenshotCb - ScreenshotReq; };
 	void LogScreenshotDuration() { UE_LOG(LogTemp, Warning, TEXT("%s::%d ScreenshotDuration=%lf;"), TEXT(__FUNCTION__), __LINE__, ScreenshotDuration()); };
-
-
 
 private:
 	// Set variable to the time
 	FORCEINLINE void SetTime(double &Time) { Time = FPlatformTime::Seconds(); };
 
 private:
-	// Whole process time
 	double ST;
 	double ET;
 
-	// Request and callback timestamps
-	double ScrubRequest;
-	double ScrubCallback;
+	double ScrubReq;
+	double ScrubCb;
 
-	double ScreenshotRequest;
-	double ScreenshotCallback;
-
-
-	//// View start time
-	//double ViewStart;
-
-	//// View end time
-	//double ViewEnd;
-
-	//// Screenshot request
-
+	double ScreenshotReq;
+	double ScreenshotCb;
 };
 
 /**
-* Stores and calculates various image processing durations
+* Keeps track of the vision logging progress
 */
 struct FSLVisProgressLogger
 {

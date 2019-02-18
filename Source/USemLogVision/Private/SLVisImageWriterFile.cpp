@@ -34,18 +34,19 @@ void USLVisImageWriterFile::Finish()
 }
 
 // Write the images at the timestamp
-void USLVisImageWriterFile::Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData)
+void USLVisImageWriterFile::Write(const FSLVisStampedData& StampedData)
 {
-	// Set path and filename
-	FString TsStr = FString::SanitizeFloat(Timestamp).Replace(TEXT("."), TEXT("-"));
-
 	// Iterate the images from the current timestamp
-	for (const auto& Img : ImagesData)
+	for (const auto& ViewData : StampedData.ViewsData)
 	{
-		FString Filename = ISLVisImageWriterInterface::CreateImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
-		FString ImgPath = DirPath + "/" + Filename;
-		FPaths::RemoveDuplicateSlashes(ImgPath);
-		// Save to file
-		FFileHelper::SaveArrayToFile(Img.BinaryData, *ImgPath);
+		// Iterate images from the view
+		for (const auto& ImgData : ViewData.ImagesData)
+		{
+			FString Filename = ISLVisImageWriterInterface::CreateImageFilename(StampedData.Timestamp, ImgData.RenderType, ViewData.ViewName);
+			FString ImgPath = DirPath + "/" + Filename;
+			FPaths::RemoveDuplicateSlashes(ImgPath);
+			// Save to file
+			FFileHelper::SaveArrayToFile(ImgData.BinaryData, *ImgPath);
+		}
 	}
 }

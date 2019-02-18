@@ -80,24 +80,23 @@ public:
 	bool ApplyOriginalMaterials();
 
 	// Toggle between the mask and original materials
-	bool Toggle();
+	bool ToggleMaterials();
 
-	// Get semantic objects from view, true if succeeded
-	bool ProcessMaskImage(const TArray<FColor>& InBitmap, TArray<FSLVisSemanticColorInfo>& OutSemColorsInfo);
+	// Process the semantic mask image, fix pixel color deviations in image, return entities data
+	void ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVisEntitiyData>& OutEntitiesData);
 
 private:
 	// Add information about the semantic color (return true if all the fields were filled)
-	bool AddSemanticColorInfo(FColor Color, const FString& ColorHex, UObject* Owner);
+	void AddSemanticColorInfo(const FColor& Color, const FString& ColorHex, UObject* Owner);
 
-	// Compare against the semantic colors, if found switch (update color info during)
-	bool SearchAndReplaceWithSemanticColor(FColor& OutColor);
+	// Compare against the semantic colors, if found switch
+	bool ReplaceIfDeviating(FColor& OutColor);
 
 	// Compare the two FColor with a tolerance
 	FORCEINLINE bool CompareWithTolerance(const FColor& ColorA, const FColor& ColorB, uint8 Tolerance = 2) const
 	{
 		return FMath::Abs(ColorA.R - ColorB.R) < Tolerance && FMath::Abs(ColorA.G - ColorB.G) < Tolerance && FMath::Abs(ColorA.B - ColorB.B) < Tolerance;
 	}
-
 
 private:
 	// Set when logger is initialized
@@ -106,8 +105,11 @@ private:
 	// true if the mask materials are currently are on the meshes
 	bool bMaskMaterialsOn;
 
-	// Store the semantic colors
+	// Store the semantic colors in an array (FindByPredicate convenience)
 	TArray<FColor> SemanticColors;
+
+	// Semantic color data stored in a map (redundant)
+	TMap<FColor, FSLVisEntitiyData> SemanticColorData;
 
 	// Store the information about the semantic color
 	TMap<FColor, FSLVisSemanticColorInfo> SemanticColorsInfo;
@@ -122,6 +124,6 @@ private:
 	UPROPERTY()
 	TMap<UMeshComponent*, UMaterialInterface*> MaskMaterials;
 
-	// Meshes with no chosen masks
+	// Meshes with no masks
 	TArray<UMeshComponent*> IgnoredMeshes;
 };

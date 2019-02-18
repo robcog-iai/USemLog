@@ -83,7 +83,7 @@ private:
 	bool GotoNextRenderType();
 
 	// Setup the given view type
-	bool ApplyRenderType(const FName& ViewType);
+	bool ApplyRenderType(const FString& ViewType);
 
 	// Called when the demo reaches the last frame
 	void QuitEditor();
@@ -112,15 +112,11 @@ private:
 
 	// Saves the image data to file/database etc.
 	UPROPERTY() // TScriptInterface + UPROPERTY avoids GC on interfaces
-	TScriptInterface<ISLVisImageWriterInterface> Writer; 
+	TScriptInterface<ISLVisImageWriterInterface> Writer;
 
 	// Mask image visualizer helper
 	UPROPERTY() // Avoid GC
 	class USLVisMaskVisualizer* MaskVisualizer;
-
-	// Data at rendered timestamp
-	FSLVisDataStamped StampedData;
-	TArray<FSLVisImageData> CurrImagesData;
 
 	// Pointer to the DemoNetDriver
 	class UDemoNetDriver* NetDriver;
@@ -128,11 +124,17 @@ private:
 	// Pointer to the viewport
 	class UGameViewportClient* ViewportClient;
 
+	// Cache data of the current view
+	FSLVisViewData CurrentViewData;
+
+	// Cache data of the current timestamp
+	FSLVisStampedData CurrentTsData;
+
 	// Array of the camera actors
 	TArray<class ASLVisCameraView*> CameraViews;
 
 	// Rendering buffer types
-	TArray<FName> RenderTypes;
+	TArray<FString> RenderTypes;
 
 	// Index of the current view
 	int32 CurrentViewIndex;
@@ -140,11 +142,8 @@ private:
 	// Index of the current render type
 	int32 CurrRenderIndex;
 
-	// Image size X
-	int32 ResX;
-
-	// Image size Y
-	int32 ResY;
+	// Screenshot resolution
+	FIntPoint Resolution;
 
 	// Update rate of the replay in seconds
 	float DemoUpdateRate;
@@ -164,7 +163,7 @@ private:
 	// Progress logger helper class
 
 	// Process duration logger helper class
-	FSLVisDurationLogger DurationsLogger;
+	FSLVisDurationsLogger DurationsLogger;
 
 
 

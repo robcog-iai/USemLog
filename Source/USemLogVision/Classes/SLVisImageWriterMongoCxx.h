@@ -35,7 +35,7 @@ public:
 	virtual void Finish() override;
 	
 	// Write the images at the timestamp
-	virtual void Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData) override;
+	virtual void Write(const FSLVisStampedData& StampedData) override;
 
 	// Skip the current timestamp (images already inserted)
 	bool ShouldSkipThisTimestamp(float Timestamp);
