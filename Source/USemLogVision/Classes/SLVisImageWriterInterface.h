@@ -67,6 +67,9 @@ struct FSLVisImageData
 */
 struct FSLVisEntitiyData
 {
+	// Default ctor
+	FSLVisEntitiyData() : NumPixels(0) {};
+
 	// Color
 	FColor Color;
 
@@ -84,6 +87,12 @@ struct FSLVisEntitiyData
 
 	// Indexes of the color
 	TArray<int32> Indexes;
+
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d; Indexes.Num()=%d;"),
+			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels, Indexes.Num());
+	}
 };
 
 
@@ -92,6 +101,9 @@ struct FSLVisEntitiyData
 */
 struct FSLVisViewData
 {
+	// Default ctor
+	FSLVisViewData() : Resolution(0,0) {};
+
 	// Name of the current view
 	FString ViewName;
 
@@ -136,17 +148,23 @@ private:
 */
 struct FSLVisStampedData
 {
-	// Array of the camera views data
-	TArray<FSLVisViewData> ViewsData;
-
 	// The timestamp when the images are rendered
 	float Timestamp;
+
+	// Array of the camera views data
+	TArray<FSLVisViewData> ViewsData;
 
 	// Reset the data
 	void Reset()
 	{
 		Timestamp = 0.f;
 		ViewsData.Empty();
+	}
+
+	// Debug string
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Timestamp=%f; ViewsData.Num()=%d"), Timestamp, ViewsData.Num());
 	}
 };
 

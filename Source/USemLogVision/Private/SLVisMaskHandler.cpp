@@ -1,7 +1,7 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLVisMaskVisualizer.h"
+#include "SLVisMaskHandler.h"
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -9,19 +9,19 @@
 #include "Tags.h"
 
 // Ctor
-USLVisMaskVisualizer::USLVisMaskVisualizer()
+USLVisMaskHandler::USLVisMaskHandler()
 {
 	bIsInit = false;
 	bMaskMaterialsOn = false;
 };
 
 // Dtor
-USLVisMaskVisualizer::~USLVisMaskVisualizer()
+USLVisMaskHandler::~USLVisMaskHandler()
 {
 }
 
 // Init
-void USLVisMaskVisualizer::Init()
+void USLVisMaskHandler::Init()
 {
 	if (!bIsInit)
 	{
@@ -51,7 +51,7 @@ void USLVisMaskVisualizer::Init()
 				if (!ColorHex.IsEmpty())
 				{
 					FColor SemColor(FColor::FromHex(ColorHex));
-					USLVisMaskVisualizer::AddSemanticColorInfo(SemColor, ColorHex, *SMAItr);
+					USLVisMaskHandler::AddSemanticData(SemColor, ColorHex, SMAItr->Tags);
 					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 					MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
@@ -62,7 +62,7 @@ void USLVisMaskVisualizer::Init()
 					if (!ColorHex.IsEmpty())
 					{
 						FColor SemColor(FColor::FromHex(ColorHex));
-						USLVisMaskVisualizer::AddSemanticColorInfo(SemColor, ColorHex, SMC);
+						USLVisMaskHandler::AddSemanticData(SemColor, ColorHex, SMC->ComponentTags);
 						UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 						MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
@@ -87,7 +87,7 @@ void USLVisMaskVisualizer::Init()
 				if (!ColorHex.IsEmpty())
 				{
 					FColor SemColor(FColor::FromHex(ColorHex));
-					USLVisMaskVisualizer::AddSemanticColorInfo(SemColor, ColorHex, *SkMAItr);
+					USLVisMaskHandler::AddSemanticData(SemColor, ColorHex, SkMAItr->Tags);
 					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 					MaskMaterials.Emplace(SkMC, DynamicMaskMaterial);
@@ -98,7 +98,7 @@ void USLVisMaskVisualizer::Init()
 					if (!ColorHex.IsEmpty())
 					{
 						FColor SemColor(FColor::FromHex(ColorHex));
-						USLVisMaskVisualizer::AddSemanticColorInfo(SemColor, ColorHex, SkMC);
+						USLVisMaskHandler::AddSemanticData(SemColor, ColorHex, SkMC->ComponentTags);
 						UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 						MaskMaterials.Emplace(SkMC, DynamicMaskMaterial);
@@ -115,7 +115,7 @@ void USLVisMaskVisualizer::Init()
 };
 
 // Apply mask materials
-bool USLVisMaskVisualizer::ApplyMaskMaterials()
+bool USLVisMaskHandler::ApplyMaskMaterials()
 {
 	if (bIsInit)
 	{
@@ -140,7 +140,7 @@ bool USLVisMaskVisualizer::ApplyMaskMaterials()
 }
 
 // Apply original materials
-bool USLVisMaskVisualizer::ApplyOriginalMaterials()
+bool USLVisMaskHandler::ApplyOriginalMaterials()
 {
 	if (bIsInit)
 	{
@@ -160,53 +160,57 @@ bool USLVisMaskVisualizer::ApplyOriginalMaterials()
 }
 
 // Toggle between the mask and original materials
-bool USLVisMaskVisualizer::ToggleMaterials()
+bool USLVisMaskHandler::ToggleMaterials()
 {
 	if (bMaskMaterialsOn)
 	{
-		return USLVisMaskVisualizer::ApplyOriginalMaterials();
+		return USLVisMaskHandler::ApplyOriginalMaterials();
 	}
 	else
 	{
-		return USLVisMaskVisualizer::ApplyMaskMaterials();
+		return USLVisMaskHandler::ApplyMaskMaterials();
 	}
 }
 
 // Process the semantic mask image, fix pixel color deviations in image, return entities data
-void USLVisMaskVisualizer::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVisEntitiyData>& OutEntitiesData)
+void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVisEntitiyData>& OutEntitiesData)
 {
 	// Map for easy updating of the entity data and avoiding duplicates
 	TMap<FColor, FSLVisEntitiyData> ColorToEntityData;
 
 	// Image array index value
-	int32 Idx;
+	int32 Idx = 0;
 
 	// Iterate mask image
 	for (auto& Color : MaskImage)
 	{
-		// Check and replace if color got deviated from the semantic one due to conversions (FLinearColor to FColor)
-		USLVisMaskVisualizer::ReplaceIfDeviating(Color);
-
-		// Check if color has a semantic meaning
-		if (SemanticColorData.Contains(Color))
+		// Continue if it is different than black with a tolerance
+		if (!USLVisMaskHandler::AlmostEqual(Color, FColor::Black, 2))
 		{
-			// Check if color has been cached in the temp map
-			if(ColorToEntityData.Contains(Color))
+			// Check and replace if color got deviated from the semantic one due to conversions (FLinearColor to FColor)
+			USLVisMaskHandler::RestoreIfAlmostSemantic(Color);
+
+			// Check if color has a semantic meaning
+			if (SemanticColorData.Contains(Color))
 			{
-				// Update the existing data
-				ColorToEntityData[Color].NumPixels++;
-				ColorToEntityData[Color].Indexes.Add(Idx);
+				// Check if color has been cached in the temp map
+				if(ColorToEntityData.Contains(Color))
+				{
+					// Update the existing data
+					ColorToEntityData[Color].NumPixels++;
+					ColorToEntityData[Color].Indexes.Add(Idx);
+				}
+				else
+				{
+					// Add init entity data
+					ColorToEntityData.Emplace(Color, SemanticColorData[Color]);
+				}
 			}
 			else
 			{
-				// Add init entity data
-				ColorToEntityData.Emplace(Color, SemanticColorData[Color]);
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Color=[%s] is missing semantic information.."),
+					TEXT(__FUNCTION__), __LINE__, *Color.ToString());
 			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Color=[%s] is missing semantic information.."),
-				TEXT(__FUNCTION__), __LINE__, *Color.ToString());
 		}
 
 		// Increment array position index 
@@ -218,39 +222,35 @@ void USLVisMaskVisualizer::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FS
 }
 
 // Add information about the semantic color (return true if all the fields were filled)
-void USLVisMaskVisualizer::AddSemanticColorInfo(const FColor& Color, const FString& ColorHex, UObject* Owner)
+void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& ColorHex, const TArray<FName>& Tags)
 {
 	FSLVisEntitiyData EntityData;
 	EntityData.Color = Color;
 	EntityData.ColorHex = ColorHex;
-	EntityData.Class = FTags::GetValue(Owner, "SemLog", "Class");
-	EntityData.Id = FTags::GetValue(Owner, "SemLog", "Id");
+	EntityData.Class = FTags::GetValue(Tags, "SemLog", "Class");
+	EntityData.Id = FTags::GetValue(Tags, "SemLog", "Id");
 
 	SemanticColors.Emplace(Color);
 	SemanticColorData.Emplace(Color, EntityData);
+
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityData=\n\t%s"), TEXT(__FUNCTION__), __LINE__, *EntityData.ToString());
 }
 
 // Compare against the semantic colors, if found switch (update color info during), returns true if the color has been switched
-bool USLVisMaskVisualizer::ReplaceIfDeviating(FColor& OutColor)
+bool USLVisMaskHandler::RestoreIfAlmostSemantic(FColor& OutColor)
 {
 	// Lambda for the FindByPredicate function, checks if the two colors are similar 
 	auto AlmostEqualPredicate = [this, &OutColor](const FColor& SemColor)
 	{
-		return this->CompareWithTolerance(OutColor, SemColor, 2);
+		return this->AlmostEqual(OutColor, SemColor, 3);
 	};
 
 	// If the two colors are similar, replace it with the semantic value
 	if (FColor* FoundSemanticColor = SemanticColors.FindByPredicate(AlmostEqualPredicate))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Before the switch %s --> %s"),
-			TEXT(__FUNCTION__), __LINE__, *OutColor.ToString(), *FoundSemanticColor->ToString());
-		
 		// Do the switch
 		OutColor = *FoundSemanticColor;
-		
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Adfter the switch %s --> %s"), TEXT(__FUNCTION__), __LINE__,
-			*OutColor.ToString(), *FoundSemanticColor->ToString());
-			return true;
+		return true;
 	}
 	return false;
 }

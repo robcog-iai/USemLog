@@ -9,7 +9,7 @@
 #include "Async.h"
 #include "HighResScreenshot.h"
 #include "SLVisCameraView.h"
-#include "SLVisMaskVisualizer.h"
+#include "SLVisMaskHandler.h"
 #include "SLVisImageWriterMongoCxx.h"
 #include "SLVisImageWriterMongoC.h"
 #include "SLVisImageWriterFile.h"
@@ -36,7 +36,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 
 	// Add buffer types to visualize
 	RenderTypes.Add("Color");	
-	//RenderTypes.Add("SLSceneDepthWorldUnits");
+	RenderTypes.Add("SLSceneDepthWorldUnits");
 	RenderTypes.Add("SLMask");
 	//RenderTypes.Add("SceneDepth");
 	//RenderTypes.Add("WorldNormal");
@@ -74,13 +74,6 @@ void ASLVisLoggerSpectatorPC::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ASLVisLoggerSpectatorPC::Tick(float DeltaTime)
  {
 	 Super::Tick(DeltaTime);
-
-	 // Hide generated pawn from the scene
-	 if (GetPawnOrSpectator())
-	 {
-		 GetPawnOrSpectator()->SetActorHiddenInGame(true);
-		 UE_LOG(LogTemp, Error, TEXT("%s::%d pawn/spec name=%s"), TEXT(__FUNCTION__), __LINE__, *GetPawnOrSpectator()->GetName());
-	 }
  }
 
 // Init logger
@@ -99,9 +92,9 @@ void ASLVisLoggerSpectatorPC::Init()
 
 		if (RenderTypes.Contains("SLMask"))
 		{
-			MaskVisualizer = NewObject<USLVisMaskVisualizer>(this);
-			MaskVisualizer->Init();
-			if (!MaskVisualizer->IsInit())
+			MaskHandler = NewObject<USLVisMaskHandler>(this);
+			MaskHandler->Init();
+			if (!MaskHandler->IsInit())
 			{
 				RenderTypes.Remove("SLMask");
 			}
@@ -330,10 +323,10 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
 
 	// Get the start time for calculating the img data processing duration
-	if (MaskVisualizer && MaskVisualizer->AreMasksOn())
+	if (MaskHandler && MaskHandler->AreMasksOn())
 	{
 		// Process the semantic mask image, fix pixel color deviations in image, return entities data
-		MaskVisualizer->ProcessMaskImage(BitmapRef, CurrentViewData.SemanticEntities);
+		MaskHandler->ProcessMaskImage(BitmapRef, CurrentViewData.SemanticEntities);
 	}
 
 	// Compress image
@@ -342,7 +335,6 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 
 	// Add current image data to the view
 	CurrentViewData.ImagesData.Emplace(FSLVisImageData(RenderTypes[CurrRenderIndex], CompressedBitmap));
-
 
 #if WITH_EDITOR
 	//ProgressBar->EnterProgressFrame();
@@ -371,8 +363,10 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 			else
 			{
 				// Write data (no new images in this demo timestamp)
+				CurrentTsData.ViewsData.Emplace(CurrentViewData);
 				CurrentTsData.Timestamp = DemoTimestamp;
 				Writer->Write(CurrentTsData);
+				CurrentViewData.Reset();
 				CurrentTsData.Reset();
 
 				ASLVisLoggerSpectatorPC::LogProgress();
@@ -488,9 +482,9 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 	{
 		if (RenderType.Equals("Color"))
 		{
-			if (MaskVisualizer && MaskVisualizer->AreMasksOn())
+			if (MaskHandler && MaskHandler->AreMasksOn())
 			{
-				MaskVisualizer->ApplyOriginalMaterials();
+				MaskHandler->ApplyOriginalMaterials();
 				ViewportClient->GetEngineShowFlags()->SetPostProcessing(true);
 			}
 			// Visualize original scene
@@ -498,9 +492,9 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 		}
 		else if (RenderType.Equals("SLMask"))
 		{
-			if (MaskVisualizer && MaskVisualizer->IsInit())
+			if (MaskHandler && MaskHandler->IsInit())
 			{
-				MaskVisualizer->ApplyMaskMaterials();
+				MaskHandler->ApplyMaskMaterials();
 				ViewportClient->GetEngineShowFlags()->SetPostProcessing(false);
 				//ViewportClient->GetEngineShowFlags()->SetLighting(false);
 				//ViewportClient->GetEngineShowFlags()->SetColorGrading(false);
@@ -516,9 +510,9 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 		}
 		else
 		{
-			if (MaskVisualizer && MaskVisualizer->AreMasksOn())
+			if (MaskHandler && MaskHandler->AreMasksOn())
 			{
-				MaskVisualizer->ApplyOriginalMaterials();
+				MaskHandler->ApplyOriginalMaterials();
 				ViewportClient->GetEngineShowFlags()->SetPostProcessing(true);
 			}
 			// Select buffer to visualize

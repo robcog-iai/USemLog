@@ -353,17 +353,18 @@ FReply FSLEdModeToolkit::GenerateVisualMasks()
 		{
 			FColor RandColor = FColor::MakeRandomColor();
 			// Find by predicate lambda
-			auto IsSimilarWithToleranceLambda = [&RandColor](const FColor& Item)
+			auto AlmostEqualPredicate = [&RandColor](const FColor& Item)
 			{
-				return FMath::Abs(RandColor.R - Item.R) < 5
-					&& FMath::Abs(RandColor.G - Item.G) < 5
-					&& FMath::Abs(RandColor.B - Item.B) < 5;
+				return FMath::Abs(RandColor.R - Item.R) <= 5
+					&& FMath::Abs(RandColor.G - Item.G) <= 5
+					&& FMath::Abs(RandColor.B - Item.B) <= 5;
 			};
 
-			if (RandColor != FColor::Black)
+			// Continue if the random color is not similar to black
+			if (!AlmostEqualPredicate(FColor::Black))
 			{
-				// Cache image if there is no other similar one in the cache
-				if (!MaskColorsCache.FindByPredicate(IsSimilarWithToleranceLambda))
+				// Cache image if there is no other similar stored
+				if (!MaskColorsCache.FindByPredicate(AlmostEqualPredicate))
 				{
 					MaskColorsCache.Emplace(RandColor);
 					return RandColor.ToHex();

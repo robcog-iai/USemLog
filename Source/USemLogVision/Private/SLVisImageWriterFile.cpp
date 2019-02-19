@@ -36,13 +36,14 @@ void USLVisImageWriterFile::Finish()
 // Write the images at the timestamp
 void USLVisImageWriterFile::Write(const FSLVisStampedData& StampedData)
 {
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d StampedData=%s"), TEXT(__FUNCTION__), __LINE__, *StampedData.ToString());
 	// Iterate the images from the current timestamp
 	for (const auto& ViewData : StampedData.ViewsData)
 	{
 		// Iterate images from the view
 		for (const auto& ImgData : ViewData.ImagesData)
 		{
-			FString Filename = ISLVisImageWriterInterface::CreateImageFilename(StampedData.Timestamp, ImgData.RenderType, ViewData.ViewName);
+			FString Filename = ISLVisImageWriterInterface::CreateImageFilename(StampedData.Timestamp, ViewData.ViewName, ImgData.RenderType);
 			FString ImgPath = DirPath + "/" + Filename;
 			FPaths::RemoveDuplicateSlashes(ImgPath);
 			// Save to file

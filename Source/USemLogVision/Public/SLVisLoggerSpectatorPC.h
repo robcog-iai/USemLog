@@ -116,7 +116,7 @@ private:
 
 	// Mask image visualizer helper
 	UPROPERTY() // Avoid GC
-	class USLVisMaskVisualizer* MaskVisualizer;
+	class USLVisMaskHandler* MaskHandler;
 
 	// Pointer to the DemoNetDriver
 	class UDemoNetDriver* NetDriver;
@@ -164,8 +164,6 @@ private:
 
 	// Process duration logger helper class
 	FSLVisDurationsLogger DurationsLogger;
-
-
 
 #if WITH_EDITOR
 	// Progress bar

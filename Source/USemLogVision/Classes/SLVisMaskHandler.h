@@ -8,61 +8,21 @@
 #include "UObject/NoExportTypes.h"
 #include "Components/MeshComponent.h"
 #include "Materials/MaterialInterface.h"
-#include "SLVisMaskVisualizer.generated.h"
-
-/**
-* Information about the semantic color
-*/
-struct FSLVisSemanticColorInfo
-{
-	// Pointer to the semantically annotated UObject
-	UObject* Owner;
-
-	// Color in hex
-	FString ColorHex;
-
-	// Color
-	FColor Color;
-
-	// Semantic class it represents
-	FString Class;
-
-	// Unique ID
-	FString Id;
-
-	// Checks if all values are set
-	bool IsComplete() const { return Owner 
-		&& !ColorHex.IsEmpty() 
-		&& Color == FColor::FromHex(ColorHex) 
-		&& !Class.IsEmpty() 
-		&& !Id.IsEmpty(); };
-
-	// Write an output of the struct
-	FORCEINLINE FString ToString() const
-	{
-		return FString::Printf(TEXT("Owner=%s; ColorHex=%s; Color=%s; Class=%s; Id=%s; NumPixels=%d"),
-			*Owner->GetName(),
-			*ColorHex,
-			*Color.ToString(),
-			*Class,
-			*Id);
-	}
-};
-
+#include "SLVisMaskHandler.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class USLVisMaskVisualizer : public UObject
+class USLVisMaskHandler : public UObject
 {
 	GENERATED_BODY()
 public:
 	// Ctor
-	USLVisMaskVisualizer();
+	USLVisMaskHandler();
 
 	// Dtor
-	~USLVisMaskVisualizer();
+	~USLVisMaskHandler();
 
 	// Init
 	void Init();
@@ -86,16 +46,16 @@ public:
 	void ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVisEntitiyData>& OutEntitiesData);
 
 private:
-	// Add information about the semantic color (return true if all the fields were filled)
-	void AddSemanticColorInfo(const FColor& Color, const FString& ColorHex, UObject* Owner);
+	// Store the information about the semantic color (return true if all the fields were filled)
+	void AddSemanticData(const FColor& Color, const FString& ColorHex, const TArray<FName>& Tags);
 
 	// Compare against the semantic colors, if found switch
-	bool ReplaceIfDeviating(FColor& OutColor);
+	bool RestoreIfAlmostSemantic(FColor& OutColor);
 
 	// Compare the two FColor with a tolerance
-	FORCEINLINE bool CompareWithTolerance(const FColor& ColorA, const FColor& ColorB, uint8 Tolerance = 2) const
+	FORCEINLINE bool AlmostEqual(const FColor& ColorA, const FColor& ColorB, uint8 Tolerance = 2) const
 	{
-		return FMath::Abs(ColorA.R - ColorB.R) < Tolerance && FMath::Abs(ColorA.G - ColorB.G) < Tolerance && FMath::Abs(ColorA.B - ColorB.B) < Tolerance;
+		return FMath::Abs(ColorA.R - ColorB.R) <= Tolerance && FMath::Abs(ColorA.G - ColorB.G) <= Tolerance && FMath::Abs(ColorA.B - ColorB.B) <= Tolerance;
 	}
 
 private:
@@ -108,11 +68,8 @@ private:
 	// Store the semantic colors in an array (FindByPredicate convenience)
 	TArray<FColor> SemanticColors;
 
-	// Semantic color data stored in a map (redundant)
+	// Semantic color data stored in a map (bit redundant with the color array)
 	TMap<FColor, FSLVisEntitiyData> SemanticColorData;
-
-	// Store the information about the semantic color
-	TMap<FColor, FSLVisSemanticColorInfo> SemanticColorsInfo;
 
 	// Material used if there is no semantic information on an entity (black)
 	UMaterial* DefaultMaskMaterial;
