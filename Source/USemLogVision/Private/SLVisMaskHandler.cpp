@@ -177,6 +177,8 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVi
 {
 	// Map for easy updating of the entity data and avoiding duplicates
 	TMap<FColor, FSLVisEntitiyData> ColorToEntityData;
+	TSet<FColor> ColorsInRange;
+	TSet<FColor> ColorsOutOfRange;
 
 	// Image array index value
 	int32 Idx = 0;
@@ -185,10 +187,15 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVi
 	for (auto& Color : MaskImage)
 	{
 		// Continue if it is different than black with a tolerance
-		if (!USLVisMaskHandler::AlmostEqual(Color, FColor::Black, 2))
+		if (!USLVisMaskHandler::AlmostEqual(Color, FColor::Black, 9))
 		{
+			FColor TempColor = Color;
 			// Check and replace if color got deviated from the semantic one due to conversions (FLinearColor to FColor)
-			USLVisMaskHandler::RestoreIfAlmostSemantic(Color);
+			if (USLVisMaskHandler::RestoreIfAlmostSemantic(Color))
+			{
+				ColorsInRange.Add(TempColor);
+			}
+			else
 
 			// Check if color has a semantic meaning
 			if (SemanticColorData.Contains(Color))
@@ -208,13 +215,31 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVi
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Color=[%s] is missing semantic information.."),
-					TEXT(__FUNCTION__), __LINE__, *Color.ToString());
+				ColorsOutOfRange.Add(Color);
+				Color = FColor::Black;
 			}
 		}
 
 		// Increment array position index 
 		Idx++;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic colors:"), TEXT(__FUNCTION__), __LINE__);
+	for (const auto& C : SemanticColors)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("\t\t%s"), *C.ToString());
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Colors in range:"), TEXT(__FUNCTION__), __LINE__);
+	for (const auto& C : ColorsInRange)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("\t\t%s"), *C.ToString());
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Colors OUT OF range:"), TEXT(__FUNCTION__), __LINE__);
+	for (const auto& C : ColorsOutOfRange)
+	{
+		UE_LOG(LogTemp, Error, TEXT("\t\t%s"), *C.ToString());
 	}
 
 	// Set output data
@@ -224,6 +249,11 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVi
 // Add information about the semantic color (return true if all the fields were filled)
 void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& ColorHex, const TArray<FName>& Tags)
 {
+	if (USLVisMaskHandler::AlmostEqual(Color, FColor::Black, 5))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic color is (almost) black, this should not happen, skipping.."), TEXT(__FUNCTION__), __LINE__);
+		return;
+	}
 	FSLVisEntitiyData EntityData;
 	EntityData.Color = Color;
 	EntityData.ColorHex = ColorHex;
@@ -242,7 +272,7 @@ bool USLVisMaskHandler::RestoreIfAlmostSemantic(FColor& OutColor)
 	// Lambda for the FindByPredicate function, checks if the two colors are similar 
 	auto AlmostEqualPredicate = [this, &OutColor](const FColor& SemColor)
 	{
-		return this->AlmostEqual(OutColor, SemColor, 3);
+		return this->AlmostEqual(OutColor, SemColor, 21);
 	};
 
 	// If the two colors are similar, replace it with the semantic value

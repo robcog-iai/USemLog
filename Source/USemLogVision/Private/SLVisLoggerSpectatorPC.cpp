@@ -44,8 +44,8 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 
 	// Image size 
 	// 8k (7680, 4320) / 4k (3840, 2160) / 2k (2048, 1080) / fhd (1920, 1080) / hd (1280, 720) / sd (720, 480)
-	Resolution.X = 24;
-	Resolution.Y = 16;
+	Resolution.X = 7680;
+	Resolution.Y = 4320;
 }
 
 // Called when the game starts or when spawned
@@ -287,6 +287,8 @@ void ASLVisLoggerSpectatorPC::RequestScreenshot()
 	{
 		GetHighResScreenshotConfig().FilenameOverride = ISLVisImageWriterInterface::CreateImageFilename(DemoTimestamp,
 			CameraViews[CurrentViewIndex]->GetViewName(), RenderTypes[CurrRenderIndex]);
+		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
+		//GetHighResScreenshotConfig().SetHDRCapture(true);
 		ViewportClient->Viewport->TakeHighResScreenShot();
 
 		// Save the screenshot request time
@@ -486,6 +488,11 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 			{
 				MaskHandler->ApplyOriginalMaterials();
 				ViewportClient->GetEngineShowFlags()->SetPostProcessing(true);
+				//ViewportClient->GetEngineShowFlags()->SetLighting(true);
+				//ViewportClient->GetEngineShowFlags()->SetColorGrading(true);
+				//ViewportClient->GetEngineShowFlags()->SetTonemapper(true);
+				//ViewportClient->GetEngineShowFlags()->SetMaterials(true);
+				//ViewportClient->GetEngineShowFlags()->SetAntiAliasing(true);
 			}
 			// Visualize original scene
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
@@ -500,9 +507,10 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 				//ViewportClient->GetEngineShowFlags()->SetColorGrading(false);
 				//ViewportClient->GetEngineShowFlags()->SetTonemapper(false);
 				//ViewportClient->GetEngineShowFlags()->SetMaterials(false);
+				//ViewportClient->GetEngineShowFlags()->SetAntiAliasing(false);
+
 				//ViewportClient->GetEngineShowFlags()->SetSceneColorFringe(false);
 				//ViewportClient->GetEngineShowFlags()->SetAtmosphericFog(false);
-				//ViewportClient->GetEngineShowFlags()->SetAntiAliasing(false);
 				////ViewportClient->GetEngineShowFlags()->SetGlobalIllumination(true);
 				////ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 				////BufferVisTargetCV->Set(TEXT("BaseColor"));
@@ -514,6 +522,11 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 			{
 				MaskHandler->ApplyOriginalMaterials();
 				ViewportClient->GetEngineShowFlags()->SetPostProcessing(true);
+				//ViewportClient->GetEngineShowFlags()->SetLighting(true);
+				//ViewportClient->GetEngineShowFlags()->SetColorGrading(true);
+				//ViewportClient->GetEngineShowFlags()->SetTonemapper(true);
+				//ViewportClient->GetEngineShowFlags()->SetMaterials(true);
+				//ViewportClient->GetEngineShowFlags()->SetAntiAliasing(true);
 			}
 			// Select buffer to visualize
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
