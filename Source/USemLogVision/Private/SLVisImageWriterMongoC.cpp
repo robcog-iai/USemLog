@@ -99,7 +99,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 
 			double_check_query = BCON_NEW("$and", "[",
 				"{", "_id", BCON_OID(&ws_oid), "}",
-				"{", "images", "{", "$exists", BCON_BOOL(false), "}", "}",
+				"{", "views", "{", "$exists", BCON_BOOL(false), "}", "}",
 				"]");
 
 			// Double check that the id is valid and there are no existing previous images in the entry,
@@ -325,7 +325,7 @@ void USLVisImageWriterMongoC::GetWorldStateParamsAt(float InTimestamp, bool bSea
 		{
 			OutParams.Timestamp = (float)bson_iter_double(&iter);
 			OutParams.TimeDistance = FMath::Abs(OutParams.Timestamp - InTimestamp);
-			OutParams.bContainsImageData = bson_iter_init_find(&iter, world_state_doc, "images");
+			OutParams.bContainsImageData = bson_iter_init_find(&iter, world_state_doc, "views");
 			if (bson_iter_init_find(&iter, world_state_doc, "_id") && BSON_ITER_HOLDS_OID(&iter))
 			{
 				bson_oid_to_string(bson_iter_oid(&iter), OutParams.oid_str);
