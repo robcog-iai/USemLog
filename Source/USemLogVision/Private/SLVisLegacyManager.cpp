@@ -1,7 +1,7 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLVisManager.h"
+#include "SLVisLegacyManager.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
@@ -12,7 +12,7 @@
 #endif // WITH_EDITOR
 
 // Sets default values for this component's properties
-USLVisManager::USLVisManager()
+USLVisLegacyManager::USLVisLegacyManager()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -53,35 +53,35 @@ USLVisManager::USLVisManager()
 	ImgTickCount = 0;
 
 	// Setup capture components
-	USLVisManager::CreateCaptureComponents();
+	USLVisLegacyManager::CreateCaptureComponents();
 }
 
 // Destructor
-USLVisManager::~USLVisManager()
+USLVisLegacyManager::~USLVisLegacyManager()
 {
 	if (!bIsFinished)
 	{
-		USLVisManager::Finish();
+		USLVisLegacyManager::Finish();
 	}
 }
 
 // Called when the game starts
-void USLVisManager::BeginPlay()
+void USLVisLegacyManager::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
 // Called every frame
-void USLVisManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void USLVisLegacyManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
 	// Call update on tick
-	USLVisManager::Update();
+	USLVisLegacyManager::Update();
 }
 
 // Init component
-void USLVisManager::Init(const FString& InLogDir, const FString& InEpisodeId)
+void USLVisLegacyManager::Init(const FString& InLogDir, const FString& InEpisodeId)
 {
 	if (!bIsInit)
 	{
@@ -89,7 +89,7 @@ void USLVisManager::Init(const FString& InLogDir, const FString& InEpisodeId)
 		EpisodeId = InEpisodeId;
 	
 		// Init capture components
-		USLVisManager::InitCaptureComponents();
+		USLVisLegacyManager::InitCaptureComponents();
 
 		// Mark manager as initialized
 		bIsInit = true;
@@ -98,7 +98,7 @@ void USLVisManager::Init(const FString& InLogDir, const FString& InEpisodeId)
 }
 
 // Start capturing
-void USLVisManager::Start()
+void USLVisLegacyManager::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -106,7 +106,7 @@ void USLVisManager::Start()
 		{
 			// Update logger on custom timer tick (does not guarantees the UpdateRate value,
 			// since it will be eventually triggered from the game thread tick
-			GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &USLVisManager::Update, UpdateRate, true);
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &USLVisLegacyManager::Update, UpdateRate, true);
 		}
 		else
 		{
@@ -121,7 +121,7 @@ void USLVisManager::Start()
 }
 
 // Stop recording
-void USLVisManager::Finish()
+void USLVisLegacyManager::Finish()
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -140,23 +140,23 @@ void USLVisManager::Finish()
 }
 
 // Called either from tick, or from the timer
-void USLVisManager::Update()
+void USLVisLegacyManager::Update()
 {
 	if (PixelFence.IsFenceComplete())
 	{
 		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Fence complete"), TEXT(__FUNCTION__), __LINE__);
 		// Read the image data
-		USLVisManager::ReadData();
+		USLVisLegacyManager::ReadData();
 
 		// Save the image data
-		USLVisManager::SaveData();
+		USLVisLegacyManager::SaveData();
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Fence NOT complete"), TEXT(__FUNCTION__), __LINE__);
 }
 
 // Read the image data
-void USLVisManager::ReadData()
+void USLVisLegacyManager::ReadData()
 {
 	/* Color */
 	if (bCaptureColor)
@@ -168,12 +168,12 @@ void USLVisManager::ReadData()
 		{
 			ColorViewport->Draw();
 			//ColorViewport->ReadPixels(ColorImage);
-			USLVisManager::ReadPixelsFromViewport(ColorImage);
+			USLVisLegacyManager::ReadPixelsFromViewport(ColorImage);
 		}
 		else // Capture from scene capture component
 		{
 			FTextureRenderTargetResource* ColorRenderResource = ColorSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
-			USLVisManager::ReadPixels(ColorRenderResource, ColorImage, ReadSurfaceDataFlags);
+			USLVisLegacyManager::ReadPixels(ColorRenderResource, ColorImage, ReadSurfaceDataFlags);
 		}
 		PixelFence.BeginFence();
 	}
@@ -185,7 +185,7 @@ void USLVisManager::ReadData()
 		ReadSurfaceDataFlags.SetLinearToGamma(false);
 
 		FTextureRenderTargetResource* DepthRenderResource = DepthSceneCaptureComp->TextureTarget->GameThread_GetRenderTargetResource();
-		USLVisManager::ReadPixels(DepthRenderResource, DepthImage, ReadSurfaceDataFlags);
+		USLVisLegacyManager::ReadPixels(DepthRenderResource, DepthImage, ReadSurfaceDataFlags);
 		PixelFence.BeginFence();
 	}
 
@@ -212,7 +212,7 @@ void USLVisManager::ReadData()
 }
 
 // Read from viewport
-void USLVisManager::ReadPixelsFromViewport(TArray<FColor>& OutImageData, FReadSurfaceDataFlags InFlags)
+void USLVisLegacyManager::ReadPixelsFromViewport(TArray<FColor>& OutImageData, FReadSurfaceDataFlags InFlags)
 {
 	FIntRect IntRect(0, 0, ColorViewport->GetSizeXY().X, ColorViewport->GetSizeXY().Y);
 
@@ -249,7 +249,7 @@ void USLVisManager::ReadPixelsFromViewport(TArray<FColor>& OutImageData, FReadSu
 }
 
 // Read from scene capture component
-void USLVisManager::ReadPixels(FTextureRenderTargetResource*& RenderResource, TArray<FColor>& OutImageData, FReadSurfaceDataFlags InFlags)
+void USLVisLegacyManager::ReadPixels(FTextureRenderTargetResource*& RenderResource, TArray<FColor>& OutImageData, FReadSurfaceDataFlags InFlags)
 {
 	FIntRect IntRect(0, 0, RenderResource->GetSizeXY().X, RenderResource->GetSizeXY().Y);
 
@@ -286,7 +286,7 @@ void USLVisManager::ReadPixels(FTextureRenderTargetResource*& RenderResource, TA
 }
 
 // Save the image data
-void USLVisManager::SaveData()
+void USLVisLegacyManager::SaveData()
 {
 	/* Color */
 	if (bCaptureColor)
@@ -347,23 +347,23 @@ void USLVisManager::SaveData()
 }
 
 // Create capture components
-void USLVisManager::CreateCaptureComponents()
+void USLVisLegacyManager::CreateCaptureComponents()
 {	
 	/* Color */
-	USLVisManager::CreateColorCaptureComponent();
+	USLVisLegacyManager::CreateColorCaptureComponent();
 
 	/* Depth */
-	USLVisManager::CreateDepthCaptureComponent();
+	USLVisLegacyManager::CreateDepthCaptureComponent();
 
 	/* Mask */
-	USLVisManager::CreateMaskCaptureComponent();
+	USLVisLegacyManager::CreateMaskCaptureComponent();
 
 	/* Normal */
-	USLVisManager::CreateNormalCaptureComponent();
+	USLVisLegacyManager::CreateNormalCaptureComponent();
 }
 
 // Create color capture component
-void USLVisManager::CreateColorCaptureComponent()
+void USLVisLegacyManager::CreateColorCaptureComponent()
 {
 	ColorSceneCaptureComp = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("ColorCapture"));
 	ColorSceneCaptureComp->SetupAttachment(this);
@@ -377,7 +377,7 @@ void USLVisManager::CreateColorCaptureComponent()
 }
 
 // Create depth capture component
-void USLVisManager::CreateDepthCaptureComponent()
+void USLVisLegacyManager::CreateDepthCaptureComponent()
 {
 	DepthSceneCaptureComp = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("DepthCapture"));
 	DepthSceneCaptureComp->SetupAttachment(this);
@@ -386,57 +386,57 @@ void USLVisManager::CreateDepthCaptureComponent()
 	DepthSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
 	DepthSceneCaptureComp->FOVAngle = FOV;
 
-	// Get depth scene material for post-processing
-	ConstructorHelpers::FObjectFinder<UMaterial> MaterialDepthFinder(TEXT("Material'/USemLog/M_SceneDepthWorldUnits.M_SceneDepthWorldUnits'"));
-	if (MaterialDepthFinder.Object != nullptr)
-	{
-		//MaterialDepthInstance = UMaterialInstanceDynamic::Create(MaterialDepthFinder.Object, DepthSceneCaptureComp);
-		MaterialDepthInstance = (UMaterial*)MaterialDepthFinder.Object;
-		if (MaterialDepthInstance != nullptr)
-		{
-			// Store previous ShowFlags
-			FEngineShowFlags PreviousShowFlags(DepthSceneCaptureComp->ShowFlags); 
+	//// Get depth scene material for post-processing
+	//ConstructorHelpers::FObjectFinder<UMaterial> MaterialDepthFinder(TEXT("Material'/USemLog/M_SceneDepthWorldUnits.M_SceneDepthWorldUnits'"));
+	//if (MaterialDepthFinder.Object != nullptr)
+	//{
+	//	//MaterialDepthInstance = UMaterialInstanceDynamic::Create(MaterialDepthFinder.Object, DepthSceneCaptureComp);
+	//	MaterialDepthInstance = (UMaterial*)MaterialDepthFinder.Object;
+	//	if (MaterialDepthInstance != nullptr)
+	//	{
+	//		// Store previous ShowFlags
+	//		FEngineShowFlags PreviousShowFlags(DepthSceneCaptureComp->ShowFlags); 
 
-			DepthSceneCaptureComp->ShowFlags = FEngineShowFlags(EShowFlagInitMode::ESFIM_All0);
-			DepthSceneCaptureComp->ShowFlags.SetRendering(true);
-			DepthSceneCaptureComp->ShowFlags.SetStaticMeshes(true);
+	//		DepthSceneCaptureComp->ShowFlags = FEngineShowFlags(EShowFlagInitMode::ESFIM_All0);
+	//		DepthSceneCaptureComp->ShowFlags.SetRendering(true);
+	//		DepthSceneCaptureComp->ShowFlags.SetStaticMeshes(true);
 
-			// Important for the correctness of tree leaves.
-			DepthSceneCaptureComp->ShowFlags.SetMaterials(true);
+	//		// Important for the correctness of tree leaves.
+	//		DepthSceneCaptureComp->ShowFlags.SetMaterials(true);
 
-			// These are minimal setting
-			DepthSceneCaptureComp->ShowFlags.SetPostProcessing(true);
-			DepthSceneCaptureComp->ShowFlags.SetPostProcessMaterial(true);
+	//		// These are minimal setting
+	//		DepthSceneCaptureComp->ShowFlags.SetPostProcessing(true);
+	//		DepthSceneCaptureComp->ShowFlags.SetPostProcessMaterial(true);
 
-			// This option will change object material to vertex color material, which don't produce surface normal
-			// ShowFlags.SetVertexColors(true);
+	//		// This option will change object material to vertex color material, which don't produce surface normal
+	//		// ShowFlags.SetVertexColors(true);
 
-			GVertexColorViewMode = EVertexColorViewMode::Color;
+	//		GVertexColorViewMode = EVertexColorViewMode::Color;
 
-			// Store the visibility of the scene, such as folliage and landscape.
-			DepthSceneCaptureComp->ShowFlags.SetStaticMeshes(PreviousShowFlags.StaticMeshes);
-			DepthSceneCaptureComp->ShowFlags.SetLandscape(PreviousShowFlags.Landscape);
+	//		// Store the visibility of the scene, such as folliage and landscape.
+	//		DepthSceneCaptureComp->ShowFlags.SetStaticMeshes(PreviousShowFlags.StaticMeshes);
+	//		DepthSceneCaptureComp->ShowFlags.SetLandscape(PreviousShowFlags.Landscape);
 
-			DepthSceneCaptureComp->ShowFlags.SetInstancedFoliage(PreviousShowFlags.InstancedFoliage);
-			DepthSceneCaptureComp->ShowFlags.SetInstancedGrass(PreviousShowFlags.InstancedGrass);
-			DepthSceneCaptureComp->ShowFlags.SetInstancedStaticMeshes(PreviousShowFlags.InstancedStaticMeshes);
+	//		DepthSceneCaptureComp->ShowFlags.SetInstancedFoliage(PreviousShowFlags.InstancedFoliage);
+	//		DepthSceneCaptureComp->ShowFlags.SetInstancedGrass(PreviousShowFlags.InstancedGrass);
+	//		DepthSceneCaptureComp->ShowFlags.SetInstancedStaticMeshes(PreviousShowFlags.InstancedStaticMeshes);
 
-			DepthSceneCaptureComp->ShowFlags.SetSkeletalMeshes(PreviousShowFlags.SkeletalMeshes);
+	//		DepthSceneCaptureComp->ShowFlags.SetSkeletalMeshes(PreviousShowFlags.SkeletalMeshes);
 
-			DepthSceneCaptureComp->PostProcessSettings.AddBlendable(MaterialDepthInstance, 1);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load depth asset!"), TEXT(__FUNCTION__), __LINE__);
-	}
+	//		DepthSceneCaptureComp->PostProcessSettings.AddBlendable(MaterialDepthInstance, 1);
+	//	}
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load depth asset!"), TEXT(__FUNCTION__), __LINE__);
+	//}
 
 	DepthSceneCaptureComp->SetHiddenInGame(true);
 	DepthSceneCaptureComp->Deactivate();
 }
 
 // Create mask capture component
-void USLVisManager::CreateMaskCaptureComponent()
+void USLVisLegacyManager::CreateMaskCaptureComponent()
 {
 	MaskSceneCaptureComp = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("MaskCapture"));
 	MaskSceneCaptureComp->SetupAttachment(this);
@@ -474,7 +474,7 @@ void USLVisManager::CreateMaskCaptureComponent()
 }
 
 // Create normal capture component
-void USLVisManager::CreateNormalCaptureComponent()
+void USLVisLegacyManager::CreateNormalCaptureComponent()
 {
 	NormalSceneCaptureComp = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("NormalCapture"));
 	NormalSceneCaptureComp->SetupAttachment(this);
@@ -483,54 +483,54 @@ void USLVisManager::CreateNormalCaptureComponent()
 	NormalSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
 	NormalSceneCaptureComp->FOVAngle = FOV;
 
-	// Get Normal scene material for postprocessing
-	ConstructorHelpers::FObjectFinder<UMaterial> MaterialNormalFinder(TEXT("Material'/USemLog/M_WorldNormal.M_WorldNormal'"));
-	if (MaterialNormalFinder.Object != nullptr)
-	{
-		MaterialNormalInstance = (UMaterial*)MaterialNormalFinder.Object;
-		if (MaterialNormalInstance != nullptr)
-		{
-			FEngineShowFlags PreviousShowFlags(NormalSceneCaptureComp->ShowFlags); // Store previous ShowFlags
-			
-			NormalSceneCaptureComp->ShowFlags = FEngineShowFlags(EShowFlagInitMode::ESFIM_All0);
-			NormalSceneCaptureComp->ShowFlags.SetRendering(true);
-			NormalSceneCaptureComp->ShowFlags.SetStaticMeshes(true);
-			// Important for the correctness of tree leaves.
-			NormalSceneCaptureComp->ShowFlags.SetMaterials(true); 
+	//// Get Normal scene material for postprocessing
+	//ConstructorHelpers::FObjectFinder<UMaterial> MaterialNormalFinder(TEXT("Material'/USemLog/M_WorldNormal.M_WorldNormal'"));
+	//if (MaterialNormalFinder.Object != nullptr)
+	//{
+	//	MaterialNormalInstance = (UMaterial*)MaterialNormalFinder.Object;
+	//	if (MaterialNormalInstance != nullptr)
+	//	{
+	//		FEngineShowFlags PreviousShowFlags(NormalSceneCaptureComp->ShowFlags); // Store previous ShowFlags
+	//		
+	//		NormalSceneCaptureComp->ShowFlags = FEngineShowFlags(EShowFlagInitMode::ESFIM_All0);
+	//		NormalSceneCaptureComp->ShowFlags.SetRendering(true);
+	//		NormalSceneCaptureComp->ShowFlags.SetStaticMeshes(true);
+	//		// Important for the correctness of tree leaves.
+	//		NormalSceneCaptureComp->ShowFlags.SetMaterials(true); 
 
 
-			// These are minimal setting
-			NormalSceneCaptureComp->ShowFlags.SetPostProcessing(true);
-			NormalSceneCaptureComp->ShowFlags.SetPostProcessMaterial(true);
-			// This option will change object material to vertex color material, which don't produce surface normal
-			// ShowFlags.SetVertexColors(true); 
+	//		// These are minimal setting
+	//		NormalSceneCaptureComp->ShowFlags.SetPostProcessing(true);
+	//		NormalSceneCaptureComp->ShowFlags.SetPostProcessMaterial(true);
+	//		// This option will change object material to vertex color material, which don't produce surface normal
+	//		// ShowFlags.SetVertexColors(true); 
 
-			GVertexColorViewMode = EVertexColorViewMode::Color;
+	//		GVertexColorViewMode = EVertexColorViewMode::Color;
 
-			// Store the visibility of the scene, such as folliage and landscape.
-			NormalSceneCaptureComp->ShowFlags.SetStaticMeshes(PreviousShowFlags.StaticMeshes);
-			NormalSceneCaptureComp->ShowFlags.SetLandscape(PreviousShowFlags.Landscape);
+	//		// Store the visibility of the scene, such as folliage and landscape.
+	//		NormalSceneCaptureComp->ShowFlags.SetStaticMeshes(PreviousShowFlags.StaticMeshes);
+	//		NormalSceneCaptureComp->ShowFlags.SetLandscape(PreviousShowFlags.Landscape);
 
-			NormalSceneCaptureComp->ShowFlags.SetInstancedFoliage(PreviousShowFlags.InstancedFoliage);
-			NormalSceneCaptureComp->ShowFlags.SetInstancedGrass(PreviousShowFlags.InstancedGrass);
-			NormalSceneCaptureComp->ShowFlags.SetInstancedStaticMeshes(PreviousShowFlags.InstancedStaticMeshes);
+	//		NormalSceneCaptureComp->ShowFlags.SetInstancedFoliage(PreviousShowFlags.InstancedFoliage);
+	//		NormalSceneCaptureComp->ShowFlags.SetInstancedGrass(PreviousShowFlags.InstancedGrass);
+	//		NormalSceneCaptureComp->ShowFlags.SetInstancedStaticMeshes(PreviousShowFlags.InstancedStaticMeshes);
 
-			NormalSceneCaptureComp->ShowFlags.SetSkeletalMeshes(PreviousShowFlags.SkeletalMeshes);
+	//		NormalSceneCaptureComp->ShowFlags.SetSkeletalMeshes(PreviousShowFlags.SkeletalMeshes);
 
-			NormalSceneCaptureComp->PostProcessSettings.AddBlendable(MaterialNormalInstance, 1);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load normal asset!"), TEXT(__FUNCTION__), __LINE__);
-	}
+	//		NormalSceneCaptureComp->PostProcessSettings.AddBlendable(MaterialNormalInstance, 1);
+	//	}
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load normal asset!"), TEXT(__FUNCTION__), __LINE__);
+	//}
 
 	NormalSceneCaptureComp->SetHiddenInGame(true);
 	NormalSceneCaptureComp->Deactivate();
 }
 
 // Init capture components
-void USLVisManager::InitCaptureComponents()
+void USLVisLegacyManager::InitCaptureComponents()
 {
 	static IImageWrapperModule& ImageWrapperModule = FModuleManager::LoadModuleChecked<IImageWrapperModule>(FName("ImageWrapper"));
 	ImageWrapper = ImageWrapperModule.CreateImageWrapper(EImageFormat::JPEG);
@@ -546,30 +546,30 @@ void USLVisManager::InitCaptureComponents()
 	/* Color */
 	if (bCaptureColor)
 	{
-		USLVisManager::InitColorCaptureComponent();
+		USLVisLegacyManager::InitColorCaptureComponent();
 	}
 
 	/* Depth */
 	if (bCaptureDepth)
 	{
-		USLVisManager::InitDepthCaptureComponent();
+		USLVisLegacyManager::InitDepthCaptureComponent();
 	}
 
 	/* Mask */
 	if (bCaptureMask)
 	{
-		USLVisManager::InitMaskCaptureComponent();
+		USLVisLegacyManager::InitMaskCaptureComponent();
 	}
 
 	/* Normal */
 	if (bCaptureNormal)
 	{
-		USLVisManager::InitNormalCaptureComponent();
+		USLVisLegacyManager::InitNormalCaptureComponent();
 	}
 }
 
 // Init color capture component
-void USLVisManager::InitColorCaptureComponent()
+void USLVisLegacyManager::InitColorCaptureComponent()
 {
 	ColorSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
 	ColorImage.AddZeroed(Width*Height);
@@ -581,7 +581,7 @@ void USLVisManager::InitColorCaptureComponent()
 }
 
 // Init depth capture component
-void USLVisManager::InitDepthCaptureComponent()
+void USLVisLegacyManager::InitDepthCaptureComponent()
 {
 	DepthSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
 	DepthImage.AddZeroed(Width*Height);
@@ -592,10 +592,10 @@ void USLVisManager::InitDepthCaptureComponent()
 }
 
 // Init mask capture component
-void USLVisManager::InitMaskCaptureComponent()
+void USLVisLegacyManager::InitMaskCaptureComponent()
 {
 	// Create masks for the objects
-	USLVisManager::InitMaskColors();
+	USLVisLegacyManager::InitMaskColors();
 
 
 	MaskSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
@@ -607,7 +607,7 @@ void USLVisManager::InitMaskCaptureComponent()
 }
 
 // Init normal capture component
-void USLVisManager::InitNormalCaptureComponent()
+void USLVisLegacyManager::InitNormalCaptureComponent()
 {
 	NormalSceneCaptureComp->TextureTarget->InitAutoFormat(Width, Height);
 	NormalImage.AddZeroed(Width*Height);
@@ -618,7 +618,7 @@ void USLVisManager::InitNormalCaptureComponent()
 }
 
 // Create various colors for each object
-void USLVisManager::InitMaskColors()
+void USLVisLegacyManager::InitMaskColors()
 {
 	TMap<AStaticMeshActor*, FColor> ActorColorMap;
 	// All objects need to be selected in order for the mask to be active
@@ -634,7 +634,7 @@ void USLVisManager::InitMaskColors()
 
 		// Create a unique color for each actor in world
 		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d WORLD"), TEXT(__FUNCTION__), __LINE__);
-		USLVisManager::SetUniqueMaskColors(ActorColorMap);
+		USLVisLegacyManager::SetUniqueMaskColors(ActorColorMap);
 
 		for (auto& ActorColorPair : ActorColorMap)
 		{
@@ -650,7 +650,7 @@ void USLVisManager::InitMaskColors()
 }
 
 // Create an array of different colors
-void USLVisManager::SetUniqueMaskColors(TMap<AStaticMeshActor*, FColor>& OutActorColorMap)
+void USLVisLegacyManager::SetUniqueMaskColors(TMap<AStaticMeshActor*, FColor>& OutActorColorMap)
 {
 	const uint32 NrOfColors = OutActorColorMap.Num();
 	const uint32 MaxHue = 50;

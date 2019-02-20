@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisCameraView.h"
-#include "SLVisManager.h"
+#include "SLVisLegacyManager.h"
 
 
 // Sets default values

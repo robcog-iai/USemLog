@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "Materials/MaterialInstance.h"
 #include "SLSkeletalMapDataAsset.h"
 #include "SLSkeletalMappingComponent.generated.h"
 
@@ -22,7 +23,25 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
+
 public:
+	// Map of bones to their class names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	USLSkeletalMapDataAsset* SkeletalMapDataAsset;
+	TMap<FName, FString> BoneClassMap;
+
+	// Map of bones to their mask colors
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	TMap<FName, FString> BoneMaskColorMap;
+
+	// Map of bones to their material instances
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	TMap<FName, UMaterialInstance*> BoneMaterialInstanceMap;
+
+private:
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	USLSkeletalMapDataAsset* LoadFromSkeletalMapDataAsset;
 };

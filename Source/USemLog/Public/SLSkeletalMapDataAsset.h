@@ -24,7 +24,7 @@ protected:
 public:
 	// Map of bones to their class names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FName, FString> BoneClassMap;	
+	TMap<FName, FString> BoneClassMap;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

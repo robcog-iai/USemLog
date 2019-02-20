@@ -15,19 +15,30 @@ void USLSkeletalMapDataAsset::PostEditChangeProperty(struct FPropertyChangedEven
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalMapDataAsset, SkeletalMesh))
 	{
-		// Empty previous map
-		BoneClassMap.Empty();
-
-		// Create a temporary skeletal mesh component from the mesh to read the bone names
-		USkeletalMeshComponent* SkelMeshComp = NewObject<USkeletalMeshComponent>(this);
-		SkelMeshComp->SetSkeletalMesh(SkeletalMesh);
-		TArray<FName> BoneNames;
-		SkelMeshComp->GetBoneNames(BoneNames);
-		for (auto Name : BoneNames)
+		if (SkeletalMesh)
 		{
-			BoneClassMap.Add(Name, "");
+			// Empty previous map
+			TMap<FName, FString> TempBoneClass = BoneClassMap;
+			BoneClassMap.Empty();
+
+			// Create a temporary skeletal mesh component from the mesh to read the bone names
+			USkeletalMeshComponent* SkelMeshComp = NewObject<USkeletalMeshComponent>(this);
+			SkelMeshComp->SetSkeletalMesh(SkeletalMesh);
+			TArray<FName> BoneNames;
+			SkelMeshComp->GetBoneNames(BoneNames);
+			for (const auto& Name : BoneNames)
+			{
+				if (TempBoneClass.Contains(Name))
+				{
+					BoneClassMap.Add(Name, TempBoneClass[Name]);
+				}
+				else
+				{
+					BoneClassMap.Add(Name, "");
+				}
+			}
+			SkelMeshComp->DestroyComponent();
 		}
-		SkelMeshComp->DestroyComponent();
 	}
 }
 #endif // WITH_EDITOR
