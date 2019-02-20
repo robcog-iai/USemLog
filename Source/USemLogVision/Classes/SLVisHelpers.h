@@ -65,6 +65,49 @@ private:
 */
 struct FSLVisProgressLogger
 {
-	float DemotTime;
+	// The current replay timestamp
+	float CurrTs;
+
+	// Total demo time
+	float TotalTime;
+
+	// Number of images to be processed
+	uint32 NumImgsToProcess;
+
+	// Number of processed images 
+	uint32 NumProcessedImgs;
+
+	// Init values with calculations
+	void Init(float InTotalTime, float ScrubRate, uint32 NumViews, uint32 NumRenderTypes)
+	{
+		CurrTs = 0.f;
+		NumProcessedImgs = 0;
+		TotalTime = InTotalTime;
+		const uint32 NumScrubs = (uint32)(InTotalTime / ScrubRate) + 1;
+		const uint32 NumImgsPerScrub = NumViews * NumRenderTypes;
+		NumProcessedImgs = NumScrubs * NumImgsPerScrub;
+	}
+
+
+	// Init values
+	void Init(float InTotalTime, uint32 InNumImgsToprocess)
+	{
+		CurrTs = 0.f;
+		NumProcessedImgs = 0;
+		TotalTime = InTotalTime;
+		NumImgsToProcess = InNumImgsToprocess;
+	}
+
+	// Get state as string
+	FString ToString() const 
+	{
+		return FString::Printf(TEXT("Time=%.9g/%.9g; Imgs=%d/%d;"), CurrTs, TotalTime, NumImgsToProcess, NumProcessedImgs);
+	}
+
+	// Log progress
+	void LogProgress() const
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s"), TEXT(__FUNCTION__), __LINE__, *ToString());
+	}
 };
 

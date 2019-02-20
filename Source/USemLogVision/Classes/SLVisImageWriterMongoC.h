@@ -106,7 +106,7 @@ private:
 
 #if SLVIS_WITH_LIBMONGO
 	// Save images to gridfs and return the bson entry
-	void SaveImagesReturnEntry(const TArray<FSLVisImageData>& ImagesData, bson_t* out_imgs_doc);
+	void AddViewsDataToDoc(const TArray<FSLVisViewData>& ViewsData, bson_t* out_views_doc);
 
 	// Write image data to gridfs, out param the oid of the file/entry, return true on success
 	bool SaveImageToGridFS(const FSLVisImageData& ImgData, bson_oid_t* out_oid);

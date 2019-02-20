@@ -36,7 +36,6 @@ void USLVisImageWriterFile::Finish()
 // Write the images at the timestamp
 void USLVisImageWriterFile::Write(const FSLVisStampedData& StampedData)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d StampedData=%s"), TEXT(__FUNCTION__), __LINE__, *StampedData.ToString());
 	// Iterate the images from the current timestamp
 	for (const auto& ViewData : StampedData.ViewsData)
 	{

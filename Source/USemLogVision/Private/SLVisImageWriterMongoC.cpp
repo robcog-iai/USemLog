@@ -58,94 +58,93 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 	}
 
 #if SLVIS_WITH_LIBMONGO
-	//bson_error_t error;	
+	bson_error_t error;	
 
-	//if (bCreateNewEntry)
-	//{
-	//	// Create a new database entry for the data
-	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d !!! WRITE !!! New entry"), TEXT(__FUNCTION__), __LINE__);
+	if (bCreateNewEntry)
+	{
+		// Create a new database entry for the data
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d !!! WRITE !!! New entry"), TEXT(__FUNCTION__), __LINE__);
 
-	//	// Document to store the images data
-	//	bson_t* imgs_doc = bson_new();
+		// Document to store the images data
+		bson_t* views_doc = bson_new();
 
-	//	// Add timestamp
-	//	BSON_APPEND_DOUBLE(imgs_doc, "timestamp", StampedData.Timestamp);
+		// Add timestamp
+		BSON_APPEND_DOUBLE(views_doc, "timestamp", StampedData.Timestamp);
 
-	//	// Save images data to gridfs, and create a bson entry
-	//	// TODO rename to SaveToGridFs
-	//	USLVisImageWriterMongoC::SaveImagesReturnEntry(ImagesData, imgs_doc);
+		// Add the views 
+		USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, views_doc);
 
-	//	// Insert imgs data
-	//	if (!mongoc_collection_insert_one(collection, imgs_doc, NULL, NULL, &error))
-	//	{
-	//		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-	//			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
-	//	}
-	//	// Clean up allocated bson documents.
-	//	bson_destroy(imgs_doc);
-	//}
-	//else
-	//{
-	//	// Create a new database entry for the data
-	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d !!! WRITE !!! Update entry"), TEXT(__FUNCTION__), __LINE__);
+		// Insert imgs data
+		if (!mongoc_collection_insert_one(collection, views_doc, NULL, NULL, &error))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+				TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		}
+		// Clean up allocated bson documents.
+		bson_destroy(views_doc);
+	}
+	else // Update existing entry
+	{
+		// Create a new database entry for the data
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d !!! WRITE !!! Update entry"), TEXT(__FUNCTION__), __LINE__);
 
-	//	// Update existing entry with the imgs data
-	//	if (ws_oid_str[0] != 0 && bson_oid_is_valid(ws_oid_str, strlen(ws_oid_str)))
-	//	{
-	//		bson_oid_t ws_oid;
-	//		bson_t* double_check_query;
+		// Update existing entry with the imgs data
+		if (ws_oid_str[0] != 0 && bson_oid_is_valid(ws_oid_str, strlen(ws_oid_str)))
+		{
+			bson_oid_t ws_oid;
+			bson_t* double_check_query;
 
-	//		// Get the cached oid
-	//		bson_oid_init_from_string(&ws_oid, ws_oid_str);
+			// Get the cached oid
+			bson_oid_init_from_string(&ws_oid, ws_oid_str);
 
-	//		double_check_query = BCON_NEW("$and", "[",
-	//			"{", "_id", BCON_OID(&ws_oid), "}",
-	//			"{", "images", "{", "$exists", BCON_BOOL(false), "}", "}",
-	//			"]");
+			double_check_query = BCON_NEW("$and", "[",
+				"{", "_id", BCON_OID(&ws_oid), "}",
+				"{", "images", "{", "$exists", BCON_BOOL(false), "}", "}",
+				"]");
 
-	//		// Double check that the id is valid and there are no existing previous images in the entry,
-	//		// this avoids adding unnecessary img data to the database if the update (second) query fails
-	//		if (mongoc_collection_find_with_opts(collection, double_check_query, NULL, NULL))
-	//		{
-	//			bson_t* imgs_doc = bson_new();
-	//			bson_t* update_doc = NULL;
-	//			bson_t *update_query = NULL;
+			// Double check that the id is valid and there are no existing previous images in the entry,
+			// this avoids adding unnecessary img data to the database if the update (second) query fails
+			if (mongoc_collection_find_with_opts(collection, double_check_query, NULL, NULL))
+			{
+				bson_t* views_doc = bson_new();
+				bson_t* update_doc = NULL;
+				bson_t *update_query = NULL;
 
-	//			// Add timestamp
-	//			BSON_APPEND_DOUBLE(imgs_doc, "timestamp2", Timestamp);
-	//			//BSON_APPEND_OID(imgs_doc, "oid2", ws_oid2); // TODO test storing the oid and not a string
+				// Add timestamp
+				BSON_APPEND_DOUBLE(views_doc, "timestamp2", StampedData.Timestamp);
+				//BSON_APPEND_OID(imgs_doc, "oid2", ws_oid2); // TODO test storing the oid and not a string
 
-	//			// Save images data to gridfs, and create a bson entry
-	//			USLVisImageWriterMongoC::SaveImagesReturnEntry(ImagesData, imgs_doc);
+				// Save images data to gridfs, and create a bson entry
+				USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, views_doc);
 
-	//			// Add the images data to the update document
-	//			update_doc = BCON_NEW("$set", BCON_DOCUMENT(imgs_doc));
+				// Add the images data to the update document
+				update_doc = BCON_NEW("$set", BCON_DOCUMENT(views_doc));
 
-	//			// Add the images data to the given oid
-	//			update_query = BCON_NEW("_id", BCON_OID(&ws_oid));
-	//			if (!mongoc_collection_update_one(collection, update_query, update_doc, NULL, NULL, &error))
-	//			{
-	//				UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-	//					TEXT(__FUNCTION__), __LINE__, *FString(error.message));
-	//			}
-	//			bson_destroy(imgs_doc);
-	//			bson_destroy(update_doc);
-	//			bson_destroy(update_query);
-	//		}
-	//		else
-	//		{
-	//			UE_LOG(LogTemp, Error, TEXT("%s::%d Entry _id=%s has previous images, skipping write. (This should not happen)"), 
-	//				TEXT(__FUNCTION__), __LINE__, *FString(ws_oid_str));
-	//		}
-	//		bson_destroy(double_check_query);			
-	//	}
-	//	else 
-	//	{
-	//		// _id invalid or empty (this should not happen because ShouldSkipThisFrame checks for these cases)
-	//		UE_LOG(LogTemp, Error, TEXT("%s::%d !!! _id is empty or invalid, this should never happen.."),
-	//			TEXT(__FUNCTION__), __LINE__);
-	//	}
-	//}
+				// Add the images data to the given oid
+				update_query = BCON_NEW("_id", BCON_OID(&ws_oid));
+				if (!mongoc_collection_update_one(collection, update_query, update_doc, NULL, NULL, &error))
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+						TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+				}
+				bson_destroy(views_doc);
+				bson_destroy(update_doc);
+				bson_destroy(update_query);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Entry _id=%s has previous images, skipping write. (This should not happen)"), 
+					TEXT(__FUNCTION__), __LINE__, *FString(ws_oid_str));
+			}
+			bson_destroy(double_check_query);
+		}
+		else 
+		{
+			// _id invalid or empty (this should not happen because ShouldSkipThisFrame checks for these cases)
+			UE_LOG(LogTemp, Error, TEXT("%s::%d !!! _id is empty or invalid, this should never happen.."),
+				TEXT(__FUNCTION__), __LINE__);
+		}
+	}
 #endif //SLVIS_WITH_LIBMONGO
 }
 
@@ -154,7 +153,7 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Writer is not init"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Writer is not init, force skipping frame"), TEXT(__FUNCTION__), __LINE__);
 		return true;
 	}
 #if SLVIS_WITH_LIBMONGO
@@ -359,101 +358,157 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 
 #if SLVIS_WITH_LIBMONGO
 // Save images to gridfs and return the bson entry
-void USLVisImageWriterMongoC::SaveImagesReturnEntry(const TArray<FSLVisImageData>& ImagesData, bson_t* out_imgs_doc)
+void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& ViewsData, bson_t* out_views_doc)
 {
 	// Init bson if needed
-	if (!out_imgs_doc)
+	if (!out_views_doc)
 	{
-		out_imgs_doc = bson_new();
+		out_views_doc = bson_new();
 	}
 
-	//bson_t arr_child;
-	//bson_t arr_obj_child;
-	//bson_t res_child;
-	//// Add image sub-documents to array
-	//BSON_APPEND_ARRAY_BEGIN(out_imgs_doc, "images", &arr_child);
-	//for (const auto& Img : ImagesData)
-	//{
-	//	bson_oid_t img_file_id;
-	//	// Write img data to gridfs
-	//	if (USLVisImageWriterMongoC::SaveImageToGridFS(Img, &img_file_id))
-	//	{
-	//		// Create image sub-doc
-	//		BSON_APPEND_DOCUMENT_BEGIN(&arr_child, "images", &arr_obj_child);
-	//		BSON_APPEND_OID(&arr_obj_child, "img_file_id", (const bson_oid_t*)&img_file_id);
-	//		BSON_APPEND_UTF8(&arr_obj_child, "label", TCHAR_TO_UTF8(*Img.Metadata.Label));
-	//		BSON_APPEND_UTF8(&arr_obj_child, "type", TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(Img.Metadata.ViewType)));
-	//		BSON_APPEND_DOUBLE(&arr_obj_child, "replay_timestamp", Img.Metadata.ReplayTimestamp);
+	bson_t view_child;
+	bson_t view_child_obj;
+	bson_t view_child_obj_res;
 
-	//		// Add img resolution sub-sub-doc
-	//		BSON_APPEND_DOCUMENT_BEGIN(&arr_obj_child, "res", &res_child);
-	//		BSON_APPEND_DOUBLE(&res_child, "x", Img.Metadata.ResX);
-	//		BSON_APPEND_DOUBLE(&res_child, "y", Img.Metadata.ResY);
-	//		bson_append_document_end(&arr_obj_child, &res_child);
+	bson_t entity_child;
+	bson_t entity_child_obj;
+	bson_t entity_child_obj_color;
 
-	//		bson_append_document_end(&arr_child, &arr_obj_child);
-	//	}
-	//}
-	//bson_append_array_end(out_imgs_doc, &arr_child);
+	bson_t img_child;
+	bson_t img_child_obj;
+	bson_oid_t img_file_id;
+
+	char i_str[16];
+	const char *i_key;
+	uint32_t i = 0;
+
+	char j_str[16];
+	const char *j_key;
+	uint32_t j = 0;
+
+	char k_str[16];
+	const char *k_key;
+	uint32_t k = 0;
+
+	// Create the views array
+	BSON_APPEND_ARRAY_BEGIN(out_views_doc, "views", &view_child);
+	for (const auto& View : ViewsData)
+	{
+		// Start view child doc (name is irrelevant since it will show up as an array index)
+		bson_uint32_to_string(i, &i_key, i_str, sizeof i_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&view_child, i_key, &view_child_obj);
+
+			// Add child doc data
+			BSON_APPEND_UTF8(&view_child_obj, "name", TCHAR_TO_UTF8(*View.ViewName));
+
+			// Add img resolution sub-sub-doc
+			BSON_APPEND_DOCUMENT_BEGIN(&view_child_obj, "res", &view_child_obj_res);
+			BSON_APPEND_DOUBLE(&view_child_obj_res, "x", View.Resolution.X);
+			BSON_APPEND_DOUBLE(&view_child_obj_res, "y", View.Resolution.Y);
+			bson_append_document_end(&view_child_obj, &view_child_obj_res);
+
+			// Create the entities array
+			j = 0;
+			BSON_APPEND_ARRAY_BEGIN(&view_child_obj, "entities", &entity_child);
+			for (const auto& Entity : View.SemanticEntities)
+			{
+				bson_uint32_to_string(j, &j_key, j_str, sizeof j_str);
+				BSON_APPEND_DOCUMENT_BEGIN(&entity_child, i_key, &entity_child_obj);
+
+					BSON_APPEND_UTF8(&entity_child_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
+					BSON_APPEND_UTF8(&entity_child_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
+					BSON_APPEND_UTF8(&entity_child_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
+					BSON_APPEND_INT32(&entity_child_obj, "num_pixels", Entity.NumPixels);
+
+					// Add color sub-sub-sub doc
+					BSON_APPEND_DOCUMENT_BEGIN(&entity_child_obj, "mask_color", &entity_child_obj_color);
+					BSON_APPEND_DOUBLE(&entity_child_obj_color, "r", Entity.Color.R);
+					BSON_APPEND_DOUBLE(&entity_child_obj_color, "g", Entity.Color.G);
+					BSON_APPEND_DOUBLE(&entity_child_obj_color, "b", Entity.Color.B);
+					BSON_APPEND_DOUBLE(&entity_child_obj_color, "a", Entity.Color.A);
+					bson_append_document_end(&entity_child_obj, &entity_child_obj_color);
+
+				bson_append_document_end(&entity_child, &entity_child_obj);
+				j++;
+			}
+			bson_append_array_end(&view_child_obj, &entity_child);
+
+			// Add gridfs data sub array
+			k = 0;
+			BSON_APPEND_ARRAY_BEGIN(&view_child_obj, "images", &img_child);
+			for (const auto& ImgData : View.ImagesData)
+			{
+				if (USLVisImageWriterMongoC::SaveImageToGridFS(ImgData, &img_file_id))
+				{
+					bson_uint32_to_string(k, &k_key, k_str, sizeof k_str);
+					BSON_APPEND_DOCUMENT_BEGIN(&img_child, i_key, &img_child_obj);
+
+					BSON_APPEND_UTF8(&img_child_obj, "type", TCHAR_TO_UTF8(*ImgData.RenderType));
+					BSON_APPEND_OID(&img_child_obj, "file_id", (const bson_oid_t*)&img_file_id);
+
+					bson_append_document_end(&img_child, &img_child_obj);
+					k++;
+				}
+			}
+			bson_append_array_end(&view_child_obj, &img_child);
+
+		// End view child doc
+		bson_append_document_end(&view_child, &view_child_obj);
+		i++;
+	}
+	bson_append_array_end(out_views_doc, &view_child);
 }
 
 // Write image data to gridfs (return the oid of the file/entry)
 bool USLVisImageWriterMongoC::SaveImageToGridFS(const FSLVisImageData& ImgData, bson_oid_t* out_oid)
 {
-	//mongoc_gridfs_file_t *file;
-	//mongoc_gridfs_file_opt_t file_opt = { 0 };
+	mongoc_gridfs_file_t *file;
+	mongoc_gridfs_file_opt_t file_opt = { 0 };
+	const bson_value_t* file_id_val;
+	mongoc_iovec_t iov;
+	bson_error_t error;
+
 	//bson_t* metadata_doc;
-	//const bson_value_t* file_id_val;
-	//mongoc_iovec_t iov;
-	//bson_error_t error;
-
 	//metadata_doc = BCON_NEW(
-	//	"label", BCON_UTF8(TCHAR_TO_UTF8(*ImgData.Metadata.Label)),
-	//	"type", BCON_UTF8(TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(ImgData.Metadata.ViewType))),
-	//	"replay_timestamp", BCON_DOUBLE(ImgData.Metadata.ReplayTimestamp),
-	//	"res", "{",
-	//		"x", BCON_INT32(ImgData.Metadata.ResX),
-	//		"y", BCON_INT32(ImgData.Metadata.ResY), "}"
+	//	"type", BCON_UTF8(TCHAR_TO_UTF8(*ImgData.RenderType))
 	//);
-
-	//file_opt.filename = TCHAR_TO_UTF8(*ISLVisImageWriterInterface::CreateImageFilename(
-	//	ImgData.Metadata.ReplayTimestamp, ImgData.Metadata.Label, ImgData.Metadata.ViewType));
+	//file_opt.filename = "no_name";
 	//file_opt.metadata = metadata_doc;
 
-	//// Create new file
-	//file = mongoc_gridfs_create_file(gridfs, &file_opt);
+	// Create new file
+	file = mongoc_gridfs_create_file(gridfs, &file_opt);
 
-	//// Set data binary and length
-	//iov.iov_base = (char*)(ImgData.BinaryData.GetData());
-	//iov.iov_len = ImgData.BinaryData.Num();
+	// Set data binary and length
+	iov.iov_base = (char*)(ImgData.BinaryData.GetData());
+	iov.iov_len = ImgData.BinaryData.Num();
 
-	//// Write data to gridfs
-	//if (iov.iov_len != mongoc_gridfs_file_writev(file, &iov, 1, 0))
-	//{
-	//	if (mongoc_gridfs_file_error(file, &error))
-	//	{
-	//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
-	//			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
-	//	}
-	//	return false;
-	//}
+	// Write data to gridfs
+	if (iov.iov_len != mongoc_gridfs_file_writev(file, &iov, 1, 0))
+	{
+		if (mongoc_gridfs_file_error(file, &error))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
+				TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		}
+		return false;
+	}
 
-	//// Saves modifications to file to the MongoDB server
-	//if (!mongoc_gridfs_file_save(file))
-	//{
-	//	mongoc_gridfs_file_error(file, &error);
-	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
-	//		TEXT(__FUNCTION__), __LINE__, *FString(error.message));
-	//	return false;
-	//}
+	// Saves modifications to file to the MongoDB server
+	if (!mongoc_gridfs_file_save(file))
+	{
+		mongoc_gridfs_file_error(file, &error);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
+			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		return false;
+	}
 
-	//// Set the out oid
-	//file_id_val = mongoc_gridfs_file_get_id(file);
-	//bson_oid_copy(&file_id_val->value.v_oid, out_oid);
+	// Set the out oid
+	file_id_val = mongoc_gridfs_file_get_id(file);
+	bson_oid_copy(&file_id_val->value.v_oid, out_oid);
 
-	//// Clean up
+	// Clean up
 	//bson_destroy(metadata_doc);
-	//mongoc_gridfs_file_destroy(file);
+	mongoc_gridfs_file_destroy(file);
 
 	return true;
 }

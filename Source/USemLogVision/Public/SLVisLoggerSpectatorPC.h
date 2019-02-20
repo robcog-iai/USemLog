@@ -11,6 +11,20 @@
 #include "SLVisLoggerSpectatorPC.generated.h"
 
 /**
+* Render types
+*/
+UENUM()
+enum class ESLVisRenderType : uint8
+{
+	Color					UMETA(DisplayName = "Color"),
+	Depth					UMETA(DisplayName = "Depth"),
+	Mask					UMETA(DisplayName = "Mask"),
+	Normal					UMETA(DisplayName = "Normal"),
+	Specular				UMETA(DisplayName = "Specular"),
+};
+
+
+/**
  * 
  */
 UCLASS()
@@ -53,7 +67,7 @@ public:
 
 private:
 	// Set rendered image quality
-	void SetupRenderingProperties();
+	void SetupRenderingParameters();
 
 	// Request a screenshot
 	void RequestScreenshot();
@@ -63,6 +77,9 @@ private:
 
 	// Called when screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
+
+	// Called when the replay is finished
+	void DemoFinishedCB();
 
 	// Pause demo
 	void DemoPause();
@@ -96,9 +113,6 @@ private:
 
 	// Check if entities are rendered using the image masks
 	void MaskFrustumCheck();
-
-	// Progress debug print
-	void LogProgress();
 
 private:
 	// Set when logger is initialized
@@ -135,6 +149,7 @@ private:
 
 	// Rendering buffer types
 	TArray<FString> RenderTypes;
+	TSet<ESLVisRenderType> ERenderTypes;
 
 	// Index of the current view
 	int32 CurrentViewIndex;
@@ -146,7 +161,7 @@ private:
 	FIntPoint Resolution;
 
 	// Update rate of the replay in seconds
-	float DemoUpdateRate;
+	float ScrubRate;
 	
 	// Avoid creating a new db entry if there is a world state in the given range [--- Ts ---]
 	float SkipNewEntryTolerance;
@@ -154,13 +169,8 @@ private:
 	// Current demo time
 	float DemoTimestamp;
 
-	// Number of saved images until now
-	uint32 NumImagesProcessed;
-
-	// Total number of images to be saved
-	uint32 NumImagesToProcess;
-
 	// Progress logger helper class
+	FSLVisProgressLogger ProgressLogger;
 
 	// Process duration logger helper class
 	FSLVisDurationsLogger DurationsLogger;

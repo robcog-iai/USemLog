@@ -23,29 +23,31 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	DemoUpdateRate = 0.88f;
-	SkipNewEntryTolerance = 0.02f; 
+	ScrubRate = 0.28f;
+	SkipNewEntryTolerance = 0.05f; 
 	CurrentViewIndex = 0;
 	CurrRenderIndex = 0;
 	DemoTimestamp = 0.f;
-	NumImagesProcessed = 0;
-	NumImagesToProcess = 0;
+
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
 
 	// Add buffer types to visualize
-	RenderTypes.Add("Color");	
+	RenderTypes.Add("Color");
 	RenderTypes.Add("SLSceneDepthWorldUnits");
 	RenderTypes.Add("SLMask");
 	//RenderTypes.Add("SceneDepth");
 	//RenderTypes.Add("WorldNormal");
 	//RenderTypes.Add("SLSceneDepth");
+	ERenderTypes.Add(ESLVisRenderType::Color);
+	ERenderTypes.Add(ESLVisRenderType::Depth);
+	ERenderTypes.Add(ESLVisRenderType::Mask);
 
 	// Image size 
 	// 8k (7680, 4320) / 4k (3840, 2160) / 2k (2048, 1080) / fhd (1920, 1080) / hd (1280, 720) / sd (720, 480)
-	Resolution.X = 7680;
-	Resolution.Y = 4320;
+	Resolution.X = 720;
+	Resolution.Y = 480;
 }
 
 // Called when the game starts or when spawned
@@ -84,11 +86,9 @@ void ASLVisLoggerSpectatorPC::Init()
 		CurrentViewIndex = 0;
 		CurrRenderIndex = 0;
 		DemoTimestamp = 0.f;
-		NumImagesProcessed = 0;
-		NumImagesToProcess = 0;
 
 		// Make sure the time offset is not larger than the replay update rate
-		FMath::Clamp(SkipNewEntryTolerance, 0.f, DemoUpdateRate);
+		FMath::Clamp(SkipNewEntryTolerance, 0.f, ScrubRate);
 
 		if (RenderTypes.Contains("SLMask"))
 		{
@@ -99,6 +99,16 @@ void ASLVisLoggerSpectatorPC::Init()
 				RenderTypes.Remove("SLMask");
 			}
 		}
+
+		//if (ERenderTypes.Contains(ESLVisRenderType::Mask))
+		//{
+		//	MaskHandler = NewObject<USLVisMaskHandler>(this);
+		//	MaskHandler->Init();
+		//	if (!MaskHandler->IsInit())
+		//	{
+		//		ERenderTypes.Remove(ESLVisRenderType::Mask);
+		//	}
+		//}
 
 		// Continue only if driver and viewport is available
 		NetDriver = GetWorld()->DemoNetDriver;
@@ -111,21 +121,17 @@ void ASLVisLoggerSpectatorPC::Init()
 
 			// Create writer
 #if SLVIS_WITH_LIBMONGO
-			//Writer = NewObject<USLVisImageWriterMongoC>(this);
-			//Writer->Init(FSLVisImageWriterParams(
-			//	TEXT("SemLog"), EpisodeId, NewEntryTolerance, "127.0.0.1", 27017));
+			Writer = NewObject<USLVisImageWriterMongoC>(this);
+			Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
 
 			//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
-			//Writer->Init(FSLVisImageWriterParams(
-			//	TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
+			//Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
 
-			Writer = NewObject<USLVisImageWriterFile>(this);
-			Writer->Init(FSLVisImageWriterParams(
-				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
+			//Writer = NewObject<USLVisImageWriterFile>(this);
+			//Writer->Init(FSLVisImageWriterParams(FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
 #else
 			Writer = NewObject<USLVisImageWriterFile>(this);
-			Writer->Init(FSLVisImageWriterParams(
-				FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
+			Writer->Init(FSLVisImageWriterParams(FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
 #endif //SLVIS_WITH_LIBMONGO
 
 #if WITH_EDITOR
@@ -141,26 +147,24 @@ void ASLVisLoggerSpectatorPC::Init()
 				{
 					CameraViews.Add(*Itr);
 				}
-				// Calculate the total images to be saved
-				uint32 NumTimesteps = (uint32)(NetDriver->DemoTotalTime / DemoUpdateRate) + 1;
-				uint32 NumImages = CameraViews.Num() * RenderTypes.Num();
-				NumImagesToProcess = NumTimesteps * NumImages;
+				// Init the progress logger (num images saved etc.)
+				ProgressLogger.Init(NetDriver->DemoTotalTime, ScrubRate, CameraViews.Num(), RenderTypes.Num());
 
 				// Check which timestamp should be rendered first
 				while (DemoTimestamp < NetDriver->DemoTotalTime &&
 					ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(DemoTimestamp))
 				{
 					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
-					NumImagesProcessed += 2; //todo
-					DemoTimestamp += DemoUpdateRate;
+					ProgressLogger.NumProcessedImgs += CameraViews.Num() * RenderTypes.Num();
+					DemoTimestamp += ScrubRate;
 				}
 
 				// Set rendering parameters
-				ASLVisLoggerSpectatorPC::SetupRenderingProperties();
+				ASLVisLoggerSpectatorPC::SetupRenderingParameters();
 
 				// Bind callback functions
 				NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::ScrubCB);
-				NetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::Finish);
+				NetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::DemoFinishedCB);
 				ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLVisLoggerSpectatorPC::ScreenshotCB);
 				bIsInit = true;
 			}
@@ -179,12 +183,10 @@ void ASLVisLoggerSpectatorPC::Start()
 		// Set camera to first target and first rendering type
 		if (ASLVisLoggerSpectatorPC::GotoInitialViewTarget() && ASLVisLoggerSpectatorPC::GotoInitialRenderType())
 		{
-			// Save the scrub request time
-			DurationsLogger.SetScrubRequestTime();
-
 			// Go to the beginning of the demo and start requesting screenshots, unpause demo in order to scrub
 			ASLVisLoggerSpectatorPC::DemoUnPause();
 			NetDriver->GotoTimeInSeconds(DemoTimestamp);
+			DurationsLogger.SetScrubRequestTime();
 
 			// Flag as started
 			bIsStarted = true;
@@ -202,7 +204,7 @@ void ASLVisLoggerSpectatorPC::Finish()
 			Writer->Finish();
 		}
 
-		ASLVisLoggerSpectatorPC::LogProgress();
+		ProgressLogger.LogProgress();
 
 		// Log the duration of the vision logger
 		DurationsLogger.SetEndTime(true);
@@ -219,15 +221,13 @@ void ASLVisLoggerSpectatorPC::Finish()
 }
 
 // Set rendered image quality
-void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
+void ASLVisLoggerSpectatorPC::SetupRenderingParameters()
 {	
-	// TODO this probably causes an extra screenshot callback
 	// Set screenshot image and viewport resolution size
 	GetHighResScreenshotConfig().SetResolution(Resolution.X, Resolution.Y, 1.0f);
-	
 	// SetResolution() sets GIsHighResScreenshot to true, which triggers the callback, avoid this be re-setting the flat to false
 	GIsHighResScreenshot = false;
-
+	
 	// TODO see if this is useful
 	//GetHighResScreenshotConfig().ParseConsoleCommand();
 	
@@ -237,7 +237,7 @@ void ASLVisLoggerSpectatorPC::SetupRenderingProperties()
 	//FString ResStr = FString::FromInt(ResX) + "x" + FString::FromInt(ResY)/* + "f"*/;
 	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetRes"))->Set(*ResStr);
 
-	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SceneColorFormat"))->Set(PF_R8G8B8A8);
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.SceneColorFormat"))->Set(PF_R8G8B8A8);
 
 	// Which anti-aliasing mode is used by default (if masking is used the AA should be turned off, otherwise the edge pixels will differ)
 	// 	AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
@@ -290,8 +290,6 @@ void ASLVisLoggerSpectatorPC::RequestScreenshot()
 		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
 		//GetHighResScreenshotConfig().SetHDRCapture(true);
 		ViewportClient->Viewport->TakeHighResScreenShot();
-
-		// Save the screenshot request time
 		DurationsLogger.SetScreenshotRequestTime();
 	});
 }
@@ -312,6 +310,10 @@ void ASLVisLoggerSpectatorPC::ScrubCB()
 // Called when screenshot is captured
 void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
 {
+#if WITH_EDITOR
+	//ProgressBar->EnterProgressFrame();
+#endif //WITH_EDITOR
+
 	// Log the duration of the screenshot processing
 	DurationsLogger.ScreenshotCbTime(true);
 
@@ -337,10 +339,6 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 
 	// Add current image data to the view
 	CurrentViewData.ImagesData.Emplace(FSLVisImageData(RenderTypes[CurrRenderIndex], CompressedBitmap));
-
-#if WITH_EDITOR
-	//ProgressBar->EnterProgressFrame();
-#endif //WITH_EDITOR
 
 	// Check if multiple view types are required
 	if (ASLVisLoggerSpectatorPC::GotoNextRenderType())
@@ -371,13 +369,13 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 				CurrentViewData.Reset();
 				CurrentTsData.Reset();
 
-				ASLVisLoggerSpectatorPC::LogProgress();
+				ProgressLogger.LogProgress();
 
 				// Find the next timestamp to scrub to
 				do {
 					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
-					NumImagesProcessed += 2;//todo
-					DemoTimestamp += DemoUpdateRate;
+					ProgressLogger.NumProcessedImgs += CameraViews.Num() * RenderTypes.Num();
+					DemoTimestamp += ScrubRate;
 				} while (DemoTimestamp < NetDriver->DemoTotalTime &&
 					ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(DemoTimestamp));
 
@@ -387,10 +385,17 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 					// Unpause demo in order to scrub
 					ASLVisLoggerSpectatorPC::DemoUnPause();
 					NetDriver->GotoTimeInSeconds(DemoTimestamp);
+					DurationsLogger.SetScrubRequestTime();
 				}
 			}
 		}
 	}
+}
+
+// Called when the replay is finished
+void ASLVisLoggerSpectatorPC::DemoFinishedCB()
+{
+	ASLVisLoggerSpectatorPC::Finish();
 }
 
 // Pause demo (needed to take the screenshot)
@@ -511,7 +516,8 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 
 				//ViewportClient->GetEngineShowFlags()->SetSceneColorFringe(false);
 				//ViewportClient->GetEngineShowFlags()->SetAtmosphericFog(false);
-				////ViewportClient->GetEngineShowFlags()->SetGlobalIllumination(true);
+				//ViewportClient->GetEngineShowFlags()->SetGlobalIllumination(true);
+
 				////ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 				////BufferVisTargetCV->Set(TEXT("BaseColor"));
 			}
@@ -563,10 +569,7 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 		{
 			if (AsMongoCxxWriter->ShouldSkipThisTimestamp(Timestamp))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Skipping the current frame images.. Time=[%f/%f] Progress=[%d/%d]"),
-					TEXT(__FUNCTION__), __LINE__,
-					DemoTimestamp, NetDriver->DemoTotalTime,
-					NumImagesProcessed, NumImagesToProcess);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Frame can be skipped.."), TEXT(__FUNCTION__), __LINE__);
 				return true;
 			}
 			else
@@ -579,10 +582,7 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 		{
 			if (AsMongoCWriter->ShouldSkipThisFrame(Timestamp))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Skipping the current frame images.. Time=[%f/%f] Progress=[%d/%d]"),
-					TEXT(__FUNCTION__), __LINE__,
-					DemoTimestamp, NetDriver->DemoTotalTime,
-					NumImagesProcessed, NumImagesToProcess);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Frame can be skipped.."), TEXT(__FUNCTION__), __LINE__);
 				return true;
 			}
 			else
@@ -688,15 +688,4 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 	
 
 	UE_LOG(LogTemp, Error, TEXT("%s::%d  ** * * ** * * ** * * ** * * *"), TEXT(__FUNCTION__), __LINE__);
-}
-
-// Progress debug print
-void ASLVisLoggerSpectatorPC::LogProgress()
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Time=[%f/%f] Progress=[%d/%d]"),
-		TEXT(__FUNCTION__), __LINE__,
-		DemoTimestamp,
-		NetDriver->DemoTotalTime,
-		NumImagesProcessed,
-		NumImagesToProcess);
 }

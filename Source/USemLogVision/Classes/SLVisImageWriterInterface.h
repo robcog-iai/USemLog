@@ -43,6 +43,21 @@ struct FSLVisImageWriterParams
 	{};
 };
 
+
+/**
+* Images metadatadata
+*/
+struct FSLVisImageMetaData
+{
+	// Render type
+	FString RenderType;
+
+	// Image type
+	FString ImageType; //png, depth resolution?
+};
+
+
+
 /**
 * Images data 
 */
@@ -54,6 +69,7 @@ struct FSLVisImageData
 	// Init ctor
 	FSLVisImageData(const FString& InRenderType, const TArray<uint8>& InBinaryData) : RenderType(InRenderType), BinaryData(InBinaryData) {};
 
+	// TODO use FSLVisImageMetaData when more data is available
 	// Render type
 	FString RenderType;
 
@@ -85,13 +101,13 @@ struct FSLVisEntitiyData
 	// Number of pixels belonging to the entity from the image
 	int32 NumPixels;
 
-	// Indexes of the color
-	TArray<int32> Indexes;
+	// Indexes where the color is located in the array
+	//TArray<int32> Indexes;
 
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d; Indexes.Num()=%d;"),
-			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels, Indexes.Num());
+		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d;"),
+			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels);
 	}
 };
 
@@ -102,7 +118,7 @@ struct FSLVisEntitiyData
 struct FSLVisViewData
 {
 	// Default ctor
-	FSLVisViewData() : Resolution(0,0) {};
+	FSLVisViewData() {};
 
 	// Name of the current view
 	FString ViewName;
