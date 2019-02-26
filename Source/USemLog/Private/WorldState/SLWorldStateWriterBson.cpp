@@ -51,9 +51,9 @@ void FSLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalAct
 	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
 	float Timestamp)
 {
-#if SL_WITH_LIBMONGO
+#if SL_WITH_LIBMONGO_CXX
 
-#endif //SL_WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO_CXX
 }
 
 // Set the file handle for the logger
@@ -71,7 +71,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 
 	return FileHandle != nullptr;
 }
-#if SL_WITH_LIBMONGO
+#if SL_WITH_LIBMONGO_CXX
 //// Add actors
 //void FSLWorldStateWriterBson::AddActors(bson_t& OutBsonEntitiesArr)
 //{
@@ -271,4 +271,4 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //		FileHandle->Write(memorybuffer, bufferlen);
 //	}
 //}
-#endif //SL_WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO_CXX

@@ -120,19 +120,19 @@ void ASLVisLoggerSpectatorPC::Init()
 			EpisodeId.RemoveFromEnd("_RP");
 
 			// Create writer
-#if SLVIS_WITH_LIBMONGO
-			Writer = NewObject<USLVisImageWriterMongoC>(this);
-			Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
-
-			//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
-			//Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
-
 			//Writer = NewObject<USLVisImageWriterFile>(this);
 			//Writer->Init(FSLVisImageWriterParams(FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
-#else
-			Writer = NewObject<USLVisImageWriterFile>(this);
-			Writer->Init(FSLVisImageWriterParams(FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
-#endif //SLVIS_WITH_LIBMONGO
+
+#if SLVIS_WITH_LIBMONGO_C
+			Writer = NewObject<USLVisImageWriterMongoC>(this);
+			Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
+#endif //SLVIS_WITH_LIBMONGO_C
+
+#if SLVIS_WITH_LIBMONGO_CXX
+			//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
+			//Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
+#endif //SLVIS_WITH_LIBMONGO_CXX
+
 
 #if WITH_EDITOR
 			//ProgressBar = MakeUnique<FScopedSlowTask>(NumImagesToSave, FText::FromString(FString(TEXT("Saving images.."))));

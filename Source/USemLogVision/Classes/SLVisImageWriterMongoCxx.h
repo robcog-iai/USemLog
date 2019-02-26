@@ -6,11 +6,11 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "SLVisImageWriterInterface.h"
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 THIRD_PARTY_INCLUDES_START
 #include "mongocxx/client.hpp"
 THIRD_PARTY_INCLUDES_END
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_CXX
 #include "SLVisImageWriterMongoCxx.generated.h"
 
 /**
@@ -51,7 +51,7 @@ private:
 	// Generate a new entry point for the images
 	bool bCreateNewDocument;
 
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 	// Must be created before using the driver and must remain alive for as long as the driver is in use
 	//mongocxx::instance mongo_inst;
 
@@ -69,5 +69,7 @@ private:
 
 	// Cached document _id for the next insertion
 	bsoncxx::types::b_oid insertion_doc_id;
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_CXX
+
 };
+

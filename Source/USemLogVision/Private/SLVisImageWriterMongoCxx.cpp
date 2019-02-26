@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisImageWriterMongoCxx.h"
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 THIRD_PARTY_INCLUDES_START
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
@@ -14,16 +14,16 @@ THIRD_PARTY_INCLUDES_END
 using namespace mongocxx;
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
-#endif //SLVIS_WITH_LIBMONGO
-
-#include <mongocxx/instance.hpp>
+#endif //SLVIS_WITH_LIBMONGO_CXX
 
 #define SLVIS_MIN_TIME_OFFSET 4.5f
 
 // Ctor
 USLVisImageWriterMongoCxx::USLVisImageWriterMongoCxx()
 {
+#if SLVIS_WITH_LIBMONGO_CXX
 	mongocxx::instance::current();
+#endif //SLVIS_WITH_LIBMONGO_CXX
 	bIsInit = false;
 }
 
@@ -52,7 +52,7 @@ void USLVisImageWriterMongoCxx::Finish()
 // Write the images at the timestamp
 void USLVisImageWriterMongoCxx::Write(const FSLVisStampedData& StampedData)
 {
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 	//// Create a bson document and array to store the images
 	//bsoncxx::builder::basic::document bson_doc{};
 	//bsoncxx::builder::basic::array bson_arr{};
@@ -132,7 +132,7 @@ void USLVisImageWriterMongoCxx::Write(const FSLVisStampedData& StampedData)
 	//			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 	//	}
 	//}
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_CXX
 }
 
 // Skip the current timestamp (images already inserted)
@@ -146,7 +146,7 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 		 // if true, return true (we can skip rendering the images)
 		 // if false, return false (we need to render the images) 
 			//  cache object id, this is where the images will be inserted	
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 	// Check nearest world state entry  WS_before <--ts_diff_before-- TS --ts_diff_after--> WS_after
 	float SmallestDiff = -1.f;
 
@@ -231,7 +231,7 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 	}
 	// todo with returns
 
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_CXX
 	return false;
 }
 
@@ -241,7 +241,7 @@ bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& Ep
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
 		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
 
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 	try
 	{
 		// Get current mongo instance, or create a new one (static variable)
@@ -308,7 +308,7 @@ bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& Ep
 	return true;
 #else
 	return false;
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_CXX
 }
 
 // Not needed if the index already exists (it gets updated for every new entry)
@@ -319,7 +319,7 @@ bool USLVisImageWriterMongoCxx::CreateIndexes()
 		return false;
 	}
 
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 	// Create indexes on timestamp
 	try
 	{
@@ -336,5 +336,5 @@ bool USLVisImageWriterMongoCxx::CreateIndexes()
 	}
 #else
 	return false;
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_CXX
 }

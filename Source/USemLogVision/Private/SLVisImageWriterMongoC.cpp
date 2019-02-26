@@ -7,13 +7,12 @@
 USLVisImageWriterMongoC::USLVisImageWriterMongoC()
 {
 	bIsInit = false;
-	ws_oid_str[0] = 0;
 }
 
 // Dtor
 USLVisImageWriterMongoC::~USLVisImageWriterMongoC()
 {
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 	//Release our handles and clean up libmongoc
 	mongoc_gridfs_destroy(gridfs);
 	mongoc_collection_destroy(collection);
@@ -21,15 +20,17 @@ USLVisImageWriterMongoC::~USLVisImageWriterMongoC()
 	mongoc_uri_destroy(uri);
 	mongoc_client_destroy(client);
 	mongoc_cleanup();
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 }
 
 // Init
 void USLVisImageWriterMongoC::Init(const FSLVisImageWriterParams& InParams)
 {
+#if SLVIS_WITH_LIBMONGO_C
 	ws_oid_str[0] = 0;
 	//bson_free(ws_oid2);
 	//ws_oid2 = nullptr;
+#endif //SLVIS_WITH_LIBMONGO_C
 	bCreateNewEntry = false;
 	TimeRange = InParams.SkipNewEntryTolerance;
 	bIsInit = USLVisImageWriterMongoC::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
@@ -57,8 +58,8 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 		return;
 	}
 
-#if SLVIS_WITH_LIBMONGO
-	bson_error_t error;	
+#if SLVIS_WITH_LIBMONGO_C
+	bson_error_t error;
 
 	if (bCreateNewEntry)
 	{
@@ -145,7 +146,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 				TEXT(__FUNCTION__), __LINE__);
 		}
 	}
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 }
 
 // Skip the current timestamp (images already inserted)
@@ -156,7 +157,7 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Writer is not init, force skipping frame"), TEXT(__FUNCTION__), __LINE__);
 		return true;
 	}
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 	// Invalidate previous document id
 	//ws_oid_str = NULL;
 	ws_oid_str[0] = 0;
@@ -223,14 +224,14 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 			}
 		}
 	}	
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 	return false;
 }
 
 // Connect to the database (returns true if there is a server running and we are connected)
 bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
 {
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
 	mongoc_init();
 
@@ -283,13 +284,13 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 	return true;
 #else
 	return false;
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 }
 
 // Get parameters about the closest entry to the given timestamp
 void USLVisImageWriterMongoC::GetWorldStateParamsAt(float InTimestamp, bool bSearchBeforeTimestamp, FSLVisWorldStateEntryParams& OutParams)
 {
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 	bson_t* filter;
 	bson_t* opts;
 	mongoc_cursor_t* cursor;
@@ -338,7 +339,7 @@ void USLVisImageWriterMongoC::GetWorldStateParamsAt(float InTimestamp, bool bSea
 	mongoc_cursor_destroy(cursor);
 	bson_destroy(filter);
 	bson_destroy(opts);
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 }
 
 // Not needed if the index already exists (it gets updated for every new entry)
@@ -349,14 +350,14 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 		return false;
 	}
 
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 	return false;
 #else
 	return false;
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 }
 
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 // Save images to gridfs and return the bson entry
 void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& ViewsData, bson_t* out_views_doc)
 {
@@ -512,4 +513,4 @@ bool USLVisImageWriterMongoC::SaveImageToGridFS(const FSLVisImageData& ImgData, 
 
 	return true;
 }
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C

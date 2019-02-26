@@ -45,10 +45,10 @@ public class USemLog : ModuleRules
 				"UTags",
 				"UIds",
 				"UConversions",
-				"UMCGrasp",			// SL_WITH_MC_GRASP
-				"libmongo",			// SL_WITH_LIBMONGO
-				//"MongoC",
-				//"MongoCxx",
+				"UMCGrasp", // SL_WITH_MC_GRASP
+				//"libmongo",
+				"MongoC", // SL_WITH_LIBMONGO_C
+				"MongoCxx", // SL_WITH_LIBMONGO_CXX
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -59,7 +59,7 @@ public class USemLog : ModuleRules
 		if (Target.Type == TargetRules.TargetType.Editor)
 		//if(Target.Type == TargetRules.TargetType.Program)
 		{
-			PrivateDependencyModuleNames.Add("USemLogVision");			
+			PrivateDependencyModuleNames.Add("USemLogVision");
 			PublicDefinitions.Add("SL_WITH_SLVIS=1");
 		}
 		else
@@ -85,15 +85,30 @@ public class USemLog : ModuleRules
 			PublicDefinitions.Add("SL_WITH_MC_GRASP=1");
 		}
 
-		string libmongo = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("libmongo"));
-		if (string.IsNullOrEmpty(libmongo))
+		string MongoC = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("MongoC"));
+		if (string.IsNullOrEmpty(MongoC))
 		{
-			PublicDefinitions.Add("SL_WITH_LIBMONGO=0");
+			PublicDefinitions.Add("SL_WITH_LIBMONGO_C=0");
 		}
 		else
 		{
-			PublicDefinitions.Add("SL_WITH_LIBMONGO=1");
-			
+			PublicDefinitions.Add("SL_WITH_LIBMONGO_C=1");
+
+			// Needed to ignore various warnings from libmongo
+			bEnableUndefinedIdentifierWarnings = false;
+			bEnableExceptions = true;
+			//bUseRTTI = true;
+		}
+
+		string MongoCxx = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("MongoCxx"));
+		if (string.IsNullOrEmpty(MongoCxx))
+		{
+			PublicDefinitions.Add("SL_WITH_LIBMONGO_CXX=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("SL_WITH_LIBMONGO_CXX=1");
+
 			// Needed to ignore various warnings from libmongo
 			bEnableUndefinedIdentifierWarnings = false;
 			bEnableExceptions = true;

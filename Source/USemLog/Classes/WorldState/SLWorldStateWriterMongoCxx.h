@@ -5,11 +5,11 @@
 
 #include "CoreMinimal.h"
 #include "ISLWorldStateWriter.h"
-#if SL_WITH_LIBMONGO
+#if SL_WITH_LIBMONGO_CXX
 THIRD_PARTY_INCLUDES_START
 #include <mongocxx/client.hpp>
 THIRD_PARTY_INCLUDES_END
-#endif //SL_WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO_CXX
 
 // Forward declaration
 class FSLWorldStateAsyncWorker;
@@ -47,7 +47,7 @@ private:
 	// Create indexes from the logged data, usually called after logging
 	bool CreateIndexes();
 	
-#if SL_WITH_LIBMONGO
+#if SL_WITH_LIBMONGO_CXX
 	// Get non skeletal actors as bson array
 	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
@@ -76,5 +76,5 @@ private:
 
 	// Database collection
 	mongocxx::collection mongo_coll;
-#endif //SL_WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO_CXX
 };

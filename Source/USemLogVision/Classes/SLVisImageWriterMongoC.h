@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "SLVisImageWriterInterface.h"
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
 #if PLATFORM_WINDOWS
 	#include "Windows/AllowWindowsPlatformTypes.h"
@@ -16,7 +16,7 @@ THIRD_PARTY_INCLUDES_START
 	#include <mongoc/mongoc.h>
 #endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 #include "SLVisImageWriterMongoC.generated.h"
 
 
@@ -26,7 +26,7 @@ THIRD_PARTY_INCLUDES_END
 */
 struct FSLVisWorldStateEntryParams
 {
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 	// If true, we know for sure there is no stale data
 	bool bAllDataIsValid;
 
@@ -64,7 +64,7 @@ struct FSLVisWorldStateEntryParams
 			*FString(oid_str)
 		);
 	}
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 };
 
 /**
@@ -104,13 +104,13 @@ private:
 	// Re-create the indexes (there could be new entries)
 	bool CreateIndexes();
 
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 	// Save images to gridfs and return the bson entry
 	void AddViewsDataToDoc(const TArray<FSLVisViewData>& ViewsData, bson_t* out_views_doc);
 
 	// Write image data to gridfs, out param the oid of the file/entry, return true on success
 	bool SaveImageToGridFS(const FSLVisImageData& ImgData, bson_oid_t* out_oid);
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 
 private:
 	// Generate a new entry point for the images
@@ -119,7 +119,7 @@ private:
 	// Min time offset for a new db entry
 	float TimeRange;
 
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_C
 	// Server uri
 	mongoc_uri_t* uri;
 
@@ -139,5 +139,5 @@ private:
 	// _id of the object (world state) where to insert the images
 	char ws_oid_str[25];
 	bson_oid_t* ws_oid2;
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_C
 };
