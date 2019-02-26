@@ -166,7 +166,7 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 					if (USkeletalMeshComponent* SkelComp = Itr->Entity->GetSkeletalMeshComponent())
 					{
 						// Iterate through the bones of the skeletal mesh
-						for (const auto& Pair : SkelMapDataAsset->BoneClassMap)
+						for (const auto& Pair : SkelMapDataAsset->BoneClasses)
 						{
 							const FVector CurrLoc = SkelComp->GetBoneLocation(Pair.Key);
 							const FQuat CurrQuat = SkelComp->GetBoneQuaternion(Pair.Key);

@@ -28,20 +28,29 @@ protected:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
+private:
+	// Update the data
+	void UpdateData();
+
 public:
 	// Map of bones to their class names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FName, FString> BoneClassMap;
+	TMap<FName, FString> BoneClasses;
 
 	// Map of bones to their mask colors
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FName, FString> BoneMaskColorMap;
+	TMap<FName, FString> BoneMaskColors;
 
 	// Map of bones to their material instances
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TMap<FName, UMaterialInstance*> BoneMaterialInstanceMap;
 
 private:
+	// Load the bones semantic information from this data asset
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	USLSkeletalMapDataAsset* LoadFromSkeletalMapDataAsset;
+
+	// Mimick a refresh button
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bRefresh;
 };

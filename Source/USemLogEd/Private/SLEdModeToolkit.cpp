@@ -567,7 +567,6 @@ void FSLEdModeToolkit::OnCheckedOverwriteGenerateRandomVisualMasks(ECheckBoxStat
 	bGenerateRandomVisualMasks = (NewCheckedState == ECheckBoxState::Checked);
 }
 
-
 // Remove all semantic ids
 FReply FSLEdModeToolkit::RemoveAllSemanticIds()
 {

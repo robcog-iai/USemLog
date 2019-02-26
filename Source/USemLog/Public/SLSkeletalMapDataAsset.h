@@ -15,18 +15,31 @@ class USEMLOG_API USLSkeletalMapDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 
+public:
+	// Ctor
+	USLSkeletalMapDataAsset();
+
 protected:
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
+private:
+	// Update the data
+	void UpdateData();
+
 public:
 	// Map of bones to their class names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FName, FString> BoneClassMap;
+	TMap<FName, FString> BoneClasses;
 
 private:
+	// Generate the bones mesh from this skeletal mesh
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	USkeletalMesh* SkeletalMesh;
+
+	// Mimick refresh button
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bRefresh;
 };
