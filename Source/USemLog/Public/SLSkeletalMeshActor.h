@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "SLSkeletalMapDataAsset.h"
+#include "SLSkeletalDataAsset.h"
 #include "SLSkeletalMeshActor.generated.h"
 
 /**
@@ -19,9 +19,9 @@ class USEMLOG_API ASLSkeletalMeshActor : public ASkeletalMeshActor
 
 public:
 	// Get the semantic mapping data asset
-	USLSkeletalMapDataAsset* GetSkeletalMapDataAsset() const { return SkeletalMapDataAsset; }
+	USLSkeletalDataAsset* GetSkeletalMapDataAsset() const { return SkeletalMapDataAsset; }
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	USLSkeletalMapDataAsset* SkeletalMapDataAsset;
+	USLSkeletalDataAsset* SkeletalMapDataAsset;
 };

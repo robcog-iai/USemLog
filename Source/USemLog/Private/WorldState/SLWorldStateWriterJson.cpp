@@ -161,7 +161,7 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 				TArray<TSharedPtr<FJsonValue>> JsonBonesArr;
 
 				// Check is the skeletal actor component is valid and has a class mapping of the bone
-				if (USLSkeletalMapDataAsset* SkelMapDataAsset = Itr->Entity->GetSkeletalMapDataAsset())
+				if (USLSkeletalDataAsset* SkelMapDataAsset = Itr->Entity->GetSkeletalMapDataAsset())
 				{
 					if (USkeletalMeshComponent* SkelComp = Itr->Entity->GetSkeletalMeshComponent())
 					{

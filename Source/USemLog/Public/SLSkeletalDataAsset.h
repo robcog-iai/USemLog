@@ -5,19 +5,19 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "SLSkeletalMapDataAsset.generated.h"
+#include "SLSkeletalDataAsset.generated.h"
 
 /**
  * Data asset containing the mapping of skeletal bones to their semantic names
  */
 UCLASS(ClassGroup = (SL), meta = (DisplayName = "SL Skeletal Map Data Asset"))
-class USEMLOG_API USLSkeletalMapDataAsset : public UDataAsset
+class USEMLOG_API USLSkeletalDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 
 public:
 	// Ctor
-	USLSkeletalMapDataAsset();
+	USLSkeletalDataAsset();
 
 protected:
 #if WITH_EDITOR
@@ -27,7 +27,7 @@ protected:
 
 private:
 	// Update the data
-	void UpdateData();
+	void LoadData();
 
 public:
 	// Map of bones to their class names
@@ -39,7 +39,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	USkeletalMesh* SkeletalMesh;
 
-	// Mimick refresh button
+	// Refresh the data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bRefresh;
+	bool bReloadData;
+
+	// Clear emtpy entries
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bClearEmptyEntries;
+
+	// Remove all previous data mimic button
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bClearAllData;
 };

@@ -15,6 +15,7 @@
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "SLSemanticMapWriter.h"
 #include "SLOverlapShape.h"
+#include "SLSkeletalDataComponent.h"
 #include "Ids.h"
 #include "Tags.h"
 
@@ -430,6 +431,31 @@ FReply FSLEdModeToolkit::GenerateVisualMasksRand()
 			}
 		}
 	}
+
+	// Iterate skeletal data components
+	for (TObjectIterator<USLSkeletalDataComponent> ObjItr; ObjItr; ++ObjItr)
+	{
+		// Valid if its parent is a skeletal mesh component
+		if (Cast<USkeletalMeshComponent>(ObjItr->GetAttachParent()))
+		{
+			if (bOverwriteVisualMaskValues)
+			{
+				for (auto& BD : ObjItr->BonesData)
+				{
+					// Check if data is valid (it has a semantic class and a mask material instance)
+					if (!BD.Value.Class.IsEmpty() && BD.Value.MaskMaterialInstance)
+					{
+						BD.Value.MaskColorHex = GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors);
+					}
+				}
+			}
+			else 
+			{
+				// Not implemented
+			}
+		}
+	}
+	
 	return FReply::Handled();
 }
 
@@ -448,7 +474,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 				if (ColorIdx.R > StepFrom255)
 				{
 					ColorIdx = FColor::White;
-					UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a unique color, saving as black.."), TEXT(__FUNCTION__), __LINE__);
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Reached the maximum possible color values.."), TEXT(__FUNCTION__), __LINE__);
 					return FColor::Black.ToHex();;
 				}
 				else
@@ -505,7 +531,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 	}
 
 	// Shuffle the array
-	ArrayShuffleLambda(UniqueColors);	
+	ArrayShuffleLambda(UniqueColors);
 
 	// Iterate only static mesh actors
 	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
@@ -548,6 +574,37 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 				// TODO not implemented
 				// Load all existing values into the array first
 				// then start adding new values with AddUnique
+			}
+		}
+
+		// Iterate skeletal data components
+		for (TObjectIterator<USLSkeletalDataComponent> ObjItr; ObjItr; ++ObjItr)
+		{
+			// Valid if its parent is a skeletal mesh component
+			if (Cast<USkeletalMeshComponent>(ObjItr->GetAttachParent()))
+			{
+				if (bOverwriteVisualMaskValues)
+				{
+					for (auto& BD : ObjItr->BonesData)
+					{
+						// Check if data is valid (it has a semantic class and a mask material instance)
+						if (!BD.Value.Class.IsEmpty() && BD.Value.MaskMaterialInstance)
+						{
+							if (UniqueColors.Num() == 0)
+							{								
+								BD.Value.MaskColorHex = FColor::Black.ToHex();
+							}
+							else
+							{
+								BD.Value.MaskColorHex = UniqueColors.Pop();
+							}
+						}
+					}
+				}
+				else
+				{
+					// Not implemented
+				}
 			}
 		}
 	}

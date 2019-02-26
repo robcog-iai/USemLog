@@ -6,18 +6,41 @@
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
 #include "Materials/MaterialInstance.h"
-#include "SLSkeletalMapDataAsset.h"
-#include "SLSkeletalMappingComponent.generated.h"
+#include "SLSkeletalDataAsset.h"
+#include "SLSkeletalDataComponent.generated.h"
 
+/**
+ * Bone semantic data structure
+ */
+USTRUCT()
+struct FSLBoneData
+{
+	GENERATED_BODY()
 
+	// Semantic class name
+	UPROPERTY(EditAnywhere)
+	FString Class;
+
+	// Color mask
+	UPROPERTY(EditAnywhere)
+	FString MaskColorHex;
+
+	// Mask material instance 
+	UPROPERTY(EditAnywhere)
+	UMaterialInstance* MaskMaterialInstance;	
+};
+
+/**
+ * Stores the semantic skeletal data of its parent skeletal mesh component
+ */
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class USEMLOG_API USLSkeletalMappingComponent : public USceneComponent
+class USEMLOG_API USLSkeletalDataComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	USLSkeletalMappingComponent();
+	USLSkeletalDataComponent();
 
 protected:
 	// Called when the game starts
@@ -30,27 +53,23 @@ protected:
 
 private:
 	// Update the data
-	void UpdateData();
+	void LoadData();
 
 public:
 	// Map of bones to their class names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FName, FString> BoneClasses;
-
-	// Map of bones to their mask colors
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FName, FString> BoneMaskColors;
-
-	// Map of bones to their material instances
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FName, UMaterialInstance*> BoneMaterialInstanceMap;
+	TMap<FName, FSLBoneData> BonesData;
 
 private:
 	// Load the bones semantic information from this data asset
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	USLSkeletalMapDataAsset* LoadFromSkeletalMapDataAsset;
+	USLSkeletalDataAsset* LoadFromDataAsset;
 
-	// Mimick a refresh button
+	// Load new data without removing previous one button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bRefresh;
+	bool bReloadData;
+
+	// Remove all previous data mimic button
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bClearAllData;
 };

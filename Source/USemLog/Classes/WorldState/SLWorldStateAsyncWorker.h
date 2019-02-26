@@ -87,7 +87,7 @@ private:
 	TArray<TSLItemState<USceneComponent>> NonSkeletalComponentPool;
 
 	// TODO USLSkeletalMeshComponent,
-	// could not find out how to dynamically change type to point to a SLSkeletalMapDataAsset
+	// could not find out how to dynamically change type to point to a SLSkeletalDataAsset
 	// Array of semantically annotated skeletal actors
 	//TArray<TSLItemState<USkeletalMeshComponent>> SkeletalComponentPool;
 };
