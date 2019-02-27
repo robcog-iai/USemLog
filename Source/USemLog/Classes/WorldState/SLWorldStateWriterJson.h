@@ -6,9 +6,6 @@
 #include "CoreMinimal.h"
 #include "ISLWorldStateWriter.h"
 
-// Forward declaration
-class FSLWorldStateAsyncWorker;
-
 /**
  * Raw data logger to json format
  */

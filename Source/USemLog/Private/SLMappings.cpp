@@ -55,7 +55,7 @@ void FSLMappings::Init(UWorld* World)
 				FString CompId = FTags::GetValue(CompItr, "SemLog", "Id");
 				FString CompClass = FTags::GetValue(CompItr, "SemLog", "Class");
 				if (!CompId.IsEmpty() && !CompClass.IsEmpty())
-				{					
+				{
 					ObjItemMap.Emplace(CompItr, FSLItem(CompItr, CompId, CompClass));
 				}
 			}

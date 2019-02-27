@@ -64,7 +64,7 @@ struct FSLItemPair
 
 
 /**
-* Raw data structure for the logged entities
+* Templated data structure of entities with semantic and previous transform information
 */
 template <typename T>
 struct TSLItemState

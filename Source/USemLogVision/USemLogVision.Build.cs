@@ -42,8 +42,8 @@ public class USemLogVision : ModuleRules
 				"UnrealEd",
 				"UTags",
 				//"libmongo",
-				"MongoC", // SLVIS_WITH_LIBMONGO_C
-				"MongoCxx", // SLVIS_WITH_LIBMONGO_CXX
+				//"MongoC", // SLVIS_WITH_LIBMONGO_C
+				//"MongoCxx", // SLVIS_WITH_LIBMONGO_CXX
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

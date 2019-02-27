@@ -158,13 +158,24 @@ void FSLWorldStateAsyncWorker::Finish(bool bForced)
 	if (!bForced)
 	{
 		// Check if mongo writer
-		if (Writer.IsValid() && WriterType == ESLWorldStateWriterType::MongoCxx)
+		if (Writer.IsValid())
 		{
-			// We cannot cast dynamically if it is not an UObject
-			TSharedPtr<FSLWorldStateWriterMongoCxx> MongoWriter = StaticCastSharedPtr<FSLWorldStateWriterMongoCxx>(Writer);
-			// Finish writer (create database indexes for example)
-			MongoWriter->Finish();
+			if (WriterType == ESLWorldStateWriterType::MongoCxx)
+			{
+				// We cannot cast dynamically if it is not an UObject
+				TSharedPtr<FSLWorldStateWriterMongoCxx> AsMongoCxxWriter = StaticCastSharedPtr<FSLWorldStateWriterMongoCxx>(Writer);
+				// Finish writer (create database indexes for example)
+				AsMongoCxxWriter->Finish();
+			}
+			else if (WriterType == ESLWorldStateWriterType::MongoC)
+			{
+				// We cannot cast dynamically if it is not an UObject
+				TSharedPtr<FSLWorldStateWriterMongoC> AsMongoCWriter = StaticCastSharedPtr<FSLWorldStateWriterMongoC>(Writer);
+				// Finish writer (create database indexes for example)
+				AsMongoCWriter->Finish();
+			}
 		}
+		
 	}
 }
 

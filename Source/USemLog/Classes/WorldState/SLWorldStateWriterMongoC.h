@@ -5,17 +5,21 @@
 
 #include "CoreMinimal.h"
 #include "ISLWorldStateWriter.h"
-#if SL_WITH_LIBMONGO_CXX
+#if SL_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
-#include <mongocxx/client.hpp>
+	#if PLATFORM_WINDOWS
+	#include "Windows/AllowWindowsPlatformTypes.h"
+	#include <mongoc/mongoc.h>
+	#include "Windows/HideWindowsPlatformTypes.h"
+	#else
+	#include <mongoc/mongoc.h>
+	#endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
-#endif //SL_WITH_LIBMONGO_CXX
+#endif //SL_WITH_LIBMONGO_C
 
-// Forward declaration
-class FSLWorldStateAsyncWorker;
 
 /**
- * Raw data logger to mongo database
+ * Raw data writer to mongo 
  */
 class FSLWorldStateWriterMongoC : public ISLWorldStateWriter
 {
@@ -47,7 +51,7 @@ private:
 	// Create indexes from the logged data, usually called after logging
 	bool CreateIndexes();
 
-#if SL_WITH_LIBMONGO_CXX
+#if SL_WITH_LIBMONGO_C
 //	// Get non skeletal actors as bson array
 //	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
 //		bsoncxx::builder::basic::array& out_bson_arr);
@@ -64,17 +68,17 @@ private:
 //	void AddPoseToDocument(const FVector& InLoc, const FQuat& InQuat,
 //		bsoncxx::builder::basic::document& out_doc);
 //
-//private:
-//	// Must be created before using the driver and must remain alive for as long as the driver is in use
-//	//mongocxx::instance mongo_inst;
-//
-//	// Mongo connection client
-//	mongocxx::client mongo_conn;
-//
-//	// Database to access
-//	mongocxx::database mongo_db;
-//
-//	// Database collection
-//	mongocxx::collection mongo_coll;
-#endif //SL_WITH_LIBMONGO_CXX
+private:
+	// Server uri
+	mongoc_uri_t* uri;
+
+	// MongoC connection client
+	mongoc_client_t* client;
+
+	// Database to access
+	mongoc_database_t* database;
+
+	// Database collection
+	mongoc_collection_t* collection;
+#endif //SL_WITH_LIBMONGO_C
 };

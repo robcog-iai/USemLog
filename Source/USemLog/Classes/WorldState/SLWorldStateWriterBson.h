@@ -14,9 +14,6 @@ THIRD_PARTY_INCLUDES_START
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_CXX
 
-// Forward declaration
-class FSLWorldStateAsyncWorker;
-
 /**
  * Raw data logger to bson format
  */
@@ -64,9 +61,6 @@ private:
 	//// Write entry to file
 	//void WriteData(uint8* memorybuffer, int64 bufferlen);
 #endif //SL_WITH_LIBMONGO_CXX
-
-	// Pointer to worker parent (access to raw data structure)
-	FSLWorldStateAsyncWorker* WorkerParent;
 
 	// File handle to write the raw data to file
 	IFileHandle* FileHandle;

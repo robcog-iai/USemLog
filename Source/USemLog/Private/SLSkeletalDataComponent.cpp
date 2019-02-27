@@ -44,6 +44,7 @@ void USLSkeletalDataComponent::PostEditChangeProperty(struct FPropertyChangedEve
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, bClearAllData))
 	{
 		BonesData.Empty();
+		Parent = nullptr;
 		bClearAllData = false;
 	}
 }
@@ -55,6 +56,9 @@ void USLSkeletalDataComponent::LoadData()
 	// Continue if attachment parent is a skeletal mesh component
 	if (USkeletalMeshComponent* SkMC = Cast<USkeletalMeshComponent>(GetAttachParent()))
 	{
+		// Set the parent
+		Parent = SkMC;
+
 		// Update from data asset
 		if (LoadFromDataAsset)
 		{
@@ -72,7 +76,7 @@ void USLSkeletalDataComponent::LoadData()
 						if (FSkeletalMaterial* SkelMat = SkMC->SkeletalMesh->Materials.FindByPredicate([&BoneClass](const FSkeletalMaterial& InMat)
 						{return InMat.MaterialSlotName.ToString().Equals(BoneClass); }))
 						{
-							BonesData[BoneName].MaskMaterialInstance = Cast<UMaterialInstance>(SkelMat->MaterialInterface);
+							BonesData[BoneName].MaskMaterial = Cast<UMaterialInterface>(SkelMat->MaterialInterface);
 						}
 					}
 					else
@@ -83,7 +87,7 @@ void USLSkeletalDataComponent::LoadData()
 						if (FSkeletalMaterial* SkelMat = SkMC->SkeletalMesh->Materials.FindByPredicate([&BoneClass](const FSkeletalMaterial& InMat)
 						{return InMat.MaterialSlotName.ToString().Equals(BoneClass); }))
 						{
-							BoneData.MaskMaterialInstance = Cast<UMaterialInstance>(SkelMat->MaterialInterface);
+							BoneData.MaskMaterial = Cast<UMaterialInterface>(SkelMat->MaterialInterface);
 						}
 						BonesData.Add(BoneName, BoneData);
 					}

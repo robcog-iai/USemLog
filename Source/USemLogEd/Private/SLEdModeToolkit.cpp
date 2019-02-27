@@ -443,7 +443,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksRand()
 				for (auto& BD : ObjItr->BonesData)
 				{
 					// Check if data is valid (it has a semantic class and a mask material instance)
-					if (!BD.Value.Class.IsEmpty() && BD.Value.MaskMaterialInstance)
+					if (!BD.Value.Class.IsEmpty() && BD.Value.MaskMaterial)
 					{
 						BD.Value.MaskColorHex = GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors);
 					}
@@ -588,7 +588,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 					for (auto& BD : ObjItr->BonesData)
 					{
 						// Check if data is valid (it has a semantic class and a mask material instance)
-						if (!BD.Value.Class.IsEmpty() && BD.Value.MaskMaterialInstance)
+						if (!BD.Value.Class.IsEmpty() && BD.Value.MaskMaterial)
 						{
 							if (UniqueColors.Num() == 0)
 							{								

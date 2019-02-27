@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
-#include "Materials/MaterialInstance.h"
+#include "Materials/MaterialInterface.h"
 #include "SLSkeletalDataAsset.h"
 #include "SLSkeletalDataComponent.generated.h"
 
@@ -27,7 +27,7 @@ struct FSLBoneData
 
 	// Mask material instance 
 	UPROPERTY(EditAnywhere)
-	UMaterialInstance* MaskMaterialInstance;	
+	UMaterialInterface* MaskMaterial;
 };
 
 /**
@@ -59,6 +59,9 @@ public:
 	// Map of bones to their class names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TMap<FName, FSLBoneData> BonesData;
+
+	// The attach parent skeletal mesh
+	USkeletalMeshComponent* Parent;
 
 private:
 	// Load the bones semantic information from this data asset

@@ -37,7 +37,7 @@ ASLManager::ASLManager()
 	UpdateRate = 0.0f;
 	LinearDistance = 0.5f; // cm
 	AngularDistance = 0.1f; // rad
-	WriterType = ESLWorldStateWriterType::Json;
+	WriterType = ESLWorldStateWriterType::MongoC;
 	ServerIp = TEXT("127.0.0.1");
 	ServerPort = 27017;
 	bIncludeAllData = false;

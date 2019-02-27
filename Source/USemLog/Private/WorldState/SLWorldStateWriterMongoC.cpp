@@ -4,11 +4,6 @@
 #include "WorldState/SLWorldStateWriterMongoC.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Conversions.h"
-#if SL_WITH_LIBMONGO_C
-THIRD_PARTY_INCLUDES_START
-
-THIRD_PARTY_INCLUDES_END
-#endif //SL_WITH_LIBMONGO_C
 
 // Constr
 FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC()
@@ -26,6 +21,14 @@ FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC(const FSLWorldStateWriterPa
 // Destr
 FSLWorldStateWriterMongoC::~FSLWorldStateWriterMongoC()
 {
+#if SL_WITH_LIBMONGO_C
+	//Release our handles and clean up libmongoc
+	mongoc_collection_destroy(collection);
+	mongoc_database_destroy(database);
+	mongoc_uri_destroy(uri);
+	mongoc_client_destroy(client);
+	mongoc_cleanup();
+#endif //SL_WITH_LIBMONGO_C
 }
 
 // Init
@@ -59,10 +62,48 @@ void FSLWorldStateWriterMongoC::Write(TArray<TSLItemState<AActor>>& NonSkeletalA
 // Connect to the database
 bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
-		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
 #if SL_WITH_LIBMONGO_C
-	return false;
+	// Required to initialize libmongoc's internals	
+	mongoc_init();
+
+	// Stores any error that might appear during the connection
+	bson_error_t error;
+
+	// Safely create a MongoDB URI object from the given string
+	FString Uri = TEXT("mongodb://") + ServerIp + TEXT(":") + FString::FromInt(ServerPort);
+	uri = mongoc_uri_new_with_error(TCHAR_TO_UTF8(*Uri), &error);
+	if (!uri)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+			TEXT(__FUNCTION__), __LINE__, *Uri, *FString(error.message));
+		return false;
+	}
+
+	// Create a new client instance
+	client = mongoc_client_new_from_uri(uri);
+	if (!client)
+	{
+		return false;
+	}
+
+	// Register the application name so we can track it in the profile logs on the server
+	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SL_" + EpisodeId)));
+
+	// Get a handle on the database "db_name" and collection "coll_name"
+	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
+	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId));
+
+	// Check server. Ping the "admin" database
+	bson_t* server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
+	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
+			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		return false;
+	}
+
+	bson_destroy(server_ping_cmd);
+	return true;
 #else
 	return false;
 #endif //SL_WITH_LIBMONGO_C

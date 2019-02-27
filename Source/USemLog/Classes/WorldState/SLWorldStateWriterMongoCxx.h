@@ -11,9 +11,6 @@ THIRD_PARTY_INCLUDES_START
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_CXX
 
-// Forward declaration
-class FSLWorldStateAsyncWorker;
-
 /**
  * Raw data logger to mongo database
  */
