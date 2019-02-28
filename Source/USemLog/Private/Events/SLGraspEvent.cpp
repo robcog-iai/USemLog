@@ -11,7 +11,7 @@ FSLGraspEvent::FSLGraspEvent()
 
 // Constructor with initialization
 FSLGraspEvent::FSLGraspEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const FSLItem& InHand, const FSLItem& InOther) :
+	const FSLObject& InHand, const FSLObject& InOther) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
 	Hand(InHand), Other(InOther)
 {
@@ -19,7 +19,7 @@ FSLGraspEvent::FSLGraspEvent(const FString& InId, const float InStart, const flo
 
 // Constructor initialization without End with pair id
 FSLGraspEvent::FSLGraspEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const FSLItem& InHand, const FSLItem& InOther) :
+	const FSLObject& InHand, const FSLObject& InOther) :
 	ISLEvent(InId, InStart), PairId(InPairId),
 	Hand(InHand), Other(InOther)
 {

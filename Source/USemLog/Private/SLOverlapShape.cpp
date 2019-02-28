@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLOverlapShape.h"
-#include "SLMappings.h"
+#include "SLObjectsManager.h"
 #include "Animation/SkeletalMeshActor.h"
 
 // UUTils
@@ -67,14 +67,14 @@ void USLOverlapShape::Init()
 	if (!bIsInit)
 	{
 		// Init the semantic items mappings singleton
-		if (!FSLMappings::GetInstance()->IsInit())
+		if (!FSLObjectsManager::GetInstance()->IsInit())
 		{
-			FSLMappings::GetInstance()->Init(GetWorld());
+			FSLObjectsManager::GetInstance()->Init(GetWorld());
 		}
 
 		// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
 		// Make sure owner is a valid semantic item
-		OwnerItem = FSLMappings::GetInstance()->GetItem(GetOwner());
+		OwnerItem = FSLObjectsManager::GetInstance()->GetObject(GetOwner());
 		if (!OwnerItem.IsValid())
 		{
 			return;
@@ -379,11 +379,11 @@ void USLOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLItem OtherItem = FSLMappings::GetInstance()->GetItem(OtherComp);
+	FSLObject OtherItem = FSLObjectsManager::GetInstance()->GetObject(OtherComp);
 	if (!OtherItem.IsValid())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem = FSLMappings::GetInstance()->GetItem(OtherComp->GetOuter());
+		OtherItem = FSLObjectsManager::GetInstance()->GetObject(OtherComp->GetOuter());
 		if (!OtherItem.IsValid())
 		{
 			return;
@@ -433,11 +433,11 @@ void USLOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLItem OtherItem = FSLMappings::GetInstance()->GetItem(OtherComp);
+	FSLObject OtherItem = FSLObjectsManager::GetInstance()->GetObject(OtherComp);
 	if (!OtherItem.IsValid())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem = FSLMappings::GetInstance()->GetItem(OtherComp->GetOuter());
+		OtherItem = FSLObjectsManager::GetInstance()->GetObject(OtherComp->GetOuter());
 		if (!OtherItem.IsValid())
 		{
 			return;

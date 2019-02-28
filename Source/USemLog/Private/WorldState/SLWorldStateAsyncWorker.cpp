@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "WorldState/SLWorldStateAsyncWorker.h"
-#include "SLMappings.h"
+#include "SLObjectsManager.h"
 #include "WorldState/SLWorldStateWriterJson.h"
 #include "WorldState/SLWorldStateWriterBson.h"
 #include "WorldState/SLWorldStateWriterMongoC.h"
@@ -71,14 +71,15 @@ bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
 	}
 
 	// Make sure the semantic items are initialized
-	FSLMappings::GetInstance()->Init(World);
+	FSLObjectsManager::GetInstance()->Init(World);
 
 	// Iterate through the semantically annotated objects
-	for (const auto& ItemPair : FSLMappings::GetInstance()->GetItemMap())
+	for (const auto& ItemPair : FSLObjectsManager::GetInstance()->GetObjectsSemanticData())
 	{
 		// Take into account only objects with transform data (AActor, USceneComponents)
 		if (AActor* ObjAsActor = Cast<AActor>(ItemPair.Value.Obj))
 		{
+			// Skip 
 			if (ASLSkeletalMeshActor* ObjAsSLSkelAct = Cast<ASLSkeletalMeshActor>(ObjAsActor))
 			{
 				SkeletalActorPool.Emplace(

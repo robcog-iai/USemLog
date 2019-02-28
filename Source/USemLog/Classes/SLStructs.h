@@ -7,7 +7,7 @@
 /**
 * Structure holding the semantic data of one item
 */
-struct FSLItem
+struct FSLObject
 {
 	// UObject of item
 	UObject* Obj;
@@ -19,10 +19,10 @@ struct FSLItem
 	FString Class;
 
 	// Default constructor
-	FSLItem() {};
+	FSLObject() {};
 
 	// Init constructor
-	FSLItem(UObject* InObj, const FString& InId, const FString& InClass) :
+	FSLObject(UObject* InObj, const FString& InId, const FString& InClass) :
 		Obj(InObj), Id(InId), Class(InClass) {};
 
 	// True if the unique id, the semantic id and the semantic class is not empty
@@ -41,16 +41,16 @@ struct FSLItem
 struct FSLItemPair
 {
 	// First item
-	FSLItem Item1;
+	FSLObject Item1;
 
 	// Second item
-	FSLItem Item2;
+	FSLObject Item2;
 
 	// Default constructor
 	FSLItemPair() {};
 
 	// Init constructor
-	FSLItemPair(const FSLItem& InItem1, const FSLItem& InItem2) : Item1(InItem1), Item2(InItem2) {};
+	FSLItemPair(const FSLObject& InItem1, const FSLObject& InItem2) : Item1(InItem1), Item2(InItem2) {};
 
 	// True if the unique id, the semantic id and the semantic class is not empty
 	bool IsValid() const { return Item1.IsValid() && Item2.IsValid(); }
@@ -70,7 +70,7 @@ template <typename T>
 struct TSLItemState
 {
 	// The semantically annotated item
-	FSLItem Item;
+	FSLObject SemObj;
 
 	// Its previous location
 	FVector PrevLoc;
@@ -85,11 +85,11 @@ struct TSLItemState
 	TSLItemState() {};
 
 	// Init constructor
-	TSLItemState(const FSLItem& InItem,
+	TSLItemState(const FSLObject& InSemObj,
 		TWeakObjectPtr<T> InEntity,
 		FVector InPrevLoc = FVector(BIG_NUMBER),
 		FQuat InPrevQuat = FQuat::Identity) :
-		Item(InItem),
+		SemObj(InSemObj),
 		Entity(InEntity),
 		PrevLoc(InPrevLoc),
 		PrevQuat(InPrevQuat)

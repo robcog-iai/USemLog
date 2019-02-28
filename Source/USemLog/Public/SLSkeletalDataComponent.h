@@ -51,19 +51,52 @@ protected:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
+public:
+	// Init the component for runtime, returns true if it was already init, or initi was succesful
+	bool Init();
+
+	// Check if the component is init (and valid)
+	bool IsInit() const { return bInit; };
+	
+	// Get the skeletal mesh parent
+	USkeletalMeshComponent* GetSkeletalMeshParent() const { return SkeletalMeshParent; };
+
+	// Get the semantic data
+	TSharedPtr<FSLObject> GetOwnerSemanticData() const { return OwnerSemanticData; };
+
 private:
+#if WITH_EDITOR
 	// Update the data
 	void LoadData();
+
+	// Clear data
+	void ClearData(bool bIncludeSkeletal = true);
+#endif // WITH_EDITOR
+
+	// Set the skeletal parent, returns true if successful or is already set
+	bool SetSkeletalParent();
+
+	// Set the semantic parent, returns true if successful or is already set
+	bool SetOwnerSemanticData();
 
 public:
 	// Map of bones to their class names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TMap<FName, FSLBoneData> BonesData;
 
-	// The attach parent skeletal mesh
-	USkeletalMeshComponent* Parent;
-
 private:
+	// Flag marking the component as init (and valid) for runtime 
+	bool bInit;
+
+	// The attach parent skeletal mesh
+	USkeletalMeshComponent* SkeletalMeshParent;
+
+	// Semantic owner
+	UObject* SemanticOwner;
+
+	// Semantic data of the owner
+	TSharedPtr<FSLObject> OwnerSemanticData;
+
 	// Load the bones semantic information from this data asset
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	USLSkeletalDataAsset* LoadFromDataAsset;

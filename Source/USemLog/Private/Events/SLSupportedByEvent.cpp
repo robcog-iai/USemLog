@@ -11,14 +11,14 @@ FSLSupportedByEvent::FSLSupportedByEvent()
 
 // Constructor with initialization
 FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const FSLItem& InSupportedItem, const FSLItem& InSupportingItem) :
+	const FSLObject& InSupportedItem, const FSLObject& InSupportingItem) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId), SupportedItem(InSupportedItem), SupportingItem(InSupportingItem)
 {
 }
 
 // Constructor initialization without end time
 FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const FSLItem& InSupportedItem, const FSLItem& InSupportingItem) :
+	const FSLObject& InSupportedItem, const FSLObject& InSupportingItem) :
 	ISLEvent(InId, InStart), PairId(InPairId), SupportedItem(InSupportedItem), SupportingItem(InSupportingItem)
 {
 }

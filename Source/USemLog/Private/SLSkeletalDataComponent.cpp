@@ -3,6 +3,7 @@
 
 #include "SLSkeletalDataComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Tags.h"
 
 // Sets default values for this component's properties
 USLSkeletalDataComponent::USLSkeletalDataComponent()
@@ -11,6 +12,7 @@ USLSkeletalDataComponent::USLSkeletalDataComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
+	bInit = false;
 	bReloadData = false;
 	bClearAllData = false;
 }
@@ -43,13 +45,29 @@ void USLSkeletalDataComponent::PostEditChangeProperty(struct FPropertyChangedEve
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, bClearAllData))
 	{
-		BonesData.Empty();
-		Parent = nullptr;
+		USLSkeletalDataComponent::ClearData();
 		bClearAllData = false;
 	}
 }
 #endif // WITH_EDITOR
 
+// Init the component for runtime
+bool USLSkeletalDataComponent::Init()
+{
+	return bInit = bInit ? true : USLSkeletalDataComponent::SetOwnerSemanticData() && USLSkeletalDataComponent::SetSkeletalParent();
+
+	//if (bInit)
+	//{
+	//	return true;
+	//}
+	//else
+	//{
+	//	bInit = USLSkeletalDataComponent::SetOwnerSemanticData() && USLSkeletalDataComponent::SetSkeletalParent();
+	//	return bInit;
+	//}
+}
+
+#if WITH_EDITOR
 // Update the data
 void USLSkeletalDataComponent::LoadData()
 {
@@ -57,7 +75,7 @@ void USLSkeletalDataComponent::LoadData()
 	if (USkeletalMeshComponent* SkMC = Cast<USkeletalMeshComponent>(GetAttachParent()))
 	{
 		// Set the parent
-		Parent = SkMC;
+		SkeletalMeshParent = SkMC;
 
 		// Update from data asset
 		if (LoadFromDataAsset)
@@ -73,8 +91,9 @@ void USLSkeletalDataComponent::LoadData()
 					if (BonesData.Contains(BoneName))
 					{
 						// Find the material slot with the bone class name
-						if (FSkeletalMaterial* SkelMat = SkMC->SkeletalMesh->Materials.FindByPredicate([&BoneClass](const FSkeletalMaterial& InMat)
-						{return InMat.MaterialSlotName.ToString().Equals(BoneClass); }))
+						if (FSkeletalMaterial* SkelMat = SkMC->SkeletalMesh->Materials.FindByPredicate(
+							[&BoneClass](const FSkeletalMaterial& InMat)
+							{return InMat.MaterialSlotName.ToString().Equals(BoneClass); }))
 						{
 							BonesData[BoneName].MaskMaterial = Cast<UMaterialInterface>(SkelMat->MaterialInterface);
 						}
@@ -84,8 +103,9 @@ void USLSkeletalDataComponent::LoadData()
 						FSLBoneData BoneData;
 						BoneData.Class = BoneClass;
 						// Find the material slot with the bone class name
-						if (FSkeletalMaterial* SkelMat = SkMC->SkeletalMesh->Materials.FindByPredicate([&BoneClass](const FSkeletalMaterial& InMat)
-						{return InMat.MaterialSlotName.ToString().Equals(BoneClass); }))
+						if (FSkeletalMaterial* SkelMat = SkMC->SkeletalMesh->Materials.FindByPredicate(
+							[&BoneClass](const FSkeletalMaterial& InMat)
+							{return InMat.MaterialSlotName.ToString().Equals(BoneClass); }))
 						{
 							BoneData.MaskMaterial = Cast<UMaterialInterface>(SkelMat->MaterialInterface);
 						}
@@ -101,83 +121,83 @@ void USLSkeletalDataComponent::LoadData()
 	}
 }
 
-//// Check if the bone was previously set
-//if (TempBoneData.Contains(Name))
-//{
-//	// Check if it has a mask material reference
-//	if (TempBoneData[Name].MaskMaterialInstance)
-//	{
-//		BoneData.Add(Name, TempBoneData[Name]);
-//	}
-//	else
-//	{
-//		// Search for the material
-//		if (FSkeletalMaterial* FoundMat = SkeletalMesh->Materials.FindByPredicate([&Name](const FSkeletalMaterial& InMat)
-//		{return Name == InMat.MaterialSlotName;	}))
-//		{
-//			TempBoneData[Name].MaskMaterialInstance = Cast<UMaterialInstance>(FoundMat->MaterialInterface);
-//		}
-//	}
-//}
-//else
-//{
-//	BoneData.Add(Name, FSLBoneData());
-//}
+// Clear all data
+void USLSkeletalDataComponent::ClearData(bool bIncludeSkeletal)
+{
+	if (bIncludeSkeletal)
+	{
+		BonesData.Empty();
+	}
+	SkeletalMeshParent = nullptr;
+	SemanticOwner = nullptr;
+	if (OwnerSemanticData.IsValid())
+	{
+		OwnerSemanticData.Reset();
+	}
+	bInit = false;
+}
+#endif // WITH_EDITOR
 
+// Set the skeletal parent, returns true if already set
+bool USLSkeletalDataComponent::SetSkeletalParent()
+{
+	if (SkeletalMeshParent)
+	{
+		// Mesh parent already set
+		return true; 
+	}
+	else
+	{
+		if (USkeletalMeshComponent* SkMC = Cast<USkeletalMeshComponent>(GetAttachParent()))
+		{
+			SkeletalMeshParent = SkMC;
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d GetAttachParent() is not of type USkeletalMeshComponent.."),
+				TEXT(__FUNCTION__), __LINE__);
+			return false;
+		}
+	}
+}
 
-		//	// Copy the mapping from the data asset
-		//	BoneClasses = LoadFromSkeletalMapDataAsset->BoneClasses;
+// Set the semantic parent, returns true if already set
+bool USLSkeletalDataComponent::SetOwnerSemanticData()
+{
+	if (OwnerSemanticData.IsValid() && OwnerSemanticData->IsValid())
+	{
+		return true; // Semantic data already set
+	}
+	else
+	{
+		// Clear ptr
+		OwnerSemanticData.Reset();
 
-		//	// Get bone names from parent skeletal mesh
-		//	TArray<FName> ParentBoneNames;
-		//	SkMC->GetBoneNames(ParentBoneNames);
-
-		//	// Remove entries with bones not available in the parent or with empty classes
-		//	for (auto MapItr(BoneClasses.CreateIterator()); MapItr; ++MapItr)
-		//	{
-		//		if (!ParentBoneNames.Contains(MapItr.Key()) || MapItr.Value().IsEmpty())
-		//		{
-		//			MapItr.RemoveCurrent();
-		//		}
-		//	}
-
-
-		//	//// Empty previous map
-		//	//TMap<FName, FString> TempBoneClass = BoneClassMap;
-		//	//BoneClassMap.Empty();
-
-		//	//// Create a temporary skeletal mesh component from the mesh to read the bone names
-		//	//USkeletalMeshComponent* SkelMeshComp = NewObject<USkeletalMeshComponent>(this);
-		//	//SkelMeshComp->SetSkeletalMesh(SkeletalMesh);
-		//	//TArray<FName> BoneNames;
-		//	//SkelMeshComp->GetBoneNames(BoneNames);
-		//	//for (const auto& Name : BoneNames)
-		//	//{
-		//	//	if (TempBoneClass.Contains(Name))
-		//	//	{
-		//	//		BoneClassMap.Add(Name, TempBoneClass[Name]);
-		//	//	}
-		//	//	else
-		//	//	{
-		//	//		BoneClassMap.Add(Name, "");
-		//	//	}
-		//	//}
-		//	//SkelMeshComp->DestroyComponent();
-		//}
-
-		//if (SkMC->SkeletalMesh)
-		//{
-		//	// Load the material instances used for masking 
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \n\t SkMC=%s; \n\t path=%s \n****\n \n\t SkMC->SkeletalMesh=%s; \n\t path=%s"),
-		//		TEXT(__FUNCTION__), __LINE__,
-		//		*SkMC->GetFullName(), *SkMC->GetPathName(),
-		//		*SkMC->SkeletalMesh->GetFullName(), *SkMC->SkeletalMesh->GetPathName() );
-
-		//	for (const auto& M : SkMC->SkeletalMesh->Materials)
-		//	{
-		//		UE_LOG(LogTemp, Warning, TEXT("%s::%d MSlot=%s ISlot=%s;"), TEXT(__FUNCTION__), __LINE__,
-		//			*M.MaterialSlotName.ToString(), *M.ImportedMaterialSlotName.ToString());
-		//	}
-		//	//FSkeletalMaterial M;
-		//	
-		//}
+		// Check if the attachment is the semantic owner
+		FString Id = FTags::GetValue(GetAttachParent(), "SemLog", "Id");
+		FString Class = FTags::GetValue(GetAttachParent(), "SemLog", "Class");
+		if (!Id.IsEmpty() && !Class.IsEmpty())
+		{
+			OwnerSemanticData = MakeShareable(new FSLObject(GetAttachParent(), Id, Class));
+			return true;
+		}
+		else
+		{
+			// Check if the owner is the semantic parent
+			Id = FTags::GetValue(GetOwner(), "SemLog", "Id");
+			Class = FTags::GetValue(GetOwner(), "SemLog", "Class");
+			if (!Id.IsEmpty() && !Class.IsEmpty())
+			{
+				OwnerSemanticData = MakeShareable(new FSLObject(GetOwner(), Id, Class));
+				return true;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d None of GetAttachParent() or GetOwner() is a semantic owner.."),
+					TEXT(__FUNCTION__), __LINE__);
+				return false;
+			}
+		}
+	}
+}

@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisionLogger.h"
-#include "SLMappings.h"
+#include "SLObjectsManager.h"
 #if SL_WITH_SLVIS
 #include "SLVisRecordGameMode.h"
 #include "Engine/DemoNetDriver.h"
@@ -33,7 +33,7 @@ void USLVisionLogger::Init(float InMaxRecHz, float InMinRecHz)
 		if (ASLVisRecordGameMode* SLGameMode = Cast<ASLVisRecordGameMode>(GetWorld()->GetAuthGameMode()))
 		{ 
 			// Set movement replications to objects
-			FSLMappings::GetInstance()->SetReplicates(true);
+			FSLObjectsManager::GetInstance()->SetReplicates(true);
 
 			// Set update rates
 			IConsoleManager::Get().FindConsoleVariable(TEXT("demo.RecordHZ"))->Set(InMaxRecHz);

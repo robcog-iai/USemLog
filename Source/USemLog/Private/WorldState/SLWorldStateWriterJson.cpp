@@ -116,7 +116,7 @@ void FSLWorldStateWriterJson::AddNonSkeletalActors(TArray<TSLItemState<AActor>>&
 
 				// Get current entry as json object
 				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
-					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
+					TMap<FString, FString>{ {"id", Itr->SemObj.Id}, { "class", Itr->SemObj.Class } },
 					CurrLoc, CurrQuat);
 
 				// Add entity to json array
@@ -126,7 +126,7 @@ void FSLWorldStateWriterJson::AddNonSkeletalActors(TArray<TSLItemState<AActor>>&
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLMappings::GetInstance()->RemoveItem(Itr->Entity.Get());
+			FSLObjectsManager::GetInstance()->RemoveObject(Itr->Entity.Get());
 		}
 	}
 }
@@ -154,7 +154,7 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 
 				// Get current entry as json object
 				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
-					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
+					TMap<FString, FString>{ {"id", Itr->SemObj.Id}, { "class", Itr->SemObj.Class } },
 					CurrLoc, CurrQuat);
 				
 				// Json array of bones
@@ -191,7 +191,7 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLMappings::GetInstance()->RemoveItem(Itr->Entity.Get());
+			FSLObjectsManager::GetInstance()->RemoveObject(Itr->Entity.Get());
 		}
 	}
 }
@@ -219,7 +219,7 @@ void FSLWorldStateWriterJson::AddNonSkeletalComponents(TArray<TSLItemState<UScen
 
 				// Get current entry as json object
 				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
-					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
+					TMap<FString, FString>{ {"id", Itr->SemObj.Id}, { "class", Itr->SemObj.Class } },
 					CurrLoc, CurrQuat);
 
 				// Add entity to json array
@@ -229,7 +229,7 @@ void FSLWorldStateWriterJson::AddNonSkeletalComponents(TArray<TSLItemState<UScen
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLMappings::GetInstance()->RemoveItem(Itr->Entity.Get());
+			FSLObjectsManager::GetInstance()->RemoveObject(Itr->Entity.Get());
 		}
 	}
 }
