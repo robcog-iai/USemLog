@@ -36,9 +36,9 @@ public:
 	virtual void Finish() override;
 
 	// Called to write the data
-	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+	virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+		TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 		float Timestamp) override;
 
 private:

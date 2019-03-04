@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "WorldState/SLWorldStateAsyncWorker.h"
-#include "SLObjectsManager.h"
+#include "SLEntitiesManager.h"
 #include "WorldState/SLWorldStateWriterJson.h"
 #include "WorldState/SLWorldStateWriterBson.h"
 #include "WorldState/SLWorldStateWriterMongoC.h"
@@ -71,10 +71,10 @@ bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
 	}
 
 	// Make sure the semantic items are initialized
-	FSLObjectsManager::GetInstance()->Init(World);
+	FSLEntitiesManager::GetInstance()->Init(World);
 
 	// Iterate through the semantically annotated objects
-	for (const auto& ItemPair : FSLObjectsManager::GetInstance()->GetObjectsSemanticData())
+	for (const auto& ItemPair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
 	{
 		// Take into account only objects with transform data (AActor, USceneComponents)
 		if (AActor* ObjAsActor = Cast<AActor>(ItemPair.Value.Obj))
@@ -82,13 +82,11 @@ bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
 			// Skip 
 			if (ASLSkeletalMeshActor* ObjAsSLSkelAct = Cast<ASLSkeletalMeshActor>(ObjAsActor))
 			{
-				SkeletalActorPool.Emplace(
-					TSLItemState<ASLSkeletalMeshActor>(ItemPair.Value, ObjAsSLSkelAct));
+				SkeletalActorPool.Emplace(TSLEntityPreviousPose<ASLSkeletalMeshActor>(ObjAsSLSkelAct, ItemPair.Value));
 			}
 			else
 			{
-				NonSkeletalActorPool.Emplace(
-					TSLItemState<AActor>(ItemPair.Value, ObjAsActor));
+				NonSkeletalActorPool.Emplace(TSLEntityPreviousPose<AActor>(ObjAsActor, ItemPair.Value));
 			}
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(ItemPair.Value.Obj))
@@ -100,8 +98,7 @@ bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
 			}
 			else
 			{
-				NonSkeletalComponentPool.Emplace(
-					TSLItemState<USceneComponent>(ItemPair.Value, ObjAsSceneComp));
+				NonSkeletalComponentPool.Emplace(TSLEntityPreviousPose<USceneComponent>(ObjAsSceneComp, ItemPair.Value));
 			}
 		}
 	}
@@ -115,7 +112,7 @@ void FSLWorldStateAsyncWorker::RemoveStaticItems()
 	// Non-skeletal actors
 	for (auto Itr(NonSkeletalActorPool.CreateIterator()); Itr; ++Itr)
 	{
-		if (FTags::HasKeyValuePair(Itr->Entity.Get(), "SemLog", "Mobility", "Static"))
+		if (FTags::HasKeyValuePair(Itr->Obj.Get(), "SemLog", "Mobility", "Static"))
 		{
 			Itr.RemoveCurrent();
 		}
@@ -125,7 +122,7 @@ void FSLWorldStateAsyncWorker::RemoveStaticItems()
 	// Skeletal actors
 	for (auto Itr(SkeletalActorPool.CreateIterator()); Itr; ++Itr)
 	{
-		if (FTags::HasKeyValuePair(Itr->Entity.Get(), "SemLog", "Mobility", "Static"))
+		if (FTags::HasKeyValuePair(Itr->Obj.Get(), "SemLog", "Mobility", "Static"))
 		{
 			Itr.RemoveCurrent();
 		}
@@ -135,7 +132,7 @@ void FSLWorldStateAsyncWorker::RemoveStaticItems()
 	// Non-skeletal scene components
 	for (auto Itr(NonSkeletalComponentPool.CreateIterator()); Itr; ++Itr)
 	{
-		if (FTags::HasKeyValuePair(Itr->Entity.Get(), "SemLog", "Mobility", "Static"))
+		if (FTags::HasKeyValuePair(Itr->Obj.Get(), "SemLog", "Mobility", "Static"))
 		{
 			Itr.RemoveCurrent();
 		}

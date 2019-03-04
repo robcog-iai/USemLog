@@ -23,7 +23,7 @@ public:
 
 private:
 	// Start new grasp event
-	void AddNewEvent(const FSLObject& Self, const FSLObject& Other, float StartTime);
+	void AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime);
 
 	// Finish then publish the event
 	bool FinishEvent(UObject* InOther, float EndTime);

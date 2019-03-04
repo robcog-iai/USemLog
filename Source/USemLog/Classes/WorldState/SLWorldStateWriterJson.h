@@ -28,9 +28,9 @@ public:
 	virtual void Finish() override;
 
 	// Write the data (it also removes invalid items from the array -- e.g. deleted ones)
-	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+	virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+		TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 		float Timestamp) override;
 
 private:
@@ -38,15 +38,15 @@ private:
 	bool SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
 
 	// Get non skeletal actors as json array
-	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+	void AddNonSkeletalActors(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
 	// Get skeletal actors as json array
-	void AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	void AddSkeletalActors(TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
 	// Get non skeletal components as json array
-	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool, 
+	void AddNonSkeletalComponents(TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool, 
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
 	// Get key value pairs as json entry

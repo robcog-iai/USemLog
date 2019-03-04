@@ -179,7 +179,7 @@ bool USLSkeletalDataComponent::SetOwnerSemanticData()
 		FString Class = FTags::GetValue(GetAttachParent(), "SemLog", "Class");
 		if (!Id.IsEmpty() && !Class.IsEmpty())
 		{
-			OwnerSemanticData = MakeShareable(new FSLObject(GetAttachParent(), Id, Class));
+			OwnerSemanticData = MakeShareable(new FSLEntity(GetAttachParent(), Id, Class));
 			return true;
 		}
 		else
@@ -189,7 +189,7 @@ bool USLSkeletalDataComponent::SetOwnerSemanticData()
 			Class = FTags::GetValue(GetOwner(), "SemLog", "Class");
 			if (!Id.IsEmpty() && !Class.IsEmpty())
 			{
-				OwnerSemanticData = MakeShareable(new FSLObject(GetOwner(), Id, Class));
+				OwnerSemanticData = MakeShareable(new FSLEntity(GetOwner(), Id, Class));
 				return true;
 			}
 			else

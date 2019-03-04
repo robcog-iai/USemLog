@@ -8,20 +8,20 @@
 #include "SLSkeletalDataComponent.h"
 
 /**
- * Singleton storing Map between the unreal objects and the semantic data
+ * Singleton storing mappings between the unreal objects and the semantic data
  */
-class USEMLOG_API FSLObjectsManager
+class USEMLOG_API FSLEntitiesManager
 {
 private:
 	// Constructor
-	FSLObjectsManager();
+	FSLEntitiesManager();
 
 public:
 	// Destructor
-	~FSLObjectsManager();
+	~FSLEntitiesManager();
 
 	// Get singleton
-	static FSLObjectsManager* GetInstance();
+	static FSLEntitiesManager* GetInstance();
 
 	// Delete instance
 	static void DeleteInstance();
@@ -45,7 +45,7 @@ public:
 	bool AddObject(UObject* Object);
 
 	// Get semantic object structure, from object
-	FSLObject GetObject(UObject* Object) const;
+	FSLEntity GetObject(UObject* Object) const;
 	
 	// Get semantic id from object
 	FString GetId(UObject* Object) const;
@@ -60,23 +60,23 @@ public:
 	bool HasValidAncestor(UObject* Object, UObject* OutAncestor = nullptr) const;
 
 	// Get the map of objects to the semantic items
-	TMap<UObject*, FSLObject>& GetObjectsSemanticData() { return ObjectsSemanticData; }
+	TMap<UObject*, FSLEntity>& GetObjectsSemanticData() { return ObjectsSemanticData; }
 
 	// Get the array of semantically annotated objects
 	int32 GetSematicObjects(TArray<UObject*>& OutArray) { return ObjectsSemanticData.GetKeys(OutArray); }
 
 	// Get the map of objects to the semantic items
-	void GetSemanticDataArray(TArray<FSLObject>& OutArray) { ObjectsSemanticData.GenerateValueArray(OutArray); }
+	void GetSemanticDataArray(TArray<FSLEntity>& OutArray) { ObjectsSemanticData.GenerateValueArray(OutArray); }
 
 private:
 	// Instance of the singleton
-	static TSharedPtr<FSLObjectsManager> StaticInstance;
+	static TSharedPtr<FSLEntitiesManager> StaticInstance;
 
 	// Flag showing the data has been init
 	bool bIsInit;
 
 	// Map of UObject pointer to object structure
-	TMap<UObject*, FSLObject> ObjectsSemanticData;
+	TMap<UObject*, FSLEntity> ObjectsSemanticData;
 
 	// Map of UObject to skeletal data component
 	TMap<UObject*, USLSkeletalDataComponent*> ObjectsSemanticSkeletalData;

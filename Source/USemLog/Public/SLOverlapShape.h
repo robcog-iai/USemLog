@@ -18,10 +18,10 @@ struct FSLOverlapResult
 	GENERATED_USTRUCT_BODY()
 
 	// Self
-	FSLObject Self;
+	FSLEntity Self;
 
 	// Other 
-	FSLObject Other;
+	FSLEntity Other;
 
 	// The mesh (static or skeletal) of the other overlapping component
 	TWeakObjectPtr<UMeshComponent> SelfMeshComponent;
@@ -39,13 +39,13 @@ struct FSLOverlapResult
 	FSLOverlapResult() {};
 
 	// Init constructor
-	FSLOverlapResult(const FSLObject& InSelf, const FSLObject& InOther, float InTime, 
+	FSLOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
 		bool bIsSemanticOverlapArea) :
 		Self(InSelf), Other(InOther), 
 		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea) {};
 
 	// Init constructor with mesh component (static/skeletal)
-	FSLOverlapResult(const FSLObject& InSelf, const FSLObject& InOther, float InTime, 
+	FSLOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
 		bool bIsSemanticOverlapArea, UMeshComponent* InSelfMeshComponent, UMeshComponent* InOtherMeshComponent) :
 		Self(InSelf), Other(InOther), 
 		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea), 
@@ -181,5 +181,5 @@ private:
 	UMeshComponent* OwnerMeshComp;
 
 	// Semantic data of the owner
-	FSLObject OwnerItem;
+	FSLEntity OwnerItem;
 };

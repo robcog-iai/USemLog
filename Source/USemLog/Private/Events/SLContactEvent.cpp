@@ -11,14 +11,14 @@ FSLContactEvent::FSLContactEvent()
 
 // Constructor with initialization
 FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const FSLObject& InItem1, const FSLObject& InItem2) :
+	const FSLEntity& InItem1, const FSLEntity& InItem2) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId), Item1(InItem1), Item2(InItem2)
 {
 }
 
 // Constructor initialization without end time
 FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const FSLObject& InItem1, const FSLObject& InItem2) :
+	const FSLEntity& InItem1, const FSLEntity& InItem2) :
 	ISLEvent(InId, InStart), PairId(InPairId), Item1(InItem1), Item2(InItem2)
 {
 }

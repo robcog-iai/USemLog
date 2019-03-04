@@ -18,20 +18,20 @@ public:
 
 	// Constructor with initialization
 	FSLGraspEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLObject& InHand, const FSLObject& InOther);
+		const FSLEntity& InHand, const FSLEntity& InOther);
 
 	// Constructor initialization without end time
 	FSLGraspEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLObject& InHand, const FSLObject& InOther);
+		const FSLEntity& InHand, const FSLEntity& InOther);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
 	// Hand item
-	FSLObject Hand;
+	FSLEntity Hand;
 	
 	// Other item (grasped item)
-	FSLObject Other;
+	FSLEntity Other;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

@@ -61,16 +61,10 @@ public:
 	virtual void Finish() = 0;
 
 	// Write data (it also checks and removes invalid items from the array - e.g. destroyed actors)
-	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+	virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+		TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 		float Timestamp) = 0;
-
-	void Write2(float Timestamp,
-		TArray<TSLItemState<AActor>>& NonSkeletalActors,
-		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponents,
-		TArray<USLSkeletalDataComponent*>& SkeletalEntities,
-		bool bCheckAndRemoveInvalidEntities = true) {};
 
 	// True if the writer is valid
 	bool IsInit() const { return bIsInit; }

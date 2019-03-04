@@ -11,12 +11,12 @@ FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC()
 	bIsInit = false;
 }
 
+// Init constr
 FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC(const FSLWorldStateWriterParams& InParams)
 {
 	bIsInit = false;
 	FSLWorldStateWriterMongoC::Init(InParams);
 }
-
 
 // Destr
 FSLWorldStateWriterMongoC::~FSLWorldStateWriterMongoC()
@@ -50,10 +50,47 @@ void FSLWorldStateWriterMongoC::Finish()
 }
 
 // Called to write the data
-void FSLWorldStateWriterMongoC::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+void FSLWorldStateWriterMongoC::Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 	float Timestamp)
+{
+	// Avoid writing emtpy documents
+	if (NonSkeletalActorPool.Num() == 0 && SkeletalActorPool.Num() == 0 && NonSkeletalComponentPool.Num() == 0)
+	{
+		return;
+	}
+	
+
+#if SL_WITH_LIBMONGO_C
+	bson_t* entities_doc;
+	bson_error_t error;
+
+	// Document to store the images data
+	entities_doc = bson_new();
+
+	// Add timestamp
+	BSON_APPEND_DOUBLE(entities_doc, "timestamp", Timestamp);
+
+
+	if (!mongoc_collection_insert_one(collection, entities_doc, NULL, NULL, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		bson_destroy(entities_doc);
+	}
+
+	// Clean up
+	bson_destroy(entities_doc);
+
+#endif //SL_WITH_LIBMONGO_C
+}
+
+void FSLWorldStateWriterMongoC::Write2(float Timestamp,
+	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+	TArray<USLSkeletalDataComponent*>& SkeletalEntities,
+	bool bCheckAndRemoveInvalidEntities)
 {
 #if SL_WITH_LIBMONGO_C
 #endif //SL_WITH_LIBMONGO_C
@@ -94,11 +131,13 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId));
 
 	// Check server. Ping the "admin" database
-	bson_t* server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
+	bson_t* server_ping_cmd;
+	server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
 	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
 			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		bson_destroy(server_ping_cmd);
 		return false;
 	}
 
@@ -117,12 +156,45 @@ bool FSLWorldStateWriterMongoC::CreateIndexes()
 		return false;
 	}
 #if SL_WITH_LIBMONGO_C
-	return false;
+	bson_t index;
+	char *index_name;
+	bson_t* index_command;
+	bson_error_t error;
+	
+	bson_init(&index);
+	BSON_APPEND_INT32(&index, "timestamp", 1);
+
+	index_name = mongoc_collection_keys_to_index_string(&index);
+
+	index_command = BCON_NEW("createIndexes",
+			BCON_UTF8(mongoc_collection_get_name(collection)),
+			"indexes",
+			"[",
+			"{",
+			"key",
+			BCON_DOCUMENT(&index),
+			"name",
+			BCON_UTF8(index_name),
+			//"unique",
+			//BCON_BOOL(false),
+			"}",
+			"]");
+
+	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
+			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		bson_destroy(index_command);
+		bson_free(index_name);
+		return false;
+	}
+
+	// Clean up
+	bson_destroy(index_command);
+	bson_free(index_name);
+	return true;
 #else
 	return false;
 #endif //SL_WITH_LIBMONGO_C
 }
 
-#if SL_WITH_LIBMONGO_C
-
-#endif //SL_WITH_LIBMONGO_C

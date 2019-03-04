@@ -33,9 +33,9 @@ public:
 	virtual void Finish() override;
 
 	// Write the data
-	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+	virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+		TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 		float Timestamp) override;
 private:
 	// Connect to the database
@@ -46,15 +46,15 @@ private:
 	
 #if SL_WITH_LIBMONGO_CXX
 	// Get non skeletal actors as bson array
-	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+	void AddNonSkeletalActors(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
 
 	// Get skeletal actors as bson array
-	void AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	void AddSkeletalActors(TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
 
 	// Get non skeletal components as bson array
-	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+	void AddNonSkeletalComponents(TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
 
 	// Add the pose information of the document

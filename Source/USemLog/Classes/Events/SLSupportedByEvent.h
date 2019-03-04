@@ -17,20 +17,20 @@ public:
 
 	// Constructor with initialization 
 	FSLSupportedByEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLObject& InSupportedItem, const FSLObject& InSupportingItem);
+		const FSLEntity& InSupportedItem, const FSLEntity& InSupportingItem);
 
 	// Constructor with initialization without end time 
 	FSLSupportedByEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLObject& InSupportedItem, const FSLObject& InSupportingItem);
+		const FSLEntity& InSupportedItem, const FSLEntity& InSupportingItem);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
 	// Supported item
-	FSLObject SupportedItem;
+	FSLEntity SupportedItem;
 
 	// Supporting item
-	FSLObject SupportingItem;
+	FSLEntity SupportingItem;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

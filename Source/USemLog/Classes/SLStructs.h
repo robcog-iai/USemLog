@@ -5,24 +5,24 @@
 #pragma once
 
 /**
-* Structure holding the semantic data of one item
+* Structure holding the semantic data of an entity
 */
-struct FSLObject
+struct FSLEntity
 {
-	// UObject of item
+	// UObject of entity
 	UObject* Obj;
 
-	// Semantic id of item
+	// Semantic id of entity
 	FString Id;
 
-	// Semantic class of item
+	// Semantic class of entity
 	FString Class;
 
 	// Default constructor
-	FSLObject() {};
+	FSLEntity() {};
 
 	// Init constructor
-	FSLObject(UObject* InObj, const FString& InId, const FString& InClass) :
+	FSLEntity(UObject* InObj, const FString& InId, const FString& InClass) :
 		Obj(InObj), Id(InId), Class(InClass) {};
 
 	// True if the unique id, the semantic id and the semantic class is not empty
@@ -36,29 +36,29 @@ struct FSLObject
 };
 
 /**
-* Structure holding the semantic data of two items
+* Structure holding the semantic data of two entities
 */
-struct FSLItemPair
+struct FSLEntityPair
 {
-	// First item
-	FSLObject Item1;
+	// First entity
+	FSLEntity Entity1;
 
-	// Second item
-	FSLObject Item2;
+	// Second entity
+	FSLEntity Entity2;
 
 	// Default constructor
-	FSLItemPair() {};
+	FSLEntityPair() {};
 
 	// Init constructor
-	FSLItemPair(const FSLObject& InItem1, const FSLObject& InItem2) : Item1(InItem1), Item2(InItem2) {};
+	FSLEntityPair(const FSLEntity& InEntity1, const FSLEntity& InEntity2) : Entity1(InEntity1), Entity2(InEntity2) {};
 
 	// True if the unique id, the semantic id and the semantic class is not empty
-	bool IsValid() const { return Item1.IsValid() && Item2.IsValid(); }
+	bool IsValid() const { return Entity1.IsValid() && Entity2.IsValid(); }
 
 	// Get result as string
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("%s %s"), *Item1.ToString(), *Item2.ToString());
+		return FString::Printf(TEXT("%s %s"), *Entity1.ToString(), *Entity2.ToString());
 	}
 };
 
@@ -67,10 +67,13 @@ struct FSLItemPair
 * Templated data structure of entities with semantic and previous transform information
 */
 template <typename T>
-struct TSLItemState
+struct TSLEntityPreviousPose
 {
-	// The semantically annotated item
-	FSLObject SemObj;
+	// Pointer to the actor/component/skeletal actor
+	TWeakObjectPtr<T> Obj;
+
+	// The semantically annotated entity
+	FSLEntity Entity;
 
 	// Its previous location
 	FVector PrevLoc;
@@ -78,18 +81,15 @@ struct TSLItemState
 	// Its previous rotation
 	FQuat PrevQuat;
 
-	// Pointer to the actor/component/skeletal actor
-	TWeakObjectPtr<T> Entity;
-
 	// Default constructor
-	TSLItemState() {};
+	TSLEntityPreviousPose() {};
 
 	// Init constructor
-	TSLItemState(const FSLObject& InSemObj,
-		TWeakObjectPtr<T> InEntity,
+	TSLEntityPreviousPose(TWeakObjectPtr<T> InObj,
+		const FSLEntity& InEntity,
 		FVector InPrevLoc = FVector(BIG_NUMBER),
 		FQuat InPrevQuat = FQuat::Identity) :
-		SemObj(InSemObj),
+		Obj(InObj),
 		Entity(InEntity),
 		PrevLoc(InPrevLoc),
 		PrevQuat(InPrevQuat)

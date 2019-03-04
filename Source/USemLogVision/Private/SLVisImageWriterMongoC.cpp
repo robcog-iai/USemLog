@@ -80,6 +80,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
 				TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			bson_destroy(views_doc);
 		}
 		// Clean up allocated bson documents.
 		bson_destroy(views_doc);
@@ -128,6 +129,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 					UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
 						TEXT(__FUNCTION__), __LINE__, *FString(error.message));
 				}
+				// Clean up
 				bson_destroy(views_doc);
 				bson_destroy(update_doc);
 				bson_destroy(update_query);
@@ -236,7 +238,7 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 	mongoc_init();
 
 	// Stores any arror that might appear during the connection
-	bson_error_t error;
+	bson_error_t error;	
 	
 	// Safely create a MongoDB URI object from the given string
 	FString Uri = TEXT("mongodb://") + ServerIp + TEXT(":") + FString::FromInt(ServerPort);
@@ -263,11 +265,13 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId));
 
 	// Check server. Ping the "admin" database
-	bson_t* server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
+	bson_t* server_ping_cmd;
+	server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
 	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
 			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		bson_destroy(server_ping_cmd);
 		return false;
 	}
 
@@ -277,6 +281,7 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
 			TEXT(__FUNCTION__), __LINE__, *Uri, *FString(error.message));
+		bson_destroy(server_ping_cmd);
 		return false;
 	}
 
@@ -465,7 +470,7 @@ bool USLVisImageWriterMongoC::SaveImageToGridFS(const FSLVisImageData& ImgData, 
 {
 	mongoc_gridfs_file_t *file;
 	mongoc_gridfs_file_opt_t file_opt = { 0 };
-	const bson_value_t* file_id_val;
+	const bson_value_t* file_id_val; // TODO why is this not destroyed?
 	mongoc_iovec_t iov;
 	bson_error_t error;
 
@@ -491,6 +496,7 @@ bool USLVisImageWriterMongoC::SaveImageToGridFS(const FSLVisImageData& ImgData, 
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
 				TEXT(__FUNCTION__), __LINE__, *FString(error.message));
 		}
+		mongoc_gridfs_file_destroy(file);
 		return false;
 	}
 
@@ -500,6 +506,7 @@ bool USLVisImageWriterMongoC::SaveImageToGridFS(const FSLVisImageData& ImgData, 
 		mongoc_gridfs_file_error(file, &error);
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
 			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+		mongoc_gridfs_file_destroy(file);
 		return false;
 	}
 

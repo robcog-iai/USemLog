@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLManager.h"
-#include "SLObjectsManager.h"
+#include "SLEntitiesManager.h"
 #include "Ids.h"
 #if SL_WITH_SLVIS
 #include "Engine/DemoNetDriver.h"
@@ -141,7 +141,7 @@ void ASLManager::Init()
 	if (!bIsInit)
 	{
 		// Init the semantic items content singleton
-		FSLObjectsManager::GetInstance()->Init(GetWorld());
+		FSLEntitiesManager::GetInstance()->Init(GetWorld());
 
 		// If the episode Id is not manually added, generate new unique id
 		if (!bUseCustomEpisodeId)
@@ -229,7 +229,7 @@ void ASLManager::Finish(const float Time, bool bForced)
 		}
 
 		// Delete the semantic items content instance
-		FSLObjectsManager::DeleteInstance();
+		FSLEntitiesManager::DeleteInstance();
 
 		// Mark manager as finished
 		bIsStarted = false;

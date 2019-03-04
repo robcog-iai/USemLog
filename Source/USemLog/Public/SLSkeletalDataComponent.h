@@ -62,7 +62,7 @@ public:
 	USkeletalMeshComponent* GetSkeletalMeshParent() const { return SkeletalMeshParent; };
 
 	// Get the semantic data
-	TSharedPtr<FSLObject> GetOwnerSemanticData() const { return OwnerSemanticData; };
+	TSharedPtr<FSLEntity> GetOwnerSemanticData() const { return OwnerSemanticData; };
 
 private:
 #if WITH_EDITOR
@@ -95,7 +95,7 @@ private:
 	UObject* SemanticOwner;
 
 	// Semantic data of the owner
-	TSharedPtr<FSLObject> OwnerSemanticData;
+	TSharedPtr<FSLEntity> OwnerSemanticData;
 
 	// Load the bones semantic information from this data asset
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

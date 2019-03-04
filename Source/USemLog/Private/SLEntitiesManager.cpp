@@ -1,39 +1,39 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLObjectsManager.h"
+#include "SLEntitiesManager.h"
 #include "Tags.h"
 
-TSharedPtr<FSLObjectsManager> FSLObjectsManager::StaticInstance;
+TSharedPtr<FSLEntitiesManager> FSLEntitiesManager::StaticInstance;
 
 // Constructor
-FSLObjectsManager::FSLObjectsManager() : bIsInit(false) 
+FSLEntitiesManager::FSLEntitiesManager() : bIsInit(false) 
 {
 }
 
 // Destructor
-FSLObjectsManager::~FSLObjectsManager() 
+FSLEntitiesManager::~FSLEntitiesManager() 
 {
 }
 
 // Get singleton
-FSLObjectsManager* FSLObjectsManager::GetInstance()
+FSLEntitiesManager* FSLEntitiesManager::GetInstance()
 {
 	if (!StaticInstance.IsValid())
 	{
-		StaticInstance = MakeShareable(new FSLObjectsManager());
+		StaticInstance = MakeShareable(new FSLEntitiesManager());
 	}
 	return StaticInstance.Get();
 }
 
 // Delete instance
-void FSLObjectsManager::DeleteInstance()
+void FSLEntitiesManager::DeleteInstance()
 {
 	StaticInstance.Reset();
 }
 
 // Init data
-void FSLObjectsManager::Init(UWorld* World)
+void FSLEntitiesManager::Init(UWorld* World)
 {
 	if (!bIsInit)
 	{
@@ -45,7 +45,7 @@ void FSLObjectsManager::Init(UWorld* World)
 			FString ActClass = FTags::GetValue(*ActorItr, "SemLog", "Class");
 			if (!ActId.IsEmpty() && !ActClass.IsEmpty())
 			{
-				ObjectsSemanticData.Emplace(*ActorItr, FSLObject(*ActorItr, ActId, ActClass));
+				ObjectsSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass));
 			}
 
 			// Iterate components of the actor
@@ -56,7 +56,7 @@ void FSLObjectsManager::Init(UWorld* World)
 				FString CompClass = FTags::GetValue(CompItr, "SemLog", "Class");
 				if (!CompId.IsEmpty() && !CompClass.IsEmpty())
 				{
-					ObjectsSemanticData.Emplace(CompItr, FSLObject(CompItr, CompId, CompClass));
+					ObjectsSemanticData.Emplace(CompItr, FSLEntity(CompItr, CompId, CompClass));
 				}
 			}
 		}
@@ -78,7 +78,7 @@ void FSLObjectsManager::Init(UWorld* World)
 
 
 // Clear data
-void FSLObjectsManager::Clear()
+void FSLEntitiesManager::Clear()
 {
 	// Clear any previous data
 	ObjectsSemanticData.Empty();
@@ -88,7 +88,7 @@ void FSLObjectsManager::Clear()
 }
 
 // Enable replication on the items
-void FSLObjectsManager::SetReplicates(bool bReplicate)
+void FSLEntitiesManager::SetReplicates(bool bReplicate)
 {
 	for (auto& Pair : ObjectsSemanticData)
 	{
@@ -128,7 +128,7 @@ void FSLObjectsManager::SetReplicates(bool bReplicate)
 
 
 // Remove object from object
-bool FSLObjectsManager::RemoveObject(UObject* Object)
+bool FSLEntitiesManager::RemoveObject(UObject* Object)
 {
 	//return FSLMappings::RemoveItem(Object->GetUniqueID());
 	int32 NrOfRemovedItems = ObjectsSemanticData.Remove(Object);
@@ -143,14 +143,14 @@ bool FSLObjectsManager::RemoveObject(UObject* Object)
 }
 
 // Try to add the given object as a semantic object (return false if the object is not properly annotated)
-bool FSLObjectsManager::AddObject(UObject* Object)
+bool FSLEntitiesManager::AddObject(UObject* Object)
 {
 	// Add to map if key is found in the actor
 	FString Id = FTags::GetValue(Object, "SemLog", "Id");
 	FString Class = FTags::GetValue(Object, "SemLog", "Class");
 	if (!Id.IsEmpty() && !Class.IsEmpty())
 	{
-		ObjectsSemanticData.Emplace(Object, FSLObject(Object, Id, Class));
+		ObjectsSemanticData.Emplace(Object, FSLEntity(Object, Id, Class));
 		return true;
 	}
 	else
@@ -160,24 +160,24 @@ bool FSLObjectsManager::AddObject(UObject* Object)
 }
 
 // Get semantic object structure, from object
-FSLObject FSLObjectsManager::GetObject(UObject* Object) const
+FSLEntity FSLEntitiesManager::GetObject(UObject* Object) const
 {
 	//return FSLMappings::GetSemanticObject(Object->GetUniqueID());
-	if (const FSLObject* Item = ObjectsSemanticData.Find(Object))
+	if (const FSLEntity* Item = ObjectsSemanticData.Find(Object))
 	{
 		return *Item;
 	}
 	else
 	{
-		return FSLObject();
+		return FSLEntity();
 	}
 }
 
 // Get semantic id from object
-FString FSLObjectsManager::GetId(UObject* Object) const
+FString FSLEntitiesManager::GetId(UObject* Object) const
 {
 	//return FSLMappings::GetSemanticId(Object->GetUniqueID());
-	if (const FSLObject* Item = ObjectsSemanticData.Find(Object))
+	if (const FSLEntity* Item = ObjectsSemanticData.Find(Object))
 	{
 		return *Item->Id;
 	}
@@ -188,10 +188,10 @@ FString FSLObjectsManager::GetId(UObject* Object) const
 }
 
 // Get semantic class from object
-FString FSLObjectsManager::GetClass(UObject* Object) const
+FString FSLEntitiesManager::GetClass(UObject* Object) const
 {
 	//return FSLMappings::GetSemanticClass(Object->GetUniqueID());
-	if (const FSLObject* Item = ObjectsSemanticData.Find(Object))
+	if (const FSLEntity* Item = ObjectsSemanticData.Find(Object))
 	{
 		return *Item->Class;
 	}
@@ -202,10 +202,10 @@ FString FSLObjectsManager::GetClass(UObject* Object) const
 }
 
 // Check is semantically object exists and is valid from object
-bool FSLObjectsManager::HasValidObject(UObject* Object) const
+bool FSLEntitiesManager::HasValidObject(UObject* Object) const
 {
 	//return FSLMappings::HasValidItem(Object->GetUniqueID());
-	if (const FSLObject* Item = ObjectsSemanticData.Find(Object))
+	if (const FSLEntity* Item = ObjectsSemanticData.Find(Object))
 	{
 		return Item->IsValid();
 	}
@@ -216,12 +216,12 @@ bool FSLObjectsManager::HasValidObject(UObject* Object) const
 }
 
 // Check if object has a valid ancestor 
-bool FSLObjectsManager::HasValidAncestor(UObject* Object, UObject* OutAncestor) const
+bool FSLEntitiesManager::HasValidAncestor(UObject* Object, UObject* OutAncestor) const
 {
 	UObject* Child = Object;
 	while(UObject* Outer = Child->GetOuter())
 	{
-		if (FSLObjectsManager::HasValidObject(Outer))
+		if (FSLEntitiesManager::HasValidObject(Outer))
 		{
 			OutAncestor = Outer;
 			return true;

@@ -21,12 +21,12 @@ FSLWorldStateWriterMongoCxx::FSLWorldStateWriterMongoCxx()
 	bIsInit = false;
 }
 
+// Init Constr
 FSLWorldStateWriterMongoCxx::FSLWorldStateWriterMongoCxx(const FSLWorldStateWriterParams& InParams)
 {
 	bIsInit = false;
 	FSLWorldStateWriterMongoCxx::Init(InParams);
 }
-
 
 // Destr
 FSLWorldStateWriterMongoCxx::~FSLWorldStateWriterMongoCxx()
@@ -52,9 +52,9 @@ void FSLWorldStateWriterMongoCxx::Finish()
 }
 
 // Called to write the data
-void FSLWorldStateWriterMongoCxx::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+void FSLWorldStateWriterMongoCxx::Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 	float Timestamp)
 {
 #if SL_WITH_LIBMONGO_CXX
@@ -181,7 +181,7 @@ bool FSLWorldStateWriterMongoCxx::CreateIndexes()
 
 #if SL_WITH_LIBMONGO_CXX
 // Get non skeletal actors as bson array
-void FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+void FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -218,13 +218,13 @@ void FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(TArray<TSLItemState<AActo
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLObjectsManager::GetInstance()->RemoveObject(Itr->Entity.Get());
+			FSLEntitiesManager::GetInstance()->RemoveObject(Itr->Entity.Get());
 		}
 	}
 }
 
 // Get skeletal actors as bson array
-void FSLWorldStateWriterMongoCxx::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+void FSLWorldStateWriterMongoCxx::AddSkeletalActors(TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -292,13 +292,13 @@ void FSLWorldStateWriterMongoCxx::AddSkeletalActors(TArray<TSLItemState<ASLSkele
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLObjectsManager::GetInstance()->RemoveObject(Itr->Entity.Get());
+			FSLEntitiesManager::GetInstance()->RemoveObject(Itr->Entity.Get());
 		}
 	}
 }
 
 // Get non skeletal components as bson array
-void FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+void FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -335,7 +335,7 @@ void FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(TArray<TSLItemState<U
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLObjectsManager::GetInstance()->RemoveObject(Itr->Entity.Get());
+			FSLEntitiesManager::GetInstance()->RemoveObject(Itr->Entity.Get());
 		}
 	}
 }

@@ -52,7 +52,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		bWriteTimelines = bInWriteTimelines;
 
 		// Init the semantic mappings (if not already init)
-		FSLObjectsManager::GetInstance()->Init(GetWorld());
+		FSLEntitiesManager::GetInstance()->Init(GetWorld());
 
 		// Create the document template
 		ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
@@ -67,7 +67,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		for (TObjectIterator<USLOverlapShape> Itr; Itr; ++Itr)
 		{
 			// Skip objects that do not have a semantically annotated ancestor
-			if (!FSLObjectsManager::GetInstance()->HasValidAncestor(*Itr))
+			if (!FSLEntitiesManager::GetInstance()->HasValidAncestor(*Itr))
 			{
 				continue;
 			}
@@ -102,7 +102,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
 			{
 				// Skip objects that do not have a semantically annotated ancestor
-				if (!FSLObjectsManager::GetInstance()->HasValidAncestor(*Itr))
+				if (!FSLEntitiesManager::GetInstance()->HasValidAncestor(*Itr))
 				{
 					continue;
 				}

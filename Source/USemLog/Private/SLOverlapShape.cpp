@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLOverlapShape.h"
-#include "SLObjectsManager.h"
+#include "SLEntitiesManager.h"
 #include "Animation/SkeletalMeshActor.h"
 
 // UUTils
@@ -67,14 +67,14 @@ void USLOverlapShape::Init()
 	if (!bIsInit)
 	{
 		// Init the semantic items mappings singleton
-		if (!FSLObjectsManager::GetInstance()->IsInit())
+		if (!FSLEntitiesManager::GetInstance()->IsInit())
 		{
-			FSLObjectsManager::GetInstance()->Init(GetWorld());
+			FSLEntitiesManager::GetInstance()->Init(GetWorld());
 		}
 
 		// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
 		// Make sure owner is a valid semantic item
-		OwnerItem = FSLObjectsManager::GetInstance()->GetObject(GetOwner());
+		OwnerItem = FSLEntitiesManager::GetInstance()->GetObject(GetOwner());
 		if (!OwnerItem.IsValid())
 		{
 			return;
@@ -379,11 +379,11 @@ void USLOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLObject OtherItem = FSLObjectsManager::GetInstance()->GetObject(OtherComp);
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetObject(OtherComp);
 	if (!OtherItem.IsValid())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem = FSLObjectsManager::GetInstance()->GetObject(OtherComp->GetOuter());
+		OtherItem = FSLEntitiesManager::GetInstance()->GetObject(OtherComp->GetOuter());
 		if (!OtherItem.IsValid())
 		{
 			return;
@@ -433,11 +433,11 @@ void USLOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLObject OtherItem = FSLObjectsManager::GetInstance()->GetObject(OtherComp);
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetObject(OtherComp);
 	if (!OtherItem.IsValid())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem = FSLObjectsManager::GetInstance()->GetObject(OtherComp->GetOuter());
+		OtherItem = FSLEntitiesManager::GetInstance()->GetObject(OtherComp->GetOuter());
 		if (!OtherItem.IsValid())
 		{
 			return;

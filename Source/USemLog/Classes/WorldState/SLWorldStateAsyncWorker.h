@@ -78,13 +78,13 @@ private:
 	TSharedPtr<ISLWorldStateWriter> Writer;
 
 	// Array of semantically annotated actors that are not skeletal
-	TArray<TSLItemState<AActor>> NonSkeletalActorPool;
+	TArray<TSLEntityPreviousPose<AActor>> NonSkeletalActorPool;
 
 	// Array of semantically annotated skeletal actors
-	TArray<TSLItemState<ASLSkeletalMeshActor>> SkeletalActorPool;
+	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>> SkeletalActorPool;
 
 	// Array of semantically annotated components that are not skeletal
-	TArray<TSLItemState<USceneComponent>> NonSkeletalComponentPool;
+	TArray<TSLEntityPreviousPose<USceneComponent>> NonSkeletalComponentPool;
 
 	// TODO USLSkeletalMeshComponent,
 	// could not find out how to dynamically change type to point to a SLSkeletalDataAsset

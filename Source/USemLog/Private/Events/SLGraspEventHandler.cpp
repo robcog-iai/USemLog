@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLGraspEventHandler.h"
-#include "SLObjectsManager.h"
+#include "SLEntitiesManager.h"
 #if SL_WITH_MC_GRASP
 #include "MCFixationGrasp.h"
 #endif // SL_WITH_MC_GRASP
@@ -17,9 +17,9 @@ void FSLGraspEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Make sure the mappings singleton is initialized (the handler uses it)
-		if (!FSLObjectsManager::GetInstance()->IsInit())
+		if (!FSLEntitiesManager::GetInstance()->IsInit())
 		{
-			FSLObjectsManager::GetInstance()->Init(InParent->GetWorld());
+			FSLEntitiesManager::GetInstance()->Init(InParent->GetWorld());
 		}
 
 #if SL_WITH_MC_GRASP
@@ -70,7 +70,7 @@ void FSLGraspEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new grasp event
-void FSLGraspEventHandler::AddNewEvent(const FSLObject& Self, const FSLObject& Other, float StartTime)
+void FSLGraspEventHandler::AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime)
 {
 	// Start a semantic grasp event
 	TSharedPtr<FSLGraspEvent> Event = MakeShareable(new FSLGraspEvent(
@@ -119,8 +119,8 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 void FSLGraspEventHandler::OnSLGraspBegin(UObject* Self, UObject* Other, float Time)
 {
 	// Check that the objects are semantically annotated
-	FSLObject SelfItem = FSLObjectsManager::GetInstance()->GetObject(Self);
-	FSLObject OtherItem = FSLObjectsManager::GetInstance()->GetObject(Other);
+	FSLEntity SelfItem = FSLEntitiesManager::GetInstance()->GetObject(Self);
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetObject(Other);
 	if (SelfItem.IsValid() && OtherItem.IsValid())
 	{
 		FSLGraspEventHandler::AddNewEvent(SelfItem, OtherItem, Time);
