@@ -21,14 +21,8 @@ USLWorldStateLogger::~USLWorldStateLogger()
 	}
 }
 
-// Init logger
-void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
-	float LinearDistance,
-	float AngularDistance,
-	const FString& Location,
-	const FString& EpisodeId,
-	const FString& ServerIp,
-	const uint16 ServerPort)
+// Init Logger
+void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams)
 {
 	if (!bIsInit)
 	{
@@ -36,8 +30,7 @@ void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
 		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
 
 		// Init async worker (create the writer and set logging parameters)
-		if (AsyncWorker->GetTask().Create(GetWorld(), WriterType, LinearDistance, AngularDistance,
-			Location, EpisodeId, ServerIp, ServerPort))
+		if (AsyncWorker && AsyncWorker->GetTask().Init(GetWorld(), WriterType, InWriterParams))
 		{
 			// Flag as init
 			bIsInit = true;
@@ -52,7 +45,7 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 	{
 		// Call before binding the recurrent Update function
 		// this ensures the initial world state is logged (static and movable semantic items)
-		USLWorldStateLogger::FirstUpdate();
+		USLWorldStateLogger::InitialUpdate();
 
 		// Start updating
 		if (UpdateRate > 0.0f)
@@ -131,7 +124,7 @@ TStatId USLWorldStateLogger::GetStatId() const
 /** End FTickableGameObject interface */
 
 // Log initial state of the world (static and dynamic entities)
-void USLWorldStateLogger::FirstUpdate()
+void USLWorldStateLogger::InitialUpdate()
 {
 	// Start async worker
 	AsyncWorker->StartBackgroundTask();

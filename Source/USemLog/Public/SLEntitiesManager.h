@@ -62,11 +62,20 @@ public:
 	// Get the map of objects to the semantic items
 	TMap<UObject*, FSLEntity>& GetObjectsSemanticData() { return ObjectsSemanticData; }
 
-	// Get the array of semantically annotated objects
+	// Get the array of semantically annotated objects (returns the number of keys)
 	int32 GetSematicObjects(TArray<UObject*>& OutArray) { return ObjectsSemanticData.GetKeys(OutArray); }
 
 	// Get the map of objects to the semantic items
 	void GetSemanticDataArray(TArray<FSLEntity>& OutArray) { ObjectsSemanticData.GenerateValueArray(OutArray); }
+
+	// Get the map of objects to the semantic items
+	TMap<UObject*, USLSkeletalDataComponent*>& GetObjectsSkeletalSemanticData() { return ObjectsSemanticSkeletalData; }
+
+	// Get the array of semantically annotated objects (returns the number of keys)
+	int32 GetSematicSkeltalObjects(TArray<UObject*>& OutArray) { return ObjectsSemanticSkeletalData.GetKeys(OutArray); }
+
+	// Get the map of objects to the semantic items
+	void GetSemanticSkeletalDataArray(TArray<USLSkeletalDataComponent*>& OutArray) { ObjectsSemanticSkeletalData.GenerateValueArray(OutArray); }
 
 private:
 	// Instance of the singleton
@@ -78,6 +87,6 @@ private:
 	// Map of UObject pointer to object structure
 	TMap<UObject*, FSLEntity> ObjectsSemanticData;
 
-	// Map of UObject to skeletal data component
+	// Map of UObject (Owner -- actor or component) to skeletal data component
 	TMap<UObject*, USLSkeletalDataComponent*> ObjectsSemanticSkeletalData;
 };

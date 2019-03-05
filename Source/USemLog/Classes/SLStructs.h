@@ -66,10 +66,11 @@ struct FSLEntityPair
 /**
 * Templated data structure of entities with semantic and previous transform information
 */
+// TODO remove the Obj pointer, and use the one from entity, add a IsValid test to make sure the Obj can have a location
 template <typename T>
 struct TSLEntityPreviousPose
 {
-	// Pointer to the actor/component/skeletal actor
+	// Pointer to the actor/component/skeletal actor, the object should have a transform
 	TWeakObjectPtr<T> Obj;
 
 	// The semantically annotated entity
@@ -94,5 +95,8 @@ struct TSLEntityPreviousPose
 		PrevLoc(InPrevLoc),
 		PrevQuat(InPrevQuat)
 	{};
+
+	// Check if the entity is valid and has a transform
+	bool IsValid() const { return Entity.IsValid() && (Cast<USceneComponent>(Entity.Obj) || Cast<AActor>(Entity.Obj)); }
 };
 

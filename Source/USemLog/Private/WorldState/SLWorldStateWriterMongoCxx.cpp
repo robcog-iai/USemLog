@@ -52,37 +52,46 @@ void FSLWorldStateWriterMongoCxx::Finish()
 }
 
 // Called to write the data
-void FSLWorldStateWriterMongoCxx::Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
-	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
-	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
-	float Timestamp)
+//void FSLWorldStateWriterMongoCxx::Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+//	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+//	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
+//	float Timestamp)
+//{
+//#if SL_WITH_LIBMONGO_CXX
+//		// Create a bson document and array to store the entities
+//		bsoncxx::builder::basic::document bson_doc{};
+//		bsoncxx::builder::basic::array bson_arr{};
+//
+//		// Add entities to the bson array
+//		FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
+//		FSLWorldStateWriterMongoCxx::AddSkeletalActors(SkeletalActorPool, bson_arr);
+//		FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
+//
+//		// Avoid inserting empty entries
+//		if (!bson_arr.view().empty())
+//		{
+//			bson_doc.append(kvp("timestamp", bsoncxx::types::b_double{Timestamp}));
+//			bson_doc.append(kvp("entities", bson_arr));
+//			try
+//			{
+//				mongo_coll.insert_one(bson_doc.view());
+//			}
+//			catch (const std::exception& xcp)
+//			{
+//				UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
+//					TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+//			}
+//		}
+//#endif //SL_WITH_LIBMONGO_CXX
+//}
+
+void FSLWorldStateWriterMongoCxx::Write2(float Timestamp,
+	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+	bool bCheckAndRemoveInvalidEntities)
 {
-#if SL_WITH_LIBMONGO_CXX
-		// Create a bson document and array to store the entities
-		bsoncxx::builder::basic::document bson_doc{};
-		bsoncxx::builder::basic::array bson_arr{};
 
-		// Add entities to the bson array
-		FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
-		FSLWorldStateWriterMongoCxx::AddSkeletalActors(SkeletalActorPool, bson_arr);
-		FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
-
-		// Avoid inserting empty entries
-		if (!bson_arr.view().empty())
-		{
-			bson_doc.append(kvp("timestamp", bsoncxx::types::b_double{Timestamp}));
-			bson_doc.append(kvp("entities", bson_arr));
-			try
-			{
-				mongo_coll.insert_one(bson_doc.view());
-			}
-			catch (const std::exception& xcp)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-					TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
-			}
-		}
-#endif //SL_WITH_LIBMONGO_CXX
 }
 
 // Connect to the database

@@ -153,8 +153,8 @@ void ASLManager::Init()
 		{
 			// Create and init world state logger
 			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
-			WorldStateLogger->Init(WriterType, LinearDistance, AngularDistance,
-				Location, EpisodeId, ServerIp, ServerPort);
+			WorldStateLogger->Init(WriterType, FSLWorldStateWriterParams(
+				LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort));
 		}
 
 		if (bLogEventData)

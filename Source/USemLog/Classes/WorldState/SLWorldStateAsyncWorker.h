@@ -6,7 +6,7 @@
 #include "Async/AsyncWork.h"
 #include "ISLWorldStateWriter.h"
 #include "SLStructs.h"
-#include "SLSkeletalMeshActor.h"
+//#include "SLSkeletalMeshActor.h"
 
 /**
 * Type of world state loggers
@@ -37,17 +37,7 @@ public:
 	virtual ~FSLWorldStateAsyncWorker();
 
 	// Init worker, load models to log from world
-	bool Create(UWorld* InWorld,
-		ESLWorldStateWriterType WriterType,
-		float LinearDistance,
-		float AngularDistance,
-		const FString& Location,
-		const FString& EpisodeId,
-		const FString& ServerIp = "",
-		const uint16 ServerPort = 0);
-
-	// Init worker, load models to log from world
-	bool Create(UWorld* InWorld,
+	bool Init(UWorld* InWorld,
 		ESLWorldStateWriterType InWriterType,
 		const FSLWorldStateWriterParams& InParams);
 
@@ -78,13 +68,16 @@ private:
 	TSharedPtr<ISLWorldStateWriter> Writer;
 
 	// Array of semantically annotated actors that are not skeletal
-	TArray<TSLEntityPreviousPose<AActor>> NonSkeletalActorPool;
-
-	// Array of semantically annotated skeletal actors
-	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>> SkeletalActorPool;
-
+	TArray<TSLEntityPreviousPose<AActor>> ActorEntitites;
+	
 	// Array of semantically annotated components that are not skeletal
-	TArray<TSLEntityPreviousPose<USceneComponent>> NonSkeletalComponentPool;
+	TArray<TSLEntityPreviousPose<USceneComponent>> ComponentEntities;
+
+	// Array of semantical skeletal data components
+	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>> SkeletalEntities;
+
+	//// Array of semantically annotated skeletal actors
+	//TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>> SkeletalActorPool; // TODO rm
 
 	// TODO USLSkeletalMeshComponent,
 	// could not find out how to dynamically change type to point to a SLSkeletalDataAsset

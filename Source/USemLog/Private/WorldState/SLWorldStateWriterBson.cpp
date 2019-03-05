@@ -46,10 +46,11 @@ void FSLWorldStateWriterBson::Finish()
 }
 
 // Called to write the data
-void FSLWorldStateWriterBson::Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
-	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
-	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
-	float Timestamp)
+void FSLWorldStateWriterBson::Write2(float Timestamp,
+	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+	bool bCheckAndRemoveInvalidEntities)
 {
 #if SL_WITH_LIBMONGO_CXX
 

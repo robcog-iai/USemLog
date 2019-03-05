@@ -4,7 +4,6 @@
 #pragma once
 
 #include "SLStructs.h"
-#include "SLSkeletalMeshActor.h" // todo rm
 #include "SLSkeletalDataComponent.h"
 
 /**
@@ -61,10 +60,16 @@ public:
 	virtual void Finish() = 0;
 
 	// Write data (it also checks and removes invalid items from the array - e.g. destroyed actors)
-	virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
-		TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
-		float Timestamp) = 0;
+	//virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+	//	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	//	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
+	//	float Timestamp) = 0;
+
+	virtual void Write2(float Timestamp,
+		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+		bool bCheckAndRemoveInvalidEntities = true) = 0;
 
 	// True if the writer is valid
 	bool IsInit() const { return bIsInit; }

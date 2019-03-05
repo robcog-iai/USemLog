@@ -52,7 +52,7 @@ protected:
 #endif // WITH_EDITOR
 
 public:
-	// Init the component for runtime, returns true if it was already init, or initi was succesful
+	// Init the component for runtime, returns true if it was already init, or init was successful
 	bool Init();
 
 	// Check if the component is init (and valid)
@@ -83,6 +83,9 @@ public:
 	// Map of bones to their class names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TMap<FName, FSLBoneData> BonesData;
+
+	// All bones map
+	TMap<FName, TSharedPtr<FSLBoneData>> AllBonesData;
 
 private:
 	// Flag marking the component as init (and valid) for runtime 

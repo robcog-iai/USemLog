@@ -28,25 +28,37 @@ public:
 	virtual void Finish() override;
 
 	// Write the data (it also removes invalid items from the array -- e.g. deleted ones)
-	virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+	/*virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
 		TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
 		TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
-		float Timestamp) override;
+		float Timestamp) override;*/
+
+	void Write2(float Timestamp,
+		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+		bool bCheckAndRemoveInvalidEntities = true) override;
 
 private:
 	// Set the file handle for the logger
 	bool SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
 
 	// Get non skeletal actors as json array
-	void AddNonSkeletalActors(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
-		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
-
-	// Get skeletal actors as json array
-	void AddSkeletalActors(TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	/*void AddNonSkeletalActors(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);*/
+	void AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
 	// Get non skeletal components as json array
-	void AddNonSkeletalComponents(TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool, 
+	/*void AddNonSkeletalComponents(TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool, 
+		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);*/
+	void AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
+
+	// Get skeletal actors as json array
+	/*void AddSkeletalActors(TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);*/
+	void AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
 	// Get key value pairs as json entry

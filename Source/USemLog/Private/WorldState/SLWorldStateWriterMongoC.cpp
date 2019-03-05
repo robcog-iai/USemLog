@@ -49,18 +49,17 @@ void FSLWorldStateWriterMongoC::Finish()
 	}
 }
 
-// Called to write the data
-void FSLWorldStateWriterMongoC::Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
-	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
-	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
-	float Timestamp)
+void FSLWorldStateWriterMongoC::Write2(float Timestamp,
+	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+	bool bCheckAndRemoveInvalidEntities)
 {
 	// Avoid writing emtpy documents
-	if (NonSkeletalActorPool.Num() == 0 && SkeletalActorPool.Num() == 0 && NonSkeletalComponentPool.Num() == 0)
+	if (ActorEntities.Num() == 0 && ComponentEntities.Num() == 0 && SkeletalEntities.Num() == 0)
 	{
 		return;
 	}
-	
 
 #if SL_WITH_LIBMONGO_C
 	bson_t* entities_doc;
@@ -83,16 +82,6 @@ void FSLWorldStateWriterMongoC::Write(TArray<TSLEntityPreviousPose<AActor>>& Non
 	// Clean up
 	bson_destroy(entities_doc);
 
-#endif //SL_WITH_LIBMONGO_C
-}
-
-void FSLWorldStateWriterMongoC::Write2(float Timestamp,
-	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
-	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
-	TArray<USLSkeletalDataComponent*>& SkeletalEntities,
-	bool bCheckAndRemoveInvalidEntities)
-{
-#if SL_WITH_LIBMONGO_C
 #endif //SL_WITH_LIBMONGO_C
 }
 

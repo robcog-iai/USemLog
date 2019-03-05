@@ -40,16 +40,11 @@ public:
 	virtual void Finish() override;
 
 	// Write the data
-	virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
-		TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
-		float Timestamp) override;
-
-	void Write2(float Timestamp,
+	virtual void Write2(float Timestamp,
 		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
-		TArray<USLSkeletalDataComponent*>& SkeletalEntities,
-		bool bCheckAndRemoveInvalidEntities = true);
+		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+		bool bCheckAndRemoveInvalidEntities = true) override;
 
 private:
 	// Connect to the database
