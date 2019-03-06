@@ -67,7 +67,7 @@ void FSLEntitiesManager::Init(UWorld* World)
 			// Check if initialization is was successful
 			if (Itr->Init())
 			{
-				ObjectsSemanticSkeletalData.Add(Itr->GetOwnerSemanticData()->Obj, *Itr);
+				ObjectsSemanticSkeletalData.Add(Itr->OwnerSemanticData.Obj, *Itr);
 			}
 		}
 

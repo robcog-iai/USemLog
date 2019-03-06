@@ -28,12 +28,22 @@ struct FSLBoneData
 	// Mask material instance 
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* MaskMaterial;
+
+	// Checks if the structure has been set
+	bool IsSet() const { return !Class.IsEmpty(); };
+
+	// Get result as string
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Class:%s; MaskColorHex:%s; MaskMaterial:%s"), *Class, *MaskColorHex,
+			MaskMaterial ? *MaskMaterial->GetName() : *FString("NULL"));
+	}
 };
 
 /**
  * Stores the semantic skeletal data of its parent skeletal mesh component
  */
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), hidecategories = (HLOD, Cooking, Transform), DisplayName="SL Skeletal Data")
 class USEMLOG_API USLSkeletalDataComponent : public USceneComponent
 {
 	GENERATED_BODY()
@@ -41,10 +51,6 @@ class USEMLOG_API USLSkeletalDataComponent : public USceneComponent
 public:	
 	// Sets default values for this component's properties
 	USLSkeletalDataComponent();
-
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
 
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
@@ -57,52 +63,52 @@ public:
 
 	// Check if the component is init (and valid)
 	bool IsInit() const { return bInit; };
-	
-	// Get the skeletal mesh parent
-	USkeletalMeshComponent* GetSkeletalMeshParent() const { return SkeletalMeshParent; };
-
-	// Get the semantic data
-	TSharedPtr<FSLEntity> GetOwnerSemanticData() const { return OwnerSemanticData; };
 
 private:
 #if WITH_EDITOR
 	// Update the data
 	void LoadData();
+#endif // WITH_EDITOR
 
 	// Clear data
-	void ClearData(bool bIncludeSkeletal = true);
-#endif // WITH_EDITOR
+	void ClearData();
 
 	// Set the skeletal parent, returns true if successful or is already set
 	bool SetSkeletalParent();
 
-	// Set the semantic parent, returns true if successful or is already set
-	bool SetOwnerSemanticData();
+	// Set the semantic parent and its data, returns true if successful or is already set
+	bool SetSemanticOwnerAndData();
+
+	// Set data for all the bones (empty for the ones without semantics)
+	void SetDataForAllBones();
 
 public:
 	// Map of bones to their class names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FName, FSLBoneData> BonesData;
+	TMap<FName, FSLBoneData> SemanticBonesData;
 
 	// All bones map
-	TMap<FName, TSharedPtr<FSLBoneData>> AllBonesData;
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	TMap<FName, FSLBoneData> AllBonesData;
+
+	// The attach parent skeletal mesh
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	USkeletalMeshComponent* SkeletalMeshParent;
+
+	// Semantic owner
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UObject* SemanticOwner;
+
+	// Semantic data of the owner	
+	FSLEntity OwnerSemanticData;
 
 private:
 	// Flag marking the component as init (and valid) for runtime 
 	bool bInit;
 
-	// The attach parent skeletal mesh
-	USkeletalMeshComponent* SkeletalMeshParent;
-
-	// Semantic owner
-	UObject* SemanticOwner;
-
-	// Semantic data of the owner
-	TSharedPtr<FSLEntity> OwnerSemanticData;
-
-	// Load the bones semantic information from this data asset
+	// Load the bones semantic information from the skeletal data asset
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	USLSkeletalDataAsset* LoadFromDataAsset;
+	USLSkeletalDataAsset* SkeletalDataAsset;
 
 	// Load new data without removing previous one button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

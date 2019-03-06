@@ -46,7 +46,7 @@ void FSLWorldStateWriterBson::Finish()
 }
 
 // Called to write the data
-void FSLWorldStateWriterBson::Write2(float Timestamp,
+void FSLWorldStateWriterBson::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,

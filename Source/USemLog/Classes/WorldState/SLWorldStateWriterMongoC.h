@@ -40,7 +40,7 @@ public:
 	virtual void Finish() override;
 
 	// Write the data
-	virtual void Write2(float Timestamp,
+	virtual void Write(float Timestamp,
 		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,

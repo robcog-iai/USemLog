@@ -89,7 +89,7 @@ bool FSLWorldStateAsyncWorker::Init(UWorld* InWorld,
 	for (const auto& SemSkelData : SemanticSkeletalData)
 	{
 		SkeletalEntities.Emplace(TSLEntityPreviousPose<USLSkeletalDataComponent>(
-			SemSkelData, *SemSkelData->GetOwnerSemanticData().Get()));
+			SemSkelData, SemSkelData->OwnerSemanticData));
 	}
 
 	// Can start working
@@ -151,7 +151,7 @@ void FSLWorldStateAsyncWorker::Finish(bool bForced)
 // Async work done here
 void FSLWorldStateAsyncWorker::DoWork()
 {
-	Writer->Write2(World->GetTimeSeconds(), ActorEntitites, ComponentEntities, SkeletalEntities);
+	Writer->Write(World->GetTimeSeconds(), ActorEntitites, ComponentEntities, SkeletalEntities);
 }
 
 // Needed by the engine API

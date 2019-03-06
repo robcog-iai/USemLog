@@ -47,37 +47,7 @@ void FSLWorldStateWriterJson::Finish()
 }
 
 // Called to write the data (it also removes invalid item -> e.g. deleted ones)
-//void FSLWorldStateWriterJson::Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
-//	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
-//	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
-//	float Timestamp)
-//{
-//	// Json root object
-//	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
-//
-//	// Out Json array of entities
-//	TArray<TSharedPtr<FJsonValue>> JsonEntitiesArr;
-//	
-//	// Add entities to json array
-//	FSLWorldStateWriterJson::AddNonSkeletalActors(NonSkeletalActorPool, JsonEntitiesArr);
-//	FSLWorldStateWriterJson::AddSkeletalActors(SkeletalActorPool, JsonEntitiesArr);
-//	FSLWorldStateWriterJson::AddNonSkeletalComponents(NonSkeletalComponentPool, JsonEntitiesArr);
-//
-//	// Avoid appending empty entries
-//	if (JsonEntitiesArr.Num() > 0)
-//	{
-//		// Set timestamp
-//		JsonRootObj->SetNumberField("timestamp", Timestamp);
-//
-//		// Add actors to Json root
-//		JsonRootObj->SetArrayField("entities", JsonEntitiesArr);
-//
-//		// Write entry to file
-//		FSLWorldStateWriterJson::WriteToFile(JsonRootObj);
-//	}
-//}
-
-void FSLWorldStateWriterJson::Write2(float Timestamp,
+void FSLWorldStateWriterJson::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
@@ -365,10 +335,10 @@ void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<U
 				// Json array of bones
 				TArray<TSharedPtr<FJsonValue>> JsonBonesArr;
 
-				if (USkeletalMeshComponent* SkelComp = Itr->Obj->GetSkeletalMeshParent())
+				if (USkeletalMeshComponent* SkelComp = Itr->Obj->SkeletalMeshParent)
 				{
 					// Iterate through the bones of the skeletal mesh
-					for (const auto& Pair : Itr->Obj->BonesData)
+					for (const auto& Pair : Itr->Obj->AllBonesData)
 					{
 						const FVector CurrLoc = SkelComp->GetBoneLocation(Pair.Key);
 						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(Pair.Key);

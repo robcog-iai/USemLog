@@ -24,6 +24,22 @@ struct FSLEntity
 	// Init constructor
 	FSLEntity(UObject* InObj, const FString& InId, const FString& InClass) :
 		Obj(InObj), Id(InId), Class(InClass) {};
+	
+	// Set data
+	void Set(UObject* InObj, const FString& InId, const FString& InClass)
+	{
+		Obj = InObj;
+		Id = InId;
+		Class = InClass;
+	}
+
+	// Clear
+	void Clear()
+	{
+		Obj = nullptr;
+		Id = "";
+		Class = "";
+	}
 
 	// True if the unique id, the semantic id and the semantic class is not empty
 	bool IsValid() const { return Obj != nullptr && !Id.IsEmpty() && !Class.IsEmpty(); }

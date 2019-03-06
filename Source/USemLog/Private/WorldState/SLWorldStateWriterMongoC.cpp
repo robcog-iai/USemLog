@@ -49,7 +49,7 @@ void FSLWorldStateWriterMongoC::Finish()
 	}
 }
 
-void FSLWorldStateWriterMongoC::Write2(float Timestamp,
+void FSLWorldStateWriterMongoC::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,

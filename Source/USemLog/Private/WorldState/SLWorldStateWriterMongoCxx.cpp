@@ -85,7 +85,7 @@ void FSLWorldStateWriterMongoCxx::Finish()
 //#endif //SL_WITH_LIBMONGO_CXX
 //}
 
-void FSLWorldStateWriterMongoCxx::Write2(float Timestamp,
+void FSLWorldStateWriterMongoCxx::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,

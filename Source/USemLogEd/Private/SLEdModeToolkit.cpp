@@ -440,12 +440,24 @@ FReply FSLEdModeToolkit::GenerateVisualMasksRand()
 		{
 			if (bOverwriteVisualMaskValues)
 			{
-				for (auto& BD : ObjItr->BonesData)
+				for (auto& Pair : ObjItr->SemanticBonesData)
 				{
-					// Check if data is valid (it has a semantic class and a mask material instance)
-					if (!BD.Value.Class.IsEmpty() && BD.Value.MaskMaterial)
+					// Check if data is set (it has a semantic class)
+					if (Pair.Value.IsSet())
 					{
-						BD.Value.MaskColorHex = GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors);
+						Pair.Value.MaskColorHex = GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors);
+
+						// Add the mask to the map used at runtime as well
+						if (ObjItr->AllBonesData.Contains(Pair.Key))
+						{
+							ObjItr->AllBonesData[Pair.Key].MaskColorHex = Pair.Value.MaskColorHex;
+						}
+						else
+						{
+							// This should not happen, the two maps should be synced
+							UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot fine bone %s, maps are not synced.."), 
+								TEXT(__FUNCTION__), __LINE__, *Pair.Key.ToString());
+						}
 					}
 				}
 			}
@@ -585,18 +597,30 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 			{
 				if (bOverwriteVisualMaskValues)
 				{
-					for (auto& BD : ObjItr->BonesData)
+					for (auto& Pair : ObjItr->SemanticBonesData)
 					{
-						// Check if data is valid (it has a semantic class and a mask material instance)
-						if (!BD.Value.Class.IsEmpty() && BD.Value.MaskMaterial)
+						// Check if data is set (it has a semantic class)
+						if (Pair.Value.IsSet())
 						{
 							if (UniqueColors.Num() == 0)
-							{								
-								BD.Value.MaskColorHex = FColor::Black.ToHex();
+							{
+								Pair.Value.MaskColorHex = FColor::Black.ToHex();
 							}
 							else
 							{
-								BD.Value.MaskColorHex = UniqueColors.Pop();
+								Pair.Value.MaskColorHex = UniqueColors.Pop();
+							}
+
+							// Add the mask to the map used at runtime as well
+							if (ObjItr->AllBonesData.Contains(Pair.Key))
+							{
+								ObjItr->AllBonesData[Pair.Key].MaskColorHex = Pair.Value.MaskColorHex;
+							}
+							else
+							{
+								// This should not happen, the two maps should be synced
+								UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot find bone %s, maps are not synced.."),
+									TEXT(__FUNCTION__), __LINE__, *Pair.Key.ToString());
 							}
 						}
 					}
@@ -608,6 +632,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 			}
 		}
 	}
+
 	return FReply::Handled();
 }
 

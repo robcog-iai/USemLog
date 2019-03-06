@@ -28,12 +28,7 @@ public:
 	virtual void Finish() override;
 
 	// Write the data (it also removes invalid items from the array -- e.g. deleted ones)
-	/*virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
-		TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
-		float Timestamp) override;*/
-
-	void Write2(float Timestamp,
+	void Write(float Timestamp,
 		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
