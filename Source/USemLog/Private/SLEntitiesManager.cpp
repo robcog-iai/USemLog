@@ -128,7 +128,7 @@ void FSLEntitiesManager::SetReplicates(bool bReplicate)
 
 
 // Remove object from object
-bool FSLEntitiesManager::RemoveObject(UObject* Object)
+bool FSLEntitiesManager::RemoveEntity(UObject* Object)
 {
 	//return FSLMappings::RemoveItem(Object->GetUniqueID());
 	int32 NrOfRemovedItems = ObjectsSemanticData.Remove(Object);
@@ -160,7 +160,7 @@ bool FSLEntitiesManager::AddObject(UObject* Object)
 }
 
 // Get semantic object structure, from object
-FSLEntity FSLEntitiesManager::GetObject(UObject* Object) const
+FSLEntity FSLEntitiesManager::GetEntity(UObject* Object) const
 {
 	//return FSLMappings::GetSemanticObject(Object->GetUniqueID());
 	if (const FSLEntity* Item = ObjectsSemanticData.Find(Object))
@@ -202,12 +202,12 @@ FString FSLEntitiesManager::GetClass(UObject* Object) const
 }
 
 // Check is semantically object exists and is valid from object
-bool FSLEntitiesManager::HasValidObject(UObject* Object) const
+bool FSLEntitiesManager::IsObjectEntitySet(UObject* Object) const
 {
 	//return FSLMappings::HasValidItem(Object->GetUniqueID());
 	if (const FSLEntity* Item = ObjectsSemanticData.Find(Object))
 	{
-		return Item->IsValid();
+		return Item->IsSet();
 	}
 	else
 	{
@@ -216,12 +216,12 @@ bool FSLEntitiesManager::HasValidObject(UObject* Object) const
 }
 
 // Check if object has a valid ancestor 
-bool FSLEntitiesManager::HasValidAncestor(UObject* Object, UObject* OutAncestor) const
+bool FSLEntitiesManager::GetValidAncestor(UObject* Object, UObject* OutAncestor) const
 {
 	UObject* Child = Object;
 	while(UObject* Outer = Child->GetOuter())
 	{
-		if (FSLEntitiesManager::HasValidObject(Outer))
+		if (FSLEntitiesManager::IsObjectEntitySet(Outer))
 		{
 			OutAncestor = Outer;
 			return true;

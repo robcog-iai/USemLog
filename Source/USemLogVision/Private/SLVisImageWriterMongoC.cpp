@@ -372,16 +372,16 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 		out_views_doc = bson_new();
 	}
 
-	bson_t view_child;
-	bson_t view_child_obj;
-	bson_t view_child_obj_res;
+	bson_t view_arr;
+	bson_t view_arr_obj;
+	bson_t view_arr_obj_res;
 
-	bson_t entity_child;
-	bson_t entity_child_obj;
-	bson_t entity_child_obj_color;
+	bson_t entity_arr;
+	bson_t entity_arr_obj;
+	bson_t entity_arr_obj_color;
 
-	bson_t img_child;
-	bson_t img_child_obj;
+	bson_t img_arr;
+	bson_t img_arr_obj;
 	bson_oid_t img_file_id;
 
 	char i_str[16];
@@ -397,72 +397,72 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 	uint32_t k = 0;
 
 	// Create the views array
-	BSON_APPEND_ARRAY_BEGIN(out_views_doc, "views", &view_child);
+	BSON_APPEND_ARRAY_BEGIN(out_views_doc, "views", &view_arr);
 	for (const auto& View : ViewsData)
 	{
 		// Start view child doc (name is irrelevant since it will show up as an array index)
 		bson_uint32_to_string(i, &i_key, i_str, sizeof i_str);
-		BSON_APPEND_DOCUMENT_BEGIN(&view_child, i_key, &view_child_obj);
+		BSON_APPEND_DOCUMENT_BEGIN(&view_arr, i_key, &view_arr_obj);
 
 			// Add child doc data
-			BSON_APPEND_UTF8(&view_child_obj, "name", TCHAR_TO_UTF8(*View.ViewName));
+			BSON_APPEND_UTF8(&view_arr_obj, "name", TCHAR_TO_UTF8(*View.ViewName));
 
 			// Add img resolution sub-sub-doc
-			BSON_APPEND_DOCUMENT_BEGIN(&view_child_obj, "res", &view_child_obj_res);
-			BSON_APPEND_DOUBLE(&view_child_obj_res, "x", View.Resolution.X);
-			BSON_APPEND_DOUBLE(&view_child_obj_res, "y", View.Resolution.Y);
-			bson_append_document_end(&view_child_obj, &view_child_obj_res);
+			BSON_APPEND_DOCUMENT_BEGIN(&view_arr_obj, "res", &view_arr_obj_res);
+			BSON_APPEND_DOUBLE(&view_arr_obj_res, "x", View.Resolution.X);
+			BSON_APPEND_DOUBLE(&view_arr_obj_res, "y", View.Resolution.Y);
+			bson_append_document_end(&view_arr_obj, &view_arr_obj_res);
 
 			// Create the entities array
 			j = 0;
-			BSON_APPEND_ARRAY_BEGIN(&view_child_obj, "entities", &entity_child);
+			BSON_APPEND_ARRAY_BEGIN(&view_arr_obj, "entities", &entity_arr);
 			for (const auto& Entity : View.SemanticEntities)
 			{
 				bson_uint32_to_string(j, &j_key, j_str, sizeof j_str);
-				BSON_APPEND_DOCUMENT_BEGIN(&entity_child, i_key, &entity_child_obj);
+				BSON_APPEND_DOCUMENT_BEGIN(&entity_arr, i_key, &entity_arr_obj);
 
-					BSON_APPEND_UTF8(&entity_child_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
-					BSON_APPEND_UTF8(&entity_child_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
-					BSON_APPEND_UTF8(&entity_child_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
-					BSON_APPEND_INT32(&entity_child_obj, "num_pixels", Entity.NumPixels);
+					BSON_APPEND_UTF8(&entity_arr_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
+					BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
+					BSON_APPEND_UTF8(&entity_arr_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
+					BSON_APPEND_INT32(&entity_arr_obj, "num_pixels", Entity.NumPixels);
 
 					// Add color sub-sub-sub doc
-					BSON_APPEND_DOCUMENT_BEGIN(&entity_child_obj, "mask_color", &entity_child_obj_color);
-					BSON_APPEND_DOUBLE(&entity_child_obj_color, "r", Entity.Color.R);
-					BSON_APPEND_DOUBLE(&entity_child_obj_color, "g", Entity.Color.G);
-					BSON_APPEND_DOUBLE(&entity_child_obj_color, "b", Entity.Color.B);
-					BSON_APPEND_DOUBLE(&entity_child_obj_color, "a", Entity.Color.A);
-					bson_append_document_end(&entity_child_obj, &entity_child_obj_color);
+					BSON_APPEND_DOCUMENT_BEGIN(&entity_arr_obj, "mask_color", &entity_arr_obj_color);
+					BSON_APPEND_DOUBLE(&entity_arr_obj_color, "r", Entity.Color.R);
+					BSON_APPEND_DOUBLE(&entity_arr_obj_color, "g", Entity.Color.G);
+					BSON_APPEND_DOUBLE(&entity_arr_obj_color, "b", Entity.Color.B);
+					BSON_APPEND_DOUBLE(&entity_arr_obj_color, "a", Entity.Color.A);
+					bson_append_document_end(&entity_arr_obj, &entity_arr_obj_color);
 
-				bson_append_document_end(&entity_child, &entity_child_obj);
+				bson_append_document_end(&entity_arr, &entity_arr_obj);
 				j++;
 			}
-			bson_append_array_end(&view_child_obj, &entity_child);
+			bson_append_array_end(&view_arr_obj, &entity_arr);
 
 			// Add gridfs data sub array
 			k = 0;
-			BSON_APPEND_ARRAY_BEGIN(&view_child_obj, "images", &img_child);
+			BSON_APPEND_ARRAY_BEGIN(&view_arr_obj, "images", &img_arr);
 			for (const auto& ImgData : View.ImagesData)
 			{
 				if (USLVisImageWriterMongoC::SaveImageToGridFS(ImgData, &img_file_id))
 				{
 					bson_uint32_to_string(k, &k_key, k_str, sizeof k_str);
-					BSON_APPEND_DOCUMENT_BEGIN(&img_child, i_key, &img_child_obj);
+					BSON_APPEND_DOCUMENT_BEGIN(&img_arr, i_key, &img_arr_obj);
 
-					BSON_APPEND_UTF8(&img_child_obj, "type", TCHAR_TO_UTF8(*ImgData.RenderType));
-					BSON_APPEND_OID(&img_child_obj, "file_id", (const bson_oid_t*)&img_file_id);
+					BSON_APPEND_UTF8(&img_arr_obj, "type", TCHAR_TO_UTF8(*ImgData.RenderType));
+					BSON_APPEND_OID(&img_arr_obj, "file_id", (const bson_oid_t*)&img_file_id);
 
-					bson_append_document_end(&img_child, &img_child_obj);
+					bson_append_document_end(&img_arr, &img_arr_obj);
 					k++;
 				}
 			}
-			bson_append_array_end(&view_child_obj, &img_child);
+			bson_append_array_end(&view_arr_obj, &img_arr);
 
 		// End view child doc
-		bson_append_document_end(&view_child, &view_child_obj);
+		bson_append_document_end(&view_arr, &view_arr_obj);
 		i++;
 	}
-	bson_append_array_end(out_views_doc, &view_child);
+	bson_append_array_end(out_views_doc, &view_arr);
 }
 
 // Write image data to gridfs (return the oid of the file/entry)

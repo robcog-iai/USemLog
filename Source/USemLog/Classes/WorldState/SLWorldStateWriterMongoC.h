@@ -54,22 +54,24 @@ private:
 	bool CreateIndexes();
 
 #if SL_WITH_LIBMONGO_C
-//	// Get non skeletal actors as bson array
-//	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-//		bsoncxx::builder::basic::array& out_bson_arr);
-//
-//	// Get skeletal actors as bson array
-//	void AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-//		bsoncxx::builder::basic::array& out_bson_arr);
-//
-//	// Get non skeletal components as bson array
-//	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
-//		bsoncxx::builder::basic::array& out_bson_arr);
-//
-//	// Add the pose information of the document
-//	void AddPoseToDocument(const FVector& InLoc, const FQuat& InQuat,
-//		bsoncxx::builder::basic::document& out_doc);
-//
+	// Add non skeletal actors to array
+	void AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+		bson_t* out_doc, uint32_t& idx);
+
+	// Add non skeletal components to array
+	void AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+		bson_t* out_doc, uint32_t& idx);
+
+	// Add skeletal actors to array
+	void AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+		bson_t* out_doc, uint32_t& idx);
+
+	// Add skeletal bones to array
+	void AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc);
+
+	// Add pose to document
+	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc);
+
 private:
 	// Server uri
 	mongoc_uri_t* uri;

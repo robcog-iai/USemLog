@@ -38,21 +38,15 @@ private:
 	// Set the file handle for the logger
 	bool SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
 
-	// Get non skeletal actors as json array
-	/*void AddNonSkeletalActors(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
-		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);*/
+	// Add non skeletal actors to json array
 	void AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
-	// Get non skeletal components as json array
-	/*void AddNonSkeletalComponents(TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool, 
-		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);*/
+	// Add non skeletal components to json array
 	void AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 
-	// Get skeletal actors as json array
-	/*void AddSkeletalActors(TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);*/
+	// Add skeletal actors to json array
 	void AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
 

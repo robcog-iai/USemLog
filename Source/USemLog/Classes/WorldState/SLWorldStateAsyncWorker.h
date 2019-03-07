@@ -44,6 +44,16 @@ public:
 	// Remove all non-movable semantic items from the update pool
 	void RemoveStaticItems();
 
+	// TODO implement these for cutting
+	//// Remove entity from being logged
+	//bool RemoveEntity(UObject* Obj);
+
+	//// Add new actor entity
+	//bool AddNewActorEntity(AActor* Actor);
+
+	//// Add new scene component entity
+	//bool AddNewComponentEntity(AActor* Actor);
+
 	// Finish up worker
 	void Finish(bool bForced = false);
 

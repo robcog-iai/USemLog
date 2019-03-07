@@ -119,9 +119,9 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 void FSLGraspEventHandler::OnSLGraspBegin(UObject* Self, UObject* Other, float Time)
 {
 	// Check that the objects are semantically annotated
-	FSLEntity SelfItem = FSLEntitiesManager::GetInstance()->GetObject(Self);
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetObject(Other);
-	if (SelfItem.IsValid() && OtherItem.IsValid())
+	FSLEntity SelfItem = FSLEntitiesManager::GetInstance()->GetEntity(Self);
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
+	if (SelfItem.IsSet() && OtherItem.IsSet())
 	{
 		FSLGraspEventHandler::AddNewEvent(SelfItem, OtherItem, Time);
 	}

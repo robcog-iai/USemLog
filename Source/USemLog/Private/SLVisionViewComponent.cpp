@@ -1,4 +1,5 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisionViewComponent.h"
 
@@ -42,7 +43,7 @@ bool USLVisionViewComponent::Init()
 // Set the semantic parent, returns true if already set
 bool USLVisionViewComponent::SetSemanticOwnerAndData()
 {
-	if (OwnerSemanticData.IsValid())
+	if (OwnerSemanticData.IsSet())
 	{
 		return true; // Semantic data already set
 	}

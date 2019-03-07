@@ -74,8 +74,8 @@ void USLOverlapShape::Init()
 
 		// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
 		// Make sure owner is a valid semantic item
-		OwnerItem = FSLEntitiesManager::GetInstance()->GetObject(GetOwner());
-		if (!OwnerItem.IsValid())
+		OwnerItem = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
+		if (!OwnerItem.IsSet())
 		{
 			return;
 		}
@@ -379,12 +379,12 @@ void USLOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetObject(OtherComp);
-	if (!OtherItem.IsValid())
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherComp);
+	if (!OtherItem.IsSet())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem = FSLEntitiesManager::GetInstance()->GetObject(OtherComp->GetOuter());
-		if (!OtherItem.IsValid())
+		OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherComp->GetOuter());
+		if (!OtherItem.IsSet())
 		{
 			return;
 		}
@@ -433,12 +433,12 @@ void USLOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetObject(OtherComp);
-	if (!OtherItem.IsValid())
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherComp);
+	if (!OtherItem.IsSet())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem = FSLEntitiesManager::GetInstance()->GetObject(OtherComp->GetOuter());
-		if (!OtherItem.IsValid())
+		OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherComp->GetOuter());
+		if (!OtherItem.IsSet())
 		{
 			return;
 		}

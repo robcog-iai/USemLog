@@ -149,7 +149,7 @@ bool USLSkeletalDataComponent::SetSkeletalParent()
 // Set the semantic parent, returns true if already set
 bool USLSkeletalDataComponent::SetSemanticOwnerAndData()
 {
-	if (OwnerSemanticData.IsValid())
+	if (OwnerSemanticData.IsSet())
 	{
 		return true; // Semantic data already set
 	}

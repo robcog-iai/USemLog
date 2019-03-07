@@ -67,7 +67,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		for (TObjectIterator<USLOverlapShape> Itr; Itr; ++Itr)
 		{
 			// Skip objects that do not have a semantically annotated ancestor
-			if (!FSLEntitiesManager::GetInstance()->HasValidAncestor(*Itr))
+			if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
 			{
 				continue;
 			}
@@ -102,7 +102,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
 			{
 				// Skip objects that do not have a semantically annotated ancestor
-				if (!FSLEntitiesManager::GetInstance()->HasValidAncestor(*Itr))
+				if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
 				{
 					continue;
 				}

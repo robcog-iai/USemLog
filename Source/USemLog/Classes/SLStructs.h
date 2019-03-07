@@ -42,7 +42,7 @@ struct FSLEntity
 	}
 
 	// True if the unique id, the semantic id and the semantic class is not empty
-	bool IsValid() const { return Obj != nullptr && !Id.IsEmpty() && !Class.IsEmpty(); }
+	bool IsSet() const { return Obj != nullptr && !Id.IsEmpty() && !Class.IsEmpty(); }
 
 	// Get result as string
 	FString ToString() const
@@ -69,7 +69,7 @@ struct FSLEntityPair
 	FSLEntityPair(const FSLEntity& InEntity1, const FSLEntity& InEntity2) : Entity1(InEntity1), Entity2(InEntity2) {};
 
 	// True if the unique id, the semantic id and the semantic class is not empty
-	bool IsValid() const { return Entity1.IsValid() && Entity2.IsValid(); }
+	bool IsSet() const { return Entity1.IsSet() && Entity2.IsSet(); }
 
 	// Get result as string
 	FString ToString() const
@@ -113,6 +113,6 @@ struct TSLEntityPreviousPose
 	{};
 
 	// Check if the entity is valid and has a transform
-	bool IsValid() const { return Entity.IsValid() && (Cast<USceneComponent>(Entity.Obj) || Cast<AActor>(Entity.Obj)); }
+	bool IsSet() const { return Entity.IsSet() && (Cast<USceneComponent>(Entity.Obj) || Cast<AActor>(Entity.Obj)); }
 };
 

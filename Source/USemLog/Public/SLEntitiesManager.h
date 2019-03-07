@@ -39,13 +39,13 @@ public:
 	void SetReplicates(bool bReplicate);
 	
 	// Remove object from object
-	bool RemoveObject(UObject* Object);
+	bool RemoveEntity(UObject* Object);
 
 	// Try to add the given object as a semantic object (return false if the object is not properly annotated)
 	bool AddObject(UObject* Object);
 
 	// Get semantic object structure, from object
-	FSLEntity GetObject(UObject* Object) const;
+	FSLEntity GetEntity(UObject* Object) const;
 	
 	// Get semantic id from object
 	FString GetId(UObject* Object) const;
@@ -54,10 +54,10 @@ public:
 	FString GetClass(UObject* Object) const;
 
 	// Check is semantically object exists and is valid from object
-	bool HasValidObject(UObject* Object) const;
+	bool IsObjectEntitySet(UObject* Object) const;
 
 	// Check if object has a valid ancestor 
-	bool HasValidAncestor(UObject* Object, UObject* OutAncestor = nullptr) const;
+	bool GetValidAncestor(UObject* Object, UObject* OutAncestor = nullptr) const;
 
 	// Get the map of objects to the semantic items
 	TMap<UObject*, FSLEntity>& GetObjectsSemanticData() { return ObjectsSemanticData; }

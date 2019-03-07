@@ -227,7 +227,7 @@ void FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(TArray<TSLEntityPreviousP
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLEntitiesManager::GetInstance()->RemoveObject(Itr->Entity.Get());
+			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Entity.Get());
 		}
 	}
 }
@@ -301,7 +301,7 @@ void FSLWorldStateWriterMongoCxx::AddSkeletalActors(TArray<TSLEntityPreviousPose
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLEntitiesManager::GetInstance()->RemoveObject(Itr->Entity.Get());
+			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Entity.Get());
 		}
 	}
 }
@@ -344,7 +344,7 @@ void FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(TArray<TSLEntityPrevi
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLEntitiesManager::GetInstance()->RemoveObject(Itr->Entity.Get());
+			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Entity.Get());
 		}
 	}
 }

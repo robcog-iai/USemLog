@@ -21,6 +21,7 @@ FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC(const FSLWorldStateWriterPa
 // Destr
 FSLWorldStateWriterMongoC::~FSLWorldStateWriterMongoC()
 {
+	FSLWorldStateWriterMongoC::Finish();
 #if SL_WITH_LIBMONGO_C
 	//Release our handles and clean up libmongoc
 	mongoc_collection_destroy(collection);
@@ -55,7 +56,7 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
 	bool bCheckAndRemoveInvalidEntities)
 {
-	// Avoid writing emtpy documents
+	// Avoid writing empty documents
 	if (ActorEntities.Num() == 0 && ComponentEntities.Num() == 0 && SkeletalEntities.Num() == 0)
 	{
 		return;
@@ -63,13 +64,25 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 
 #if SL_WITH_LIBMONGO_C
 	bson_t* entities_doc;
+	bson_t entities_arr;
 	bson_error_t error;
+
+	uint32_t arr_idx = 10;
 
 	// Document to store the images data
 	entities_doc = bson_new();
 
 	// Add timestamp
 	BSON_APPEND_DOUBLE(entities_doc, "timestamp", Timestamp);
+
+	// Add entities to array
+	BSON_APPEND_ARRAY_BEGIN(entities_doc, "entities", &entities_arr);
+
+	FSLWorldStateWriterMongoC::AddActorEntities(ActorEntities, &entities_arr, arr_idx);
+	FSLWorldStateWriterMongoC::AddComponentEntities(ComponentEntities, &entities_arr, arr_idx);
+	FSLWorldStateWriterMongoC::AddSkeletalEntities(SkeletalEntities, &entities_arr, arr_idx);
+
+	bson_append_array_end(entities_doc, &entities_arr);
 
 
 	if (!mongoc_collection_insert_one(collection, entities_doc, NULL, NULL, &error))
@@ -187,3 +200,199 @@ bool FSLWorldStateWriterMongoC::CreateIndexes()
 #endif //SL_WITH_LIBMONGO_C
 }
 
+#if SL_WITH_LIBMONGO_C
+// Add non skeletal actors to array
+void FSLWorldStateWriterMongoC::AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+	bson_t* out_doc, uint32_t& idx)
+{
+	bson_t arr_obj;
+	char idx_str[16];
+	const char *idx_key;
+
+	// Iterate items
+	for (auto Itr(ActorEntities.CreateIterator()); Itr; ++Itr)
+	{
+		// Check if pointer is valid
+		if (Itr->Obj.IsValid(/*false, true*/))
+		{
+			// Check if the entity moved more than the threshold since the last logging
+			const FVector CurrLoc = Itr->Obj->GetActorLocation();
+			const FQuat CurrQuat = Itr->Obj->GetActorQuat();
+
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+				CurrQuat.AngularDistance(Itr->PrevQuat))
+			{
+				// Update prev state
+				Itr->PrevLoc = CurrLoc;
+				Itr->PrevQuat = CurrQuat;
+
+				bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+				BSON_APPEND_DOCUMENT_BEGIN(out_doc, idx_key, &arr_obj);
+
+				BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Itr->Entity.Id));
+				AddPoseChild(CurrLoc, CurrQuat, &arr_obj);
+
+				bson_append_document_end(out_doc, &arr_obj);
+				idx++;
+			}
+		}
+		else
+		{
+			Itr.RemoveCurrent();
+			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Obj.Get());
+		}
+	}
+}
+
+// Add non skeletal components to array
+void FSLWorldStateWriterMongoC::AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+	bson_t* out_doc, uint32_t& idx)
+{
+	bson_t arr_obj;
+	char idx_str[16];
+	const char *idx_key;
+
+	// Iterate items
+	for (auto Itr(ComponentEntities.CreateIterator()); Itr; ++Itr)
+	{
+		// Check if pointer is valid
+		if (Itr->Obj.IsValid(/*false, true*/))
+		{
+			// Check if the entity moved more than the threshold since the last logging
+			const FVector CurrLoc = Itr->Obj->GetComponentLocation();
+			const FQuat CurrQuat = Itr->Obj->GetComponentQuat();
+
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+				CurrQuat.AngularDistance(Itr->PrevQuat))
+			{
+				// Update prev state
+				Itr->PrevLoc = CurrLoc;
+				Itr->PrevQuat = CurrQuat;
+
+				bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+				BSON_APPEND_DOCUMENT_BEGIN(out_doc, idx_key, &arr_obj);
+
+				BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Itr->Entity.Id));
+				AddPoseChild(CurrLoc, CurrQuat, &arr_obj);
+
+				uint32_t arr_jdx = 10;
+
+
+				bson_append_document_end(out_doc, &arr_obj);
+				idx++;
+			}
+		}
+		else
+		{
+			Itr.RemoveCurrent();
+			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Obj.Get());
+		}
+	}
+}
+
+// Add skeletal actors to array
+void FSLWorldStateWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+	bson_t* out_doc, uint32_t& idx)
+{
+	bson_t arr_obj;
+	char idx_str[16];
+	const char *idx_key;
+
+	// Iterate items
+	for (auto Itr(SkeletalEntities.CreateIterator()); Itr; ++Itr)
+	{
+		// Check if the entity moved more than the threshold since the last logging
+		const FVector CurrLoc = Itr->Obj->GetComponentLocation();
+		const FQuat CurrQuat = Itr->Obj->GetComponentQuat();
+
+		// Check if pointer is valid
+		if (Itr->Obj.IsValid(/*false, true*/))
+		{
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+				CurrQuat.AngularDistance(Itr->PrevQuat))
+			{
+				// Update prev state
+				Itr->PrevLoc = CurrLoc;
+				Itr->PrevQuat = CurrQuat;
+
+				bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+				BSON_APPEND_DOCUMENT_BEGIN(out_doc, idx_key, &arr_obj);
+
+				BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Itr->Entity.Id));
+				AddPoseChild(CurrLoc, CurrQuat, &arr_obj);
+
+				// Add bones
+				if (Itr->Obj->SkeletalMeshParent)
+				{
+					AddSkeletalBones(Itr->Obj->SkeletalMeshParent, &arr_obj);
+				}
+
+				bson_append_document_end(out_doc, &arr_obj);
+				idx++;
+			}
+		}
+		else
+		{
+			Itr.RemoveCurrent();
+			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Obj.Get());
+		}
+	}
+}
+
+// Add skeletal bones to array
+void FSLWorldStateWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc)
+{
+	bson_t bones_arr;
+	bson_t arr_obj;
+	char idx_str[16];
+	const char *idx_key;
+	uint32_t arr_idx = 1290;
+
+	// Add entities to array
+	BSON_APPEND_ARRAY_BEGIN(out_doc, "bones", &bones_arr);
+
+	TArray<FName> BoneNames;
+	SkelComp->GetBoneNames(BoneNames);
+	for (const auto& BoneName : BoneNames)
+	{
+		const FVector CurrLoc = SkelComp->GetBoneLocation(BoneName);
+		const FQuat CurrQuat = SkelComp->GetBoneQuaternion(BoneName);
+
+		bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, idx_key, &arr_obj);
+
+		BSON_APPEND_UTF8(&arr_obj, "name", TCHAR_TO_UTF8(*BoneName.ToString()));
+		AddPoseChild(CurrLoc, CurrQuat, &arr_obj);
+
+		bson_append_document_end(&bones_arr, &arr_obj);
+		arr_idx++;
+	}
+
+	bson_append_array_end(out_doc, &bones_arr);
+}
+
+// Add pose to document
+void FSLWorldStateWriterMongoC::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc)
+{
+	// Switch to right handed ROS transformation
+	const FVector ROSLoc = FConversions::UToROS(InLoc);
+	const FQuat ROSQuat = FConversions::UToROS(InQuat);
+
+	bson_t child_obj_loc;
+	bson_t child_obj_rot;
+	
+	BSON_APPEND_DOCUMENT_BEGIN(out_doc, "loc", &child_obj_loc);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "x", ROSLoc.X);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "y", ROSLoc.Y);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "z", ROSLoc.Z);
+	bson_append_document_end(out_doc, &child_obj_loc);
+
+	BSON_APPEND_DOCUMENT_BEGIN(out_doc, "rot", &child_obj_rot);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "x", ROSQuat.X);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "y", ROSQuat.Y);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "z", ROSQuat.Z);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "w", ROSQuat.W);
+	bson_append_document_end(out_doc, &child_obj_rot);
+}
+
+#endif //SL_WITH_LIBMONGO_C
