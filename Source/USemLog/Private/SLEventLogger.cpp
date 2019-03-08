@@ -22,8 +22,13 @@
 
 
 // Constructor
-USLEventLogger::USLEventLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
+USLEventLogger::USLEventLogger()
 {
+	bIsInit = false;
+	bIsStarted = false;
+	bIsFinished = false;
+	bWriteMetadata = false;
+	bWriteTimelines = false;
 }
 
 // Destructor
@@ -37,25 +42,26 @@ USLEventLogger::~USLEventLogger()
 
 // Init Logger
 void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
-	const FString& InLocation,
-	const FString& InEpisodeId,
+	const FSLEventWriterParams& WriterParams,
 	bool bInLogContactEvents,
 	bool bInLogSupportedByEvents,
 	bool bInLogGraspEvents,
-	bool bInWriteTimelines)
+	bool bInWriteTimelines,
+	bool bInWriteMetadata)
 {
 	if (!bIsInit)
 	{
-		LogDirectory = InLocation;
-		EpisodeId = InEpisodeId;
+		LogDirectory = WriterParams.Location;
+		EpisodeId = WriterParams.EpisodeId;
 		OwlDocTemplate = TemplateType;
 		bWriteTimelines = bInWriteTimelines;
+		bWriteMetadata = bInWriteMetadata;
 
 		// Init the semantic mappings (if not already init)
 		FSLEntitiesManager::GetInstance()->Init(GetWorld());
 
 		// Create the document template
-		ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
+		ExperimentDoc = CreateEventsDocTemplate(TemplateType, EpisodeId);
 
 		// TODO create one handler for each event type
 		// bind all the objects to one handler
@@ -115,6 +121,11 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 #endif // SL_WITH_MC_GRASP
 		}
 
+		if (bWriteMetadata)
+		{
+			MetadataWriter.Init(WriterParams);
+		}
+
 		// Mark as initialized
 		bIsInit = true;
 	}
@@ -140,6 +151,11 @@ void USLEventLogger::Start()
 		for (auto& SLOverlapShape : SemanticOverlapAreas)
 		{
 			SLOverlapShape->Start();
+		}
+
+		if (bWriteMetadata)
+		{
+			MetadataWriter.Start();
 		}
 
 		// Mark as started
@@ -190,8 +206,18 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		// Add experiment individual to doc
 		ExperimentDoc->AddExperimentIndividual();
 
+
 		// Write events to file
 		USLEventLogger::WriteToFile();
+
+		if (bWriteMetadata)
+		{
+			MetadataWriter.Finish();
+		}
+
+		bIsStarted = false;
+		bIsInit = false;
+		bIsFinished = true;
 	}
 }
 

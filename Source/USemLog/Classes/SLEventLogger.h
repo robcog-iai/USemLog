@@ -7,17 +7,11 @@
 #include "UObject/NoExportTypes.h"
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
+#include "SLMetadataWriter.h"
 #include "SLEventLogger.generated.h"
 
 // Forward declaration
 class ISLEvent;
-
-/**
-* Event logger parameters
-*/
-struct FSLEventLoggerParams
-{
-};
 
 /**
  * Event (symbolic) data logger
@@ -36,12 +30,12 @@ public:
 
 	// Init Logger
 	void Init(ESLOwlExperimentTemplate TemplateType,
-		const FString& InLocation,
-		const FString& InEpisodeId,
+		const FSLEventWriterParams& WriterParams,
 		bool bInLogContactEvents,
 		bool bInLogSupportedByEvents,
 		bool bInLogGraspEvents,
-		bool bInWriteTimelines);
+		bool bInWriteTimelines,
+		bool bInWriteMetadata);
 
 	// Start logger
 	void Start();
@@ -81,6 +75,12 @@ private:
 
 	// Save events to timelines
 	bool bWriteTimelines;
+
+	// Write metadata (world and events)
+	bool bWriteMetadata;
+
+	// Metadata writer
+	FSLMetadataWriter MetadataWriter;
 
 	// Array of finished events
 	TArray<TSharedPtr<ISLEvent>> FinishedEvents;

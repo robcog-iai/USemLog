@@ -67,23 +67,23 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d !!! WRITE !!! New entry"), TEXT(__FUNCTION__), __LINE__);
 
 		// Document to store the images data
-		bson_t* views_doc = bson_new();
+		bson_t* doc = bson_new();
 
 		// Add timestamp
-		BSON_APPEND_DOUBLE(views_doc, "timestamp", StampedData.Timestamp);
+		BSON_APPEND_DOUBLE(doc, "timestamp", StampedData.Timestamp);
 
 		// Add the views 
-		USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, views_doc);
+		USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, doc);
 
 		// Insert imgs data
-		if (!mongoc_collection_insert_one(collection, views_doc, NULL, NULL, &error))
+		if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error))
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
 				TEXT(__FUNCTION__), __LINE__, *FString(error.message));
-			bson_destroy(views_doc);
+			bson_destroy(doc);
 		}
 		// Clean up allocated bson documents.
-		bson_destroy(views_doc);
+		bson_destroy(doc);
 	}
 	else // Update existing entry
 	{
@@ -108,19 +108,19 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 			// this avoids adding unnecessary img data to the database if the update (second) query fails
 			if (mongoc_collection_find_with_opts(collection, double_check_query, NULL, NULL))
 			{
-				bson_t* views_doc = bson_new();
+				bson_t* doc = bson_new();
 				bson_t* update_doc = NULL;
 				bson_t *update_query = NULL;
 
 				// Add timestamp
-				BSON_APPEND_DOUBLE(views_doc, "timestamp2", StampedData.Timestamp);
+				BSON_APPEND_DOUBLE(doc, "timestamp2", StampedData.Timestamp);
 				//BSON_APPEND_OID(imgs_doc, "oid2", ws_oid2); // TODO test storing the oid and not a string
 
 				// Save images data to gridfs, and create a bson entry
-				USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, views_doc);
+				USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, doc);
 
 				// Add the images data to the update document
-				update_doc = BCON_NEW("$set", BCON_DOCUMENT(views_doc));
+				update_doc = BCON_NEW("$set", BCON_DOCUMENT(doc));
 
 				// Add the images data to the given oid
 				update_query = BCON_NEW("_id", BCON_OID(&ws_oid));
@@ -130,7 +130,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 						TEXT(__FUNCTION__), __LINE__, *FString(error.message));
 				}
 				// Clean up
-				bson_destroy(views_doc);
+				bson_destroy(doc);
 				bson_destroy(update_doc);
 				bson_destroy(update_query);
 			}

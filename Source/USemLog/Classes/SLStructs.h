@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+
 /**
 * Structure holding the semantic data of an entity
 */

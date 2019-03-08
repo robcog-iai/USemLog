@@ -63,37 +63,37 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 	}
 
 #if SL_WITH_LIBMONGO_C
-	bson_t* entities_doc;
+	bson_t* doc;
 	bson_t entities_arr;
 	bson_error_t error;
 
-	uint32_t arr_idx = 10;
+	uint32_t arr_idx = 0;
 
 	// Document to store the images data
-	entities_doc = bson_new();
+	doc = bson_new();
 
 	// Add timestamp
-	BSON_APPEND_DOUBLE(entities_doc, "timestamp", Timestamp);
+	BSON_APPEND_DOUBLE(doc, "timestamp", Timestamp);
 
 	// Add entities to array
-	BSON_APPEND_ARRAY_BEGIN(entities_doc, "entities", &entities_arr);
+	BSON_APPEND_ARRAY_BEGIN(doc, "entities", &entities_arr);
 
 	FSLWorldStateWriterMongoC::AddActorEntities(ActorEntities, &entities_arr, arr_idx);
 	FSLWorldStateWriterMongoC::AddComponentEntities(ComponentEntities, &entities_arr, arr_idx);
 	FSLWorldStateWriterMongoC::AddSkeletalEntities(SkeletalEntities, &entities_arr, arr_idx);
 
-	bson_append_array_end(entities_doc, &entities_arr);
+	bson_append_array_end(doc, &entities_arr);
 
 
-	if (!mongoc_collection_insert_one(collection, entities_doc, NULL, NULL, &error))
+	if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
 			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
-		bson_destroy(entities_doc);
+		bson_destroy(doc);
 	}
 
 	// Clean up
-	bson_destroy(entities_doc);
+	bson_destroy(doc);
 
 #endif //SL_WITH_LIBMONGO_C
 }
@@ -346,7 +346,7 @@ void FSLWorldStateWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelCom
 	bson_t arr_obj;
 	char idx_str[16];
 	const char *idx_key;
-	uint32_t arr_idx = 1290;
+	uint32_t arr_idx = 0;
 
 	// Add entities to array
 	BSON_APPEND_ARRAY_BEGIN(out_doc, "bones", &bones_arr);

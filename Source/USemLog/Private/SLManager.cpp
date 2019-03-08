@@ -48,6 +48,7 @@ ASLManager::ASLManager()
 	bLogSupportedByEvents = true;
 	bLogGraspEvents = true;
 	bWriteTimelines = true;
+	bWriteMetadata = true;
 	ExperimentTemplateType = ESLOwlExperimentTemplate::Default;
 
 	// Vision data logger default values
@@ -161,8 +162,8 @@ void ASLManager::Init()
 		{
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
-			EventDataLogger->Init(ExperimentTemplateType, Location, EpisodeId,
-				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
+			EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId, ServerIp, ServerPort),
+				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines, bWriteMetadata);
 		}
 
 		if (bLogVisionData)

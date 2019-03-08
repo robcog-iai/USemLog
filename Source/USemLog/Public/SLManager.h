@@ -4,6 +4,7 @@
 
 #include "USemLog.h"
 #include "GameFramework/Info.h"
+#include "SLStructs.h"
 #include "SLWorldStateLogger.h"
 #include "SLEventLogger.h"
 #include "SLVisionLogger.h"
@@ -80,7 +81,6 @@ private:
 
 	// Set when manager is finished
 	bool bIsFinished;
-
 
 	/* Semantic logger */
 	// Enable custom location
@@ -195,6 +195,10 @@ private:
 	// Write event data as timelines
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	bool bWriteTimelines;
+
+	// Write event data as a metadata entry
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	bool bWriteMetadata;
 
 	// Owl experiment template
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
