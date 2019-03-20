@@ -6,6 +6,122 @@
 #include "CoreMinimal.h"
 
 /**
+* Render types
+*/
+UENUM()
+enum class ESLVisRenderType : uint8
+{
+	Color					UMETA(DisplayName = "Color"),
+	Depth					UMETA(DisplayName = "Depth"),
+	Mask					UMETA(DisplayName = "Mask"),
+	Normal					UMETA(DisplayName = "Normal"),
+	Specular				UMETA(DisplayName = "Specular"),
+};
+
+// Static helper functions
+struct FSLVisHelper
+{
+	// Get view type suffix
+	FORCEINLINE static FString GetRenderTypeSuffix(ESLVisRenderType RenderType);
+
+	// Get render type as command string
+	FORCEINLINE static FString GetRenderTypeAsCommandString(ESLVisRenderType RenderType);
+
+	// Get render type as string
+	FORCEINLINE static FString GetRenderTypeAsString(ESLVisRenderType RenderType);
+
+	// Get image filename
+	FORCEINLINE static FString CreateImageFilename(float Timestamp, const FString& ViewName, ESLVisRenderType RenderType);
+};
+
+// Get view type suffix
+FString FSLVisHelper::GetRenderTypeSuffix(ESLVisRenderType RenderType)
+{
+	if (RenderType == ESLVisRenderType::Color)
+	{
+		return FString("C"); // Color
+	}
+	else if (RenderType == ESLVisRenderType::Depth)
+	{
+		return FString("D"); // Depth
+	}
+	else if (RenderType == ESLVisRenderType::Normal)
+	{
+		return FString("N"); // Normal
+	}
+	else if (RenderType == ESLVisRenderType::Mask)
+	{
+		return FString("M"); // Mask
+	}
+	else
+	{
+		// Unsupported buffer type
+		return FString("Unknown");
+	}
+}
+
+// Get render type as command string
+FString FSLVisHelper::GetRenderTypeAsCommandString(ESLVisRenderType RenderType)
+{
+	if (RenderType == ESLVisRenderType::Color)
+	{
+		return FString(""); // Color
+	}
+	else if (RenderType == ESLVisRenderType::Depth)
+	{
+		return FString("SLSceneDepthWorldUnits"); // SceneDepthWorldUnits // SceneDepth
+	}
+	else if (RenderType == ESLVisRenderType::Normal)
+	{
+		return FString("WorldNormal"); // Normal
+	}
+	else if (RenderType == ESLVisRenderType::Mask)
+	{
+		return FString("SLMask"); // Mask
+	}
+	else
+	{
+		// Unsupported buffer type
+		return FString("Unknown");
+	}
+}
+
+// Get render type as string
+FString FSLVisHelper::GetRenderTypeAsString(ESLVisRenderType RenderType)
+{
+	if (RenderType == ESLVisRenderType::Color)
+	{
+		return FString("Color"); 
+	}
+	else if (RenderType == ESLVisRenderType::Depth)
+	{
+		return FString("Depth"); 
+	}
+	else if (RenderType == ESLVisRenderType::Normal)
+	{
+		return FString("Normal");
+	}
+	else if (RenderType == ESLVisRenderType::Mask)
+	{
+		return FString("Mask");
+	}
+	else
+	{
+		// Unsupported buffer type
+		return FString("Unknown");
+	}
+}
+
+// Get image filename
+FString FSLVisHelper::CreateImageFilename(float Timestamp, const FString& ViewName, ESLVisRenderType RenderType)
+{
+	return FString::Printf(TEXT("SLVis_%s_%s_%s.png"),
+		*ViewName,
+		*FString::SanitizeFloat(Timestamp).Replace(TEXT("."), TEXT("-")),
+		*FSLVisHelper::GetRenderTypeSuffix(RenderType));
+}
+
+/**
 * Keeps track of the vision logging processes duration
 */
 struct FSLVisDurationsLogger

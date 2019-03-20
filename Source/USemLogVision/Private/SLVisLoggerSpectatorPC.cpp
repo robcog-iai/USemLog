@@ -8,7 +8,7 @@
 #include "ImageUtils.h"
 #include "Async.h"
 #include "HighResScreenshot.h"
-#include "SLVisCameraView.h"
+#include "SLVisViewActor.h"
 #include "SLVisMaskHandler.h"
 #include "SLVisImageWriterMongoCxx.h"
 #include "SLVisImageWriterMongoC.h"
@@ -34,15 +34,10 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	bIsFinished = false;
 
 	// Add buffer types to visualize
-	RenderTypes.Add("Color");
-	RenderTypes.Add("SLSceneDepthWorldUnits");
-	RenderTypes.Add("SLMask");
-	//RenderTypes.Add("SceneDepth");
-	//RenderTypes.Add("WorldNormal");
-	//RenderTypes.Add("SLSceneDepth");
-	ERenderTypes.Add(ESLVisRenderType::Color);
-	ERenderTypes.Add(ESLVisRenderType::Depth);
-	ERenderTypes.Add(ESLVisRenderType::Mask);
+	RenderTypes.Add(ESLVisRenderType::Color);
+	RenderTypes.Add(ESLVisRenderType::Depth);
+	RenderTypes.Add(ESLVisRenderType::Mask);
+	RenderTypes.Add(ESLVisRenderType::Normal);
 
 	// Image size 
 	// 8k (7680, 4320) / 4k (3840, 2160) / 2k (2048, 1080) / fhd (1920, 1080) / hd (1280, 720) / sd (720, 480)
@@ -90,25 +85,15 @@ void ASLVisLoggerSpectatorPC::Init()
 		// Make sure the time offset is not larger than the replay update rate
 		FMath::Clamp(SkipNewEntryTolerance, 0.f, ScrubRate);
 
-		if (RenderTypes.Contains("SLMask"))
+		if (RenderTypes.Contains(ESLVisRenderType::Mask))
 		{
 			MaskHandler = NewObject<USLVisMaskHandler>(this);
 			MaskHandler->Init();
 			if (!MaskHandler->IsInit())
 			{
-				RenderTypes.Remove("SLMask");
+				RenderTypes.Remove(ESLVisRenderType::Mask);
 			}
 		}
-
-		//if (ERenderTypes.Contains(ESLVisRenderType::Mask))
-		//{
-		//	MaskHandler = NewObject<USLVisMaskHandler>(this);
-		//	MaskHandler->Init();
-		//	if (!MaskHandler->IsInit())
-		//	{
-		//		ERenderTypes.Remove(ESLVisRenderType::Mask);
-		//	}
-		//}
 
 		// Continue only if driver and viewport is available
 		NetDriver = GetWorld()->DemoNetDriver;
@@ -142,17 +127,14 @@ void ASLVisLoggerSpectatorPC::Init()
 			// Flag as initialized
 			if (Writer && Writer->IsInit())
 			{
-				// Get camera views from the world
-				for (TActorIterator<ASLVisCameraView>Itr(GetWorld()); Itr; ++Itr)
-				{
-					CameraViews.Add(*Itr);
-				}
+				// Add existing camera views to the array
+				SetCameraViews();
+
 				// Init the progress logger (num images saved etc.)
 				ProgressLogger.Init(NetDriver->DemoTotalTime, ScrubRate, CameraViews.Num(), RenderTypes.Num());
 
 				// Check which timestamp should be rendered first
-				while (DemoTimestamp < NetDriver->DemoTotalTime &&
-					ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(DemoTimestamp))
+				while (DemoTimestamp < NetDriver->DemoTotalTime && ShouldSkipThisFrame(DemoTimestamp))
 				{
 					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
 					ProgressLogger.NumProcessedImgs += CameraViews.Num() * RenderTypes.Num();
@@ -160,7 +142,7 @@ void ASLVisLoggerSpectatorPC::Init()
 				}
 
 				// Set rendering parameters
-				ASLVisLoggerSpectatorPC::SetupRenderingParameters();
+				SetRenderingParameters();
 
 				// Bind callback functions
 				NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::ScrubCB);
@@ -220,8 +202,21 @@ void ASLVisLoggerSpectatorPC::Finish()
 	}
 }
 
+// Cache existing camera views
+void ASLVisLoggerSpectatorPC::SetCameraViews()
+{
+	// Get camera views from the world
+	for (TActorIterator<ASLVisViewActor>Itr(GetWorld()); Itr; ++Itr)
+	{
+		if (Itr->Init())
+		{
+			CameraViews.Add(*Itr);
+		}
+	}
+}
+
 // Set rendered image quality
-void ASLVisLoggerSpectatorPC::SetupRenderingParameters()
+void ASLVisLoggerSpectatorPC::SetRenderingParameters()
 {	
 	// Set screenshot image and viewport resolution size
 	GetHighResScreenshotConfig().SetResolution(Resolution.X, Resolution.Y, 1.0f);
@@ -285,8 +280,8 @@ void ASLVisLoggerSpectatorPC::RequestScreenshot()
 	// Request screenshot on game thread
 	AsyncTask(ENamedThreads::GameThread, [this]()
 	{
-		GetHighResScreenshotConfig().FilenameOverride = ISLVisImageWriterInterface::CreateImageFilename(DemoTimestamp,
-			CameraViews[CurrentViewIndex]->GetViewName(), RenderTypes[CurrRenderIndex]);
+		GetHighResScreenshotConfig().FilenameOverride = FSLVisHelper::CreateImageFilename(DemoTimestamp,
+			CameraViews[CurrentViewIndex]->Class, RenderTypes[CurrRenderIndex]);
 		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
 		//GetHighResScreenshotConfig().SetHDRCapture(true);
 		ViewportClient->Viewport->TakeHighResScreenShot();
@@ -320,7 +315,7 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	// Make sure the current view data is init
 	if (!CurrentViewData.IsInit())
 	{
-		CurrentViewData.Init(CameraViews[CurrentViewIndex]->GetViewName(), Resolution);
+		CurrentViewData.Init(CameraViews[CurrentViewIndex]->Id, CameraViews[CurrentViewIndex]->Class, Resolution);
 	}
 
 	// Remove const-ness from image
@@ -330,7 +325,7 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	if (MaskHandler && MaskHandler->AreMasksOn())
 	{
 		// Process the semantic mask image, fix pixel color deviations in image, return entities data
-		MaskHandler->ProcessMaskImage(BitmapRef, CurrentViewData.SemanticEntities);
+		MaskHandler->ProcessMaskImage(BitmapRef, CurrentViewData.SemanticEntities, CurrentViewData.SemanticSkelEntities);
 	}
 
 	// Compress image
@@ -341,24 +336,24 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	CurrentViewData.ImagesData.Emplace(FSLVisImageData(RenderTypes[CurrRenderIndex], CompressedBitmap));
 
 	// Check if multiple view types are required
-	if (ASLVisLoggerSpectatorPC::GotoNextRenderType())
+	if (GotoNextRenderType())
 	{
-		ASLVisLoggerSpectatorPC::RequestScreenshot();
+		RequestScreenshot();
 	}
 	else
 	{
 		// Go back to the first view type
-		if (ASLVisLoggerSpectatorPC::GotoInitialRenderType())
+		if (GotoInitialRenderType())
 		{
 			// Check if more views are available
-			if (ASLVisLoggerSpectatorPC::GotoNextViewTarget())
+			if (GotoNextViewTarget())
 			{
 				// Add and reset previous view data
 				CurrentTsData.ViewsData.Emplace(CurrentViewData);
 				CurrentViewData.Reset();
 
 				// Request a new screenshot
-				ASLVisLoggerSpectatorPC::RequestScreenshot();
+				RequestScreenshot();
 			}
 			else
 			{
@@ -377,13 +372,13 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 					ProgressLogger.NumProcessedImgs += CameraViews.Num() * RenderTypes.Num();
 					DemoTimestamp += ScrubRate;
 				} while (DemoTimestamp < NetDriver->DemoTotalTime &&
-					ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(DemoTimestamp));
+					ShouldSkipThisFrame(DemoTimestamp));
 
 				// Go back to first view
-				if (ASLVisLoggerSpectatorPC::GotoInitialViewTarget())
+				if (GotoInitialViewTarget())
 				{
 					// Unpause demo in order to scrub
-					ASLVisLoggerSpectatorPC::DemoUnPause();
+					DemoUnPause();
 					NetDriver->GotoTimeInSeconds(DemoTimestamp);
 					DurationsLogger.SetScrubRequestTime();
 				}
@@ -455,7 +450,7 @@ bool ASLVisLoggerSpectatorPC::GotoInitialRenderType()
 	CurrRenderIndex = 0;
 	if (RenderTypes.IsValidIndex(CurrRenderIndex))
 	{
-		return ASLVisLoggerSpectatorPC::ApplyRenderType(RenderTypes[CurrRenderIndex]);
+		return ApplyRenderType(RenderTypes[CurrRenderIndex]);
 	}
 	else
 	{
@@ -470,7 +465,7 @@ bool ASLVisLoggerSpectatorPC::GotoNextRenderType()
 	CurrRenderIndex++;
 	if (RenderTypes.IsValidIndex(CurrRenderIndex))
 	{
-		return ASLVisLoggerSpectatorPC::ApplyRenderType(RenderTypes[CurrRenderIndex]);
+		return ApplyRenderType(RenderTypes[CurrRenderIndex]);
 	}
 	else
 	{
@@ -479,7 +474,7 @@ bool ASLVisLoggerSpectatorPC::GotoNextRenderType()
 }
 
 // Render the given view type
-bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
+bool ASLVisLoggerSpectatorPC::ApplyRenderType(ESLVisRenderType RenderType)
 {
 	// Get the console variable for switching buffer views
 	static IConsoleVariable* BufferVisTargetCV = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));	
@@ -487,7 +482,7 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 	// Choose rendering type
 	if (BufferVisTargetCV && ViewportClient->GetEngineShowFlags())
 	{
-		if (RenderType.Equals("Color"))
+		if (RenderType == ESLVisRenderType::Color)
 		{
 			if (MaskHandler && MaskHandler->AreMasksOn())
 			{
@@ -502,7 +497,7 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 			// Visualize original scene
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 		}
-		else if (RenderType.Equals("SLMask"))
+		else if (RenderType == ESLVisRenderType::Mask)
 		{
 			if (MaskHandler && MaskHandler->IsInit())
 			{
@@ -536,7 +531,7 @@ bool ASLVisLoggerSpectatorPC::ApplyRenderType(const FString& RenderType)
 			}
 			// Select buffer to visualize
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*RenderType);
+			BufferVisTargetCV->Set(*FSLVisHelper::GetRenderTypeAsCommandString(RenderType));
 		}
 		return true;
 	}
@@ -607,8 +602,8 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d In game thread, continuing.. "), TEXT(__FUNCTION__), __LINE__);
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d RenderType=%s; TargetLabel:%s;\n World TimeSeconds=%f; DeltaTimeSeconds=%f;"),
-			TEXT(__FUNCTION__), __LINE__, *RenderTypes[CurrRenderIndex],
-			*CameraViews[CurrentViewIndex]->GetViewName(),
+			TEXT(__FUNCTION__), __LINE__, *FSLVisHelper::GetRenderTypeAsString(RenderTypes[CurrRenderIndex]),
+			*CameraViews[CurrentViewIndex]->Class,
 			GetWorld()->TimeSeconds, GetWorld()->DeltaTimeSeconds);
 	
 		for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)

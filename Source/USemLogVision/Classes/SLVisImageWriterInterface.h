@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "SLVisHelpers.h" // ESLVisRenderType
 #include "SLVisImageWriterInterface.generated.h"
 
 
@@ -67,11 +68,11 @@ struct FSLVisImageData
 	FSLVisImageData() {};
 
 	// Init ctor
-	FSLVisImageData(const FString& InRenderType, const TArray<uint8>& InBinaryData) : RenderType(InRenderType), BinaryData(InBinaryData) {};
+	FSLVisImageData(ESLVisRenderType InRenderType, const TArray<uint8>& InBinaryData) : RenderType(InRenderType), BinaryData(InBinaryData) {};
 
 	// TODO use FSLVisImageMetaData when more data is available
 	// Render type
-	FString RenderType;
+	ESLVisRenderType RenderType;
 
 	// Binary data
 	TArray<uint8> BinaryData;
@@ -101,13 +102,78 @@ struct FSLVisEntitiyData
 	// Number of pixels belonging to the entity from the image
 	int32 NumPixels;
 
-	// Indexes where the color is located in the array
-	//TArray<int32> Indexes;
-
 	FString ToString() const
 	{
 		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d;"),
 			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels);
+	}
+};
+
+/**
+* Semantic skeletal entities data from the view
+*/
+struct FSLVisBoneData
+{
+	// Default ctor
+	FSLVisBoneData() : NumPixels(0) {};
+
+	// TODO OwnerId and OwnerClass is redundant since skel data also contains this
+	// it is convenient however for fast TMap lookups when processing the mask image pixels
+	// Owner Id
+	FString OwnerId;
+
+	// Owner Class
+	FString OwnerClass;
+
+	// Color
+	FColor Color;
+
+	// Color in hex
+	FString ColorHex;
+
+	// Class of the bone
+	FString Class;
+
+	// Number of pixels belonging to the entity from the image
+	int32 NumPixels;
+
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Class=%s; NumPixels=%d;"),
+			*Color.ToString(), *ColorHex, *Class, NumPixels);
+	}
+
+	// Check if two bones data is equal (comparing the colors should be the fastest, since the color should be unique)
+	bool operator==(const FSLVisBoneData& Other) const
+	{
+		return Color == Other.Color;
+	}
+};
+
+/**
+* Semantic skeletal entities data from the view
+*/
+struct FSLVisSkelData
+{
+	// Default ctor
+	FSLVisSkelData() {};
+
+	// Init ctor
+	FSLVisSkelData(const FString& InId, const FString& InClass) : Id(InId), Class(InClass) {};
+
+	// Unique id of the entity
+	FString Id;
+
+	// Class of the entity
+	FString Class;
+
+	// Bones data
+	TArray<FSLVisBoneData> BonesData;
+
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Id=%s; Class=%s; NumBonedData=%d; Class=%s; NumPixels=%d;"),
+			*Id, *Class, BonesData.Num());
 	}
 };
 
@@ -120,14 +186,20 @@ struct FSLVisViewData
 	// Default ctor
 	FSLVisViewData() {};
 
+	// Id of the current view
+	FString Id;
+
 	// Name of the current view
-	FString ViewName;
+	FString Class;
 
 	// Image resolution
 	FIntPoint Resolution;
 
 	// Data about the entities visible in the view
 	TArray<FSLVisEntitiyData> SemanticEntities;
+
+	// Data about the skeletal entities visible in the view
+	TArray<FSLVisSkelData> SemanticSkelEntities;
 
 	// Image data of the given render type
 	TArray<FSLVisImageData> ImagesData;
@@ -136,9 +208,10 @@ struct FSLVisViewData
 	bool IsInit() const { return bIsInit; };
 
 	// Init view data
-	void Init(const FString& InViewName, const FIntPoint& InResolution)
+	void Init(const FString& InId, const FString& InClass, const FIntPoint& InResolution)
 	{
-		ViewName = InViewName;
+		Id = InId;
+		Class = InClass;
 		Resolution = InResolution;
 		bIsInit = true;
 	}
@@ -146,7 +219,8 @@ struct FSLVisViewData
 	// Clear all data
 	void Reset()
 	{
-		ViewName = FString();
+		Id = FString();
+		Class = FString();
 		Resolution = FIntPoint(ForceInitToZero);
 		SemanticEntities.Empty();
 		ImagesData.Empty();
@@ -214,48 +288,7 @@ public:
 	// True if the writer is valid
 	bool IsInit() const { return bIsInit; }
 
-	// Get view type suffix
-	FORCEINLINE static FString GetRenderTypeSuffix(const FString& RenderType);
-
-	// Get image filename
-	FORCEINLINE static FString CreateImageFilename(float Timestamp, const FString& ViewName, const FString& RenderType);
-
 protected:
 	// Flag to show if it is valid
 	bool bIsInit;
 };
-
-// Get view type suffix
-FString ISLVisImageWriterInterface::GetRenderTypeSuffix(const FString& RenderType)
-{
-	if (RenderType.Equals("Color"))
-	{
-		return FString("C"); // Color
-	}
-	else if (RenderType.Equals("SceneDepth") || RenderType.Equals("SLSceneDepth") || RenderType.Equals("SLSceneDepthWorldUnits"))
-	{
-		return FString("D"); // Depth
-	}
-	else if (RenderType.Equals("WorldNormal"))
-	{
-		return FString("N"); // Normal
-	}
-	else if (RenderType.Equals("Mask") || RenderType.Equals("SLMask"))
-	{
-		return FString("M"); // Normal
-	}
-	else
-	{
-		// Unsupported buffer type
-		return FString("Unknown");
-	}
-}
-
-// Get image filename
-FString ISLVisImageWriterInterface::CreateImageFilename(float Timestamp, const FString& ViewName, const FString& RenderType)
-{
-	return FString::Printf(TEXT("SLVis_%s_%s_%s.png"),
-		*ViewName,
-		*FString::SanitizeFloat(Timestamp).Replace(TEXT("."), TEXT("-")),
-		*ISLVisImageWriterInterface::GetRenderTypeSuffix(RenderType));
-}

@@ -21,6 +21,11 @@
 			"LoadingPhase": "Default"
 		},
 		{
+			"Name": "USemLogSkel",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
 			"Name": "USemLogEd",
 			"Type": "Editor"
 		},

@@ -40,6 +40,7 @@ public class USemLogVision : ModuleRules
 				"RHI",
 				"RenderCore",
 				"UnrealEd",
+				"USemLogSkel",
 				"UTags",
 				//"libmongo",
 				"MongoC", // SLVIS_WITH_LIBMONGO_C

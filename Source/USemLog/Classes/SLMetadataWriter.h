@@ -4,7 +4,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLEntitiesManager.h"
 #if SL_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
 #if PLATFORM_WINDOWS
@@ -93,7 +92,14 @@ private:
 	bool CreateIndexes();
 
 #if SL_WITH_LIBMONGO_C
+	// Add entities data to the bson document
 	void AddEntities(bson_t* out_doc);
+
+	// Add semantic events data to the bson document
+	void AddEvents(bson_t* out_doc);
+
+	// Add pose to document
+	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc);
 #endif //SL_WITH_LIBMONGO_C
 
 private:
@@ -120,6 +126,6 @@ private:
 	mongoc_collection_t* collection;
 
 	// Insertion document id
-	bson_oid_t doc_id;
+	bson_oid_t oid;
 #endif //SL_WITH_LIBMONGO_C
 };

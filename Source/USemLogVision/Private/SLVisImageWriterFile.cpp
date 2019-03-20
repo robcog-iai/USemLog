@@ -42,7 +42,7 @@ void USLVisImageWriterFile::Write(const FSLVisStampedData& StampedData)
 		// Iterate images from the view
 		for (const auto& ImgData : ViewData.ImagesData)
 		{
-			FString Filename = ISLVisImageWriterInterface::CreateImageFilename(StampedData.Timestamp, ViewData.ViewName, ImgData.RenderType);
+			FString Filename = FSLVisHelper::CreateImageFilename(StampedData.Timestamp, ViewData.Class, ImgData.RenderType);
 			FString ImgPath = DirPath + "/" + Filename;
 			FPaths::RemoveDuplicateSlashes(ImgPath);
 			// Save to file

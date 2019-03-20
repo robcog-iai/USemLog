@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
 #include "Materials/MaterialInterface.h"
+#include "SLStructs.h"
 #include "SLSkeletalDataAsset.h"
 #include "SLSkeletalDataComponent.generated.h"
 
@@ -25,9 +26,16 @@ struct FSLBoneData
 	UPROPERTY(EditAnywhere)
 	FString MaskColorHex;
 
-	// Mask material instance 
+	//// Mask material instance 
+	//UPROPERTY(EditAnywhere)
+	//UMaterialInterface* MaskMaterial;
+
+	// Mask material index
 	UPROPERTY(EditAnywhere)
-	UMaterialInterface* MaskMaterial;
+	int32 MaskMaterialIndex;
+
+	//// Default constructor
+	//FSLBoneData() : Class(""), MaskColorHex(""), MaskMaterialIndex(INDEX_NONE) {};
 
 	// Checks if the structure has been set
 	bool IsSet() const { return !Class.IsEmpty(); };
@@ -35,8 +43,7 @@ struct FSLBoneData
 	// Get result as string
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Class:%s; MaskColorHex:%s; MaskMaterial:%s"), *Class, *MaskColorHex,
-			MaskMaterial ? *MaskMaterial->GetName() : *FString("NULL"));
+		return FString::Printf(TEXT("Class:%s; MaskColorHex:%s; MaskMaterialIndex:%d"), *Class, *MaskColorHex, MaskMaterialIndex);
 	}
 };
 
@@ -44,7 +51,7 @@ struct FSLBoneData
  * Stores the semantic skeletal data of its parent skeletal mesh component
  */
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), hidecategories = (HLOD, Cooking, Transform), DisplayName="SL Skeletal Data")
-class USEMLOG_API USLSkeletalDataComponent : public USceneComponent
+class USEMLOGSKEL_API USLSkeletalDataComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
@@ -65,10 +72,11 @@ public:
 	bool IsInit() const { return bInit; };
 
 private:
-#if WITH_EDITOR
-	// Update the data
-	void LoadData();
-#endif // WITH_EDITOR
+	// Update the data from the data asset
+	void LoadFromDataAsset();
+
+	// Refresh the values (update material index, remove invalid data)
+	void Refresh();
 
 	// Clear data
 	void ClearData();
@@ -77,7 +85,7 @@ private:
 	bool SetSkeletalParent();
 
 	// Set the semantic parent and its data, returns true if successful or is already set
-	bool SetSemanticOwnerAndData();
+	bool SetSemanticOwnerData();
 
 	// Set data for all the bones (empty for the ones without semantics)
 	void SetDataForAllBones();
@@ -110,11 +118,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	USLSkeletalDataAsset* SkeletalDataAsset;
 
-	// Load new data without removing previous one button
+	// Clear and re-load data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bReloadData;
+	bool bReloadFromDataAssetButton;
+
+	// Refresh the values (update material index, remove invalid data)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bRefresh;
 
 	// Remove all previous data mimic button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bClearAllData;
+	bool bClearAllDataButton;
 };

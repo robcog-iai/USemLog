@@ -209,7 +209,6 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 
 		// Write events to file
 		USLEventLogger::WriteToFile();
-
 		if (bWriteMetadata)
 		{
 			MetadataWriter.Finish();

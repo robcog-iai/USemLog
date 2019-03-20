@@ -63,37 +63,37 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 	}
 
 #if SL_WITH_LIBMONGO_C
-	bson_t* doc;
+	bson_t* ws_doc;
 	bson_t entities_arr;
 	bson_error_t error;
 
 	uint32_t arr_idx = 0;
 
-	// Document to store the images data
-	doc = bson_new();
+	// Document to store the data
+	ws_doc = bson_new();
 
 	// Add timestamp
-	BSON_APPEND_DOUBLE(doc, "timestamp", Timestamp);
+	BSON_APPEND_DOUBLE(ws_doc, "timestamp", Timestamp);
 
 	// Add entities to array
-	BSON_APPEND_ARRAY_BEGIN(doc, "entities", &entities_arr);
+	BSON_APPEND_ARRAY_BEGIN(ws_doc, "entities", &entities_arr);
 
 	FSLWorldStateWriterMongoC::AddActorEntities(ActorEntities, &entities_arr, arr_idx);
 	FSLWorldStateWriterMongoC::AddComponentEntities(ComponentEntities, &entities_arr, arr_idx);
 	FSLWorldStateWriterMongoC::AddSkeletalEntities(SkeletalEntities, &entities_arr, arr_idx);
 
-	bson_append_array_end(doc, &entities_arr);
+	bson_append_array_end(ws_doc, &entities_arr);
 
 
-	if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error))
+	if (!mongoc_collection_insert_one(collection, ws_doc, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
 			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
-		bson_destroy(doc);
+		bson_destroy(ws_doc);
 	}
 
 	// Clean up
-	bson_destroy(doc);
+	bson_destroy(ws_doc);
 
 #endif //SL_WITH_LIBMONGO_C
 }
@@ -130,6 +130,14 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 
 	// Get a handle on the database "db_name" and collection "coll_name"
 	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
+
+	// Abort if we connect to an existing collection
+	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*EpisodeId), &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Collection %s already exists in database.."),
+			TEXT(__FUNCTION__), __LINE__, *EpisodeId);
+		//return false;
+	}
 	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId));
 
 	// Check server. Ping the "admin" database

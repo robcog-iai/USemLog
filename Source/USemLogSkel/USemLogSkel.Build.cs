@@ -3,15 +3,14 @@
 
 using UnrealBuildTool;
 
-public class USemLogEd : ModuleRules
+public class USemLogSkel : ModuleRules
 {
-	public USemLogEd(ReadOnlyTargetRules Target) : base(Target)
+	public USemLogSkel(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
-				//"USemLogEd/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -19,7 +18,6 @@ public class USemLogEd : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				//"USemLogEd/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -29,10 +27,7 @@ public class USemLogEd : ModuleRules
 			new string[]
 			{
 				"Core",
-				"USemLog",
-				"USemLogSkel",
 				"UTags",
-				"UIds",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -43,17 +38,11 @@ public class USemLogEd : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
-				"Slate",
-				"SlateCore",
-				"InputCore",
-				"UnrealEd",
-				"LevelEditor",
-				"Projects",
-				// ... add private dependencies that you statically link with here ...
+				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-		
-		
+
+
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
 			{

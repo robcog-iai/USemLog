@@ -58,16 +58,15 @@ void FSLEntitiesManager::Init(UWorld* World)
 				{
 					ObjectsSemanticData.Emplace(CompItr, FSLEntity(CompItr, CompId, CompClass));
 				}
-			}
-		}
 
-		// Iterate skeletal data components
-		for (TObjectIterator<USLSkeletalDataComponent> Itr; Itr; ++Itr)
-		{
-			// Check if initialization is was successful
-			if (Itr->Init())
-			{
-				ObjectsSemanticSkeletalData.Add(Itr->OwnerSemanticData.Obj, *Itr);
+				// Check if the component is a skeletal data container
+				if (USLSkeletalDataComponent* AsSkelData = Cast<USLSkeletalDataComponent>(CompItr))
+				{
+					if (AsSkelData->Init())
+					{
+						ObjectsSemanticSkeletalData.Add(AsSkelData->OwnerSemanticData.Obj, AsSkelData);
+					}
+				}
 			}
 		}
 

@@ -10,22 +10,9 @@
 #include "SLVisHelpers.h"
 #include "SLVisLoggerSpectatorPC.generated.h"
 
-/**
-* Render types
-*/
-UENUM()
-enum class ESLVisRenderType : uint8
-{
-	Color					UMETA(DisplayName = "Color"),
-	Depth					UMETA(DisplayName = "Depth"),
-	Mask					UMETA(DisplayName = "Mask"),
-	Normal					UMETA(DisplayName = "Normal"),
-	Specular				UMETA(DisplayName = "Specular"),
-};
-
 
 /**
- * 
+ * Player controller stepping through the saved demo
  */
 UCLASS()
 class USEMLOGVISION_API ASLVisLoggerSpectatorPC : public APlayerController
@@ -64,10 +51,13 @@ public:
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
-
+	
 private:
+	// Cache existing camera views
+	void SetCameraViews();
+
 	// Set rendered image quality
-	void SetupRenderingParameters();
+	void SetRenderingParameters();
 
 	// Request a screenshot
 	void RequestScreenshot();
@@ -100,7 +90,7 @@ private:
 	bool GotoNextRenderType();
 
 	// Setup the given view type
-	bool ApplyRenderType(const FString& ViewType);
+	bool ApplyRenderType(ESLVisRenderType ViewType);
 
 	// Called when the demo reaches the last frame
 	void QuitEditor();
@@ -145,11 +135,10 @@ private:
 	FSLVisStampedData CurrentTsData;
 
 	// Array of the camera actors
-	TArray<class ASLVisCameraView*> CameraViews;
+	TArray<class ASLVisViewActor*> CameraViews;
 
 	// Rendering buffer types
-	TArray<FString> RenderTypes;
-	TSet<ESLVisRenderType> ERenderTypes;
+	TArray<ESLVisRenderType> RenderTypes;
 
 	// Index of the current view
 	int32 CurrentViewIndex;

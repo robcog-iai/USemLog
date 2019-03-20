@@ -45,6 +45,7 @@ public class USemLog : ModuleRules
 				"UTags",
 				"UIds",
 				"UConversions",
+				"USemLogSkel",
 				//"UMCGrasp", // SL_WITH_MC_GRASP
 				//"libmongo",
 				"MongoC", // SL_WITH_LIBMONGO_C

@@ -13,8 +13,9 @@ USLSkeletalDataComponent::USLSkeletalDataComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 
 	bInit = false;
-	bReloadData = false;
-	bClearAllData = false;
+	bReloadFromDataAssetButton = false;
+	bRefresh = false;
+	bClearAllDataButton = false;
 }
 
 #if WITH_EDITOR
@@ -29,17 +30,22 @@ void USLSkeletalDataComponent::PostEditChangeProperty(struct FPropertyChangedEve
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, SkeletalDataAsset))
 	{
-		USLSkeletalDataComponent::LoadData();
+		LoadFromDataAsset();
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, bReloadData))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, bReloadFromDataAssetButton))
 	{
-		USLSkeletalDataComponent::LoadData();
-		bReloadData = false;
+		LoadFromDataAsset();
+		bReloadFromDataAssetButton = false;
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, bClearAllData))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, bRefresh))
 	{
-		USLSkeletalDataComponent::ClearData();
-		bClearAllData = false;
+		Refresh();
+		bRefresh = false;
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, bClearAllDataButton))
+	{
+		ClearData();
+		bClearAllDataButton = false;
 	}
 }
 #endif // WITH_EDITOR
@@ -47,13 +53,26 @@ void USLSkeletalDataComponent::PostEditChangeProperty(struct FPropertyChangedEve
 // Init the component for runtime
 bool USLSkeletalDataComponent::Init()
 {
-	return bInit = bInit ? true : USLSkeletalDataComponent::SetSemanticOwnerAndData() && USLSkeletalDataComponent::SetSkeletalParent();
+	if (!bInit)
+	{
+		if (SetSemanticOwnerData() && SetSkeletalParent())
+		{
+			bInit = true;
+		}
+		else 
+		{
+			bInit = false;
+		}
+	}
+	return bInit;
 }
 
-#if WITH_EDITOR
-// Update the data
-void USLSkeletalDataComponent::LoadData()
+// Clear and re-load data from data asset
+void USLSkeletalDataComponent::LoadFromDataAsset()
 {
+	// Remove any previous data
+	ClearData();
+
 	// Continue if attachment parent is a skeletal mesh component
 	if (USkeletalMeshComponent* SkMC = Cast<USkeletalMeshComponent>(GetAttachParent()))
 	{
@@ -70,38 +89,34 @@ void USLSkeletalDataComponent::LoadData()
 				const FName BoneName = BoneClassPair.Key;
 				if (!BoneClass.IsEmpty())
 				{
-					// Override any previous data for now
-					if (SemanticBonesData.Contains(BoneName))
+					// Create new data
+					FSLBoneData BoneData;
+					BoneData.Class = BoneClass;
+					BoneData.MaskMaterialIndex = SkMC->GetMaterialIndex(FName(*BoneClass));
+
+					if (BoneData.MaskMaterialIndex == INDEX_NONE)
 					{
-						// Find the material slot with the bone class name
-						if (FSkeletalMaterial* SkelMat = SkMC->SkeletalMesh->Materials.FindByPredicate(
-							[&BoneClass](const FSkeletalMaterial& InMat)
-							{return InMat.MaterialSlotName.ToString().Equals(BoneClass); }))
-						{
-							SemanticBonesData[BoneName].MaskMaterial = Cast<UMaterialInterface>(SkelMat->MaterialInterface);
-						}
+						UE_LOG(LogTemp, Error, TEXT("%s::%d Class %s is not part of a material slot.."),
+							TEXT(__FUNCTION__), __LINE__, *BoneClass);
 					}
-					else
-					{
-						FSLBoneData BoneData;
-						BoneData.Class = BoneClass;
-						// Find the material slot with the bone class name
-						if (FSkeletalMaterial* SkelMat = SkMC->SkeletalMesh->Materials.FindByPredicate(
-							[&BoneClass](const FSkeletalMaterial& InMat)
-							{return InMat.MaterialSlotName.ToString().Equals(BoneClass); }))
-						{
-							BoneData.MaskMaterial = Cast<UMaterialInterface>(SkelMat->MaterialInterface);
-						}
-						SemanticBonesData.Add(BoneName, BoneData);
-					}
+
+					//// Find the material slot with the bone class name
+					//if (FSkeletalMaterial* SkelMat = SkMC->SkeletalMesh->Materials.FindByPredicate(
+					//	[&BoneClass](const FSkeletalMaterial& InMat)
+					//	{return InMat.MaterialSlotName.ToString().Equals(BoneClass); }))
+					//{
+					//	BoneData.MaskMaterial = SkelMat->MaterialInterface;
+					//}
+
+					SemanticBonesData.Add(BoneName, BoneData);
 				}
 			}
 
 			// Set owner and the semantic bone data
-			USLSkeletalDataComponent::SetSemanticOwnerAndData();
+			SetSemanticOwnerData();
 
 			// Make sure that the non-annotated bones have an empty semantics structure
-			USLSkeletalDataComponent::SetDataForAllBones();
+			SetDataForAllBones();
 		}
 	}
 	else
@@ -109,7 +124,42 @@ void USLSkeletalDataComponent::LoadData()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Parent is not a USkeletalMeshComponent.."), TEXT(__FUNCTION__), __LINE__);
 	}
 }
-#endif // WITH_EDITOR
+
+// Refresh data, update material indexes remove invalid data
+void USLSkeletalDataComponent::Refresh()
+{
+	// Continue if attachment parent is a skeletal mesh component
+	if (USkeletalMeshComponent* SkMC = Cast<USkeletalMeshComponent>(GetAttachParent()))
+	{
+		// Set the pointer to the skeletal mesh parent
+		SkeletalMeshParent = SkMC;
+
+		// Iterate bone classes from the data asset, ignore empty classes
+		for (auto& BoneDataPair : SemanticBonesData)
+		{
+			// Update the bone index
+			BoneDataPair.Value.MaskMaterialIndex = SkMC->GetMaterialIndex(FName(*BoneDataPair.Value.Class));
+
+			if (BoneDataPair.Value.MaskMaterialIndex == INDEX_NONE)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Class %s is not part of a material slot.."),
+					TEXT(__FUNCTION__), __LINE__, *BoneDataPair.Value.Class);
+			}
+		}
+
+		// Set owner and the semantic bone data
+		SetSemanticOwnerData();
+
+		// Make sure that the non-annotated bones have an empty semantics structure
+		SetDataForAllBones();
+		
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Parent is not a USkeletalMeshComponent.."), TEXT(__FUNCTION__), __LINE__);
+	}
+}
+
 
 // Clear all data
 void USLSkeletalDataComponent::ClearData()
@@ -146,8 +196,8 @@ bool USLSkeletalDataComponent::SetSkeletalParent()
 	}
 }
 
-// Set the semantic parent, returns true if already set
-bool USLSkeletalDataComponent::SetSemanticOwnerAndData()
+// Set the semantic parent data, returns true if already set
+bool USLSkeletalDataComponent::SetSemanticOwnerData()
 {
 	if (OwnerSemanticData.IsSet())
 	{
@@ -192,10 +242,8 @@ bool USLSkeletalDataComponent::SetSemanticOwnerAndData()
 // Set data for all the bones (empty for the ones without semantics)
 void USLSkeletalDataComponent::SetDataForAllBones()
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 	if (SkeletalMeshParent)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("\t%s::%d"), TEXT(__FUNCTION__), __LINE__);
 		// Merge the semantic bones data to the into the rest of the skeletal bones (these will have FSLBoneData empty/invalid)
 		TArray<FName> AllBoneNames;
 		SkeletalMeshParent->GetBoneNames(AllBoneNames);

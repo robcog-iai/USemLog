@@ -266,6 +266,13 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	{
 		if (bStartFromUserInput) {bStartAtBeginPlay = false;  bStartWithDelay = false; bStartAtFirstTick = false;}
 	}
+	
+	// Generate an editable unique id
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bUseCustomEpisodeId))
+	{
+		if (bUseCustomEpisodeId) { EpisodeId = FIds::NewGuidInBase64Url(); }
+		else { EpisodeId = TEXT("autogen"); };
+	}
 }
 
 // Called by the editor to query whether a property of this object is allowed to be modified.

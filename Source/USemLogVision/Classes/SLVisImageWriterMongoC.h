@@ -41,6 +41,9 @@ struct FSLVisWorldStateEntryParams
 
 	// _id of the entry as string
 	char oid_str[25];
+#if SLVIS_WITH_LIBMONGO_C
+	bson_oid_t oid;
+#endif //SLVIS_WITH_LIBMONGO_C
 
 	// Default constructor
 	FSLVisWorldStateEntryParams()
@@ -138,6 +141,6 @@ private:
 
 	// _id of the object (world state) where to insert the images
 	char ws_oid_str[25];
-	bson_oid_t* ws_oid2;
+	bson_oid_t ws_oid2; // + add a flag in the else // Update existing entry branch? or just make sure the oid is correct
 #endif //SLVIS_WITH_LIBMONGO_C
 };

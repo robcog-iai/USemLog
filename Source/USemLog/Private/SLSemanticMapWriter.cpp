@@ -74,11 +74,12 @@ void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FSLOwlSemanticMap> InSem
 		// Take into account only objects with an id
 		if (IdPtr)
 		{
+			// Check if class is also available
 			if (ClassPtr)
 			{
 				AddObjectIndividual(InSemMap, ObjToTagsItr.Key, *IdPtr, *ClassPtr);
 			}
-			// Check for other types, e.g. constraints can be actors or components
+			// No class is available, check for other types, e.g. constraints can be actors or components
 			else if (APhysicsConstraintActor* ConstrAct = Cast<APhysicsConstraintActor>(ObjToTagsItr.Key))
 			{
 				AddConstraintIndividual(InSemMap, ConstrAct->GetConstraintComp(), *IdPtr, ConstrAct->Tags);
@@ -108,19 +109,16 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 	const FString DocId = InSemMap->Id;
 
 	// Create the object individual
-	FSLOwlNode ObjIndividual = FSLOwlSemanticMapStatics::CreateObjectIndividual(
-		MapPrefix, InId, InClass);
+	FSLOwlNode ObjIndividual = FSLOwlSemanticMapStatics::CreateObjectIndividual(MapPrefix, InId, InClass);
 
 	// Add describedInMap property
-	ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateDescribedInMapProperty(
-		MapPrefix, DocId));
+	ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateDescribedInMapProperty(MapPrefix, DocId));
 	
 	// Add parent property
 	const FString ParentId = GetParentId(Object);
 	if (!ParentId.IsEmpty())
 	{
-		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateParentProperty(
-			MapPrefix, ParentId));
+		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateParentProperty(MapPrefix, ParentId));
 	}
 
 	// Add child properties
@@ -128,8 +126,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 	GetChildIds(Object, ChildIds);
 	for (const auto& ChildId : ChildIds)
 	{
-		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateChildProperty(
-			MapPrefix, ChildId));
+		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateChildProperty(MapPrefix, ChildId));
 	}
 
 	// Add mobility property
@@ -174,8 +171,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 
 		/* Add properties */
 		// Pose property
-		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePoseProperty(
-			MapPrefix, PoseId));
+		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePoseProperty(MapPrefix, PoseId));
 
 
 		// If static mesh, add pathToCadModel property
@@ -304,15 +300,13 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 			SkelComp->GetBoneNames(BoneNames);
 			for (const auto& BoneName : BoneNames)
 			{
-				ClassDefinition.AddChildNode(
-					FSLOwlSemanticMapStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
+				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
 			}
 		}
 	}
 	else if (USkeletalMeshComponent* ObjAsSkelComp = Cast<USkeletalMeshComponent>(Object))
 	{
-		const FVector BBSize = FConversions::CmToM(
-			ObjAsSkelComp->Bounds.GetBox().GetSize());
+		const FVector BBSize = FConversions::CmToM(ObjAsSkelComp->Bounds.GetBox().GetSize());
 		if (!BBSize.IsZero())
 		{
 			ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
