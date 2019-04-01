@@ -164,13 +164,13 @@ public:
 	FSLOverlapEndSignature OnEndSLOverlap;
 
 private:
-	// Set when manager is initialized
+	// True if initialized
 	bool bIsInit;
 
-	// Set when manager is started
+	// True if started
 	bool bIsStarted;
 
-	// Set when manager is finished
+	// True if finished
 	bool bIsFinished;
 
 	// Init and start at begin play
@@ -181,5 +181,5 @@ private:
 	UMeshComponent* OwnerMeshComp;
 
 	// Semantic data of the owner
-	FSLEntity OwnerItem;
+	FSLEntity SemanticOwner;
 };

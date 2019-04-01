@@ -34,7 +34,7 @@ USLOverlapShape::~USLOverlapShape()
 {
 	if (!bIsFinished)
 	{
-		USLOverlapShape::Finish(true);
+		Finish(true);
 	}
 }
 
@@ -45,8 +45,8 @@ void USLOverlapShape::BeginPlay()
 
 	if (bStartAtBeginPlay)
 	{
-		USLOverlapShape::Init();
-		USLOverlapShape::Start();
+		Init();
+		Start();
 	}
 }
 
@@ -57,7 +57,7 @@ void USLOverlapShape::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (!bIsFinished)
 	{
-		USLOverlapShape::Finish();
+		Finish();
 	}
 }
 
@@ -66,7 +66,7 @@ void USLOverlapShape::Init()
 {
 	if (!bIsInit)
 	{
-		// Init the semantic items mappings singleton
+		// Make sure the semantic entities are set
 		if (!FSLEntitiesManager::GetInstance()->IsInit())
 		{
 			FSLEntitiesManager::GetInstance()->Init(GetWorld());
@@ -74,8 +74,8 @@ void USLOverlapShape::Init()
 
 		// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
 		// Make sure owner is a valid semantic item
-		OwnerItem = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
-		if (!OwnerItem.IsSet())
+		SemanticOwner = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
+		if (!SemanticOwner.IsSet())
 		{
 			return;
 		}
@@ -397,7 +397,7 @@ void USLOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
 		// Broadcast begin of semantic overlap event
-		FSLOverlapResult SemanticOverlapResult(OwnerItem, OtherItem, 
+		FSLOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem, 
 			StartTime, false, OwnerMeshComp, OtherAsMeshComp);
 		OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
 	}
@@ -410,10 +410,10 @@ void USLOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 		// This allows us to be in sync with the overlap end event 
 		// since the unique ids and the rule of ignoring the one event will not change
 		// Filter out one of the trigger areas (compare unique ids)
-		if (OtherItem.Obj->GetUniqueID() > OwnerItem.Obj->GetUniqueID())
+		if (OtherItem.Obj->GetUniqueID() > SemanticOwner.Obj->GetUniqueID())
 		{
 			// Broadcast begin of semantic overlap event
-			FSLOverlapResult SemanticOverlapResult(OwnerItem, OtherItem,
+			FSLOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem,
 				StartTime, true, OwnerMeshComp, OtherContactTrigger->OwnerMeshComp);
 			OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
 		}
@@ -451,7 +451,7 @@ void USLOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
 		// Broadcast end of semantic overlap event
-		OnEndSLOverlap.Broadcast(OwnerItem.Obj, OtherItem.Obj, EndTime);
+		OnEndSLOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
 	}
 	else if (USLOverlapShape* OtherContactTrigger = Cast<USLOverlapShape>(OtherComp))
 	{
@@ -462,10 +462,10 @@ void USLOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		// This allows us to be in sync with the overlap end event 
 		// since the unique ids and the rule of ignoring the one event will not change
 		// Filter out one of the trigger areas (compare unique ids)
-		if (OtherItem.Obj->GetUniqueID() > OwnerItem.Obj->GetUniqueID())
+		if (OtherItem.Obj->GetUniqueID() > SemanticOwner.Obj->GetUniqueID())
 		{
 			// Broadcast end of semantic overlap event
-			OnEndSLOverlap.Broadcast(OwnerItem.Obj, OtherItem.Obj, EndTime);
+			OnEndSLOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
 		}
 	}
 }
