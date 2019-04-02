@@ -50,4 +50,10 @@ private:
 
 	// True if finished
 	bool bIsFinished;
+
+#if WITH_EDITORONLY_DATA
+	// Location and orientation visualization of the component
+	UPROPERTY()
+	class UArrowComponent* ArrowVis;
+#endif // WITH_EDITORONLY_DATA
 };

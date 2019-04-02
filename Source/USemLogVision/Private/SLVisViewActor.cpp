@@ -13,7 +13,7 @@ ASLVisViewActor::ASLVisViewActor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	bInit = false;
+	bIsInit = false;
 
 #if WITH_EDITORONLY_DATA
 	ArrowVis = CreateEditorOnlyDefaultSubobject<UArrowComponent>(TEXT("SLVisViewArrowComponent"));
@@ -38,7 +38,7 @@ void ASLVisViewActor::BeginPlay()
 // Called when the game starts or when spawned
 bool ASLVisViewActor::Init()
 {
-	if (bInit && !Class.IsEmpty() && !Id.IsEmpty())
+	if (bIsInit && !Class.IsEmpty() && !Id.IsEmpty())
 	{
 		return true;
 	}
@@ -49,12 +49,12 @@ bool ASLVisViewActor::Init()
 
 		if (!Class.IsEmpty() && !Id.IsEmpty())
 		{
-			bInit = true;
+			bIsInit = true;
 			return true;
 		}
 		else
 		{
-			bInit = false;
+			bIsInit = false;
 			return false;
 		}
 	}

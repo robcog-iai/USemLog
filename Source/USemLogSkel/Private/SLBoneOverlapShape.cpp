@@ -2,10 +2,24 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLBoneOverlapShape.h"
+#if WITH_EDITOR
+#include "Components/ArrowComponent.h"
+#endif // WITH_EDITOR
 
 // Ctor
 USLBoneOverlapShape::USLBoneOverlapShape()
 {
+#if WITH_EDITORONLY_DATA
+	ArrowVis = CreateEditorOnlyDefaultSubobject<UArrowComponent>(TEXT("BoneView"));
+	if (ArrowVis)
+	{
+		ArrowVis->ArrowColor = FColor::Red;
+		ArrowVis->bTreatAsASprite = true;
+		ArrowVis->bLightAttachment = true;
+		ArrowVis->bIsScreenSizeScaled = true;
+	}
+#endif // WITH_EDITORONLY_DATA
+
 	UE_LOG(LogTemp, Error, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 }
 
@@ -20,6 +34,7 @@ bool USLBoneOverlapShape::Init(USkeletalMeshComponent* Parent, FName BoneName)
 {
 	if (!bIsInit)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
 		bIsInit = true;
 		return bIsInit;
 	}

@@ -11,6 +11,7 @@
 #include "Events/SLGraspEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLOverlapShape.h"
+#include "SLGraspListener.h"
 #include "SLGoogleCharts.h"
 
 // UUtils
@@ -72,9 +73,19 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		// Init all contact trigger handlers
 		for (TObjectIterator<USLOverlapShape> Itr; Itr; ++Itr)
 		{
+			// Make sure the object is in the world
+			if (!GetWorld()->ContainsActor(Itr->GetOwner()))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
+					TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+				continue;
+			}
+
 			// Skip objects that do not have a semantically annotated ancestor
 			if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
 			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
+					TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
 				continue;
 			}
 
@@ -82,7 +93,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			Itr->Init();
 
 			// Store the semantic overlap areas
-			SemanticOverlapAreas.Add(*Itr);
+			OverlapShapes.Emplace(*Itr);
 
 			if (bInLogContactEvents)
 			{
@@ -101,15 +112,50 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			}
 		}
 
+		// Init all grasp listeners
+		for (TObjectIterator<USLGraspListener> Itr; Itr; ++Itr)
+		{
+			// Make sure the object is in the world
+			if (!GetWorld()->ContainsActor(Itr->GetOwner()))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
+					TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+				continue;
+			}
+
+			// Skip objects that do not have a semantically annotated ancestor
+			if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
+					TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+				continue;
+			}
+			
+			if (Itr->Init())
+			{
+				GraspListeners.Emplace(*Itr);
+			}
+		}
+
 		// Init grasp handlers
 		if (bInLogGraspEvents)
 		{
 #if SL_WITH_MC_GRASP
 			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
 			{
+				// Make sure the object is in the world
+				if (!GetWorld()->ContainsActor(Itr->GetOwner()))
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
+						TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+					continue;
+				}
+
 				// Skip objects that do not have a semantically annotated ancestor
 				if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
 				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
+						TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
 					continue;
 				}
 
@@ -148,9 +194,15 @@ void USLEventLogger::Start()
 		}
 
 		// Start the semantic overlap areas
-		for (auto& SLOverlapShape : SemanticOverlapAreas)
+		for (auto& SLOverlapShape : OverlapShapes)
 		{
 			SLOverlapShape->Start();
+		}
+
+		// Start the grasp listeners
+		for (auto& SLGraspListener : GraspListeners)
+		{
+			SLGraspListener->Start();
 		}
 
 		if (bWriteMetadata)
@@ -176,11 +228,18 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		EventHandlers.Empty();
 
 		// Finish semantic overlap events publishing
-		for (auto& SLOverlapShape : SemanticOverlapAreas)
+		for (auto& SLOverlapShape : OverlapShapes)
 		{
 			SLOverlapShape->Finish(bForced);
 		}
-		SemanticOverlapAreas.Empty();
+		OverlapShapes.Empty();
+
+		// Finish the grasp listeners
+		for (auto& SLGraspListener : GraspListeners)
+		{
+			SLGraspListener->Finish(bForced);
+		}
+		GraspListeners.Empty();
 
 		// Mark finished
 		bIsStarted = false;

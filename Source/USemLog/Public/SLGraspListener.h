@@ -10,9 +10,19 @@
 #include "SLGraspListener.generated.h"
 
 /**
+* Hand type
+*/
+UENUM()
+enum class ESLGraspHandType : uint8
+{
+	Left					UMETA(DisplayName = "Left"),
+	Right					UMETA(DisplayName = "Right"),
+};
+
+/**
  * Checks for physics based grasp events
  */
-UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Grasp Listener")
 class USEMLOG_API USLGraspListener : public UActorComponent
 {
 	GENERATED_BODY()
@@ -25,7 +35,7 @@ public:
 	~USLGraspListener();
 
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
-	void Init();
+	bool Init();
 
 	// Start listening to grasp events, update currently overlapping objects
 	void Start();
@@ -42,7 +52,16 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
+protected:
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+
 private:
+	// Add default bone names
+	void AddDefaultBoneNames();
+#endif // WITH_EDITOR
+
 	// Set overlap groups, return true if at least one valid overlap is in each group
 	bool SetOverlapGroups();
 
@@ -73,4 +92,13 @@ private:
 	UPROPERTY() // Avoid GC
 	TArray<USLBoneOverlapShape*> GroupB;
 
+#if WITH_EDITOR
+	// Hand type to add default bone types
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLGraspHandType HandType;
+
+	// Mimic a button to add the default bone types
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bAddDefaultBoneTypes;
+#endif // WITH_EDITOR
 };

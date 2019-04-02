@@ -20,7 +20,7 @@ public:
 	bool Init();
 
 	// True if it is successfully initialized
-	bool IsInit() const { return bInit; };
+	bool IsInit() const { return bIsInit; };
 
 protected:
 	// Called when the game starts or when spawned
@@ -41,5 +41,5 @@ private:
 #endif // WITH_EDITORONLY_DATA
 
 	// True if successfully initialized
-	bool bInit;
+	bool bIsInit;
 };
