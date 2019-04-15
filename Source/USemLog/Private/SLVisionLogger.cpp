@@ -44,7 +44,7 @@ void USLVisionLogger::Init(float InMaxRecHz, float InMinRecHz)
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Game Mode not set, vision replay will not be recorded.."), TEXT(__FUNCTION__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Game Mode not set, vision replay will not be recorded.."), *FString(__func__), __LINE__);
 		}
 #endif //SL_WITH_SLVIS
 	}

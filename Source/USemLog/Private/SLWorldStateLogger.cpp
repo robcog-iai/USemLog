@@ -146,6 +146,6 @@ void USLWorldStateLogger::Update()
 	}
 	else
 	{
-		UE_LOG(LogSL, Error, TEXT("%s::%d Previous task not finished, SKIPPING new task.."), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogSL, Error, TEXT("%s::%d Previous task not finished, SKIPPING new task.."), *FString(__func__), __LINE__);
 	}
 }

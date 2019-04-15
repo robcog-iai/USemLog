@@ -95,7 +95,7 @@ void FSLMetadataWriter::WriteEnvironmentMetadata()
 	if (!mongoc_collection_insert_one(collection, meta_doc, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 		bson_destroy(meta_doc);
 	}
 
@@ -127,7 +127,7 @@ void FSLMetadataWriter::WriteEventsMetadata()
 	if (!mongoc_collection_update_one(collection, update_query, update_doc, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 	}
 	// Clean up
 	bson_destroy(evs_doc);
@@ -155,7 +155,7 @@ bool FSLMetadataWriter::Connect(const FString& DBName, const FString& EpisodeId,
 	if (!uri)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			TEXT(__FUNCTION__), __LINE__, *Uri, *FString(error.message));
+			*FString(__func__), __LINE__, *Uri, *FString(error.message));
 		return false;
 	}
 
@@ -176,7 +176,7 @@ bool FSLMetadataWriter::Connect(const FString& DBName, const FString& EpisodeId,
 	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*MetaCollName), &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Collection %s already exists in database.."),
-			TEXT(__FUNCTION__), __LINE__, *MetaCollName);
+			*FString(__func__), __LINE__, *MetaCollName);
 		//return false;
 	}
 
@@ -188,7 +188,7 @@ bool FSLMetadataWriter::Connect(const FString& DBName, const FString& EpisodeId,
 	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 		bson_destroy(server_ping_cmd);
 		return false;
 	}
@@ -266,7 +266,7 @@ bool FSLMetadataWriter::CreateIndexes()
 	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 		bson_destroy(index_command);
 		bson_free(index_name);
 		return false;
