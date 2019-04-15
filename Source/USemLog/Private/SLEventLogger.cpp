@@ -77,7 +77,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			if (!GetWorld()->ContainsActor(Itr->GetOwner()))
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
-					TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+					*FString(__func__), __LINE__, *Itr->GetName());
 				continue;
 			}
 
@@ -85,7 +85,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
-					TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+					*FString(__func__), __LINE__, *Itr->GetName());
 				continue;
 			}
 
@@ -119,7 +119,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			if (!GetWorld()->ContainsActor(Itr->GetOwner()))
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
-					TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+					*FString(__func__), __LINE__, *Itr->GetName());
 				continue;
 			}
 
@@ -127,7 +127,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
-					TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+					*FString(__func__), __LINE__, *Itr->GetName());
 				continue;
 			}
 			
@@ -147,7 +147,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				if (!GetWorld()->ContainsActor(Itr->GetOwner()))
 				{
 					UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
-						TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+						*FString(__func__), __LINE__, *Itr->GetName());
 					continue;
 				}
 
@@ -155,7 +155,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
 				{
 					UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
-						TEXT(__FUNCTION__), __LINE__, *Itr->GetName());
+						*FString(__func__), __LINE__, *Itr->GetName());
 					continue;
 				}
 
@@ -282,8 +282,8 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 // Called when a semantic event is done
 void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->ToString()));
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->ToString());
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), *FString(__func__), __LINE__, *Event->ToString()));
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), *FString(__func__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
 }
 

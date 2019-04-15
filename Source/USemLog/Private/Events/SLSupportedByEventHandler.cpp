@@ -189,7 +189,7 @@ bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLOverlapResult& InC
 			EMoveComponentFlags::MOVECOMP_DisableBlockingOverlapDispatch, ETeleportType::TeleportPhysics);
 		
 		//UE_LOG(LogTemp, Warning, TEXT(">> %s::%d PARENT MOVE DOWN HIT=\n\t%s"),
-		//	TEXT(__FUNCTION__), __LINE__, *ParentMoveDownHit.ToString());
+		//	*FString(__func__), __LINE__, *ParentMoveDownHit.ToString());
 
 		FHitResult ParentMoveBackHit;
 		InCandidate.SelfMeshComponent->MoveComponent(FVector(0.f, 0.f, 10.5f),
