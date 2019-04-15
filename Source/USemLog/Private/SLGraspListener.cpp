@@ -11,7 +11,7 @@ USLGraspListener::USLGraspListener()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
-	UE_LOG(LogTemp, Error, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__func__), __LINE__);
 
 	// State flags
 	bIsInit = false;
@@ -49,7 +49,7 @@ bool USLGraspListener::Init()
 		SemanticOwner = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
 		if (!SemanticOwner.IsSet())
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not semantically annotated.."), TEXT(__FUNCTION__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not semantically annotated.."), *FString(__func__), __LINE__);
 			return bIsInit;
 		}
 
@@ -144,7 +144,7 @@ bool USLGraspListener::SetOverlapGroups()
 				if (SMC->GetBoneIndex(BoneName) == INDEX_NONE)
 				{
 					UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not part of the skeleton"),
-						TEXT(__FUNCTION__), __LINE__, *BoneName.ToString());
+						*FString(__func__), __LINE__, *BoneName.ToString());
 					return false;
 				}
 
@@ -155,14 +155,14 @@ bool USLGraspListener::SetOverlapGroups()
 					if (BoneOverlapShape->Init(SMC, BoneName))
 					{
 						UE_LOG(LogTemp, Warning, TEXT("%s::%d Successfull init and attachment to %s"),
-							TEXT(__FUNCTION__), __LINE__, *BoneName.ToString());
+							*FString(__func__), __LINE__, *BoneName.ToString());
 						Group.Emplace(BoneOverlapShape);
 						return true;
 					}
 				}
 
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to attach or to init bone shape %s"),
-					TEXT(__FUNCTION__), __LINE__, *BoneName.ToString());
+					*FString(__func__), __LINE__, *BoneName.ToString());
 				BoneOverlapShape->DestroyComponent();
 				return false;
 			};
@@ -180,20 +180,20 @@ bool USLGraspListener::SetOverlapGroups()
 				//{
 				//	BoneOverlapShape->Init(SMC, BoneName);
 				//	UE_LOG(LogTemp, Warning, TEXT("%s::%d GroupA: Successfull attachment to %s"),
-				//		TEXT(__FUNCTION__), __LINE__, *BoneName.ToString());
+				//		*FString(__func__), __LINE__, *BoneName.ToString());
 				//	GroupA.Emplace(BoneOverlapShape);
 				//}
 				//else
 				//{
 				//	UE_LOG(LogTemp, Error, TEXT("%s::%d GroupA: Faild to attach to %s"),
-				//		TEXT(__FUNCTION__), __LINE__, *BoneName.ToString());
+				//		*FString(__func__), __LINE__, *BoneName.ToString());
 				//}
 			}
 
 			// Check if at least one valid overlap shape is in the group
 			if (GroupA.Num() == 0)
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d GroupA is empty."), TEXT(__FUNCTION__), __LINE__);
+				UE_LOG(LogTemp, Error, TEXT("%s::%d GroupA is empty."), *FString(__func__), __LINE__);
 				return false;
 			}
 
@@ -210,20 +210,20 @@ bool USLGraspListener::SetOverlapGroups()
 				//{
 				//	BoneOverlapShape->Init(SMC, BoneName);
 				//	UE_LOG(LogTemp, Warning, TEXT("%s::%d GroupA: Successfull attachment to %s"),
-				//		TEXT(__FUNCTION__), __LINE__, *BoneName.ToString());
+				//		*FString(__func__), __LINE__, *BoneName.ToString());
 				//	GroupB.Emplace(BoneOverlapShape);
 				//}
 				//else
 				//{
 				//	UE_LOG(LogTemp, Error, TEXT("%s::%d GroupA: Faild to attach to %s"),
-				//		TEXT(__FUNCTION__), __LINE__, *BoneName.ToString());
+				//		*FString(__func__), __LINE__, *BoneName.ToString());
 				//}
 			}
 
 			// Check if at least one valid overlap shape is in the group
 			if (GroupB.Num() == 0)
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d GroupB is empty."), TEXT(__FUNCTION__), __LINE__);
+				UE_LOG(LogTemp, Error, TEXT("%s::%d GroupB is empty."), *FString(__func__), __LINE__);
 				return false;
 			}
 
@@ -235,7 +235,7 @@ bool USLGraspListener::SetOverlapGroups()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not a skeletal mesh actor"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not a skeletal mesh actor"), *FString(__func__), __LINE__);
 		return false;
 	}
 }

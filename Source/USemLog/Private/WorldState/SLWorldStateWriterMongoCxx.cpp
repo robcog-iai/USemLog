@@ -79,7 +79,7 @@ void FSLWorldStateWriterMongoCxx::Finish()
 //			catch (const std::exception& xcp)
 //			{
 //				UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-//					TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+//					*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 //			}
 //		}
 //#endif //SL_WITH_LIBMONGO_CXX
@@ -98,7 +98,7 @@ void FSLWorldStateWriterMongoCxx::Write(float Timestamp,
 bool FSLWorldStateWriterMongoCxx::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
-		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
+		*FString(__func__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
 #if SL_WITH_LIBMONGO_CXX
 	try
 	{
@@ -134,7 +134,7 @@ bool FSLWorldStateWriterMongoCxx::Connect(const FString& DBName, const FString& 
 		{
 			//FString MongoUri = FString(mongo_conn.uri().to_string().c_str());
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d Mongo client with URI: %s "),
-			//	TEXT(__FUNCTION__), __LINE__, *MongoUri);
+			//	*FString(__func__), __LINE__, *MongoUri);
 		}
 		else
 		{
@@ -152,7 +152,7 @@ bool FSLWorldStateWriterMongoCxx::Connect(const FString& DBName, const FString& 
 	catch(const std::exception& xcp)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 		return false;
 	}
 	return true;
@@ -180,7 +180,7 @@ bool FSLWorldStateWriterMongoCxx::CreateIndexes()
 	catch (const std::exception& xcp)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 		return false;
 	}
 #else
