@@ -93,7 +93,7 @@ void USLVisLegacyManager::Init(const FString& InLogDir, const FString& InEpisode
 
 		// Mark manager as initialized
 		bIsInit = true;
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), *FString(__func__), __LINE__);
 	}
 }
 
@@ -116,7 +116,7 @@ void USLVisLegacyManager::Start()
 		
 		// Mark manager as started
 		bIsStarted = true;
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), *FString(__func__), __LINE__);
 	}
 }
 
@@ -135,7 +135,7 @@ void USLVisLegacyManager::Finish()
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d"), *FString(__func__), __LINE__);
 	}
 }
 
@@ -144,7 +144,7 @@ void USLVisLegacyManager::Update()
 {
 	if (PixelFence.IsFenceComplete())
 	{
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Fence complete"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Fence complete"), *FString(__func__), __LINE__);
 		// Read the image data
 		USLVisLegacyManager::ReadData();
 
@@ -152,7 +152,7 @@ void USLVisLegacyManager::Update()
 		USLVisLegacyManager::SaveData();
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Fence NOT complete"), TEXT(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Fence NOT complete"), *FString(__func__), __LINE__);
 }
 
 // Read the image data
@@ -428,7 +428,7 @@ void USLVisLegacyManager::CreateDepthCaptureComponent()
 	//}
 	//else
 	//{
-	//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load depth asset!"), TEXT(__FUNCTION__), __LINE__);
+	//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load depth asset!"), *FString(__func__), __LINE__);
 	//}
 
 	DepthSceneCaptureComp->SetHiddenInGame(true);
@@ -522,7 +522,7 @@ void USLVisLegacyManager::CreateNormalCaptureComponent()
 	//}
 	//else
 	//{
-	//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load normal asset!"), TEXT(__FUNCTION__), __LINE__);
+	//	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Could not load normal asset!"), *FString(__func__), __LINE__);
 	//}
 
 	NormalSceneCaptureComp->SetHiddenInGame(true);
@@ -633,7 +633,7 @@ void USLVisLegacyManager::InitMaskColors()
 		}
 
 		// Create a unique color for each actor in world
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d WORLD"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d WORLD"), *FString(__func__), __LINE__);
 		USLVisLegacyManager::SetUniqueMaskColors(ActorColorMap);
 
 		for (auto& ActorColorPair : ActorColorMap)
@@ -643,7 +643,7 @@ void USLVisLegacyManager::InitMaskColors()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d NO WORLD"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d NO WORLD"), *FString(__func__), __LINE__);
 	}
 
 
@@ -666,10 +666,10 @@ void USLVisLegacyManager::SetUniqueMaskColors(TMap<AStaticMeshActor*, FColor>& O
 
 	// Compute how many different Saturations and Values are needed
 	int32_t left = FMath::Max<int32_t>(0, NrOfColors - HueCount);
-	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d left=%d"), TEXT(__FUNCTION__), __LINE__, left);
+	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d left=%d"), *FString(__func__), __LINE__, left);
 	while (left > 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d left=%d"), TEXT(__FUNCTION__), __LINE__, left);
+		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d left=%d"), *FString(__func__), __LINE__, left);
 		if (left > 0)
 		{
 			++ValCount;
@@ -686,11 +686,11 @@ void USLVisLegacyManager::SetUniqueMaskColors(TMap<AStaticMeshActor*, FColor>& O
 	// Compute how many different saturations and values are needed
 	int32 Remaining = FMath::Max<int32>(0, NrOfColors - HueCount);
 	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Remaining=%d, NRofCol=%d"),
-		TEXT(__FUNCTION__), __LINE__, Remaining, NrOfColors);
+		*FString(__func__), __LINE__, Remaining, NrOfColors);
 	while (Remaining > 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Remaining=%d, NRofCol=%d"),
-			TEXT(__FUNCTION__), __LINE__, Remaining, NrOfColors);
+			*FString(__func__), __LINE__, Remaining, NrOfColors);
 		if (Remaining > 0)
 		{
 			++ValCount;
@@ -727,7 +727,7 @@ void USLVisLegacyManager::SetUniqueMaskColors(TMap<AStaticMeshActor*, FColor>& O
 
 	// TODO merge these two steps, add the color directly to the map
 	UE_LOG(LogTemp, Warning, TEXT(">> %s::%d NR cols: %d , NR Acts: %d"),
-		TEXT(__FUNCTION__), __LINE__, Colors.Num(), OutActorColorMap.Num());
+		*FString(__func__), __LINE__, Colors.Num(), OutActorColorMap.Num());
 	if (Colors.Num() >= OutActorColorMap.Num())
 	{
 		for (auto& ActorColorPair : OutActorColorMap)
@@ -773,6 +773,6 @@ void USLVisLegacyManager::SetUniqueMaskColors(TMap<AStaticMeshActor*, FColor>& O
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT(">> %s::%d Not engough colors for each actor, skipping mask setup."),
-			TEXT(__FUNCTION__), __LINE__);
+			*FString(__func__), __LINE__);
 	}
 }

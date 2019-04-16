@@ -20,13 +20,13 @@ USLBoneOverlapShape::USLBoneOverlapShape()
 	}
 #endif // WITH_EDITORONLY_DATA
 
-	UE_LOG(LogTemp, Error, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__func__), __LINE__);
 }
 
 // Dtor
 USLBoneOverlapShape::~USLBoneOverlapShape()
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__func__), __LINE__);
 }
 
 // Attach to bone 
@@ -34,7 +34,7 @@ bool USLBoneOverlapShape::Init(USkeletalMeshComponent* Parent, FName BoneName)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
 		bIsInit = true;
 		return bIsInit;
 	}

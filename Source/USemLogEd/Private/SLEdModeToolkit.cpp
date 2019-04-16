@@ -387,7 +387,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksRand()
 				{
 					// Conflict
 					//UE_LOG(LogTemp, Warning, TEXT("\t\t\t%s::%d Conflict between RandColor=%s; and SemColor=%s; Trial=%d"),
-					//	TEXT(__FUNCTION__), __LINE__, *RandColor.ToString(), *SemColor->ToString(), Idx);
+					//	*FString(__func__), __LINE__, *RandColor.ToString(), *SemColor->ToString(), Idx);
 				}
 				else
 				{
@@ -397,7 +397,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksRand()
 				}
 			}
 		}
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a unique color, saving as black.."), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a unique color, saving as black.."), *FString(__func__), __LINE__);
 		return FColor::Black.ToHex();
 	};
 
@@ -456,7 +456,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksRand()
 						{
 							// This should not happen, the two maps should be synced
 							UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot fine bone %s, maps are not synced.."), 
-								TEXT(__FUNCTION__), __LINE__, *Pair.Key.ToString());
+								*FString(__func__), __LINE__, *Pair.Key.ToString());
 						}
 					}
 				}
@@ -486,7 +486,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 				if (ColorIdx.R > StepFrom255)
 				{
 					ColorIdx = FColor::White;
-					UE_LOG(LogTemp, Error, TEXT("%s::%d Reached the maximum possible color values.."), TEXT(__FUNCTION__), __LINE__);
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Reached the maximum possible color values.."), *FString(__func__), __LINE__);
 					return FColor::Black.ToHex();;
 				}
 				else
@@ -559,7 +559,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 					//FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", GenerateUniqueColorLambda(Tolerance, CIdx), true);
 					if (UniqueColors.Num() == 0)
 					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d No more unique colors, saving as black"), TEXT(__FUNCTION__), __LINE__);
+						UE_LOG(LogTemp, Error, TEXT("%s::%d No more unique colors, saving as black"), *FString(__func__), __LINE__);
 						FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", FColor::Black.ToHex(), true);
 					}
 					else
@@ -572,7 +572,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 					//FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", GenerateUniqueColorLambda(Tolerance, CIdx), true);
 					if (UniqueColors.Num() == 0)
 					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d No more unique colors, saving as black"), TEXT(__FUNCTION__), __LINE__);
+						UE_LOG(LogTemp, Error, TEXT("%s::%d No more unique colors, saving as black"), *FString(__func__), __LINE__);
 						FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", FColor::Black.ToHex(), true);
 					}
 					else
@@ -620,7 +620,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 							{
 								// This should not happen, the two maps should be synced
 								UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot find bone %s, maps are not synced.."),
-									TEXT(__FUNCTION__), __LINE__, *Pair.Key.ToString());
+									*FString(__func__), __LINE__, *Pair.Key.ToString());
 							}
 						}
 					}

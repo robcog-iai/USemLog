@@ -97,7 +97,7 @@ void USLSkeletalDataComponent::LoadFromDataAsset()
 					if (BoneData.MaskMaterialIndex == INDEX_NONE)
 					{
 						UE_LOG(LogTemp, Error, TEXT("%s::%d Class %s is not part of a material slot.."),
-							TEXT(__FUNCTION__), __LINE__, *BoneClass);
+							*FString(__func__), __LINE__, *BoneClass);
 					}
 
 					//// Find the material slot with the bone class name
@@ -121,7 +121,7 @@ void USLSkeletalDataComponent::LoadFromDataAsset()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Parent is not a USkeletalMeshComponent.."), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Parent is not a USkeletalMeshComponent.."), *FString(__func__), __LINE__);
 	}
 }
 
@@ -143,7 +143,7 @@ void USLSkeletalDataComponent::Refresh()
 			if (BoneDataPair.Value.MaskMaterialIndex == INDEX_NONE)
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Class %s is not part of a material slot.."),
-					TEXT(__FUNCTION__), __LINE__, *BoneDataPair.Value.Class);
+					*FString(__func__), __LINE__, *BoneDataPair.Value.Class);
 			}
 		}
 
@@ -156,7 +156,7 @@ void USLSkeletalDataComponent::Refresh()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Parent is not a USkeletalMeshComponent.."), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Parent is not a USkeletalMeshComponent.."), *FString(__func__), __LINE__);
 	}
 }
 
@@ -190,7 +190,7 @@ bool USLSkeletalDataComponent::SetSkeletalParent()
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d GetAttachParent() is not of type USkeletalMeshComponent.."),
-				TEXT(__FUNCTION__), __LINE__);
+				*FString(__func__), __LINE__);
 			return false;
 		}
 	}
@@ -232,7 +232,7 @@ bool USLSkeletalDataComponent::SetSemanticOwnerData()
 			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d None of GetAttachParent() or GetOwner() is a semantic owner.."),
-					TEXT(__FUNCTION__), __LINE__);
+					*FString(__func__), __LINE__);
 				return false;
 			}
 		}
