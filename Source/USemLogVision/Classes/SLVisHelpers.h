@@ -147,19 +147,19 @@ struct FSLVisDurationsLogger
 	void SetStartTime() { SetTime(ST); };
 	void SetEndTime(bool bLogDuration = false) { SetTime(ET); if (bLogDuration) { LogTotalDuration(); }; };
 	double TotalDuration() const { return ET - ST; };
-	void LogTotalDuration() { UE_LOG(LogTemp, Warning, TEXT("%s::%d TotalDuration=%lf;"), TEXT(__FUNCTION__), __LINE__, TotalDuration()); };
+	void LogTotalDuration() { UE_LOG(LogTemp, Warning, TEXT("%s::%d TotalDuration=%lf;"), *FString(__func__), __LINE__, TotalDuration()); };
 
 	// Scrub req to callback
 	void SetScrubRequestTime() { SetTime(ScrubReq); };
 	void SetScrubCbTime(bool bLogDuration = false) { SetTime(ScrubCb); if (bLogDuration) { LogScrubDuration(); };};
 	double ScrubDuration() const {	return ScrubCb - ScrubReq; };
-	void LogScrubDuration() { UE_LOG(LogTemp, Warning, TEXT("%s::%d ScrubDuration=%lf;"), TEXT(__FUNCTION__), __LINE__, ScrubDuration()); };
+	void LogScrubDuration() { UE_LOG(LogTemp, Warning, TEXT("%s::%d ScrubDuration=%lf;"), *FString(__func__), __LINE__, ScrubDuration()); };
 
 	// Screenshot req to callback
 	void SetScreenshotRequestTime() { SetTime(ScreenshotReq); };
 	void ScreenshotCbTime(bool bLogDuration = false) { SetTime(ScreenshotCb); if (bLogDuration) { LogScreenshotDuration(); }; };
 	double ScreenshotDuration() const {	return ScreenshotCb - ScreenshotReq; };
-	void LogScreenshotDuration() { UE_LOG(LogTemp, Warning, TEXT("%s::%d ScreenshotDuration=%lf;"), TEXT(__FUNCTION__), __LINE__, ScreenshotDuration()); };
+	void LogScreenshotDuration() { UE_LOG(LogTemp, Warning, TEXT("%s::%d ScreenshotDuration=%lf;"), *FString(__func__), __LINE__, ScreenshotDuration()); };
 
 private:
 	// Set variable to the time
@@ -223,7 +223,7 @@ struct FSLVisProgressLogger
 	// Log progress
 	void LogProgress() const
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s"), TEXT(__FUNCTION__), __LINE__, *ToString());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s"), *FString(__func__), __LINE__, *ToString());
 	}
 };
 

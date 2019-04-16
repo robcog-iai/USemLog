@@ -115,7 +115,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 				bson_t *update_query = NULL;
 
 				// Add timestamp
-				BSON_APPEND_DOUBLE(doc, "render_timestamp", StampedData.Timestamp);
+				BSON_APPEND_DOUBLE(doc, "timestamp_render", StampedData.Timestamp);
 
 				// Save images data to gridfs, and create a bson entry
 				USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, doc);
@@ -174,7 +174,7 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 	FSLVisWorldStateEntryParams AfterWS;
 	USLVisImageWriterMongoC::GetWorldStateParamsAt(Timestamp, false, AfterWS);
 
-	// Flag if world state entries are valip for image data update
+	// Flag if world state entries are valid for image data update
 	bool bBeforeIsValidForUpdate = BeforeWS.bAllDataIsValid && (!BeforeWS.bContainsImageData) && (BeforeWS.TimeDistance < TimeRange);
 	bool bAfterIsValidForUpdate = AfterWS.bAllDataIsValid && (!AfterWS.bContainsImageData) && (AfterWS.TimeDistance < TimeRange);
 	
@@ -501,17 +501,17 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 				BSON_APPEND_DOCUMENT_BEGIN(&entity_arr, j_key, &entity_arr_obj);
 
 					BSON_APPEND_UTF8(&entity_arr_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
-					BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
-					BSON_APPEND_UTF8(&entity_arr_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
+					//BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
+					//BSON_APPEND_UTF8(&entity_arr_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
 					BSON_APPEND_INT32(&entity_arr_obj, "num_pixels", Entity.NumPixels);
 
-					// Add color sub-sub-sub doc
-					BSON_APPEND_DOCUMENT_BEGIN(&entity_arr_obj, "mask_color", &obj_color);
-					BSON_APPEND_DOUBLE(&obj_color, "r", Entity.Color.R);
-					BSON_APPEND_DOUBLE(&obj_color, "g", Entity.Color.G);
-					BSON_APPEND_DOUBLE(&obj_color, "b", Entity.Color.B);
-					BSON_APPEND_DOUBLE(&obj_color, "a", Entity.Color.A);
-					bson_append_document_end(&entity_arr_obj, &obj_color);
+					//// Add color sub-sub-sub doc
+					//BSON_APPEND_DOCUMENT_BEGIN(&entity_arr_obj, "mask_color", &obj_color);
+					//BSON_APPEND_DOUBLE(&obj_color, "r", Entity.Color.R);
+					//BSON_APPEND_DOUBLE(&obj_color, "g", Entity.Color.G);
+					//BSON_APPEND_DOUBLE(&obj_color, "b", Entity.Color.B);
+					//BSON_APPEND_DOUBLE(&obj_color, "a", Entity.Color.A);
+					//bson_append_document_end(&entity_arr_obj, &obj_color);
 
 				bson_append_document_end(&entity_arr, &entity_arr_obj);
 				j++;

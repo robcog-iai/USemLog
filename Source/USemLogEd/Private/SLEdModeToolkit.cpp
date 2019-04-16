@@ -86,7 +86,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("SemanticallyAnnotateConstraints", "Annotate Constraints"))
+						.Text(LOCTEXT("AnnotateConstraints", "Annotate Constraints"))
 						.IsEnabled(true)
 						.OnClicked(this, &FSLEdModeToolkit::SemanticallyAnnotateConstraints)
 					]

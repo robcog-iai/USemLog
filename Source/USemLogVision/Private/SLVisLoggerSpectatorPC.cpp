@@ -23,7 +23,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	ScrubRate = 0.28f;
+	ScrubRate = 0.08f;
 	SkipNewEntryTolerance = 0.05f; 
 	CurrentViewIndex = 0;
 	CurrRenderIndex = 0;
@@ -34,15 +34,15 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	bIsFinished = false;
 
 	// Add buffer types to visualize
-	RenderTypes.Add(ESLVisRenderType::Color);
-	RenderTypes.Add(ESLVisRenderType::Depth);
+	//RenderTypes.Add(ESLVisRenderType::Color);
+	//RenderTypes.Add(ESLVisRenderType::Depth);
 	RenderTypes.Add(ESLVisRenderType::Mask);
-	RenderTypes.Add(ESLVisRenderType::Normal);
+	//RenderTypes.Add(ESLVisRenderType::Normal);
 
 	// Image size 
 	// 8k (7680, 4320) / 4k (3840, 2160) / 2k (2048, 1080) / fhd (1920, 1080) / hd (1280, 720) / sd (720, 480)
-	Resolution.X = 720;
-	Resolution.Y = 480;
+	Resolution.X = 1920;
+	Resolution.Y = 1080;
 }
 
 // Called when the game starts or when spawned

@@ -7,7 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "SLVisViewActor.generated.h"
 
-UCLASS()
+UCLASS(ClassGroup = (SL), DisplayName = "SL Vis View")
 class USEMLOGVISION_API ASLVisViewActor : public AActor
 {
 	GENERATED_BODY()

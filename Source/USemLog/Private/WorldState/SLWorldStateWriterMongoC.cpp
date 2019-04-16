@@ -88,7 +88,7 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 	if (!mongoc_collection_insert_one(collection, ws_doc, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 		bson_destroy(ws_doc);
 	}
 
@@ -114,7 +114,7 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 	if (!uri)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			TEXT(__FUNCTION__), __LINE__, *Uri, *FString(error.message));
+			*FString(__func__), __LINE__, *Uri, *FString(error.message));
 		return false;
 	}
 
@@ -135,7 +135,7 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*EpisodeId), &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Collection %s already exists in database.."),
-			TEXT(__FUNCTION__), __LINE__, *EpisodeId);
+			*FString(__func__), __LINE__, *EpisodeId);
 		//return false;
 	}
 	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId));
@@ -146,7 +146,7 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 		bson_destroy(server_ping_cmd);
 		return false;
 	}
@@ -193,7 +193,7 @@ bool FSLWorldStateWriterMongoC::CreateIndexes()
 	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 		bson_destroy(index_command);
 		bson_free(index_name);
 		return false;
