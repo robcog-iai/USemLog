@@ -178,6 +178,11 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 	bool bBeforeIsValidForUpdate = BeforeWS.bAllDataIsValid && (!BeforeWS.bContainsImageData) && (BeforeWS.TimeDistance < TimeRange);
 	bool bAfterIsValidForUpdate = AfterWS.bAllDataIsValid && (!AfterWS.bContainsImageData) && (AfterWS.TimeDistance < TimeRange);
 	
+	// strcpy_s is safer than strcpy, but only an optional method in the standard
+	// as clang doesn't implement it, we rewrite it here for linux. WARN: Normally strcpy_s requires 3 arguments, while visual studio seems to be happy with two when using stack allocated buffers. This is because they have a templated version of strcpy_s
+	#ifndef _MSC_VER
+		#define strcpy_s strcpy
+	#endif
 	// Check if a valid world state was found before the query timestamp
 	if(bBeforeIsValidForUpdate)
 	{
