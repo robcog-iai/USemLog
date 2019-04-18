@@ -564,7 +564,7 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 		{
 			if (AsMongoCxxWriter->ShouldSkipThisTimestamp(Timestamp))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Frame can be skipped.."), TEXT(__FUNCTION__), __LINE__);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Frame can be skipped.."), *FString(__func__), __LINE__);
 				return true;
 			}
 			else
@@ -577,7 +577,7 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 		{
 			if (AsMongoCWriter->ShouldSkipThisFrame(Timestamp))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Frame can be skipped.."), TEXT(__FUNCTION__), __LINE__);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Frame can be skipped.."), *FString(__func__), __LINE__);
 				return true;
 			}
 			else
@@ -600,9 +600,9 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 {
 	if (IsInGameThread())
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d In game thread, continuing.. "), TEXT(__FUNCTION__), __LINE__);
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d In game thread, continuing.. "), *FString(__func__), __LINE__);
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d RenderType=%s; TargetLabel:%s;\n World TimeSeconds=%f; DeltaTimeSeconds=%f;"),
-			TEXT(__FUNCTION__), __LINE__, *FSLVisHelper::GetRenderTypeAsString(RenderTypes[CurrRenderIndex]),
+			*FString(__func__), __LINE__, *FSLVisHelper::GetRenderTypeAsString(RenderTypes[CurrRenderIndex]),
 			*CameraViews[CurrentViewIndex]->Class,
 			GetWorld()->TimeSeconds, GetWorld()->DeltaTimeSeconds);
 	
@@ -627,7 +627,7 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 						if (SceneView->ViewFrustum.IntersectBox(ActItr->GetActorLocation(), ActItr->GetComponentsBoundingBox().GetExtent()))
 						{
 							UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d %s Intersected"),
-								TEXT(__FUNCTION__), __LINE__, *ActItr->GetName());
+								*FString(__func__), __LINE__, *ActItr->GetName());
 
 							// todo naive check via 5 traces from bounding box edges + center
 							// if all traces are blocked, the object is not visible
@@ -635,18 +635,18 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 						else
 						{
 							UE_LOG(LogTemp, Error, TEXT("\t\t%s::%d %s Not in view (not intersected)"),
-								TEXT(__FUNCTION__), __LINE__, *ActItr->GetName());
+								*FString(__func__), __LINE__, *ActItr->GetName());
 						}
 					}
 					else
 					{
 						UE_LOG(LogTemp, Error, TEXT("\t%s::%d %s Not in view"),
-							TEXT(__FUNCTION__), __LINE__, *ActItr->GetName());
+							*FString(__func__), __LINE__, *ActItr->GetName());
 					}
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d No local player.."), TEXT(__FUNCTION__), __LINE__);
+					UE_LOG(LogTemp, Error, TEXT("%s::%d No local player.."), *FString(__func__), __LINE__);
 				}
 			}
 			
@@ -655,10 +655,10 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Not in game thread, skipping.."), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Not in game thread, skipping.."), *FString(__func__), __LINE__);
 	}
 	//UE_LOG(LogTemp, Warning, TEXT("%s::%d WORLD TimeSeconds=%f; DeltaTimeSeconds=%f"),
-	//	TEXT(__FUNCTION__), __LINE__, GetWorld()->TimeSeconds, GetWorld()->DeltaTimeSeconds);
+	//	*FString(__func__), __LINE__, GetWorld()->TimeSeconds, GetWorld()->DeltaTimeSeconds);
 	//// Cache original materials, and create mask materials for static meshes
 	//for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 	//{
@@ -667,12 +667,12 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 	//		if (ActItr->WasRecentlyRendered(0.01))
 	//		{
 	//			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s was recently rendered, last render time: %f"),
-	//				TEXT(__FUNCTION__), __LINE__, *ActItr->GetName(), ActItr->GetLastRenderTime());
+	//				*FString(__func__), __LINE__, *ActItr->GetName(), ActItr->GetLastRenderTime());
 	//		}
 	//		else 
 	//		{
 	//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s was NOT recently rendered, last render time: %f"),
-	//				TEXT(__FUNCTION__), __LINE__, *ActItr->GetName(), ActItr->GetLastRenderTime());
+	//				*FString(__func__), __LINE__, *ActItr->GetName(), ActItr->GetLastRenderTime());
 	//		}
 	//	}
 	//}
@@ -682,5 +682,5 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 
 	
 
-	UE_LOG(LogTemp, Error, TEXT("%s::%d  ** * * ** * * ** * * ** * * *"), TEXT(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Error, TEXT("%s::%d  ** * * ** * * ** * * ** * * *"), *FString(__func__), __LINE__);
 }

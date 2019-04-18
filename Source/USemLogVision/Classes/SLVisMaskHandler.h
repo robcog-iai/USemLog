@@ -57,7 +57,7 @@ struct FSLVisSkelMeshMasks
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Mesh or DefaultMaskMaterial is not valid.."), TEXT(__FUNCTION__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Mesh or DefaultMaskMaterial is not valid.."), *FString(__func__), __LINE__);
 		}
 	};
 };

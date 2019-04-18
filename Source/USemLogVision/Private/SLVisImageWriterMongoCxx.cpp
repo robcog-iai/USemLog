@@ -100,7 +100,7 @@ void USLVisImageWriterMongoCxx::Write(const FSLVisStampedData& StampedData)
 	//	catch (const std::exception& xcp)
 	//	{
 	//		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-	//			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+	//			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 	//	}
 
 	//	// Add to array
@@ -129,7 +129,7 @@ void USLVisImageWriterMongoCxx::Write(const FSLVisStampedData& StampedData)
 	//	catch (const std::exception& xcp)
 	//	{
 	//		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-	//			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+	//			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 	//	}
 	//}
 #endif //SLVIS_WITH_LIBMONGO_CXX
@@ -176,7 +176,7 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 					{
 						insertion_doc_id = id_el.get_oid();
 						SmallestDiff = CurrDiff;
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), TEXT(__FUNCTION__), __LINE__, SmallestDiff);
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), *FString(__func__), __LINE__, SmallestDiff);
 					}
 				}
 			}
@@ -213,14 +213,14 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 							// Other result is invalid or it is valid but current diff is smaller
 							insertion_doc_id = id_el.get_oid();
 							SmallestDiff = CurrDiff;
-							UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), TEXT(__FUNCTION__), __LINE__, SmallestDiff);
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), *FString(__func__), __LINE__, SmallestDiff);
 							bCreateNewDocument = false;
 							return false;
 						}
 						else
 						{
 							// Use other result (which is valid since we check if the diff is not negative)
-							UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), TEXT(__FUNCTION__), __LINE__, SmallestDiff);
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), *FString(__func__), __LINE__, SmallestDiff);
 							bCreateNewDocument = false;
 							return false;
 						}
@@ -239,7 +239,7 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
-		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
+		*FString(__func__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
 
 #if SLVIS_WITH_LIBMONGO_CXX
 	try
@@ -273,7 +273,7 @@ bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& Ep
 		{
 			//FString MongoUri = FString(mongo_conn.uri().to_string().c_str());
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d Mongo client with URI: %s "),
-			//	TEXT(__FUNCTION__), __LINE__, *MongoUri);
+			//	*FString(__func__), __LINE__, *MongoUri);
 		}
 		else
 		{
@@ -290,7 +290,7 @@ bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& Ep
 		if (!mongo_db.has_collection(TCHAR_TO_UTF8(*EpisodeId)))
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Collestion %s does not exist in %s"),
-				TEXT(__FUNCTION__), __LINE__, *EpisodeId, *DBName);
+				*FString(__func__), __LINE__, *EpisodeId, *DBName);
 			// TODO abort in this case
 		}
 		mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
@@ -302,7 +302,7 @@ bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& Ep
 	catch (const std::exception& xcp)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 		return false;
 	}
 	return true;
@@ -331,7 +331,7 @@ bool USLVisImageWriterMongoCxx::CreateIndexes()
 	catch (const std::exception& xcp)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 		return false;
 	}
 #else
