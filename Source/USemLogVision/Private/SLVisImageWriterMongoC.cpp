@@ -7,6 +7,7 @@
 USLVisImageWriterMongoC::USLVisImageWriterMongoC()
 {
 	bIsInit = false;
+	bIsMongoInitCalled = false;
 }
 
 // Dtor
@@ -19,7 +20,14 @@ USLVisImageWriterMongoC::~USLVisImageWriterMongoC()
 	mongoc_database_destroy(database);
 	mongoc_uri_destroy(uri);
 	mongoc_client_destroy(client);
-	mongoc_cleanup();
+
+	if(bIsMongoInitCalled)
+	{
+		mongoc_cleanup();
+		bIsMongoInitCalled = false;
+	}else{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Mongo Init hasn't been called before dtor, skipping cleanup"), *FString(__func__), __LINE__);
+	}
 #endif //SLVIS_WITH_LIBMONGO_C
 }
 
@@ -243,6 +251,7 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 #if SLVIS_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
 	mongoc_init();
+	bIsMongoInitCalled = true;
 
 	// Stores any error that might appear during the connection
 	bson_error_t error;	

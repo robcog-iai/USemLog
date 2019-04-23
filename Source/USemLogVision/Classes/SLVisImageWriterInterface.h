@@ -291,4 +291,6 @@ public:
 protected:
 	// Flag to show if it is valid
 	bool bIsInit;
+	// Flag to show if mongoc has been called
+	bool bIsMongoInitCalled;
 };

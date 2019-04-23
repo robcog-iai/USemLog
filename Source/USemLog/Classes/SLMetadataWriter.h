@@ -112,6 +112,11 @@ private:
 	// Set when manager is finished
 	bool bIsFinished;
 
+	// Flag to show if mongoc has been called
+	bool bIsMongoInitCalled;
+
+
+
 #if SL_WITH_LIBMONGO_C
 	// Server uri
 	mongoc_uri_t* uri;

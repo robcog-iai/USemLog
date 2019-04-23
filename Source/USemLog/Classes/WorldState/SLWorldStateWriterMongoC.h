@@ -72,6 +72,9 @@ private:
 	// Add pose to document
 	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc);
 
+	// Flag to show if mongoc has been called
+	bool bIsMongoInitCalled;
+
 private:
 	// Server uri
 	mongoc_uri_t* uri;
