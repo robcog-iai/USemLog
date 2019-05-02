@@ -96,7 +96,6 @@ void FSLMetadataWriter::WriteEnvironmentMetadata()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
 			*FString(__func__), __LINE__, *FString(error.message));
-		bson_destroy(meta_doc);
 	}
 
 	// Clean up
