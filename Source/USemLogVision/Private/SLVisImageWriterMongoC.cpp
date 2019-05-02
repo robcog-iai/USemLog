@@ -54,7 +54,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 	if (!(StampedData.ViewsData.Num() > 0))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Images data is empty, nothing to write.."),
-			TEXT(__FUNCTION__), __LINE__);
+			*FString(__func__), __LINE__);
 		return;
 	}
 
@@ -65,7 +65,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 	{
 		// Create a new database entry for the data
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Writing a new entry.."),
-			TEXT(__FUNCTION__), __LINE__);
+			*FString(__func__), __LINE__);
 
 		// Document to store the images data
 		bson_t* doc = bson_new();
@@ -80,7 +80,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 		if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error))
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-				TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+				*FString(__func__), __LINE__, *FString(error.message));
 			bson_destroy(doc);
 		}
 		// Clean up allocated bson documents.
@@ -89,7 +89,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 	else // Update existing entry
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Updating entry oid=%s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(ws_oid_str));
+			*FString(__func__), __LINE__, *FString(ws_oid_str));
 
 		// Update existing entry with the imgs data
 		//if(ws_oid2)
@@ -128,7 +128,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 				if (!mongoc_collection_update_one(collection, update_query, update_doc, NULL, NULL, &error))
 				{
 					UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-						TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+						*FString(__func__), __LINE__, *FString(error.message));
 				}
 				// Clean up
 				bson_destroy(doc);
@@ -139,9 +139,9 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 			{
 				//char oid_str[25];
 				//bson_oid_to_string(ws_oid2, oid_str);
-				//UE_LOG(LogTemp, Error, TEXT("%s::%d Update OID=%s"), TEXT(__FUNCTION__), __LINE__, *FString(oid_str));
+				//UE_LOG(LogTemp, Error, TEXT("%s::%d Update OID=%s"), *FString(__func__), __LINE__, *FString(oid_str));
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Entry _id=%s already has views stored, skipping.. (This should not happen)"), 
-					TEXT(__FUNCTION__), __LINE__, *FString(ws_oid_str));
+					*FString(__func__), __LINE__, *FString(ws_oid_str));
 			}
 			bson_destroy(double_check_query);
 		}
@@ -149,7 +149,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 		{
 			// _id invalid or empty (this should not happen because ShouldSkipThisFrame checks for these cases)
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Search entry _id is empty or invalid, this should not happen.."),
-				TEXT(__FUNCTION__), __LINE__);
+				*FString(__func__), __LINE__);
 		}
 	}
 #endif //SLVIS_WITH_LIBMONGO_C
@@ -160,7 +160,7 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Writer is not init, force skipping frame"), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Writer is not init, force skipping frame"), *FString(__func__), __LINE__);
 		return true;
 	}
 #if SLVIS_WITH_LIBMONGO_C
@@ -178,6 +178,11 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 	bool bBeforeIsValidForUpdate = BeforeWS.bAllDataIsValid && (!BeforeWS.bContainsImageData) && (BeforeWS.TimeDistance < TimeRange);
 	bool bAfterIsValidForUpdate = AfterWS.bAllDataIsValid && (!AfterWS.bContainsImageData) && (AfterWS.TimeDistance < TimeRange);
 	
+	// strcpy_s is safer than strcpy, but only an optional method in the standard
+	// as clang doesn't implement it, we rewrite it here for linux. WARN: Normally strcpy_s requires 3 arguments, while visual studio seems to be happy with two when using stack allocated buffers. This is because they have a templated version of strcpy_s
+	#ifndef _MSC_VER
+		#define strcpy_s strcpy
+	#endif
 	// Check if a valid world state was found before the query timestamp
 	if(bBeforeIsValidForUpdate)
 	{
@@ -248,7 +253,7 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 	if (!uri) 
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			TEXT(__FUNCTION__), __LINE__, *Uri, *FString(error.message));
+			*FString(__func__), __LINE__, *Uri, *FString(error.message));
 		return false;
 	}
 
@@ -272,7 +277,7 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 		bson_destroy(server_ping_cmd);
 		return false;
 	}
@@ -282,7 +287,7 @@ bool USLVisImageWriterMongoC::Connect(const FString& DBName, const FString& Epis
 	if (!gridfs)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			TEXT(__FUNCTION__), __LINE__, *Uri, *FString(error.message));
+			*FString(__func__), __LINE__, *Uri, *FString(error.message));
 		bson_destroy(server_ping_cmd);
 		return false;
 	}
@@ -416,7 +421,7 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 		bson_destroy(index_command);
 		bson_free(index_name);
 		return false;
@@ -613,7 +618,7 @@ bool USLVisImageWriterMongoC::SaveImageToGridFS(const FSLVisImageData& ImgData, 
 		if (mongoc_gridfs_file_error(file, &error))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
-				TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+				*FString(__func__), __LINE__, *FString(error.message));
 		}
 		mongoc_gridfs_file_destroy(file);
 		return false;
@@ -624,7 +629,7 @@ bool USLVisImageWriterMongoC::SaveImageToGridFS(const FSLVisImageData& ImgData, 
 	{
 		mongoc_gridfs_file_error(file, &error);
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
-			TEXT(__FUNCTION__), __LINE__, *FString(error.message));
+			*FString(__func__), __LINE__, *FString(error.message));
 		mongoc_gridfs_file_destroy(file);
 		return false;
 	}

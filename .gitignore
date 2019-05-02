@@ -9,6 +9,10 @@
 /Plugins/hydra-ue4/Binaries/
 *.sln
 
+# vim
+*.swp
+*.swo
+
 # Compiled Object files
 *.slo
 *.lo

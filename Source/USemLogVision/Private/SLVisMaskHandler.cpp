@@ -41,7 +41,7 @@ void USLVisMaskHandler::Init()
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material! NOT initalized.."),
-				TEXT(__FUNCTION__), __LINE__);
+				*FString(__func__), __LINE__);
 			return;
 		}
 
@@ -137,7 +137,7 @@ void USLVisMaskHandler::SetupSkeletalMeshes()
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot init skeletal data component.. (this should not happen)"), TEXT(__FUNCTION__), __LINE__);
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot init skeletal data component.. (this should not happen)"), *FString(__func__), __LINE__);
 				}
 			}
 			else
@@ -276,19 +276,19 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVi
 		Idx++;
 	}
 
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic colors:"), TEXT(__FUNCTION__), __LINE__);
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic colors:"), *FString(__func__), __LINE__);
 	//for (const auto& C : SemanticColors)
 	//{
 	//	UE_LOG(LogTemp, Warning, TEXT("\t\t%s"), *C.ToString());
 	//}
 
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Colors in range:"), TEXT(__FUNCTION__), __LINE__);
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Colors in range:"), *FString(__func__), __LINE__);
 	//for (const auto& C : ColorsInRange)
 	//{
 	//	UE_LOG(LogTemp, Warning, TEXT("\t\t%s"), *C.ToString());
 	//}
 
-	//UE_LOG(LogTemp, Error, TEXT("%s::%d Colors OUT OF range:"), TEXT(__FUNCTION__), __LINE__);
+	//UE_LOG(LogTemp, Error, TEXT("%s::%d Colors OUT OF range:"), *FString(__func__), __LINE__);
 	//for (const auto& C : ColorsOutOfRange)
 	//{
 	//	UE_LOG(LogTemp, Error, TEXT("\t\t%s"), *C.ToString());
@@ -331,7 +331,7 @@ void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& Colo
 {
 	if (USLVisMaskHandler::AlmostEqual(Color, FColor::Black, SLVIS_BLACK_TOL))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic color is (almost) black, this should not happen, skipping.."), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic color is (almost) black, this should not happen, skipping.."), *FString(__func__), __LINE__);
 		return;
 	}
 	FSLVisEntitiyData EntityData;
@@ -343,7 +343,7 @@ void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& Colo
 	MaskColors.Emplace(Color);
 	EntitiesMasks.Emplace(Color, EntityData);
 
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityData=\n\t%s"), TEXT(__FUNCTION__), __LINE__, *EntityData.ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityData=\n\t%s"), *FString(__func__), __LINE__, *EntityData.ToString());
 }
 
 // Store the information about the skeletal semantic color
@@ -351,7 +351,7 @@ void USLVisMaskHandler::AddSkelSemanticData(const FString& OwnerId, const FStrin
 {
 	if (USLVisMaskHandler::AlmostEqual(Color, FColor::Black, SLVIS_BLACK_TOL))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic color is (almost) black, this should not happen, skipping.."), TEXT(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic color is (almost) black, this should not happen, skipping.."), *FString(__func__), __LINE__);
 		return;
 	}
 	FSLVisBoneData BoneData;
@@ -364,7 +364,7 @@ void USLVisMaskHandler::AddSkelSemanticData(const FString& OwnerId, const FStrin
 	MaskColors.Emplace(Color);
 	BonesMasks.Emplace(Color, BoneData);
 
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityData=\n\t%s"), TEXT(__FUNCTION__), __LINE__, *EntityData.ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityData=\n\t%s"), *FString(__func__), __LINE__, *EntityData.ToString());
 }
 
 // Compare against the semantic colors, if found switch (update color info during), returns true if the color has been switched
