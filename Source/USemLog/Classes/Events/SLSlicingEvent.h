@@ -18,27 +18,27 @@ public:
 
 	// Constructor with initialization
 	FSLSlicingEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLItem& InPerformedBy, const FSLItem& InDeviceUsed, const FSLItem& InObjectActedOn,
-		const FSLItem& InOutputsCreated, const bool InTaskSuccess);
+		const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn,
+		const FSLEntity& InOutputsCreated, const bool InTaskSuccess);
 
 	// Constructor initialization without endTime, endTaskSuccess and outputsCreated.
 	FSLSlicingEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLItem& InPerformedBy, const FSLItem& InDeviceUsed, const FSLItem& InObjectActedOn);
+		const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
 	// Cutter agent
-	FSLItem PerformedBy;
+	FSLEntity PerformedBy;
 	
 	// Cutter Device
-	FSLItem DeviceUsed;
+	FSLEntity DeviceUsed;
 
 	// Other item (Sliced item)
-	FSLItem ObjectActedOn;
+	FSLEntity ObjectActedOn;
 
 	// Slice
-	FSLItem OutputsCreated;
+	FSLEntity OutputsCreated;
 
 	// Task succeded or not
 	bool TaskSuccess;

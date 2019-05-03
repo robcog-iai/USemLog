@@ -164,7 +164,7 @@ void ASLManager::Init()
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
 			EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId, ServerIp, ServerPort),
-				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines, bWriteMetadata);
+				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogSlicingEvents, bWriteTimelines, bWriteMetadata);
 		}
 
 		if (bLogVisionData)

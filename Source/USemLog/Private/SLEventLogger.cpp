@@ -9,6 +9,7 @@
 #include "Events/SLContactEventHandler.h"
 #include "Events/SLSupportedByEventHandler.h"
 #include "Events/SLGraspEventHandler.h"
+#include "Events/SLSlicingEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLOverlapShape.h"
 #include "SLGraspListener.h"
@@ -171,7 +172,6 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 #endif // SL_WITH_MC_GRASP
 		}
 
-<<<<<<< HEAD
 		// Init Slicing handlers
 		if (bInLogSlicingEvents)
 		{
@@ -179,7 +179,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			for (TObjectIterator<USlicingBladeComponent> Itr; Itr; ++Itr)
 			{
 				// Skip objects that do not have a semantically annotated ancestor
-				if (!FSLMappings::GetInstance()->HasValidAncestor(*Itr))
+				if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
 				{
 					continue;
 				}
@@ -190,11 +190,11 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				EventHandlers.Add(SlicingEventHandler);
 			}
 #endif // SL_WITH_SLICING
-=======
+		}
+
 		if (bWriteMetadata)
 		{
 			MetadataWriter.Init(WriterParams);
->>>>>>> c3352d439414e0a8268f43ee4cc754286552205c
 		}
 
 		// Mark as initialized

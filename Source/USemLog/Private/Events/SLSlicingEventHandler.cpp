@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLSlicingEventHandler.h"
-#include "SLMappings.h"
+#include "SLEntitiesManager.h"
 #include "Tags.h"
 #if SL_WITH_SLICING
 #include "SlicingBladeComponent.h"
@@ -18,9 +18,9 @@ void FSLSlicingEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Make sure the mappings singleton is initialized (the handler uses it)
-		if (!FSLMappings::GetInstance()->IsInit())
+		if (!FSLEntitiesManager::GetInstance()->IsInit())
 		{
-			FSLMappings::GetInstance()->Init(InParent->GetWorld());
+			FSLEntitiesManager::GetInstance()->Init(InParent->GetWorld());
 		}
 
 #if SL_WITH_SLICING
@@ -74,7 +74,7 @@ void FSLSlicingEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new Slicing event
-void FSLSlicingEventHandler::AddNewEvent(const FSLItem& PerformedBy, const FSLItem& DeviceUsed, const FSLItem& ObjectActedOn, float StartTime)
+void FSLSlicingEventHandler::AddNewEvent(const FSLEntity& PerformedBy, const FSLEntity& DeviceUsed, const FSLEntity& ObjectActedOn, float StartTime)
 {
 	// Start a semantic Slicing event
 	TSharedPtr<FSLSlicingEvent> Event = MakeShareable(new FSLSlicingEvent(
@@ -86,7 +86,7 @@ void FSLSlicingEventHandler::AddNewEvent(const FSLItem& PerformedBy, const FSLIt
 }
 
 // Publish finished event
-bool FSLSlicingEventHandler::FinishEvent(UObject* ObjectActedOn, bool taskSuccess, float EndTime, const FSLItem& OutputsCreated = FSLItem::FSLItem())
+bool FSLSlicingEventHandler::FinishEvent(UObject* ObjectActedOn, bool taskSuccess, float EndTime, const FSLEntity& OutputsCreated = FSLEntity::FSLEntity())
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
@@ -125,24 +125,24 @@ void FSLSlicingEventHandler::FinishAllEvents(float EndTime)
 void FSLSlicingEventHandler::OnSLSlicingBegin(UObject* PerformedBy, UObject* DeviceUsed, UObject* ObjectActedOn, float Time)
 {
 	// Check that the objects are semantically annotated
-  	FSLItem PerformedByItem = FSLMappings::GetInstance()->GetItem(PerformedBy);
-	FSLItem DeviceUsedItem = FSLMappings::GetInstance()->GetItem(DeviceUsed);
-	FSLItem CutItem = FSLMappings::GetInstance()->GetItem(ObjectActedOn);
-	if (PerformedByItem.IsValid()
-		&& CutItem.IsValid()
-		&& DeviceUsedItem.IsValid())
+  	FSLEntity PerformedByEntity = FSLEntitiesManager::GetInstance()->GetEntity(PerformedBy);
+	FSLEntity DeviceUsedEntity = FSLEntitiesManager::GetInstance()->GetEntity(DeviceUsed);
+	FSLEntity CutEntity = FSLEntitiesManager::GetInstance()->GetEntity(ObjectActedOn);
+	if (PerformedByEntity.IsSet()
+		&& CutEntity.IsSet()
+		&& DeviceUsedEntity.IsSet())
 	{
-		FSLSlicingEventHandler::AddNewEvent(PerformedByItem, DeviceUsedItem, CutItem, Time);
+		FSLSlicingEventHandler::AddNewEvent(PerformedByEntity, DeviceUsedEntity, CutEntity, Time);
 	}
 }
 
 // Event called when a semantic Slicing event ends
 void FSLSlicingEventHandler::OnSLSlicingEndFail(UObject* PerformedBy, UObject* ObjectActedOn, float Time)
 {
-	FSLItem PerformedByItem = FSLMappings::GetInstance()->GetItem(PerformedBy);
-	FSLItem CutItem = FSLMappings::GetInstance()->GetItem(ObjectActedOn);
-	if (PerformedByItem.IsValid()
-		&& CutItem.IsValid())
+	FSLEntity PerformedByEntity = FSLEntitiesManager::GetInstance()->GetEntity(PerformedBy);
+	FSLEntity CutEntity = FSLEntitiesManager::GetInstance()->GetEntity(ObjectActedOn);
+	if (PerformedByEntity.IsSet()
+		&& CutEntity.IsSet())
 	{
 		FSLSlicingEventHandler::FinishEvent(ObjectActedOn, false, Time);
 	}
@@ -151,14 +151,14 @@ void FSLSlicingEventHandler::OnSLSlicingEndFail(UObject* PerformedBy, UObject* O
 // Event called when a semantic Slicing event ends
 void FSLSlicingEventHandler::OnSLSlicingEndSuccess(UObject* PerformedBy, UObject* ObjectActedOn, UObject* OutputsCreated, float Time)
 {
-	FSLItem PerformedByItem = FSLMappings::GetInstance()->GetItem(PerformedBy);
-	FSLItem CutItem = FSLMappings::GetInstance()->GetItem(ObjectActedOn);
-	FSLItem OutputsCreatedItem = FSLMappings::GetInstance()->GetItem(OutputsCreated);
-	if (PerformedByItem.IsValid()
-		&& CutItem.IsValid()
-		&& OutputsCreatedItem.IsValid())
+	FSLEntity PerformedByEntity = FSLEntitiesManager::GetInstance()->GetEntity(PerformedBy);
+	FSLEntity CutEntity = FSLEntitiesManager::GetInstance()->GetEntity(ObjectActedOn);
+	FSLEntity OutputsCreatedEntity = FSLEntitiesManager::GetInstance()->GetEntity(OutputsCreated);
+	if (PerformedByEntity.IsSet()
+		&& CutEntity.IsSet()
+		&& OutputsCreatedEntity.IsSet())
 	{
-		FSLSlicingEventHandler::FinishEvent(ObjectActedOn, true, Time, OutputsCreatedItem);
+		FSLSlicingEventHandler::FinishEvent(ObjectActedOn, true, Time, OutputsCreatedEntity);
 	}
 }
 
@@ -167,11 +167,11 @@ void FSLSlicingEventHandler::OnSLObjectCreation(UObject* TransformedObject, UObj
 {
 	// Only create Id for new Slice and use same old ID for Original object
 	FString IdValue = FIds::NewGuidInBase64() + "_";
-	IdValue.Append(FTags::GetKeyValue(TransformedObject, "SemLog", "Id"));
+	IdValue.Append(FTags::GetValue(TransformedObject, "SemLog", "Id"));
 	FTags::AddKeyValuePair(NewSlice, "SemLog", "Id", IdValue, true);
 
-	if (FSLMappings::GetInstance()->AddItem(TransformedObject) &&
-		FSLMappings::GetInstance()->AddItem(NewSlice))
+	if (FSLEntitiesManager::GetInstance()->AddObject(TransformedObject) &&
+		FSLEntitiesManager::GetInstance()->AddObject(NewSlice))
 	{
 		UE_LOG(LogTemp, Error, TEXT(">>Items Have been Created"));
 	}
@@ -180,9 +180,9 @@ void FSLSlicingEventHandler::OnSLObjectCreation(UObject* TransformedObject, UObj
 // Event called when an object is destroyed
 void FSLSlicingEventHandler::OnSLObjectDestruction(UObject* ObjectActedOn, float Time)
 {
-	FSLItem OtherItem = FSLMappings::GetInstance()->GetItem(ObjectActedOn);
-	if (OtherItem.IsValid())
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(ObjectActedOn);
+	if (OtherItem.IsSet())
 	{
-		FSLMappings::GetInstance()->RemoveItem(ObjectActedOn);
+		FSLEntitiesManager::GetInstance()->RemoveEntity(ObjectActedOn);
 	}
 }

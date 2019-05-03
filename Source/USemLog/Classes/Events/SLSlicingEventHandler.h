@@ -23,10 +23,10 @@ public:
 
 private:
 	// Start new Slicing event
-	void AddNewEvent(const FSLItem& PerformedBy, const FSLItem& DeviceUsed, const FSLItem& ObjectActedOn, float StartTime);
+	void AddNewEvent(const FSLEntity& PerformedBy, const FSLEntity& DeviceUsed, const FSLEntity& ObjectActedOn, float StartTime);
 
 	// Finish then publish the event
-	bool FinishEvent(UObject* InObjectActedOn, bool taskSuccess, float EndTime, const FSLItem& OutputsCreated);
+	bool FinishEvent(UObject* InObjectActedOn, bool taskSuccess, float EndTime, const FSLEntity& OutputsCreated);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);

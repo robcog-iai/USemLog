@@ -11,8 +11,8 @@ FSLSlicingEvent::FSLSlicingEvent()
 
 // Constructor with initialization
 FSLSlicingEvent::FSLSlicingEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const FSLItem& InPerformedBy, const FSLItem& InDeviceUsed, const FSLItem& InObjectActedOn,
-	const FSLItem& InOutputsCreated, const bool InTaskSuccess) :
+	const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn,
+	const FSLEntity& InOutputsCreated, const bool InTaskSuccess) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
 	PerformedBy(InPerformedBy), DeviceUsed(InDeviceUsed), ObjectActedOn(InObjectActedOn),
 	OutputsCreated(InOutputsCreated), TaskSuccess(InTaskSuccess)
@@ -21,7 +21,7 @@ FSLSlicingEvent::FSLSlicingEvent(const FString& InId, const float InStart, const
 
 // Constructor initialization without endTime, endTaskSuccess and outputsCreated.
 FSLSlicingEvent::FSLSlicingEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const FSLItem& InPerformedBy, const FSLItem& InDeviceUsed, const FSLItem& InObjectActedOn) :
+	const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn) :
 	ISLEvent(InId, InStart), PairId(InPairId),
 	PerformedBy(InPerformedBy), DeviceUsed(InDeviceUsed), ObjectActedOn(InObjectActedOn)
 {
