@@ -1,10 +1,11 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "SLVisHelpers.h" // ESLVisRenderType
 #include "SLVisImageWriterInterface.generated.h"
 
 
@@ -26,73 +27,237 @@ struct FSLVisImageWriterParams
 	uint16 ServerPort;
 
 	// Minimum time offset for a new entry
-	float NewEntryTimeRange;
+	float SkipNewEntryTolerance;
 
 	// Constructor
 	FSLVisImageWriterParams(
 		const FString& InLocation,
 		const FString& InEpisodeId,
-		float InNewEntryTimeRange = 0.f,
+		float InSkipNewEntryTolerance = 0.f,
 		const FString& InServerIp = "",
 		uint16 InServerPort = 0) :
 		Location(InLocation),
 		EpisodeId(InEpisodeId),
-		NewEntryTimeRange(InNewEntryTimeRange),
+		SkipNewEntryTolerance(InSkipNewEntryTolerance),
 		ServerIp(InServerIp),
 		ServerPort(InServerPort)
 	{};
 };
 
+
 /**
-* Image metadata
+* Images metadatadata
 */
-struct FSLVisImageMetadata
+struct FSLVisImageMetaData
 {
-	// View type
-	FName ViewType;
+	// Render type
+	FString RenderType;
 
-	// Camera name
-	FString Label;
-
-	// Image resolution X
-	int32 ResX;
-
-	// Image resolution Y
-	int32 ResY;
-
-	// Timestamp when the image was rendered in the replay
-	float ReplayTimestamp;
-
-	// Constructor
-	FSLVisImageMetadata(const FName& InViewType,
-		const FString& InCameraLabel,
-		int32 InResX,
-		int32 InResY,
-		float InReplayTimestamp) :
-		ViewType(InViewType),
-		Label(InCameraLabel),
-		ResX(InResX),
-		ResY(InResY),
-		ReplayTimestamp(InReplayTimestamp)
-	{};
+	// Image type
+	FString ImageType; //png, depth resolution?
 };
 
+
+
 /**
-* Images data with metadata
+* Images data 
 */
 struct FSLVisImageData
-{	
-	// Metadata
-	FSLVisImageMetadata Metadata;
+{
+	// Default ctor
+	FSLVisImageData() {};
 
-	// Data
-	TArray<uint8> Data;
+	// Init ctor
+	FSLVisImageData(ESLVisRenderType InRenderType, const TArray<uint8>& InBinaryData) : RenderType(InRenderType), BinaryData(InBinaryData) {};
 
-	// Ctor
-	FSLVisImageData(const FSLVisImageMetadata& InMetadata, const TArray<uint8>& InData) :
-		Metadata(InMetadata), Data(InData)
-	{};
+	// TODO use FSLVisImageMetaData when more data is available
+	// Render type
+	ESLVisRenderType RenderType;
+
+	// Binary data
+	TArray<uint8> BinaryData;
 };
+
+
+/**
+* Semantic entities data from the view
+*/
+struct FSLVisEntitiyData
+{
+	// Default ctor
+	FSLVisEntitiyData() : NumPixels(0) {};
+
+	// Color
+	FColor Color;
+
+	// Color in hex
+	FString ColorHex;
+
+	// Unique id of the entity
+	FString Id;
+
+	// Class of the entity
+	FString Class;
+
+	// Number of pixels belonging to the entity from the image
+	int32 NumPixels;
+
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d;"),
+			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels);
+	}
+};
+
+/**
+* Semantic skeletal entities data from the view
+*/
+struct FSLVisBoneData
+{
+	// Default ctor
+	FSLVisBoneData() : NumPixels(0) {};
+
+	// TODO OwnerId and OwnerClass is redundant since skel data also contains this
+	// it is convenient however for fast TMap lookups when processing the mask image pixels
+	// Owner Id
+	FString OwnerId;
+
+	// Owner Class
+	FString OwnerClass;
+
+	// Color
+	FColor Color;
+
+	// Color in hex
+	FString ColorHex;
+
+	// Class of the bone
+	FString Class;
+
+	// Number of pixels belonging to the entity from the image
+	int32 NumPixels;
+
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Class=%s; NumPixels=%d;"),
+			*Color.ToString(), *ColorHex, *Class, NumPixels);
+	}
+
+	// Check if two bones data is equal (comparing the colors should be the fastest, since the color should be unique)
+	bool operator==(const FSLVisBoneData& Other) const
+	{
+		return Color == Other.Color;
+	}
+};
+
+/**
+* Semantic skeletal entities data from the view
+*/
+struct FSLVisSkelData
+{
+	// Default ctor
+	FSLVisSkelData() {};
+
+	// Init ctor
+	FSLVisSkelData(const FString& InId, const FString& InClass) : Id(InId), Class(InClass) {};
+
+	// Unique id of the entity
+	FString Id;
+
+	// Class of the entity
+	FString Class;
+
+	// Bones data
+	TArray<FSLVisBoneData> BonesData;
+
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Id=%s; Class=%s; NumBonedData=%d; Class=%s; NumPixels=%d;"),
+			*Id, *Class, BonesData.Num());
+	}
+};
+
+
+/**
+* Data data from the view
+*/
+struct FSLVisViewData
+{
+	// Default ctor
+	FSLVisViewData() {};
+
+	// Id of the current view
+	FString Id;
+
+	// Name of the current view
+	FString Class;
+
+	// Image resolution
+	FIntPoint Resolution;
+
+	// Data about the entities visible in the view
+	TArray<FSLVisEntitiyData> SemanticEntities;
+
+	// Data about the skeletal entities visible in the view
+	TArray<FSLVisSkelData> SemanticSkelEntities;
+
+	// Image data of the given render type
+	TArray<FSLVisImageData> ImagesData;
+
+	// Get init state
+	bool IsInit() const { return bIsInit; };
+
+	// Init view data
+	void Init(const FString& InId, const FString& InClass, const FIntPoint& InResolution)
+	{
+		Id = InId;
+		Class = InClass;
+		Resolution = InResolution;
+		bIsInit = true;
+	}
+
+	// Clear all data
+	void Reset()
+	{
+		Id = FString();
+		Class = FString();
+		Resolution = FIntPoint(ForceInitToZero);
+		SemanticEntities.Empty();
+		ImagesData.Empty();
+		bIsInit = false;
+	}
+
+private:
+	// Init state flag
+	bool bIsInit;
+};
+
+
+/**
+* Collection of all the views data in the current rendered timestamp
+*/
+struct FSLVisStampedData
+{
+	// The timestamp when the images are rendered
+	float Timestamp;
+
+	// Array of the camera views data
+	TArray<FSLVisViewData> ViewsData;
+
+	// Reset the data
+	void Reset()
+	{
+		Timestamp = 0.f;
+		ViewsData.Empty();
+	}
+
+	// Debug string
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Timestamp=%f; ViewsData.Num()=%d"), Timestamp, ViewsData.Num());
+	}
+};
+
 
 /**
 * Dummy class needed to support Cast<ISLVisImageWriterInterface>(Object).
@@ -118,69 +283,12 @@ public:
 	virtual void Finish() = 0;
 
 	// Write the images at the timestamp
-	virtual void Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData) = 0;
+	virtual void Write(const FSLVisStampedData& StampedData) = 0;
 
 	// True if the writer is valid
 	bool IsInit() const { return bIsInit; }
-
-	// Get view type suffix
-	FORCEINLINE static FString GetViewTypeSuffix(const FName& ViewType);
-
-	// Get view type name
-	FORCEINLINE static FString GetViewTypeName(const FName& ViewType);
-
-	// Get image filename
-	FORCEINLINE static FString CreateImageFilename(float Timestamp, const FString& Label, const FName& ViewType);
 
 protected:
 	// Flag to show if it is valid
 	bool bIsInit;
 };
-
-// Get view type suffix
-FString ISLVisImageWriterInterface::GetViewTypeSuffix(const FName& ViewType)
-{
-	if (ViewType.IsEqual(NAME_None))
-	{
-		return FString("C"); // Color
-	}
-	else if (ViewType.IsEqual("SceneDepth") || ViewType.IsEqual("SLSceneDepth") || ViewType.IsEqual("SLSceneDepthWorldUnits"))
-	{
-		return FString("D"); // Depth
-	}
-	else if (ViewType.IsEqual("WorldNormal"))
-	{
-		return FString("N"); // Normal
-	}
-	else if (ViewType.IsEqual("Mask") || ViewType.IsEqual("SLMask"))
-	{
-		return FString("M"); // Normal
-	}
-	else
-	{
-		// Unsupported buffer type
-		return FString("Unknown");
-	}
-}
-
-// Get view type name
-FString ISLVisImageWriterInterface::GetViewTypeName(const FName& ViewType)
-{
-	if (ViewType.IsEqual(NAME_None))
-	{
-		return FString("Color"); // Color
-	}
-	else
-	{
-		return ViewType.ToString();
-	}
-}
-
-// Get image filename
-FString ISLVisImageWriterInterface::CreateImageFilename(float Timestamp, const FString& Label, const FName& ViewType)
-{
-	return FString::Printf(TEXT("SLVis_%s_%s_%s.png"),
-		*Label,
-		*FString::SanitizeFloat(Timestamp).Replace(TEXT("."), TEXT("-")),
-		*ISLVisImageWriterInterface::GetViewTypeSuffix(ViewType));
-}

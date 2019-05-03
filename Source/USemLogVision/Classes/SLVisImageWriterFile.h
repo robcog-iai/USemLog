@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -30,7 +30,7 @@ public:
 	virtual void Finish() override;
 
 	// Write the images at the timestamp
-	virtual void Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData) override;
+	virtual void Write(const FSLVisStampedData& StampedData) override;
 
 private:	
 	// Path where to save the images

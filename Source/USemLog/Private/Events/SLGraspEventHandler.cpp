@@ -1,8 +1,8 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLGraspEventHandler.h"
-#include "SLMappings.h"
+#include "SLEntitiesManager.h"
 #if SL_WITH_MC_GRASP
 #include "MCFixationGrasp.h"
 #endif // SL_WITH_MC_GRASP
@@ -17,9 +17,9 @@ void FSLGraspEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Make sure the mappings singleton is initialized (the handler uses it)
-		if (!FSLMappings::GetInstance()->IsInit())
+		if (!FSLEntitiesManager::GetInstance()->IsInit())
 		{
-			FSLMappings::GetInstance()->Init(InParent->GetWorld());
+			FSLEntitiesManager::GetInstance()->Init(InParent->GetWorld());
 		}
 
 #if SL_WITH_MC_GRASP
@@ -70,7 +70,7 @@ void FSLGraspEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new grasp event
-void FSLGraspEventHandler::AddNewEvent(const FSLItem& Self, const FSLItem& Other, float StartTime)
+void FSLGraspEventHandler::AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime)
 {
 	// Start a semantic grasp event
 	TSharedPtr<FSLGraspEvent> Event = MakeShareable(new FSLGraspEvent(
@@ -119,9 +119,9 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 void FSLGraspEventHandler::OnSLGraspBegin(UObject* Self, UObject* Other, float Time)
 {
 	// Check that the objects are semantically annotated
-	FSLItem SelfItem = FSLMappings::GetInstance()->GetItem(Self);
-	FSLItem OtherItem = FSLMappings::GetInstance()->GetItem(Other);
-	if (SelfItem.IsValid() && OtherItem.IsValid())
+	FSLEntity SelfItem = FSLEntitiesManager::GetInstance()->GetEntity(Self);
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
+	if (SelfItem.IsSet() && OtherItem.IsSet())
 	{
 		FSLGraspEventHandler::AddNewEvent(SelfItem, OtherItem, Time);
 	}

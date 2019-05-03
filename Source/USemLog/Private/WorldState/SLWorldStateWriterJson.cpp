@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "WorldState/SLWorldStateWriterJson.h"
@@ -22,6 +22,7 @@ FSLWorldStateWriterJson::FSLWorldStateWriterJson(const FSLWorldStateWriterParams
 // Destr
 FSLWorldStateWriterJson::~FSLWorldStateWriterJson()
 {
+	FSLWorldStateWriterJson::Finish();
 	if (FileHandle)
 	{
 		delete FileHandle;
@@ -47,21 +48,22 @@ void FSLWorldStateWriterJson::Finish()
 }
 
 // Called to write the data (it also removes invalid item -> e.g. deleted ones)
-void FSLWorldStateWriterJson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
-	float Timestamp)
+void FSLWorldStateWriterJson::Write(float Timestamp,
+	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+	bool bCheckAndRemoveInvalidEntities)
 {
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
 
 	// Out Json array of entities
 	TArray<TSharedPtr<FJsonValue>> JsonEntitiesArr;
-	
+
 	// Add entities to json array
-	FSLWorldStateWriterJson::AddNonSkeletalActors(NonSkeletalActorPool, JsonEntitiesArr);
-	FSLWorldStateWriterJson::AddSkeletalActors(SkeletalActorPool, JsonEntitiesArr);
-	FSLWorldStateWriterJson::AddNonSkeletalComponents(NonSkeletalComponentPool, JsonEntitiesArr);
+	FSLWorldStateWriterJson::AddActorEntities(ActorEntities, JsonEntitiesArr);
+	FSLWorldStateWriterJson::AddComponentEntities(ComponentEntities, JsonEntitiesArr);
+	FSLWorldStateWriterJson::AddSkeletalEntities(SkeletalEntities, JsonEntitiesArr);
 
 	// Avoid appending empty entries
 	if (JsonEntitiesArr.Num() > 0)
@@ -76,6 +78,7 @@ void FSLWorldStateWriterJson::Write(TArray<TSLItemState<AActor>>& NonSkeletalAct
 		FSLWorldStateWriterJson::WriteToFile(JsonRootObj);
 	}
 }
+
 
 // Set the file handle for the logger
 bool FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
@@ -94,18 +97,18 @@ bool FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const F
 }
 
 // Get non skeletal actors as json array
-void FSLWorldStateWriterJson::AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+void FSLWorldStateWriterJson::AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
 {
 	// Iterate items
-	for (auto Itr(NonSkeletalActorPool.CreateIterator()); Itr; ++Itr)
+	for (auto Itr(ActorEntities.CreateIterator()); Itr; ++Itr)
 	{
 		// Check if pointer is valid
-		if (Itr->Entity.IsValid(/*false, true*/))
+		if (Itr->Obj.IsValid(/*false, true*/))
 		{
 			// Check if the entity moved more than the threshold since the last logging
-			const FVector CurrLoc = Itr->Entity->GetActorLocation();
-			const FQuat CurrQuat = Itr->Entity->GetActorQuat();
+			const FVector CurrLoc = Itr->Obj->GetActorLocation();
+			const FQuat CurrQuat = Itr->Obj->GetActorQuat();
 
 			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
@@ -116,7 +119,7 @@ void FSLWorldStateWriterJson::AddNonSkeletalActors(TArray<TSLItemState<AActor>>&
 
 				// Get current entry as json object
 				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
-					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
+					TMap<FString, FString>{ {"id", Itr->Entity.Id}, { "class", Itr->Entity.Class } },
 					CurrLoc, CurrQuat);
 
 				// Add entity to json array
@@ -126,24 +129,24 @@ void FSLWorldStateWriterJson::AddNonSkeletalActors(TArray<TSLItemState<AActor>>&
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLMappings::GetInstance()->RemoveItem(Itr->Entity.Get());
+			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Obj.Get());
 		}
 	}
 }
 
-// Get skeletal actors as json array
-void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+// Get non skeletal components as json array
+void FSLWorldStateWriterJson::AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
 {
 	// Iterate items
-	for (auto Itr(SkeletalActorPool.CreateIterator()); Itr; ++Itr)
+	for (auto Itr(ComponentEntities.CreateIterator()); Itr; ++Itr)
 	{
 		// Check if pointer is valid
-		if (Itr->Entity.IsValid(/*false, true*/))
+		if (Itr->Obj.IsValid(/*false, true*/))
 		{
 			// Check if the entity moved more than the threshold since the last logging
-			const FVector CurrLoc = Itr->Entity->GetActorLocation();
-			const FQuat CurrQuat = Itr->Entity->GetActorQuat();
+			const FVector CurrLoc = Itr->Obj->GetComponentLocation();
+			const FQuat CurrQuat = Itr->Obj->GetComponentQuat();
 
 			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
@@ -154,31 +157,75 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 
 				// Get current entry as json object
 				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
-					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
+					TMap<FString, FString>{ {"id", Itr->Entity.Id}, { "class", Itr->Entity.Class } },
 					CurrLoc, CurrQuat);
-				
+
+				// Add entity to json array
+				OutJsonEntitiesArr.Add(MakeShareable(new FJsonValueObject(JsonEntry)));
+			}
+		}
+		else
+		{
+			Itr.RemoveCurrent();
+			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Obj.Get());
+		}
+	}
+}
+
+// Get skeletal actors as json array
+void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
+{
+	// Iterate items
+	for (auto Itr(SkeletalEntities.CreateIterator()); Itr; ++Itr)
+	{
+		// Check if pointer is valid
+		if (Itr->Obj.IsValid(/*false, true*/))
+		{
+			// Check if the entity moved more than the threshold since the last logging
+			const FVector CurrLoc = Itr->Obj->GetComponentLocation();
+			const FQuat CurrQuat = Itr->Obj->GetComponentQuat();
+
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+				CurrQuat.AngularDistance(Itr->PrevQuat))
+			{
+				// Update prev state
+				Itr->PrevLoc = CurrLoc;
+				Itr->PrevQuat = CurrQuat;
+
+				// Get current entry as json object
+				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
+					TMap<FString, FString>{ {"id", Itr->Entity.Id}, { "class", Itr->Entity.Class } },
+					CurrLoc, CurrQuat);
+
 				// Json array of bones
 				TArray<TSharedPtr<FJsonValue>> JsonBonesArr;
 
-				// Check is the skeletal actor component is valid and has a class mapping of the bone
-				if (USLSkeletalMapDataAsset* SkelMapDataAsset = Itr->Entity->GetSkeletalMapDataAsset())
+				if (USkeletalMeshComponent* SkelComp = Itr->Obj->SkeletalMeshParent)
 				{
-					if (USkeletalMeshComponent* SkelComp = Itr->Entity->GetSkeletalMeshComponent())
+					// Iterate through the bones of the skeletal mesh
+					for (const auto& Pair : Itr->Obj->AllBonesData)
 					{
-						// Iterate through the bones of the skeletal mesh
-						for (const auto& Pair : SkelMapDataAsset->BoneClassMap)
+						const FVector CurrLoc = SkelComp->GetBoneLocation(Pair.Key);
+						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(Pair.Key);
+
+						// Get current entry as json object
+						TMap<FString, FString> SemanticData;
+						SemanticData.Add("bone", Pair.Key.ToString());
+						if (!Pair.Value.Class.IsEmpty())
 						{
-							const FVector CurrLoc = SkelComp->GetBoneLocation(Pair.Key);
-							const FQuat CurrQuat = SkelComp->GetBoneQuaternion(Pair.Key);
-
-							// Get current entry as json object
-							TSharedPtr<FJsonObject> JsonBoneEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
-								TMap<FString, FString>{ {"bone", Pair.Key.ToString()}, { "class", Pair.Value } },
-								CurrLoc, CurrQuat);
-
-							// Add bone to Json array
-							JsonBonesArr.Add(MakeShareable(new FJsonValueObject(JsonBoneEntry)));
+							SemanticData.Add("class", Pair.Value.Class);
 						}
+						if (!Pair.Value.MaskColorHex.IsEmpty())
+						{
+							SemanticData.Add("mask_hex", Pair.Value.MaskColorHex);
+						}
+
+						TSharedPtr<FJsonObject> JsonBoneEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
+							SemanticData, CurrLoc, CurrQuat);
+
+						// Add bone to Json array
+						JsonBonesArr.Add(MakeShareable(new FJsonValueObject(JsonBoneEntry)));
 					}
 				}
 				// Add bones to json entry
@@ -191,45 +238,7 @@ void FSLWorldStateWriterJson::AddSkeletalActors(TArray<TSLItemState<ASLSkeletalM
 		else
 		{
 			Itr.RemoveCurrent();
-			FSLMappings::GetInstance()->RemoveItem(Itr->Entity.Get());
-		}
-	}
-}
-
-// Get non skeletal components as json array
-void FSLWorldStateWriterJson::AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
-	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
-{
-	// Iterate items
-	for (auto Itr(NonSkeletalComponentPool.CreateIterator()); Itr; ++Itr)
-	{
-		// Check if pointer is valid
-		if (Itr->Entity.IsValid(/*false, true*/))
-		{
-			// Check if the entity moved more than the threshold since the last logging
-			const FVector CurrLoc = Itr->Entity->GetComponentLocation();
-			const FQuat CurrQuat = Itr->Entity->GetComponentQuat();
-
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
-				CurrQuat.AngularDistance(Itr->PrevQuat))
-			{
-				// Update prev state
-				Itr->PrevLoc = CurrLoc;
-				Itr->PrevQuat = CurrQuat;
-
-				// Get current entry as json object
-				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
-					TMap<FString, FString>{ {"id", Itr->Item.Id}, { "class", Itr->Item.Class } },
-					CurrLoc, CurrQuat);
-
-				// Add entity to json array
-				OutJsonEntitiesArr.Add(MakeShareable(new FJsonValueObject(JsonEntry)));
-			}
-		}
-		else
-		{
-			Itr.RemoveCurrent();
-			FSLMappings::GetInstance()->RemoveItem(Itr->Entity.Get());
+			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Obj.Get());
 		}
 	}
 }

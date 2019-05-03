@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -7,20 +7,20 @@
 #include "Components/SceneComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "IImageWrapper.h"
-#include "SLVisManager.generated.h"
+#include "SLVisLegacyManager.generated.h"
 
 
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics, Collision, LOD, AssetUserData))
-class USEMLOGVISION_API USLVisManager : public USceneComponent
+class USEMLOGVISION_API USLVisLegacyManager : public USceneComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	USLVisManager();
+	USLVisLegacyManager();
 
 	// Destructor
-	~USLVisManager();
+	~USLVisLegacyManager();
 
 protected:
 	// Called when the game starts

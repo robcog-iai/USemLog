@@ -1,8 +1,8 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLOverlapShape.h"
-#include "SLMappings.h"
+#include "SLEntitiesManager.h"
 #include "Animation/SkeletalMeshActor.h"
 
 // UUTils
@@ -34,7 +34,7 @@ USLOverlapShape::~USLOverlapShape()
 {
 	if (!bIsFinished)
 	{
-		USLOverlapShape::Finish(true);
+		Finish(true);
 	}
 }
 
@@ -45,8 +45,8 @@ void USLOverlapShape::BeginPlay()
 
 	if (bStartAtBeginPlay)
 	{
-		USLOverlapShape::Init();
-		USLOverlapShape::Start();
+		Init();
+		Start();
 	}
 }
 
@@ -57,7 +57,7 @@ void USLOverlapShape::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (!bIsFinished)
 	{
-		USLOverlapShape::Finish();
+		Finish();
 	}
 }
 
@@ -66,16 +66,16 @@ void USLOverlapShape::Init()
 {
 	if (!bIsInit)
 	{
-		// Init the semantic items mappings singleton
-		if (!FSLMappings::GetInstance()->IsInit())
+		// Make sure the semantic entities are set
+		if (!FSLEntitiesManager::GetInstance()->IsInit())
 		{
-			FSLMappings::GetInstance()->Init(GetWorld());
+			FSLEntitiesManager::GetInstance()->Init(GetWorld());
 		}
 
 		// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
 		// Make sure owner is a valid semantic item
-		OwnerItem = FSLMappings::GetInstance()->GetItem(GetOwner());
-		if (!OwnerItem.IsValid())
+		SemanticOwner = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
+		if (!SemanticOwner.IsSet())
 		{
 			return;
 		}
@@ -379,12 +379,12 @@ void USLOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLItem OtherItem = FSLMappings::GetInstance()->GetItem(OtherComp);
-	if (!OtherItem.IsValid())
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherComp);
+	if (!OtherItem.IsSet())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem = FSLMappings::GetInstance()->GetItem(OtherComp->GetOuter());
-		if (!OtherItem.IsValid())
+		OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherComp->GetOuter());
+		if (!OtherItem.IsSet())
 		{
 			return;
 		}
@@ -397,7 +397,7 @@ void USLOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
 		// Broadcast begin of semantic overlap event
-		FSLOverlapResult SemanticOverlapResult(OwnerItem, OtherItem, 
+		FSLOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem, 
 			StartTime, false, OwnerMeshComp, OtherAsMeshComp);
 		OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
 	}
@@ -410,10 +410,10 @@ void USLOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 		// This allows us to be in sync with the overlap end event 
 		// since the unique ids and the rule of ignoring the one event will not change
 		// Filter out one of the trigger areas (compare unique ids)
-		if (OtherItem.Obj->GetUniqueID() > OwnerItem.Obj->GetUniqueID())
+		if (OtherItem.Obj->GetUniqueID() > SemanticOwner.Obj->GetUniqueID())
 		{
 			// Broadcast begin of semantic overlap event
-			FSLOverlapResult SemanticOverlapResult(OwnerItem, OtherItem,
+			FSLOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem,
 				StartTime, true, OwnerMeshComp, OtherContactTrigger->OwnerMeshComp);
 			OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
 		}
@@ -433,12 +433,12 @@ void USLOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	}
 
 	// Check if the component or its outer is semantically annotated
-	FSLItem OtherItem = FSLMappings::GetInstance()->GetItem(OtherComp);
-	if (!OtherItem.IsValid())
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherComp);
+	if (!OtherItem.IsSet())
 	{
 		// Other not valid, check if its outer is semantically annotated
-		OtherItem = FSLMappings::GetInstance()->GetItem(OtherComp->GetOuter());
-		if (!OtherItem.IsValid())
+		OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherComp->GetOuter());
+		if (!OtherItem.IsSet())
 		{
 			return;
 		}
@@ -451,7 +451,7 @@ void USLOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
 		// Broadcast end of semantic overlap event
-		OnEndSLOverlap.Broadcast(OwnerItem.Obj, OtherItem.Obj, EndTime);
+		OnEndSLOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
 	}
 	else if (USLOverlapShape* OtherContactTrigger = Cast<USLOverlapShape>(OtherComp))
 	{
@@ -462,10 +462,10 @@ void USLOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		// This allows us to be in sync with the overlap end event 
 		// since the unique ids and the rule of ignoring the one event will not change
 		// Filter out one of the trigger areas (compare unique ids)
-		if (OtherItem.Obj->GetUniqueID() > OwnerItem.Obj->GetUniqueID())
+		if (OtherItem.Obj->GetUniqueID() > SemanticOwner.Obj->GetUniqueID())
 		{
 			// Broadcast end of semantic overlap event
-			OnEndSLOverlap.Broadcast(OwnerItem.Obj, OtherItem.Obj, EndTime);
+			OnEndSLOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
 		}
 	}
 }

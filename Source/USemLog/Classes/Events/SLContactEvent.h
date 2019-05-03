@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -17,20 +17,20 @@ public:
 
 	// Constructor with initialization
 	FSLContactEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLItem& InItem1, const FSLItem& InItem2);
+		const FSLEntity& InItem1, const FSLEntity& InItem2);
 
 	// Constructor initialization without end time
 	FSLContactEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLItem& InItem1, const FSLItem& InItem2);
+		const FSLEntity& InItem1, const FSLEntity& InItem2);
 	
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
 	// Item1 in contact
-	FSLItem Item1;
+	FSLEntity Item1;
 
 	// Item2 in contact
-	FSLItem Item2;
+	FSLEntity Item2;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

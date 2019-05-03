@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -50,11 +50,20 @@ private:
 	// Set flag attribute depending on the checkbox state
 	void OnCheckedOverwriteClassNames(ECheckBoxState NewCheckedState);
 
-	// Set unique mask colors in hexa for the entities
-	FReply SetVisualMaskValues();
+	// Set unique mask colors in hex for the entities (random or incremental)
+	FReply GenerateVisualMasks();
+
+	// Set unique mask colors in hex for the entities (random generator)
+	FReply GenerateVisualMasksRand();
+
+	// Set unique mask colors in hex for the entities (incremental generator)
+	FReply GenerateVisualMasksInc();
 
 	// Set flag attribute depending on the checkbox state
-	void OnCheckedOverwriteVisualMaskValues(ECheckBoxState NewCheckedState);
+	void OnCheckedOverwriteVisualMasks(ECheckBoxState NewCheckedState);
+
+	// Set flag attribute depending on the checkbox state
+	void OnCheckedOverwriteGenerateRandomVisualMasks(ECheckBoxState NewCheckedState);
 
 	// Update legacy namings from tags
 	FReply UpdateLegacyNames();
@@ -64,7 +73,6 @@ private:
 
 	// Update semantic visual shape visuals
 	FReply UpdateSLOverlapShapeColors();
-
 
 private:
 	// Widget pointer
@@ -77,7 +85,10 @@ private:
 	bool bOverwriteExistingClassNames;
 
 	// If true, overwrite existing mask values
-	bool bOverwriteExistingVisualMaskValues;
+	bool bOverwriteVisualMaskValues;
+
+	// If true, generate random colors
+	bool bGenerateRandomVisualMasks;
 
 	// Apply changed to selected actors only
 	bool bOnlySelected;

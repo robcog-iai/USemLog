@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 using UnrealBuildTool;
@@ -40,10 +40,11 @@ public class USemLogVision : ModuleRules
 				"RHI",
 				"RenderCore",
 				"UnrealEd",
+				"USemLogSkel",
 				"UTags",
-				"libmongo", //SLVIS_WITH_LIBMONGO
-				//"MongoC",
-				//"MongoCxx",
+				//"libmongo",
+				"MongoC", // SLVIS_WITH_LIBMONGO_C
+				//"MongoCxx", // SLVIS_WITH_LIBMONGO_CXX
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -56,14 +57,30 @@ public class USemLogVision : ModuleRules
 			}
 			);
 
-		string libmongo = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("libmongo"));
-		if (string.IsNullOrEmpty(libmongo))
+
+		string MongoC = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("MongoC"));
+		if (string.IsNullOrEmpty(MongoC))
 		{
-			PublicDefinitions.Add("SLVIS_WITH_LIBMONGO=0");
+			PublicDefinitions.Add("SLVIS_WITH_LIBMONGO_C=0");
 		}
 		else
 		{
-			PublicDefinitions.Add("SLVIS_WITH_LIBMONGO=1");
+			PublicDefinitions.Add("SLVIS_WITH_LIBMONGO_C=1");
+
+			// Needed to ignore various warnings from libmongo
+			bEnableUndefinedIdentifierWarnings = false;
+			bEnableExceptions = true;
+			//bUseRTTI = true;
+		}
+
+		string MongoCXX = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("MongoCXX"));
+		if (string.IsNullOrEmpty(MongoCXX))
+		{
+			PublicDefinitions.Add("SLVIS_WITH_LIBMONGO_CXX=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("SLVIS_WITH_LIBMONGO_CXX=1");
 
 			// Needed to ignore various warnings from libmongo
 			bEnableUndefinedIdentifierWarnings = false;

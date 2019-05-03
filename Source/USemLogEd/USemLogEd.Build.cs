@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 using UnrealBuildTool;
@@ -30,6 +30,7 @@ public class USemLogEd : ModuleRules
 			{
 				"Core",
 				"USemLog",
+				"USemLogSkel",
 				"UTags",
 				"UIds",
 				// ... add other public dependencies that you statically link with here ...

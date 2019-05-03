@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -18,10 +18,10 @@ struct FSLOverlapResult
 	GENERATED_USTRUCT_BODY()
 
 	// Self
-	FSLItem Self;
+	FSLEntity Self;
 
 	// Other 
-	FSLItem Other;
+	FSLEntity Other;
 
 	// The mesh (static or skeletal) of the other overlapping component
 	TWeakObjectPtr<UMeshComponent> SelfMeshComponent;
@@ -39,13 +39,13 @@ struct FSLOverlapResult
 	FSLOverlapResult() {};
 
 	// Init constructor
-	FSLOverlapResult(const FSLItem& InSelf, const FSLItem& InOther, float InTime, 
+	FSLOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
 		bool bIsSemanticOverlapArea) :
 		Self(InSelf), Other(InOther), 
 		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea) {};
 
 	// Init constructor with mesh component (static/skeletal)
-	FSLOverlapResult(const FSLItem& InSelf, const FSLItem& InOther, float InTime, 
+	FSLOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
 		bool bIsSemanticOverlapArea, UMeshComponent* InSelfMeshComponent, UMeshComponent* InOtherMeshComponent) :
 		Self(InSelf), Other(InOther), 
 		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea), 
@@ -164,13 +164,13 @@ public:
 	FSLOverlapEndSignature OnEndSLOverlap;
 
 private:
-	// Set when manager is initialized
+	// True if initialized
 	bool bIsInit;
 
-	// Set when manager is started
+	// True if started
 	bool bIsStarted;
 
-	// Set when manager is finished
+	// True if finished
 	bool bIsFinished;
 
 	// Init and start at begin play
@@ -181,5 +181,5 @@ private:
 	UMeshComponent* OwnerMeshComp;
 
 	// Semantic data of the owner
-	FSLItem OwnerItem;
+	FSLEntity SemanticOwner;
 };

@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -7,17 +7,11 @@
 #include "UObject/NoExportTypes.h"
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
+#include "SLMetadataWriter.h"
 #include "SLEventLogger.generated.h"
 
 // Forward declaration
 class ISLEvent;
-
-/**
-* Event logger parameters
-*/
-struct FSLEventLoggerParams
-{
-};
 
 /**
  * Event (symbolic) data logger
@@ -36,13 +30,13 @@ public:
 
 	// Init Logger
 	void Init(ESLOwlExperimentTemplate TemplateType,
-		const FString& InLocation,
-		const FString& InEpisodeId,
+		const FSLEventWriterParams& WriterParams,
 		bool bInLogContactEvents,
 		bool bInLogSupportedByEvents,
 		bool bInLogGraspEvents,
 		bool bInLogSlicingEvents,
-		bool bInWriteTimelines);
+		bool bInWriteTimelines,
+		bool bInWriteMetadata);
 
 	// Start logger
 	void Start();
@@ -83,6 +77,12 @@ private:
 	// Save events to timelines
 	bool bWriteTimelines;
 
+	// Write metadata (world and events)
+	bool bWriteMetadata;
+
+	// Metadata writer
+	FSLMetadataWriter MetadataWriter;
+
 	// Array of finished events
 	TArray<TSharedPtr<ISLEvent>> FinishedEvents;
 
@@ -93,5 +93,8 @@ private:
 	TArray<TSharedPtr<ISLEventHandler>> EventHandlers;
 
 	// Cache of the semantic overlap areas
-	TArray<class USLOverlapShape*> SemanticOverlapAreas;
+	TArray<class USLOverlapShape*> OverlapShapes;
+
+	// Cache of the grasp listeners
+	TArray<class USLGraspListener*> GraspListeners;
 };

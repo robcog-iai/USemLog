@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -7,16 +7,6 @@
 #include "UObject/NoExportTypes.h"
 #include "WorldState/SLWorldStateAsyncWorker.h"
 #include "SLWorldStateLogger.generated.h"
-
-
-
-/**
-* World state logger parameters
-*/
-struct FSLWorldStateLoggerParams
-{
-
-};
 
 /**
  * Raw (subsymbolic) data logger, 
@@ -36,13 +26,7 @@ public:
 	~USLWorldStateLogger();
 
 	// Init Logger
-	void Init(ESLWorldStateWriterType WriterType,
-		float LinearDistance,
-		float AngularDistance,
-		const FString& Location,
-		const FString& EpisodeId,
-		const FString& ServerIp = "",
-		const uint16 ServerPort = 0);
+	void Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams);
 
 	// Start logger
 	void Start(const float UpdateRate);
@@ -64,7 +48,7 @@ protected:
 
 private:
 	// Log initial state of the world (static and dynamic entities)
-	void FirstUpdate();
+	void InitialUpdate();
 
 	// Log current state of the world (dynamic objects that moved more than the distance threshold)
 	void Update();

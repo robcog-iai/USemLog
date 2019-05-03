@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -6,7 +6,7 @@
 #include "Async/AsyncWork.h"
 #include "ISLWorldStateWriter.h"
 #include "SLStructs.h"
-#include "SLSkeletalMeshActor.h"
+//#include "SLSkeletalMeshActor.h"
 
 /**
 * Type of world state loggers
@@ -17,7 +17,7 @@ enum class ESLWorldStateWriterType : uint8
 	Json					UMETA(DisplayName = "Json"),
 	Bson					UMETA(DisplayName = "Bson"),
 	MongoC					UMETA(DisplayName = "MongoC"),
-	MongoCxx					UMETA(DisplayName = "MongoCxx")
+	MongoCxx				UMETA(DisplayName = "MongoCxx")
 };
 
 /**
@@ -37,22 +37,22 @@ public:
 	virtual ~FSLWorldStateAsyncWorker();
 
 	// Init worker, load models to log from world
-	bool Create(UWorld* InWorld,
-		ESLWorldStateWriterType WriterType,
-		float LinearDistance,
-		float AngularDistance,
-		const FString& Location,
-		const FString& EpisodeId,
-		const FString& ServerIp = "",
-		const uint16 ServerPort = 0);
-
-	// Init worker, load models to log from world
-	bool Create(UWorld* InWorld,
+	bool Init(UWorld* InWorld,
 		ESLWorldStateWriterType InWriterType,
 		const FSLWorldStateWriterParams& InParams);
 
 	// Remove all non-movable semantic items from the update pool
 	void RemoveStaticItems();
+
+	// TODO implement these for cutting
+	//// Remove entity from being logged
+	//bool RemoveEntity(UObject* Obj);
+
+	//// Add new actor entity
+	//bool AddNewActorEntity(AActor* Actor);
+
+	//// Add new scene component entity
+	//bool AddNewComponentEntity(AActor* Actor);
 
 	// Finish up worker
 	void Finish(bool bForced = false);
@@ -78,16 +78,19 @@ private:
 	TSharedPtr<ISLWorldStateWriter> Writer;
 
 	// Array of semantically annotated actors that are not skeletal
-	TArray<TSLItemState<AActor>> NonSkeletalActorPool;
-
-	// Array of semantically annotated skeletal actors
-	TArray<TSLItemState<ASLSkeletalMeshActor>> SkeletalActorPool;
-
+	TArray<TSLEntityPreviousPose<AActor>> ActorEntitites;
+	
 	// Array of semantically annotated components that are not skeletal
-	TArray<TSLItemState<USceneComponent>> NonSkeletalComponentPool;
+	TArray<TSLEntityPreviousPose<USceneComponent>> ComponentEntities;
+
+	// Array of semantical skeletal data components
+	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>> SkeletalEntities;
+
+	//// Array of semantically annotated skeletal actors
+	//TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>> SkeletalActorPool; // TODO rm
 
 	// TODO USLSkeletalMeshComponent,
-	// could not find out how to dynamically change type to point to a SLSkeletalMapDataAsset
+	// could not find out how to dynamically change type to point to a SLSkeletalDataAsset
 	// Array of semantically annotated skeletal actors
 	//TArray<TSLItemState<USkeletalMeshComponent>> SkeletalComponentPool;
 };

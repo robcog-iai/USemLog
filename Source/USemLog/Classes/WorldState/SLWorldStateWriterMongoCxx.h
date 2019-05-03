@@ -1,18 +1,15 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "ISLWorldStateWriter.h"
-#if SL_WITH_LIBMONGO
+#if SL_WITH_LIBMONGO_CXX
 THIRD_PARTY_INCLUDES_START
 #include <mongocxx/client.hpp>
 THIRD_PARTY_INCLUDES_END
-#endif //SL_WITH_LIBMONGO
-
-// Forward declaration
-class FSLWorldStateAsyncWorker;
+#endif //SL_WITH_LIBMONGO_CXX
 
 /**
  * Raw data logger to mongo database
@@ -36,10 +33,16 @@ public:
 	virtual void Finish() override;
 
 	// Write the data
-	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
-		float Timestamp) override;
+	/*virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+		TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+		TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
+		float Timestamp) override;*/
+
+	virtual void Write(float Timestamp,
+		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+		bool bCheckAndRemoveInvalidEntities = true) override;
 private:
 	// Connect to the database
 	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
@@ -47,17 +50,17 @@ private:
 	// Create indexes from the logged data, usually called after logging
 	bool CreateIndexes();
 	
-#if SL_WITH_LIBMONGO
+#if SL_WITH_LIBMONGO_CXX
 	// Get non skeletal actors as bson array
-	void AddNonSkeletalActors(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
+	void AddNonSkeletalActors(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
 
 	// Get skeletal actors as bson array
-	void AddSkeletalActors(TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	void AddSkeletalActors(TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
 
 	// Get non skeletal components as bson array
-	void AddNonSkeletalComponents(TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
+	void AddNonSkeletalComponents(TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 		bsoncxx::builder::basic::array& out_bson_arr);
 
 	// Add the pose information of the document
@@ -76,5 +79,5 @@ private:
 
 	// Database collection
 	mongocxx::collection mongo_coll;
-#endif //SL_WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO_CXX
 };

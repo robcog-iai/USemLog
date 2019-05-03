@@ -1,10 +1,10 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
 
 #include "SLStructs.h"
-#include "SLSkeletalMeshActor.h"
+#include "SLSkeletalDataComponent.h"
 
 /**
 * Parameters for creating a world state data writer
@@ -59,11 +59,17 @@ public:
 	// Finish
 	virtual void Finish() = 0;
 
-	// Write data (it also removes invalid items from the array - e.g. destroyed actors)
-	virtual void Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-		TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-		TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
-		float Timestamp) = 0;
+	// Write data (it also checks and removes invalid items from the array - e.g. destroyed actors)
+	//virtual void Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+	//	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+	//	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
+	//	float Timestamp) = 0;
+
+	virtual void Write(float Timestamp,
+		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+		bool bCheckAndRemoveInvalidEntities = true) = 0;
 
 	// True if the writer is valid
 	bool IsInit() const { return bIsInit; }

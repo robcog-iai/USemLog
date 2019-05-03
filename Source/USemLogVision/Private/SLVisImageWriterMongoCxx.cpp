@@ -1,8 +1,8 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisImageWriterMongoCxx.h"
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 THIRD_PARTY_INCLUDES_START
 #include <mongocxx/instance.hpp>
 #include <mongocxx/uri.hpp>
@@ -14,16 +14,16 @@ THIRD_PARTY_INCLUDES_END
 using namespace mongocxx;
 using bsoncxx::builder::basic::kvp;
 using bsoncxx::builder::basic::make_document;
-#endif //SLVIS_WITH_LIBMONGO
-
-#include <mongocxx/instance.hpp>
+#endif //SLVIS_WITH_LIBMONGO_CXX
 
 #define SLVIS_MIN_TIME_OFFSET 4.5f
 
 // Ctor
 USLVisImageWriterMongoCxx::USLVisImageWriterMongoCxx()
 {
+#if SLVIS_WITH_LIBMONGO_CXX
 	mongocxx::instance::current();
+#endif //SLVIS_WITH_LIBMONGO_CXX
 	bIsInit = false;
 }
 
@@ -50,89 +50,89 @@ void USLVisImageWriterMongoCxx::Finish()
 }
 
 // Write the images at the timestamp
-void USLVisImageWriterMongoCxx::Write(float Timestamp, const TArray<FSLVisImageData>& ImagesData)
+void USLVisImageWriterMongoCxx::Write(const FSLVisStampedData& StampedData)
 {
-#if SLVIS_WITH_LIBMONGO
-	// Create a bson document and array to store the images
-	bsoncxx::builder::basic::document bson_doc{};
-	bsoncxx::builder::basic::array bson_arr{};
+#if SLVIS_WITH_LIBMONGO_CXX
+	//// Create a bson document and array to store the images
+	//bsoncxx::builder::basic::document bson_doc{};
+	//bsoncxx::builder::basic::array bson_arr{};
 
-	// Add images array
-	for (const auto& Img : ImagesData)
-	{
-		// Create new local document to store the img data
-		bsoncxx::builder::basic::document bson_img_doc{};
+	//// Add images array
+	//for (const auto& Img : ImagesData)
+	//{
+	//	// Create new local document to store the img data
+	//	bsoncxx::builder::basic::document bson_img_doc{};
 
-		// Add camera label and type
-		bson_img_doc.append(kvp("label", TCHAR_TO_UTF8(*Img.Metadata.Label)));
-		bson_img_doc.append(kvp("type", TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(Img.Metadata.ViewType))));
+	//	// Add camera label and type
+	//	bson_img_doc.append(kvp("label", TCHAR_TO_UTF8(*Img.Metadata.Label)));
+	//	bson_img_doc.append(kvp("type", TCHAR_TO_UTF8(*ISLVisImageWriterInterface::GetViewTypeName(Img.Metadata.ViewType))));
 
-		// Add image resolution
-		bsoncxx::builder::basic::document bson_res_doc{};
-		bson_res_doc.append(kvp("x", bsoncxx::types::b_int32{Img.Metadata.ResX}));
-		bson_res_doc.append(kvp("y", bsoncxx::types::b_int32{Img.Metadata.ResY}));
-		bson_img_doc.append(kvp("res", bson_res_doc));
+	//	// Add image resolution
+	//	bsoncxx::builder::basic::document bson_res_doc{};
+	//	bson_res_doc.append(kvp("x", bsoncxx::types::b_int32{Img.Metadata.ResX}));
+	//	bson_res_doc.append(kvp("y", bsoncxx::types::b_int32{Img.Metadata.ResY}));
+	//	bson_img_doc.append(kvp("res", bson_res_doc));
 
-		// Add binary data
-		//bson_img_doc.append(kvp("data", types::b_binary{
-		//	binary_sub_type::k_binary,
-		//	static_cast<uint32_t>(Img.Data.Num()),
-		//	reinterpret_cast<const uint8_t*>(Img.Data.GetData())}));
+	//	// Add binary data
+	//	//bson_img_doc.append(kvp("data", types::b_binary{
+	//	//	binary_sub_type::k_binary,
+	//	//	static_cast<uint32_t>(Img.Data.Num()),
+	//	//	reinterpret_cast<const uint8_t*>(Img.Data.GetData())}));
 
-		try
-		{
-			bsoncxx::builder::basic::document meta_doc{};
-			meta_doc.append(kvp("x_meta", bsoncxx::types::b_int32{ 32 }));
-			options::gridfs::upload upload_options;
-			upload_options.metadata(meta_doc.view());
-			FString ImageName = ISLVisImageWriterInterface::CreateImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
-			
-			// Create gridfs bucket uploader with options
-			gridfs::uploader gridfs_uploader = gridfs_bucket.open_upload_stream(TCHAR_TO_UTF8(*ImageName), upload_options);
+	//	try
+	//	{
+	//		bsoncxx::builder::basic::document meta_doc{};
+	//		meta_doc.append(kvp("x_meta", bsoncxx::types::b_int32{ 32 }));
+	//		options::gridfs::upload upload_options;
+	//		upload_options.metadata(meta_doc.view());
+	//		FString ImageName = ISLVisImageWriterInterface::CreateImageFilename(Timestamp, Img.Metadata.Label, Img.Metadata.ViewType);
+	//		
+	//		// Create gridfs bucket uploader with options
+	//		gridfs::uploader gridfs_uploader = gridfs_bucket.open_upload_stream(TCHAR_TO_UTF8(*ImageName), upload_options);
 
-			// Write data to uploader
-			gridfs_uploader.write(reinterpret_cast<const uint8_t*>(Img.Data.GetData()), static_cast<uint32_t>(Img.Data.Num()));
+	//		// Write data to uploader
+	//		gridfs_uploader.write(reinterpret_cast<const uint8_t*>(Img.BinaryData.GetData()), static_cast<uint32_t>(Img.BinaryData.Num()));
 
-			// Close uploader and write the id of the written data object
-			result::gridfs::upload upload_result = gridfs_uploader.close();
-			bson_img_doc.append(kvp("img_file_id", upload_result.id()));
-		}
-		catch (const std::exception& xcp)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-				TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
-		}
+	//		// Close uploader and write the id of the written data object
+	//		result::gridfs::upload upload_result = gridfs_uploader.close();
+	//		bson_img_doc.append(kvp("img_file_id", upload_result.id()));
+	//	}
+	//	catch (const std::exception& xcp)
+	//	{
+	//		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
+	//			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+	//	}
 
-		// Add to array
-		bson_arr.append(bson_img_doc);
-	}
+	//	// Add to array
+	//	bson_arr.append(bson_img_doc);
+	//}
 
-	// Avoid inserting empty entries
-	if (!bson_arr.view().empty())
-	{
-		// Write the timestamp
-		bson_doc.append(kvp("timestamp", bsoncxx::types::b_double{ Timestamp }));
-		bson_doc.append(kvp("images", bson_arr));
-		try
-		{
-			if (bCreateNewDocument)
-			{
-				mongo_coll.insert_one(bson_doc.view());
-			}
-			else
-			{
-				// TODO
-				// Insert at cached document _id
-				mongo_coll.insert_one(bson_doc.view());
-			}
-		}
-		catch (const std::exception& xcp)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-				TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
-		}
-	}
-#endif //SLVIS_WITH_LIBMONGO
+	//// Avoid inserting empty entries
+	//if (!bson_arr.view().empty())
+	//{
+	//	// Write the timestamp
+	//	bson_doc.append(kvp("timestamp", bsoncxx::types::b_double{ Timestamp }));
+	//	bson_doc.append(kvp("images", bson_arr));
+	//	try
+	//	{
+	//		if (bCreateNewDocument)
+	//		{
+	//			mongo_coll.insert_one(bson_doc.view());
+	//		}
+	//		else
+	//		{
+	//			// TODO
+	//			// Insert at cached document _id
+	//			mongo_coll.insert_one(bson_doc.view());
+	//		}
+	//	}
+	//	catch (const std::exception& xcp)
+	//	{
+	//		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
+	//			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+	//	}
+	//}
+#endif //SLVIS_WITH_LIBMONGO_CXX
 }
 
 // Skip the current timestamp (images already inserted)
@@ -146,7 +146,7 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 		 // if true, return true (we can skip rendering the images)
 		 // if false, return false (we need to render the images) 
 			//  cache object id, this is where the images will be inserted	
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 	// Check nearest world state entry  WS_before <--ts_diff_before-- TS --ts_diff_after--> WS_after
 	float SmallestDiff = -1.f;
 
@@ -176,7 +176,7 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 					{
 						insertion_doc_id = id_el.get_oid();
 						SmallestDiff = CurrDiff;
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), TEXT(__FUNCTION__), __LINE__, SmallestDiff);
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), *FString(__func__), __LINE__, SmallestDiff);
 					}
 				}
 			}
@@ -213,14 +213,14 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 							// Other result is invalid or it is valid but current diff is smaller
 							insertion_doc_id = id_el.get_oid();
 							SmallestDiff = CurrDiff;
-							UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), TEXT(__FUNCTION__), __LINE__, SmallestDiff);
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), *FString(__func__), __LINE__, SmallestDiff);
 							bCreateNewDocument = false;
 							return false;
 						}
 						else
 						{
 							// Use other result (which is valid since we check if the diff is not negative)
-							UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), TEXT(__FUNCTION__), __LINE__, SmallestDiff);
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d TsDiff=%f"), *FString(__func__), __LINE__, SmallestDiff);
 							bCreateNewDocument = false;
 							return false;
 						}
@@ -231,7 +231,7 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 	}
 	// todo with returns
 
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_CXX
 	return false;
 }
 
@@ -239,9 +239,9 @@ bool USLVisImageWriterMongoCxx::ShouldSkipThisTimestamp(float Timestamp)
 bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
-		TEXT(__FUNCTION__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
+		*FString(__func__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
 
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 	try
 	{
 		// Get current mongo instance, or create a new one (static variable)
@@ -273,7 +273,7 @@ bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& Ep
 		{
 			//FString MongoUri = FString(mongo_conn.uri().to_string().c_str());
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d Mongo client with URI: %s "),
-			//	TEXT(__FUNCTION__), __LINE__, *MongoUri);
+			//	*FString(__func__), __LINE__, *MongoUri);
 		}
 		else
 		{
@@ -290,7 +290,7 @@ bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& Ep
 		if (!mongo_db.has_collection(TCHAR_TO_UTF8(*EpisodeId)))
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Collestion %s does not exist in %s"),
-				TEXT(__FUNCTION__), __LINE__, *EpisodeId, *DBName);
+				*FString(__func__), __LINE__, *EpisodeId, *DBName);
 			// TODO abort in this case
 		}
 		mongo_coll = mongo_db[TCHAR_TO_UTF8(*EpisodeId)];
@@ -302,13 +302,13 @@ bool USLVisImageWriterMongoCxx::Connect(const FString& DBName, const FString& Ep
 	catch (const std::exception& xcp)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 		return false;
 	}
 	return true;
 #else
 	return false;
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_CXX
 }
 
 // Not needed if the index already exists (it gets updated for every new entry)
@@ -319,7 +319,7 @@ bool USLVisImageWriterMongoCxx::CreateIndexes()
 		return false;
 	}
 
-#if SLVIS_WITH_LIBMONGO
+#if SLVIS_WITH_LIBMONGO_CXX
 	// Create indexes on timestamp
 	try
 	{
@@ -331,10 +331,10 @@ bool USLVisImageWriterMongoCxx::CreateIndexes()
 	catch (const std::exception& xcp)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d exception: %s"),
-			TEXT(__FUNCTION__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
+			*FString(__func__), __LINE__, UTF8_TO_TCHAR(xcp.what()));
 		return false;
 	}
 #else
 	return false;
-#endif //SLVIS_WITH_LIBMONGO
+#endif //SLVIS_WITH_LIBMONGO_CXX
 }

@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -7,10 +7,12 @@
 #include "GameFramework/PlayerController.h"
 #include "Misc/ScopedSlowTask.h"
 #include "SLVisImageWriterInterface.h"
+#include "SLVisHelpers.h"
 #include "SLVisLoggerSpectatorPC.generated.h"
 
+
 /**
- * 
+ * Player controller stepping through the saved demo
  */
 UCLASS()
 class USEMLOGVISION_API ASLVisLoggerSpectatorPC : public APlayerController
@@ -27,9 +29,6 @@ protected:
 
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	// Setup user input bindings
-	virtual void SetupInputComponent() override;
 
 public:
 	// Called every frame
@@ -52,19 +51,25 @@ public:
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
-
+	
 private:
+	// Cache existing camera views
+	void SetCameraViews();
+
 	// Set rendered image quality
-	void SetupRenderingProperties();
+	void SetRenderingParameters();
+
+	// Request a screenshot
+	void RequestScreenshot();
 
 	// Called after a successful scrub
-	void DemoGotoCB();
+	void ScrubCB();
 
 	// Called when screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
-	// Called when the demo reaches the last frame
-	void QuitEditor();
+	// Called when the replay is finished
+	void DemoFinishedCB();
 
 	// Pause demo
 	void DemoPause();
@@ -72,26 +77,32 @@ private:
 	// Un-pause demo
 	void DemoUnPause();
 
-	// Check if demo is paused
-	bool IsDemoPaused();
-
 	// Sets the first view, returns false if there are no views at all
-	bool SetFirstViewTarget();
+	bool GotoInitialViewTarget();
 
 	// Sets the next view, returns false there are no more views
-	bool SetNextViewTarget();
+	bool GotoNextViewTarget();
 
 	// Sets the first visualization buffer type, false if none
-	bool SetFirstViewType();
+	bool GotoInitialRenderType();
 
 	// Sets the next visualization buffer type, returns false there are no more views
-	bool SetNextViewType();
+	bool GotoNextRenderType();
 
 	// Setup the given view type
-	bool ChangeViewType(const FName& ViewType);
+	bool ApplyRenderType(ESLVisRenderType ViewType);
+
+	// Called when the demo reaches the last frame
+	void QuitEditor();
 
 	// Skip the current timestamp (return false if not a mongo writer)
 	bool ShouldSkipThisFrame(float Timestamp);
+
+	// Check if entities are in the frustum using bounding box checks
+	void ShallowFrustumCheck();
+
+	// Check if entities are rendered using the image masks
+	void MaskFrustumCheck();
 
 private:
 	// Set when logger is initialized
@@ -102,20 +113,14 @@ private:
 
 	// Set when logger is finished
 	bool bIsFinished;
-	
-	// True if the meshes have the mask materials on
-	bool bMaskMaterialsOn;
 
 	// Saves the image data to file/database etc.
 	UPROPERTY() // TScriptInterface + UPROPERTY avoids GC on interfaces
-	TScriptInterface<ISLVisImageWriterInterface> Writer; 
+	TScriptInterface<ISLVisImageWriterInterface> Writer;
 
 	// Mask image visualizer helper
 	UPROPERTY() // Avoid GC
-	class USLVisMaskVisualizer* MaskVisualizer;
-
-	// Images at a given timeslice
-	TArray<FSLVisImageData> CurrImagesData;
+	class USLVisMaskHandler* MaskHandler;
 
 	// Pointer to the DemoNetDriver
 	class UDemoNetDriver* NetDriver;
@@ -123,38 +128,41 @@ private:
 	// Pointer to the viewport
 	class UGameViewportClient* ViewportClient;
 
+	// Cache data of the current view
+	FSLVisViewData CurrentViewData;
+
+	// Cache data of the current timestamp
+	FSLVisStampedData CurrentTsData;
+
 	// Array of the camera actors
-	TArray<class ASLVisCameraView*> CameraViews;
+	TArray<class ASLVisViewActor*> CameraViews;
 
 	// Rendering buffer types
-	TArray<FName> ViewTypes;
+	TArray<ESLVisRenderType> RenderTypes;
 
 	// Index of the current view
-	int32 ActiveCameraViewIndex;
+	int32 CurrentViewIndex;
 
-	// Index of the current view type
-	int32 ActiveViewTypeIndex;
+	// Index of the current render type
+	int32 CurrRenderIndex;
 
-	// Image size X
-	int32 ResX;
-
-	// Image size Y
-	int32 ResY;
+	// Screenshot resolution
+	FIntPoint Resolution;
 
 	// Update rate of the replay in seconds
-	float DemoUpdateRate;
+	float ScrubRate;
 	
 	// Avoid creating a new db entry if there is a world state in the given range [--- Ts ---]
-	float NewEntryTimeRange;
+	float SkipNewEntryTolerance;
 
 	// Current demo time
 	float DemoTimestamp;
 
-	// Number of saved images until now
-	uint32 NumImagesProcessed;
+	// Progress logger helper class
+	FSLVisProgressLogger ProgressLogger;
 
-	// Total number of images to be saved
-	uint32 NumImagesToProcess;
+	// Process duration logger helper class
+	FSLVisDurationsLogger DurationsLogger;
 
 #if WITH_EDITOR
 	// Progress bar

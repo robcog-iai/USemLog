@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLEdModeToolkit.h"
@@ -15,6 +15,7 @@
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "SLSemanticMapWriter.h"
 #include "SLOverlapShape.h"
+#include "SLSkeletalDataComponent.h"
 #include "Ids.h"
 #include "Tags.h"
 
@@ -25,7 +26,8 @@ FSLEdModeToolkit::FSLEdModeToolkit()
 {
 	bOverwriteSemanticMap = true;
 	bOverwriteExistingClassNames = true;
-	bOverwriteExistingVisualMaskValues = true;
+	bOverwriteVisualMaskValues = true;
+	bGenerateRandomVisualMasks = true;
 }
 
 void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
@@ -84,7 +86,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("SemanticallyAnnotateConstraints", "Annotate Constraints"))
+						.Text(LOCTEXT("AnnotateConstraints", "Annotate Constraints"))
 						.IsEnabled(true)
 						.OnClicked(this, &FSLEdModeToolkit::SemanticallyAnnotateConstraints)
 					]
@@ -120,16 +122,23 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 							.AutoWidth()
 							[
 								SNew(SButton)
-								.Text(LOCTEXT("SetVisualMaskValues", "Set Visual Mask Values"))
+								.Text(LOCTEXT("GenerateVisualMasks", "Generate Visual Masks"))
 							.IsEnabled(true)
-							.OnClicked(this, &FSLEdModeToolkit::SetVisualMaskValues)
+							.OnClicked(this, &FSLEdModeToolkit::GenerateVisualMasks)
 							]
 						+ SHorizontalBox::Slot()
 							[
 								SNew(SCheckBox)
-								.ToolTipText(LOCTEXT("SetVisualMaskValues_Overwrite", "Overwrite"))
+								.ToolTipText(LOCTEXT("GenerateVisualMasks_Overwrite", "Overwrite"))
 							.IsChecked(ECheckBoxState::Checked)
-							.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteVisualMaskValues)
+							.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteVisualMasks)
+							]
+						+ SHorizontalBox::Slot()
+							[
+								SNew(SCheckBox)
+								.ToolTipText(LOCTEXT("GenerateRandomVisualMasks_Overwrite", "Random(checked) / Incremental(unchecked)"))
+							.IsChecked(ECheckBoxState::Checked)
+							.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteGenerateRandomVisualMasks)
 							]
 					]
 				////
@@ -181,7 +190,7 @@ class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 {
 	return GLevelEditorModeTools().GetActiveMode(FSLEdMode::EM_SLEdModeId);
 }
-#undef LOCTEXT_NAMESPACE
+
 
 /** Callbacks */
 // Return true if any actors are selected in the viewport
@@ -214,13 +223,13 @@ void FSLEdModeToolkit::OnCheckedOverwriteSemanticMap(ECheckBoxState NewCheckedSt
 // Generate new semantic ids
 FReply FSLEdModeToolkit::GenerateNewSemanticIds()
 {
+	FScopedTransaction Transaction(LOCTEXT("GenerateNewSemanticIds", "Generate new Ids"));
 	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
 		int32 TagIndex = FTags::GetTagTypeIndex(*ActItr, "SemLog");
 		if (TagIndex != INDEX_NONE)
 		{
-			FTags::AddKeyValuePair(
-				ActItr->Tags[TagIndex], "Id", FIds::NewGuidInBase64Url());
+			FTags::AddKeyValuePair(ActItr->Tags[TagIndex], "Id", FIds::NewGuidInBase64Url(), true, *ActItr);
 		}
 
 		// Check component tags as well
@@ -229,8 +238,7 @@ FReply FSLEdModeToolkit::GenerateNewSemanticIds()
 			int32 TagIndex = FTags::GetTagTypeIndex(CompItr, "SemLog");
 			if (TagIndex != INDEX_NONE)
 			{
-				FTags::AddKeyValuePair(
-					CompItr->ComponentTags[TagIndex], "Id", FIds::NewGuidInBase64());
+				FTags::AddKeyValuePair(CompItr->ComponentTags[TagIndex], "Id", FIds::NewGuidInBase64(), true, CompItr);
 			}
 		}
 	}
@@ -240,6 +248,7 @@ FReply FSLEdModeToolkit::GenerateNewSemanticIds()
 // Generate semantic ids for constraints
 FReply FSLEdModeToolkit::SemanticallyAnnotateConstraints()
 {
+	FScopedTransaction Transaction(LOCTEXT("SemanticallyAnnotateConstraints", "Semantically annotated constraints"));
 	for (TObjectIterator<UPhysicsConstraintComponent> ConstrItr; ConstrItr; ++ConstrItr)
 	{
 		// Check if constraint is not already tagged
@@ -261,6 +270,7 @@ FReply FSLEdModeToolkit::SemanticallyAnnotateConstraints()
 // Name semantic classes from asset name
 FReply FSLEdModeToolkit::SetClassNamesToDefault()
 {
+	FScopedTransaction Transaction(LOCTEXT("SetClassNamesToDefault", "Set class names to default values"));
 	// Iterate only static mesh actors
 	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
@@ -309,7 +319,7 @@ FReply FSLEdModeToolkit::SetClassNamesToDefault()
 					ClassName.FindLastChar('.', FindCharPos);
 					ClassName.RemoveAt(0, FindCharPos + 1);
 					ClassName.RemoveFromStart(TEXT("SM_"));
-					FTags::AddKeyValuePair(SMC, "SemLog", "Class", ClassName);
+					FTags::AddKeyValuePair(SMC, "SemLog", "Class", ClassName, true);
 				}
 
 			}
@@ -322,7 +332,7 @@ FReply FSLEdModeToolkit::SetClassNamesToDefault()
 				ClassName.FindLastChar('.', FindCharPos);
 				ClassName.RemoveAt(0, FindCharPos + 1);
 				ClassName.RemoveFromStart(TEXT("SM_"));
-				FTags::AddKeyValuePair(*ActItr, "SemLog", "Class", ClassName);
+				FTags::AddKeyValuePair(*ActItr, "SemLog", "Class", ClassName, true);
 			}
 		}
 	}
@@ -333,40 +343,67 @@ FReply FSLEdModeToolkit::SetClassNamesToDefault()
 void FSLEdModeToolkit::OnCheckedOverwriteClassNames(ECheckBoxState NewCheckedState)
 {
 	// TODO now everything will be overwritten
-	bOverwriteExistingVisualMaskValues = true;
+	bOverwriteVisualMaskValues = true;
 	//bOverwriteExistingClassNames = (NewCheckedState == ECheckBoxState::Checked);
 }
 
-// Set unique mask colors in hexa for the entities
-FReply FSLEdModeToolkit::SetVisualMaskValues()
+// Set unique mask colors in hex for the entities (random or incremental)
+FReply FSLEdModeToolkit::GenerateVisualMasks()
 {
-	// Keep all colors in an array to check for uniqueness;
-	TArray<FColor> MaskColors;
-
-	// Lambda for generating unique colors as hex string
-	auto GetUniqueRandomColorLambda = [&MaskColors]()->FString
+	FScopedTransaction Transaction(LOCTEXT("GenerateVisualMasks", "Generate Visual Masks"));
+	if (bGenerateRandomVisualMasks)
 	{
-		FColor RandColor = FColor::MakeRandomColor();
-		if (MaskColors.Num() == 0)
+		return FSLEdModeToolkit::GenerateVisualMasksRand();
+	}
+	else
+	{
+		return FSLEdModeToolkit::GenerateVisualMasksInc();
+	}
+}
+
+// Set unique mask colors in hex for the entities (use random colors)
+FReply FSLEdModeToolkit::GenerateVisualMasksRand()
+{
+	// Lambda for generating unique colors as hex string
+	auto GenerateUniqueColorLambda = [](const uint8 Tolerance, const int32 NrOfTrials, TArray<FColor>& ConsumedColors)->FString
+	{
+		// Iterate generating a random color until it is unique (and differs from black)
+		for (int32 Idx = 0; Idx < NrOfTrials; ++Idx)
 		{
-			MaskColors.Emplace(RandColor);
-			return RandColor.ToHex();
-		}
-		else
-		{
-			int32 NrOfTrials = 0;
-			while (MaskColors.AddUnique(RandColor) == INDEX_NONE)
+			FColor RandColor = FColor::MakeRandomColor();
+			// Find by predicate lambda
+			auto AlmostEqualPredicate = [RandColor, Tolerance](const FColor& Item)
 			{
-				RandColor = FColor::MakeRandomColor();
-				NrOfTrials++;
-				if (NrOfTrials > 10)
+				return FMath::Abs(RandColor.R - Item.R) <= Tolerance
+					&& FMath::Abs(RandColor.G - Item.G) <= Tolerance
+					&& FMath::Abs(RandColor.B - Item.B) <= Tolerance;
+			};
+
+			// Continue if the random color is not similar to black
+			if (!AlmostEqualPredicate(FColor::Black))
+			{
+				// Cache image if there is no other similar stored
+				if (FColor* SemColor = ConsumedColors.FindByPredicate(AlmostEqualPredicate))
 				{
-					return FColor(ForceInit).ToHex();
+					// Conflict
+					//UE_LOG(LogTemp, Warning, TEXT("\t\t\t%s::%d Conflict between RandColor=%s; and SemColor=%s; Trial=%d"),
+					//	*FString(__func__), __LINE__, *RandColor.ToString(), *SemColor->ToString(), Idx);
+				}
+				else
+				{
+					// Different color found
+					ConsumedColors.Emplace(RandColor);
+					return RandColor.ToHex();
 				}
 			}
-			return RandColor.ToHex();
 		}
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a unique color, saving as black.."), *FString(__func__), __LINE__);
+		return FColor::Black.ToHex();
 	};
+
+	const uint8 Tolerance = 27;
+	const int32 NrOfTrials = 1000;
+	TArray<FColor> ConsumedColors;
 
 	// Iterate only static mesh actors
 	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
@@ -374,16 +411,174 @@ FReply FSLEdModeToolkit::SetVisualMaskValues()
 		// Continue only if a valid mesh component is available
 		if (UStaticMeshComponent* SMC = ActItr->GetStaticMeshComponent())
 		{
-			if (bOverwriteExistingVisualMaskValues)
+			if (bOverwriteVisualMaskValues)
 			{
 				// Check if the actor or the component is semantically annotated
 				if (FTags::HasKey(*ActItr, "SemLog", "Class"))
 				{
-					FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", GetUniqueRandomColorLambda(), true);
+					FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors), true);
 				}
 				else if (FTags::HasKey(SMC, "SemLog", "Class"))
 				{
-					FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", GetUniqueRandomColorLambda(), true);
+					FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors), true);
+				}
+			}
+			else
+			{
+				// TODO not implemented
+				// Load all existing values into the array first
+				// then start adding new values with AddUnique
+			}
+		}
+	}
+
+	// Iterate skeletal data components
+	for (TObjectIterator<USLSkeletalDataComponent> ObjItr; ObjItr; ++ObjItr)
+	{
+		// Valid if its parent is a skeletal mesh component
+		if (Cast<USkeletalMeshComponent>(ObjItr->GetAttachParent()))
+		{
+			if (bOverwriteVisualMaskValues)
+			{
+				for (auto& Pair : ObjItr->SemanticBonesData)
+				{
+					// Check if data is set (it has a semantic class)
+					if (Pair.Value.IsSet())
+					{
+						Pair.Value.MaskColorHex = GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors);
+
+						// Add the mask to the map used at runtime as well
+						if (ObjItr->AllBonesData.Contains(Pair.Key))
+						{
+							ObjItr->AllBonesData[Pair.Key].MaskColorHex = Pair.Value.MaskColorHex;
+						}
+						else
+						{
+							// This should not happen, the two maps should be synced
+							UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot fine bone %s, maps are not synced.."), 
+								*FString(__func__), __LINE__, *Pair.Key.ToString());
+						}
+					}
+				}
+			}
+			else 
+			{
+				// Not implemented
+			}
+		}
+	}
+	
+	return FReply::Handled();
+}
+
+// Set unique mask colors in hex for the entities (use incremental colors)
+FReply FSLEdModeToolkit::GenerateVisualMasksInc()
+{
+	auto GenerateUniqueColorLambda = [](const uint8 Step, FColor& ColorIdx)->FString
+	{
+		const uint8 StepFrom255 = 255 - Step;
+		if (ColorIdx.B > StepFrom255)
+		{
+			ColorIdx.B = ColorIdx.B - StepFrom255;
+			if (ColorIdx.G > StepFrom255)
+			{
+				ColorIdx.G = ColorIdx.G - StepFrom255;
+				if (ColorIdx.R > StepFrom255)
+				{
+					ColorIdx = FColor::White;
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Reached the maximum possible color values.."), *FString(__func__), __LINE__);
+					return FColor::Black.ToHex();;
+				}
+				else
+				{
+					ColorIdx.R += Step;
+					return ColorIdx.ToHex();;
+				}
+			}
+			else
+			{
+				ColorIdx.G += Step;
+				return ColorIdx.ToHex();;
+			}
+		}
+		else
+		{
+			ColorIdx.B += Step;
+			return ColorIdx.ToHex();;
+		}
+	};
+
+	// Generated colors params
+	const uint8 Tolerance = 27;
+	FColor CIdx(0, 0, 0, 255);
+
+	// Lambda to shuffle the unqiue colors array
+	auto ArrayShuffleLambda = [](const TArray<FString>& Colors)
+	{
+		int32 LastIndex = Colors.Num() - 1;
+		for (int32 i = 0; i < LastIndex; ++i)
+		{
+			int32 Index = FMath::RandRange(0, LastIndex);
+			if (i != Index)
+			{
+				const_cast<TArray<FString>*>(&Colors)->Swap(i, Index);
+			}
+		}
+	};
+
+	// Add all possible colors to an array and shuffle them (avoid having similar color shades next to each other)
+	TArray<FString> UniqueColors;
+	bool bIsColorBlack = false;
+	while (!bIsColorBlack)
+	{
+		FString UC = GenerateUniqueColorLambda(Tolerance, CIdx);
+		if (UC.Equals(FColor::Black.ToHex()))
+		{
+			bIsColorBlack = true;
+		}
+		else
+		{
+			UniqueColors.Add(UC);
+		}
+	}
+
+	// Shuffle the array
+	ArrayShuffleLambda(UniqueColors);
+
+	// Iterate only static mesh actors
+	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	{
+		// Continue only if a valid mesh component is available
+		if (UStaticMeshComponent* SMC = ActItr->GetStaticMeshComponent())
+		{
+			if (bOverwriteVisualMaskValues)
+			{
+				// Check if the actor or the component is semantically annotated
+				if (FTags::HasKey(*ActItr, "SemLog", "Class"))
+				{
+					//FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", GenerateUniqueColorLambda(Tolerance, CIdx), true);
+					if (UniqueColors.Num() == 0)
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d No more unique colors, saving as black"), *FString(__func__), __LINE__);
+						FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", FColor::Black.ToHex(), true);
+					}
+					else
+					{
+						FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", UniqueColors.Pop(), true);
+					}
+				}
+				else if (FTags::HasKey(SMC, "SemLog", "Class"))
+				{
+					//FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", GenerateUniqueColorLambda(Tolerance, CIdx), true);
+					if (UniqueColors.Num() == 0)
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d No more unique colors, saving as black"), *FString(__func__), __LINE__);
+						FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", FColor::Black.ToHex(), true);
+					}
+					else
+					{
+						FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", UniqueColors.Pop(), true);
+					}
 				}
 			}
 			else
@@ -394,19 +589,70 @@ FReply FSLEdModeToolkit::SetVisualMaskValues()
 			}
 		}
 
+		// Iterate skeletal data components
+		for (TObjectIterator<USLSkeletalDataComponent> ObjItr; ObjItr; ++ObjItr)
+		{
+			// Valid if its parent is a skeletal mesh component
+			if (Cast<USkeletalMeshComponent>(ObjItr->GetAttachParent()))
+			{
+				if (bOverwriteVisualMaskValues)
+				{
+					for (auto& Pair : ObjItr->SemanticBonesData)
+					{
+						// Check if data is set (it has a semantic class)
+						if (Pair.Value.IsSet())
+						{
+							if (UniqueColors.Num() == 0)
+							{
+								Pair.Value.MaskColorHex = FColor::Black.ToHex();
+							}
+							else
+							{
+								Pair.Value.MaskColorHex = UniqueColors.Pop();
+							}
+
+							// Add the mask to the map used at runtime as well
+							if (ObjItr->AllBonesData.Contains(Pair.Key))
+							{
+								ObjItr->AllBonesData[Pair.Key].MaskColorHex = Pair.Value.MaskColorHex;
+							}
+							else
+							{
+								// This should not happen, the two maps should be synced
+								UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot find bone %s, maps are not synced.."),
+									*FString(__func__), __LINE__, *Pair.Key.ToString());
+							}
+						}
+					}
+				}
+				else
+				{
+					// Not implemented
+				}
+			}
+		}
 	}
+
 	return FReply::Handled();
 }
 
 // Set flag attribute depending on the checkbox state
-void FSLEdModeToolkit::OnCheckedOverwriteVisualMaskValues(ECheckBoxState NewCheckedState)
+void FSLEdModeToolkit::OnCheckedOverwriteVisualMasks(ECheckBoxState NewCheckedState)
 {
-	bOverwriteExistingVisualMaskValues = (NewCheckedState == ECheckBoxState::Checked);
+	//bOverwriteVisualMaskValues = (NewCheckedState == ECheckBoxState::Checked);
+	bOverwriteVisualMaskValues = true;
+}
+
+// Set flag attribute depending on the checkbox state
+void FSLEdModeToolkit::OnCheckedOverwriteGenerateRandomVisualMasks(ECheckBoxState NewCheckedState)
+{
+	bGenerateRandomVisualMasks = (NewCheckedState == ECheckBoxState::Checked);
 }
 
 // Remove all semantic ids
 FReply FSLEdModeToolkit::RemoveAllSemanticIds()
 {
+	FScopedTransaction Transaction(LOCTEXT("RemoveAllSemanticIds", "Remove all semantic Ids"));
 	FTags::RemoveAllKeyValuePairs(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
 	return FReply::Handled();
 }
@@ -414,6 +660,7 @@ FReply FSLEdModeToolkit::RemoveAllSemanticIds()
 // Update legacy namings from tags
 FReply FSLEdModeToolkit::UpdateLegacyNames()
 {
+	FScopedTransaction Transaction(LOCTEXT("UpdateLegacyNames", "Update legacy names"));
 	// What to replace
 	const FString SearchText = "LogType";
 	// With what
@@ -421,22 +668,27 @@ FReply FSLEdModeToolkit::UpdateLegacyNames()
 
 	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
-		for (auto& T : ActItr->Tags)
+		ActItr->Modify();
+		for (auto& Tag : ActItr->Tags)
 		{
-			FString TagAsString = T.ToString();
-			TagAsString.ReplaceInline(*SearchText, *ReplaceText);
-			T = FName(*TagAsString);
+			FString TagAsString = Tag.ToString();
+			if (TagAsString.ReplaceInline(*SearchText, *ReplaceText) > 0)
+			{
+				Tag = FName(*TagAsString);
+			}
 		}
 		// Iterate actor components
 		TArray<UActorComponent*> Comps;
 		ActItr->GetComponents<UActorComponent>(Comps);
 		for (auto& C : Comps)
 		{
-			for (auto& T : C->ComponentTags)
+			for (auto& Tag : C->ComponentTags)
 			{
-				FString TagAsString = T.ToString();
-				TagAsString.ReplaceInline(*SearchText, *ReplaceText);
-				T = FName(*TagAsString);
+				FString TagAsString = Tag.ToString();
+				if (TagAsString.ReplaceInline(*SearchText, *ReplaceText) > 0)
+				{
+					Tag = FName(*TagAsString);
+				}
 			}
 		}
 	}
@@ -446,16 +698,24 @@ FReply FSLEdModeToolkit::UpdateLegacyNames()
 // Remove all tags
 FReply FSLEdModeToolkit::RemoveAllTags()
 {
+	FScopedTransaction Transaction(LOCTEXT("RemoveAllTags", "Remove all tags"));
 	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
-		ActItr->Tags.Empty();
+		ActItr->Modify();
+		if (ActItr->Tags.Num() > 0)
+		{			
+			ActItr->Tags.Empty();
+		}
 
 		// Iterate actor components
 		TArray<UActorComponent*> Comps;
 		ActItr->GetComponents<UActorComponent>(Comps);
 		for (auto& C : Comps)
 		{
-			C->ComponentTags.Empty();
+			if (C->ComponentTags.Num() > 0)
+			{
+				C->ComponentTags.Empty();
+			}
 		}
 	}
 	return FReply::Handled();
@@ -476,3 +736,5 @@ FReply FSLEdModeToolkit::UpdateSLOverlapShapeColors()
 	}
 	return FReply::Handled();
 }
+
+#undef LOCTEXT_NAMESPACE

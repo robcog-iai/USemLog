@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLContactEvent.h"
@@ -11,14 +11,14 @@ FSLContactEvent::FSLContactEvent()
 
 // Constructor with initialization
 FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const FSLItem& InItem1, const FSLItem& InItem2) :
+	const FSLEntity& InItem1, const FSLEntity& InItem2) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId), Item1(InItem1), Item2(InItem2)
 {
 }
 
 // Constructor initialization without end time
 FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const FSLItem& InItem1, const FSLItem& InItem2) :
+	const FSLEntity& InItem1, const FSLEntity& InItem2) :
 	ISLEvent(InId, InStart), PairId(InPairId), Item1(InItem1), Item2(InItem2)
 {
 }

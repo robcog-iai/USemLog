@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -17,20 +17,20 @@ public:
 
 	// Constructor with initialization 
 	FSLSupportedByEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLItem& InSupportedItem, const FSLItem& InSupportingItem);
+		const FSLEntity& InSupportedItem, const FSLEntity& InSupportingItem);
 
 	// Constructor with initialization without end time 
 	FSLSupportedByEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLItem& InSupportedItem, const FSLItem& InSupportingItem);
+		const FSLEntity& InSupportedItem, const FSLEntity& InSupportingItem);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
 	// Supported item
-	FSLItem SupportedItem;
+	FSLEntity SupportedItem;
 
 	// Supporting item
-	FSLItem SupportingItem;
+	FSLEntity SupportingItem;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

@@ -1,8 +1,8 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "WorldState/SLWorldStateAsyncWorker.h"
-#include "SLMappings.h"
+#include "SLEntitiesManager.h"
 #include "WorldState/SLWorldStateWriterJson.h"
 #include "WorldState/SLWorldStateWriterBson.h"
 #include "WorldState/SLWorldStateWriterMongoC.h"
@@ -21,21 +21,7 @@ FSLWorldStateAsyncWorker::~FSLWorldStateAsyncWorker()
 }
 
 // Init writer, load items from sl mapping singleton
-bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
-	ESLWorldStateWriterType WriterType,
-	float LinearDistance,
-	float AngularDistance,
-	const FString& Location,
-	const FString& EpisodeId,
-	const FString& ServerIp,
-	const uint16 ServerPort)
-{
-	return FSLWorldStateAsyncWorker::Create(InWorld, WriterType,
-		FSLWorldStateWriterParams(LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort));
-}
-
-// Init writer, load items from sl mapping singleton
-bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
+bool FSLWorldStateAsyncWorker::Init(UWorld* InWorld,
 	ESLWorldStateWriterType InWriterType,
 	const FSLWorldStateWriterParams& InParams)
 {
@@ -71,39 +57,41 @@ bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
 	}
 
 	// Make sure the semantic items are initialized
-	FSLMappings::GetInstance()->Init(World);
+	FSLEntitiesManager::GetInstance()->Init(World);
 
-	// Iterate through the semantically annotated objects
-	for (const auto& ItemPair : FSLMappings::GetInstance()->GetItemMap())
+	// Iterate all annotated entities, ignore skeletal ones
+	TArray<FSLEntity> SemanticEntities;
+	FSLEntitiesManager::GetInstance()->GetSemanticDataArray(SemanticEntities);
+	for (const auto& SemEntity : SemanticEntities)
 	{
 		// Take into account only objects with transform data (AActor, USceneComponents)
-		if (AActor* ObjAsActor = Cast<AActor>(ItemPair.Value.Obj))
+		if (AActor* ObjAsActor = Cast<AActor>(SemEntity.Obj))
 		{
-			if (ASLSkeletalMeshActor* ObjAsSLSkelAct = Cast<ASLSkeletalMeshActor>(ObjAsActor))
+			// Continue if it is not a skeletal mesh actor
+			if (!Cast<ASkeletalMeshActor>(ObjAsActor))
 			{
-				SkeletalActorPool.Emplace(
-					TSLItemState<ASLSkeletalMeshActor>(ItemPair.Value, ObjAsSLSkelAct));
-			}
-			else
-			{
-				NonSkeletalActorPool.Emplace(
-					TSLItemState<AActor>(ItemPair.Value, ObjAsActor));
+				ActorEntitites.Emplace(TSLEntityPreviousPose<AActor>(ObjAsActor, SemEntity));
 			}
 		}
-		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(ItemPair.Value.Obj))
+		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
 		{
-			if (USkeletalMeshComponent* ObjAsSkelMeshComponent = Cast<USkeletalMeshComponent>(ObjAsSceneComp))
+			// Continue if it is not a skeletal mesh component 
+			if (!Cast<USkeletalMeshComponent>(ObjAsSceneComp))
 			{
-				/*SkeletalComponentPool.Emplace(
-					TSLItemState<USkeletalMeshComponent>(ItemPair.Value, ObjAsSkelMeshComponent));*/
-			}
-			else
-			{
-				NonSkeletalComponentPool.Emplace(
-					TSLItemState<USceneComponent>(ItemPair.Value, ObjAsSceneComp));
+				ComponentEntities.Emplace(TSLEntityPreviousPose<USceneComponent>(ObjAsSceneComp, SemEntity));
 			}
 		}
 	}
+
+	// Get the skeletal data info
+	TArray<USLSkeletalDataComponent*> SemanticSkeletalData;
+	FSLEntitiesManager::GetInstance()->GetSemanticSkeletalDataArray(SemanticSkeletalData);
+	for (const auto& SemSkelData : SemanticSkeletalData)
+	{
+		SkeletalEntities.Emplace(TSLEntityPreviousPose<USLSkeletalDataComponent>(
+			SemSkelData, SemSkelData->OwnerSemanticData));
+	}
+
 	// Can start working
 	return true;
 }
@@ -112,44 +100,26 @@ bool FSLWorldStateAsyncWorker::Create(UWorld* InWorld,
 void FSLWorldStateAsyncWorker::RemoveStaticItems()
 {
 	// Non-skeletal actors
-	for (auto Itr(NonSkeletalActorPool.CreateIterator()); Itr; ++Itr)
+	for (auto Itr(ActorEntitites.CreateIterator()); Itr; ++Itr)
 	{
-		if (FTags::HasKeyValuePair(Itr->Entity.Get(), "SemLog", "Mobility", "Static"))
+		if (FTags::HasKeyValuePair(Itr->Obj.Get(), "SemLog", "Mobility", "Static"))
 		{
 			Itr.RemoveCurrent();
 		}
 	}
-	NonSkeletalActorPool.Shrink();
-
-	// Skeletal actors
-	for (auto Itr(SkeletalActorPool.CreateIterator()); Itr; ++Itr)
-	{
-		if (FTags::HasKeyValuePair(Itr->Entity.Get(), "SemLog", "Mobility", "Static"))
-		{
-			Itr.RemoveCurrent();
-		}
-	}
-	SkeletalActorPool.Shrink();
+	ActorEntitites.Shrink();
 
 	// Non-skeletal scene components
-	for (auto Itr(NonSkeletalComponentPool.CreateIterator()); Itr; ++Itr)
+	for (auto Itr(ComponentEntities.CreateIterator()); Itr; ++Itr)
 	{
-		if (FTags::HasKeyValuePair(Itr->Entity.Get(), "SemLog", "Mobility", "Static"))
+		if (FTags::HasKeyValuePair(Itr->Obj.Get(), "SemLog", "Mobility", "Static"))
 		{
 			Itr.RemoveCurrent();
 		}
 	}
-	NonSkeletalComponentPool.Shrink();
+	ComponentEntities.Shrink();
 
-	//// Skeletal components
-	//for (auto Itr(SkeletalComponentPool.CreateIterator()); Itr; ++Itr)
-	//{
-	//	if (!FTags::HasKeyValuePair(Itr->Entity.Get(), "SemLog", "Mobility", "Dynamic"))
-	//	{
-	//		Itr.RemoveCurrent();
-	//	}
-	//}
-	//SkeletalComponentPool.Shrink();
+	// Skeletal components are probably always movable, so we just skip that step
 }
 
 // Finish up worker
@@ -158,12 +128,22 @@ void FSLWorldStateAsyncWorker::Finish(bool bForced)
 	if (!bForced)
 	{
 		// Check if mongo writer
-		if (Writer.IsValid() && WriterType == ESLWorldStateWriterType::MongoCxx)
+		if (Writer.IsValid())
 		{
-			// We cannot cast dynamically if it is not an UObject
-			TSharedPtr<FSLWorldStateWriterMongoCxx> MongoWriter = StaticCastSharedPtr<FSLWorldStateWriterMongoCxx>(Writer);
-			// Finish writer (create database indexes for example)
-			MongoWriter->Finish();
+			if (WriterType == ESLWorldStateWriterType::MongoCxx)
+			{
+				// We cannot cast dynamically if it is not an UObject
+				TSharedPtr<FSLWorldStateWriterMongoCxx> AsMongoCxxWriter = StaticCastSharedPtr<FSLWorldStateWriterMongoCxx>(Writer);
+				// Finish writer (create database indexes for example)
+				AsMongoCxxWriter->Finish();
+			}
+			else if (WriterType == ESLWorldStateWriterType::MongoC)
+			{
+				// We cannot cast dynamically if it is not an UObject
+				TSharedPtr<FSLWorldStateWriterMongoC> AsMongoCWriter = StaticCastSharedPtr<FSLWorldStateWriterMongoC>(Writer);
+				// Finish writer (create database indexes for example)
+				AsMongoCWriter->Finish();
+			}
 		}
 	}
 }
@@ -171,8 +151,7 @@ void FSLWorldStateAsyncWorker::Finish(bool bForced)
 // Async work done here
 void FSLWorldStateAsyncWorker::DoWork()
 {
-	Writer->Write(NonSkeletalActorPool, SkeletalActorPool, NonSkeletalComponentPool,
-		World->GetTimeSeconds());
+	Writer->Write(World->GetTimeSeconds(), ActorEntitites, ComponentEntities, SkeletalEntities);
 }
 
 // Needed by the engine API

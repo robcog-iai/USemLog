@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "WorldState/SLWorldStateWriterBson.h"
@@ -46,14 +46,15 @@ void FSLWorldStateWriterBson::Finish()
 }
 
 // Called to write the data
-void FSLWorldStateWriterBson::Write(TArray<TSLItemState<AActor>>& NonSkeletalActorPool,
-	TArray<TSLItemState<ASLSkeletalMeshActor>>& SkeletalActorPool,
-	TArray<TSLItemState<USceneComponent>>& NonSkeletalComponentPool,
-	float Timestamp)
+void FSLWorldStateWriterBson::Write(float Timestamp,
+	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+	bool bCheckAndRemoveInvalidEntities)
 {
-#if SL_WITH_LIBMONGO
+#if SL_WITH_LIBMONGO_CXX
 
-#endif //SL_WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO_CXX
 }
 
 // Set the file handle for the logger
@@ -71,7 +72,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 
 	return FileHandle != nullptr;
 }
-#if SL_WITH_LIBMONGO
+#if SL_WITH_LIBMONGO_CXX
 //// Add actors
 //void FSLWorldStateWriterBson::AddActors(bson_t& OutBsonEntitiesArr)
 //{
@@ -271,4 +272,4 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //		FileHandle->Write(memorybuffer, bufferlen);
 //	}
 //}
-#endif //SL_WITH_LIBMONGO
+#endif //SL_WITH_LIBMONGO_CXX

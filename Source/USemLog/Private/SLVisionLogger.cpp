@@ -1,8 +1,8 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisionLogger.h"
-#include "SLMappings.h"
+#include "SLEntitiesManager.h"
 #if SL_WITH_SLVIS
 #include "SLVisRecordGameMode.h"
 #include "Engine/DemoNetDriver.h"
@@ -33,7 +33,7 @@ void USLVisionLogger::Init(float InMaxRecHz, float InMinRecHz)
 		if (ASLVisRecordGameMode* SLGameMode = Cast<ASLVisRecordGameMode>(GetWorld()->GetAuthGameMode()))
 		{ 
 			// Set movement replications to objects
-			FSLMappings::GetInstance()->SetReplicates(true);
+			FSLEntitiesManager::GetInstance()->SetReplicates(true);
 
 			// Set update rates
 			IConsoleManager::Get().FindConsoleVariable(TEXT("demo.RecordHZ"))->Set(InMaxRecHz);
@@ -44,7 +44,7 @@ void USLVisionLogger::Init(float InMaxRecHz, float InMinRecHz)
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Game Mode not set, vision replay will not be recorded.."), TEXT(__FUNCTION__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Game Mode not set, vision replay will not be recorded.."), *FString(__func__), __LINE__);
 		}
 #endif //SL_WITH_SLVIS
 	}

@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLEventLogger.h"
@@ -11,6 +11,7 @@
 #include "Events/SLGraspEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLOverlapShape.h"
+#include "SLGraspListener.h"
 #include "SLGoogleCharts.h"
 
 // UUtils
@@ -25,8 +26,13 @@
 #endif // SL_WITH_SLICING
 
 // Constructor
-USLEventLogger::USLEventLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
+USLEventLogger::USLEventLogger()
 {
+	bIsInit = false;
+	bIsStarted = false;
+	bIsFinished = false;
+	bWriteMetadata = false;
+	bWriteTimelines = false;
 }
 
 // Destructor
@@ -40,26 +46,27 @@ USLEventLogger::~USLEventLogger()
 
 // Init Logger
 void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
-	const FString& InLocation,
-	const FString& InEpisodeId,
+	const FSLEventWriterParams& WriterParams,
 	bool bInLogContactEvents,
 	bool bInLogSupportedByEvents,
 	bool bInLogGraspEvents,
 	bool bInLogSlicingEvents,
-	bool bInWriteTimelines)
+	bool bInWriteTimelines,
+	bool bInWriteMetadata)
 {
 	if (!bIsInit)
 	{
-		LogDirectory = InLocation;
-		EpisodeId = InEpisodeId;
+		LogDirectory = WriterParams.Location;
+		EpisodeId = WriterParams.EpisodeId;
 		OwlDocTemplate = TemplateType;
 		bWriteTimelines = bInWriteTimelines;
+		bWriteMetadata = bInWriteMetadata;
 
 		// Init the semantic mappings (if not already init)
-		FSLMappings::GetInstance()->Init(GetWorld());
+		FSLEntitiesManager::GetInstance()->Init(GetWorld());
 
 		// Create the document template
-		ExperimentDoc = CreateEventsDocTemplate(TemplateType, InEpisodeId);
+		ExperimentDoc = CreateEventsDocTemplate(TemplateType, EpisodeId);
 
 		// TODO create one handler for each event type
 		// bind all the objects to one handler
@@ -70,9 +77,19 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		// Init all contact trigger handlers
 		for (TObjectIterator<USLOverlapShape> Itr; Itr; ++Itr)
 		{
-			// Skip objects that do not have a semantically annotated ancestor
-			if (!FSLMappings::GetInstance()->HasValidAncestor(*Itr))
+			// Make sure the object is in the world
+			if (!GetWorld()->ContainsActor(Itr->GetOwner()))
 			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
+					*FString(__func__), __LINE__, *Itr->GetName());
+				continue;
+			}
+
+			// Skip objects that do not have a semantically annotated ancestor
+			if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
+					*FString(__func__), __LINE__, *Itr->GetName());
 				continue;
 			}
 
@@ -80,7 +97,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			Itr->Init();
 
 			// Store the semantic overlap areas
-			SemanticOverlapAreas.Add(*Itr);
+			OverlapShapes.Emplace(*Itr);
 
 			if (bInLogContactEvents)
 			{
@@ -99,15 +116,50 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			}
 		}
 
+		// Init all grasp listeners
+		for (TObjectIterator<USLGraspListener> Itr; Itr; ++Itr)
+		{
+			// Make sure the object is in the world
+			if (!GetWorld()->ContainsActor(Itr->GetOwner()))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
+					*FString(__func__), __LINE__, *Itr->GetName());
+				continue;
+			}
+
+			// Skip objects that do not have a semantically annotated ancestor
+			if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
+					*FString(__func__), __LINE__, *Itr->GetName());
+				continue;
+			}
+			
+			if (Itr->Init())
+			{
+				GraspListeners.Emplace(*Itr);
+			}
+		}
+
 		// Init grasp handlers
 		if (bInLogGraspEvents)
 		{
 #if SL_WITH_MC_GRASP
 			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
 			{
-				// Skip objects that do not have a semantically annotated ancestor
-				if (!FSLMappings::GetInstance()->HasValidAncestor(*Itr))
+				// Make sure the object is in the world
+				if (!GetWorld()->ContainsActor(Itr->GetOwner()))
 				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
+						*FString(__func__), __LINE__, *Itr->GetName());
+					continue;
+				}
+
+				// Skip objects that do not have a semantically annotated ancestor
+				if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
+						*FString(__func__), __LINE__, *Itr->GetName());
 					continue;
 				}
 
@@ -119,6 +171,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 #endif // SL_WITH_MC_GRASP
 		}
 
+<<<<<<< HEAD
 		// Init Slicing handlers
 		if (bInLogSlicingEvents)
 		{
@@ -137,6 +190,11 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				EventHandlers.Add(SlicingEventHandler);
 			}
 #endif // SL_WITH_SLICING
+=======
+		if (bWriteMetadata)
+		{
+			MetadataWriter.Init(WriterParams);
+>>>>>>> c3352d439414e0a8268f43ee4cc754286552205c
 		}
 
 		// Mark as initialized
@@ -161,9 +219,20 @@ void USLEventLogger::Start()
 		}
 
 		// Start the semantic overlap areas
-		for (auto& SLOverlapShape : SemanticOverlapAreas)
+		for (auto& SLOverlapShape : OverlapShapes)
 		{
 			SLOverlapShape->Start();
+		}
+
+		// Start the grasp listeners
+		for (auto& SLGraspListener : GraspListeners)
+		{
+			SLGraspListener->Start();
+		}
+
+		if (bWriteMetadata)
+		{
+			MetadataWriter.Start();
 		}
 
 		// Mark as started
@@ -184,11 +253,18 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		EventHandlers.Empty();
 
 		// Finish semantic overlap events publishing
-		for (auto& SLOverlapShape : SemanticOverlapAreas)
+		for (auto& SLOverlapShape : OverlapShapes)
 		{
 			SLOverlapShape->Finish(bForced);
 		}
-		SemanticOverlapAreas.Empty();
+		OverlapShapes.Empty();
+
+		// Finish the grasp listeners
+		for (auto& SLGraspListener : GraspListeners)
+		{
+			SLGraspListener->Finish(bForced);
+		}
+		GraspListeners.Empty();
 
 		// Mark finished
 		bIsStarted = false;
@@ -214,16 +290,25 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		// Add experiment individual to doc
 		ExperimentDoc->AddExperimentIndividual();
 
+
 		// Write events to file
 		USLEventLogger::WriteToFile();
+		if (bWriteMetadata)
+		{
+			MetadataWriter.Finish();
+		}
+
+		bIsStarted = false;
+		bIsInit = false;
+		bIsFinished = true;
 	}
 }
 
 // Called when a semantic event is done
 void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->ToString()));
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), TEXT(__FUNCTION__), __LINE__, *Event->ToString());
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), *FString(__func__), __LINE__, *Event->ToString()));
+	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), *FString(__func__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
 }
 

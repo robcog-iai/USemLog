@@ -1,8 +1,8 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLManager.h"
-#include "SLMappings.h"
+#include "SLEntitiesManager.h"
 #include "Ids.h"
 #if SL_WITH_SLVIS
 #include "Engine/DemoNetDriver.h"
@@ -37,7 +37,7 @@ ASLManager::ASLManager()
 	UpdateRate = 0.0f;
 	LinearDistance = 0.5f; // cm
 	AngularDistance = 0.1f; // rad
-	WriterType = ESLWorldStateWriterType::Json;
+	WriterType = ESLWorldStateWriterType::MongoC;
 	ServerIp = TEXT("127.0.0.1");
 	ServerPort = 27017;
 	bIncludeAllData = false;
@@ -49,6 +49,7 @@ ASLManager::ASLManager()
 	bLogGraspEvents = true;
 	bLogSlicingEvents = true;
 	bWriteTimelines = true;
+	bWriteMetadata = true;
 	ExperimentTemplateType = ESLOwlExperimentTemplate::Default;
 
 	// Vision data logger default values
@@ -129,7 +130,7 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ASLManager::Init()
 {
 #if SL_WITH_SLVIS
-	// TODO see if the manager can be set not to replicate SetReplicateMovement and SetReplicates did not work
+	// TODO needed, since un-replicating the manager did not seem to work
 	//SetReplicateMovement(false);
 	//SetReplicates(false);
 	// Init can be called even if it is a demo replay, skip if it is the case
@@ -142,7 +143,7 @@ void ASLManager::Init()
 	if (!bIsInit)
 	{
 		// Init the semantic items content singleton
-		FSLMappings::GetInstance()->Init(GetWorld());
+		FSLEntitiesManager::GetInstance()->Init(GetWorld());
 
 		// If the episode Id is not manually added, generate new unique id
 		if (!bUseCustomEpisodeId)
@@ -154,16 +155,16 @@ void ASLManager::Init()
 		{
 			// Create and init world state logger
 			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
-			WorldStateLogger->Init(WriterType, LinearDistance, AngularDistance,
-				Location, EpisodeId, ServerIp, ServerPort);
+			WorldStateLogger->Init(WriterType, FSLWorldStateWriterParams(
+				LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort));
 		}
 
 		if (bLogEventData)
 		{
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
-			EventDataLogger->Init(ExperimentTemplateType, Location, EpisodeId,
-				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogSlicingEvents, bWriteTimelines);
+			EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId, ServerIp, ServerPort),
+				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines, bWriteMetadata);
 		}
 
 		if (bLogVisionData)
@@ -230,7 +231,7 @@ void ASLManager::Finish(const float Time, bool bForced)
 		}
 
 		// Delete the semantic items content instance
-		FSLMappings::DeleteInstance();
+		FSLEntitiesManager::DeleteInstance();
 
 		// Mark manager as finished
 		bIsStarted = false;
@@ -265,6 +266,13 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartFromUserInput))
 	{
 		if (bStartFromUserInput) {bStartAtBeginPlay = false;  bStartWithDelay = false; bStartAtFirstTick = false;}
+	}
+	
+	// Generate an editable unique id
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bUseCustomEpisodeId))
+	{
+		if (bUseCustomEpisodeId) { EpisodeId = FIds::NewGuidInBase64Url(); }
+		else { EpisodeId = TEXT("autogen"); };
 	}
 }
 

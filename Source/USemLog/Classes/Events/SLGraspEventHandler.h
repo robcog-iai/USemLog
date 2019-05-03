@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -23,7 +23,7 @@ public:
 
 private:
 	// Start new grasp event
-	void AddNewEvent(const FSLItem& Self, const FSLItem& Other, float StartTime);
+	void AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime);
 
 	// Finish then publish the event
 	bool FinishEvent(UObject* InOther, float EndTime);
