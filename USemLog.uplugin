@@ -47,6 +47,10 @@
 		{
 			"Name": "libmongo",
 			"Enabled": true
+		},
+		{
+			"Name": "Slicing",
+			"Enabled": false
 		}
 	]
 }
