@@ -47,6 +47,7 @@ public class USemLog : ModuleRules
 				"UConversions",
 				"UMCGrasp",			// SL_WITH_MC_GRASP
 				"libmongo",			// SL_WITH_LIBMONGO
+                "SlicingLogic",     // SL_WITH_SLICING
 				//"MongoC",
 				//"MongoCxx",
 				// ... add private dependencies that you statically link with here ...	
@@ -99,5 +100,15 @@ public class USemLog : ModuleRules
 			bEnableExceptions = true;
 			//bUseRTTI = true;
 		}
-	}
+
+        string SlicingLogic = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("SlicingLogic"));
+        if (string.IsNullOrEmpty(SlicingLogic))
+        {
+            PublicDefinitions.Add("SL_WITH_SLICING=0");
+        }
+        else
+        {
+            PublicDefinitions.Add("SL_WITH_SLICING=1");
+        }
+    }
 }

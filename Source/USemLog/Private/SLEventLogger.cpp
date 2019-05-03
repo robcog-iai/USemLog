@@ -20,6 +20,9 @@
 #include "MCFixationGrasp.h"
 #endif // SL_WITH_MC_GRASP
 
+#if SL_WITH_SLICING
+#include "SlicingBladeComponent.h"
+#endif // SL_WITH_SLICING
 
 // Constructor
 USLEventLogger::USLEventLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
@@ -42,6 +45,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 	bool bInLogContactEvents,
 	bool bInLogSupportedByEvents,
 	bool bInLogGraspEvents,
+	bool bInLogSlicingEvents,
 	bool bInWriteTimelines)
 {
 	if (!bIsInit)
@@ -113,6 +117,26 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				EventHandlers.Add(GraspEventHandler);
 			}
 #endif // SL_WITH_MC_GRASP
+		}
+
+		// Init Slicing handlers
+		if (bInLogSlicingEvents)
+		{
+#if SL_WITH_SLICING
+			for (TObjectIterator<USlicingBladeComponent> Itr; Itr; ++Itr)
+			{
+				// Skip objects that do not have a semantically annotated ancestor
+				if (!FSLMappings::GetInstance()->HasValidAncestor(*Itr))
+				{
+					continue;
+				}
+
+				// Create a Slicing event handler 
+				TSharedPtr<FSLSlicingEventHandler> SlicingEventHandler = MakeShareable(new FSLSlicingEventHandler());
+				SlicingEventHandler->Init(*Itr);
+				EventHandlers.Add(SlicingEventHandler);
+			}
+#endif // SL_WITH_SLICING
 		}
 
 		// Mark as initialized

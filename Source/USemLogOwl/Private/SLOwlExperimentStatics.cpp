@@ -42,11 +42,14 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddPropertyDefinition(FOwlCommentNode("Property Definitions"));
 	Experiment->AddPropertyDefinition("knowrob", "taskContext");
 	Experiment->AddPropertyDefinition("knowrob", "taskSuccess");
-
 	Experiment->AddPropertyDefinition("knowrob", "startTime");
 	Experiment->AddPropertyDefinition("knowrob", "endTime");
 	Experiment->AddPropertyDefinition("knowrob", "experiment");
 	Experiment->AddPropertyDefinition("knowrob", "inContact");
+	Experiment->AddPropertyDefinition("knowrob", "performedBy");
+	Experiment->AddPropertyDefinition("knowrob", "objectActedOn");
+	Experiment->AddPropertyDefinition("knowrob", "deviceUsed");
+	Experiment->AddPropertyDefinition("knowrob", "outputsCreated");
 
 	// Add datatype definitions
 	Experiment->AddDatatypeDefinition(FOwlCommentNode("Property Definitions"));
@@ -57,8 +60,10 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddClassDefinition(FOwlCommentNode("Class Definitions"));
 	Experiment->AddClassDefinition("knowrob", "UnrealExperiment");
 	Experiment->AddClassDefinition("knowrob", "GraspingSomething");
+	Experiment->AddClassDefinition("knowrob", "SlicingSomething");
 	Experiment->AddClassDefinition("knowrob", "TouchingSituation");
 	Experiment->AddClassDefinition("knowrob", "Pose");
+	Experiment->AddClassDefinition("knowrob", "Knife");
 
 	// Add individuals comment
 	// Experiment->AddExperimentIndividual(InDocPrefix, InDocId); // Adding at end
@@ -205,6 +210,16 @@ FSLOwlNode FSLOwlExperimentStatics::CreatePerformedByProperty(const FString& InD
 		RdfResource, FSLOwlAttributeValue(InDocPrefix, InObjId)));
 }
 
+// Create deviceUsed property
+FSLOwlNode FSLOwlExperimentStatics::CreateDeviceUsedProperty(const FString& InDocPrefix, const FString& InObjId)
+{
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "deviceUsed");
+
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, InObjId)));
+}
+
 // Create objectActedOn property
 FSLOwlNode FSLOwlExperimentStatics::CreateObjectActedOnProperty(const FString& InDocPrefix, const FString& InObjId)
 {
@@ -213,4 +228,25 @@ FSLOwlNode FSLOwlExperimentStatics::CreateObjectActedOnProperty(const FString& I
 
 	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
 		RdfResource, FSLOwlAttributeValue(InDocPrefix, InObjId)));
+}
+
+// Create outputsCreated property
+FSLOwlNode FSLOwlExperimentStatics::CreateOutputsCreatedProperty(const FString& InDocPrefix, const FString& InObjId)
+{
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "outputsCreated");
+
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, InObjId)));
+}
+
+// Create taskSuccess property
+FSLOwlNode FSLOwlExperimentStatics::CreateTaskSuccessProperty(const FString& InDocPrefix, const bool TaskSuccess)
+{
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "taskSuccess");
+
+	const FString Id = TaskSuccess ? "true" : "false";
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, Id)));
 }

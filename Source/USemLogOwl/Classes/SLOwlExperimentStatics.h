@@ -72,6 +72,16 @@ struct USEMLOGOWL_API FSLOwlExperimentStatics
 	static FSLOwlNode CreatePerformedByProperty(
 		const FString& InDocPrefix, const FString& InObjId);
 
+	// Create deviceUsed property
+	static FSLOwlNode CreateDeviceUsedProperty(
+		const FString& InDocPrefix, const FString& InObjId);
+
 	// Create objectActedOn property
 	static FSLOwlNode CreateObjectActedOnProperty(const FString& InDocPrefix, const FString& InObjId);
+
+	// Create outputsCreated property
+	static FSLOwlNode CreateOutputsCreatedProperty(const FString& InDocPrefix, const FString& InObjId);
+
+	// Create TaskSuccess property
+	static FSLOwlNode CreateTaskSuccessProperty(const FString& InDocPrefix, const bool TaskSuccess);
 };

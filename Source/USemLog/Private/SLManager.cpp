@@ -47,6 +47,7 @@ ASLManager::ASLManager()
 	bLogContactEvents = true;
 	bLogSupportedByEvents = true;
 	bLogGraspEvents = true;
+	bLogSlicingEvents = true;
 	bWriteTimelines = true;
 	ExperimentTemplateType = ESLOwlExperimentTemplate::Default;
 
@@ -162,7 +163,7 @@ void ASLManager::Init()
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
 			EventDataLogger->Init(ExperimentTemplateType, Location, EpisodeId,
-				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bWriteTimelines);
+				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogSlicingEvents, bWriteTimelines);
 		}
 
 		if (bLogVisionData)
