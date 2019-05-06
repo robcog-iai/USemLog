@@ -47,7 +47,7 @@
 		},
 		{
 			"Name": "UPhysicsBasedMC",
-			"Enabled": true
+			"Enabled": false
 		},
 		{
 			"Name": "libmongo",
