@@ -45,12 +45,12 @@ public class USemLog : ModuleRules
 				"UTags",
 				"UIds",
 				"UConversions",
-				"UMCGrasp",			// SL_WITH_MC_GRASP
-				"libmongo",			// SL_WITH_LIBMONGO
-                                "SlicingLogic",                 // SL_WITH_SLICING
+				//"UMCGrasp",			// SL_WITH_MC_GRASP
+				//"libmongo",			// SL_WITH_LIBMONGO
+                                //"SlicingLogic",               // SL_WITH_SLICING
 				//"MongoCxx",
-				"USemLogSkel",
-				"MongoC", // SL_WITH_LIBMONGO_C
+				//"USemLogSkel",
+				//"MongoC", // SL_WITH_LIBMONGO_C
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
