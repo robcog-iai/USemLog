@@ -34,6 +34,7 @@ public:
 		bool bInLogContactEvents,
 		bool bInLogSupportedByEvents,
 		bool bInLogGraspEvents,
+		bool bInLogSlicingEvents,
 		bool bInWriteTimelines,
 		bool bInWriteMetadata);
 

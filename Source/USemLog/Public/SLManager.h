@@ -192,6 +192,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	bool bLogGraspEvents;
 
+	// Listen for slicing events
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	bool bLogSlicingEvents;
+
 	// Write event data as timelines
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	bool bWriteTimelines;

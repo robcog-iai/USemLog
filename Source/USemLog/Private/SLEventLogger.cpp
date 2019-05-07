@@ -9,6 +9,7 @@
 #include "Events/SLContactEventHandler.h"
 #include "Events/SLSupportedByEventHandler.h"
 #include "Events/SLGraspEventHandler.h"
+#include "Events/SLSlicingEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLOverlapShape.h"
 #include "SLGraspListener.h"
@@ -21,6 +22,9 @@
 #include "MCFixationGrasp.h"
 #endif // SL_WITH_MC_GRASP
 
+#if SL_WITH_SLICING
+#include "SlicingBladeComponent.h"
+#endif // SL_WITH_SLICING
 
 // Constructor
 USLEventLogger::USLEventLogger()
@@ -47,6 +51,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 	bool bInLogContactEvents,
 	bool bInLogSupportedByEvents,
 	bool bInLogGraspEvents,
+	bool bInLogSlicingEvents,
 	bool bInWriteTimelines,
 	bool bInWriteMetadata)
 {
@@ -165,6 +170,26 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				EventHandlers.Add(GraspEventHandler);
 			}
 #endif // SL_WITH_MC_GRASP
+		}
+
+		// Init Slicing handlers
+		if (bInLogSlicingEvents)
+		{
+#if SL_WITH_SLICING
+			for (TObjectIterator<USlicingBladeComponent> Itr; Itr; ++Itr)
+			{
+				// Skip objects that do not have a semantically annotated ancestor
+				if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
+				{
+					continue;
+				}
+
+				// Create a Slicing event handler 
+				TSharedPtr<FSLSlicingEventHandler> SlicingEventHandler = MakeShareable(new FSLSlicingEventHandler());
+				SlicingEventHandler->Init(*Itr);
+				EventHandlers.Add(SlicingEventHandler);
+			}
+#endif // SL_WITH_SLICING
 		}
 
 		if (bWriteMetadata)
