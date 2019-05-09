@@ -150,15 +150,15 @@ private:
 	ESLWorldStateWriterType WriterType;
 
 	// Mongodb server IP
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
 	FString ServerIp;
 
 	// Mongodb server PORT
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (ClampMin = 0, ClampMax = 65535))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (ClampMin = 0, ClampMax = 65535), meta = (editcondition = "bLogWorldState"))
 	uint16 ServerPort;
 
 	// Include event and replay data to the database
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
 	bool bIncludeAllData;
 
 	// World state logger, use UPROPERTY to avoid GC

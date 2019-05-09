@@ -9,7 +9,7 @@
 /**
  * Listens to grasp events input, and outputs finished semantic grasp events
  */
-class FSLGraspEventHandler : public ISLEventHandler
+class FSLFixationGraspEventHandler : public ISLEventHandler
 {
 public:
 	// Init parent

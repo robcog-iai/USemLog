@@ -45,6 +45,9 @@ public:
 	void Finish(const float Time, bool bForced = false);
 
 private:
+	// Check if the component is valid in the world and has a semantically annotated owner
+	bool IsValidAndAnnotated(UActorComponent* Comp);
+
 	// Called when a semantic event is done
 	void OnSemanticEvent(TSharedPtr<ISLEvent> Event);
 

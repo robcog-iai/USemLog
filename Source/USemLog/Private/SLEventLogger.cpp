@@ -8,7 +8,7 @@
 
 #include "Events/SLContactEventHandler.h"
 #include "Events/SLSupportedByEventHandler.h"
-#include "Events/SLGraspEventHandler.h"
+#include "Events/SLFixationGraspEventHandler.h"
 #include "Events/SLSlicingEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLOverlapShape.h"
@@ -73,101 +73,62 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		// bind all the objects to one handler
 		// Instead of Init -> AddParent
 		// Parent -> TArray Parents
-		// rename FSLContactEventHandler,FSLSupportedByEventHandler,FSLGraspEventHandler -> Events
+		// rename FSLContactEventHandler,FSLSupportedByEventHandler,FSLFixationGraspEventHandler -> Events
 
 		// Init all contact trigger handlers
 		for (TObjectIterator<USLOverlapShape> Itr; Itr; ++Itr)
 		{
-			// Make sure the object is in the world
-			if (!GetWorld()->ContainsActor(Itr->GetOwner()))
+			if (IsValidAndAnnotated(*Itr))
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
-					*FString(__func__), __LINE__, *Itr->GetName());
-				continue;
-			}
+				// Init the semantic overlap area
+				Itr->Init();
 
-			// Skip objects that do not have a semantically annotated ancestor
-			if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
-					*FString(__func__), __LINE__, *Itr->GetName());
-				continue;
-			}
+				// Store the semantic overlap areas
+				OverlapShapes.Emplace(*Itr);
 
-			// Init the semantic overlap area
-			Itr->Init();
+				if (bInLogContactEvents)
+				{
+					// Create a contact event handler 
+					TSharedPtr<FSLContactEventHandler> ContactEventHandler = MakeShareable(new FSLContactEventHandler());
+					ContactEventHandler->Init(*Itr);
+					EventHandlers.Add(ContactEventHandler);
+				}
 
-			// Store the semantic overlap areas
-			OverlapShapes.Emplace(*Itr);
-
-			if (bInLogContactEvents)
-			{
-				// Create a contact event handler 
-				TSharedPtr<FSLContactEventHandler> ContactEventHandler = MakeShareable(new FSLContactEventHandler());
-				ContactEventHandler->Init(*Itr);
-				EventHandlers.Add(ContactEventHandler);
-			}
-
-			if (bInLogSupportedByEvents)
-			{
-				// Create a supported-by event handler
-				TSharedPtr<FSLSupportedByEventHandler> SupportedByEventHandler = MakeShareable(new FSLSupportedByEventHandler());
-				SupportedByEventHandler->Init(*Itr);
-				EventHandlers.Add(SupportedByEventHandler);
+				if (bInLogSupportedByEvents)
+				{
+					// Create a supported-by event handler
+					TSharedPtr<FSLSupportedByEventHandler> SupportedByEventHandler = MakeShareable(new FSLSupportedByEventHandler());
+					SupportedByEventHandler->Init(*Itr);
+					EventHandlers.Add(SupportedByEventHandler);
+				}
 			}
 		}
 
 		// Init all grasp listeners
 		for (TObjectIterator<USLGraspListener> Itr; Itr; ++Itr)
 		{
-			// Make sure the object is in the world
-			if (!GetWorld()->ContainsActor(Itr->GetOwner()))
+			if (IsValidAndAnnotated(*Itr))
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
-					*FString(__func__), __LINE__, *Itr->GetName());
-				continue;
-			}
-
-			// Skip objects that do not have a semantically annotated ancestor
-			if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
-					*FString(__func__), __LINE__, *Itr->GetName());
-				continue;
-			}
-			
-			if (Itr->Init())
-			{
-				GraspListeners.Emplace(*Itr);
+				if (Itr->Init())
+				{
+					GraspListeners.Emplace(*Itr);
+				}
 			}
 		}
 
-		// Init grasp handlers
+		// Init fixation grasp handlers
 		if (bInLogGraspEvents)
 		{
 #if SL_WITH_MC_GRASP
 			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
 			{
-				// Make sure the object is in the world
-				if (!GetWorld()->ContainsActor(Itr->GetOwner()))
+				if (IsValidAndAnnotated(*Itr))
 				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
-						*FString(__func__), __LINE__, *Itr->GetName());
-					continue;
+					// Create a grasp event handler 
+					TSharedPtr<FSLFixationGraspEventHandler> FixationGraspEventHandler = MakeShareable(new FSLFixationGraspEventHandler());
+					FixationGraspEventHandler->Init(*Itr);
+					EventHandlers.Add(FixationGraspEventHandler);
 				}
-
-				// Skip objects that do not have a semantically annotated ancestor
-				if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
-						*FString(__func__), __LINE__, *Itr->GetName());
-					continue;
-				}
-
-				// Create a grasp event handler 
-				TSharedPtr<FSLGraspEventHandler> GraspEventHandler = MakeShareable(new FSLGraspEventHandler());
-				GraspEventHandler->Init(*Itr);
-				EventHandlers.Add(GraspEventHandler);
 			}
 #endif // SL_WITH_MC_GRASP
 		}
@@ -178,16 +139,14 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 #if SL_WITH_SLICING
 			for (TObjectIterator<USlicingBladeComponent> Itr; Itr; ++Itr)
 			{
-				// Skip objects that do not have a semantically annotated ancestor
-				if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(*Itr))
+				// Make sure the object is in the world
+				if (IsValidAndAnnotated(*Itr))
 				{
-					continue;
+					// Create a Slicing event handler 
+					TSharedPtr<FSLSlicingEventHandler> SlicingEventHandler = MakeShareable(new FSLSlicingEventHandler());
+					SlicingEventHandler->Init(*Itr);
+					EventHandlers.Add(SlicingEventHandler);
 				}
-
-				// Create a Slicing event handler 
-				TSharedPtr<FSLSlicingEventHandler> SlicingEventHandler = MakeShareable(new FSLSlicingEventHandler());
-				SlicingEventHandler->Init(*Itr);
-				EventHandlers.Add(SlicingEventHandler);
 			}
 #endif // SL_WITH_SLICING
 		}
@@ -200,6 +159,27 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		// Mark as initialized
 		bIsInit = true;
 	}
+}
+
+// Check if the component is valid in the world and has a semantically annotated owner
+bool USLEventLogger::IsValidAndAnnotated(UActorComponent* Comp)
+{
+	// Make sure the object is in the world
+	if (!GetWorld()->ContainsActor(Comp->GetOwner()))
+	{
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not from this world.."),
+		//	*FString(__func__), __LINE__, *Comp->GetName());
+		return false;
+	}
+
+	// Skip objects that do not have a semantically annotated ancestor
+	if (!FSLEntitiesManager::GetInstance()->GetValidAncestor(Comp))
+	{
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no semantically annotated ancestor.."),
+		//	*FString(__func__), __LINE__, *Comp->GetName());
+		return false;
+	}
+	return true;
 }
 
 // Start logger

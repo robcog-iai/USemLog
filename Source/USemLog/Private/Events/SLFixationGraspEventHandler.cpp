@@ -1,7 +1,7 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Events/SLGraspEventHandler.h"
+#include "Events/SLFixationGraspEventHandler.h"
 #include "SLEntitiesManager.h"
 #if SL_WITH_MC_GRASP
 #include "MCFixationGrasp.h"
@@ -12,7 +12,7 @@
 
 
 // Set parent
-void FSLGraspEventHandler::Init(UObject* InParent)
+void FSLFixationGraspEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{
@@ -36,14 +36,14 @@ void FSLGraspEventHandler::Init(UObject* InParent)
 }
 
 // Bind to input delegates
-void FSLGraspEventHandler::Start()
+void FSLFixationGraspEventHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
 #if SL_WITH_MC_GRASP
 		// Subscribe to the forwarded semantically annotated grasping broadcasts
-		Parent->OnGraspBegin.AddRaw(this, &FSLGraspEventHandler::OnSLGraspBegin);
-		Parent->OnGraspEnd.AddRaw(this, &FSLGraspEventHandler::OnSLGraspEnd);
+		Parent->OnGraspBegin.AddRaw(this, &FSLFixationGraspEventHandler::OnSLGraspBegin);
+		Parent->OnGraspEnd.AddRaw(this, &FSLFixationGraspEventHandler::OnSLGraspEnd);
 #endif // SL_WITH_MC_GRASP
 
 		// Mark as started
@@ -52,11 +52,11 @@ void FSLGraspEventHandler::Start()
 }
 
 // Terminate listener, finish and publish remaining events
-void FSLGraspEventHandler::Finish(float EndTime, bool bForced)
+void FSLFixationGraspEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
-		FSLGraspEventHandler::FinishAllEvents(EndTime);
+		FSLFixationGraspEventHandler::FinishAllEvents(EndTime);
 	
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
@@ -70,7 +70,7 @@ void FSLGraspEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new grasp event
-void FSLGraspEventHandler::AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime)
+void FSLFixationGraspEventHandler::AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime)
 {
 	// Start a semantic grasp event
 	TSharedPtr<FSLGraspEvent> Event = MakeShareable(new FSLGraspEvent(
@@ -82,7 +82,7 @@ void FSLGraspEventHandler::AddNewEvent(const FSLEntity& Self, const FSLEntity& O
 }
 
 // Publish finished event
-bool FSLGraspEventHandler::FinishEvent(UObject* Other, float EndTime)
+bool FSLFixationGraspEventHandler::FinishEvent(UObject* Other, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
@@ -102,7 +102,7 @@ bool FSLGraspEventHandler::FinishEvent(UObject* Other, float EndTime)
 }
 
 // Terminate and publish pending events (this usually is called at end play)
-void FSLGraspEventHandler::FinishAllEvents(float EndTime)
+void FSLFixationGraspEventHandler::FinishAllEvents(float EndTime)
 {
 	// Finish events
 	for (auto& Ev : StartedEvents)
@@ -116,19 +116,19 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic grasp event begins
-void FSLGraspEventHandler::OnSLGraspBegin(UObject* Self, UObject* Other, float Time)
+void FSLFixationGraspEventHandler::OnSLGraspBegin(UObject* Self, UObject* Other, float Time)
 {
 	// Check that the objects are semantically annotated
 	FSLEntity SelfItem = FSLEntitiesManager::GetInstance()->GetEntity(Self);
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
 	if (SelfItem.IsSet() && OtherItem.IsSet())
 	{
-		FSLGraspEventHandler::AddNewEvent(SelfItem, OtherItem, Time);
+		FSLFixationGraspEventHandler::AddNewEvent(SelfItem, OtherItem, Time);
 	}
 }
 
 // Event called when a semantic grasp event ends
-void FSLGraspEventHandler::OnSLGraspEnd(UObject* Self, UObject* Other, float Time)
+void FSLFixationGraspEventHandler::OnSLGraspEnd(UObject* Self, UObject* Other, float Time)
 {
-	FSLGraspEventHandler::FinishEvent(Other, Time);
+	FSLFixationGraspEventHandler::FinishEvent(Other, Time);
 }

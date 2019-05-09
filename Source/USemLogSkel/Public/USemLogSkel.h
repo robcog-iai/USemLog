@@ -9,6 +9,10 @@
 // Declare logging types
 DECLARE_LOG_CATEGORY_EXTERN(LogSLSkel, All, All);
 
+#if defined(_MSC_VER)
+#define __func__ __FUNCTION__
+#endif
+
 class FUSemLogSkel : public IModuleInterface
 {
 public:
