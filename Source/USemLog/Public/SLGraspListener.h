@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "SLBoneOverlapShape.h"
+#include "SLGraspOverlapShape.h"
 #include "SLStructs.h" // FSLEntity
 #include "SLGraspListener.generated.h"
 
@@ -17,16 +17,6 @@ enum class ESLGraspHandType : uint8
 {
 	Left					UMETA(DisplayName = "Left"),
 	Right					UMETA(DisplayName = "Right"),
-};
-
-/**
-* Skeletal type
-*/
-UENUM()
-enum class ESLGraspSkeletalType : uint8
-{
-	Default					UMETA(DisplayName = "Default"),
-	Genesis					UMETA(DisplayName = "Genesis"),
 };
 
 /**
@@ -66,17 +56,30 @@ protected:
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-
-private:
-	// Use a preconfigured set of names for the bones
-	void AddDefaultParams();
 #endif // WITH_EDITOR
 
-	// Set overlap groups, return true if at least one valid overlap is in each group
-	bool InitOverlapGroups();
+	// Load overlap groups, return true if at least one valid overlap is in each group
+	bool LoadOverlapGroups();
 
+private:
 	// Check if the grasp trigger is active
 	void InputAxisCallback(float Value);
+
+	// Process beginning of contact in group A
+	UFUNCTION()
+	void OnBeginGroupAContact(AActor* OtherActor);
+
+	// Process ending of contact in group A
+	UFUNCTION()
+	void OnEndGroupAContact(AActor* OtherActor);
+
+	// Process beginning of contact in group B
+	UFUNCTION()
+	void OnBeginGroupBContact(AActor* OtherActor);
+
+	// Process ending of contact in group B
+	UFUNCTION()
+	void OnEndGroupBContact(AActor* OtherActor);
 
 private:
 	// True if initialized
@@ -98,31 +101,21 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FName InputAxisName;
 
-	// Bone names of overlap areas spawn location (at least one overlap needs to be active from both groups to have a grasp)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TArray<FName> BoneNamesGroupA;
+	// Opposing group A for testing for grasps
+	TArray<USLGraspOverlapShape*> GroupA;
 
-	// Bone names of overlap areas spawn location (at least one overlap needs to be active from both groups to have a grasp)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TArray<FName> BoneNamesGroupB;
+	// Opposing group B for testing for grasps
+	TArray<USLGraspOverlapShape*> GroupB;
 
-	UPROPERTY() // Avoid GC
-	TArray<USLBoneOverlapShape*> GroupA;
+	// Objects in contact with group A
+	TArray<AActor*> ItemsA;
 
-	UPROPERTY() // Avoid GC
-	TArray<USLBoneOverlapShape*> GroupB;
+	// Objects in contact with group B
+	TArray<AActor*> ItemsB;
 	
 #if WITH_EDITOR
-	// Hand type to add default bone types
+	// Hand type to load pre-defined parameters
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	ESLGraspHandType HandType;
-
-	// Hand type to add default bone types
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLGraspSkeletalType SkeletalType;
-
-	// Mimic a button to add the default bone types
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bAddDefaultBoneTypes;
 #endif // WITH_EDITOR
 };

@@ -23,9 +23,6 @@ USLGraspListener::USLGraspListener()
 #if WITH_EDITOR
 	// Default values
 	HandType = ESLGraspHandType::Left;
-	SkeletalType = ESLGraspSkeletalType::Default;
-
-	bAddDefaultBoneTypes = false;
 #endif // WITH_EDITOR
 }
 
@@ -57,7 +54,31 @@ bool USLGraspListener::Init()
 			return false;
 		}
 
-		// Set user input bindings
+		// True if each group has at least one bone overlap
+		if (LoadOverlapGroups())
+		{
+			for (auto BoneOverlap : GroupA)
+			{
+				BoneOverlap->Init();
+			}
+			for (auto BoneOverlap : GroupB)
+			{
+				BoneOverlap->Init();
+			}
+
+			bIsInit = true;
+			return true;
+		}
+	}
+	return false;
+}
+
+// Start listening to grasp events, update currently overlapping objects
+void USLGraspListener::Start()
+{
+	if (!bIsStarted && bIsInit)
+	{
+		// Listen for the input for grasping
 		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 		{
 			if (UInputComponent* IC = PC->InputComponent)
@@ -67,24 +88,29 @@ bool USLGraspListener::Init()
 			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d No Input Component found.."), *FString(__func__), __LINE__);
+				return;
 			}
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d No Player controller found.."), *FString(__func__), __LINE__);
+			return;
 		}
 
-		// True if each group has at least one bone overlap
-		bIsInit = InitOverlapGroups();
-	}
-	return bIsInit;
-}
+		// Start listening on the bone overlaps
+		for (auto BoneOverlap : GroupA)
+		{
+			BoneOverlap->Start();
+			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLGraspListener::OnBeginGroupAContact);
+			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLGraspListener::OnEndGroupAContact);
+		}
+		for (auto BoneOverlap : GroupB)
+		{
+			BoneOverlap->Start();
+			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLGraspListener::OnBeginGroupBContact);
+			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLGraspListener::OnEndGroupBContact);
+		}
 
-// Start listening to grasp events, update currently overlapping objects
-void USLGraspListener::Start()
-{
-	if (!bIsStarted && bIsInit)
-	{
 		// Mark as started
 		bIsStarted = true;
 	}
@@ -112,191 +138,83 @@ void USLGraspListener::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
-	// Set the left / right constraint actors
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspListener, bAddDefaultBoneTypes))
+	// Set pre-defined parameters
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspListener, HandType))
 	{
-		// Use a preconfigured set of params
-		AddDefaultParams();
-		bAddDefaultBoneTypes = false;
-	}
-}
-
-// Use a preconfigured set of names for the bones
-void USLGraspListener::AddDefaultParams()
-{
-	// Clear any previous bone names
-	BoneNamesGroupA.Empty();
-	BoneNamesGroupB.Empty();
-	
-	if (HandType == ESLGraspHandType::Left)
-	{
-		InputAxisName = "LeftGrasp";
-
-		if (SkeletalType == ESLGraspSkeletalType::Genesis)
+		if (HandType == ESLGraspHandType::Left)
 		{
-			BoneNamesGroupA.Add("lIndex3");
-			BoneNamesGroupA.Add("lMid3");
-			BoneNamesGroupA.Add("lRing3");
-			BoneNamesGroupA.Add("lPinty3");
-
-			BoneNamesGroupB.Add("lThumb3");
+			InputAxisName = "LeftGrasp";
 		}
-		else
+		else if (HandType == ESLGraspHandType::Right)
 		{
-			BoneNamesGroupA.Add("index_03_l");
-			BoneNamesGroupA.Add("middle_03_l");
-			BoneNamesGroupA.Add("pinky_03_l");
-			BoneNamesGroupA.Add("ring_03_l");
-
-			BoneNamesGroupB.Add("thumb_03_l");
-		}
-	}
-	else if (HandType == ESLGraspHandType::Right)
-	{
-		InputAxisName = "RightGrasp";
-
-		if (SkeletalType == ESLGraspSkeletalType::Genesis)
-		{
-			BoneNamesGroupA.Add("rIndex3");
-			BoneNamesGroupA.Add("rMid3");
-			BoneNamesGroupA.Add("rRing3");
-			BoneNamesGroupA.Add("rPinty3");
-
-			BoneNamesGroupB.Add("rThumb3");
-		}
-		else
-		{
-			BoneNamesGroupA.Add("index_03_r");
-			BoneNamesGroupA.Add("middle_03_r");
-			BoneNamesGroupA.Add("pinky_03_r");
-			BoneNamesGroupA.Add("ring_03_r");
-
-			BoneNamesGroupB.Add("thumb_03_r");
+			InputAxisName = "RightGrasp";
 		}
 	}
 }
 #endif // WITH_EDITOR
 
 // Set overlap groups, return true if at least one valid overlap is in each group
-bool USLGraspListener::InitOverlapGroups()
+bool USLGraspListener::LoadOverlapGroups()
 {
-	// Check if owner is a skeletal actor
-	if (ASkeletalMeshActor* SkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
+	// Check grasp overlap components of owner and add them to their groups
+	TArray<UActorComponent*> GraspOverlaps = GetOwner()->GetComponentsByClass(USLGraspOverlapShape::StaticClass());
+	for (UActorComponent* GraspOverlapComp : GraspOverlaps)
 	{
-		// Get the skeletal mesh component
-		if (USkeletalMeshComponent* SMC = SkelAct->GetSkeletalMeshComponent())
+		USLGraspOverlapShape* GraspOverlap = CastChecked<USLGraspOverlapShape>(GraspOverlapComp);
+
+		if (GraspOverlap->Group == ESLGraspOverlapGroup::A)
 		{
-			// Lambda to create and attach a bone overlap shape, returns true if shape successfully attached
-			auto CreateAndAttachBoneOverlapShapeLambda = [this, &SMC](const FName& BoneName, TArray<USLBoneOverlapShape*>& Group) -> bool
-			{
-				// Check if bone name is part of the skeleton
-				if (SMC->GetBoneIndex(BoneName) == INDEX_NONE)
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not part of the skeleton"),
-						*FString(__func__), __LINE__, *BoneName.ToString());
-					return false;
-				}
-
-				// Create new bone overlap and attach it to the bone
-				USLBoneOverlapShape* BoneOverlapShape = NewObject<USLBoneOverlapShape>(this, BoneName);
-				if (BoneOverlapShape->AttachToComponent(SMC, FAttachmentTransformRules::SnapToTargetIncludingScale, BoneName))
-				{
-					if (BoneOverlapShape->Init(SMC, BoneName))
-					{
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d Successfull init and attachment to %s"),
-							*FString(__func__), __LINE__, *BoneName.ToString());
-						Group.Emplace(BoneOverlapShape);
-						return true;
-					}
-				}
-
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to attach or to init bone shape %s"),
-					*FString(__func__), __LINE__, *BoneName.ToString());
-				BoneOverlapShape->DestroyComponent();
-				return false;
-			};
-
-			// Create and attach overlap events for Group A
-			for (const auto& BoneName : BoneNamesGroupA)
-			{
-				CreateAndAttachBoneOverlapShapeLambda(BoneName, GroupA);
-
-				//// Create a new overlap component
-				//USLBoneOverlapShape* BoneOverlapShape = NewObject<USLBoneOverlapShape>(this, BoneName);
-
-				//// Attach to component bone
-				//if (BoneOverlapShape->AttachToComponent(SMC, FAttachmentTransformRules::SnapToTargetIncludingScale, BoneName))
-				//{
-				//	BoneOverlapShape->Init(SMC, BoneName);
-				//	UE_LOG(LogTemp, Warning, TEXT("%s::%d GroupA: Successfull attachment to %s"),
-				//		*FString(__func__), __LINE__, *BoneName.ToString());
-				//	GroupA.Emplace(BoneOverlapShape);
-				//}
-				//else
-				//{
-				//	UE_LOG(LogTemp, Error, TEXT("%s::%d GroupA: Faild to attach to %s"),
-				//		*FString(__func__), __LINE__, *BoneName.ToString());
-				//}
-			}
-
-			// Check if at least one valid overlap shape is in the group
-			if (GroupA.Num() == 0)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d GroupA is empty."), *FString(__func__), __LINE__);
-				return false;
-			}
-
-			// Create and attach overlap events for Group B
-			for (const auto& BoneName : BoneNamesGroupB)
-			{
-				CreateAndAttachBoneOverlapShapeLambda(BoneName, GroupB);
-
-				//// Create a new overlap component
-				//USLBoneOverlapShape* BoneOverlapShape = NewObject<USLBoneOverlapShape>(this, BoneName);
-
-				//// Attach to component bone
-				//if (BoneOverlapShape->AttachToComponent(SMC, FAttachmentTransformRules::SnapToTargetIncludingScale, BoneName))
-				//{
-				//	BoneOverlapShape->Init(SMC, BoneName);
-				//	UE_LOG(LogTemp, Warning, TEXT("%s::%d GroupA: Successfull attachment to %s"),
-				//		*FString(__func__), __LINE__, *BoneName.ToString());
-				//	GroupB.Emplace(BoneOverlapShape);
-				//}
-				//else
-				//{
-				//	UE_LOG(LogTemp, Error, TEXT("%s::%d GroupA: Faild to attach to %s"),
-				//		*FString(__func__), __LINE__, *BoneName.ToString());
-				//}
-			}
-
-			// Check if at least one valid overlap shape is in the group
-			if (GroupB.Num() == 0)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d GroupB is empty."), *FString(__func__), __LINE__);
-				return false;
-			}
-			return true;
+			GroupA.Add(GraspOverlap);
 		}
-		return true;
+		else if (GraspOverlap->Group == ESLGraspOverlapGroup::B)
+		{
+			GroupB.Add(GraspOverlap);
+		}
 	}
-	else
+
+	// Check if at least one valid overlap shape is in each group
+	if (GroupA.Num() == 0 || GroupB.Num() == 0)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not a skeletal mesh actor"), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d One of the grasp groups is empty."), *FString(__func__), __LINE__);
 		return false;
 	}
+	return true;
 }
-
 
 // Check if the grasp trigger is active
 void USLGraspListener::InputAxisCallback(float Value)
 {
 	if (Value > 0.2)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__func__), __LINE__);
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__func__), __LINE__);
 		bGraspingIsActive = true;
 	}
 	else
 	{
 		bGraspingIsActive = false;
 	}
+}
+
+// Process beginning of contact in group A
+void USLGraspListener::OnBeginGroupAContact(AActor* OtherActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+}
+
+// Process ending of contact in group A
+void USLGraspListener::OnEndGroupAContact(AActor* OtherActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+}
+
+// Process beginning of contact in group B
+void USLGraspListener::OnBeginGroupBContact(AActor* OtherActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+}
+
+// Process ending of contact in group B
+void USLGraspListener::OnEndGroupBContact(AActor* OtherActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
 }
