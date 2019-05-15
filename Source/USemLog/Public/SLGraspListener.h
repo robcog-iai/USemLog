@@ -62,8 +62,17 @@ protected:
 	bool LoadOverlapGroups();
 
 private:
+	// Pause/continue the grasp detection
+	void Idle(bool bInIdle);
+
 	// Check if the grasp trigger is active
 	void InputAxisCallback(float Value);
+
+	// Check if the grasp trigger is active and for grasp check
+	void InputAxisCallbackWithGraspCheck(float Value);
+
+	// Grasp update check
+	void GraspCheckUpdate();
 
 	// Process beginning of contact in group A
 	UFUNCTION()
@@ -91,15 +100,19 @@ private:
 	// True if finished
 	bool bIsFinished;
 
-	// The trigger for grasping is pulled
-	bool bGraspingIsActive;
+	// True grasp detection is paused
+	bool bIsIdle;
 	
-	// Semantic data of the owner
-	FSLEntity SemanticOwner;
-
 	// Read the input directly, avoid biding to various controllers
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FName InputAxisName;
+
+	// Update rate for checking for grasp events (0 = every tick)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float GraspCheckUpdateRate;
+
+	// Semantic data of the owner
+	FSLEntity SemanticOwner;
 
 	// Opposing group A for testing for grasps
 	TArray<USLGraspOverlapShape*> GroupA;
@@ -108,10 +121,16 @@ private:
 	TArray<USLGraspOverlapShape*> GroupB;
 
 	// Objects in contact with group A
-	TArray<AActor*> ItemsA;
+	TSet<AActor*> SetA;
 
 	// Objects in contact with group B
-	TArray<AActor*> ItemsB;
+	TSet<AActor*> SetB;
+
+	// Objects currently grasped
+	TArray<AActor*> GraspedObjects;
+
+	// Grasp update timer handler
+	FTimerHandle GraspTimerHandle;
 	
 #if WITH_EDITOR
 	// Hand type to load pre-defined parameters

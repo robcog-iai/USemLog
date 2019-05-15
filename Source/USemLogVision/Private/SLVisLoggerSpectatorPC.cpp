@@ -14,6 +14,8 @@
 #include "SLVisImageWriterMongoC.h"
 #include "SLVisImageWriterFile.h"
 
+#include "Camera/CameraActor.h"
+
 #include "Engine/LocalPlayer.h"
 
 // Ctor
@@ -34,15 +36,15 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	bIsFinished = false;
 
 	// Add buffer types to visualize
-	//RenderTypes.Add(ESLVisRenderType::Color);
-	//RenderTypes.Add(ESLVisRenderType::Depth);
+	RenderTypes.Add(ESLVisRenderType::Color);
+	RenderTypes.Add(ESLVisRenderType::Depth);
 	RenderTypes.Add(ESLVisRenderType::Mask);
-	//RenderTypes.Add(ESLVisRenderType::Normal);
+	RenderTypes.Add(ESLVisRenderType::Normal);
 
 	// Image size 
 	// 8k (7680, 4320) / 4k (3840, 2160) / 2k (2048, 1080) / fhd (1920, 1080) / hd (1280, 720) / sd (720, 480)
-	Resolution.X = 1920;
-	Resolution.Y = 1080;
+	Resolution.X = 360;
+	Resolution.Y = 240;
 }
 
 // Called when the game starts or when spawned
@@ -110,7 +112,7 @@ void ASLVisLoggerSpectatorPC::Init()
 
 #if SLVIS_WITH_LIBMONGO_C
 			Writer = NewObject<USLVisImageWriterMongoC>(this);
-			Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
+			Writer->Init(FSLVisImageWriterParams(TEXT("SemLog_IMG"), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
 #endif //SLVIS_WITH_LIBMONGO_C
 
 #if SLVIS_WITH_LIBMONGO_CXX
@@ -137,8 +139,9 @@ void ASLVisLoggerSpectatorPC::Init()
 				while (DemoTimestamp < NetDriver->DemoTotalTime && ShouldSkipThisFrame(DemoTimestamp))
 				{
 					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
-					ProgressLogger.NumProcessedImgs += CameraViews.Num() * RenderTypes.Num();
+					ProgressLogger.AddProcessedImaged(CameraViews.Num() * RenderTypes.Num());
 					DemoTimestamp += ScrubRate;
+					ProgressLogger.SetCurrentTime(DemoTimestamp);
 				}
 
 				// Set rendering parameters
@@ -160,7 +163,7 @@ void ASLVisLoggerSpectatorPC::Start()
 	if (!bIsStarted && bIsInit)
 	{
 		// Start durations logger
-		DurationsLogger.SetStartTime();
+		//DurationsLogger.SetStartTime();
 
 		// Set camera to first target and first rendering type
 		if (ASLVisLoggerSpectatorPC::GotoInitialViewTarget() && ASLVisLoggerSpectatorPC::GotoInitialRenderType())
@@ -168,7 +171,7 @@ void ASLVisLoggerSpectatorPC::Start()
 			// Go to the beginning of the demo and start requesting screenshots, unpause demo in order to scrub
 			ASLVisLoggerSpectatorPC::DemoUnPause();
 			NetDriver->GotoTimeInSeconds(DemoTimestamp);
-			DurationsLogger.SetScrubRequestTime();
+			//DurationsLogger.SetScrubRequestTime();
 
 			// Flag as started
 			bIsStarted = true;
@@ -189,7 +192,7 @@ void ASLVisLoggerSpectatorPC::Finish()
 		ProgressLogger.LogProgress();
 
 		// Log the duration of the vision logger
-		DurationsLogger.SetEndTime(true);
+		//DurationsLogger.SetEndTime(true);
 
 		// Flag as finished
 		bIsStarted = false;
@@ -198,7 +201,7 @@ void ASLVisLoggerSpectatorPC::Finish()
 	
 		// Crashes if called from EndPlay
 		// Try to quit editor
-		//ASLVisLoggerSpectatorPC::QuitEditor();
+		ASLVisLoggerSpectatorPC::QuitEditor();
 	}
 }
 
@@ -208,7 +211,8 @@ void ASLVisLoggerSpectatorPC::SetCameraViews()
 	// Get camera views from the world
 	for (TActorIterator<ASLVisViewActor>Itr(GetWorld()); Itr; ++Itr)
 	{
-		if (Itr->Init())
+		Itr->Init();
+		if(Itr->IsInit())
 		{
 			CameraViews.Add(*Itr);
 		}
@@ -281,11 +285,11 @@ void ASLVisLoggerSpectatorPC::RequestScreenshot()
 	AsyncTask(ENamedThreads::GameThread, [this]()
 	{
 		GetHighResScreenshotConfig().FilenameOverride = FSLVisHelper::CreateImageFilename(DemoTimestamp,
-			CameraViews[CurrentViewIndex]->Class, RenderTypes[CurrRenderIndex]);
+			CameraViews[CurrentViewIndex]->GetClass(), RenderTypes[CurrRenderIndex]);
 		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
 		//GetHighResScreenshotConfig().SetHDRCapture(true);
 		ViewportClient->Viewport->TakeHighResScreenShot();
-		DurationsLogger.SetScreenshotRequestTime();
+		//DurationsLogger.SetScreenshotRequestTime();
 	});
 }
 
@@ -293,7 +297,7 @@ void ASLVisLoggerSpectatorPC::RequestScreenshot()
 void ASLVisLoggerSpectatorPC::ScrubCB()
 {
 	// Log the duration of the scrub
-	DurationsLogger.SetScrubCbTime(true);
+	//DurationsLogger.SetScrubCbTime(true);
 
 	// Pause the replay
 	ASLVisLoggerSpectatorPC::DemoPause();
@@ -310,12 +314,12 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 #endif //WITH_EDITOR
 
 	// Log the duration of the screenshot processing
-	DurationsLogger.ScreenshotCbTime(true);
+	//DurationsLogger.ScreenshotCbTime(true);
 
 	// Make sure the current view data is init
 	if (!CurrentViewData.IsInit())
 	{
-		CurrentViewData.Init(CameraViews[CurrentViewIndex]->Id, CameraViews[CurrentViewIndex]->Class, Resolution);
+		CurrentViewData.Init(CameraViews[CurrentViewIndex]->GetId(), CameraViews[CurrentViewIndex]->GetClass(), Resolution);
 	}
 
 	// Remove const-ness from image
@@ -369,8 +373,9 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 				// Find the next timestamp to scrub to
 				do {
 					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
-					ProgressLogger.NumProcessedImgs += CameraViews.Num() * RenderTypes.Num();
+					ProgressLogger.AddProcessedImaged(CameraViews.Num() * RenderTypes.Num());
 					DemoTimestamp += ScrubRate;
+					ProgressLogger.SetCurrentTime(DemoTimestamp);
 				} while (DemoTimestamp < NetDriver->DemoTotalTime &&
 					ShouldSkipThisFrame(DemoTimestamp));
 
@@ -380,7 +385,7 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 					// Unpause demo in order to scrub
 					DemoUnPause();
 					NetDriver->GotoTimeInSeconds(DemoTimestamp);
-					DurationsLogger.SetScrubRequestTime();
+					//DurationsLogger.SetScrubRequestTime();
 				}
 			}
 		}
@@ -603,7 +608,7 @@ void ASLVisLoggerSpectatorPC::ShallowFrustumCheck()
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d In game thread, continuing.. "), *FString(__func__), __LINE__);
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d RenderType=%s; TargetLabel:%s;\n World TimeSeconds=%f; DeltaTimeSeconds=%f;"),
 			*FString(__func__), __LINE__, *FSLVisHelper::GetRenderTypeAsString(RenderTypes[CurrRenderIndex]),
-			*CameraViews[CurrentViewIndex]->Class,
+			*CameraViews[CurrentViewIndex]->GetClass(),
 			GetWorld()->TimeSeconds, GetWorld()->DeltaTimeSeconds);
 	
 		for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)

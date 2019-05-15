@@ -8,7 +8,9 @@
 USLGraspOverlapShape::USLGraspOverlapShape()
 {
 	// Default sphere radius
-	InitSphereRadius(1.5f);
+	InitSphereRadius(1.0f);
+
+	//bMultiBodyOverlap = true;
 
 	// Default group of the finger
 	Group = ESLGraspOverlapGroup::A;
@@ -18,14 +20,11 @@ USLGraspOverlapShape::USLGraspOverlapShape()
 	// Mimic a button to attach to the bone	
 	bAttachButton = false;
 #endif // WITH_EDITOR
-
-	UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__func__), __LINE__);
 }
 
 // Dtor
 USLGraspOverlapShape::~USLGraspOverlapShape()
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__func__), __LINE__);
 }
 
 // Attach to bone 
@@ -33,13 +32,14 @@ bool USLGraspOverlapShape::Init()
 {
 	if (!bIsInit)
 	{
-		// Try attaching the component to its bone
+		// Make sure the shape is attached to it parent
 		if (AttachToBone())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
-
-			SetHiddenInGame(!bVisualDebug);
-
+			if (bVisualDebug)
+			{
+				SetHiddenInGame(false);
+				SetColor(FColor::Yellow);
+			}
 			bIsInit = true;
 			return true;
 		}
@@ -52,7 +52,10 @@ void USLGraspOverlapShape::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d start overlaps bindiung, loc=%s"), TEXT(__func__), __LINE__, *GetComponentLocation().ToString());
+		if (bVisualDebug)
+		{
+			SetColor(FColor::Red);
+		}
 
 		// Enable overlap events
 		SetGenerateOverlapEvents(true);
@@ -65,6 +68,31 @@ void USLGraspOverlapShape::Start()
 		bIsStarted = true;
 	}
 }
+
+// Pause/continue listening to overlaps 
+void USLGraspOverlapShape::Idle(bool bInIdle)
+{
+	if (bIsStarted && bInIdle != bIsIdle)
+	{
+		// Pause / start overlap events
+		SetGenerateOverlapEvents(!bInIdle);
+
+		if (bVisualDebug)
+		{
+			if (bInIdle)
+			{
+				ActiveContacts.Empty();
+				SetColor(FColor::Yellow);
+			}
+			else
+			{
+				SetColor(FColor::Blue);
+			}
+		}
+		bIsIdle = bInIdle;
+	}
+}
+
 
 // Stop publishing overlap events
 void USLGraspOverlapShape::Finish(bool bForced)
@@ -174,23 +202,31 @@ void USLGraspOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Selfoverlap"), TEXT(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d %s Self Overlap"), TEXT(__func__), __LINE__, *GetName());
+		if (bVisualDebug)
+		{
+			if (ActiveContacts.Num() == 0)
+			{
+				SetColor(FColor::Red);
+			}
+		}
 		return;
 	}
 
-	// Ignore overlap with other shape
-	if (OtherComp->IsA(USLGraspOverlapShape::StaticClass()))
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass()))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d other bone overlap"), TEXT(__func__), __LINE__);
-		return;
-	}
-
-	// Check the type of the other component
-	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
-	{
+		if (bVisualDebug)
+		{
+			ActiveContacts.Emplace(OtherActor);
+			SetColor(FColor::Green);
+		}
 		// Forward the overlap with the item
 		OnBeginSLGraspOverlap.Broadcast(OtherActor);
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d good overlap"), TEXT(__func__), __LINE__);
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s OtherActor=%s PUB"), TEXT(__func__), __LINE__, *GetName(), *OtherActor->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s OtherActor=%s IGNORED"), TEXT(__func__), __LINE__, *GetName(), *OtherActor->GetName());
 	}
 }
 
@@ -203,23 +239,34 @@ void USLGraspOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Selfoverlap END"), TEXT(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d *END* %s Self Overlap"), TEXT(__func__), __LINE__, *GetName());
+		if (bVisualDebug)
+		{
+			if (ActiveContacts.Num() == 0)
+			{
+				SetColor(FColor::Blue);
+			}
+		}
 		return;
 	}
 
-	// Ignore overlap with other shape
-	if (OtherComp->IsA(USLGraspOverlapShape::StaticClass()))
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass()))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d other bone overlap END"), TEXT(__func__), __LINE__);
-		return;
-	}
-
-	// Check the type of the other component
-	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
-	{
-		// Forward the overlap with the item
+		if (bVisualDebug)
+		{
+			ActiveContacts.Remove(OtherActor);
+			if (ActiveContacts.Num() == 0)
+			{
+				SetColor(FColor::Blue);
+			}
+		}
+		
 		OnEndSLGraspOverlap.Broadcast(OtherActor);
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d good overlap END"), TEXT(__func__), __LINE__);
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d *END* %s OtherActor=%s PUB"), TEXT(__func__), __LINE__, *GetName(), *OtherActor->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s *END* OtherActor=%s IGNORED"), TEXT(__func__), __LINE__, *GetName(), *OtherActor->GetName());
 	}
 }
 

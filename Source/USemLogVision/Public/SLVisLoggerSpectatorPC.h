@@ -3,13 +3,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "USemLogVision.h"
 #include "GameFramework/PlayerController.h"
 #include "Misc/ScopedSlowTask.h"
 #include "SLVisImageWriterInterface.h"
 #include "SLVisHelpers.h"
 #include "SLVisLoggerSpectatorPC.generated.h"
-
 
 /**
  * Player controller stepping through the saved demo
@@ -134,7 +133,7 @@ private:
 	// Cache data of the current timestamp
 	FSLVisStampedData CurrentTsData;
 
-	// Array of the camera actors
+	// Array of the views
 	TArray<class ASLVisViewActor*> CameraViews;
 
 	// Rendering buffer types

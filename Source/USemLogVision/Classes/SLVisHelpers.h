@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "USemLogVision.h"
 
 /**
 * Render types
@@ -181,6 +181,42 @@ private:
 */
 struct FSLVisProgressLogger
 {
+	// Init values with calculations
+	void Init(float InTotalTime, float ScrubRate, uint32 NumViews, uint32 NumRenderTypes)
+	{
+		CurrTs = 0.f;
+		NumProcessedImgs = 0;
+		TotalTime = InTotalTime;
+		const uint32 NumScrubs = (uint32)(InTotalTime / ScrubRate) + 1;
+		const uint32 NumImgsPerScrub = NumViews * NumRenderTypes;
+		NumImgsToProcess = NumScrubs * NumImgsPerScrub;
+	}
+
+	// Set current scrub time
+	void SetCurrentTime(float InTime)
+	{
+		CurrTs = InTime;
+	}
+
+	// Add processed images
+	void AddProcessedImaged(uint32 ProcessedImages)
+	{
+		NumProcessedImgs = NumProcessedImgs + ProcessedImages;
+	}
+
+	// Get state as string
+	FString ToString() const 
+	{
+		return FString::Printf(TEXT("Time=%.9g/%.9g; Imgs=%d/%d;"), CurrTs, TotalTime, NumProcessedImgs, NumImgsToProcess);
+	}
+
+	// Log progress
+	void LogProgress() const
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s"), *FString(__func__), __LINE__, *ToString());
+	}
+
+private:
 	// The current replay timestamp
 	float CurrTs;
 
@@ -192,38 +228,5 @@ struct FSLVisProgressLogger
 
 	// Number of processed images 
 	uint32 NumProcessedImgs;
-
-	// Init values with calculations
-	void Init(float InTotalTime, float ScrubRate, uint32 NumViews, uint32 NumRenderTypes)
-	{
-		CurrTs = 0.f;
-		NumProcessedImgs = 0;
-		TotalTime = InTotalTime;
-		const uint32 NumScrubs = (uint32)(InTotalTime / ScrubRate) + 1;
-		const uint32 NumImgsPerScrub = NumViews * NumRenderTypes;
-		NumProcessedImgs = NumScrubs * NumImgsPerScrub;
-	}
-
-
-	// Init values
-	void Init(float InTotalTime, uint32 InNumImgsToprocess)
-	{
-		CurrTs = 0.f;
-		NumProcessedImgs = 0;
-		TotalTime = InTotalTime;
-		NumImgsToProcess = InNumImgsToprocess;
-	}
-
-	// Get state as string
-	FString ToString() const 
-	{
-		return FString::Printf(TEXT("Time=%.9g/%.9g; Imgs=%d/%d;"), CurrTs, TotalTime, NumImgsToProcess, NumProcessedImgs);
-	}
-
-	// Log progress
-	void LogProgress() const
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s"), *FString(__func__), __LINE__, *ToString());
-	}
 };
 

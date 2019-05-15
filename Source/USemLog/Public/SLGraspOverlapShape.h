@@ -45,6 +45,9 @@ public:
 	// Start listening to overlaps
 	void Start();
 
+	// Pause/continue the overlap detection
+	void Idle(bool bInIdle);
+
 	// Stop publishing overlap events
 	void Finish(bool bForced = false);
 
@@ -53,6 +56,9 @@ public:
 
 	// Get started state
 	bool IsStarted() const { return bIsStarted; };
+
+	// Get idle state
+	bool IsIdle() const { return bIsIdle; };
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
@@ -103,12 +109,18 @@ private:
 	// True if started
 	bool bIsStarted;
 
+	// True if idle (paused)
+	bool bIsIdle;
+
 	// True if finished
 	bool bIsFinished;
 
 	// Debug with visibility at runtime
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bVisualDebug;
+
+	// Cache valid contacts (visualization purposes)
+	TSet<AActor*> ActiveContacts;
 
 	// Name of the skeletal bone to attach the shape to
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

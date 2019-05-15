@@ -10,15 +10,13 @@ USLGraspListener::USLGraspListener()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
-	UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__func__), __LINE__);
-
+	
 	// State flags
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
-	bGraspingIsActive = false;
 	InputAxisName = "LeftGrasp";
+	GraspCheckUpdateRate = 0.2f;
 
 #if WITH_EDITOR
 	// Default values
@@ -78,12 +76,24 @@ void USLGraspListener::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		// Listen for the input for grasping
+		// Bind grasp trigger input and update check functions
 		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 		{
 			if (UInputComponent* IC = PC->InputComponent)
 			{
-				IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisCallback);
+				// Check if the grasp check should be synced with the input callback
+				if (GraspCheckUpdateRate > 0.f)
+				{
+					// Un-synced
+					IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisCallback);
+					GetWorld()->GetTimerManager().SetTimer(GraspTimerHandle, this,
+						&USLGraspListener::GraspCheckUpdate, GraspCheckUpdateRate, true);
+				}
+				else
+				{
+					// Synced
+					IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisCallbackWithGraspCheck);
+				}
 			}
 			else
 			{
@@ -113,6 +123,23 @@ void USLGraspListener::Start()
 
 		// Mark as started
 		bIsStarted = true;
+	}
+}
+
+// Start listening to grasp events, update currently overlapping objects
+void USLGraspListener::Idle(bool bInIdle)
+{
+	if (bIsStarted && bInIdle != bIsIdle)
+	{
+		for (auto BoneOverlap : GroupA)
+		{
+			BoneOverlap->Idle(bInIdle);
+		}
+		for (auto BoneOverlap : GroupB)
+		{
+			BoneOverlap->Idle(bInIdle);
+		}
+		bIsIdle = bInIdle;
 	}
 }
 
@@ -184,37 +211,86 @@ bool USLGraspListener::LoadOverlapGroups()
 // Check if the grasp trigger is active
 void USLGraspListener::InputAxisCallback(float Value)
 {
-	if (Value > 0.2)
+	if (Value > 0.3)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d"), TEXT(__func__), __LINE__);
-		bGraspingIsActive = true;
+		Idle(false);
+	}
+	else
+	{	
+		Idle(true);
+	}
+}
+
+// Check if the grasp trigger is active with grasp check synced
+void USLGraspListener::InputAxisCallbackWithGraspCheck(float Value)
+{
+	if (Value > 0.3)
+	{
+		Idle(false);
 	}
 	else
 	{
-		bGraspingIsActive = false;
+		Idle(true);
+	}
+
+	GraspCheckUpdate();
+}
+
+// Check if the grasp trigger is active
+void USLGraspListener::GraspCheckUpdate()
+{
+	// TODO add a bChanged flag
+	if (!bIsIdle)
+	{
+		TSet<AActor*> UnionAB = SetA.Union(SetB);
+		for (const auto& Obj : UnionAB)
+		{
+			if (!GraspedObjects.Contains(Obj))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Grasped Obj %s at %f"),
+					TEXT(__func__), __LINE__, *Obj->GetName(),GetWorld()->GetTimeSeconds());
+				GraspedObjects.Emplace(Obj);
+			}
+
+		}
+	}
+	else
+	{
+		for (const auto& Obj : GraspedObjects)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Released Obj %s at %f"),
+				TEXT(__func__), __LINE__, *Obj->GetName(), GetWorld()->GetTimeSeconds());
+		}
+		GraspedObjects.Empty();
+		SetA.Empty();
+		SetB.Empty();
 	}
 }
 
 // Process beginning of contact in group A
 void USLGraspListener::OnBeginGroupAContact(AActor* OtherActor)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+	SetA.Emplace(OtherActor);
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
 }
 
 // Process ending of contact in group A
 void USLGraspListener::OnEndGroupAContact(AActor* OtherActor)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+	SetA.Remove(OtherActor);
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
 }
 
 // Process beginning of contact in group B
 void USLGraspListener::OnBeginGroupBContact(AActor* OtherActor)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+	SetB.Emplace(OtherActor);
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
 }
 
 // Process ending of contact in group B
 void USLGraspListener::OnEndGroupBContact(AActor* OtherActor)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+	SetB.Remove(OtherActor);
 }
