@@ -36,7 +36,7 @@ public:
 	void Clear();
 
 	// Enable replication on the items
-	void SetReplicates(bool bReplicate);
+	void SetReplicates(bool bReplicate, float Priority = 1.f, float MinFreq = 2.f, float MaxFreq = 100.f);
 	
 	// Remove object from object
 	bool RemoveEntity(UObject* Object);

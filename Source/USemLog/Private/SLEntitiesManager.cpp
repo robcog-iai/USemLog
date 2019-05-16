@@ -87,7 +87,7 @@ void FSLEntitiesManager::Clear()
 }
 
 // Enable replication on the items
-void FSLEntitiesManager::SetReplicates(bool bReplicate)
+void FSLEntitiesManager::SetReplicates(bool bReplicate, float Priority, float MinFreq, float MaxFreq)
 {
 	for (auto& Pair : ObjectsSemanticData)
 	{
@@ -110,6 +110,9 @@ void FSLEntitiesManager::SetReplicates(bool bReplicate)
 			{
 				ObjAsSMA->SetReplicates(bReplicate);
 				ObjAsSMA->SetReplicateMovement(bReplicate);
+				ObjAsSMA->NetPriority = Priority;
+				ObjAsSMA->MinNetUpdateFrequency = MinFreq;
+				ObjAsSMA->NetUpdateFrequency = MaxFreq;
 			}
 		}
 		else if (UStaticMeshComponent* ObjAsSMC = Cast<UStaticMeshComponent>(Pair.Key))
@@ -119,6 +122,9 @@ void FSLEntitiesManager::SetReplicates(bool bReplicate)
 				ObjAsSMC->SetIsReplicated(bReplicate);
 				ObjAsSMC->GetOwner()->SetReplicates(bReplicate);
 				ObjAsSMC->GetOwner()->SetReplicateMovement(bReplicate);
+				ObjAsSMA->GetOwner()->NetPriority = Priority;
+				ObjAsSMA->GetOwner()->MinNetUpdateFrequency = MinFreq;
+				ObjAsSMA->GetOwner()->NetUpdateFrequency = MaxFreq;
 			}
 		}
 		// TODO see skeletal mesh comps and actors

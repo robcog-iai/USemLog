@@ -24,7 +24,7 @@ USLVisionLogger::~USLVisionLogger()
 }
 
 // Init Logger
-void USLVisionLogger::Init(float InMaxRecHz, float InMinRecHz)
+void USLVisionLogger::Init(float InMinRecHz, float InMaxRecHz)
 {
 	if (!bIsInit)
 	{
@@ -33,11 +33,11 @@ void USLVisionLogger::Init(float InMaxRecHz, float InMinRecHz)
 		if (ASLVisRecordGameMode* SLGameMode = Cast<ASLVisRecordGameMode>(GetWorld()->GetAuthGameMode()))
 		{ 
 			// Set movement replications to objects
-			FSLEntitiesManager::GetInstance()->SetReplicates(true);
+			FSLEntitiesManager::GetInstance()->SetReplicates(true, 10, InMinRecHz, InMaxRecHz);
 
 			// Set update rates
-			IConsoleManager::Get().FindConsoleVariable(TEXT("demo.RecordHZ"))->Set(InMaxRecHz);
 			IConsoleManager::Get().FindConsoleVariable(TEXT("demo.MinRecordHZ"))->Set(InMinRecHz);
+			IConsoleManager::Get().FindConsoleVariable(TEXT("demo.RecordHZ"))->Set(InMaxRecHz);
 
 			// Mark as initialized
 			bIsInit = true;

@@ -54,7 +54,7 @@ ASLManager::ASLManager()
 
 	// Vision data logger default values
 	bLogVisionData = true;
-	MaxRecordHz = 90.f;
+	MaxRecordHz = 120.f;
 	MinRecordHz = 30.f;
 
 #if WITH_EDITOR
@@ -171,7 +171,7 @@ void ASLManager::Init()
 		{
 			// Create and init vision logger
 			VisionDataLogger = NewObject<USLVisionLogger>(this);
-			VisionDataLogger->Init(MaxRecordHz, MinRecordHz);
+			VisionDataLogger->Init(MinRecordHz, MaxRecordHz);
 		}
 
 		// Mark manager as initialized

@@ -31,7 +31,7 @@ public:
 	~USLVisionLogger();
 
 	// Init Logger
-	void Init(float InMaxRecHz, float InMinRecHz);
+	void Init(float InMinRecHz, float InMaxRecHz);
 
 	// Start logger
 	void Start(const FString& EpisodeId);

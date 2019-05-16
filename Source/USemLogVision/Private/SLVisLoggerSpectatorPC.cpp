@@ -25,8 +25,6 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	PrimaryActorTick.bTickEvenWhenPaused = true;
 	bShouldPerformFullTickWhenPaused = true;
 
-	ScrubRate = 0.08f;
-	SkipNewEntryTolerance = 0.05f; 
 	CurrentViewIndex = 0;
 	CurrRenderIndex = 0;
 	DemoTimestamp = 0.f;
@@ -40,6 +38,11 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	RenderTypes.Add(ESLVisRenderType::Depth);
 	RenderTypes.Add(ESLVisRenderType::Mask);
 	RenderTypes.Add(ESLVisRenderType::Normal);
+
+	
+	ScrubRate = 0.02f;
+	SkipNewEntryTolerance = 0.05f; 
+
 
 	// Image size 
 	// 8k (7680, 4320) / 4k (3840, 2160) / 2k (2048, 1080) / fhd (1920, 1080) / hd (1280, 720) / sd (720, 480)
@@ -112,7 +115,7 @@ void ASLVisLoggerSpectatorPC::Init()
 
 #if SLVIS_WITH_LIBMONGO_C
 			Writer = NewObject<USLVisImageWriterMongoC>(this);
-			Writer->Init(FSLVisImageWriterParams(TEXT("SemLog_IMG"), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
+			Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
 #endif //SLVIS_WITH_LIBMONGO_C
 
 #if SLVIS_WITH_LIBMONGO_CXX
@@ -215,6 +218,11 @@ void ASLVisLoggerSpectatorPC::SetCameraViews()
 		if(Itr->IsInit())
 		{
 			CameraViews.Add(*Itr);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not initialized semantically"),
+				*FString(__func__), __LINE__, *Itr->GetName());
 		}
 	}
 }
@@ -596,7 +604,7 @@ bool ASLVisLoggerSpectatorPC::ShouldSkipThisFrame(float Timestamp)
 	}
 
 	// No valid writer, skip frames
-	UE_LOG(LogTemp, Error, TEXT("%s::%d No valid writer found, skipping frames.."));
+	UE_LOG(LogTemp, Error, TEXT("%s::%d No valid writer found, skipping frames.."), *FString(__func__), __LINE__);
 	return true;
 }
 

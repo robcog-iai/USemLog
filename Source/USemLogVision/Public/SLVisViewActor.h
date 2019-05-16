@@ -5,10 +5,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Engine/StaticMeshActor.h"
 #include "SLVisViewActor.generated.h"
 
 UCLASS(ClassGroup = (SL), DisplayName = "SL Vis View")
-class USEMLOGVISION_API ASLVisViewActor : public AActor
+class USEMLOGVISION_API ASLVisViewActor : public AStaticMeshActor
 {
 	GENERATED_BODY()
 	
@@ -32,6 +33,12 @@ protected:
 	// Only called during gameplay, used for attaching to components of parent (if requested)
 	virtual void PostInitializeComponents() override;
 
+	// Called when the games starts
+	virtual void BeginPlay() override;
+
+	// Called every update frame
+	virtual void Tick(float DeltaSeconds) override;
+
 private:
 #if WITH_EDITORONLY_DATA
 	// Camera used for visual localization
@@ -52,4 +59,7 @@ private:
 
 	// Unique id
 	FString Id;
+
+	// Reference to the component to follow
+	USceneComponent* CompToFollow;
 };
