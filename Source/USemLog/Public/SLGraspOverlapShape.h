@@ -75,6 +75,9 @@ private:
 	// Set debug color
 	void SetColor(FColor Color);
 
+	// Publish currently overlapping components
+	void TriggerInitialOverlaps();
+
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
@@ -118,6 +121,10 @@ private:
 	// Debug with visibility at runtime
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bVisualDebug;
+
+	// Snap to the position of the bone when attached
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bSnapToBone;
 
 	// Cache valid contacts (visualization purposes)
 	TSet<AActor*> ActiveContacts;

@@ -15,6 +15,7 @@ USLGraspOverlapShape::USLGraspOverlapShape()
 	// Default group of the finger
 	Group = ESLGraspOverlapGroup::A;
 	bVisualDebug = true;
+	bSnapToBone = true;
 
 #if WITH_EDITOR
 	// Mimic a button to attach to the bone	
@@ -60,6 +61,9 @@ void USLGraspOverlapShape::Start()
 		// Enable overlap events
 		SetGenerateOverlapEvents(true);
 
+		// Broadcast currently overlapping components
+		TriggerInitialOverlaps();
+
 		// Bind future overlapping event delegates
 		OnComponentBeginOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapBegin);
 		OnComponentEndOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapEnd);
@@ -72,23 +76,36 @@ void USLGraspOverlapShape::Start()
 // Pause/continue listening to overlaps 
 void USLGraspOverlapShape::Idle(bool bInIdle)
 {
-	if (bIsStarted && bInIdle != bIsIdle)
+	if (bInIdle != bIsIdle)
 	{
 		// Pause / start overlap events
 		SetGenerateOverlapEvents(!bInIdle);
 
-		if (bVisualDebug)
+		if (bInIdle)
 		{
-			if (bInIdle)
+			// Broadcast ending of any active grasp related contacts
+			for (auto& AC : ActiveContacts)
 			{
-				ActiveContacts.Empty();
+				OnEndSLGraspOverlap.Broadcast(AC);
+			}
+			ActiveContacts.Empty();
+
+			if (bVisualDebug)
+			{
 				SetColor(FColor::Yellow);
 			}
-			else
+		}
+		else
+		{
+			// Broadcast currently overlapping components
+			TriggerInitialOverlaps();
+
+			if (bVisualDebug)
 			{
 				SetColor(FColor::Blue);
 			}
 		}
+
 		bIsIdle = bInIdle;
 	}
 }
@@ -167,7 +184,10 @@ bool USLGraspOverlapShape::AttachToBone()
 		{
 			if (SMC->GetBoneIndex(BoneName) != INDEX_NONE)
 			{
-				if (AttachToComponent(SMC, FAttachmentTransformRules::SnapToTargetIncludingScale, BoneName))
+				FAttachmentTransformRules AttachmentRule = bSnapToBone ? FAttachmentTransformRules::SnapToTargetIncludingScale
+					: FAttachmentTransformRules::KeepRelativeTransform;
+
+				if (AttachToComponent(SMC, AttachmentRule, BoneName))
 				{
 					UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached component %s to the bone %s"),
 						TEXT(__func__), __LINE__, *GetName(), *BoneName.ToString());
@@ -188,6 +208,20 @@ void USLGraspOverlapShape::SetColor(FColor Color)
 	{
 		ShapeColor = Color;
 		MarkRenderStateDirty();
+	}
+}
+
+// Publish currently overlapping components
+void USLGraspOverlapShape::TriggerInitialOverlaps()
+{
+	// If objects are already overlapping at begin play, they will not be triggered
+	// Here we do a manual overlap check and forward them to OnOverlapBegin
+	TSet<UPrimitiveComponent*> CurrOverlappingComponents;
+	GetOverlappingComponents(CurrOverlappingComponents);
+	FHitResult Dummy;
+	for (const auto& CompItr : CurrOverlappingComponents)
+	{
+		OnOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
 }
 
@@ -215,18 +249,14 @@ void USLGraspOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 
 	if (OtherActor->IsA(AStaticMeshActor::StaticClass()))
 	{
+		ActiveContacts.Emplace(OtherActor);
+
 		if (bVisualDebug)
 		{
-			ActiveContacts.Emplace(OtherActor);
 			SetColor(FColor::Green);
 		}
-		// Forward the overlap with the item
+
 		OnBeginSLGraspOverlap.Broadcast(OtherActor);
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s OtherActor=%s PUB"), TEXT(__func__), __LINE__, *GetName(), *OtherActor->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s OtherActor=%s IGNORED"), TEXT(__func__), __LINE__, *GetName(), *OtherActor->GetName());
 	}
 }
 
@@ -252,9 +282,10 @@ void USLGraspOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 
 	if (OtherActor->IsA(AStaticMeshActor::StaticClass()))
 	{
+		ActiveContacts.Remove(OtherActor);
+		
 		if (bVisualDebug)
 		{
-			ActiveContacts.Remove(OtherActor);
 			if (ActiveContacts.Num() == 0)
 			{
 				SetColor(FColor::Blue);
@@ -262,11 +293,6 @@ void USLGraspOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		}
 		
 		OnEndSLGraspOverlap.Broadcast(OtherActor);
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d *END* %s OtherActor=%s PUB"), TEXT(__func__), __LINE__, *GetName(), *OtherActor->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s *END* OtherActor=%s IGNORED"), TEXT(__func__), __LINE__, *GetName(), *OtherActor->GetName());
 	}
 }
 

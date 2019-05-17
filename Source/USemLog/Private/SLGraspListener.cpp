@@ -15,6 +15,7 @@ USLGraspListener::USLGraspListener()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
+	bGraspIsDirty = true;
 	InputAxisName = "LeftGrasp";
 	GraspCheckUpdateRate = 0.2f;
 
@@ -87,12 +88,12 @@ void USLGraspListener::Start()
 					// Un-synced
 					IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisCallback);
 					GetWorld()->GetTimerManager().SetTimer(GraspTimerHandle, this,
-						&USLGraspListener::GraspCheckUpdate, GraspCheckUpdateRate, true);
+						&USLGraspListener::CheckGraspState, GraspCheckUpdateRate, true);
 				}
 				else
 				{
 					// Synced
-					IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisCallbackWithGraspCheck);
+					IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisWithGraspCheckCallback);
 				}
 			}
 			else
@@ -126,10 +127,10 @@ void USLGraspListener::Start()
 	}
 }
 
-// Start listening to grasp events, update currently overlapping objects
+// Pause/continue grasp detection
 void USLGraspListener::Idle(bool bInIdle)
 {
-	if (bIsStarted && bInIdle != bIsIdle)
+	if (bInIdle != bIsIdle)
 	{
 		for (auto BoneOverlap : GroupA)
 		{
@@ -140,6 +141,20 @@ void USLGraspListener::Idle(bool bInIdle)
 			BoneOverlap->Idle(bInIdle);
 		}
 		bIsIdle = bInIdle;
+
+
+		// Clear sets
+		if (bInIdle)
+		{
+			for (const auto& Obj : GraspedObjects)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Released Obj %s at %f"),
+					TEXT(__func__), __LINE__, *Obj->GetName(), GetWorld()->GetTimeSeconds());
+			}
+			GraspedObjects.Empty();
+			SetA.Empty();
+			SetB.Empty();
+		}
 	}
 }
 
@@ -222,7 +237,7 @@ void USLGraspListener::InputAxisCallback(float Value)
 }
 
 // Check if the grasp trigger is active with grasp check synced
-void USLGraspListener::InputAxisCallbackWithGraspCheck(float Value)
+void USLGraspListener::InputAxisWithGraspCheckCallback(float Value)
 {
 	if (Value > 0.3)
 	{
@@ -232,15 +247,13 @@ void USLGraspListener::InputAxisCallbackWithGraspCheck(float Value)
 	{
 		Idle(true);
 	}
-
-	GraspCheckUpdate();
+	CheckGraspState();
 }
 
-// Check if the grasp trigger is active
-void USLGraspListener::GraspCheckUpdate()
+// Check for grasping state
+void USLGraspListener::CheckGraspState()
 {
-	// TODO add a bChanged flag
-	if (!bIsIdle)
+	if (bGraspIsDirty)
 	{
 		TSet<AActor*> UnionAB = SetA.Union(SetB);
 		for (const auto& Obj : UnionAB)
@@ -248,22 +261,11 @@ void USLGraspListener::GraspCheckUpdate()
 			if (!GraspedObjects.Contains(Obj))
 			{
 				UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Grasped Obj %s at %f"),
-					TEXT(__func__), __LINE__, *Obj->GetName(),GetWorld()->GetTimeSeconds());
+					TEXT(__func__), __LINE__, *Obj->GetName(), GetWorld()->GetTimeSeconds());
 				GraspedObjects.Emplace(Obj);
 			}
-
 		}
-	}
-	else
-	{
-		for (const auto& Obj : GraspedObjects)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Released Obj %s at %f"),
-				TEXT(__func__), __LINE__, *Obj->GetName(), GetWorld()->GetTimeSeconds());
-		}
-		GraspedObjects.Empty();
-		SetA.Empty();
-		SetB.Empty();
+		bGraspIsDirty = false;
 	}
 }
 
@@ -271,6 +273,7 @@ void USLGraspListener::GraspCheckUpdate()
 void USLGraspListener::OnBeginGroupAContact(AActor* OtherActor)
 {
 	SetA.Emplace(OtherActor);
+	bGraspIsDirty = true;
 	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
 }
 
@@ -278,6 +281,7 @@ void USLGraspListener::OnBeginGroupAContact(AActor* OtherActor)
 void USLGraspListener::OnEndGroupAContact(AActor* OtherActor)
 {
 	SetA.Remove(OtherActor);
+	bGraspIsDirty = true;
 	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
 }
 
@@ -285,12 +289,14 @@ void USLGraspListener::OnEndGroupAContact(AActor* OtherActor)
 void USLGraspListener::OnBeginGroupBContact(AActor* OtherActor)
 {
 	SetB.Emplace(OtherActor);
+	bGraspIsDirty = true;
 	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
 }
 
 // Process ending of contact in group B
 void USLGraspListener::OnEndGroupBContact(AActor* OtherActor)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
 	SetB.Remove(OtherActor);
+	bGraspIsDirty = true;
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
 }

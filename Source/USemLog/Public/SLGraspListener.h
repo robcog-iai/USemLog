@@ -19,6 +19,12 @@ enum class ESLGraspHandType : uint8
 	Right					UMETA(DisplayName = "Right"),
 };
 
+/** Notify when an object is grasped */
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspBegin, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
+
+/** Notify when an object is released */
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspEnd, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
+
 /**
  * Checks for physics based grasp events
  */
@@ -69,10 +75,10 @@ private:
 	void InputAxisCallback(float Value);
 
 	// Check if the grasp trigger is active and for grasp check
-	void InputAxisCallbackWithGraspCheck(float Value);
+	void InputAxisWithGraspCheckCallback(float Value);
 
 	// Grasp update check
-	void GraspCheckUpdate();
+	void CheckGraspState();
 
 	// Process beginning of contact in group A
 	UFUNCTION()
@@ -90,6 +96,13 @@ private:
 	UFUNCTION()
 	void OnEndGroupBContact(AActor* OtherActor);
 
+public:
+	// Event called when grasp occurs
+	FSLGraspBegin OnSLGraspBegin;
+
+	// Event called when grasp ends
+	FSLGraspEnd OnSLGraspEnd;
+
 private:
 	// True if initialized
 	bool bIsInit;
@@ -102,6 +115,9 @@ private:
 
 	// True grasp detection is paused
 	bool bIsIdle;
+
+	// New information added 
+	bool bGraspIsDirty;
 	
 	// Read the input directly, avoid biding to various controllers
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
