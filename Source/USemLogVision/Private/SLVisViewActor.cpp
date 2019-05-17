@@ -39,6 +39,7 @@ ASLVisViewActor::ASLVisViewActor()
 		GetStaticMeshComponent()->SetCollisionEnabled(ECollisionEnabled::Type::PhysicsOnly);
 		GetStaticMeshComponent()->SetCollisionObjectType(ECC_WorldDynamic);
 		GetStaticMeshComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		GetStaticMeshComponent()->bHiddenInGame = true;
 	}
 
 	// This has to be set in the constructor in order to be replicated
@@ -51,6 +52,7 @@ ASLVisViewActor::ASLVisViewActor()
 	NetPriority = 10.0f;
 	NetUpdateFrequency = 100.0f;
 	MinNetUpdateFrequency = 60.0f;
+
 }
 
 // Called when the game starts or when spawned
