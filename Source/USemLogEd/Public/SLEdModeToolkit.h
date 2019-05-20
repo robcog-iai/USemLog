@@ -72,7 +72,7 @@ private:
 	FReply RemoveAllTags();
 
 	// Update semantic visual shape visuals
-	FReply UpdateSLOverlapShapeColors();
+	FReply UpdateSLContactOverlapShapeColors();
 
 private:
 	// Widget pointer

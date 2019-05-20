@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLContactEventHandler.h"
-#include "SLOverlapShape.h"
+#include "SLContactOverlapShape.h"
 
 // UUtils
 #include "Ids.h"
@@ -12,7 +12,7 @@ void FSLContactEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{		// Check if parent is of right type
-		Parent = Cast<USLOverlapShape>(InParent);
+		Parent = Cast<USLContactOverlapShape>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized
@@ -54,7 +54,7 @@ void FSLContactEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new contact event
-void FSLContactEventHandler::AddNewEvent(const FSLOverlapResult& InResult)
+void FSLContactEventHandler::AddNewEvent(const FSLContactOverlapResult& InResult)
 {
 	// Start a semantic contact event
 	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
@@ -100,7 +100,7 @@ void FSLContactEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic overlap event begins
-void FSLContactEventHandler::OnSLOverlapBegin(const FSLOverlapResult& SemanticOverlapResult)
+void FSLContactEventHandler::OnSLOverlapBegin(const FSLContactOverlapResult& SemanticOverlapResult)
 {
 	FSLContactEventHandler::AddNewEvent(SemanticOverlapResult);
 }

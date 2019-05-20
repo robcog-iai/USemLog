@@ -118,24 +118,39 @@ private:
 	// True if finished
 	bool bIsFinished;
 
-	// Debug with visibility at runtime
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bVisualDebug;
-
-	// Snap to the position of the bone when attached
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bSnapToBone;
-
-	// Cache valid contacts (visualization purposes)
+	// Cache valid contacts
 	TSet<AActor*> ActiveContacts;
+
+	// Active contact count (since multiple shapes might have the same contact, keep a counter)
+	TMap<AActor*, int32> ActiveContactCounter;
+
+	// Optional additional collisions triggering the same event
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	TArray<UShapeComponent*> AdditionalCollisions;
 
 	// Name of the skeletal bone to attach the shape to
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FName BoneName;
+
+	// Snap to the position of the bone when attached
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bSnapToBone;
 
 #if WITH_EDITOR
 	// Mimic a button to add the skeletal bone
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bAttachButton;
 #endif // WITH_EDITOR
+
+	// If the owner is not a skeletal actor, one needs to add the children (fingers) manually
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bIsNotSkeletal;
+
+	// Explicit references to the other fingers (ignore them during overlap)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bIsNotSkeletal"))
+	TArray<AStaticMeshActor*> IgnoredList;
+
+	// Debug with visibility at runtime
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bVisualDebug;
 };

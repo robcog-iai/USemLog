@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLSupportedByEventHandler.h"
-#include "SLOverlapShape.h"
+#include "SLContactOverlapShape.h"
 
 // UUtils
 #include "Ids.h"
@@ -15,7 +15,7 @@ void FSLSupportedByEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{		// Check if parent is of right type
-		Parent = Cast<USLOverlapShape>(InParent);
+		Parent = Cast<USLContactOverlapShape>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized
@@ -160,7 +160,7 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 }
 
 // Is a supported by event, returns nullptr if not an event
-bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLOverlapResult& InCandidate,
+bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLContactOverlapResult& InCandidate,
 	float Time, TSharedPtr<FSLSupportedByEvent> OutEvent)
 {
 	// Get relative vertical speed
@@ -244,7 +244,7 @@ void FSLSupportedByEventHandler::FinishAllEvents(float EndTime)
 }
 
 // Event called when a semantic overlap event begins
-void FSLSupportedByEventHandler::OnSLOverlapBegin(const FSLOverlapResult& InResult)
+void FSLSupportedByEventHandler::OnSLOverlapBegin(const FSLContactOverlapResult& InResult)
 {
 	// Add as candidate
 	Candidates.Emplace(InResult);

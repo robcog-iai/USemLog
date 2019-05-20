@@ -7,13 +7,13 @@
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "SLStructs.h"
-#include "SLOverlapShape.generated.h"
+#include "SLContactOverlapShape.generated.h"
 
 /**
  * Structure containing information about the semantic overlap event
  */
 USTRUCT()
-struct FSLOverlapResult
+struct FSLContactOverlapResult
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -36,16 +36,16 @@ struct FSLOverlapResult
 	bool bIsOtherASemanticOverlapArea;
 
 	// Default ctor
-	FSLOverlapResult() {};
+	FSLContactOverlapResult() {};
 
 	// Init constructor
-	FSLOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
+	FSLContactOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
 		bool bIsSemanticOverlapArea) :
 		Self(InSelf), Other(InOther), 
 		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea) {};
 
 	// Init constructor with mesh component (static/skeletal)
-	FSLOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
+	FSLContactOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
 		bool bIsSemanticOverlapArea, UMeshComponent* InSelfMeshComponent, UMeshComponent* InOtherMeshComponent) :
 		Self(InSelf), Other(InOther), 
 		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea), 
@@ -62,7 +62,7 @@ struct FSLOverlapResult
 };
 
 /** Delegate to notify that a contact begins between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLOverlapBeginSignature, const FSLOverlapResult&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLOverlapBeginSignature, const FSLContactOverlapResult&);
 
 /** Delegate to notify that a contact ended between two semantically annotated objects */
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLOverlapEndSignature, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
@@ -70,16 +70,16 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLOverlapEndSignature, UObject* /*Self*/
 /**
  * Collision area listening for semantic collision events
  */
-UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics))
-class USEMLOG_API USLOverlapShape : public UBoxComponent
+UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Overlap Shape")
+class USEMLOG_API USLContactOverlapShape : public UBoxComponent
 {
 	GENERATED_BODY()
 public:
 	// Default constructor
-	USLOverlapShape();
+	USLContactOverlapShape();
 
 	// Dtor
-	~USLOverlapShape();
+	~USLContactOverlapShape();
 
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
 	void Init();

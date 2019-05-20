@@ -14,7 +14,7 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "SLSemanticMapWriter.h"
-#include "SLOverlapShape.h"
+#include "SLContactOverlapShape.h"
 #include "SLSkeletalDataComponent.h"
 #include "Ids.h"
 #include "Tags.h"
@@ -167,9 +167,9 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("UpdateSLOverlapShapeColors", "Update Semantic Overlap Shape Visuals"))
+						.Text(LOCTEXT("UpdateSLContactOverlapShapeColors", "Update Semantic Overlap Shape Visuals"))
 						.IsEnabled(true)
-						.OnClicked(this, &FSLEdModeToolkit::UpdateSLOverlapShapeColors)
+						.OnClicked(this, &FSLEdModeToolkit::UpdateSLContactOverlapShapeColors)
 					]
 		];
 
@@ -722,13 +722,13 @@ FReply FSLEdModeToolkit::RemoveAllTags()
 }
 
 // Update semantic visual shape visuals
-FReply FSLEdModeToolkit::UpdateSLOverlapShapeColors()
+FReply FSLEdModeToolkit::UpdateSLContactOverlapShapeColors()
 {
 	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
 		// Iterate actor components
-		TArray<USLOverlapShape*> Comps;
-		ActItr->GetComponents<USLOverlapShape>(Comps);
+		TArray<USLContactOverlapShape*> Comps;
+		ActItr->GetComponents<USLContactOverlapShape>(Comps);
 		for (auto& C : Comps)
 		{
 			C->UpdateVisualColor();

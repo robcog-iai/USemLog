@@ -7,9 +7,9 @@
 #include "Events/SLGraspEvent.h"
 
 /**
- * Listens to fixation grasp events input, and outputs finished semantic grasp events
+ * Listens to grasp events input, and outputs finished semantic grasp events
  */
-class FSLFixationGraspEventHandler : public ISLEventHandler
+class FSLGraspEventHandler : public ISLEventHandler
 {
 public:
 	// Init parent
@@ -26,24 +26,20 @@ private:
 	void AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime);
 
 	// Finish then publish the event
-	bool FinishEvent(UObject* InOther, float EndTime);
+	bool FinishEvent(UObject* Other, float EndTime);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLGraspBegin(UObject* Self, UObject* Other, float Time);
-	
+	void OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time);
+
 	// Event called when a semantic overlap event ends
-	void OnSLGraspEnd(UObject* Self, UObject* Other, float Time);
+	void OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time);
 
 private:
 	// Parent
-#if SL_WITH_MC_GRASP
-	class UMCFixationGrasp* Parent;
-#else
-	UObject* Parent;
-#endif // SL_WITH_MC_GRASP
+	class USLGraspListener* Parent;
 
 	// Array of started events
 	TArray<TSharedPtr<FSLGraspEvent>> StartedEvents;

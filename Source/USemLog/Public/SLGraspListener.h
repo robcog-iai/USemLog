@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Engine/StaticMeshActor.h"
 #include "SLGraspOverlapShape.h"
 #include "SLStructs.h" // FSLEntity
 #include "SLGraspListener.generated.h"
@@ -20,10 +21,10 @@ enum class ESLGraspHandType : uint8
 };
 
 /** Notify when an object is grasped */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspBegin, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspBegin, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
 
 /** Notify when an object is released */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspEnd, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspEnd, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
 
 /**
  * Checks for physics based grasp events
@@ -74,11 +75,20 @@ private:
 	// Check if the grasp trigger is active
 	void InputAxisCallback(float Value);
 
-	// Check if the grasp trigger is active and for grasp check
-	void InputAxisWithGraspCheckCallback(float Value);
+	//// Check if the grasp trigger is active and for grasp check
+	//void InputAxisWithGraspCheckCallback(float Value);
 
 	// Grasp update check
 	void CheckGraspState();
+
+	// A grasp has started
+	void BeginGrasp(AActor* Other);
+	
+	// A grasp has ended
+	void EndGrasp(AActor* Other);
+
+	// All grasps have ended
+	void EndAllGrasps();
 
 	// Process beginning of contact in group A
 	UFUNCTION()
@@ -119,13 +129,27 @@ private:
 	// New information added 
 	bool bGraspIsDirty;
 	
+#if WITH_EDITOR
+	// Hand type to load pre-defined parameters
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLGraspHandType HandType;
+#endif // WITH_EDITOR
+	
 	// Read the input directly, avoid biding to various controllers
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FName InputAxisName;
 
-	// Update rate for checking for grasp events (0 = every tick)
+	// Axis input value to wake up from idle
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float GraspCheckUpdateRate;
+	float IdleWakeupValue;
+
+	// If the owner is not a skeletal actor, one needs to add the children (fingers) manually
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bIsNotSkeletal;
+
+	// Explicit reference to the children (fingers) if the owner is not a skeletal actor
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bIsNotSkeletal"))
+	TArray<AStaticMeshActor*> Fingers;
 
 	// Semantic data of the owner
 	FSLEntity SemanticOwner;
@@ -147,10 +171,4 @@ private:
 
 	// Grasp update timer handler
 	FTimerHandle GraspTimerHandle;
-	
-#if WITH_EDITOR
-	// Hand type to load pre-defined parameters
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLGraspHandType HandType;
-#endif // WITH_EDITOR
 };

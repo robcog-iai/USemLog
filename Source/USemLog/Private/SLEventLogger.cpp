@@ -11,7 +11,7 @@
 #include "Events/SLFixationGraspEventHandler.h"
 #include "Events/SLSlicingEventHandler.h"
 #include "SLOwlExperimentStatics.h"
-#include "SLOverlapShape.h"
+#include "SLContactOverlapShape.h"
 #include "SLGraspListener.h"
 #include "SLGoogleCharts.h"
 
@@ -76,7 +76,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		// rename FSLContactEventHandler,FSLSupportedByEventHandler,FSLFixationGraspEventHandler -> Events
 
 		// Init all contact trigger handlers
-		for (TObjectIterator<USLOverlapShape> Itr; Itr; ++Itr)
+		for (TObjectIterator<USLContactOverlapShape> Itr; Itr; ++Itr)
 		{
 			if (IsValidAndAnnotated(*Itr))
 			{
@@ -104,22 +104,27 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			}
 		}
 
-		// Init all grasp listeners
-		for (TObjectIterator<USLGraspListener> Itr; Itr; ++Itr)
-		{
-			if (IsValidAndAnnotated(*Itr))
-			{
-				if (Itr->Init())
-				{
-					GraspListeners.Emplace(*Itr);
-				}
-			}
-		}
-
-		// Init fixation grasp handlers
+		// Init fixation or normal grasp handlers
 		if (bInLogGraspEvents)
 		{
+			// Init all grasp listeners
+			for (TObjectIterator<USLGraspListener> Itr; Itr; ++Itr)
+			{
+				if (IsValidAndAnnotated(*Itr))
+				{
+					if (Itr->Init())
+					{
+						GraspListeners.Emplace(*Itr);
+						TSharedPtr<FSLGraspEventHandler> GraspEventHandler = MakeShareable(new FSLGraspEventHandler());
+						GraspEventHandler->Init(*Itr);
+						EventHandlers.Add(GraspEventHandler);
+					}
+				}
+			}
+
+
 #if SL_WITH_MC_GRASP
+			// Init fixation grasp listeners
 			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
 			{
 				if (IsValidAndAnnotated(*Itr))
@@ -199,9 +204,9 @@ void USLEventLogger::Start()
 		}
 
 		// Start the semantic overlap areas
-		for (auto& SLOverlapShape : OverlapShapes)
+		for (auto& SLContactOverlapShape : OverlapShapes)
 		{
-			SLOverlapShape->Start();
+			SLContactOverlapShape->Start();
 		}
 
 		// Start the grasp listeners
@@ -233,9 +238,9 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		EventHandlers.Empty();
 
 		// Finish semantic overlap events publishing
-		for (auto& SLOverlapShape : OverlapShapes)
+		for (auto& SLContactOverlapShape : OverlapShapes)
 		{
-			SLOverlapShape->Finish(bForced);
+			SLContactOverlapShape->Finish(bForced);
 		}
 		OverlapShapes.Empty();
 

@@ -16,6 +16,7 @@ USLGraspOverlapShape::USLGraspOverlapShape()
 	Group = ESLGraspOverlapGroup::A;
 	bVisualDebug = true;
 	bSnapToBone = true;
+	bIsNotSkeletal = false;
 
 #if WITH_EDITOR
 	// Mimic a button to attach to the bone	
@@ -33,12 +34,37 @@ bool USLGraspOverlapShape::Init()
 {
 	if (!bIsInit)
 	{
-		// Make sure the shape is attached to it parent
-		if (AttachToBone())
+		// Make sure the shape is attached to it bone
+		if (!bIsNotSkeletal)
+		{
+			if (AttachToBone())
+			{
+				if (bVisualDebug)
+				{
+					SetHiddenInGame(false);
+					for (auto& AC : AdditionalCollisions)
+					{
+						AC->SetHiddenInGame(false);
+					}
+					SetColor(FColor::Yellow);
+				}
+				bIsInit = true;
+				return true;
+			}
+			else 
+			{
+				return false;
+			}
+		}
+		else
 		{
 			if (bVisualDebug)
 			{
 				SetHiddenInGame(false);
+				for (auto& AC : AdditionalCollisions)
+				{
+					AC->SetHiddenInGame(false);
+				}
 				SetColor(FColor::Yellow);
 			}
 			bIsInit = true;
@@ -60,6 +86,10 @@ void USLGraspOverlapShape::Start()
 
 		// Enable overlap events
 		SetGenerateOverlapEvents(true);
+		for (auto& AC : AdditionalCollisions)
+		{
+			AC->SetGenerateOverlapEvents(true);
+		}
 
 		// Broadcast currently overlapping components
 		TriggerInitialOverlaps();
@@ -67,6 +97,12 @@ void USLGraspOverlapShape::Start()
 		// Bind future overlapping event delegates
 		OnComponentBeginOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapBegin);
 		OnComponentEndOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapEnd);
+
+		for (auto& AC : AdditionalCollisions)
+		{
+			AC->OnComponentBeginOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapBegin);
+			AC->OnComponentEndOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapEnd);
+		}
 
 		// Mark as started
 		bIsStarted = true;
@@ -78,6 +114,7 @@ void USLGraspOverlapShape::Idle(bool bInIdle)
 {
 	if (bInIdle != bIsIdle)
 	{
+		// TODO this triggers on next tick for ending the overlap events
 		// Pause / start overlap events
 		SetGenerateOverlapEvents(!bInIdle);
 
@@ -102,14 +139,12 @@ void USLGraspOverlapShape::Idle(bool bInIdle)
 
 			if (bVisualDebug)
 			{
-				SetColor(FColor::Blue);
+				SetColor(FColor::Red);
 			}
 		}
-
 		bIsIdle = bInIdle;
 	}
 }
-
 
 // Stop publishing overlap events
 void USLGraspOverlapShape::Finish(bool bForced)
@@ -135,7 +170,7 @@ void USLGraspOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent& 
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspOverlapShape, bAttachButton))
 	{
-		if (AttachToBone())
+		if (!bIsNotSkeletal && AttachToBone())
 		{
 			if (Rename(*BoneName.ToString()))
 			{
@@ -153,7 +188,7 @@ void USLGraspOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent& 
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspOverlapShape, BoneName))
 	{
-		if (AttachToBone())
+		if (!bIsNotSkeletal && AttachToBone())
 		{
 			if (Rename(*BoneName.ToString()))
 			{
@@ -165,6 +200,61 @@ void USLGraspOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent& 
 			SetColor(FColor::Red);
 		}
 		bAttachButton = false;
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspOverlapShape, bIsNotSkeletal))
+	{
+		if (bIsNotSkeletal)
+		{
+			BoneName = NAME_None;
+			FString NewName = Group == ESLGraspOverlapGroup::A ? FString("GraspOverlapGroupA") : FString("GraspOverlapGroupB");
+			if (Rename(*NewName))
+			{
+				// TODO find the 'refresh' to see the renaming
+				//GetOwner()->MarkPackageDirty();
+				//MarkPackageDirty();
+			}
+		}
+		else
+		{
+			IgnoredList.Empty();
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspOverlapShape, IgnoredList))
+	{
+		if (IgnoredList.Num() > 0)
+		{
+			SetColor(FColor::Green);
+		}
+		//if (IgnoreList.Num() > 0)
+		//{
+		//	bool bDifferntGroups = true;
+		//	for (const auto& IA : IgnoreList)
+		//	{
+		//		TArray<UActorComponent*> Comps = IA->GetComponentsByClass(USLGraspOverlapShape::StaticClass());
+		//		for (const auto& C : Comps)
+		//		{
+		//			USLGraspOverlapShape* CastC = CastChecked<USLGraspOverlapShape>(C);
+		//			if (Group == CastChecked<USLGraspOverlapShape>(C)->Group)
+		//			{
+		//				bDifferntGroups = false;
+		//				SetColor(FColor::Red);
+		//				UE_LOG(LogTemp, Error, TEXT("%s::%d Grasp overlap component from ignored list has the same group (these should be different).."),
+		//					*FString(__func__), __LINE__);
+		//				break;
+		//			}
+		//		}
+		//	}
+		//	if (bDifferntGroups)
+		//	{
+		//		SetColor(FColor::Green);
+		//	}
+		//}
+		//else
+		//{
+		//	SetColor(FColor::Red);
+		//	UE_LOG(LogTemp, Error, TEXT("%s::%d Ignore list is empty.."),
+		//		*FString(__func__), __LINE__);
+		//}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspOverlapShape, bVisualDebug))
 	{
@@ -189,10 +279,15 @@ bool USLGraspOverlapShape::AttachToBone()
 
 				if (AttachToComponent(SMC, AttachmentRule, BoneName))
 				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached component %s to the bone %s"),
-						TEXT(__func__), __LINE__, *GetName(), *BoneName.ToString());
+					//UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached component %s to the bone %s"),
+					//	TEXT(__func__), __LINE__, *GetName(), *BoneName.ToString());
 					return true;
 				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find bone %s for component %s"),
+					TEXT(__func__), __LINE__, *BoneName.ToString(), *GetName());
 			}
 		}
 	}
@@ -208,6 +303,11 @@ void USLGraspOverlapShape::SetColor(FColor Color)
 	{
 		ShapeColor = Color;
 		MarkRenderStateDirty();
+		for (auto& AC : AdditionalCollisions)
+		{
+			AC->ShapeColor = Color;
+			MarkRenderStateDirty();
+		}
 	}
 }
 
@@ -223,6 +323,17 @@ void USLGraspOverlapShape::TriggerInitialOverlaps()
 	{
 		OnOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
+
+	for (auto& AC : AdditionalCollisions)
+	{
+		TSet<UPrimitiveComponent*> CurrOverlappingComponents;
+		AC->GetOverlappingComponents(CurrOverlappingComponents);
+		FHitResult Dummy;
+		for (const auto& CompItr : CurrOverlappingComponents)
+		{
+			OnOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
+		}
+	}
 }
 
 // Called on overlap begin events
@@ -236,26 +347,26 @@ void USLGraspOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d %s Self Overlap"), TEXT(__func__), __LINE__, *GetName());
-		if (bVisualDebug)
-		{
-			if (ActiveContacts.Num() == 0)
-			{
-				SetColor(FColor::Red);
-			}
-		}
+		//if (bVisualDebug)
+		//{
+		//	if (ActiveContacts.Num() == 0)
+		//	{
+		//		SetColor(FColor::Red);
+		//	}
+		//}
 		return;
 	}
 
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass()))
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) 
+		&& !IgnoredList.Contains(OtherActor))
 	{
 		ActiveContacts.Emplace(OtherActor);
+		
 
 		if (bVisualDebug)
 		{
 			SetColor(FColor::Green);
 		}
-
 		OnBeginSLGraspOverlap.Broadcast(OtherActor);
 	}
 }
@@ -266,32 +377,35 @@ void USLGraspOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
-	// Ignore self overlaps 
-	if (OtherActor == GetOwner())
+	// It seems SetGenerateOverlapEvents(false) will trigger the overlap end event, this flag avoids those triggers
+	if (bIsIdle)
 	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d *END* %s Self Overlap"), TEXT(__func__), __LINE__, *GetName());
-		if (bVisualDebug)
-		{
-			if (ActiveContacts.Num() == 0)
-			{
-				SetColor(FColor::Blue);
-			}
-		}
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
 		return;
 	}
 
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass()))
+	// Ignore self overlaps 
+	if (OtherActor == GetOwner())
 	{
-		ActiveContacts.Remove(OtherActor);
-		
+		//if (bVisualDebug)
+		//{
+		//	if (ActiveContacts.Num() == 0)
+		//	{
+		//		SetColor(FColor::Red);
+		//	}
+		//}
+		return;
+	}
+
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) && !IgnoredList.Contains(OtherActor))
+	{
 		if (bVisualDebug)
 		{
 			if (ActiveContacts.Num() == 0)
 			{
-				SetColor(FColor::Blue);
+				SetColor(FColor::Red);
 			}
 		}
-		
 		OnEndSLGraspOverlap.Broadcast(OtherActor);
 	}
 }

@@ -17,7 +17,8 @@ USLGraspListener::USLGraspListener()
 	bIsFinished = false;
 	bGraspIsDirty = true;
 	InputAxisName = "LeftGrasp";
-	GraspCheckUpdateRate = 0.2f;
+	bIsNotSkeletal = false;
+	IdleWakeupValue = 0.5;
 
 #if WITH_EDITOR
 	// Default values
@@ -82,19 +83,7 @@ void USLGraspListener::Start()
 		{
 			if (UInputComponent* IC = PC->InputComponent)
 			{
-				// Check if the grasp check should be synced with the input callback
-				if (GraspCheckUpdateRate > 0.f)
-				{
-					// Un-synced
-					IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisCallback);
-					GetWorld()->GetTimerManager().SetTimer(GraspTimerHandle, this,
-						&USLGraspListener::CheckGraspState, GraspCheckUpdateRate, true);
-				}
-				else
-				{
-					// Synced
-					IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisWithGraspCheckCallback);
-				}
+				IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisCallback);
 			}
 			else
 			{
@@ -192,26 +181,44 @@ void USLGraspListener::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 			InputAxisName = "RightGrasp";
 		}
 	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspListener, bIsNotSkeletal))
+	{
+		Fingers.Empty();
+	}
 }
 #endif // WITH_EDITOR
 
 // Set overlap groups, return true if at least one valid overlap is in each group
 bool USLGraspListener::LoadOverlapGroups()
 {
-	// Check grasp overlap components of owner and add them to their groups
-	TArray<UActorComponent*> GraspOverlaps = GetOwner()->GetComponentsByClass(USLGraspOverlapShape::StaticClass());
-	for (UActorComponent* GraspOverlapComp : GraspOverlaps)
+	// Lambda to check grasp overlap components of owner and add them to their groups
+	auto GetOverlapComponentsLambda = [this](AActor* Owner)
 	{
-		USLGraspOverlapShape* GraspOverlap = CastChecked<USLGraspOverlapShape>(GraspOverlapComp);
+		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLGraspOverlapShape::StaticClass());
+		for (UActorComponent* GraspOverlapComp : GraspOverlaps)
+		{
+			USLGraspOverlapShape* GraspOverlap = CastChecked<USLGraspOverlapShape>(GraspOverlapComp);
+			if (GraspOverlap->Group == ESLGraspOverlapGroup::A)
+			{
+				GroupA.Add(GraspOverlap);
+			}
+			else if (GraspOverlap->Group == ESLGraspOverlapGroup::B)
+			{
+				GroupB.Add(GraspOverlap);
+			}
+		}
+	};
 
-		if (GraspOverlap->Group == ESLGraspOverlapGroup::A)
+	if (bIsNotSkeletal)
+	{
+		for (const auto& F : Fingers)
 		{
-			GroupA.Add(GraspOverlap);
+			GetOverlapComponentsLambda(F);
 		}
-		else if (GraspOverlap->Group == ESLGraspOverlapGroup::B)
-		{
-			GroupB.Add(GraspOverlap);
-		}
+	}
+	else 
+	{
+		GetOverlapComponentsLambda(GetOwner());
 	}
 
 	// Check if at least one valid overlap shape is in each group
@@ -226,7 +233,7 @@ bool USLGraspListener::LoadOverlapGroups()
 // Check if the grasp trigger is active
 void USLGraspListener::InputAxisCallback(float Value)
 {
-	if (Value > 0.3)
+	if (Value > IdleWakeupValue)
 	{
 		Idle(false);
 	}
@@ -236,67 +243,86 @@ void USLGraspListener::InputAxisCallback(float Value)
 	}
 }
 
-// Check if the grasp trigger is active with grasp check synced
-void USLGraspListener::InputAxisWithGraspCheckCallback(float Value)
-{
-	if (Value > 0.3)
-	{
-		Idle(false);
-	}
-	else
-	{
-		Idle(true);
-	}
-	CheckGraspState();
-}
-
 // Check for grasping state
 void USLGraspListener::CheckGraspState()
 {
-	if (bGraspIsDirty)
+	for (const auto& Obj : SetA.Intersect(SetB))
 	{
-		TSet<AActor*> UnionAB = SetA.Union(SetB);
-		for (const auto& Obj : UnionAB)
+		if (!GraspedObjects.Contains(Obj))
 		{
-			if (!GraspedObjects.Contains(Obj))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Grasped Obj %s at %f"),
-					TEXT(__func__), __LINE__, *Obj->GetName(), GetWorld()->GetTimeSeconds());
-				GraspedObjects.Emplace(Obj);
-			}
+			BeginGrasp(Obj);
 		}
-		bGraspIsDirty = false;
 	}
+}
+
+// A grasp has started
+void USLGraspListener::BeginGrasp(AActor* Other)
+{
+	GraspedObjects.Emplace(Other);
+	OnSLGraspBegin.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
+}
+
+// A grasp has ended
+void USLGraspListener::EndGrasp(AActor* Other)
+{
+	if (GraspedObjects.Remove(Other) > 0)
+	{
+		OnSLGraspEnd.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
+	}
+}
+
+// All grasps have ended
+void USLGraspListener::EndAllGrasps()
+{
+	for (const auto& Obj : GraspedObjects)
+	{
+		OnSLGraspEnd.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
+	}
+	GraspedObjects.Empty();
 }
 
 // Process beginning of contact in group A
 void USLGraspListener::OnBeginGroupAContact(AActor* OtherActor)
 {
-	SetA.Emplace(OtherActor);
-	bGraspIsDirty = true;
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+	bool bAlreadyInSet = false;
+	SetA.Emplace(OtherActor, &bAlreadyInSet);
+	if (!bAlreadyInSet && GroupB.Num() != 0 && !GraspedObjects.Contains(OtherActor))
+	{
+		CheckGraspState();
+	}
 }
 
 // Process ending of contact in group A
 void USLGraspListener::OnEndGroupAContact(AActor* OtherActor)
 {
-	SetA.Remove(OtherActor);
-	bGraspIsDirty = true;
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+	if (SetA.Remove(OtherActor) > 0)
+	{
+		if (GraspedObjects.Contains(OtherActor))
+		{
+			EndGrasp(OtherActor);
+		}
+	}
 }
 
 // Process beginning of contact in group B
 void USLGraspListener::OnBeginGroupBContact(AActor* OtherActor)
 {
-	SetB.Emplace(OtherActor);
-	bGraspIsDirty = true;
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+	bool bAlreadyInSet = false;
+	SetB.Emplace(OtherActor, &bAlreadyInSet);
+	if (!bAlreadyInSet && GroupA.Num() != 0 && !GraspedObjects.Contains(OtherActor))
+	{
+		CheckGraspState();
+	}
 }
 
 // Process ending of contact in group B
 void USLGraspListener::OnEndGroupBContact(AActor* OtherActor)
 {
-	SetB.Remove(OtherActor);
-	bGraspIsDirty = true;
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Other=%s"), TEXT(__func__), __LINE__, *OtherActor->GetName());
+	if (SetB.Remove(OtherActor) > 0)
+	{
+		if (GraspedObjects.Contains(OtherActor))
+		{
+			EndGrasp(OtherActor);
+		}
+	}
 }

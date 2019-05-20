@@ -8,7 +8,7 @@
 #include "Events/SLSupportedByEvent.h"
 
 // Forward declarations
-struct FSLOverlapResult;
+struct FSLContactOverlapResult;
 
 /**
  * Listens to contact events input, and outputs finished semantic supported-by events
@@ -30,7 +30,7 @@ private:
 	void InspectCandidatesCb();
 
 	// Is a supported by event, returns nullptr if not an event
-	bool IsPartOfASupportedByEvent(FSLOverlapResult& InCandidate, float Time, TSharedPtr<FSLSupportedByEvent> OutEvent);
+	bool IsPartOfASupportedByEvent(FSLContactOverlapResult& InCandidate, float Time, TSharedPtr<FSLSupportedByEvent> OutEvent);
 
 	// Check if other obj is a supported by candidate
 	bool IsACandidate(UObject* InOther, bool bRemoveIfFound = false);
@@ -42,17 +42,17 @@ private:
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLOverlapBegin(const FSLOverlapResult& InResult);
+	void OnSLOverlapBegin(const FSLContactOverlapResult& InResult);
 
 	// Event called when a semantic overlap event ends
 	void OnSLOverlapEnd(UObject* Self, UObject* Other, float Time);
 
 private:
 	// Parent semantic overlap area
-	class USLOverlapShape* Parent;
+	class USLContactOverlapShape* Parent;
 	
 	// Candidates for supported by event
-	TArray<FSLOverlapResult> Candidates;
+	TArray<FSLContactOverlapResult> Candidates;
 
 	// Array of started supported by events
 	TArray<TSharedPtr<FSLSupportedByEvent>> StartedEvents;
