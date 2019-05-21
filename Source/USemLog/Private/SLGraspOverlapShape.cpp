@@ -42,10 +42,6 @@ bool USLGraspOverlapShape::Init()
 				if (bVisualDebug)
 				{
 					SetHiddenInGame(false);
-					for (auto& AC : AdditionalCollisions)
-					{
-						AC->SetHiddenInGame(false);
-					}
 					SetColor(FColor::Yellow);
 				}
 				bIsInit = true;
@@ -61,10 +57,6 @@ bool USLGraspOverlapShape::Init()
 			if (bVisualDebug)
 			{
 				SetHiddenInGame(false);
-				for (auto& AC : AdditionalCollisions)
-				{
-					AC->SetHiddenInGame(false);
-				}
 				SetColor(FColor::Yellow);
 			}
 			bIsInit = true;
@@ -86,10 +78,6 @@ void USLGraspOverlapShape::Start()
 
 		// Enable overlap events
 		SetGenerateOverlapEvents(true);
-		for (auto& AC : AdditionalCollisions)
-		{
-			AC->SetGenerateOverlapEvents(true);
-		}
 
 		// Broadcast currently overlapping components
 		TriggerInitialOverlaps();
@@ -97,12 +85,6 @@ void USLGraspOverlapShape::Start()
 		// Bind future overlapping event delegates
 		OnComponentBeginOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapBegin);
 		OnComponentEndOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapEnd);
-
-		for (auto& AC : AdditionalCollisions)
-		{
-			AC->OnComponentBeginOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapBegin);
-			AC->OnComponentEndOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapEnd);
-		}
 
 		// Mark as started
 		bIsStarted = true;
@@ -207,6 +189,7 @@ void USLGraspOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent& 
 		{
 			BoneName = NAME_None;
 			FString NewName = Group == ESLGraspOverlapGroup::A ? FString("GraspOverlapGroupA") : FString("GraspOverlapGroupB");
+			NewName.Append(FString::FromInt(GetUniqueID()));
 			if (Rename(*NewName))
 			{
 				// TODO find the 'refresh' to see the renaming
@@ -303,11 +286,6 @@ void USLGraspOverlapShape::SetColor(FColor Color)
 	{
 		ShapeColor = Color;
 		MarkRenderStateDirty();
-		for (auto& AC : AdditionalCollisions)
-		{
-			AC->ShapeColor = Color;
-			MarkRenderStateDirty();
-		}
 	}
 }
 
@@ -322,17 +300,6 @@ void USLGraspOverlapShape::TriggerInitialOverlaps()
 	for (const auto& CompItr : CurrOverlappingComponents)
 	{
 		OnOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
-	}
-
-	for (auto& AC : AdditionalCollisions)
-	{
-		TSet<UPrimitiveComponent*> CurrOverlappingComponents;
-		AC->GetOverlappingComponents(CurrOverlappingComponents);
-		FHitResult Dummy;
-		for (const auto& CompItr : CurrOverlappingComponents)
-		{
-			OnOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
-		}
 	}
 }
 
@@ -361,13 +328,11 @@ void USLGraspOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 		&& !IgnoredList.Contains(OtherActor))
 	{
 		ActiveContacts.Emplace(OtherActor);
-		
-
+		OnBeginSLGraspOverlap.Broadcast(OtherActor);
 		if (bVisualDebug)
 		{
 			SetColor(FColor::Green);
 		}
-		OnBeginSLGraspOverlap.Broadcast(OtherActor);
 	}
 }
 
@@ -399,6 +364,11 @@ void USLGraspOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 
 	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) && !IgnoredList.Contains(OtherActor))
 	{
+		if (ActiveContacts.Remove(OtherActor) > 0)
+		{
+			OnEndSLGraspOverlap.Broadcast(OtherActor);
+		}
+
 		if (bVisualDebug)
 		{
 			if (ActiveContacts.Num() == 0)
@@ -406,7 +376,6 @@ void USLGraspOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 				SetColor(FColor::Red);
 			}
 		}
-		OnEndSLGraspOverlap.Broadcast(OtherActor);
 	}
 }
 

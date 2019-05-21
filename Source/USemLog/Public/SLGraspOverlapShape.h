@@ -121,12 +121,12 @@ private:
 	// Cache valid contacts
 	TSet<AActor*> ActiveContacts;
 
-	// Active contact count (since multiple shapes might have the same contact, keep a counter)
-	TMap<AActor*, int32> ActiveContactCounter;
+	//// Active contact count (the additional share the contacts)
+	//TMap<AActor*, int32> ActiveContactCounter;
 
-	// Optional additional collisions triggering the same event
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TArray<UShapeComponent*> AdditionalCollisions;
+	//// Optional additional collisions triggering the same event
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	//TArray<USphereComponent*> AdditionalCollisions;
 
 	// Name of the skeletal bone to attach the shape to
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
