@@ -54,6 +54,9 @@ bool USLGraspListener::Init()
 			return false;
 		}
 
+		// Remove any unset references in the array
+		Fingers.Remove(nullptr);
+
 		// True if each group has at least one bone overlap
 		if (LoadOverlapGroups())
 		{

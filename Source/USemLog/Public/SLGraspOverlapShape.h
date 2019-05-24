@@ -148,7 +148,7 @@ private:
 
 	// Explicit references to the other fingers (ignore them during overlap)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bIsNotSkeletal"))
-	TArray<AStaticMeshActor*> IgnoredList;
+	TArray<AStaticMeshActor*> IgnoreList;
 
 	// Debug with visibility at runtime
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

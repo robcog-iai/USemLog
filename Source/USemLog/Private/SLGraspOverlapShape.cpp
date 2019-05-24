@@ -34,6 +34,9 @@ bool USLGraspOverlapShape::Init()
 {
 	if (!bIsInit)
 	{
+		// Remove any unset references in the array
+		IgnoreList.Remove(nullptr);
+
 		// Make sure the shape is attached to it bone
 		if (!bIsNotSkeletal)
 		{
@@ -199,12 +202,12 @@ void USLGraspOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent& 
 		}
 		else
 		{
-			IgnoredList.Empty();
+			IgnoreList.Empty();
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspOverlapShape, IgnoredList))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspOverlapShape, IgnoreList))
 	{
-		if (IgnoredList.Num() > 0)
+		if (IgnoreList.Num() > 0)
 		{
 			SetColor(FColor::Green);
 		}
@@ -325,7 +328,7 @@ void USLGraspOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	}
 
 	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) 
-		&& !IgnoredList.Contains(OtherActor))
+		&& !IgnoreList.Contains(OtherActor))
 	{
 		ActiveContacts.Emplace(OtherActor);
 		OnBeginSLGraspOverlap.Broadcast(OtherActor);
@@ -362,7 +365,7 @@ void USLGraspOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		return;
 	}
 
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) && !IgnoredList.Contains(OtherActor))
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) && !IgnoreList.Contains(OtherActor))
 	{
 		if (ActiveContacts.Remove(OtherActor) > 0)
 		{
