@@ -85,6 +85,7 @@ void USLGraspOverlapShape::Start()
 		// Broadcast currently overlapping components
 		TriggerInitialOverlaps();
 
+		// https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Delegates/Dynamic/index.html
 		// Bind future overlapping event delegates
 		OnComponentBeginOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapBegin);
 		OnComponentEndOverlap.AddDynamic(this, &USLGraspOverlapShape::OnOverlapEnd);
