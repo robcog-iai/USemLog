@@ -118,7 +118,16 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 						TSharedPtr<FSLGraspEventHandler> GraspEventHandler = MakeShareable(new FSLGraspEventHandler());
 						GraspEventHandler->Init(*Itr);
 						EventHandlers.Add(GraspEventHandler);
+
+						// The grasp listener can also publish contact events
+						if (bInLogContactEvents)
+						{
+							TSharedPtr<FSLContactEventHandler> ContactEventHandler = MakeShareable(new FSLContactEventHandler());
+							ContactEventHandler->Init(*Itr);
+							EventHandlers.Add(ContactEventHandler);
+						}
 					}
+
 				}
 			}
 

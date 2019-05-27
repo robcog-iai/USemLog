@@ -16,6 +16,7 @@ USLGraspListener::USLGraspListener()
 	bIsStarted = false;
 	bIsFinished = false;
 	bGraspIsDirty = true;
+	bCheckForContacts = true;
 	InputAxisName = "LeftGrasp";
 	bIsNotSkeletal = false;
 	IdleWakeupValue = 0.5;
@@ -262,7 +263,7 @@ void USLGraspListener::CheckGraspState()
 void USLGraspListener::BeginGrasp(AActor* Other)
 {
 	GraspedObjects.Emplace(Other);
-	OnSLGraspBegin.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
+	OnBeginSLGrasp.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
 }
 
 // A grasp has ended
@@ -270,7 +271,7 @@ void USLGraspListener::EndGrasp(AActor* Other)
 {
 	if (GraspedObjects.Remove(Other) > 0)
 	{
-		OnSLGraspEnd.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
+		OnEndSLGrasp.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -279,9 +280,52 @@ void USLGraspListener::EndAllGrasps()
 {
 	for (const auto& Obj : GraspedObjects)
 	{
-		OnSLGraspEnd.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
+		OnEndSLGrasp.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
 	}
 	GraspedObjects.Empty();
+}
+
+// Check for begin contact
+void USLGraspListener::CheckBeginContact(AActor* Other)
+{
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
+	if (!OtherItem.IsSet())
+	{
+		if (int32* NumContacts = ContactObjects.Find(Other))
+		{
+			*NumContacts++;
+		}
+		else
+		{
+			ContactObjects.Add(Other, 1);
+			// Broadcast begin of semantic overlap event
+			FSLContactOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem,
+				GetWorld()->GetTimeSeconds(), false);
+			OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
+		}
+	}
+}
+
+// Check for begin contact
+void USLGraspListener::CheckEndContact(AActor* Other)
+{
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
+	if (!OtherItem.IsSet())
+	{
+		if (int32* NumContacts = ContactObjects.Find(Other))
+		{
+			*NumContacts--;
+			if (NumContacts == 0)
+			{
+				OnEndSLOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
+			}
+			ContactObjects.Remove(Other);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		}
+	}
 }
 
 // Process beginning of contact in group A
@@ -292,6 +336,27 @@ void USLGraspListener::OnBeginGroupAContact(AActor* OtherActor)
 	if (!bAlreadyInSet && GroupB.Num() != 0 && !GraspedObjects.Contains(OtherActor))
 	{
 		CheckGraspState();
+	}
+
+	if (bCheckForContacts)
+	{
+		CheckBeginContact(OtherActor);
+	}
+}
+
+// Process beginning of contact in group B
+void USLGraspListener::OnBeginGroupBContact(AActor* OtherActor)
+{
+	bool bAlreadyInSet = false;
+	SetB.Emplace(OtherActor, &bAlreadyInSet);
+	if (!bAlreadyInSet && GroupA.Num() != 0 && !GraspedObjects.Contains(OtherActor))
+	{
+		CheckGraspState();
+	}
+
+	if (bCheckForContacts)
+	{
+		CheckBeginContact(OtherActor);
 	}
 }
 
@@ -305,16 +370,10 @@ void USLGraspListener::OnEndGroupAContact(AActor* OtherActor)
 			EndGrasp(OtherActor);
 		}
 	}
-}
 
-// Process beginning of contact in group B
-void USLGraspListener::OnBeginGroupBContact(AActor* OtherActor)
-{
-	bool bAlreadyInSet = false;
-	SetB.Emplace(OtherActor, &bAlreadyInSet);
-	if (!bAlreadyInSet && GroupA.Num() != 0 && !GraspedObjects.Contains(OtherActor))
+	if (bCheckForContacts)
 	{
-		CheckGraspState();
+		CheckEndContact(OtherActor);
 	}
 }
 
@@ -327,5 +386,10 @@ void USLGraspListener::OnEndGroupBContact(AActor* OtherActor)
 		{
 			EndGrasp(OtherActor);
 		}
+	}
+
+	if (bCheckForContacts)
+	{
+		CheckEndContact(OtherActor);
 	}
 }

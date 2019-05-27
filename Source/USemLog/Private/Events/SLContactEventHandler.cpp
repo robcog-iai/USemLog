@@ -3,6 +3,7 @@
 
 #include "Events/SLContactEventHandler.h"
 #include "SLContactOverlapShape.h"
+#include "SLGraspListener.h"
 
 // UUtils
 #include "Ids.h"
@@ -11,12 +12,23 @@
 void FSLContactEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
-	{		// Check if parent is of right type
+	{
+		// Check if parent is of right type
 		Parent = Cast<USLContactOverlapShape>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized
 			bIsInit = true;
+		}
+		else
+		{
+			//// Grasp listener can also listen for contacts
+			//Parent = Cast<USLGraspListener>(InParent);
+			//if (Parent)
+			//{
+			//	// Mark as initialized
+			//	bIsInit = true;
+			//}
 		}
 	}
 }
