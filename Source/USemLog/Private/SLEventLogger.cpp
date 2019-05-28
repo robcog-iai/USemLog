@@ -12,7 +12,7 @@
 #include "Events/SLSlicingEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLContactOverlapShape.h"
-#include "SLGraspListener.h"
+#include "SLManipulatorListener.h"
 #include "SLGoogleCharts.h"
 
 // UUtils
@@ -108,7 +108,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		if (bInLogGraspEvents)
 		{
 			// Init all grasp listeners
-			for (TObjectIterator<USLGraspListener> Itr; Itr; ++Itr)
+			for (TObjectIterator<USLManipulatorListener> Itr; Itr; ++Itr)
 			{
 				if (IsValidAndAnnotated(*Itr))
 				{
@@ -219,9 +219,9 @@ void USLEventLogger::Start()
 		}
 
 		// Start the grasp listeners
-		for (auto& SLGraspListener : GraspListeners)
+		for (auto& SLManipulatorListener : GraspListeners)
 		{
-			SLGraspListener->Start();
+			SLManipulatorListener->Start();
 		}
 
 		if (bWriteMetadata)
@@ -254,9 +254,9 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		OverlapShapes.Empty();
 
 		// Finish the grasp listeners
-		for (auto& SLGraspListener : GraspListeners)
+		for (auto& SLManipulatorListener : GraspListeners)
 		{
-			SLGraspListener->Finish(bForced);
+			SLManipulatorListener->Finish(bForced);
 		}
 		GraspListeners.Empty();
 

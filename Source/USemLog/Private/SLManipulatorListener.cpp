@@ -1,11 +1,11 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLGraspListener.h"
+#include "SLManipulatorListener.h"
 #include "Animation/SkeletalMeshActor.h"
 
 // Sets default values for this component's properties
-USLGraspListener::USLGraspListener()
+USLManipulatorListener::USLManipulatorListener()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -19,7 +19,7 @@ USLGraspListener::USLGraspListener()
 	bCheckForContacts = true;
 	InputAxisName = "LeftGrasp";
 	bIsNotSkeletal = false;
-	IdleWakeupValue = 0.5;
+	UnPauseTriggerVal = 0.5;
 
 #if WITH_EDITOR
 	// Default values
@@ -28,7 +28,7 @@ USLGraspListener::USLGraspListener()
 }
 
 // Dtor
-USLGraspListener::~USLGraspListener()
+USLManipulatorListener::~USLManipulatorListener()
 {
 	if (!bIsFinished)
 	{
@@ -37,7 +37,7 @@ USLGraspListener::~USLGraspListener()
 }
 
 // Init listener
-bool USLGraspListener::Init()
+bool USLManipulatorListener::Init()
 {
 	if (!bIsInit)
 	{
@@ -78,7 +78,7 @@ bool USLGraspListener::Init()
 }
 
 // Start listening to grasp events, update currently overlapping objects
-void USLGraspListener::Start()
+void USLManipulatorListener::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -87,7 +87,7 @@ void USLGraspListener::Start()
 		{
 			if (UInputComponent* IC = PC->InputComponent)
 			{
-				IC->BindAxis(InputAxisName, this, &USLGraspListener::InputAxisCallback);
+				IC->BindAxis(InputAxisName, this, &USLManipulatorListener::InputAxisCallback);
 			}
 			else
 			{
@@ -105,14 +105,19 @@ void USLGraspListener::Start()
 		for (auto BoneOverlap : GroupA)
 		{
 			BoneOverlap->Start();
-			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLGraspListener::OnBeginGroupAContact);
-			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLGraspListener::OnEndGroupAContact);
+			BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
+			BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
+			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupAGraspContact);
+			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupAGraspContact);
 		}
 		for (auto BoneOverlap : GroupB)
 		{
 			BoneOverlap->Start();
-			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLGraspListener::OnBeginGroupBContact);
-			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLGraspListener::OnEndGroupBContact);
+			BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
+			BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
+			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupBGraspContact);
+			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupBGraspContact);
+
 		}
 
 		// Mark as started
@@ -121,23 +126,23 @@ void USLGraspListener::Start()
 }
 
 // Pause/continue grasp detection
-void USLGraspListener::Idle(bool bInIdle)
+void USLManipulatorListener::Pause(bool bInPause)
 {
-	if (bInIdle != bIsIdle)
+	if (bInPause != bIsPaused)
 	{
 		for (auto BoneOverlap : GroupA)
 		{
-			BoneOverlap->Idle(bInIdle);
+			BoneOverlap->PauseGrasp(bInPause);
 		}
 		for (auto BoneOverlap : GroupB)
 		{
-			BoneOverlap->Idle(bInIdle);
+			BoneOverlap->PauseGrasp(bInPause);
 		}
-		bIsIdle = bInIdle;
+		bIsPaused = bInPause;
 
 
 		// Clear sets
-		if (bInIdle)
+		if (bInPause)
 		{
 			for (const auto& Obj : GraspedObjects)
 			{
@@ -152,7 +157,7 @@ void USLGraspListener::Idle(bool bInIdle)
 }
 
 // Stop publishing grasp events
-void USLGraspListener::Finish(bool bForced)
+void USLManipulatorListener::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -165,7 +170,7 @@ void USLGraspListener::Finish(bool bForced)
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
-void USLGraspListener::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLManipulatorListener::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -174,7 +179,7 @@ void USLGraspListener::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	// Set pre-defined parameters
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspListener, HandType))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorListener, HandType))
 	{
 		if (HandType == ESLGraspHandType::Left)
 		{
@@ -185,7 +190,7 @@ void USLGraspListener::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 			InputAxisName = "RightGrasp";
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLGraspListener, bIsNotSkeletal))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorListener, bIsNotSkeletal))
 	{
 		Fingers.Empty();
 	}
@@ -193,20 +198,20 @@ void USLGraspListener::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 #endif // WITH_EDITOR
 
 // Set overlap groups, return true if at least one valid overlap is in each group
-bool USLGraspListener::LoadOverlapGroups()
+bool USLManipulatorListener::LoadOverlapGroups()
 {
 	// Lambda to check grasp overlap components of owner and add them to their groups
 	auto GetOverlapComponentsLambda = [this](AActor* Owner)
 	{
-		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLGraspOverlapShape::StaticClass());
+		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLManipulatorOverlapShape::StaticClass());
 		for (UActorComponent* GraspOverlapComp : GraspOverlaps)
 		{
-			USLGraspOverlapShape* GraspOverlap = CastChecked<USLGraspOverlapShape>(GraspOverlapComp);
-			if (GraspOverlap->Group == ESLGraspOverlapGroup::A)
+			USLManipulatorOverlapShape* GraspOverlap = CastChecked<USLManipulatorOverlapShape>(GraspOverlapComp);
+			if (GraspOverlap->Group == ESLManipulatorOverlapGroup::A)
 			{
 				GroupA.Add(GraspOverlap);
 			}
-			else if (GraspOverlap->Group == ESLGraspOverlapGroup::B)
+			else if (GraspOverlap->Group == ESLManipulatorOverlapGroup::B)
 			{
 				GroupB.Add(GraspOverlap);
 			}
@@ -235,20 +240,20 @@ bool USLGraspListener::LoadOverlapGroups()
 }
 
 // Check if the grasp trigger is active
-void USLGraspListener::InputAxisCallback(float Value)
+void USLManipulatorListener::InputAxisCallback(float Value)
 {
-	if (Value > IdleWakeupValue)
+	if (Value > UnPauseTriggerVal)
 	{
-		Idle(false);
+		Pause(false);
 	}
 	else
 	{	
-		Idle(true);
+		Pause(true);
 	}
 }
 
 // Check for grasping state
-void USLGraspListener::CheckGraspState()
+void USLManipulatorListener::CheckGraspState()
 {
 	for (const auto& Obj : SetA.Intersect(SetB))
 	{
@@ -260,14 +265,14 @@ void USLGraspListener::CheckGraspState()
 }
 
 // A grasp has started
-void USLGraspListener::BeginGrasp(AActor* Other)
+void USLManipulatorListener::BeginGrasp(AActor* Other)
 {
 	GraspedObjects.Emplace(Other);
 	OnBeginSLGrasp.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
 }
 
 // A grasp has ended
-void USLGraspListener::EndGrasp(AActor* Other)
+void USLManipulatorListener::EndGrasp(AActor* Other)
 {
 	if (GraspedObjects.Remove(Other) > 0)
 	{
@@ -276,7 +281,7 @@ void USLGraspListener::EndGrasp(AActor* Other)
 }
 
 // All grasps have ended
-void USLGraspListener::EndAllGrasps()
+void USLManipulatorListener::EndAllGrasps()
 {
 	for (const auto& Obj : GraspedObjects)
 	{
@@ -285,51 +290,8 @@ void USLGraspListener::EndAllGrasps()
 	GraspedObjects.Empty();
 }
 
-// Check for begin contact
-void USLGraspListener::CheckBeginContact(AActor* Other)
-{
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
-	if (!OtherItem.IsSet())
-	{
-		if (int32* NumContacts = ContactObjects.Find(Other))
-		{
-			*NumContacts++;
-		}
-		else
-		{
-			ContactObjects.Add(Other, 1);
-			// Broadcast begin of semantic overlap event
-			FSLContactOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem,
-				GetWorld()->GetTimeSeconds(), false);
-			OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
-		}
-	}
-}
-
-// Check for begin contact
-void USLGraspListener::CheckEndContact(AActor* Other)
-{
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
-	if (!OtherItem.IsSet())
-	{
-		if (int32* NumContacts = ContactObjects.Find(Other))
-		{
-			*NumContacts--;
-			if (NumContacts == 0)
-			{
-				OnEndSLOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
-			}
-			ContactObjects.Remove(Other);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
-		}
-	}
-}
-
 // Process beginning of contact in group A
-void USLGraspListener::OnBeginGroupAContact(AActor* OtherActor)
+void USLManipulatorListener::OnBeginGroupAGraspContact(AActor* OtherActor)
 {
 	bool bAlreadyInSet = false;
 	SetA.Emplace(OtherActor, &bAlreadyInSet);
@@ -337,15 +299,10 @@ void USLGraspListener::OnBeginGroupAContact(AActor* OtherActor)
 	{
 		CheckGraspState();
 	}
-
-	if (bCheckForContacts)
-	{
-		CheckBeginContact(OtherActor);
-	}
 }
 
 // Process beginning of contact in group B
-void USLGraspListener::OnBeginGroupBContact(AActor* OtherActor)
+void USLManipulatorListener::OnBeginGroupBGraspContact(AActor* OtherActor)
 {
 	bool bAlreadyInSet = false;
 	SetB.Emplace(OtherActor, &bAlreadyInSet);
@@ -353,15 +310,32 @@ void USLGraspListener::OnBeginGroupBContact(AActor* OtherActor)
 	{
 		CheckGraspState();
 	}
+}
 
-	if (bCheckForContacts)
+// Process beginning of contact
+void USLManipulatorListener::OnBeginContact(AActor* OtherActor)
+{
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
+	if (!OtherItem.IsSet())
 	{
-		CheckBeginContact(OtherActor);
+		if (int32* NumContacts = ContactObjects.Find(OtherActor))
+		{
+			*NumContacts++;
+		}
+		else
+		{
+			ContactObjects.Add(OtherActor, 1);
+			// Broadcast begin of semantic overlap event
+			FSLContactOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem,
+				GetWorld()->GetTimeSeconds(), false);
+			OnBeginManipulatorOverlap.Broadcast(SemanticOverlapResult);
+		}
 	}
 }
 
+
 // Process ending of contact in group A
-void USLGraspListener::OnEndGroupAContact(AActor* OtherActor)
+void USLManipulatorListener::OnEndGroupAGraspContact(AActor* OtherActor)
 {
 	if (SetA.Remove(OtherActor) > 0)
 	{
@@ -370,15 +344,10 @@ void USLGraspListener::OnEndGroupAContact(AActor* OtherActor)
 			EndGrasp(OtherActor);
 		}
 	}
-
-	if (bCheckForContacts)
-	{
-		CheckEndContact(OtherActor);
-	}
 }
 
 // Process ending of contact in group B
-void USLGraspListener::OnEndGroupBContact(AActor* OtherActor)
+void USLManipulatorListener::OnEndGroupBGraspContact(AActor* OtherActor)
 {
 	if (SetB.Remove(OtherActor) > 0)
 	{
@@ -387,9 +356,26 @@ void USLGraspListener::OnEndGroupBContact(AActor* OtherActor)
 			EndGrasp(OtherActor);
 		}
 	}
+}
 
-	if (bCheckForContacts)
+// Process ending of contact
+void USLManipulatorListener::OnEndContact(AActor* OtherActor)
+{
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
+	if (!OtherItem.IsSet())
 	{
-		CheckEndContact(OtherActor);
+		if (int32* NumContacts = ContactObjects.Find(OtherActor))
+		{
+			*NumContacts--;
+			if (NumContacts == 0)
+			{
+				OnEndManipulatorOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
+			}
+			ContactObjects.Remove(OtherActor);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		}
 	}
 }
