@@ -4,12 +4,15 @@
 #pragma once
 
 #include "Events/ISLEventHandler.h"
-#include "Events/SLGraspEvent.h"
+#include "Events/SLContactEvent.h"
+
+// Forward declarations
+struct FSLContactOverlapResult;
 
 /**
- * Listens to grasp events input, and outputs finished semantic grasp events
+ * Listens to contact events input, and outputs finished semantic contact events
  */
-class FSLGraspEventHandler : public ISLEventHandler
+class FSLManipulatorContactEventHandler : public ISLEventHandler
 {
 public:
 	// Init parent
@@ -22,8 +25,8 @@ public:
 	void Finish(float EndTime, bool bForced = false) override;
 
 private:
-	// Start new grasp event
-	void AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime);
+	// Start new contact event
+	void AddNewEvent(const FSLContactOverlapResult& InResult);
 
 	// Finish then publish the event
 	bool FinishEvent(UObject* Other, float EndTime);
@@ -32,15 +35,15 @@ private:
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLOverlapBegin(const FSLContactOverlapResult& InResult);
 
 	// Event called when a semantic overlap event ends
-	void OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLOverlapEnd(UObject* Self, UObject* Other, float Time);
 
 private:
-	// Parent
+	// Parent semantic overlap area
 	class USLManipulatorListener* Parent;
 
-	// Array of started events
-	TArray<TSharedPtr<FSLGraspEvent>> StartedEvents;
+	// Array of started contact events
+	TArray<TSharedPtr<FSLContactEvent>> StartedEvents;
 };

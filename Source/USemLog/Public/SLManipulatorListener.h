@@ -6,10 +6,10 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Engine/StaticMeshActor.h"
-#include "SLGraspOverlapShape.h"
+#include "SLManipulatorOverlapShape.h"
 #include "SLStructs.h" // FSLEntity
 #include "SLContactOverlapShape.h" // semantic contact delegates
-#include "SLGraspListener.generated.h"
+#include "SLManipulatorListener.generated.h"
 
 /**
 * Hand type
@@ -31,16 +31,16 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspEndSignature, const FSLEntity& /*
  * Checks for physics based grasp events and semantic contacts
  */
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Grasp Listener")
-class USEMLOG_API USLGraspListener : public UActorComponent
+class USEMLOG_API USLManipulatorListener : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	USLGraspListener();
+	USLManipulatorListener();
 
 	// Dtor
-	~USLGraspListener();
+	~USLManipulatorListener();
 
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
 	bool Init();
@@ -71,7 +71,7 @@ protected:
 
 private:
 	// Pause/continue the grasp detection
-	void Idle(bool bInIdle);
+	void Pause(bool bInPause);
 
 	// Check if the grasp trigger is active
 	void InputAxisCallback(float Value);
@@ -88,27 +88,29 @@ private:
 	// All grasps have ended
 	void EndAllGrasps();
 
-	// Check for begin contact
-	void CheckBeginContact(AActor* Other);
-
-	// Check for begin contact
-	void CheckEndContact(AActor* Other);
-
-	// Process beginning of contact in group A
+	// Process beginning of grasp related contact in group A
 	UFUNCTION()
-	void OnBeginGroupAContact(AActor* OtherActor);
+	void OnBeginGroupAGraspContact(AActor* OtherActor);
 
-	// Process beginning of contact in group B
+	// Process beginning of grasp related contact in group B
 	UFUNCTION()
-	void OnBeginGroupBContact(AActor* OtherActor);
+	void OnBeginGroupBGraspContact(AActor* OtherActor);
 
-	// Process ending of contact in group A
+	// Process beginning of contact
 	UFUNCTION()
-	void OnEndGroupAContact(AActor* OtherActor);
+	void OnBeginContact(AActor* OtherActor);
 
-	// Process ending of contact in group B
+	// Process ending of grasp related contact in group A
 	UFUNCTION()
-	void OnEndGroupBContact(AActor* OtherActor);
+	void OnEndGroupAGraspContact(AActor* OtherActor);
+
+	// Process ending of grasp related  contact in group B
+	UFUNCTION()
+	void OnEndGroupBGraspContact(AActor* OtherActor);
+
+	// Process ending of contact
+	UFUNCTION()
+	void OnEndContact(AActor* OtherActor);
 	
 public:
 	// Event called when grasp occurs
@@ -118,10 +120,10 @@ public:
 	FSLGraspEndSignature OnEndSLGrasp;
 
 	// Event called when a semantic overlap begins
-	FSLOverlapBeginSignature OnBeginSLOverlap;
+	FSLOverlapBeginSignature OnBeginManipulatorOverlap;
 
 	// Event called when a semantic overlap ends
-	FSLOverlapEndSignature OnEndSLOverlap;
+	FSLOverlapEndSignature OnEndManipulatorOverlap;
 
 private:
 	// True if initialized
@@ -134,7 +136,7 @@ private:
 	bool bIsFinished;
 
 	// True grasp detection is paused
-	bool bIsIdle;
+	bool bIsPaused;
 
 	// New information added 
 	bool bGraspIsDirty;
@@ -154,7 +156,7 @@ private:
 
 	// Axis input value to wake up from idle
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float IdleWakeupValue;
+	float UnPauseTriggerVal;
 
 	// If the owner is not a skeletal actor, one needs to add the children (fingers) manually
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -168,10 +170,10 @@ private:
 	FSLEntity SemanticOwner;
 
 	// Opposing group A for testing for grasps
-	TArray<USLGraspOverlapShape*> GroupA;
+	TArray<USLManipulatorOverlapShape*> GroupA;
 
 	// Opposing group B for testing for grasps
-	TArray<USLGraspOverlapShape*> GroupB;
+	TArray<USLManipulatorOverlapShape*> GroupB;
 
 	// Objects in contact with group A
 	TSet<AActor*> SetA;

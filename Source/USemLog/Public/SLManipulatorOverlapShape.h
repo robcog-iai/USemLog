@@ -6,13 +6,13 @@
 #include "USemLogSkel.h"
 #include "Components/SphereComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "SLGraspOverlapShape.generated.h"
+#include "SLManipulatorOverlapShape.generated.h"
 
 /**
 * Hand type
 */
 UENUM()
-enum class ESLGraspOverlapGroup : uint8
+enum class ESLManipulatorOverlapGroup : uint8
 {
 	A					UMETA(DisplayName = "A"),
 	B					UMETA(DisplayName = "B"),
@@ -28,25 +28,25 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FSLGraspOverlapEndSignature, AActor* /*Other
  * Semantic overlap generator for grasp detection
  */
 UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Grasp Overlap Shape")
-class USEMLOG_API USLGraspOverlapShape : public USphereComponent
+class USEMLOG_API USLManipulatorOverlapShape : public USphereComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Ctor
-	USLGraspOverlapShape();
+	USLManipulatorOverlapShape();
 
 	// Dtor
-	~USLGraspOverlapShape();
+	~USLManipulatorOverlapShape() = default;
 	
 	// Attach to bone 
-	bool Init();
+	bool Init(bool bGrasp = true, bool bContact = true);
 
 	// Start listening to overlaps
 	void Start();
 
 	// Pause/continue the overlap detection
-	void Idle(bool bInIdle);
+	void PauseGrasp(bool bInPause);
 
 	// Stop publishing overlap events
 	void Finish(bool bForced = false);
@@ -57,8 +57,8 @@ public:
 	// Get started state
 	bool IsStarted() const { return bIsStarted; };
 
-	// Get idle state
-	bool IsIdle() const { return bIsIdle; };
+	// True if grasp overlaps are paused
+	bool IsGraspPaused() const { return bIsPaused; };
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
@@ -80,7 +80,16 @@ private:
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
+	void OnGraspOverlapBegin(UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	// Event called when something starts to overlaps this component
+	UFUNCTION()
+	void OnContactOverlapBegin(UPrimitiveComponent* OverlappedComp,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex,
@@ -89,7 +98,14 @@ private:
 
 	// Event called when something stops overlapping this component 
 	UFUNCTION()
-	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
+	void OnGraspOverlapEnd(UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex);
+
+	// Event called when something stops overlapping this component 
+	UFUNCTION()
+	void OnContactOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
@@ -98,12 +114,18 @@ public:
 	// Forward begin of contact with an item
 	FSLGraspOverlapBeginSignature OnBeginSLGraspOverlap;
 
+	// Forward begin of contact with an item
+	FSLGraspOverlapBeginSignature OnBeginSLContactOverlap;
+
 	// Forward end of contact with an item
 	FSLGraspOverlapEndSignature OnEndSLGraspOverlap;
 
+	// Forward end of contact with an item
+	FSLGraspOverlapEndSignature OnEndSLContactOverlap;
+
 	// Group to which the shape belongs to for the grasping detection
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLGraspOverlapGroup Group;
+	ESLManipulatorOverlapGroup Group;
 
 private:
 	// True if initialized
@@ -112,21 +134,20 @@ private:
 	// True if started
 	bool bIsStarted;
 
-	// True if idle (paused)
-	bool bIsIdle;
+	// True if grasp overlaps are paused
+	bool bIsPaused;
 
 	// True if finished
 	bool bIsFinished;
 
+	// Detect grasp contacts
+	bool bDetectGrasps;
+
+	// Detect contacts
+	bool bDetectContacts;
+
 	// Cache valid contacts
 	TSet<AActor*> ActiveContacts;
-
-	//// Active contact count (the additional share the contacts)
-	//TMap<AActor*, int32> ActiveContactCounter;
-
-	//// Optional additional collisions triggering the same event
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	//TArray<USphereComponent*> AdditionalCollisions;
 
 	// Name of the skeletal bone to attach the shape to
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

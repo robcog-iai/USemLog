@@ -3,7 +3,7 @@
 
 #include "Events/SLGraspEventHandler.h"
 #include "SLEntitiesManager.h"
-#include "SLGraspListener.h"
+#include "SLManipulatorListener.h"
 
 // UUtils
 #include "Ids.h"
@@ -21,7 +21,7 @@ void FSLGraspEventHandler::Init(UObject* InParent)
 		}
 
 		// Check if parent is of right type
-		Parent = Cast<USLGraspListener>(InParent);
+		Parent = Cast<USLManipulatorListener>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized

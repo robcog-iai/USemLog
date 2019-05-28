@@ -99,5 +99,5 @@ private:
 	TArray<class USLContactOverlapShape*> OverlapShapes;
 
 	// Cache of the grasp listeners
-	TArray<class USLGraspListener*> GraspListeners;
+	TArray<class USLManipulatorListener*> GraspListeners;
 };

@@ -1,19 +1,20 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Events/SLContactEventHandler.h"
-#include "SLContactOverlapShape.h"
+#include "Events/SLManipulatorContactEventHandler.h"
+#include "SLManipulatorOverlapShape.h"
+#include "SLManipulatorListener.h"
 
 // UUtils
 #include "Ids.h"
 
 // Set parent
-void FSLContactEventHandler::Init(UObject* InParent)
+void FSLManipulatorContactEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<USLContactOverlapShape>(InParent);
+		Parent = Cast<USLManipulatorListener>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized
@@ -23,12 +24,12 @@ void FSLContactEventHandler::Init(UObject* InParent)
 }
 
 // Bind to input delegates
-void FSLContactEventHandler::Start()
+void FSLManipulatorContactEventHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		Parent->OnBeginSLOverlap.AddRaw(this, &FSLContactEventHandler::OnSLOverlapBegin);
-		Parent->OnEndSLOverlap.AddRaw(this, &FSLContactEventHandler::OnSLOverlapEnd);
+		Parent->OnBeginManipulatorOverlap.AddRaw(this, &FSLManipulatorContactEventHandler::OnSLOverlapBegin);
+		Parent->OnEndManipulatorOverlap.AddRaw(this, &FSLManipulatorContactEventHandler::OnSLOverlapEnd);
 
 		// Mark as started
 		bIsStarted = true;
@@ -36,12 +37,12 @@ void FSLContactEventHandler::Start()
 }
 
 // Terminate listener, finish and publish remaining events
-void FSLContactEventHandler::Finish(float EndTime, bool bForced)
+void FSLManipulatorContactEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		// End and broadcast all started events
-		FSLContactEventHandler::FinishAllEvents(EndTime);
+		FSLManipulatorContactEventHandler::FinishAllEvents(EndTime);
 
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
@@ -55,7 +56,7 @@ void FSLContactEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new contact event
-void FSLContactEventHandler::AddNewEvent(const FSLContactOverlapResult& InResult)
+void FSLManipulatorContactEventHandler::AddNewEvent(const FSLContactOverlapResult& InResult)
 {
 	// Start a semantic contact event
 	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
@@ -67,7 +68,7 @@ void FSLContactEventHandler::AddNewEvent(const FSLContactOverlapResult& InResult
 }
 
 // Publish finished event
-bool FSLContactEventHandler::FinishEvent(UObject* InOther, float EndTime)
+bool FSLManipulatorContactEventHandler::FinishEvent(UObject* InOther, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
@@ -87,7 +88,7 @@ bool FSLContactEventHandler::FinishEvent(UObject* InOther, float EndTime)
 }
 
 // Terminate and publish pending contact events (this usually is called at end play)
-void FSLContactEventHandler::FinishAllEvents(float EndTime)
+void FSLManipulatorContactEventHandler::FinishAllEvents(float EndTime)
 {
 	// Finish contact events
 	for (auto& Ev : StartedEvents)
@@ -101,13 +102,13 @@ void FSLContactEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic overlap event begins
-void FSLContactEventHandler::OnSLOverlapBegin(const FSLContactOverlapResult& SemanticOverlapResult)
+void FSLManipulatorContactEventHandler::OnSLOverlapBegin(const FSLContactOverlapResult& SemanticOverlapResult)
 {
-	FSLContactEventHandler::AddNewEvent(SemanticOverlapResult);
+	FSLManipulatorContactEventHandler::AddNewEvent(SemanticOverlapResult);
 }
 
 // Event called when a semantic overlap event ends
-void FSLContactEventHandler::OnSLOverlapEnd(UObject* Self, UObject* Other, float Time)
+void FSLManipulatorContactEventHandler::OnSLOverlapEnd(UObject* Self, UObject* Other, float Time)
 {
-	FSLContactEventHandler::FinishEvent(Other, Time);
+	FSLManipulatorContactEventHandler::FinishEvent(Other, Time);
 }
