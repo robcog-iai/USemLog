@@ -21,6 +21,9 @@ USLManipulatorListener::USLManipulatorListener()
 	bIsNotSkeletal = false;
 	UnPauseTriggerVal = 0.5;
 
+	bDetectGrasps = true;
+	bDetectContacts = true;
+
 #if WITH_EDITOR
 	// Default values
 	HandType = ESLGraspHandType::Left;
@@ -63,11 +66,11 @@ bool USLManipulatorListener::Init()
 		{
 			for (auto BoneOverlap : GroupA)
 			{
-				BoneOverlap->Init();
+				BoneOverlap->Init(bDetectGrasps, bDetectContacts);
 			}
 			for (auto BoneOverlap : GroupB)
 			{
-				BoneOverlap->Init();
+				BoneOverlap->Init(bDetectGrasps, bDetectContacts);
 			}
 
 			bIsInit = true;
@@ -105,19 +108,30 @@ void USLManipulatorListener::Start()
 		for (auto BoneOverlap : GroupA)
 		{
 			BoneOverlap->Start();
-			BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
-			BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
-			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupAGraspContact);
-			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupAGraspContact);
+			if (bDetectContacts)
+			{
+				BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
+				BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
+			}
+			if (bDetectGrasps)
+			{
+				BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupAGraspContact);
+				BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupAGraspContact);
+			}
 		}
 		for (auto BoneOverlap : GroupB)
 		{
 			BoneOverlap->Start();
-			BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
-			BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
-			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupBGraspContact);
-			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupBGraspContact);
-
+			if (bDetectContacts)
+			{
+				BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
+				BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
+			}
+			if (bDetectGrasps)
+			{
+				BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupBGraspContact);
+				BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupBGraspContact);
+			}
 		}
 
 		// Mark as started
@@ -233,8 +247,8 @@ bool USLManipulatorListener::LoadOverlapGroups()
 	// Check if at least one valid overlap shape is in each group
 	if (GroupA.Num() == 0 || GroupB.Num() == 0)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d One of the grasp groups is empty."), *FString(__func__), __LINE__);
-		return false;
+		UE_LOG(LogTemp, Error, TEXT("%s::%d One of the grasp groups is empty grasp detection disabled."), *FString(__func__), __LINE__);
+		bDetectGrasps = false;
 	}
 	return true;
 }
@@ -316,11 +330,11 @@ void USLManipulatorListener::OnBeginGroupBGraspContact(AActor* OtherActor)
 void USLManipulatorListener::OnBeginContact(AActor* OtherActor)
 {
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
-	if (!OtherItem.IsSet())
+	if (OtherItem.IsSet())
 	{
 		if (int32* NumContacts = ContactObjects.Find(OtherActor))
 		{
-			*NumContacts++;
+			(*NumContacts)++;
 		}
 		else
 		{
@@ -362,16 +376,16 @@ void USLManipulatorListener::OnEndGroupBGraspContact(AActor* OtherActor)
 void USLManipulatorListener::OnEndContact(AActor* OtherActor)
 {
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
-	if (!OtherItem.IsSet())
+	if (OtherItem.IsSet())
 	{
 		if (int32* NumContacts = ContactObjects.Find(OtherActor))
 		{
-			*NumContacts--;
-			if (NumContacts == 0)
+			(*NumContacts)--;
+			if ((*NumContacts) < 1)
 			{
 				OnEndManipulatorOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
+				ContactObjects.Remove(OtherActor);
 			}
-			ContactObjects.Remove(OtherActor);
 		}
 		else
 		{

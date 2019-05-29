@@ -8,7 +8,7 @@
 USLManipulatorOverlapShape::USLManipulatorOverlapShape()
 {
 	// Default sphere radius
-	InitSphereRadius(1.0f);
+	InitSphereRadius(1.25f);
 
 	//bMultiBodyOverlap = true;
 
@@ -108,12 +108,6 @@ void USLManipulatorOverlapShape::PauseGrasp(bool bInPause)
 {
 	if (bInPause != bIsPaused)
 	{
-		//// TODO this triggers on next tick for ending the overlap events
-		//// Pause / start overlap events
-		//SetGenerateOverlapEvents(!bInPause);
-
-		//// https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Delegates/Dynamic/index.html
-
 		if (bInPause)
 		{
 			// Broadcast ending of any active grasp related contacts
@@ -137,9 +131,6 @@ void USLManipulatorOverlapShape::PauseGrasp(bool bInPause)
 			// Re-bind the grasp related overlap bindings
 			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapBegin);
 			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapEnd);
-
-			// Broadcast currently overlapping components
-			//TriggerInitialOverlaps();
 
 			if (bVisualDebug)
 			{
@@ -346,7 +337,7 @@ void USLManipulatorOverlapShape::OnGraspOverlapBegin(UPrimitiveComponent* Overla
 		return;
 	}
 
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) 
+	if (OtherComp->IsA(UStaticMeshComponent::StaticClass())
 		&& !IgnoreList.Contains(OtherActor))
 	{
 		ActiveContacts.Emplace(OtherActor);
@@ -372,7 +363,7 @@ void USLManipulatorOverlapShape::OnContactOverlapBegin(UPrimitiveComponent* Over
 		return;
 	}
 
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass())
+	if (OtherComp->IsA(UStaticMeshComponent::StaticClass())
 		&& !IgnoreList.Contains(OtherActor))
 	{
 		OnBeginSLContactOverlap.Broadcast(OtherActor);
@@ -398,7 +389,7 @@ void USLManipulatorOverlapShape::OnGraspOverlapEnd(UPrimitiveComponent* Overlapp
 		return;
 	}
 
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) 
+	if (OtherComp->IsA(UStaticMeshComponent::StaticClass())
 		&& !IgnoreList.Contains(OtherActor))
 	{
 		if (ActiveContacts.Remove(OtherActor) > 0)
@@ -428,7 +419,7 @@ void USLManipulatorOverlapShape::OnContactOverlapEnd(UPrimitiveComponent* Overla
 		return;
 	}
 
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) 
+	if (OtherComp->IsA(UStaticMeshComponent::StaticClass())
 		&& !IgnoreList.Contains(OtherActor))
 	{
 		OnEndSLContactOverlap.Broadcast(OtherActor);

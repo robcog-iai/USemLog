@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "USemLogSkel.h"
+#include "USemLog.h"
 #include "Components/SphereComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "SLManipulatorOverlapShape.generated.h"
@@ -27,7 +27,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FSLGraspOverlapEndSignature, AActor* /*Other
 /**
  * Semantic overlap generator for grasp detection
  */
-UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Grasp Overlap Shape")
+UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Overlap Shape")
 class USEMLOG_API USLManipulatorOverlapShape : public USphereComponent
 {
 	GENERATED_BODY()

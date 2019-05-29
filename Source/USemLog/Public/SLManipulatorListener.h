@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "UsemLog.h"
 #include "Components/ActorComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "SLManipulatorOverlapShape.h"
@@ -30,7 +30,7 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspEndSignature, const FSLEntity& /*
 /**
  * Checks for physics based grasp events and semantic contacts
  */
-UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Grasp Listener")
+UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Manipulator Listener")
 class USEMLOG_API USLManipulatorListener : public UActorComponent
 {
 	GENERATED_BODY()
@@ -157,6 +157,14 @@ private:
 	// Axis input value to wake up from idle
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float UnPauseTriggerVal;
+
+	// Detect grasp contacts
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bDetectGrasps;
+
+	// Detect contacts
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bDetectContacts;
 
 	// If the owner is not a skeletal actor, one needs to add the children (fingers) manually
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
