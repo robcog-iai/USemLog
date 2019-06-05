@@ -11,11 +11,6 @@ FSLEntitiesManager::FSLEntitiesManager() : bIsInit(false)
 {
 }
 
-// Destructor
-FSLEntitiesManager::~FSLEntitiesManager() 
-{
-}
-
 // Get singleton
 FSLEntitiesManager* FSLEntitiesManager::GetInstance()
 {

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "UsemLog.h"
 #include "Components/ActorComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "SLManipulatorOverlapShape.h"
@@ -30,7 +30,7 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspEndSignature, const FSLEntity& /*
 /**
  * Checks for physics based grasp events and semantic contacts
  */
-UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Grasp Listener")
+UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Manipulator Listener")
 class USEMLOG_API USLManipulatorListener : public UActorComponent
 {
 	GENERATED_BODY()
@@ -43,7 +43,7 @@ public:
 	~USLManipulatorListener();
 
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
-	bool Init();
+	bool Init(bool bInDetectGrasps, bool bInDetectContacts);
 
 	// Start listening to grasp events, update currently overlapping objects
 	void Start();
@@ -141,8 +141,11 @@ private:
 	// New information added 
 	bool bGraspIsDirty;
 
-	// If true, the listener broadcasts also semantic contact events
-	bool bCheckForContacts;
+	// Detect grasp contacts
+	bool bDetectGrasps;
+
+	// Detect contacts
+	bool bDetectContacts;
 	
 #if WITH_EDITOR
 	// Hand type to load pre-defined parameters

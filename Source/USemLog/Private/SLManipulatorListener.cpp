@@ -16,7 +16,7 @@ USLManipulatorListener::USLManipulatorListener()
 	bIsStarted = false;
 	bIsFinished = false;
 	bGraspIsDirty = true;
-	bCheckForContacts = true;
+	bIsPaused = false;
 	InputAxisName = "LeftGrasp";
 	bIsNotSkeletal = false;
 	UnPauseTriggerVal = 0.5;
@@ -37,10 +37,12 @@ USLManipulatorListener::~USLManipulatorListener()
 }
 
 // Init listener
-bool USLManipulatorListener::Init()
+bool USLManipulatorListener::Init(bool bInDetectGrasps, bool bInDetectContacts)
 {
 	if (!bIsInit)
 	{
+		bDetectGrasps = bInDetectGrasps;
+		bDetectContacts = bInDetectContacts;
 		// Init the semantic entities manager
 		if (!FSLEntitiesManager::GetInstance()->IsInit())
 		{
@@ -63,11 +65,11 @@ bool USLManipulatorListener::Init()
 		{
 			for (auto BoneOverlap : GroupA)
 			{
-				BoneOverlap->Init();
+				BoneOverlap->Init(bDetectGrasps, bDetectContacts);
 			}
 			for (auto BoneOverlap : GroupB)
 			{
-				BoneOverlap->Init();
+				BoneOverlap->Init(bDetectGrasps, bDetectContacts);
 			}
 
 			bIsInit = true;
@@ -105,19 +107,30 @@ void USLManipulatorListener::Start()
 		for (auto BoneOverlap : GroupA)
 		{
 			BoneOverlap->Start();
-			BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
-			BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
-			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupAGraspContact);
-			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupAGraspContact);
+			if (bDetectContacts)
+			{
+				BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
+				BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
+			}
+			if (bDetectGrasps)
+			{
+				BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupAGraspContact);
+				BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupAGraspContact);
+			}
 		}
 		for (auto BoneOverlap : GroupB)
 		{
 			BoneOverlap->Start();
-			BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
-			BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
-			BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupBGraspContact);
-			BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupBGraspContact);
-
+			if (bDetectContacts)
+			{
+				BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
+				BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
+			}
+			if (bDetectGrasps)
+			{
+				BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupBGraspContact);
+				BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupBGraspContact);
+			}
 		}
 
 		// Mark as started
@@ -146,8 +159,7 @@ void USLManipulatorListener::Pause(bool bInPause)
 		{
 			for (const auto& Obj : GraspedObjects)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Released Obj %s at %f"),
-					TEXT(__func__), __LINE__, *Obj->GetName(), GetWorld()->GetTimeSeconds());
+				OnEndSLGrasp.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
 			}
 			GraspedObjects.Empty();
 			SetA.Empty();
@@ -233,8 +245,8 @@ bool USLManipulatorListener::LoadOverlapGroups()
 	// Check if at least one valid overlap shape is in each group
 	if (GroupA.Num() == 0 || GroupB.Num() == 0)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d One of the grasp groups is empty."), *FString(__func__), __LINE__);
-		return false;
+		UE_LOG(LogTemp, Error, TEXT("%s::%d One of the grasp groups is empty grasp detection disabled."), *FString(__func__), __LINE__);
+		bDetectGrasps = false;
 	}
 	return true;
 }
@@ -242,7 +254,7 @@ bool USLManipulatorListener::LoadOverlapGroups()
 // Check if the grasp trigger is active
 void USLManipulatorListener::InputAxisCallback(float Value)
 {
-	if (Value > UnPauseTriggerVal)
+	if (Value >= UnPauseTriggerVal)
 	{
 		Pause(false);
 	}
@@ -265,18 +277,24 @@ void USLManipulatorListener::CheckGraspState()
 }
 
 // A grasp has started
-void USLManipulatorListener::BeginGrasp(AActor* Other)
+void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 {
-	GraspedObjects.Emplace(Other);
-	OnBeginSLGrasp.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+		FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *Begin Grasp* %s"),
+			*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
+	GraspedObjects.Emplace(OtherActor);
+	OnBeginSLGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
 }
 
 // A grasp has ended
-void USLManipulatorListener::EndGrasp(AActor* Other)
+void USLManipulatorListener::EndGrasp(AActor* OtherActor)
 {
-	if (GraspedObjects.Remove(Other) > 0)
+	if (GraspedObjects.Remove(OtherActor) > 0)
 	{
-		OnEndSLGrasp.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+			FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *End Grasp* %s"),
+				*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
+		OnEndSLGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -316,11 +334,11 @@ void USLManipulatorListener::OnBeginGroupBGraspContact(AActor* OtherActor)
 void USLManipulatorListener::OnBeginContact(AActor* OtherActor)
 {
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
-	if (!OtherItem.IsSet())
+	if (OtherItem.IsSet())
 	{
 		if (int32* NumContacts = ContactObjects.Find(OtherActor))
 		{
-			*NumContacts++;
+			(*NumContacts)++;
 		}
 		else
 		{
@@ -332,7 +350,6 @@ void USLManipulatorListener::OnBeginContact(AActor* OtherActor)
 		}
 	}
 }
-
 
 // Process ending of contact in group A
 void USLManipulatorListener::OnEndGroupAGraspContact(AActor* OtherActor)
@@ -362,16 +379,19 @@ void USLManipulatorListener::OnEndGroupBGraspContact(AActor* OtherActor)
 void USLManipulatorListener::OnEndContact(AActor* OtherActor)
 {
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
-	if (!OtherItem.IsSet())
+	if (OtherItem.IsSet())
 	{
 		if (int32* NumContacts = ContactObjects.Find(OtherActor))
 		{
-			*NumContacts--;
-			if (NumContacts == 0)
+			(*NumContacts)--;
+			if ((*NumContacts) < 1)
 			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+					FString::Printf(TEXT(" * * * * *END* *BCAST* *HAND CONTACT* %s"),
+						*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
 				OnEndManipulatorOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
+				ContactObjects.Remove(OtherActor);
 			}
-			ContactObjects.Remove(OtherActor);
 		}
 		else
 		{

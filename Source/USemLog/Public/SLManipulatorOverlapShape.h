@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "USemLogSkel.h"
+#include "USemLog.h"
 #include "Components/SphereComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "SLManipulatorOverlapShape.generated.h"
@@ -27,7 +27,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FSLGraspOverlapEndSignature, AActor* /*Other
 /**
  * Semantic overlap generator for grasp detection
  */
-UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Grasp Overlap Shape")
+UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Overlap Shape")
 class USEMLOG_API USLManipulatorOverlapShape : public USphereComponent
 {
 	GENERATED_BODY()
@@ -58,7 +58,7 @@ public:
 	bool IsStarted() const { return bIsStarted; };
 
 	// True if grasp overlaps are paused
-	bool IsGraspPaused() const { return bIsPaused; };
+	bool IsGraspPaused() const { return bGraspPaused; };
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
@@ -75,8 +75,11 @@ private:
 	// Set debug color
 	void SetColor(FColor Color);
 
-	// Publish currently overlapping components
-	void TriggerInitialOverlaps();
+	// Publish currently grasp related overlapping components
+	void TriggerInitialGraspOverlaps();
+
+	// Publish currently contact related overlapping components
+	void TriggerInitialContactOverlaps();
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
@@ -135,7 +138,7 @@ private:
 	bool bIsStarted;
 
 	// True if grasp overlaps are paused
-	bool bIsPaused;
+	bool bGraspPaused;
 
 	// True if finished
 	bool bIsFinished;

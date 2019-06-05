@@ -89,42 +89,74 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				if (bInLogContactEvents)
 				{
 					// Create a contact event handler 
-					TSharedPtr<FSLContactEventHandler> ContactEventHandler = MakeShareable(new FSLContactEventHandler());
-					ContactEventHandler->Init(*Itr);
-					EventHandlers.Add(ContactEventHandler);
+					TSharedPtr<FSLContactEventHandler> CEHandler = MakeShareable(new FSLContactEventHandler());
+					CEHandler->Init(*Itr);
+					if (CEHandler->IsInit())
+					{
+						EventHandlers.Add(CEHandler);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+							*FString(__func__), __LINE__, *Itr->GetName());
+					}
 				}
 
 				if (bInLogSupportedByEvents)
 				{
 					// Create a supported-by event handler
-					TSharedPtr<FSLSupportedByEventHandler> SupportedByEventHandler = MakeShareable(new FSLSupportedByEventHandler());
-					SupportedByEventHandler->Init(*Itr);
-					EventHandlers.Add(SupportedByEventHandler);
+					TSharedPtr<FSLSupportedByEventHandler> SBEHandler = MakeShareable(new FSLSupportedByEventHandler());
+					SBEHandler->Init(*Itr);
+					if (SBEHandler->IsInit())
+					{
+						EventHandlers.Add(SBEHandler);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+							*FString(__func__), __LINE__, *Itr->GetName());
+					}
 				}
 			}
 		}
 
 		// Init fixation or normal grasp handlers
-		if (bInLogGraspEvents)
+		if (bInLogGraspEvents || bInLogContactEvents)
 		{
 			// Init all grasp listeners
 			for (TObjectIterator<USLManipulatorListener> Itr; Itr; ++Itr)
 			{
 				if (IsValidAndAnnotated(*Itr))
 				{
-					if (Itr->Init())
+					if (Itr->Init(bInLogGraspEvents, bInLogContactEvents))
 					{
 						GraspListeners.Emplace(*Itr);
-						TSharedPtr<FSLGraspEventHandler> GraspEventHandler = MakeShareable(new FSLGraspEventHandler());
-						GraspEventHandler->Init(*Itr);
-						EventHandlers.Add(GraspEventHandler);
+						TSharedPtr<FSLGraspEventHandler> GEHandler = MakeShareable(new FSLGraspEventHandler());
+						GEHandler->Init(*Itr);
+						if (GEHandler->IsInit())
+						{
+							EventHandlers.Add(GEHandler);
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+								*FString(__func__), __LINE__, *Itr->GetName());
+						}
 
 						// The grasp listener can also publish contact events
 						if (bInLogContactEvents)
 						{
-							TSharedPtr<FSLContactEventHandler> ContactEventHandler = MakeShareable(new FSLContactEventHandler());
-							ContactEventHandler->Init(*Itr);
-							EventHandlers.Add(ContactEventHandler);
+							TSharedPtr<FSLManipulatorContactEventHandler> MCEHandler = MakeShareable(new FSLManipulatorContactEventHandler());
+							MCEHandler->Init(*Itr);
+							if (MCEHandler->IsInit())
+							{
+								EventHandlers.Add(MCEHandler);
+							}
+							else
+							{
+								UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+									*FString(__func__), __LINE__, *Itr->GetName());
+							}
 						}
 					}
 
@@ -139,9 +171,17 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				if (IsValidAndAnnotated(*Itr))
 				{
 					// Create a grasp event handler 
-					TSharedPtr<FSLFixationGraspEventHandler> FixationGraspEventHandler = MakeShareable(new FSLFixationGraspEventHandler());
-					FixationGraspEventHandler->Init(*Itr);
-					EventHandlers.Add(FixationGraspEventHandler);
+					TSharedPtr<FSLFixationGraspEventHandler> FGEHandler = MakeShareable(new FSLFixationGraspEventHandler());
+					FGEHandler->Init(*Itr);
+					if (FGEHandler->IsInit())
+					{
+						EventHandlers.Add(FGEHandler);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+							*FString(__func__), __LINE__, *Itr->GetName());
+					}
 				}
 			}
 #endif // SL_WITH_MC_GRASP
@@ -157,9 +197,17 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				if (IsValidAndAnnotated(*Itr))
 				{
 					// Create a Slicing event handler 
-					TSharedPtr<FSLSlicingEventHandler> SlicingEventHandler = MakeShareable(new FSLSlicingEventHandler());
-					SlicingEventHandler->Init(*Itr);
-					EventHandlers.Add(SlicingEventHandler);
+					TSharedPtr<FSLSlicingEventHandler> SEHandler = MakeShareable(new FSLSlicingEventHandler());
+					SEHandler->Init(*Itr);
+					if (SEHandler->IsInit())
+					{
+						EventHandlers.Add(SEHandler);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+							*FString(__func__), __LINE__, *Itr->GetName());
+					}
 				}
 			}
 #endif // SL_WITH_SLICING
@@ -301,8 +349,8 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 // Called when a semantic event is done
 void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), *FString(__func__), __LINE__, *Event->ToString()));
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), *FString(__func__), __LINE__, *Event->ToString());
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), *FString(__func__), __LINE__, *Event->ToString()));
+	//UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), *FString(__func__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
 }
 

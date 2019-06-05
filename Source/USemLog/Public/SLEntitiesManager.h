@@ -18,7 +18,7 @@ private:
 
 public:
 	// Destructor
-	~FSLEntitiesManager();
+	~FSLEntitiesManager() = default;
 
 	// Get singleton
 	static FSLEntitiesManager* GetInstance();

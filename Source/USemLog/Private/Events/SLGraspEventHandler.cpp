@@ -83,9 +83,16 @@ bool FSLGraspEventHandler::FinishEvent(UObject* Other, float EndTime)
 		// It is enough to compare against the other id when searching
 		if ((*EventItr)->Other.Obj == Other)
 		{
-			// Set end time and publish event
-			(*EventItr)->End = EndTime;
-			OnSemanticEvent.ExecuteIfBound(*EventItr);
+			// Ignore short events
+			if ((EndTime - (*EventItr)->Start) > ContactEventMin)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::White,
+					FString::Printf(TEXT(" * * * * * * *BCAST* *Grasp*")), false, FVector2D(1.5f, 1.5f));
+
+				// Set end time and publish event
+				(*EventItr)->End = EndTime;
+				OnSemanticEvent.ExecuteIfBound(*EventItr);
+			}
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
 			return true;
@@ -100,9 +107,13 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 	// Finish events
 	for (auto& Ev : StartedEvents)
 	{
-		// Set end time and publish event
-		Ev->End = EndTime;
-		OnSemanticEvent.ExecuteIfBound(Ev);
+		// Ignore short events
+		if ((EndTime - Ev->Start) > ContactEventMin)
+		{
+			// Set end time and publish event
+			Ev->End = EndTime;
+			OnSemanticEvent.ExecuteIfBound(Ev);
+		}
 	}
 	StartedEvents.Empty();
 }

@@ -76,9 +76,15 @@ bool FSLManipulatorContactEventHandler::FinishEvent(UObject* InOther, float EndT
 		// It is enough to compare against the other id when searching
 		if ((*EventItr)->Item2.Obj == InOther)
 		{
-			// Set end time and publish event
-			(*EventItr)->End = EndTime;
-			OnSemanticEvent.ExecuteIfBound(*EventItr);
+			// Ignore short events
+			if ((EndTime - (*EventItr)->Start) > ContactEventMin)
+			{
+				// Set end time and publish event
+				(*EventItr)->End = EndTime;
+				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::White,
+				//	FString::Printf(TEXT(" * * * * * * *BCAST* *EVENT* ")), false, FVector2D(1.5f, 1.5f));
+				OnSemanticEvent.ExecuteIfBound(*EventItr);
+			}
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
 			return true;
@@ -93,9 +99,13 @@ void FSLManipulatorContactEventHandler::FinishAllEvents(float EndTime)
 	// Finish contact events
 	for (auto& Ev : StartedEvents)
 	{
-		// Set end time and publish event
-		Ev->End = EndTime;
-		OnSemanticEvent.ExecuteIfBound(Ev);
+		// Ignore short events
+		if ((EndTime - Ev->Start) > ContactEventMin)
+		{
+			// Set end time and publish event
+			Ev->End = EndTime;
+			OnSemanticEvent.ExecuteIfBound(Ev);
+		}
 	}
 	StartedEvents.Empty();
 }
