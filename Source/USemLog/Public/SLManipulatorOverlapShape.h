@@ -58,7 +58,7 @@ public:
 	bool IsStarted() const { return bIsStarted; };
 
 	// True if grasp overlaps are paused
-	bool IsGraspPaused() const { return bIsPaused; };
+	bool IsGraspPaused() const { return bGraspPaused; };
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
@@ -75,8 +75,11 @@ private:
 	// Set debug color
 	void SetColor(FColor Color);
 
-	// Publish currently overlapping components
-	void TriggerInitialOverlaps();
+	// Publish currently grasp related overlapping components
+	void TriggerInitialGraspOverlaps();
+
+	// Publish currently contact related overlapping components
+	void TriggerInitialContactOverlaps();
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
@@ -135,7 +138,7 @@ private:
 	bool bIsStarted;
 
 	// True if grasp overlaps are paused
-	bool bIsPaused;
+	bool bGraspPaused;
 
 	// True if finished
 	bool bIsFinished;

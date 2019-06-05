@@ -43,7 +43,7 @@ public:
 	~USLManipulatorListener();
 
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
-	bool Init();
+	bool Init(bool bInDetectGrasps, bool bInDetectContacts);
 
 	// Start listening to grasp events, update currently overlapping objects
 	void Start();
@@ -141,8 +141,11 @@ private:
 	// New information added 
 	bool bGraspIsDirty;
 
-	// If true, the listener broadcasts also semantic contact events
-	bool bCheckForContacts;
+	// Detect grasp contacts
+	bool bDetectGrasps;
+
+	// Detect contacts
+	bool bDetectContacts;
 	
 #if WITH_EDITOR
 	// Hand type to load pre-defined parameters
@@ -157,14 +160,6 @@ private:
 	// Axis input value to wake up from idle
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float UnPauseTriggerVal;
-
-	// Detect grasp contacts
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bDetectGrasps;
-
-	// Detect contacts
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bDetectContacts;
 
 	// If the owner is not a skeletal actor, one needs to add the children (fingers) manually
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

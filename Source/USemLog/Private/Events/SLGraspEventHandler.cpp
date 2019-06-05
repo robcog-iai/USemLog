@@ -86,6 +86,9 @@ bool FSLGraspEventHandler::FinishEvent(UObject* Other, float EndTime)
 			// Ignore short events
 			if ((EndTime - (*EventItr)->Start) > ContactEventMin)
 			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::White,
+					FString::Printf(TEXT(" * * * * * * *BCAST* *Grasp*")), false, FVector2D(1.5f, 1.5f));
+
 				// Set end time and publish event
 				(*EventItr)->End = EndTime;
 				OnSemanticEvent.ExecuteIfBound(*EventItr);

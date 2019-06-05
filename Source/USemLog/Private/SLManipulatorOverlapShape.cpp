@@ -17,7 +17,7 @@ USLManipulatorOverlapShape::USLManipulatorOverlapShape()
 	bVisualDebug = true;
 	bSnapToBone = true;
 	bIsNotSkeletal = false;
-	bIsPaused = false;
+	bGraspPaused = false;
 	bDetectGrasps = false;
 	bDetectContacts = false;
 
@@ -45,7 +45,7 @@ bool USLManipulatorOverlapShape::Init(bool bGrasp, bool bContact)
 				if (bVisualDebug)
 				{
 					SetHiddenInGame(false);
-					SetColor(FColor::Yellow);
+					bGraspPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
 				}
 				bIsInit = true;
 				return true;
@@ -60,7 +60,7 @@ bool USLManipulatorOverlapShape::Init(bool bGrasp, bool bContact)
 			if (bVisualDebug)
 			{
 				SetHiddenInGame(false);
-				SetColor(FColor::Yellow);
+				bGraspPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
 			}
 			bIsInit = true;
 			return true;
@@ -76,14 +76,11 @@ void USLManipulatorOverlapShape::Start()
 	{
 		if (bVisualDebug)
 		{
-			SetColor(FColor::Red);
+			bGraspPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
 		}
 
 		// Enable overlap events
 		SetGenerateOverlapEvents(true);
-
-		// Broadcast currently overlapping components
-		TriggerInitialOverlaps();
 
 		// Bind overlap events
 		if (bDetectGrasps)
@@ -94,6 +91,7 @@ void USLManipulatorOverlapShape::Start()
 
 		if (bDetectContacts)
 		{
+			TriggerInitialContactOverlaps();
 			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnContactOverlapBegin);
 			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnContactOverlapEnd);
 		}
@@ -106,8 +104,15 @@ void USLManipulatorOverlapShape::Start()
 // Pause/continue listening to overlaps 
 void USLManipulatorOverlapShape::PauseGrasp(bool bInPause)
 {
-	if (bInPause != bIsPaused)
+	if (bInPause != bGraspPaused)
 	{
+		bGraspPaused = bInPause;
+
+		if (bVisualDebug)
+		{
+			bGraspPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
+		}
+
 		if (bInPause)
 		{
 			// Broadcast ending of any active grasp related contacts
@@ -120,24 +125,15 @@ void USLManipulatorOverlapShape::PauseGrasp(bool bInPause)
 			// Remove grasp related overlap bindings
 			OnComponentBeginOverlap.RemoveDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapBegin);
 			OnComponentEndOverlap.RemoveDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapEnd);
-
-			if (bVisualDebug)
-			{
-				SetColor(FColor::Yellow);
-			}
 		}
 		else
 		{
+			TriggerInitialGraspOverlaps();
 			// Re-bind the grasp related overlap bindings
 			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapBegin);
 			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapEnd);
-
-			if (bVisualDebug)
-			{
-				SetColor(FColor::Red);
-			}
 		}
-		bIsPaused = bInPause;
+		
 	}
 }
 
@@ -302,8 +298,8 @@ void USLManipulatorOverlapShape::SetColor(FColor Color)
 	}
 }
 
-// Publish currently overlapping components
-void USLManipulatorOverlapShape::TriggerInitialOverlaps()
+// Publish currently grasp related overlapping components
+void USLManipulatorOverlapShape::TriggerInitialGraspOverlaps()
 {
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
@@ -312,14 +308,21 @@ void USLManipulatorOverlapShape::TriggerInitialOverlaps()
 	FHitResult Dummy;
 	for (const auto& CompItr : CurrOverlappingComponents)
 	{
-		if (bDetectGrasps)
-		{
-			OnGraspOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
-		}
-		if (bDetectContacts)
-		{
-			OnContactOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
-		}
+		OnGraspOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
+	}
+}
+
+// Publish currently contact related overlapping components
+void USLManipulatorOverlapShape::TriggerInitialContactOverlaps()
+{
+	// If objects are already overlapping at begin play, they will not be triggered
+	// Here we do a manual overlap check and forward them to OnOverlapBegin
+	TSet<UPrimitiveComponent*> CurrOverlappingComponents;
+	GetOverlappingComponents(CurrOverlappingComponents);
+	FHitResult Dummy;
+	for (const auto& CompItr : CurrOverlappingComponents)
+	{
+		OnContactOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
 }
 
@@ -331,17 +334,25 @@ void USLManipulatorOverlapShape::OnGraspOverlapBegin(UPrimitiveComponent* Overla
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d START OA:%s; T:%f START"), *FString(__func__), __LINE__,
+	//	*OtherActor->GetName(), GetWorld()->GetTimeSeconds());
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
 		return;
 	}
 
-	if (OtherComp->IsA(UStaticMeshComponent::StaticClass())
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass())
 		&& !IgnoreList.Contains(OtherActor))
 	{
+		//UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d START OA:%s; T:%f START"), *FString(__func__), __LINE__,
+		//	*OtherActor->GetName(), GetWorld()->GetTimeSeconds());
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+			FString::Printf(TEXT(" *  *  *START* *BCAST* GraspContact %s<-->%s T:%f"),
+				*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
 		ActiveContacts.Emplace(OtherActor);
 		OnBeginSLGraspOverlap.Broadcast(OtherActor);
+
 		if (bVisualDebug)
 		{
 			SetColor(FColor::Green);
@@ -360,12 +371,22 @@ void USLManipulatorOverlapShape::OnContactOverlapBegin(UPrimitiveComponent* Over
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Magenta, 
+		//	FString::Printf(TEXT(" !! SELF !! T:%f"), GetWorld()->GetTimeSeconds()),
+		//	false, FVector2D(1.5f, 1.5f));
 		return;
 	}
 
-	if (OtherComp->IsA(UStaticMeshComponent::StaticClass())
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+	//	FString::Printf(TEXT(" *  *START* *CONTACT* %s<-->%s T:%f"),
+	//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
+
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass())
 		&& !IgnoreList.Contains(OtherActor))
 	{
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+		//	FString::Printf(TEXT(" *  *  *START* *BCAST* CONTACT %s<-->%s T:%f C=%d"),
+		//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds(), OvCounter), false, FVector2D(1.5f, 1.5f));
 		OnBeginSLContactOverlap.Broadcast(OtherActor);
 	}
 }
@@ -376,24 +397,24 @@ void USLManipulatorOverlapShape::OnGraspOverlapEnd(UPrimitiveComponent* Overlapp
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
-	// It seems SetGenerateOverlapEvents(false) will trigger the overlap end event, this flag avoids those triggers
-	if (bIsPaused)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
-		return;
-	}
-
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d END OA:%s; T:%f END"), *FString(__func__), __LINE__,
+	//	*OtherActor->GetName(), GetWorld()->GetTimeSeconds());
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
 		return;
 	}
 
-	if (OtherComp->IsA(UStaticMeshComponent::StaticClass())
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass())
 		&& !IgnoreList.Contains(OtherActor))
 	{
 		if (ActiveContacts.Remove(OtherActor) > 0)
 		{
+			//UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d END OA:%s; T:%f END"), *FString(__func__), __LINE__,
+			//	*OtherActor->GetName(), GetWorld()->GetTimeSeconds());
+			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+				FString::Printf(TEXT(" *  *  *END* *BCAST* GraspContact %s<-->%s T:%f"),
+					*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
 			OnEndSLGraspOverlap.Broadcast(OtherActor);
 		}
 
@@ -416,12 +437,22 @@ void USLManipulatorOverlapShape::OnContactOverlapEnd(UPrimitiveComponent* Overla
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Magenta,
+			FString::Printf(TEXT(" !! SELF !! T:%f"),
+				GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
 		return;
 	}
 
-	if (OtherComp->IsA(UStaticMeshComponent::StaticClass())
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+	//	FString::Printf(TEXT(" *  *END* *CONTACT* %s<-->%s T:%f"),
+	//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
+
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass())
 		&& !IgnoreList.Contains(OtherActor))
 	{
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+		//	FString::Printf(TEXT(" *  *  *END* *BCAST* *CONTACT* %s<-->%s T:%f C:%d"),
+		//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds(), OvCounter), false, FVector2D(1.5f, 1.5f));
 		OnEndSLContactOverlap.Broadcast(OtherActor);
 	}
 }

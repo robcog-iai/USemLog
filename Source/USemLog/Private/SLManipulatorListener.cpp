@@ -16,13 +16,10 @@ USLManipulatorListener::USLManipulatorListener()
 	bIsStarted = false;
 	bIsFinished = false;
 	bGraspIsDirty = true;
-	bCheckForContacts = true;
+	bIsPaused = false;
 	InputAxisName = "LeftGrasp";
 	bIsNotSkeletal = false;
 	UnPauseTriggerVal = 0.5;
-
-	bDetectGrasps = true;
-	bDetectContacts = true;
 
 #if WITH_EDITOR
 	// Default values
@@ -40,10 +37,12 @@ USLManipulatorListener::~USLManipulatorListener()
 }
 
 // Init listener
-bool USLManipulatorListener::Init()
+bool USLManipulatorListener::Init(bool bInDetectGrasps, bool bInDetectContacts)
 {
 	if (!bIsInit)
 	{
+		bDetectGrasps = bInDetectGrasps;
+		bDetectContacts = bInDetectContacts;
 		// Init the semantic entities manager
 		if (!FSLEntitiesManager::GetInstance()->IsInit())
 		{
@@ -160,8 +159,7 @@ void USLManipulatorListener::Pause(bool bInPause)
 		{
 			for (const auto& Obj : GraspedObjects)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d Released Obj %s at %f"),
-					TEXT(__func__), __LINE__, *Obj->GetName(), GetWorld()->GetTimeSeconds());
+				OnEndSLGrasp.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
 			}
 			GraspedObjects.Empty();
 			SetA.Empty();
@@ -256,7 +254,7 @@ bool USLManipulatorListener::LoadOverlapGroups()
 // Check if the grasp trigger is active
 void USLManipulatorListener::InputAxisCallback(float Value)
 {
-	if (Value > UnPauseTriggerVal)
+	if (Value >= UnPauseTriggerVal)
 	{
 		Pause(false);
 	}
@@ -279,18 +277,24 @@ void USLManipulatorListener::CheckGraspState()
 }
 
 // A grasp has started
-void USLManipulatorListener::BeginGrasp(AActor* Other)
+void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 {
-	GraspedObjects.Emplace(Other);
-	OnBeginSLGrasp.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+		FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *Begin Grasp* %s"),
+			*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
+	GraspedObjects.Emplace(OtherActor);
+	OnBeginSLGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
 }
 
 // A grasp has ended
-void USLManipulatorListener::EndGrasp(AActor* Other)
+void USLManipulatorListener::EndGrasp(AActor* OtherActor)
 {
-	if (GraspedObjects.Remove(Other) > 0)
+	if (GraspedObjects.Remove(OtherActor) > 0)
 	{
-		OnEndSLGrasp.Broadcast(SemanticOwner, Other, GetWorld()->GetTimeSeconds());
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+			FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *End Grasp* %s"),
+				*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
+		OnEndSLGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -347,7 +351,6 @@ void USLManipulatorListener::OnBeginContact(AActor* OtherActor)
 	}
 }
 
-
 // Process ending of contact in group A
 void USLManipulatorListener::OnEndGroupAGraspContact(AActor* OtherActor)
 {
@@ -383,6 +386,9 @@ void USLManipulatorListener::OnEndContact(AActor* OtherActor)
 			(*NumContacts)--;
 			if ((*NumContacts) < 1)
 			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+					FString::Printf(TEXT(" * * * * *END* *BCAST* *HAND CONTACT* %s"),
+						*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
 				OnEndManipulatorOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
 				ContactObjects.Remove(OtherActor);
 			}

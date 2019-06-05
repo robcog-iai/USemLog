@@ -81,6 +81,8 @@ bool FSLManipulatorContactEventHandler::FinishEvent(UObject* InOther, float EndT
 			{
 				// Set end time and publish event
 				(*EventItr)->End = EndTime;
+				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::White,
+				//	FString::Printf(TEXT(" * * * * * * *BCAST* *EVENT* ")), false, FVector2D(1.5f, 1.5f));
 				OnSemanticEvent.ExecuteIfBound(*EventItr);
 			}
 			// Remove event from the pending list

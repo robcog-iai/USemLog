@@ -121,14 +121,14 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		}
 
 		// Init fixation or normal grasp handlers
-		if (bInLogGraspEvents)
+		if (bInLogGraspEvents || bInLogContactEvents)
 		{
 			// Init all grasp listeners
 			for (TObjectIterator<USLManipulatorListener> Itr; Itr; ++Itr)
 			{
 				if (IsValidAndAnnotated(*Itr))
 				{
-					if (Itr->Init())
+					if (Itr->Init(bInLogGraspEvents, bInLogContactEvents))
 					{
 						GraspListeners.Emplace(*Itr);
 						TSharedPtr<FSLGraspEventHandler> GEHandler = MakeShareable(new FSLGraspEventHandler());
@@ -349,8 +349,8 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 // Called when a semantic event is done
 void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), *FString(__func__), __LINE__, *Event->ToString()));
-	UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), *FString(__func__), __LINE__, *Event->ToString());
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), *FString(__func__), __LINE__, *Event->ToString()));
+	//UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), *FString(__func__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
 }
 
