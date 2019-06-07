@@ -15,7 +15,7 @@
 USTRUCT()
 struct FSLContactOverlapResult
 {
-	GENERATED_USTRUCT_BODY()
+	GENERATED_BODY()
 
 	// Self
 	FSLEntity Self;
@@ -41,15 +41,22 @@ struct FSLContactOverlapResult
 	// Init constructor
 	FSLContactOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
 		bool bIsSemanticOverlapArea) :
-		Self(InSelf), Other(InOther), 
-		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea) {};
+		Self(InSelf), 
+		Other(InOther), 
+		Time(InTime),
+		bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea)
+	{};
 
 	// Init constructor with mesh component (static/skeletal)
 	FSLContactOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
 		bool bIsSemanticOverlapArea, UMeshComponent* InSelfMeshComponent, UMeshComponent* InOtherMeshComponent) :
-		Self(InSelf), Other(InOther), 
-		Time(InTime), bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea), 
-		SelfMeshComponent(InSelfMeshComponent), OtherMeshComponent(InOtherMeshComponent) {};
+		Self(InSelf),
+		Other(InOther), 
+		SelfMeshComponent(InSelfMeshComponent),
+		OtherMeshComponent(InOtherMeshComponent),
+		Time(InTime),
+		bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea)
+	{};
 
 	// Get result as string
 	FString ToString() const

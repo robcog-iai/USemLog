@@ -38,9 +38,9 @@ struct FSLVisImageWriterParams
 		uint16 InServerPort = 0) :
 		Location(InLocation),
 		EpisodeId(InEpisodeId),
-		SkipNewEntryTolerance(InSkipNewEntryTolerance),
 		ServerIp(InServerIp),
-		ServerPort(InServerPort)
+		ServerPort(InServerPort),
+		SkipNewEntryTolerance(InSkipNewEntryTolerance)
 	{};
 };
 

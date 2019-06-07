@@ -235,17 +235,17 @@ void USLVisLegacyManager::ReadPixelsFromViewport(TArray<FColor>& OutImageData, F
 		InFlags,
 	};
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
-		ReadSurfaceCommand,
-		FReadSurfaceContext, Context, ReadSurfaceContext,
-		{
-			RHICmdList.ReadSurfaceData(
-				Context.SrcRenderTarget->GetRenderTargetTexture(),
-				Context.Rect,
-				*Context.OutData,
-				Context.Flags
-			);
-		});
+	//ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
+	//	ReadSurfaceCommand,
+	//	FReadSurfaceContext, Context, ReadSurfaceContext,
+	//	{
+	//		RHICmdList.ReadSurfaceData(
+	//			Context.SrcRenderTarget->GetRenderTargetTexture(),
+	//			Context.Rect,
+	//			*Context.OutData,
+	//			Context.Flags
+	//		);
+	//	});
 }
 
 // Read from scene capture component
@@ -272,17 +272,17 @@ void USLVisLegacyManager::ReadPixels(FTextureRenderTargetResource*& RenderResour
 		InFlags,
 	};
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
-		ReadSurfaceCommand,
-		FReadSurfaceContext, Context, ReadSurfaceContext,
-		{
-			RHICmdList.ReadSurfaceData(
-				Context.SrcRenderTarget->GetRenderTargetTexture(),
-				Context.Rect,
-				*Context.OutData,
-				Context.Flags
-			);
-		});
+	//ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
+	//	ReadSurfaceCommand,
+	//	FReadSurfaceContext, Context, ReadSurfaceContext,
+	//	{
+	//		RHICmdList.ReadSurfaceData(
+	//			Context.SrcRenderTarget->GetRenderTargetTexture(),
+	//			Context.Rect,
+	//			*Context.OutData,
+	//			Context.Flags
+	//		);
+	//	});
 }
 
 // Save the image data

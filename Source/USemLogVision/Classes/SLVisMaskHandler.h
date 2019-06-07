@@ -36,7 +36,7 @@ struct FSLVisSkelMeshMasks
 	// Init constructor
 	FSLVisSkelMeshMasks(UMeshComponent* InMesh, UMaterialInterface* InDefaultMaskMaterial,
 		const TMap<int32, UMaterialInterface*>& InMaterials = TMap<int32, UMaterialInterface*>{})
-		: Mesh(InMesh), DefaultMaskMaterial(InDefaultMaskMaterial), MaskMaterials(InMaterials) {};
+		: Mesh(InMesh), MaskMaterials(InMaterials), DefaultMaskMaterial(InDefaultMaskMaterial) {};
 
 	// Apply the materials to the mesh component
 	void ApplyMaterials()

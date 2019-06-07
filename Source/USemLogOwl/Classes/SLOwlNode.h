@@ -81,8 +81,8 @@ public:
 		const TArray<FSLOwlAttribute>& InAttributes,
 		const FString& InValue) :
 		Name(InName),
-		Attributes(InAttributes),
-		Value(InValue)
+		Value(InValue),
+		Attributes(InAttributes)
 	{}
 
 	// Init constructor, NO Children, one attribute
