@@ -235,10 +235,10 @@ FReply FSLEdModeToolkit::GenerateNewSemanticIds()
 		// Check component tags as well
 		for (const auto& CompItr : ActItr->GetComponents())
 		{
-			int32 TagIndex = FTags::GetTagTypeIndex(CompItr, "SemLog");
-			if (TagIndex != INDEX_NONE)
+			int32 CompTagIndex = FTags::GetTagTypeIndex(CompItr, "SemLog");
+			if (CompTagIndex != INDEX_NONE)
 			{
-				FTags::AddKeyValuePair(CompItr->ComponentTags[TagIndex], "Id", FIds::NewGuidInBase64(), true, CompItr);
+				FTags::AddKeyValuePair(CompItr->ComponentTags[CompTagIndex], "Id", FIds::NewGuidInBase64(), true, CompItr);
 			}
 		}
 	}
