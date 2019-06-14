@@ -206,8 +206,8 @@ void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<U
 					// Iterate through the bones of the skeletal mesh
 					for (const auto& Pair : Itr->Obj->AllBonesData)
 					{
-						const FVector CurrLoc = SkelComp->GetBoneLocation(Pair.Key);
-						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(Pair.Key);
+						const FVector CurrBoneLoc = SkelComp->GetBoneLocation(Pair.Key);
+						const FQuat CurrBoneQuat = SkelComp->GetBoneQuaternion(Pair.Key);
 
 						// Get current entry as json object
 						TMap<FString, FString> SemanticData;
@@ -222,7 +222,7 @@ void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<U
 						}
 
 						TSharedPtr<FJsonObject> JsonBoneEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
-							SemanticData, CurrLoc, CurrQuat);
+							SemanticData, CurrBoneLoc, CurrBoneQuat);
 
 						// Add bone to Json array
 						JsonBonesArr.Add(MakeShareable(new FJsonValueObject(JsonBoneEntry)));

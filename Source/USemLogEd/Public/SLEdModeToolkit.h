@@ -71,6 +71,9 @@ private:
 	// Remove all tags
 	FReply RemoveAllTags();
 
+	// Add contact overlap shapes
+	FReply AddSLContactOverlapShapes();
+
 	// Update semantic visual shape visuals
 	FReply UpdateSLContactOverlapShapeColors();
 

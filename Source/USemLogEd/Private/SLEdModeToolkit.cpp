@@ -167,6 +167,16 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
+						.Text(LOCTEXT("AddSLContactOverlapShapeColors", "Add Semantic Overlap Shapes"))
+					.IsEnabled(true)
+					.OnClicked(this, &FSLEdModeToolkit::AddSLContactOverlapShapes)
+					]
+				////
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SButton)
 						.Text(LOCTEXT("UpdateSLContactOverlapShapeColors", "Update Semantic Overlap Shape Visuals"))
 						.IsEnabled(true)
 						.OnClicked(this, &FSLEdModeToolkit::UpdateSLContactOverlapShapeColors)
@@ -703,7 +713,7 @@ FReply FSLEdModeToolkit::RemoveAllTags()
 	{
 		ActItr->Modify();
 		if (ActItr->Tags.Num() > 0)
-		{			
+		{
 			ActItr->Tags.Empty();
 		}
 
@@ -718,6 +728,36 @@ FReply FSLEdModeToolkit::RemoveAllTags()
 			}
 		}
 	}
+	return FReply::Handled();
+}
+
+// Add semantic overlap shapes
+FReply FSLEdModeToolkit::AddSLContactOverlapShapes()
+{
+	FScopedTransaction Transaction(LOCTEXT("AddSLContactOverlapShapes", "Add contact overlap shapes"));
+	// Iterate only static mesh actors
+	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	{
+		// Continue only if a valid mesh component is available
+		if (UStaticMeshComponent* SMC = ActItr->GetStaticMeshComponent())
+		{
+			// Ignore if actor is not tagged
+			if (FTags::HasKey(*ActItr, "SemLog", "Class"))
+			{
+				// Continue if no previous components are created
+				TArray<USLContactOverlapShape*> Comps;
+				ActItr->GetComponents<USLContactOverlapShape>(Comps);
+				//if (Comps.Num() == 0)
+				//{
+				//	USLContactOverlapShape* Comp = NewObject<USLContactOverlapShape>(*ActItr);
+				//	Comp->RegisterComponent();
+				//	/*FTransform T;
+				//	ActItr->AddComponent("USLContactOverlapShape", false, T, USLContactOverlapShape::StaticClass());*/
+				//}
+			}
+		}
+	}
+
 	return FReply::Handled();
 }
 

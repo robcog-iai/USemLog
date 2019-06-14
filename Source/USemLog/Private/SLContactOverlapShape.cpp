@@ -9,10 +9,6 @@
 #include "Tags.h"
 #include "Ids.h"
 
-#define SL_COLL_SCALE_FACTOR 1.03f
-#define SL_COLL_SCALE_SIZE 0.25f
-#define SL_COLL_TAGTYPE "SemLogColl"
-
 // Default constructor
 USLContactOverlapShape::USLContactOverlapShape()
 {
@@ -27,6 +23,16 @@ USLContactOverlapShape::USLContactOverlapShape()
 
 	// Is started by the event logger
 	bStartAtBeginPlay = false;
+
+#if WITH_EDITOR
+	// Box extent scale
+	BoxExtentScaleFactor = 1.03f;
+	BoxExtentMin = 0.25f;
+	BoxExtentMax = 1.f;
+
+	// Mimics a button
+	bReCalcShapeButton = false;
+#endif // WITH_EDITOR
 }
 
 // Destructor
@@ -155,7 +161,7 @@ void USLContactOverlapShape::PostInitProperties()
 		USLContactOverlapShape::StoreShapeBounds();
 	}
 
-	// Set bounds visal corresponding color 
+	// Set bounds visual corresponding color 
 	USLContactOverlapShape::UpdateVisualColor();
 }
 
@@ -174,17 +180,17 @@ void USLContactOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent
 	{
 		if (PropertyName == FName("X"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "ExtX",
+			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "ExtX",
 				FString::SanitizeFloat(BoxExtent.X));
 		}
 		else if (PropertyName == FName("Y"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "ExtY",
+			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "ExtY",
 				FString::SanitizeFloat(BoxExtent.Y));
 		}
 		else if (PropertyName == FName("Z"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "ExtY",
+			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "ExtY",
 				FString::SanitizeFloat(BoxExtent.Y));
 		}
 	}
@@ -192,17 +198,17 @@ void USLContactOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent
 	{
 		if (PropertyName == FName("X"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "LocX",
+			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "LocX",
 				FString::SanitizeFloat(RelativeLocation.X));
 		}
 		else if (PropertyName == FName("Y"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "LocY",
+			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "LocY",
 				FString::SanitizeFloat(RelativeLocation.Y));
 		}
 		else if (PropertyName == FName("Z"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), SL_COLL_TAGTYPE, "LocZ",
+			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "LocZ",
 				FString::SanitizeFloat(RelativeLocation.Y));
 		}
 	}
@@ -214,7 +220,12 @@ void USLContactOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent
 		KeyValMap.Add("QuatX", FString::SanitizeFloat(RelQuat.X));
 		KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
 		KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
-		FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
+		FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
+	}
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactOverlapShape, bReCalcShapeButton))
+	{
+		CalcShapeBounds();
+		bReCalcShapeButton = false;
 	}
 }
 
@@ -237,14 +248,14 @@ void USLContactOverlapShape::PostEditComponentMove(bool bFinished)
 	KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
 	KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
 
-	FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
+	FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
 }
 
 // Read values from tags
 bool USLContactOverlapShape::LoadShapeBounds()
 {
 	TMap<FString, FString> TagKeyValMap = 
-		FTags::GetKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE);
+		FTags::GetKeyValuePairs(GetOuter(), TagTypeName);
 
 	if (TagKeyValMap.Num() == 0){return false;}
 
@@ -286,16 +297,22 @@ bool USLContactOverlapShape::CalcShapeBounds()
 	// Get the static mesh component
 	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
 	{
-		UStaticMeshComponent* SMComp = OuterAsSMAct->GetStaticMeshComponent();
+		if (UStaticMeshComponent* SMComp = OuterAsSMAct->GetStaticMeshComponent())
+		{
+			// Apply smallest box extent
+			FVector BBMin;
+			FVector BBMax;
+			SMComp->GetLocalBounds(BBMin, BBMax);
+			const FVector Ext = (BBMax - BBMin) * 0.5f;
+			const FVector ScaledExt = Ext * BoxExtentScaleFactor;
+			SetBoxExtent(ScaledExt.BoundToBox(Ext + BoxExtentMin, Ext + BoxExtentMax));
 
-		// Apply parameters to the contact listener area
-		//SetBoxExtent(SMComp->Bounds.BoxExtent * SL_COLL_SCALE_FACTOR);
-		SetBoxExtent(SMComp->Bounds.BoxExtent + FVector(SL_COLL_SCALE_SIZE));
-		// Apply its location
-		FTransform BoundsTransf(FQuat::Identity, SMComp->Bounds.Origin);
-		BoundsTransf.SetToRelativeTransform(SMComp->GetComponentTransform());
-		SetRelativeTransform(BoundsTransf);
-		return true;
+			// Apply its location
+			//FTransform BoundsTransf(FQuat::Identity, SMComp->Bounds.Origin);
+			//BoundsTransf.SetToRelativeTransform(SMComp->GetComponentTransform());
+			//SetRelativeTransform(BoundsTransf);
+			return true;
+		}
 	}
 	return false;
 }
@@ -322,7 +339,7 @@ bool USLContactOverlapShape::StoreShapeBounds()
 	KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
 	KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
 	
-	return FTags::AddKeyValuePairs(GetOuter(), SL_COLL_TAGTYPE, KeyValMap);
+	return FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
 }
 
 // Update bounds visual (red/green -- parent is not/is semantically annotated)

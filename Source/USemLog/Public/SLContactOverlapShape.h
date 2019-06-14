@@ -184,9 +184,30 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartAtBeginPlay;
 
+#if WITH_EDITOR
+	// Box extent scale factor (smaller will be chosen)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float BoxExtentScaleFactor;
+
+	// The box extent will be at least this big
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float BoxExtentMin;
+
+	// The box extent will be at most this big
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float BoxExtentMax;
+
+	// Mimics a button
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bReCalcShapeButton;
+#endif // WITH_EDITOR
+
 	// Pointer to the outer (owner) mesh component 
 	UMeshComponent* OwnerMeshComp;
 
 	// Semantic data of the owner
 	FSLEntity SemanticOwner;
+
+	/* Constants */
+	constexpr static char* TagTypeName = "SemLogColl";
 };
