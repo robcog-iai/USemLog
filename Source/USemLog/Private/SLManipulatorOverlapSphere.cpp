@@ -1,11 +1,11 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLManipulatorOverlapShape.h"
+#include "SLManipulatorOverlapSphere.h"
 #include "Animation/SkeletalMeshActor.h"
 
 // Ctor
-USLManipulatorOverlapShape::USLManipulatorOverlapShape()
+USLManipulatorOverlapSphere::USLManipulatorOverlapSphere()
 {
 	// Default sphere radius
 	InitSphereRadius(1.25f);
@@ -28,7 +28,7 @@ USLManipulatorOverlapShape::USLManipulatorOverlapShape()
 }
 
 // Attach to bone 
-bool USLManipulatorOverlapShape::Init(bool bGrasp, bool bContact)
+bool USLManipulatorOverlapSphere::Init(bool bGrasp, bool bContact)
 {
 	if (!bIsInit)
 	{
@@ -70,7 +70,7 @@ bool USLManipulatorOverlapShape::Init(bool bGrasp, bool bContact)
 }
 
 // Start listening to overlaps 
-void USLManipulatorOverlapShape::Start()
+void USLManipulatorOverlapSphere::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -85,15 +85,15 @@ void USLManipulatorOverlapShape::Start()
 		// Bind overlap events
 		if (bDetectGrasps)
 		{
-			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapBegin);
-			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapEnd);
+			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapBegin);
+			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapEnd);
 		}
 
 		if (bDetectContacts)
 		{
 			TriggerInitialContactOverlaps();
-			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnContactOverlapBegin);
-			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnContactOverlapEnd);
+			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnContactOverlapBegin);
+			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnContactOverlapEnd);
 		}
 
 		// Mark as started
@@ -102,7 +102,7 @@ void USLManipulatorOverlapShape::Start()
 }
 
 // Pause/continue listening to overlaps 
-void USLManipulatorOverlapShape::PauseGrasp(bool bInPause)
+void USLManipulatorOverlapSphere::PauseGrasp(bool bInPause)
 {
 	if (bInPause != bGraspPaused)
 	{
@@ -123,22 +123,22 @@ void USLManipulatorOverlapShape::PauseGrasp(bool bInPause)
 			ActiveContacts.Empty();
 
 			// Remove grasp related overlap bindings
-			OnComponentBeginOverlap.RemoveDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapBegin);
-			OnComponentEndOverlap.RemoveDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapEnd);
+			OnComponentBeginOverlap.RemoveDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapBegin);
+			OnComponentEndOverlap.RemoveDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapEnd);
 		}
 		else
 		{
 			TriggerInitialGraspOverlaps();
 			// Re-bind the grasp related overlap bindings
-			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapBegin);
-			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapShape::OnGraspOverlapEnd);
+			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapBegin);
+			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapEnd);
 		}
 		
 	}
 }
 
 // Stop publishing overlap events
-void USLManipulatorOverlapShape::Finish(bool bForced)
+void USLManipulatorOverlapSphere::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -151,7 +151,7 @@ void USLManipulatorOverlapShape::Finish(bool bForced)
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
-void USLManipulatorOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLManipulatorOverlapSphere::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -159,7 +159,7 @@ void USLManipulatorOverlapShape::PostEditChangeProperty(struct FPropertyChangedE
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapShape, bAttachButton))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapSphere, bAttachButton))
 	{
 		if (!bIsNotSkeletal && AttachToBone())
 		{
@@ -177,7 +177,7 @@ void USLManipulatorOverlapShape::PostEditChangeProperty(struct FPropertyChangedE
 		}
 		bAttachButton = false;
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapShape, BoneName))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapSphere, BoneName))
 	{
 		if (!bIsNotSkeletal && AttachToBone())
 		{
@@ -192,7 +192,7 @@ void USLManipulatorOverlapShape::PostEditChangeProperty(struct FPropertyChangedE
 		}
 		bAttachButton = false;
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapShape, bIsNotSkeletal))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapSphere, bIsNotSkeletal))
 	{
 		if (bIsNotSkeletal)
 		{
@@ -211,7 +211,7 @@ void USLManipulatorOverlapShape::PostEditChangeProperty(struct FPropertyChangedE
 			IgnoreList.Empty();
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapShape, IgnoreList))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapSphere, IgnoreList))
 	{
 		if (IgnoreList.Num() > 0)
 		{
@@ -222,11 +222,11 @@ void USLManipulatorOverlapShape::PostEditChangeProperty(struct FPropertyChangedE
 		//	bool bDifferntGroups = true;
 		//	for (const auto& IA : IgnoreList)
 		//	{
-		//		TArray<UActorComponent*> Comps = IA->GetComponentsByClass(USLManipulatorOverlapShape::StaticClass());
+		//		TArray<UActorComponent*> Comps = IA->GetComponentsByClass(USLManipulatorOverlapSphere::StaticClass());
 		//		for (const auto& C : Comps)
 		//		{
-		//			USLManipulatorOverlapShape* CastC = CastChecked<USLManipulatorOverlapShape>(C);
-		//			if (Group == CastChecked<USLManipulatorOverlapShape>(C)->Group)
+		//			USLManipulatorOverlapSphere* CastC = CastChecked<USLManipulatorOverlapSphere>(C);
+		//			if (Group == CastChecked<USLManipulatorOverlapSphere>(C)->Group)
 		//			{
 		//				bDifferntGroups = false;
 		//				SetColor(FColor::Red);
@@ -248,7 +248,7 @@ void USLManipulatorOverlapShape::PostEditChangeProperty(struct FPropertyChangedE
 		//		*FString(__func__), __LINE__);
 		//}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapShape, bVisualDebug))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorOverlapSphere, bVisualDebug))
 	{
 		SetHiddenInGame(bVisualDebug);
 	}
@@ -256,7 +256,7 @@ void USLManipulatorOverlapShape::PostEditChangeProperty(struct FPropertyChangedE
 #endif // WITH_EDITOR
 
 // Attach component to bone
-bool USLManipulatorOverlapShape::AttachToBone()
+bool USLManipulatorOverlapSphere::AttachToBone()
 {
 	// Check if owner is a skeletal actor
 	if (ASkeletalMeshActor* SkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
@@ -289,7 +289,7 @@ bool USLManipulatorOverlapShape::AttachToBone()
 }
 
 // Set debug color
-void USLManipulatorOverlapShape::SetColor(FColor Color)
+void USLManipulatorOverlapSphere::SetColor(FColor Color)
 {
 	if (ShapeColor != Color)
 	{
@@ -299,7 +299,7 @@ void USLManipulatorOverlapShape::SetColor(FColor Color)
 }
 
 // Publish currently grasp related overlapping components
-void USLManipulatorOverlapShape::TriggerInitialGraspOverlaps()
+void USLManipulatorOverlapSphere::TriggerInitialGraspOverlaps()
 {
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
@@ -313,7 +313,7 @@ void USLManipulatorOverlapShape::TriggerInitialGraspOverlaps()
 }
 
 // Publish currently contact related overlapping components
-void USLManipulatorOverlapShape::TriggerInitialContactOverlaps()
+void USLManipulatorOverlapSphere::TriggerInitialContactOverlaps()
 {
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
@@ -327,7 +327,7 @@ void USLManipulatorOverlapShape::TriggerInitialContactOverlaps()
 }
 
 // Called on overlap begin events
-void USLManipulatorOverlapShape::OnGraspOverlapBegin(UPrimitiveComponent* OverlappedComp,
+void USLManipulatorOverlapSphere::OnGraspOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex,
@@ -361,7 +361,7 @@ void USLManipulatorOverlapShape::OnGraspOverlapBegin(UPrimitiveComponent* Overla
 }
 
 // Called on overlap begin events
-void USLManipulatorOverlapShape::OnContactOverlapBegin(UPrimitiveComponent* OverlappedComp,
+void USLManipulatorOverlapSphere::OnContactOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex,
@@ -392,7 +392,7 @@ void USLManipulatorOverlapShape::OnContactOverlapBegin(UPrimitiveComponent* Over
 }
 
 // Called on overlap end events
-void USLManipulatorOverlapShape::OnGraspOverlapEnd(UPrimitiveComponent* OverlappedComp,
+void USLManipulatorOverlapSphere::OnGraspOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
@@ -429,7 +429,7 @@ void USLManipulatorOverlapShape::OnGraspOverlapEnd(UPrimitiveComponent* Overlapp
 }
 
 // Called on overlap end events
-void USLManipulatorOverlapShape::OnContactOverlapEnd(UPrimitiveComponent* OverlappedComp,
+void USLManipulatorOverlapSphere::OnContactOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)

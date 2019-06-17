@@ -1,7 +1,7 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLContactOverlapShape.h"
+#include "SLContactBox.h"
 #include "SLEntitiesManager.h"
 #include "Animation/SkeletalMeshActor.h"
 
@@ -10,7 +10,7 @@
 #include "Ids.h"
 
 // Default constructor
-USLContactOverlapShape::USLContactOverlapShape()
+USLContactBox::USLContactBox()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -36,7 +36,7 @@ USLContactOverlapShape::USLContactOverlapShape()
 }
 
 // Destructor
-USLContactOverlapShape::~USLContactOverlapShape()
+USLContactBox::~USLContactBox()
 {
 	if (!bIsFinished)
 	{
@@ -45,7 +45,7 @@ USLContactOverlapShape::~USLContactOverlapShape()
 }
 
 // Called at level startup
-void USLContactOverlapShape::BeginPlay()
+void USLContactBox::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -57,7 +57,7 @@ void USLContactOverlapShape::BeginPlay()
 }
 
 // Called when actor removed from game or game ended
-void USLContactOverlapShape::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void USLContactBox::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
@@ -68,7 +68,7 @@ void USLContactOverlapShape::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Setup pointers to outer, check if semantically annotated
-void USLContactOverlapShape::Init()
+void USLContactBox::Init()
 {
 	if (!bIsInit)
 	{
@@ -115,7 +115,7 @@ void USLContactOverlapShape::Init()
 }
 
 // Start overlap events, trigger currently overlapping objects
-void USLContactOverlapShape::Start()
+void USLContactBox::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -123,11 +123,11 @@ void USLContactOverlapShape::Start()
 		SetGenerateOverlapEvents(true);
 
 		// Broadcast currently overlapping components
-		USLContactOverlapShape::TriggerInitialOverlaps();
+		USLContactBox::TriggerInitialOverlaps();
 
 		// Bind future overlapping event delegates
-		OnComponentBeginOverlap.AddDynamic(this, &USLContactOverlapShape::OnOverlapBegin);
-		OnComponentEndOverlap.AddDynamic(this, &USLContactOverlapShape::OnOverlapEnd);
+		OnComponentBeginOverlap.AddDynamic(this, &USLContactBox::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLContactBox::OnOverlapEnd);
 
 		// Mark as started
 		bIsStarted = true;
@@ -135,7 +135,7 @@ void USLContactOverlapShape::Start()
 }
 
 // Stop publishing overlap events
-void USLContactOverlapShape::Finish(bool bForced)
+void USLContactBox::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -151,22 +151,22 @@ void USLContactOverlapShape::Finish(bool bForced)
 
 #if WITH_EDITOR
 // Called after the C++ constructor and after the properties have been initialized
-void USLContactOverlapShape::PostInitProperties()
+void USLContactBox::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	if (!USLContactOverlapShape::LoadShapeBounds())
+	if (!USLContactBox::LoadShapeBounds())
 	{
-		USLContactOverlapShape::CalcShapeBounds();
-		USLContactOverlapShape::StoreShapeBounds();
+		USLContactBox::CalcShapeBounds();
+		USLContactBox::StoreShapeBounds();
 	}
 
 	// Set bounds visual corresponding color 
-	USLContactOverlapShape::UpdateVisualColor();
+	USLContactBox::UpdateVisualColor();
 }
 
 // Called when a property is changed in the editor
-void USLContactOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLContactBox::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -176,7 +176,7 @@ void USLContactOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent
 	FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != NULL) ? 
 		PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactOverlapShape, BoxExtent))
+	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactBox, BoxExtent))
 	{
 		if (PropertyName == FName("X"))
 		{
@@ -194,7 +194,7 @@ void USLContactOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent
 				FString::SanitizeFloat(BoxExtent.Y));
 		}
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactOverlapShape, RelativeLocation))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactBox, RelativeLocation))
 	{
 		if (PropertyName == FName("X"))
 		{
@@ -212,7 +212,7 @@ void USLContactOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent
 				FString::SanitizeFloat(RelativeLocation.Y));
 		}
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactOverlapShape, RelativeRotation))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactBox, RelativeRotation))
 	{
 		const FQuat RelQuat = GetRelativeTransform().GetRotation();
 		TMap<FString, FString> KeyValMap;
@@ -222,7 +222,7 @@ void USLContactOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent
 		KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
 		FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactOverlapShape, bReCalcShapeButton))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactBox, bReCalcShapeButton))
 	{
 		CalcShapeBounds();
 		bReCalcShapeButton = false;
@@ -230,7 +230,7 @@ void USLContactOverlapShape::PostEditChangeProperty(struct FPropertyChangedEvent
 }
 
 // Called when this component is moved in the editor
-void USLContactOverlapShape::PostEditComponentMove(bool bFinished)
+void USLContactBox::PostEditComponentMove(bool bFinished)
 {
 	// Update tags with the new transform
 	const FTransform RelTransf = GetRelativeTransform();
@@ -252,7 +252,7 @@ void USLContactOverlapShape::PostEditComponentMove(bool bFinished)
 }
 
 // Read values from tags
-bool USLContactOverlapShape::LoadShapeBounds()
+bool USLContactBox::LoadShapeBounds()
 {
 	TMap<FString, FString> TagKeyValMap = 
 		FTags::GetKeyValuePairs(GetOuter(), TagTypeName);
@@ -292,7 +292,7 @@ bool USLContactOverlapShape::LoadShapeBounds()
 }
 
 // Calculate trigger area size
-bool USLContactOverlapShape::CalcShapeBounds()
+bool USLContactBox::CalcShapeBounds()
 {
 	// Get the static mesh component
 	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
@@ -318,7 +318,7 @@ bool USLContactOverlapShape::CalcShapeBounds()
 }
 
 // Save values to tags
-bool USLContactOverlapShape::StoreShapeBounds()
+bool USLContactBox::StoreShapeBounds()
 {
 	const FTransform RelTransf = GetRelativeTransform();
 	const FVector RelLoc = RelTransf.GetLocation();
@@ -343,7 +343,7 @@ bool USLContactOverlapShape::StoreShapeBounds()
 }
 
 // Update bounds visual (red/green -- parent is not/is semantically annotated)
-void USLContactOverlapShape::UpdateVisualColor()
+void USLContactBox::UpdateVisualColor()
 {
 	// Set the default color of the shape
 	if (FTags::HasKey(GetOuter(), "SemLog", "Class"))
@@ -367,7 +367,7 @@ void USLContactOverlapShape::UpdateVisualColor()
 #endif // WITH_EDITOR
 
 // Publish currently overlapping components
-void USLContactOverlapShape::TriggerInitialOverlaps()
+void USLContactBox::TriggerInitialOverlaps()
 {
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
@@ -376,13 +376,13 @@ void USLContactOverlapShape::TriggerInitialOverlaps()
 	FHitResult Dummy;
 	for (const auto& CompItr : CurrOverlappingComponents)
 	{
-		USLContactOverlapShape::OnOverlapBegin(
+		USLContactBox::OnOverlapBegin(
 			this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
 }
 
 // Called on overlap begin events
-void USLContactOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
+void USLContactBox::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex,
@@ -414,11 +414,11 @@ void USLContactOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
 		// Broadcast begin of semantic overlap event
-		FSLContactOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem, 
+		FSLContactResult SemanticOverlapResult(SemanticOwner, OtherItem, 
 			StartTime, false, OwnerMeshComp, OtherAsMeshComp);
-		OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
+		OnBeginSLContact.Broadcast(SemanticOverlapResult);
 	}
-	else if (USLContactOverlapShape* OtherContactTrigger = Cast<USLContactOverlapShape>(OtherComp))
+	else if (USLContactBox* OtherContactTrigger = Cast<USLContactBox>(OtherComp))
 	{
 		// If both areas are trigger areas, they will both concurrently trigger overlap events.
 		// To avoid this we consistently ignore one trigger event. This is chosen using
@@ -430,15 +430,15 @@ void USLContactOverlapShape::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 		if (OtherItem.Obj->GetUniqueID() > SemanticOwner.Obj->GetUniqueID())
 		{
 			// Broadcast begin of semantic overlap event
-			FSLContactOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem,
+			FSLContactResult SemanticOverlapResult(SemanticOwner, OtherItem,
 				StartTime, true, OwnerMeshComp, OtherContactTrigger->OwnerMeshComp);
-			OnBeginSLOverlap.Broadcast(SemanticOverlapResult);
+			OnBeginSLContact.Broadcast(SemanticOverlapResult);
 		}
 	}
 }
 
 // Called on overlap end events
-void USLContactOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
+void USLContactBox::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
@@ -468,9 +468,9 @@ void USLContactOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
 		// Broadcast end of semantic overlap event
-		OnEndSLOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
+		OnEndSLContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
 	}
-	else if (USLContactOverlapShape* OtherContactTrigger = Cast<USLContactOverlapShape>(OtherComp))
+	else if (USLContactBox* OtherContactTrigger = Cast<USLContactBox>(OtherComp))
 	{
 		// If both areas are trigger areas, they will both concurrently trigger overlap events.
 		// To avoid this we consistently ignore one trigger event. This is chosen using
@@ -482,7 +482,7 @@ void USLContactOverlapShape::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		if (OtherItem.Obj->GetUniqueID() > SemanticOwner.Obj->GetUniqueID())
 		{
 			// Broadcast end of semantic overlap event
-			OnEndSLOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
+			OnEndSLContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
 		}
 	}
 }

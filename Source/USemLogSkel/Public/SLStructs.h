@@ -1,11 +1,14 @@
-#pragma once
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SLStructs.generated.h"
 
+/************************************************************************/
+/*                       STRUCTS                                        */
+/************************************************************************/
 /**
 * Structure holding the semantic data of an entity
 */
@@ -118,3 +121,71 @@ struct TSLEntityPreviousPose
 	bool IsSet() const { return Entity.IsSet() && (Cast<USceneComponent>(Entity.Obj) || Cast<AActor>(Entity.Obj)); }
 };
 
+/**
+ * Structure containing information about the semantic overlap event
+ */
+USTRUCT()
+struct FSLContactResult
+{
+	GENERATED_BODY()
+
+	// Self
+	FSLEntity Self;
+
+	// Other 
+	FSLEntity Other;
+
+	// The mesh (static or skeletal) of the other overlapping component
+	TWeakObjectPtr<UMeshComponent> SelfMeshComponent;
+
+	// The mesh (static or skeletal) of the other overlapping component
+	TWeakObjectPtr<UMeshComponent> OtherMeshComponent;
+
+	// Timestamp in seconds of the event triggering
+	float Time;
+
+	// Flag showing if Other is also of type Semantic Overlap Area
+	bool bIsOtherASemanticOverlapArea;
+
+	// Default ctor
+	FSLContactResult() {};
+
+	// Init constructor
+	FSLContactResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime,
+		bool bIsSemanticOverlapArea) :
+		Self(InSelf),
+		Other(InOther),
+		Time(InTime),
+		bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea)
+	{};
+
+	// Init constructor with mesh component (static/skeletal)
+	FSLContactResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime,
+		bool bIsSemanticOverlapArea, UMeshComponent* InSelfMeshComponent, UMeshComponent* InOtherMeshComponent) :
+		Self(InSelf),
+		Other(InOther),
+		SelfMeshComponent(InSelfMeshComponent),
+		OtherMeshComponent(InOtherMeshComponent),
+		Time(InTime),
+		bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea)
+	{};
+
+	// Get result as string
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Self:[%s] Other:[%s] Time:%f bIsOtherASemanticOverlapArea:%s StaticMeshActor:%s StaticMeshComponent:%s"),
+			*Self.ToString(), *Other.ToString(), Time,
+			bIsOtherASemanticOverlapArea == true ? TEXT("True") : TEXT("False"),
+			OtherMeshComponent.IsValid() ? *OtherMeshComponent->GetName() : TEXT("None"));
+	}
+};
+
+
+/************************************************************************/
+/*                       DELEGATES                                      */
+/************************************************************************/
+/** Delegate to notify that a contact begins between two semantically annotated objects */
+DECLARE_MULTICAST_DELEGATE_OneParam(FBeginSLContactSignature, const FSLContactResult&);
+
+/** Delegate to notify that a contact ended between two semantically annotated objects */
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FEndSLContactSignature, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);

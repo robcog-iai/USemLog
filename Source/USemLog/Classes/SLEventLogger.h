@@ -96,7 +96,7 @@ private:
 	TArray<TSharedPtr<ISLEventHandler>> EventHandlers;
 
 	// Cache of the semantic overlap areas
-	TArray<class USLContactOverlapShape*> OverlapShapes;
+	TArray<class USLContactBox*> OverlapShapes;
 
 	// Cache of the grasp listeners
 	TArray<class USLManipulatorListener*> GraspListeners;

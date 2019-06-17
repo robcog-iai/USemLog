@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLContactEventHandler.h"
-#include "SLContactOverlapShape.h"
+#include "SLContactBox.h"
 
 // UUtils
 #include "Ids.h"
@@ -13,7 +13,7 @@ void FSLContactEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<USLContactOverlapShape>(InParent);
+		Parent = Cast<USLContactBox>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized
@@ -27,8 +27,8 @@ void FSLContactEventHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		Parent->OnBeginSLOverlap.AddRaw(this, &FSLContactEventHandler::OnSLOverlapBegin);
-		Parent->OnEndSLOverlap.AddRaw(this, &FSLContactEventHandler::OnSLOverlapEnd);
+		Parent->OnBeginSLContact.AddRaw(this, &FSLContactEventHandler::OnSLOverlapBegin);
+		Parent->OnEndSLContact.AddRaw(this, &FSLContactEventHandler::OnSLOverlapEnd);
 
 		// Mark as started
 		bIsStarted = true;
@@ -55,7 +55,7 @@ void FSLContactEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new contact event
-void FSLContactEventHandler::AddNewEvent(const FSLContactOverlapResult& InResult)
+void FSLContactEventHandler::AddNewEvent(const FSLContactResult& InResult)
 {
 	// Start a semantic contact event
 	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
@@ -109,7 +109,7 @@ void FSLContactEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic overlap event begins
-void FSLContactEventHandler::OnSLOverlapBegin(const FSLContactOverlapResult& SemanticOverlapResult)
+void FSLContactEventHandler::OnSLOverlapBegin(const FSLContactResult& SemanticOverlapResult)
 {
 	FSLContactEventHandler::AddNewEvent(SemanticOverlapResult);
 }

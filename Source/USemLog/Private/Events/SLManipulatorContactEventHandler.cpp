@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLManipulatorContactEventHandler.h"
-#include "SLManipulatorOverlapShape.h"
+#include "SLManipulatorOverlapSphere.h"
 #include "SLManipulatorListener.h"
 
 // UUtils
@@ -28,8 +28,8 @@ void FSLManipulatorContactEventHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		Parent->OnBeginManipulatorOverlap.AddRaw(this, &FSLManipulatorContactEventHandler::OnSLOverlapBegin);
-		Parent->OnEndManipulatorOverlap.AddRaw(this, &FSLManipulatorContactEventHandler::OnSLOverlapEnd);
+		Parent->OnBeginManipulatorContact.AddRaw(this, &FSLManipulatorContactEventHandler::OnSLOverlapBegin);
+		Parent->OnEndManipulatorContact.AddRaw(this, &FSLManipulatorContactEventHandler::OnSLOverlapEnd);
 
 		// Mark as started
 		bIsStarted = true;
@@ -56,7 +56,7 @@ void FSLManipulatorContactEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new contact event
-void FSLManipulatorContactEventHandler::AddNewEvent(const FSLContactOverlapResult& InResult)
+void FSLManipulatorContactEventHandler::AddNewEvent(const FSLContactResult& InResult)
 {
 	// Start a semantic contact event
 	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
@@ -112,7 +112,7 @@ void FSLManipulatorContactEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic overlap event begins
-void FSLManipulatorContactEventHandler::OnSLOverlapBegin(const FSLContactOverlapResult& SemanticOverlapResult)
+void FSLManipulatorContactEventHandler::OnSLOverlapBegin(const FSLContactResult& SemanticOverlapResult)
 {
 	FSLManipulatorContactEventHandler::AddNewEvent(SemanticOverlapResult);
 }

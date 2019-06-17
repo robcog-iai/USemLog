@@ -7,86 +7,21 @@
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "SLStructs.h"
-#include "SLContactOverlapShape.generated.h"
-
-/**
- * Structure containing information about the semantic overlap event
- */
-USTRUCT()
-struct FSLContactOverlapResult
-{
-	GENERATED_BODY()
-
-	// Self
-	FSLEntity Self;
-
-	// Other 
-	FSLEntity Other;
-
-	// The mesh (static or skeletal) of the other overlapping component
-	TWeakObjectPtr<UMeshComponent> SelfMeshComponent;
-
-	// The mesh (static or skeletal) of the other overlapping component
-	TWeakObjectPtr<UMeshComponent> OtherMeshComponent;
-
-	// Timestamp in seconds of the event triggering
-	float Time;
-
-	// Flag showing if Other is also of type Semantic Overlap Area
-	bool bIsOtherASemanticOverlapArea;
-
-	// Default ctor
-	FSLContactOverlapResult() {};
-
-	// Init constructor
-	FSLContactOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
-		bool bIsSemanticOverlapArea) :
-		Self(InSelf), 
-		Other(InOther), 
-		Time(InTime),
-		bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea)
-	{};
-
-	// Init constructor with mesh component (static/skeletal)
-	FSLContactOverlapResult(const FSLEntity& InSelf, const FSLEntity& InOther, float InTime, 
-		bool bIsSemanticOverlapArea, UMeshComponent* InSelfMeshComponent, UMeshComponent* InOtherMeshComponent) :
-		Self(InSelf),
-		Other(InOther), 
-		SelfMeshComponent(InSelfMeshComponent),
-		OtherMeshComponent(InOtherMeshComponent),
-		Time(InTime),
-		bIsOtherASemanticOverlapArea(bIsSemanticOverlapArea)
-	{};
-
-	// Get result as string
-	FString ToString() const
-	{
-		return FString::Printf(TEXT("Self:[%s] Other:[%s] Time:%f bIsOtherASemanticOverlapArea:%s StaticMeshActor:%s StaticMeshComponent:%s"),
-			*Self.ToString(), *Other.ToString(), Time,
-			bIsOtherASemanticOverlapArea == true ? TEXT("True") : TEXT("False"),
-			OtherMeshComponent.IsValid() ? *OtherMeshComponent->GetName() : TEXT("None"));
-	}
-};
-
-/** Delegate to notify that a contact begins between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLOverlapBeginSignature, const FSLContactOverlapResult&);
-
-/** Delegate to notify that a contact ended between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLOverlapEndSignature, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
+#include "SLContactBox.generated.h"
 
 /**
  * Collision area listening for semantic collision events
  */
-UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Overlap Shape")
-class USEMLOG_API USLContactOverlapShape : public UBoxComponent
+UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Box")
+class USEMLOG_API USLContactBox : public UBoxComponent
 {
 	GENERATED_BODY()
 public:
 	// Default constructor
-	USLContactOverlapShape();
+	USLContactBox();
 
 	// Dtor
-	~USLContactOverlapShape();
+	~USLContactBox();
 
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
 	void Init();
@@ -165,10 +100,10 @@ private:
 
 public:
 	// Event called when a semantic overlap begins
-	FSLOverlapBeginSignature OnBeginSLOverlap;
+	FBeginSLContactSignature OnBeginSLContact;
 
 	// Event called when a semantic overlap ends
-	FSLOverlapEndSignature OnEndSLOverlap;
+	FEndSLContactSignature OnEndSLContact;
 
 private:
 	// True if initialized

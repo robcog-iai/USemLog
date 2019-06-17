@@ -6,9 +6,9 @@
 #include "UsemLog.h"
 #include "Components/ActorComponent.h"
 #include "Engine/StaticMeshActor.h"
-#include "SLManipulatorOverlapShape.h"
+#include "SLManipulatorOverlapSphere.h"
 #include "SLStructs.h" // FSLEntity
-#include "SLContactOverlapShape.h" // semantic contact delegates
+#include "SLContactBox.h" // semantic contact delegates
 #include "SLManipulatorListener.generated.h"
 
 /**
@@ -22,10 +22,10 @@ enum class ESLGraspHandType : uint8
 };
 
 /** Notify when an object is grasped */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspBeginSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FBeginSLManipulatorOverlapSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
 
 /** Notify when an object is released */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLGraspEndSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FEndSLManipulatorEndSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
 
 /**
  * Checks for physics based grasp events and semantic contacts
@@ -114,16 +114,16 @@ private:
 	
 public:
 	// Event called when grasp occurs
-	FSLGraspBeginSignature OnBeginSLGrasp;
+	FBeginSLManipulatorOverlapSignature OnBeginManipulatorGrasp;
 
 	// Event called when grasp ends
-	FSLGraspEndSignature OnEndSLGrasp;
+	FEndSLManipulatorEndSignature OnEndManipulatorGrasp;
 
 	// Event called when a semantic overlap begins
-	FSLOverlapBeginSignature OnBeginManipulatorOverlap;
+	FBeginSLContactSignature OnBeginManipulatorContact;
 
 	// Event called when a semantic overlap ends
-	FSLOverlapEndSignature OnEndManipulatorOverlap;
+	FEndSLContactSignature OnEndManipulatorContact;
 
 private:
 	// True if initialized
@@ -173,10 +173,10 @@ private:
 	FSLEntity SemanticOwner;
 
 	// Opposing group A for testing for grasps
-	TArray<USLManipulatorOverlapShape*> GroupA;
+	TArray<USLManipulatorOverlapSphere*> GroupA;
 
 	// Opposing group B for testing for grasps
-	TArray<USLManipulatorOverlapShape*> GroupB;
+	TArray<USLManipulatorOverlapSphere*> GroupB;
 
 	// Objects in contact with group A
 	TSet<AActor*> SetA;

@@ -159,7 +159,7 @@ void USLManipulatorListener::Pause(bool bInPause)
 		{
 			for (const auto& Obj : GraspedObjects)
 			{
-				OnEndSLGrasp.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
+				OnEndManipulatorGrasp.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
 			}
 			GraspedObjects.Empty();
 			SetA.Empty();
@@ -215,10 +215,10 @@ bool USLManipulatorListener::LoadOverlapGroups()
 	// Lambda to check grasp overlap components of owner and add them to their groups
 	auto GetOverlapComponentsLambda = [this](AActor* Owner)
 	{
-		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLManipulatorOverlapShape::StaticClass());
+		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLManipulatorOverlapSphere::StaticClass());
 		for (UActorComponent* GraspOverlapComp : GraspOverlaps)
 		{
-			USLManipulatorOverlapShape* GraspOverlap = CastChecked<USLManipulatorOverlapShape>(GraspOverlapComp);
+			USLManipulatorOverlapSphere* GraspOverlap = CastChecked<USLManipulatorOverlapSphere>(GraspOverlapComp);
 			if (GraspOverlap->Group == ESLManipulatorOverlapGroup::A)
 			{
 				GroupA.Add(GraspOverlap);
@@ -283,7 +283,7 @@ void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 		FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *Begin Grasp* %s"),
 			*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
 	GraspedObjects.Emplace(OtherActor);
-	OnBeginSLGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
+	OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
 }
 
 // A grasp has ended
@@ -294,7 +294,7 @@ void USLManipulatorListener::EndGrasp(AActor* OtherActor)
 		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
 			FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *End Grasp* %s"),
 				*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
-		OnEndSLGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
+		OnEndManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -303,7 +303,7 @@ void USLManipulatorListener::EndAllGrasps()
 {
 	for (const auto& Obj : GraspedObjects)
 	{
-		OnEndSLGrasp.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
+		OnEndManipulatorGrasp.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
 	}
 	GraspedObjects.Empty();
 }
@@ -344,9 +344,9 @@ void USLManipulatorListener::OnBeginContact(AActor* OtherActor)
 		{
 			ContactObjects.Add(OtherActor, 1);
 			// Broadcast begin of semantic overlap event
-			FSLContactOverlapResult SemanticOverlapResult(SemanticOwner, OtherItem,
+			FSLContactResult SemanticOverlapResult(SemanticOwner, OtherItem,
 				GetWorld()->GetTimeSeconds(), false);
-			OnBeginManipulatorOverlap.Broadcast(SemanticOverlapResult);
+			OnBeginManipulatorContact.Broadcast(SemanticOverlapResult);
 		}
 	}
 }
@@ -389,7 +389,7 @@ void USLManipulatorListener::OnEndContact(AActor* OtherActor)
 				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
 					FString::Printf(TEXT(" * * * * *END* *BCAST* *HAND CONTACT* %s"),
 						*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
-				OnEndManipulatorOverlap.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
+				OnEndManipulatorContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
 				ContactObjects.Remove(OtherActor);
 			}
 		}

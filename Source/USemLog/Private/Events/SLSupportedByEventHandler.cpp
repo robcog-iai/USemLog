@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLSupportedByEventHandler.h"
-#include "SLContactOverlapShape.h"
+#include "SLContactBox.h"
 
 // UUtils
 #include "Ids.h"
@@ -15,7 +15,7 @@ void FSLSupportedByEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{		// Check if parent is of right type
-		Parent = Cast<USLContactOverlapShape>(InParent);
+		Parent = Cast<USLContactBox>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized
@@ -30,8 +30,8 @@ void FSLSupportedByEventHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		Parent->OnBeginSLOverlap.AddRaw(this, &FSLSupportedByEventHandler::OnSLOverlapBegin);
-		Parent->OnEndSLOverlap.AddRaw(this, &FSLSupportedByEventHandler::OnSLOverlapEnd);
+		Parent->OnBeginSLContact.AddRaw(this, &FSLSupportedByEventHandler::OnSLOverlapBegin);
+		Parent->OnEndSLContact.AddRaw(this, &FSLSupportedByEventHandler::OnSLOverlapEnd);
 
 		// Start timer (will be directly paused if no candidates are available)
 		TimerDelegate.BindRaw(this, &FSLSupportedByEventHandler::InspectCandidatesCb);
@@ -160,7 +160,7 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 }
 
 // Is a supported by event, returns nullptr if not an event
-bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLContactOverlapResult& InCandidate,
+bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLContactResult& InCandidate,
 	float Time, TSharedPtr<FSLSupportedByEvent> OutEvent)
 {
 	// Get relative vertical speed
@@ -244,7 +244,7 @@ void FSLSupportedByEventHandler::FinishAllEvents(float EndTime)
 }
 
 // Event called when a semantic overlap event begins
-void FSLSupportedByEventHandler::OnSLOverlapBegin(const FSLContactOverlapResult& InResult)
+void FSLSupportedByEventHandler::OnSLOverlapBegin(const FSLContactResult& InResult)
 {
 	// Add as candidate
 	Candidates.Emplace(InResult);

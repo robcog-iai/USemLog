@@ -14,7 +14,7 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "SLSemanticMapWriter.h"
-#include "SLContactOverlapShape.h"
+#include "SLContactBox.h"
 #include "SLSkeletalDataComponent.h"
 #include "Ids.h"
 #include "Tags.h"
@@ -167,9 +167,9 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("AddSLContactOverlapShapeColors", "Add Semantic Overlap Shapes"))
+						.Text(LOCTEXT("AddSLContactBoxColors", "Add Semantic Overlap Shapes"))
 					.IsEnabled(true)
-					.OnClicked(this, &FSLEdModeToolkit::AddSLContactOverlapShapes)
+					.OnClicked(this, &FSLEdModeToolkit::AddSLContactBoxs)
 					]
 				////
 				+ SVerticalBox::Slot()
@@ -177,9 +177,9 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("UpdateSLContactOverlapShapeColors", "Update Semantic Overlap Shape Visuals"))
+						.Text(LOCTEXT("UpdateSLContactBoxColors", "Update Semantic Overlap Shape Visuals"))
 						.IsEnabled(true)
-						.OnClicked(this, &FSLEdModeToolkit::UpdateSLContactOverlapShapeColors)
+						.OnClicked(this, &FSLEdModeToolkit::UpdateSLContactBoxColors)
 					]
 		];
 
@@ -732,9 +732,9 @@ FReply FSLEdModeToolkit::RemoveAllTags()
 }
 
 // Add semantic overlap shapes
-FReply FSLEdModeToolkit::AddSLContactOverlapShapes()
+FReply FSLEdModeToolkit::AddSLContactBoxs()
 {
-	FScopedTransaction Transaction(LOCTEXT("AddSLContactOverlapShapes", "Add contact overlap shapes"));
+	FScopedTransaction Transaction(LOCTEXT("AddSLContactBoxs", "Add contact overlap shapes"));
 	// Iterate only static mesh actors
 	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
@@ -745,14 +745,14 @@ FReply FSLEdModeToolkit::AddSLContactOverlapShapes()
 			if (FTags::HasKey(*ActItr, "SemLog", "Class"))
 			{
 				// Continue if no previous components are created
-				TArray<USLContactOverlapShape*> Comps;
-				ActItr->GetComponents<USLContactOverlapShape>(Comps);
+				TArray<USLContactBox*> Comps;
+				ActItr->GetComponents<USLContactBox>(Comps);
 				//if (Comps.Num() == 0)
 				//{
-				//	USLContactOverlapShape* Comp = NewObject<USLContactOverlapShape>(*ActItr);
+				//	USLContactBox* Comp = NewObject<USLContactBox>(*ActItr);
 				//	Comp->RegisterComponent();
 				//	/*FTransform T;
-				//	ActItr->AddComponent("USLContactOverlapShape", false, T, USLContactOverlapShape::StaticClass());*/
+				//	ActItr->AddComponent("USLContactBox", false, T, USLContactBox::StaticClass());*/
 				//}
 			}
 		}
@@ -762,13 +762,13 @@ FReply FSLEdModeToolkit::AddSLContactOverlapShapes()
 }
 
 // Update semantic visual shape visuals
-FReply FSLEdModeToolkit::UpdateSLContactOverlapShapeColors()
+FReply FSLEdModeToolkit::UpdateSLContactBoxColors()
 {
 	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
 		// Iterate actor components
-		TArray<USLContactOverlapShape*> Comps;
-		ActItr->GetComponents<USLContactOverlapShape>(Comps);
+		TArray<USLContactBox*> Comps;
+		ActItr->GetComponents<USLContactBox>(Comps);
 		for (auto& C : Comps)
 		{
 			C->UpdateVisualColor();

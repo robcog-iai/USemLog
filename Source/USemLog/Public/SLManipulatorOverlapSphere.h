@@ -6,7 +6,7 @@
 #include "USemLog.h"
 #include "Components/SphereComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "SLManipulatorOverlapShape.generated.h"
+#include "SLManipulatorOverlapSphere.generated.h"
 
 /**
 * Hand type
@@ -27,17 +27,17 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FSLGraspOverlapEndSignature, AActor* /*Other
 /**
  * Semantic overlap generator for grasp detection
  */
-UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Overlap Shape")
-class USEMLOG_API USLManipulatorOverlapShape : public USphereComponent
+UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Overlap Sphere")
+class USEMLOG_API USLManipulatorOverlapSphere : public USphereComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Ctor
-	USLManipulatorOverlapShape();
+	USLManipulatorOverlapSphere();
 
 	// Dtor
-	~USLManipulatorOverlapShape() = default;
+	~USLManipulatorOverlapSphere() = default;
 	
 	// Attach to bone 
 	bool Init(bool bGrasp = true, bool bContact = true);

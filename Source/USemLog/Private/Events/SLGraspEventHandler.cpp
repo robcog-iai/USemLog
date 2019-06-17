@@ -36,8 +36,8 @@ void FSLGraspEventHandler::Start()
 	if (!bIsStarted && bIsInit)
 	{
 		// Subscribe to the forwarded semantically annotated grasping broadcasts
-		Parent->OnBeginSLGrasp.AddRaw(this, &FSLGraspEventHandler::OnSLGraspBegin);
-		Parent->OnEndSLGrasp.AddRaw(this, &FSLGraspEventHandler::OnSLGraspEnd);
+		Parent->OnBeginManipulatorGrasp.AddRaw(this, &FSLGraspEventHandler::OnSLGraspBegin);
+		Parent->OnEndManipulatorGrasp.AddRaw(this, &FSLGraspEventHandler::OnSLGraspEnd);
 
 		// Mark as started
 		bIsStarted = true;
