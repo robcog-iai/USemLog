@@ -12,6 +12,8 @@
 #include "Events/SLSlicingEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLContactBox.h"
+#include "SLContactSphere.h"
+#include "SLContactCapsule.h"
 #include "SLManipulatorListener.h"
 #include "SLGoogleCharts.h"
 
@@ -84,7 +86,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				Itr->Init();
 
 				// Store the semantic overlap areas
-				OverlapShapes.Emplace(*Itr);
+				ContactBoxes.Emplace(*Itr);
 
 				if (bInLogContactEvents)
 				{
@@ -261,7 +263,7 @@ void USLEventLogger::Start()
 		}
 
 		// Start the semantic overlap areas
-		for (auto& SLContactBox : OverlapShapes)
+		for (auto& SLContactBox : ContactBoxes)
 		{
 			SLContactBox->Start();
 		}
@@ -295,11 +297,11 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		EventHandlers.Empty();
 
 		// Finish semantic overlap events publishing
-		for (auto& SLContactBox : OverlapShapes)
+		for (auto& SLContactBox : ContactBoxes)
 		{
 			SLContactBox->Finish(bForced);
 		}
-		OverlapShapes.Empty();
+		ContactBoxes.Empty();
 
 		// Finish the grasp listeners
 		for (auto& SLManipulatorListener : GraspListeners)

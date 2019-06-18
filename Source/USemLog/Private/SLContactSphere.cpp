@@ -1,7 +1,7 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLContactBox.h"
+#include "SLContactSphere.h"
 #include "SLEntitiesManager.h"
 #include "Animation/SkeletalMeshActor.h"
 
@@ -10,7 +10,7 @@
 #include "Ids.h"
 
 // Default constructor
-USLContactBox::USLContactBox()
+USLContactSphere::USLContactSphere()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -26,9 +26,9 @@ USLContactBox::USLContactBox()
 
 #if WITH_EDITOR
 	// Box extent scale
-	BoxExtentScaleFactor = 1.03f;
-	BoxExtentMin = 0.25f;
-	BoxExtentMax = 1.f;
+	SphereScaleFactor = 1.25f;
+	SphereMinSize = 0.25f;
+	SphereMaxSize = 1.f;
 
 	// Mimics a button
 	bReCalcShapeButton = false;
@@ -36,7 +36,7 @@ USLContactBox::USLContactBox()
 }
 
 // Destructor
-USLContactBox::~USLContactBox()
+USLContactSphere::~USLContactSphere()
 {
 	if (!bIsFinished)
 	{
@@ -45,7 +45,7 @@ USLContactBox::~USLContactBox()
 }
 
 // Called at level startup
-void USLContactBox::BeginPlay()
+void USLContactSphere::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -57,7 +57,7 @@ void USLContactBox::BeginPlay()
 }
 
 // Called when actor removed from game or game ended
-void USLContactBox::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void USLContactSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
@@ -68,7 +68,7 @@ void USLContactBox::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Setup pointers to outer, check if semantically annotated
-void USLContactBox::Init()
+void USLContactSphere::Init()
 {
 	if (!bIsInit)
 	{
@@ -115,7 +115,7 @@ void USLContactBox::Init()
 }
 
 // Start overlap events, trigger currently overlapping objects
-void USLContactBox::Start()
+void USLContactSphere::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -123,11 +123,11 @@ void USLContactBox::Start()
 		SetGenerateOverlapEvents(true);
 
 		// Broadcast currently overlapping components
-		USLContactBox::TriggerInitialOverlaps();
+		USLContactSphere::TriggerInitialOverlaps();
 
 		// Bind future overlapping event delegates
-		OnComponentBeginOverlap.AddDynamic(this, &USLContactBox::OnOverlapBegin);
-		OnComponentEndOverlap.AddDynamic(this, &USLContactBox::OnOverlapEnd);
+		OnComponentBeginOverlap.AddDynamic(this, &USLContactSphere::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLContactSphere::OnOverlapEnd);
 
 		// Mark as started
 		bIsStarted = true;
@@ -135,7 +135,7 @@ void USLContactBox::Start()
 }
 
 // Stop publishing overlap events
-void USLContactBox::Finish(bool bForced)
+void USLContactSphere::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -151,50 +151,37 @@ void USLContactBox::Finish(bool bForced)
 
 #if WITH_EDITOR
 // Called after the C++ constructor and after the properties have been initialized
-void USLContactBox::PostInitProperties()
+void USLContactSphere::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	if (!USLContactBox::LoadShapeBounds())
+	if (!USLContactSphere::LoadShapeBounds())
 	{
-		USLContactBox::CalcShapeBounds();
-		USLContactBox::StoreShapeBounds();
+		USLContactSphere::CalcShapeBounds();
+		USLContactSphere::StoreShapeBounds();
 	}
 
 	// Set bounds visual corresponding color 
-	USLContactBox::UpdateVisualColor();
+	USLContactSphere::UpdateVisualColor();
 }
 
 // Called when a property is changed in the editor
-void USLContactBox::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
 	// Get the changed property and member names
 	FName PropertyName = PropertyChangedEvent.GetPropertyName();
 
-	FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != NULL) ? 
+	FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != NULL) ?
 		PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactBox, BoxExtent))
+	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, SphereRadius))
 	{
-		if (PropertyName == FName("X"))
-		{
-			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "ExtX",
-				FString::SanitizeFloat(BoxExtent.X));
-		}
-		else if (PropertyName == FName("Y"))
-		{
-			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "ExtY",
-				FString::SanitizeFloat(BoxExtent.Y));
-		}
-		else if (PropertyName == FName("Z"))
-		{
-			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "ExtY",
-				FString::SanitizeFloat(BoxExtent.Y));
-		}
+			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "Radius",
+				FString::SanitizeFloat(SphereRadius));
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactBox, RelativeLocation))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, RelativeLocation))
 	{
 		if (PropertyName == FName("X"))
 		{
@@ -212,17 +199,7 @@ void USLContactBox::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 				FString::SanitizeFloat(RelativeLocation.Y));
 		}
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactBox, RelativeRotation))
-	{
-		const FQuat RelQuat = GetRelativeTransform().GetRotation();
-		TMap<FString, FString> KeyValMap;
-		KeyValMap.Add("QuatW", FString::SanitizeFloat(RelQuat.W));
-		KeyValMap.Add("QuatX", FString::SanitizeFloat(RelQuat.X));
-		KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
-		KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
-		FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
-	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactBox, bReCalcShapeButton))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, bReCalcShapeButton))
 	{
 		CalcShapeBounds();
 		bReCalcShapeButton = false;
@@ -230,12 +207,10 @@ void USLContactBox::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 }
 
 // Called when this component is moved in the editor
-void USLContactBox::PostEditComponentMove(bool bFinished)
+void USLContactSphere::PostEditComponentMove(bool bFinished)
 {
 	// Update tags with the new transform
-	const FTransform RelTransf = GetRelativeTransform();
-	const FVector RelLoc = RelTransf.GetLocation();
-	const FQuat RelQuat = RelTransf.GetRotation();
+	const FVector RelLoc = GetRelativeTransform().GetLocation();
 
 	TMap<FString, FString> KeyValMap;
 
@@ -243,28 +218,19 @@ void USLContactBox::PostEditComponentMove(bool bFinished)
 	KeyValMap.Add("LocY", FString::SanitizeFloat(RelLoc.Y));
 	KeyValMap.Add("LocZ", FString::SanitizeFloat(RelLoc.Z));
 
-	KeyValMap.Add("QuatW", FString::SanitizeFloat(RelQuat.W));
-	KeyValMap.Add("QuatX", FString::SanitizeFloat(RelQuat.X));
-	KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
-	KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
-
 	FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
 }
 
 // Read values from tags
-bool USLContactBox::LoadShapeBounds()
+bool USLContactSphere::LoadShapeBounds()
 {
-	TMap<FString, FString> TagKeyValMap = 
+	TMap<FString, FString> TagKeyValMap =
 		FTags::GetKeyValuePairs(GetOuter(), TagTypeName);
 
-	if (TagKeyValMap.Num() == 0){return false;}
+	if (TagKeyValMap.Num() == 0) { return false; }
 
-	FVector BoxExt;
-	if (FString* ValPtr = TagKeyValMap.Find("ExtX")) { BoxExt.X = FCString::Atof(**ValPtr); }
-	else { return false; }
-	if (FString* ValPtr = TagKeyValMap.Find("ExtY")) { BoxExt.Y = FCString::Atof(**ValPtr); }
-	else { return false; }
-	if (FString* ValPtr = TagKeyValMap.Find("ExtZ")) { BoxExt.Z = FCString::Atof(**ValPtr); }
+	float Radius;
+	if (FString* ValPtr = TagKeyValMap.Find("Radius")) { Radius = FCString::Atof(**ValPtr); }
 	else { return false; }
 
 	FVector RelLoc;
@@ -275,41 +241,28 @@ bool USLContactBox::LoadShapeBounds()
 	if (FString* ValPtr = TagKeyValMap.Find("LocZ")) { RelLoc.Z = FCString::Atof(**ValPtr); }
 	else { return false; }
 
-	FQuat RelQuat;
-	if (FString* ValPtr = TagKeyValMap.Find("QuatW")) { RelQuat.W = FCString::Atof(**ValPtr); }
-	else { return false; }
-	if (FString* ValPtr = TagKeyValMap.Find("QuatX")) { RelQuat.X = FCString::Atof(**ValPtr); }
-	else { return false; }
-	if (FString* ValPtr = TagKeyValMap.Find("QuatY")) { RelQuat.Y = FCString::Atof(**ValPtr); }
-	else { return false; }
-	if (FString* ValPtr = TagKeyValMap.Find("QuatZ")) { RelQuat.Z = FCString::Atof(**ValPtr); }
-	else { return false; }
-
-	SetBoxExtent(BoxExt);
-	SetRelativeTransform(FTransform(RelQuat, RelLoc));
+	SetSphereRadius(Radius);
+	SetRelativeLocation(RelLoc);
 	return true;
 }
 
 // Calculate trigger area size
-bool USLContactBox::CalcShapeBounds()
+bool USLContactSphere::CalcShapeBounds()
 {
 	// Get the static mesh component
 	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
 	{
 		if (UStaticMeshComponent* SMComp = OuterAsSMAct->GetStaticMeshComponent())
 		{
-			// Apply smallest box extent
+			// Apply smallest sphere size
 			FVector BBMin;
 			FVector BBMax;
 			SMComp->GetLocalBounds(BBMin, BBMax);
-			const FVector Ext = (BBMax - BBMin) * 0.5f;
-			const FVector ScaledExt = Ext * BoxExtentScaleFactor;
-			SetBoxExtent(ScaledExt.BoundToBox(Ext + BoxExtentMin, Ext + BoxExtentMax));
+			FBoxSphereBounds BoxSphere(FBox(BBMin*0.5f, BBMax*0.5f));
+			float Radius = FMath::Clamp(BoxSphere.SphereRadius * SphereScaleFactor,
+				BoxSphere.SphereRadius + SphereMinSize, BoxSphere.SphereRadius + SphereMaxSize);
 
-			// Apply its location
-			//FTransform BoundsTransf(FQuat::Identity, SMComp->Bounds.Origin);
-			//BoundsTransf.SetToRelativeTransform(SMComp->GetComponentTransform());
-			//SetRelativeTransform(BoundsTransf);
+			SetSphereRadius(Radius);
 			return true;
 		}
 	}
@@ -317,32 +270,23 @@ bool USLContactBox::CalcShapeBounds()
 }
 
 // Save values to tags
-bool USLContactBox::StoreShapeBounds()
+bool USLContactSphere::StoreShapeBounds()
 {
-	const FTransform RelTransf = GetRelativeTransform();
-	const FVector RelLoc = RelTransf.GetLocation();
-	const FQuat RelQuat = RelTransf.GetRotation();
+	const FVector RelLoc = GetRelativeTransform().GetLocation();
 
 	TMap<FString, FString> KeyValMap;
-	
-	KeyValMap.Add("ExtX", FString::SanitizeFloat(BoxExtent.X));
-	KeyValMap.Add("ExtY", FString::SanitizeFloat(BoxExtent.Y));
-	KeyValMap.Add("ExtZ", FString::SanitizeFloat(BoxExtent.Z));
-	
+
+	KeyValMap.Add("Radius", FString::SanitizeFloat(SphereRadius));
+
 	KeyValMap.Add("LocX", FString::SanitizeFloat(RelLoc.X));
 	KeyValMap.Add("LocY", FString::SanitizeFloat(RelLoc.Y));
 	KeyValMap.Add("LocZ", FString::SanitizeFloat(RelLoc.Z));
 
-	KeyValMap.Add("QuatW", FString::SanitizeFloat(RelQuat.W));
-	KeyValMap.Add("QuatX", FString::SanitizeFloat(RelQuat.X));
-	KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
-	KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
-	
 	return FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
 }
 
 // Update bounds visual (red/green -- parent is not/is semantically annotated)
-void USLContactBox::UpdateVisualColor()
+void USLContactSphere::UpdateVisualColor()
 {
 	// Set the default color of the shape
 	if (FTags::HasKey(GetOuter(), "SemLog", "Class"))
@@ -366,7 +310,7 @@ void USLContactBox::UpdateVisualColor()
 #endif // WITH_EDITOR
 
 // Publish currently overlapping components
-void USLContactBox::TriggerInitialOverlaps()
+void USLContactSphere::TriggerInitialOverlaps()
 {
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
@@ -375,13 +319,13 @@ void USLContactBox::TriggerInitialOverlaps()
 	FHitResult Dummy;
 	for (const auto& CompItr : CurrOverlappingComponents)
 	{
-		USLContactBox::OnOverlapBegin(
+		USLContactSphere::OnOverlapBegin(
 			this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
 }
 
 // Called on overlap begin events
-void USLContactBox::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
+void USLContactSphere::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex,
@@ -413,11 +357,11 @@ void USLContactBox::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
 		// Broadcast begin of semantic overlap event
-		FSLContactResult SemanticOverlapResult(SemanticOwner, OtherItem, 
+		FSLContactResult SemanticOverlapResult(SemanticOwner, OtherItem,
 			StartTime, false, OwnerMeshComp, OtherAsMeshComp);
 		OnBeginSLContact.Broadcast(SemanticOverlapResult);
 	}
-	else if (USLContactBox* OtherContactTrigger = Cast<USLContactBox>(OtherComp))
+	else if (USLContactSphere* OtherContactTrigger = Cast<USLContactSphere>(OtherComp))
 	{
 		// If both areas are trigger areas, they will both concurrently trigger overlap events.
 		// To avoid this we consistently ignore one trigger event. This is chosen using
@@ -437,7 +381,7 @@ void USLContactBox::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 }
 
 // Called on overlap end events
-void USLContactBox::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
+void USLContactSphere::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
@@ -469,7 +413,7 @@ void USLContactBox::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		// Broadcast end of semantic overlap event
 		OnEndSLContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
 	}
-	else if (USLContactBox* OtherContactTrigger = Cast<USLContactBox>(OtherComp))
+	else if (USLContactSphere* OtherContactTrigger = Cast<USLContactSphere>(OtherComp))
 	{
 		// If both areas are trigger areas, they will both concurrently trigger overlap events.
 		// To avoid this we consistently ignore one trigger event. This is chosen using
