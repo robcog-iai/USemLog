@@ -14,7 +14,7 @@ class FSLSlicingEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLSlicingEvent();
+	FSLSlicingEvent() = default;
 
 	// Constructor with initialization
 	FSLSlicingEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,

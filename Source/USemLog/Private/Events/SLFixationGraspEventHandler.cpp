@@ -88,7 +88,7 @@ bool FSLFixationGraspEventHandler::FinishEvent(UObject* Other, float EndTime)
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Other.Obj == Other)
+		if ((*EventItr)->Item.Obj == Other)
 		{
 			// Set end time and publish event
 			(*EventItr)->End = EndTime;

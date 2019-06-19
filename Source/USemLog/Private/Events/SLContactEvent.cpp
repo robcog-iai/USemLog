@@ -4,11 +4,6 @@
 #include "Events/SLContactEvent.h"
 #include "SLOwlExperimentStatics.h"
 
-// Default constructor
-FSLContactEvent::FSLContactEvent()
-{
-}
-
 // Constructor with initialization
 FSLContactEvent::FSLContactEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 	const FSLEntity& InItem1, const FSLEntity& InItem2) :

@@ -4,10 +4,6 @@
 #include "Events/SLSlidingEvent.h"
 #include "SLOwlExperimentStatics.h"
 
-	// Default constructor
-FSLSlidingEvent::FSLSlidingEvent()
-{
-}
 //
 //// Constructor with initialization
 //FSLSlidingEvent::FSLSlidingEvent(const FString& InId,

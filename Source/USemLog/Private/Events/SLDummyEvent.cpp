@@ -3,14 +3,6 @@
 
 #include "Events/SLDummyEvent.h"
 
-// Default constructor
-FSLDummyEvent::FSLDummyEvent()
-{
-	Start = 0.2f;
-	End = 1231.f;
-}
-
-
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
 FSLOwlNode FSLDummyEvent::ToOwlNode(/*ESLEventsTemplate TemplateType*/) const

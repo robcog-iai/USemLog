@@ -13,7 +13,7 @@ class FSLSupportedByEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLSupportedByEvent();
+	FSLSupportedByEvent() = default;
 
 	// Constructor with initialization 
 	FSLSupportedByEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,

@@ -1,32 +1,30 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Events/SLGraspEvent.h"
+#include "Events/SLTransportEvent.h"
 #include "SLOwlExperimentStatics.h"
 
 // Constructor with initialization
-FSLGraspEvent::FSLGraspEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const FSLEntity& InManipulator, const FSLEntity& InOther) :
-	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
-	Manipulator(InManipulator), Item(InOther)
+FSLTransportEvent::FSLTransportEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
+	const FSLEntity& InManipulator, const FSLEntity& InItem) :
+	ISLEvent(InId, InStart, InEnd), PairId(InPairId), Manipulator(InManipulator), Item(InItem)
 {
 }
 
-// Constructor initialization without End with pair id
-FSLGraspEvent::FSLGraspEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const FSLEntity& InManipulator, const FSLEntity& InOther) :
-	ISLEvent(InId, InStart), PairId(InPairId),
-	Manipulator(InManipulator), Item(InOther)
+// Constructor initialization without end time
+FSLTransportEvent::FSLTransportEvent(const FString& InId, const float InStart, const uint64 InPairId,
+	const FSLEntity& InItem, const FSLEntity& InManipulator) :
+	ISLEvent(InId, InStart), PairId(InPairId), Manipulator(InManipulator), Item(InItem)
 {
 }
 
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
-FSLOwlNode FSLGraspEvent::ToOwlNode() const
+FSLOwlNode FSLTransportEvent::ToOwlNode() const
 {
-	// Create the contact event node
+	// Create the Transport event node
 	FSLOwlNode EventIndividual = FSLOwlExperimentStatics::CreateEventIndividual(
-		"log", Id, "GraspingSomething");
+		"log", Id, "TransportingSituation");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator.Id));
@@ -35,7 +33,7 @@ FSLOwlNode FSLGraspEvent::ToOwlNode() const
 }
 
 // Add the owl representation of the event to the owl document
-void FSLGraspEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
+void FSLTransportEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 {
 	// Add timepoint individuals
 	// We know that the document is of type FOwlExperiment,
@@ -46,30 +44,30 @@ void FSLGraspEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
 		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
+	EventsDoc->AddObjectIndividual(Item.Obj,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item.Id, Manipulator.Class));
 	EventsDoc->AddObjectIndividual(Manipulator.Obj,
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", Manipulator.Id, Manipulator.Class));
-	EventsDoc->AddObjectIndividual(Item.Obj,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item.Id, Item.Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
 // Get event context data as string (ToString equivalent)
-FString FSLGraspEvent::Context() const
+FString FSLTransportEvent::Context() const
 {
-	return FString::Printf(TEXT("Grasp - %lld"), PairId);
+	return FString::Printf(TEXT("Transport - %lld"), PairId);
 }
 
 // Get the tooltip data
-FString FSLGraspEvent::Tooltip() const
+FString FSLTransportEvent::Tooltip() const
 {
-	return FString::Printf(TEXT("\'Manipulator\',\'%s\',\'Id\',\'%s\',\'Other\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
-		*Manipulator.Class, *Manipulator.Id, *Item.Class, *Item.Id, *Id);
+	return FString::Printf(TEXT("\'O1\',\'%s\',\'Id\',\'%s\',\'O2\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
+		*Item.Class, *Item.Id, *Manipulator.Class, *Manipulator.Id, *Id);
 }
 
 // Get the data as string
-FString FSLGraspEvent::ToString() const
+FString FSLTransportEvent::ToString() const
 {
-	return FString::Printf(TEXT("Manipulator:[%s] Other:[%s] PairId:%lld"),
-		*Manipulator.ToString(), *Item.ToString(), PairId);
+	return FString::Printf(TEXT("Item:[%s] Manipulator:[%s] PairId:%lld"),
+		*Item.ToString(), *Manipulator.ToString(), PairId);
 }
 /* End ISLEvent interface */

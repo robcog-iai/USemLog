@@ -7,30 +7,30 @@
 #include "SLStructs.h"
 
 /**
-* Contact event class
+* Reach event class
 */
-class FSLContactEvent : public ISLEvent
+class FSLReachEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLContactEvent() = default;
+	FSLReachEvent() = default;
 
 	// Constructor with initialization
-	FSLContactEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLEntity& InItem1, const FSLEntity& InItem2);
+	FSLReachEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
+		const FSLEntity& InManipulator, const FSLEntity& InItem);
 
 	// Constructor initialization without end time
-	FSLContactEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLEntity& InItem1, const FSLEntity& InItem2);
-	
+	FSLReachEvent(const FString& InId, const float InStart, const uint64 InPairId,
+		const FSLEntity& InManipulator, const FSLEntity& InItem);
+
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
-	// Item1 in contact
-	FSLEntity Item1;
+	// Who is Reaching the object
+	FSLEntity Manipulator;
 
-	// Item2 in contact
-	FSLEntity Item2;
+	// The object Reached
+	FSLEntity Item;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

@@ -8,3 +8,6 @@
 #include "SLGraspEvent.h"
 #include "SLSlidingEvent.h"
 #include "SLPushedEvent.h"
+#include "SLLiftEvent.h"
+#include "SLReachEvent.h"
+#include "SLTransportEvent.h"

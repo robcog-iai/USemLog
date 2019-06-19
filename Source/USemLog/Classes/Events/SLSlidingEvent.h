@@ -12,7 +12,7 @@ class FSLSlidingEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLSlidingEvent();
+	FSLSlidingEvent() = default;
 
 	//// Constructor with initialization
 	//FSLSlidingEvent(const FString& InId,

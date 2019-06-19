@@ -13,7 +13,7 @@ class FSLDummyEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLDummyEvent();
+	FSLDummyEvent() = default;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event
