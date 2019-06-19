@@ -272,19 +272,19 @@ bool USLManipulatorOverlapSphere::AttachToBone()
 				if (AttachToComponent(SMC, AttachmentRule, BoneName))
 				{
 					//UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached component %s to the bone %s"),
-					//	TEXT(__func__), __LINE__, *GetName(), *BoneName.ToString());
+					//	*FString(__func__), __LINE__, *GetName(), *BoneName.ToString());
 					return true;
 				}
 			}
 			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find bone %s for component %s"),
-					TEXT(__func__), __LINE__, *BoneName.ToString(), *GetName());
+					*FString(__func__), __LINE__, *BoneName.ToString(), *GetName());
 			}
 		}
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not attach component %s to the bone %s"),
-		TEXT(__func__), __LINE__, *GetName(), *BoneName.ToString());
+		*FString(__func__), __LINE__, *GetName(), *BoneName.ToString());
 	return false;
 }
 
