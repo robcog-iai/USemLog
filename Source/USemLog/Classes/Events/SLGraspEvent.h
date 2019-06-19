@@ -14,24 +14,24 @@ class FSLGraspEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLGraspEvent();
+	FSLGraspEvent() = default;
 
 	// Constructor with initialization
 	FSLGraspEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLEntity& InHand, const FSLEntity& InOther);
+		const FSLEntity& InManipulator, const FSLEntity& InItem);
 
 	// Constructor initialization without end time
 	FSLGraspEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLEntity& InHand, const FSLEntity& InOther);
+		const FSLEntity& InManipulator, const FSLEntity& InItem);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
-	// Hand item
-	FSLEntity Hand;
+	// Manipulator item
+	FSLEntity Manipulator;
 	
-	// Other item (grasped item)
-	FSLEntity Other;
+	// Item item (grasped item)
+	FSLEntity Item;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

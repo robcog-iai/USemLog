@@ -4,11 +4,6 @@
 #include "Events/SLPushedEvent.h"
 #include "SLOwlExperimentStatics.h"
 
-	// Default constructor
-FSLPushedEvent::FSLPushedEvent()
-{
-}
-
 //// Constructor with initialization
 //FSLPushedEvent::FSLPushedEvent(const FString& InId,
 //	const float InStart,

@@ -12,7 +12,7 @@ class FSLPushedEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLPushedEvent();
+	FSLPushedEvent() = default;
 
 	//// Constructor with initialization
 	//FSLPushedEvent(const FString& InId,

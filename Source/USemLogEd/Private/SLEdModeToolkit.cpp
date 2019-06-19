@@ -187,7 +187,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("EnableAllOverlaps", "Enable overlap events"))
+						.Text(LOCTEXT("EnableAllOverlaps", "Enable All Overlaps"))
 					.IsEnabled(true)
 					.OnClicked(this, &FSLEdModeToolkit::EnableAllOverlaps)
 					]

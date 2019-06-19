@@ -4,11 +4,6 @@
 #include "Events/SLSupportedByEvent.h"
 #include "SLOwlExperimentStatics.h"
 
-	// Default constructor
-FSLSupportedByEvent::FSLSupportedByEvent()
-{
-}
-
 // Constructor with initialization
 FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 	const FSLEntity& InSupportedItem, const FSLEntity& InSupportingItem) :

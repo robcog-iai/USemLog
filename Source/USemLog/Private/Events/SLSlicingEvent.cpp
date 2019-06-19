@@ -4,11 +4,6 @@
 #include "Events/SLSlicingEvent.h"
 #include "SLOwlExperimentStatics.h"
 
-// Default constructor
-FSLSlicingEvent::FSLSlicingEvent()
-{
-}
-
 // Constructor with initialization
 FSLSlicingEvent::FSLSlicingEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 	const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn,
