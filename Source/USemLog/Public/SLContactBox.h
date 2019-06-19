@@ -144,5 +144,5 @@ private:
 	FSLEntity SemanticOwner;
 
 	/* Constants */
-	constexpr static char* TagTypeName = "SemLogColl";
+	constexpr static const char* TagTypeName = "SemLogColl";
 };
