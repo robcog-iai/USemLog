@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLContactEventHandler.h"
-#include "SLContactBox.h"
+#include "SLContactShapeInterface.h"
 
 // UUtils
 #include "Ids.h"
@@ -13,10 +13,9 @@ void FSLContactEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<USLContactBox>(InParent);
+		Parent = Cast<ISLContactShapeInterface>(InParent);
 		if (Parent)
 		{
-			// Mark as initialized
 			bIsInit = true;
 		}
 	}
@@ -27,8 +26,11 @@ void FSLContactEventHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		Parent->OnBeginSLContact.AddRaw(this, &FSLContactEventHandler::OnSLOverlapBegin);
-		Parent->OnEndSLContact.AddRaw(this, &FSLContactEventHandler::OnSLOverlapEnd);
+		if (Parent)
+		{
+			Parent->OnBeginSLContact.AddRaw(this, &FSLContactEventHandler::OnSLOverlapBegin);
+			Parent->OnEndSLContact.AddRaw(this, &FSLContactEventHandler::OnSLOverlapEnd);
+		}
 
 		// Mark as started
 		bIsStarted = true;

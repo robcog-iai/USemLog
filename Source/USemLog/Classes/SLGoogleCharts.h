@@ -65,18 +65,21 @@ struct FSLGoogleCharts
 		// Add event times
 		for (const auto& Ev : InEvents)
 		{
-			TimelineStr.Append(
-				"\t\t [ \'" + Ev->Context() + "\' , \'" + Ev->Id + "\' , " );
+			const FString StartStr = FString::Printf(TEXT("%.3f"),Ev->Start); //FString::SanitizeFloat(Ev->Start);
+			const FString EndStr = FString::Printf(TEXT("%.3f"), Ev->End); //FString::SanitizeFloat(Ev->End);
+			const FString StartMsStr = FString::Printf(TEXT("%.3f"), Ev->Start * 1000.f); //FString::SanitizeFloat(Ev->Start * 1000.f);
+			const FString EndMsStr = FString::Printf(TEXT("%.3f"), Ev->End * 1000.f);  //FString::SanitizeFloat(Ev->End * 1000.f);
+
+			TimelineStr.Append("\t\t [ \'" + Ev->Context() + "\' , \'" + Ev->Id + "\' , " );
 			if (Params.bTooltips)
 			{
 				TimelineStr.Append(
 					"createTooltipHTMLContent("
-					+ FString::SanitizeFloat(Ev->Start) + ", " 
-					+ FString::SanitizeFloat(Ev->End) + ", "
+					+ StartStr + ", "
+					+ EndStr + ", "
 					+ Ev->Tooltip() + "), " );
 			}
-			TimelineStr.Append(FString::SanitizeFloat(Ev->Start * 1000.f) + " , " 
-				+ FString::SanitizeFloat(Ev->End * 1000.f) + " ],\n");  // google charts needs millisecods
+			TimelineStr.Append(StartMsStr + " , " + EndMsStr + " ],\n");  // google charts needs millisecods
 		}
 
 		TimelineStr.Append(

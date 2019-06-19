@@ -42,7 +42,7 @@ private:
 
 private:
 	// Parent semantic overlap area
-	class USLContactBox* Parent;
+	class ISLContactShapeInterface* Parent;
 
 	// Array of started contact events
 	TArray<TSharedPtr<FSLContactEvent>> StartedEvents;

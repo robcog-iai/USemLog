@@ -49,7 +49,7 @@ private:
 
 private:
 	// Parent semantic overlap area
-	class USLContactBox* Parent;
+	class ISLContactShapeInterface* Parent;
 	
 	// Candidates for supported by event
 	TArray<FSLContactResult> Candidates;
@@ -65,4 +65,8 @@ private:
 	
 	// Re-enable the overlap events in the next tick
 	FTimerDelegate TimerDelegateNextTick;
+
+	/* Constants */
+	constexpr static float MaxVertSpeed = 0.5f;
+	constexpr static float UpdateRate = 0.15f;
 };

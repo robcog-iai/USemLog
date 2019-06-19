@@ -11,9 +11,7 @@
 #include "Events/SLFixationGraspEventHandler.h"
 #include "Events/SLSlicingEventHandler.h"
 #include "SLOwlExperimentStatics.h"
-#include "SLContactBox.h"
-#include "SLContactSphere.h"
-#include "SLContactCapsule.h"
+#include "SLContactShapeInterface.h"
 #include "SLManipulatorListener.h"
 #include "SLGoogleCharts.h"
 
@@ -78,45 +76,47 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		// rename FSLContactEventHandler,FSLSupportedByEventHandler,FSLFixationGraspEventHandler -> Events
 
 		// Init all contact trigger handlers
-		for (TObjectIterator<USLContactBox> Itr; Itr; ++Itr)
+		for (TObjectIterator<UShapeComponent> Itr; Itr; ++Itr)
 		{
-			if (IsValidAndAnnotated(*Itr))
+			//if (Itr->GetClass()->ImplementsInterface(USLContactShapeInterface::StaticClass()))
+			if (ISLContactShapeInterface* ContactShape = Cast<ISLContactShapeInterface>(*Itr))
 			{
-				// Init the semantic overlap area
-				Itr->Init();
-
-				// Store the semantic overlap areas
-				ContactBoxes.Emplace(*Itr);
-
-				if (bInLogContactEvents)
+				if (IsValidAndAnnotated(*Itr))
 				{
-					// Create a contact event handler 
-					TSharedPtr<FSLContactEventHandler> CEHandler = MakeShareable(new FSLContactEventHandler());
-					CEHandler->Init(*Itr);
-					if (CEHandler->IsInit())
-					{
-						EventHandlers.Add(CEHandler);
-					}
-					else
-					{
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-							*FString(__func__), __LINE__, *Itr->GetName());
-					}
-				}
+					ContactShape->Init();
 
-				if (bInLogSupportedByEvents)
-				{
-					// Create a supported-by event handler
-					TSharedPtr<FSLSupportedByEventHandler> SBEHandler = MakeShareable(new FSLSupportedByEventHandler());
-					SBEHandler->Init(*Itr);
-					if (SBEHandler->IsInit())
+					ContactShapes.Emplace(ContactShape);
+
+					if (bInLogContactEvents)
 					{
-						EventHandlers.Add(SBEHandler);
+						// Create a contact event handler 
+						TSharedPtr<FSLContactEventHandler> CEHandler = MakeShareable(new FSLContactEventHandler());
+						CEHandler->Init(*Itr);
+						if (CEHandler->IsInit())
+						{
+							EventHandlers.Add(CEHandler);
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+								*FString(__func__), __LINE__, *Itr->GetName());
+						}
 					}
-					else
+
+					if (bInLogSupportedByEvents)
 					{
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-							*FString(__func__), __LINE__, *Itr->GetName());
+						// Create a supported-by event handler
+						TSharedPtr<FSLSupportedByEventHandler> SBEHandler = MakeShareable(new FSLSupportedByEventHandler());
+						SBEHandler->Init(*Itr);
+						if (SBEHandler->IsInit())
+						{
+							EventHandlers.Add(SBEHandler);
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+								*FString(__func__), __LINE__, *Itr->GetName());
+						}
 					}
 				}
 			}
@@ -263,9 +263,9 @@ void USLEventLogger::Start()
 		}
 
 		// Start the semantic overlap areas
-		for (auto& SLContactBox : ContactBoxes)
+		for (auto& SLContactShape : ContactShapes)
 		{
-			SLContactBox->Start();
+			SLContactShape->Start();
 		}
 
 		// Start the grasp listeners
@@ -297,11 +297,11 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		EventHandlers.Empty();
 
 		// Finish semantic overlap events publishing
-		for (auto& SLContactBox : ContactBoxes)
+		for (auto& SLContactShape : ContactShapes)
 		{
-			SLContactBox->Finish(bForced);
+			SLContactShape->Finish();
 		}
-		ContactBoxes.Empty();
+		ContactShapes.Empty();
 
 		// Finish the grasp listeners
 		for (auto& SLManipulatorListener : GraspListeners)

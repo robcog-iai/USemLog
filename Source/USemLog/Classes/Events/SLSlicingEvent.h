@@ -19,7 +19,7 @@ public:
 	// Constructor with initialization
 	FSLSlicingEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 		const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn,
-		const FSLEntity& InOutputsCreated, const bool InTaskSuccess);
+		const FSLEntity& InOutputsCreated, const bool bInTaskSuccessful);
 
 	// Constructor initialization without endTime, endTaskSuccess and outputsCreated.
 	FSLSlicingEvent(const FString& InId, const float InStart, const uint64 InPairId,
@@ -40,8 +40,8 @@ public:
 	// Slice
 	FSLEntity OutputsCreated;
 
-	// Task succeded or not
-	bool TaskSuccess;
+	// Task succeeded or not
+	bool bTaskSuccessful;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event
