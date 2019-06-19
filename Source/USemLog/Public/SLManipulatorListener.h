@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "UsemLog.h"
+#include "USemLog.h"
 #include "Components/ActorComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "SLManipulatorOverlapSphere.h"

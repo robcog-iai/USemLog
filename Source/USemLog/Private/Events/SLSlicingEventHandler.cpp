@@ -86,7 +86,7 @@ void FSLSlicingEventHandler::AddNewEvent(const FSLEntity& PerformedBy, const FSL
 }
 
 // Publish finished event
-bool FSLSlicingEventHandler::FinishEvent(UObject* ObjectActedOn, bool taskSuccess, float EndTime, const FSLEntity& OutputsCreated = FSLEntity::FSLEntity())
+bool FSLSlicingEventHandler::FinishEvent(UObject* ObjectActedOn, bool bInTaskSuccessful, float EndTime, const FSLEntity& OutputsCreated = FSLEntity())
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
@@ -96,7 +96,7 @@ bool FSLSlicingEventHandler::FinishEvent(UObject* ObjectActedOn, bool taskSucces
 		{
 			// Set end time and publish event
 			(*EventItr)->End = EndTime;
-			(*EventItr)->TaskSuccess = taskSuccess;
+			(*EventItr)->bTaskSuccessful = bInTaskSuccessful;
 			(*EventItr)->OutputsCreated = OutputsCreated;
 			OnSemanticEvent.ExecuteIfBound(*EventItr);
 			// Remove event from the pending list

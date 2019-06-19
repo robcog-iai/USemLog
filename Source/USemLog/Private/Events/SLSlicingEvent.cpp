@@ -12,10 +12,10 @@ FSLSlicingEvent::FSLSlicingEvent()
 // Constructor with initialization
 FSLSlicingEvent::FSLSlicingEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 	const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn,
-	const FSLEntity& InOutputsCreated, const bool InTaskSuccess) :
+	const FSLEntity& InOutputsCreated, const bool bInTaskSuccessful) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
 	PerformedBy(InPerformedBy), DeviceUsed(InDeviceUsed), ObjectActedOn(InObjectActedOn),
-	OutputsCreated(InOutputsCreated), TaskSuccess(InTaskSuccess)
+	OutputsCreated(InOutputsCreated), bTaskSuccessful(bInTaskSuccessful)
 {
 }
 
@@ -39,8 +39,8 @@ FSLOwlNode FSLSlicingEvent::ToOwlNode() const
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", PerformedBy.Id));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateDeviceUsedProperty("log", DeviceUsed.Id));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", ObjectActedOn.Id));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateTaskSuccessProperty("log", TaskSuccess));
-	if (TaskSuccess)
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateTaskSuccessProperty("log", bTaskSuccessful));
+	if (bTaskSuccessful)
 	{
 		EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateOutputsCreatedProperty("log", OutputsCreated.Id));
 	}
@@ -65,7 +65,7 @@ void FSLSlicingEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", DeviceUsed.Id, DeviceUsed.Class));
 	EventsDoc->AddObjectIndividual(ObjectActedOn.Obj,
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", ObjectActedOn.Id, ObjectActedOn.Class));
-	if (TaskSuccess)
+	if (bTaskSuccessful)
 	{
 	EventsDoc->AddObjectIndividual(OutputsCreated.Obj,
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", OutputsCreated.Id, OutputsCreated.Class));
@@ -82,7 +82,7 @@ FString FSLSlicingEvent::Context() const
 // Get the tooltip data
 FString FSLSlicingEvent::Tooltip() const
 {
-	if (TaskSuccess) {
+	if (bTaskSuccessful) {
 		return FString::Printf(TEXT("\'PerformedBy\',\'%s\',\'Id\',\'%s\',  \
 								 \'DeviceUsed\',\'%s\',\'Id\',\'%s\',  \
 								 \'ObjectActedOn\',\'%s\',\'Id\',\'%s\',\
@@ -111,7 +111,7 @@ FString FSLSlicingEvent::Tooltip() const
 // Get the data as string
 FString FSLSlicingEvent::ToString() const
 {
-	if (TaskSuccess) {
+	if (bTaskSuccessful) {
 		return FString::Printf(TEXT("PerformedBy:[%s] DeviceUsed:[%s] ObjectActedOn:[%s] TaskSuccess:[True] OutputsCreated:[%s] PairId:%lld"),
 			*PerformedBy.ToString(), *DeviceUsed.ToString(), *ObjectActedOn.ToString(), *OutputsCreated.ToString(), PairId);
 	}
