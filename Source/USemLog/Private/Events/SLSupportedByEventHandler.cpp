@@ -2,20 +2,17 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLSupportedByEventHandler.h"
-#include "SLContactBox.h"
+#include "SLContactShapeInterface.h"
 
 // UUtils
 #include "Ids.h"
-
-#define SL_SB_VERT_SPEED_TH 0.5f // Supported by event vertical speed threshold
-#define SL_SB_UPDATE_RATE_CB 0.15f // Update rate for the timer callback
 
 // Set parent
 void FSLSupportedByEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{		// Check if parent is of right type
-		Parent = Cast<USLContactBox>(InParent);
+		Parent = Cast<ISLContactShapeInterface>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized
@@ -35,8 +32,8 @@ void FSLSupportedByEventHandler::Start()
 
 		// Start timer (will be directly paused if no candidates are available)
 		TimerDelegate.BindRaw(this, &FSLSupportedByEventHandler::InspectCandidatesCb);
-		Parent->GetWorld()->GetTimerManager().SetTimer(TimerHandle,
-			TimerDelegate, SL_SB_UPDATE_RATE_CB, true);
+		Parent->GetWorldFromShape()->GetTimerManager().SetTimer(TimerHandle,
+			TimerDelegate, UpdateRate, true);
 
 		// Mark as started
 		bIsStarted = true;
@@ -51,9 +48,9 @@ void FSLSupportedByEventHandler::Finish(float EndTime, bool bForced)
 	{
 		// End and broadcast all started events
 		FSLSupportedByEventHandler::FinishAllEvents(EndTime);
-		if (Parent->GetWorld())
+		if (Parent->GetWorldFromShape())
 		{
-			Parent->GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+			Parent->GetWorldFromShape()->GetTimerManager().ClearTimer(TimerHandle);
 		}
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
@@ -89,7 +86,7 @@ bool FSLSupportedByEventHandler::IsACandidate(UObject* InOther, bool bRemoveIfFo
 void FSLSupportedByEventHandler::InspectCandidatesCb()
 {
 	// Current start time
-	float StartTime = Parent->GetWorld()->GetTimeSeconds();
+	float StartTime = Parent->GetWorldFromShape()->GetTimeSeconds();
 	
 	// Check if candidates are in a supported by event
 	for (auto CandidateItr(Candidates.CreateIterator()); CandidateItr; ++CandidateItr)
@@ -114,7 +111,7 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 			CandidateItr->OtherMeshComponent->GetComponentVelocity().Z);
 		
 		// Check that the relative speed on Z between the two objects is smaller than the threshold
-		if (RelVerticalSpeed < SL_SB_VERT_SPEED_TH)
+		if (RelVerticalSpeed < MaxVertSpeed)
 		{
 			const FString Id = FIds::NewGuidInBase64Url();
 			const uint64 PairId = FIds::PairEncodeCantor(CandidateItr->Self.Obj->GetUniqueID(), CandidateItr->Other.Obj->GetUniqueID());
@@ -155,7 +152,7 @@ void FSLSupportedByEventHandler::InspectCandidatesCb()
 	// Pause timer
 	if (Candidates.Num() == 0)
 	{
-		Parent->GetWorld()->GetTimerManager().PauseTimer(TimerHandle);
+		Parent->GetWorldFromShape()->GetTimerManager().PauseTimer(TimerHandle);
 	}
 }
 
@@ -168,7 +165,7 @@ bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLContactResult& InC
 		InCandidate.OtherMeshComponent->GetComponentVelocity().Z);
 
 	// Check that the relative speed on Z between the two objects is smaller than the threshold
-	if (RelVerticalSpeed < SL_SB_VERT_SPEED_TH)
+	if (RelVerticalSpeed < MaxVertSpeed)
 	{
 		// Disable overlaps until next tick
 		//if (Parent->OwnerStaticMeshComp->GetGenerateOverlapEvents())
@@ -180,7 +177,7 @@ bool FSLSupportedByEventHandler::IsPartOfASupportedByEvent(FSLContactResult& InC
 			{
 				InCandidate.SelfMeshComponent->SetGenerateOverlapEvents(true);
 			});
-			Parent->GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);
+			Parent->GetWorldFromShape()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);
 		//}
 
 		FHitResult ParentMoveDownHit;
@@ -250,9 +247,9 @@ void FSLSupportedByEventHandler::OnSLOverlapBegin(const FSLContactResult& InResu
 	Candidates.Emplace(InResult);
 
 	// Re-start (if paused) timer to check candidates
-	if (Parent->GetWorld()->GetTimerManager().IsTimerPaused(TimerHandle))
+	if (Parent->GetWorldFromShape()->GetTimerManager().IsTimerPaused(TimerHandle))
 	{
-		Parent->GetWorld()->GetTimerManager().UnPauseTimer(TimerHandle);
+		Parent->GetWorldFromShape()->GetTimerManager().UnPauseTimer(TimerHandle);
 	}
 }
 

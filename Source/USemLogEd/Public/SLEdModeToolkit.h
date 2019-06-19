@@ -72,10 +72,13 @@ private:
 	FReply RemoveAllTags();
 
 	// Add contact overlap shapes
-	FReply AddSLContactBoxs();
+	FReply AddSLContactBoxes();
 
 	// Update semantic visual shape visuals
 	FReply UpdateSLContactBoxColors();
+
+	// Enable all overlaps
+	FReply EnableAllOverlaps();
 
 private:
 	// Widget pointer

@@ -47,7 +47,7 @@ public:
 private:
 	// Check if the component is valid in the world and has a semantically annotated owner
 	bool IsValidAndAnnotated(UActorComponent* Comp);
-
+	
 	// Called when a semantic event is done
 	void OnSemanticEvent(TSharedPtr<ISLEvent> Event);
 
@@ -95,8 +95,8 @@ private:
 	// Semantic event handlers (takes input raw events, outputs finished semantic events)
 	TArray<TSharedPtr<ISLEventHandler>> EventHandlers;
 
-	// Cache of the semantic overlap areas
-	TArray<class USLContactBox*> ContactBoxes;
+	// List of the contact trigger shapes, stored to call Start and Finish on them
+	TArray<class ISLContactShapeInterface*> ContactShapes;
 
 	// Cache of the grasp listeners
 	TArray<class USLManipulatorListener*> GraspListeners;

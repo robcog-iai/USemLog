@@ -169,7 +169,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 						SNew(SButton)
 						.Text(LOCTEXT("AddSLContactBoxColors", "Add Semantic Overlap Shapes"))
 					.IsEnabled(true)
-					.OnClicked(this, &FSLEdModeToolkit::AddSLContactBoxs)
+					.OnClicked(this, &FSLEdModeToolkit::AddSLContactBoxes)
 					]
 				////
 				+ SVerticalBox::Slot()
@@ -180,6 +180,16 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 						.Text(LOCTEXT("UpdateSLContactBoxColors", "Update Semantic Overlap Shape Visuals"))
 						.IsEnabled(true)
 						.OnClicked(this, &FSLEdModeToolkit::UpdateSLContactBoxColors)
+					]
+				////
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("EnableAllOverlaps", "Enable overlap events"))
+					.IsEnabled(true)
+					.OnClicked(this, &FSLEdModeToolkit::EnableAllOverlaps)
 					]
 		];
 
@@ -732,7 +742,7 @@ FReply FSLEdModeToolkit::RemoveAllTags()
 }
 
 // Add semantic overlap shapes
-FReply FSLEdModeToolkit::AddSLContactBoxs()
+FReply FSLEdModeToolkit::AddSLContactBoxes()
 {
 	FScopedTransaction Transaction(LOCTEXT("AddSLContactBoxs", "Add contact overlap shapes"));
 	// Iterate only static mesh actors
@@ -774,6 +784,27 @@ FReply FSLEdModeToolkit::UpdateSLContactBoxColors()
 			C->UpdateVisualColor();
 		}
 	}
+	return FReply::Handled();
+}
+
+// Enable all overlaps
+FReply FSLEdModeToolkit::EnableAllOverlaps()
+{
+	FScopedTransaction Transaction(LOCTEXT("EnableAllOverlaps", "Enable all overlaps"));
+	// Iterate only static mesh actors
+	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	{
+		// Continue only if a valid mesh component is available
+		if (UStaticMeshComponent* SMC = ActItr->GetStaticMeshComponent())
+		{
+			// Ignore if actor is not tagged
+			if (FTags::HasKey(*ActItr, "SemLog", "Class"))
+			{
+				SMC->SetGenerateOverlapEvents(true);
+			}
+		}
+	}
+
 	return FReply::Handled();
 }
 
