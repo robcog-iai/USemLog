@@ -85,6 +85,7 @@ void USLManipulatorOverlapSphere::Start()
 		// Bind overlap events
 		if (bDetectGrasps)
 		{
+			//TriggerInitialGraspOverlaps(); // TODO check why wasn't this here
 			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapBegin);
 			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapEnd);
 		}
@@ -360,37 +361,6 @@ void USLManipulatorOverlapSphere::OnGraspOverlapBegin(UPrimitiveComponent* Overl
 	}
 }
 
-// Called on overlap begin events
-void USLManipulatorOverlapSphere::OnContactOverlapBegin(UPrimitiveComponent* OverlappedComp,
-	AActor* OtherActor,
-	UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex,
-	bool bFromSweep,
-	const FHitResult& SweepResult)
-{
-	// Ignore self overlaps 
-	if (OtherActor == GetOwner())
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Magenta, 
-		//	FString::Printf(TEXT(" !! SELF !! T:%f"), GetWorld()->GetTimeSeconds()),
-		//	false, FVector2D(1.5f, 1.5f));
-		return;
-	}
-
-	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
-	//	FString::Printf(TEXT(" *  *START* *CONTACT* %s<-->%s T:%f"),
-	//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
-
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass())
-		&& !IgnoreList.Contains(OtherActor))
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
-		//	FString::Printf(TEXT(" *  *  *START* *BCAST* CONTACT %s<-->%s T:%f C=%d"),
-		//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds(), OvCounter), false, FVector2D(1.5f, 1.5f));
-		OnBeginSLContactOverlap.Broadcast(OtherActor);
-	}
-}
-
 // Called on overlap end events
 void USLManipulatorOverlapSphere::OnGraspOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
@@ -425,6 +395,37 @@ void USLManipulatorOverlapSphere::OnGraspOverlapEnd(UPrimitiveComponent* Overlap
 				SetColor(FColor::Red);
 			}
 		}
+	}
+}
+
+// Called on overlap begin events
+void USLManipulatorOverlapSphere::OnContactOverlapBegin(UPrimitiveComponent* OverlappedComp,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult)
+{
+	// Ignore self overlaps 
+	if (OtherActor == GetOwner())
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Magenta, 
+		//	FString::Printf(TEXT(" !! SELF !! T:%f"), GetWorld()->GetTimeSeconds()),
+		//	false, FVector2D(1.5f, 1.5f));
+		return;
+	}
+
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+	//	FString::Printf(TEXT(" *  *START* *CONTACT* %s<-->%s T:%f"),
+	//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
+
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass())
+		&& !IgnoreList.Contains(OtherActor))
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+		//	FString::Printf(TEXT(" *  *  *START* *BCAST* CONTACT %s<-->%s T:%f C=%d"),
+		//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds(), OvCounter), false, FVector2D(1.5f, 1.5f));
+		OnBeginSLContactOverlap.Broadcast(OtherActor);
 	}
 }
 

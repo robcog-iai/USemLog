@@ -6,9 +6,7 @@
 #include "USemLog.h"
 #include "Components/ActorComponent.h"
 #include "Engine/StaticMeshActor.h"
-#include "SLManipulatorOverlapSphere.h"
 #include "SLStructs.h" // FSLEntity
-#include "SLContactBox.h" // semantic contact delegates
 #include "SLManipulatorListener.generated.h"
 
 /**
@@ -173,10 +171,10 @@ private:
 	FSLEntity SemanticOwner;
 
 	// Opposing group A for testing for grasps
-	TArray<USLManipulatorOverlapSphere*> GroupA;
+	TArray<class USLManipulatorOverlapSphere*> GroupA;
 
 	// Opposing group B for testing for grasps
-	TArray<USLManipulatorOverlapSphere*> GroupB;
+	TArray<class USLManipulatorOverlapSphere*> GroupB;
 
 	// Objects in contact with group A
 	TSet<AActor*> SetA;

@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLManipulatorListener.h"
+#include "SLManipulatorOverlapSphere.h"
 #include "Animation/SkeletalMeshActor.h"
 
 // Sets default values for this component's properties
