@@ -3,10 +3,6 @@
 # USemLog
 
 Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data to a KnowRob compatible format.
-
-# Master branch
-
-Version with UTags as object descriptions and basic editor integration
 	
 # Usage:
 
