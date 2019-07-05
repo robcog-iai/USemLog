@@ -27,6 +27,9 @@ struct FSLEventWriterParams
 	// Episode unique id
 	FString EpisodeId;
 
+	// Task description
+	FString TaskDescription;
+
 	// Server ip (optional)
 	FString ServerIp;
 
@@ -37,10 +40,12 @@ struct FSLEventWriterParams
 	FSLEventWriterParams(
 		const FString& InLocation,
 		const FString& InEpisodeId,
+		const FString& InTaskDescription,
 		const FString& InServerIp = "",
 		uint16 InServerPort = 0) :
 		Location(InLocation),
 		EpisodeId(InEpisodeId),
+		TaskDescription(InTaskDescription),
 		ServerIp(InServerIp),
 		ServerPort(InServerPort)
 	{};
@@ -79,14 +84,17 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 private:
+	// Connect to the database
+	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
+	
+	// Add the task metadata (e.g. SemLog.meta)
+	void WriteTaskMetadata(const FString& DBName, const FString& TaskDescription);
+
 	// Write the environment metadata
 	void WriteEnvironmentMetadata();
 
 	// Write the episode events metadata
 	void WriteEventsMetadata();
-
-	// Connect to the database
-	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
 
 	// Create databased for faster lookups
 	bool CreateIndexes();

@@ -8,6 +8,8 @@ public class USemLog : ModuleRules
 	public USemLog(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		//PrivatePCHHeaderFile = "Public/USemLog.h";
+		//bEnforceIWYU = false;
 
 		PublicIncludePaths.AddRange(
 			new string[] {
@@ -48,7 +50,7 @@ public class USemLog : ModuleRules
 				"USemLogSkel",
 				//"UMCGrasp", // SL_WITH_MC_GRASP
 				//"libmongo",
-				//"SlicingLogic",      //SL_WITH_SLICING
+				//"SlicingLogic",	  //SL_WITH_SLICING
 				"MongoC", // SL_WITH_LIBMONGO_C
 				//"MongoCxx", // SL_WITH_LIBMONGO_CXX
 				// ... add private dependencies that you statically link with here ...	
@@ -117,14 +119,14 @@ public class USemLog : ModuleRules
 			//bUseRTTI = true;
 		}
 
-        string SlicingLogic = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("SlicingLogic"));
-        if (string.IsNullOrEmpty(SlicingLogic))
-        {
-            PublicDefinitions.Add("SL_WITH_SLICING=0");
-        }
-        else
-        {
-            PublicDefinitions.Add("SL_WITH_SLICING=1");
-        }
-    }
+		string SlicingLogic = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("SlicingLogic"));
+		if (string.IsNullOrEmpty(SlicingLogic))
+		{
+			PublicDefinitions.Add("SL_WITH_SLICING=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("SL_WITH_SLICING=1");
+		}
+	}
 }

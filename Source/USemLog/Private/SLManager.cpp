@@ -24,6 +24,7 @@ ASLManager::ASLManager()
 	Location = TEXT("SemLog");
 	bUseCustomEpisodeId = false;
 	EpisodeId = TEXT("autogen");
+	TaskDescription = TEXT("write task description here");
 	bStartAtBeginPlay = true;
 	bStartAtFirstTick = false;
 	bStartWithDelay = false;
@@ -163,7 +164,7 @@ void ASLManager::Init()
 		{
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
-			EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId, ServerIp, ServerPort),
+			EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId, TaskDescription, ServerIp, ServerPort),
 				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogSlicingEvents, bWriteTimelines, bWriteMetadata);
 		}
 

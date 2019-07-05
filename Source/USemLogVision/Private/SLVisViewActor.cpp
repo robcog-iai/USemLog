@@ -79,7 +79,6 @@ void ASLVisViewActor::PostInitializeComponents()
 	// Skip attachment if it is a replay
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d ATT Skipped"), *FString(__func__), __LINE__);
 		return;
 	}
 

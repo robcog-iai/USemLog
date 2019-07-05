@@ -8,6 +8,7 @@ public class USemLogVision : ModuleRules
 	public USemLogVision(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		//PrivatePCHHeaderFile = "Public/USemLogVision.h";
 
 		PublicIncludePaths.AddRange(
 			new string[] {
@@ -42,6 +43,7 @@ public class USemLogVision : ModuleRules
 				"UnrealEd",
 				"USemLogSkel",
 				"UTags",
+				"UConversions",
 				//"libmongo",
 				"MongoC", // SLVIS_WITH_LIBMONGO_C
 				//"MongoCxx", // SLVIS_WITH_LIBMONGO_CXX

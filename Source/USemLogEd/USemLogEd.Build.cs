@@ -8,6 +8,7 @@ public class USemLogEd : ModuleRules
 	public USemLogEd(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		//PrivatePCHHeaderFile = "Public/USemLogEd.h";
 
 		PublicIncludePaths.AddRange(
 			new string[] {

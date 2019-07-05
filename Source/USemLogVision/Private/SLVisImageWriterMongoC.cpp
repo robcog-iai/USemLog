@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisImageWriterMongoC.h"
+#include "Conversions.h"
 
 // Ctor
 USLVisImageWriterMongoC::USLVisImageWriterMongoC()
@@ -103,7 +104,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 
 			double_check_query = BCON_NEW("$and", "[",
 				"{", "_id", BCON_OID(&ws_oid), "}",
-				"{", "views", "{", "$exists", BCON_BOOL(false), "}", "}",
+				"{", "camera_views", "{", "$exists", BCON_BOOL(false), "}", "}",
 				"]");
 
 			// Double check that the id is valid and there are no existing previous images in the entry,
@@ -338,7 +339,7 @@ void USLVisImageWriterMongoC::GetWorldStateParamsAt(float InTimestamp, bool bSea
 		{
 			OutParams.Timestamp = (float)bson_iter_double(&iter);
 			OutParams.TimeDistance = FMath::Abs(OutParams.Timestamp - InTimestamp);
-			OutParams.bContainsImageData = bson_iter_init_find(&iter, world_state_doc, "views");
+			OutParams.bContainsImageData = bson_iter_init_find(&iter, world_state_doc, "camera_views");
 			if (bson_iter_init_find(&iter, world_state_doc, "_id") && BSON_ITER_HOLDS_OID(&iter))
 			{
 				bson_oid_copy(bson_iter_oid(&iter), &OutParams.oid);
@@ -362,31 +363,41 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 	{
 		return false;
 	}
-#if SL_WITH_LIBMONGO_C	
+#if SLVIS_WITH_LIBMONGO_C
 
-	bson_t index;
-	char *index_name;
+	bson_t idx_id;
+	char *idx_id_str;
+	bson_init(&idx_id);
+	BSON_APPEND_INT32(&idx_id, "camera_views.id", 1);
+	idx_id_str = mongoc_collection_keys_to_index_string(&idx_id);
 
-	bson_t index2;
-	char *index_name2;
+	bson_t idx_cls;
+	char *idx_cls_str;
+	bson_init(&idx_cls);
+	BSON_APPEND_INT32(&idx_cls, "camera_views.class", 1);
+	idx_cls_str = mongoc_collection_keys_to_index_string(&idx_cls);
 
-	bson_t index3;
-	char *index_name3;
+	bson_t idx_eid;
+	char *idx_eid_str;
+	bson_init(&idx_eid);
+	BSON_APPEND_INT32(&idx_eid, "camera_views.entities.id", 1);
+	idx_eid_str = mongoc_collection_keys_to_index_string(&idx_eid);
+
+	bson_t idx_ecls;
+	char *idx_ecls_str;
+	bson_init(&idx_ecls);
+	BSON_APPEND_INT32(&idx_ecls, "camera_views.entities.class", 1);
+	idx_ecls_str = mongoc_collection_keys_to_index_string(&idx_ecls);
+
+	bson_t idx_bcls;
+	char *idx_bcls_str;
+	bson_init(&idx_bcls);
+	BSON_APPEND_INT32(&idx_bcls, "camera_views.entities.bones.class", 1);
+	idx_bcls_str = mongoc_collection_keys_to_index_string(&idx_bcls);
+
 
 	bson_t* index_command;
 	bson_error_t error;
-
-	bson_init(&index);
-	BSON_APPEND_INT32(&index, "views.id", 1);
-	index_name = mongoc_collection_keys_to_index_string(&index);
-
-	bson_init(&index2);
-	BSON_APPEND_INT32(&index2, "views.entities.id", 1);
-	index_name2 = mongoc_collection_keys_to_index_string(&index2);
-
-	bson_init(&index3);
-	BSON_APPEND_INT32(&index3, "views.entities.bones.class", 1);
-	index_name3 = mongoc_collection_keys_to_index_string(&index3);
 
 	index_command = BCON_NEW("createIndexes",
 		BCON_UTF8(mongoc_collection_get_name(collection)),
@@ -394,25 +405,41 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 		"[",
 			"{",
 				"key",
-				BCON_DOCUMENT(&index),
+				BCON_DOCUMENT(&idx_id),
 				"name",
-				BCON_UTF8(index_name),
+				BCON_UTF8(idx_id_str),
 				//"unique",
 				//BCON_BOOL(false),
 			"}",
 			"{",
 				"key",
-				BCON_DOCUMENT(&index2),
+				BCON_DOCUMENT(&idx_cls),
 				"name",
-				BCON_UTF8(index_name2),
+				BCON_UTF8(idx_cls_str),
 				//"unique",
 				//BCON_BOOL(false),
 			"}",
 			"{",
 				"key",
-				BCON_DOCUMENT(&index3),
+				BCON_DOCUMENT(&idx_eid),
 				"name",
-				BCON_UTF8(index_name3),
+				BCON_UTF8(idx_eid_str),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_ecls),
+				"name",
+				BCON_UTF8(idx_ecls_str),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_bcls),
+				"name",
+				BCON_UTF8(idx_bcls_str),
 				//"unique",
 				//BCON_BOOL(false),
 			"}",
@@ -423,18 +450,18 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
 			*FString(__func__), __LINE__, *FString(error.message));
 		bson_destroy(index_command);
-		bson_free(index_name);
+		bson_free(idx_id_str);
 		return false;
 	}
 
 	// Clean up
 	bson_destroy(index_command);
-	bson_free(index_name);
-	bson_free(index_name2);
+	bson_free(idx_id_str);
+	bson_free(idx_eid_str);
 	return true;
 #else
 	return false;
-#endif //SL_WITH_LIBMONGO_C
+#endif //SLVIS_WITH_LIBMONGO_C
 }
 
 #if SLVIS_WITH_LIBMONGO_C
@@ -453,7 +480,7 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 
 	bson_t entity_arr;
 	bson_t entity_arr_obj;
-	bson_t obj_color;
+	//bson_t obj_color;
 
 	bson_t entity_bone_arr;
 	bson_t entity_bone_arr_obj;
@@ -479,7 +506,7 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 	uint32_t l = 0;
 
 	// Create the views array
-	BSON_APPEND_ARRAY_BEGIN(out_views_doc, "views", &view_arr);
+	BSON_APPEND_ARRAY_BEGIN(out_views_doc, "camera_views", &view_arr);
 	for (const auto& View : ViewsData)
 	{
 		// Start view child doc (name is irrelevant since it will show up as an array index)
@@ -499,16 +526,38 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 			// Create the entities array
 			j = 0;
 			BSON_APPEND_ARRAY_BEGIN(&view_arr_obj, "entities", &entity_arr);
-			// Add the static meshe entities
+			// Add the static meshes entities
 			for (const auto& Entity : View.SemanticEntities)
 			{
 				bson_uint32_to_string(j, &j_key, j_str, sizeof j_str);
 				BSON_APPEND_DOCUMENT_BEGIN(&entity_arr, j_key, &entity_arr_obj);
 
 					BSON_APPEND_UTF8(&entity_arr_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
-					//BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
+					BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
 					//BSON_APPEND_UTF8(&entity_arr_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
 					BSON_APPEND_INT32(&entity_arr_obj, "num_pixels", Entity.NumPixels);
+					BSON_APPEND_INT32(&entity_arr_obj, "distance", Entity.Distance);
+
+					// Switch to right handed ROS transformation
+					const FVector ROSLoc = FConversions::UToROS(Entity.Transform.GetLocation());
+					const FQuat ROSQuat = FConversions::UToROS(Entity.Transform.GetRotation());
+
+					bson_t child_obj_loc;
+					bson_t child_obj_rot;
+
+					BSON_APPEND_DOCUMENT_BEGIN(&entity_arr_obj, "loc", &child_obj_loc);
+					BSON_APPEND_DOUBLE(&child_obj_loc, "x", ROSLoc.X);
+					BSON_APPEND_DOUBLE(&child_obj_loc, "y", ROSLoc.Y);
+					BSON_APPEND_DOUBLE(&child_obj_loc, "z", ROSLoc.Z);
+					bson_append_document_end(&entity_arr_obj, &child_obj_loc);
+
+					BSON_APPEND_DOCUMENT_BEGIN(&entity_arr_obj, "rot", &child_obj_rot);
+					BSON_APPEND_DOUBLE(&child_obj_rot, "x", ROSQuat.X);
+					BSON_APPEND_DOUBLE(&child_obj_rot, "y", ROSQuat.Y);
+					BSON_APPEND_DOUBLE(&child_obj_rot, "z", ROSQuat.Z);
+					BSON_APPEND_DOUBLE(&child_obj_rot, "w", ROSQuat.W);
+					bson_append_document_end(&entity_arr_obj, &child_obj_rot);
+
 
 					//// Add color sub-sub-sub doc
 					//BSON_APPEND_DOCUMENT_BEGIN(&entity_arr_obj, "mask_color", &obj_color);
@@ -540,16 +589,16 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 
 						BSON_APPEND_UTF8(&entity_bone_arr_obj, "class", TCHAR_TO_UTF8(*BoneData.Class));
 
-						BSON_APPEND_UTF8(&entity_bone_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.ColorHex));
+						//BSON_APPEND_UTF8(&entity_bone_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.ColorHex));
 						BSON_APPEND_INT32(&entity_bone_arr_obj, "num_pixels", BoneData.NumPixels);
 
-						// Add color sub-sub-sub doc
-						BSON_APPEND_DOCUMENT_BEGIN(&entity_bone_arr_obj, "mask_color", &obj_color);
-						BSON_APPEND_DOUBLE(&obj_color, "r", BoneData.Color.R);
-						BSON_APPEND_DOUBLE(&obj_color, "g", BoneData.Color.G);
-						BSON_APPEND_DOUBLE(&obj_color, "b", BoneData.Color.B);
-						BSON_APPEND_DOUBLE(&obj_color, "a", BoneData.Color.A);
-						bson_append_document_end(&entity_bone_arr_obj, &obj_color);
+						//// Add color sub-sub-sub doc
+						//BSON_APPEND_DOCUMENT_BEGIN(&entity_bone_arr_obj, "mask_color", &obj_color);
+						//BSON_APPEND_DOUBLE(&obj_color, "r", BoneData.Color.R);
+						//BSON_APPEND_DOUBLE(&obj_color, "g", BoneData.Color.G);
+						//BSON_APPEND_DOUBLE(&obj_color, "b", BoneData.Color.B);
+						//BSON_APPEND_DOUBLE(&obj_color, "a", BoneData.Color.A);
+						//bson_append_document_end(&entity_bone_arr_obj, &obj_color);
 
 						bson_append_document_end(&entity_bone_arr, &entity_bone_arr_obj);
 						l++;

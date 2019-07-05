@@ -52,6 +52,9 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 	
 private:
+	// Create data writer
+	void CreateWriter();
+
 	// Cache existing camera views
 	void SetCameraViews();
 
@@ -167,4 +170,8 @@ private:
 	// Progress bar
 	//TUniquePtr<FScopedSlowTask> ProgressBar;
 #endif //WITH_EDITOR
+
+	/* Constants */
+	// Database name
+	constexpr static const char* DBName = "SemLogVis421";
 };

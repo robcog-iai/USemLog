@@ -40,14 +40,14 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	RenderTypes.Add(ESLVisRenderType::Normal);
 
 	
-	ScrubRate = 0.02f;
-	SkipNewEntryTolerance = 0.05f; 
+	ScrubRate = 0.03f;
+	SkipNewEntryTolerance = 0.05f;
 
 
 	// Image size 
 	// 8k (7680, 4320) / 4k (3840, 2160) / 2k (2048, 1080) / fhd (1920, 1080) / hd (1280, 720) / sd (720, 480)
-	Resolution.X = 720;
-	Resolution.Y = 480;
+	Resolution.X = 72;
+	Resolution.Y = 48;
 }
 
 // Called when the game starts or when spawned
@@ -105,29 +105,8 @@ void ASLVisLoggerSpectatorPC::Init()
 		ViewportClient = GetWorld()->GetGameViewport();
 		if (NetDriver && ViewportClient)
 		{
-			// Get episode id by removing suffix
-			FString EpisodeId = NetDriver->GetActiveReplayName();
-			EpisodeId.RemoveFromEnd("_RP");
-
-			// Create writer
-			//Writer = NewObject<USLVisImageWriterFile>(this);
-			//Writer->Init(FSLVisImageWriterParams(FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
-
-#if SLVIS_WITH_LIBMONGO_C
-			Writer = NewObject<USLVisImageWriterMongoC>(this);
-			Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
-#endif //SLVIS_WITH_LIBMONGO_C
-
-#if SLVIS_WITH_LIBMONGO_CXX
-			//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
-			//Writer->Init(FSLVisImageWriterParams(TEXT("SemLog"), EpisodeId, "127.0.0.1", 27017));
-#endif //SLVIS_WITH_LIBMONGO_CXX
-
-
-#if WITH_EDITOR
-			//ProgressBar = MakeUnique<FScopedSlowTask>(NumImagesToSave, FText::FromString(FString(TEXT("Saving images.."))));
-			//ProgressBar->MakeDialog(true, true);
-#endif //WITH_EDITOR
+			// Set the writer pointer
+			CreateWriter();
 
 			// Flag as initialized
 			if (Writer && Writer->IsInit())
@@ -135,26 +114,29 @@ void ASLVisLoggerSpectatorPC::Init()
 				// Add existing camera views to the array
 				SetCameraViews();
 
-				// Init the progress logger (num images saved etc.)
-				ProgressLogger.Init(NetDriver->DemoTotalTime, ScrubRate, CameraViews.Num(), RenderTypes.Num());
-
-				// Check which timestamp should be rendered first
-				while (DemoTimestamp < NetDriver->DemoTotalTime && ShouldSkipThisFrame(DemoTimestamp))
+				if (CameraViews.Num() > 0)
 				{
-					// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
-					ProgressLogger.AddProcessedImaged(CameraViews.Num() * RenderTypes.Num());
-					DemoTimestamp += ScrubRate;
-					ProgressLogger.SetCurrentTime(DemoTimestamp);
+					// Init the progress logger (num images saved etc.)
+					ProgressLogger.Init(NetDriver->DemoTotalTime, ScrubRate, CameraViews.Num(), RenderTypes.Num());
+
+					// Check which timestamp should be rendered first
+					while (DemoTimestamp < NetDriver->DemoTotalTime && ShouldSkipThisFrame(DemoTimestamp))
+					{
+						// Update the number of saved images (even if timestamps are skipped, for tracking purposes)
+						ProgressLogger.AddProcessedImaged(CameraViews.Num() * RenderTypes.Num());
+						DemoTimestamp += ScrubRate;
+						ProgressLogger.SetCurrentTime(DemoTimestamp);
+					}
+
+					// Set rendering parameters
+					SetRenderingParameters();
+
+					// Bind callback functions
+					NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::ScrubCB);
+					NetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::DemoFinishedCB);
+					ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLVisLoggerSpectatorPC::ScreenshotCB);
+					bIsInit = true;
 				}
-
-				// Set rendering parameters
-				SetRenderingParameters();
-
-				// Bind callback functions
-				NetDriver->OnGotoTimeDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::ScrubCB);
-				NetDriver->OnDemoFinishPlaybackDelegate.AddUObject(this, &ASLVisLoggerSpectatorPC::DemoFinishedCB);
-				ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLVisLoggerSpectatorPC::ScreenshotCB);
-				bIsInit = true;
 			}
 		}
 	}
@@ -206,6 +188,34 @@ void ASLVisLoggerSpectatorPC::Finish()
 		// Try to quit editor
 		ASLVisLoggerSpectatorPC::QuitEditor();
 	}
+}
+
+// Create data writer
+void ASLVisLoggerSpectatorPC::CreateWriter()
+{
+	// Get episode id by removing suffix
+	FString EpisodeId = NetDriver->GetActiveReplayName();
+	EpisodeId.RemoveFromEnd("_RP");
+
+	// Create writer
+	//Writer = NewObject<USLVisImageWriterFile>(this);
+	//Writer->Init(FSLVisImageWriterParams(FPaths::ProjectDir() + TEXT("/SemLog/Episodes/"), EpisodeId));
+
+#if SLVIS_WITH_LIBMONGO_C
+	Writer = NewObject<USLVisImageWriterMongoC>(this);
+	Writer->Init(FSLVisImageWriterParams(FString(DBName), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
+#endif //SLVIS_WITH_LIBMONGO_C
+
+#if SLVIS_WITH_LIBMONGO_CXX
+	//Writer = NewObject<USLVisImageWriterMongoCxx>(this);
+	//Writer->Init(FSLVisImageWriterParams(FString(DBName), EpisodeId, "127.0.0.1", 27017));
+#endif //SLVIS_WITH_LIBMONGO_CXX
+
+
+#if WITH_EDITOR
+			//ProgressBar = MakeUnique<FScopedSlowTask>(NumImagesToSave, FText::FromString(FString(TEXT("Saving images.."))));
+			//ProgressBar->MakeDialog(true, true);
+#endif //WITH_EDITOR
 }
 
 // Cache existing camera views

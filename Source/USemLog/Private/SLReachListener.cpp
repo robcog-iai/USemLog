@@ -120,7 +120,7 @@ void USLReachListener::RelocateSphere()
 // Update callback, check for changes in the reach model
 void USLReachListener::Update()
 {
-
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
 }
 
 // Publish currently overlapping components

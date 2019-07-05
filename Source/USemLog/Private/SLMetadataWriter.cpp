@@ -36,13 +36,20 @@ void FSLMetadataWriter::Init(const FSLEventWriterParams& WriterParams)
 	if (!bIsInit)
 	{
 #if SL_WITH_LIBMONGO_C
-		bIsInit = Connect(WriterParams.Location, WriterParams.EpisodeId, WriterParams.ServerIp, WriterParams.ServerPort);
-		// Write the initial pose and properties of all the entities
-		WriteEnvironmentMetadata();
+		// Connect to the database
+		if (Connect(WriterParams.Location, WriterParams.EpisodeId, WriterParams.ServerIp, WriterParams.ServerPort))
+		{
+			// Write task metadata (if not already done)
+			WriteTaskMetadata(WriterParams.Location, WriterParams.TaskDescription);
+
+			// Write the initial environment data (some sort of semantic map) ids, classes, initial poses
+			WriteEnvironmentMetadata();
+
+			bIsInit = true;
+		}
 #endif //SL_WITH_LIBMONGO_C
 	}
 }
-
 
 // Write the environment metadata
 void FSLMetadataWriter::Start()
@@ -68,6 +75,112 @@ void FSLMetadataWriter::Finish(bool bForced)
 		bIsInit = false;
 		bIsFinished = true;
 	}
+}
+
+// Connect to the database
+bool FSLMetadataWriter::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
+{
+	const FString MetaCollName = EpisodeId + ".meta";
+
+#if SL_WITH_LIBMONGO_C
+	// Required to initialize libmongoc's internals	
+	mongoc_init();
+
+	// Stores any error that might appear during the connection
+	bson_error_t error;
+
+	// Safely create a MongoDB URI object from the given string
+	FString Uri = TEXT("mongodb://") + ServerIp + TEXT(":") + FString::FromInt(ServerPort);
+	uri = mongoc_uri_new_with_error(TCHAR_TO_UTF8(*Uri), &error);
+	if (!uri)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+			*FString(__func__), __LINE__, *Uri, *FString(error.message));
+		return false;
+	}
+
+	// Create a new client instance
+	client = mongoc_client_new_from_uri(uri);
+	if (!client)
+	{
+		return false;
+	}
+
+	// Register the application name so we can track it in the profile logs on the server
+	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SL_" + MetaCollName)));
+
+	// Get a handle on the database "db_name" and collection "coll_name"
+	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
+
+	// Abort if we connect to an existing collection
+	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*MetaCollName), &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Collection %s already exists in database.."),
+			*FString(__func__), __LINE__, *MetaCollName);
+		//return false;
+	}
+
+	collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*MetaCollName));
+
+	// Check server. Ping the "admin" database
+	bson_t* server_ping_cmd;
+	server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
+	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+		bson_destroy(server_ping_cmd);
+		return false;
+	}
+
+	bson_destroy(server_ping_cmd);
+	return true;
+#else
+	return false;
+#endif //SL_WITH_LIBMONGO_C
+}
+
+// Add the task metadata (e.g. SemLog.meta)
+void FSLMetadataWriter::WriteTaskMetadata(const FString& DBName, const FString& TaskDescription)
+{
+#if SL_WITH_LIBMONGO_C
+	bson_error_t error;
+	const FString MetaCollName = DBName + ".meta";
+
+	if (!mongoc_database_has_collection(database, TCHAR_TO_UTF8(*MetaCollName), &error))
+	{
+		mongoc_collection_t *task_meta_coll;
+		bson_t* meta_doc;
+
+		task_meta_coll = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*MetaCollName));
+		
+		// Document to store the metadata
+		meta_doc = bson_new();
+
+		// Add the unique id of the object
+		bson_oid_init(&oid, NULL);
+		BSON_APPEND_OID(meta_doc, "_id", &oid);
+
+		// Add the task description
+		BSON_APPEND_UTF8(meta_doc, "task_description", TCHAR_TO_UTF8(*TaskDescription));
+
+		if (!mongoc_collection_insert_one(task_meta_coll, meta_doc, NULL, NULL, &error))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+				*FString(__func__), __LINE__, *FString(error.message));
+		}
+
+		// Clean up
+		bson_destroy(meta_doc);
+		mongoc_collection_destroy(task_meta_coll);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Task .meta collection already written"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+
+#endif //SL_WITH_LIBMONGO_C
 }
 
 // Write the environment metadata
@@ -133,69 +246,6 @@ void FSLMetadataWriter::WriteEventsMetadata()
 	bson_destroy(update_query);
 
 
-#endif //SL_WITH_LIBMONGO_C
-}
-
-// Connect to the database
-bool FSLMetadataWriter::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
-{
-	const FString MetaCollName = EpisodeId + ".meta";
-
-#if SL_WITH_LIBMONGO_C
-	// Required to initialize libmongoc's internals	
-	mongoc_init();
-
-	// Stores any error that might appear during the connection
-	bson_error_t error;
-
-	// Safely create a MongoDB URI object from the given string
-	FString Uri = TEXT("mongodb://") + ServerIp + TEXT(":") + FString::FromInt(ServerPort);
-	uri = mongoc_uri_new_with_error(TCHAR_TO_UTF8(*Uri), &error);
-	if (!uri)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			*FString(__func__), __LINE__, *Uri, *FString(error.message));
-		return false;
-	}
-
-	// Create a new client instance
-	client = mongoc_client_new_from_uri(uri);
-	if (!client)
-	{
-		return false;
-	}
-
-	// Register the application name so we can track it in the profile logs on the server
-	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SL_" + MetaCollName)));
-
-	// Get a handle on the database "db_name" and collection "coll_name"
-	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
-
-	// Abort if we connect to an existing collection
-	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*MetaCollName), &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Collection %s already exists in database.."),
-			*FString(__func__), __LINE__, *MetaCollName);
-		//return false;
-	}
-
-	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*MetaCollName));
-
-	// Check server. Ping the "admin" database
-	bson_t* server_ping_cmd;
-	server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
-	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-		bson_destroy(server_ping_cmd);
-		return false;
-	}
-
-	bson_destroy(server_ping_cmd);
-	return true;
-#else
-	return false;
 #endif //SL_WITH_LIBMONGO_C
 }
 

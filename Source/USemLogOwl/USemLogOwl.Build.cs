@@ -8,6 +8,7 @@ public class USemLogOwl : ModuleRules
 	public USemLogOwl(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		//PrivatePCHHeaderFile = "Public/USemLogOwl.h";
 
 		PublicIncludePaths.AddRange(
 			new string[] {

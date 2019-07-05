@@ -62,6 +62,12 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
+	// Get location
+	FString GetLogLocation() const { return Location; };
+
+	// Get episode id
+	FString GetEpisodeId() const { return EpisodeId; };
+
 private:
 	// Setup user input bindings
 	void SetupInputBindings();
@@ -98,6 +104,10 @@ private:
 	// Episode Id (be default will be auto generated)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomEpisodeId"))
 	FString EpisodeId;
+
+	// Task description
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString TaskDescription;
 
 	// Start at load time
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

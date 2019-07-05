@@ -8,6 +8,7 @@ public class USemLogSkel : ModuleRules
 	public USemLogSkel(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		//PrivatePCHHeaderFile = "Public/USemLogSkel.h";
 
 		PublicIncludePaths.AddRange(
 			new string[] {

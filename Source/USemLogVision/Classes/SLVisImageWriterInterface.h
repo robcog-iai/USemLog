@@ -102,10 +102,16 @@ struct FSLVisEntitiyData
 	// Number of pixels belonging to the entity from the image
 	int32 NumPixels;
 
+	// Distance to the view
+	float Distance;
+
+	// Relative transform from the view
+	FTransform Transform;
+
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d;"),
-			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels);
+		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d; Distance=%f; Transform=%s"),
+			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels, Distance, *Transform.ToString());
 	}
 };
 
