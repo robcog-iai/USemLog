@@ -95,7 +95,10 @@ public:
 	bool ToggleMaterials();
 
 	// Process the semantic mask image, fix pixel color deviations in image, return entities data
-	void ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVisEntitiyData>& OutEntitiesData, TArray<FSLVisSkelData>& OutSkelData);
+	void ProcessMaskImage(TArray<FColor>& MaskImage,
+		TArray<FSLVisEntitiyData>& OutEntitiesData,
+		TArray<FSLVisSkelData>& OutSkelData,
+		const FTransform& ViewWorldTransform);
 
 private:
 	// Save the original color materials of the static meshes, and create a for each mesh a mask material
@@ -105,10 +108,15 @@ private:
 	void SetupSkeletalMeshes();
 
 	// Store the information about the semantic color
-	void AddSemanticData(const FColor& Color, const FString& ColorHex, const TArray<FName>& Tags);
+	void AddSemanticData(const FColor& Color, const FString& ColorHex, const TArray<FName>& Tags, const FTransform& WorldTransform);
 
 	// Store the information about the skeletal semantic color
-	void AddSkelSemanticData(const FString& OwnerId, const FString& OwnerClass, const FColor& Color, const FString& ColorHex, const FString& BoneClass);
+	void AddSkelSemanticData(const FString& OwnerId,
+		const FString& OwnerClass,
+		const FColor& Color,
+		const FString& ColorHex,
+		const FString& BoneClass,
+		const FTransform& WorldTransform);
 
 	// Compare against the semantic colors, if found, switch
 	bool RestoreIfCloseToAMaskColor(FColor& OutColor);

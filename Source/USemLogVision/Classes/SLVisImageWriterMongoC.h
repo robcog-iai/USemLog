@@ -33,8 +33,8 @@ struct FSLVisWorldStateEntryParams
 	// Entry timestamp
 	float Timestamp;
 
-	// Distance from query ts to entry ts
-	float TimeDistance;
+	// Time difference from query ts to entry ts
+	float TimeDelta;
 
 	// Contains images
 	bool bContainsImageData;
@@ -50,7 +50,7 @@ struct FSLVisWorldStateEntryParams
 	{
 		bAllDataIsValid = false;
 		Timestamp = -1.f; // Negative represents stale data
-		TimeDistance = -1.f;
+		TimeDelta = -1.f;
 		bContainsImageData = false;
 	};
 
@@ -59,10 +59,10 @@ struct FSLVisWorldStateEntryParams
 	{
 		//char oidstr[25];
 		//bson_oid_to_string(oid, oidstr);
-		return FString::Printf(TEXT("bAllDataIsValid:[%s] Timestamp:[%f] TimeDistance:[%f] bContainsImageData:[%s] oid[%s]"),
+		return FString::Printf(TEXT("bAllDataIsValid:[%s] Timestamp:[%f] TimeDelta:[%f] bContainsImageData:[%s] oid[%s]"),
 			bAllDataIsValid ? TEXT("true") : TEXT("false"),
 			Timestamp,
-			TimeDistance,
+			TimeDelta,
 			bContainsImageData ? TEXT("true") : TEXT("false"),
 			*FString(oid_str)
 		);

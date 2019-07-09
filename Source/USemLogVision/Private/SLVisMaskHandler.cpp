@@ -70,7 +70,7 @@ void USLVisMaskHandler::SetupStaticMeshes()
 			if (!ColorHex.IsEmpty())
 			{
 				FColor SemColor(FColor::FromHex(ColorHex));
-				AddSemanticData(SemColor, ColorHex, SMAItr->Tags);
+				AddSemanticData(SemColor, ColorHex, SMAItr->Tags, SMAItr->GetTransform());
 				UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 				DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 				MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
@@ -81,7 +81,7 @@ void USLVisMaskHandler::SetupStaticMeshes()
 				if (!ColorHex.IsEmpty())
 				{
 					FColor SemColor(FColor::FromHex(ColorHex));
-					AddSemanticData(SemColor, ColorHex, SMC->ComponentTags);
+					AddSemanticData(SemColor, ColorHex, SMC->ComponentTags, SMC->GetComponentTransform());
 					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 					MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
@@ -126,7 +126,8 @@ void USLVisMaskHandler::SetupSkeletalMeshes()
 						const FString BoneClass = BoneDataPair.Value.Class;
 
 						FColor SemColor(FColor::FromHex(BoneColorHex));
-						AddSkelSemanticData(OwnerId, OwnerClass, SemColor, BoneColorHex, BoneClass);
+						FTransform DummyWorldTransform; // TODO get the bone world transform
+						AddSkelSemanticData(OwnerId, OwnerClass, SemColor, BoneColorHex, BoneClass, DummyWorldTransform);
 						UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 
@@ -211,7 +212,10 @@ bool USLVisMaskHandler::ToggleMaterials()
 }
 
 // Process the semantic mask image, fix pixel color deviations in image, return semantic data from the image
-void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVisEntitiyData>& OutEntitiesData, TArray<FSLVisSkelData>& OutSkelData)
+void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage,
+	TArray<FSLVisEntitiyData>& OutEntitiesData,
+	TArray<FSLVisSkelData>& OutSkelData,
+	const FTransform& ViewWorldTransform)
 {
 	// Temp map for easy updating of the entity data and avoiding duplicates, will be outputted as an array
 	TMap<FColor, FSLVisEntitiyData> EntitiesInImage; // Cache which static meshes are in the image
@@ -327,7 +331,7 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, TArray<FSLVi
 }
 
 // Add information about the semantic color (return true if all the fields were filled)
-void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& ColorHex, const TArray<FName>& Tags)
+void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& ColorHex, const TArray<FName>& Tags, const FTransform& WorldTransform)
 {
 	if (USLVisMaskHandler::AlmostEqual(Color, FColor::Black, SLVIS_BLACK_TOL))
 	{
@@ -339,6 +343,7 @@ void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& Colo
 	EntityData.ColorHex = ColorHex;
 	EntityData.Class = FTags::GetValue(Tags, "SemLog", "Class");
 	EntityData.Id = FTags::GetValue(Tags, "SemLog", "Id");
+	EntityData.WorldTransform = WorldTransform;
 
 	MaskColors.Emplace(Color);
 	EntitiesMasks.Emplace(Color, EntityData);
@@ -347,7 +352,12 @@ void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& Colo
 }
 
 // Store the information about the skeletal semantic color
-void USLVisMaskHandler::AddSkelSemanticData(const FString& OwnerId, const FString& OwnerClass, const FColor& Color, const FString& ColorHex, const FString& BoneClass)
+void USLVisMaskHandler::AddSkelSemanticData(const FString& OwnerId,
+	const FString& OwnerClass,
+	const FColor& Color,
+	const FString& ColorHex,
+	const FString& BoneClass,
+	const FTransform& WorldTransform)
 {
 	if (USLVisMaskHandler::AlmostEqual(Color, FColor::Black, SLVIS_BLACK_TOL))
 	{
@@ -360,6 +370,7 @@ void USLVisMaskHandler::AddSkelSemanticData(const FString& OwnerId, const FStrin
 	BoneData.Color = Color;
 	BoneData.ColorHex = ColorHex;
 	BoneData.Class = BoneClass;
+	BoneData.WorldTransform = WorldTransform;
 
 	MaskColors.Emplace(Color);
 	BonesMasks.Emplace(Color, BoneData);

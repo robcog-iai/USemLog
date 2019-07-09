@@ -347,7 +347,8 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	if (MaskHandler && MaskHandler->AreMasksOn())
 	{
 		// Process the semantic mask image, fix pixel color deviations in image, return entities data
-		MaskHandler->ProcessMaskImage(BitmapRef, CurrentViewData.SemanticEntities, CurrentViewData.SemanticSkelEntities);
+		FTransform CurrViewWorldTransform = CameraViews[CurrentViewIndex]->GetTransform();
+		MaskHandler->ProcessMaskImage(BitmapRef, CurrentViewData.SemanticEntities, CurrentViewData.SemanticSkelEntities, CurrViewWorldTransform);
 	}
 
 	// Compress image

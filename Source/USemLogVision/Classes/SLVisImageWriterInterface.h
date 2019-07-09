@@ -106,12 +106,15 @@ struct FSLVisEntitiyData
 	float Distance;
 
 	// Relative transform from the view
-	FTransform Transform;
+	FTransform ViewTransform;
+
+	// Absolute transform from the world (used to calculate the ViewTransform)
+	FTransform WorldTransform;
 
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d; Distance=%f; Transform=%s"),
-			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels, Distance, *Transform.ToString());
+		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d; Distance=%f; ViewTransform=%s"),
+			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels, Distance, *ViewTransform.ToString());
 	}
 };
 
@@ -143,10 +146,19 @@ struct FSLVisBoneData
 	// Number of pixels belonging to the entity from the image
 	int32 NumPixels;
 
+	// Distance to the view
+	float Distance;
+
+	// Relative transform from the view
+	FTransform ViewTransform;
+
+	// Absolute transform from the world (used to calculate the ViewTransform)
+	FTransform WorldTransform;
+
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Class=%s; NumPixels=%d;"),
-			*Color.ToString(), *ColorHex, *Class, NumPixels);
+		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Class=%s; NumPixels=%d; Distance=%f; ViewTransform=%s"),
+			*Color.ToString(), *ColorHex, *Class, NumPixels, Distance, *ViewTransform.ToString());
 	}
 
 	// Check if two bones data is equal (comparing the colors should be the fastest, since the color should be unique)

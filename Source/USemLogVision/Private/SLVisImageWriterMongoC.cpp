@@ -176,8 +176,8 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 	USLVisImageWriterMongoC::GetWorldStateParamsAt(Timestamp, false, AfterWS);
 
 	// Flag if world state entries are valid for image data update
-	bool bBeforeIsValidForUpdate = BeforeWS.bAllDataIsValid && (!BeforeWS.bContainsImageData) && (BeforeWS.TimeDistance < TimeRange);
-	bool bAfterIsValidForUpdate = AfterWS.bAllDataIsValid && (!AfterWS.bContainsImageData) && (AfterWS.TimeDistance < TimeRange);
+	bool bBeforeIsValidForUpdate = BeforeWS.bAllDataIsValid && (!BeforeWS.bContainsImageData) && (BeforeWS.TimeDelta < TimeRange);
+	bool bAfterIsValidForUpdate = AfterWS.bAllDataIsValid && (!AfterWS.bContainsImageData) && (AfterWS.TimeDelta < TimeRange);
 	
 	// strcpy_s is safer than strcpy, but only an optional method in the standard
 	// as clang doesn't implement it, we rewrite it here for linux. WARN: Normally strcpy_s requires 3 arguments, while visual studio seems to be happy with two when using stack allocated buffers. This is because they have a templated version of strcpy_s
@@ -190,7 +190,7 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 		if (bAfterIsValidForUpdate)
 		{
 			// Both valid (take the closest)
-			strcpy_s(ws_oid_str, BeforeWS.TimeDistance < AfterWS.TimeDistance ? BeforeWS.oid_str : AfterWS.oid_str);
+			strcpy_s(ws_oid_str, BeforeWS.TimeDelta < AfterWS.TimeDelta ? BeforeWS.oid_str : AfterWS.oid_str);
 			bCreateNewEntry = false;
 			return false;
 		}
@@ -214,13 +214,13 @@ bool USLVisImageWriterMongoC::ShouldSkipThisFrame(float Timestamp)
 		else
 		{
 			// None valid for update, check if new entry should be created or to skip the frame
-			if ((BeforeWS.bAllDataIsValid && BeforeWS.bContainsImageData && (BeforeWS.TimeDistance < TimeRange)))
+			if ((BeforeWS.bAllDataIsValid && BeforeWS.bContainsImageData && (BeforeWS.TimeDelta < TimeRange)))
 			{
 				// Skip frame if there is already image data in the time range
 				bCreateNewEntry = false;
 				return true;
 			}
-			else if ((AfterWS.bAllDataIsValid && AfterWS.bContainsImageData && (AfterWS.TimeDistance < TimeRange)))
+			else if ((AfterWS.bAllDataIsValid && AfterWS.bContainsImageData && (AfterWS.TimeDelta < TimeRange)))
 			{
 				// Skip frame if there is already image data in the time range
 				bCreateNewEntry = false;
@@ -338,7 +338,7 @@ void USLVisImageWriterMongoC::GetWorldStateParamsAt(float InTimestamp, bool bSea
 		if (bson_iter_init_find(&iter, world_state_doc, "timestamp") && BSON_ITER_HOLDS_DOUBLE(&iter))
 		{
 			OutParams.Timestamp = (float)bson_iter_double(&iter);
-			OutParams.TimeDistance = FMath::Abs(OutParams.Timestamp - InTimestamp);
+			OutParams.TimeDelta = FMath::Abs(OutParams.Timestamp - InTimestamp);
 			OutParams.bContainsImageData = bson_iter_init_find(&iter, world_state_doc, "camera_views");
 			if (bson_iter_init_find(&iter, world_state_doc, "_id") && BSON_ITER_HOLDS_OID(&iter))
 			{
@@ -536,11 +536,11 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 					BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
 					//BSON_APPEND_UTF8(&entity_arr_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
 					BSON_APPEND_INT32(&entity_arr_obj, "num_pixels", Entity.NumPixels);
-					BSON_APPEND_INT32(&entity_arr_obj, "distance", Entity.Distance);
+					BSON_APPEND_DOUBLE(&entity_arr_obj, "distance", Entity.Distance);
 
 					// Switch to right handed ROS transformation
-					const FVector ROSLoc = FConversions::UToROS(Entity.Transform.GetLocation());
-					const FQuat ROSQuat = FConversions::UToROS(Entity.Transform.GetRotation());
+					const FVector ROSLoc = FConversions::UToROS(Entity.ViewTransform.GetLocation());
+					const FQuat ROSQuat = FConversions::UToROS(Entity.ViewTransform.GetRotation());
 
 					bson_t child_obj_loc;
 					bson_t child_obj_rot;
@@ -591,6 +591,27 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 
 						//BSON_APPEND_UTF8(&entity_bone_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.ColorHex));
 						BSON_APPEND_INT32(&entity_bone_arr_obj, "num_pixels", BoneData.NumPixels);
+						BSON_APPEND_DOUBLE(&entity_bone_arr_obj, "distance", BoneData.Distance);
+
+						// Switch to right handed ROS transformation
+						const FVector ROSLoc = FConversions::UToROS(BoneData.ViewTransform.GetLocation());
+						const FQuat ROSQuat = FConversions::UToROS(BoneData.ViewTransform.GetRotation());
+
+						bson_t child_obj_loc;
+						bson_t child_obj_rot;
+
+						BSON_APPEND_DOCUMENT_BEGIN(&entity_bone_arr_obj, "loc", &child_obj_loc);
+						BSON_APPEND_DOUBLE(&child_obj_loc, "x", ROSLoc.X);
+						BSON_APPEND_DOUBLE(&child_obj_loc, "y", ROSLoc.Y);
+						BSON_APPEND_DOUBLE(&child_obj_loc, "z", ROSLoc.Z);
+						bson_append_document_end(&entity_bone_arr_obj, &child_obj_loc);
+
+						BSON_APPEND_DOCUMENT_BEGIN(&entity_bone_arr_obj, "rot", &child_obj_rot);
+						BSON_APPEND_DOUBLE(&child_obj_rot, "x", ROSQuat.X);
+						BSON_APPEND_DOUBLE(&child_obj_rot, "y", ROSQuat.Y);
+						BSON_APPEND_DOUBLE(&child_obj_rot, "z", ROSQuat.Z);
+						BSON_APPEND_DOUBLE(&child_obj_rot, "w", ROSQuat.W);
+						bson_append_document_end(&entity_bone_arr_obj, &child_obj_rot);
 
 						//// Add color sub-sub-sub doc
 						//BSON_APPEND_DOCUMENT_BEGIN(&entity_bone_arr_obj, "mask_color", &obj_color);
