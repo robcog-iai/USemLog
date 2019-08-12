@@ -52,6 +52,9 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 	
 private:
+	// Disable physics for skeletal components
+	void DisablePhysicsOnEntities();
+
 	// Create data writer
 	void CreateWriter();
 
@@ -155,7 +158,7 @@ private:
 	float ScrubRate;
 	
 	// Avoid creating a new db entry if there is a world state in the given range [--- Ts ---]
-	float SkipNewEntryTolerance;
+	float SkipNewEntryDistance;
 
 	// Current demo time
 	float DemoTimestamp;
@@ -173,5 +176,5 @@ private:
 
 	/* Constants */
 	// Database name
-	constexpr static const char* DBName = "SemLogVis421";
+	constexpr static const char* DBName = "SL_421_OH";
 };

@@ -85,7 +85,7 @@ struct FSLVisImageData
 struct FSLVisEntitiyData
 {
 	// Default ctor
-	FSLVisEntitiyData() : NumPixels(0) {};
+	FSLVisEntitiyData() : NumPixels(0), SelfAsActor(nullptr), SelfAsComponent(nullptr) {};
 
 	// Color
 	FColor Color;
@@ -103,18 +103,21 @@ struct FSLVisEntitiyData
 	int32 NumPixels;
 
 	// Distance to the view
-	float Distance;
+	float LinearDistanceToView;
+	float AngularDistanceToView;
 
 	// Relative transform from the view
-	FTransform ViewTransform;
+	FTransform TransformFromView;
 
-	// Absolute transform from the world (used to calculate the ViewTransform)
-	FTransform WorldTransform;
+	// Pointer to get the current world transform (one of them is nullptr)
+	AStaticMeshActor* SelfAsActor;
+	UStaticMeshComponent* SelfAsComponent;
 
+	//
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d; Distance=%f; ViewTransform=%s"),
-			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels, Distance, *ViewTransform.ToString());
+		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Id=%s; Class=%s; NumPixels=%d; DistanceToView=%f; TransformFromView=%s"),
+			*Color.ToString(), *ColorHex, *Id, *Class, NumPixels, LinearDistanceToView, *TransformFromView.ToString());
 	}
 };
 
@@ -147,18 +150,18 @@ struct FSLVisBoneData
 	int32 NumPixels;
 
 	// Distance to the view
-	float Distance;
+	float DistanceToView;
 
 	// Relative transform from the view
-	FTransform ViewTransform;
+	FTransform TransformFromView;
 
 	// Absolute transform from the world (used to calculate the ViewTransform)
-	FTransform WorldTransform;
+	FTransform TransformFromWorld;
 
 	FString ToString() const
 	{
 		return FString::Printf(TEXT("Color=%s; ColorHex=%s; Class=%s; NumPixels=%d; Distance=%f; ViewTransform=%s"),
-			*Color.ToString(), *ColorHex, *Class, NumPixels, Distance, *ViewTransform.ToString());
+			*Color.ToString(), *ColorHex, *Class, NumPixels, DistanceToView, *TransformFromView.ToString());
 	}
 
 	// Check if two bones data is equal (comparing the colors should be the fastest, since the color should be unique)
@@ -222,6 +225,13 @@ struct FSLVisViewData
 	// Image data of the given render type
 	TArray<FSLVisImageData> ImagesData;
 
+	// Number of entities in the view
+	uint32 NumEntities;
+
+	// Total distances to the view
+	float TotalLinearDistanceSize;
+	float TotalAngularDistanceSize;
+
 	// Get init state
 	bool IsInit() const { return bIsInit; };
 
@@ -235,13 +245,17 @@ struct FSLVisViewData
 	}
 
 	// Clear all data
-	void Reset()
+	void Clear()
 	{
 		Id = FString();
 		Class = FString();
 		Resolution = FIntPoint(ForceInitToZero);
 		SemanticEntities.Empty();
+		SemanticSkelEntities.Empty();
 		ImagesData.Empty();
+		NumEntities = 0;
+		TotalLinearDistanceSize = 0.f;
+		TotalAngularDistanceSize = 0.f;
 		bIsInit = false;
 	}
 

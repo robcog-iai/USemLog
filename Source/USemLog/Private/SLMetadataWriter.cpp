@@ -201,6 +201,9 @@ void FSLMetadataWriter::WriteEnvironmentMetadata()
 
 	// Add entities to the environment doc
 	AddEntities(env_doc);
+	
+	// Add the camera view actors as e separate document
+	AddCameraViews(env_doc);
 
 	// Add the env doc to the meta doc
 	BSON_APPEND_DOCUMENT(meta_doc, "env", env_doc);
@@ -267,6 +270,12 @@ bool FSLMetadataWriter::CreateIndexes()
 	bson_t index3;
 	char *index_name3;
 
+	bson_t index4;
+	char *index_name4;
+
+	bson_t index5;
+	char *index_name5;
+
 	bson_t* index_command;
 	bson_error_t error;
 
@@ -281,6 +290,14 @@ bool FSLMetadataWriter::CreateIndexes()
 	bson_init(&index3);
 	BSON_APPEND_INT32(&index3, "env.entities.bones.class", 1);
 	index_name3 = mongoc_collection_keys_to_index_string(&index3);
+
+	bson_init(&index4);
+	BSON_APPEND_INT32(&index4, "env.camera_views.id", 1);
+	index_name4 = mongoc_collection_keys_to_index_string(&index4);
+
+	bson_init(&index5);
+	BSON_APPEND_INT32(&index5, "env.camera_views.class", 1);
+	index_name5 = mongoc_collection_keys_to_index_string(&index5);
 
 	index_command = BCON_NEW("createIndexes",
 		BCON_UTF8(mongoc_collection_get_name(collection)),
@@ -310,6 +327,22 @@ bool FSLMetadataWriter::CreateIndexes()
 				//"unique",
 				//BCON_BOOL(false),
 			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&index4),
+				"name",
+				BCON_UTF8(index_name4),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&index5),
+				"name",
+				BCON_UTF8(index_name5),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
 		"]");
 
 	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
@@ -332,6 +365,7 @@ bool FSLMetadataWriter::CreateIndexes()
 }
 
 #if SL_WITH_LIBMONGO_C
+// Add entities data to the bson document
 void FSLMetadataWriter::AddEntities(bson_t* out_doc)
 {
 	bson_t arr;
@@ -456,6 +490,57 @@ void FSLMetadataWriter::AddEntities(bson_t* out_doc)
 		}
 
 		// Add the semantic item to the array
+		bson_append_document_end(&arr, &arr_obj);
+		idx++;
+	}
+
+	bson_append_array_end(out_doc, &arr);
+}
+
+// Add camera views
+void FSLMetadataWriter::AddCameraViews(bson_t* out_doc)
+{
+	bson_t arr;
+	bson_t arr_obj;
+	char idx_str[16];
+	const char *idx_key;
+	uint32_t idx = 0;
+
+	// Add entities to array
+	BSON_APPEND_ARRAY_BEGIN(out_doc, "camera_views", &arr);
+
+	// Iterate non skeletal semantic entities
+	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetCameraViewsSemanticData())
+	{
+		const FSLEntity SemEntity = Pair.Value;
+
+		if (Cast<ASkeletalMeshActor>(SemEntity.Obj) || Cast<USkeletalMeshComponent>(SemEntity.Obj))
+		{
+			continue;
+		}
+
+		// Start array doc
+		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
+
+		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
+		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
+		
+		// Check if location data is available
+		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
+		{
+			const FVector Loc = ObjAsAct->GetActorLocation();
+			const FQuat Quat = ObjAsAct->GetActorQuat();
+			AddPoseChild(Loc, Quat, &arr_obj);
+		}
+		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
+		{
+			const FVector Loc = ObjAsSceneComp->GetComponentLocation();
+			const FQuat Quat = ObjAsSceneComp->GetComponentQuat();
+			AddPoseChild(Loc, Quat, &arr_obj);
+		}
+
+		// Finish array doc
 		bson_append_document_end(&arr, &arr_obj);
 		idx++;
 	}

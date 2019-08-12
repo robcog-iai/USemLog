@@ -168,26 +168,42 @@ bool FSLWorldStateWriterMongoC::CreateIndexes()
 #if SL_WITH_LIBMONGO_C
 	bson_t index;
 	char *index_name;
+
+	bson_t index2;
+	char *index_name2;
+
 	bson_t* index_command;
 	bson_error_t error;
 	
 	bson_init(&index);
 	BSON_APPEND_INT32(&index, "timestamp", 1);
-
 	index_name = mongoc_collection_keys_to_index_string(&index);
+
+	bson_init(&index2);
+	BSON_APPEND_INT32(&index2, "entities.id", 1);
+	index_name2 = mongoc_collection_keys_to_index_string(&index2);
+
 
 	index_command = BCON_NEW("createIndexes",
 			BCON_UTF8(mongoc_collection_get_name(collection)),
 			"indexes",
 			"[",
-			"{",
-			"key",
-			BCON_DOCUMENT(&index),
-			"name",
-			BCON_UTF8(index_name),
-			//"unique",
-			//BCON_BOOL(false),
-			"}",
+				"{",
+					"key",
+					BCON_DOCUMENT(&index),
+					"name",
+					BCON_UTF8(index_name),
+					//"unique",
+					//BCON_BOOL(false),
+				"}",
+				"{",
+					"key",
+					BCON_DOCUMENT(&index2),
+					"name",
+					BCON_UTF8(index_name2),
+					//"unique",
+					//BCON_BOOL(false),
+				"}",
 			"]");
 
 	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))

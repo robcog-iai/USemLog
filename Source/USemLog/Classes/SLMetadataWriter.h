@@ -103,6 +103,9 @@ private:
 	// Add entities data to the bson document
 	void AddEntities(bson_t* out_doc);
 
+	// Add camera views
+	void AddCameraViews(bson_t* out_doc);
+
 	// Add semantic events data to the bson document
 	void AddEvents(bson_t* out_doc);
 

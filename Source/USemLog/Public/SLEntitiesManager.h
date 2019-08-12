@@ -68,6 +68,7 @@ public:
 	// Get the map of objects to the semantic items
 	void GetSemanticDataArray(TArray<FSLEntity>& OutArray) { ObjectsSemanticData.GenerateValueArray(OutArray); }
 
+
 	// Get the map of objects to the semantic items
 	TMap<UObject*, USLSkeletalDataComponent*>& GetObjectsSkeletalSemanticData() { return ObjectsSemanticSkeletalData; }
 
@@ -76,6 +77,16 @@ public:
 
 	// Get the map of objects to the semantic items
 	void GetSemanticSkeletalDataArray(TArray<USLSkeletalDataComponent*>& OutArray) { ObjectsSemanticSkeletalData.GenerateValueArray(OutArray); }
+
+
+	// Get the map of objects to the semantic items
+	TMap<UObject*, FSLEntity>& GetCameraViewsSemanticData() { return CameraViewSemanticData; }
+
+	// Get the array of semantically annotated objects (returns the number of keys)
+	int32 GetCameraViewsObjects(TArray<UObject*>& OutArray) { return CameraViewSemanticData.GetKeys(OutArray); }
+
+	// Get the map of objects to the semantic items
+	void GetCameraViewsDataArray(TArray<FSLEntity>& OutArray) { CameraViewSemanticData.GenerateValueArray(OutArray); }
 
 private:
 	// Instance of the singleton
@@ -89,4 +100,7 @@ private:
 
 	// Map of UObject (Owner -- actor or component) to skeletal data component
 	TMap<UObject*, USLSkeletalDataComponent*> ObjectsSemanticSkeletalData;
+
+	// Map of Camera View Actors pointer to object structure
+	TMap<UObject*, FSLEntity> CameraViewSemanticData;
 };

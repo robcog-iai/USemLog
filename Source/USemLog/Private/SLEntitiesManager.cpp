@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLEntitiesManager.h"
+#include "SLVisViewActor.h"
 #include "Tags.h"
 
 TSharedPtr<FSLEntitiesManager> FSLEntitiesManager::StaticInstance;
@@ -41,6 +42,12 @@ void FSLEntitiesManager::Init(UWorld* World)
 			if (!ActId.IsEmpty() && !ActClass.IsEmpty())
 			{
 				ObjectsSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass));
+
+				// Create a separate list with the camera views
+				if (ActorItr->IsA(ASLVisViewActor::StaticClass()))
+				{
+					CameraViewSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass));
+				}
 			}
 
 			// Iterate components of the actor

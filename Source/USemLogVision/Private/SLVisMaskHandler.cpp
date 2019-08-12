@@ -70,7 +70,7 @@ void USLVisMaskHandler::SetupStaticMeshes()
 			if (!ColorHex.IsEmpty())
 			{
 				FColor SemColor(FColor::FromHex(ColorHex));
-				AddSemanticData(SemColor, ColorHex, SMAItr->Tags, SMAItr->GetTransform());
+				AddSemanticData(SemColor, ColorHex, SMAItr->Tags, *SMAItr);
 				UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 				DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 				MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
@@ -81,7 +81,7 @@ void USLVisMaskHandler::SetupStaticMeshes()
 				if (!ColorHex.IsEmpty())
 				{
 					FColor SemColor(FColor::FromHex(ColorHex));
-					AddSemanticData(SemColor, ColorHex, SMC->ComponentTags, SMC->GetComponentTransform());
+					AddSemanticData(SemColor, ColorHex, SMC->ComponentTags, SMC);
 					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 					MaskMaterials.Emplace(SMC, DynamicMaskMaterial);
@@ -212,10 +212,7 @@ bool USLVisMaskHandler::ToggleMaterials()
 }
 
 // Process the semantic mask image, fix pixel color deviations in image, return semantic data from the image
-void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage,
-	TArray<FSLVisEntitiyData>& OutEntitiesData,
-	TArray<FSLVisSkelData>& OutSkelData,
-	const FTransform& ViewWorldTransform)
+void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, const FTransform& ViewWorldTransform, FSLVisViewData& OutViewData)
 {
 	// Temp map for easy updating of the entity data and avoiding duplicates, will be outputted as an array
 	TMap<FColor, FSLVisEntitiyData> EntitiesInImage; // Cache which static meshes are in the image
@@ -251,8 +248,24 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage,
 				}
 				else
 				{
+					FSLVisEntitiyData EntityData = EntitiesMasks[PixelColor];
+					if (EntityData.SelfAsActor)
+					{
+						EntityData.TransformFromView = ViewWorldTransform.GetRelativeTransform(EntityData.SelfAsActor->GetTransform());
+						EntityData.LinearDistanceToView = FVector::Distance(ViewWorldTransform.GetLocation(), EntityData.SelfAsActor->GetActorLocation());
+						EntityData.AngularDistanceToView = ViewWorldTransform.GetRotation().AngularDistance(EntityData.SelfAsActor->GetActorQuat());
+						
+						OutViewData.TotalLinearDistanceSize += EntityData.LinearDistanceToView;
+						OutViewData.TotalAngularDistanceSize += EntityData.AngularDistanceToView;
+					}
+					else if (EntityData.SelfAsComponent)
+					{
+						EntityData.TransformFromView = ViewWorldTransform.GetRelativeTransform(EntityData.SelfAsComponent->GetComponentTransform());
+						EntityData.LinearDistanceToView = FVector::Distance(ViewWorldTransform.GetLocation(), EntityData.SelfAsComponent->GetComponentLocation());
+						EntityData.AngularDistanceToView = ViewWorldTransform.GetRotation().AngularDistance(EntityData.SelfAsComponent->GetComponentQuat());
+					}
 					// Add init entity data
-					EntitiesInImage.Emplace(PixelColor, EntitiesMasks[PixelColor]);
+					EntitiesInImage.Emplace(PixelColor, EntityData);
 				}
 			}
 			else if (BonesMasks.Contains(PixelColor)) // Check if color belongs to a skeletal bone
@@ -299,8 +312,8 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage,
 	//}
 
 	// Output the semantic data from the image
-	EntitiesInImage.GenerateValueArray(OutEntitiesData);
-
+	OutViewData.NumEntities = EntitiesInImage.Num();
+	EntitiesInImage.GenerateValueArray(OutViewData.SemanticEntities);
 
 	// Iterate on all the color to bones pair and generate skeletal structure data
 	for (const auto& ColorToBonePair : BonesInImage)
@@ -309,7 +322,7 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage,
 
 		bool bParentFound = false;
 		// Check if bone data parent is created
-		for (auto& SkelParent : OutSkelData)
+		for (auto& SkelParent : OutViewData.SemanticSkelEntities)
 		{
 			// If parent ID is the same with the Bone owner id, add the bone to the parents list
 			if (SkelParent.Id.Equals(BoneData.OwnerId))
@@ -325,13 +338,13 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage,
 		{
 			FSLVisSkelData Parent(BoneData.OwnerId, BoneData.OwnerClass);
 			Parent.BonesData.Emplace(BoneData);
-			OutSkelData.Emplace(Parent);
+			OutViewData.SemanticSkelEntities.Emplace(Parent);
 		}
 	}
 }
 
 // Add information about the semantic color (return true if all the fields were filled)
-void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& ColorHex, const TArray<FName>& Tags, const FTransform& WorldTransform)
+void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& ColorHex, const TArray<FName>& Tags, UObject* Self)
 {
 	if (USLVisMaskHandler::AlmostEqual(Color, FColor::Black, SLVIS_BLACK_TOL))
 	{
@@ -343,7 +356,17 @@ void USLVisMaskHandler::AddSemanticData(const FColor& Color, const FString& Colo
 	EntityData.ColorHex = ColorHex;
 	EntityData.Class = FTags::GetValue(Tags, "SemLog", "Class");
 	EntityData.Id = FTags::GetValue(Tags, "SemLog", "Id");
-	EntityData.WorldTransform = WorldTransform;
+	if (Self)
+	{
+		if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Self))
+		{
+			EntityData.SelfAsActor = AsSMA;
+		}
+		else if (UStaticMeshComponent* AsSMC = Cast<UStaticMeshComponent>(Self))
+		{
+			EntityData.SelfAsComponent = AsSMC;
+		}
+	}
 
 	MaskColors.Emplace(Color);
 	EntitiesMasks.Emplace(Color, EntityData);
@@ -370,7 +393,7 @@ void USLVisMaskHandler::AddSkelSemanticData(const FString& OwnerId,
 	BoneData.Color = Color;
 	BoneData.ColorHex = ColorHex;
 	BoneData.Class = BoneClass;
-	BoneData.WorldTransform = WorldTransform;
+	BoneData.TransformFromWorld = WorldTransform;
 
 	MaskColors.Emplace(Color);
 	BonesMasks.Emplace(Color, BoneData);

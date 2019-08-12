@@ -13,6 +13,7 @@
 #include "SLVisImageWriterMongoCxx.h"
 #include "SLVisImageWriterMongoC.h"
 #include "SLVisImageWriterFile.h"
+#include "Animation/SkeletalMeshActor.h"
 
 #include "Camera/CameraActor.h"
 
@@ -40,14 +41,14 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	RenderTypes.Add(ESLVisRenderType::Normal);
 
 	
-	ScrubRate = 0.03f;
-	SkipNewEntryTolerance = 0.05f;
+	ScrubRate = 0.25f;
+	SkipNewEntryDistance = 0.05f;
 
 
 	// Image size 
 	// 8k (7680, 4320) / 4k (3840, 2160) / 2k (2048, 1080) / fhd (1920, 1080) / hd (1280, 720) / sd (720, 480)
-	Resolution.X = 72;
-	Resolution.Y = 48;
+	Resolution.X = 500;
+	Resolution.Y = 500;
 }
 
 // Called when the game starts or when spawned
@@ -88,7 +89,7 @@ void ASLVisLoggerSpectatorPC::Init()
 		DemoTimestamp = 0.f;
 
 		// Make sure the time offset is not larger than the replay update rate
-		FMath::Clamp(SkipNewEntryTolerance, 0.f, ScrubRate);
+		FMath::Clamp(SkipNewEntryDistance, 0.f, ScrubRate);
 
 		if (RenderTypes.Contains(ESLVisRenderType::Mask))
 		{
@@ -147,6 +148,9 @@ void ASLVisLoggerSpectatorPC::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
+		// Disable physics on skeletal entities
+		//DisablePhysicsOnEntities();
+
 		// Start durations logger
 		//DurationsLogger.SetStartTime();
 
@@ -190,6 +194,22 @@ void ASLVisLoggerSpectatorPC::Finish()
 	}
 }
 
+// Disable physics for skeletal components
+void ASLVisLoggerSpectatorPC::DisablePhysicsOnEntities()
+{
+	for (TActorIterator<AStaticMeshActor> SMAItr(GetWorld()); SMAItr; ++SMAItr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d DISABLE PHYSICS ON %s"), *FString(__func__), __LINE__,*SMAItr->GetName());
+		SMAItr->DisableComponentsSimulatePhysics();
+	}
+
+	for (TActorIterator<ASkeletalMeshActor> SkMAItr(GetWorld()); SkMAItr; ++SkMAItr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d DISABLE PHYSICS ON %s"), *FString(__func__), __LINE__, *SkMAItr->GetName());
+		SkMAItr->DisableComponentsSimulatePhysics();
+	}
+}
+
 // Create data writer
 void ASLVisLoggerSpectatorPC::CreateWriter()
 {
@@ -203,7 +223,7 @@ void ASLVisLoggerSpectatorPC::CreateWriter()
 
 #if SLVIS_WITH_LIBMONGO_C
 	Writer = NewObject<USLVisImageWriterMongoC>(this);
-	Writer->Init(FSLVisImageWriterParams(FString(DBName), EpisodeId, SkipNewEntryTolerance, "127.0.0.1", 27017));
+	Writer->Init(FSLVisImageWriterParams(FString(DBName), EpisodeId, SkipNewEntryDistance, "127.0.0.1", 27017));
 #endif //SLVIS_WITH_LIBMONGO_C
 
 #if SLVIS_WITH_LIBMONGO_CXX
@@ -348,7 +368,7 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 	{
 		// Process the semantic mask image, fix pixel color deviations in image, return entities data
 		FTransform CurrViewWorldTransform = CameraViews[CurrentViewIndex]->GetTransform();
-		MaskHandler->ProcessMaskImage(BitmapRef, CurrentViewData.SemanticEntities, CurrentViewData.SemanticSkelEntities, CurrViewWorldTransform);
+		MaskHandler->ProcessMaskImage(BitmapRef, CurrViewWorldTransform, CurrentViewData);
 	}
 
 	// Compress image
@@ -373,7 +393,7 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 			{
 				// Add and reset previous view data
 				CurrentTsData.ViewsData.Emplace(CurrentViewData);
-				CurrentViewData.Reset();
+				CurrentViewData.Clear();
 
 				// Request a new screenshot
 				RequestScreenshot();
@@ -384,7 +404,7 @@ void ASLVisLoggerSpectatorPC::ScreenshotCB(int32 SizeX, int32 SizeY, const TArra
 				CurrentTsData.ViewsData.Emplace(CurrentViewData);
 				CurrentTsData.Timestamp = DemoTimestamp;
 				Writer->Write(CurrentTsData);
-				CurrentViewData.Reset();
+				CurrentViewData.Clear();
 				CurrentTsData.Reset();
 
 				ProgressLogger.LogProgress();

@@ -19,7 +19,7 @@ ASLVisViewActor::ASLVisViewActor()
 	if (VisCamera)
 	{
 		VisCamera->SetupAttachment(GetRootComponent());
-		VisCamera->SetWorldScale3D(FVector(0.25));
+		VisCamera->SetWorldScale3D(FVector(0.15));
 	}
 #endif // WITH_EDITORONLY_DATA
 
@@ -32,7 +32,7 @@ ASLVisViewActor::ASLVisViewActor()
 	{
 		GetStaticMeshComponent()->SetStaticMesh(DummyMesh.Object);
 		SetMobility(EComponentMobility::Movable);
-		GetStaticMeshComponent()->SetSimulatePhysics(true);
+		GetStaticMeshComponent()->SetSimulatePhysics(true); // Needs physics on to replicate for some reason, this makes attachments not work
 		GetStaticMeshComponent()->SetEnableGravity(false);
 		this->bStaticMeshReplicateMovement = true;
 		GetStaticMeshComponent()->SetCollisionProfileName("ViewReplicateDummy");
@@ -79,8 +79,11 @@ void ASLVisViewActor::PostInitializeComponents()
 	// Skip attachment if it is a replay
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{
+		// TODO set hidden? or not worth it since the mesh is small anyway
 		return;
 	}
+
+	//GetStaticMeshComponent()->SetSimulatePhysics(true);
 
 	// Check if the actor should be attached to a component of its attached parent actor
 	if (ComponentTagStamp != NAME_None)
@@ -104,17 +107,19 @@ void ASLVisViewActor::PostInitializeComponents()
 			GetAttachParentActor()->GetComponentsByTag(USceneComponent::StaticClass(), ComponentTagStamp);
 		if (ComponentsWithTagStamp.Num() == 1)
 		{
-			/*USceneComponent* SC = CastChecked<USceneComponent>(ComponentsWithTagStamp[0]);
-			AttachToComponent(SC, FAttachmentTransformRules::SnapToTargetIncludingScale);*/
+			//USceneComponent* SC = CastChecked<USceneComponent>(ComponentsWithTagStamp[0]);
+			//AttachToComponent(SC, FAttachmentTransformRules::SnapToTargetIncludingScale);
 			CompToFollow = CastChecked<USceneComponent>(ComponentsWithTagStamp[0]);
 			SetActorTickEnabled(true);
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s will be followed every tick"),
+				*FString(__func__), __LINE__, *ComponentsWithTagStamp[0]->GetName());
 		}
 		else if (ComponentsWithTagStamp.Num() > 1)
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Multiple components found to attach to with tag stamp=%s, attaching to first one"),
 				*FString(__func__), __LINE__, *ComponentTagStamp.ToString());
-			/*USceneComponent* SC = CastChecked<USceneComponent>(ComponentsWithTagStamp[0]);
-			AttachToComponent(SC, FAttachmentTransformRules::SnapToTargetIncludingScale);*/
+			//USceneComponent* SC = CastChecked<USceneComponent>(ComponentsWithTagStamp[0]);
+			//AttachToComponent(SC, FAttachmentTransformRules::SnapToTargetIncludingScale);
 			CompToFollow = CastChecked<USceneComponent>(ComponentsWithTagStamp[0]);
 			SetActorTickEnabled(true);
 		}
@@ -124,6 +129,13 @@ void ASLVisViewActor::PostInitializeComponents()
 				*FString(__func__), __LINE__, *ComponentTagStamp.ToString());
 		}
 	}
+	// Todo attachements does not work due to the physics as a requirement for replication, follow the component in tick as workaround
+	//else if (AActor* AttParentAct = GetAttachParentActor())
+	//{
+	//	// Apparently attachments from the editor brakes
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Forcing attachment on parent %s"), *FString(__func__), __LINE__, *AttParentAct->GetName());
+	//	AttachToActor(AttParentAct, FAttachmentTransformRules::KeepRelativeTransform);
+	//}
 }
 
 // Called when the games starts

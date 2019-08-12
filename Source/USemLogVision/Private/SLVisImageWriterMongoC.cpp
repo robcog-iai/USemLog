@@ -377,6 +377,24 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 	BSON_APPEND_INT32(&idx_cls, "camera_views.class", 1);
 	idx_cls_str = mongoc_collection_keys_to_index_string(&idx_cls);
 
+	bson_t idx_ne;
+	char *idx_ne_str;
+	bson_init(&idx_ne);
+	BSON_APPEND_INT32(&idx_ne, "camera_views.number_entities", 1);
+	idx_ne_str = mongoc_collection_keys_to_index_string(&idx_ne);
+
+	bson_t idx_tld;
+	char *idx_tld_str;
+	bson_init(&idx_tld);
+	BSON_APPEND_INT32(&idx_tld, "camera_views.total_linear_distance", 1);
+	idx_tld_str = mongoc_collection_keys_to_index_string(&idx_tld);
+
+	bson_t idx_tad;
+	char *idx_tad_str;
+	bson_init(&idx_tad);
+	BSON_APPEND_INT32(&idx_tad, "camera_views.total_angular_distance", 1);
+	idx_tad_str = mongoc_collection_keys_to_index_string(&idx_tad);
+
 	bson_t idx_eid;
 	char *idx_eid_str;
 	bson_init(&idx_eid);
@@ -416,6 +434,30 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 				BCON_DOCUMENT(&idx_cls),
 				"name",
 				BCON_UTF8(idx_cls_str),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_ne),
+				"name",
+				BCON_UTF8(idx_ne_str),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_tld),
+				"name",
+				BCON_UTF8(idx_tld_str),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_tad),
+				"name",
+				BCON_UTF8(idx_tad_str),
 				//"unique",
 				//BCON_BOOL(false),
 			"}",
@@ -517,10 +559,14 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 			BSON_APPEND_UTF8(&view_arr_obj, "class", TCHAR_TO_UTF8(*View.Class));
 			BSON_APPEND_UTF8(&view_arr_obj, "id", TCHAR_TO_UTF8(*View.Id));
 
+			BSON_APPEND_INT32(&view_arr_obj, "num_entities",View.NumEntities);
+			BSON_APPEND_DOUBLE(&view_arr_obj, "total_linear_distance", View.TotalLinearDistanceSize);
+			BSON_APPEND_DOUBLE(&view_arr_obj, "total_angular_distance", View.TotalAngularDistanceSize);
+
 			// Add img resolution sub-sub-doc
 			BSON_APPEND_DOCUMENT_BEGIN(&view_arr_obj, "res", &view_arr_obj_res);
-			BSON_APPEND_DOUBLE(&view_arr_obj_res, "x", View.Resolution.X);
-			BSON_APPEND_DOUBLE(&view_arr_obj_res, "y", View.Resolution.Y);
+			BSON_APPEND_INT32(&view_arr_obj_res, "x", View.Resolution.X);
+			BSON_APPEND_INT32(&view_arr_obj_res, "y", View.Resolution.Y);
 			bson_append_document_end(&view_arr_obj, &view_arr_obj_res);
 
 			// Create the entities array
@@ -536,11 +582,12 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 					BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
 					//BSON_APPEND_UTF8(&entity_arr_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
 					BSON_APPEND_INT32(&entity_arr_obj, "num_pixels", Entity.NumPixels);
-					BSON_APPEND_DOUBLE(&entity_arr_obj, "distance", Entity.Distance);
+					BSON_APPEND_DOUBLE(&entity_arr_obj, "linear_distance", FConversions::CmToM(Entity.LinearDistanceToView));
+					BSON_APPEND_DOUBLE(&entity_arr_obj, "angular_distance", FConversions::CmToM(Entity.AngularDistanceToView));
 
 					// Switch to right handed ROS transformation
-					const FVector ROSLoc = FConversions::UToROS(Entity.ViewTransform.GetLocation());
-					const FQuat ROSQuat = FConversions::UToROS(Entity.ViewTransform.GetRotation());
+					const FVector ROSLoc = FConversions::UToROS(Entity.TransformFromView.GetLocation());
+					const FQuat ROSQuat = FConversions::UToROS(Entity.TransformFromView.GetRotation());
 
 					bson_t child_obj_loc;
 					bson_t child_obj_rot;
@@ -570,7 +617,7 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 				bson_append_document_end(&entity_arr, &entity_arr_obj);
 				j++;
 			}
-			// Add the skeletal entities
+			// Add the skeletal entities //TODO outdated regarding distances to camera etc.
 			for (const auto& SkelEntity : View.SemanticSkelEntities)
 			{
 				bson_uint32_to_string(j, &j_key, j_str, sizeof j_str);
@@ -591,11 +638,11 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 
 						//BSON_APPEND_UTF8(&entity_bone_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.ColorHex));
 						BSON_APPEND_INT32(&entity_bone_arr_obj, "num_pixels", BoneData.NumPixels);
-						BSON_APPEND_DOUBLE(&entity_bone_arr_obj, "distance", BoneData.Distance);
+						BSON_APPEND_DOUBLE(&entity_bone_arr_obj, "distance", FConversions::CmToM(BoneData.DistanceToView));
 
 						// Switch to right handed ROS transformation
-						const FVector ROSLoc = FConversions::UToROS(BoneData.ViewTransform.GetLocation());
-						const FQuat ROSQuat = FConversions::UToROS(BoneData.ViewTransform.GetRotation());
+						const FVector ROSLoc = FConversions::UToROS(BoneData.TransformFromView.GetLocation());
+						const FQuat ROSQuat = FConversions::UToROS(BoneData.TransformFromView.GetRotation());
 
 						bson_t child_obj_loc;
 						bson_t child_obj_rot;
