@@ -4,7 +4,7 @@
 #include "Events/SLFixationGraspEventHandler.h"
 #include "SLEntitiesManager.h"
 #if SL_WITH_MC_GRASP
-#include "MCFixationGrasp.h"
+#include "MCGraspFixation.h"
 #endif // SL_WITH_MC_GRASP
 
 // UUtils
@@ -24,7 +24,7 @@ void FSLFixationGraspEventHandler::Init(UObject* InParent)
 
 #if SL_WITH_MC_GRASP
 		// Check if parent is of right type
-		Parent = Cast<UMCFixationGrasp>(InParent);
+		Parent = Cast<UMCGraspFixation>(InParent);
 #endif // SL_WITH_MC_GRASP
 
 		if (Parent)

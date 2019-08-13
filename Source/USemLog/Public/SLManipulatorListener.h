@@ -20,7 +20,7 @@ enum class ESLGraspHandType : uint8
 };
 
 /** Notify when an object is grasped */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FBeginSLManipulatorOverlapSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FBeginSLManipulatorOverlapSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/, const FString& /*Type*/);
 
 /** Notify when an object is released */
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FEndSLManipulatorEndSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
@@ -66,6 +66,14 @@ protected:
 
 	// Load overlap groups, return true if at least one valid overlap is in each group
 	bool LoadOverlapGroups();
+
+#if SL_WITH_MC_GRASP
+	// Subscribe to grasp type changes
+	bool SubscribeToGraspTypeChanges();
+
+	// Callback on grasp type change
+	void OnGraspType(const FString& Type);
+#endif // SL_WITH_MC_GRASP
 
 private:
 	// Pause/continue the grasp detection
@@ -187,4 +195,7 @@ private:
 
 	// Objects currently in contact and the number of shapes in contact with. Used of semantic contact detection
 	TMap<AActor*, int32> ContactObjects;
+
+	// Active grasp type
+	FString ActiveGraspType;
 };

@@ -348,9 +348,9 @@ void USLManipulatorOverlapSphere::OnGraspOverlapBegin(UPrimitiveComponent* Overl
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d START OA:%s; T:%f START"), *FString(__func__), __LINE__,
 		//	*OtherActor->GetName(), GetWorld()->GetTimeSeconds());
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
-			FString::Printf(TEXT(" *  *  *START* *BCAST* GraspContact %s<-->%s T:%f"),
-				*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+		//	FString::Printf(TEXT(" *  *  *START* *BCAST* GraspContact %s<-->%s T:%f"),
+		//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
 		ActiveContacts.Emplace(OtherActor);
 		OnBeginSLGraspOverlap.Broadcast(OtherActor);
 
@@ -382,9 +382,9 @@ void USLManipulatorOverlapSphere::OnGraspOverlapEnd(UPrimitiveComponent* Overlap
 		{
 			//UE_LOG(LogTemp, Warning, TEXT("\t\t%s::%d END OA:%s; T:%f END"), *FString(__func__), __LINE__,
 			//	*OtherActor->GetName(), GetWorld()->GetTimeSeconds());
-			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
-				FString::Printf(TEXT(" *  *  *END* *BCAST* GraspContact %s<-->%s T:%f"),
-					*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
+			//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+			//	FString::Printf(TEXT(" *  *  *END* *BCAST* GraspContact %s<-->%s T:%f"),
+			//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
 			OnEndSLGraspOverlap.Broadcast(OtherActor);
 		}
 
@@ -438,9 +438,9 @@ void USLManipulatorOverlapSphere::OnContactOverlapEnd(UPrimitiveComponent* Overl
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Magenta,
-			FString::Printf(TEXT(" !! SELF !! T:%f"),
-				GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Magenta,
+		//	FString::Printf(TEXT(" !! SELF !! T:%f"),
+		//		GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
 		return;
 	}
 

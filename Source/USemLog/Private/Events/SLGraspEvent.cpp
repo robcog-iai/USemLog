@@ -6,17 +6,17 @@
 
 // Constructor with initialization
 FSLGraspEvent::FSLGraspEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const FSLEntity& InManipulator, const FSLEntity& InOther) :
+	const FSLEntity& InManipulator, const FSLEntity& InOther, const FString& InGraspType) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
-	Manipulator(InManipulator), Item(InOther)
+	Manipulator(InManipulator), Item(InOther), GraspType(InGraspType)
 {
 }
 
 // Constructor initialization without End with pair id
 FSLGraspEvent::FSLGraspEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const FSLEntity& InManipulator, const FSLEntity& InOther) :
+	const FSLEntity& InManipulator, const FSLEntity& InOther, const FString& InGraspType) :
 	ISLEvent(InId, InStart), PairId(InPairId),
-	Manipulator(InManipulator), Item(InOther)
+	Manipulator(InManipulator), Item(InOther), GraspType(InGraspType)
 {
 }
 
@@ -31,6 +31,7 @@ FSLOwlNode FSLGraspEvent::ToOwlNode() const
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator.Id));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", Item.Id));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateGraspTypeProperty("knowrob", GraspType));
 	return EventIndividual;
 }
 

@@ -45,7 +45,7 @@ void FSLContactEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	EventsDoc->AddTimepointIndividual(
 		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
 	EventsDoc->AddObjectIndividual(Item1.Obj,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item1.Id, Item2.Class));
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item1.Id, Item1.Class));
 	EventsDoc->AddObjectIndividual(Item2.Obj,
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item2.Id, Item2.Class));
 	OutDoc->AddIndividual(ToOwlNode());

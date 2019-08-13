@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/SphereComponent.h"
+#include "SLStructs.h"
 #include "SLReachListener.generated.h"
 
 // Forward declarations
@@ -59,6 +60,9 @@ private:
 	void RelocateSphere();
 #endif // WITH_EDITOR
 
+	// Subscribe for grasp event from sibling component
+	bool SubscribeForGraspEvents();
+	
 	// Update callback, check for changes in the reach model
 	void Update();
 
@@ -66,7 +70,10 @@ private:
 	void TriggerInitialOverlaps();
 
 	// Check if the object is can be a candidate for reaching
-	bool CanBeACandidate(AStaticMeshActor* InObject);
+	bool CanBeACandidate(AStaticMeshActor* InObject) const;
+
+	// Called when the sibling component detects a grasp
+	void OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType);
 
 	// Event called when something stops overlapping this component 
 	UFUNCTION()

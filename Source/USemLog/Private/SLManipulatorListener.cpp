@@ -4,6 +4,11 @@
 #include "SLManipulatorListener.h"
 #include "SLManipulatorOverlapSphere.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "SLEntitiesManager.h"
+#if SL_WITH_MC_GRASP
+#include "MCGraspAnimController.h"
+#endif // SL_WITH_MC_GRASP
+
 
 // Sets default values for this component's properties
 USLManipulatorListener::USLManipulatorListener()
@@ -26,6 +31,8 @@ USLManipulatorListener::USLManipulatorListener()
 	// Default values
 	HandType = ESLGraspHandType::Left;
 #endif // WITH_EDITOR
+
+	ActiveGraspType = "Default";
 }
 
 // Dtor
@@ -60,6 +67,12 @@ bool USLManipulatorListener::Init(bool bInDetectGrasps, bool bInDetectContacts)
 
 		// Remove any unset references in the array
 		Fingers.Remove(nullptr);
+
+#if SL_WITH_MC_GRASP
+		// Subscribe to grasp type changes
+		 SubscribeToGraspTypeChanges();
+#endif // SL_WITH_MC_GRASP
+		
 
 		// True if each group has at least one bone overlap
 		if (LoadOverlapGroups())
@@ -252,6 +265,31 @@ bool USLManipulatorListener::LoadOverlapGroups()
 	return true;
 }
 
+#if SL_WITH_MC_GRASP
+// Subscribe to grasp type changes
+bool USLManipulatorListener::SubscribeToGraspTypeChanges()
+{
+	if (UMCGraspAnimController* Sibling = CastChecked<UMCGraspAnimController>(
+		GetOwner()->GetComponentByClass(UMCGraspAnimController::StaticClass())))
+	{
+		Sibling->OnGraspType.AddUObject(this, &USLManipulatorListener::OnGraspType);
+		return true;
+	}
+	return false;
+}
+
+// Callback on grasp type change
+void USLManipulatorListener::OnGraspType(const FString& Type)
+{
+	ActiveGraspType = Type;
+	ActiveGraspType.RemoveFromStart("GA_");
+	ActiveGraspType.RemoveFromEnd("_Left");
+	ActiveGraspType.RemoveFromEnd("_Right");
+	ActiveGraspType.Append("Grasp");
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d ActiveGraspType=%s"), *FString(__func__), __LINE__, *ActiveGraspType);
+}
+#endif // SL_WITH_MC_GRASP
+
 // Check if the grasp trigger is active
 void USLManipulatorListener::InputAxisCallback(float Value)
 {
@@ -284,7 +322,7 @@ void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 		FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *Begin Grasp* %s"),
 			*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
 	GraspedObjects.Emplace(OtherActor);
-	OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
+	OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
 }
 
 // A grasp has ended
@@ -387,9 +425,9 @@ void USLManipulatorListener::OnEndContact(AActor* OtherActor)
 			(*NumContacts)--;
 			if ((*NumContacts) < 1)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
-					FString::Printf(TEXT(" * * * * *END* *BCAST* *HAND CONTACT* %s"),
-						*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
+				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+				//	FString::Printf(TEXT(" * * * * *END* *BCAST* *HAND CONTACT* %s"),
+				//		*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
 				OnEndManipulatorContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
 				ContactObjects.Remove(OtherActor);
 			}

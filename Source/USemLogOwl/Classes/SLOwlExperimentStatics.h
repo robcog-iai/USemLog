@@ -84,4 +84,7 @@ struct USEMLOGOWL_API FSLOwlExperimentStatics
 
 	// Create TaskSuccess property
 	static FSLOwlNode CreateTaskSuccessProperty(const FString& InDocPrefix, const bool TaskSuccess);
+
+	// Create grasp type property
+	static FSLOwlNode CreateGraspTypeProperty(const FString& InDocPrefix, const FString& GraspType);
 };

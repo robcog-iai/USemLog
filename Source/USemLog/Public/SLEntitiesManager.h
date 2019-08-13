@@ -63,30 +63,30 @@ public:
 	TMap<UObject*, FSLEntity>& GetObjectsSemanticData() { return ObjectsSemanticData; }
 
 	// Get the array of semantically annotated objects (returns the number of keys)
-	int32 GetSematicObjects(TArray<UObject*>& OutArray) { return ObjectsSemanticData.GetKeys(OutArray); }
+	int32 GetSemanticObjects(TArray<UObject*>& OutArray) const { return ObjectsSemanticData.GetKeys(OutArray); }
 
 	// Get the map of objects to the semantic items
-	void GetSemanticDataArray(TArray<FSLEntity>& OutArray) { ObjectsSemanticData.GenerateValueArray(OutArray); }
+	void GetSemanticDataArray(TArray<FSLEntity>& OutArray) const { ObjectsSemanticData.GenerateValueArray(OutArray); }
 
 
 	// Get the map of objects to the semantic items
 	TMap<UObject*, USLSkeletalDataComponent*>& GetObjectsSkeletalSemanticData() { return ObjectsSemanticSkeletalData; }
 
 	// Get the array of semantically annotated objects (returns the number of keys)
-	int32 GetSematicSkeltalObjects(TArray<UObject*>& OutArray) { return ObjectsSemanticSkeletalData.GetKeys(OutArray); }
+	int32 GetSemanticSkeltalObjects(TArray<UObject*>& OutArray) const { return ObjectsSemanticSkeletalData.GetKeys(OutArray); }
 
 	// Get the map of objects to the semantic items
-	void GetSemanticSkeletalDataArray(TArray<USLSkeletalDataComponent*>& OutArray) { ObjectsSemanticSkeletalData.GenerateValueArray(OutArray); }
+	void GetSemanticSkeletalDataArray(TArray<USLSkeletalDataComponent*>& OutArray) const { ObjectsSemanticSkeletalData.GenerateValueArray(OutArray); }
 
 
 	// Get the map of objects to the semantic items
 	TMap<UObject*, FSLEntity>& GetCameraViewsSemanticData() { return CameraViewSemanticData; }
 
 	// Get the array of semantically annotated objects (returns the number of keys)
-	int32 GetCameraViewsObjects(TArray<UObject*>& OutArray) { return CameraViewSemanticData.GetKeys(OutArray); }
+	int32 GetCameraViewsObjects(TArray<UObject*>& OutArray) const { return CameraViewSemanticData.GetKeys(OutArray); }
 
 	// Get the map of objects to the semantic items
-	void GetCameraViewsDataArray(TArray<FSLEntity>& OutArray) { CameraViewSemanticData.GenerateValueArray(OutArray); }
+	void GetCameraViewsDataArray(TArray<FSLEntity>& OutArray) const { CameraViewSemanticData.GenerateValueArray(OutArray); }
 
 private:
 	// Instance of the singleton

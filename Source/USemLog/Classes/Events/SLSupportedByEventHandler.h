@@ -6,6 +6,7 @@
 
 #include "Events/ISLEventHandler.h"
 #include "Events/SLSupportedByEvent.h"
+#include "TimerManager.h"
 
 // Forward declarations
 struct FSLContactResult;
@@ -49,7 +50,7 @@ private:
 
 private:
 	// Parent semantic overlap area
-	class ISLContactShapeInterface* Parent;
+	class ISLContactShapeInterface* Parent = nullptr;
 	
 	// Candidates for supported by event
 	TArray<FSLContactResult> Candidates;
@@ -68,5 +69,5 @@ private:
 
 	/* Constants */
 	constexpr static float MaxVertSpeed = 0.5f;
-	constexpr static float UpdateRate = 0.15f;
+	constexpr static float UpdateRate = 0.25f;
 };

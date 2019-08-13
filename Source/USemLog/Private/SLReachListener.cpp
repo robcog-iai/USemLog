@@ -3,8 +3,12 @@
 
 #include "SLReachListener.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "Engine/StaticMeshActor.h"
+#include "TimerManager.h"
+#include "Components/StaticMeshComponent.h"
+#include "SLManipulatorListener.h"
 
-	// Set default values
+// Set default values
 USLReachListener::USLReachListener()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
@@ -37,8 +41,12 @@ bool USLReachListener::Init()
 {
 	if (!bIsInit)
 	{
-		bIsInit = true;
-		return true;
+		// Subscribe for grasp notifications from sibling component
+		if(SubscribeForGraspEvents())
+		{
+			bIsInit = true;
+			return true;
+		}		
 	}
 	return false;
 }
@@ -117,6 +125,20 @@ void USLReachListener::RelocateSphere()
 }
 #endif // WITH_EDITOR
 
+// Subscribe for grasp events from sibling component
+bool USLReachListener::SubscribeForGraspEvents()
+{
+	if(USLManipulatorListener* Sibling = CastChecked<USLManipulatorListener>(
+		GetOwner()->GetComponentByClass(USLManipulatorListener::StaticClass())))
+	{
+		Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLReachListener::OnSLGraspBegin);
+		return true;
+	}
+	return false;
+}
+
+
+
 // Update callback, check for changes in the reach model
 void USLReachListener::Update()
 {
@@ -130,7 +152,7 @@ void USLReachListener::TriggerInitialOverlaps()
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
 	TSet<UPrimitiveComponent*> CurrOverlappingComponents;
 	GetOverlappingComponents(CurrOverlappingComponents);
-	FHitResult Dummy;
+	const FHitResult Dummy;
 	for (const auto& CompItr : CurrOverlappingComponents)
 	{
 		OnOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
@@ -138,7 +160,7 @@ void USLReachListener::TriggerInitialOverlaps()
 }
 
 // Check if the object is can be a candidate for reaching
-bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject)
+bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject) const
 {
 	// Check if the object is movable
 	if (!InObject->IsRootComponentMovable())
@@ -167,6 +189,15 @@ bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject)
 	return false;
 }
 
+// Called when sibling detects a grasp
+void USLReachListener::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
+	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
+		FString::Printf(TEXT(" *  Finish reach here! %s T:%f"),
+			*Other->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
+}
+
 // Called on overlap begin events
 void USLReachListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
@@ -175,6 +206,7 @@ void USLReachListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
 	//// Ignore self overlaps 
 	//if (OtherActor == GetOwner())
 	//{
@@ -188,6 +220,7 @@ void USLReachListener::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
 	//// Ignore self overlaps 
 	//if (OtherActor == GetOwner())
 	//{

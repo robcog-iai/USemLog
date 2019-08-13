@@ -40,7 +40,7 @@ private:
 private:
 	// Parent
 #if SL_WITH_MC_GRASP
-	class UMCFixationGrasp* Parent;
+	class UMCGraspFixation* Parent;
 #else
 	UObject* Parent;
 #endif // SL_WITH_MC_GRASP

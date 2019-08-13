@@ -62,8 +62,6 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddClassDefinition("knowrob", "GraspingSomething");
 	Experiment->AddClassDefinition("knowrob", "SlicingSomething");
 	Experiment->AddClassDefinition("knowrob", "TouchingSituation");
-	Experiment->AddClassDefinition("knowrob", "Pose");
-	Experiment->AddClassDefinition("knowrob", "Knife");
 
 	// Add individuals comment
 	// Experiment->AddExperimentIndividual(InDocPrefix, InDocId); // Adding at end
@@ -249,4 +247,13 @@ FSLOwlNode FSLOwlExperimentStatics::CreateTaskSuccessProperty(const FString& InD
 	const FString Id = TaskSuccess ? "true" : "false";
 	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
 		RdfResource, FSLOwlAttributeValue(InDocPrefix, Id)));
+}
+
+FSLOwlNode FSLOwlExperimentStatics::CreateGraspTypeProperty(const FString& InDocPrefix, const FString& InGraspType)
+{
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "graspType");
+
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, InGraspType)));
 }

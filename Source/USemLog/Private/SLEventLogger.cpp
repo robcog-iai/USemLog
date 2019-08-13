@@ -19,7 +19,7 @@
 #include "Ids.h"
 
 #if SL_WITH_MC_GRASP
-#include "MCFixationGrasp.h"
+#include "MCGraspFixation.h"
 #endif // SL_WITH_MC_GRASP
 
 #if SL_WITH_SLICING
@@ -168,7 +168,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 
 #if SL_WITH_MC_GRASP
 			// Init fixation grasp listeners
-			for (TObjectIterator<UMCFixationGrasp> Itr; Itr; ++Itr)
+			for (TObjectIterator<UMCGraspFixation> Itr; Itr; ++Itr)
 			{
 				if (IsValidAndAnnotated(*Itr))
 				{

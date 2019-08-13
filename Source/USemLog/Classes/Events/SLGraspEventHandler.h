@@ -23,7 +23,7 @@ public:
 
 private:
 	// Start new grasp event
-	void AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime);
+	void AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime, const FString& Type);
 
 	// Finish then publish the event
 	bool FinishEvent(UObject* Other, float EndTime);
@@ -32,7 +32,7 @@ private:
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& Type);
 
 	// Event called when a semantic overlap event ends
 	void OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time);

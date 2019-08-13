@@ -63,13 +63,13 @@ void FSLGraspEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new grasp event
-void FSLGraspEventHandler::AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime)
+void FSLGraspEventHandler::AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime, const FString& InType)
 {
 	// Start a semantic grasp event
 	TSharedPtr<FSLGraspEvent> Event = MakeShareable(new FSLGraspEvent(
 		FIds::NewGuidInBase64Url(), StartTime,
 		FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other.Obj->GetUniqueID()),
-		Self, Other));
+		Self, Other, InType));
 	// Add event to the pending array
 	StartedEvents.Emplace(Event);
 }
@@ -86,9 +86,6 @@ bool FSLGraspEventHandler::FinishEvent(UObject* Other, float EndTime)
 			// Ignore short events
 			if ((EndTime - (*EventItr)->Start) > ContactEventMin)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::White,
-					FString::Printf(TEXT(" * * * * * * *BCAST* *Grasp*")), false, FVector2D(1.5f, 1.5f));
-
 				// Set end time and publish event
 				(*EventItr)->End = EndTime;
 				OnSemanticEvent.ExecuteIfBound(*EventItr);
@@ -120,13 +117,13 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic grasp event begins
-void FSLGraspEventHandler::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time)
+void FSLGraspEventHandler::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& Type)
 {
 	// Check that the objects are semantically annotated
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
 	if (OtherItem.IsSet())
 	{
-		FSLGraspEventHandler::AddNewEvent(Self, OtherItem, Time);
+		FSLGraspEventHandler::AddNewEvent(Self, OtherItem, Time, Type);
 	}
 }
 
