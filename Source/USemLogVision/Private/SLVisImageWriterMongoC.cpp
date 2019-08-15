@@ -603,7 +603,7 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 					BSON_APPEND_UTF8(&entity_arr_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
 					BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
 					//BSON_APPEND_UTF8(&entity_arr_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
-					BSON_APPEND_INT32(&entity_arr_obj, "duplicate", false);
+					BSON_APPEND_BOOL(&entity_arr_obj, "duplicate", false);
 					BSON_APPEND_INT32(&entity_arr_obj, "num_pixels", Entity.NumPixels);
 					BSON_APPEND_DOUBLE(&entity_arr_obj, "linear_distance", FConversions::CmToM(Entity.LinearDistanceToView));
 					BSON_APPEND_DOUBLE(&entity_arr_obj, "angular_distance", FConversions::CmToM(Entity.AngularDistanceToView));

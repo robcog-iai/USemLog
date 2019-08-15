@@ -14,9 +14,7 @@
 #include "SLVisImageWriterMongoC.h"
 #include "SLVisImageWriterFile.h"
 #include "Animation/SkeletalMeshActor.h"
-
 #include "Camera/CameraActor.h"
-
 #include "Engine/LocalPlayer.h"
 
 // Ctor
@@ -41,7 +39,7 @@ ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
 	RenderTypes.Add(ESLVisRenderType::Normal);
 
 	
-	ScrubRate = 0.25f;
+	ScrubRate = 0.1f;
 	SkipNewEntryDistance = 0.05f;
 
 

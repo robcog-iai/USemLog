@@ -113,11 +113,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartAtBeginPlay;
 
-	// Start after begin play, in the first tick
+	// Start after begin play, in the first tick TODO inserts twice timestamp 0 in mongo
+	// this might be because we set the time back to 0 to sync it with the replay function
+	// however this seems to have the side effect that tick is called twice at timestamp 0 (this theory has not been tested)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartAtFirstTick;
 
-	// Start after a given delay
+	// Start after a given delay TODO inserts twice timestamp 0 in mongo
+	// this might be because we set the time back to 0 to sync it with the replay function
+	// however this seems to have the side effect that tick is called twice at timestamp 0 (this theory has not been tested)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartWithDelay;
 
@@ -125,7 +129,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartWithDelay"))
 	float StartDelay;
 
-	// Start from external user input
+	// Start from external user input TODO inserts twice timestamp 0 in mongo
+	// this might be because we set the time back to 0 to sync it with the replay function
+	// however this seems to have the side effect that tick is called twice at timestamp 0 (this theory has not been tested)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartFromUserInput;
 

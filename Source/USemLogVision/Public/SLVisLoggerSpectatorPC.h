@@ -176,5 +176,5 @@ private:
 
 	/* Constants */
 	// Database name
-	constexpr static const char* DBName = "SL_421_OH";
+	constexpr static const char* DBName = "MessyKitchen";
 };
