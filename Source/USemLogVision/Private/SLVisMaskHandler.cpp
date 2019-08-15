@@ -8,6 +8,7 @@
 #include "EngineUtils.h"
 #include "SLSkeletalDataComponent.h"
 #include "Tags.h"
+#include "SLVisImageWriterInterface.h"
 
 #define SLVIS_SEM_TOL 21
 #define SLVIS_BLACK_TOL 5
@@ -26,10 +27,13 @@ USLVisMaskHandler::~USLVisMaskHandler()
 }
 
 // Init
-void USLVisMaskHandler::Init()
+void USLVisMaskHandler::Init(int32 InNumOfPixels)
 {
 	if (!bIsInit)
 	{
+		// Used for calculating the percentage in order to ignore barely visible entities
+		TotalNumOfPixelsInImg = InNumOfPixels;
+		
 		// Load default mask material
 		DefaultMaskMaterial = LoadObject<UMaterial>(this,
 			TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask"));
@@ -254,9 +258,6 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, const FTrans
 						EntityData.TransformFromView = ViewWorldTransform.GetRelativeTransform(EntityData.SelfAsActor->GetTransform());
 						EntityData.LinearDistanceToView = FVector::Distance(ViewWorldTransform.GetLocation(), EntityData.SelfAsActor->GetActorLocation());
 						EntityData.AngularDistanceToView = ViewWorldTransform.GetRotation().AngularDistance(EntityData.SelfAsActor->GetActorQuat());
-						
-						OutViewData.TotalLinearDistanceSize += EntityData.LinearDistanceToView;
-						OutViewData.TotalAngularDistanceSize += EntityData.AngularDistanceToView;
 					}
 					else if (EntityData.SelfAsComponent)
 					{
@@ -311,9 +312,6 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, const FTrans
 	//	UE_LOG(LogTemp, Error, TEXT("\t\t%s"), *C.ToString());
 	//}
 
-	// Output the semantic data from the image
-	OutViewData.NumEntities = EntitiesInImage.Num();
-	EntitiesInImage.GenerateValueArray(OutViewData.SemanticEntities);
 
 	// Iterate on all the color to bones pair and generate skeletal structure data
 	for (const auto& ColorToBonePair : BonesInImage)
@@ -341,6 +339,9 @@ void USLVisMaskHandler::ProcessMaskImage(TArray<FColor>& MaskImage, const FTrans
 			OutViewData.SemanticSkelEntities.Emplace(Parent);
 		}
 	}
+	
+	// Remove entities that have a very small relative number of pixels in the image and set the avg distance in the scene
+	SetOutputData(EntitiesInImage, BonesInImage, OutViewData);
 }
 
 // Add information about the semantic color (return true if all the fields were filled)
@@ -420,3 +421,36 @@ bool USLVisMaskHandler::RestoreIfCloseToAMaskColor(FColor& OutColor)
 	return false;
 }
 
+// Remove entities that have a very small relative number of pixels in the image and set the avg distance in the scene
+void USLVisMaskHandler::SetOutputData(TMap<FColor, FSLVisEntitiyData>& EntitiesInImage,
+	TMap<FColor, FSLVisBoneData>& BonesInImage,
+	FSLVisViewData& OutViewData)
+{
+	const int32 RelativeMinNumOfPixels = TotalNumOfPixelsInImg * IgnorePercentage;
+	//float TotalLinDistances = 0.f;
+	//float TotalAngDistances = 0.f;
+	
+	// TODO skeletal information is not handled here
+	for (auto EntityItr(EntitiesInImage.CreateIterator()); EntityItr; ++EntityItr)
+	{
+		// Remove entities that are `barely` in the scene
+		if(EntityItr->Value.NumPixels < AbsoluteMinNumOfPixels 
+			|| EntityItr->Value.NumPixels < RelativeMinNumOfPixels)
+		{
+			EntityItr.RemoveCurrent();
+		}
+		else
+		{
+			OutViewData.TotalLinearDistanceSize += EntityItr->Value.LinearDistanceToView;
+			OutViewData.TotalAngularDistanceSize += EntityItr->Value.AngularDistanceToView;
+			//TotalLinDistances += EntityItr->Value.LinearDistanceToView;
+			//TotalAngDistances += EntityItr->Value.AngularDistanceToView;
+		}
+	}
+	
+	// Output the semantic data from the image
+	OutViewData.NumEntities = EntitiesInImage.Num();
+	//OutViewData.TotalLinearDistanceSize = TotalLinDistances / OutViewData.NumEntities;
+	//OutViewData.TotalAngularDistanceSize = TotalAngDistances / OutViewData.NumEntities;
+	EntitiesInImage.GenerateValueArray(OutViewData.SemanticEntities);
+}

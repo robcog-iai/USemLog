@@ -94,7 +94,7 @@ void ASLVisLoggerSpectatorPC::Init()
 		if (RenderTypes.Contains(ESLVisRenderType::Mask))
 		{
 			MaskHandler = NewObject<USLVisMaskHandler>(this);
-			MaskHandler->Init();
+			MaskHandler->Init(Resolution.X * Resolution.Y);
 			if (!MaskHandler->IsInit())
 			{
 				RenderTypes.Remove(ESLVisRenderType::Mask);

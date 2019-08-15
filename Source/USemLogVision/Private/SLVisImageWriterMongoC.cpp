@@ -73,6 +73,9 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 
 		// Add timestamp
 		BSON_APPEND_DOUBLE(doc, "timestamp", StampedData.Timestamp);
+		
+		// Add the render timestamp (in this case this coincides with timestamp
+		BSON_APPEND_DOUBLE(doc, "timestamp_render", StampedData.Timestamp);
 
 		// Add the views 
 		USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, doc);
@@ -366,52 +369,54 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 #if SLVIS_WITH_LIBMONGO_C
 
 	bson_t idx_id;
-	char *idx_id_str;
 	bson_init(&idx_id);
 	BSON_APPEND_INT32(&idx_id, "camera_views.id", 1);
-	idx_id_str = mongoc_collection_keys_to_index_string(&idx_id);
+	char* idx_id_str = mongoc_collection_keys_to_index_string(&idx_id);
 
 	bson_t idx_cls;
-	char *idx_cls_str;
 	bson_init(&idx_cls);
 	BSON_APPEND_INT32(&idx_cls, "camera_views.class", 1);
-	idx_cls_str = mongoc_collection_keys_to_index_string(&idx_cls);
+	char* idx_cls_str = mongoc_collection_keys_to_index_string(&idx_cls);
 
 	bson_t idx_ne;
-	char *idx_ne_str;
 	bson_init(&idx_ne);
 	BSON_APPEND_INT32(&idx_ne, "camera_views.number_entities", 1);
-	idx_ne_str = mongoc_collection_keys_to_index_string(&idx_ne);
+	char* idx_ne_str = mongoc_collection_keys_to_index_string(&idx_ne);
+
+	bson_t idx_dp;
+	bson_init(&idx_dp);
+	BSON_APPEND_INT32(&idx_dp, "camera_views.duplicate", 1);
+	char* idx_dp_str = mongoc_collection_keys_to_index_string(&idx_dp);
 
 	bson_t idx_tld;
-	char *idx_tld_str;
 	bson_init(&idx_tld);
 	BSON_APPEND_INT32(&idx_tld, "camera_views.total_linear_distance", 1);
-	idx_tld_str = mongoc_collection_keys_to_index_string(&idx_tld);
+	char* idx_tld_str = mongoc_collection_keys_to_index_string(&idx_tld);
 
 	bson_t idx_tad;
-	char *idx_tad_str;
 	bson_init(&idx_tad);
 	BSON_APPEND_INT32(&idx_tad, "camera_views.total_angular_distance", 1);
-	idx_tad_str = mongoc_collection_keys_to_index_string(&idx_tad);
+	char* idx_tad_str = mongoc_collection_keys_to_index_string(&idx_tad);
 
 	bson_t idx_eid;
-	char *idx_eid_str;
 	bson_init(&idx_eid);
 	BSON_APPEND_INT32(&idx_eid, "camera_views.entities.id", 1);
-	idx_eid_str = mongoc_collection_keys_to_index_string(&idx_eid);
+	char* idx_eid_str = mongoc_collection_keys_to_index_string(&idx_eid);
 
 	bson_t idx_ecls;
-	char *idx_ecls_str;
 	bson_init(&idx_ecls);
 	BSON_APPEND_INT32(&idx_ecls, "camera_views.entities.class", 1);
-	idx_ecls_str = mongoc_collection_keys_to_index_string(&idx_ecls);
+	char* idx_ecls_str = mongoc_collection_keys_to_index_string(&idx_ecls);
+
+	bson_t idx_edp;
+	bson_init(&idx_edp);
+	BSON_APPEND_INT32(&idx_edp, "camera_views.entities.duplicate", 1);
+	char* idx_edp_str = mongoc_collection_keys_to_index_string(&idx_edp);
 
 	bson_t idx_bcls;
-	char *idx_bcls_str;
 	bson_init(&idx_bcls);
 	BSON_APPEND_INT32(&idx_bcls, "camera_views.entities.bones.class", 1);
-	idx_bcls_str = mongoc_collection_keys_to_index_string(&idx_bcls);
+	char* idx_bcls_str = mongoc_collection_keys_to_index_string(&idx_bcls);
 
 
 	bson_t* index_command;
@@ -447,6 +452,14 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 			"}",
 			"{",
 				"key",
+				BCON_DOCUMENT(&idx_dp),
+				"name",
+				BCON_UTF8(idx_dp_str),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
+			"{",
+				"key",
 				BCON_DOCUMENT(&idx_tld),
 				"name",
 				BCON_UTF8(idx_tld_str),
@@ -474,6 +487,14 @@ bool USLVisImageWriterMongoC::CreateIndexes()
 				BCON_DOCUMENT(&idx_ecls),
 				"name",
 				BCON_UTF8(idx_ecls_str),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_edp),
+				"name",
+				BCON_UTF8(idx_edp_str),
 				//"unique",
 				//BCON_BOOL(false),
 			"}",
@@ -559,6 +580,7 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 			BSON_APPEND_UTF8(&view_arr_obj, "class", TCHAR_TO_UTF8(*View.Class));
 			BSON_APPEND_UTF8(&view_arr_obj, "id", TCHAR_TO_UTF8(*View.Id));
 
+			BSON_APPEND_BOOL(&view_arr_obj, "duplicate", false);
 			BSON_APPEND_INT32(&view_arr_obj, "num_entities",View.NumEntities);
 			BSON_APPEND_DOUBLE(&view_arr_obj, "total_linear_distance", View.TotalLinearDistanceSize);
 			BSON_APPEND_DOUBLE(&view_arr_obj, "total_angular_distance", View.TotalAngularDistanceSize);
@@ -581,6 +603,7 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 					BSON_APPEND_UTF8(&entity_arr_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
 					BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
 					//BSON_APPEND_UTF8(&entity_arr_obj, "mask_hex", TCHAR_TO_UTF8(*Entity.ColorHex));
+					BSON_APPEND_INT32(&entity_arr_obj, "duplicate", false);
 					BSON_APPEND_INT32(&entity_arr_obj, "num_pixels", Entity.NumPixels);
 					BSON_APPEND_DOUBLE(&entity_arr_obj, "linear_distance", FConversions::CmToM(Entity.LinearDistanceToView));
 					BSON_APPEND_DOUBLE(&entity_arr_obj, "angular_distance", FConversions::CmToM(Entity.AngularDistanceToView));

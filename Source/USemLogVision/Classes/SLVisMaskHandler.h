@@ -77,7 +77,7 @@ public:
 	~USLVisMaskHandler();
 
 	// Init
-	void Init();
+	void Init(int32 InNumOfPixels);
 
 	// Check if it is init
 	bool IsInit() const { return bIsInit; };
@@ -117,6 +117,11 @@ private:
 
 	// Compare against the semantic colors, if found, switch
 	bool RestoreIfCloseToAMaskColor(FColor& OutColor);
+
+	// Remove entities that have a very small relative number of pixels in the image and set the avg distance in the scene
+	void SetOutputData(TMap<FColor, FSLVisEntitiyData>& EntitiesInImage,
+		TMap<FColor, FSLVisBoneData>& BonesInImage,
+		FSLVisViewData& OutViewData);
 
 	// Compare the two FColor with a tolerance
 	FORCEINLINE bool AlmostEqual(const FColor& ColorA, const FColor& ColorB, uint8 Tolerance = 2) const
@@ -158,4 +163,14 @@ private:
 
 	// Meshes with no masks
 	TArray<UMeshComponent*> IgnoredMeshes;
+
+	// Total num of pixels in the rendered image, used for calculating the percentage in order to ignore barely visible entities
+	int32 TotalNumOfPixelsInImg;
+
+	/* Constants */
+	// Ignore percentage (normalized) for the relative number of pixels in an image
+	constexpr static const float IgnorePercentage = 0.005;
+
+	// Ignore entities with less than 100 pixels;
+	constexpr static const int32 AbsoluteMinNumOfPixels = 150;
 };
