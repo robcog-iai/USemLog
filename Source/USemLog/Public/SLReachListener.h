@@ -3,13 +3,21 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "USemLog.h"
 #include "Components/SphereComponent.h"
 #include "SLStructs.h"
 #include "SLReachListener.generated.h"
 
+
+//typedef TPair<float, float> FTimeAndDistance;
+//using FTimeAndDistance = TPair<float, float>;
+using FTimeAndDistance = TTuple<float, float>; // <Time, Distance>
+
 // Forward declarations
 class AStaticMeshActor;
+
+/** Notify when an object is released */
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLReachEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*StartTime*/, float /*EndTime*/);
 
 /**
  * Checks for reaching actions
@@ -63,7 +71,7 @@ private:
 	// Subscribe for grasp event from sibling component
 	bool SubscribeForGraspEvents();
 	
-	// Update callback, check for changes in the reach model
+	// Update callback, checks distance to hand, if it increases it resets the start time
 	void Update();
 
 	// Publish currently overlapping components
@@ -91,6 +99,10 @@ private:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
+public:
+	// Event called when the reaching motion is finished
+	FSLReachEventSignature OnReachEvent;
+	
 private:
 	// True if initialized
 	bool bIsInit;
@@ -116,7 +128,10 @@ private:
 	// Timer handle for the update rate
 	FTimerHandle TimerHandle;
 
-	// Candidates for reaching action, pointing to their starting time
-	TMap<AStaticMeshActor*, float> Candidates;
+	// Semantic data of the owner
+	FSLEntity SemanticOwner;
+
+	// CandidatesWithTimeAndDistance for reaching action, pointing to their starting time
+	TMap<AStaticMeshActor*, FTimeAndDistance> CandidatesWithTimeAndDistance;
 
 };

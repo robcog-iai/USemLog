@@ -7,6 +7,7 @@
 #include "TimerManager.h"
 #include "Components/StaticMeshComponent.h"
 #include "SLManipulatorListener.h"
+#include "SLEntitiesManager.h"
 
 // Set default values
 USLReachListener::USLReachListener()
@@ -41,12 +42,26 @@ bool USLReachListener::Init()
 {
 	if (!bIsInit)
 	{
+		// Init the semantic entities manager
+		if (!FSLEntitiesManager::GetInstance()->IsInit())
+		{
+			FSLEntitiesManager::GetInstance()->Init(GetWorld());
+		}
+
+		// Check that the owner is part of the semantic entities
+		SemanticOwner = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
+		if (!SemanticOwner.IsSet())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not semantically annotated.."), *FString(__func__), __LINE__);
+			return false;
+		}
+		
 		// Subscribe for grasp notifications from sibling component
 		if(SubscribeForGraspEvents())
 		{
 			bIsInit = true;
 			return true;
-		}		
+		}
 	}
 	return false;
 }
@@ -137,12 +152,44 @@ bool USLReachListener::SubscribeForGraspEvents()
 	return false;
 }
 
-
-
-// Update callback, check for changes in the reach model
+// Update callback, checks distance to hand, if it increases it resets the start time
 void USLReachListener::Update()
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
+	AActor* Owner = GetOwner();
+	const float CurrTime = GetWorld()->GetTimeSeconds();
+
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s Update at, %f]"),
+	//	*FString(__func__), __LINE__, *Owner->GetName(), CurrTime);
+	
+	for(auto& C : CandidatesWithTimeAndDistance)
+	{
+		const float CurrDistance = FVector::Distance(Owner->GetActorLocation(), C.Key->GetActorLocation());
+		const float PrevDistance = C.Value.Get<1>();
+		const float DistDiff = PrevDistance - CurrDistance;
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s CurrDist:%f;  PrevDist:%f; DistDiff:%f; Abs:%f"),
+			*FString(__func__), __LINE__, *Owner->GetName(), CurrDistance, PrevDistance, DistDiff, FMath::Abs(DistDiff));
+
+		// Ignore small difference changes
+		if(FMath::Abs(DistDiff) > 1.0f)
+		{
+			if(DistDiff > 0)
+			{
+				// Positive difference makes the hand closer to the object, update the distance
+				C.Value.Get<1>() = CurrDistance;
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t Closer to %s, updating distance from %f to %f"),
+					*FString(__func__), __LINE__, *C.Key->GetName(), PrevDistance, CurrDistance);
+			}
+			else
+			{
+				// Negative difference makes the hand further away from the object, update distance, reset the start time
+				C.Value.Get<0>() = CurrTime;
+				C.Value.Get<1>() = CurrDistance;
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t Further from %s, reseting time[%f] and updating distance from %f to %f"),
+					*FString(__func__), __LINE__, *C.Key->GetName(), C.Value.Get<0>(), PrevDistance, CurrDistance);
+			}
+		}
+	}
 }
 
 // Publish currently overlapping components
@@ -162,6 +209,12 @@ void USLReachListener::TriggerInitialOverlaps()
 // Check if the object is can be a candidate for reaching
 bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject) const
 {
+	// Make sure the object is semantically annotated
+	if (!FSLEntitiesManager::GetInstance()->IsObjectEntitySet(InObject))
+	{
+		return false;
+	}
+	
 	// Check if the object is movable
 	if (!InObject->IsRootComponentMovable())
 	{
@@ -192,10 +245,18 @@ bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject) const
 // Called when sibling detects a grasp
 void USLReachListener::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
-		FString::Printf(TEXT(" *  Finish reach here! %s T:%f"),
-			*Other->GetName(), GetWorld()->GetTimeSeconds()), false, FVector2D(1.5f, 1.5f));
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
+	{
+		if (CandidatesWithTimeAndDistance.Contains(AsSMA))
+		{
+			// Publish event
+			const float StartTime = CandidatesWithTimeAndDistance[AsSMA].Get<0>();
+			OnReachEvent.Broadcast(SemanticOwner, Other, StartTime, Time);
+			CandidatesWithTimeAndDistance.Empty();
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Finished reaching for %s [%f, %f]"),
+				*FString(__func__), __LINE__, *Other->GetName(), StartTime, Time);
+		}
+	}
 }
 
 // Called on overlap begin events
@@ -206,12 +267,23 @@ void USLReachListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
-	//// Ignore self overlaps 
-	//if (OtherActor == GetOwner())
-	//{
-	//	return;
-	//}
+	// Ignore self overlaps 
+	if (OtherActor == GetOwner())
+	{
+		return;
+	}
+	
+	if(AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherActor))
+	{
+		if(CanBeACandidate(AsSMA))
+		{
+			const float Distance = FVector::Distance(GetOwner()->GetActorLocation(), AsSMA->GetActorLocation());
+			FTimeAndDistance TimeAndDistance = MakeTuple(GetWorld()->GetTimeSeconds(), Distance);
+			CandidatesWithTimeAndDistance.Emplace(AsSMA, TimeAndDistance);
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Added %s as candidate"), *FString(__func__), __LINE__, *AsSMA->GetName());
+		}
+	}
+	
 }
 
 // Called on overlap end events
@@ -220,18 +292,17 @@ void USLReachListener::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
-	//// Ignore self overlaps 
-	//if (OtherActor == GetOwner())
-	//{
-	//	return;
-	//}
+	// Ignore self overlaps 
+	if (OtherActor == GetOwner())
+	{
+		return;
+	}
 
-	//if (OtherActor->IsA(AStaticMeshActor::StaticClass()))
-	//{
-	//	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green,
-	//	//	FString::Printf(TEXT(" *  *  *END* *BCAST* *CONTACT* %s<-->%s T:%f C:%d"),
-	//	//		*GetName(), *OtherActor->GetName(), GetWorld()->GetTimeSeconds(), OvCounter), false, FVector2D(1.5f, 1.5f));
-	//	//OnEndSLContactOverlap.Broadcast(OtherActor);
-	//}
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherActor))
+	{
+		if (CandidatesWithTimeAndDistance.Remove(AsSMA) > 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Removed %s as candidate"), *FString(__func__), __LINE__, *AsSMA->GetName());
+		}
+	}
 }

@@ -7,22 +7,27 @@
 #include "EngineUtils.h"
 
 #include "Events/SLContactEventHandler.h"
+#include "Events/SLManipulatorContactEventHandler.h"
 #include "Events/SLSupportedByEventHandler.h"
-#include "Events/SLFixationGraspEventHandler.h"
-#include "Events/SLSlicingEventHandler.h"
+#include "Events/SLGraspEventHandler.h"
+#include "Events/SLReachEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLContactShapeInterface.h"
 #include "SLManipulatorListener.h"
+#include "SLReachListener.h"
 #include "SLGoogleCharts.h"
 
 // UUtils
 #include "Ids.h"
+#include "SLEntitiesManager.h"
 
 #if SL_WITH_MC_GRASP
+#include "Events/SLFixationGraspEventHandler.h"
 #include "MCGraspFixation.h"
 #endif // SL_WITH_MC_GRASP
 
 #if SL_WITH_SLICING
+#include "Events/SLSlicingEventHandler.h"
 #include "SlicingBladeComponent.h"
 #endif // SL_WITH_SLICING
 
@@ -187,6 +192,30 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				}
 			}
 #endif // SL_WITH_MC_GRASP
+
+			// Init all reach listeners
+			for (TObjectIterator<USLReachListener> Itr; Itr; ++Itr)
+			{
+				if (IsValidAndAnnotated(*Itr))
+				{
+					if (Itr->Init())
+					{
+						ReachListeners.Emplace(*Itr);
+						TSharedPtr<FSLReachEventHandler> REHandler = MakeShareable(new FSLReachEventHandler());
+						REHandler->Init(*Itr);
+						if (REHandler->IsInit())
+						{
+							EventHandlers.Add(REHandler);
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+								*FString(__func__), __LINE__, *Itr->GetName());
+						}
+					}
+
+				}
+			}
 		}
 
 		// Init Slicing handlers
@@ -274,6 +303,12 @@ void USLEventLogger::Start()
 			SLManipulatorListener->Start();
 		}
 
+		// Start the reach listeners
+		for (auto& SLReachListener : ReachListeners)
+		{
+			SLReachListener->Start();
+		}
+
 		if (bWriteMetadata)
 		{
 			MetadataWriter.Start();
@@ -309,6 +344,13 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 			SLManipulatorListener->Finish(bForced);
 		}
 		GraspListeners.Empty();
+
+		// Start the reach listeners
+		for (auto& SLReachListener : ReachListeners)
+		{
+			SLReachListener->Start();
+		}
+		ReachListeners.Empty();
 
 		// Mark finished
 		bIsStarted = false;

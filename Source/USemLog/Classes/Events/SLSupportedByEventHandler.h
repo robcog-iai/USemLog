@@ -52,7 +52,7 @@ private:
 	// Parent semantic overlap area
 	class ISLContactShapeInterface* Parent = nullptr;
 	
-	// Candidates for supported by event
+	// CandidatesWithTimeAndDistance for supported by event
 	TArray<FSLContactResult> Candidates;
 
 	// Array of started supported by events

@@ -1,0 +1,77 @@
+// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
+
+#include "Events/SLReachEventHandler.h"
+#include "SLEntitiesManager.h"
+#include "SLReachListener.h"
+
+// UUtils
+#include "Ids.h"
+
+
+// Set parent
+void FSLReachEventHandler::Init(UObject* InParent)
+{
+	if (!bIsInit)
+	{
+		// Make sure the mappings singleton is initialized (the handler uses it)
+		if (!FSLEntitiesManager::GetInstance()->IsInit())
+		{
+			FSLEntitiesManager::GetInstance()->Init(InParent->GetWorld());
+		}
+
+		// Check if parent is of right type
+		Parent = Cast<USLReachListener>(InParent);
+		if (Parent)
+		{
+			// Mark as initialized
+			bIsInit = true;
+		}
+	}
+}
+
+// Bind to input delegates
+void FSLReachEventHandler::Start()
+{
+	if (!bIsStarted && bIsInit)
+	{
+		// Subscribe to the forwarded semantically annotated Reaching broadcasts
+		Parent->OnReachEvent.AddRaw(this, &FSLReachEventHandler::OnSLReachEvent);
+
+		// Mark as started
+		bIsStarted = true;
+	}
+}
+
+// Terminate listener, finish and publish remaining events
+void FSLReachEventHandler::Finish(float EndTime, bool bForced)
+{
+	if (!bIsFinished && (bIsInit || bIsStarted))
+	{
+		// TODO use dynamic delegates to be able to unbind from them
+		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
+		// this would mean that the handler will need to inherit from UObject
+
+		// Mark finished
+		bIsStarted = false;
+		bIsInit = false;
+		bIsFinished = true;
+	}
+}
+
+// Event called when a semantic Reach event begins
+void FSLReachEventHandler::OnSLReachEvent(const FSLEntity& Self, UObject* Other, float StartTime, float EndTime)
+{
+	// Check that the objects are semantically annotated
+	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
+	if (OtherItem.IsSet())
+	{
+		// Start a semantic Reach event
+		TSharedPtr<FSLReachEvent> Event = MakeShareable(new FSLReachEvent(
+			FIds::NewGuidInBase64Url(), StartTime, EndTime,
+			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), OtherItem.Obj->GetUniqueID()),
+			Self, OtherItem));
+
+		OnSemanticEvent.ExecuteIfBound(Event);
+	}
+}

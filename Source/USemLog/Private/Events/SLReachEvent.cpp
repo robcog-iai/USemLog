@@ -24,7 +24,7 @@ FSLOwlNode FSLReachEvent::ToOwlNode() const
 {
 	// Create the Reach event node
 	FSLOwlNode EventIndividual = FSLOwlExperimentStatics::CreateEventIndividual(
-		"log", Id, "ReachingSituation");
+		"log", Id, "ReachingForSomething");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator.Id));
@@ -44,10 +44,10 @@ void FSLReachEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
 		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(Item.Obj,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item.Id, Manipulator.Class));
 	EventsDoc->AddObjectIndividual(Manipulator.Obj,
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", Manipulator.Id, Manipulator.Class));
+	EventsDoc->AddObjectIndividual(Item.Obj,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item.Id, Item.Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
@@ -61,13 +61,13 @@ FString FSLReachEvent::Context() const
 FString FSLReachEvent::Tooltip() const
 {
 	return FString::Printf(TEXT("\'O1\',\'%s\',\'Id\',\'%s\',\'O2\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
-		*Item.Class, *Item.Id, *Manipulator.Class, *Manipulator.Id, *Id);
+		*Manipulator.Class, *Manipulator.Id, *Item.Class, *Item.Id, *Id);
 }
 
 // Get the data as string
 FString FSLReachEvent::ToString() const
 {
 	return FString::Printf(TEXT("Item:[%s] Manipulator:[%s] PairId:%lld"),
-		*Item.ToString(), *Manipulator.ToString(), PairId);
+		*Manipulator.ToString(), *Item.ToString(), PairId);
 }
 /* End ISLEvent interface */

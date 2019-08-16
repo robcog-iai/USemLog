@@ -100,4 +100,7 @@ private:
 
 	// Cache of the grasp listeners
 	TArray<class USLManipulatorListener*> GraspListeners;
+
+	// Cache of the grasp listeners
+	TArray<class USLReachListener*> ReachListeners;
 };
