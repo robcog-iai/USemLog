@@ -195,18 +195,14 @@ private:
 	// Listen for supported by events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	bool bLogSupportedByEvents;
-
-	//// Listen for sliding events
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
-	//bool bLogSlidingEvents;
-
-	//// Listen for pushed events
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
-	//bool bLogPushedEvents;
 	
 	// Listen for grasping events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	bool bLogGraspEvents;
+
+	// Listen for PickAndPlace events
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	bool bLogPickAndPlaceEvents;
 
 	// Listen for slicing events
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))

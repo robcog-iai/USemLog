@@ -529,7 +529,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 	};
 
 	// Generated colors params
-	const uint8 Tolerance = 27;
+	const uint8 Tolerance = 47;
 	FColor CIdx(0, 0, 0, 255);
 
 	// Lambda to shuffle the unqiue colors array

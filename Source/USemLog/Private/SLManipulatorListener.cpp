@@ -5,6 +5,7 @@
 #include "SLManipulatorOverlapSphere.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "SLEntitiesManager.h"
+#include "GameFramework/PlayerController.h"
 #if SL_WITH_MC_GRASP
 #include "MCGraspAnimController.h"
 #endif // SL_WITH_MC_GRASP
@@ -26,7 +27,7 @@ USLManipulatorListener::USLManipulatorListener()
 	InputAxisName = "LeftGrasp";
 	bIsNotSkeletal = false;
 	UnPauseTriggerVal = 0.5;
-
+	
 #if WITH_EDITOR
 	// Default values
 	HandType = ESLGraspHandType::Left;
@@ -51,6 +52,7 @@ bool USLManipulatorListener::Init(bool bInDetectGrasps, bool bInDetectContacts)
 	{
 		bDetectGrasps = bInDetectGrasps;
 		bDetectContacts = bInDetectContacts;
+		
 		// Init the semantic entities manager
 		if (!FSLEntitiesManager::GetInstance()->IsInit())
 		{
@@ -318,9 +320,9 @@ void USLManipulatorListener::CheckGraspState()
 // A grasp has started
 void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
-		FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *Begin Grasp* %s"),
-			*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+	//	FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *Begin Grasp* %s"),
+	//		*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
 	GraspedObjects.Emplace(OtherActor);
 	OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
 }
@@ -330,9 +332,9 @@ void USLManipulatorListener::EndGrasp(AActor* OtherActor)
 {
 	if (GraspedObjects.Remove(OtherActor) > 0)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
-			FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *End Grasp* %s"),
-				*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
+		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
+		//	FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *End Grasp* %s"),
+		//		*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
 		OnEndManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
 	}
 }

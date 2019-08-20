@@ -84,7 +84,7 @@ bool FSLGraspEventHandler::FinishEvent(UObject* Other, float EndTime)
 		if ((*EventItr)->Item.Obj == Other)
 		{
 			// Ignore short events
-			if ((EndTime - (*EventItr)->Start) > ContactEventMin)
+			if ((EndTime - (*EventItr)->Start) > GraspEventMin)
 			{
 				// Set end time and publish event
 				(*EventItr)->End = EndTime;

@@ -48,6 +48,7 @@ ASLManager::ASLManager()
 	bLogContactEvents = true;
 	bLogSupportedByEvents = true;
 	bLogGraspEvents = true;
+	bLogPickAndPlaceEvents = true;
 	bLogSlicingEvents = true;
 	bWriteTimelines = true;
 	bWriteMetadata = true;
@@ -165,7 +166,7 @@ void ASLManager::Init()
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
 			EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId, TaskDescription, ServerIp, ServerPort),
-				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogSlicingEvents, bWriteTimelines, bWriteMetadata);
+				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines, bWriteMetadata);
 		}
 
 		if (bLogVisionData)

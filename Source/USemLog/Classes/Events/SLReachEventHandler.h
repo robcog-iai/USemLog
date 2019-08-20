@@ -22,7 +22,7 @@ public:
 	void Finish(float EndTime, bool bForced = false) override;
 
 private:
-	// Create and publish finsihed reach event
+	// Create and publish finished reach event
 	void OnSLReachEvent(const FSLEntity& Self, UObject* Other, float StartTime, float EndTime);
 
 private:

@@ -1,18 +1,18 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Events/SLTransportEvent.h"
+#include "Events/SLSlideEvent.h"
 #include "SLOwlExperimentStatics.h"
 
 // Constructor with initialization
-FSLTransportEvent::FSLTransportEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
+FSLSlideEvent::FSLSlideEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 	const FSLEntity& InManipulator, const FSLEntity& InItem) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId), Manipulator(InManipulator), Item(InItem)
 {
 }
 
 // Constructor initialization without end time
-FSLTransportEvent::FSLTransportEvent(const FString& InId, const float InStart, const uint64 InPairId,
+FSLSlideEvent::FSLSlideEvent(const FString& InId, const float InStart, const uint64 InPairId,
 	const FSLEntity& InItem, const FSLEntity& InManipulator) :
 	ISLEvent(InId, InStart), PairId(InPairId), Manipulator(InManipulator), Item(InItem)
 {
@@ -20,11 +20,11 @@ FSLTransportEvent::FSLTransportEvent(const FString& InId, const float InStart, c
 
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
-FSLOwlNode FSLTransportEvent::ToOwlNode() const
+FSLOwlNode FSLSlideEvent::ToOwlNode() const
 {
-	// Create the Transport event node
+	// Create the Slide event node
 	FSLOwlNode EventIndividual = FSLOwlExperimentStatics::CreateEventIndividual(
-		"log", Id, "TransportingSituation");
+		"log", Id, "SlidingSituation");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator.Id));
@@ -33,7 +33,7 @@ FSLOwlNode FSLTransportEvent::ToOwlNode() const
 }
 
 // Add the owl representation of the event to the owl document
-void FSLTransportEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
+void FSLSlideEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 {
 	// Add timepoint individuals
 	// We know that the document is of type FOwlExperiment,
@@ -44,28 +44,28 @@ void FSLTransportEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
 		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(Item.Obj,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Manipulator.Id, Manipulator.Class));
 	EventsDoc->AddObjectIndividual(Manipulator.Obj,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Manipulator.Id, Manipulator.Class));
+	EventsDoc->AddObjectIndividual(Item.Obj,
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", Item.Id, Item.Class));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
 // Get event context data as string (ToString equivalent)
-FString FSLTransportEvent::Context() const
+FString FSLSlideEvent::Context() const
 {
-	return FString::Printf(TEXT("Transport - %lld"), PairId);
+	return FString::Printf(TEXT("Slide - %lld"), PairId);
 }
 
 // Get the tooltip data
-FString FSLTransportEvent::Tooltip() const
+FString FSLSlideEvent::Tooltip() const
 {
 	return FString::Printf(TEXT("\'O1\',\'%s\',\'Id\',\'%s\',\'O2\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
-		*Manipulator.Class, *Manipulator.Id, *Item.Class, *Item.Id,  *Id);
+		*Manipulator.Class, *Manipulator.Id, *Item.Class, *Item.Id, *Id);
 }
 
 // Get the data as string
-FString FSLTransportEvent::ToString() const
+FString FSLSlideEvent::ToString() const
 {
 	return FString::Printf(TEXT("Item:[%s] Manipulator:[%s] PairId:%lld"),
 		*Manipulator.ToString(), *Item.ToString(), PairId);

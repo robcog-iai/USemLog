@@ -167,8 +167,8 @@ void USLReachListener::Update()
 		const float PrevDistance = C.Value.Get<1>();
 		const float DistDiff = PrevDistance - CurrDistance;
 
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s CurrDist:%f;  PrevDist:%f; DistDiff:%f; Abs:%f"),
-			*FString(__func__), __LINE__, *Owner->GetName(), CurrDistance, PrevDistance, DistDiff, FMath::Abs(DistDiff));
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s CurrDist:%f;  PrevDist:%f; DistDiff:%f; Abs:%f"),
+		//	*FString(__func__), __LINE__, *Owner->GetName(), CurrDistance, PrevDistance, DistDiff, FMath::Abs(DistDiff));
 
 		// Ignore small difference changes
 		if(FMath::Abs(DistDiff) > 1.0f)
@@ -177,16 +177,16 @@ void USLReachListener::Update()
 			{
 				// Positive difference makes the hand closer to the object, update the distance
 				C.Value.Get<1>() = CurrDistance;
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t Closer to %s, updating distance from %f to %f"),
-					*FString(__func__), __LINE__, *C.Key->GetName(), PrevDistance, CurrDistance);
+				//UE_LOG(LogTemp, Warning, TEXT("%s::%d \t Closer to %s, updating distance from %f to %f"),
+				//	*FString(__func__), __LINE__, *C.Key->GetName(), PrevDistance, CurrDistance);
 			}
 			else
 			{
 				// Negative difference makes the hand further away from the object, update distance, reset the start time
 				C.Value.Get<0>() = CurrTime;
 				C.Value.Get<1>() = CurrDistance;
-				UE_LOG(LogTemp, Error, TEXT("%s::%d \t Further from %s, reseting time[%f] and updating distance from %f to %f"),
-					*FString(__func__), __LINE__, *C.Key->GetName(), C.Value.Get<0>(), PrevDistance, CurrDistance);
+				//UE_LOG(LogTemp, Error, TEXT("%s::%d \t Further from %s, reseting time[%f] and updating distance from %f to %f"),
+				//	*FString(__func__), __LINE__, *C.Key->GetName(), C.Value.Get<0>(), PrevDistance, CurrDistance);
 			}
 		}
 	}

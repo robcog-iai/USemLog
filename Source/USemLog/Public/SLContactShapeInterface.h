@@ -78,10 +78,10 @@ protected:
 
 public:
 	// Event called when a semantic overlap begins
-	FBeginSLContactSignature OnBeginSLContact;
+	FSLBeginContactSignature OnBeginSLContact;
 
 	// Event called when a semantic overlap ends
-	FEndSLContactSignature OnEndSLContact;
+	FSLEndContactSignature OnEndSLContact;
 
 protected:
 	// True if initialized

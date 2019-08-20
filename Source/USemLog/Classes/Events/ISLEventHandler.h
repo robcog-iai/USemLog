@@ -44,11 +44,6 @@ public:
 	FSLEventSignature OnSemanticEvent;
 
 protected:
-	/* Constant values */
-	// Ignore events with durations smaller than
-	constexpr static float ContactEventMin = 0.05f;
-	constexpr static float GraspEventMin = 0.25f;
-
 	// Set when initialized
 	bool bIsInit = false;
 
@@ -57,4 +52,9 @@ protected:
 
 	// Set when finished
 	bool bIsFinished = false;
+
+	/* Constant values */
+	// Ignore events with durations smaller than
+	constexpr static float ContactEventMin = 0.05f;
+	constexpr static float GraspEventMin = 0.25f;
 };

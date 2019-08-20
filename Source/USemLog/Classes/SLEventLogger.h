@@ -4,7 +4,6 @@
 #pragma once
 
 #include "USemLog.h"
-#include "UObject/NoExportTypes.h"
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
 #include "SLMetadataWriter.h"
@@ -34,6 +33,7 @@ public:
 		bool bInLogContactEvents,
 		bool bInLogSupportedByEvents,
 		bool bInLogGraspEvents,
+		bool bInPickAndPlaceEvents,
 		bool bInLogSlicingEvents,
 		bool bInWriteTimelines,
 		bool bInWriteMetadata);
@@ -100,6 +100,9 @@ private:
 
 	// Cache of the grasp listeners
 	TArray<class USLManipulatorListener*> GraspListeners;
+
+	// Cache of the pick and place listeners
+	TArray<class USLPickAndPlaceListener*> PickAndPlaceListeners;
 
 	// Cache of the grasp listeners
 	TArray<class USLReachListener*> ReachListeners;

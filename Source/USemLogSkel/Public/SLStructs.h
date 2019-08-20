@@ -185,7 +185,8 @@ struct FSLContactResult
 /*                       DELEGATES                                      */
 /************************************************************************/
 /** Delegate to notify that a contact begins between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_OneParam(FBeginSLContactSignature, const FSLContactResult&);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLBeginContactSignature, const FSLContactResult&);
 
 /** Delegate to notify that a contact ended between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FEndSLContactSignature, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndContactSignature, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
+

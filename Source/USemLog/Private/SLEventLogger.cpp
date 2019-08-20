@@ -11,10 +11,12 @@
 #include "Events/SLSupportedByEventHandler.h"
 #include "Events/SLGraspEventHandler.h"
 #include "Events/SLReachEventHandler.h"
+#include "Events/SLPickAndPlaceEventsHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLContactShapeInterface.h"
 #include "SLManipulatorListener.h"
 #include "SLReachListener.h"
+#include "SLPickAndPlaceListener.h"
 #include "SLGoogleCharts.h"
 
 // UUtils
@@ -56,6 +58,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 	bool bInLogContactEvents,
 	bool bInLogSupportedByEvents,
 	bool bInLogGraspEvents,
+	bool bInPickAndPlaceEvents,
 	bool bInLogSlicingEvents,
 	bool bInWriteTimelines,
 	bool bInWriteMetadata)
@@ -218,6 +221,32 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			}
 		}
 
+		if(bInPickAndPlaceEvents)
+		{
+			// Init all pick and place listeners
+			for (TObjectIterator<USLPickAndPlaceListener> Itr; Itr; ++Itr)
+			{
+				if (IsValidAndAnnotated(*Itr))
+				{
+					if (Itr->Init())
+					{
+						PickAndPlaceListeners.Emplace(*Itr);
+						TSharedPtr<FSLPickAndPlaceEventsHandler> PAPHandler = MakeShareable(new FSLPickAndPlaceEventsHandler());
+						PAPHandler->Init(*Itr);
+						if (PAPHandler->IsInit())
+						{
+							EventHandlers.Add(PAPHandler);
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+								*FString(__func__), __LINE__, *Itr->GetName());
+						}
+					}
+				}
+			}
+		}
+
 		// Init Slicing handlers
 		if (bInLogSlicingEvents)
 		{
@@ -301,6 +330,12 @@ void USLEventLogger::Start()
 		for (auto& SLManipulatorListener : GraspListeners)
 		{
 			SLManipulatorListener->Start();
+		}
+
+		// Start the pick and place listeners
+		for (auto& SLPAPListener : PickAndPlaceListeners)
+		{
+			SLPAPListener->Start();
 		}
 
 		// Start the reach listeners

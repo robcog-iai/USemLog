@@ -19,14 +19,12 @@ enum class ESLGraspHandType : uint8
 	Right					UMETA(DisplayName = "Right"),
 };
 
-/** Notify when an object is grasped */
-DECLARE_MULTICAST_DELEGATE_FourParams(FBeginSLManipulatorOverlapSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/, const FString& /*Type*/);
-
-/** Notify when an object is released */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FEndSLManipulatorEndSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
+/** Notify when an object is grasped and released*/
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/, const FString& /*Type*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
 
 /**
- * Checks for physics based grasp events and semantic contacts
+ * Checks for manipulator related events (contact, grasp, lift, transport, slide)
  */
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Manipulator Listener")
 class USEMLOG_API USLManipulatorListener : public UActorComponent
@@ -119,18 +117,14 @@ private:
 	void OnEndContact(AActor* OtherActor);
 	
 public:
-	// Event called when grasp occurs
-	FBeginSLManipulatorOverlapSignature OnBeginManipulatorGrasp;
+	// Event called when grasp begins/ends
+	FSLBeginManipulatorGraspSignature OnBeginManipulatorGrasp;
+	FSLEndManipulatorGraspSignature OnEndManipulatorGrasp;
 
-	// Event called when grasp ends
-	FEndSLManipulatorEndSignature OnEndManipulatorGrasp;
-
-	// Event called when a semantic overlap begins
-	FBeginSLContactSignature OnBeginManipulatorContact;
-
-	// Event called when a semantic overlap ends
-	FEndSLContactSignature OnEndManipulatorContact;
-
+	// Event called when a semantic overlap/contact begins/ends
+	FSLBeginContactSignature OnBeginManipulatorContact;
+	FSLEndContactSignature OnEndManipulatorContact;
+	
 private:
 	// True if initialized
 	bool bIsInit;
