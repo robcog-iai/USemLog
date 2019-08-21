@@ -5,6 +5,7 @@
 
 #include "Events/ISLEventHandler.h"
 #include "Events/SLContactEvent.h"
+#include "Events/SLSupportedByEvent.h"
 
 // Forward declarations
 struct FSLContactResult;
@@ -26,10 +27,16 @@ public:
 
 private:
 	// Start new contact event
-	void AddNewEvent(const FSLContactResult& InResult);
+	void AddNewContactEvent(const FSLContactResult& InResult);
 
 	// Finish then publish the event
-	bool FinishEvent(UObject* Other, float EndTime);
+	bool FinishContactEvent(UObject* Other, float EndTime);
+
+	// Start new supported by event
+	void AddNewSupportedByEvent(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime);
+
+	// Finish then publish the event
+	bool FinishSupportedByEvent(const uint64 InPairId, float EndTime);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);
@@ -40,10 +47,19 @@ private:
 	// Event called when a semantic overlap event ends
 	void OnSLOverlapEnd(UObject* Self, UObject* Other, float Time);
 
+	// Event called when a supported by event begins
+	void OnSLSupportedByBegin(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime);
+	
+	// Event called when a supported by event ends
+	void OnSLSupportedByEnd(UObject* Supported, UObject* Supporting, float Time);
+
 private:
 	// Parent semantic overlap area
 	class ISLContactShapeInterface* Parent = nullptr;
 
 	// Array of started contact events
-	TArray<TSharedPtr<FSLContactEvent>> StartedEvents;
+	TArray<TSharedPtr<FSLContactEvent>> StartedContactEvents;
+
+	// Array of started supported by events
+	TArray<TSharedPtr<FSLSupportedByEvent>> StartedSupportedByEvents;
 };

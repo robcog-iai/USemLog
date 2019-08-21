@@ -30,6 +30,9 @@ void FSLContactEventHandler::Start()
 		{
 			Parent->OnBeginSLContact.AddRaw(this, &FSLContactEventHandler::OnSLOverlapBegin);
 			Parent->OnEndSLContact.AddRaw(this, &FSLContactEventHandler::OnSLOverlapEnd);
+
+			Parent->OnBeginSLSupportedBy.AddRaw(this, &FSLContactEventHandler::OnSLSupportedByBegin);
+			Parent->OnEndSLSupportedBy.AddRaw(this, &FSLContactEventHandler::OnSLSupportedByEnd);
 		}
 
 		// Mark as started
@@ -57,7 +60,7 @@ void FSLContactEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new contact event
-void FSLContactEventHandler::AddNewEvent(const FSLContactResult& InResult)
+void FSLContactEventHandler::AddNewContactEvent(const FSLContactResult& InResult)
 {
 	// Start a semantic contact event
 	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
@@ -65,14 +68,14 @@ void FSLContactEventHandler::AddNewEvent(const FSLContactResult& InResult)
 		FIds::PairEncodeCantor(InResult.Self.Obj->GetUniqueID(), InResult.Other.Obj->GetUniqueID()),
 		InResult.Self, InResult.Other));
 	// Add event to the pending contacts array
-	StartedEvents.Emplace(ContactEvent);
+	StartedContactEvents.Emplace(ContactEvent);
 }
 
 // Publish finished event
-bool FSLContactEventHandler::FinishEvent(UObject* InOther, float EndTime)
+bool FSLContactEventHandler::FinishContactEvent(UObject* InOther, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
-	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
+	for (auto EventItr(StartedContactEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
 		if ((*EventItr)->Item2.Obj == InOther)
@@ -92,11 +95,47 @@ bool FSLContactEventHandler::FinishEvent(UObject* InOther, float EndTime)
 	return false;
 }
 
+// Start new supported by event
+void FSLContactEventHandler::AddNewSupportedByEvent(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime)
+{
+	// Start a supported by event
+	TSharedPtr<FSLSupportedByEvent> Event = MakeShareable(new FSLSupportedByEvent(
+		FIds::NewGuidInBase64Url(), StartTime,
+		FIds::PairEncodeCantor(Supported.Obj->GetUniqueID(), Supporting.Obj->GetUniqueID()),
+		Supported, Supporting));
+	// Add event to the pending array
+	StartedSupportedByEvents.Emplace(Event);
+}
+
+// Finish then publish the event
+bool FSLContactEventHandler::FinishSupportedByEvent(const uint64 InPairId, float EndTime)
+{
+	// Use iterator to be able to remove the entry from the array
+	for (auto EventItr(StartedSupportedByEvents.CreateIterator()); EventItr; ++EventItr)
+	{
+		// It is enough to compare against the other id when searching
+		if ((*EventItr)->PairId == InPairId)
+		{
+			// Ignore short events
+			if ((EndTime - (*EventItr)->Start) > SupportedByEventMin)
+			{
+				// Set end time and publish event
+				(*EventItr)->End = EndTime;
+				OnSemanticEvent.ExecuteIfBound(*EventItr);
+			}
+			// Remove event from the pending list
+			EventItr.RemoveCurrent();
+			return true;
+		}
+	}
+	return false;
+}
+
 // Terminate and publish pending contact events (this usually is called at end play)
 void FSLContactEventHandler::FinishAllEvents(float EndTime)
 {
 	// Finish contact events
-	for (auto& Ev : StartedEvents)
+	for (auto& Ev : StartedContactEvents)
 	{
 		// Ignore short events
 		if ((EndTime - Ev->Start) > ContactEventMin)
@@ -106,18 +145,44 @@ void FSLContactEventHandler::FinishAllEvents(float EndTime)
 			OnSemanticEvent.ExecuteIfBound(Ev);
 		}
 	}
-	StartedEvents.Empty();
+	StartedContactEvents.Empty();
+
+	// Finish supported by events
+	for (auto& Ev : StartedSupportedByEvents)
+	{
+		// Ignore short events
+		if ((EndTime - Ev->Start) > SupportedByEventMin)
+		{
+			// Set end time and publish event
+			Ev->End = EndTime;
+			OnSemanticEvent.ExecuteIfBound(Ev);
+		}
+	}
+	StartedSupportedByEvents.Empty();
 }
 
 
 // Event called when a semantic overlap event begins
-void FSLContactEventHandler::OnSLOverlapBegin(const FSLContactResult& SemanticOverlapResult)
+void FSLContactEventHandler::OnSLOverlapBegin(const FSLContactResult& InResult)
 {
-	FSLContactEventHandler::AddNewEvent(SemanticOverlapResult);
+	AddNewContactEvent(InResult);
 }
 
 // Event called when a semantic overlap event ends
 void FSLContactEventHandler::OnSLOverlapEnd(UObject* Self, UObject* Other, float Time)
 {
-	FSLContactEventHandler::FinishEvent(Other, Time);
+	FinishContactEvent(Other, Time);
+}
+
+// Event called when a supported by event begins
+void FSLContactEventHandler::OnSLSupportedByBegin(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime)
+{
+	AddNewSupportedByEvent(Supported, Supporting, StartTime);
+}
+
+// Event called when a 'possible' supported by event ends
+void FSLContactEventHandler::OnSLSupportedByEnd(UObject* Supported, UObject* Supporting, float Time)
+{
+	const uint64 PairId = FIds::PairEncodeCantor(Supported->GetUniqueID(), Supporting->GetUniqueID());
+	FinishSupportedByEvent(PairId, Time);
 }

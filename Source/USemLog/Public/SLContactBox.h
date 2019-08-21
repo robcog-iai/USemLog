@@ -24,7 +24,7 @@ public:
 
 	/* Begin ISLContactShapeInterface*/
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
-	virtual void Init() override;
+	virtual void Init(bool bLogSupportedByEvents = true) override;
 
 	// Start publishing overlap events, trigger currently overlapping objects
 	virtual void Start() override;

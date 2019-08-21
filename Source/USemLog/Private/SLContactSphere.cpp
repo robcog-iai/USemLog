@@ -21,6 +21,9 @@ USLContactSphere::USLContactSphere()
 	bIsStarted = false;
 	bIsFinished = false;
 
+	bLogSupportedByEvents = true;
+	SupportedByObj = nullptr;
+	
 	// Is started by the event logger
 	bStartAtBeginPlay = false;
 
@@ -68,12 +71,15 @@ void USLContactSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Setup pointers to outer, check if semantically annotated
-void USLContactSphere::Init()
+void USLContactSphere::Init(bool bInLogSupportedByEvents)
 {
 	if (!bIsInit)
 	{
-		// Important, set the interface shape pointer
+		bLogSupportedByEvents = bInLogSupportedByEvents;
+		
+		// Important, set the interface pointers
 		ShapeComponent = this;
+		World = GetWorld();
 
 		// Make sure the semantic entities are set
 		if (!FSLEntitiesManager::GetInstance()->IsInit())
@@ -122,6 +128,11 @@ void USLContactSphere::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
+		if(bLogSupportedByEvents)
+		{
+			StartSupportedBy();
+		}
+		
 		// Enable overlap events
 		SetGenerateOverlapEvents(true);
 

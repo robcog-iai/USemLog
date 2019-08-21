@@ -23,6 +23,8 @@ USLPickAndPlaceListener::USLPickAndPlaceListener()
 	bDetectLiftEvents = true;
 	bDetectSlideEvents = true;
 	bDetectTransportEvents = true;
+
+	GraspedObject = nullptr;
 }
 
 // Dtor
@@ -64,8 +66,12 @@ void USLPickAndPlaceListener::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		// Mark as started
-		bIsStarted = true;
+		// Subscribe for grasp notifications from sibling component
+		if(SubscribeForGraspEvents())
+		{
+			// Mark as started
+			bIsStarted = true;
+		}
 	}
 }
 
@@ -82,3 +88,37 @@ void USLPickAndPlaceListener::Finish(bool bForced)
 	}
 }
 
+// Subscribe for grasp events from sibling component
+bool USLPickAndPlaceListener::SubscribeForGraspEvents()
+{
+	if(USLManipulatorListener* Sibling = CastChecked<USLManipulatorListener>(
+		GetOwner()->GetComponentByClass(USLManipulatorListener::StaticClass())))
+	{
+		Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLPickAndPlaceListener::OnSLGraspBegin);
+		return true;
+	}
+	return false;
+}
+
+// Called when grasp starts
+void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType)
+{
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
+	{
+		GraspedObject = AsSMA;
+	}
+}
+
+// Called when grasp ends
+void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time)
+{
+	if(Other == GraspedObject)
+	{
+		GraspedObject = nullptr;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen (were there multiple objects grasped?)"),
+				*FString(__func__), __LINE__);
+	}
+}

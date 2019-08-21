@@ -8,7 +8,7 @@
 
 #include "Events/SLContactEventHandler.h"
 #include "Events/SLManipulatorContactEventHandler.h"
-#include "Events/SLSupportedByEventHandler.h"
+//#include "Events/SLSupportedByEventHandler.h"
 #include "Events/SLGraspEventHandler.h"
 #include "Events/SLReachEventHandler.h"
 #include "Events/SLPickAndPlaceEventsHandler.h"
@@ -91,7 +91,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 			{
 				if (IsValidAndAnnotated(*Itr))
 				{
-					ContactShape->Init();
+					ContactShape->Init(bInLogSupportedByEvents);
 
 					ContactShapes.Emplace(ContactShape);
 
@@ -111,21 +111,21 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 						}
 					}
 
-					if (bInLogSupportedByEvents)
-					{
-						// Create a supported-by event handler
-						TSharedPtr<FSLSupportedByEventHandler> SBEHandler = MakeShareable(new FSLSupportedByEventHandler());
-						SBEHandler->Init(*Itr);
-						if (SBEHandler->IsInit())
-						{
-							EventHandlers.Add(SBEHandler);
-						}
-						else
-						{
-							UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-								*FString(__func__), __LINE__, *Itr->GetName());
-						}
-					}
+					//if (bInLogSupportedByEvents)
+					//{
+					//	// Create a supported-by event handler
+					//	TSharedPtr<FSLSupportedByEventHandler> SBEHandler = MakeShareable(new FSLSupportedByEventHandler());
+					//	SBEHandler->Init(*Itr);
+					//	if (SBEHandler->IsInit())
+					//	{
+					//		EventHandlers.Add(SBEHandler);
+					//	}
+					//	else
+					//	{
+					//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+					//			*FString(__func__), __LINE__, *Itr->GetName());
+					//	}
+					//}
 				}
 			}
 		}

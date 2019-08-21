@@ -3,9 +3,15 @@
 
 #pragma once
 
-#include "Engine/StaticMeshActor.h"
+#include "Components/MeshComponent.h"
+#include "Components/ShapeComponent.h"
 #include "SLStructs.h"
+#include "TimerManager.h"
 #include "SLContactShapeInterface.generated.h"
+
+/** Notiy the begin/end of a supported by event */
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginSupportedBySignature, const FSLEntity& /*Supported*/, const FSLEntity& /*Supporting*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndSupportedBySignature, UObject* /*Supported*/, UObject* /*Supporting*/, float /*Time*/);
 
 UINTERFACE(Blueprintable)
 class USLContactShapeInterface : public UInterface
@@ -19,7 +25,7 @@ class ISLContactShapeInterface
 
 public:
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
-	virtual void Init() = 0;
+	virtual void Init(bool bLogSupportedByEvents = true) = 0;
 
 	// Start publishing overlap events, trigger currently overlapping objects
 	virtual void Start() = 0;
@@ -36,9 +42,9 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
-	// Convenient function to get the world
-	FORCEINLINE virtual UWorld* GetWorldFromShape() const { return ShapeComponent ? ShapeComponent->GetWorld() : nullptr; };
-
+	// True if parent is supported by a surface
+	bool IsSupported() const {return SupportedByObj != nullptr;};
+	
 #if WITH_EDITOR
 	// Update bounds visual (red/green -- parent is not/is semantically annotated)
 	// it is public so it can be accessed from the editor panel for updates
@@ -60,6 +66,15 @@ protected:
 	// Publish currently overlapping components
 	void TriggerInitialOverlaps();
 
+	// Start checking for supported by events
+	void StartSupportedBy();
+
+	// Check for supported by events
+	void SupportedByUpdate();
+
+	// Check if Other is a supported by candidate
+	bool RemoveIfSupportedByCandidate(UObject* InOther);
+
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
 	virtual void OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
@@ -77,12 +92,14 @@ protected:
 		int32 OtherBodyIndex);
 
 public:
-	// Event called when a semantic overlap begins
+	// Event called when a semantic overlap begins / ends
 	FSLBeginContactSignature OnBeginSLContact;
-
-	// Event called when a semantic overlap ends
 	FSLEndContactSignature OnEndSLContact;
 
+	// Called when a supported by event begins / ends
+	FSLBeginSupportedBySignature OnBeginSLSupportedBy;
+	FSLEndSupportedBySignature OnEndSLSupportedBy;
+	
 protected:
 	// True if initialized
 	bool bIsInit;
@@ -93,6 +110,12 @@ protected:
 	// True if finished
 	bool bIsFinished;
 
+	// The object supporting this item
+	UObject* SupportedByObj;
+
+	// Pointer to the world
+	UWorld* World;
+
 	// Pointer to the given shape component
 	UShapeComponent* ShapeComponent;
 
@@ -102,6 +125,20 @@ protected:
 	// Semantic data of the owner
 	FSLEntity SemanticOwner;
 
+	// Include supported by events
+	bool bLogSupportedByEvents;
+
+	// SupportedBy contact candidates
+	TArray<FSLContactResult> SBCandidates;
+	
+	// Supported by event update timer handle
+	FTimerHandle SBTimerHandle;
+
+	// Allow binding against non-UObject functions
+	FTimerDelegate SBTimerDelegate;
+
 	/* Constants */
 	constexpr static const char* TagTypeName = "SemLogColl";
+	constexpr static float SBUpdateRate = 0.25f;
+	constexpr static float SBMaxVertSpeed = 0.5f;
 };

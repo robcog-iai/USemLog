@@ -21,6 +21,9 @@ USLContactBox::USLContactBox()
 	bIsStarted = false;
 	bIsFinished = false;
 
+	bLogSupportedByEvents = true;
+	SupportedByObj = nullptr;
+
 	// Is started by the event logger
 	bStartAtBeginPlay = false;
 
@@ -68,12 +71,16 @@ void USLContactBox::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Setup pointers to outer, check if semantically annotated
-void USLContactBox::Init()
+void USLContactBox::Init(bool bInLogSupportedByEvents)
 {
 	if (!bIsInit)
 	{
-		// Important, set the interface shape pointer
+		bLogSupportedByEvents = bInLogSupportedByEvents;
+		
+		// Important, set the interface pointers
 		ShapeComponent = this;
+		World = GetWorld();
+
 
 		// Make sure the semantic entities are set
 		if (!FSLEntitiesManager::GetInstance()->IsInit())
@@ -88,15 +95,15 @@ void USLContactBox::Init()
 		{
 			return;
 		}
-
+		
 		// Make sure the mesh (static/skeletal) component is valid
-		if (AStaticMeshActor* CastToSMAct = Cast<AStaticMeshActor>(GetOwner()))
-		{
-			OwnerMeshComp = CastToSMAct->GetStaticMeshComponent();
+		if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(GetOwner()))
+		{			
+			OwnerMeshComp = AsSMA->GetStaticMeshComponent();
 		}
-		else if (ASkeletalMeshActor* CastToSkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
+		else if (ASkeletalMeshActor* AsSkMA = Cast<ASkeletalMeshActor>(GetOwner()))
 		{
-			OwnerMeshComp = CastToSkelAct->GetSkeletalMeshComponent();
+			OwnerMeshComp = AsSkMA->GetSkeletalMeshComponent();
 		}
 
 		if (OwnerMeshComp)
@@ -109,11 +116,6 @@ void USLContactBox::Init()
 			// Mark as initialized
 			bIsInit = true;
 		}
-		else
-		{
-			// Not init
-			return;
-		}
 	}
 }
 
@@ -122,6 +124,11 @@ void USLContactBox::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
+		if(bLogSupportedByEvents)
+		{
+			StartSupportedBy();
+		}
+		
 		// Enable overlap events
 		SetGenerateOverlapEvents(true);
 

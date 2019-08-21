@@ -52,7 +52,17 @@ public:
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
-	
+
+private:
+	// Subscribe to grasp events from sibling
+	bool SubscribeForGraspEvents();
+
+	// Called on grasp begin
+	void OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType);
+
+	// Called on grasp end
+	void OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time);
+
 public:
 	// Lift/slide/transport events begin end 
 	FSLBeginLiftSignature OnBeginManipulatorLift;
@@ -89,6 +99,7 @@ private:
 	// Semantic data of the owner
 	FSLEntity SemanticOwner;
 
-	// Objects currently grasped
-	TArray<AActor*> GraspedObjects;
+	// TODO currently only taking into account that only one objects is grasped
+	// Object currently grasped
+	AStaticMeshActor* GraspedObject;
 };

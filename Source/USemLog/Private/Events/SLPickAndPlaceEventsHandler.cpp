@@ -89,13 +89,10 @@ bool FSLPickAndPlaceEventsHandler::FinishLiftEvent(UObject* Other, float EndTime
 		// It is enough to compare against the other id when searching
 		if ((*EventItr)->Item.Obj == Other)
 		{
-			// Ignore short events
-			if ((EndTime - (*EventItr)->Start))
-			{
-				// Set end time and publish event
-				(*EventItr)->End = EndTime;
-				OnSemanticEvent.ExecuteIfBound(*EventItr);
-			}
+			// Set end time and publish event
+			(*EventItr)->End = EndTime;
+			OnSemanticEvent.ExecuteIfBound(*EventItr);
+
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
 			return true;
@@ -125,13 +122,10 @@ bool FSLPickAndPlaceEventsHandler::FinishSlideEvent(UObject* Other, float EndTim
 		// It is enough to compare against the other id when searching
 		if ((*EventItr)->Item.Obj == Other)
 		{
-			// Ignore short events
-			if ((EndTime - (*EventItr)->Start))
-			{
-				// Set end time and publish event
-				(*EventItr)->End = EndTime;
-				OnSemanticEvent.ExecuteIfBound(*EventItr);
-			}
+			// Set end time and publish event
+			(*EventItr)->End = EndTime;
+			OnSemanticEvent.ExecuteIfBound(*EventItr);
+
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
 			return true;
@@ -162,13 +156,10 @@ bool FSLPickAndPlaceEventsHandler::FinishTransportEvent(UObject* Other, float En
 		// It is enough to compare against the other id when searching
 		if ((*EventItr)->Item.Obj == Other)
 		{
-			// Ignore short events
-			if ((EndTime - (*EventItr)->Start))
-			{
-				// Set end time and publish event
-				(*EventItr)->End = EndTime;
-				OnSemanticEvent.ExecuteIfBound(*EventItr);
-			}
+			// Set end time and publish event
+			(*EventItr)->End = EndTime;
+			OnSemanticEvent.ExecuteIfBound(*EventItr);
+
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
 			return true;
@@ -184,37 +175,26 @@ void FSLPickAndPlaceEventsHandler::FinishAllEvents(float EndTime)
 	// Finish events
 	for (auto& Ev : StartedLiftEvents)
 	{
-		// Ignore short events
-		if ((EndTime - Ev->Start) > ContactEventMin)
-		{
-			// Set end time and publish event
-			Ev->End = EndTime;
-			OnSemanticEvent.ExecuteIfBound(Ev);
-		}
+		// Set end time and publish event
+		Ev->End = EndTime;
+		OnSemanticEvent.ExecuteIfBound(Ev);
+
 	}
 	StartedLiftEvents.Empty();
 
 	for (auto& Ev : StartedSlideEvents)
 	{
-		// Ignore short events
-		if ((EndTime - Ev->Start) > ContactEventMin)
-		{
-			// Set end time and publish event
-			Ev->End = EndTime;
-			OnSemanticEvent.ExecuteIfBound(Ev);
-		}
+		// Set end time and publish event
+		Ev->End = EndTime;
+		OnSemanticEvent.ExecuteIfBound(Ev);
 	}
 	StartedLiftEvents.Empty();
 
 	for (auto& Ev : StartedLiftEvents)
 	{
-		// Ignore short events
-		if ((EndTime - Ev->Start) > ContactEventMin)
-		{
-			// Set end time and publish event
-			Ev->End = EndTime;
-			OnSemanticEvent.ExecuteIfBound(Ev);
-		}
+		// Set end time and publish event
+		Ev->End = EndTime;
+		OnSemanticEvent.ExecuteIfBound(Ev);
 	}
 	StartedLiftEvents.Empty();
 }
