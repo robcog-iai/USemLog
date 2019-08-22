@@ -22,7 +22,6 @@ USLContactCapsule::USLContactCapsule()
 	bIsFinished = false;
 	
 	bLogSupportedByEvents = true;
-	SupportedByObj = nullptr;
 
 	// Is started by the event logger
 	bStartAtBeginPlay = false;
@@ -130,7 +129,7 @@ void USLContactCapsule::Start()
 	{
 		if(bLogSupportedByEvents)
 		{
-			StartSupportedBy();
+			StartSupportedByUpdateCheck();
 		}
 		
 		// Enable overlap events

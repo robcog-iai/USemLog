@@ -33,7 +33,7 @@ private:
 	bool FinishContactEvent(UObject* Other, float EndTime);
 
 	// Start new supported by event
-	void AddNewSupportedByEvent(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime);
+	void AddNewSupportedByEvent(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 EventPairId);
 
 	// Finish then publish the event
 	bool FinishSupportedByEvent(const uint64 InPairId, float EndTime);
@@ -48,10 +48,10 @@ private:
 	void OnSLOverlapEnd(UObject* Self, UObject* Other, float Time);
 
 	// Event called when a supported by event begins
-	void OnSLSupportedByBegin(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime);
+	void OnSLSupportedByBegin(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 EventPairId);
 	
 	// Event called when a supported by event ends
-	void OnSLSupportedByEnd(UObject* Supported, UObject* Supporting, float Time);
+	void OnSLSupportedByEnd(const uint64 PairId1, const uint64 PairId2, float Time);
 
 private:
 	// Parent semantic overlap area

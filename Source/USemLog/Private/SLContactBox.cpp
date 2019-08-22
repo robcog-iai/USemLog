@@ -22,7 +22,6 @@ USLContactBox::USLContactBox()
 	bIsFinished = false;
 
 	bLogSupportedByEvents = true;
-	SupportedByObj = nullptr;
 
 	// Is started by the event logger
 	bStartAtBeginPlay = false;
@@ -126,7 +125,7 @@ void USLContactBox::Start()
 	{
 		if(bLogSupportedByEvents)
 		{
-			StartSupportedBy();
+			StartSupportedByUpdateCheck();
 		}
 		
 		// Enable overlap events

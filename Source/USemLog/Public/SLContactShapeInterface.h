@@ -10,8 +10,8 @@
 #include "SLContactShapeInterface.generated.h"
 
 /** Notiy the begin/end of a supported by event */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginSupportedBySignature, const FSLEntity& /*Supported*/, const FSLEntity& /*Supporting*/, float /*Time*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndSupportedBySignature, UObject* /*Supported*/, UObject* /*Supporting*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginSupportedBySignature, const FSLEntity& /*Supported*/, const FSLEntity& /*Supporting*/, float /*Time*/, const uint64 /*PairId*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndSupportedBySignature, const uint64 /*PairId1*/, const uint64 /*PairId2*/, float /*Time*/);
 
 UINTERFACE(Blueprintable)
 class USLContactShapeInterface : public UInterface
@@ -43,7 +43,9 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 	// True if parent is supported by a surface
-	bool IsSupported() const {return SupportedByObj != nullptr;};
+	bool IsSupportedBySomething() const {return IsSupportedByPariIds.Num() != 0;};
+
+	FString GetOwnerClassName() const {return SemanticOwner.Class;};
 	
 #if WITH_EDITOR
 	// Update bounds visual (red/green -- parent is not/is semantically annotated)
@@ -67,13 +69,13 @@ protected:
 	void TriggerInitialOverlaps();
 
 	// Start checking for supported by events
-	void StartSupportedBy();
+	void StartSupportedByUpdateCheck();
 
 	// Check for supported by events
-	void SupportedByUpdate();
+	void SupportedByUpdateCheck();
 
 	// Check if Other is a supported by candidate
-	bool RemoveIfSupportedByCandidate(UObject* InOther);
+	bool CheckAndRemoveIfJustCandidate(UObject* InOther);
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
@@ -110,8 +112,8 @@ protected:
 	// True if finished
 	bool bIsFinished;
 
-	// The object supporting this item
-	UObject* SupportedByObj;
+	// Array of events id of objects currently supporting this item, used for checking if this object is supported by any suface(s)
+	TArray<uint64> IsSupportedByPariIds;
 
 	// Pointer to the world
 	UWorld* World;

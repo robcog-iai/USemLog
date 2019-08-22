@@ -96,13 +96,11 @@ bool FSLContactEventHandler::FinishContactEvent(UObject* InOther, float EndTime)
 }
 
 // Start new supported by event
-void FSLContactEventHandler::AddNewSupportedByEvent(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime)
+void FSLContactEventHandler::AddNewSupportedByEvent(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 EventPairId)
 {
 	// Start a supported by event
 	TSharedPtr<FSLSupportedByEvent> Event = MakeShareable(new FSLSupportedByEvent(
-		FIds::NewGuidInBase64Url(), StartTime,
-		FIds::PairEncodeCantor(Supported.Obj->GetUniqueID(), Supporting.Obj->GetUniqueID()),
-		Supported, Supporting));
+		FIds::NewGuidInBase64Url(), StartTime, EventPairId, Supported, Supporting));
 	// Add event to the pending array
 	StartedSupportedByEvents.Emplace(Event);
 }
@@ -175,14 +173,16 @@ void FSLContactEventHandler::OnSLOverlapEnd(UObject* Self, UObject* Other, float
 }
 
 // Event called when a supported by event begins
-void FSLContactEventHandler::OnSLSupportedByBegin(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime)
+void FSLContactEventHandler::OnSLSupportedByBegin(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 PairId)
 {
-	AddNewSupportedByEvent(Supported, Supporting, StartTime);
+	AddNewSupportedByEvent(Supported, Supporting, StartTime, PairId);
 }
 
 // Event called when a 'possible' supported by event ends
-void FSLContactEventHandler::OnSLSupportedByEnd(UObject* Supported, UObject* Supporting, float Time)
+void FSLContactEventHandler::OnSLSupportedByEnd(const uint64 PairId1, const uint64 PairId2, float EndTime)
 {
-	const uint64 PairId = FIds::PairEncodeCantor(Supported->GetUniqueID(), Supporting->GetUniqueID());
-	FinishSupportedByEvent(PairId, Time);
+	if(!FinishSupportedByEvent(PairId1, EndTime))
+	{
+		FinishSupportedByEvent(PairId2, EndTime);
+	}
 }

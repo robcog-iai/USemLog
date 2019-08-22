@@ -40,18 +40,18 @@ void ISLContactShapeInterface::TriggerInitialOverlaps()
 }
 
 // Start checking for supported by events
-void ISLContactShapeInterface::StartSupportedBy()
+void ISLContactShapeInterface::StartSupportedByUpdateCheck()
 {
 	if(World)
 	{
 		// Start updating the timer, will be paused if there are no candidates
-		SBTimerDelegate.BindRaw(this, &ISLContactShapeInterface::SupportedByUpdate);
+		SBTimerDelegate.BindRaw(this, &ISLContactShapeInterface::SupportedByUpdateCheck);
 		World->GetTimerManager().SetTimer(SBTimerHandle, SBTimerDelegate, SBUpdateRate, true);
 	}
 }
 
 // Supported by update
-void ISLContactShapeInterface::SupportedByUpdate()
+void ISLContactShapeInterface::SupportedByUpdateCheck()
 {
 	// Check if candidates are in a supported by event
 	for (auto CandidateItr(SBCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
@@ -70,28 +70,29 @@ void ISLContactShapeInterface::SupportedByUpdate()
 				if (CandidateItr->SelfMeshComponent->GetComponentLocation().Z >
 					CandidateItr->OtherMeshComponent->GetComponentLocation().Z)
 				{
-					OnBeginSLSupportedBy.Broadcast(
-						CandidateItr->Self,		// supported
-						CandidateItr->Other,	// supporting
-						World->GetTimeSeconds());
-					SupportedByObj = CandidateItr->Other.Obj;
+					FSLEntity Supported = CandidateItr->Self;
+					FSLEntity Supporting = CandidateItr->Other;
+					const uint64 PairId = FIds::PairEncodeCantor(Supported.Obj->GetUniqueID(), Supporting.Obj->GetUniqueID());
+					OnBeginSLSupportedBy.Broadcast(Supported, Supporting, World->GetTimeSeconds(), PairId);
+					IsSupportedByPariIds.Add(PairId);
 				}
 				else
 				{
-					OnBeginSLSupportedBy.Broadcast(
-						CandidateItr->Other,	// supported
-						CandidateItr->Self,		// supporting
-						World->GetTimeSeconds());
+					FSLEntity Supported = CandidateItr->Other;
+					FSLEntity Supporting = CandidateItr->Self;
+					const uint64 PairId = FIds::PairEncodeCantor(Supported.Obj->GetUniqueID(), Supporting.Obj->GetUniqueID());
+					OnBeginSLSupportedBy.Broadcast(Supported, Supporting, World->GetTimeSeconds(), PairId);
+					// Self item is supporting another, to not add it to the supportedby events id
 				}
 			}
 			else 
 			{
 				// Other can only support, self can only be supported
-				OnBeginSLSupportedBy.Broadcast(
-						CandidateItr->Self,		// supported
-						CandidateItr->Other,	// supporting
-						World->GetTimeSeconds());
-				SupportedByObj = CandidateItr->Other.Obj;
+				FSLEntity Supported = CandidateItr->Self;
+				FSLEntity Supporting = CandidateItr->Other;
+				const uint64 PairId = FIds::PairEncodeCantor(Supported.Obj->GetUniqueID(), Supporting.Obj->GetUniqueID());
+				OnBeginSLSupportedBy.Broadcast(Supported, Supporting, World->GetTimeSeconds(), PairId);
+				IsSupportedByPariIds.Add(PairId);
 			}
 			// Remove candidate, it is now part of a started event
 			CandidateItr.RemoveCurrent();
@@ -103,10 +104,10 @@ void ISLContactShapeInterface::SupportedByUpdate()
 	{
 		World->GetTimerManager().PauseTimer(SBTimerHandle);
 	}
-	
 }
 
-bool ISLContactShapeInterface::RemoveIfSupportedByCandidate(UObject* InOther)
+// Remove candidate from array
+bool ISLContactShapeInterface::CheckAndRemoveIfJustCandidate(UObject* InOther)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto CandidateItr(SBCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
@@ -184,7 +185,7 @@ void ISLContactShapeInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedCom
 			FSLContactResult SemanticOverlapResult(SemanticOwner, OtherItem,
 				StartTime, true, OwnerMeshComp, OtherContactTrigger->OwnerMeshComp);
 			OnBeginSLContact.Broadcast(SemanticOverlapResult);
-
+			
 			if(bLogSupportedByEvents)
 			{
 				// Add candidate and re-start (if paused) timer cb
@@ -195,6 +196,7 @@ void ISLContactShapeInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedCom
 				}
 			}
 		}
+
 	}
 }
 
@@ -230,15 +232,6 @@ void ISLContactShapeInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	{
 		// Broadcast end of semantic overlap event
 		OnEndSLContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
-
-		if(bLogSupportedByEvents)
-		{
-			// If the Other is not a supported by candidate, it could be part of e started supported by event
-			if(!RemoveIfSupportedByCandidate(OtherItem.Obj))
-			{
-				OnEndSLSupportedBy.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
-			}
-		}
 	}
 	else if (ISLContactShapeInterface* OtherContactTrigger = Cast<ISLContactShapeInterface>(OtherComp))
 	{
@@ -253,14 +246,21 @@ void ISLContactShapeInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		{
 			// Broadcast end of semantic overlap event
 			OnEndSLContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
+		}
+	}
 
-			if(bLogSupportedByEvents)
+	if(bLogSupportedByEvents)
+	{
+		// Ignore and remove if it is a candidate only
+		// (it cannot be a candidate and an event, e.g. contact ended with a candidate only)
+		if(!CheckAndRemoveIfJustCandidate(OtherItem.Obj))
+		{
+			const uint64 PairId1 = FIds::PairEncodeCantor(SemanticOwner.Obj->GetUniqueID(),OtherItem.Obj->GetUniqueID());
+			const uint64 PairId2 = FIds::PairEncodeCantor(OtherItem.Obj->GetUniqueID(), SemanticOwner.Obj->GetUniqueID());
+			OnEndSLSupportedBy.Broadcast(PairId1, PairId2, EndTime);
+			if(IsSupportedByPariIds.Remove(PairId1) == 0)
 			{
-				// If the Other is not a supported by candidate, it could be part of e started supported by event
-				if(!RemoveIfSupportedByCandidate(OtherItem.Obj))
-				{
-					OnEndSLSupportedBy.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
-				}
+				IsSupportedByPariIds.Remove(PairId2);
 			}
 		}
 	}

@@ -60,14 +60,14 @@ FString FSLSupportedByEvent::Context() const
 // Get the tooltip data
 FString FSLSupportedByEvent::Tooltip() const
 {
-	return FString::Printf(TEXT("\'SupportingItem\',\'%s\',\'Id\',\'%s\',\'SupportedItem\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
-		*SupportingItem.Class, *SupportingItem.Id, *SupportedItem.Class, *SupportedItem.Id, *Id);
+	return FString::Printf(TEXT("\'SupportedItem\',\'%s\',\'Id\',\'%s\',\'SupportingItem\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
+		*SupportedItem.Class, *SupportedItem.Id, *SupportingItem.Class, *SupportingItem.Id, *Id);
 }
 
 // Get the data as string
 FString FSLSupportedByEvent::ToString() const
 {
-	return FString::Printf(TEXT("SupportingItem:[%s] SupportedItem:[%s] PairId:%lld"),
-		*SupportingItem.ToString(), *SupportedItem.ToString(), PairId);
+	return FString::Printf(TEXT("SupportedItem:[%s] SupportingItem:[%s] PairId:%lld"),
+		*SupportedItem.ToString(), *SupportingItem.ToString(), PairId);
 }
 /* End ISLEvent interface */
