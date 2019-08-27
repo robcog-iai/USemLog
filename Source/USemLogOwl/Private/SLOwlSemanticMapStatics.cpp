@@ -509,6 +509,6 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateQuaternionProperty(const FQuat& InQua
 	const FSLOwlAttributeValue AttrValString("xsd", "string");
 	
 	const FString QuatStr = FString::Printf(TEXT("%f %f %f %f"),
-		InQuat.W, InQuat.X, InQuat.Y, InQuat.Z);
+		InQuat.X, InQuat.Y, InQuat.Z, InQuat.W);
 	return FSLOwlNode(KbQuat, FSLOwlAttribute(RdfDatatype, AttrValString), QuatStr);
 }
