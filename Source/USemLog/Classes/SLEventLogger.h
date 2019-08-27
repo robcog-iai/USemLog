@@ -7,6 +7,7 @@
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
 #include "SLMetadataWriter.h"
+#include "ActorEditorUtils.h"
 #include "SLEventLogger.generated.h"
 
 // Forward declaration
@@ -37,6 +38,7 @@ public:
 		bool bInLogSlicingEvents,
 		bool bInWriteTimelines,
 		bool bInWriteMetadata);
+	
 
 	// Start logger
 	void Start();
@@ -46,7 +48,7 @@ public:
 
 private:
 	// Check if the component is valid in the world and has a semantically annotated owner
-	bool IsValidAndAnnotated(UActorComponent* Comp);
+	bool IsValidAndAnnotated(UActorComponent* Comp) const;
 	
 	// Called when a semantic event is done
 	void OnSemanticEvent(TSharedPtr<ISLEvent> Event);

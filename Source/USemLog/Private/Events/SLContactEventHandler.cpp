@@ -72,23 +72,26 @@ void FSLContactEventHandler::AddNewContactEvent(const FSLContactResult& InResult
 }
 
 // Publish finished event
-bool FSLContactEventHandler::FinishContactEvent(UObject* InOther, float EndTime)
+bool FSLContactEventHandler::FinishContactEvent(const FSLEntity& InOther, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedContactEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Item2.Obj == InOther)
+		if ((*EventItr)->Item2.EqualsFast(InOther))
 		{
-			// Ignore short events
-			if ((EndTime - (*EventItr)->Start) > ContactEventMin)
+			// Set the event end time
+			(*EventItr)->End = EndTime;
+
+			// Avoid publishing short events
+			if (((*EventItr)->End - (*EventItr)->Start) > ContactEventMin)
 			{
-				// Set end time and publish event
-				(*EventItr)->End = EndTime;
 				OnSemanticEvent.ExecuteIfBound(*EventItr);
 			}
+			
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
+
 			return true;
 		}
 	}
@@ -159,7 +162,6 @@ void FSLContactEventHandler::FinishAllEvents(float EndTime)
 	StartedSupportedByEvents.Empty();
 }
 
-
 // Event called when a semantic overlap event begins
 void FSLContactEventHandler::OnSLOverlapBegin(const FSLContactResult& InResult)
 {
@@ -167,7 +169,7 @@ void FSLContactEventHandler::OnSLOverlapBegin(const FSLContactResult& InResult)
 }
 
 // Event called when a semantic overlap event ends
-void FSLContactEventHandler::OnSLOverlapEnd(UObject* Self, UObject* Other, float Time)
+void FSLContactEventHandler::OnSLOverlapEnd(const FSLEntity& Self, const FSLEntity& Other, float Time)
 {
 	FinishContactEvent(Other, Time);
 }

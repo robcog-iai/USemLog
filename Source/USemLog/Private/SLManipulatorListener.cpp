@@ -419,7 +419,7 @@ void USLManipulatorListener::OnEndGroupBGraspContact(AActor* OtherActor)
 // Process ending of contact
 void USLManipulatorListener::OnEndContact(AActor* OtherActor)
 {
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
+	const FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
 	if (OtherItem.IsSet())
 	{
 		if (int32* NumContacts = ContactObjects.Find(OtherActor))
@@ -430,7 +430,7 @@ void USLManipulatorListener::OnEndContact(AActor* OtherActor)
 				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
 				//	FString::Printf(TEXT(" * * * * *END* *BCAST* *HAND CONTACT* %s"),
 				//		*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
-				OnEndManipulatorContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, GetWorld()->GetTimeSeconds());
+				OnEndManipulatorContact.Broadcast(SemanticOwner, OtherItem, GetWorld()->GetTimeSeconds());
 				ContactObjects.Remove(OtherActor);
 			}
 		}

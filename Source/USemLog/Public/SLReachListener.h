@@ -16,8 +16,11 @@ using FTimeAndDistance = TTuple<float, float>; // <Time, Distance>
 // Forward declarations
 class AStaticMeshActor;
 
-/** Notify when an object is released */
+/** Notify when a reaching event happened*/
 DECLARE_MULTICAST_DELEGATE_FourParams(FSLReachEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*StartTime*/, float /*EndTime*/);
+
+/** Notify when a manipulator positioning event happened*/
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLManipulatorPositioningEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*StartTime*/, float /*EndTime*/);
 
 /**
  * Checks for reaching actions
@@ -69,7 +72,7 @@ private:
 #endif // WITH_EDITOR
 
 	// Subscribe for grasp event from sibling component
-	bool SubscribeForGraspEvents();
+	bool SubscribeForManipulatorEvents();
 	
 	// Update callback, checks distance to hand, if it increases it resets the start time
 	void Update();
@@ -80,8 +83,14 @@ private:
 	// Check if the object is can be a candidate for reaching
 	bool CanBeACandidate(AStaticMeshActor* InObject) const;
 
-	// Called when the sibling component detects a grasp
+	// End reach and positioning events, pause timer
 	void OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType);
+
+	// Reset looking for the events
+	void OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time);
+	
+	// Used for the reaching and hand positioning detection
+	void OnSLManipulatorContactBegin(const FSLContactResult& ContactResult);
 
 	// Event called when something stops overlapping this component 
 	UFUNCTION()
@@ -102,6 +111,9 @@ private:
 public:
 	// Event called when the reaching motion is finished
 	FSLReachEventSignature OnReachEvent;
+
+	// Event called when the manipulator positioning motion is finished
+	FSLReachEventSignature OnManipulatorPositioningEvent;
 	
 private:
 	// True if initialized
@@ -134,4 +146,14 @@ private:
 	// CandidatesWithTimeAndDistance for reaching action, pointing to their starting time
 	TMap<AStaticMeshActor*, FTimeAndDistance> CandidatesWithTimeAndDistance;
 
+	// Pause everything if the hand is currently grasping something
+	UObject* CurrGraspedObj;
+	
+	/* Constants */
+	// Minimal duration for the reaching events
+	constexpr static float ReachEventMin = 0.35f;
+	// Minimal duration for the positioning events
+	constexpr static float ManipulatorPositionEventMin = 0.25f;
+	// Minimum distance squared for reaching movements
+	constexpr static float MinDistSq = 2.5f * 2.5f;
 };

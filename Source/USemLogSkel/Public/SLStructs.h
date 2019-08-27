@@ -24,7 +24,7 @@ struct FSLEntity
 	FString Class;
 
 	// Default constructor
-	FSLEntity() {};
+	FSLEntity() = default;
 
 	// Init constructor
 	FSLEntity(UObject* InObj, const FString& InId, const FString& InClass) :
@@ -53,6 +53,18 @@ struct FSLEntity
 	FString ToString() const
 	{
 		return FString::Printf(TEXT("UniqueID:%ld Id:%s Class:%s"), Obj->GetUniqueID(), *Id, *Class);
+	}
+
+	// Compares only the pointers of the UObject (should work in all cases)
+	FORCEINLINE bool EqualsFast(const FSLEntity& Other) const
+	{
+		return Obj == Other.Obj;
+	}
+
+	// Compares the UObject pointers inlcuding the Id and Class
+	FORCEINLINE bool Equals(const FSLEntity& Other) const
+	{
+		return Obj == Other.Obj && Id.Equals(Other.Id) && Class.Equals(Other.Class);
 	}
 };
 
@@ -188,5 +200,6 @@ struct FSLContactResult
 DECLARE_MULTICAST_DELEGATE_OneParam(FSLBeginContactSignature, const FSLContactResult&);
 
 /** Delegate to notify that a contact ended between two semantically annotated objects */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndContactSignature, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
+//DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndContactSignature, UObject* /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndContactSignature, const FSLEntity& /*Self*/, const FSLEntity& /*Other*/, float /*Time*/);
 

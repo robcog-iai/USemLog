@@ -31,8 +31,8 @@ FSLWorldStateWriterBson::~FSLWorldStateWriterBson()
 // Init
 void FSLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
 {
-	MinLinearDistanceSquared = InParams.LinearDistanceSquared;
-	MinAngularDistance = InParams.AngularDistance;
+	LinDistSqMin = InParams.LinearDistanceSquared;
+	AngDistMin = InParams.AngularDistance;
 	bIsInit = FSLWorldStateWriterBson::SetFileHandle(InParams.Location, InParams.EpisodeId);
 }
 

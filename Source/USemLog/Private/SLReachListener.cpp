@@ -25,6 +25,8 @@ USLReachListener::USLReachListener()
 	WeightLimit = 15.0f;
 	VolumeLimit = 30000.0f; // 1000cm^3 = 1 Liter
 
+	CurrGraspedObj = nullptr;
+	
 	ShapeColor = FColor::Orange.WithAlpha(64);
 }
 
@@ -57,7 +59,7 @@ bool USLReachListener::Init()
 		}
 		
 		// Subscribe for grasp notifications from sibling component
-		if(SubscribeForGraspEvents())
+		if(SubscribeForManipulatorEvents())
 		{
 			bIsInit = true;
 			return true;
@@ -79,7 +81,8 @@ void USLReachListener::Start()
 
 		// Bind to the update callback function
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &USLReachListener::Update, UpdateRate, true);
-
+		GetWorld()->GetTimerManager().PauseTimer(TimerHandle);
+		
 		// Mark as started
 		bIsStarted = true;
 	}
@@ -141,12 +144,16 @@ void USLReachListener::RelocateSphere()
 #endif // WITH_EDITOR
 
 // Subscribe for grasp events from sibling component
-bool USLReachListener::SubscribeForGraspEvents()
+bool USLReachListener::SubscribeForManipulatorEvents()
 {
 	if(USLManipulatorListener* Sibling = CastChecked<USLManipulatorListener>(
 		GetOwner()->GetComponentByClass(USLManipulatorListener::StaticClass())))
 	{
+		// Timeline reaching,      positioning
+		// [-----------contact][contact--------grasp]
+		Sibling->OnBeginManipulatorContact.AddUObject(this, &USLReachListener::OnSLManipulatorContactBegin);
 		Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLReachListener::OnSLGraspBegin);
+		Sibling->OnEndManipulatorGrasp.AddUObject(this, &USLReachListener::OnSLGraspEnd);
 		return true;
 	}
 	return false;
@@ -157,38 +164,33 @@ void USLReachListener::Update()
 {
 	AActor* Owner = GetOwner();
 	const float CurrTime = GetWorld()->GetTimeSeconds();
-
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s Update at, %f]"),
-	//	*FString(__func__), __LINE__, *Owner->GetName(), CurrTime);
 	
 	for(auto& C : CandidatesWithTimeAndDistance)
 	{
-		const float CurrDistance = FVector::Distance(Owner->GetActorLocation(), C.Key->GetActorLocation());
-		const float PrevDistance = C.Value.Get<1>();
-		const float DistDiff = PrevDistance - CurrDistance;
+		const float CurrDistanceSq = FVector::DistSquared(Owner->GetActorLocation(), C.Key->GetActorLocation());
+		const float PrevDistanceSq = C.Value.Get<1>();
+		const float DiffDistSq = PrevDistanceSq - CurrDistanceSq;
 
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s CurrDist:%f;  PrevDist:%f; DistDiff:%f; Abs:%f"),
-		//	*FString(__func__), __LINE__, *Owner->GetName(), CurrDistance, PrevDistance, DistDiff, FMath::Abs(DistDiff));
-
-		// Ignore small difference changes
-		if(FMath::Abs(DistDiff) > 1.0f)
+		// Ignore small squared difference changes (MinDistSq)
+		if(DiffDistSq > MinDistSq)
 		{
-			if(DistDiff > 0)
-			{
-				// Positive difference makes the hand closer to the object, update the distance
-				C.Value.Get<1>() = CurrDistance;
-				//UE_LOG(LogTemp, Warning, TEXT("%s::%d \t Closer to %s, updating distance from %f to %f"),
-				//	*FString(__func__), __LINE__, *C.Key->GetName(), PrevDistance, CurrDistance);
-			}
-			else
-			{
-				// Negative difference makes the hand further away from the object, update distance, reset the start time
-				C.Value.Get<0>() = CurrTime;
-				C.Value.Get<1>() = CurrDistance;
-				//UE_LOG(LogTemp, Error, TEXT("%s::%d \t Further from %s, reseting time[%f] and updating distance from %f to %f"),
-				//	*FString(__func__), __LINE__, *C.Key->GetName(), C.Value.Get<0>(), PrevDistance, CurrDistance);
-			}
+			// Positive difference makes the hand closer to the object, update the distance
+			C.Value.Get<1>() = CurrDistanceSq;
 		}
+		else if(DiffDistSq < MinDistSq)
+		{
+			// Negative difference makes the hand further away from the object, update distance, reset the start time
+			C.Value.Get<0>() = CurrTime;
+			C.Value.Get<1>() = CurrDistanceSq;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Hand moving away from candidate %s resetting time!"),
+				*FString(__func__), __LINE__, *C.Key->GetName());
+		}
+	}
+
+	// No candidates, pause update function
+	if(CandidatesWithTimeAndDistance.Num() == 0)
+	{
+		GetWorld()->GetTimerManager().PauseTimer(TimerHandle);
 	}
 }
 
@@ -242,20 +244,99 @@ bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject) const
 	return false;
 }
 
-// Called when sibling detects a grasp
-void USLReachListener::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType)
+//Called when the sibling is in contact with an object, used for ending the reaching event and starting the manipulator positioning event
+void USLReachListener::OnSLManipulatorContactBegin(const FSLContactResult& ContactResult)
 {
-	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(ContactResult.Other.Obj))
 	{
 		if (CandidatesWithTimeAndDistance.Contains(AsSMA))
 		{
 			// Publish event
 			const float StartTime = CandidatesWithTimeAndDistance[AsSMA].Get<0>();
-			OnReachEvent.Broadcast(SemanticOwner, Other, StartTime, Time);
-			CandidatesWithTimeAndDistance.Empty();
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Finished reaching for %s [%f, %f]"),
-				*FString(__func__), __LINE__, *Other->GetName(), StartTime, Time);
+			//OnReachEvent.Broadcast(SemanticOwner, Other, StartTime, Time);
+			//CandidatesWithTimeAndDistance.Empty();
+			//UE_LOG(LogTemp, Warning, TEXT("%s::%d Finished reaching for %s [%f, %f]"),
+			//	*FString(__func__), __LINE__, *Other->GetName(), StartTime, Time);
 		}
+	}
+}
+
+// Called when sibling detects a grasp, used for ending the manipulator positioning event
+void USLReachListener::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType)
+{
+	if(CurrGraspedObj)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Hand is already grasping something.. this can happen if multiple objects have been grasped"),
+			*FString(__func__), __LINE__);
+	}
+	else
+	{
+		CurrGraspedObj = Other;
+	}
+	
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
+	{
+		if (CandidatesWithTimeAndDistance.Contains(AsSMA))
+		{
+			// Avoid broadcasting small events
+			const float StartTime = CandidatesWithTimeAndDistance[AsSMA].Get<0>();
+			if(Time - StartTime > ReachEventMin)
+			{
+				OnReachEvent.Broadcast(SemanticOwner, Other, StartTime, Time);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Finished reaching for %s [%f, %f]"),
+					*FString(__func__), __LINE__, *Other->GetName(), StartTime, Time);
+			}
+			CandidatesWithTimeAndDistance.Empty();
+
+			// Pause looking for candidates until the hand is free again
+			GetWorld()->GetTimerManager().PauseTimer(TimerHandle);
+			OnComponentBeginOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapBegin);
+			OnComponentEndOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapEnd);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not have happened.."), *FString(__func__), __LINE__);
+		}
+	}
+	
+}
+
+// Reset looking for the events
+void USLReachListener::OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time)
+{
+	if(CurrGraspedObj == Other)
+	{
+		CurrGraspedObj = nullptr;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not have happened.. there might be something still grasped.."),
+			*FString(__func__), __LINE__);
+		return;
+	}
+	
+	if(CandidatesWithTimeAndDistance.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, 
+			TEXT("%s::%d This should not happen, on grasp end there should be no candidates (were there multiple obj grasped?)"),
+			*FString(__func__), __LINE__);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] \t\t Grasp end, reset timer"), *FString(__func__), __LINE__,
+		GetWorld()->GetTimeSeconds());
+
+	// Look for new candidates
+	TriggerInitialOverlaps();
+	OnComponentBeginOverlap.AddDynamic(this, &USLReachListener::OnOverlapBegin);
+	OnComponentEndOverlap.AddDynamic(this, &USLReachListener::OnOverlapEnd);
+	
+	if(GetWorld()->GetTimerManager().IsTimerPaused(TimerHandle))
+	{
+		GetWorld()->GetTimerManager().UnPauseTimer(TimerHandle);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not have happened.."), *FString(__func__), __LINE__);
 	}
 }
 
@@ -267,12 +348,7 @@ void USLReachListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
-	// Ignore self overlaps 
-	if (OtherActor == GetOwner())
-	{
-		return;
-	}
-	
+	// Ignore skeletal meshes
 	if(AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherActor))
 	{
 		if(CanBeACandidate(AsSMA))
@@ -280,7 +356,14 @@ void USLReachListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 			const float Distance = FVector::Distance(GetOwner()->GetActorLocation(), AsSMA->GetActorLocation());
 			FTimeAndDistance TimeAndDistance = MakeTuple(GetWorld()->GetTimeSeconds(), Distance);
 			CandidatesWithTimeAndDistance.Emplace(AsSMA, TimeAndDistance);
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Added %s as candidate"), *FString(__func__), __LINE__, *AsSMA->GetName());
+			
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t\t Added %s as candidate"),
+				*FString(__func__), __LINE__, *AsSMA->GetName());
+
+			if(GetWorld()->GetTimerManager().IsTimerPaused(TimerHandle))
+			{
+				GetWorld()->GetTimerManager().UnPauseTimer(TimerHandle);
+			}
 		}
 	}
 	
@@ -292,12 +375,6 @@ void USLReachListener::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
-	// Ignore self overlaps 
-	if (OtherActor == GetOwner())
-	{
-		return;
-	}
-
 	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherActor))
 	{
 		if (CandidatesWithTimeAndDistance.Remove(AsSMA) > 0)

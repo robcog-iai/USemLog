@@ -105,7 +105,7 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 	for (auto& Ev : StartedEvents)
 	{
 		// Ignore short events
-		if ((EndTime - Ev->Start) > ContactEventMin)
+		if ((EndTime - Ev->Start) > GraspEventMin)
 		{
 			// Set end time and publish event
 			Ev->End = EndTime;

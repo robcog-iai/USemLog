@@ -24,6 +24,19 @@ void ISLContactShapeInterface::Finish(bool bForced)
 	}
 }
 
+// Init the interface
+bool ISLContactShapeInterface::InitInterface(UShapeComponent* InShapeComponent, UWorld* InWorld)
+{
+	if(InShapeComponent && InWorld)
+	{
+		World = InWorld;
+		ShapeComponent = InShapeComponent;
+		DelayTimerDelegate.BindRaw(this, &ISLContactShapeInterface::DelayedOverlapEndEventCallback);
+		return true;
+	}
+	return false;
+}
+
 // Publish currently overlapping components
 void ISLContactShapeInterface::TriggerInitialOverlaps()
 {
@@ -45,13 +58,14 @@ void ISLContactShapeInterface::StartSupportedByUpdateCheck()
 	if(World)
 	{
 		// Start updating the timer, will be paused if there are no candidates
-		SBTimerDelegate.BindRaw(this, &ISLContactShapeInterface::SupportedByUpdateCheck);
+		SBTimerDelegate.BindRaw(this, &ISLContactShapeInterface::SupportedByUpdateCheckBegin);
 		World->GetTimerManager().SetTimer(SBTimerHandle, SBTimerDelegate, SBUpdateRate, true);
 	}
 }
 
 // Supported by update
-void ISLContactShapeInterface::SupportedByUpdateCheck()
+// TODO is a supported by end update look required?
+void ISLContactShapeInterface::SupportedByUpdateCheckBegin()
 {
 	// Check if candidates are in a supported by event
 	for (auto CandidateItr(SBCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
@@ -152,6 +166,13 @@ void ISLContactShapeInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedCom
 	// Get the time of the event in second
 	float StartTime = World->GetTimeSeconds();
 
+	// Check if this overlap happened very closely to another finished one, if yes concatenate the two by ignoring this start
+	// and the recent overlap end
+	if(SkipOverlapEndEventBroadcast(OtherItem, StartTime))
+	{
+		return;
+	}
+
 	// Check the type of the other component
 	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
@@ -196,7 +217,6 @@ void ISLContactShapeInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedCom
 				}
 			}
 		}
-
 	}
 }
 
@@ -224,44 +244,91 @@ void ISLContactShapeInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 		}
 	}
 
-	// Get the time of the event in second
-	float EndTime = World->GetTimeSeconds();
+	// Delay publishing the overlap event in case of possible concatenations
+	RecentlyEndedOverlapEvents.Emplace(FSLOverlapEndEvent(OtherComp, OtherItem, World->GetTimeSeconds()));
 
-	// Check the type of the other component
-	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
+	// Delay publishing for a while, in case the new event is of the same type and should be concatenated
+	if(!World->GetTimerManager().IsTimerActive(DelayTimerHandle))
 	{
-		// Broadcast end of semantic overlap event
-		OnEndSLContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
+		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap*2.f, false);
 	}
-	else if (ISLContactShapeInterface* OtherContactTrigger = Cast<ISLContactShapeInterface>(OtherComp))
-	{
-		// If both areas are trigger areas, they will both concurrently trigger overlap events.
-		// To avoid this we consistently ignore one trigger event. This is chosen using
-		// the unique ids of the overlapping actors (GetUniqueID), we compare the two values 
-		// and consistently pick the event with a given (larger or smaller) value.
-		// This allows us to be in sync with the overlap end event 
-		// since the unique ids and the rule of ignoring the one event will not change
-		// Filter out one of the trigger areas (compare unique ids)
-		if (OtherItem.Obj->GetUniqueID() > SemanticOwner.Obj->GetUniqueID())
-		{
-			// Broadcast end of semantic overlap event
-			OnEndSLContact.Broadcast(SemanticOwner.Obj, OtherItem.Obj, EndTime);
-		}
-	}
+}
 
-	if(bLogSupportedByEvents)
+// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+void ISLContactShapeInterface::DelayedOverlapEndEventCallback()
+{
+	// Curr time (keep very recently added events for another delay)
+	const float CurrTime = World->GetTimeSeconds();
+	
+	for (auto OverlapEndEvItr(RecentlyEndedOverlapEvents.CreateIterator()); OverlapEndEvItr; ++OverlapEndEvItr)
 	{
-		// Ignore and remove if it is a candidate only
-		// (it cannot be a candidate and an event, e.g. contact ended with a candidate only)
-		if(!CheckAndRemoveIfJustCandidate(OtherItem.Obj))
+		// Check if the event is old enough that it had it chance to be concatenated
+		if(CurrTime - OverlapEndEvItr->Time > MaxOverlapEventTimeGap)
 		{
-			const uint64 PairId1 = FIds::PairEncodeCantor(SemanticOwner.Obj->GetUniqueID(),OtherItem.Obj->GetUniqueID());
-			const uint64 PairId2 = FIds::PairEncodeCantor(OtherItem.Obj->GetUniqueID(), SemanticOwner.Obj->GetUniqueID());
-			OnEndSLSupportedBy.Broadcast(PairId1, PairId2, EndTime);
-			if(IsSupportedByPariIds.Remove(PairId1) == 0)
+			// Check the type of the other component
+			if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OverlapEndEvItr->OtherComp))
 			{
-				IsSupportedByPariIds.Remove(PairId2);
+				// Broadcast end of semantic overlap event
+				OnEndSLContact.Broadcast(SemanticOwner, OverlapEndEvItr->OtherItem, OverlapEndEvItr->Time);
+			}
+			else if (ISLContactShapeInterface* OtherContactTrigger = Cast<ISLContactShapeInterface>(OverlapEndEvItr->OtherComp))
+			{
+				// If both areas are trigger areas, they will both concurrently trigger overlap events.
+				// To avoid this we consistently ignore one trigger event. This is chosen using
+				// the unique ids of the overlapping actors (GetUniqueID), we compare the two values 
+				// and consistently pick the event with a given (larger or smaller) value.
+				// This allows us to be in sync with the overlap end event 
+				// since the unique ids and the rule of ignoring the one event will not change
+				// Filter out one of the trigger areas (compare unique ids)
+				if (OverlapEndEvItr->OtherItem.Obj->GetUniqueID() > SemanticOwner.Obj->GetUniqueID())
+				{
+					// Broadcast end of semantic overlap event
+					OnEndSLContact.Broadcast(SemanticOwner, OverlapEndEvItr->OtherItem, OverlapEndEvItr->Time);
+				}
+			}
+
+			if(bLogSupportedByEvents)
+			{
+				// Ignore and remove if it is a candidate only
+				// (it cannot be a candidate and an event, e.g. contact ended with a candidate only)
+				if(!CheckAndRemoveIfJustCandidate(OverlapEndEvItr->OtherItem.Obj))
+				{
+					const uint64 PairId1 = FIds::PairEncodeCantor(SemanticOwner.Obj->GetUniqueID(),OverlapEndEvItr->OtherItem.Obj->GetUniqueID());
+					const uint64 PairId2 = FIds::PairEncodeCantor(OverlapEndEvItr->OtherItem.Obj->GetUniqueID(), SemanticOwner.Obj->GetUniqueID());
+					OnEndSLSupportedBy.Broadcast(PairId1, PairId2, OverlapEndEvItr->Time);
+					if(IsSupportedByPariIds.Remove(PairId1) == 0)
+					{
+						IsSupportedByPariIds.Remove(PairId2);
+					}
+				}
+			}
+		}
+		// Remove event from the pending list
+		OverlapEndEvItr.RemoveCurrent();
+	}
+
+	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
+	if(RecentlyEndedOverlapEvents.Num() > 0)
+	{
+		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap*2.f, false);
+	}
+}
+
+// Skip publishing overlap event if it can be concatenated with the current event start
+bool ISLContactShapeInterface::SkipOverlapEndEventBroadcast(const FSLEntity& InItem, float StartTime)
+{
+	for (auto OverlapEndEvItr(RecentlyEndedOverlapEvents.CreateIterator()); OverlapEndEvItr; ++OverlapEndEvItr)
+	{
+		// Check if it is an event between the same entities
+		if(OverlapEndEvItr->OtherItem.EqualsFast(InItem))
+		{
+			// Check time difference
+			if(StartTime - OverlapEndEvItr->Time < MaxOverlapEventTimeGap)
+			{
+				OverlapEndEvItr.RemoveCurrent();
+				return true;
 			}
 		}
 	}
+	return false;
 }

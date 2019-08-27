@@ -6,6 +6,7 @@
 #include "Events/ISLEventHandler.h"
 #include "Events/SLContactEvent.h"
 #include "Events/SLSupportedByEvent.h"
+#include "TimerManager.h"
 
 // Forward declarations
 struct FSLContactResult;
@@ -30,7 +31,7 @@ private:
 	void AddNewContactEvent(const FSLContactResult& InResult);
 
 	// Finish then publish the event
-	bool FinishContactEvent(UObject* Other, float EndTime);
+	bool FinishContactEvent(const FSLEntity&, float EndTime);
 
 	// Start new supported by event
 	void AddNewSupportedByEvent(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 EventPairId);
@@ -45,14 +46,14 @@ private:
 	void OnSLOverlapBegin(const FSLContactResult& InResult);
 	
 	// Event called when a semantic overlap event ends
-	void OnSLOverlapEnd(UObject* Self, UObject* Other, float Time);
+	void OnSLOverlapEnd(const FSLEntity& Self, const FSLEntity& Other, float Time);
 
 	// Event called when a supported by event begins
 	void OnSLSupportedByBegin(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 EventPairId);
 	
 	// Event called when a supported by event ends
 	void OnSLSupportedByEnd(const uint64 PairId1, const uint64 PairId2, float Time);
-
+	
 private:
 	// Parent semantic overlap area
 	class ISLContactShapeInterface* Parent = nullptr;
@@ -62,4 +63,8 @@ private:
 
 	// Array of started supported by events
 	TArray<TSharedPtr<FSLSupportedByEvent>> StartedSupportedByEvents;
+	
+	/* Constant values */
+	constexpr static float ContactEventMin = 0.3f;
+	constexpr static float SupportedByEventMin = 0.4f;
 };

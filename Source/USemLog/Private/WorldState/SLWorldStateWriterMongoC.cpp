@@ -35,8 +35,8 @@ FSLWorldStateWriterMongoC::~FSLWorldStateWriterMongoC()
 // Init
 void FSLWorldStateWriterMongoC::Init(const FSLWorldStateWriterParams& InParams)
 {
-	MinLinearDistanceSquared = InParams.LinearDistanceSquared;
-	MinAngularDistance = InParams.AngularDistance;
+	LinDistSqMin = InParams.LinearDistanceSquared;
+	AngDistMin = InParams.AngularDistance;
 	bIsInit = FSLWorldStateWriterMongoC::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
 }
 
@@ -243,7 +243,7 @@ void FSLWorldStateWriterMongoC::AddActorEntities(TArray<TSLEntityPreviousPose<AA
 			const FVector CurrLoc = Itr->Obj->GetActorLocation();
 			const FQuat CurrQuat = Itr->Obj->GetActorQuat();
 
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > LinDistSqMin ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
 				// Update prev state
@@ -286,7 +286,7 @@ void FSLWorldStateWriterMongoC::AddComponentEntities(TArray<TSLEntityPreviousPos
 			const FVector CurrLoc = Itr->Obj->GetComponentLocation();
 			const FQuat CurrQuat = Itr->Obj->GetComponentQuat();
 
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > LinDistSqMin ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
 				// Update prev state
@@ -332,7 +332,7 @@ void FSLWorldStateWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose
 		// Check if pointer is valid
 		if (Itr->Obj.IsValid(/*false, true*/))
 		{
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > LinDistSqMin ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
 				// Update prev state

@@ -52,10 +52,4 @@ protected:
 
 	// Set when finished
 	bool bIsFinished = false;
-
-	/* Constant values */
-	// Ignore events with durations smaller than
-	constexpr static float ContactEventMin = 0.05f;
-	constexpr static float SupportedByEventMin = 0.4f;
-	constexpr static float GraspEventMin = 0.25f;
 };

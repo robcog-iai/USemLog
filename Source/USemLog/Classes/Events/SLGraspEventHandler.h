@@ -43,4 +43,7 @@ private:
 
 	// Array of started events
 	TArray<TSharedPtr<FSLGraspEvent>> StartedEvents;
+	
+	/* Constant values */
+	constexpr static float GraspEventMin = 0.25f;
 };

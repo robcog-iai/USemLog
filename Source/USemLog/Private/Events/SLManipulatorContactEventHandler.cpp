@@ -17,8 +17,12 @@ void FSLManipulatorContactEventHandler::Init(UObject* InParent)
 		Parent = Cast<USLManipulatorListener>(InParent);
 		if (Parent)
 		{
-			// Mark as initialized
-			bIsInit = true;
+			World = Parent->GetWorld();
+			if(World)
+			{
+				DelayTimerDelegate.BindRaw(this, &FSLManipulatorContactEventHandler::DelayedFinishContactEvent);
+				bIsInit = true;
+			}
 		}
 	}
 }
@@ -58,35 +62,42 @@ void FSLManipulatorContactEventHandler::Finish(float EndTime, bool bForced)
 // Start new contact event
 void FSLManipulatorContactEventHandler::AddNewEvent(const FSLContactResult& InResult)
 {
-	// Start a semantic contact event
-	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
-		FIds::NewGuidInBase64Url(), InResult.Time,
-		FIds::PairEncodeCantor(InResult.Self.Obj->GetUniqueID(), InResult.Other.Obj->GetUniqueID()),
-		InResult.Self, InResult.Other));
-	// Add event to the pending contacts array
-	StartedEvents.Emplace(ContactEvent);
+		// Check first if it should be concatenated to a recently finished event
+	if(!ReOpenRecentlyFinishedContactEvent(InResult.Self, InResult.Other, InResult.Time))
+	{
+		// Start a semantic contact event
+		TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
+			FIds::NewGuidInBase64Url(), InResult.Time,
+			FIds::PairEncodeCantor(InResult.Self.Obj->GetUniqueID(), InResult.Other.Obj->GetUniqueID()),
+			InResult.Self, InResult.Other));
+		// Add event to the pending contacts array
+		StartedEvents.Emplace(ContactEvent);
+	}
 }
 
 // Publish finished event
-bool FSLManipulatorContactEventHandler::FinishEvent(UObject* InOther, float EndTime)
+bool FSLManipulatorContactEventHandler::FinishEvent(const FSLEntity& InOther, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Item2.Obj == InOther)
+		if ((*EventItr)->Item2.EqualsFast(InOther))
 		{
-			// Ignore short events
-			if ((EndTime - (*EventItr)->Start) > ContactEventMin)
-			{
-				// Set end time and publish event
-				(*EventItr)->End = EndTime;
-				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::White,
-				//	FString::Printf(TEXT(" * * * * * * *BCAST* *EVENT* ")), false, FVector2D(1.5f, 1.5f));
-				OnSemanticEvent.ExecuteIfBound(*EventItr);
-			}
+			// Set the event end time
+			(*EventItr)->End = EndTime;
+
+			// Add to the recently finished contact events
+			RecentlyFinishedEvents.Emplace(*EventItr);
+			
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
+
+			// Delay publishing for a while, in case the new event is of the same type and should be concatenated
+			if(!World->GetTimerManager().IsTimerActive(DelayTimerHandle))
+			{
+				World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,ContactEventTimeGapMax*2.f, false);
+			}
 			return true;
 		}
 	}
@@ -108,6 +119,17 @@ void FSLManipulatorContactEventHandler::FinishAllEvents(float EndTime)
 		}
 	}
 	StartedEvents.Empty();
+
+	// Finish the recently finished events
+	for (auto& Ev : RecentlyFinishedEvents)
+	{
+		// Avoid publishing short events
+		if ((Ev->End - Ev->Start) > ContactEventMin)
+		{
+			OnSemanticEvent.ExecuteIfBound(Ev);
+		}
+	}
+	RecentlyFinishedEvents.Empty();
 }
 
 
@@ -118,7 +140,56 @@ void FSLManipulatorContactEventHandler::OnSLOverlapBegin(const FSLContactResult&
 }
 
 // Event called when a semantic overlap event ends
-void FSLManipulatorContactEventHandler::OnSLOverlapEnd(UObject* Self, UObject* Other, float Time)
+void FSLManipulatorContactEventHandler::OnSLOverlapEnd(const FSLEntity& Self, const FSLEntity& Other, float Time)
 {
 	FSLManipulatorContactEventHandler::FinishEvent(Other, Time);
+}
+
+// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+void FSLManipulatorContactEventHandler::DelayedFinishContactEvent()
+{
+	// Curr time (keep very recenlty added events for another delay)
+	const float CurrTime = World->GetTimeSeconds();
+	
+	for (auto RecentEvItr(RecentlyFinishedEvents.CreateIterator()); RecentEvItr; ++RecentEvItr)
+	{
+		// Check if the event is old enough that it had it chance to be concatenated
+		if(CurrTime - (*RecentEvItr)->End > ContactEventTimeGapMax)
+		{
+			// Avoid publishing short events
+			if (((*RecentEvItr)->End - (*RecentEvItr)->Start) > ContactEventMin)
+			{
+				OnSemanticEvent.ExecuteIfBound(*RecentEvItr);
+			}
+		}
+		// Remove event from the pending list
+		RecentEvItr.RemoveCurrent();
+	}
+
+	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
+	if(RecentlyFinishedEvents.Num() > 0)
+	{
+		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,ContactEventTimeGapMax*2.f, false);
+	}
+}
+
+// Check if the new event should be concatenated to an existing finished one
+bool FSLManipulatorContactEventHandler::ReOpenRecentlyFinishedContactEvent(const FSLEntity& Item1, const FSLEntity& Item2, float StartTime)
+{
+	for (auto RecentEvItr(RecentlyFinishedEvents.CreateIterator()); RecentEvItr; ++RecentEvItr)
+	{
+		// Check if it is an event between the same entities
+		if((*RecentEvItr)->Item1.Obj == Item1.Obj && 
+			(*RecentEvItr)->Item2.Obj == Item2.Obj)
+		{
+			// Check time difference
+			if(StartTime - (*RecentEvItr)->End < ContactEventTimeGapMax)
+			{
+				StartedEvents.Emplace(*RecentEvItr);
+				RecentEvItr.RemoveCurrent();
+				return true;
+			}
+		}
+	}
+	return false;
 }

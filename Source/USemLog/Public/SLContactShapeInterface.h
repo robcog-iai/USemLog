@@ -9,10 +9,37 @@
 #include "TimerManager.h"
 #include "SLContactShapeInterface.generated.h"
 
+/**
+ * Structure holding the OverlapEnd event data,
+ * cached for a small period of time in case it should be concatenated with the follow-up event
+ */
+struct FSLOverlapEndEvent
+{
+	// Default ctor
+	FSLOverlapEndEvent() = default;
+
+	// Init ctor
+	FSLOverlapEndEvent(UPrimitiveComponent* InOtherComp, const FSLEntity& InOtherItem, float InTime) :
+		OtherComp(InOtherComp), OtherItem(InOtherItem), Time(InTime) {};
+
+	// Overlap component
+	UPrimitiveComponent* OtherComp;
+	
+	// Other item of the overlap end
+	FSLEntity OtherItem;
+
+	// Time
+	float Time;
+};
+
+
 /** Notiy the begin/end of a supported by event */
 DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginSupportedBySignature, const FSLEntity& /*Supported*/, const FSLEntity& /*Supporting*/, float /*Time*/, const uint64 /*PairId*/);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndSupportedBySignature, const uint64 /*PairId1*/, const uint64 /*PairId2*/, float /*Time*/);
 
+/**
+ *  Unreal style interface for the contact shapes 
+ */
 UINTERFACE(Blueprintable)
 class USLContactShapeInterface : public UInterface
 {
@@ -45,7 +72,8 @@ public:
 	// True if parent is supported by a surface
 	bool IsSupportedBySomething() const {return IsSupportedByPariIds.Num() != 0;};
 
-	FString GetOwnerClassName() const {return SemanticOwner.Class;};
+	// Get the world
+	UWorld* GetWorldFromShape() const { return World; };
 	
 #if WITH_EDITOR
 	// Update bounds visual (red/green -- parent is not/is semantically annotated)
@@ -65,6 +93,9 @@ protected:
 	virtual bool StoreShapeBounds() = 0;
 #endif // WITH_EDITOR
 
+	// Init interface
+	bool InitInterface(UShapeComponent* InShapeComponent, UWorld* InWorld);
+
 	// Publish currently overlapping components
 	void TriggerInitialOverlaps();
 
@@ -72,7 +103,7 @@ protected:
 	void StartSupportedByUpdateCheck();
 
 	// Check for supported by events
-	void SupportedByUpdateCheck();
+	void SupportedByUpdateCheckBegin();
 
 	// Check if Other is a supported by candidate
 	bool CheckAndRemoveIfJustCandidate(UObject* InOther);
@@ -93,6 +124,12 @@ protected:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
+	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+	void DelayedOverlapEndEventCallback();
+
+	// Skip publishing overlap event if it can be concatenated with the current event start
+	bool SkipOverlapEndEventBroadcast(const FSLEntity& InItem, float StartTime);
+	
 public:
 	// Event called when a semantic overlap begins / ends
 	FSLBeginContactSignature OnBeginSLContact;
@@ -139,8 +176,18 @@ protected:
 	// Allow binding against non-UObject functions
 	FTimerDelegate SBTimerDelegate;
 
+	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
+	FTimerHandle DelayTimerHandle;
+
+	// Can only bind the timer handle to UObjects or FTimerDelegates
+	FTimerDelegate DelayTimerDelegate;
+
+	// Array of recently ended overlaps
+	TArray<FSLOverlapEndEvent> RecentlyEndedOverlapEvents;
+
 	/* Constants */
 	constexpr static const char* TagTypeName = "SemLogColl";
 	constexpr static float SBUpdateRate = 0.25f;
 	constexpr static float SBMaxVertSpeed = 0.5f;
+	constexpr static float MaxOverlapEventTimeGap = 0.2f;
 };

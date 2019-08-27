@@ -8,6 +8,7 @@
 #include "Components/ActorComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "SLStructs.h" // FSLEntity
+#include "SLContactShapeInterface.h"
 #include "SLPickAndPlaceListener.generated.h"
 
 /** Notify the beginning and the end of the lift/slide/transport events */
@@ -63,6 +64,9 @@ private:
 	// Called on grasp end
 	void OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time);
 
+	// Update callback
+	void Update();
+
 public:
 	// Lift/slide/transport events begin end 
 	FSLBeginLiftSignature OnBeginManipulatorLift;
@@ -96,10 +100,20 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bDetectTransportEvents;
 
+	// Update rate for checking the event type
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float UpdateRate;
+
 	// Semantic data of the owner
 	FSLEntity SemanticOwner;
 
 	// TODO currently only taking into account that only one objects is grasped
 	// Object currently grasped
 	AStaticMeshActor* GraspedObject;
+
+	// Contact shape of the grasped object, holds information if the object is supported by a surface
+	ISLContactShapeInterface* GraspedObjectContactShape;
+	
+	// Update timer handle
+	FTimerHandle UpdateTimerHandle;
 };

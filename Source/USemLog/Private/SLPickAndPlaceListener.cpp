@@ -24,6 +24,8 @@ USLPickAndPlaceListener::USLPickAndPlaceListener()
 	bDetectSlideEvents = true;
 	bDetectTransportEvents = true;
 
+	UpdateRate = 0.15f;
+
 	GraspedObject = nullptr;
 }
 
@@ -69,6 +71,11 @@ void USLPickAndPlaceListener::Start()
 		// Subscribe for grasp notifications from sibling component
 		if(SubscribeForGraspEvents())
 		{
+			// Start update callback (will directly be paused until a grasp is active)
+			GetWorld()->GetTimerManager().SetTimer(
+				UpdateTimerHandle, this, &USLPickAndPlaceListener::Update, UpdateRate, true);
+			GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
+			
 			// Mark as started
 			bIsStarted = true;
 		}
@@ -95,6 +102,7 @@ bool USLPickAndPlaceListener::SubscribeForGraspEvents()
 		GetOwner()->GetComponentByClass(USLManipulatorListener::StaticClass())))
 	{
 		Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLPickAndPlaceListener::OnSLGraspBegin);
+		Sibling->OnEndManipulatorGrasp.AddUObject(this, &USLPickAndPlaceListener::OnSLGraspEnd);
 		return true;
 	}
 	return false;
@@ -103,9 +111,33 @@ bool USLPickAndPlaceListener::SubscribeForGraspEvents()
 // Called when grasp starts
 void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType)
 {
+	if(GraspedObject)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Multiple objects grasped? TODO"), *FString(__func__), __LINE__);
+	}
+	
 	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
 	{
 		GraspedObject = AsSMA;
+		for (const auto& C : GraspedObject->GetComponents())
+		{
+			if(C->Implements<USLContactShapeInterface>())
+			{
+				GraspedObjectContactShape = Cast<ISLContactShapeInterface>(C);
+				if(GraspedObjectContactShape)
+				{
+					if(GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
+					{
+						GetWorld()->GetTimerManager().UnPauseTimer(UpdateTimerHandle);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been paused.."), *FString(__func__), __LINE__);
+					}
+				}
+				break; // stop iterating other components
+			}
+		}
 	}
 }
 
@@ -115,10 +147,41 @@ void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, UObject* Other
 	if(Other == GraspedObject)
 	{
 		GraspedObject = nullptr;
+		GraspedObjectContactShape = nullptr;
+		if(!GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
+		{
+			GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been running.."),
+				*FString(__func__), __LINE__);
+		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen (were there multiple objects grasped?)"),
 				*FString(__func__), __LINE__);
+	}
+}
+
+// Update callback
+void USLPickAndPlaceListener::Update()
+{
+	if(GraspedObject == nullptr || GraspedObjectContactShape == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Thus should not happen....."), *FString(__func__), __LINE__);
+		return;
+	}
+	
+	if(GraspedObjectContactShape->IsSupportedBySomething())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %f %s -> supported"),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GraspedObject->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %f %s -> flaoting"), *FString(__func__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GraspedObject->GetName());
 	}
 }

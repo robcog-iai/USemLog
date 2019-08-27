@@ -32,8 +32,8 @@ FSLWorldStateWriterJson::~FSLWorldStateWriterJson()
 // Init
 void FSLWorldStateWriterJson::Init(const FSLWorldStateWriterParams& InParams)
 {
-	MinLinearDistanceSquared = InParams.LinearDistanceSquared;
-	MinAngularDistance = InParams.AngularDistance;
+	LinDistSqMin = InParams.LinearDistanceSquared;
+	AngDistMin = InParams.AngularDistance;
 	bIsInit = FSLWorldStateWriterJson::SetFileHandle(InParams.Location, InParams.EpisodeId);
 }
 
@@ -110,7 +110,7 @@ void FSLWorldStateWriterJson::AddActorEntities(TArray<TSLEntityPreviousPose<AAct
 			const FVector CurrLoc = Itr->Obj->GetActorLocation();
 			const FQuat CurrQuat = Itr->Obj->GetActorQuat();
 
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > LinDistSqMin ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
 				// Update prev state
@@ -148,7 +148,7 @@ void FSLWorldStateWriterJson::AddComponentEntities(TArray<TSLEntityPreviousPose<
 			const FVector CurrLoc = Itr->Obj->GetComponentLocation();
 			const FQuat CurrQuat = Itr->Obj->GetComponentQuat();
 
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > LinDistSqMin ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
 				// Update prev state
@@ -186,7 +186,7 @@ void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<U
 			const FVector CurrLoc = Itr->Obj->GetComponentLocation();
 			const FQuat CurrQuat = Itr->Obj->GetComponentQuat();
 
-			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > MinLinearDistanceSquared ||
+			if (FVector::DistSquared(CurrLoc, Itr->PrevLoc) > LinDistSqMin ||
 				CurrQuat.AngularDistance(Itr->PrevQuat))
 			{
 				// Update prev state

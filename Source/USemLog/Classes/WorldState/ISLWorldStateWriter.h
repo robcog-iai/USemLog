@@ -77,10 +77,10 @@ public:
 protected:
 	// Flag to show if it is valid
 	bool bIsInit;
-
+	
 	// Location step size (log items that moved at least this distance since the last log)
-	float MinLinearDistanceSquared;;
+	float LinDistSqMin;;
 
 	// Rotation step size (log items that rotated at least this value since the last log)
-	float MinAngularDistance;
+	float AngDistMin;
 };

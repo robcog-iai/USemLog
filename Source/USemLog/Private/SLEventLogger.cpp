@@ -110,22 +110,6 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 								*FString(__func__), __LINE__, *Itr->GetName());
 						}
 					}
-
-					//if (bInLogSupportedByEvents)
-					//{
-					//	// Create a supported-by event handler
-					//	TSharedPtr<FSLSupportedByEventHandler> SBEHandler = MakeShareable(new FSLSupportedByEventHandler());
-					//	SBEHandler->Init(*Itr);
-					//	if (SBEHandler->IsInit())
-					//	{
-					//		EventHandlers.Add(SBEHandler);
-					//	}
-					//	else
-					//	{
-					//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-					//			*FString(__func__), __LINE__, *Itr->GetName());
-					//	}
-					//}
 				}
 			}
 		}
@@ -284,7 +268,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 }
 
 // Check if the component is valid in the world and has a semantically annotated owner
-bool USLEventLogger::IsValidAndAnnotated(UActorComponent* Comp)
+bool USLEventLogger::IsValidAndAnnotated(UActorComponent* Comp) const
 {
 	// Make sure the object is in the world
 	if (!GetWorld()->ContainsActor(Comp->GetOwner()))

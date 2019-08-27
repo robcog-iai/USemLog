@@ -77,8 +77,10 @@ void USLContactCapsule::Init(bool bInLogSupportedByEvents)
 		bLogSupportedByEvents = bInLogSupportedByEvents;
 		
 		// Important, set the interface pointers
-		ShapeComponent = this;
-		World = GetWorld();
+		if(!InitInterface(this, GetWorld()))
+		{
+			return;
+		}
 
 		// Make sure the semantic entities are set
 		if (!FSLEntitiesManager::GetInstance()->IsInit())
