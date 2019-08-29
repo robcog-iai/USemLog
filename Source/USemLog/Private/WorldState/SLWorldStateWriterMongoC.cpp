@@ -221,7 +221,7 @@ bool FSLWorldStateWriterMongoC::CreateIndexes() const
 	bson_t index5;
 	bson_init(&index5);
 	BSON_APPEND_INT32(&index5, "gaze.entity_id", 1);
-	char* index_name5 = mongoc_collection_keys_to_index_string(&index4);
+	char* index_name5 = mongoc_collection_keys_to_index_string(&index5);
 
 
 	index_command = BCON_NEW("createIndexes",
@@ -432,13 +432,13 @@ void FSLWorldStateWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t*
 {
 	const FVector ROSTargetLoc = FConversions::UToROS(GazeData.Target);
 	const FVector ROSOrigLoc = FConversions::UToROS(GazeData.Origin);
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d ROSTargetLoc=%s Class=%s Id=%s"),
-		*FString(__func__), __LINE__, *ROSTargetLoc.ToString(), *GazeData.Entity.Class, *GazeData.Entity.Id);
 
 	// When nesting objects, parent needs to be init to a base state !!! 
 	bson_t gaze_obj = BSON_INITIALIZER; 
 	bson_t target_loc;
 	bson_t origin_loc;
+	
+	BSON_APPEND_UTF8(&gaze_obj, "entity_id", TCHAR_TO_UTF8(*GazeData.Entity.Id));
 	
 	BSON_APPEND_DOCUMENT_BEGIN(&gaze_obj, "target", &target_loc);
 	BSON_APPEND_DOUBLE(&target_loc, "x", ROSTargetLoc.X);
@@ -451,8 +451,6 @@ void FSLWorldStateWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t*
 	BSON_APPEND_DOUBLE(&origin_loc, "y", ROSOrigLoc.Y);
 	BSON_APPEND_DOUBLE(&origin_loc, "z", ROSOrigLoc.Z);
 	bson_append_document_end(&gaze_obj, &origin_loc);
-
-	BSON_APPEND_UTF8(&gaze_obj, "entity_id", TCHAR_TO_UTF8(*GazeData.Entity.Id));
 	
 	BSON_APPEND_DOCUMENT(out_doc, "gaze", &gaze_obj);
 }
