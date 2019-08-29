@@ -2,7 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
-
+#if SL_WITH_EYE_TRACKING
+#include "SRanipal_Enums.h" // Added here since in other places weird namsepace error occur
+#endif // SL_WITH_EYE_TRACKING
 #include "CoreMinimal.h"
 #include "ModuleManager.h"
 
