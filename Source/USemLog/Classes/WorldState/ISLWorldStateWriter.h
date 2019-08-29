@@ -58,7 +58,7 @@ public:
 	virtual ~ISLWorldStateWriter(){};
 	
 	// Init the writer
-	virtual void Init(const FSLWorldStateWriterParams& InParams) = 0;
+	virtual bool Init(const FSLWorldStateWriterParams& InParams) = 0;
 	
 	// Finish
 	virtual void Finish() = 0;

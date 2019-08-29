@@ -22,7 +22,7 @@ public:
 	virtual ~FSLWorldStateWriterJson();
 
 	// Init
-	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
+	virtual bool Init(const FSLWorldStateWriterParams& InParams) override;
 
 	// Finish
 	virtual void Finish() override;

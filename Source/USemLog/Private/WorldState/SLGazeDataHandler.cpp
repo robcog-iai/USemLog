@@ -4,6 +4,7 @@
 #include "WorldState/SLGazeDataHandler.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "SLEntitiesManager.h"
 
 #if SL_WITH_EYE_TRACKING
 //#include "SRanipal_Enums.h" // Moved to USemLog before CoreMinimal.h otherwise weird namespace errors occur
@@ -93,50 +94,108 @@ bool FSLGazeDataHandler::GetData(FSLGazeData& OutData)
 	{
 		return false;
 	}
-	return true;
-}
 
-void FSLGazeDataHandler::TestGazeData()
-{
-	if(bIsStarted)
-	{
 #if SL_WITH_EYE_TRACKING
-		float RayLength = 1000.0f;
-		float RayRadius = 0.5f;
-			
-		FVector CameraGazeOrigin, CameraGazeDirection;
-		FVector RayCastOrigin, RayCastDirection;
+	FVector CameraGazeOriginNotUsed, CameraGazeDirection;
+	if(USRanipal_FunctionLibrary_Eye::GetGazeRay(GazeIndex::COMBINE, CameraGazeOriginNotUsed, CameraGazeDirection))
+	{
+		const FVector RaycastOrigin = PlayerCameraRef->GetCameraLocation();
+		const FVector RaycastTarget =  PlayerCameraRef->GetCameraRotation().RotateVector(RaycastOrigin + CameraGazeDirection * RayLength);
+		
+		FCollisionQueryParams TraceParam = FCollisionQueryParams(FName("EyeTraceParam"), true, PlayerCameraRef);
+		FHitResult HitResult;
 
-		FVector PlayerMainCameraLocation;
-		FRotator PlayerMainCameraRotation;
-
-		bool valid = USRanipal_FunctionLibrary_Eye::GetGazeRay(GazeIndex::COMBINE, CameraGazeOrigin, CameraGazeDirection);
-		if (valid) 
+		// Line trace
+		if(RayRadius == 0.f)
 		{
-			// Find the ray cast origin and target positon.
-			PlayerMainCameraLocation = PlayerCameraRef->GetCameraLocation();
-			PlayerMainCameraRotation = PlayerCameraRef->GetCameraRotation();
-			RayCastOrigin = PlayerMainCameraLocation + FVector(0.f, 0.f, -4.f);
-			RayCastDirection = PlayerMainCameraRotation.RotateVector(
-				PlayerMainCameraLocation + CameraGazeDirection * RayLength
-			);
-
-			DrawDebugLine(
-				World,
-				RayCastOrigin, RayCastDirection,
-				FColor::Emerald,
-				false, -1, 0,
-				RayRadius
-			);
-
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s Loc %s"), *FString(__func__), __LINE__, 
-				*PlayerCameraRef->GetName(), *PlayerCameraRef->GetCameraLocation().ToString());
-
+			if(World->LineTraceSingleByChannel(HitResult, RaycastOrigin, RaycastTarget, ECC_Pawn, TraceParam))
+			{
+				FSLEntity Entity;
+				if(FSLEntitiesManager::GetInstance()->GetEntity(HitResult.Actor.Get(),Entity))
+				{
+					OutData.SetData(RaycastOrigin, HitResult.ImpactPoint, Entity);
+					DrawDebugLine(World, RaycastOrigin, RaycastTarget, FColor::Green);
+					DrawDebugSphere(World, HitResult.ImpactPoint, 2.f, 32, FColor::Red);
+					return true;
+				}
+				else
+				{
+					DrawDebugLine(World, RaycastOrigin, RaycastTarget, FColor::Emerald);
+					return false;
+				}
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Log, TEXT("[SRanipal] Notvalid gaze ray"));
+			FCollisionShape Sphere;
+			Sphere.SetSphere(RayRadius);
+			if(World->SweepSingleByChannel(HitResult,RaycastOrigin, RaycastTarget, FQuat::Identity, 
+				ECC_Pawn, Sphere, TraceParam))
+			{
+				FSLEntity Entity;
+				if(FSLEntitiesManager::GetInstance()->GetEntity(HitResult.Actor.Get(),Entity))
+				{
+					OutData.SetData(RaycastOrigin, HitResult.ImpactPoint, Entity);
+					DrawDebugLine(World, RaycastOrigin, RaycastTarget, FColor::Green);
+					DrawDebugSphere(World, HitResult.ImpactPoint, RayRadius, 32, FColor::Red);
+					return true;
+				}
+				else
+				{
+					DrawDebugLine(World, RaycastOrigin, RaycastTarget, FColor::Emerald);
+					return false;
+				}
+			}
 		}
-#endif // SL_WITH_EYE_TRACKING
 	}
+#endif // SL_WITH_EYE_TRACKING
+	
+	return false;
 }
+
+
+//
+//void FSLGazeDataHandler::TestGazeData()
+//{
+//	if(bIsStarted)
+//	{
+//#if SL_WITH_EYE_TRACKING
+//		float RayLength = 1000.0f;
+//		float RayRadius = 0.5f;
+//			
+//		FVector CameraGazeOrigin, CameraGazeDirection;
+//		FVector RayCastOrigin, RayCastDirection;
+//
+//		FVector PlayerMainCameraLocation;
+//		FRotator PlayerMainCameraRotation;
+//
+//		bool valid = USRanipal_FunctionLibrary_Eye::GetGazeRay(GazeIndex::COMBINE, CameraGazeOrigin, CameraGazeDirection);
+//		if (valid) 
+//		{
+//			// Find the ray cast origin and target positon.
+//			PlayerMainCameraLocation = PlayerCameraRef->GetCameraLocation();
+//			PlayerMainCameraRotation = PlayerCameraRef->GetCameraRotation();
+//			RayCastOrigin = PlayerMainCameraLocation + FVector(0.f, 0.f, -4.f);
+//			RayCastDirection = PlayerMainCameraRotation.RotateVector(
+//				PlayerMainCameraLocation + CameraGazeDirection * RayLength
+//			);
+//
+//			DrawDebugLine(
+//				World,
+//				RayCastOrigin, RayCastDirection,
+//				FColor::Emerald,
+//				false, -1, 0,
+//				RayRadius
+//			);
+//
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s Loc %s"), *FString(__func__), __LINE__, 
+//				*PlayerCameraRef->GetName(), *PlayerCameraRef->GetCameraLocation().ToString());
+//
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Log, TEXT("[SRanipal] Notvalid gaze ray"));
+//		}
+//#endif // SL_WITH_EYE_TRACKING
+//	}
+//}

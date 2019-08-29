@@ -34,7 +34,7 @@ public:
 	virtual ~FSLWorldStateWriterMongoC();
 
 	// Init
-	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
+	virtual bool Init(const FSLWorldStateWriterParams& InParams) override;
 
 	// Finish
 	virtual void Finish() override;
@@ -57,24 +57,24 @@ private:
 #if SL_WITH_LIBMONGO_C
 	// Add non skeletal actors to array
 	void AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
-		bson_t* out_doc, uint32_t& idx);
+		bson_t* out_doc, uint32_t& idx) const;
 
 	// Add non skeletal components to array
 	void AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
-		bson_t* out_doc, uint32_t& idx);
+		bson_t* out_doc, uint32_t& idx) const;
 
 	// Add skeletal actors to array
 	void AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
-		bson_t* out_doc, uint32_t& idx);
+		bson_t* out_doc, uint32_t& idx) const;
 
 	// Add gaze data
-	void AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc);
+	void AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc) const;
 
 	// Add skeletal bones to array
-	void AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc);
+	void AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc) const;
 
 	// Add pose to document
-	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc);
+	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc) const;
 
 private:
 	// Server uri

@@ -180,6 +180,22 @@ FSLEntity FSLEntitiesManager::GetEntity(UObject* Object) const
 	}
 }
 
+// Get semantic object structure, from object
+bool FSLEntitiesManager::GetEntity(UObject* Object, FSLEntity& OutEntity) const
+{
+	//return FSLMappings::GetSemanticObject(Object->GetUniqueID());
+	if (const FSLEntity* Item = ObjectsSemanticData.Find(Object))
+	{
+		OutEntity = *Item;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
 // Get semantic id from object
 FString FSLEntitiesManager::GetId(UObject* Object) const
 {

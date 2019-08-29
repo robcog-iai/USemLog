@@ -12,17 +12,35 @@
 */
 struct FSLGazeData
 {
-	// Line trace end location
-	FVector Target;
+	// Default ctor
+	FSLGazeData() = default;
+	
+	// Init ctor
+	FSLGazeData(const FVector& InOrigin, const FVector& InTarget, const FSLEntity& InEntity) :
+		Origin(InOrigin), Target(InTarget), Entity(InEntity){};
 
+	// Set the values of the data
+	void SetData(const FVector& InOrigin, const FVector& InTarget, const FSLEntity& InEntity)
+	{
+		Origin = InOrigin;
+		Target = InTarget;
+		Entity = InEntity;
+	}
+	
 	// Head position
 	FVector Origin;
+	
+	// Line trace end location
+	FVector Target;
 	
 	// The entities in focus (sphere trace
 	FSLEntity Entity;
 
-	// Check if there is data
-	FORCEINLINE bool HasData() const { return Entity.Obj != nullptr; };
+	// Quick check if there is data
+	FORCEINLINE bool HasDataFast() const { return Entity.Obj != nullptr; };
+
+	// In depth check for data
+	FORCEINLINE bool HasData() const { return Entity.IsSet(); };
 
 	// Check if the two gaze data is equal with a tolerance
 	FORCEINLINE bool Equals(const FSLGazeData& Other, float Tolerance=KINDA_SMALL_NUMBER) const
@@ -60,9 +78,6 @@ public:
 
 	// Get the current gaze data, true if a raytrace hit occurs
 	bool GetData(FSLGazeData& OutData);
-	
-	// Dummy call
-	void TestGazeData();
 
 private:
 	// True if the eye tracking framework is successfully working
@@ -74,12 +89,13 @@ private:
 	// True when the eye tracking framework is stopped
 	bool bIsFinished;
 	
-	// Used for debug visualization
+	// Used for trace calculation
 	UWorld* World;
 
 	// Used for getting the gaze origin point
 	APlayerCameraManager* PlayerCameraRef;
 
-	// Resulting data
-	FSLGazeData Data;
+	/* Constants */
+	constexpr static float RayLength = 1000.f;
+	constexpr static float RayRadius = 1.5f;
 };

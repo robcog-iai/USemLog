@@ -46,7 +46,10 @@ public:
 
 	// Get semantic object structure, from object
 	FSLEntity GetEntity(UObject* Object) const;
-	
+
+	// Get semantic object structure, from object
+	bool GetEntity(UObject* Object, FSLEntity& OutEntity) const;
+
 	// Get semantic id from object
 	FString GetId(UObject* Object) const;
 

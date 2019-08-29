@@ -124,7 +124,7 @@ bool FSLMetadataWriter::Connect(const FString& DBName, const FString& EpisodeId,
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Collection %s already exists in database.."),
 			*FString(__func__), __LINE__, *MetaCollName);
-		//return false;
+		return false;
 	}
 
 	collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*MetaCollName));

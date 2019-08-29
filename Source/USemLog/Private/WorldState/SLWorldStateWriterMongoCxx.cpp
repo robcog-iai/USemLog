@@ -34,11 +34,12 @@ FSLWorldStateWriterMongoCxx::~FSLWorldStateWriterMongoCxx()
 }
 
 // Init
-void FSLWorldStateWriterMongoCxx::Init(const FSLWorldStateWriterParams& InParams)
+bool FSLWorldStateWriterMongoCxx::Init(const FSLWorldStateWriterParams& InParams)
 {
 	LinDistSqMin = InParams.LinearDistanceSquared;
 	AngDistMin = InParams.AngularDistance;
 	bIsInit = FSLWorldStateWriterMongoCxx::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
+	return bIsInit;
 }
 
 // Finish

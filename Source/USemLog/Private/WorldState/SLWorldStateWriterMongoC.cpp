@@ -34,11 +34,15 @@ FSLWorldStateWriterMongoC::~FSLWorldStateWriterMongoC()
 }
 
 // Init
-void FSLWorldStateWriterMongoC::Init(const FSLWorldStateWriterParams& InParams)
+bool FSLWorldStateWriterMongoC::Init(const FSLWorldStateWriterParams& InParams)
 {
-	LinDistSqMin = InParams.LinearDistanceSquared;
-	AngDistMin = InParams.AngularDistance;
-	bIsInit = FSLWorldStateWriterMongoC::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
+	if(!bIsInit)
+	{
+		LinDistSqMin = InParams.LinearDistanceSquared;
+		AngDistMin = InParams.AngularDistance;
+		bIsInit =  Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);		
+	}
+	return bIsInit;
 }
 
 // Finish
@@ -79,15 +83,13 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 	// Add timestamp
 	BSON_APPEND_DOUBLE(ws_doc, "timestamp", Timestamp);
 
-	// Avoid writing empty documents
-	if(ActorEntities.Num() > 0)
-	{
-		// Add entities to array
-		BSON_APPEND_ARRAY_BEGIN(ws_doc, "entities", &entities_arr);
-		AddActorEntities(ActorEntities, &entities_arr, arr_idx);
-		AddComponentEntities(ComponentEntities, &entities_arr, arr_idx);
-		bson_append_array_end(ws_doc, &entities_arr);
-	}
+	// TODO Avoid writing empty documents by checking the indexes or sending a bool reference
+	// Add entities to array
+	BSON_APPEND_ARRAY_BEGIN(ws_doc, "entities", &entities_arr);
+	AddActorEntities(ActorEntities, &entities_arr, arr_idx);
+	AddComponentEntities(ComponentEntities, &entities_arr, arr_idx);
+	bson_append_array_end(ws_doc, &entities_arr);
+
 	
 	// Avoid writing empty documents
 	if(SkeletalEntities.Num() > 0)
@@ -100,7 +102,7 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 		bson_append_array_end(ws_doc, &sk_entities_arr);
 	}
 
-	if(GazeData.HasData())
+	if(GazeData.HasDataFast())
 	{
 		if(!PreviousGazeData.Equals(GazeData, 3.f))
 		{
@@ -108,6 +110,7 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 			PreviousGazeData = GazeData;
 		}
 	}
+
 
 
 	if (!mongoc_collection_insert_one(collection, ws_doc, NULL, NULL, &error))
@@ -161,7 +164,7 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Collection %s already exists in database.."),
 			*FString(__func__), __LINE__, *EpisodeId);
-		//return false;
+		return false;
 	}
 	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId));
 
@@ -215,6 +218,11 @@ bool FSLWorldStateWriterMongoC::CreateIndexes() const
 	BSON_APPEND_INT32(&index4, "skel_entities.bones.name", 1);
 	char* index_name4 = mongoc_collection_keys_to_index_string(&index4);
 
+	bson_t index5;
+	bson_init(&index5);
+	BSON_APPEND_INT32(&index5, "gaze.entity_id", 1);
+	char* index_name5 = mongoc_collection_keys_to_index_string(&index4);
+
 
 	index_command = BCON_NEW("createIndexes",
 			BCON_UTF8(mongoc_collection_get_name(collection)),
@@ -252,6 +260,14 @@ bool FSLWorldStateWriterMongoC::CreateIndexes() const
 					//"unique",
 					//BCON_BOOL(false),
 				"}",
+				"{",
+					"key",
+					BCON_DOCUMENT(&index5),
+					"name",
+					BCON_UTF8(index_name5),
+					//"unique",
+					//BCON_BOOL(false),
+				"}",
 			"]");
 
 	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
@@ -275,7 +291,7 @@ bool FSLWorldStateWriterMongoC::CreateIndexes() const
 #if SL_WITH_LIBMONGO_C
 // Add non skeletal actors to array
 void FSLWorldStateWriterMongoC::AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
-	bson_t* out_doc, uint32_t& idx)
+	bson_t* out_doc, uint32_t& idx) const
 {
 	bson_t arr_obj;
 	char idx_str[16];
@@ -318,7 +334,7 @@ void FSLWorldStateWriterMongoC::AddActorEntities(TArray<TSLEntityPreviousPose<AA
 
 // Add non skeletal components to array
 void FSLWorldStateWriterMongoC::AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
-	bson_t* out_doc, uint32_t& idx)
+	bson_t* out_doc, uint32_t& idx) const
 {
 	bson_t arr_obj;
 	char idx_str[16];
@@ -364,7 +380,7 @@ void FSLWorldStateWriterMongoC::AddComponentEntities(TArray<TSLEntityPreviousPos
 
 // Add skeletal actors to array
 void FSLWorldStateWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
-	bson_t* out_doc, uint32_t& idx)
+	bson_t* out_doc, uint32_t& idx) const
 {
 	bson_t arr_obj;
 	char idx_str[16];
@@ -412,12 +428,15 @@ void FSLWorldStateWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose
 }
 
 // Add gaze data to document
-void FSLWorldStateWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc)
+void FSLWorldStateWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc) const
 {
 	const FVector ROSTargetLoc = FConversions::UToROS(GazeData.Target);
-	const FVector ROSOrigLoc = FConversions::UToROS(GazeData.Target);
+	const FVector ROSOrigLoc = FConversions::UToROS(GazeData.Origin);
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d ROSTargetLoc=%s Class=%s Id=%s"),
+		*FString(__func__), __LINE__, *ROSTargetLoc.ToString(), *GazeData.Entity.Class, *GazeData.Entity.Id);
 
-	bson_t gaze_obj;
+	// When nesting objects, parent needs to be init to a base state !!! 
+	bson_t gaze_obj = BSON_INITIALIZER; 
 	bson_t target_loc;
 	bson_t origin_loc;
 	
@@ -434,12 +453,12 @@ void FSLWorldStateWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t*
 	bson_append_document_end(&gaze_obj, &origin_loc);
 
 	BSON_APPEND_UTF8(&gaze_obj, "entity_id", TCHAR_TO_UTF8(*GazeData.Entity.Id));
-
+	
 	BSON_APPEND_DOCUMENT(out_doc, "gaze", &gaze_obj);
 }
 
 // Add skeletal bones to array
-void FSLWorldStateWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc)
+void FSLWorldStateWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc) const
 {
 	bson_t bones_arr;
 	bson_t arr_obj;
@@ -471,7 +490,7 @@ void FSLWorldStateWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelCom
 }
 
 // Add pose to document
-void FSLWorldStateWriterMongoC::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc)
+void FSLWorldStateWriterMongoC::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc) const
 {
 	// Switch to right handed ROS transformation
 	const FVector ROSLoc = FConversions::UToROS(InLoc);
@@ -493,5 +512,4 @@ void FSLWorldStateWriterMongoC::AddPoseChild(const FVector& InLoc, const FQuat& 
 	BSON_APPEND_DOUBLE(&child_obj_rot, "w", ROSQuat.W);
 	bson_append_document_end(out_doc, &child_obj_rot);
 }
-
 #endif //SL_WITH_LIBMONGO_C

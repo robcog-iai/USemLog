@@ -15,7 +15,7 @@
 struct FSLEntity
 {
 	// UObject of entity
-	UObject* Obj;
+	UObject* Obj = nullptr;
 
 	// Semantic id of entity
 	FString Id;
