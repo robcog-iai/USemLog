@@ -5,6 +5,7 @@
 
 #include "SLStructs.h"
 #include "SLSkeletalDataComponent.h"
+#include "SLGazeDataHandler.h"
 
 /**
 * Parameters for creating a world state data writer
@@ -53,6 +54,9 @@ struct FSLWorldStateWriterParams
 class ISLWorldStateWriter
 {
 public:
+	// Virtual dtor
+	virtual ~ISLWorldStateWriter(){};
+	
 	// Init the writer
 	virtual void Init(const FSLWorldStateWriterParams& InParams) = 0;
 	
@@ -69,6 +73,7 @@ public:
 		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+		FSLGazeData& GazeData,
 		bool bCheckAndRemoveInvalidEntities = true) = 0;
 
 	// True if the writer is valid
@@ -83,4 +88,7 @@ protected:
 
 	// Rotation step size (log items that rotated at least this value since the last log)
 	float AngDistMin;
+	
+	// Previous gaze data
+	FSLGazeData PreviousGazeData;
 };

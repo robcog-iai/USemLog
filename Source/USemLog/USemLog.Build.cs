@@ -30,6 +30,7 @@ public class USemLog : ModuleRules
 			{
 				"Core",
 				"USemLogOwl",
+				"SRanipal", // SL_WITH_EYE_TRACKING
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -53,6 +54,7 @@ public class USemLog : ModuleRules
 				//"SlicingLogic",	  //SL_WITH_SLICING
 				"MongoC", // SL_WITH_LIBMONGO_C
 				//"MongoCxx", // SL_WITH_LIBMONGO_CXX
+				"SRanipal", // SL_WITH_EYE_TRACKING
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -117,6 +119,16 @@ public class USemLog : ModuleRules
 			bEnableUndefinedIdentifierWarnings = false;
 			bEnableExceptions = true;
 			//bUseRTTI = true;
+		}
+
+		string SRanipal = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("SRanipal"));
+		if (string.IsNullOrEmpty(SRanipal))
+		{
+			PublicDefinitions.Add("SL_WITH_EYE_TRACKING=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("SL_WITH_EYE_TRACKING=1");
 		}
 
 		string SlicingLogic = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("SlicingLogic"));

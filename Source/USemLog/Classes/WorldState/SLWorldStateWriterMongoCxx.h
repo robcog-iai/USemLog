@@ -42,6 +42,7 @@ public:
 		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+		FSLGazeData& GazeData,
 		bool bCheckAndRemoveInvalidEntities = true) override;
 private:
 	// Connect to the database

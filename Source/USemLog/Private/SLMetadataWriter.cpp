@@ -5,6 +5,8 @@
 #include "SLEntitiesManager.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Conversions.h"
+#include "Tags.h"
+#include "Components/SkeletalMeshComponent.h"
 
 // Default constructor
 FSLMetadataWriter::FSLMetadataWriter()
@@ -56,6 +58,11 @@ void FSLMetadataWriter::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
+		if(!FSLEntitiesManager::GetInstance()->IsInit())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Entities manager is not init.."), *FString(__func__), __LINE__);
+			return;
+		}
 		bIsStarted = true;
 	}
 }
@@ -69,7 +76,7 @@ void FSLMetadataWriter::Finish(bool bForced)
 		WriteEventsMetadata();
 
 		// Create indexes on the data
-		CreateIndexes();
+		// CreateIndexes(); // TODO not required since the collection is only one document
 
 		bIsStarted = false;
 		bIsInit = false;
@@ -253,7 +260,7 @@ void FSLMetadataWriter::WriteEventsMetadata()
 }
 
 // Create databased for faster lookups
-bool FSLMetadataWriter::CreateIndexes()
+bool FSLMetadataWriter::CreateIndexes() const
 {
 	if (!bIsInit)
 	{
@@ -270,11 +277,11 @@ bool FSLMetadataWriter::CreateIndexes()
 	bson_t index3;
 	char *index_name3;
 
-	bson_t index4;
-	char *index_name4;
+	//bson_t index4;
+	//char *index_name4;
 
-	bson_t index5;
-	char *index_name5;
+	//bson_t index5;
+	//char *index_name5;
 
 	bson_t* index_command;
 	bson_error_t error;
@@ -288,16 +295,16 @@ bool FSLMetadataWriter::CreateIndexes()
 	index_name2 = mongoc_collection_keys_to_index_string(&index2);
 
 	bson_init(&index3);
-	BSON_APPEND_INT32(&index3, "env.entities.bones.class", 1);
+	BSON_APPEND_INT32(&index3, "env.skel_entities.bones.class", 1);
 	index_name3 = mongoc_collection_keys_to_index_string(&index3);
 
-	bson_init(&index4);
-	BSON_APPEND_INT32(&index4, "env.camera_views.id", 1);
-	index_name4 = mongoc_collection_keys_to_index_string(&index4);
+	//bson_init(&index4);
+	//BSON_APPEND_INT32(&index4, "env.camera_views.id", 1);
+	//index_name4 = mongoc_collection_keys_to_index_string(&index4);
 
-	bson_init(&index5);
-	BSON_APPEND_INT32(&index5, "env.camera_views.class", 1);
-	index_name5 = mongoc_collection_keys_to_index_string(&index5);
+	//bson_init(&index5);
+	//BSON_APPEND_INT32(&index5, "env.camera_views.class", 1);
+	//index_name5 = mongoc_collection_keys_to_index_string(&index5);
 
 	index_command = BCON_NEW("createIndexes",
 		BCON_UTF8(mongoc_collection_get_name(collection)),
@@ -327,22 +334,22 @@ bool FSLMetadataWriter::CreateIndexes()
 				//"unique",
 				//BCON_BOOL(false),
 			"}",
-			"{",
-				"key",
-				BCON_DOCUMENT(&index4),
-				"name",
-				BCON_UTF8(index_name4),
-				//"unique",
-				//BCON_BOOL(false),
-			"}",
-			"{",
-				"key",
-				BCON_DOCUMENT(&index5),
-				"name",
-				BCON_UTF8(index_name5),
-				//"unique",
-				//BCON_BOOL(false),
-			"}",
+			//"{",
+			//	"key",
+			//	BCON_DOCUMENT(&index4),
+			//	"name",
+			//	BCON_UTF8(index_name4),
+			//	//"unique",
+			//	//BCON_BOOL(false),
+			//"}",
+			//"{",
+			//	"key",
+			//	BCON_DOCUMENT(&index5),
+			//	"name",
+			//	BCON_UTF8(index_name5),
+			//	//"unique",
+			//	//BCON_BOOL(false),
+			//"}",
 		"]");
 
 	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
@@ -369,6 +376,7 @@ bool FSLMetadataWriter::CreateIndexes()
 void FSLMetadataWriter::AddEntities(bson_t* out_doc)
 {
 	bson_t arr;
+	bson_t sk_arr;
 	bson_t arr_obj;
 	char idx_str[16];
 	const char *idx_key;
@@ -376,7 +384,6 @@ void FSLMetadataWriter::AddEntities(bson_t* out_doc)
 
 	// Add entities to array
 	BSON_APPEND_ARRAY_BEGIN(out_doc, "entities", &arr);
-
 	// Iterate non skeletal semantic entities
 	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
 	{
@@ -418,7 +425,12 @@ void FSLMetadataWriter::AddEntities(bson_t* out_doc)
 		bson_append_document_end(&arr, &arr_obj);
 		idx++;
 	}
+	bson_append_array_end(out_doc, &arr);
 
+	// Add skel entities to array
+	BSON_APPEND_ARRAY_BEGIN(out_doc, "skel_entities", &sk_arr);
+	// Reset array index
+	idx=0;
 	// Iterate skeletal semantic entities
 	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSkeletalSemanticData())
 	{
@@ -428,7 +440,7 @@ void FSLMetadataWriter::AddEntities(bson_t* out_doc)
 		UObject* SemOwner = SkelDataComp->SemanticOwner;
 
 		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
-		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
+		BSON_APPEND_DOCUMENT_BEGIN(&sk_arr, idx_key, &arr_obj);
 
 		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*OwnerSemData.Id));
 		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*OwnerSemData.Class));
@@ -490,11 +502,10 @@ void FSLMetadataWriter::AddEntities(bson_t* out_doc)
 		}
 
 		// Add the semantic item to the array
-		bson_append_document_end(&arr, &arr_obj);
+		bson_append_document_end(&sk_arr, &arr_obj);
 		idx++;
 	}
-
-	bson_append_array_end(out_doc, &arr);
+	bson_append_array_end(out_doc, &sk_arr);
 }
 
 // Add camera views
@@ -586,5 +597,4 @@ void FSLMetadataWriter::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, 
 	BSON_APPEND_DOUBLE(&child_obj_rot, "w", ROSQuat.W);
 	bson_append_document_end(out_doc, &child_obj_rot);
 }
-
 #endif //SL_WITH_LIBMONGO_C

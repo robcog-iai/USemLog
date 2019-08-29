@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "USemLog.h"
 #include "ISLWorldStateWriter.h"
 #if SL_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
@@ -44,6 +44,7 @@ public:
 		TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 		TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 		TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+		FSLGazeData& GazeData,
 		bool bCheckAndRemoveInvalidEntities = true) override;
 
 private:
@@ -51,7 +52,7 @@ private:
 	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
 
 	// Create indexes on the logged data, usually called after logging
-	bool CreateIndexes();
+	bool CreateIndexes() const;
 
 #if SL_WITH_LIBMONGO_C
 	// Add non skeletal actors to array
@@ -65,6 +66,9 @@ private:
 	// Add skeletal actors to array
 	void AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
 		bson_t* out_doc, uint32_t& idx);
+
+	// Add gaze data
+	void AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc);
 
 	// Add skeletal bones to array
 	void AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc);

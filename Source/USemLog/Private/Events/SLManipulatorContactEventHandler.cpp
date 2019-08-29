@@ -161,9 +161,9 @@ void FSLManipulatorContactEventHandler::DelayedFinishContactEvent()
 			{
 				OnSemanticEvent.ExecuteIfBound(*RecentEvItr);
 			}
+			// Remove event from the pending list
+			RecentEvItr.RemoveCurrent();
 		}
-		// Remove event from the pending list
-		RecentEvItr.RemoveCurrent();
 	}
 
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate

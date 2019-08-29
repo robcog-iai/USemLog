@@ -360,7 +360,7 @@ void USLVisImageWriterMongoC::GetWorldStateParamsAt(float InTimestamp, bool bSea
 }
 
 // Not needed if the index already exists (it gets updated for every new entry)
-bool USLVisImageWriterMongoC::CreateIndexes()
+bool USLVisImageWriterMongoC::CreateIndexes() const
 {
 	if (!bIsInit)
 	{
@@ -542,6 +542,7 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 	bson_t view_arr_obj_res;
 
 	bson_t entity_arr;
+	bson_t sk_entity_arr;
 	bson_t entity_arr_obj;
 	//bson_t obj_color;
 
@@ -640,11 +641,14 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 				bson_append_document_end(&entity_arr, &entity_arr_obj);
 				j++;
 			}
-			// Add the skeletal entities //TODO outdated regarding distances to camera etc.
+			bson_append_array_end(&view_arr_obj, &entity_arr);
+		
+			// Add the skeletal entities // TODO outdated regarding distances to camera etc.
+			j = 0;
 			for (const auto& SkelEntity : View.SemanticSkelEntities)
 			{
 				bson_uint32_to_string(j, &j_key, j_str, sizeof j_str);
-				BSON_APPEND_DOCUMENT_BEGIN(&entity_arr, j_key, &entity_arr_obj);
+				BSON_APPEND_DOCUMENT_BEGIN(&sk_entity_arr, j_key, &entity_arr_obj);
 
 				BSON_APPEND_UTF8(&entity_arr_obj, "id", TCHAR_TO_UTF8(*SkelEntity.Id));
 				BSON_APPEND_UTF8(&entity_arr_obj, "class", TCHAR_TO_UTF8(*SkelEntity.Class));
@@ -697,11 +701,10 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 					bson_append_array_end(&entity_arr_obj, &entity_bone_arr);
 
 
-				bson_append_document_end(&entity_arr, &entity_arr_obj);
+				bson_append_document_end(&sk_entity_arr, &entity_arr_obj);
 				j++;
 			}
-
-			bson_append_array_end(&view_arr_obj, &entity_arr);
+			bson_append_array_end(&view_arr_obj, &sk_entity_arr);
 
 			// Add gridfs data sub array
 			k = 0;

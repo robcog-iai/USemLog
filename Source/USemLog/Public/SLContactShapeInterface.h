@@ -127,6 +127,9 @@ protected:
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedOverlapEndEventCallback();
 
+	// Broadcast delayed overlaps, if curr time < 0, it guarantees a publish
+	bool PublishDelayedOverlapEndEvent(const FSLOverlapEndEvent& Ev, float CurrTime = -1.f);
+
 	// Skip publishing overlap event if it can be concatenated with the current event start
 	bool SkipOverlapEndEventBroadcast(const FSLEntity& InItem, float StartTime);
 	

@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLWorldStateLogger.h"
+#include "Kismet/GameplayStatics.h"
 
 // Constructor
 USLWorldStateLogger::USLWorldStateLogger()
@@ -30,10 +31,13 @@ void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType, const FSLWorl
 		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
 
 		// Init async worker (create the writer and set logging parameters)
-		if (AsyncWorker && AsyncWorker->GetTask().Init(GetWorld(), WriterType, InWriterParams))
+		if (AsyncWorker)
 		{
-			// Flag as init
-			bIsInit = true;
+			AsyncWorker->GetTask().Init(GetWorld(), WriterType, InWriterParams);
+			if(AsyncWorker->GetTask().IsInit())
+			{
+				bIsInit = true;
+			}
 		}
 	}
 }
@@ -43,6 +47,9 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 {
 	if (!bIsStarted && bIsInit)
 	{
+		// Prepare worker for starting
+		AsyncWorker->GetTask().Start();
+		
 		// Call before binding the recurrent Update function
 		// this ensures the initial world state is logged (static and movable semantic items)
 		USLWorldStateLogger::InitialUpdate();
@@ -60,6 +67,7 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 			// Update logger on tick (updates every game thread tick, update rate can vary)
 			bIsTickable = true;
 		}
+
 
 		// Set flags
 		bIsStarted = true;

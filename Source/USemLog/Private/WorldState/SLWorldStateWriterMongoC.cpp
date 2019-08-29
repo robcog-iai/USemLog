@@ -4,6 +4,7 @@
 #include "WorldState/SLWorldStateWriterMongoC.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Conversions.h"
+#include "SLEntitiesManager.h"
 
 // Constr
 FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC()
@@ -50,10 +51,12 @@ void FSLWorldStateWriterMongoC::Finish()
 	}
 }
 
+// Write data to document
 void FSLWorldStateWriterMongoC::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+	FSLGazeData& GazeData,
 	bool bCheckAndRemoveInvalidEntities)
 {
 	// Avoid writing empty documents
@@ -65,6 +68,7 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 #if SL_WITH_LIBMONGO_C
 	bson_t* ws_doc;
 	bson_t entities_arr;
+	bson_t sk_entities_arr;
 	bson_error_t error;
 
 	uint32_t arr_idx = 0;
@@ -75,14 +79,35 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 	// Add timestamp
 	BSON_APPEND_DOUBLE(ws_doc, "timestamp", Timestamp);
 
-	// Add entities to array
-	BSON_APPEND_ARRAY_BEGIN(ws_doc, "entities", &entities_arr);
+	// Avoid writing empty documents
+	if(ActorEntities.Num() > 0)
+	{
+		// Add entities to array
+		BSON_APPEND_ARRAY_BEGIN(ws_doc, "entities", &entities_arr);
+		AddActorEntities(ActorEntities, &entities_arr, arr_idx);
+		AddComponentEntities(ComponentEntities, &entities_arr, arr_idx);
+		bson_append_array_end(ws_doc, &entities_arr);
+	}
+	
+	// Avoid writing empty documents
+	if(SkeletalEntities.Num() > 0)
+	{
+		// Add skel entities to array
+		BSON_APPEND_ARRAY_BEGIN(ws_doc, "skel_entities", &sk_entities_arr);
+		// Reset array index
+		arr_idx = 0;
+		AddSkeletalEntities(SkeletalEntities, &sk_entities_arr, arr_idx);
+		bson_append_array_end(ws_doc, &sk_entities_arr);
+	}
 
-	FSLWorldStateWriterMongoC::AddActorEntities(ActorEntities, &entities_arr, arr_idx);
-	FSLWorldStateWriterMongoC::AddComponentEntities(ComponentEntities, &entities_arr, arr_idx);
-	FSLWorldStateWriterMongoC::AddSkeletalEntities(SkeletalEntities, &entities_arr, arr_idx);
-
-	bson_append_array_end(ws_doc, &entities_arr);
+	if(GazeData.HasData())
+	{
+		if(!PreviousGazeData.Equals(GazeData, 3.f))
+		{
+			AddGazeData(GazeData, ws_doc);
+			PreviousGazeData = GazeData;
+		}
+	}
 
 
 	if (!mongoc_collection_insert_one(collection, ws_doc, NULL, NULL, &error))
@@ -159,29 +184,36 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 }
 
 // Create indexes from the logged data, usually called after logging
-bool FSLWorldStateWriterMongoC::CreateIndexes()
+bool FSLWorldStateWriterMongoC::CreateIndexes() const
 {
 	if (!bIsInit)
 	{
 		return false;
 	}
 #if SL_WITH_LIBMONGO_C
-	bson_t index;
-	char *index_name;
-
-	bson_t index2;
-	char *index_name2;
 
 	bson_t* index_command;
 	bson_error_t error;
 	
+	bson_t index;
 	bson_init(&index);
 	BSON_APPEND_INT32(&index, "timestamp", 1);
-	index_name = mongoc_collection_keys_to_index_string(&index);
+	char* index_name = mongoc_collection_keys_to_index_string(&index);
 
+	bson_t index2;
 	bson_init(&index2);
 	BSON_APPEND_INT32(&index2, "entities.id", 1);
-	index_name2 = mongoc_collection_keys_to_index_string(&index2);
+	char* index_name2 = mongoc_collection_keys_to_index_string(&index2);
+
+	bson_t index3;
+	bson_init(&index3);
+	BSON_APPEND_INT32(&index3, "skel_entities.id", 1);
+	char* index_name3 = mongoc_collection_keys_to_index_string(&index3);
+
+	bson_t index4;
+	bson_init(&index4);
+	BSON_APPEND_INT32(&index4, "skel_entities.bones.name", 1);
+	char* index_name4 = mongoc_collection_keys_to_index_string(&index4);
 
 
 	index_command = BCON_NEW("createIndexes",
@@ -201,6 +233,22 @@ bool FSLWorldStateWriterMongoC::CreateIndexes()
 					BCON_DOCUMENT(&index2),
 					"name",
 					BCON_UTF8(index_name2),
+					//"unique",
+					//BCON_BOOL(false),
+				"}",
+				"{",
+					"key",
+					BCON_DOCUMENT(&index3),
+					"name",
+					BCON_UTF8(index_name3),
+					//"unique",
+					//BCON_BOOL(false),
+				"}",
+				"{",
+					"key",
+					BCON_DOCUMENT(&index4),
+					"name",
+					BCON_UTF8(index_name4),
 					//"unique",
 					//BCON_BOOL(false),
 				"}",
@@ -361,6 +409,33 @@ void FSLWorldStateWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose
 			FSLEntitiesManager::GetInstance()->RemoveEntity(Itr->Obj.Get());
 		}
 	}
+}
+
+// Add gaze data to document
+void FSLWorldStateWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc)
+{
+	const FVector ROSTargetLoc = FConversions::UToROS(GazeData.Target);
+	const FVector ROSOrigLoc = FConversions::UToROS(GazeData.Target);
+
+	bson_t gaze_obj;
+	bson_t target_loc;
+	bson_t origin_loc;
+	
+	BSON_APPEND_DOCUMENT_BEGIN(&gaze_obj, "target", &target_loc);
+	BSON_APPEND_DOUBLE(&target_loc, "x", ROSTargetLoc.X);
+	BSON_APPEND_DOUBLE(&target_loc, "y", ROSTargetLoc.Y);
+	BSON_APPEND_DOUBLE(&target_loc, "z", ROSTargetLoc.Z);
+	bson_append_document_end(&gaze_obj, &target_loc);
+
+	BSON_APPEND_DOCUMENT_BEGIN(&gaze_obj, "origin", &origin_loc);
+	BSON_APPEND_DOUBLE(&origin_loc, "x", ROSOrigLoc.X);
+	BSON_APPEND_DOUBLE(&origin_loc, "y", ROSOrigLoc.Y);
+	BSON_APPEND_DOUBLE(&origin_loc, "z", ROSOrigLoc.Z);
+	bson_append_document_end(&gaze_obj, &origin_loc);
+
+	BSON_APPEND_UTF8(&gaze_obj, "entity_id", TCHAR_TO_UTF8(*GazeData.Entity.Id));
+
+	BSON_APPEND_DOCUMENT(out_doc, "gaze", &gaze_obj);
 }
 
 // Add skeletal bones to array

@@ -40,18 +40,22 @@
 			"LoadingPhase": "Default"
 		}
 	],
-	"Plugins": [
-		{
-			"Name": "UUtils",
-			"Enabled": true
-		},
-		{
-			"Name": "UPhysicsBasedMC",
-			"Enabled": true
-		},
-		{
-			"Name": "libmongo",
-			"Enabled": true
-		}
-	]
+  "Plugins": [
+    {
+      "Name": "UUtils",
+      "Enabled": true
+    },
+    {
+      "Name": "UPhysicsBasedMC",
+      "Enabled": true
+    },
+    {
+      "Name": "libmongo",
+      "Enabled": true
+    },
+    {
+      "Name": "SRAnipal",
+      "Enabled": true
+    }
+  ]
 }

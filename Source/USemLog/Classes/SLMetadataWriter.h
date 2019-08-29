@@ -97,7 +97,7 @@ private:
 	void WriteEventsMetadata();
 
 	// Create databased for faster lookups
-	bool CreateIndexes();
+	bool CreateIndexes() const;
 
 #if SL_WITH_LIBMONGO_C
 	// Add entities data to the bson document

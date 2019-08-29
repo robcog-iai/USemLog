@@ -105,7 +105,7 @@ private:
 	void GetWorldStateParamsAt(float InTimestamp, bool bSearchBeforeTimestamp, FSLVisWorldStateEntryParams& OutParams);
 
 	// Re-create the indexes (there could be new entries)
-	bool CreateIndexes();
+	bool CreateIndexes() const;
 
 #if SLVIS_WITH_LIBMONGO_C
 	// Save images to gridfs and return the bson entry

@@ -49,8 +49,9 @@ struct FSLBoneData
 
 /**
  * Stores the semantic skeletal data of its parent skeletal mesh component
+ * SceneComponent so it can be added to skeletal components that are not inheriting from a SkeletalMeshActor
  */
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), hidecategories = (HLOD, Cooking, Transform), DisplayName="SL Skeletal Data")
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), hidecategories = (HLOD, Cooking, Transform, Animation, Mesh, Materials), DisplayName="SL Skeletal Data")
 class USEMLOGSKEL_API USLSkeletalDataComponent : public USceneComponent
 {
 	GENERATED_BODY()

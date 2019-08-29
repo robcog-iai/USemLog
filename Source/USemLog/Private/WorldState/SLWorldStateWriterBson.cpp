@@ -50,6 +50,7 @@ void FSLWorldStateWriterBson::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+	FSLGazeData& GazeData,
 	bool bCheckAndRemoveInvalidEntities)
 {
 #if SL_WITH_LIBMONGO_CXX

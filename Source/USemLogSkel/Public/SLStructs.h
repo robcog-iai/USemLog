@@ -58,6 +58,10 @@ struct FSLEntity
 	// Compares only the pointers of the UObject (should work in all cases)
 	FORCEINLINE bool EqualsFast(const FSLEntity& Other) const
 	{
+		if(Obj == nullptr || Other.Obj == nullptr)
+		{
+			return false;
+		}
 		return Obj == Other.Obj;
 	}
 
@@ -191,7 +195,6 @@ struct FSLContactResult
 			OtherMeshComponent.IsValid() ? *OtherMeshComponent->GetName() : TEXT("None"));
 	}
 };
-
 
 /************************************************************************/
 /*                       DELEGATES                                      */

@@ -6,7 +6,7 @@
 #include "Async/AsyncWork.h"
 #include "ISLWorldStateWriter.h"
 #include "SLStructs.h"
-//#include "SLSkeletalMeshActor.h"
+#include "SLGazeDataHandler.h"
 
 /**
 * Type of world state loggers
@@ -37,10 +37,25 @@ public:
 	virtual ~FSLWorldStateAsyncWorker();
 
 	// Init worker, load models to log from world
-	bool Init(UWorld* InWorld,
+	void Init(UWorld* InWorld,
 		ESLWorldStateWriterType InWriterType,
 		const FSLWorldStateWriterParams& InParams);
 
+	// Prepare worker for starting to log
+	void Start();
+	
+	// Finish up worker
+	void Finish(bool bForced = false);
+
+	// Check if successfully init
+	bool IsInit() const { return bIsInit; };
+	
+	// Check if ready to start
+	bool IsStarted() const { return bIsStarted; };
+	
+	// Check if finished
+	bool IsFinished() const { return bIsFinished; };
+	
 	// Remove all non-movable semantic items from the update pool
 	void RemoveStaticItems();
 
@@ -54,8 +69,6 @@ public:
 	//// Add new scene component entity
 	//bool AddNewComponentEntity(AActor* Actor);
 
-	// Finish up worker
-	void Finish(bool bForced = false);
 
 private:
 	// FAsyncTask - async work done here
@@ -65,6 +78,15 @@ private:
 	FORCEINLINE TStatId GetStatId() const;
 
 private:
+	// Worker is init
+	bool bIsInit;
+
+	// Worker prepared to start
+	bool bIsStarted;
+
+	// Worker is stopped
+	bool bIsFinished;
+	
 	// Pointer to world (access to timestamps)
 	UWorld* World;
 
@@ -86,6 +108,11 @@ private:
 	// Array of semantical skeletal data components
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>> SkeletalEntities;
 
+	// Gaze data handler
+	FSLGazeDataHandler GazeDataHandler;
+	
+	
+	
 	//// Array of semantically annotated skeletal actors
 	//TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>> SkeletalActorPool; // TODO rm
 
