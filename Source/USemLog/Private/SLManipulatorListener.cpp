@@ -189,6 +189,13 @@ void USLManipulatorListener::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+		// Publish dangling recently finished events
+		for (const auto& EvItr : RecentlyEndedGraspEvent)
+		{
+			OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr.OtherActor, EvItr.Time);
+		}
+		RecentlyEndedGraspEvent.Empty();
+		
 		// Mark as finished
 		bIsStarted = false;
 		bIsInit = false;
@@ -320,22 +327,28 @@ void USLManipulatorListener::CheckGraspState()
 // A grasp has started
 void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 {
-	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
-	//	FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *Begin Grasp* %s"),
-	//		*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
-	GraspedObjects.Emplace(OtherActor);
-	OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
+	// Check if this begin event happened right after the previous one ended
+	// if so remove it from the array, and cancel publishing the begin event
+	if(!SkipRecentGraspEndEventBroadcast(OtherActor, GetWorld()->GetTimeSeconds()))
+	{
+		GraspedObjects.Emplace(OtherActor);
+		OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
+	}
 }
 
 // A grasp has ended
 void USLManipulatorListener::EndGrasp(AActor* OtherActor)
 {
-	if (GraspedObjects.Remove(OtherActor) > 0)
+	if (GraspedObjects.Contains(OtherActor))
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
-		//	FString::Printf(TEXT(" * * * * *BEGIN* *BCAST* *End Grasp* %s"),
-		//		*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
-		OnEndManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds());
+		// Grasp ended
+		RecentlyEndedGraspEvent.Emplace(FSLGraspEndEvent(OtherActor, GetWorld()->GetTimeSeconds()));
+		
+		// Delay publishing for a while, in case the new event is of the same type and should be concatenated
+		if(!GetWorld()->GetTimerManager().IsTimerActive(DelayTimerHandle))
+		{
+			GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxGraspEventTimeGap*2.f, false);
+		}
 	}
 }
 
@@ -439,4 +452,55 @@ void USLManipulatorListener::OnEndContact(AActor* OtherActor)
 			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
 		}
 	}
+}
+
+// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+void USLManipulatorListener::DelayedGraspEndEventCallback()
+{
+	// Curr time (keep very recently added events for another delay)
+	const float CurrTime = GetWorld()->GetTimeSeconds();
+	
+	for (auto EvItr(RecentlyEndedGraspEvent.CreateIterator()); EvItr; ++EvItr)
+	{
+		// If enough time has passed, publish the event
+		if(CurrTime - EvItr->Time > MaxGraspEventTimeGap)
+		{
+			if(GraspedObjects.Remove(EvItr->OtherActor)>0)
+			{
+				OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr->OtherActor, EvItr->Time);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+			}
+			// Remove event from the pending list
+			EvItr.RemoveCurrent();
+		}
+	}
+
+	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
+	if(RecentlyEndedGraspEvent.Num() > 0)
+	{
+		GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate, MaxGraspEventTimeGap*2.f, false);
+	}
+}
+
+// Check if this begin event happened right after the previous one ended
+// if so remove it from the array, and cancel publishing the begin event
+bool USLManipulatorListener::SkipRecentGraspEndEventBroadcast(AActor* OtherActor, float StartTime)
+{
+	for (auto EvItr(RecentlyEndedGraspEvent.CreateIterator()); EvItr; ++EvItr)
+	{
+		// Check if it is an event between the same entities
+		if(EvItr->OtherActor == OtherActor)
+		{
+			// Check time difference
+			if(StartTime - EvItr->Time < MaxGraspEventTimeGap)
+			{
+				EvItr.RemoveCurrent();
+				return true;
+			}
+		}
+	}
+	return false;
 }

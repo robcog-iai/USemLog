@@ -8,10 +8,16 @@
 #include "SLStructs.h"
 #include "SLReachListener.generated.h"
 
+// Convenience enum
+enum ESLTimeAndDistance
+{
+	Time = 0,
+	Dist = 1
+};
 
-//typedef TPair<float, float> FTimeAndDistance;
-//using FTimeAndDistance = TPair<float, float>;
-using FTimeAndDistance = TTuple<float, float>; // <Time, Distance>
+//typedef TPair<float, float> FSLTimeAndDistance;
+//using FSLTimeAndDistance = TPair<float, float>;
+using FSLTimeAndDistance = TTuple<float, float>; // <Time, Distance>
 
 // Forward declarations
 class AStaticMeshActor;
@@ -125,6 +131,9 @@ private:
 	// True if finished
 	bool bIsFinished;
 
+	// Shows if the begin / end overlap callbacks are bound (avoid adding the same callback twice)
+	bool bCallbacksAreBound;
+
 	// How often to check for reaching action in its area (0 = every tick)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float UpdateRate;
@@ -144,7 +153,7 @@ private:
 	FSLEntity SemanticOwner;
 
 	// CandidatesWithTimeAndDistance for reaching action, pointing to their starting time
-	TMap<AStaticMeshActor*, FTimeAndDistance> CandidatesWithTimeAndDistance;
+	TMap<AStaticMeshActor*, FSLTimeAndDistance> CandidatesWithTimeAndDistance;
 
 	// Pause everything if the hand is currently grasping something
 	UObject* CurrGraspedObj;

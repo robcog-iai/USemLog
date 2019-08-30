@@ -283,6 +283,7 @@ void ISLContactShapeInterface::DelayedOverlapEndEventCallback()
 	}
 }
 
+// Broadcast delayed overlaps, if curr time < 0, it guarantees a publish
 bool ISLContactShapeInterface::PublishDelayedOverlapEndEvent(const FSLOverlapEndEvent& Ev, float CurrTime)
 {
 	// Check if the event is old enough that it had it chance to be concatenated
@@ -331,8 +332,6 @@ bool ISLContactShapeInterface::PublishDelayedOverlapEndEvent(const FSLOverlapEnd
 	}
 	return false;
 }
-
-
 
 // Skip publishing overlap event if it can be concatenated with the current event start
 bool ISLContactShapeInterface::SkipOverlapEndEventBroadcast(const FSLEntity& InItem, float StartTime)

@@ -7,6 +7,7 @@
 #include "Components/ActorComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "SLStructs.h" // FSLEntity
+#include "TimerManager.h"
 #include "SLManipulatorListener.generated.h"
 
 /**
@@ -17,6 +18,26 @@ enum class ESLGraspHandType : uint8
 {
 	Left					UMETA(DisplayName = "Left"),
 	Right					UMETA(DisplayName = "Right"),
+};
+
+/**
+ * Structure holding the OverlapEnd event data,
+ * cached for a small period of time in case it should be concatenated with the follow-up event
+ */
+struct FSLGraspEndEvent
+{
+	// Default ctor
+	FSLGraspEndEvent() = default;
+
+	// Init ctor
+	FSLGraspEndEvent(AActor* InOtherActor, float InTime) :
+		OtherActor(InOtherActor), Time(InTime) {};
+
+	// Overlap component
+	AActor* OtherActor;
+
+	// End time of the event 
+	float Time;
 };
 
 /** Notify when an object is grasped and released*/
@@ -115,6 +136,13 @@ private:
 	// Process ending of contact
 	UFUNCTION()
 	void OnEndContact(AActor* OtherActor);
+
+	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+	void DelayedGraspEndEventCallback();
+
+	// Check if this begin event happened right after the previous one ended
+	// if so remove it from the array, and cancel publishing the begin event
+	bool SkipRecentGraspEndEventBroadcast(AActor* OtherActor, float StartTime);
 	
 public:
 	// Event called when grasp begins/ends
@@ -192,4 +220,17 @@ private:
 
 	// Active grasp type
 	FString ActiveGraspType;
+
+	
+	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
+	FTimerHandle DelayTimerHandle;
+
+	// Can only bind the timer handle to UObjects or FTimerDelegates
+	FTimerDelegate DelayTimerDelegate;
+
+	// Array of recently ended events
+	TArray<FSLGraspEndEvent> RecentlyEndedGraspEvent;
+
+	/* Constants */
+	constexpr static float MaxGraspEventTimeGap = 0.25f;
 };

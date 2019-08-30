@@ -174,14 +174,14 @@ void USLPickAndPlaceListener::Update()
 		return;
 	}
 	
-	if(GraspedObjectContactShape->IsSupportedBySomething())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %f %s -> supported"),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GraspedObject->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %f %s -> flaoting"), *FString(__func__), __LINE__,
-			GetWorld()->GetTimeSeconds(), *GraspedObject->GetName());
-	}
+	//if(GraspedObjectContactShape->IsSupportedBySomething())
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %f %s -> supported"),
+	//		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GraspedObject->GetName());
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %f %s -> flaoting"), *FString(__func__), __LINE__,
+	//		GetWorld()->GetTimeSeconds(), *GraspedObject->GetName());
+	//}
 }
