@@ -21,8 +21,7 @@ enum class ESLGraspHandType : uint8
 };
 
 /**
- * Structure holding the OverlapEnd event data,
- * cached for a small period of time in case it should be concatenated with the follow-up event
+ * Grasp event end data
  */
 struct FSLGraspEndEvent
 {
@@ -35,6 +34,25 @@ struct FSLGraspEndEvent
 
 	// Overlap component
 	AActor* OtherActor;
+
+	// End time of the event 
+	float Time;
+};
+
+/**
+ * Grasp event end data
+ */
+struct FSLContactEndEvent
+{
+	// Default ctor
+	FSLContactEndEvent() = default;
+
+	// Init ctor
+	FSLContactEndEvent(const FSLEntity& InOtherItem, float InTime) :
+		OtherItem(InOtherItem), Time(InTime) {};
+
+	// Overlap component
+	FSLEntity OtherItem;
 
 	// End time of the event 
 	float Time;
@@ -86,6 +104,7 @@ protected:
 	// Load overlap groups, return true if at least one valid overlap is in each group
 	bool LoadOverlapGroups();
 
+	/* Begin grasp related */
 #if SL_WITH_MC_GRASP
 	// Subscribe to grasp type changes
 	bool SubscribeToGraspTypeChanges();
@@ -96,14 +115,30 @@ protected:
 
 private:
 	// Pause/continue the grasp detection
-	void Pause(bool bInPause);
+	void PauseGraspDetection(bool bInPause);
 
 	// Check if the grasp trigger is active
-	void InputAxisCallback(float Value);
+	void GraspInputAxisCallback(float Value);
 
+	// Process beginning of grasp related contact in group A
+	UFUNCTION()
+	void OnBeginOverlapGroupAGrasp(AActor* OtherActor);
+
+	// Process beginning of grasp related contact in group B
+	UFUNCTION()
+	void OnBeginOverlapGroupBGrasp(AActor* OtherActor);
+	
+	// Process ending of grasp related contact in group A
+	UFUNCTION()
+	void OnEndOverlapGroupAGrasp(AActor* OtherActor);
+
+	// Process ending of grasp related  contact in group B
+	UFUNCTION()
+	void OnEndOverlapGroupBGrasp(AActor* OtherActor);
+	
 	// Grasp update check
 	void CheckGraspState();
-
+	
 	// A grasp has started
 	void BeginGrasp(AActor* Other);
 	
@@ -113,36 +148,33 @@ private:
 	// All grasps have ended
 	void EndAllGrasps();
 
-	// Process beginning of grasp related contact in group A
-	UFUNCTION()
-	void OnBeginGroupAGraspContact(AActor* OtherActor);
-
-	// Process beginning of grasp related contact in group B
-	UFUNCTION()
-	void OnBeginGroupBGraspContact(AActor* OtherActor);
-
-	// Process beginning of contact
-	UFUNCTION()
-	void OnBeginContact(AActor* OtherActor);
-
-	// Process ending of grasp related contact in group A
-	UFUNCTION()
-	void OnEndGroupAGraspContact(AActor* OtherActor);
-
-	// Process ending of grasp related  contact in group B
-	UFUNCTION()
-	void OnEndGroupBGraspContact(AActor* OtherActor);
-
-	// Process ending of contact
-	UFUNCTION()
-	void OnEndContact(AActor* OtherActor);
-
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedGraspEndEventCallback();
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
 	bool SkipRecentGraspEndEventBroadcast(AActor* OtherActor, float StartTime);
+	/* End grasp related */
+
+	/* Begin contact related */
+	// Process beginning of contact
+	UFUNCTION()
+	void OnBeginOverlapContact(AActor* OtherActor);
+
+	// Process ending of contact
+	UFUNCTION()
+	void OnEndOverlapContact(AActor* OtherActor);
+
+	// End all contacts
+	void EndAllContacts();
+
+	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+	void DelayedContactEndEventCallback();
+
+	// Check if this begin event happened right after the previous one ended
+	// if so remove it from the array, and cancel publishing the begin event
+	bool SkipRecentContactEndEventBroadcast(const FSLEntity& OtherItem, float StartTime);
+	/* End contact related */
 	
 public:
 	// Event called when grasp begins/ends
@@ -200,37 +232,47 @@ private:
 	// Semantic data of the owner
 	FSLEntity SemanticOwner;
 
+	
+	/* Grasp related */
 	// Opposing group A for testing for grasps
 	TArray<class USLManipulatorOverlapSphere*> GroupA;
 
 	// Opposing group B for testing for grasps
 	TArray<class USLManipulatorOverlapSphere*> GroupB;
 
+	// Objects currently grasped
+	TArray<AActor*> GraspedObjects;
+
+	// Active grasp type
+	FString ActiveGraspType;
+	
+	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
+	FTimerHandle GraspDelayTimerHandle;
+
+	// Array of recently ended events
+	TArray<FSLGraspEndEvent> RecentlyEndedGraspEvents;
+
+
+	/* Contact related */
 	// Objects in contact with group A
 	TSet<AActor*> SetA;
 
 	// Objects in contact with group B
 	TSet<AActor*> SetB;
 
-	// Objects currently grasped
-	TArray<AActor*> GraspedObjects;
-
 	// Objects currently in contact and the number of shapes in contact with. Used of semantic contact detection
-	TMap<AActor*, int32> ContactObjects;
+	TMap<AActor*, int32> ObjectsInContact;
 
-	// Active grasp type
-	FString ActiveGraspType;
-
-	
 	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
-	FTimerHandle DelayTimerHandle;
-
-	// Can only bind the timer handle to UObjects or FTimerDelegates
-	FTimerDelegate DelayTimerDelegate;
+	FTimerHandle ContactDelayTimerHandle;
 
 	// Array of recently ended events
-	TArray<FSLGraspEndEvent> RecentlyEndedGraspEvent;
+	TArray<FSLContactEndEvent> RecentlyEndedContactEvents;
+	
 
 	/* Constants */
 	constexpr static float MaxGraspEventTimeGap = 0.25f;
+	constexpr static float MinGraspEvent = 0.2f;
+	constexpr static float MaxContactEventTimeGap = 0.35f;
+	constexpr static float MinContactEvent = 0.2f;
 };

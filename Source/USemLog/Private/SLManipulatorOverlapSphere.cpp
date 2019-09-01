@@ -102,7 +102,7 @@ void USLManipulatorOverlapSphere::Start()
 	}
 }
 
-// Pause/continue listening to overlaps 
+// PauseGraspDetection/continue listening to overlaps 
 void USLManipulatorOverlapSphere::PauseGrasp(bool bInPause)
 {
 	if (bInPause != bGraspPaused)
@@ -299,6 +299,7 @@ void USLManipulatorOverlapSphere::SetColor(FColor Color)
 	}
 }
 
+/* Grasp related */
 // Publish currently grasp related overlapping components
 void USLManipulatorOverlapSphere::TriggerInitialGraspOverlaps()
 {
@@ -310,20 +311,6 @@ void USLManipulatorOverlapSphere::TriggerInitialGraspOverlaps()
 	for (const auto& CompItr : CurrOverlappingComponents)
 	{
 		OnGraspOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
-	}
-}
-
-// Publish currently contact related overlapping components
-void USLManipulatorOverlapSphere::TriggerInitialContactOverlaps()
-{
-	// If objects are already overlapping at begin play, they will not be triggered
-	// Here we do a manual overlap check and forward them to OnOverlapBegin
-	TSet<UPrimitiveComponent*> CurrOverlappingComponents;
-	GetOverlappingComponents(CurrOverlappingComponents);
-	FHitResult Dummy;
-	for (const auto& CompItr : CurrOverlappingComponents)
-	{
-		OnContactOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
 }
 
@@ -395,6 +382,21 @@ void USLManipulatorOverlapSphere::OnGraspOverlapEnd(UPrimitiveComponent* Overlap
 				SetColor(FColor::Red);
 			}
 		}
+	}
+}
+
+/* Contact related*/
+// Publish currently contact related overlapping components
+void USLManipulatorOverlapSphere::TriggerInitialContactOverlaps()
+{
+	// If objects are already overlapping at begin play, they will not be triggered
+	// Here we do a manual overlap check and forward them to OnOverlapBegin
+	TSet<UPrimitiveComponent*> CurrOverlappingComponents;
+	GetOverlappingComponents(CurrOverlappingComponents);
+	FHitResult Dummy;
+	for (const auto& CompItr : CurrOverlappingComponents)
+	{
+		OnContactOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
 }
 

@@ -111,58 +111,58 @@ bool USLPickAndPlaceListener::SubscribeForGraspEvents()
 // Called when grasp starts
 void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType)
 {
-	if(GraspedObject)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Multiple objects grasped? TODO"), *FString(__func__), __LINE__);
-	}
-	
-	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
-	{
-		GraspedObject = AsSMA;
-		for (const auto& C : GraspedObject->GetComponents())
-		{
-			if(C->Implements<USLContactShapeInterface>())
-			{
-				GraspedObjectContactShape = Cast<ISLContactShapeInterface>(C);
-				if(GraspedObjectContactShape)
-				{
-					if(GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
-					{
-						GetWorld()->GetTimerManager().UnPauseTimer(UpdateTimerHandle);
-					}
-					else
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been paused.."), *FString(__func__), __LINE__);
-					}
-				}
-				break; // stop iterating other components
-			}
-		}
-	}
+	//if(GraspedObject)
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Multiple objects grasped? TODO"), *FString(__func__), __LINE__);
+	//}
+	//
+	//if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
+	//{
+	//	GraspedObject = AsSMA;
+	//	for (const auto& C : GraspedObject->GetComponents())
+	//	{
+	//		if(C->Implements<USLContactShapeInterface>())
+	//		{
+	//			GraspedObjectContactShape = Cast<ISLContactShapeInterface>(C);
+	//			if(GraspedObjectContactShape)
+	//			{
+	//				if(GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
+	//				{
+	//					GetWorld()->GetTimerManager().UnPauseTimer(UpdateTimerHandle);
+	//				}
+	//				else
+	//				{
+	//					UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been paused.."), *FString(__func__), __LINE__);
+	//				}
+	//			}
+	//			break; // stop iterating other components
+	//		}
+	//	}
+	//}
 }
 
 // Called when grasp ends
 void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time)
 {
-	if(Other == GraspedObject)
-	{
-		GraspedObject = nullptr;
-		GraspedObjectContactShape = nullptr;
-		if(!GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
-		{
-			GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been running.."),
-				*FString(__func__), __LINE__);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen (were there multiple objects grasped?)"),
-				*FString(__func__), __LINE__);
-	}
+	//if(Other == GraspedObject)
+	//{
+	//	GraspedObject = nullptr;
+	//	GraspedObjectContactShape = nullptr;
+	//	if(!GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
+	//	{
+	//		GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
+	//	}
+	//	else
+	//	{
+	//		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been running.."),
+	//			*FString(__func__), __LINE__);
+	//	}
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen (were there multiple objects grasped?)"),
+	//			*FString(__func__), __LINE__);
+	//}
 }
 
 // Update callback

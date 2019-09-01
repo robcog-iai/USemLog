@@ -120,7 +120,7 @@ void ISLContactShapeInterface::SupportedByUpdateCheckBegin()
 		}
 	}
 	
-	// Pause timer
+	// PauseGraspDetection timer
 	if (SBCandidates.Num() == 0)
 	{
 		World->GetTimerManager().PauseTimer(SBTimerHandle);

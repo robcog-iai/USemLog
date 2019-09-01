@@ -105,7 +105,7 @@ void USLManipulatorListener::Start()
 		{
 			if (UInputComponent* IC = PC->InputComponent)
 			{
-				IC->BindAxis(InputAxisName, this, &USLManipulatorListener::InputAxisCallback);
+				IC->BindAxis(InputAxisName, this, &USLManipulatorListener::GraspInputAxisCallback);
 			}
 			else
 			{
@@ -125,13 +125,13 @@ void USLManipulatorListener::Start()
 			BoneOverlap->Start();
 			if (bDetectContacts)
 			{
-				BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
-				BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
+				BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginOverlapContact);
+				BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndOverlapContact);
 			}
 			if (bDetectGrasps)
 			{
-				BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupAGraspContact);
-				BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupAGraspContact);
+				BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginOverlapGroupAGrasp);
+				BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndOverlapGroupAGrasp);
 			}
 		}
 		for (auto BoneOverlap : GroupB)
@@ -139,13 +139,13 @@ void USLManipulatorListener::Start()
 			BoneOverlap->Start();
 			if (bDetectContacts)
 			{
-				BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginContact);
-				BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndContact);
+				BoneOverlap->OnBeginSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginOverlapContact);
+				BoneOverlap->OnEndSLContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndOverlapContact);
 			}
 			if (bDetectGrasps)
 			{
-				BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginGroupBGraspContact);
-				BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndGroupBGraspContact);
+				BoneOverlap->OnBeginSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginOverlapGroupBGrasp);
+				BoneOverlap->OnEndSLGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndOverlapGroupBGrasp);
 			}
 		}
 
@@ -155,7 +155,7 @@ void USLManipulatorListener::Start()
 }
 
 // Pause/continue grasp detection
-void USLManipulatorListener::Pause(bool bInPause)
+void USLManipulatorListener::PauseGraspDetection(bool bInPause)
 {
 	if (bInPause != bIsPaused)
 	{
@@ -190,11 +190,20 @@ void USLManipulatorListener::Finish(bool bForced)
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		// Publish dangling recently finished events
-		for (const auto& EvItr : RecentlyEndedGraspEvent)
+		for (const auto& EvItr : RecentlyEndedGraspEvents)
 		{
 			OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr.OtherActor, EvItr.Time);
 		}
-		RecentlyEndedGraspEvent.Empty();
+		RecentlyEndedGraspEvents.Empty();
+		EndAllGrasps();
+
+		//for (const auto& EvItr : RecentlyEndedContactEvents)
+		//{
+		//	OnEndManipulatorContact.Broadcast(SemanticOwner, EvItr.OtherItem, EvItr.Time);
+		//}
+		//RecentlyEndedContactEvents.Empty();
+		//EndAllContacts();
+
 		
 		// Mark as finished
 		bIsStarted = false;
@@ -274,6 +283,7 @@ bool USLManipulatorListener::LoadOverlapGroups()
 	return true;
 }
 
+/* Begin grasp related */
 #if SL_WITH_MC_GRASP
 // Subscribe to grasp type changes
 bool USLManipulatorListener::SubscribeToGraspTypeChanges()
@@ -295,20 +305,66 @@ void USLManipulatorListener::OnGraspType(const FString& Type)
 	ActiveGraspType.RemoveFromEnd("_Left");
 	ActiveGraspType.RemoveFromEnd("_Right");
 	ActiveGraspType.Append("Grasp");
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d ActiveGraspType=%s"), *FString(__func__), __LINE__, *ActiveGraspType);
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d ActiveGraspType=%s"), *FString(__func__), __LINE__, *ActiveGraspType);
 }
 #endif // SL_WITH_MC_GRASP
 
 // Check if the grasp trigger is active
-void USLManipulatorListener::InputAxisCallback(float Value)
+void USLManipulatorListener::GraspInputAxisCallback(float Value)
 {
 	if (Value >= UnPauseTriggerVal)
 	{
-		Pause(false);
+		PauseGraspDetection(false);
 	}
 	else
 	{	
-		Pause(true);
+		PauseGraspDetection(true);
+	}
+}
+
+// Process beginning of grasp in group A
+void USLManipulatorListener::OnBeginOverlapGroupAGrasp(AActor* OtherActor)
+{
+	bool bAlreadyInSet = false;
+	SetA.Emplace(OtherActor, &bAlreadyInSet);
+	if (!bAlreadyInSet && GroupB.Num() != 0 && !GraspedObjects.Contains(OtherActor))
+	{
+		CheckGraspState();
+	}
+}
+
+// Process beginning of grasp in group B
+void USLManipulatorListener::OnBeginOverlapGroupBGrasp(AActor* OtherActor)
+{
+	bool bAlreadyInSet = false;
+	SetB.Emplace(OtherActor, &bAlreadyInSet);
+	if (!bAlreadyInSet && GroupA.Num() != 0 && !GraspedObjects.Contains(OtherActor))
+	{
+		CheckGraspState();
+	}
+}
+
+// Process ending of contact in group A
+void USLManipulatorListener::OnEndOverlapGroupAGrasp(AActor* OtherActor)
+{
+	if (SetA.Remove(OtherActor) > 0)
+	{
+		if (GraspedObjects.Contains(OtherActor))
+		{
+			EndGrasp(OtherActor);
+		}
+	}
+}
+
+// Process ending of contact in group B
+void USLManipulatorListener::OnEndOverlapGroupBGrasp(AActor* OtherActor)
+{
+	if (SetB.Remove(OtherActor) > 0)
+	{
+		if (GraspedObjects.Contains(OtherActor))
+		{
+			EndGrasp(OtherActor);
+		}
 	}
 }
 
@@ -331,7 +387,7 @@ void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 	// if so remove it from the array, and cancel publishing the begin event
 	if(!SkipRecentGraspEndEventBroadcast(OtherActor, GetWorld()->GetTimeSeconds()))
 	{
-		GraspedObjects.Emplace(OtherActor);
+		GraspedObjects.AddUnique(OtherActor);
 		OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
 	}
 }
@@ -339,20 +395,22 @@ void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 // A grasp has ended
 void USLManipulatorListener::EndGrasp(AActor* OtherActor)
 {
-	if (GraspedObjects.Contains(OtherActor))
+	//if (GraspedObjects.Contains(OtherActor))
+	if (GraspedObjects.Remove(OtherActor) > 0)
 	{
 		// Grasp ended
-		RecentlyEndedGraspEvent.Emplace(FSLGraspEndEvent(OtherActor, GetWorld()->GetTimeSeconds()));
+		RecentlyEndedGraspEvents.Emplace(FSLGraspEndEvent(OtherActor, GetWorld()->GetTimeSeconds()));
 		
 		// Delay publishing for a while, in case the new event is of the same type and should be concatenated
-		if(!GetWorld()->GetTimerManager().IsTimerActive(DelayTimerHandle))
+		if(!GetWorld()->GetTimerManager().IsTimerActive(GraspDelayTimerHandle))
 		{
-			GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxGraspEventTimeGap*2.f, false);
+			GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorListener::DelayedGraspEndEventCallback,
+				MaxGraspEventTimeGap*2.f, false);
 		}
 	}
 }
 
-// All grasps have ended
+// End all grasps
 void USLManipulatorListener::EndAllGrasps()
 {
 	for (const auto& Obj : GraspedObjects)
@@ -362,126 +420,39 @@ void USLManipulatorListener::EndAllGrasps()
 	GraspedObjects.Empty();
 }
 
-// Process beginning of contact in group A
-void USLManipulatorListener::OnBeginGroupAGraspContact(AActor* OtherActor)
-{
-	bool bAlreadyInSet = false;
-	SetA.Emplace(OtherActor, &bAlreadyInSet);
-	if (!bAlreadyInSet && GroupB.Num() != 0 && !GraspedObjects.Contains(OtherActor))
-	{
-		CheckGraspState();
-	}
-}
-
-// Process beginning of contact in group B
-void USLManipulatorListener::OnBeginGroupBGraspContact(AActor* OtherActor)
-{
-	bool bAlreadyInSet = false;
-	SetB.Emplace(OtherActor, &bAlreadyInSet);
-	if (!bAlreadyInSet && GroupA.Num() != 0 && !GraspedObjects.Contains(OtherActor))
-	{
-		CheckGraspState();
-	}
-}
-
-// Process beginning of contact
-void USLManipulatorListener::OnBeginContact(AActor* OtherActor)
-{
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
-	if (OtherItem.IsSet())
-	{
-		if (int32* NumContacts = ContactObjects.Find(OtherActor))
-		{
-			(*NumContacts)++;
-		}
-		else
-		{
-			ContactObjects.Add(OtherActor, 1);
-			// Broadcast begin of semantic overlap event
-			FSLContactResult SemanticOverlapResult(SemanticOwner, OtherItem,
-				GetWorld()->GetTimeSeconds(), false);
-			OnBeginManipulatorContact.Broadcast(SemanticOverlapResult);
-		}
-	}
-}
-
-// Process ending of contact in group A
-void USLManipulatorListener::OnEndGroupAGraspContact(AActor* OtherActor)
-{
-	if (SetA.Remove(OtherActor) > 0)
-	{
-		if (GraspedObjects.Contains(OtherActor))
-		{
-			EndGrasp(OtherActor);
-		}
-	}
-}
-
-// Process ending of contact in group B
-void USLManipulatorListener::OnEndGroupBGraspContact(AActor* OtherActor)
-{
-	if (SetB.Remove(OtherActor) > 0)
-	{
-		if (GraspedObjects.Contains(OtherActor))
-		{
-			EndGrasp(OtherActor);
-		}
-	}
-}
-
-// Process ending of contact
-void USLManipulatorListener::OnEndContact(AActor* OtherActor)
-{
-	const FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(OtherActor);
-	if (OtherItem.IsSet())
-	{
-		if (int32* NumContacts = ContactObjects.Find(OtherActor))
-		{
-			(*NumContacts)--;
-			if ((*NumContacts) < 1)
-			{
-				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue,
-				//	FString::Printf(TEXT(" * * * * *END* *BCAST* *HAND CONTACT* %s"),
-				//		*OtherActor->GetName()), false, FVector2D(1.5f, 1.5f));
-				OnEndManipulatorContact.Broadcast(SemanticOwner, OtherItem, GetWorld()->GetTimeSeconds());
-				ContactObjects.Remove(OtherActor);
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
-		}
-	}
-}
-
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 void USLManipulatorListener::DelayedGraspEndEventCallback()
 {
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = GetWorld()->GetTimeSeconds();
 	
-	for (auto EvItr(RecentlyEndedGraspEvent.CreateIterator()); EvItr; ++EvItr)
+	for (auto EvItr(RecentlyEndedGraspEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// If enough time has passed, publish the event
 		if(CurrTime - EvItr->Time > MaxGraspEventTimeGap)
 		{
-			if(GraspedObjects.Remove(EvItr->OtherActor)>0)
-			{
-				OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr->OtherActor, EvItr->Time);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
-			}
+			//if(GraspedObjects.Remove(EvItr->OtherActor)>0)
+			//{
+			//	OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr->OtherActor, EvItr->Time);
+			//}
+			//else
+			//{
+			//	UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+			//}
+
+			// Broadcast delayed event
+			OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr->OtherActor, EvItr->Time);
+			
 			// Remove event from the pending list
 			EvItr.RemoveCurrent();
 		}
 	}
 
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
-	if(RecentlyEndedGraspEvent.Num() > 0)
+	if(RecentlyEndedGraspEvents.Num() > 0)
 	{
-		GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate, MaxGraspEventTimeGap*2.f, false);
+		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorListener::DelayedGraspEndEventCallback,
+			MaxGraspEventTimeGap*2.f, false);
 	}
 }
 
@@ -489,7 +460,7 @@ void USLManipulatorListener::DelayedGraspEndEventCallback()
 // if so remove it from the array, and cancel publishing the begin event
 bool USLManipulatorListener::SkipRecentGraspEndEventBroadcast(AActor* OtherActor, float StartTime)
 {
-	for (auto EvItr(RecentlyEndedGraspEvent.CreateIterator()); EvItr; ++EvItr)
+	for (auto EvItr(RecentlyEndedGraspEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// Check if it is an event between the same entities
 		if(EvItr->OtherActor == OtherActor)
@@ -504,3 +475,129 @@ bool USLManipulatorListener::SkipRecentGraspEndEventBroadcast(AActor* OtherActor
 	}
 	return false;
 }
+/* End grasp related */
+
+
+/* Begin contact related */
+// Process beginning of contact
+void USLManipulatorListener::OnBeginOverlapContact(AActor* OtherActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d !!! %f !!! A finger starts contact with %s"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherActor->GetName());
+	
+	if (FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(OtherActor))
+	{
+		if (int32* NumContacts = ObjectsInContact.Find(OtherActor))
+		{
+			(*NumContacts)++;
+			
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Existing contact, increasing number of fingers: %d"),
+				*FString(__func__), __LINE__,  *NumContacts);
+		}
+		else
+		{
+			if(!SkipRecentContactEndEventBroadcast(*OtherItem, GetWorld()->GetTimeSeconds()))
+			{
+				ObjectsInContact.Add(OtherActor, 1);
+				// Broadcast begin of semantic overlap event
+				OnBeginManipulatorContact.Broadcast(FSLContactResult(SemanticOwner, *OtherItem,
+					GetWorld()->GetTimeSeconds(), false));
+				
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t New contact, setting num of fingers to: %d"),
+					*FString(__func__), __LINE__, *ObjectsInContact[OtherActor]);
+				
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Not enough time has passed since last contact, concatenating.."),
+					*FString(__func__), __LINE__);
+			}
+		}
+	}
+}
+
+// Process ending of contact
+void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
+{
+	if (FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(OtherActor))
+	{
+		if (int32* NumContacts = ObjectsInContact.Find(OtherActor))
+		{
+			(*NumContacts)--;
+			if ((*NumContacts) < 1)
+			{
+				// Delay publishing for a while, in case the new event is of the same type and should be concatenated
+				if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
+				{
+					GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
+						MaxContactEventTimeGap * 2.f, false);
+				}
+				ObjectsInContact.Remove(OtherActor);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		}
+	}
+}
+
+// End all contacts
+void USLManipulatorListener::EndAllContacts()
+{
+	for (const auto& Obj : ObjectsInContact)
+	{
+		if (FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Obj.Key))
+		{
+			OnEndManipulatorContact.Broadcast(SemanticOwner, *OtherItem, GetWorld()->GetTimeSeconds());
+		}
+	}
+	ObjectsInContact.Empty();
+}
+
+// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+void USLManipulatorListener::DelayedContactEndEventCallback()
+{
+	// Curr time (keep very recently added events for another delay)
+	const float CurrTime = GetWorld()->GetTimeSeconds();
+	
+	for (auto EvItr(RecentlyEndedContactEvents.CreateIterator()); EvItr; ++EvItr)
+	{
+		// If enough time has passed, publish the event
+		if(CurrTime - EvItr->Time > MaxContactEventTimeGap)
+		{
+			// Ignore small events
+			OnEndManipulatorContact.Broadcast(SemanticOwner, EvItr->OtherItem, EvItr->Time);
+			EvItr.RemoveCurrent();
+		}
+	}
+
+	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
+	if(RecentlyEndedContactEvents.Num() > 0)
+	{
+		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
+			MaxContactEventTimeGap*2.f, false);
+	}
+}
+
+// Check if this begin event happened right after the previous one ended
+// if so remove it from the array, and cancel publishing the begin event
+bool USLManipulatorListener::SkipRecentContactEndEventBroadcast(const FSLEntity& OtherItem, float StartTime)
+{
+	for (auto EvItr(RecentlyEndedContactEvents.CreateIterator()); EvItr; ++EvItr)
+	{
+		// Check if it is an event between the same entities
+		if(EvItr->OtherItem.EqualsFast(OtherItem))
+		{
+			// Check time difference
+			if(StartTime - EvItr->Time < MaxContactEventTimeGap)
+			{
+				// Event will be concatenated
+				EvItr.RemoveCurrent();
+				return true;
+			}
+		}
+	}
+	return false;
+}
+/* End contact related */

@@ -23,7 +23,7 @@ using FSLTimeAndDistance = TTuple<float, float>; // <Time, Distance>
 class AStaticMeshActor;
 
 /** Notify when a reaching event happened*/
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLReachEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*StartTime*/, float /*EndTime*/);
+DECLARE_MULTICAST_DELEGATE_FiveParams(FSLReachEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
 
 /** Notify when a manipulator positioning event happened*/
 DECLARE_MULTICAST_DELEGATE_FourParams(FSLManipulatorPositioningEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*StartTime*/, float /*EndTime*/);
@@ -98,6 +98,9 @@ private:
 	// Used for the reaching and hand positioning detection
 	void OnSLManipulatorContactBegin(const FSLContactResult& ContactResult);
 
+	// Cancel started events
+	void OnSLManipulatorContactEnd(const FSLEntity& Self, const FSLEntity& Other, float Time);
+
 	// Event called when something stops overlapping this component 
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
@@ -116,7 +119,7 @@ private:
 
 public:
 	// Event called when the reaching motion is finished
-	FSLReachEventSignature OnReachEvent;
+	FSLReachEventSignature OnPreAndReachEvent;
 
 	// Event called when the manipulator positioning motion is finished
 	FSLReachEventSignature OnManipulatorPositioningEvent;
@@ -155,14 +158,13 @@ private:
 	// CandidatesWithTimeAndDistance for reaching action, pointing to their starting time
 	TMap<AStaticMeshActor*, FSLTimeAndDistance> CandidatesWithTimeAndDistance;
 
+	// The objects currently in contact with (before grasping)
+	TMap<AStaticMeshActor*, float> ObjectsInContactWithManipulator;
+	
 	// Pause everything if the hand is currently grasping something
 	UObject* CurrGraspedObj;
 	
 	/* Constants */
-	// Minimal duration for the reaching events
-	constexpr static float ReachEventMin = 0.35f;
-	// Minimal duration for the positioning events
-	constexpr static float ManipulatorPositionEventMin = 0.25f;
 	// Minimum distance squared for reaching movements
 	constexpr static float MinDistSq = 2.5f * 2.5f;
 };

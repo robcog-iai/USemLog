@@ -158,6 +158,7 @@ bool USLReachListener::SubscribeForManipulatorEvents()
 		// Timeline reaching,      positioning
 		// [-----------contact][contact--------grasp]
 		Sibling->OnBeginManipulatorContact.AddUObject(this, &USLReachListener::OnSLManipulatorContactBegin);
+		Sibling->OnEndManipulatorContact.AddUObject(this, &USLReachListener::OnSLManipulatorContactEnd);
 		Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLReachListener::OnSLGraspBegin);
 		Sibling->OnEndManipulatorGrasp.AddUObject(this, &USLReachListener::OnSLGraspEnd);
 		return true;
@@ -246,19 +247,65 @@ bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject) const
 	return false;
 }
 
-//Called when the sibling is in contact with an object, used for ending the reaching event and starting the manipulator positioning event
+// Called when the sibling is in contact with an object, used for ending the reaching event and starting the manipulator positioning event
 void USLReachListener::OnSLManipulatorContactBegin(const FSLContactResult& ContactResult)
 {
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d %f ** Hand START contact with %s"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *ContactResult.Other.Obj->GetName());
+
+	if(CurrGraspedObj)
+	{
+		// Ignore while in grasp mode
+		return;
+	}
+	
 	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(ContactResult.Other.Obj))
 	{
+		// Check if the object in contact with is one of the candidates (should be)
 		if (CandidatesWithTimeAndDistance.Contains(AsSMA))
 		{
-			// Publish event
-			const float StartTime = CandidatesWithTimeAndDistance[AsSMA].Get<0>();
-			//OnReachEvent.Broadcast(SemanticOwner, Other, StartTime, Time);
-			//CandidatesWithTimeAndDistance.Empty();
-			//UE_LOG(LogTemp, Warning, TEXT("%s::%d Finished reaching for %s [%f, %f]"),
-			//	*FString(__func__), __LINE__, *Other->GetName(), StartTime, Time);
+			ObjectsInContactWithManipulator.Emplace(AsSMA, ContactResult.Time);
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %f Hand in contact with %s"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *AsSMA->GetName());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		}
+	}
+}
+
+// Cancel started events
+void USLReachListener::OnSLManipulatorContactEnd(const FSLEntity& Self, const FSLEntity& Other, float Time)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d %f ** Hand END in contact with %s"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other.Obj->GetName());
+	
+	if(CurrGraspedObj)
+	{
+		// Ignore while in grasp mode
+		return;
+	}
+	
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other.Obj))
+	{
+		// Check if the object in contact with is one of the candidates (should be)
+		if (ObjectsInContactWithManipulator.Remove(AsSMA) > 0)
+		{
+			// Reset reach start in the candidate
+			if(FSLTimeAndDistance* TimeAndDist = CandidatesWithTimeAndDistance.Find(AsSMA))
+			{
+				TimeAndDist->Get<ESLTimeAndDistance::Time>() = GetWorld()->GetTimeSeconds();
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+			}
+			
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Contact ended between the hand and %s"), *FString(__func__), __LINE__, *AsSMA->GetName());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
 		}
 	}
 }
@@ -268,51 +315,49 @@ void USLReachListener::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, flo
 {
 	if(CurrGraspedObj)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Hand is already grasping something.. this can happen if multiple objects have been grasped"),
-			*FString(__func__), __LINE__);
-	}
-	else
-	{
-		CurrGraspedObj = Other;
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should happen.. "), *FString(__func__), __LINE__);
+		return;
 	}
 	
 	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
 	{
-		// Check if the grasped object is one of the candidates (should be)
-		if (CandidatesWithTimeAndDistance.Contains(AsSMA))
+		// Check if the grasped object is a candidate and is in contact with the hand
+		if(FSLTimeAndDistance* CandidateTimeAndDist = CandidatesWithTimeAndDistance.Find(AsSMA))
 		{
-			// Avoid broadcasting short events
-			const float StartTime = CandidatesWithTimeAndDistance[AsSMA].Get<ESLTimeAndDistance::Time>();
-			if(Time - StartTime > ReachEventMin)
+			if(float* ContactTime = ObjectsInContactWithManipulator.Find(AsSMA))
 			{
-				OnReachEvent.Broadcast(SemanticOwner, Other, StartTime, Time);
-				//UE_LOG(LogTemp, Warning, TEXT("%s::%d Finished reaching for %s [%f, %f]"),
-				//	*FString(__func__), __LINE__, *Other->GetName(), StartTime, Time);
-			}
+				// Grasp is active, ignore multiple event inputs
+				CurrGraspedObj = Other;
 
-			// Remove existing candidates and pause the update callback while the hand is grasping
-			CandidatesWithTimeAndDistance.Empty();
-			GetWorld()->GetTimerManager().PauseTimer(TimerHandle);
+				// Broadcast reach and pre grasp events
+				const float ReachStartTime = CandidateTimeAndDist->Get<ESLTimeAndDistance::Time>();
+				const float ReachEndTime = *ContactTime;
+				OnPreAndReachEvent.Broadcast(SemanticOwner, Other, ReachStartTime, ReachEndTime, Time);
+
+				// Remove existing candidates and pause the update callback while the hand is grasping
+				CandidatesWithTimeAndDistance.Empty();
+				ObjectsInContactWithManipulator.Empty();
+				GetWorld()->GetTimerManager().PauseTimer(TimerHandle);
 
 
-			// Remove overlap callbacks while grasp is active
-			if(bCallbacksAreBound)
-			{
-				OnComponentBeginOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapBegin);
-				OnComponentEndOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapEnd);
-				bCallbacksAreBound = false;
+				// Remove overlap callbacks while grasp is active
+				if(bCallbacksAreBound)
+				{
+					OnComponentBeginOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapBegin);
+					OnComponentEndOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapEnd);
+					bCallbacksAreBound = false;
+				}
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d This should not have happened.. the callbacks should have been BOUND.."), *FString(__func__), __LINE__);
+				UE_LOG(LogTemp, Error, TEXT("%s::%d This should happen.."), *FString(__func__), __LINE__);
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not have happened.."), *FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should happen.."), *FString(__func__), __LINE__);
 		}
 	}
-	
 }
 
 // Reset looking for the events
@@ -324,13 +369,7 @@ void USLReachListener::OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not have happened.. possible if multiple objects were grasped.."), *FString(__func__), __LINE__);
-		return;
-	}
-	
-	if(CandidatesWithTimeAndDistance.Num() > 0)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not have happened.. should have been emptied at grasp begin.."), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.. possible if multiple objects were grasped.."), *FString(__func__), __LINE__);
 		return;
 	}
 	

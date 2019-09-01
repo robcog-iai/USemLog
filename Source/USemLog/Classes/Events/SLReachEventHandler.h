@@ -5,6 +5,7 @@
 
 #include "Events/ISLEventHandler.h"
 #include "Events/SLReachEvent.h"
+#include "Events/SLPreGraspPositioningEvent.h"
 
 /**
  * Listens to Reach events input, and outputs finished semantic Reach events
@@ -23,12 +24,15 @@ public:
 
 private:
 	// Create and publish finished reach event
-	void OnSLReachEvent(const FSLEntity& Self, UObject* Other, float StartTime, float EndTime);
+	void OnSLPreAndReachEvent(const FSLEntity& Self, UObject* Other, float ReachStartTime, float ReachEndTime, float PreGraspEndTime);
 
 private:
 	// Parent
 	class USLReachListener* Parent;
 
-	// Array of started events
-	TArray<TSharedPtr<FSLReachEvent>> StartedEvents;
+	/* Constants */
+	// Minimal duration for the reaching events
+	constexpr static float ReachEventMin = 0.35f;
+	// Minimal duration for the positioning events
+	constexpr static float PreGraspPositioningEventMin = 0.25f;
 };

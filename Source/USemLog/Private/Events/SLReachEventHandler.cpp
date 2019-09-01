@@ -36,7 +36,7 @@ void FSLReachEventHandler::Start()
 	if (!bIsStarted && bIsInit)
 	{
 		// Subscribe to the forwarded semantically annotated Reaching broadcasts
-		Parent->OnReachEvent.AddRaw(this, &FSLReachEventHandler::OnSLReachEvent);
+		Parent->OnPreAndReachEvent.AddRaw(this, &FSLReachEventHandler::OnSLPreAndReachEvent);
 
 		// Mark as started
 		bIsStarted = true;
@@ -60,18 +60,24 @@ void FSLReachEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Event called when a semantic Reach event begins
-void FSLReachEventHandler::OnSLReachEvent(const FSLEntity& Self, UObject* Other, float StartTime, float EndTime)
+void FSLReachEventHandler::OnSLPreAndReachEvent(const FSLEntity& Self, UObject* Other, float ReachStartTime, float ReachEndTime, float PreGraspEndTime)
 {
 	// Check that the objects are semantically annotated
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
-	if (OtherItem.IsSet())
+	if (FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
 	{
-		// Start a semantic Reach event
-		TSharedPtr<FSLReachEvent> Event = MakeShareable(new FSLReachEvent(
-			FIds::NewGuidInBase64Url(), StartTime, EndTime,
-			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), OtherItem.Obj->GetUniqueID()),
-			Self, OtherItem));
+		const uint64 PairID =FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), OtherItem->Obj->GetUniqueID());
+		if(ReachEndTime - ReachStartTime > ReachEventMin)
+		{
+			OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLReachEvent(
+				FIds::NewGuidInBase64Url(), ReachStartTime, ReachEndTime,
+				PairID,Self, *OtherItem)));
+		}
 
-		OnSemanticEvent.ExecuteIfBound(Event);
+		if(PreGraspEndTime - ReachEndTime > PreGraspPositioningEventMin)
+		{
+			OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPreGraspPositioningEvent(
+				FIds::NewGuidInBase64Url(), ReachEndTime, PreGraspEndTime,
+				PairID,Self, *OtherItem)));
+		}
 	}
 }

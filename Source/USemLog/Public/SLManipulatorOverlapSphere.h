@@ -75,12 +75,10 @@ private:
 	// Set debug color
 	void SetColor(FColor Color);
 
+	/* Grasp related*/
 	// Publish currently grasp related overlapping components
 	void TriggerInitialGraspOverlaps();
-
-	// Publish currently contact related overlapping components
-	void TriggerInitialContactOverlaps();
-
+	
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
 	void OnGraspOverlapBegin(UPrimitiveComponent* OverlappedComp,
@@ -96,6 +94,10 @@ private:
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
+
+	/* Contact related */
+	// Publish currently contact related overlapping components
+	void TriggerInitialContactOverlaps();
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
@@ -114,14 +116,15 @@ private:
 		int32 OtherBodyIndex);
 
 public:
+	
 	// Forward begin of contact with an item
 	FSLGraspOverlapBeginSignature OnBeginSLGraspOverlap;
 
-	// Forward begin of contact with an item
-	FSLGraspOverlapBeginSignature OnBeginSLContactOverlap;
-
 	// Forward end of contact with an item
 	FSLGraspOverlapEndSignature OnEndSLGraspOverlap;
+	
+	// Forward begin of contact with an item
+	FSLGraspOverlapBeginSignature OnBeginSLContactOverlap;
 
 	// Forward end of contact with an item
 	FSLGraspOverlapEndSignature OnEndSLContactOverlap;
