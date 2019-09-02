@@ -40,8 +40,14 @@ void FSLManipulatorContactEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+		// Let parent first publish any pending (delayed) events
+		if(!Parent->IsFinished())
+		{
+			Parent->Finish();
+		}
+		
 		// End and broadcast all started events
-		FSLManipulatorContactEventHandler::FinishAllEvents(EndTime);
+		FinishAllEvents(EndTime);
 
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
@@ -79,6 +85,8 @@ bool FSLManipulatorContactEventHandler::FinishEvent(const FSLEntity& InOther, fl
 			(*EventItr)->End = EndTime;
 
 			OnSemanticEvent.ExecuteIfBound(*EventItr);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t\t CONTACT EVENT [%s;%s] [%f<-->%f]"),
+				*FString(__func__), __LINE__, *(*EventItr)->Item1.Obj->GetName(), *(*EventItr)->Item2.Obj->GetName(), (*EventItr)->Start, (*EventItr)->End);
 			
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
@@ -97,6 +105,8 @@ void FSLManipulatorContactEventHandler::FinishAllEvents(float EndTime)
 		// Set end time and publish event
 		Ev->End = EndTime;
 		OnSemanticEvent.ExecuteIfBound(Ev);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t\t [FINISH]CONTACT EVENT [%s;%s] [%f<-->%f]"),
+			*FString(__func__), __LINE__, *Ev->Item1.Obj->GetName(), *Ev->Item2.Obj->GetName(), Ev->Start, Ev->End);
 	}
 	StartedEvents.Empty();
 }
@@ -105,11 +115,11 @@ void FSLManipulatorContactEventHandler::FinishAllEvents(float EndTime)
 // Event called when a semantic overlap event begins
 void FSLManipulatorContactEventHandler::OnSLOverlapBegin(const FSLContactResult& SemanticOverlapResult)
 {
-	FSLManipulatorContactEventHandler::AddNewEvent(SemanticOverlapResult);
+	AddNewEvent(SemanticOverlapResult);
 }
 
 // Event called when a semantic overlap event ends
 void FSLManipulatorContactEventHandler::OnSLOverlapEnd(const FSLEntity& Self, const FSLEntity& Other, float Time)
 {
-	FSLManipulatorContactEventHandler::FinishEvent(Other, Time);
+	FinishEvent(Other, Time);
 }

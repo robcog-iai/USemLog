@@ -99,6 +99,13 @@ void USLReachListener::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+		if(bCallbacksAreBound)
+		{
+			OnComponentBeginOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapBegin);
+			OnComponentEndOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapEnd);
+			bCallbacksAreBound = false;
+		}
+		
 		// Mark as finished
 		bIsStarted = false;
 		bIsInit = false;
@@ -120,7 +127,7 @@ void USLReachListener::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
 	// Get the changed property name
-	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+	const FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	// Set pre-defined parameters
@@ -137,7 +144,7 @@ void USLReachListener::RelocateSphere()
 	{
 		USceneComponent* RootComp = GetOwner()->GetRootComponent();
 		//FVector Center = GetOwner()->CalculateComponentsBoundingBoxInLocalSpace().GetCenter();
-		float BoundsCenterOffsetDist = FVector::Distance(RootComp->Bounds.Origin, RootComp->GetComponentLocation());
+		const float BoundsCenterOffsetDist = FVector::Distance(RootComp->Bounds.Origin, RootComp->GetComponentLocation());
 		float OwnerRadius;
 		float OwnerHalfHeight;
 		GetOwner()->GetRootComponent()->CalcBoundingCylinder(OwnerRadius, OwnerHalfHeight);

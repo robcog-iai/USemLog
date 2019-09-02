@@ -48,6 +48,12 @@ void FSLReachEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+		// Let parent finish first
+		if(!Parent->IsFinished())
+		{
+			Parent->Finish();
+		}
+		
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
 		// this would mean that the handler will need to inherit from UObject

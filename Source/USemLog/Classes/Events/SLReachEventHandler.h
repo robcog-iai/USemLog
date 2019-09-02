@@ -32,7 +32,7 @@ private:
 
 	/* Constants */
 	// Minimal duration for the reaching events
-	constexpr static float ReachEventMin = 0.35f;
+	constexpr static float ReachEventMin = 0.25f;
 	// Minimal duration for the positioning events
-	constexpr static float PreGraspPositioningEventMin = 0.25f;
+	constexpr static float PreGraspPositioningEventMin = 0.2f;
 };

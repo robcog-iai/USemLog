@@ -345,6 +345,13 @@ bool ISLContactShapeInterface::SkipOverlapEndEventBroadcast(const FSLEntity& InI
 			if(StartTime - OverlapEndEvItr->Time < MaxOverlapEventTimeGap)
 			{
 				OverlapEndEvItr.RemoveCurrent();
+
+				// Check if it was the last event, if so, pause the delay publisher
+				if(RecentlyEndedOverlapEvents.Num() == 0)
+				{
+					World->GetTimerManager().ClearTimer(DelayTimerHandle);
+				}
+				
 				return true;
 			}
 		}

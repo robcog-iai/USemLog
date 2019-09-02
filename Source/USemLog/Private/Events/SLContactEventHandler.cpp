@@ -45,8 +45,14 @@ void FSLContactEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+		// Let parent first publish any pending (delayed) events
+		if(!Parent->IsFinished())
+		{
+			Parent->Finish();
+		}
+		
 		// End and broadcast all started events
-		FSLContactEventHandler::FinishAllEvents(EndTime);
+		FinishAllEvents(EndTime);
 
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic

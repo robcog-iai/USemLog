@@ -3,6 +3,7 @@
 
 #include "SLManipulatorOverlapSphere.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "Engine/StaticMeshActor.h"
 
 // Ctor
 USLManipulatorOverlapSphere::USLManipulatorOverlapSphere()
@@ -85,7 +86,7 @@ void USLManipulatorOverlapSphere::Start()
 		// Bind overlap events
 		if (bDetectGrasps)
 		{
-			//TriggerInitialGraspOverlaps(); // TODO check why wasn't this here
+			TriggerInitialGraspOverlaps(); // TODO this was commented out, any reason?
 			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapBegin);
 			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorOverlapSphere::OnGraspOverlapEnd);
 		}
@@ -143,6 +144,8 @@ void USLManipulatorOverlapSphere::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+		SetGenerateOverlapEvents(false);
+		
 		// Mark as finished
 		bIsStarted = false;
 		bIsInit = false;

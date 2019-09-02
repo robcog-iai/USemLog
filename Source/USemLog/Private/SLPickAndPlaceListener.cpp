@@ -72,8 +72,7 @@ void USLPickAndPlaceListener::Start()
 		if(SubscribeForGraspEvents())
 		{
 			// Start update callback (will directly be paused until a grasp is active)
-			GetWorld()->GetTimerManager().SetTimer(
-				UpdateTimerHandle, this, &USLPickAndPlaceListener::Update, UpdateRate, true);
+			GetWorld()->GetTimerManager().SetTimer(UpdateTimerHandle, this, &USLPickAndPlaceListener::Update, UpdateRate, true);
 			GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
 			
 			// Mark as started

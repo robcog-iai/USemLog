@@ -189,22 +189,29 @@ void USLManipulatorListener::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+		for (auto BoneOverlap : GroupA)
+		{
+			BoneOverlap->Finish();
+		}
+		for (auto BoneOverlap : GroupB)
+		{
+			BoneOverlap->Finish();
+		}
+		
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedGraspEvents)
 		{
 			OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr.OtherActor, EvItr.Time);
 		}
 		RecentlyEndedGraspEvents.Empty();
-		EndAllGrasps();
 
-		//for (const auto& EvItr : RecentlyEndedContactEvents)
-		//{
-		//	OnEndManipulatorContact.Broadcast(SemanticOwner, EvItr.OtherItem, EvItr.Time);
-		//}
-		//RecentlyEndedContactEvents.Empty();
-		//EndAllContacts();
+		// Publish dangling recently finished events
+		for (const auto& EvItr : RecentlyEndedContactEvents)
+		{
+			OnEndManipulatorContact.Broadcast(SemanticOwner, EvItr.OtherItem, EvItr.Time);
+		}
+		RecentlyEndedContactEvents.Empty();
 
-		
 		// Mark as finished
 		bIsStarted = false;
 		bIsInit = false;
@@ -383,11 +390,10 @@ void USLManipulatorListener::CheckGraspState()
 // A grasp has started
 void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 {
-	// Check if this begin event happened right after the previous one ended
-	// if so remove it from the array, and cancel publishing the begin event
+	// Check if it is a new grasp event, or a concatenation with a previous one, either way, there is a new grasp
+	GraspedObjects.AddUnique(OtherActor);
 	if(!SkipRecentGraspEndEventBroadcast(OtherActor, GetWorld()->GetTimeSeconds()))
 	{
-		GraspedObjects.AddUnique(OtherActor);
 		OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
 	}
 }
@@ -469,6 +475,12 @@ bool USLManipulatorListener::SkipRecentGraspEndEventBroadcast(AActor* OtherActor
 			if(StartTime - EvItr->Time < MaxGraspEventTimeGap)
 			{
 				EvItr.RemoveCurrent();
+
+				// Check if it was the last event, if so, pause the delay publisher
+				if(RecentlyEndedGraspEvents.Num() == 0)
+				{
+					GetWorld()->GetTimerManager().ClearTimer(GraspDelayTimerHandle);
+				}
 				return true;
 			}
 		}
@@ -482,35 +494,34 @@ bool USLManipulatorListener::SkipRecentGraspEndEventBroadcast(AActor* OtherActor
 // Process beginning of contact
 void USLManipulatorListener::OnBeginOverlapContact(AActor* OtherActor)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d !!! %f !!! A finger starts contact with %s"),
-		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherActor->GetName());
-	
 	if (FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(OtherActor))
 	{
 		if (int32* NumContacts = ObjectsInContact.Find(OtherActor))
 		{
 			(*NumContacts)++;
-			
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Existing contact, increasing number of fingers: %d"),
-				*FString(__func__), __LINE__,  *NumContacts);
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d >>>>>>> [%f] INC Finger=%d; Other=%s;"),
+				*FString(__func__), __LINE__,
+				GetWorld()->GetTimeSeconds(),
+				*NumContacts,
+				*OtherActor->GetName());
 		}
 		else
 		{
-			if(!SkipRecentContactEndEventBroadcast(*OtherItem, GetWorld()->GetTimeSeconds()))
+			// Check if it is a new contact event, or a concatenation with a previous one, either way, there is a new contact
+			ObjectsInContact.Add(OtherActor, 1);
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d >>>>>>> [%f] FIRST Finger=%d; Other=%s; Contacts=%d;"),
+					*FString(__func__), __LINE__, 
+					GetWorld()->GetTimeSeconds(),
+					ObjectsInContact[OtherActor],
+					*OtherActor->GetName(),
+					ObjectsInContact.Num());
+			const float CurrTime = GetWorld()->GetTimeSeconds();
+			if(!SkipRecentContactEndEventBroadcast(*OtherItem, CurrTime))
 			{
-				ObjectsInContact.Add(OtherActor, 1);
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d >>>>>>> [%f] \t\t\t\t\t\t @@@@@@@@ BCAST START!"),
+					*FString(__func__), __LINE__)
 				// Broadcast begin of semantic overlap event
-				OnBeginManipulatorContact.Broadcast(FSLContactResult(SemanticOwner, *OtherItem,
-					GetWorld()->GetTimeSeconds(), false));
-				
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t New contact, setting num of fingers to: %d"),
-					*FString(__func__), __LINE__, *ObjectsInContact[OtherActor]);
-				
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Not enough time has passed since last contact, concatenating.."),
-					*FString(__func__), __LINE__);
+				OnBeginManipulatorContact.Broadcast(FSLContactResult(SemanticOwner, *OtherItem, CurrTime, false));
 			}
 		}
 	}
@@ -524,15 +535,25 @@ void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
 		if (int32* NumContacts = ObjectsInContact.Find(OtherActor))
 		{
 			(*NumContacts)--;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d <<<<<<<< [%f]  DEC Finger=%d; Other=%s;"),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),*NumContacts, *OtherActor->GetName());
+			
 			if ((*NumContacts) < 1)
 			{
+				// Remove contact object
+				ObjectsInContact.Remove(OtherActor);
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t CONTACT ENDED; Add to delay! Contacts=%d"),
+					*FString(__func__), __LINE__, ObjectsInContact.Num());
+				
+				// Manipulator contact ended
+				RecentlyEndedContactEvents.Emplace(FSLContactEndEvent(*OtherItem, GetWorld()->GetTimeSeconds()));
+				
 				// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 				if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
 				{
 					GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
 						MaxContactEventTimeGap * 2.f, false);
 				}
-				ObjectsInContact.Remove(OtherActor);
 			}
 		}
 		else
@@ -545,10 +566,16 @@ void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
 // End all contacts
 void USLManipulatorListener::EndAllContacts()
 {
+	UE_LOG(LogTemp, Error, TEXT("%s::%d **** %f  ObjectsInContactNum=%d"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), RecentlyEndedContactEvents.Num());
+
 	for (const auto& Obj : ObjectsInContact)
 	{
 		if (FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Obj.Key))
 		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d **** %f \t\t ObjectsInContact BCAST=%s"),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherItem->Obj->GetName());
+			
 			OnEndManipulatorContact.Broadcast(SemanticOwner, *OtherItem, GetWorld()->GetTimeSeconds());
 		}
 	}
@@ -558,6 +585,9 @@ void USLManipulatorListener::EndAllContacts()
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 void USLManipulatorListener::DelayedContactEndEventCallback()
 {
+	UE_LOG(LogTemp, Error, TEXT("%s::%d ~~~~~~~~~~ [%f] LOOP RecentlyEndedContactEvents=%d"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), RecentlyEndedContactEvents.Num());
+	
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = GetWorld()->GetTimeSeconds();
 	
@@ -566,15 +596,22 @@ void USLManipulatorListener::DelayedContactEndEventCallback()
 		// If enough time has passed, publish the event
 		if(CurrTime - EvItr->Time > MaxContactEventTimeGap)
 		{
-			// Ignore small events
+			UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Enough time has passed [%f/%f] \t\t\t @@@@@@@@@@ BCAST END!"),
+				*FString(__func__), __LINE__, CurrTime - EvItr->Time, MaxContactEventTimeGap);
 			OnEndManipulatorContact.Broadcast(SemanticOwner, EvItr->OtherItem, EvItr->Time);
 			EvItr.RemoveCurrent();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t NOT enough time has passed [%f/%f] --> RE-SPIN"),
+				*FString(__func__), __LINE__, CurrTime - EvItr->Time, MaxContactEventTimeGap);
 		}
 	}
 
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedContactEvents.Num() > 0)
 	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t Confirm RE-SPIN!"), *FString(__func__), __LINE__);
 		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
 			MaxContactEventTimeGap*2.f, false);
 	}
@@ -589,13 +626,26 @@ bool USLManipulatorListener::SkipRecentContactEndEventBroadcast(const FSLEntity&
 		// Check if it is an event between the same entities
 		if(EvItr->OtherItem.EqualsFast(OtherItem))
 		{
-			// Check time difference
-			if(StartTime - EvItr->Time < MaxContactEventTimeGap)
+			// Check time difference between the previous and current event
+			const float TimeGap = StartTime - EvItr->Time;
+			if(TimeGap < MaxContactEventTimeGap)
 			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d >__< \t\t [%f < %f] Concatenate event, abort new event.."),
+					*FString(__func__), __LINE__, TimeGap, MaxContactEventTimeGap);
+				
 				// Event will be concatenated
 				EvItr.RemoveCurrent();
+
+				// Check if it was the last event, if so, pause the delay publisher
+				if(RecentlyEndedContactEvents.Num() == 0)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t\t Last event, delay timer cleared"), *FString(__func__), __LINE__);
+					GetWorld()->GetTimerManager().ClearTimer(ContactDelayTimerHandle);
+				}
 				return true;
 			}
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d >____________< \t\t [%f > %f] DON'T concatenate, start new event.."),
+				*FString(__func__), __LINE__, TimeGap, MaxContactEventTimeGap);
 		}
 	}
 	return false;

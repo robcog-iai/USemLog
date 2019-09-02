@@ -55,7 +55,13 @@ void FSLPickAndPlaceEventsHandler::Finish(float EndTime, bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
-		FSLPickAndPlaceEventsHandler::FinishAllEvents(EndTime);
+		// Let parent finish first
+		if(!Parent->IsFinished())
+		{
+			Parent->Finish();
+		}
+		
+		FinishAllEvents(EndTime);
 
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
