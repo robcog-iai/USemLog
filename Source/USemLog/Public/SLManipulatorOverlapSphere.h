@@ -5,6 +5,7 @@
 
 #include "USemLog.h"
 #include "Components/SphereComponent.h"
+#include "Engine/StaticMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "SLManipulatorOverlapSphere.generated.h"
 
@@ -18,11 +19,30 @@ enum class ESLManipulatorOverlapGroup : uint8
 	B					UMETA(DisplayName = "B"),
 };
 
+/**
+ * Overlap event end data
+ */
+struct FSLManipulatorOverlapEndEvent
+{
+	// Default ctor
+	FSLManipulatorOverlapEndEvent() = default;
+
+	// Init ctor
+	FSLManipulatorOverlapEndEvent(AActor* InOtherActor, float InTime) :
+		OtherActor(InOtherActor), Time(InTime) {};
+
+	// Overlap component
+	AActor* OtherActor;
+
+	// End time of the event 
+	float Time;
+};
+
 /** Delegate to notify that a contact begins between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLGraspOverlapBeginSignature, AActor* /*OtherActor*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorOverlapBeginSignature, AActor* /*OtherActor*/);
 
 /** Delegate to notify that a contact ended between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLGraspOverlapEndSignature, AActor* /*OtherActor*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorOverlapEndSignature, AActor* /*OtherActor*/);
 
 /**
  * Semantic overlap generator for grasp detection
@@ -63,6 +83,9 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
+	// Give access to the group of which the shape belongs to for the grasping detection
+	ESLManipulatorOverlapGroup GetGroup() const { return Group;};
+
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -95,6 +118,13 @@ private:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
+	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+	void DelayedGraspOverlapEndEventCallback();
+
+	// Check if this begin event happened right after the previous one ended
+	// if so remove it from the array, and cancel publishing the begin event
+	bool SkipRecentGraspOverlapEndEventBroadcast(AActor* OtherActor, float StartTime);
+
 	/* Contact related */
 	// Publish currently contact related overlapping components
 	void TriggerInitialContactOverlaps();
@@ -115,23 +145,21 @@ private:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
+	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+	void DelayedContactOverlapEndEventCallback();
+
+	// Check if this begin event happened right after the previous one ended
+	// if so remove it from the array, and cancel publishing the begin event
+	bool SkipRecentContactOverlapEndEventBroadcast(AActor* OtherActor, float StartTime);
+
 public:
+	// Grasp related overlap begin/end
+	FSLManipulatorOverlapBeginSignature OnBeginManipulatorGraspOverlap;
+	FSLManipulatorOverlapEndSignature OnEndManipulatorGraspOverlap;
 	
-	// Forward begin of contact with an item
-	FSLGraspOverlapBeginSignature OnBeginSLGraspOverlap;
-
-	// Forward end of contact with an item
-	FSLGraspOverlapEndSignature OnEndSLGraspOverlap;
-	
-	// Forward begin of contact with an item
-	FSLGraspOverlapBeginSignature OnBeginSLContactOverlap;
-
-	// Forward end of contact with an item
-	FSLGraspOverlapEndSignature OnEndSLContactOverlap;
-
-	// Group to which the shape belongs to for the grasping detection
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLManipulatorOverlapGroup Group;
+	// Contact related overlap begin/end
+	FSLManipulatorOverlapBeginSignature OnBeginManipulatorContactOverlap;
+	FSLManipulatorOverlapEndSignature OnEndManipulatorContactOverlap;
 
 private:
 	// True if initialized
@@ -146,7 +174,7 @@ private:
 	// True if finished
 	bool bIsFinished;
 
-	// Detect grasp contacts
+	// Detect grasp contacts (separated since the grasp detection can be paused)
 	bool bDetectGrasps;
 
 	// Detect contacts
@@ -154,6 +182,10 @@ private:
 
 	// Cache valid contacts
 	TSet<AActor*> ActiveContacts;
+
+	// The group of which the shape belongs to for the grasping detection
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLManipulatorOverlapGroup Group;
 
 	// Name of the skeletal bone to attach the shape to
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -177,7 +209,22 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bIsNotSkeletal"))
 	TArray<AStaticMeshActor*> IgnoreList;
 
-	// Debug with visibility at runtime
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bVisualDebug;
+
+	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
+	FTimerHandle GraspDelayTimerHandle;
+
+	// Array of recently ended events
+	TArray<FSLManipulatorOverlapEndEvent> RecentlyEndedGraspOverlapEvents;
+	
+	
+	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
+	FTimerHandle ContactDelayTimerHandle;
+
+	// Array of recently ended events
+	TArray<FSLManipulatorOverlapEndEvent> RecentlyEndedContactOverlapEvents;
+	
+
+	/* Constants */
+	constexpr static bool bVisualDebug = true;
+	constexpr static float MaxOverlapEventTimeGap = 0.11f;
 };

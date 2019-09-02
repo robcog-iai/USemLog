@@ -145,8 +145,8 @@ private:
 	// A grasp has ended
 	void EndGrasp(AActor* Other);
 
-	// All grasps have ended
-	void EndAllGrasps();
+	//// All grasps have ended
+	//void EndAllGrasps();
 
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedGraspEndEventCallback();
@@ -165,8 +165,8 @@ private:
 	UFUNCTION()
 	void OnEndOverlapContact(AActor* OtherActor);
 
-	// End all contacts
-	void EndAllContacts();
+	//// End all contacts
+	//void EndAllContacts();
 
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedContactEndEventCallback();
