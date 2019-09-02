@@ -44,25 +44,24 @@ private:
 	
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);
-
 	
 	// Event called when a semantic overlap event begins
-	void OnSLLiftBegin(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLLiftBegin(const FSLEntity& Self, AActor* Other, float Time);
 
 	// Event called when a semantic overlap event ends
-	void OnSLLiftEnd(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLLiftEnd(const FSLEntity& Self, AActor* Other, float Time);
 
 	// Event called when a semantic overlap event begins
-	void OnSLSlideBegin(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLSlideBegin(const FSLEntity& Self, AActor* Other, float Time);
 
 	// Event called when a semantic overlap event ends
-	void OnSLSlideEnd(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLSlideEnd(const FSLEntity& Self, AActor* Other, float Time);
 
 		// Event called when a semantic overlap event begins
-	void OnSLTransportBegin(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLTransportBegin(const FSLEntity& Self, AActor* Other, float Time);
 
 	// Event called when a semantic overlap event ends
-	void OnSLTransportEnd(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLTransportEnd(const FSLEntity& Self, AActor* Other, float Time);
 	
 private:
 	// Parent

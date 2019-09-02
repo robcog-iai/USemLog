@@ -19,14 +19,9 @@ USLPickAndPlaceListener::USLPickAndPlaceListener()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
-
-	bDetectLiftEvents = true;
-	bDetectSlideEvents = true;
-	bDetectTransportEvents = true;
-
-	UpdateRate = 0.15f;
-
+	
 	GraspedObject = nullptr;
+	EventCheck = ESLPaPStateCheck::NONE;
 }
 
 // Dtor
@@ -107,61 +102,97 @@ bool USLPickAndPlaceListener::SubscribeForGraspEvents()
 	return false;
 }
 
-// Called when grasp starts
-void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType)
+// Get grasped objects contact shape component
+ISLContactShapeInterface* USLPickAndPlaceListener::GetContactShapeComponent(AActor* Actor) const
 {
-	//if(GraspedObject)
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Multiple objects grasped? TODO"), *FString(__func__), __LINE__);
-	//}
-	//
-	//if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
-	//{
-	//	GraspedObject = AsSMA;
-	//	for (const auto& C : GraspedObject->GetComponents())
-	//	{
-	//		if(C->Implements<USLContactShapeInterface>())
-	//		{
-	//			GraspedObjectContactShape = Cast<ISLContactShapeInterface>(C);
-	//			if(GraspedObjectContactShape)
-	//			{
-	//				if(GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
-	//				{
-	//					GetWorld()->GetTimerManager().UnPauseTimer(UpdateTimerHandle);
-	//				}
-	//				else
-	//				{
-	//					UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been paused.."), *FString(__func__), __LINE__);
-	//				}
-	//			}
-	//			break; // stop iterating other components
-	//		}
-	//	}
-	//}
+	if(Actor)
+	{
+		for (const auto& C : Actor->GetComponents())
+		{
+			if(C->Implements<USLContactShapeInterface>())
+			{
+				if(ISLContactShapeInterface* CSI = Cast<ISLContactShapeInterface>(C))
+				{
+					return CSI;
+				}
+			}
+		}
+	}
+	return nullptr;
+}
+
+// Called when grasp starts
+void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType)
+{
+	if(GraspedObject)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.. multiple objects grasped?"), *FString(__func__), __LINE__);
+		return; // we are already grasping an object, ignore future ones
+	}
+
+	// Take into account only objects that have a contact shape component
+	if(ISLContactShapeInterface* CSI = GetContactShapeComponent(Other))
+	{
+		GraspedObject = Other;
+		GraspedObjectContactShape = CSI;
+
+		PrevRelevantLocation = Other->GetActorLocation();
+		PrevRelevantTime = GetWorld()->GetTimeSeconds();
+
+		if(GraspedObjectContactShape->IsSupportedBySomething())
+		{
+			EventCheck = ESLPaPStateCheck::Slide;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, should start with a supporting state.."),
+				*FString(__func__), __LINE__);
+			GraspedObject = nullptr;
+			GraspedObjectContactShape = nullptr;
+			return;
+		}
+
+		
+		if(GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
+		{
+			GetWorld()->GetTimerManager().UnPauseTimer(UpdateTimerHandle);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been paused.."),
+				*FString(__func__), __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Grasped object %s does not have a ContactShapeInterface"),
+			*FString(__func__), __LINE__, *Other->GetName());
+		return; // we are already grasping an object, ignore future ones
+	}
 }
 
 // Called when grasp ends
-void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time)
+void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time)
 {
-	//if(Other == GraspedObject)
-	//{
-	//	GraspedObject = nullptr;
-	//	GraspedObjectContactShape = nullptr;
-	//	if(!GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
-	//	{
-	//		GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
-	//	}
-	//	else
-	//	{
-	//		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been running.."),
-	//			*FString(__func__), __LINE__);
-	//	}
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen (were there multiple objects grasped?)"),
-	//			*FString(__func__), __LINE__);
-	//}
+	if(Other == GraspedObject)
+	{
+		GraspedObject = nullptr;
+		GraspedObjectContactShape = nullptr;
+		if(!GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
+		{
+			GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been running.."),
+				*FString(__func__), __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.. multiple objects grasped?"),
+				*FString(__func__), __LINE__);
+	}
 }
 
 // Update callback
@@ -169,18 +200,30 @@ void USLPickAndPlaceListener::Update()
 {
 	if(GraspedObject == nullptr || GraspedObjectContactShape == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Thus should not happen....."), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen....."), *FString(__func__), __LINE__);
 		return;
 	}
-	
-	//if(GraspedObjectContactShape->IsSupportedBySomething())
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %f %s -> supported"),
-	//		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GraspedObject->GetName());
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %f %s -> flaoting"), *FString(__func__), __LINE__,
-	//		GetWorld()->GetTimeSeconds(), *GraspedObject->GetName());
-	//}
+
+	if(EventCheck == ESLPaPStateCheck::Slide)
+	{
+		if(!GraspedObjectContactShape->IsSupportedBySomething())
+		{
+			const float CurrTime = GetWorld()->GetTimeSeconds();
+			if(FVector::DistSquared(PrevRelevantLocation, GraspedObject->GetActorLocation()) > MinSlideDistSq
+				&& CurrTime - PrevRelevantTime > MinSlideDuration)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d BCAST Slide [%f <--> %f]"),
+					*FString(__func__), __LINE__, PrevRelevantTime, CurrTime);
+
+				EventCheck = ESLPaPStateCheck::PickUpOrTransport;
+			}
+		}
+	}
+	else if(EventCheck == ESLPaPStateCheck::PickUpOrTransport)
+	{
+		if(!GraspedObjectContactShape->IsSupportedBySomething())
+		{
+			
+		}
+	}
 }

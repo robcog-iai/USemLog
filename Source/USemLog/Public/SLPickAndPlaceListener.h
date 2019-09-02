@@ -6,20 +6,54 @@
 
 #include "USemLog.h"
 #include "Components/ActorComponent.h"
-#include "Engine/StaticMeshActor.h"
 #include "SLStructs.h" // FSLEntity
 #include "SLContactShapeInterface.h"
 #include "SLPickAndPlaceListener.generated.h"
 
+
+/**
+* Hand type
+*/
+UENUM()
+enum class ESLPaPStateCheck : uint8
+{
+	NONE								UMETA(DisplayName = "NONE"),
+	Slide								UMETA(DisplayName = "Slide"),
+	PickUpOrTransport					UMETA(DisplayName = "PickUpOrTransport"),
+	TransportOrPutDown					UMETA(DisplayName = "TransportOrPutDown"),
+	PutDown								UMETA(DisplayName = "PutDown"),
+	
+};
+
+/**
+ * Various PaP events helpers
+ */
+struct FSLPaPSlide
+{
+public:
+	// Default ctor
+	FSLPaPSlide() = default;
+
+	
+	float MovedDistSq;
+
+
+	// End time of the event 
+	float StartTime;
+
+};
+
+
 /** Notify the beginning and the end of the lift/slide/transport events */
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginLiftSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndLiftSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLSlideSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*StartTime*/, float /*EndTime*/);
 
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginSlideSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndSlideSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
 
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginTransportSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndTransportSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginLiftSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndLiftSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
+
+
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginTransportSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndTransportSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
 
 /**
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
@@ -58,25 +92,26 @@ private:
 	// Subscribe to grasp events from sibling
 	bool SubscribeForGraspEvents();
 
+	// Get grasped objects contact shape component
+	ISLContactShapeInterface* GetContactShapeComponent(AActor* Actor) const;
+
 	// Called on grasp begin
-	void OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType);
+	void OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType);
 
 	// Called on grasp end
-	void OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time);
 
 	// Update callback
 	void Update();
 
 public:
-	// Lift/slide/transport events begin end 
+	// PaP events begin/end
+	FSLSlideSignature OnManipulatorSlideEvent;
+
+	
 	FSLBeginLiftSignature OnBeginManipulatorLift;
 	FSLEndLiftSignature OnEndManipulatorLift;
 
-	FSLBeginSlideSignature OnBeginManipulatorSlide;
-	FSLEndSlideSignature OnEndManipulatorSlide;
-
-	FSLBeginSlideSignature OnBeginManipulatorTransport;
-	FSLEndSlideSignature OnEndManipulatorTransport;
 	
 private:
 	// True if initialized
@@ -88,32 +123,34 @@ private:
 	// True if finished
 	bool bIsFinished;
 
-	// Flags for detecting various stages of the pick and place
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bDetectLiftEvents;
-
-	// Flags for detecting various stages of the pick and place
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bDetectSlideEvents;
-
-	// Flags for detecting various stages of the pick and place
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bDetectTransportEvents;
-
-	// Update rate for checking the event type
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float UpdateRate;
-
 	// Semantic data of the owner
 	FSLEntity SemanticOwner;
 
-	// TODO currently only taking into account that only one objects is grasped
 	// Object currently grasped
-	AStaticMeshActor* GraspedObject;
+	AActor* GraspedObject;
+
+	// Previous event check
+	ESLPaPStateCheck EventCheck;
+
+	// Cache of various relevant locations
+	FVector PrevRelevantLocation;
+
+	// Cache of various relevant times
+	float PrevRelevantTime;
 
 	// Contact shape of the grasped object, holds information if the object is supported by a surface
 	ISLContactShapeInterface* GraspedObjectContactShape;
 	
 	// Update timer handle
 	FTimerHandle UpdateTimerHandle;
+
+	/* Constants */
+	constexpr static float UpdateRate = 0.07f;
+
+	// Slide events
+	constexpr static float MinSlideDistSq = 6.f * 6.f;
+	constexpr static float MinSlideDuration = 0.7f;
+	
+	constexpr static float PickUpDistSq = 15.f * 15.f;
+	constexpr static float PickMinZ = 3.f;
 };

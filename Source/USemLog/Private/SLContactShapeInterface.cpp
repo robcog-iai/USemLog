@@ -257,7 +257,7 @@ void ISLContactShapeInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 	if(!World->GetTimerManager().IsTimerActive(DelayTimerHandle))
 	{
-		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap*2.f, false);
+		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap*1.2f, false);
 	}
 }
 
@@ -279,7 +279,7 @@ void ISLContactShapeInterface::DelayedOverlapEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedOverlapEvents.Num() > 0)
 	{
-		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap*2.f, false);
+		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap*1.2f, false);
 	}
 }
 

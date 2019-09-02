@@ -59,8 +59,8 @@ struct FSLContactEndEvent
 };
 
 /** Notify when an object is grasped and released*/
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/, const FString& /*Type*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/, const FString& /*Type*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
 
 /**
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
@@ -145,9 +145,6 @@ private:
 	// A grasp has ended
 	void EndGrasp(AActor* Other);
 
-	//// All grasps have ended
-	//void EndAllGrasps();
-
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedGraspEndEventCallback();
 
@@ -164,9 +161,6 @@ private:
 	// Process ending of contact
 	UFUNCTION()
 	void OnEndOverlapContact(AActor* OtherActor);
-
-	//// End all contacts
-	//void EndAllContacts();
 
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedContactEndEventCallback();

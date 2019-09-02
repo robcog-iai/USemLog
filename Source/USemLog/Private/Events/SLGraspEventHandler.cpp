@@ -81,7 +81,7 @@ void FSLGraspEventHandler::AddNewEvent(const FSLEntity& Self, const FSLEntity& O
 }
 
 // Publish finished event
-bool FSLGraspEventHandler::FinishEvent(UObject* Other, float EndTime)
+bool FSLGraspEventHandler::FinishEvent(AActor* Other, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
@@ -123,18 +123,18 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic grasp event begins
-void FSLGraspEventHandler::OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& Type)
+void FSLGraspEventHandler::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& Type)
 {
 	// Check that the objects are semantically annotated
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
 	if (OtherItem.IsSet())
 	{
-		FSLGraspEventHandler::AddNewEvent(Self, OtherItem, Time, Type);
+		AddNewEvent(Self, OtherItem, Time, Type);
 	}
 }
 
 // Event called when a semantic grasp event ends
-void FSLGraspEventHandler::OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time)
+void FSLGraspEventHandler::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time)
 {
-	FSLGraspEventHandler::FinishEvent(Other, Time);
+	FinishEvent(Other, Time);
 }

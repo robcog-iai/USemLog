@@ -6,10 +6,11 @@
 #include "USemLog.h"
 #include "Components/SphereComponent.h"
 #include "SLStructs.h"
+#include "Engine/StaticMeshActor.h"
 #include "SLReachListener.generated.h"
 
 // Convenience enum
-enum ESLTimeAndDistance
+enum ESLTimeAndDistanceSq
 {
 	Time = 0,
 	Dist = 1
@@ -17,10 +18,7 @@ enum ESLTimeAndDistance
 
 //typedef TPair<float, float> FSLTimeAndDistance;
 //using FSLTimeAndDistance = TPair<float, float>;
-using FSLTimeAndDistance = TTuple<float, float>; // <Time, Distance>
-
-// Forward declarations
-class AStaticMeshActor;
+using FSLTimeAndDistanceSq = TTuple<float, float>; // <Time, Distance>
 
 /** Notify when a reaching event happened*/
 DECLARE_MULTICAST_DELEGATE_FiveParams(FSLReachEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
@@ -90,10 +88,10 @@ private:
 	bool CanBeACandidate(AStaticMeshActor* InObject) const;
 
 	// End reach and positioning events, pause timer
-	void OnSLGraspBegin(const FSLEntity& Self, UObject* Other, float Time, const FString& GraspType);
+	void OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType);
 
 	// Reset looking for the events
-	void OnSLGraspEnd(const FSLEntity& Self, UObject* Other, float Time);
+	void OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time);
 	
 	// Used for the reaching and hand positioning detection
 	void OnSLManipulatorContactBegin(const FSLContactResult& ContactResult);
@@ -137,34 +135,36 @@ private:
 	// Shows if the begin / end overlap callbacks are bound (avoid adding the same callback twice)
 	bool bCallbacksAreBound;
 
-	// How often to check for reaching action in its area (0 = every tick)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float UpdateRate;
+	//// How often to check for reaching action in its area (0 = every tick)
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	//float UpdateRate;
 
-	// Weight (kg) limit for candidates that can be potentially reached
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float WeightLimit;
+	//// Weight (kg) limit for candidates that can be potentially reached
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	//float WeightLimit;
 
-	// Volume (cm^3) limit for candidates that can be potentially reach (1000cm^3 = 1 Liter)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float VolumeLimit;
+	//// Volume (cm^3) limit for candidates that can be potentially reach (1000cm^3 = 1 Liter)
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	//float VolumeLimit;
 
 	// Timer handle for the update rate
-	FTimerHandle TimerHandle;
+	FTimerHandle UpdateTimerHandle;
 
 	// Semantic data of the owner
 	FSLEntity SemanticOwner;
 
 	// CandidatesWithTimeAndDistance for reaching action, pointing to their starting time
-	TMap<AStaticMeshActor*, FSLTimeAndDistance> CandidatesWithTimeAndDistance;
+	TMap<AStaticMeshActor*, FSLTimeAndDistanceSq> CandidatesWithTimeAndDistance;
 
 	// The objects currently in contact with (before grasping)
 	TMap<AStaticMeshActor*, float> ObjectsInContactWithManipulator;
 	
 	// Pause everything if the hand is currently grasping something
-	UObject* CurrGraspedObj;
+	AActor* CurrGraspedObj;
 	
 	/* Constants */
 	// Minimum distance squared for reaching movements
 	constexpr static float MinDistSq = 2.5f * 2.5f;
+
+	constexpr static float UpdateRate = 0.22f;
 };

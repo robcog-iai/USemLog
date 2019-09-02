@@ -85,9 +85,7 @@ bool FSLManipulatorContactEventHandler::FinishEvent(const FSLEntity& InOther, fl
 			(*EventItr)->End = EndTime;
 
 			OnSemanticEvent.ExecuteIfBound(*EventItr);
-			UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t\t CONTACT EVENT [%s;%s] [%f<-->%f]"),
-				*FString(__func__), __LINE__, *(*EventItr)->Item1.Obj->GetName(), *(*EventItr)->Item2.Obj->GetName(), (*EventItr)->Start, (*EventItr)->End);
-			
+
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
 			return true;
@@ -105,8 +103,6 @@ void FSLManipulatorContactEventHandler::FinishAllEvents(float EndTime)
 		// Set end time and publish event
 		Ev->End = EndTime;
 		OnSemanticEvent.ExecuteIfBound(Ev);
-		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t\t [FINISH]CONTACT EVENT [%s;%s] [%f<-->%f]"),
-			*FString(__func__), __LINE__, *Ev->Item1.Obj->GetName(), *Ev->Item2.Obj->GetName(), Ev->Start, Ev->End);
 	}
 	StartedEvents.Empty();
 }

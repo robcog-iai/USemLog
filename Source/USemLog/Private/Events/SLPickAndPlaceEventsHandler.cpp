@@ -35,15 +35,15 @@ void FSLPickAndPlaceEventsHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		// Subscribe to the forwarded semantically annotated grasping broadcasts
-		Parent->OnBeginManipulatorLift.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLLiftBegin);
-		Parent->OnEndManipulatorLift.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLLiftEnd);
+		//// Subscribe to the forwarded semantically annotated grasping broadcasts
+		//Parent->OnBeginManipulatorLift.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLLiftBegin);
+		//Parent->OnEndManipulatorLift.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLLiftEnd);
 
-		Parent->OnBeginManipulatorSlide.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLSlideBegin);
-		Parent->OnEndManipulatorSlide.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLSlideEnd);
+		//Parent->OnManipulatorSlideEvent.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLSlideBegin);
+		//Parent->OnEndManipulatorSlide.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLSlideEnd);
 
-		Parent->OnBeginManipulatorTransport.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLTransportBegin);
-		Parent->OnEndManipulatorTransport.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLTransportEnd);
+		//Parent->OnBeginManipulatorTransport.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLTransportBegin);
+		//Parent->OnEndManipulatorTransport.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLTransportEnd);
 		
 		// Mark as started
 		bIsStarted = true;
@@ -207,7 +207,7 @@ void FSLPickAndPlaceEventsHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic grasp event begins
-void FSLPickAndPlaceEventsHandler::OnSLLiftBegin(const FSLEntity& Self, UObject* Other, float Time)
+void FSLPickAndPlaceEventsHandler::OnSLLiftBegin(const FSLEntity& Self, AActor* Other, float Time)
 {
 	// Check that the objects are semantically annotated
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
@@ -218,13 +218,13 @@ void FSLPickAndPlaceEventsHandler::OnSLLiftBegin(const FSLEntity& Self, UObject*
 }
 
 // Event called when a semantic grasp event ends
-void FSLPickAndPlaceEventsHandler::OnSLLiftEnd(const FSLEntity& Self, UObject* Other, float Time)
+void FSLPickAndPlaceEventsHandler::OnSLLiftEnd(const FSLEntity& Self, AActor* Other, float Time)
 {
 	FSLPickAndPlaceEventsHandler::FinishLiftEvent(Other, Time);
 }
 
 // Event called when a semantic grasp event begins
-void FSLPickAndPlaceEventsHandler::OnSLSlideBegin(const FSLEntity& Self, UObject* Other, float Time)
+void FSLPickAndPlaceEventsHandler::OnSLSlideBegin(const FSLEntity& Self, AActor* Other, float Time)
 {
 	// Check that the objects are semantically annotated
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
@@ -235,13 +235,13 @@ void FSLPickAndPlaceEventsHandler::OnSLSlideBegin(const FSLEntity& Self, UObject
 }
 
 // Event called when a semantic grasp event ends
-void FSLPickAndPlaceEventsHandler::OnSLSlideEnd(const FSLEntity& Self, UObject* Other, float Time)
+void FSLPickAndPlaceEventsHandler::OnSLSlideEnd(const FSLEntity& Self, AActor* Other, float Time)
 {
 	FSLPickAndPlaceEventsHandler::FinishSlideEvent(Other, Time);
 }
 
 // Event called when a semantic grasp event begins
-void FSLPickAndPlaceEventsHandler::OnSLTransportBegin(const FSLEntity& Self, UObject* Other, float Time)
+void FSLPickAndPlaceEventsHandler::OnSLTransportBegin(const FSLEntity& Self, AActor* Other, float Time)
 {
 	// Check that the objects are semantically annotated
 	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
@@ -252,7 +252,7 @@ void FSLPickAndPlaceEventsHandler::OnSLTransportBegin(const FSLEntity& Self, UOb
 }
 
 // Event called when a semantic grasp event ends
-void FSLPickAndPlaceEventsHandler::OnSLTransportEnd(const FSLEntity& Self, UObject* Other, float Time)
+void FSLPickAndPlaceEventsHandler::OnSLTransportEnd(const FSLEntity& Self, AActor* Other, float Time)
 {
 	FSLPickAndPlaceEventsHandler::FinishTransportEvent(Other, Time);
 }
