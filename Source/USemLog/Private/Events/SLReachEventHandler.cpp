@@ -36,7 +36,7 @@ void FSLReachEventHandler::Start()
 	if (!bIsStarted && bIsInit)
 	{
 		// Subscribe to the forwarded semantically annotated Reaching broadcasts
-		Parent->OnPreAndReachEvent.AddRaw(this, &FSLReachEventHandler::OnSLPreAndReachEvent);
+		Parent->OnPreGraspAndReachEvent.AddRaw(this, &FSLReachEventHandler::OnSLPreAndReachEvent);
 
 		// Mark as started
 		bIsStarted = true;

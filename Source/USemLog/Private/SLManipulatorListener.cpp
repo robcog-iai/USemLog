@@ -409,7 +409,7 @@ void USLManipulatorListener::EndGrasp(AActor* OtherActor)
 		if(!GetWorld()->GetTimerManager().IsTimerActive(GraspDelayTimerHandle))
 		{
 			GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorListener::DelayedGraspEndEventCallback,
-				MaxGraspEventTimeGap*2.f, false);
+				MaxGraspEventTimeGap*1.4f, false);
 		}
 	}
 }
@@ -447,7 +447,7 @@ void USLManipulatorListener::DelayedGraspEndEventCallback()
 	if(RecentlyEndedGraspEvents.Num() > 0)
 	{
 		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorListener::DelayedGraspEndEventCallback,
-			MaxGraspEventTimeGap*2.f, false);
+			MaxGraspEventTimeGap*1.4f, false);
 	}
 }
 
@@ -523,7 +523,7 @@ void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
 				if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
 				{
 					GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
-						MaxContactEventTimeGap * 2.f, false);
+						MaxContactEventTimeGap * 1.4f, false);
 				}
 			}
 		}
@@ -554,7 +554,7 @@ void USLManipulatorListener::DelayedContactEndEventCallback()
 	if(RecentlyEndedContactEvents.Num() > 0)
 	{
 		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
-			MaxContactEventTimeGap*2.f, false);
+			MaxContactEventTimeGap * 1.4f, false);
 	}
 }
 

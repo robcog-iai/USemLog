@@ -20,8 +20,9 @@ USLPickAndPlaceListener::USLPickAndPlaceListener()
 	bIsStarted = false;
 	bIsFinished = false;
 	
-	GraspedObject = nullptr;
+	CurrGraspedObj = nullptr;
 	EventCheck = ESLPaPStateCheck::NONE;
+	UpdateFunctionPtr = &USLPickAndPlaceListener::Update_NONE;
 }
 
 // Dtor
@@ -51,6 +52,10 @@ bool USLPickAndPlaceListener::Init()
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not semantically annotated.."), *FString(__func__), __LINE__);
 			return false;
 		}
+
+		// Init state
+		EventCheck = ESLPaPStateCheck::NONE;
+		UpdateFunctionPtr = &USLPickAndPlaceListener::Update_NONE;
 
 		bIsInit = true;
 		return true;
@@ -124,17 +129,21 @@ ISLContactShapeInterface* USLPickAndPlaceListener::GetContactShapeComponent(AAct
 // Called when grasp starts
 void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType)
 {
-	if(GraspedObject)
+	if(CurrGraspedObj)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.. multiple objects grasped?"), *FString(__func__), __LINE__);
-		return; // we are already grasping an object, ignore future ones
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] Cannot set %s as grasped object.. manipulator is already grasping %s;"),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName(), *CurrGraspedObj->GetName());
+		return;
 	}
 
 	// Take into account only objects that have a contact shape component
 	if(ISLContactShapeInterface* CSI = GetContactShapeComponent(Other))
 	{
-		GraspedObject = Other;
+		CurrGraspedObj = Other;
 		GraspedObjectContactShape = CSI;
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s set as grasped object.."),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
 
 		PrevRelevantLocation = Other->GetActorLocation();
 		PrevRelevantTime = GetWorld()->GetTimeSeconds();
@@ -142,13 +151,17 @@ void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Othe
 		if(GraspedObjectContactShape->IsSupportedBySomething())
 		{
 			EventCheck = ESLPaPStateCheck::Slide;
+			UpdateFunctionPtr = &USLPickAndPlaceListener::Update_Slide;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, should start with a supporting state.."),
-				*FString(__func__), __LINE__);
-			GraspedObject = nullptr;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s should be in a SupportedBy state.. aborting interaction.."),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
+
+			CurrGraspedObj = nullptr;
 			GraspedObjectContactShape = nullptr;
+			EventCheck = ESLPaPStateCheck::NONE;
+			UpdateFunctionPtr = &USLPickAndPlaceListener::Update_NONE;
 			return;
 		}
 
@@ -159,46 +172,61 @@ void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Othe
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been paused.."),
-				*FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, timer should have been paused here.."),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Grasped object %s does not have a ContactShapeInterface"),
-			*FString(__func__), __LINE__, *Other->GetName());
-		return; // we are already grasping an object, ignore future ones
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s does not have a ContactShapeInterface required to query the SupportedBy state..  aborting interaction.."),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
 	}
 }
 
 // Called when grasp ends
 void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time)
 {
-	if(Other == GraspedObject)
+	if(CurrGraspedObj == nullptr)
 	{
-		GraspedObject = nullptr;
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen.. currently grasped object is nullptr while ending grasp with %s"),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
+		return;
+	}
+
+	if(CurrGraspedObj == Other)
+	{
+		CurrGraspedObj = nullptr;
 		GraspedObjectContactShape = nullptr;
+		EventCheck = ESLPaPStateCheck::NONE;
+		UpdateFunctionPtr = &USLPickAndPlaceListener::Update_NONE;
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s removed as grasped object.."),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
+
 		if(!GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
 		{
 			GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen, timer should have been running.."),
-				*FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, timer should have been running here.."),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.. multiple objects grasped?"),
-				*FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] End grasp with %s while %s is still grasped.. ignoring event.."),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName(), *CurrGraspedObj->GetName());
 	}
 }
 
 // Update callback
 void USLPickAndPlaceListener::Update()
 {
-	if(GraspedObject == nullptr || GraspedObjectContactShape == nullptr)
+	// Call the state update function
+	(this->*UpdateFunctionPtr)();
+
+	if(CurrGraspedObj == nullptr || GraspedObjectContactShape == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen....."), *FString(__func__), __LINE__);
 		return;
@@ -206,18 +234,7 @@ void USLPickAndPlaceListener::Update()
 
 	if(EventCheck == ESLPaPStateCheck::Slide)
 	{
-		if(!GraspedObjectContactShape->IsSupportedBySomething())
-		{
-			const float CurrTime = GetWorld()->GetTimeSeconds();
-			if(FVector::DistSquared(PrevRelevantLocation, GraspedObject->GetActorLocation()) > MinSlideDistSq
-				&& CurrTime - PrevRelevantTime > MinSlideDuration)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d BCAST Slide [%f <--> %f]"),
-					*FString(__func__), __LINE__, PrevRelevantTime, CurrTime);
 
-				EventCheck = ESLPaPStateCheck::PickUpOrTransport;
-			}
-		}
 	}
 	else if(EventCheck == ESLPaPStateCheck::PickUpOrTransport)
 	{
@@ -226,4 +243,35 @@ void USLPickAndPlaceListener::Update()
 			
 		}
 	}
+}
+
+// Default update function
+void USLPickAndPlaceListener::Update_NONE()
+{
+
+}
+
+void USLPickAndPlaceListener::Update_Slide()
+{
+	if(!GraspedObjectContactShape->IsSupportedBySomething())
+	{
+		const float CurrTime = GetWorld()->GetTimeSeconds();
+		const float CurrDistXY = FVector::DistXY(PrevRelevantLocation, CurrGraspedObj->GetActorLocation());
+		if(CurrDistXY > MinSlideDistXY	&& CurrTime - PrevRelevantTime > MinSlideDuration)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d BCAST Slide [%f <--> %f]"),
+				*FString(__func__), __LINE__, PrevRelevantTime, CurrTime);
+
+			EventCheck = ESLPaPStateCheck::PickUpOrTransport;
+			UpdateFunctionPtr = &USLPickAndPlaceListener::Update_PickUpOrTransport;
+		}
+	}
+}
+
+void USLPickAndPlaceListener::Update_PickUpOrTransport()
+{
+}
+
+void USLPickAndPlaceListener::Update_TransportOrPutDown()
+{
 }

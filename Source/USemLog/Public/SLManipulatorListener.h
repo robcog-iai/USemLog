@@ -40,7 +40,7 @@ struct FSLGraspEndEvent
 };
 
 /**
- * Grasp event end data
+ * Contact event end data
  */
 struct FSLContactEndEvent
 {

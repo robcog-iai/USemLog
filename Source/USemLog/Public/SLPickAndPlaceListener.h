@@ -107,11 +107,9 @@ private:
 public:
 	// PaP events begin/end
 	FSLSlideSignature OnManipulatorSlideEvent;
-
 	
 	FSLBeginLiftSignature OnBeginManipulatorLift;
 	FSLEndLiftSignature OnEndManipulatorLift;
-
 	
 private:
 	// True if initialized
@@ -127,7 +125,7 @@ private:
 	FSLEntity SemanticOwner;
 
 	// Object currently grasped
-	AActor* GraspedObject;
+	AActor* CurrGraspedObj;
 
 	// Previous event check
 	ESLPaPStateCheck EventCheck;
@@ -144,13 +142,27 @@ private:
 	// Update timer handle
 	FTimerHandle UpdateTimerHandle;
 
+	/* Update function bindings */
+	// Function pointer type for calling the correct update function
+	typedef void(USLPickAndPlaceListener::*UpdateFunctionPointerType)();
+
+	// Function pointer for the state check update callback
+	UpdateFunctionPointerType UpdateFunctionPtr;
+
+	// State update functions
+	void Update_NONE();
+	void Update_Slide();
+	void Update_PickUpOrTransport();
+	void Update_TransportOrPutDown();
+
+
 	/* Constants */
-	constexpr static float UpdateRate = 0.07f;
+	constexpr static float UpdateRate = 0.09f;
 
 	// Slide events
-	constexpr static float MinSlideDistSq = 6.f * 6.f;
+	constexpr static float MinSlideDistXY = 10.f;
 	constexpr static float MinSlideDuration = 0.7f;
 	
-	constexpr static float PickUpDistSq = 15.f * 15.f;
-	constexpr static float PickMinZ = 3.f;
+	constexpr static float MaxPickUpDistXY = 15.f;
+	constexpr static float MinPickUpHeight = 3.f;
 };

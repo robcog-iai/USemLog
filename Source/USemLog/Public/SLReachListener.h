@@ -9,8 +9,27 @@
 #include "Engine/StaticMeshActor.h"
 #include "SLReachListener.generated.h"
 
+/**
+ * PreGrasp event end data
+ */
+struct FSLPreGraspEndEvent
+{
+	// Default ctor
+	FSLPreGraspEndEvent() = default;
+
+	// Init ctor
+	FSLPreGraspEndEvent(AStaticMeshActor* InOther, float InTime) :
+		Other(InOther), Time(InTime) {};
+
+	// Other actor
+	AStaticMeshActor* Other;
+
+	// End time of the event 
+	float Time;
+};
+
 // Convenience enum
-enum ESLTimeAndDistanceSq
+enum ESLTimeAndDist
 {
 	Time = 0,
 	Dist = 1
@@ -18,13 +37,10 @@ enum ESLTimeAndDistanceSq
 
 //typedef TPair<float, float> FSLTimeAndDistance;
 //using FSLTimeAndDistance = TPair<float, float>;
-using FSLTimeAndDistanceSq = TTuple<float, float>; // <Time, Distance>
+using FSLTimeAndDist = TTuple<float, float>; // <Time, Distance>
 
 /** Notify when a reaching event happened*/
-DECLARE_MULTICAST_DELEGATE_FiveParams(FSLReachEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
-
-/** Notify when a manipulator positioning event happened*/
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLManipulatorPositioningEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*StartTime*/, float /*EndTime*/);
+DECLARE_MULTICAST_DELEGATE_FiveParams(FSLPreGraspAndReachEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
 
 /**
  * Checks for reaching actions
@@ -79,14 +95,30 @@ private:
 	bool SubscribeForManipulatorEvents();
 	
 	// Update callback, checks distance to hand, if it increases it resets the start time
-	void Update();
+	void ReachUpdate();
 
 	// Publish currently overlapping components
 	void TriggerInitialOverlaps();
 
 	// Check if the object is can be a candidate for reaching
 	bool CanBeACandidate(AStaticMeshActor* InObject) const;
+	
+	// Checks for candidates in the overlap area
+	UFUNCTION()
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
 
+	// Checks for candidates in the overlap area
+	UFUNCTION()
+	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex);
+	
 	// End reach and positioning events, pause timer
 	void OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType);
 
@@ -96,31 +128,18 @@ private:
 	// Used for the reaching and hand positioning detection
 	void OnSLManipulatorContactBegin(const FSLContactResult& ContactResult);
 
-	// Cancel started events
+	// Manipulator is not in contact with object anymore, check for possible concatenation, or reset the potential reach time
 	void OnSLManipulatorContactEnd(const FSLEntity& Self, const FSLEntity& Other, float Time);
+	
+	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
+	void DelayedManipulatorContactEndEventCallback();
 
-	// Event called when something stops overlapping this component 
-	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
-		AActor* OtherActor,
-		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex,
-		bool bFromSweep,
-		const FHitResult& SweepResult);
-
-	// Event called when something stops overlapping this component 
-	UFUNCTION()
-	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
-		AActor* OtherActor,
-		UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex);
+	// Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
+	bool SkipRecentManipulatorContactEndEventTime(AStaticMeshActor* Other, float StartTime);
 
 public:
 	// Event called when the reaching motion is finished
-	FSLReachEventSignature OnPreAndReachEvent;
-
-	// Event called when the manipulator positioning motion is finished
-	FSLReachEventSignature OnManipulatorPositioningEvent;
+	FSLPreGraspAndReachEventSignature OnPreGraspAndReachEvent;
 	
 private:
 	// True if initialized
@@ -132,20 +151,8 @@ private:
 	// True if finished
 	bool bIsFinished;
 
-	// Shows if the begin / end overlap callbacks are bound (avoid adding the same callback twice)
+	// Shows if the begin / end overlap callbacks are bound (avoid adding the same callback twice--crash)
 	bool bCallbacksAreBound;
-
-	//// How often to check for reaching action in its area (0 = every tick)
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	//float UpdateRate;
-
-	//// Weight (kg) limit for candidates that can be potentially reached
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	//float WeightLimit;
-
-	//// Volume (cm^3) limit for candidates that can be potentially reach (1000cm^3 = 1 Liter)
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	//float VolumeLimit;
 
 	// Timer handle for the update rate
 	FTimerHandle UpdateTimerHandle;
@@ -154,17 +161,22 @@ private:
 	FSLEntity SemanticOwner;
 
 	// CandidatesWithTimeAndDistance for reaching action, pointing to their starting time
-	TMap<AStaticMeshActor*, FSLTimeAndDistanceSq> CandidatesWithTimeAndDistance;
+	TMap<AStaticMeshActor*, FSLTimeAndDist> CandidatesWithTimeAndDistance;
 
 	// The objects currently in contact with (before grasping)
 	TMap<AStaticMeshActor*, float> ObjectsInContactWithManipulator;
 	
 	// Pause everything if the hand is currently grasping something
 	AActor* CurrGraspedObj;
+
+	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
+	FTimerHandle ManipulatorContactDelayTimerHandle;
+
+	// Array of recently ended events
+	TArray<FSLPreGraspEndEvent> RecentlyEndedManipulatorContactEvents;
 	
 	/* Constants */
-	// Minimum distance squared for reaching movements
-	constexpr static float MinDistSq = 2.5f * 2.5f;
-
-	constexpr static float UpdateRate = 0.22f;
+	constexpr static float MinDist = 2.5f;
+	constexpr static float UpdateRate = 0.27f;
+	constexpr static float MaxPreGraspEventTimeGap = 1.3f;
 };
