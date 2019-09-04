@@ -7,20 +7,20 @@
 #include "SLStructs.h"
 
 /**
-* Lift event class
+* Pick and place PickUp event class
 */
-class FSLLiftEvent : public ISLEvent
+class FSLPickUpEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLLiftEvent() = default;
+	FSLPickUpEvent() = default;
 
 	// Constructor with initialization
-	FSLLiftEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
+	FSLPickUpEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 		const FSLEntity& InManipulator, const FSLEntity& InItem);
 
 	// Constructor initialization without end time
-	FSLLiftEvent(const FString& InId, const float InStart, const uint64 InPairId,
+	FSLPickUpEvent(const FString& InId, const float InStart, const uint64 InPairId,
 		const FSLEntity& InManipulator, const FSLEntity& InItem);
 
 	// Pair id of the event (combination of two unique runtime ids)

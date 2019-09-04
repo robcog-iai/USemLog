@@ -44,9 +44,9 @@ public:
 };
 
 
-/** Notify the beginning and the end of the lift/slide/transport events */
+/** Notify the beginning and the end of the pick and place related events */
 DECLARE_MULTICAST_DELEGATE_FourParams(FSLSlideSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*StartTime*/, float /*EndTime*/);
-
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLPickUpSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*StartTime*/, float /*EndTime*/);
 
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginLiftSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndLiftSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
@@ -104,12 +104,19 @@ private:
 	// Update callback
 	void Update();
 
+	// Object released, terminate active even
+	void FinishActiveEvent();
+
+	// State update functions
+	void Update_NONE();
+	void Update_Slide();
+	void Update_PickUpOrTransport();
+	void Update_TransportOrPutDown();
+
 public:
-	// PaP events begin/end
+	// PaP events delegates
 	FSLSlideSignature OnManipulatorSlideEvent;
-	
-	FSLBeginLiftSignature OnBeginManipulatorLift;
-	FSLEndLiftSignature OnEndManipulatorLift;
+	FSLSlideSignature OnManipulatorPickUpEvent;
 	
 private:
 	// True if initialized
@@ -149,20 +156,23 @@ private:
 	// Function pointer for the state check update callback
 	UpdateFunctionPointerType UpdateFunctionPtr;
 
-	// State update functions
-	void Update_NONE();
-	void Update_Slide();
-	void Update_PickUpOrTransport();
-	void Update_TransportOrPutDown();
+	/* PickUp related */
+	// Set when the object is lifted from the supported area more than the MinPickUpHeight value
+	bool bLiftOffHappened;
+
+	// The location where the object was started to be lifted (use this to compare against MaxPickUpDistXY and MaxPickUpHeight)
+	FVector LiftOffLocation;
 
 
 	/* Constants */
 	constexpr static float UpdateRate = 0.09f;
 
-	// Slide events
-	constexpr static float MinSlideDistXY = 10.f;
-	constexpr static float MinSlideDuration = 0.7f;
+	// Slide
+	constexpr static float MinSlideDistXY = 9.f;
+	constexpr static float MinSlideDuration = 0.9f;
 	
-	constexpr static float MaxPickUpDistXY = 15.f;
+	// PickUp
+	constexpr static float MaxPickUpDistXY = 14.f;
 	constexpr static float MinPickUpHeight = 3.f;
+	constexpr static float MaxPickUpHeight = 20.f;
 };

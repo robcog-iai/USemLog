@@ -4,7 +4,7 @@
 #pragma once
 
 #include "Events/ISLEventHandler.h"
-#include "Events/SLLiftEvent.h"
+#include "Events/SLPickUpEvent.h"
 #include "Events/SLSlideEvent.h"
 #include "Events/SLTransportEvent.h"
 
@@ -46,16 +46,12 @@ private:
 	void FinishAllEvents(float EndTime);
 	
 	// Event called when a semantic overlap event begins
-	void OnSLLiftBegin(const FSLEntity& Self, AActor* Other, float Time);
+	void OnSLPickUp(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime);
 
-	// Event called when a semantic overlap event ends
-	void OnSLLiftEnd(const FSLEntity& Self, AActor* Other, float Time);
 
 	// Event called when a semantic overlap event begins
-	void OnSLSlideBegin(const FSLEntity& Self, AActor* Other, float Time);
+	void OnSLSlide(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime);
 
-	// Event called when a semantic overlap event ends
-	void OnSLSlideEnd(const FSLEntity& Self, AActor* Other, float Time);
 
 		// Event called when a semantic overlap event begins
 	void OnSLTransportBegin(const FSLEntity& Self, AActor* Other, float Time);
@@ -68,7 +64,7 @@ private:
 	class USLPickAndPlaceListener* Parent;
 
 	// Array of started events
-	TArray<TSharedPtr<FSLLiftEvent>> StartedLiftEvents;
+	TArray<TSharedPtr<FSLPickUpEvent>> StartedLiftEvents;
 	TArray<TSharedPtr<FSLSlideEvent>> StartedSlideEvents;
 	TArray<TSharedPtr<FSLTransportEvent>> StartedTransportEvents;
 };

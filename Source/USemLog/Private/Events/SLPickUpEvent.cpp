@@ -1,18 +1,18 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Events/SLLiftEvent.h"
+#include "Events/SLPickUpEvent.h"
 #include "SLOwlExperimentStatics.h"
 
 // Constructor with initialization
-FSLLiftEvent::FSLLiftEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
+FSLPickUpEvent::FSLPickUpEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 	const FSLEntity& InManipulator, const FSLEntity& InItem) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId), Manipulator(InManipulator), Item(InItem)
 {
 }
 
 // Constructor initialization without end time
-FSLLiftEvent::FSLLiftEvent(const FString& InId, const float InStart, const uint64 InPairId,
+FSLPickUpEvent::FSLPickUpEvent(const FString& InId, const float InStart, const uint64 InPairId,
 	const FSLEntity& InItem, const FSLEntity& InManipulator) :
 	ISLEvent(InId, InStart), PairId(InPairId), Manipulator(InManipulator), Item(InItem)
 {
@@ -20,11 +20,11 @@ FSLLiftEvent::FSLLiftEvent(const FString& InId, const float InStart, const uint6
 
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
-FSLOwlNode FSLLiftEvent::ToOwlNode() const
+FSLOwlNode FSLPickUpEvent::ToOwlNode() const
 {
 	// Create the Lift event node
 	FSLOwlNode EventIndividual = FSLOwlExperimentStatics::CreateEventIndividual(
-		"log", Id, "LiftingSituation");
+		"log", Id, "PickUpSituation");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator.Id));
@@ -33,7 +33,7 @@ FSLOwlNode FSLLiftEvent::ToOwlNode() const
 }
 
 // Add the owl representation of the event to the owl document
-void FSLLiftEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
+void FSLPickUpEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 {
 	// Add timepoint individuals
 	// We know that the document is of type FOwlExperiment,
@@ -52,20 +52,20 @@ void FSLLiftEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 }
 
 // Get event context data as string (ToString equivalent)
-FString FSLLiftEvent::Context() const
+FString FSLPickUpEvent::Context() const
 {
-	return FString::Printf(TEXT("Lift - %lld"), PairId);
+	return FString::Printf(TEXT("PickUp - %lld"), PairId);
 }
 
 // Get the tooltip data
-FString FSLLiftEvent::Tooltip() const
+FString FSLPickUpEvent::Tooltip() const
 {
 	return FString::Printf(TEXT("\'O1\',\'%s\',\'Id\',\'%s\',\'O2\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
 		*Item.Class, *Item.Id, *Manipulator.Class, *Manipulator.Id, *Id);
 }
 
 // Get the data as string
-FString FSLLiftEvent::ToString() const
+FString FSLPickUpEvent::ToString() const
 {
 	return FString::Printf(TEXT("Item:[%s] Manipulator:[%s] PairId:%lld"),
 		*Item.ToString(), *Manipulator.ToString(), PairId);

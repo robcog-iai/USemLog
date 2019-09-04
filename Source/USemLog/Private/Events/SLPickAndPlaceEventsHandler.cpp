@@ -35,6 +35,11 @@ void FSLPickAndPlaceEventsHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
+		Parent->OnManipulatorPickUpEvent.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLPickUp);
+
+		Parent->OnManipulatorSlideEvent.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLSlide);
+
+
 		//// Subscribe to the forwarded semantically annotated grasping broadcasts
 		//Parent->OnBeginManipulatorLift.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLLiftBegin);
 		//Parent->OnEndManipulatorLift.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLLiftEnd);
@@ -78,7 +83,7 @@ void FSLPickAndPlaceEventsHandler::Finish(float EndTime, bool bForced)
 void FSLPickAndPlaceEventsHandler::AddNewLiftEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime)
 {
 	// Start a semantic grasp event
-	TSharedPtr<FSLLiftEvent> Event = MakeShareable(new FSLLiftEvent(
+	TSharedPtr<FSLPickUpEvent> Event = MakeShareable(new FSLPickUpEvent(
 		FIds::NewGuidInBase64Url(), StartTime,
 		FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other.Obj->GetUniqueID()),
 		Self, Other));
@@ -207,37 +212,32 @@ void FSLPickAndPlaceEventsHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic grasp event begins
-void FSLPickAndPlaceEventsHandler::OnSLLiftBegin(const FSLEntity& Self, AActor* Other, float Time)
+void FSLPickAndPlaceEventsHandler::OnSLPickUp(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
 {
-	// Check that the objects are semantically annotated
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
-	if (OtherItem.IsSet())
+	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
 	{
-		FSLPickAndPlaceEventsHandler::AddNewLiftEvent(Self, OtherItem, Time);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d PickUp event sent.."), *FString(__func__), __LINE__);
+
+		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPickUpEvent(
+			FIds::NewGuidInBase64Url(), StartTime, EndTime,
+			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
+			Self, *OtherItem)));
 	}
 }
 
-// Event called when a semantic grasp event ends
-void FSLPickAndPlaceEventsHandler::OnSLLiftEnd(const FSLEntity& Self, AActor* Other, float Time)
-{
-	FSLPickAndPlaceEventsHandler::FinishLiftEvent(Other, Time);
-}
 
 // Event called when a semantic grasp event begins
-void FSLPickAndPlaceEventsHandler::OnSLSlideBegin(const FSLEntity& Self, AActor* Other, float Time)
+void FSLPickAndPlaceEventsHandler::OnSLSlide(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
 {
-	// Check that the objects are semantically annotated
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
-	if (OtherItem.IsSet())
+	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
 	{
-		FSLPickAndPlaceEventsHandler::AddNewSlideEvent(Self, OtherItem, Time);
-	}
-}
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Slide event sent.."), *FString(__func__), __LINE__);
 
-// Event called when a semantic grasp event ends
-void FSLPickAndPlaceEventsHandler::OnSLSlideEnd(const FSLEntity& Self, AActor* Other, float Time)
-{
-	FSLPickAndPlaceEventsHandler::FinishSlideEvent(Other, Time);
+		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLSlideEvent(
+			FIds::NewGuidInBase64Url(), StartTime, EndTime,
+			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
+			Self, *OtherItem)));
+	}
 }
 
 // Event called when a semantic grasp event begins
