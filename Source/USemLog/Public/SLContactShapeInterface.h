@@ -70,7 +70,10 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 	// True if parent is supported by a surface
-	bool IsSupportedBySomething() const {return IsSupportedByPariIds.Num() != 0;};
+	bool IsSupportedBySomething() const { return IsSupportedByPariIds.Num() != 0; };
+
+	// Get the last supported by something time
+	float GetLastSupportedByEndTime() const { return PrevSupportedByEndTime; }
 
 	// Get the world
 	UWorld* GetWorldFromShape() const { return World; };
@@ -155,6 +158,9 @@ protected:
 	// Array of events id of objects currently supporting this item, used for checking if this object is supported by any suface(s)
 	TArray<uint64> IsSupportedByPariIds;
 
+	// Last supported by time
+	float PrevSupportedByEndTime;
+
 	// Pointer to the world
 	UWorld* World;
 
@@ -190,7 +196,7 @@ protected:
 
 	/* Constants */
 	constexpr static const char* TagTypeName = "SemLogColl";
-	constexpr static float SBUpdateRate = 0.25f;
+	constexpr static float SBUpdateRate = 0.13f;
 	constexpr static float SBMaxVertSpeed = 0.5f;
-	constexpr static float MaxOverlapEventTimeGap = 0.2f;
+	constexpr static float MaxOverlapEventTimeGap = 0.12f;
 };

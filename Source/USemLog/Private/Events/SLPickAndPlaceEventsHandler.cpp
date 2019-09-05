@@ -216,8 +216,6 @@ void FSLPickAndPlaceEventsHandler::OnSLPickUp(const FSLEntity& Self, AActor* Oth
 {
 	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d PickUp event sent.."), *FString(__func__), __LINE__);
-
 		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPickUpEvent(
 			FIds::NewGuidInBase64Url(), StartTime, EndTime,
 			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
@@ -231,8 +229,6 @@ void FSLPickAndPlaceEventsHandler::OnSLSlide(const FSLEntity& Self, AActor* Othe
 {
 	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Slide event sent.."), *FString(__func__), __LINE__);
-
 		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLSlideEvent(
 			FIds::NewGuidInBase64Url(), StartTime, EndTime,
 			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),

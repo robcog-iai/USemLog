@@ -19,7 +19,7 @@ enum class ESLPaPStateCheck : uint8
 {
 	NONE								UMETA(DisplayName = "NONE"),
 	Slide								UMETA(DisplayName = "Slide"),
-	PickUpOrTransport					UMETA(DisplayName = "PickUpOrTransport"),
+	PickUp								UMETA(DisplayName = "PickUp"),
 	TransportOrPutDown					UMETA(DisplayName = "TransportOrPutDown"),
 	PutDown								UMETA(DisplayName = "PutDown"),
 	
@@ -110,7 +110,7 @@ private:
 	// State update functions
 	void Update_NONE();
 	void Update_Slide();
-	void Update_PickUpOrTransport();
+	void Update_PickUp();
 	void Update_TransportOrPutDown();
 
 public:
@@ -163,16 +163,19 @@ private:
 	// The location where the object was started to be lifted (use this to compare against MaxPickUpDistXY and MaxPickUpHeight)
 	FVector LiftOffLocation;
 
+	/* PutDown related */
+	// Past locations and time during transport in order to backtrace and detect put-down events
+	//TCircularQueue<TTuple<float, FVector>> TimeTravel;
 
 	/* Constants */
-	constexpr static float UpdateRate = 0.09f;
+	constexpr static float UpdateRate = 0.05f;
 
 	// Slide
 	constexpr static float MinSlideDistXY = 9.f;
 	constexpr static float MinSlideDuration = 0.9f;
 	
 	// PickUp
-	constexpr static float MaxPickUpDistXY = 14.f;
+	constexpr static float MaxPickUpDistXY = 11.f;
 	constexpr static float MinPickUpHeight = 3.f;
-	constexpr static float MaxPickUpHeight = 20.f;
+	constexpr static float MaxPickUpHeight = 16.f;
 };

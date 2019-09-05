@@ -89,6 +89,9 @@ void USLPickAndPlaceListener::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+		// Finish any active event
+		FinishActiveEvent();
+
 		// Mark as finished
 		bIsStarted = false;
 		bIsInit = false;
@@ -234,20 +237,25 @@ void USLPickAndPlaceListener::FinishActiveEvent()
 
 	if(EventCheck == ESLPaPStateCheck::Slide)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] BCAST Slide [%f <--> %f]"),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## SLIDE ##############  [%f <--> %f]"),
+			*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
 		OnManipulatorSlideEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
 	}
-	else if(EventCheck == ESLPaPStateCheck::PickUpOrTransport)
+	else if(EventCheck == ESLPaPStateCheck::PickUp)
 	{
 		// TODO add a ESLPaPStateCheck::PickUp?
 		if(bLiftOffHappened)
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] BCAST PickUp [%f <--> %f]"),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
+				*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
 			OnManipulatorSlideEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
+			bLiftOffHappened = false;
 		}
 	}
+
+	CurrGraspedObj = nullptr;
+	EventCheck = ESLPaPStateCheck::NONE;
+	UpdateFunctionPtr = &USLPickAndPlaceListener::Update_NONE;
 }
 
 // Update callback
@@ -255,29 +263,15 @@ void USLPickAndPlaceListener::Update()
 {
 	// Call the state update function
 	(this->*UpdateFunctionPtr)();
-
-
-
-	if(EventCheck == ESLPaPStateCheck::Slide)
-	{
-
-	}
-	else if(EventCheck == ESLPaPStateCheck::PickUpOrTransport)
-	{
-		if(!GraspedObjectContactShape->IsSupportedBySomething())
-		{
-			
-		}
-	}
 }
 
+/* Update functions*/
 // Default update function
 void USLPickAndPlaceListener::Update_NONE()
 {
 	UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen.."), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 }
 
-/* Update functions*/
 // Check for slide events
 void USLPickAndPlaceListener::Update_Slide()
 {
@@ -294,54 +288,32 @@ void USLPickAndPlaceListener::Update_Slide()
 	// Sliding events can only end when the object is not supported by the surface anymore
 	if(!GraspedObjectContactShape->IsSupportedBySomething())
 	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f]  \t\t **** END SupportedBy ****"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+
 		// Check if enough distance and time has passed for a sliding event
 		if(CurrDistXY > MinSlideDistXY && CurrTime - PrevRelevantTime > MinSlideDuration)
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] BCAST Slide..  [%f <--> %f]"),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
+			const float ExactSupportedByEndTime = GraspedObjectContactShape->GetLastSupportedByEndTime();
+
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## SLIDE ##############  [%f <--> %f]"),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, ExactSupportedByEndTime);
 
 			// Broadcast event
-			OnManipulatorSlideEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
+			OnManipulatorSlideEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, ExactSupportedByEndTime);
 
 			// Only update if they were part of the sliding event
-			PrevRelevantTime = CurrTime;
+			PrevRelevantTime = ExactSupportedByEndTime;
 			PrevRelevantLocation = CurrObjLocation;
 		}
 
-		EventCheck = ESLPaPStateCheck::PickUpOrTransport;
-		UpdateFunctionPtr = &USLPickAndPlaceListener::Update_PickUpOrTransport;
+		bLiftOffHappened = false;
+		EventCheck = ESLPaPStateCheck::PickUp;
+		UpdateFunctionPtr = &USLPickAndPlaceListener::Update_PickUp;
 	}
-	//else
-	//{
-	//	if(CurrDistXY > MinSlideDistXY && CurrTime - PrevRelevantTime > MinSlideDuration)
-	//	{
-	//		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Sliding.. DistXY=%f/%f; Duration=%f/%f; \t\t READY FOR BROADCAST DONE!"),
-	//			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-	//			CurrDistXY, MinSlideDistXY,	CurrTime - PrevRelevantTime, MinSlideDuration);
-	//	}
-	//	else if(CurrDistXY > MinSlideDistXY)
-	//	{
-	//		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Sliding.. DistXY=%f/%f; Duration=%f/%f; \t\t DIST DONE!"),
-	//			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-	//			CurrDistXY, MinSlideDistXY,	CurrTime - PrevRelevantTime, MinSlideDuration);
-	//	}
-	//	else if(CurrTime - PrevRelevantTime > MinSlideDuration)
-	//	{
-	//		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Sliding.. DistXY=%f/%f; Duration=%f/%f; \t\t DURATION DONE!"),
-	//			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-	//			CurrDistXY, MinSlideDistXY,	CurrTime - PrevRelevantTime, MinSlideDuration);
-	//	}
-	//	else
-	//	{
-	//		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Sliding.. DistXY=%f/%f; Duration=%f/%f;"),
-	//			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-	//			CurrDistXY, MinSlideDistXY,	CurrTime - PrevRelevantTime, MinSlideDuration);
-	//	}
-	//}
 }
 
-// Check for pick-up or transport events
-void USLPickAndPlaceListener::Update_PickUpOrTransport()
+// Check for pick-up events
+void USLPickAndPlaceListener::Update_PickUp()
 {
 	const FVector CurrObjLocation = CurrGraspedObj->GetActorLocation();
 	const float CurrTime = GetWorld()->GetTimeSeconds();
@@ -354,68 +326,43 @@ void USLPickAndPlaceListener::Update_PickUpOrTransport()
 
 			if(CurrDistXY > MaxPickUpDistXY || CurrObjLocation.Z - LiftOffLocation.Z > MaxPickUpHeight)
 			{
-				if(CurrDistXY > MaxPickUpDistXY)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] BCAST PickUp.. PickUpHeight=%f/%f; DistXY=%f/%f; [%f <--> %f] \t\t XY DISTANCE LIMIT REACHED"),
-						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-						CurrObjLocation.Z - LiftOffLocation.Z,
-						MaxPickUpHeight,
-						CurrDistXY,
-						MaxPickUpDistXY,
-						PrevRelevantTime,
-						CurrTime);
-				}
-				else if(CurrObjLocation.Z - LiftOffLocation.Z > MaxPickUpHeight)
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] BCAST PickUp.. PickUpHeight=%f/%f; DistXY=%f/%f; [%f <--> %f] \t\t HEIGHT LIMIT REACHED"),
-						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-						CurrObjLocation.Z - LiftOffLocation.Z,
-						MaxPickUpHeight,
-						CurrDistXY,
-						MaxPickUpDistXY,
-						PrevRelevantTime,
-						CurrTime);
-				}
 
+				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
+					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
 				// Broadcast event
 				OnManipulatorPickUpEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
 
-				// Reset relevant params
+				// Start checking for the next possible events
+				bLiftOffHappened = false;
 				PrevRelevantTime = CurrTime;
 				PrevRelevantLocation = CurrObjLocation;
-
-				// Start checking for the next possible events
 				EventCheck = ESLPaPStateCheck::TransportOrPutDown;
 				UpdateFunctionPtr = &USLPickAndPlaceListener::Update_TransportOrPutDown;
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  PickUp Height=%f/%f; DistXY=%f/%f;"),
-					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-					CurrObjLocation.Z - LiftOffLocation.Z,
-					MaxPickUpHeight,
-					CurrDistXY,
-					MaxPickUpDistXY);
 			}
 		}
 		else if(CurrObjLocation.Z - PrevRelevantLocation.Z > MinPickUpHeight)
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] LiftOff happened"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t **** LiftOFF **** \t\t\t\t\t\t\t\t LIFTOFF"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 
 			// This is not going to be the start time of the PickUp event, we use the SupportedBy end time
 			// we save the LiftOffLocation to check against the ending of the PickUp event by comparing distances against
 			bLiftOffHappened = true;
 			LiftOffLocation = CurrObjLocation;
 		}
+		else if(FVector::DistXY(LiftOffLocation, PrevRelevantLocation) > MaxPickUpDistXY)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t **** Skip PickUp **** \t\t\t\t\t\t\t\t SKIP PICKUP"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			EventCheck = ESLPaPStateCheck::TransportOrPutDown;
+			UpdateFunctionPtr = &USLPickAndPlaceListener::Update_TransportOrPutDown;
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  Obj SupportedBy, check for sliding events"),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] \t\t **** START SupportedBy ****"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 
 		if(bLiftOffHappened)
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] BCAST PickUp [%f <--> %f]"),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
 				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
 			OnManipulatorPickUpEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
 		}
@@ -428,6 +375,19 @@ void USLPickAndPlaceListener::Update_PickUpOrTransport()
 	}
 }
 
+// Check for put-down or transport events
 void USLPickAndPlaceListener::Update_TransportOrPutDown()
 {
+	if(GraspedObjectContactShape->IsSupportedBySomething())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t\t **** START SupportedBy ****"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+
+		const FVector CurrObjLocation = CurrGraspedObj->GetActorLocation();
+		const float CurrTime = GetWorld()->GetTimeSeconds();
+
+		PrevRelevantTime = CurrTime;
+		PrevRelevantLocation = CurrObjLocation;
+		EventCheck = ESLPaPStateCheck::Slide;
+		UpdateFunctionPtr = &USLPickAndPlaceListener::Update_Slide;
+	}
 }

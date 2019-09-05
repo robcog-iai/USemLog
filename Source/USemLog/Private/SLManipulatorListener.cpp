@@ -357,6 +357,8 @@ void USLManipulatorListener::OnEndOverlapGroupAGrasp(AActor* OtherActor)
 	{
 		if (GraspedObjects.Contains(OtherActor))
 		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t ~~~~~~~~~~ *END GRASP* init from Group A. ~~~~~~~~~~"),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 			EndGrasp(OtherActor);
 		}
 	}
@@ -369,6 +371,8 @@ void USLManipulatorListener::OnEndOverlapGroupBGrasp(AActor* OtherActor)
 	{
 		if (GraspedObjects.Contains(OtherActor))
 		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t ~~~~~~~~~~ *END GRASP* init from Group B. ~~~~~~~~~~"),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 			EndGrasp(OtherActor);
 		}
 	}
@@ -393,7 +397,14 @@ void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 	GraspedObjects.AddUnique(OtherActor);
 	if(!SkipRecentGraspEndEventBroadcast(OtherActor, GetWorld()->GetTimeSeconds()))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] \t ~~~~~~~~~~~~~~~~~~~~~~~~~~ *BEGIN GRASP BCAST* with %s ~~~~~~~~~~~~~~~~~~~~~~~~~~"),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherActor->GetName());
 		OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t ~~~~~~~~~~ *END GRASP* cancelled (concatenation) ~~~~~~~~~~"),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -409,7 +420,7 @@ void USLManipulatorListener::EndGrasp(AActor* OtherActor)
 		if(!GetWorld()->GetTimerManager().IsTimerActive(GraspDelayTimerHandle))
 		{
 			GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorListener::DelayedGraspEndEventCallback,
-				MaxGraspEventTimeGap*1.4f, false);
+				MaxGraspEventTimeGap * 1.2f, false);
 		}
 	}
 }
@@ -435,6 +446,8 @@ void USLManipulatorListener::DelayedGraspEndEventCallback()
 		// If enough time has passed, publish the event
 		if(CurrTime - EvItr->Time > MaxGraspEventTimeGap)
 		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ~~~~~~~~~~~~~~~~~~~~~~~~~~ *END GRASP BCAST* (with delay) GraspEnd=%f; with %s;  ~~~~~~~~~~~~~~~~~~~~~~~~~~"),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), EvItr->Time, *EvItr->OtherActor->GetName());
 			// Broadcast delayed event
 			OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr->OtherActor, EvItr->Time);
 			
@@ -447,7 +460,7 @@ void USLManipulatorListener::DelayedGraspEndEventCallback()
 	if(RecentlyEndedGraspEvents.Num() > 0)
 	{
 		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorListener::DelayedGraspEndEventCallback,
-			MaxGraspEventTimeGap*1.4f, false);
+			MaxGraspEventTimeGap * 1.2f, false);
 	}
 }
 
@@ -523,7 +536,7 @@ void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
 				if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
 				{
 					GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
-						MaxContactEventTimeGap * 1.4f, false);
+						MaxContactEventTimeGap * 1.2f, false);
 				}
 			}
 		}
@@ -554,7 +567,7 @@ void USLManipulatorListener::DelayedContactEndEventCallback()
 	if(RecentlyEndedContactEvents.Num() > 0)
 	{
 		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
-			MaxContactEventTimeGap * 1.4f, false);
+			MaxContactEventTimeGap * 1.2f, false);
 	}
 }
 

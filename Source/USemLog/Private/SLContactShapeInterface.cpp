@@ -257,7 +257,7 @@ void ISLContactShapeInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 	if(!World->GetTimerManager().IsTimerActive(DelayTimerHandle))
 	{
-		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap*1.2f, false);
+		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap*1.12f, false);
 	}
 }
 
@@ -279,7 +279,7 @@ void ISLContactShapeInterface::DelayedOverlapEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedOverlapEvents.Num() > 0)
 	{
-		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap*1.2f, false);
+		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,MaxOverlapEventTimeGap * 1.12f, false);
 	}
 }
 
@@ -322,6 +322,7 @@ bool ISLContactShapeInterface::PublishDelayedOverlapEndEvent(const FSLOverlapEnd
 				const uint64 PairId1 = FIds::PairEncodeCantor(SemanticOwner.Obj->GetUniqueID(),Ev.OtherItem.Obj->GetUniqueID());
 				const uint64 PairId2 = FIds::PairEncodeCantor(Ev.OtherItem.Obj->GetUniqueID(), SemanticOwner.Obj->GetUniqueID());
 				OnEndSLSupportedBy.Broadcast(PairId1, PairId2, Ev.Time);
+				PrevSupportedByEndTime =  Ev.Time;
 				if(IsSupportedByPariIds.Remove(PairId1) == 0)
 				{
 					IsSupportedByPariIds.Remove(PairId2);
