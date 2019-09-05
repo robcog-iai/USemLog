@@ -24,7 +24,11 @@ USLPickAndPlaceListener::USLPickAndPlaceListener()
 	UpdateFunctionPtr = &USLPickAndPlaceListener::Update_NONE;
 
 	/* PickUp */
-	bool bLiftOffHappened = false;
+	bLiftOffHappened = false;
+
+	/* PutDown */
+	RecentMovementBuffer.Reserve(RecentMovementBufferSize);
+	
 }
 
 // Dtor
@@ -322,9 +326,8 @@ void USLPickAndPlaceListener::Update_PickUp()
 	{
 		if(bLiftOffHappened)
 		{
-			const float CurrDistXY = FVector::DistXY(LiftOffLocation, CurrObjLocation);
-
-			if(CurrDistXY > MaxPickUpDistXY || CurrObjLocation.Z - LiftOffLocation.Z > MaxPickUpHeight)
+			if(CurrObjLocation.Z - LiftOffLocation.Z > MaxPickUpHeight ||
+				FVector::DistXY(LiftOffLocation, CurrObjLocation) > MaxPickUpDistXY)
 			{
 
 				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
@@ -378,16 +381,111 @@ void USLPickAndPlaceListener::Update_PickUp()
 // Check for put-down or transport events
 void USLPickAndPlaceListener::Update_TransportOrPutDown()
 {
+	const float CurrTime = GetWorld()->GetTimeSeconds();
+	const FVector CurrObjLocation = CurrGraspedObj->GetActorLocation();
+
 	if(GraspedObjectContactShape->IsSupportedBySomething())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t\t **** START SupportedBy ****"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 
-		const FVector CurrObjLocation = CurrGraspedObj->GetActorLocation();
-		const float CurrTime = GetWorld()->GetTimeSeconds();
+
+		// First check if a put down movement happened
+		bool bPutDownHappened = false;
+		float PutDownStartTime = -1.f;
+		int32 Idx = RecentMovementBuffer.Num() - 1;
+		while(Idx > 0 && CurrTime - RecentMovementBuffer[Idx].Key < PutDownMovementBacktrackDuration)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t\t [%f] [%f/%f] MinPutDownHeight"),
+				*FString(__func__), __LINE__,
+				GetWorld()->GetTimeSeconds(), 
+				RecentMovementBuffer[Idx].Key,
+				RecentMovementBuffer[Idx].Value.Z - CurrObjLocation.Z,
+				MinPutDownHeight);
+
+			if(RecentMovementBuffer[Idx].Value.Z - CurrObjLocation.Z > MinPutDownHeight)
+			{
+				bPutDownHappened = true;
+
+				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f]  \t\t\t\t PUT DOWN HAPPENED"),
+					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+				break;
+			}
+			Idx--;
+		}
+
+		// Check for the PutDown movement start time
+		if(bPutDownHappened)
+		{
+			while(Idx > 0)
+			{
+				// Check when the 
+				if(RecentMovementBuffer[Idx].Value.Z - CurrObjLocation.Z > MaxPutDownHeight
+					|| FVector::Distance(RecentMovementBuffer[Idx].Value, CurrObjLocation) > MaxPutDownDistXY)
+				{
+					PutDownStartTime = RecentMovementBuffer[Idx].Key;
+
+					UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
+						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, PutDownStartTime);
+					OnManipulatorTransportEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, PutDownStartTime);
+
+
+					UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PUT DOWN ##############  [%f <--> %f]"),
+						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PutDownStartTime, CurrTime);
+					OnManipulatorPutDownEvent.Broadcast(SemanticOwner, CurrGraspedObj, PutDownStartTime, CurrTime);
+					break;
+				}
+				Idx--;
+			}
+			// TODO it can happen that the limits are not in the buffer, and not event is published, should it be left like this?
+			if(PutDownStartTime < 0)
+			{
+				PutDownStartTime = RecentMovementBuffer[0].Key;
+
+				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
+					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, PutDownStartTime);
+				OnManipulatorPutDownEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, PutDownStartTime);
+
+				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PUT DOWN ##############  [%f <--> %f]"),
+					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PutDownStartTime, CurrTime);
+				OnManipulatorPutDownEvent.Broadcast(SemanticOwner, CurrGraspedObj, PutDownStartTime, CurrTime);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
+			OnManipulatorTransportEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
+		}
+
+		RecentMovementBuffer.Reset(RecentMovementBufferSize);
 
 		PrevRelevantTime = CurrTime;
 		PrevRelevantLocation = CurrObjLocation;
 		EventCheck = ESLPaPStateCheck::Slide;
 		UpdateFunctionPtr = &USLPickAndPlaceListener::Update_Slide;
 	}
+	else
+	{
+		// Cache recent movements 
+		if(RecentMovementBuffer.Num() > 1)
+		{
+			RecentMovementBuffer.Push(TPair<float, FVector>(CurrTime, CurrObjLocation));
+
+			// Remove values older than RecentMovementBufferDuration
+			int32 Count = 0;
+			while(RecentMovementBuffer.Last().Key - RecentMovementBuffer[Count].Key > RecentMovementBufferDuration)
+			{
+				Count++;
+			}
+			if(Count > 0)
+			{
+				RecentMovementBuffer.RemoveAt(0, Count, false);
+			}
+		}
+		else
+		{
+			RecentMovementBuffer.Push(TPair<float, FVector>(CurrTime, CurrObjLocation));
+		}
+	}
 }
+

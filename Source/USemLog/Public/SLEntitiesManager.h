@@ -7,6 +7,9 @@
 #include "SLStructs.h"
 #include "SLSkeletalDataComponent.h"
 
+class AStaticMeshActor;
+class ASkeletalMeshActor;
+
 /**
  * Singleton storing mappings between the unreal objects and the semantic data
  */
@@ -94,6 +97,26 @@ public:
 	// Get the map of objects to the semantic items
 	void GetCameraViewsDataArray(TArray<FSLEntity>& OutArray) const { CameraViewSemanticData.GenerateValueArray(OutArray); }
 
+	// Get static mesh actor
+	FORCEINLINE AStaticMeshActor* GetStaticMeshActor(const FString& Id) const 
+	{
+		if(auto* Value = IdToStaticMeshActor.Find(Id))
+		{
+			return *Value;
+		}
+		return nullptr;
+	};
+
+	// Get skeletal mesh actor
+	FORCEINLINE ASkeletalMeshActor* GetSkeletalMeshActor(const FString& Id) const 
+	{
+	if(auto* Value = IdToSkeletalMeshActor.Find(Id))
+		{
+			return *Value;
+		}
+		return nullptr;
+	};
+
 private:
 	// Instance of the singleton
 	static TSharedPtr<FSLEntitiesManager> StaticInstance;
@@ -109,4 +132,10 @@ private:
 
 	// Map of Camera View Actors pointer to object structure
 	TMap<UObject*, FSLEntity> CameraViewSemanticData;
+
+	// Id to static mesh actor
+	TMap<FString, AStaticMeshActor*> IdToStaticMeshActor;
+
+	// Id to static mesh actor
+	TMap<FString, ASkeletalMeshActor*> IdToSkeletalMeshActor;
 };

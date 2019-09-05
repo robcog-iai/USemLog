@@ -8,6 +8,7 @@
 #include "Components/ActorComponent.h"
 #include "SLStructs.h" // FSLEntity
 #include "SLContactShapeInterface.h"
+#include "CircularQueue.h"
 #include "SLPickAndPlaceListener.generated.h"
 
 
@@ -43,17 +44,8 @@ public:
 
 };
 
-
 /** Notify the beginning and the end of the pick and place related events */
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLSlideSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*StartTime*/, float /*EndTime*/);
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLPickUpSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*StartTime*/, float /*EndTime*/);
-
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginLiftSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndLiftSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
-
-
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLBeginTransportSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndTransportSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLPaPSubEventSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*StartTime*/, float /*EndTime*/);
 
 /**
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
@@ -115,8 +107,10 @@ private:
 
 public:
 	// PaP events delegates
-	FSLSlideSignature OnManipulatorSlideEvent;
-	FSLSlideSignature OnManipulatorPickUpEvent;
+	FSLPaPSubEventSignature OnManipulatorSlideEvent;
+	FSLPaPSubEventSignature OnManipulatorPickUpEvent;
+	FSLPaPSubEventSignature OnManipulatorPutDownEvent;
+	FSLPaPSubEventSignature OnManipulatorTransportEvent;
 	
 private:
 	// True if initialized
@@ -165,7 +159,7 @@ private:
 
 	/* PutDown related */
 	// Past locations and time during transport in order to backtrace and detect put-down events
-	//TCircularQueue<TTuple<float, FVector>> TimeTravel;
+	TArray<TPair<float, FVector>> RecentMovementBuffer;
 
 	/* Constants */
 	constexpr static float UpdateRate = 0.05f;
@@ -175,7 +169,17 @@ private:
 	constexpr static float MinSlideDuration = 0.9f;
 	
 	// PickUp
-	constexpr static float MaxPickUpDistXY = 11.f;
+	constexpr static float MaxPickUpDistXY = 9.f;
 	constexpr static float MinPickUpHeight = 3.f;
-	constexpr static float MaxPickUpHeight = 16.f;
+	constexpr static float MaxPickUpHeight = 12.f;
+
+	// PutDown
+	constexpr static int32 RecentMovementBufferSize = 256;
+	constexpr static float RecentMovementBufferDuration = 3.3f;
+	constexpr static float PutDownMovementBacktrackDuration = 1.5f;
+	constexpr static float MinPutDownHeight = 2.f;
+
+	constexpr static float MaxPutDownHeight = 8.f;
+	constexpr static float MaxPutDownDistXY = 9.f;
 };
+

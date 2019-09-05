@@ -48,6 +48,17 @@ void FSLEntitiesManager::Init(UWorld* World)
 				{
 					CameraViewSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass));
 				}
+
+				// Store quick map of id to actor pointer
+				if(AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(*ActorItr))
+				{
+					IdToStaticMeshActor.Emplace(ActId, AsSMA);
+				}
+				else if(ASkeletalMeshActor* AsSkMA = Cast<ASkeletalMeshActor>(*ActorItr))
+				{
+					IdToSkeletalMeshActor.Emplace(ActId, AsSkMA);
+				}
+
 			}
 
 			// Iterate components of the actor

@@ -4,12 +4,10 @@
 #pragma once
 
 #include "Events/ISLEventHandler.h"
-#include "Events/SLPickUpEvent.h"
-#include "Events/SLSlideEvent.h"
-#include "Events/SLTransportEvent.h"
+#include "SLStructs.h"
 
 /**
- * Listens to grasp events input, and outputs finished semantic grasp events
+ * Listens to pick and place related events
  */
 class FSLPickAndPlaceEventsHandler : public ISLEventHandler
 {
@@ -23,48 +21,21 @@ public:
 	// Terminate listener, finish and publish remaining events
 	void Finish(float EndTime, bool bForced = false) override;
 
-private:
-	// Start new lift event
-	void AddNewLiftEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime);
-
-	// Finish then publish the event
-	bool FinishLiftEvent(UObject* Other, float EndTime);
-
-	// Start new lift event
-	void AddNewSlideEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime);
-
-	// Finish then publish the event
-	bool FinishSlideEvent(UObject* Other, float EndTime);
-
-	// Start new lift event
-	void AddNewTransportEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime);
-
-	// Finish then publish the event
-	bool FinishTransportEvent(UObject* Other, float EndTime);
-	
-	// Terminate and publish started events (this usually is called at end play)
-	void FinishAllEvents(float EndTime);
-	
-	// Event called when a semantic overlap event begins
-	void OnSLPickUp(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime);
-
-
-	// Event called when a semantic overlap event begins
+private:	
+	// Event called when a slide event happened
 	void OnSLSlide(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime);
 
+	// Event called when a pick up event happened
+	void OnSLPickUp(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime);
 
-		// Event called when a semantic overlap event begins
-	void OnSLTransportBegin(const FSLEntity& Self, AActor* Other, float Time);
+	// Event called when a transport event happened
+	void OnSLTransport(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime);
 
-	// Event called when a semantic overlap event ends
-	void OnSLTransportEnd(const FSLEntity& Self, AActor* Other, float Time);
-	
+	// Event called when a put down event happened
+	void OnSLPutDown(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime);
+
 private:
 	// Parent
 	class USLPickAndPlaceListener* Parent;
-
-	// Array of started events
-	TArray<TSharedPtr<FSLPickUpEvent>> StartedLiftEvents;
-	TArray<TSharedPtr<FSLSlideEvent>> StartedSlideEvents;
-	TArray<TSharedPtr<FSLTransportEvent>> StartedTransportEvents;
 };
+

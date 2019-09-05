@@ -5,6 +5,11 @@
 #include "SLEntitiesManager.h"
 #include "SLPickAndPlaceListener.h"
 
+#include "Events/SLPickUpEvent.h"
+#include "Events/SLSlideEvent.h"
+#include "Events/SLPutDownEvent.h"
+#include "Events/SLTransportEvent.h"
+
 // UUtils
 #include "Ids.h"
 
@@ -36,19 +41,9 @@ void FSLPickAndPlaceEventsHandler::Start()
 	if (!bIsStarted && bIsInit)
 	{
 		Parent->OnManipulatorPickUpEvent.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLPickUp);
-
 		Parent->OnManipulatorSlideEvent.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLSlide);
-
-
-		//// Subscribe to the forwarded semantically annotated grasping broadcasts
-		//Parent->OnBeginManipulatorLift.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLLiftBegin);
-		//Parent->OnEndManipulatorLift.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLLiftEnd);
-
-		//Parent->OnManipulatorSlideEvent.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLSlideBegin);
-		//Parent->OnEndManipulatorSlide.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLSlideEnd);
-
-		//Parent->OnBeginManipulatorTransport.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLTransportBegin);
-		//Parent->OnEndManipulatorTransport.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLTransportEnd);
+		Parent->OnManipulatorTransportEvent.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLTransport);
+		Parent->OnManipulatorPutDownEvent.AddRaw(this, &FSLPickAndPlaceEventsHandler::OnSLPutDown);
 		
 		// Mark as started
 		bIsStarted = true;
@@ -65,8 +60,6 @@ void FSLPickAndPlaceEventsHandler::Finish(float EndTime, bool bForced)
 		{
 			Parent->Finish();
 		}
-		
-		FinishAllEvents(EndTime);
 
 		// TODO use dynamic delegates to be able to unbind from them
 		// https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Delegates/Dynamic
@@ -79,152 +72,9 @@ void FSLPickAndPlaceEventsHandler::Finish(float EndTime, bool bForced)
 	}
 }
 
-// Start new event
-void FSLPickAndPlaceEventsHandler::AddNewLiftEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime)
-{
-	// Start a semantic grasp event
-	TSharedPtr<FSLPickUpEvent> Event = MakeShareable(new FSLPickUpEvent(
-		FIds::NewGuidInBase64Url(), StartTime,
-		FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other.Obj->GetUniqueID()),
-		Self, Other));
-	// Add event to the pending array
-	StartedLiftEvents.Emplace(Event);
-}
-
-// Publish finished event
-bool FSLPickAndPlaceEventsHandler::FinishLiftEvent(UObject* Other, float EndTime)
-{
-	// Use iterator to be able to remove the entry from the array
-	for (auto EventItr(StartedLiftEvents.CreateIterator()); EventItr; ++EventItr)
-	{
-		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Item.Obj == Other)
-		{
-			// Set end time and publish event
-			(*EventItr)->End = EndTime;
-			OnSemanticEvent.ExecuteIfBound(*EventItr);
-
-			// Remove event from the pending list
-			EventItr.RemoveCurrent();
-			return true;
-		}
-	}
-	return false;
-}
-
-// Start new event
-void FSLPickAndPlaceEventsHandler::AddNewSlideEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime)
-{
-	// Start a semantic grasp event
-	TSharedPtr<FSLSlideEvent> Event = MakeShareable(new FSLSlideEvent(
-		FIds::NewGuidInBase64Url(), StartTime,
-		FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other.Obj->GetUniqueID()),
-		Self, Other));
-	// Add event to the pending array
-	StartedSlideEvents.Emplace(Event);
-}
-
-// Publish finished event
-bool FSLPickAndPlaceEventsHandler::FinishSlideEvent(UObject* Other, float EndTime)
-{
-	// Use iterator to be able to remove the entry from the array
-	for (auto EventItr(StartedSlideEvents.CreateIterator()); EventItr; ++EventItr)
-	{
-		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Item.Obj == Other)
-		{
-			// Set end time and publish event
-			(*EventItr)->End = EndTime;
-			OnSemanticEvent.ExecuteIfBound(*EventItr);
-
-			// Remove event from the pending list
-			EventItr.RemoveCurrent();
-			return true;
-		}
-	}
-	return false;
-}
 
 
-// Start new event
-void FSLPickAndPlaceEventsHandler::AddNewTransportEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime)
-{
-	// Start a semantic grasp event
-	TSharedPtr<FSLTransportEvent> Event = MakeShareable(new FSLTransportEvent(
-		FIds::NewGuidInBase64Url(), StartTime,
-		FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other.Obj->GetUniqueID()),
-		Self, Other));
-	// Add event to the pending array
-	StartedTransportEvents.Emplace(Event);
-}
-
-// Publish finished event
-bool FSLPickAndPlaceEventsHandler::FinishTransportEvent(UObject* Other, float EndTime)
-{
-	// Use iterator to be able to remove the entry from the array
-	for (auto EventItr(StartedTransportEvents.CreateIterator()); EventItr; ++EventItr)
-	{
-		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Item.Obj == Other)
-		{
-			// Set end time and publish event
-			(*EventItr)->End = EndTime;
-			OnSemanticEvent.ExecuteIfBound(*EventItr);
-
-			// Remove event from the pending list
-			EventItr.RemoveCurrent();
-			return true;
-		}
-	}
-	return false;
-}
-
-
-// Terminate and publish pending events (this usually is called at end play)
-void FSLPickAndPlaceEventsHandler::FinishAllEvents(float EndTime)
-{
-	// Finish events
-	for (auto& Ev : StartedLiftEvents)
-	{
-		// Set end time and publish event
-		Ev->End = EndTime;
-		OnSemanticEvent.ExecuteIfBound(Ev);
-
-	}
-	StartedLiftEvents.Empty();
-
-	for (auto& Ev : StartedSlideEvents)
-	{
-		// Set end time and publish event
-		Ev->End = EndTime;
-		OnSemanticEvent.ExecuteIfBound(Ev);
-	}
-	StartedLiftEvents.Empty();
-
-	for (auto& Ev : StartedLiftEvents)
-	{
-		// Set end time and publish event
-		Ev->End = EndTime;
-		OnSemanticEvent.ExecuteIfBound(Ev);
-	}
-	StartedLiftEvents.Empty();
-}
-
-
-// Event called when a semantic grasp event begins
-void FSLPickAndPlaceEventsHandler::OnSLPickUp(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
-{
-	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
-	{
-		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPickUpEvent(
-			FIds::NewGuidInBase64Url(), StartTime, EndTime,
-			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
-			Self, *OtherItem)));
-	}
-}
-
-
-// Event called when a semantic grasp event begins
+// Event called when a slide event happened
 void FSLPickAndPlaceEventsHandler::OnSLSlide(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
 {
 	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
@@ -236,19 +86,38 @@ void FSLPickAndPlaceEventsHandler::OnSLSlide(const FSLEntity& Self, AActor* Othe
 	}
 }
 
-// Event called when a semantic grasp event begins
-void FSLPickAndPlaceEventsHandler::OnSLTransportBegin(const FSLEntity& Self, AActor* Other, float Time)
+// Event called when a pick up event happened
+void FSLPickAndPlaceEventsHandler::OnSLPickUp(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
 {
-	// Check that the objects are semantically annotated
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
-	if (OtherItem.IsSet())
+	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
 	{
-		FSLPickAndPlaceEventsHandler::AddNewTransportEvent(Self, OtherItem, Time);
+		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPickUpEvent(
+			FIds::NewGuidInBase64Url(), StartTime, EndTime,
+			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
+			Self, *OtherItem)));
 	}
 }
 
-// Event called when a semantic grasp event ends
-void FSLPickAndPlaceEventsHandler::OnSLTransportEnd(const FSLEntity& Self, AActor* Other, float Time)
+// Event called when a transport event happened
+void FSLPickAndPlaceEventsHandler::OnSLTransport(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
 {
-	FSLPickAndPlaceEventsHandler::FinishTransportEvent(Other, Time);
+	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
+	{
+		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLTransportEvent(
+			FIds::NewGuidInBase64Url(), StartTime, EndTime,
+			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
+			Self, *OtherItem)));
+	}
+}
+
+// Event called when a put down event happened
+void FSLPickAndPlaceEventsHandler::OnSLPutDown(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
+{
+	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
+	{
+		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPutDownEvent(
+			FIds::NewGuidInBase64Url(), StartTime, EndTime,
+			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
+			Self, *OtherItem)));
+	}
 }
