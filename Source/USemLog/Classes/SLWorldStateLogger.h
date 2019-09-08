@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "WorldState/SLWorldStateAsyncWorker.h"
+#include "SLMetadataWriter.h"
 #include "SLWorldStateLogger.generated.h"
 
 /**
@@ -26,7 +27,7 @@ public:
 	~USLWorldStateLogger();
 
 	// Init Logger
-	void Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams);
+	void Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams, bool bInWriteMetadata, const FString& TaskDescription);
 
 	// Start logger
 	void Start(const float UpdateRate);
@@ -65,6 +66,12 @@ private:
 
 	// True if the object can be ticked (used by FTickableGameObject)
 	bool bIsTickable;
+
+	// Write metadata (world and events)
+	bool bWriteMetadata;
+
+	// Metadata writer
+	FSLMetadataWriter MetadataWriter;
 
 	// Timer handle for custom update rate
 	FTimerHandle TimerHandle;

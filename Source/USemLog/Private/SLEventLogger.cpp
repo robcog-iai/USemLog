@@ -12,11 +12,13 @@
 #include "Events/SLGraspEventHandler.h"
 #include "Events/SLReachEventHandler.h"
 #include "Events/SLPickAndPlaceEventsHandler.h"
+#include "Events/SLContainerEventHandler.h"
 #include "SLOwlExperimentStatics.h"
 #include "SLContactShapeInterface.h"
 #include "SLManipulatorListener.h"
 #include "SLReachListener.h"
 #include "SLPickAndPlaceListener.h"
+#include "SLContainerListener.h"
 #include "SLGoogleCharts.h"
 
 // UUtils
@@ -39,7 +41,6 @@ USLEventLogger::USLEventLogger()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
-	bWriteMetadata = false;
 	bWriteTimelines = false;
 }
 
@@ -48,7 +49,7 @@ USLEventLogger::~USLEventLogger()
 {
 	if (!bIsFinished && !IsTemplate())
 	{
-		USLEventLogger::Finish(-1.f, true);
+		Finish(-1.f, true);
 	}
 }
 
@@ -60,8 +61,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 	bool bInLogGraspEvents,
 	bool bInPickAndPlaceEvents,
 	bool bInLogSlicingEvents,
-	bool bInWriteTimelines,
-	bool bInWriteMetadata)
+	bool bInWriteTimelines)
 {
 	if (!bIsInit)
 	{
@@ -69,7 +69,6 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		EpisodeId = WriterParams.EpisodeId;
 		OwlDocTemplate = TemplateType;
 		bWriteTimelines = bInWriteTimelines;
-		bWriteMetadata = bInWriteMetadata;
 
 		// Init the semantic mappings (if not already init)
 		FSLEntitiesManager::GetInstance()->Init(GetWorld());
@@ -203,6 +202,30 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 
 				}
 			}
+
+			// Init all container manipulation listeners
+			for (TObjectIterator<USLContainerListener> Itr; Itr; ++Itr)
+			{
+				if (IsValidAndAnnotated(*Itr))
+				{
+					if (Itr->Init())
+					{
+						ContainerListeners.Emplace(*Itr);
+						TSharedPtr<FSLContainerEventHandler> Handler = MakeShareable(new FSLContainerEventHandler());
+						Handler->Init(*Itr);
+						if (Handler->IsInit())
+						{
+							EventHandlers.Add(Handler);
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+								*FString(__func__), __LINE__, *Itr->GetName());
+						}
+					}
+
+				}
+			}
 		}
 
 		if(bInPickAndPlaceEvents)
@@ -255,11 +278,6 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 				}
 			}
 #endif // SL_WITH_SLICING
-		}
-
-		if (bWriteMetadata)
-		{
-			MetadataWriter.Init(WriterParams);
 		}
 
 		// Mark as initialized
@@ -328,11 +346,6 @@ void USLEventLogger::Start()
 			SLReachListener->Start();
 		}
 
-		if (bWriteMetadata)
-		{
-			MetadataWriter.Start();
-		}
-
 		// Mark as started
 		bIsStarted = true;
 	}
@@ -395,13 +408,8 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		// Add experiment individual to doc
 		ExperimentDoc->AddExperimentIndividual();
 
-
 		// Write events to file
-		USLEventLogger::WriteToFile();
-		if (bWriteMetadata)
-		{
-			MetadataWriter.Finish();
-		}
+		WriteToFile();
 
 		bIsStarted = false;
 		bIsInit = false;

@@ -28,7 +28,6 @@ USLPickAndPlaceListener::USLPickAndPlaceListener()
 
 	/* PutDown */
 	RecentMovementBuffer.Reserve(RecentMovementBufferSize);
-	
 }
 
 // Dtor

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WorldState/ISLWorldStateWriter.h"
 #if SL_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
 #if PLATFORM_WINDOWS
@@ -15,42 +16,6 @@ THIRD_PARTY_INCLUDES_START
 #endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_C
-
-/**
-* Parameters for creating an event logger
-*/
-struct FSLEventWriterParams
-{
-	// Location where to save the data (filename/database name etc.)
-	FString Location;
-
-	// Episode unique id
-	FString EpisodeId;
-
-	// Task description
-	FString TaskDescription;
-
-	// Server ip (optional)
-	FString ServerIp;
-
-	// Server Port (optional)
-	uint16 ServerPort;
-
-	// Constructor
-	FSLEventWriterParams(
-		const FString& InLocation,
-		const FString& InEpisodeId,
-		const FString& InTaskDescription,
-		const FString& InServerIp = "",
-		uint16 InServerPort = 0) :
-		Location(InLocation),
-		EpisodeId(InEpisodeId),
-		TaskDescription(InTaskDescription),
-		ServerIp(InServerIp),
-		ServerPort(InServerPort)
-	{};
-};
-
 
 
 /**
@@ -66,7 +31,7 @@ public:
 	~FSLMetadataWriter();
 
 	// Init
-	void Init(const FSLEventWriterParams& WriterParams);
+	void Init(const FSLWorldStateWriterParams& WriterParams, const FString& InTaskDescription);
 
 	// Write the environment metadata
 	void Start();

@@ -14,6 +14,46 @@
 class ISLEvent;
 
 /**
+* Parameters for creating an event logger
+*/
+struct FSLEventWriterParams
+{
+	// Location where to save the data (filename/database name etc.)
+	FString Location;
+
+	// Episode unique id
+	FString EpisodeId;
+
+	//// Task description
+	//FString TaskDescription;
+
+	//// Server ip (optional)
+	//FString ServerIp;
+
+	//// Server Port (optional)
+	//uint16 ServerPort;
+
+	// Constructor
+	FSLEventWriterParams(
+		const FString& InLocation,
+		const FString& InEpisodeId
+		/*,
+		const FString& InTaskDescription,
+		const FString& InServerIp = "",
+		uint16 InServerPort = 0
+		*/
+		) :
+		Location(InLocation),
+		EpisodeId(InEpisodeId)
+		/*,
+		TaskDescription(InTaskDescription),
+		ServerIp(InServerIp),
+		ServerPort(InServerPort)
+		*/
+	{};
+};
+
+/**
  * Event (symbolic) data logger
  */
 UCLASS()
@@ -36,8 +76,7 @@ public:
 		bool bInLogGraspEvents,
 		bool bInPickAndPlaceEvents,
 		bool bInLogSlicingEvents,
-		bool bInWriteTimelines,
-		bool bInWriteMetadata);
+		bool bInWriteTimelines);
 	
 
 	// Start logger
@@ -82,12 +121,6 @@ private:
 	// Save events to timelines
 	bool bWriteTimelines;
 
-	// Write metadata (world and events)
-	bool bWriteMetadata;
-
-	// Metadata writer
-	FSLMetadataWriter MetadataWriter;
-
 	// Array of finished events
 	TArray<TSharedPtr<ISLEvent>> FinishedEvents;
 
@@ -108,4 +141,7 @@ private:
 
 	// Cache of the grasp listeners
 	TArray<class USLReachListener*> ReachListeners;
+
+	// Cache of the container manipulation listeners
+	TArray<class USLContainerListener*> ContainerListeners;
 };

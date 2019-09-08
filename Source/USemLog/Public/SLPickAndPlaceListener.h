@@ -8,7 +8,6 @@
 #include "Components/ActorComponent.h"
 #include "SLStructs.h" // FSLEntity
 #include "SLContactShapeInterface.h"
-#include "CircularQueue.h"
 #include "SLPickAndPlaceListener.generated.h"
 
 
@@ -34,14 +33,11 @@ struct FSLPaPSlide
 public:
 	// Default ctor
 	FSLPaPSlide() = default;
-
 	
-	float MovedDistSq;
-
+	float MovedDist;
 
 	// End time of the event 
 	float StartTime;
-
 };
 
 /** Notify the beginning and the end of the pick and place related events */

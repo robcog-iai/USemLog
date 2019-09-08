@@ -196,7 +196,7 @@ protected:
 
 	/* Constants */
 	constexpr static const char* TagTypeName = "SemLogColl";
-	constexpr static float SBUpdateRate = 0.13f;
+	constexpr static float SBUpdateRate = 0.11f;
 	constexpr static float SBMaxVertSpeed = 0.5f;
 	constexpr static float MaxOverlapEventTimeGap = 0.12f;
 };

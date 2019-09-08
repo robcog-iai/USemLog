@@ -4,6 +4,7 @@
 #include "SLEntitiesManager.h"
 #include "SLVisViewActor.h"
 #include "Tags.h"
+#include "Animation/SkeletalMeshActor.h"
 
 TSharedPtr<FSLEntitiesManager> FSLEntitiesManager::StaticInstance;
 
@@ -56,9 +57,17 @@ void FSLEntitiesManager::Init(UWorld* World)
 				}
 				else if(ASkeletalMeshActor* AsSkMA = Cast<ASkeletalMeshActor>(*ActorItr))
 				{
-					IdToSkeletalMeshActor.Emplace(ActId, AsSkMA);
+					// Check if skeletal data component is available
+					if(AsSkMA->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+					{
+						IdToSkeletalMeshActor.Emplace(ActId, AsSkMA);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no USLSKeletalDataComponent, entity will not be logged.."), 
+							*FString(__func__), __LINE__, *AsSkMA->GetName());
+					}
 				}
-
 			}
 
 			// Iterate components of the actor

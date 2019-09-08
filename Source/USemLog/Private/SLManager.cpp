@@ -35,6 +35,7 @@ ASLManager::ASLManager()
 
 	// World state logger default values
 	bLogWorldState = true;
+	bWriteMetadata = true;
 	UpdateRate = 0.0f;
 	LinearDistance = 0.5f; // cm
 	AngularDistance = 0.1f; // rad
@@ -51,7 +52,6 @@ ASLManager::ASLManager()
 	bLogPickAndPlaceEvents = true;
 	bLogSlicingEvents = true;
 	bWriteTimelines = true;
-	bWriteMetadata = true;
 	ExperimentTemplateType = ESLOwlExperimentTemplate::Default;
 
 	// Vision data logger default values
@@ -158,15 +158,15 @@ void ASLManager::Init()
 			// Create and init world state logger
 			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
 			WorldStateLogger->Init(WriterType, FSLWorldStateWriterParams(
-				LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort));
+				LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort), bWriteMetadata, TaskDescription);
 		}
 
 		if (bLogEventData)
 		{
 			// Create and init event data logger
 			EventDataLogger = NewObject<USLEventLogger>(this);
-			EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId, TaskDescription, ServerIp, ServerPort),
-				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines, bWriteMetadata);
+			EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId),
+				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines);
 		}
 
 		if (bLogVisionData)

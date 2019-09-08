@@ -33,7 +33,7 @@ FSLMetadataWriter::~FSLMetadataWriter()
 }
 
 // Init writer
-void FSLMetadataWriter::Init(const FSLEventWriterParams& WriterParams)
+void FSLMetadataWriter::Init(const FSLWorldStateWriterParams& WriterParams, const FString& InTaskDescription)
 {
 	if (!bIsInit)
 	{
@@ -42,7 +42,7 @@ void FSLMetadataWriter::Init(const FSLEventWriterParams& WriterParams)
 		if (Connect(WriterParams.Location, WriterParams.EpisodeId, WriterParams.ServerIp, WriterParams.ServerPort))
 		{
 			// Write task metadata (if not already done)
-			WriteTaskMetadata(WriterParams.Location, WriterParams.TaskDescription);
+			WriteTaskMetadata(WriterParams.Location, InTaskDescription);
 
 			// Write the initial environment data (some sort of semantic map) ids, classes, initial poses
 			WriteEnvironmentMetadata();

@@ -18,15 +18,19 @@ USLWorldStateLogger::~USLWorldStateLogger()
 {
 	if (!bIsFinished && !IsTemplate())
 	{
-		USLWorldStateLogger::Finish(true);
+		Finish(true);
 	}
 }
 
 // Init Logger
-void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams)
+void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
+	const FSLWorldStateWriterParams& InWriterParams,
+	bool bInWriteMetadata, const FString& TaskDescription)
 {
 	if (!bIsInit)
 	{
+		bWriteMetadata = bInWriteMetadata;
+
 		// Create async worker to do the writing on a separate thread
 		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
 
@@ -38,6 +42,11 @@ void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType, const FSLWorl
 			{
 				bIsInit = true;
 			}
+		}
+
+		if (bWriteMetadata)
+		{
+			MetadataWriter.Init(InWriterParams, TaskDescription);
 		}
 	}
 }
@@ -52,7 +61,7 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 		
 		// Call before binding the recurrent Update function
 		// this ensures the initial world state is logged (static and movable semantic items)
-		USLWorldStateLogger::InitialUpdate();
+		InitialUpdate();
 
 		// Start updating
 		if (UpdateRate > 0.0f)
@@ -66,6 +75,11 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 		{
 			// Update logger on tick (updates every game thread tick, update rate can vary)
 			bIsTickable = true;
+		}
+
+		if (bWriteMetadata)
+		{
+			MetadataWriter.Start();
 		}
 
 
@@ -97,10 +111,16 @@ void USLWorldStateLogger::Finish(bool bForced)
 		{
 			GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 		}
+
 		//  Disable tick
 		if (bIsTickable)
 		{
 			bIsTickable = false;
+		}
+
+		if (bWriteMetadata)
+		{
+			MetadataWriter.Finish();
 		}
 
 		// Mark logger as finished

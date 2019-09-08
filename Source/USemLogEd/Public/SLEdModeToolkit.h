@@ -80,6 +80,9 @@ private:
 	// Enable all overlaps
 	FReply EnableAllOverlaps();
 
+	// Tag selected meshes as containers
+	FReply TagSelectedAsContainers();
+
 private:
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;
@@ -98,4 +101,5 @@ private:
 
 	// Apply changed to selected actors only
 	bool bOnlySelected;
+
 };

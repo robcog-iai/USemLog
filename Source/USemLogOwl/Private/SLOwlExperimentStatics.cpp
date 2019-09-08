@@ -257,3 +257,12 @@ FSLOwlNode FSLOwlExperimentStatics::CreateGraspTypeProperty(const FString& InDoc
 	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
 		RdfResource, FSLOwlAttributeValue(InDocPrefix, InGraspType)));
 }
+
+FSLOwlNode FSLOwlExperimentStatics::CreateTypeProperty(const FString& InDocPrefix, const FString& InType)
+{
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "type");
+
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, InType)));
+}

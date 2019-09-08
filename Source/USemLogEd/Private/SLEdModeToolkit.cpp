@@ -18,6 +18,7 @@
 #include "SLSkeletalDataComponent.h"
 #include "Ids.h"
 #include "Tags.h"
+#include "ScopedTransaction.h"
 
 #define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"
 
@@ -190,6 +191,16 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 						.Text(LOCTEXT("EnableAllOverlaps", "Enable All Overlaps"))
 					.IsEnabled(true)
 					.OnClicked(this, &FSLEdModeToolkit::EnableAllOverlaps)
+					]
+				////
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("TagSelectedAsContainers", "Tag Selected As Containers"))
+					.IsEnabled(true)
+					.OnClicked(this, &FSLEdModeToolkit::TagSelectedAsContainers)
 					]
 		];
 
@@ -802,6 +813,42 @@ FReply FSLEdModeToolkit::EnableAllOverlaps()
 			{
 				SMC->SetGenerateOverlapEvents(true);
 			}
+		}
+	}
+
+	return FReply::Handled();
+}
+
+// Enable all overlaps
+FReply FSLEdModeToolkit::TagSelectedAsContainers()
+{
+	FScopedTransaction Transaction(LOCTEXT("TagSelectedAsContainer", "Tag Selected As Containers"));
+
+	TArray<AStaticMeshActor*> SelectedSMAs;
+	GEditor->GetSelectedActors()->GetSelectedObjects(SelectedSMAs);
+
+	// Iterate only static mesh actors
+	for (auto& ActItr : SelectedSMAs)
+	{
+		// Ignore if actor is not tagged
+		if (FTags::HasKey(ActItr, "SemLog", "Class"))
+		{
+			if (!FTags::HasKey(ActItr, "SemLog", "Container"))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s tagged as container.."), 
+					*FString(__func__), __LINE__, *ActItr->GetName());
+				FTags::AddKeyValuePair(ActItr, "SemLog", "Container", "True");
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is already tagged as container.."), 
+					*FString(__func__), __LINE__, *ActItr->GetName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no Class tag, skipping.."), 
+				*FString(__func__), __LINE__, *ActItr->GetName());
 		}
 	}
 
