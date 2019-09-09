@@ -56,6 +56,12 @@ private:
 	// Finish any active events
 	void FinishActiveEvents();
 
+	// Iterate recursively attached constraints actors of parent, append other constrained actors to set
+	void GetAllConstraintsOtherActors(AActor* Actor, TSet<AActor*>& OutOtherConstraintActors);
+
+	// Iterate recursively on the attached actors, and search for container type
+	void GetAllAttachedContainers(AActor* Actor, TSet<AActor*>& OutContainers);
+
 public:
 	// Container manipulation delegate
 	FSLContainerManipulationSignature OnContainerManipulation;
@@ -76,9 +82,13 @@ private:
 	// Object currently grasped
 	AActor* CurrGraspedObj;
 
-	// Containers being opened/closed (can be more, e.g. fridge handle opens the fridge and the fridge cladding)
-	TArray<AActor*> Containers;
+	// Grasp time
+	float GraspTime;
+
+	// Containers and their initial distance to the manipulator
+	TMap<AActor*, float> ContainerToDistance;
 
 	/* Constants */
-	constexpr static float MinDistance = 10.f;
+	constexpr static float MinDistance = 5.f;
 };
+

@@ -4,6 +4,9 @@
 #include "SLContainerListener.h"
 #include "SLEntitiesManager.h"
 #include "SLManipulatorListener.h"
+#include "PhysicsEngine/PhysicsConstraintActor.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "Tags.h"
 
 // Sets default values for this component's properties
 USLContainerListener::USLContainerListener()
@@ -18,6 +21,7 @@ USLContainerListener::USLContainerListener()
 	bIsFinished = false;
 
 	CurrGraspedObj = nullptr;
+	GraspTime = -1.f;
 }
 
 // Dtor
@@ -67,6 +71,10 @@ void USLContainerListener::Start()
 
 			bIsStarted = true;
 		}
+		else
+		{	
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find sibling USLManipulatorListener .."), *FString(__func__), __LINE__);
+		}
 	}
 }
 
@@ -95,11 +103,12 @@ void USLContainerListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, 
 			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName(), *CurrGraspedObj->GetName());
 		return;
 	}
-	else
-	{
-		CurrGraspedObj = Other;
-		SetContainersAndDistances();
-	}
+	
+	// Mark as grasped
+	CurrGraspedObj = Other;
+	GraspTime = Time;
+
+	SetContainersAndDistances();
 }
 
 // Called when grasp ends
@@ -114,10 +123,25 @@ void USLContainerListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, fl
 
 	if(CurrGraspedObj == Other)
 	{
-		CurrGraspedObj = nullptr;
 
-		// Check which events to send
-		Containers.Empty();
+		// Publish close/open events
+		for(const auto Pair : ContainerToDistance)
+		{
+			const float CurrDistance = FVector::Distance(Pair.Key->GetActorLocation(), CurrGraspedObj->GetActorLocation());
+
+			if(CurrDistance - Pair.Value > MinDistance)
+			{
+				OnContainerManipulation.Broadcast(SemanticOwner, Pair.Key, GraspTime, Time, "open");
+			}
+			else if(CurrDistance - Pair.Value < - MinDistance)
+			{
+				OnContainerManipulation.Broadcast(SemanticOwner, Pair.Key, GraspTime, Time, "close");
+			}
+		}
+		
+		// Mark as released, empty previous container
+		CurrGraspedObj = nullptr;
+		ContainerToDistance.Empty();
 	}
 	else
 	{
@@ -129,12 +153,124 @@ void USLContainerListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, fl
 // Search which container will be manipulated and save their current distance to the grasped item
 bool USLContainerListener::SetContainersAndDistances()
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d CurrGraspedObj %s, Outermost=%s.."),
-		*FString(__func__), __LINE__, *CurrGraspedObj->GetName(), *CurrGraspedObj->GetOutermost()->GetName());
-	return true;
+	// Get the outermost attachment parent of the actor
+	const auto GetOutermostAttachmentLambda = [](AActor* Actor)
+	{
+		if(AActor* OutermostAttachParent = Actor->GetAttachParentActor())
+		{
+			while(AActor* CurrAttParent = OutermostAttachParent->GetAttachParentActor())
+			{
+				OutermostAttachParent = CurrAttParent;
+			}
+			return OutermostAttachParent;
+		}
+		return (AActor*)nullptr;
+	};
+
+	// Set of all the other actors connected with constraints
+	// (containers can only be linked through constrained actors, since otherwise they would be moving together)
+	TSet<AActor*> OtherConstraintActors;
+	// Get outermost attachment
+	if(AActor* OutermostAttachParent = GetOutermostAttachmentLambda(CurrGraspedObj))
+	{
+		GetAllConstraintsOtherActors(OutermostAttachParent, OtherConstraintActors);
+	}
+	else
+	{
+		GetAllConstraintsOtherActors(CurrGraspedObj, OtherConstraintActors);
+	}
+
+	// Set of the found containers
+	TSet<AActor*> Containers;
+	// TODO recurse over all constraint chain links, we now stop at the second link
+	// Iterate the other constraint and search for containers
+	for(const auto& OtherConstrAct : OtherConstraintActors)
+	{
+		// Search for containers starting with the outermost
+		if(AActor* OutermostAttachParent = GetOutermostAttachmentLambda(OtherConstrAct))
+		{
+			GetAllAttachedContainers(OutermostAttachParent, Containers);
+		}
+		else
+		{
+			GetAllAttachedContainers(OtherConstrAct, Containers);
+		}
+	}
+
+	// Store the containers and their distances to the manipulator
+	for(const auto& C : Containers)
+	{
+		ContainerToDistance.Emplace(C, FVector::Distance(C->GetActorLocation(), CurrGraspedObj->GetActorLocation()));
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Container=%s; Dist=%f"),
+		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *C->GetName(), FVector::Distance(C->GetActorLocation(), CurrGraspedObj->GetActorLocation()));
+	}
+
+
+	return Containers.Num() > 0;
 }
 
 // Finish any active events
 void USLContainerListener::FinishActiveEvents()
 {
+	if(CurrGraspedObj)
+	{
+		// Fake a grasp end call
+		OnSLGraspEnd(SemanticOwner, CurrGraspedObj, GetWorld()->GetTimeSeconds());
+	}	
+}
+
+// Iterate recursively attached constraints actors of parent, append other constrained actors to set
+void USLContainerListener::GetAllConstraintsOtherActors(AActor* Actor, TSet<AActor*>& OutOtherConstraintActors)
+{
+	if(APhysicsConstraintActor* AttAsPCA = Cast<APhysicsConstraintActor>(Actor))
+	{
+		if(AttAsPCA->GetConstraintComp()->ConstraintActor1 != Actor)
+		{
+			OutOtherConstraintActors.Emplace(AttAsPCA->GetConstraintComp()->ConstraintActor1);
+		}
+		else if(AttAsPCA->GetConstraintComp()->ConstraintActor2 != Actor)
+		{
+			OutOtherConstraintActors.Emplace(AttAsPCA->GetConstraintComp()->ConstraintActor2);
+		}
+	}
+
+	TArray<AActor*> AttActors;
+	Actor->GetAttachedActors(AttActors);
+	for(const auto& AttAct : AttActors)
+	{
+		if(APhysicsConstraintActor* AttAsPCA = Cast<APhysicsConstraintActor>(AttAct))
+		{
+			if(AttAsPCA->GetConstraintComp()->ConstraintActor1 != Actor)
+			{
+				OutOtherConstraintActors.Emplace(AttAsPCA->GetConstraintComp()->ConstraintActor1);
+			}
+			else if(AttAsPCA->GetConstraintComp()->ConstraintActor2 != Actor)
+			{
+				OutOtherConstraintActors.Emplace(AttAsPCA->GetConstraintComp()->ConstraintActor2);
+			}
+		}
+
+		GetAllConstraintsOtherActors(AttAct, OutOtherConstraintActors);
+	}
+}
+
+// Iterate recursively on the attached actors, and search for container type
+void USLContainerListener::GetAllAttachedContainers(AActor* Actor, TSet<AActor*>& OutContainers)
+{
+	if(FTags::HasKey(Actor, "SemLog", "Container"))
+	{
+		OutContainers.Emplace(Actor);
+	}
+
+	TArray<AActor*> AttActors;
+	Actor->GetAttachedActors(AttActors);
+	for(const auto& AttAct : AttActors)
+	{
+		if(FTags::HasKey(AttAct, "SemLog", "Container"))
+		{
+			OutContainers.Emplace(AttAct);
+		}
+
+		GetAllConstraintsOtherActors(AttAct, OutContainers);
+	}
 }

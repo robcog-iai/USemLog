@@ -323,27 +323,33 @@ void USLEventLogger::Start()
 		}
 
 		// Start the semantic overlap areas
-		for (auto& SLContactShape : ContactShapes)
+		for (auto& Listener : ContactShapes)
 		{
-			SLContactShape->Start();
+			Listener->Start();
 		}
 
 		// Start the grasp listeners
-		for (auto& SLManipulatorListener : GraspListeners)
+		for (auto& Listener : GraspListeners)
 		{
-			SLManipulatorListener->Start();
+			Listener->Start();
 		}
 
 		// Start the pick and place listeners
-		for (auto& SLPAPListener : PickAndPlaceListeners)
+		for (auto& Listener : PickAndPlaceListeners)
 		{
-			SLPAPListener->Start();
+			Listener->Start();
 		}
 
 		// Start the reach listeners
-		for (auto& SLReachListener : ReachListeners)
+		for (auto& Listener : ReachListeners)
 		{
-			SLReachListener->Start();
+			Listener->Start();
+		}
+
+		// Start the container listeners
+		for (auto& Listener : ContainerListeners)
+		{
+			Listener->Start();
 		}
 
 		// Mark as started

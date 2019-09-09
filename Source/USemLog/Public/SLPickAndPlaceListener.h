@@ -95,6 +95,9 @@ private:
 	// Object released, terminate active even
 	void FinishActiveEvent();
 
+	// Backtrace and check if a put-down event happened
+	bool HasPutDownEventHappened(const float CurrTime,const FVector& CurrObjLocation,  uint32& OutPutDownEndIdx);
+
 	// State update functions
 	void Update_NONE();
 	void Update_Slide();

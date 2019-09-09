@@ -151,8 +151,8 @@ void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Othe
 		CurrGraspedObj = Other;
 		GraspedObjectContactShape = CSI;
 
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s set as grasped object.."),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s set as grasped object.."),
+		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
 
 		PrevRelevantLocation = Other->GetActorLocation();
 		PrevRelevantTime = GetWorld()->GetTimeSeconds();
@@ -164,8 +164,8 @@ void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Othe
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s should be in a SupportedBy state.. aborting interaction.."),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
+			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s should be in a SupportedBy state.. aborting interaction.."),
+			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
 
 			CurrGraspedObj = nullptr;
 			GraspedObjectContactShape = nullptr;
@@ -212,8 +212,8 @@ void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other,
 		// Terminate active event
 		FinishActiveEvent();
 
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s removed as grasped object.."),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s removed as grasped object.."),
+		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
 
 
 		if(!GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
@@ -240,25 +240,54 @@ void USLPickAndPlaceListener::FinishActiveEvent()
 
 	if(EventCheck == ESLPaPStateCheck::Slide)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## SLIDE ##############  [%f <--> %f]"),
-			*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## SLIDE ##############  [%f <--> %f]"),
+		//	*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
 		OnManipulatorSlideEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
 	}
 	else if(EventCheck == ESLPaPStateCheck::PickUp)
 	{
-		// TODO add a ESLPaPStateCheck::PickUp?
 		if(bLiftOffHappened)
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
-				*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
+			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
+			//	*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
 			OnManipulatorSlideEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
 			bLiftOffHappened = false;
 		}
+	}
+	else if(EventCheck == ESLPaPStateCheck::TransportOrPutDown)
+	{
+		//TODO
 	}
 
 	CurrGraspedObj = nullptr;
 	EventCheck = ESLPaPStateCheck::NONE;
 	UpdateFunctionPtr = &USLPickAndPlaceListener::Update_NONE;
+}
+
+// Backtrace and check if a put-down event happened
+bool USLPickAndPlaceListener::HasPutDownEventHappened(const float CurrTime, const FVector& CurrObjLocation, uint32& OutPutDownEndIdx)
+{
+	OutPutDownEndIdx = RecentMovementBuffer.Num() - 1;
+	while(OutPutDownEndIdx > 0 && CurrTime - RecentMovementBuffer[OutPutDownEndIdx].Key < PutDownMovementBacktrackDuration)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t\t [%f] [%f/%f] MinPutDownHeight"),
+			*FString(__func__), __LINE__,
+			GetWorld()->GetTimeSeconds(), 
+			RecentMovementBuffer[OutPutDownEndIdx].Key,
+			RecentMovementBuffer[OutPutDownEndIdx].Value.Z - CurrObjLocation.Z,
+			MinPutDownHeight);
+
+		if(RecentMovementBuffer[OutPutDownEndIdx].Value.Z - CurrObjLocation.Z > MinPutDownHeight)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t\t\t\t PUT DOWN HAPPENED"),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			return true;
+		}
+		OutPutDownEndIdx--;
+	}
+	UE_LOG(LogTemp, Error, TEXT("%s::%d [%f]  \t\t\t\t PUT DOWN HAS NOT HAPPENED"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+	return false;
 }
 
 // Update callback
@@ -387,41 +416,18 @@ void USLPickAndPlaceListener::Update_TransportOrPutDown()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t\t **** START SupportedBy ****"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 
-
-		// First check if a put down movement happened
-		bool bPutDownHappened = false;
-		float PutDownStartTime = -1.f;
-		int32 Idx = RecentMovementBuffer.Num() - 1;
-		while(Idx > 0 && CurrTime - RecentMovementBuffer[Idx].Key < PutDownMovementBacktrackDuration)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t\t [%f] [%f/%f] MinPutDownHeight"),
-				*FString(__func__), __LINE__,
-				GetWorld()->GetTimeSeconds(), 
-				RecentMovementBuffer[Idx].Key,
-				RecentMovementBuffer[Idx].Value.Z - CurrObjLocation.Z,
-				MinPutDownHeight);
-
-			if(RecentMovementBuffer[Idx].Value.Z - CurrObjLocation.Z > MinPutDownHeight)
-			{
-				bPutDownHappened = true;
-
-				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f]  \t\t\t\t PUT DOWN HAPPENED"),
-					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-				break;
-			}
-			Idx--;
-		}
-
 		// Check for the PutDown movement start time
-		if(bPutDownHappened)
+		uint32 PutDownEndIdx = 0;
+		if(HasPutDownEventHappened(CurrTime, CurrObjLocation, PutDownEndIdx))
 		{
-			while(Idx > 0)
+			float PutDownStartTime = -1.f;
+			while(PutDownEndIdx > 0)
 			{
 				// Check when the 
-				if(RecentMovementBuffer[Idx].Value.Z - CurrObjLocation.Z > MaxPutDownHeight
-					|| FVector::Distance(RecentMovementBuffer[Idx].Value, CurrObjLocation) > MaxPutDownDistXY)
+				if(RecentMovementBuffer[PutDownEndIdx].Value.Z - CurrObjLocation.Z > MaxPutDownHeight
+					|| FVector::Distance(RecentMovementBuffer[PutDownEndIdx].Value, CurrObjLocation) > MaxPutDownDistXY)
 				{
-					PutDownStartTime = RecentMovementBuffer[Idx].Key;
+					PutDownStartTime = RecentMovementBuffer[PutDownEndIdx].Key;
 
 					UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
 						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, PutDownStartTime);
@@ -433,11 +439,14 @@ void USLPickAndPlaceListener::Update_TransportOrPutDown()
 					OnManipulatorPutDownEvent.Broadcast(SemanticOwner, CurrGraspedObj, PutDownStartTime, CurrTime);
 					break;
 				}
-				Idx--;
+				PutDownEndIdx--;
 			}
-			// TODO it can happen that the limits are not in the buffer, and not event is published, should it be left like this?
+
+			// If the limits are not crossed in the buffer the oldest available time is used (TODO, or should we ignore the action?)
 			if(PutDownStartTime < 0)
 			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] The limits were not crossed in the available data in the buffer, the oldest available time is used"),
+					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 				PutDownStartTime = RecentMovementBuffer[0].Key;
 
 				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
