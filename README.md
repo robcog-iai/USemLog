@@ -1,4 +1,4 @@
-![](Documentation/Img/SemLog.png)
+![](Documentation/Img/SemLog.jpg)
 
 # USemLog
 
@@ -49,3 +49,7 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
     `Mobility,Dynamic;` - represents the raw logging type of the object (Static or Dynamic)
 
     `Id,y6dnf3eQsUK9pPKAzo90yA;` - unique id in UUID in Base64Url
+
+#### Semantically annotate skeletal components:
+
+* [Tutorial](Documentation/SkelAnnotationTutorial.md)

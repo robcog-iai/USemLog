@@ -19,7 +19,7 @@ USLVisionLogger::~USLVisionLogger()
 {
 	if (!bIsFinished && !IsTemplate())
 	{
-		USLVisionLogger::Finish(true);
+		Finish(true);
 	}
 }
 

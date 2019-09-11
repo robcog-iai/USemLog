@@ -8,14 +8,16 @@
 #include "ImageUtils.h"
 #include "Async.h"
 #include "HighResScreenshot.h"
+#include "Animation/SkeletalMeshActor.h"
+#include "Camera/CameraActor.h"
+#include "Engine/LocalPlayer.h"
+
 #include "SLVisViewActor.h"
 #include "SLVisMaskHandler.h"
 #include "SLVisImageWriterMongoCxx.h"
 #include "SLVisImageWriterMongoC.h"
 #include "SLVisImageWriterFile.h"
-#include "Animation/SkeletalMeshActor.h"
-#include "Camera/CameraActor.h"
-#include "Engine/LocalPlayer.h"
+
 
 // Ctor
 ASLVisLoggerSpectatorPC::ASLVisLoggerSpectatorPC()
@@ -57,18 +59,19 @@ void ASLVisLoggerSpectatorPC::BeginPlay()
 	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
 	{
 		// Init logger
-		ASLVisLoggerSpectatorPC::Init();
+		Init();
 
 		// Start logger
-		ASLVisLoggerSpectatorPC::Start();
+		Start();
 	}
 }
 
 // Called when actor removed from game or game ended
 void ASLVisLoggerSpectatorPC::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	Super::EndPlay(EndPlayReason);
 	// Finish logger
-	//ASLVisLoggerSpectatorPC::Finish();
+	//Finish();
 }
 
 // Called every frame
@@ -231,8 +234,8 @@ void ASLVisLoggerSpectatorPC::CreateWriter()
 
 
 #if WITH_EDITOR
-			//ProgressBar = MakeUnique<FScopedSlowTask>(NumImagesToSave, FText::FromString(FString(TEXT("Saving images.."))));
-			//ProgressBar->MakeDialog(true, true);
+	//ProgressBar = MakeUnique<FScopedSlowTask>(NumImagesToSave, FText::FromString(FString(TEXT("Saving images.."))));
+	//ProgressBar->MakeDialog(true, true);
 #endif //WITH_EDITOR
 }
 

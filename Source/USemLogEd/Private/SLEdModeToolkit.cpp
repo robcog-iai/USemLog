@@ -19,6 +19,7 @@
 #include "Ids.h"
 #include "Tags.h"
 #include "ScopedTransaction.h"
+#include "Animation/SkeletalMeshActor.h"
 
 #define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"
 
@@ -462,7 +463,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksRand()
 			}
 		}
 	}
-
+	
 	// Iterate skeletal data components
 	for (TObjectIterator<USLSkeletalDataComponent> ObjItr; ObjItr; ++ObjItr)
 	{

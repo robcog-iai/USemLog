@@ -30,7 +30,7 @@ public class USemLog : ModuleRules
 			{
 				"Core",
 				"USemLogOwl",
-				"SRanipal", // SL_WITH_EYE_TRACKING
+				"USemLogSkel", // NEeded for external access of SLStructs.h, for example through SLEtntitesManager
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -48,7 +48,6 @@ public class USemLog : ModuleRules
 				"UTags",
 				"UIds",
 				"UConversions",
-				"USemLogSkel",
 				"UMCGrasp", // SL_WITH_MC_GRASP
 				//"libmongo",
 				//"SlicingLogic",	  //SL_WITH_SLICING
