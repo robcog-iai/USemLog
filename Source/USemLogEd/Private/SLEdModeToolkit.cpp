@@ -541,7 +541,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 	};
 
 	// Generated colors params
-	const uint8 Tolerance = 47;
+	const uint8 Tolerance = 27;
 	FColor CIdx(0, 0, 0, 255);
 
 	// Lambda to shuffle the unqiue colors array
@@ -576,8 +576,10 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 
 	// Shuffle the array
 	ArrayShuffleLambda(UniqueColors);
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d UniqueColorsNum() = %d"), *FString(__func__), __LINE__, UniqueColors.Num());
 
 	// Iterate only static mesh actors
+	uint32 UsedColors = 0;
 	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{
 		// Continue only if a valid mesh component is available
@@ -588,28 +590,36 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 				// Check if the actor or the component is semantically annotated
 				if (FTags::HasKey(*ActItr, "SemLog", "Class"))
 				{
-					//FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", GenerateUniqueColorLambda(Tolerance, CIdx), true);
 					if (UniqueColors.Num() == 0)
 					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d No more unique colors, saving as black"), *FString(__func__), __LINE__);
+						UE_LOG(LogTemp, Error, TEXT("%s::%d [Actor] ActItr=%s; No more unique colors, saving as black"),
+							*FString(__func__), __LINE__, *ActItr->GetName());
 						FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", FColor::Black.ToHex(), true);
 					}
 					else
 					{
-						FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", UniqueColors.Pop(), true);
+						const FString ColorStr = UniqueColors.Pop(false);
+						FTags::AddKeyValuePair(*ActItr, "SemLog", "VisMask", ColorStr, true);
+						UsedColors++;
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d [Actor] ActItr=%s; Color=%s; \t\t\t\t [%d/%d] "),
+							*FString(__func__), __LINE__, *ActItr->GetName(), *ColorStr, UsedColors, UniqueColors.Num());
 					}
 				}
 				else if (FTags::HasKey(SMC, "SemLog", "Class"))
 				{
-					//FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", GenerateUniqueColorLambda(Tolerance, CIdx), true);
 					if (UniqueColors.Num() == 0)
 					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d No more unique colors, saving as black"), *FString(__func__), __LINE__);
 						FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", FColor::Black.ToHex(), true);
+						UE_LOG(LogTemp, Error, TEXT("%s::%d [Comp] Owner=%s; No more unique colors, saving as black"),
+							*FString(__func__), __LINE__, *ActItr->GetName());
 					}
 					else
 					{
-						FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", UniqueColors.Pop(), true);
+						const FString ColorStr = UniqueColors.Pop(false);
+						FTags::AddKeyValuePair(SMC, "SemLog", "VisMask", ColorStr, true);
+						UsedColors++;
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d [Comp] Owner=%s; Color=%s; \t\t\t\t [%d/%d] "),
+							*FString(__func__), __LINE__, *ActItr->GetName(), *ColorStr, UsedColors, UniqueColors.Num());
 					}
 				}
 			}
@@ -620,51 +630,58 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 				// then start adding new values with AddUnique
 			}
 		}
-
-		// Iterate skeletal data components
-		for (TObjectIterator<USLSkeletalDataComponent> ObjItr; ObjItr; ++ObjItr)
+	}
+	
+	// Iterate skeletal data components
+	for (TObjectIterator<USLSkeletalDataComponent> ObjItr; ObjItr; ++ObjItr)
+	{
+		// Valid if its parent is a skeletal mesh component
+		if (Cast<USkeletalMeshComponent>(ObjItr->GetAttachParent()))
 		{
-			// Valid if its parent is a skeletal mesh component
-			if (Cast<USkeletalMeshComponent>(ObjItr->GetAttachParent()))
+			if (bOverwriteVisualMaskValues)
 			{
-				if (bOverwriteVisualMaskValues)
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d [Skel] Owner=%s;"), *FString(__func__), __LINE__, *ObjItr->GetOwner()->GetName());
+				
+				for (auto& Pair : ObjItr->SemanticBonesData)
 				{
-					for (auto& Pair : ObjItr->SemanticBonesData)
+					// Check if data is set (it has a semantic class)
+					if (Pair.Value.IsSet())
 					{
-						// Check if data is set (it has a semantic class)
-						if (Pair.Value.IsSet())
+						if (UniqueColors.Num() == 0)
 						{
-							if (UniqueColors.Num() == 0)
-							{
-								Pair.Value.MaskColorHex = FColor::Black.ToHex();
-							}
-							else
-							{
-								Pair.Value.MaskColorHex = UniqueColors.Pop();
-							}
+							UE_LOG(LogTemp, Error, TEXT("%s::%d \t Class=%s; No more unique colors, saving as black"),
+								*FString(__func__), __LINE__, *Pair.Value.Class);
+							Pair.Value.MaskColorHex = FColor::Black.ToHex();
+						}
+						else
+						{
+							const FString ColorStr = UniqueColors.Pop(false);
+							Pair.Value.MaskColorHex = ColorStr;
+							UsedColors++;
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d \t Class=%s; Color=%s; \t\t\t\t [%d/%d]"),
+								*FString(__func__), __LINE__, *Pair.Value.Class, *ColorStr, UsedColors, UniqueColors.Num());
+						}
 
-							// Add the mask to the map used at runtime as well
-							if (ObjItr->AllBonesData.Contains(Pair.Key))
-							{
-								ObjItr->AllBonesData[Pair.Key].MaskColorHex = Pair.Value.MaskColorHex;
-							}
-							else
-							{
-								// This should not happen, the two maps should be synced
-								UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot find bone %s, maps are not synced.."),
-									*FString(__func__), __LINE__, *Pair.Key.ToString());
-							}
+						// Add the mask to the map used at runtime as well
+						if (ObjItr->AllBonesData.Contains(Pair.Key))
+						{
+							ObjItr->AllBonesData[Pair.Key].MaskColorHex = Pair.Value.MaskColorHex;
+						}
+						else
+						{
+							// This should not happen, the two maps should be synced
+							UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot find bone %s, maps are not synced.."),
+								*FString(__func__), __LINE__, *Pair.Key.ToString());
 						}
 					}
 				}
-				else
-				{
-					// Not implemented
-				}
+			}
+			else
+			{
+				// Not implemented
 			}
 		}
 	}
-
 	return FReply::Handled();
 }
 

@@ -18,6 +18,7 @@ ASLVisLiveViewManager::ASLVisLiveViewManager()
 
 	InputNextRenderType = "NextRenderType";
 	InputPrevRenderType = "PrevRenderType";
+	InputViewMode = "ViewModeToggle";
 
 	RenderTypes.Emplace(ESLVisRenderType::Color);
 	RenderTypes.Emplace(ESLVisRenderType::Depth);
@@ -26,6 +27,9 @@ ASLVisLiveViewManager::ASLVisLiveViewManager()
 	RenderTypes.Emplace(ESLVisRenderType::Mask);
 
 	ActiveRenderTypeIdx = 0;
+
+	// Scene is by default lit
+	bViewModeLit = true;
 }
 
 // Called when the game starts or when spawned
@@ -117,8 +121,9 @@ void ASLVisLiveViewManager::SetupInputBindings()
 	{
 		if (UInputComponent* IC = PC->InputComponent)
 		{
-			IC->BindAction(InputNextRenderType, IE_Released, this, &ASLVisLiveViewManager::GotoNextRender);
-			IC->BindAction(InputPrevRenderType, IE_Released, this, &ASLVisLiveViewManager::GotoPrevRender);
+			IC->BindAction(InputNextRenderType, IE_Released, this, &ASLVisLiveViewManager::GotoNextRender).bExecuteWhenPaused = true;
+			IC->BindAction(InputPrevRenderType, IE_Released, this, &ASLVisLiveViewManager::GotoPrevRender).bExecuteWhenPaused = true;
+			IC->BindAction(InputViewMode, IE_Released, this, &ASLVisLiveViewManager::ViewModeToggle).bExecuteWhenPaused = true;
 		}
 	}
 	else
@@ -194,7 +199,6 @@ void ASLVisLiveViewManager::ApplyRenderType(ESLVisRenderType Type)
 		{
 			MaskHandler->ApplyMaskMaterials();
 			ViewportClient->GetEngineShowFlags()->SetPostProcessing(false);
-
 			// TODO Kept here in case one needs to test with/without these params
 			//ViewportClient->GetEngineShowFlags()->SetLighting(false);
 			//ViewportClient->GetEngineShowFlags()->SetColorGrading(false);
@@ -230,4 +234,22 @@ void ASLVisLiveViewManager::GotoPrevRender()
 	// Decrease the index, if it becomes smaller than 0, set it to the last entry 
 	ActiveRenderTypeIdx = ActiveRenderTypeIdx <= 0 ? RenderTypes.Num() - 1 : ActiveRenderTypeIdx - 1;
 	ApplyRenderType(RenderTypes[ActiveRenderTypeIdx]);
+}
+
+// Toggle the view mode (lit/unlit)
+void ASLVisLiveViewManager::ViewModeToggle()
+{
+	// TODO no effect
+	if(bViewModeLit)
+	{
+		GetWorld()->Exec(GetWorld(), TEXT("viewmode unlit"));
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d viewmode unlit"), *FString(__func__), __LINE__);
+		bViewModeLit = false;
+	}
+	else
+	{
+		GetWorld()->Exec(GetWorld(), TEXT("viewmode lit"));
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d viewmode lit"), *FString(__func__), __LINE__);
+		bViewModeLit = true;
+	}
 }

@@ -60,6 +60,9 @@ private:
 	// Goto previous render type
 	void GotoPrevRender();
 
+	// Toggle the view mode (lit/unlit)
+	void ViewModeToggle();
+
 private:
 	// Set when logger is initialized
 	bool bIsInit;
@@ -78,6 +81,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FName InputPrevRenderType;
 
+	// The input to select the view mode
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FName InputViewMode;
+
 	// Render types
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TArray<ESLVisRenderType> RenderTypes;
@@ -91,4 +98,7 @@ private:
 
 	// Used for switching default render types
 	UGameViewportClient* ViewportClient;
+
+	// Flag for the view mode
+	bool bViewModeLit;
 };
