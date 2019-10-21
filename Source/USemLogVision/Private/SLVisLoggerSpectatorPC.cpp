@@ -200,13 +200,14 @@ void ASLVisLoggerSpectatorPC::DisablePhysicsOnEntities()
 {
 	for (TActorIterator<AStaticMeshActor> SMAItr(GetWorld()); SMAItr; ++SMAItr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d DISABLE PHYSICS ON %s"), *FString(__func__), __LINE__,*SMAItr->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [Static] Disabling physics on %s"), *FString(__func__), __LINE__,*SMAItr->GetName());
 		SMAItr->DisableComponentsSimulatePhysics();
+		SMAItr->SetMobility(EComponentMobility::Movable);
 	}
 
 	for (TActorIterator<ASkeletalMeshActor> SkMAItr(GetWorld()); SkMAItr; ++SkMAItr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d DISABLE PHYSICS ON %s"), *FString(__func__), __LINE__, *SkMAItr->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [Skeletal] Disabling physics on %s"), *FString(__func__), __LINE__, *SkMAItr->GetName());
 		SkMAItr->DisableComponentsSimulatePhysics();
 	}
 }
@@ -522,7 +523,7 @@ bool ASLVisLoggerSpectatorPC::GotoNextRenderType()
 bool ASLVisLoggerSpectatorPC::ApplyRenderType(ESLVisRenderType RenderType)
 {
 	// Get the console variable for switching buffer views
-	static IConsoleVariable* BufferVisTargetCV = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));	
+	static IConsoleVariable* BufferVisTargetCV = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));
 
 	// Choose rendering type
 	if (BufferVisTargetCV && ViewportClient->GetEngineShowFlags())

@@ -34,7 +34,7 @@ void USLVisImageWriterMongoC::Init(const FSLVisImageWriterParams& InParams)
 #endif //SLVIS_WITH_LIBMONGO_C
 	bCreateNewEntry = false;
 	TimeRange = InParams.SkipNewEntryTolerance;
-	bIsInit = USLVisImageWriterMongoC::Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
+	bIsInit = Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
 }
 
 // Finish

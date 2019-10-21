@@ -4,9 +4,9 @@
 
 #include "USemLog.h"
 #include "GameFramework/Info.h"
-#include "SLStructs.h"
 #include "SLWorldStateLogger.h"
 #include "SLEventLogger.h"
+#include "SLMetadataLogger.h"
 #include "SLVisionLogger.h"
 #include "SLManager.generated.h"
 
@@ -144,6 +144,34 @@ private:
 	FName FinishInputActionName;
 
 
+	// Mongodb server IP
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString ServerIp;
+
+	// Mongodb server PORT
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (ClampMin = 0, ClampMax = 65535))
+	uint16 ServerPort;
+	
+
+	/* Begin task metadata logger properties */	
+	// Include task related metadata
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bLogMetadata;
+
+	// Write the initial poses of the entities (semantic map locations)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata", meta = (editcondition = "bLogMetadata"))
+	bool bWriteWorldStateMetadata;
+
+	// Perform a 3d sphere image scan of all the handheld items
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata", meta = (editcondition = "bLogMetadata"))
+	bool bWriteItemImageScans;
+
+	// Metadata logger, use UPROPERTY to avoid GC
+	UPROPERTY()
+	USLMetadataLogger* MetadataLogger;
+	/* End task metadata logger properties */
+	
+	
 	/* Begin world state logger properties */
 	// Log world state
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -168,18 +196,6 @@ private:
 	// Writer type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
 	ESLWorldStateWriterType WriterType;
-
-	// Mongodb server IP
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
-	FString ServerIp;
-
-	// Mongodb server PORT
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (ClampMin = 0, ClampMax = 65535), meta = (editcondition = "bLogWorldState"))
-	uint16 ServerPort;
-
-	// Include event and replay data to the database
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
-	bool bIncludeAllData;
 
 	// World state logger, use UPROPERTY to avoid GC
 	UPROPERTY()

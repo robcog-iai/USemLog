@@ -54,6 +54,7 @@ public class USemLog : ModuleRules
 				"MongoC", // SL_WITH_LIBMONGO_C
 				//"MongoCxx", // SL_WITH_LIBMONGO_CXX
 				"SRanipal", // SL_WITH_EYE_TRACKING
+				"Boost", // SL_WITH_BOOST
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -138,6 +139,16 @@ public class USemLog : ModuleRules
 		else
 		{
 			PublicDefinitions.Add("SL_WITH_SLICING=1");
+		}
+		
+		string Boost = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Boost"));
+		if (string.IsNullOrEmpty(Boost))
+		{
+			PublicDefinitions.Add("VIZ_WITH_BOOST=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("VIZ_WITH_BOOST=1");
 		}
 	}
 }

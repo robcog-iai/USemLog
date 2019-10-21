@@ -33,6 +33,15 @@ ASLManager::ASLManager()
 	StartInputActionName = "SLStart";
 	FinishInputActionName = "SLFinish";
 
+	// Server location
+	ServerIp = TEXT("127.0.0.1");
+	ServerPort = 27017;
+	
+	// Metadata logger default values
+	bLogMetadata = false;
+	bWriteWorldStateMetadata = false;
+	bWriteItemImageScans = false;
+
 	// World state logger default values
 	bLogWorldState = true;
 	bWriteMetadata = true;
@@ -40,9 +49,7 @@ ASLManager::ASLManager()
 	LinearDistance = 0.5f; // cm
 	AngularDistance = 0.1f; // rad
 	WriterType = ESLWorldStateWriterType::MongoC;
-	ServerIp = TEXT("127.0.0.1");
-	ServerPort = 27017;
-	bIncludeAllData = false;
+
 
 	// Events logger default values
 	bLogEventData = true;
@@ -54,6 +61,7 @@ ASLManager::ASLManager()
 	bWriteTimelines = true;
 	ExperimentTemplateType = ESLOwlExperimentTemplate::Default;
 
+	
 	// Vision data logger default values
 	bLogVisionData = true;
 	MaxRecordHz = 120.f;
@@ -153,6 +161,13 @@ void ASLManager::Init()
 			EpisodeId = FIds::NewGuidInBase64Url();
 		}
 
+		if (bLogMetadata)
+		{
+			// Create and init world state logger
+			MetadataLogger = NewObject<USLMetadataLogger>(this);
+			//MetadataLogger->Init(Location, ServerIp, ServerPort);
+		}
+
 		if (bLogWorldState)
 		{
 			// Create and init world state logger
@@ -189,6 +204,11 @@ void ASLManager::Start()
 		// Reset world time
 		GetWorld()->TimeSeconds = 0.f;
 
+		// Start metadata logger
+		if (bLogMetadata && MetadataLogger)
+		{
+		}
+
 		// Start world state logger
 		if (bLogWorldState && WorldStateLogger)
 		{
@@ -217,6 +237,10 @@ void ASLManager::Finish(const float Time, bool bForced)
 {
 	if (!bIsFinished && (bIsStarted || bIsInit))
 	{
+		if (MetadataLogger)
+		{
+		}
+		
 		if (WorldStateLogger)
 		{
 			WorldStateLogger->Finish(bForced);
@@ -296,7 +320,7 @@ bool ASLManager::CanEditChange(const UProperty* InProperty) const
 	{
 		return (WriterType == ESLWorldStateWriterType::MongoCxx) || (WriterType == ESLWorldStateWriterType::MongoC);
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bIncludeAllData))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
 	{
 		return (WriterType == ESLWorldStateWriterType::MongoCxx) || (WriterType == ESLWorldStateWriterType::MongoC);
 	}
