@@ -168,7 +168,7 @@ private:
 
 	// Metadata logger, use UPROPERTY to avoid GC
 	UPROPERTY()
-	USLEventLogger* MetadataLogger;
+	USLMetadataLogger* MetadataLogger;
 	/* End task metadata logger properties */
 	
 	
