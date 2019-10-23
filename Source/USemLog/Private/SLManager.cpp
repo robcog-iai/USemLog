@@ -39,8 +39,7 @@ ASLManager::ASLManager()
 	
 	// Metadata logger default values
 	bLogMetadata = false;
-	bWriteWorldStateMetadata = false;
-	bWriteItemImageScans = false;
+	bWriteItemScans = false;
 
 	// World state logger default values
 	bLogWorldState = true;
@@ -59,6 +58,7 @@ ASLManager::ASLManager()
 	bLogPickAndPlaceEvents = true;
 	bLogSlicingEvents = true;
 	bWriteTimelines = true;
+	bWriteEpisodeMetadata = false;
 	ExperimentTemplateType = ESLOwlExperimentTemplate::Default;
 
 	
@@ -165,7 +165,8 @@ void ASLManager::Init()
 		{
 			// Create and init world state logger
 			MetadataLogger = NewObject<USLMetadataLogger>(this);
-			//MetadataLogger->Init(Location, ServerIp, ServerPort);
+			MetadataLogger->Init(Location, EpisodeId, ServerIp, ServerPort,
+				TaskDescription, bWriteItemScans);
 		}
 
 		if (bLogWorldState)
@@ -207,6 +208,7 @@ void ASLManager::Start()
 		// Start metadata logger
 		if (bLogMetadata && MetadataLogger)
 		{
+			MetadataLogger->Start();
 		}
 
 		// Start world state logger
@@ -239,6 +241,7 @@ void ASLManager::Finish(const float Time, bool bForced)
 	{
 		if (MetadataLogger)
 		{
+			MetadataLogger->Finish(bForced);
 		}
 		
 		if (WorldStateLogger)

@@ -153,18 +153,14 @@ private:
 	uint16 ServerPort;
 	
 
-	/* Begin task metadata logger properties */	
+	/* Begin task metadata logger properties */
 	// Include task related metadata
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogMetadata;
 
-	// Write the initial poses of the entities (semantic map locations)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata", meta = (editcondition = "bLogMetadata"))
-	bool bWriteWorldStateMetadata;
-
 	// Perform a 3d sphere image scan of all the handheld items
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata", meta = (editcondition = "bLogMetadata"))
-	bool bWriteItemImageScans;
+	bool bWriteItemScans;
 
 	// Metadata logger, use UPROPERTY to avoid GC
 	UPROPERTY()
@@ -231,6 +227,10 @@ private:
 	// Write event data as timelines
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	bool bWriteTimelines;
+
+	// Includes the related events in the episode (TODO)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	bool bWriteEpisodeMetadata;
 
 	// Owl experiment template
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))

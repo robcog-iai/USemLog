@@ -7,7 +7,6 @@
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
 #include "SLMetadataWriter.h"
-#include "ActorEditorUtils.h"
 #include "SLEventLogger.generated.h"
 
 // Forward declaration

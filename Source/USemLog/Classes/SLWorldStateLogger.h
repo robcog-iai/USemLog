@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "WorldState/SLWorldStateAsyncWorker.h"
+#include "Tickable.h"
 #include "SLMetadataWriter.h"
 #include "SLWorldStateLogger.generated.h"
 
