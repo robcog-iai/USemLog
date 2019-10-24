@@ -160,7 +160,7 @@ private:
 
 	// Perform a 3d sphere image scan of all the handheld items
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bLogMetadata"))
-	bool bWriteItemScans;
+	bool bScanitems;
 
 	// Overwrite existing entries
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bLogMetadata"))
