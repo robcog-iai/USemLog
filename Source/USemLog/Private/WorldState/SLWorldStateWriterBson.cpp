@@ -29,12 +29,11 @@ FSLWorldStateWriterBson::~FSLWorldStateWriterBson()
 }
 
 // Init
-bool FSLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
+void FSLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
 {
 	LinDistSqMin = InParams.LinearDistanceSquared;
 	AngDistMin = InParams.AngularDistance;
-	bIsInit = FSLWorldStateWriterBson::SetFileHandle(InParams.Location, InParams.EpisodeId);
-	return bIsInit;
+	bIsInit = SetFileHandle(InParams.Location, InParams.EpisodeId);
 }
 
 // Finish

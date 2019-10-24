@@ -30,7 +30,7 @@ public:
 	virtual ~FSLWorldStateWriterBson();
 
 	// Init
-	virtual bool Init(const FSLWorldStateWriterParams& InParams) override;
+	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
 
 	// Finish
 	virtual void Finish() override;

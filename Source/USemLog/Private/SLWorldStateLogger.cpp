@@ -23,14 +23,10 @@ USLWorldStateLogger::~USLWorldStateLogger()
 }
 
 // Init Logger
-void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
-	const FSLWorldStateWriterParams& InWriterParams,
-	bool bInWriteMetadata, const FString& TaskDescription)
+void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams)
 {
 	if (!bIsInit)
 	{
-		bWriteMetadata = bInWriteMetadata;
-
 		// Create async worker to do the writing on a separate thread
 		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
 
@@ -42,11 +38,6 @@ void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType,
 			{
 				bIsInit = true;
 			}
-		}
-
-		if (bWriteMetadata)
-		{
-			MetadataWriter.Init(InWriterParams, TaskDescription);
 		}
 	}
 }
