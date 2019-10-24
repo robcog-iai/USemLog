@@ -37,19 +37,21 @@ ASLManager::ASLManager()
 	ServerIp = TEXT("127.0.0.1");
 	ServerPort = 27017;
 	
-	// Metadata logger default values
+	// Task metadata logger default values
 	bLogMetadata = false;
 	bWriteItemScans = false;
+	bOverwriteMetadata = false;
 
+	
 	// World state logger default values
 	bLogWorldState = true;
-	bWriteMetadata = true;
+	bOverwriteWorldState = false;
 	UpdateRate = 0.0f;
 	LinearDistance = 0.5f; // cm
 	AngularDistance = 0.1f; // rad
 	WriterType = ESLWorldStateWriterType::MongoC;
 
-
+	
 	// Events logger default values
 	bLogEventData = true;
 	bLogContactEvents = true;
@@ -68,7 +70,7 @@ ASLManager::ASLManager()
 	MinRecordHz = 30.f;
 
 #if WITH_EDITOR
-	// Make manager sprite smaller
+	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.5;
 #endif // WITH_EDITOR
 }
@@ -78,7 +80,7 @@ ASLManager::~ASLManager()
 {
 	if (!bIsFinished && !IsTemplate())
 	{
-		ASLManager::Finish(-1.f, true);
+		Finish(-1.f, true);
 	}
 }
 
@@ -88,7 +90,7 @@ void ASLManager::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// Init loggers
-	ASLManager::Init();
+	Init();
 }
 
 // Called when the game starts or when spawned
@@ -98,14 +100,14 @@ void ASLManager::BeginPlay()
 
 	if (bStartAtBeginPlay)
 	{
-		ASLManager::Start();
+		Start();
 	}
 	else if (bStartAtFirstTick)
 	{
 		FTimerDelegate TimerDelegateNextTick;
 		TimerDelegateNextTick.BindLambda([this]
 		{
-			ASLManager::Start();
+			Start();
 		});
 		GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);
 	}
@@ -115,14 +117,14 @@ void ASLManager::BeginPlay()
 		FTimerDelegate TimerDelegateDelay;
 		TimerDelegateDelay.BindLambda([this]
 		{
-			ASLManager::Start();
+			Start();
 		});
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, StartDelay, false);
 	}
 	else if (bStartFromUserInput)
 	{
 		// Bind user input
-		ASLManager::SetupInputBindings();
+		SetupInputBindings();
 	}
 }
 
@@ -132,7 +134,7 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	if (!bIsFinished)
 	{
-		ASLManager::Finish(GetWorld()->GetTimeSeconds());
+		Finish(GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -161,35 +163,39 @@ void ASLManager::Init()
 			EpisodeId = FIds::NewGuidInBase64Url();
 		}
 
+		// Metadata logging happens exclusively
 		if (bLogMetadata)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Logging metadata only.."), *FString(__func__), __LINE__);
+
 			// Create and init world state logger
 			MetadataLogger = NewObject<USLMetadataLogger>(this);
-			MetadataLogger->Init(Location, EpisodeId, ServerIp, ServerPort,
-				TaskDescription, bWriteItemScans);
+			MetadataLogger->Init(Location, EpisodeId, ServerIp, ServerPort, bOverwriteMetadata);
 		}
-
-		if (bLogWorldState)
+		else
 		{
-			// Create and init world state logger
-			WorldStateLogger = NewObject<USLWorldStateLogger>(this);
-			WorldStateLogger->Init(WriterType, FSLWorldStateWriterParams(
-				LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort), bWriteMetadata, TaskDescription);
-		}
+			if (bLogWorldState)
+			{
+				// Create and init world state logger
+				WorldStateLogger = NewObject<USLWorldStateLogger>(this);
+				WorldStateLogger->Init(WriterType, FSLWorldStateWriterParams(
+					LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort, bOverwriteWorldState));
+			}
 
-		if (bLogEventData)
-		{
-			// Create and init event data logger
-			EventDataLogger = NewObject<USLEventLogger>(this);
-			EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId),
-				bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines);
-		}
+			if (bLogEventData)
+			{
+				// Create and init event data logger
+				EventDataLogger = NewObject<USLEventLogger>(this);
+				EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId),
+					bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines);
+			}
 
-		if (bLogVisionData)
-		{
-			// Create and init vision logger
-			VisionDataLogger = NewObject<USLVisionLogger>(this);
-			VisionDataLogger->Init(MinRecordHz, MaxRecordHz);
+			if (bLogVisionData)
+			{
+				// Create and init vision logger
+				VisionDataLogger = NewObject<USLVisionLogger>(this);
+				VisionDataLogger->Init(MinRecordHz, MaxRecordHz);
+			}
 		}
 
 		// Mark manager as initialized
@@ -205,28 +211,33 @@ void ASLManager::Start()
 		// Reset world time
 		GetWorld()->TimeSeconds = 0.f;
 
-		// Start metadata logger
-		if (bLogMetadata && MetadataLogger)
+		if(bLogMetadata)
 		{
-			MetadataLogger->Start();
+			// Start metadata logger
+			if ( MetadataLogger)
+			{
+				MetadataLogger->Start(TaskDescription, bWriteItemScans);
+			}
 		}
-
-		// Start world state logger
-		if (bLogWorldState && WorldStateLogger)
+		else
 		{
-			WorldStateLogger->Start(UpdateRate);
-		}
+			// Start world state logger
+			if (bLogWorldState && WorldStateLogger)
+			{
+				WorldStateLogger->Start(UpdateRate);
+			}
 
-		// Start event data logger
-		if (bLogEventData && EventDataLogger)
-		{
-			EventDataLogger->Start();
-		}
+			// Start event data logger
+			if (bLogEventData && EventDataLogger)
+			{
+				EventDataLogger->Start();
+			}
 
-		// Start the vision data logger
-		if (bLogVisionData && VisionDataLogger)
-		{
-			VisionDataLogger->Start(EpisodeId);
+			// Start the vision data logger
+			if (bLogVisionData && VisionDataLogger)
+			{
+				VisionDataLogger->Start(EpisodeId);
+			}
 		}
 
 		// Mark manager as started
@@ -239,24 +250,29 @@ void ASLManager::Finish(const float Time, bool bForced)
 {
 	if (!bIsFinished && (bIsStarted || bIsInit))
 	{
-		if (MetadataLogger)
+		if(bLogMetadata)
 		{
-			MetadataLogger->Finish(bForced);
+			if (MetadataLogger)
+			{
+				MetadataLogger->Finish(bForced);
+			}
 		}
-		
-		if (WorldStateLogger)
+		else
 		{
-			WorldStateLogger->Finish(bForced);
-		}
+			if (WorldStateLogger)
+			{
+				WorldStateLogger->Finish(bForced);
+			}
 
-		if (EventDataLogger)
-		{
-			EventDataLogger->Finish(Time, bForced);
-		}
+			if (EventDataLogger)
+			{
+				EventDataLogger->Finish(Time, bForced);
+			}
 		
-		if (VisionDataLogger)
-		{
-			VisionDataLogger->Finish(bForced);
+			if (VisionDataLogger)
+			{
+				VisionDataLogger->Finish(bForced);
+			}
 		}
 
 		// Delete the semantic items content instance

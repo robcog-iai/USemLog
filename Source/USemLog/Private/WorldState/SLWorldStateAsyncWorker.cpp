@@ -22,7 +22,7 @@ FSLWorldStateAsyncWorker::FSLWorldStateAsyncWorker()
 // Destructor
 FSLWorldStateAsyncWorker::~FSLWorldStateAsyncWorker()
 {
-	FSLWorldStateAsyncWorker::Finish(true);
+	Finish(true);
 }
 
 // Init writer, load items from sl mapping singleton

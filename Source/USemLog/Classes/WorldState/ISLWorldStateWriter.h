@@ -30,6 +30,9 @@ struct FSLWorldStateWriterParams
 	// Server Port (optional)
 	uint16 ServerPort;
 
+	// Overwrite exiting data
+	bool bOverwrite;
+
 	// Constructor
 	FSLWorldStateWriterParams(
 		float InLinearDistance,
@@ -37,13 +40,15 @@ struct FSLWorldStateWriterParams
 		const FString& InLocation,
 		const FString& InEpisodeId,
 		const FString& InServerIp = "",
-		uint16 InServerPort = 0) :
+		uint16 InServerPort = 0,
+		bool bInOverwrite = false) :
 		LinearDistanceSquared(InLinearDistance*InLinearDistance),
 		AngularDistance(InAngularDistance),
 		Location(InLocation),
 		EpisodeId(InEpisodeId),
 		ServerIp(InServerIp),
-		ServerPort(InServerPort)
+		ServerPort(InServerPort),
+		bOverwrite(bInOverwrite)
 	{};
 };
 
@@ -58,7 +63,7 @@ public:
 	virtual ~ISLWorldStateWriter(){};
 	
 	// Init the writer
-	virtual bool Init(const FSLWorldStateWriterParams& InParams) = 0;
+	virtual void Init(const FSLWorldStateWriterParams& InParams) = 0;
 	
 	// Finish
 	virtual void Finish() = 0;

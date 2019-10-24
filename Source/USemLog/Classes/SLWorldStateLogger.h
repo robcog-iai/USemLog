@@ -28,7 +28,7 @@ public:
 	~USLWorldStateLogger();
 
 	// Init Logger
-	void Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams, bool bInWriteMetadata, const FString& TaskDescription);
+	void Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams);
 
 	// Start logger
 	void Start(const float UpdateRate);

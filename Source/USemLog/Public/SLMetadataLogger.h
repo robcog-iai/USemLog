@@ -37,10 +37,10 @@ public:
 	
 	// Init logger
 	void Init(const FString& InLocation, const FString InEpisodeId, const FString InServerIp, uint16 InServerPort,
-		const FString& InTaskDescription,  bool bWriteItemImageScans);
+		bool bOverwrite = false);
 
 	// Start logger
-	void Start();
+	void Start(const FString& InTaskDescription,  bool bWriteItemImageScans);
 
 	// Finish logger
 	void Finish(bool bForced = false);
@@ -55,8 +55,34 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 	
 private:
-	// Connect to the database
-	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
+	// Connect to the database, if overwrite is true, remove existing collection
+	bool Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bOverwrite);
+
+	// Disconnect and clean db connection
+	void Disconnect();
+
+	// Create meta document
+	void CreateDoc();
+
+	// Write the task description
+	void AddTaskDescription(const FString& InTaskDescription);
+
+	// Add the environment data (skeletal and non-skeletal entities)
+	void AddEnvironmentData();
+
+	// Add the existing camera views
+	void AddCameraViews();
+
+	// Add item image scans
+	void AddItemScans();
+	
+	// Insert the document to the collection
+	void InsertDoc();
+
+#if SL_WITH_LIBMONGO_C
+	// Add pose to document
+	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc);
+#endif //SL_WITH_LIBMONGO_C
 	
 private:
 	// Set when initialized
@@ -80,5 +106,8 @@ private:
 
 	// Database collection
 	mongoc_collection_t* collection;
+
+	// Document id, the whole collection will consist of one document
+	bson_t* doc;
 #endif //SL_WITH_LIBMONGO_C
 };

@@ -34,7 +34,7 @@ public:
 	virtual ~FSLWorldStateWriterMongoC();
 
 	// Init
-	virtual bool Init(const FSLWorldStateWriterParams& InParams) override;
+	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
 
 	// Finish
 	virtual void Finish() override;
@@ -49,8 +49,11 @@ public:
 
 private:
 	// Connect to the database
-	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort);
+	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort, bool bOverwrite = false);
 
+	// Disconnect and clean db connection
+	void Disconnect();
+	
 	// Create indexes on the logged data, usually called after logging
 	bool CreateIndexes() const;
 

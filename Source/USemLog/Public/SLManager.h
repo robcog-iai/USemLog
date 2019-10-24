@@ -159,9 +159,13 @@ private:
 	bool bLogMetadata;
 
 	// Perform a 3d sphere image scan of all the handheld items
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata", meta = (editcondition = "bLogMetadata"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bLogMetadata"))
 	bool bWriteItemScans;
 
+	// Overwrite existing entries
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bLogMetadata"))
+	bool bOverwriteMetadata;
+	
 	// Metadata logger, use UPROPERTY to avoid GC
 	UPROPERTY()
 	USLMetadataLogger* MetadataLogger;
@@ -172,10 +176,10 @@ private:
 	// Log world state
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogWorldState;
-	
-	// Write event data as a metadata entry
+
+	// Remove any existing entries
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
-	bool bWriteMetadata;
+	bool bOverwriteWorldState;
 
 	// Update rate (s) of world state logging (0.f means logging on every tick) (not fixed nor guaranteed)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))

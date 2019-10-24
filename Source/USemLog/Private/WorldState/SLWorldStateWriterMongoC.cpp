@@ -16,33 +16,31 @@ FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC()
 FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC(const FSLWorldStateWriterParams& InParams)
 {
 	bIsInit = false;
-	FSLWorldStateWriterMongoC::Init(InParams);
+	Init(InParams);
 }
 
 // Destr
 FSLWorldStateWriterMongoC::~FSLWorldStateWriterMongoC()
 {
-	FSLWorldStateWriterMongoC::Finish();
-#if SL_WITH_LIBMONGO_C
-	//Release our handles and clean up libmongoc
-	mongoc_collection_destroy(collection);
-	mongoc_database_destroy(database);
-	mongoc_uri_destroy(uri);
-	mongoc_client_destroy(client);
-	mongoc_cleanup();
-#endif //SL_WITH_LIBMONGO_C
+	Finish();
+	
+	// Disconnect and clean db connection
+	Disconnect();
 }
 
 // Init
-bool FSLWorldStateWriterMongoC::Init(const FSLWorldStateWriterParams& InParams)
+void FSLWorldStateWriterMongoC::Init(const FSLWorldStateWriterParams& InParams)
 {
 	if(!bIsInit)
 	{
+		if(!Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort, InParams.bOverwrite))
+		{
+			return;
+		}
 		LinDistSqMin = InParams.LinearDistanceSquared;
 		AngDistMin = InParams.AngularDistance;
-		bIsInit =  Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);		
+		bIsInit =  true;
 	}
-	return bIsInit;
 }
 
 // Finish
@@ -50,7 +48,7 @@ void FSLWorldStateWriterMongoC::Finish()
 {
 	if (bIsInit)
 	{
-		FSLWorldStateWriterMongoC::CreateIndexes();
+		CreateIndexes();
 		bIsInit = false;
 	}
 }
@@ -127,7 +125,7 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 }
 
 // Connect to the database
-bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
+bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort, bool bOverwrite)
 {
 #if SL_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
@@ -141,8 +139,8 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 	uri = mongoc_uri_new_with_error(TCHAR_TO_UTF8(*Uri), &error);
 	if (!uri)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			*FString(__func__), __LINE__, *Uri, *FString(error.message));
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s; [Uri=%s]"),
+			*FString(__func__), __LINE__, *FString(error.message), *Uri);
 		return false;
 	}
 
@@ -162,10 +160,30 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 	// Abort if we connect to an existing collection
 	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*EpisodeId), &error))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Collection %s already exists in database.."),
-			*FString(__func__), __LINE__, *EpisodeId);
-		return false;
+		if(bOverwrite)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d World state collection %s already exists, will be removed and overwritten.."),
+				*FString(__func__), __LINE__, *EpisodeId);
+			if(!mongoc_collection_drop (mongoc_database_get_collection(database, TCHAR_TO_UTF8(*EpisodeId)), &error))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+					*FString(__func__), __LINE__, *FString(error.message));
+				return false;
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d World state collection %s already exists and should not be overwritten, skipping metadata logging.."),
+				*FString(__func__), __LINE__, *EpisodeId);
+			return false;
+		}
 	}
+	else 
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Collection %s does not exist, creating a new one.."),
+			*FString(__func__), __LINE__, *EpisodeId);
+	}
+	
 	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId));
 
 	// Check server. Ping the "admin" database
@@ -184,6 +202,31 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 #else
 	return false;
 #endif //SL_WITH_LIBMONGO_C
+}
+
+// Disconnect and clean db connection
+void FSLWorldStateWriterMongoC::Disconnect()
+{
+#if SL_WITH_LIBMONGO_C
+	// Release handles and clean up mongoc
+	if(uri)
+	{
+		mongoc_uri_destroy(uri);
+	}
+	if(client)
+	{
+		mongoc_client_destroy(client);
+	}
+	if(database)
+	{
+		mongoc_database_destroy(database);
+	}
+	if(collection)
+	{
+		mongoc_collection_destroy(collection);
+	}
+	mongoc_cleanup();
+#endif //SL_WITH_LIBMONGO_C
 }
 
 // Create indexes from the logged data, usually called after logging
