@@ -29,7 +29,7 @@ USLMetadataLogger::~USLMetadataLogger()
 
 // Init logger
 void USLMetadataLogger::Init(const FString& InLocation, const FString InEpisodeId, const FString InServerIp, uint16 InServerPort,
-		 bool bOverwrite)
+		 bool bScanItems, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -41,12 +41,18 @@ void USLMetadataLogger::Init(const FString& InLocation, const FString InEpisodeI
 		// Create the bson metadata document
 		CreateDoc();
 
+		if(bScanItems)
+		{
+			ItemScanner = NewObject<USLItemScanner>(this);
+			ItemScanner->Init();
+		}
+
 		bIsInit = true;
 	}
 }
 
 // Start logger
-void USLMetadataLogger::Start(const FString& InTaskDescription,  bool bWriteItemScans)
+void USLMetadataLogger::Start(const FString& InTaskDescription)
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -56,7 +62,7 @@ void USLMetadataLogger::Start(const FString& InTaskDescription,  bool bWriteItem
 		AddCameraViews();
 
 		// Scan items and include the data in the document
-		if(bWriteItemScans)
+		if(ItemScanner)
 		{
 			AddItemScans();
 		}

@@ -5,6 +5,7 @@
 
 #include "USemLog.h"
 #include "UObject/NoExportTypes.h"
+#include "SLItemScanner.h"
 
 #if SL_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
@@ -37,10 +38,10 @@ public:
 	
 	// Init logger
 	void Init(const FString& InLocation, const FString InEpisodeId, const FString InServerIp, uint16 InServerPort,
-		bool bOverwrite = false);
+		bool bScanItems, bool bOverwrite = false);
 
 	// Start logger
-	void Start(const FString& InTaskDescription,  bool bWriteItemImageScans);
+	void Start(const FString& InTaskDescription);
 
 	// Finish logger
 	void Finish(bool bForced = false);
@@ -93,6 +94,10 @@ private:
 
 	// Set when finished
 	bool bIsFinished;
+
+	// Helper class for scanning the items from the world
+	UPROPERTY() // Avoid GC
+	USLItemScanner* ItemScanner;
 
 #if SL_WITH_LIBMONGO_C
 	// Server uri
