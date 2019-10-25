@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMeshActor.h"
 #include "SLItemScanner.generated.h"
 
 /**
  * Scans handheld items by taking images from unidistributed points form a sphere as a camera location
  */
 UCLASS()
-class USLItemScanner : public UStaticMeshComponent
+class USLItemScanner : public UObject
 {
 	GENERATED_BODY()
 
@@ -22,7 +22,7 @@ public:
 	~USLItemScanner();
 
 	// Setup scanning room
-	void Init();
+	void Init(UWorld* World);
 
 	// Start scanning
 	void Start();
@@ -40,6 +40,16 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 private:
+	// Get the items to scan
+	void ScanItems(const float InVolumeLimit, const float InLengthLimit);
+
+	// Check if the item should be scanned
+	bool ShouldBeScanned(UStaticMeshComponent* SMC, const float InVolumeLimit, const float InLengthLimit) const;
+
+	// Scan the item
+	void ScanItem(AActor *Item);
+	
+private:
 	// Set when initialized
 	bool bIsInit;
 
@@ -48,8 +58,18 @@ private:
 
 	// Set when finished
 	bool bIsFinished;
+	
+	// Scanner box actor to spawn
+	UPROPERTY() // Avoid GC
+	AStaticMeshActor* ScanBoxActor;
 
 	/* Constants */
-	// Location to telepor the scanning room
+	// Vertical offset to spawn the scanning room
 	constexpr static const float ZOffset = 1000.f;
+
+	// Volume limit in cubic centimeters (1000cm^3 = 1 Liter) of items to scan
+	constexpr static const float VolumeLimit = 40000.f;
+
+	// Length limit of its bounding box points (cm) 
+	constexpr static const float LengthLimit = 75.f;
 };

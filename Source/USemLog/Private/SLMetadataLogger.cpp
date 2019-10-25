@@ -29,7 +29,7 @@ USLMetadataLogger::~USLMetadataLogger()
 
 // Init logger
 void USLMetadataLogger::Init(const FString& InLocation, const FString InEpisodeId, const FString InServerIp, uint16 InServerPort,
-		 bool bScanItems, bool bOverwrite)
+		 UWorld* World, bool bScanItems, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -44,7 +44,7 @@ void USLMetadataLogger::Init(const FString& InLocation, const FString InEpisodeI
 		if(bScanItems)
 		{
 			ItemScanner = NewObject<USLItemScanner>(this);
-			ItemScanner->Init();
+			ItemScanner->Init(World);
 		}
 
 		bIsInit = true;
@@ -64,7 +64,7 @@ void USLMetadataLogger::Start(const FString& InTaskDescription)
 		// Scan items and include the data in the document
 		if(ItemScanner)
 		{
-			AddItemScans();
+			ItemScanner->Start();
 		}
 		
 		bIsStarted = true;
@@ -232,6 +232,7 @@ void USLMetadataLogger::AddEnvironmentData()
 	{
 		const FSLEntity SemEntity = Pair.Value;
 
+		// Ignore skeletal entities
 		if (Cast<ASkeletalMeshActor>(SemEntity.Obj) || Cast<USkeletalMeshComponent>(SemEntity.Obj))
 		{
 			continue;
@@ -406,7 +407,7 @@ void USLMetadataLogger::AddCameraViews()
 }
 
 // Add item image scans
-void USLMetadataLogger::AddItemScans()
+void USLMetadataLogger::AddScans()
 {
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Scanning.."), *FString(__func__), __LINE__);
 }

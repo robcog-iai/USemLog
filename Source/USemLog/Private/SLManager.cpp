@@ -39,7 +39,7 @@ ASLManager::ASLManager()
 	
 	// Task metadata logger default values
 	bLogMetadata = false;
-	bScanitems = false;
+	bScanItems = false;
 	bOverwriteMetadata = false;
 
 	
@@ -170,7 +170,7 @@ void ASLManager::Init()
 
 			// Create and init world state logger
 			MetadataLogger = NewObject<USLMetadataLogger>(this);
-			MetadataLogger->Init(Location, EpisodeId, ServerIp, ServerPort,bScanitems, bOverwriteMetadata);
+			MetadataLogger->Init(Location, EpisodeId, ServerIp, ServerPort, GetWorld(), bScanItems, bOverwriteMetadata);
 		}
 		else
 		{

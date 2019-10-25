@@ -38,7 +38,7 @@ public:
 	
 	// Init logger
 	void Init(const FString& InLocation, const FString InEpisodeId, const FString InServerIp, uint16 InServerPort,
-		bool bScanItems, bool bOverwrite = false);
+		UWorld* World, bool bScanItems, bool bOverwrite = false);
 
 	// Start logger
 	void Start(const FString& InTaskDescription);
@@ -75,7 +75,7 @@ private:
 	void AddCameraViews();
 
 	// Add item image scans
-	void AddItemScans();
+	void AddScans();
 	
 	// Insert the document to the collection
 	void InsertDoc();
