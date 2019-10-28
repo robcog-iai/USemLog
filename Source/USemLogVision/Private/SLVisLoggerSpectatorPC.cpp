@@ -191,7 +191,7 @@ void ASLVisLoggerSpectatorPC::Finish()
 	
 		// Crashes if called from EndPlay
 		// Try to quit editor
-		ASLVisLoggerSpectatorPC::QuitEditor();
+		QuitEditor();
 	}
 }
 

@@ -97,7 +97,7 @@ private:
 
 	// Helper class for scanning the items from the world
 	UPROPERTY() // Avoid GC
-	USLItemScanner* ItemScanner;
+	USLItemScanner* ItemsScanner;
 
 #if SL_WITH_LIBMONGO_C
 	// Server uri

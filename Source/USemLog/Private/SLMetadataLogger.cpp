@@ -43,8 +43,8 @@ void USLMetadataLogger::Init(const FString& InLocation, const FString InEpisodeI
 
 		if(bScanItems)
 		{
-			ItemScanner = NewObject<USLItemScanner>(this);
-			ItemScanner->Init(World);
+			ItemsScanner = NewObject<USLItemScanner>(this);
+			ItemsScanner->Init(World);
 		}
 
 		bIsInit = true;
@@ -62,9 +62,9 @@ void USLMetadataLogger::Start(const FString& InTaskDescription)
 		AddCameraViews();
 
 		// Scan items and include the data in the document
-		if(ItemScanner)
+		if(ItemsScanner)
 		{
-			ItemScanner->Start();
+			ItemsScanner->Start();
 		}
 		
 		bIsStarted = true;
@@ -77,6 +77,11 @@ void USLMetadataLogger::Finish(bool bForced)
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		InsertDoc();
+
+		if(ItemsScanner)
+		{
+			ItemsScanner->Finish();
+		}
 		
 		bIsStarted = false;
 		bIsInit = false;
