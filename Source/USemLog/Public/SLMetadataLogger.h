@@ -38,7 +38,7 @@ public:
 	
 	// Init logger
 	void Init(const FString& InLocation, const FString InEpisodeId, const FString InServerIp, uint16 InServerPort,
-		bool bScanItems, bool bOverwrite = false);
+		UWorld* World, bool bScanItems, bool bOverwrite = false);
 
 	// Start logger
 	void Start(const FString& InTaskDescription);
@@ -75,7 +75,7 @@ private:
 	void AddCameraViews();
 
 	// Add item image scans
-	void AddItemScans();
+	void AddScans();
 	
 	// Insert the document to the collection
 	void InsertDoc();
@@ -97,7 +97,7 @@ private:
 
 	// Helper class for scanning the items from the world
 	UPROPERTY() // Avoid GC
-	USLItemScanner* ItemScanner;
+	USLItemScanner* ItemsScanner;
 
 #if SL_WITH_LIBMONGO_C
 	// Server uri

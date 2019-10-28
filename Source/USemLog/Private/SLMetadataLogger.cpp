@@ -29,7 +29,7 @@ USLMetadataLogger::~USLMetadataLogger()
 
 // Init logger
 void USLMetadataLogger::Init(const FString& InLocation, const FString InEpisodeId, const FString InServerIp, uint16 InServerPort,
-		 bool bScanItems, bool bOverwrite)
+		 UWorld* World, bool bScanItems, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -43,8 +43,8 @@ void USLMetadataLogger::Init(const FString& InLocation, const FString InEpisodeI
 
 		if(bScanItems)
 		{
-			ItemScanner = NewObject<USLItemScanner>(this);
-			ItemScanner->Init();
+			ItemsScanner = NewObject<USLItemScanner>(this);
+			ItemsScanner->Init(World);
 		}
 
 		bIsInit = true;
@@ -62,9 +62,9 @@ void USLMetadataLogger::Start(const FString& InTaskDescription)
 		AddCameraViews();
 
 		// Scan items and include the data in the document
-		if(ItemScanner)
+		if(ItemsScanner)
 		{
-			AddItemScans();
+			ItemsScanner->Start();
 		}
 		
 		bIsStarted = true;
@@ -77,6 +77,11 @@ void USLMetadataLogger::Finish(bool bForced)
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		InsertDoc();
+
+		if(ItemsScanner)
+		{
+			ItemsScanner->Finish();
+		}
 		
 		bIsStarted = false;
 		bIsInit = false;
@@ -232,6 +237,7 @@ void USLMetadataLogger::AddEnvironmentData()
 	{
 		const FSLEntity SemEntity = Pair.Value;
 
+		// Ignore skeletal entities
 		if (Cast<ASkeletalMeshActor>(SemEntity.Obj) || Cast<USkeletalMeshComponent>(SemEntity.Obj))
 		{
 			continue;
@@ -406,7 +412,7 @@ void USLMetadataLogger::AddCameraViews()
 }
 
 // Add item image scans
-void USLMetadataLogger::AddItemScans()
+void USLMetadataLogger::AddScans()
 {
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Scanning.."), *FString(__func__), __LINE__);
 }
