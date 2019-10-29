@@ -65,7 +65,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 {
 	if (!bIsInit)
 	{
-		LogDirectory = WriterParams.Location;
+		LogDirectory = WriterParams.TaskId;
 		EpisodeId = WriterParams.EpisodeId;
 		OwlDocTemplate = TemplateType;
 		bWriteTimelines = bInWriteTimelines;
@@ -446,7 +446,7 @@ bool USLEventLogger::WriteToFile()
 		return false;
 
 	// Write experiment to file
-	FString FullFilePath = FPaths::ProjectDir() +
+	FString FullFilePath = FPaths::ProjectDir() + "/SemLog/" +
 		LogDirectory + TEXT("/Episodes/") + EpisodeId + TEXT("_ED.owl");
 	FPaths::RemoveDuplicateSlashes(FullFilePath);
 	return FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);

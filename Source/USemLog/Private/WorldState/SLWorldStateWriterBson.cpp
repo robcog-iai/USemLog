@@ -33,7 +33,7 @@ void FSLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
 {
 	LinDistSqMin = InParams.LinearDistanceSquared;
 	AngDistMin = InParams.AngularDistance;
-	bIsInit = SetFileHandle(InParams.Location, InParams.EpisodeId);
+	bIsInit = SetFileHandle(InParams.TaskId, InParams.EpisodeId);
 }
 
 // Finish

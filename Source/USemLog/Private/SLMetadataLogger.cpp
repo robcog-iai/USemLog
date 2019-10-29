@@ -28,12 +28,12 @@ USLMetadataLogger::~USLMetadataLogger()
 }
 
 // Init logger
-void USLMetadataLogger::Init(const FString& InLocation, const FString InEpisodeId, const FString InServerIp, uint16 InServerPort,
-		 UWorld* World, bool bScanItems, bool bOverwrite)
+void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
+		 UWorld* InWorld, bool bScanItems, FIntPoint Resolution, bool bScanViewModeUnlit, bool bIncludeScansLocally, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
-		if(!Connect(InLocation, InServerIp, InServerPort, bOverwrite))
+		if(!Connect(InTaskId, InServerIp, InServerPort, bOverwrite))
 		{
 			return;
 		}
@@ -44,7 +44,8 @@ void USLMetadataLogger::Init(const FString& InLocation, const FString InEpisodeI
 		if(bScanItems)
 		{
 			ItemsScanner = NewObject<USLItemScanner>(this);
-			ItemsScanner->Init(World);
+			ItemsScanner->Init(InTaskId, InServerIp, InServerPort,
+				InWorld, Resolution, bScanViewModeUnlit, bIncludeScansLocally, bOverwrite);
 		}
 
 		bIsInit = true;

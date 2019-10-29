@@ -8,8 +8,23 @@
 #include "SLItemScanner.generated.h"
 
 // Forward declarations
+class UGameViewportClient;
 class AStaticMeshActor;
 class APlayerCameraManager;
+
+/**
+* View modes
+*/
+UENUM()
+enum class ESLItemScannerViewMode : uint8
+{
+	Lit						UMETA(DisplayName = "Lit"),
+	Unlit					UMETA(DisplayName = "Unlit"),
+	Mask					UMETA(DisplayName = "Mask"),
+	Depth					UMETA(DisplayName = "Depth"),
+	Normal					UMETA(DisplayName = "Normal"),
+	Specular				UMETA(DisplayName = "Specular"),
+};
 
 /**
  * Scans handheld items by taking images from unidistributed points form a sphere as a camera location
@@ -27,7 +42,8 @@ public:
 	~USLItemScanner();
 
 	// Setup scanning room
-	void Init(UWorld* InWorld);
+	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
+		 UWorld* InWorld, FIntPoint Resolution, bool bScanViewModeUnlit, bool bIncludeScansLocally, bool bOverwrite);
 
 	// Start scanning
 	void Start();
@@ -68,7 +84,30 @@ private:
 
 	// Load items to scan
 	bool LoadItemsToScan();
+
+	// Init render parameters (resolution, view mode)
+	void InitRenderParameters(FIntPoint Resolution);
+
+	// Setup view mode
+	void SetupViewMode();
 	
+	// Move first item in the scan box
+	bool SetupFirstScanItem();
+
+	// Set next item in the scan box, return false if there are no more items
+	bool SetupNextItem();
+
+	// Move camera in position for the first scan
+	bool SetupFirstScanPose();
+
+	// Move camera in position for the next scan, return false if there are no more poses
+	bool SetupNextScanPose();
+
+	// Request a screenshot
+	void RequestScreenshot();
+	
+	// Called when the screenshot is captured
+	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 	
 	// Get the items to scan
 	//void ScanItems(const float InVolumeLimit, const float InLengthLimit);
@@ -76,10 +115,7 @@ private:
 	// Check if the item should be scanned
 	bool ShouldBeScanned(UStaticMeshComponent* SMC) const;
 
-	// Scan the item
-	void ScanItem(AActor *Item);
-
-	// Quit the editor once the scanning is finished
+	// Clean exit, all the Finish() methods will be triggered
 	void QuitEditor();
 	
 private:
@@ -95,25 +131,18 @@ private:
 	// True if the object can be ticked (used by FTickableGameObject)
 	bool bIsTickable;
 
-	// Pointer to the world
-	UWorld* World;
+	// View mode lit/unlit
+	bool bUnlit;
 
-	// Used for setting the camera pose (SetViewTarget())
-	APlayerCameraManager* PCM;
-
-	// Scan camera poses
-	TArray<FTransform> ScanPoses;
-
-	// Scan items with semantic data
-	TArray<TPair<UStaticMeshComponent*, FSLEntity>> ScanItems;
-
-	// Currently active camera pose scan index
-	int32 CurrPoseIdx;
-
-	// Currently scanned item index in map
-	int32 CurrItemIdx;
-
+	// Flag to save the scanned images locally as well
+	bool bIncludeLocally;
 	
+	// Location on where to save the data
+	FString Location;
+
+	// Current name of scan (for saving locally, and progress update purposes)
+	FString CurrScanName;
+
 	// Scanner box actor to spawn
 	UPROPERTY() // Avoid GC
 	AStaticMeshActor* ScanBoxActor;
@@ -122,7 +151,23 @@ private:
 	UPROPERTY() // Avoid GC
 	AStaticMeshActor* CameraPoseActor;
 
+	// Pointer to the world
+	UWorld* World;
+	
+	// Used for triggering the screenshot request
+	UGameViewportClient* ViewportClient;
 
+	// Scan camera poses
+	TArray<FTransform> ScanPoses;
+
+	// Scan items with semantic data
+	TArray<TPair<AActor*, FSLEntity>> ScanItems;
+
+	// Currently active camera pose scan index
+	int32 CurrPoseIdx;
+
+	// Currently scanned item index in map
+	int32 CurrItemIdx;
 
 	/* Constants */
 	// Vertical offset to spawn the scanning room

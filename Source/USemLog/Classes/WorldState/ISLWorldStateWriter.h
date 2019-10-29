@@ -19,7 +19,7 @@ struct FSLWorldStateWriterParams
 	float AngularDistance;
 
 	// Location where to save the data (filename/database name etc.)
-	FString Location;
+	FString TaskId;
 
 	// Episode unique id
 	FString EpisodeId;
@@ -37,14 +37,14 @@ struct FSLWorldStateWriterParams
 	FSLWorldStateWriterParams(
 		float InLinearDistance,
 		float InAngularDistance,
-		const FString& InLocation,
+		const FString& InTaskId,
 		const FString& InEpisodeId,
 		const FString& InServerIp = "",
 		uint16 InServerPort = 0,
 		bool bInOverwrite = false) :
 		LinearDistanceSquared(InLinearDistance*InLinearDistance),
 		AngularDistance(InAngularDistance),
-		Location(InLocation),
+		TaskId(InTaskId),
 		EpisodeId(InEpisodeId),
 		ServerIp(InServerIp),
 		ServerPort(InServerPort),

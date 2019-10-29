@@ -126,7 +126,7 @@ void USLWorldStateLogger::Finish(bool bForced)
 void USLWorldStateLogger::Tick(float DeltaTime)
 {
 	// Call update on tick
-	USLWorldStateLogger::Update();
+	Update();
 }
 
 // Return if object is ready to be ticked
