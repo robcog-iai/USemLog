@@ -156,10 +156,10 @@ void ASLVisLoggerSpectatorPC::Start()
 		//DurationsLogger.SetStartTime();
 
 		// Set camera to first target and first rendering type
-		if (ASLVisLoggerSpectatorPC::GotoInitialViewTarget() && ASLVisLoggerSpectatorPC::GotoInitialRenderType())
+		if (GotoInitialViewTarget() && GotoInitialRenderType())
 		{
 			// Go to the beginning of the demo and start requesting screenshots, unpause demo in order to scrub
-			ASLVisLoggerSpectatorPC::DemoUnPause();
+			DemoUnPause();
 			NetDriver->GotoTimeInSeconds(DemoTimestamp);
 			//DurationsLogger.SetScrubRequestTime();
 
@@ -264,7 +264,7 @@ void ASLVisLoggerSpectatorPC::SetRenderingParameters()
 {	
 	// Set screenshot image and viewport resolution size
 	GetHighResScreenshotConfig().SetResolution(Resolution.X, Resolution.Y, 1.0f);
-	// SetResolution() sets GIsHighResScreenshot to true, which triggers the callback, avoid this be re-setting the flat to false
+	// SetResolution() sets GIsHighResScreenshot to true, which triggers the callback, avoid this be re-setting the flag to false
 	GIsHighResScreenshot = false;
 	
 	// TODO see if this is useful
@@ -314,7 +314,7 @@ void ASLVisLoggerSpectatorPC::SetRenderingParameters()
 	// Default 0.0f;
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.TonemapperGamma"))->Set(2.2f);
 
-	// Force highest LOD
+	// LOD level to force, -1 is off. (0 - Best)
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
 }
 
@@ -340,10 +340,10 @@ void ASLVisLoggerSpectatorPC::ScrubCB()
 	//DurationsLogger.SetScrubCbTime(true);
 
 	// Pause the replay
-	ASLVisLoggerSpectatorPC::DemoPause();
+	DemoPause();
 
 	// Request a screenshot
-	ASLVisLoggerSpectatorPC::RequestScreenshot();
+	RequestScreenshot();
 }
 
 // Called when screenshot is captured

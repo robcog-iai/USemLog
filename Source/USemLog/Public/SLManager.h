@@ -62,8 +62,8 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
-	// Get location
-	FString GetLogLocation() const { return Location; };
+	// Get TaskId
+	FString GetTaskId() const { return TaskId; };
 
 	// Get episode id
 	FString GetEpisodeId() const { return EpisodeId; };
@@ -89,13 +89,9 @@ private:
 	bool bIsFinished;
 
 	/* Semantic logger */
-	// Enable custom location
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bUseCustomLocation;
-
 	// Log directory (or the database name if saving to mongodb)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomLocation"))
-	FString Location;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomTaskId"))
+	FString TaskId;
 
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -161,6 +157,18 @@ private:
 	// Perform a 3d sphere image scan of all the handheld items
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bLogMetadata"))
 	bool bScanItems;
+
+	// Scan image resolution
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
+	FIntPoint ScanResolution;
+
+	// Scanning view mode
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
+	bool bScanViewModeUnlit;
+
+	// Save the scanned images locally
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
+	bool bIncludeScansLocally;
 
 	// Overwrite existing entries
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bLogMetadata"))

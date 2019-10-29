@@ -49,7 +49,7 @@ public:
 
 private:
 	// Connect to the database
-	bool Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort, bool bOverwrite = false);
+	bool Connect(const FString& DBName, const FString& CollectionName, const FString& ServerIp, uint16 ServerPort, bool bOverwrite = false);
 
 	// Disconnect and clean db connection
 	void Disconnect();

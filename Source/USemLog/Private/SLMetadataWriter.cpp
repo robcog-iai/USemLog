@@ -39,10 +39,10 @@ void FSLMetadataWriter::Init(const FSLWorldStateWriterParams& WriterParams, cons
 	{
 #if SL_WITH_LIBMONGO_C
 		// Connect to the database
-		if (Connect(WriterParams.Location, WriterParams.EpisodeId, WriterParams.ServerIp, WriterParams.ServerPort))
+		if (Connect(WriterParams.TaskId, WriterParams.EpisodeId, WriterParams.ServerIp, WriterParams.ServerPort))
 		{
 			// Write task metadata (if not already done)
-			WriteTaskMetadata(WriterParams.Location, InTaskDescription);
+			WriteTaskMetadata(WriterParams.TaskId, InTaskDescription);
 
 			// Write the initial environment data (some sort of semantic map) ids, classes, initial poses
 			WriteEnvironmentMetadata();

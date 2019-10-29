@@ -118,7 +118,7 @@ FString FSLVisHelper::CreateImageFilename(float Timestamp, const FString& ViewNa
 	return FString::Printf(TEXT("SLVis_%s_%s_%s.png"),
 		*ViewName,
 		*FString::SanitizeFloat(Timestamp).Replace(TEXT("."), TEXT("-")),
-		*FSLVisHelper::GetRenderTypeSuffix(RenderType));
+		*GetRenderTypeSuffix(RenderType));
 }
 
 /**

@@ -20,11 +20,10 @@ ASLManager::ASLManager()
 	bIsFinished = false;
 
 	// Semantic logger default values
-	bUseCustomLocation = false;
-	Location = TEXT("SemLog");
+	TaskId = TEXT("DefaultTaskId");
 	bUseCustomEpisodeId = false;
 	EpisodeId = TEXT("autogen");
-	TaskDescription = TEXT("write task description here");
+	TaskDescription = TEXT("Write task description here");
 	bStartAtBeginPlay = true;
 	bStartAtFirstTick = false;
 	bStartWithDelay = false;
@@ -33,13 +32,17 @@ ASLManager::ASLManager()
 	StartInputActionName = "SLStart";
 	FinishInputActionName = "SLFinish";
 
-	// Server location
+	// Server TaskId
 	ServerIp = TEXT("127.0.0.1");
 	ServerPort = 27017;
 	
 	// Task metadata logger default values
 	bLogMetadata = false;
 	bScanItems = false;
+	ScanResolution.X = 1920;
+	ScanResolution.Y = 1080;
+	bScanViewModeUnlit = false;
+	bIncludeScansLocally = false;
 	bOverwriteMetadata = false;
 
 	
@@ -170,7 +173,8 @@ void ASLManager::Init()
 
 			// Create and init world state logger
 			MetadataLogger = NewObject<USLMetadataLogger>(this);
-			MetadataLogger->Init(Location, EpisodeId, ServerIp, ServerPort, GetWorld(), bScanItems, bOverwriteMetadata);
+			MetadataLogger->Init(TaskId, ServerIp, ServerPort,
+				GetWorld(), bScanItems, ScanResolution, bScanViewModeUnlit, bIncludeScansLocally, bOverwriteMetadata);
 		}
 		else
 		{
@@ -179,14 +183,14 @@ void ASLManager::Init()
 				// Create and init world state logger
 				WorldStateLogger = NewObject<USLWorldStateLogger>(this);
 				WorldStateLogger->Init(WriterType, FSLWorldStateWriterParams(
-					LinearDistance, AngularDistance, Location, EpisodeId, ServerIp, ServerPort, bOverwriteWorldState));
+					LinearDistance, AngularDistance, TaskId, EpisodeId, ServerIp, ServerPort, bOverwriteWorldState));
 			}
 
 			if (bLogEventData)
 			{
 				// Create and init event data logger
 				EventDataLogger = NewObject<USLEventLogger>(this);
-				EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(Location, EpisodeId),
+				EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(TaskId, EpisodeId),
 					bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines);
 			}
 

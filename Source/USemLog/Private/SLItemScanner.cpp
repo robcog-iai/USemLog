@@ -2,12 +2,17 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLItemScanner.h"
-#include "ConstructorHelpers.h"
-#include "Engine/StaticMeshActor.h"
 #include "SLEntitiesManager.h"
+#include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "Async.h"
+#include "HighResScreenshot.h"
+#include "ImageUtils.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/GameViewportClient.h"
+#include "FileHelper.h"
+#include "Components/StaticMeshComponent.h"
 
 // Ctor
 USLItemScanner::USLItemScanner()
@@ -15,6 +20,8 @@ USLItemScanner::USLItemScanner()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
+	bUnlit = false;
+	bIncludeLocally = false;
 	bIsTickable = false;
 	CurrPoseIdx = INDEX_NONE;
 	CurrItemIdx = INDEX_NONE;
@@ -30,12 +37,27 @@ USLItemScanner::~USLItemScanner()
 }
 
 // Init scanner
-void USLItemScanner::Init(UWorld* InWorld)
+void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
+		 UWorld* InWorld, FIntPoint Resolution, bool bScanViewModeUnlit, bool bIncludeScansLocally, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
+		Location = InTaskId;
+		bUnlit = bScanViewModeUnlit;
+		bIncludeLocally = bIncludeScansLocally;
+		
 		// Cache the world, needed later to get the camera manager (can be done after init -- around BeginPlay)
 		World = InWorld;
+
+		ViewportClient = World->GetGameViewport();
+		if(!ViewportClient)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access the GameViewport.."), *FString(__func__), __LINE__);
+			return;
+		}
+
+		// Bind the screenshot result callback
+		ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLItemScanner::ScreenshotCB);
 
 		// Spawn the scan box mesh actor
 		if(!LoadScanBoxActor())
@@ -59,16 +81,16 @@ void USLItemScanner::Init(UWorld* InWorld)
 		if(!LoadItemsToScan())
 		{
 			return;
-		}	
+		}
+
+		// Set scan image resolution and various rendering paramaters
+		InitRenderParameters(Resolution);
 
 		// Disable physics on skeletal actors (avoid any of them roaming through the scene)
 		for (TActorIterator<ASkeletalMeshActor> SkMAItr(GetWorld()); SkMAItr; ++SkMAItr)
 		{
 			SkMAItr->DisableComponentsSimulatePhysics();
 		}
-
-		CurrPoseIdx = 0;
-		CurrItemIdx = 0;
 		
 		bIsInit = true;
 	}
@@ -79,13 +101,22 @@ void USLItemScanner::Start()
 {
 	if(!bIsStarted && bIsInit)
 	{
-		// Get the camera controller, not available yet in Init(), hence called here
-		PCM = UGameplayStatics::GetPlayerCameraManager(World, 0);
-		if(!PCM)
+		// Cannot be called in Init() because GetFirstPlayerController() is nullptr before BeginPlay
+		SetupViewMode();
+		
+		if(!SetupFirstScanItem())
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access the CameraManager.."), *FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set the first item for scanning.."), *FString(__func__), __LINE__);
 			return;
 		}
+
+		if(!SetupFirstScanPose())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not trigger the first scan.."), *FString(__func__), __LINE__);
+			return;
+		}
+
+		RequestScreenshot();
 		
 		// Enable ticking (camera movement will happen every tick)
 		bIsTickable = true;
@@ -112,28 +143,32 @@ void USLItemScanner::Finish()
 // Called after ticking all actors, DeltaTime is the time passed since the last call.
 void USLItemScanner::Tick(float DeltaTime)
 {
-	if(CurrItemIdx < ScanItems.Num())
-	{
-		
-	}
-	
-	if(CurrPoseIdx < ScanPoses.Num())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] CurrCameraPoseIdx = %ld; CameraPose=%s; ActorPose=%s;"),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Item/Pose Idx=[%d/%d]"),
 			*FString(__func__), __LINE__, World->GetTimeSeconds(),
-			CurrPoseIdx,
-			*ScanPoses[CurrPoseIdx].ToString(),
-			*CameraPoseActor->GetTransform().ToString());
-		
-		CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
-		PCM->SetViewTarget(CameraPoseActor);
+			CurrPoseIdx, CurrItemIdx);
+	
+	//if(CurrItemIdx < ScanItems.Num())
+	//{
+	//	
+	//}
+	//
+	//if(CurrPoseIdx < ScanPoses.Num())
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] CurrCameraPoseIdx = %ld; CameraPose=%s; ActorPose=%s;"),
+	//		*FString(__func__), __LINE__, World->GetTimeSeconds(),
+	//		CurrPoseIdx,
+	//		*ScanPoses[CurrPoseIdx].ToString(),
+	//		*CameraPoseActor->GetTransform().ToString());
+	//	
+	//	CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
+	//	PCM->SetViewTarget(CameraPoseActor);
 
-		CurrPoseIdx++;
-	}
-	else
-	{
-		QuitEditor();
-	}
+	//	CurrPoseIdx++;
+	//}
+	//else
+	//{
+	//	QuitEditor();
+	//}
 }
 
 // Return if object is ready to be ticked
@@ -174,7 +209,7 @@ bool USLItemScanner::LoadScanBoxActor()
 	}
 	ScanBoxActor->GetStaticMeshComponent()->SetStaticMesh(ScanBoxMesh);
 	ScanBoxActor->SetMobility(EComponentMobility::Static);
-
+	//ScanBoxActor->SetActorHiddenInGame(true);
 	return true;
 }
 
@@ -256,7 +291,8 @@ bool USLItemScanner::LoadItemsToScan()
 			{
 				if(ShouldBeScanned(SMC))
 				{
-					ScanItems.Emplace(SMC, SemEntity);
+					SMC->SetSimulatePhysics(false);
+					ScanItems.Emplace(SMC->GetOwner(), SemEntity);
 				}
 				else
 				{
@@ -274,7 +310,8 @@ bool USLItemScanner::LoadItemsToScan()
 		{
 			if(ShouldBeScanned(ObjAsSMC))
 			{
-				ScanItems.Emplace(ObjAsSMC, SemEntity);
+				ObjAsSMC->SetSimulatePhysics(false);
+				ScanItems.Emplace(ObjAsSMC->GetOwner(), SemEntity);
 			}
 			else
 			{
@@ -298,63 +335,155 @@ bool USLItemScanner::LoadItemsToScan()
 	return true;
 }
 
-//// Get an array of items to scan
-//void USLItemScanner::ScanItems(const float InVolumeLimit, const float InLengthLimit)
-//{
-//	// Cache the classes that were already iterated
-//	TSet<FString> IteratedClasses;
-//	
-//	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
-//	{
-//		const FSLEntity SemEntity = Pair.Value;
-//
-//		// Skip if class was already checked
-//		if(IteratedClasses.Contains(SemEntity.Class))
-//		{
-//			continue;
-//		}
-//		IteratedClasses.Emplace(SemEntity.Class);
-//		
-//		// Check if the item has a visual
-//		if (AStaticMeshActor* ObjAsSMA = Cast<AStaticMeshActor>(SemEntity.Obj))
-//		{
-//			if(UStaticMeshComponent* SMC = ObjAsSMA->GetStaticMeshComponent())
-//			{
-//				if(ShouldBeScanned(SMC, InVolumeLimit, InLengthLimit))
-//				{
-//					ScanItem(SMC->GetOwner());
-//				}
-//				else
-//				{
-//					UE_LOG(LogTemp, Error, TEXT("%s::%d %s is out of bounds/static, skipping scan.."),
-//						*FString(__func__), __LINE__, *SemEntity.Class);
-//				}
-//			}
-//			else
-//			{
-//				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no static mesh component, skipping scan.."),
-//					*FString(__func__), __LINE__, *SemEntity.Class);
-//			}
-//		}
-//		else if (UStaticMeshComponent* ObjAsSMC = Cast<UStaticMeshComponent>(SemEntity.Obj))
-//		{
-//			if(ShouldBeScanned(ObjAsSMC, InVolumeLimit, InLengthLimit))
-//			{
-//				ScanItem(ObjAsSMC->GetOwner());
-//			}
-//			else
-//			{
-//				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is out of bounds, skipping scan.."),
-//					*FString(__func__), __LINE__, *SemEntity.Class);
-//			}
-//		}
-//		else
-//		{
-//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual, skipping scan.."),
-//				*FString(__func__), __LINE__, *SemEntity.Class);
-//		}
-//	}
-//}
+// Init render parameters (resolution, view mode)
+void USLItemScanner::InitRenderParameters(FIntPoint Resolution)
+{
+	// Set screenshot image and viewport resolution size
+	GetHighResScreenshotConfig().SetResolution(Resolution.X, Resolution.Y, 1.0f);
+	// Avoid triggering the callback be overwriting the resolution -> SetResolution() sets GIsHighResScreenshot to true, which triggers the callback (ScreenshotCB)
+	GIsHighResScreenshot = false;
+
+	// 	AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AntiAliasing"))->Set(AAM_None);
+
+	// Whether the default for AutoExposure is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AutoExposure"))->Set(0);
+
+	// Whether the default for MotionBlur is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.MotionBlur"))->Set(0);
+
+	// LOD level to force, -1 is off. (0 - Best)
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
+}
+
+// Set view mode
+void USLItemScanner::SetupViewMode()
+{
+	if(bUnlit)
+	{
+		World->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+	}
+	else
+	{
+		World->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+	}
+}
+
+// Setup first item in the scan box
+bool USLItemScanner::SetupFirstScanItem()
+{
+	// Move the first item to the center of the scan box
+	CurrItemIdx = 0;
+	if(!ScanItems.IsValidIndex(CurrItemIdx))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid item index [%ld].."), *FString(__func__), __LINE__, CurrItemIdx);
+		return false;
+	}
+	ScanItems[CurrItemIdx].Key->SetActorLocation(ScanBoxActor->GetActorLocation());
+	return true;
+}
+
+// Set next item in the scan box, return false if there are no more items
+bool USLItemScanner::SetupNextItem()
+{
+	// Move previous item away
+	ScanItems[CurrItemIdx].Key->SetActorLocation(FVector(0.f));
+	
+	// Bring next item
+	CurrItemIdx++;
+	if(!ScanItems.IsValidIndex(CurrItemIdx))
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Last item [%ld] reached.."), *FString(__func__), __LINE__, CurrItemIdx-1);
+		return false;
+	}
+	ScanItems[CurrItemIdx].Key->SetActorLocation(ScanBoxActor->GetActorLocation());
+	return true;
+}
+
+// Scan item from the first camera pose
+bool USLItemScanner::SetupFirstScanPose()
+{
+	CurrPoseIdx = 0;
+	if(!ScanPoses.IsValidIndex(CurrPoseIdx))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid pose index [%ld].."), *FString(__func__), __LINE__, CurrPoseIdx);
+		return false;
+	}
+	CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
+	World->GetFirstPlayerController()->SetViewTarget(CameraPoseActor); // Cannot be called before BeginPlay
+	return true;
+}
+
+// Scan item from the next camera pose, return false if there are no more poses
+bool USLItemScanner::SetupNextScanPose()
+{
+	CurrPoseIdx++;
+	if(!ScanPoses.IsValidIndex(CurrPoseIdx))
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Last pose [%ld] reached .."), *FString(__func__), __LINE__, CurrPoseIdx-1);
+		return false;
+	}
+	CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
+	World->GetFirstPlayerController()->SetViewTarget(CameraPoseActor);
+	return true;
+}
+
+// Request a screenshot
+void USLItemScanner::RequestScreenshot()
+{
+	// Request screenshot on game thread
+	AsyncTask(ENamedThreads::GameThread, [this]()
+	{
+		CurrScanName = FString::FromInt(CurrItemIdx) + "_" + ScanItems[CurrItemIdx].Value.Class + "_" + FString::FromInt(CurrPoseIdx);
+		GetHighResScreenshotConfig().FilenameOverride = CurrScanName;
+		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
+		//GetHighResScreenshotConfig().SetHDRCapture(true);
+		ViewportClient->Viewport->TakeHighResScreenShot();
+	});
+}
+
+// Called when screenshot is captured
+void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Progress=[Items=%ld/%ld; Poses=%ld/%ld; Total=%ld/%ld]"),
+		*FString(__func__), __LINE__, World->GetTimeSeconds(),
+		CurrItemIdx + 1, ScanItems.Num(),
+		CurrPoseIdx + 1, ScanPoses.Num(),
+		CurrItemIdx * ScanPoses.Num() + CurrPoseIdx + 1,
+		ScanItems.Num() * ScanPoses.Num());
+
+	// Remove const-ness from image
+	TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
+
+	// Compress image
+	TArray<uint8> CompressedBitmap;
+	FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
+	
+	// Save the png locally
+	if(bIncludeLocally)
+	{
+		FString Path = FPaths::ProjectDir() + "/SemLog/" + Location + "/Meta/" + CurrScanName + ".png";
+		FPaths::RemoveDuplicateSlashes(Path);
+		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
+	}
+
+	// Goto next step
+	if(SetupNextScanPose())
+	{
+		RequestScreenshot();
+	}
+	else if(SetupNextItem())
+	{
+		SetupFirstScanPose();
+		RequestScreenshot();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished scanning.."),
+			*FString(__func__), __LINE__, World->GetTimeSeconds());
+		QuitEditor();
+	}
+}
 
 // Check if the items meets the requirements to be scanned
 bool USLItemScanner::ShouldBeScanned(UStaticMeshComponent* SMC) const
@@ -362,13 +491,6 @@ bool USLItemScanner::ShouldBeScanned(UStaticMeshComponent* SMC) const
 	return SMC->Mobility == EComponentMobility::Movable &&
 		SMC->Bounds.GetBox().GetVolume() < VolumeLimit &&
 		SMC->Bounds.SphereRadius * 2.f < LengthLimit;
-}
-
-// Scan the current item
-void USLItemScanner::ScanItem(AActor* Item)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t Scanning %s.."),
-			*FString(__func__), __LINE__, *Item->GetName());
 }
 
 // Quit the editor once the scanning is finished

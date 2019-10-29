@@ -33,7 +33,7 @@ void FSLWorldStateWriterMongoC::Init(const FSLWorldStateWriterParams& InParams)
 {
 	if(!bIsInit)
 	{
-		if(!Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort, InParams.bOverwrite))
+		if(!Connect(InParams.TaskId, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort, InParams.bOverwrite))
 		{
 			return;
 		}
@@ -125,7 +125,7 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 }
 
 // Connect to the database
-bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort, bool bOverwrite)
+bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& CollectionName, const FString& ServerIp, uint16 ServerPort, bool bOverwrite)
 {
 #if SL_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
@@ -152,19 +152,19 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 	}
 
 	// Register the application name so we can track it in the profile logs on the server
-	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SL_" + EpisodeId)));
+	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SL_" + CollectionName)));
 
 	// Get a handle on the database "db_name" and collection "coll_name"
 	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
 
 	// Abort if we connect to an existing collection
-	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*EpisodeId), &error))
+	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*CollectionName), &error))
 	{
 		if(bOverwrite)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d World state collection %s already exists, will be removed and overwritten.."),
-				*FString(__func__), __LINE__, *EpisodeId);
-			if(!mongoc_collection_drop (mongoc_database_get_collection(database, TCHAR_TO_UTF8(*EpisodeId)), &error))
+				*FString(__func__), __LINE__, *CollectionName);
+			if(!mongoc_collection_drop (mongoc_database_get_collection(database, TCHAR_TO_UTF8(*CollectionName)), &error))
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
 					*FString(__func__), __LINE__, *FString(error.message));
@@ -174,17 +174,17 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Ep
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d World state collection %s already exists and should not be overwritten, skipping metadata logging.."),
-				*FString(__func__), __LINE__, *EpisodeId);
+				*FString(__func__), __LINE__, *CollectionName);
 			return false;
 		}
 	}
 	else 
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Collection %s does not exist, creating a new one.."),
-			*FString(__func__), __LINE__, *EpisodeId);
+			*FString(__func__), __LINE__, *CollectionName);
 	}
 	
-	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*EpisodeId));
+	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*CollectionName));
 
 	// Check server. Ping the "admin" database
 	bson_t* server_ping_cmd;

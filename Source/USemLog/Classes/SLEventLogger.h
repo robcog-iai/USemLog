@@ -18,7 +18,7 @@ class ISLEvent;
 struct FSLEventWriterParams
 {
 	// Location where to save the data (filename/database name etc.)
-	FString Location;
+	FString TaskId;
 
 	// Episode unique id
 	FString EpisodeId;
@@ -34,7 +34,7 @@ struct FSLEventWriterParams
 
 	// Constructor
 	FSLEventWriterParams(
-		const FString& InLocation,
+		const FString& InTaskId,
 		const FString& InEpisodeId
 		/*,
 		const FString& InTaskDescription,
@@ -42,7 +42,7 @@ struct FSLEventWriterParams
 		uint16 InServerPort = 0
 		*/
 		) :
-		Location(InLocation),
+		TaskId(InTaskId),
 		EpisodeId(InEpisodeId)
 		/*,
 		TaskDescription(InTaskDescription),

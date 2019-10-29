@@ -38,7 +38,7 @@ void FSLWorldStateWriterMongoCxx::Init(const FSLWorldStateWriterParams& InParams
 {
 	LinDistSqMin = InParams.LinearDistanceSquared;
 	AngDistMin = InParams.AngularDistance;
-	bIsInit = Connect(InParams.Location, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
+	bIsInit = Connect(InParams.TaskId, InParams.EpisodeId, InParams.ServerIp, InParams.ServerPort);
 }
 
 // Finish
