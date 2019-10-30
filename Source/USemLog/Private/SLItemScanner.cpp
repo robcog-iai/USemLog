@@ -210,7 +210,7 @@ bool USLItemScanner::LoadScanPoints()
 	ScanPoses.Emplace(FTransform(FVector(-50.f, 0.f, ScanBoxOffsetZ)));
 	ScanPoses.Emplace(FTransform(FVector(-50.f, 50.f, ScanBoxOffsetZ)));
 	ScanPoses.Emplace(FTransform(FVector(-50.f, -50.f, ScanBoxOffsetZ)));
-		
+
 	if(ScanPoses.Num() == 0)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d No scan poses added.."), *FString(__func__), __LINE__);
@@ -336,6 +336,7 @@ bool USLItemScanner::LoadMaskMaterial()
 
 	// Create the dynamic mask material from the default one
 	DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+	DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::White);
 	return true;
 }
 
@@ -382,7 +383,7 @@ bool USLItemScanner::SetupNextViewMode()
 		return false;
 	}
 
-	ApplyViewMode(ViewModes[CurrViewModeIdx]);	
+	ApplyViewMode(ViewModes[CurrViewModeIdx]);
 	return true;
 }
 
@@ -475,12 +476,18 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		CurrItemIdx * ScanPoses.Num() * ViewModes.Num() + CurrPoseIdx * ViewModes.Num() + CurrViewModeIdx + 1,
 		ScanItems.Num() * ScanPoses.Num() * ViewModes.Num());
 
-	// Remove const-ness from image
-	TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
+	// Count pixel colors
+	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
+	{
+		CountPixelColors(Bitmap);
+	}
+	
+	//// Remove const-ness from array
+	//TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
 
 	// Compress image
 	TArray<uint8> CompressedBitmap;
-	FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
+	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
 	
 	// Save the png locally
 	if(bIncludeLocally)
@@ -518,6 +525,35 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	}
 }
 
+// Count the number of color types in the image
+void USLItemScanner::CountPixelColors(const TArray<FColor>& Bitmap)
+{
+	TMap<FColor, int32> PixelColorNums;
+
+	// Iterate image pixels
+	for(const auto& C : Bitmap)
+	{
+		if(int32* Num = PixelColorNums.Find(C))
+		{
+			(*Num)++;
+		}
+		else
+		{
+			PixelColorNums.Add(C,1);
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Colors: "), *FString(__func__), __LINE__);
+	for(const auto& Pair : PixelColorNums)
+	{
+		if(Pair.Value > 500)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t %s : %ld"),
+				*FString(__func__), __LINE__, *Pair.Key.ToString(), Pair.Value);
+		}
+	}
+}
+
 // Apply view mode
 void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 {
@@ -544,14 +580,21 @@ void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 // Apply mask material to current item
 void USLItemScanner::ApplyMaskMaterial()
 {
-	if(DynamicMaskMaterial)
+	if(OriginalMaterials.Num() == 0)
 	{
 		UStaticMeshComponent* SMC = ScanItems[CurrItemIdx].Key;
 		OriginalMaterials = SMC->GetMaterials();
 		
-		FColor MaskColor(FColor::FromHex(ScanItems[CurrItemIdx].Value.VisualMask));
-		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
-
+		//FColor MaskColor(FColor::FromHex(ScanItems[CurrItemIdx].Value.VisualMask));
+		//FLinearColor LinMaskColorSRGB(FLinearColor::FromSRGBColor(MaskColor));
+		//FLinearColor LinMaskColorPow22(FLinearColor::FromPow22Color(MaskColor));
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d InHex=%s; OutColor=%s; OutHex=%s;"),
+		//	*FString(__func__), __LINE__, *ScanItems[CurrItemIdx].Value.VisualMask, *MaskColor.ToString(), *MaskColor.ToHex());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d LinMaskColorSRGB=%s; LinMaskColorPow22=%s; "),
+		//	*FString(__func__), __LINE__, *LinMaskColorSRGB.ToString(), *LinMaskColorPow22.ToString());
+		//DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromPow22Color(MaskColor));
+		////DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
+		
 		for (int32 Idx = 0; Idx < SMC->GetNumMaterials(); ++Idx)
 		{
 			SMC->SetMaterial(Idx, DynamicMaskMaterial);

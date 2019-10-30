@@ -104,6 +104,9 @@ private:
 	// Called when the screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
+	// Count colors
+	void CountPixelColors(const TArray<FColor>& Bitmap);
+	
 	// Apply view mode
 	void ApplyViewMode(ESLItemScannerViewMode Mode);
 
