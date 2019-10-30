@@ -42,7 +42,8 @@ void FSLEntitiesManager::Init(UWorld* World)
 			FString ActClass = FTags::GetValue(*ActorItr, "SemLog", "Class");
 			if (!ActId.IsEmpty() && !ActClass.IsEmpty())
 			{
-				ObjectsSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass));
+				ObjectsSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass,
+					FTags::GetValue(*ActorItr, "SemLog", "VisMask")));
 
 				// Create a separate list with the camera views
 				if (ActorItr->IsA(ASLVisViewActor::StaticClass()))
@@ -78,7 +79,8 @@ void FSLEntitiesManager::Init(UWorld* World)
 				FString CompClass = FTags::GetValue(CompItr, "SemLog", "Class");
 				if (!CompId.IsEmpty() && !CompClass.IsEmpty())
 				{
-					ObjectsSemanticData.Emplace(CompItr, FSLEntity(CompItr, CompId, CompClass));
+					ObjectsSemanticData.Emplace(CompItr, FSLEntity(CompItr, CompId, CompClass,
+						FTags::GetValue(CompItr, "SemLog", "VisMask")));
 				}
 
 				// Check if the component is a skeletal data container

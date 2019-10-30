@@ -41,7 +41,9 @@ ASLManager::ASLManager()
 	bScanItems = false;
 	ScanResolution.X = 1920;
 	ScanResolution.Y = 1080;
-	bScanViewModeUnlit = false;
+	ScanViewModes.Add(ESLItemScannerViewMode::Lit);
+	ScanViewModes.Add(ESLItemScannerViewMode::Unlit);
+	ScanViewModes.Add(ESLItemScannerViewMode::Mask);
 	bIncludeScansLocally = false;
 	bOverwriteMetadata = false;
 
@@ -174,7 +176,7 @@ void ASLManager::Init()
 			// Create and init world state logger
 			MetadataLogger = NewObject<USLMetadataLogger>(this);
 			MetadataLogger->Init(TaskId, ServerIp, ServerPort,
-				GetWorld(), bScanItems, ScanResolution, bScanViewModeUnlit, bIncludeScansLocally, bOverwriteMetadata);
+				bScanItems, ScanResolution, ScanViewModes, bIncludeScansLocally, bOverwriteMetadata);
 		}
 		else
 		{

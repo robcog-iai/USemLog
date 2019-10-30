@@ -38,7 +38,7 @@ public:
 	
 	// Init logger
 	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		UWorld* InWorld, bool bScanItems, FIntPoint Resolution, bool bScanViewModeUnlit, bool bIncludeScansLocally,  bool bOverwrite = false);
+		bool bScanItems, FIntPoint Resolution, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally,  bool bOverwrite = false);
 
 	// Start logger
 	void Start(const FString& InTaskDescription);

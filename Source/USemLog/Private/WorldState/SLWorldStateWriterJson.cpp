@@ -217,9 +217,9 @@ void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<U
 						{
 							SemanticData.Add("class", Pair.Value.Class);
 						}
-						if (!Pair.Value.MaskColorHex.IsEmpty())
+						if (!Pair.Value.VisualMask.IsEmpty())
 						{
-							SemanticData.Add("mask_hex", Pair.Value.MaskColorHex);
+							SemanticData.Add("mask_hex", Pair.Value.VisualMask);
 						}
 
 						TSharedPtr<FJsonObject> JsonBoneEntry = FSLWorldStateWriterJson::GetAsJsonEntry(

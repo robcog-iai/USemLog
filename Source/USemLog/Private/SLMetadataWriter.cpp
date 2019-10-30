@@ -486,9 +486,9 @@ void FSLMetadataWriter::AddEntities(bson_t* out_doc)
 				{
 					BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*BoneData.Class));
 
-					if (!BoneData.MaskColorHex.IsEmpty())
+					if (!BoneData.VisualMask.IsEmpty())
 					{
-						BSON_APPEND_UTF8(&bones_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.MaskColorHex));
+						BSON_APPEND_UTF8(&bones_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.VisualMask));
 					}
 				}
 

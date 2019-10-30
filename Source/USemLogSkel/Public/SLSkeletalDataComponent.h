@@ -24,7 +24,7 @@ struct FSLBoneData
 
 	// Color mask
 	UPROPERTY(EditAnywhere)
-	FString MaskColorHex;
+	FString VisualMask;
 
 	//// Mask material instance 
 	//UPROPERTY(EditAnywhere)
@@ -43,7 +43,7 @@ struct FSLBoneData
 	// Get result as string
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Class:%s; MaskColorHex:%s; MaskMaterialIndex:%d"), *Class, *MaskColorHex, MaskMaterialIndex);
+		return FString::Printf(TEXT("Class:%s; VisualMask:%s; MaskMaterialIndex:%d"), *Class, *VisualMask, MaskMaterialIndex);
 	}
 };
 
