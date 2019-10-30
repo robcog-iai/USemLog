@@ -113,7 +113,7 @@ void USLVisLiveViewMaskHandler::SetupSkeletalMeshes()
 					// Iterate the bones and add the mask materials
 					for (const auto& BoneDataPair : SkelDataComp->SemanticBonesData)
 					{
-						const FString BoneColorHex = BoneDataPair.Value.MaskColorHex;
+						const FString BoneColorHex = BoneDataPair.Value.VisualMask;
 						const FString BoneClass = BoneDataPair.Value.Class;
 
 						FColor SemColor(FColor::FromHex(BoneColorHex));

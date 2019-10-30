@@ -162,10 +162,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	FIntPoint ScanResolution;
 
-	// Scanning view mode
+	// Scan view modes
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
-	bool bScanViewModeUnlit;
-
+	TSet<ESLItemScannerViewMode> ScanViewModes;
+	
 	// Save the scanned images locally
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	bool bIncludeScansLocally;

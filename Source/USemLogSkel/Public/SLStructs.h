@@ -23,12 +23,19 @@ struct FSLEntity
 	// Semantic class of entity
 	FString Class;
 
+	// Visual mask of the entity
+	FString VisualMask;
+
 	// Default constructor
 	FSLEntity() = default;
 
 	// Init constructor
 	FSLEntity(UObject* InObj, const FString& InId, const FString& InClass) :
 		Obj(InObj), Id(InId), Class(InClass) {};
+
+	// Init ctor with visual mask
+	FSLEntity(UObject* InObj, const FString& InId, const FString& InClass, const FString& InVisualMask) :
+		Obj(InObj), Id(InId), Class(InClass), VisualMask(InVisualMask) {};
 	
 	// Set data
 	void Set(UObject* InObj, const FString& InId, const FString& InClass)
@@ -38,17 +45,30 @@ struct FSLEntity
 		Class = InClass;
 	}
 
+	// Set data with visual mask
+	void Set(UObject* InObj, const FString& InId, const FString& InClass, const FString& InVisualMask)
+	{
+		Obj = InObj;
+		Id = InId;
+		Class = InClass;
+		VisualMask = InVisualMask;
+	}
+
 	// Clear
 	void Clear()
 	{
 		Obj = nullptr;
 		Id = "";
 		Class = "";
+		VisualMask = "";
 	}
 
 	// True if the unique id, the semantic id and the semantic class is not empty
 	bool IsSet() const { return Obj != nullptr && !Id.IsEmpty() && !Class.IsEmpty(); }
 
+	// Check if visual is set
+	bool HasVisualMask() const { return !VisualMask.IsEmpty(); }
+	
 	// Get result as string
 	FString ToString() const
 	{

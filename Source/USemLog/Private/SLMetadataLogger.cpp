@@ -29,7 +29,7 @@ USLMetadataLogger::~USLMetadataLogger()
 
 // Init logger
 void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		 UWorld* InWorld, bool bScanItems, FIntPoint Resolution, bool bScanViewModeUnlit, bool bIncludeScansLocally, bool bOverwrite)
+		 bool bScanItems, FIntPoint Resolution, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -45,7 +45,7 @@ void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, 
 		{
 			ItemsScanner = NewObject<USLItemScanner>(this);
 			ItemsScanner->Init(InTaskId, InServerIp, InServerPort,
-				InWorld, Resolution, bScanViewModeUnlit, bIncludeScansLocally, bOverwrite);
+				Resolution, InViewModes, bIncludeScansLocally, bOverwrite);
 		}
 
 		bIsInit = true;
@@ -336,9 +336,9 @@ void USLMetadataLogger::AddEnvironmentData()
 				{
 					BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*BoneData.Class));
 
-					if (!BoneData.MaskColorHex.IsEmpty())
+					if (!BoneData.VisualMask.IsEmpty())
 					{
-						BSON_APPEND_UTF8(&bones_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.MaskColorHex));
+						BSON_APPEND_UTF8(&bones_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.VisualMask));
 					}
 				}
 

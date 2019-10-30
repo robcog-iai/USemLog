@@ -477,12 +477,12 @@ FReply FSLEdModeToolkit::GenerateVisualMasksRand()
 					// Check if data is set (it has a semantic class)
 					if (Pair.Value.IsSet())
 					{
-						Pair.Value.MaskColorHex = GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors);
+						Pair.Value.VisualMask = GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors);
 
 						// Add the mask to the map used at runtime as well
 						if (ObjItr->AllBonesData.Contains(Pair.Key))
 						{
-							ObjItr->AllBonesData[Pair.Key].MaskColorHex = Pair.Value.MaskColorHex;
+							ObjItr->AllBonesData[Pair.Key].VisualMask = Pair.Value.VisualMask;
 						}
 						else
 						{
@@ -651,12 +651,12 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 						{
 							UE_LOG(LogTemp, Error, TEXT("%s::%d \t Class=%s; No more unique colors, saving as black"),
 								*FString(__func__), __LINE__, *Pair.Value.Class);
-							Pair.Value.MaskColorHex = FColor::Black.ToHex();
+							Pair.Value.VisualMask = FColor::Black.ToHex();
 						}
 						else
 						{
 							const FString ColorStr = UniqueColors.Pop(false);
-							Pair.Value.MaskColorHex = ColorStr;
+							Pair.Value.VisualMask = ColorStr;
 							UsedColors++;
 							UE_LOG(LogTemp, Warning, TEXT("%s::%d \t Class=%s; Color=%s; \t\t\t\t [%d/%d]"),
 								*FString(__func__), __LINE__, *Pair.Value.Class, *ColorStr, UsedColors, UniqueColors.Num());
@@ -665,7 +665,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 						// Add the mask to the map used at runtime as well
 						if (ObjItr->AllBonesData.Contains(Pair.Key))
 						{
-							ObjItr->AllBonesData[Pair.Key].MaskColorHex = Pair.Value.MaskColorHex;
+							ObjItr->AllBonesData[Pair.Key].VisualMask = Pair.Value.VisualMask;
 						}
 						else
 						{
