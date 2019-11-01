@@ -7,7 +7,6 @@
 #include "UObject/NoExportTypes.h"
 #include "WorldState/SLWorldStateAsyncWorker.h"
 #include "Tickable.h"
-#include "SLMetadataWriter.h"
 #include "SLWorldStateLogger.generated.h"
 
 /**
@@ -67,12 +66,6 @@ private:
 
 	// True if the object can be ticked (used by FTickableGameObject)
 	bool bIsTickable;
-
-	// Write metadata (world and events)
-	bool bWriteMetadata;
-
-	// Metadata writer
-	FSLMetadataWriter MetadataWriter;
 
 	// Timer handle for custom update rate
 	FTimerHandle TimerHandle;

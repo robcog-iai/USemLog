@@ -6,7 +6,6 @@
 #include "USemLog.h"
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
-#include "SLMetadataWriter.h"
 #include "SLEventLogger.generated.h"
 
 // Forward declaration

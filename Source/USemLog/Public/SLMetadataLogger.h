@@ -6,7 +6,6 @@
 #include "USemLog.h"
 #include "UObject/NoExportTypes.h"
 #include "SLItemScanner.h"
-
 #if SL_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
 #if PLATFORM_WINDOWS
@@ -18,7 +17,6 @@ THIRD_PARTY_INCLUDES_START
 #endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_C
-
 #include "SLMetadataLogger.generated.h"
 
 /**
@@ -29,6 +27,9 @@ class USEMLOG_API USLMetadataLogger : public UObject
 {
 	GENERATED_BODY()
 
+	// Give access to private methods
+	friend class USLItemScanner;
+	
 public:
 	// Ctor
 	USLMetadataLogger();
@@ -54,7 +55,7 @@ public:
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
-	
+
 private:
 	// Connect to the database, if overwrite is true, remove existing collection
 	bool Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bOverwrite);
@@ -62,25 +63,25 @@ private:
 	// Disconnect and clean db connection
 	void Disconnect();
 
-	// Create meta document
-	void CreateDoc();
+	// Add a scan entry to the database
+	void AddScanEntry(const FString& Class,
+		int32 NumPixels,
+		const FVector& SphereIndex,
+		FIntPoint Resolution);
 
-	// Write the task description
-	void AddTaskDescription(const FString& InTaskDescription);
-
-	// Add the environment data (skeletal and non-skeletal entities)
-	void AddEnvironmentData();
-
-	// Add the existing camera views
-	void AddCameraViews();
-
-	// Add item image scans
-	void AddScans();
-	
-	// Insert the document to the collection
-	void InsertDoc();
+	// Add image to gridfs
+	void AddToGridFs(const FString& ViewModeName, const TArray<uint8>& CompressedBitmap);
 
 #if SL_WITH_LIBMONGO_C
+	// Write the task description
+	void AddTaskDescription(const FString& InTaskDescription, bson_t* in_doc);
+
+	// Add the environment data (skeletal and non-skeletal entities)
+	void AddEnvironmentData(bson_t* in_doc);
+
+	// Add the existing camera views
+	void AddCameraViews(bson_t* in_doc);
+
 	// Add pose to document
 	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc);
 #endif //SL_WITH_LIBMONGO_C
@@ -112,7 +113,7 @@ private:
 	// Database collection
 	mongoc_collection_t* collection;
 
-	// Document id, the whole collection will consist of one document
-	bson_t* doc;
+	// Insert scans binaries
+	mongoc_gridfs_t *gridfs;
 #endif //SL_WITH_LIBMONGO_C
 };

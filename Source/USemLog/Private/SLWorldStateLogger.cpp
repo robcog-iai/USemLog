@@ -68,12 +68,6 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 			bIsTickable = true;
 		}
 
-		if (bWriteMetadata)
-		{
-			MetadataWriter.Start();
-		}
-
-
 		// Set flags
 		bIsStarted = true;
 	}
@@ -107,11 +101,6 @@ void USLWorldStateLogger::Finish(bool bForced)
 		if (bIsTickable)
 		{
 			bIsTickable = false;
-		}
-
-		if (bWriteMetadata)
-		{
-			MetadataWriter.Finish();
 		}
 
 		// Mark logger as finished

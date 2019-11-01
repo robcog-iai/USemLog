@@ -15,6 +15,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "SLMetadataLogger.h"
 
 // Ctor
 USLItemScanner::USLItemScanner()
@@ -27,6 +28,7 @@ USLItemScanner::USLItemScanner()
 	CurrViewModeIdx = INDEX_NONE;
 	CurrPoseIdx = INDEX_NONE;
 	CurrItemIdx = INDEX_NONE;
+	ItemPixelNum = INDEX_NONE;
 }
 
 // Dtor
@@ -40,13 +42,14 @@ USLItemScanner::~USLItemScanner()
 
 // Init scanner
 void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		 FIntPoint Resolution, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally, bool bOverwrite)
+		 FIntPoint InResolution, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally)
 {
 	if (!bIsInit)
 	{
 		Location = InTaskId;
 		ViewModes = InViewModes.Array();
 		bIncludeLocally = bIncludeScansLocally;
+		Resolution = InResolution;
 
 		// If no view modes are available, add a default one
 		if(ViewModes.Num() == 0)
@@ -81,7 +84,7 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 		ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLItemScanner::ScreenshotCB);
 
 		// Set scan image resolution and various rendering paramaters
-		InitRenderParameters(Resolution);
+		InitRenderParameters();
 
 		// Disable physics on all actors
 		for (TActorIterator<AActor> Act(GetWorld()); Act; ++Act)
@@ -94,10 +97,11 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 }
 
 // Start scanning
-void USLItemScanner::Start()
+void USLItemScanner::Start(USLMetadataLogger* InParent)
 {
 	if(!bIsStarted && bIsInit)
 	{
+		Parent = InParent;
 		if(!SetupFirstScanItem())
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set the first item for scanning.."), *FString(__func__), __LINE__);
@@ -341,7 +345,7 @@ bool USLItemScanner::LoadMaskMaterial()
 }
 
 // Init render parameters (resolution, view mode)
-void USLItemScanner::InitRenderParameters(FIntPoint Resolution)
+void USLItemScanner::InitRenderParameters()
 {
 	// Set screenshot image and viewport resolution size
 	GetHighResScreenshotConfig().SetResolution(Resolution.X, Resolution.Y, 1.0f);
@@ -476,18 +480,18 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		CurrItemIdx * ScanPoses.Num() * ViewModes.Num() + CurrPoseIdx * ViewModes.Num() + CurrViewModeIdx + 1,
 		ScanItems.Num() * ScanPoses.Num() * ViewModes.Num());
 
-	// Count pixel colors
-	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
-	{
-		CountPixelColors(Bitmap);
-	}
+	// Count how many pixels does the item occupi in the image (works with view mode mask/unlit)
+	CountItemPixelNum(Bitmap);
 	
 	//// Remove const-ness from array
-	//TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
-
+	//TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap)
+	
 	// Compress image
 	TArray<uint8> CompressedBitmap;
 	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
+
+	// Add image to gridfs
+	Parent->AddToGridFs(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 	
 	// Save the png locally
 	if(bIncludeLocally)
@@ -497,59 +501,125 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 	}
 
+	// Item and camera in position, check for other view modes
 	if(SetupNextViewMode())
 	{
 		RequestScreenshot();
 	}
 	else
 	{
-		if(SetupFirstViewMode())
+		// No other view modes, keep or set the first one
+		SetupFirstViewMode();
+
+		// New item or camera location is being set, write the entry data
+		Parent->AddScanEntry(ScanItems[CurrItemIdx].Value.Class,
+			ItemPixelNum,
+			ScanPoses[CurrPoseIdx].GetLocation(),
+			Resolution);
+
+		// New camera or image location will be set, reset the number of item pixels
+		ItemPixelNum = INDEX_NONE;
+			
+		// Check for next camera poses
+		if(SetupNextScanPose())
 		{
-			if(SetupNextScanPose())
+			RequestScreenshot();
+		}
+		else if(SetupNextItem())
+		{
+			// No other scan poses found, set next item and first camera scan pose
+			SetupFirstScanPose();
+
+			// Has an effect only if the first view mode is of type mask (needs to apply the mask material on the new item)
+			SetupFirstViewMode();
+			
+			RequestScreenshot();
+		}
+		else
+		{
+			// No more items, or camera scan poses
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished scanning.."),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			QuitEditor();
+		}
+	}
+}
+
+// Count (and check) the number of pixels the item uses in the image
+void USLItemScanner::CountItemPixelNum(const TArray<FColor>& Bitmap)
+{
+	// Count pixel colors
+	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
+	{
+		// Cache the previous number of item pixels
+		int32 PrevItemPixelNum = ItemPixelNum;
+		
+		int32 NumBackgroundPixels = 0;
+		GetColorsPixelNum(Bitmap, FColor::Black, NumBackgroundPixels, FColor::White, ItemPixelNum);
+		if(ItemPixelNum + NumBackgroundPixels != Resolution.X * Resolution.Y)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Number of item [%ld] + background [%ld] pixels, differs of number image total [%ld]."),
+				*FString(__func__), __LINE__, ItemPixelNum, NumBackgroundPixels, Resolution.X * Resolution.Y);
+		}
+
+		// Compare against previous (other view mode) number item pixels
+		if(PrevItemPixelNum != INDEX_NONE)
+		{
+			if(ItemPixelNum != PrevItemPixelNum)
 			{
-				RequestScreenshot();
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Prev number [%ld] of item pixels differs of current one [%ld]."),
+					*FString(__func__), __LINE__, PrevItemPixelNum, ItemPixelNum);
 			}
-			else if(SetupNextItem())
+		}
+	}
+	else if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Unlit)
+	{
+		// Cache the previous number of item pixels
+		int32 PrevItemPixelNum = ItemPixelNum;
+		
+		int32 NumBackgroundPixels = GetColorPixelNum(Bitmap, FColor::Black);
+		ItemPixelNum = Resolution.X * Resolution.Y - NumBackgroundPixels;
+
+		// Compare against previous (other view mode) number item pixels
+		if(PrevItemPixelNum != INDEX_NONE)
+		{
+			if(ItemPixelNum != PrevItemPixelNum)
 			{
-				SetupFirstScanPose();
-				SetupFirstViewMode();
-				RequestScreenshot();
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished scanning.."),
-					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-				QuitEditor();
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Prev number [%ld] of item pixels differs of current one [%ld]."),
+					*FString(__func__), __LINE__, PrevItemPixelNum, ItemPixelNum);
 			}
 		}
 	}
 }
 
-// Count the number of color types in the image
-void USLItemScanner::CountPixelColors(const TArray<FColor>& Bitmap)
+// Get the number of pixels of the given color in the image
+int32 USLItemScanner::GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor Color) const
 {
-	TMap<FColor, int32> PixelColorNums;
-
-	// Iterate image pixels
-	for(const auto& C : Bitmap)
+	int32 Num = 0;
+	for (const auto& C : Bitmap)
 	{
-		if(int32* Num = PixelColorNums.Find(C))
+		if(C == Color)
 		{
-			(*Num)++;
-		}
-		else
-		{
-			PixelColorNums.Add(C,1);
+			Num++;
 		}
 	}
+	return Num++;
+}
 
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Colors: "), *FString(__func__), __LINE__);
-	for(const auto& Pair : PixelColorNums)
+// Get the number of pixels of the given two colors in the image
+void USLItemScanner::GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor ColorA, int32& OutNumA, const FColor ColorB, int32& OutNumB)
+{
+	OutNumA = 0;
+	OutNumB = 0;
+	for (const auto& C : Bitmap)
 	{
-		if(Pair.Value > 500)
+		if(C == ColorA)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t %s : %ld"),
-				*FString(__func__), __LINE__, *Pair.Key.ToString(), Pair.Value);
+			OutNumA++;
+		}
+		else if(C == ColorB)
+		{
+			OutNumB++;
 		}
 	}
 }
@@ -560,20 +630,53 @@ void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 	if(Mode == ESLItemScannerViewMode::Lit)
 	{
 		ApplyOriginalMaterial();
-		GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+		if(bUnlit)
+		{
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			bUnlit = false;
+		}
 		ViewModePostfix = "L";
 	}
 	else if(Mode == ESLItemScannerViewMode::Unlit)
 	{
 		ApplyOriginalMaterial();
-		GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		if(!bUnlit)
+		{
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+			bUnlit = true;
+		}
 		ViewModePostfix = "U";
 	}
 	else if(Mode == ESLItemScannerViewMode::Mask)
 	{
 		ApplyMaskMaterial();
-		GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		if(!bUnlit)
+		{
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+			bUnlit = true;
+		}
 		ViewModePostfix = "M";
+	}
+}
+
+// Get the view mode string name
+FString USLItemScanner::GetViewModeName(ESLItemScannerViewMode Mode)
+{
+	if(Mode == ESLItemScannerViewMode::Lit)
+	{
+		return FString("Lit");
+	}
+	else if(Mode == ESLItemScannerViewMode::Unlit)
+	{
+		return FString("Unlit");
+	}
+	else if(Mode == ESLItemScannerViewMode::Mask)
+	{
+		return FString("Mask");
+	}
+	else
+	{
+		return FString("None");
 	}
 }
 

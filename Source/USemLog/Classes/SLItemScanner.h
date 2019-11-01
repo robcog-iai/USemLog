@@ -7,6 +7,7 @@
 #include "SLItemScanner.generated.h"
 
 // Forward declarations
+class USLMetadataLogger; // Parent
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
 class UGameViewportClient;
@@ -44,10 +45,10 @@ public:
 
 	// Setup scanning room
 	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		FIntPoint Resolution, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally, bool bOverwrite);
+		FIntPoint InResolution, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally);
 
 	// Start scanning
-	void Start();
+	void Start(USLMetadataLogger* InParent);
 
 	// Finish scanning
 	void Finish();
@@ -78,7 +79,7 @@ private:
 	bool LoadMaskMaterial();
 
 	// Init render parameters (resolution, view mode)
-	void InitRenderParameters(FIntPoint Resolution);
+	void InitRenderParameters();
 
 	// Setup view mode
 	bool SetupFirstViewMode();
@@ -104,11 +105,20 @@ private:
 	// Called when the screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
-	// Count colors
-	void CountPixelColors(const TArray<FColor>& Bitmap);
+	// Count the number of pixels the item represents in the image;
+	void CountItemPixelNum(const TArray<FColor>& Bitmap);
+	
+	// Get the number of pixels of the given color in the image
+	int32 GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor Color) const;
+	
+	// Get the number of pixels of the given two colors in the image
+	void GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor ColorA, int32& OutNumA, const FColor ColorB, int32& OutNumB);
 	
 	// Apply view mode
 	void ApplyViewMode(ESLItemScannerViewMode Mode);
+
+	// Get view mode name
+	FString GetViewModeName(ESLItemScannerViewMode Mode);
 
 	// Apply mask material to current item
 	void ApplyMaskMaterial();
@@ -143,6 +153,9 @@ private:
 
 	// Flag to save the scanned images locally as well
 	bool bIncludeLocally;
+
+	// Pointer to the parent, used for updating the metadata mongo document;
+	USLMetadataLogger* Parent;
 	
 	// Location on where to save the data
 	FString Location;
@@ -190,6 +203,15 @@ private:
 
 	// Currently scanned item index in map
 	int32 CurrItemIdx;
+
+	// Scan image resolution
+	FIntPoint Resolution;
+
+	// Currently counted number of pixels of the item
+	int32 ItemPixelNum;
+
+	// Entry image data
+	//TMap<FString, const TArray<FColor>&> ScanImageData;
 
 	/* Constants */
 	// Vertical offset to spawn the scanning room

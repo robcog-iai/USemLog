@@ -78,7 +78,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 		BSON_APPEND_DOUBLE(doc, "timestamp_render", StampedData.Timestamp);
 
 		// Add the views 
-		USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, doc);
+		AddViewsDataToDoc(StampedData.ViewsData, doc);
 
 		// Insert imgs data
 		if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error))
@@ -122,7 +122,7 @@ void USLVisImageWriterMongoC::Write(const FSLVisStampedData& StampedData)
 				BSON_APPEND_DOUBLE(doc, "timestamp_render", StampedData.Timestamp);
 
 				// Save images data to gridfs, and create a bson entry
-				USLVisImageWriterMongoC::AddViewsDataToDoc(StampedData.ViewsData, doc);
+				AddViewsDataToDoc(StampedData.ViewsData, doc);
 
 				// Add the images data to the update document
 				update_doc = BCON_NEW("$set", BCON_DOCUMENT(doc));
@@ -737,7 +737,7 @@ bool USLVisImageWriterMongoC::SaveImageToGridFS(const FSLVisImageData& ImgData, 
 {
 	mongoc_gridfs_file_t *file;
 	mongoc_gridfs_file_opt_t file_opt = { 0 };
-	const bson_value_t* file_id_val; // TODO why is this not destroyed?
+	const bson_value_t* file_id_val;
 	mongoc_iovec_t iov;
 	bson_error_t error;
 

@@ -38,14 +38,11 @@ void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, 
 			return;
 		}
 
-		// Create the bson metadata document
-		CreateDoc();
-
 		if(bScanItems)
 		{
 			ItemsScanner = NewObject<USLItemScanner>(this);
 			ItemsScanner->Init(InTaskId, InServerIp, InServerPort,
-				Resolution, InViewModes, bIncludeScansLocally, bOverwrite);
+				Resolution, InViewModes, bIncludeScansLocally);
 		}
 
 		bIsInit = true;
@@ -57,15 +54,30 @@ void USLMetadataLogger::Start(const FString& InTaskDescription)
 {
 	if (!bIsStarted && bIsInit)
 	{
-		// Add data to the document
-		AddTaskDescription(InTaskDescription);
-		AddEnvironmentData();
-		AddCameraViews();
+		// Create the environment and task description document
+		bson_oid_t oid;
+		bson_t* doc =  bson_new();
 
-		// Scan items and include the data in the document
+		bson_oid_init(&oid, NULL);
+		BSON_APPEND_OID(doc, "_id", &oid);
+		
+		// Add data to the document
+		AddTaskDescription(InTaskDescription, doc);
+		AddEnvironmentData(doc);
+		AddCameraViews(doc);
+
+		// Write document to the collection
+		bson_error_t error;
+		if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+				*FString(__func__), __LINE__, *FString(error.message));
+		}
+
+		// Start the item scanner, for every finished scan it will trigger an update call on the logger
 		if(ItemsScanner)
 		{
-			ItemsScanner->Start();
+			ItemsScanner->Start(this);
 		}
 		
 		bIsStarted = true;
@@ -77,8 +89,6 @@ void USLMetadataLogger::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
-		InsertDoc();
-
 		if(ItemsScanner)
 		{
 			ItemsScanner->Finish();
@@ -88,6 +98,21 @@ void USLMetadataLogger::Finish(bool bForced)
 		bIsInit = false;
 		bIsFinished = true;
 	}
+}
+
+// Add a scan entry to the database
+void USLMetadataLogger::AddScanEntry(const FString& Class,
+		int32 NumPixels,
+		const FVector& SphereIndex,
+		FIntPoint Resolution)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Class=%s; NumPixels=%ld;"),*FString(__func__), __LINE__, *Class, NumPixels);
+}
+
+// Add image to gridfs
+void USLMetadataLogger::AddToGridFs(const FString& ViewModeName, const TArray<uint8>& CompressedBitmap)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t ViewMode=%s;"),*FString(__func__), __LINE__, *ViewModeName);
 }
 
 // Connect to the database
@@ -116,6 +141,7 @@ bool USLMetadataLogger::Connect(const FString& DBName, const FString& ServerIp, 
 	client = mongoc_client_new_from_uri(uri);
 	if (!client)
 	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not create a mongo client.."), *FString(__func__), __LINE__);
 		return false;
 	}
 
@@ -154,6 +180,16 @@ bool USLMetadataLogger::Connect(const FString& DBName, const FString& ServerIp, 
 
 	collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*MetaCollName));
 
+
+	// Create a gridfs handle prefixed by fs */
+	gridfs = mongoc_client_get_gridfs(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*MetaCollName), &error);
+	if (!gridfs)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+			*FString(__func__), __LINE__, *Uri, *FString(error.message));
+		return false;
+	}
+
 	// Double check that the server is alive. Ping the "admin" database
 	bson_t* server_ping_cmd;
 	server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
@@ -177,6 +213,10 @@ void USLMetadataLogger::Disconnect()
 {
 #if SL_WITH_LIBMONGO_C
 	// Release handles and clean up mongoc
+	if(gridfs)
+	{
+		mongoc_gridfs_destroy(gridfs);
+	}
 	if(uri)
 	{
 		mongoc_uri_destroy(uri);
@@ -193,37 +233,21 @@ void USLMetadataLogger::Disconnect()
 	{
 		mongoc_collection_destroy(collection);
 	}
-	if(doc)
-	{
-		bson_destroy(doc);
-	}
 	mongoc_cleanup();
 #endif //SL_WITH_LIBMONGO_C
 }
 
-// Create the metadata document
-void USLMetadataLogger::CreateDoc()
-{
+
 #if SL_WITH_LIBMONGO_C
-	bson_oid_t oid;
-	doc =  bson_new();
-
-	bson_oid_init(&oid, NULL);
-	BSON_APPEND_OID(doc, "_id", &oid);
-#endif //SL_WITH_LIBMONGO_C
-}
-
 // Write the task description to the document
-void USLMetadataLogger::AddTaskDescription(const FString& InTaskDescription)
+void USLMetadataLogger::AddTaskDescription(const FString& InTaskDescription, bson_t* in_doc)
 {
-#if SL_WITH_LIBMONGO_C
-	BSON_APPEND_UTF8(doc, "task_description", TCHAR_TO_UTF8(*InTaskDescription));
-#endif //SL_WITH_LIBMONGO_C
+	BSON_APPEND_UTF8(in_doc, "task_description", TCHAR_TO_UTF8(*InTaskDescription));
 }
 
-void USLMetadataLogger::AddEnvironmentData()
+// Write the environment data
+void USLMetadataLogger::AddEnvironmentData(bson_t* in_doc)
 {
-#if SL_WITH_LIBMONGO_C
 	bson_t arr;
 	bson_t sk_arr;
 	bson_t arr_obj;
@@ -232,7 +256,7 @@ void USLMetadataLogger::AddEnvironmentData()
 	uint32_t idx = 0;
 
 	// Add entities to array
-	BSON_APPEND_ARRAY_BEGIN(doc, "entities", &arr);
+	BSON_APPEND_ARRAY_BEGIN(in_doc, "entities", &arr);
 	// Iterate non skeletal semantic entities
 	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
 	{
@@ -275,10 +299,10 @@ void USLMetadataLogger::AddEnvironmentData()
 		bson_append_document_end(&arr, &arr_obj);
 		idx++;
 	}
-	bson_append_array_end(doc, &arr);
+	bson_append_array_end(in_doc, &arr);
 
 	// Add skel entities to array
-	BSON_APPEND_ARRAY_BEGIN(doc, "skel_entities", &sk_arr);
+	BSON_APPEND_ARRAY_BEGIN(in_doc, "skel_entities", &sk_arr);
 	// Reset array index
 	idx=0;
 	// Iterate skeletal semantic entities
@@ -355,14 +379,12 @@ void USLMetadataLogger::AddEnvironmentData()
 		bson_append_document_end(&sk_arr, &arr_obj);
 		idx++;
 	}
-	bson_append_array_end(doc, &sk_arr);
-#endif //SL_WITH_LIBMONGO_C
+	bson_append_array_end(in_doc, &sk_arr);
 }
 
 // Add camera views
-void USLMetadataLogger::AddCameraViews()
+void USLMetadataLogger::AddCameraViews(bson_t* in_doc)
 {
-#if SL_WITH_LIBMONGO_C
 	bson_t arr;
 	bson_t arr_obj;
 	char idx_str[16];
@@ -370,7 +392,7 @@ void USLMetadataLogger::AddCameraViews()
 	uint32_t idx = 0;
 
 	// Add entities to array
-	BSON_APPEND_ARRAY_BEGIN(doc, "camera_views", &arr);
+	BSON_APPEND_ARRAY_BEGIN(in_doc, "camera_views", &arr);
 
 	// Iterate non skeletal semantic entities
 	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetCameraViewsSemanticData())
@@ -408,30 +430,9 @@ void USLMetadataLogger::AddCameraViews()
 		idx++;
 	}
 
-	bson_append_array_end(doc, &arr);
-#endif //SL_WITH_LIBMONGO_C
+	bson_append_array_end(in_doc, &arr);
 }
 
-// Add item image scans
-void USLMetadataLogger::AddScans()
-{
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Scanning.."), *FString(__func__), __LINE__);
-}
-
-// Insert the document to the collection
-void USLMetadataLogger::InsertDoc()
-{
-#if SL_WITH_LIBMONGO_C
-	bson_error_t error;
-	if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-#endif //SL_WITH_LIBMONGO_C
-}
-
-#if SL_WITH_LIBMONGO_C
 // Add pose to document
 void USLMetadataLogger::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc)
 {
