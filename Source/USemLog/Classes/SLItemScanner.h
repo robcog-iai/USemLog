@@ -20,12 +20,12 @@ class APlayerCameraManager;
 UENUM()
 enum class ESLItemScannerViewMode : uint8
 {
-	Lit						UMETA(DisplayName = "Lit"),
-	Unlit					UMETA(DisplayName = "Unlit"),
+	NONE					UMETA(DisplayName = "None"),
+	Lit						UMETA(DisplayName = "Color (lit)"),
+	Unlit					UMETA(DisplayName = "Color (unlit)"),
 	Mask					UMETA(DisplayName = "Mask"),
-	//Depth					UMETA(DisplayName = "Depth"),
-	//Normal				UMETA(DisplayName = "Normal"),
-	//Specular				UMETA(DisplayName = "Specular"),
+	Depth					UMETA(DisplayName = "Depth"),
+	Normal					UMETA(DisplayName = "Normal"),
 };
 
 /**
@@ -63,8 +63,8 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 private:
-	// Load scan box actor
-	bool LoadScanBoxActor();
+	//// Load scan box actor
+	//bool LoadScanBoxActor();
 
 	// Load scan camera convenience actor
 	bool LoadScanCameraPoseActor();
@@ -73,7 +73,7 @@ private:
 	bool LoadScanPoints();
 
 	// Load items to scan
-	bool LoadScanItems(bool bWithMask = false, bool bWithContactShape = false);
+	bool LoadScanItems(bool bWithContactShape = false);
 
 	// Load mask dynamic material
 	bool LoadMaskMaterial();
@@ -109,16 +109,16 @@ private:
 	void CountItemPixelNum(const TArray<FColor>& Bitmap);
 	
 	// Get the number of pixels of the given color in the image
-	int32 GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor Color) const;
+	int32 GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor& Color) const;
 	
 	// Get the number of pixels of the given two colors in the image
-	void GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor ColorA, int32& OutNumA, const FColor ColorB, int32& OutNumB);
+	void GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor& ColorA, int32& OutNumA, const FColor& ColorB, int32& OutNumB);
 	
 	// Apply view mode
 	void ApplyViewMode(ESLItemScannerViewMode Mode);
 
 	// Get view mode name
-	FString GetViewModeName(ESLItemScannerViewMode Mode);
+	FString GetViewModeName(ESLItemScannerViewMode Mode) const;
 
 	// Apply mask material to current item
 	void ApplyMaskMaterial();
@@ -134,6 +134,9 @@ private:
 	
 	// Clean exit, all the Finish() methods will be triggered
 	void QuitEditor();
+
+	// Generate sphere scan poses
+	void GenerateSphereScanPoses(uint32 MaxNumOfPoints, float Radius, TArray<FTransform>& OutTransforms);
 	
 private:
 	// Set when initialized
@@ -144,12 +147,6 @@ private:
 
 	// Set when finished
 	bool bIsFinished;
-
-	// True if the object can be ticked (used by FTickableGameObject)
-	bool bIsTickable;
-
-	// View mode lit/unlit
-	bool bUnlit;
 
 	// Flag to save the scanned images locally as well
 	bool bIncludeLocally;
@@ -166,19 +163,13 @@ private:
 	// Current scan view mode postfix
 	FString ViewModePostfix;
 
-	// Scanner box actor to spawn
-	UPROPERTY() // Avoid GC
-	AStaticMeshActor* ScanBoxActor;
-
 	// Convenience actor for setting the camera pose (SetViewTarget(InActor))
 	UPROPERTY() // Avoid GC
 	AStaticMeshActor* CameraPoseActor;
 
 	// Dynamic mask material
+	UPROPERTY() // Avoid GC
 	UMaterialInstanceDynamic* DynamicMaskMaterial;
-	
-	//// Mask material to apply to item
-	//UMaterial* DefaultMaskMaterial;
 
 	// Original material of the item
 	TArray<UMaterialInterface*> OriginalMaterials;
@@ -190,11 +181,19 @@ private:
 	TArray<FTransform> ScanPoses;
 
 	// Scan items with semantic data
-	TArray<TPair<UStaticMeshComponent*, FSLEntity>> ScanItems;
+	TArray<TPair<UStaticMeshComponent*, FString>> ScanItems;
+
+	// TODO
+	//// Actor duplicates with mask material (avoids switching materials, which can lead to some texture artifacts)
+	//UPROPERTY() // Avoid GC
+	//TArray<AActor*> MaskDuplicates;
 
 	// View modes (lit/unlit/mask etc.)
 	TArray<ESLItemScannerViewMode> ViewModes;
 
+	// Cache the previous view mode
+	ESLItemScannerViewMode PrevViewMode;
+	
 	// Currently active view mode
 	int32 CurrViewModeIdx;
 	
@@ -214,9 +213,6 @@ private:
 	//TMap<FString, const TArray<FColor>&> ScanImageData;
 
 	/* Constants */
-	// Vertical offset to spawn the scanning room
-	constexpr static const float ScanBoxOffsetZ = 1000.f;
-
 	// Volume limit in cubic centimeters (1000cm^3 = 1 Liter) of items to scan
 	constexpr static const float VolumeLimit = 40000.f;
 
