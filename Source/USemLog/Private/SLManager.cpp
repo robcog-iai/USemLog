@@ -44,6 +44,8 @@ ASLManager::ASLManager()
 	ScanViewModes.Add(ESLItemScannerViewMode::Lit);
 	ScanViewModes.Add(ESLItemScannerViewMode::Unlit);
 	ScanViewModes.Add(ESLItemScannerViewMode::Mask);
+	ScanViewModes.Add(ESLItemScannerViewMode::Depth);
+	ScanViewModes.Add(ESLItemScannerViewMode::Normal);
 	bIncludeScansLocally = false;
 	bOverwriteMetadata = false;
 

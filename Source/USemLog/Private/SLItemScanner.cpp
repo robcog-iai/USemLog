@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLItemScanner.h"
-#include "SLEntitiesManager.h"
+#include "Tags.h"
 #include "SLContactShapeInterface.h"
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
@@ -16,6 +16,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "SLMetadataLogger.h"
+#include "Engine/Light.h"
 
 // Ctor
 USLItemScanner::USLItemScanner()
@@ -23,12 +24,12 @@ USLItemScanner::USLItemScanner()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
-	bUnlit = false;
 	bIncludeLocally = false;
 	CurrViewModeIdx = INDEX_NONE;
 	CurrPoseIdx = INDEX_NONE;
 	CurrItemIdx = INDEX_NONE;
 	ItemPixelNum = INDEX_NONE;
+	PrevViewMode = ESLItemScannerViewMode::NONE;
 }
 
 // Dtor
@@ -69,7 +70,7 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 		}
 
 		// Spawn helper actors, load scan items and points
-		if(!LoadScanBoxActor() || !LoadScanCameraPoseActor() || !LoadScanPoints() || !LoadScanItems(true, true))
+		if(/*!LoadScanBoxActor() || */!LoadScanCameraPoseActor() || !LoadScanPoints() || !LoadScanItems(true))
 		{
 			return;
 		}
@@ -117,11 +118,12 @@ void USLItemScanner::Start(USLMetadataLogger* InParent)
 		// Cannot be called in Init() because GetFirstPlayerController() is nullptr before BeginPlay
 		SetupFirstViewMode();
 
+		// Hide default pawn
+		GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
+
+		// Start the dominoes
 		RequestScreenshot();
-		
-		// Enable ticking (camera movement will happen every tick)
-		bIsTickable = true;
-		
+
 		bIsStarted = true;
 	}
 }
@@ -138,35 +140,6 @@ void USLItemScanner::Finish()
 		bIsInit = false;
 		bIsFinished = true;
 	}
-}
-
-// Load scan box actor
-bool USLItemScanner::LoadScanBoxActor()
-{
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = TEXT("SM_ScanBox");
-	ScanBoxActor = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(),
-		FTransform(FVector(0.f, 0.f, ScanBoxOffsetZ)), SpawnParams);
-	if(!ScanBoxActor)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not spawn scan box actor.."), *FString(__func__), __LINE__);
-		return false;
-	}
-#if WITH_EDITOR
-	ScanBoxActor->SetActorLabel(FString(TEXT("SM_ScanBox")));
-#endif // WITH_EDITOR
-		
-	UStaticMesh* ScanBoxMesh = LoadObject<UStaticMesh>(nullptr,TEXT("/USemLog/Vision/ScanBox/SM_ScanBox.SM_ScanBox"));
-	if(!ScanBoxMesh)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find scan box mesh.."), *FString(__func__), __LINE__);
-		ScanBoxActor->Destroy();
-		return false;
-	}
-	ScanBoxActor->GetStaticMeshComponent()->SetStaticMesh(ScanBoxMesh);
-	ScanBoxActor->SetMobility(EComponentMobility::Static);
-	//ScanBoxActor->SetActorHiddenInGame(true);
-	return true;
 }
 
 // Load scan camera convenience actor
@@ -200,20 +173,7 @@ bool USLItemScanner::LoadScanCameraPoseActor()
 // Load scanning points
 bool USLItemScanner::LoadScanPoints()
 {
-	//// Load the scan poses
-	//for(uint32 Idx = 0; Idx < 1200; Idx++)
-	//{
-	//	const float Z = Idx * 1.1f;
-	//	const FTransform T = FTransform(FVector(0.f, 0.f, Idx));
-	//	ScanPoses.Emplace(T);
-	//}
-
-	ScanPoses.Emplace(FTransform(FVector(-100.f, 0.f, ScanBoxOffsetZ)));
-	ScanPoses.Emplace(FTransform(FVector(-100.f, 50.f, ScanBoxOffsetZ)));
-	ScanPoses.Emplace(FTransform(FVector(-100.f, -50.f, ScanBoxOffsetZ)));
-	ScanPoses.Emplace(FTransform(FVector(-50.f, 0.f, ScanBoxOffsetZ)));
-	ScanPoses.Emplace(FTransform(FVector(-50.f, 50.f, ScanBoxOffsetZ)));
-	ScanPoses.Emplace(FTransform(FVector(-50.f, -50.f, ScanBoxOffsetZ)));
+	GenerateSphereScanPoses(128, 50.f, ScanPoses);
 
 	if(ScanPoses.Num() == 0)
 	{
@@ -224,93 +184,64 @@ bool USLItemScanner::LoadScanPoints()
 }
 
 // Load items to scan
-bool USLItemScanner::LoadScanItems(bool bWithMask, bool bWithContactShape)
+bool USLItemScanner::LoadScanItems(bool bWithContactShape)
 {
 	// Cache the classes that were already iterated
-	TSet<FString> IteratedClasses;
-	
-	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
-	{
-		const FSLEntity SemanticData = Pair.Value;
+	TSet<FString> ConsultedClasses;
 
-		// Skip if class was already checked
-		if(IteratedClasses.Contains(SemanticData.Class))
-		{
-			continue;
-		}
-		IteratedClasses.Emplace(SemanticData.Class);
-		
+	// Iterate all actors
+	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
+	{
 		// Check if the item has a visual
-		if (AStaticMeshActor* ObjAsSMA = Cast<AStaticMeshActor>(SemanticData.Obj))
+		if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(*ActItr))
 		{
-			if(UStaticMeshComponent* SMC = ObjAsSMA->GetStaticMeshComponent())
+			// Everything is hidden by default
+			AsSMA->SetActorHiddenInGame(true);
+			
+			const FString Class = FTags::GetValue(*ActItr, "SemLog", "Class");
+
+			// Skip if class was already checked
+			if(ConsultedClasses.Contains(Class))
+			{
+				continue;
+			}
+			ConsultedClasses.Emplace(Class);
+
+			if(UStaticMeshComponent* SMC = AsSMA->GetStaticMeshComponent())
 			{
 				if(IsHandheldItem(SMC))
 				{
-					if(bWithMask && !SemanticData.HasVisualMask())
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %s has no visual mask, skipping item scan.."),
-							*FString(__func__), __LINE__, *SemanticData.Class);
-						continue;
-					}
-					
 					if(bWithContactShape && !HasSemanticContactShape(SMC))
 					{
 						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t %s has no semantic contact shape, skipping item scan.."),
-							*FString(__func__), __LINE__, *SemanticData.Class);
+							*FString(__func__), __LINE__, *Class);
 						continue;
 					}
-					
+
 					SMC->SetSimulatePhysics(false);
-					ScanItems.Emplace(SMC, SemanticData);
+					
+					ScanItems.Emplace(SMC, Class);
+					//MaskDuplicates.EmplaceAt()
+					
 					UE_LOG(LogTemp, Warning, TEXT("%s::%d Added %s to the scan items list.."),
-						*FString(__func__), __LINE__, *SemanticData.Class);
+						*FString(__func__), __LINE__, *Class);
 				}
 				else
 				{
 					UE_LOG(LogTemp, Error, TEXT("%s::%d \t %s is not a handheld item (too large, not movable), skipping item scan.."),
-						*FString(__func__), __LINE__, *SemanticData.Class);
+						*FString(__func__), __LINE__, *Class);
 				}
 			}
 			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no static mesh component, skipping item scan.."),
-					*FString(__func__), __LINE__, *SemanticData.Class);
+					*FString(__func__), __LINE__, *Class);
 			}
 		}
-		else if (UStaticMeshComponent* ObjAsSMC = Cast<UStaticMeshComponent>(SemanticData.Obj))
+		else if(!Cast<ALight>(*ActItr))
 		{
-			if(IsHandheldItem(ObjAsSMC))
-			{
-				if(bWithContactShape && !HasSemanticContactShape(ObjAsSMC))
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %s has no semantic contact shape, skipping item scan.."),
-						*FString(__func__), __LINE__, *SemanticData.Class);
-					continue;
-				}
-
-				if(bWithMask && !SemanticData.HasVisualMask())
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t %s has no visual mask, skipping item scan.."),
-						*FString(__func__), __LINE__, *SemanticData.Class);
-					continue;
-				}
-				
-				ObjAsSMC->SetSimulatePhysics(false);
-				ScanItems.Emplace(ObjAsSMC, SemanticData);
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Added %s to the scan items list.."),
-						*FString(__func__), __LINE__, *SemanticData.Class);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d \t %s is not a handheld item (too large, not movable), skipping item scan.."),
-					*FString(__func__), __LINE__, *SemanticData.Class);
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not a static mesh actor, skipping scan.."),
-				*FString(__func__), __LINE__, *SemanticData.Class);
+			// Hide everything else that is not a light
+			(*ActItr)->SetActorHiddenInGame(true);
 		}
 	}
 
@@ -394,22 +325,22 @@ bool USLItemScanner::SetupNextViewMode()
 // Setup first item in the scan box
 bool USLItemScanner::SetupFirstScanItem()
 {
-	// Move the first item to the center of the scan box
 	CurrItemIdx = 0;
 	if(!ScanItems.IsValidIndex(CurrItemIdx))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid item index [%ld].."), *FString(__func__), __LINE__, CurrItemIdx);
 		return false;
 	}
-	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorLocation(ScanBoxActor->GetActorLocation());
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorLocation(FVector::ZeroVector);
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(false);
 	return true;
 }
 
 // Set next item in the scan box, return false if there are no more items
 bool USLItemScanner::SetupNextItem()
 {
-	// Move previous item away
-	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorLocation(FVector(0.f));
+	// Hide previous actor
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(true);
 	
 	// Bring next item
 	CurrItemIdx++;
@@ -418,7 +349,8 @@ bool USLItemScanner::SetupNextItem()
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Last item [%ld] reached.."), *FString(__func__), __LINE__, CurrItemIdx-1);
 		return false;
 	}
-	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorLocation(ScanBoxActor->GetActorLocation());
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorLocation(FVector::ZeroVector);
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(false);
 	return true;
 }
 
@@ -456,7 +388,7 @@ void USLItemScanner::RequestScreenshot()
 	// Request screenshot on game thread
 	AsyncTask(ENamedThreads::GameThread, [this]()
 	{
-		CurrScanName = FString::FromInt(CurrItemIdx) + "_" + ScanItems[CurrItemIdx].Value.Class + "_" + FString::FromInt(CurrPoseIdx);
+		CurrScanName = FString::FromInt(CurrItemIdx) + "_" + ScanItems[CurrItemIdx].Value + "_" + FString::FromInt(CurrPoseIdx);
 		if(!ViewModePostfix.IsEmpty())
 		{
 			CurrScanName.Append("_" + ViewModePostfix);
@@ -491,7 +423,7 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
 
 	// Add image to gridfs
-	Parent->AddToGridFs(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
+	//Parent->AddToGridFs(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 	
 	// Save the png locally
 	if(bIncludeLocally)
@@ -511,11 +443,11 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		// No other view modes, keep or set the first one
 		SetupFirstViewMode();
 
-		// New item or camera location is being set, write the entry data
-		Parent->AddScanEntry(ScanItems[CurrItemIdx].Value.Class,
-			ItemPixelNum,
-			ScanPoses[CurrPoseIdx].GetLocation(),
-			Resolution);
+		//// New item or camera location is being set, write the entry data
+		//Parent->AddScanEntry(ScanItems[CurrItemIdx].Value.Class,
+		//	ItemPixelNum,
+		//	ScanPoses[CurrPoseIdx].GetLocation(),
+		//	Resolution);
 
 		// New camera or image location will be set, reset the number of item pixels
 		ItemPixelNum = INDEX_NONE;
@@ -525,22 +457,29 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		{
 			RequestScreenshot();
 		}
-		else if(SetupNextItem())
+		else 
 		{
-			// No other scan poses found, set next item and first camera scan pose
-			SetupFirstScanPose();
-
-			// Has an effect only if the first view mode is of type mask (needs to apply the mask material on the new item)
-			SetupFirstViewMode();
+			if(SetupNextItem())
+			{
+				// If in mask mode, apply the mask material on the current item as well
+				if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
+				{
+					OriginalMaterials.Empty();
+					ApplyMaskMaterial();
+				}
 			
-			RequestScreenshot();
-		}
-		else
-		{
-			// No more items, or camera scan poses
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished scanning.."),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-			QuitEditor();
+				// No other scan poses found, set next item and first camera scan pose
+				SetupFirstScanPose();
+			
+				RequestScreenshot();
+			}
+			else
+			{
+				// No more items, or camera scan poses
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished scanning.."),
+					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+				QuitEditor();
+			}
 		}
 	}
 }
@@ -593,7 +532,7 @@ void USLItemScanner::CountItemPixelNum(const TArray<FColor>& Bitmap)
 }
 
 // Get the number of pixels of the given color in the image
-int32 USLItemScanner::GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor Color) const
+int32 USLItemScanner::GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor& Color) const
 {
 	int32 Num = 0;
 	for (const auto& C : Bitmap)
@@ -607,7 +546,7 @@ int32 USLItemScanner::GetColorPixelNum(const TArray<FColor>& Bitmap, const FColo
 }
 
 // Get the number of pixels of the given two colors in the image
-void USLItemScanner::GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor ColorA, int32& OutNumA, const FColor ColorB, int32& OutNumB)
+void USLItemScanner::GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor& ColorA, int32& OutNumA, const FColor& ColorB, int32& OutNumB)
 {
 	OutNumA = 0;
 	OutNumB = 0;
@@ -627,44 +566,257 @@ void USLItemScanner::GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColo
 // Apply view mode
 void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 {
+	// No change in the rendering view mode
+	if(Mode == PrevViewMode)
+	{
+		return;
+	}
+
+	// Get the console variable for switching buffer views
+	static IConsoleVariable* BufferVisTargetCV = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));
+
 	if(Mode == ESLItemScannerViewMode::Lit)
 	{
-		ApplyOriginalMaterial();
-		if(bUnlit)
+		if(PrevViewMode == ESLItemScannerViewMode::Depth || PrevViewMode == ESLItemScannerViewMode::Normal)
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Unlit)
 		{
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-			bUnlit = false;
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Mask)
+		{
+			ApplyOriginalMaterial();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+		}
+		else
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 		}
 		ViewModePostfix = "L";
+		
+		//if(bBufferVisOn)
+		//{
+		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+		//	bBufferVisOn = false;
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bBufferVisOn = false "), *FString(__func__), __LINE__);
+		//}
+		//if(bMaskMatOn)
+		//{
+		//	ApplyOriginalMaterial();
+		//	bMaskMatOn = false;
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bMaskMatOn = false "), *FString(__func__), __LINE__);
+		//}
+		//if(bUnlitOn)
+		//{
+		//	GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+		//	bUnlitOn = false;
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bUnlitOn = false "), *FString(__func__), __LINE__);
+		//}
+		//
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d \t ************** L **************"), *FString(__func__), __LINE__);
 	}
 	else if(Mode == ESLItemScannerViewMode::Unlit)
 	{
-		ApplyOriginalMaterial();
-		if(!bUnlit)
+		if(PrevViewMode == ESLItemScannerViewMode::Lit)
 		{
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
-			bUnlit = true;
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Mask)
+		{
+			ApplyOriginalMaterial();
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Depth || PrevViewMode == ESLItemScannerViewMode::Normal)
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		}
+		else
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
 		ViewModePostfix = "U";
+		
+		//if(bBufferVisOn)
+		//{
+		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+		//	bBufferVisOn = false;
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bBufferVisOn = false "), *FString(__func__), __LINE__);
+		//}
+		//if(bMaskMatOn)
+		//{
+		//	ApplyOriginalMaterial();
+		//	bMaskMatOn = false;
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bMaskMatOn = false "), *FString(__func__), __LINE__);
+		//}
+		//if(!bUnlitOn)
+		//{
+		//	GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		//	bUnlitOn = true;
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bUnlitOn = true "), *FString(__func__), __LINE__);
+		//}
+		//
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d \t ************** U ************** "), *FString(__func__), __LINE__);
 	}
 	else if(Mode == ESLItemScannerViewMode::Mask)
 	{
-		ApplyMaskMaterial();
-		if(!bUnlit)
+		if(PrevViewMode == ESLItemScannerViewMode::Unlit)
 		{
+			ApplyMaskMaterial();
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Lit)
+		{
+			ApplyMaskMaterial();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
-			bUnlit = true;
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Depth || PrevViewMode == ESLItemScannerViewMode::Normal)
+		{
+			ApplyMaskMaterial();
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		}
+		else
+		{
+			ApplyMaskMaterial();
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
 		ViewModePostfix = "M";
+		
+		//if(bBufferVisOn)
+		//{
+		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+		//	bBufferVisOn = false;
+		//}
+		//if(!bMaskMatOn)
+		//{
+		//	ApplyMaskMaterial();
+		//	bMaskMatOn = true;
+		//}
+		//if(!bUnlitOn)
+		//{
+		//	GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		//	bUnlitOn = true;
+		//}
+		//ViewModePostfix = "M";
 	}
+	else if(Mode == ESLItemScannerViewMode::Depth)
+	{
+		if(PrevViewMode == ESLItemScannerViewMode::Mask)
+		{
+			ApplyOriginalMaterial();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Unlit)
+		{
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Lit)
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Normal)
+		{
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		else
+		{
+			ApplyOriginalMaterial();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		ViewModePostfix = "D";
+
+		
+		//if(bMaskMatOn)
+		//{
+		//	ApplyOriginalMaterial();
+		//	bMaskMatOn = false;
+		//}
+		//if(!bBufferVisOn)
+		//{
+		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+		//	bBufferVisOn = true;
+		//}
+		//if(!bDepthVisOn)
+		//{
+		//	BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		//	bDepthVisOn = true;
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bUnlitOn = true "), *FString(__func__), __LINE__);
+		//}
+		//ViewModePostfix = "D";
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d \t ************** D ************** "), *FString(__func__), __LINE__);
+	}
+	else if(Mode == ESLItemScannerViewMode::Normal)
+	{
+		if(PrevViewMode == ESLItemScannerViewMode::Depth)
+		{
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Mask)
+		{
+			ApplyOriginalMaterial();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Unlit)
+		{
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		else if(PrevViewMode == ESLItemScannerViewMode::Lit)
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		else
+		{
+			ApplyOriginalMaterial();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		ViewModePostfix = "N";
+		
+		//if(bMaskMatOn)
+		//{
+		//	ApplyOriginalMaterial();
+		//	bMaskMatOn = false;
+		//}
+		//if(!bBufferVisOn)
+		//{
+		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+		//	bBufferVisOn = true;
+		//}
+		//if(bDepthVisOn)
+		//{
+		//	BufferVisTargetCV->Set(*FString("WorldNormal"));
+		//	bDepthVisOn = false;
+		//}
+		//ViewModePostfix = "N";
+	}
+
+	// Cache as previous view mode
+	PrevViewMode = Mode;
 }
 
 // Get the view mode string name
-FString USLItemScanner::GetViewModeName(ESLItemScannerViewMode Mode)
+FString USLItemScanner::GetViewModeName(ESLItemScannerViewMode Mode) const
 {
 	if(Mode == ESLItemScannerViewMode::Lit)
 	{
-		return FString("Lit");
+		return FString("Color");
 	}
 	else if(Mode == ESLItemScannerViewMode::Unlit)
 	{
@@ -673,6 +825,14 @@ FString USLItemScanner::GetViewModeName(ESLItemScannerViewMode Mode)
 	else if(Mode == ESLItemScannerViewMode::Mask)
 	{
 		return FString("Mask");
+	}
+	else if(Mode == ESLItemScannerViewMode::Depth)
+	{
+		return FString("Depth");
+	}
+	else if(Mode == ESLItemScannerViewMode::Normal)
+	{
+		return FString("Normal");
 	}
 	else
 	{
@@ -752,5 +912,41 @@ void USLItemScanner::QuitEditor()
 	if (GEngine)
 	{
 		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
+	}
+}
+
+// Generate sphere scan poses
+void USLItemScanner::GenerateSphereScanPoses(uint32 MaxNumOfPoints, float Radius, TArray<FTransform>& OutTransforms)
+{
+	// (https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf)
+	const float Area = 4 * PI / MaxNumOfPoints;
+	const float Distance = FMath::Sqrt(Area);
+
+	// Num of latitudes
+	const int32 MTheta = FMath::RoundToInt(PI/Distance);
+	const float DTheta = PI / MTheta;
+	const float DPhi = Area / DTheta;
+
+	// Iterate latitude lines
+	for (int32 M = 0; M < MTheta; M++)
+	{
+		// 0 <= Theta <= PI
+		const float Theta = PI * (float(M) + 0.5) / MTheta;
+
+		// Num of longitudes
+		const int32 MPhi = FMath::RoundToInt(2 * PI * FMath::Sin(Theta) / DPhi);
+		for (int32 N = 0; N < MPhi; N++)
+		{
+			// 0 <= Phi < 2pi 
+			const float Phi = 2 * PI * N / MPhi;
+
+			FVector Point;
+			Point.X = FMath::Sin(Theta) * FMath::Cos(Phi) * Radius;
+			Point.Y = FMath::Sin(Theta) * FMath::Sin(Phi) * Radius;
+			Point.Z = FMath::Cos(Theta) * Radius;
+			FQuat Quat = (-Point).ToOrientationQuat();
+
+			OutTransforms.Emplace(Quat, Point);
+		}
 	}
 }
