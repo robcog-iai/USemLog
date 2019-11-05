@@ -63,12 +63,21 @@ private:
 	// Disconnect and clean db connection
 	void Disconnect();
 
-	// Add a scan entry to the database
-	void AddScanEntry(const FString& Class,
-		int32 NumPixels,
-		const FVector& SphereIndex,
-		FIntPoint Resolution);
+	// Create the scan entry bson document
+	void StartScanEntry(/*Class..*/);
+	
+	// Add image to gridfs and the oid to the array doc
+	void AddImageEntry(const FString& ViewType, const TArray<uint8>& CompressedBitmap);
 
+	// Write the document to the database
+	void WriteScanEntry();
+	
+	//// Add a scan entry to the database
+	//void AddScanEntry(const FString& Class,
+	//	int32 NumPixels,
+	//	const FVector& SphereIndex,
+	//	FIntPoint Resolution);
+	
 	// Add image to gridfs
 	void AddToGridFs(const FString& ViewModeName, const TArray<uint8>& CompressedBitmap);
 
@@ -114,6 +123,15 @@ private:
 	mongoc_collection_t* collection;
 
 	// Insert scans binaries
-	mongoc_gridfs_t *gridfs;
+	mongoc_gridfs_t* gridfs;
+
+	// Scan entry doc
+	bson_t* scan_doc;
+
+	// Image scans array doc
+	bson_t* scan_img_arr_doc;
+
+	// Image scan array doc index
+	uint32_t img_arr_idx;
 #endif //SL_WITH_LIBMONGO_C
 };

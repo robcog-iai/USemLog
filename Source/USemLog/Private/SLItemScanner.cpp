@@ -70,7 +70,7 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 		}
 
 		// Spawn helper actors, load scan items and points
-		if(/*!LoadScanBoxActor() || */!LoadScanCameraPoseActor() || !LoadScanPoints() || !LoadScanItems(true))
+		if(!LoadScanCameraPoseActor() || !LoadScanPoints() || !LoadScanItems(true))
 		{
 			return;
 		}
@@ -123,6 +123,9 @@ void USLItemScanner::Start(USLMetadataLogger* InParent)
 
 		// Start the dominoes
 		RequestScreenshot();
+
+		// Create scan document
+		Parent->StartScanEntry();
 
 		bIsStarted = true;
 	}
@@ -433,6 +436,8 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 	}
 
+	Parent->AddImageEntry(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
+
 	// Item and camera in position, check for other view modes
 	if(SetupNextViewMode())
 	{
@@ -455,12 +460,16 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		// Check for next camera poses
 		if(SetupNextScanPose())
 		{
+			Parent->WriteScanEntry();
+			Parent->StartScanEntry();
 			RequestScreenshot();
 		}
 		else 
 		{
 			if(SetupNextItem())
 			{
+				Parent->WriteScanEntry();
+				Parent->StartScanEntry();
 				// If in mask mode, apply the mask material on the current item as well
 				if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
 				{

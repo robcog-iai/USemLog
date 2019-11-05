@@ -182,17 +182,9 @@ private:
 
 	// Scan items with semantic data
 	TArray<TPair<UStaticMeshComponent*, FString>> ScanItems;
-
-	// TODO
-	//// Actor duplicates with mask material (avoids switching materials, which can lead to some texture artifacts)
-	//UPROPERTY() // Avoid GC
-	//TArray<AActor*> MaskDuplicates;
-
+	
 	// View modes (lit/unlit/mask etc.)
 	TArray<ESLItemScannerViewMode> ViewModes;
-
-	// Cache the previous view mode
-	ESLItemScannerViewMode PrevViewMode;
 	
 	// Currently active view mode
 	int32 CurrViewModeIdx;
@@ -202,15 +194,20 @@ private:
 
 	// Currently scanned item index in map
 	int32 CurrItemIdx;
+	
+	// TODO
+	//// Actor duplicates with mask material (avoids switching materials, which can lead to some texture artifacts)
+	//UPROPERTY() // Avoid GC
+	//TArray<AActor*> MaskDuplicates;
+
+	// Cache the previous view mode
+	ESLItemScannerViewMode PrevViewMode;
 
 	// Scan image resolution
 	FIntPoint Resolution;
 
 	// Currently counted number of pixels of the item
 	int32 ItemPixelNum;
-
-	// Entry image data
-	//TMap<FString, const TArray<FColor>&> ScanImageData;
 
 	/* Constants */
 	// Volume limit in cubic centimeters (1000cm^3 = 1 Liter) of items to scan

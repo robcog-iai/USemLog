@@ -100,21 +100,6 @@ void USLMetadataLogger::Finish(bool bForced)
 	}
 }
 
-// Add a scan entry to the database
-void USLMetadataLogger::AddScanEntry(const FString& Class,
-		int32 NumPixels,
-		const FVector& SphereIndex,
-		FIntPoint Resolution)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Class=%s; NumPixels=%ld;"),*FString(__func__), __LINE__, *Class, NumPixels);
-}
-
-// Add image to gridfs
-void USLMetadataLogger::AddToGridFs(const FString& ViewModeName, const TArray<uint8>& CompressedBitmap)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t ViewMode=%s;"),*FString(__func__), __LINE__, *ViewModeName);
-}
-
 // Connect to the database
 bool USLMetadataLogger::Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bOverwrite)
 {
@@ -233,7 +218,61 @@ void USLMetadataLogger::Disconnect()
 	{
 		mongoc_collection_destroy(collection);
 	}
+	if(scan_doc)
+	{
+		bson_destroy(scan_doc);
+	}
 	mongoc_cleanup();
+#endif //SL_WITH_LIBMONGO_C
+}
+
+// Create the scan entry bson document
+void USLMetadataLogger::StartScanEntry()
+{
+#if SL_WITH_LIBMONGO_C
+	scan_doc = bson_new();
+	scan_img_arr_doc = bson_new();
+	img_arr_idx = 0;
+	BSON_APPEND_ARRAY_BEGIN(scan_doc, "images", scan_img_arr_doc);
+#endif //SL_WITH_LIBMONGO_C
+}
+
+// Add image to gridfs and the oid to the array doc
+void USLMetadataLogger::AddImageEntry(const FString& ViewType, const TArray<uint8>& CompressedBitmap)
+{
+#if SL_WITH_LIBMONGO_C
+	bson_t img_arr_obj;
+	char k_str[16];
+	const char *k_key;
+	
+	bson_uint32_to_string(img_arr_idx, &k_key, k_str, sizeof k_str);
+	
+	BSON_APPEND_DOCUMENT_BEGIN(scan_img_arr_doc, k_key, &img_arr_obj);
+		BSON_APPEND_UTF8(&img_arr_obj, "type", TCHAR_TO_UTF8(*ViewType));
+		//BSON_APPEND_OID(&img_arr_obj, "file_id", (const bson_oid_t*)&img_file_id);
+	bson_append_document_end(scan_img_arr_doc, &img_arr_obj);
+	
+	img_arr_idx++;
+#endif //SL_WITH_LIBMONGO_C
+}
+
+// Write the document to the database
+void USLMetadataLogger::WriteScanEntry()
+{
+#if SL_WITH_LIBMONGO_C
+	if(scan_doc && scan_img_arr_doc)
+	{
+		bson_append_array_end(scan_doc, scan_img_arr_doc);
+
+		bson_error_t error;
+		if (!mongoc_collection_insert_one(collection, scan_doc, NULL, NULL, &error))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+				*FString(__func__), __LINE__, *FString(error.message));
+		}
+		bson_destroy(scan_img_arr_doc);
+		bson_destroy(scan_doc);
+	}
 #endif //SL_WITH_LIBMONGO_C
 }
 

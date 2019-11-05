@@ -711,10 +711,10 @@ void USLVisImageWriterMongoC::AddViewsDataToDoc(const TArray<FSLVisViewData>& Vi
 			BSON_APPEND_ARRAY_BEGIN(&view_arr_obj, "images", &img_arr);
 			for (const auto& ImgData : View.ImagesData)
 			{
-				if (USLVisImageWriterMongoC::SaveImageToGridFS(ImgData, &img_file_id))
+				if (SaveImageToGridFS(ImgData, &img_file_id))
 				{
 					bson_uint32_to_string(k, &k_key, k_str, sizeof k_str);
-					BSON_APPEND_DOCUMENT_BEGIN(&img_arr, i_key, &img_arr_obj);
+					BSON_APPEND_DOCUMENT_BEGIN(&img_arr, k_key, &img_arr_obj);
 
 					BSON_APPEND_UTF8(&img_arr_obj, "type", TCHAR_TO_UTF8(*FSLVisHelper::GetRenderTypeAsString(ImgData.RenderType)));
 					BSON_APPEND_OID(&img_arr_obj, "file_id", (const bson_oid_t*)&img_file_id);
