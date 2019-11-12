@@ -180,7 +180,7 @@ private:
 	// Scan camera poses
 	TArray<FTransform> ScanPoses;
 
-	// Scan items with semantic data
+	// Scan item mesh with class name
 	TArray<TPair<UStaticMeshComponent*, FString>> ScanItems;
 	
 	// View modes (lit/unlit/mask etc.)
@@ -211,8 +211,11 @@ private:
 
 	/* Constants */
 	// Volume limit in cubic centimeters (1000cm^3 = 1 Liter) of items to scan
-	constexpr static const float VolumeLimit = 40000.f;
+	constexpr static const float VolumeLimit = 14000.f;
 
 	// Length limit of its bounding box points (cm) 
 	constexpr static const float LengthLimit = 75.f;
+
+	// Number of scans
+	constexpr static const int32 NumScanPoints = 2;
 };

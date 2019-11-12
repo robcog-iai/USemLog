@@ -121,11 +121,26 @@ void USLItemScanner::Start(USLMetadataLogger* InParent)
 		// Hide default pawn
 		GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
 
+		// Create scan document
+		Parent->InitScanEntry(ScanItems[CurrItemIdx].Value, Resolution);
+		Parent->InitScanPoseEntry(ScanPoses[CurrPoseIdx]);
+
+		//for(int32 j = 0; j < 2; j++)
+		//{
+		//	Parent->InitScanEntry("Class1", Resolution);
+		//
+		//	for(int32 i = 0; i < 15000; i++)
+		//	{
+		//		Parent->InitScanPoseEntry(FTransform::Identity);
+		//		Parent->FinishScanPoseEntry();
+		//	}
+		//
+		//	Parent->FinishScanEntry();
+		//}
+
+		
 		// Start the dominoes
 		RequestScreenshot();
-
-		// Create scan document
-		Parent->StartScanEntry();
 
 		bIsStarted = true;
 	}
@@ -136,9 +151,7 @@ void USLItemScanner::Finish()
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Finish"),
-			*FString(__func__), __LINE__);
-		
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d Finish"), *FString(__func__), __LINE__);		
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
@@ -176,7 +189,7 @@ bool USLItemScanner::LoadScanCameraPoseActor()
 // Load scanning points
 bool USLItemScanner::LoadScanPoints()
 {
-	GenerateSphereScanPoses(128, 50.f, ScanPoses);
+	GenerateSphereScanPoses(NumScanPoints, 50.f, ScanPoses);
 
 	if(ScanPoses.Num() == 0)
 	{
@@ -415,8 +428,12 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		CurrItemIdx * ScanPoses.Num() * ViewModes.Num() + CurrPoseIdx * ViewModes.Num() + CurrViewModeIdx + 1,
 		ScanItems.Num() * ScanPoses.Num() * ViewModes.Num());
 
-	// Count how many pixels does the item occupi in the image (works with view mode mask/unlit)
+	// Count how many pixels does the item occupy in the image (works with view mode mask/unlit)
 	CountItemPixelNum(Bitmap);
+	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
+	{
+		//Parent->AddImageNumPixels(ItemPixelNum);
+	}
 	
 	//// Remove const-ness from array
 	//TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap)
@@ -428,6 +445,8 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	// Add image to gridfs
 	//Parent->AddToGridFs(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 	
+
+	
 	// Save the png locally
 	if(bIncludeLocally)
 	{
@@ -436,7 +455,7 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 	}
 
-	Parent->AddImageEntry(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
+	//Parent->AddImageEntry(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 
 	// Item and camera in position, check for other view modes
 	if(SetupNextViewMode())
@@ -448,28 +467,23 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		// No other view modes, keep or set the first one
 		SetupFirstViewMode();
 
-		//// New item or camera location is being set, write the entry data
-		//Parent->AddScanEntry(ScanItems[CurrItemIdx].Value.Class,
-		//	ItemPixelNum,
-		//	ScanPoses[CurrPoseIdx].GetLocation(),
-		//	Resolution);
-
 		// New camera or image location will be set, reset the number of item pixels
 		ItemPixelNum = INDEX_NONE;
-			
+
 		// Check for next camera poses
 		if(SetupNextScanPose())
 		{
-			Parent->WriteScanEntry();
-			Parent->StartScanEntry();
+			Parent->FinishScanPoseEntry();
+			Parent->InitScanPoseEntry(ScanPoses[CurrPoseIdx]);
 			RequestScreenshot();
 		}
-		else 
+		else
 		{
+			Parent->FinishScanPoseEntry();
+			Parent->FinishScanEntry();
+			
 			if(SetupNextItem())
 			{
-				Parent->WriteScanEntry();
-				Parent->StartScanEntry();
 				// If in mask mode, apply the mask material on the current item as well
 				if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
 				{
@@ -479,6 +493,9 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 			
 				// No other scan poses found, set next item and first camera scan pose
 				SetupFirstScanPose();
+
+				Parent->InitScanEntry(ScanItems[CurrItemIdx].Value, Resolution);
+				Parent->InitScanPoseEntry(ScanPoses[CurrPoseIdx]);
 			
 				RequestScreenshot();
 			}

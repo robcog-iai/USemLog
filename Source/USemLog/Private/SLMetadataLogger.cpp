@@ -56,7 +56,7 @@ void USLMetadataLogger::Start(const FString& InTaskDescription)
 	{
 		// Create the environment and task description document
 		bson_oid_t oid;
-		bson_t* doc =  bson_new();
+		bson_t* doc = bson_new();
 
 		bson_oid_init(&oid, NULL);
 		BSON_APPEND_OID(doc, "_id", &oid);
@@ -81,6 +81,8 @@ void USLMetadataLogger::Start(const FString& InTaskDescription)
 		}
 		
 		bIsStarted = true;
+
+		bson_destroy(doc);
 	}
 }
 
@@ -218,74 +220,172 @@ void USLMetadataLogger::Disconnect()
 	{
 		mongoc_collection_destroy(collection);
 	}
-	if(scan_doc)
-	{
-		bson_destroy(scan_doc);
-	}
+	//if(scan_entry_doc)
+	//{
+	//	bson_destroy(scan_entry_doc);
+	//}
+	//if(scan_pose_arr)
+	//{
+	//	bson_destroy(scan_entry_doc);
+	//}
 	mongoc_cleanup();
 #endif //SL_WITH_LIBMONGO_C
 }
 
 // Create the scan entry bson document
-void USLMetadataLogger::StartScanEntry()
+void USLMetadataLogger::InitScanEntry(const FString& Class, FIntPoint Resolution)
 {
 #if SL_WITH_LIBMONGO_C
-	scan_doc = bson_new();
-	scan_img_arr_doc = bson_new();
-	img_arr_idx = 0;
-	BSON_APPEND_ARRAY_BEGIN(scan_doc, "images", scan_img_arr_doc);
-#endif //SL_WITH_LIBMONGO_C
-}
-
-// Add image to gridfs and the oid to the array doc
-void USLMetadataLogger::AddImageEntry(const FString& ViewType, const TArray<uint8>& CompressedBitmap)
-{
-#if SL_WITH_LIBMONGO_C
-	bson_t img_arr_obj;
-	char k_str[16];
-	const char *k_key;
-	
-	bson_uint32_to_string(img_arr_idx, &k_key, k_str, sizeof k_str);
-	
-	BSON_APPEND_DOCUMENT_BEGIN(scan_img_arr_doc, k_key, &img_arr_obj);
-		BSON_APPEND_UTF8(&img_arr_obj, "type", TCHAR_TO_UTF8(*ViewType));
-		//BSON_APPEND_OID(&img_arr_obj, "file_id", (const bson_oid_t*)&img_file_id);
-	bson_append_document_end(scan_img_arr_doc, &img_arr_obj);
-	
-	img_arr_idx++;
-#endif //SL_WITH_LIBMONGO_C
-}
-
-// Write the document to the database
-void USLMetadataLogger::WriteScanEntry()
-{
-#if SL_WITH_LIBMONGO_C
-	if(scan_doc && scan_img_arr_doc)
+	if(scan_entry_doc || scan_pose_arr)
 	{
-		bson_append_array_end(scan_doc, scan_img_arr_doc);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan entry should have been un-initialized.. aborting.."), *FString(__func__), __LINE__);
+		return;
+	}
+	scan_entry_doc = bson_new();
+	scan_pose_arr = bson_new();
+	scan_pose_arr_idx = 0;
 
+	BSON_APPEND_UTF8(scan_entry_doc, "class", TCHAR_TO_UTF8(*Class));
+
+	bson_t res_obj;
+	BSON_APPEND_DOCUMENT_BEGIN(scan_entry_doc, "res", &res_obj);
+	BSON_APPEND_INT32(&res_obj, "x", Resolution.X);
+	BSON_APPEND_INT32(&res_obj, "y", Resolution.Y);
+	bson_append_document_end(scan_entry_doc, &res_obj);
+
+	// Begin the scan camera poses array
+	BSON_APPEND_ARRAY_BEGIN(scan_entry_doc, "scans", scan_pose_arr);
+#endif //SL_WITH_LIBMONGO_C
+}
+
+// Write and clear the scan entry to the database
+void USLMetadataLogger::FinishScanEntry()
+{
+#if SL_WITH_LIBMONGO_C
+	if(scan_entry_doc && scan_pose_arr)
+	{
+		// End the scan camera poses array
+		bson_append_array_end(scan_entry_doc, scan_pose_arr);
+
+		// Write entry to the collection
 		bson_error_t error;
-		if (!mongoc_collection_insert_one(collection, scan_doc, NULL, NULL, &error))
+		if (!mongoc_collection_insert_one(collection, scan_entry_doc, NULL, NULL, &error))
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
 				*FString(__func__), __LINE__, *FString(error.message));
 		}
-		bson_destroy(scan_img_arr_doc);
-		bson_destroy(scan_doc);
+		bson_clear(&scan_pose_arr);
+		bson_clear(&scan_entry_doc);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan entry NOT initialized.. aborting.."), *FString(__func__), __LINE__);
 	}
 #endif //SL_WITH_LIBMONGO_C
 }
 
+// Create the camera pose location entry (it will contain the rendered images at the given camera pose)
+void USLMetadataLogger::InitScanPoseEntry(const FTransform& Pose)
+{
+#if SL_WITH_LIBMONGO_C
+	if(scan_pose_doc /*|| scan_img_arr*/)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry should have been un-initialized.. aborting.."), *FString(__func__), __LINE__);
+		return;
+	}
+	
+	if(scan_pose_arr)
+	{
+		scan_pose_doc = bson_new();
+
+		char i_str[16];
+		const char *i_key;
+
+		bson_uint32_to_string(scan_pose_arr_idx, &i_key, i_str, sizeof i_str);
+		BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, i_key, scan_pose_doc);
+
+		AddPoseChild(Pose.GetLocation(), Pose.GetRotation(), scan_pose_doc);
+
+	//	//scan_img_arr = bson_new();
+	//	//scan_img_arr_idx = 0;
+
+	//	// Begin the scan images array
+	//	//BSON_APPEND_ARRAY_BEGIN(scan_pose_doc, "images", scan_img_arr);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose array NOT initialized.. aborting.."), *FString(__func__), __LINE__);
+		return;
+	}
+#endif //SL_WITH_LIBMONGO_C
+}
+
+// Add pose entry to the scan entry document
+void USLMetadataLogger::FinishScanPoseEntry()
+{
+#if SL_WITH_LIBMONGO_C
+	if(scan_pose_doc && scan_pose_arr /*&& scan_img_arr*/)
+	{
+		bson_append_document_end(scan_pose_arr, scan_pose_doc);
+		bson_clear(&scan_pose_doc);
+		scan_pose_arr_idx++;
+	}
+	
+	
+	//if(scan_pose_doc && scan_pose_arr /*&& scan_img_arr*/)
+	//{
+	//	// End the scan images array
+	//	//bson_append_array_end(scan_pose_arr, scan_img_arr);
+	//	
+	//	bson_append_document_end(scan_pose_arr, scan_pose_doc);
+		
+
+	//	bson_destroy(scan_pose_doc);
+	//	//bson_destroy(scan_img_arr);
+	//}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry NOT initialized.. aborting.."), *FString(__func__), __LINE__);
+	}
+#endif //SL_WITH_LIBMONGO_C
+}
+
+// Add the scanned image number of pixels to the pose entry
+void USLMetadataLogger::AddImageNumPixels(int32 NumPixels)
+{
+#if SL_WITH_LIBMONGO_C
+	//BSON_APPEND_INT32(doc, "num_pixels", NumPixels);
+#endif //SL_WITH_LIBMONGO_C
+}
+
+// Add scan image to the scan entry (raw data to the gridfs and the pointer in the scan entry)
+void USLMetadataLogger::AddImageEntry(const FString& ViewType, const TArray<uint8>& CompressedBitmap)
+{
+#if SL_WITH_LIBMONGO_C
+	//bson_t img_arr_obj;
+	//char k_str[16];
+	//const char *k_key;
+	//
+	//bson_uint32_to_string(scan_pose_arr_idx, &k_key, k_str, sizeof k_str);
+	//
+	//BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, k_key, &img_arr_obj);
+	//	BSON_APPEND_UTF8(&img_arr_obj, "type", TCHAR_TO_UTF8(*ViewType));
+	//	//BSON_APPEND_OID(&img_arr_obj, "file_id", (const bson_oid_t*)&img_file_id);
+	//bson_append_document_end(scan_pose_arr, &img_arr_obj);
+	//
+	//scan_pose_arr_idx++;
+#endif //SL_WITH_LIBMONGO_C
+}
 
 #if SL_WITH_LIBMONGO_C
 // Write the task description to the document
-void USLMetadataLogger::AddTaskDescription(const FString& InTaskDescription, bson_t* in_doc)
+void USLMetadataLogger::AddTaskDescription(const FString& InTaskDescription, bson_t* doc)
 {
-	BSON_APPEND_UTF8(in_doc, "task_description", TCHAR_TO_UTF8(*InTaskDescription));
+	BSON_APPEND_UTF8(doc, "task_description", TCHAR_TO_UTF8(*InTaskDescription));
 }
 
 // Write the environment data
-void USLMetadataLogger::AddEnvironmentData(bson_t* in_doc)
+void USLMetadataLogger::AddEnvironmentData(bson_t* doc)
 {
 	bson_t arr;
 	bson_t sk_arr;
@@ -295,7 +395,7 @@ void USLMetadataLogger::AddEnvironmentData(bson_t* in_doc)
 	uint32_t idx = 0;
 
 	// Add entities to array
-	BSON_APPEND_ARRAY_BEGIN(in_doc, "entities", &arr);
+	BSON_APPEND_ARRAY_BEGIN(doc, "entities", &arr);
 	// Iterate non skeletal semantic entities
 	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
 	{
@@ -338,10 +438,10 @@ void USLMetadataLogger::AddEnvironmentData(bson_t* in_doc)
 		bson_append_document_end(&arr, &arr_obj);
 		idx++;
 	}
-	bson_append_array_end(in_doc, &arr);
+	bson_append_array_end(doc, &arr);
 
 	// Add skel entities to array
-	BSON_APPEND_ARRAY_BEGIN(in_doc, "skel_entities", &sk_arr);
+	BSON_APPEND_ARRAY_BEGIN(doc, "skel_entities", &sk_arr);
 	// Reset array index
 	idx=0;
 	// Iterate skeletal semantic entities
@@ -418,11 +518,11 @@ void USLMetadataLogger::AddEnvironmentData(bson_t* in_doc)
 		bson_append_document_end(&sk_arr, &arr_obj);
 		idx++;
 	}
-	bson_append_array_end(in_doc, &sk_arr);
+	bson_append_array_end(doc, &sk_arr);
 }
 
 // Add camera views
-void USLMetadataLogger::AddCameraViews(bson_t* in_doc)
+void USLMetadataLogger::AddCameraViews(bson_t* doc)
 {
 	bson_t arr;
 	bson_t arr_obj;
@@ -431,7 +531,7 @@ void USLMetadataLogger::AddCameraViews(bson_t* in_doc)
 	uint32_t idx = 0;
 
 	// Add entities to array
-	BSON_APPEND_ARRAY_BEGIN(in_doc, "camera_views", &arr);
+	BSON_APPEND_ARRAY_BEGIN(doc, "camera_views", &arr);
 
 	// Iterate non skeletal semantic entities
 	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetCameraViewsSemanticData())
@@ -469,11 +569,11 @@ void USLMetadataLogger::AddCameraViews(bson_t* in_doc)
 		idx++;
 	}
 
-	bson_append_array_end(in_doc, &arr);
+	bson_append_array_end(doc, &arr);
 }
 
 // Add pose to document
-void USLMetadataLogger::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc)
+void USLMetadataLogger::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* doc)
 {
 	// Switch to right handed ROS transformation
 	const FVector ROSLoc = FConversions::UToROS(InLoc);
@@ -482,17 +582,17 @@ void USLMetadataLogger::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, 
 	bson_t child_obj_loc;
 	bson_t child_obj_rot;
 
-	BSON_APPEND_DOCUMENT_BEGIN(out_doc, "loc", &child_obj_loc);
+	BSON_APPEND_DOCUMENT_BEGIN(doc, "loc", &child_obj_loc);
 	BSON_APPEND_DOUBLE(&child_obj_loc, "x", ROSLoc.X);
 	BSON_APPEND_DOUBLE(&child_obj_loc, "y", ROSLoc.Y);
 	BSON_APPEND_DOUBLE(&child_obj_loc, "z", ROSLoc.Z);
-	bson_append_document_end(out_doc, &child_obj_loc);
+	bson_append_document_end(doc, &child_obj_loc);
 
-	BSON_APPEND_DOCUMENT_BEGIN(out_doc, "rot", &child_obj_rot);
+	BSON_APPEND_DOCUMENT_BEGIN(doc, "rot", &child_obj_rot);
 	BSON_APPEND_DOUBLE(&child_obj_rot, "x", ROSQuat.X);
 	BSON_APPEND_DOUBLE(&child_obj_rot, "y", ROSQuat.Y);
 	BSON_APPEND_DOUBLE(&child_obj_rot, "z", ROSQuat.Z);
 	BSON_APPEND_DOUBLE(&child_obj_rot, "w", ROSQuat.W);
-	bson_append_document_end(out_doc, &child_obj_rot);
+	bson_append_document_end(doc, &child_obj_rot);
 }
 #endif //SL_WITH_LIBMONGO_C

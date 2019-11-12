@@ -63,14 +63,23 @@ private:
 	// Disconnect and clean db connection
 	void Disconnect();
 
-	// Create the scan entry bson document
-	void StartScanEntry(/*Class..*/);
-	
-	// Add image to gridfs and the oid to the array doc
-	void AddImageEntry(const FString& ViewType, const TArray<uint8>& CompressedBitmap);
+	// Create the scan entry bson document (a scan entry contains all the scan images of a given class)
+	void InitScanEntry(const FString& Class, FIntPoint Resolution);
 
-	// Write the document to the database
-	void WriteScanEntry();
+	// Write and clear the scan entry to the database
+	void FinishScanEntry();
+
+	// Create the camera pose location entry (it will contain the rendered images at the given camera pose)
+	void InitScanPoseEntry(const FTransform& Pose);
+
+	// Add pose entry to the scan entry document
+	void FinishScanPoseEntry();
+
+	// Add number of pixels to doc
+	void AddImageNumPixels(int32 NumPixels);
+	
+	// Add scan image to the scan entry (raw data to the gridfs and the pointer in the scan entry)
+	void AddImageEntry(const FString& ViewType, const TArray<uint8>& CompressedBitmap);
 	
 	//// Add a scan entry to the database
 	//void AddScanEntry(const FString& Class,
@@ -83,16 +92,16 @@ private:
 
 #if SL_WITH_LIBMONGO_C
 	// Write the task description
-	void AddTaskDescription(const FString& InTaskDescription, bson_t* in_doc);
+	void AddTaskDescription(const FString& InTaskDescription, bson_t* doc);
 
 	// Add the environment data (skeletal and non-skeletal entities)
-	void AddEnvironmentData(bson_t* in_doc);
+	void AddEnvironmentData(bson_t* doc);
 
 	// Add the existing camera views
-	void AddCameraViews(bson_t* in_doc);
+	void AddCameraViews(bson_t* doc);
 
 	// Add pose to document
-	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc);
+	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* doc);
 #endif //SL_WITH_LIBMONGO_C
 	
 private:
@@ -125,13 +134,22 @@ private:
 	// Insert scans binaries
 	mongoc_gridfs_t* gridfs;
 
-	// Scan entry doc
-	bson_t* scan_doc;
+	// Scan entry doc (holds all the scanned images of the given class)
+	bson_t* scan_entry_doc;
 
-	// Image scans array doc
-	bson_t* scan_img_arr_doc;
+	// Scan pose array (holds the array of image types and the pose of the camera)
+	bson_t* scan_pose_arr;
 
 	// Image scan array doc index
-	uint32_t img_arr_idx;
+	uint32_t scan_pose_arr_idx;
+
+	//// Scan pose obj doc (will be added to the array)
+	bson_t* scan_pose_doc;
+
+	//// Holds the variously rendered scanned images
+	//bson_t* scan_img_arr;
+
+	//// Image scan array doc index
+	//uint32_t scan_img_arr_idx;
 #endif //SL_WITH_LIBMONGO_C
 };
