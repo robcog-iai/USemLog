@@ -264,39 +264,39 @@ void USLMetadataLogger::StartScanEntry(const FString& Class, FIntPoint Resolutio
 void USLMetadataLogger::StartScanPoseEntry(const FTransform& Pose)
 {
 #if SL_WITH_LIBMONGO_C
-	if(scan_pose_doc || scan_img_arr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry should have been un-initialized.. aborting.."), *FString(__func__), __LINE__);
-		return;
-	}
-	
-	if(scan_pose_arr)
-	{
-		scan_pose_doc = bson_new();
-		scan_img_arr = bson_new();
-		scan_img_arr_idx = 0;
-		
-		char key_str[16];
-		const char *key;
-		bson_uint32_to_string(scan_pose_arr_idx, &key, key_str, sizeof key_str);
-/*
- *	* <-- BEGIN "scan" array entry -->
- */		
-		BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, key, scan_pose_doc);
-
-		AddPoseChild(Pose.GetLocation(), Pose.GetRotation(), scan_pose_doc);
-
-/*
- *	*	* <-- BEGIN "images" array -->
- */
-		BSON_APPEND_ARRAY_BEGIN(scan_pose_doc, "images", scan_img_arr);
-
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose array NOT initialized.. aborting.."), *FString(__func__), __LINE__);
-		return;
-	}
+//	if(scan_pose_doc || scan_img_arr)
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry should have been un-initialized.. aborting.."), *FString(__func__), __LINE__);
+//		return;
+//	}
+//	
+//	if(scan_pose_arr)
+//	{
+//		scan_pose_doc = bson_new();
+//		scan_img_arr = bson_new();
+//		scan_img_arr_idx = 0;
+//		
+//		char key_str[16];
+//		const char *key;
+//		bson_uint32_to_string(scan_pose_arr_idx, &key, key_str, sizeof key_str);
+///*
+// *	* <-- BEGIN "scan" array entry -->
+// */		
+//		BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, key, scan_pose_doc);
+//
+//		AddPoseChild(Pose.GetLocation(), Pose.GetRotation(), scan_pose_doc);
+//
+///*
+// *	*	* <-- BEGIN "images" array -->
+// */
+//		BSON_APPEND_ARRAY_BEGIN(scan_pose_doc, "images", scan_img_arr);
+//
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose array NOT initialized.. aborting.."), *FString(__func__), __LINE__);
+//		return;
+//	}
 #endif //SL_WITH_LIBMONGO_C
 }
 
@@ -304,14 +304,14 @@ void USLMetadataLogger::StartScanPoseEntry(const FTransform& Pose)
 void USLMetadataLogger::AddNumPixels(int32 NumPixels)
 {
 #if SL_WITH_LIBMONGO_C
-	if(scan_pose_doc)
-	{
-		BSON_APPEND_INT32(scan_pose_doc, "num_pixels", NumPixels);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry NOT initialized.. aborting.."), *FString(__func__), __LINE__);
-	}
+	//if(scan_pose_doc)
+	//{
+	//	BSON_APPEND_INT32(scan_pose_doc, "num_pixels", NumPixels);
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry NOT initialized.. aborting.."), *FString(__func__), __LINE__);
+	//}
 #endif //SL_WITH_LIBMONGO_C
 }
 
@@ -319,29 +319,28 @@ void USLMetadataLogger::AddNumPixels(int32 NumPixels)
 void USLMetadataLogger::AddImageEntry(const FString& ViewType, const TArray<uint8>& CompressedBitmap)
 {
 #if SL_WITH_LIBMONGO_C
-	if(scan_img_arr)
-	{
-		bson_t img_arr_obj;
-		bson_oid_t file_oid;
-	
-		char key_str[16];
-		const char *key;
+	//if(scan_img_arr)
+	//{
+	//	bson_t img_arr_obj;
+	//	bson_oid_t file_oid;
+	//
+	//	char key_str[16];
+	//	const char *key;
 
-		AddToGridFs(CompressedBitmap, &file_oid);
-	
-		bson_uint32_to_string(scan_img_arr_idx, &key, key_str, sizeof key_str);
-		
-		BSON_APPEND_DOCUMENT_BEGIN(scan_img_arr, key, &img_arr_obj);
-			BSON_APPEND_UTF8(&img_arr_obj, "type", TCHAR_TO_UTF8(*ViewType));
-			BSON_APPEND_OID(&img_arr_obj, "file_id", (const bson_oid_t*)&file_oid);
-		bson_append_document_end(scan_img_arr, &img_arr_obj);
-		scan_img_arr_idx++;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan iumage array NOT initialized.. aborting.."), *FString(__func__), __LINE__);
-	}
-
+	//	AddToGridFs(CompressedBitmap, &file_oid);
+	//
+	//	bson_uint32_to_string(scan_img_arr_idx, &key, key_str, sizeof key_str);
+	//	
+	//	BSON_APPEND_DOCUMENT_BEGIN(scan_img_arr, key, &img_arr_obj);
+	//		BSON_APPEND_UTF8(&img_arr_obj, "type", TCHAR_TO_UTF8(*ViewType));
+	//		BSON_APPEND_OID(&img_arr_obj, "file_id", (const bson_oid_t*)&file_oid);
+	//	bson_append_document_end(scan_img_arr, &img_arr_obj);
+	//	scan_img_arr_idx++;
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Scan iumage array NOT initialized.. aborting.."), *FString(__func__), __LINE__);
+	//}
 #endif //SL_WITH_LIBMONGO_C
 }
 
@@ -355,8 +354,8 @@ void USLMetadataLogger::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 		return;
 	}
 
-	bson_t scan_pose_doc2;
-	bson_t scan_img_arr2;
+	bson_t scan_pose_doc;
+	bson_t scan_img_arr;
 	bson_t scan_img_arr_obj;
 	bson_oid_t file_oid;
 
@@ -368,27 +367,27 @@ void USLMetadataLogger::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 	const char *img_key;
 
 	bson_uint32_to_string(scan_pose_arr_idx, &pose_key, pose_key_str, sizeof pose_key_str);
-	BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, pose_key, &scan_pose_doc2);
-	
-		BSON_APPEND_INT32(&scan_pose_doc2, "num_pixels", ScanPoseData.NumPixels);
-	
-		AddPoseChild(ScanPoseData.Pose.GetLocation(), ScanPoseData.Pose.GetRotation(), &scan_pose_doc2);
-	
-		AddImgBBChild(ScanPoseData.BBMin, ScanPoseData.BBMax, &scan_pose_doc2);
-	
-		BSON_APPEND_ARRAY_BEGIN(&scan_pose_doc2, "images", &scan_img_arr2);
+	BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, pose_key, &scan_pose_doc);
+
+		BSON_APPEND_INT32(&scan_pose_doc, "num_pixels", ScanPoseData.NumPixels);
+		AddPoseChild(ScanPoseData.Pose.GetLocation(), ScanPoseData.Pose.GetRotation(), &scan_pose_doc);
+		AddImgBBChild(ScanPoseData.BBMin, ScanPoseData.BBMax, &scan_pose_doc);
+
+		// "images" array containing the pointer to the gridfs file and the rendering type
+		BSON_APPEND_ARRAY_BEGIN(&scan_pose_doc, "images", &scan_img_arr);
 		for(const auto& Pair : ScanPoseData.Images)
 		{
 			AddToGridFs(Pair.Value, &file_oid);
 			bson_uint32_to_string(img_arr_idx, &img_key, img_key_str, sizeof img_key_str);
-			BSON_APPEND_DOCUMENT_BEGIN(&scan_img_arr2, img_key, &scan_img_arr_obj);
+			BSON_APPEND_DOCUMENT_BEGIN(&scan_img_arr, img_key, &scan_img_arr_obj);
 				BSON_APPEND_UTF8(&scan_img_arr_obj, "type", TCHAR_TO_UTF8(*Pair.Key));
 				BSON_APPEND_OID(&scan_img_arr_obj, "file_id", (const bson_oid_t*)&file_oid);
-			bson_append_document_end(&scan_img_arr2, &scan_img_arr_obj);
+			bson_append_document_end(&scan_img_arr, &scan_img_arr_obj);
 			img_arr_idx++;
 		}
-		bson_append_array_end(&scan_pose_doc2, &scan_img_arr2);
-	bson_append_document_end(scan_pose_arr,&scan_pose_doc2);
+		bson_append_array_end(&scan_pose_doc, &scan_img_arr);
+	
+	bson_append_document_end(scan_pose_arr,&scan_pose_doc);
 	scan_pose_arr_idx++;
 	
 #endif //SL_WITH_LIBMONGO_C
@@ -398,30 +397,29 @@ void USLMetadataLogger::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 void USLMetadataLogger::FinishScanPoseEntry()
 {
 #if SL_WITH_LIBMONGO_C
-	if(scan_pose_doc && scan_img_arr)
-	{
-		//bson_append_array_end(scan_pose_doc, scan_img_arr);
-		bson_append_array_end(scan_pose_doc, scan_img_arr);
-/*
- *	*	* <-- END "images" array -->
- */
-
-		bson_append_document_end(scan_pose_arr, scan_pose_doc);
-/*
- *	* <-- END "scan" array entry -->
- */		
-		scan_pose_arr_idx++;
-
-		bson_clear(&scan_img_arr);
-		bson_clear(&scan_pose_doc);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry NOT initialized.. aborting.."), *FString(__func__), __LINE__);
-	}
+//	if(scan_pose_doc && scan_img_arr)
+//	{
+//		//bson_append_array_end(scan_pose_doc, scan_img_arr);
+//		bson_append_array_end(scan_pose_doc, scan_img_arr);
+///*
+// *	*	* <-- END "images" array -->
+// */
+//
+//		bson_append_document_end(scan_pose_arr, scan_pose_doc);
+///*
+// *	* <-- END "scan" array entry -->
+// */		
+//		scan_pose_arr_idx++;
+//
+//		bson_clear(&scan_img_arr);
+//		bson_clear(&scan_pose_doc);
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry NOT initialized.. aborting.."), *FString(__func__), __LINE__);
+//	}
 #endif //SL_WITH_LIBMONGO_C
 }
-
 
 // Write and clear the scan entry to the database
 void USLMetadataLogger::FinishScanEntry()
@@ -451,7 +449,6 @@ void USLMetadataLogger::FinishScanEntry()
 	}
 #endif //SL_WITH_LIBMONGO_C
 }
-
 
 #if SL_WITH_LIBMONGO_C
 // Add image to gridfs, output the oid

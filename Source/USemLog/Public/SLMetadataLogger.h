@@ -144,12 +144,12 @@ private:
 	uint32_t scan_pose_arr_idx;
 
 	// Scan pose obj doc (will be added to the array)
-	bson_t* scan_pose_doc;
+	//bson_t* scan_pose_doc;
 
 	// Holds the variously rendered images from the same camera position
-	bson_t* scan_img_arr;
+	//bson_t* scan_img_arr;
 
 	// Image scan array doc index
-	uint32_t scan_img_arr_idx;
+	//uint32_t scan_img_arr_idx;
 #endif //SL_WITH_LIBMONGO_C
 };
