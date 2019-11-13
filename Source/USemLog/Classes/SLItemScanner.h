@@ -21,12 +21,34 @@ UENUM()
 enum class ESLItemScannerViewMode : uint8
 {
 	NONE					UMETA(DisplayName = "None"),
-	Lit						UMETA(DisplayName = "Color (lit)"),
-	Unlit					UMETA(DisplayName = "Color (unlit)"),
+	Lit						UMETA(DisplayName = "Color"),
+	Unlit					UMETA(DisplayName = "Unlit"),
 	Mask					UMETA(DisplayName = "Mask"),
 	Depth					UMETA(DisplayName = "Depth"),
 	Normal					UMETA(DisplayName = "Normal"),
 };
+
+/**
+ * One camera position scan data (number of pixels, rendered images array, object image bounds)
+ */
+struct FSLScanPoseData
+{
+	// Number of pixels occupied by the item in the image
+	int32 NumPixels;
+
+	// The min bounds coordinates of the image
+	FIntPoint BBMin;
+
+	// The max bounds coordinates of the image
+	FIntPoint BBMax;
+
+	// Camera pose
+	FTransform Pose;
+
+	// Array of image data pair, render type name to binary data
+	TArray<TPair<FString, TArray<uint8>>> Images;
+};
+
 
 /**
  * Scans handheld items by taking images from unidistributed points form a sphere as a camera location
@@ -106,8 +128,11 @@ private:
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
 	// Count the number of pixels the item represents in the image;
-	void CountItemPixelNum(const TArray<FColor>& Bitmap);
-	
+	void CountItemPixelNumWithCheck(const TArray<FColor>& Bitmap);
+
+	// Get the number of pixels that the item occupies in the image
+	int32 GetItemPixelNum(const TArray<FColor>& Bitmap);
+
 	// Get the number of pixels of the given color in the image
 	int32 GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor& Color) const;
 	
@@ -147,6 +172,9 @@ private:
 
 	// Set when finished
 	bool bIsFinished;
+
+	// Contains the data of the current scan in a given camera pose
+	FSLScanPoseData ScanPoseData;
 
 	// Flag to save the scanned images locally as well
 	bool bIncludeLocally;

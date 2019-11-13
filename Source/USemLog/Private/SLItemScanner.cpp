@@ -122,16 +122,20 @@ void USLItemScanner::Start(USLMetadataLogger* InParent)
 		GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
 
 		// Create scan document
-		Parent->InitScanEntry(ScanItems[CurrItemIdx].Value, Resolution);
-		Parent->InitScanPoseEntry(ScanPoses[CurrPoseIdx]);
-
+		Parent->StartScanEntry(ScanItems[CurrItemIdx].Value, Resolution);
+		//Parent->StartScanPoseEntry(ScanPoses[CurrPoseIdx]);
+		ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
+		
 		//for(int32 j = 0; j < 2; j++)
 		//{
-		//	Parent->InitScanEntry("Class1", Resolution);
+		//	Parent->StartScanEntry("Class1", Resolution);
 		//
-		//	for(int32 i = 0; i < 15000; i++)
+		//	for(int32 i = 0; i < 2; i++)
 		//	{
-		//		Parent->InitScanPoseEntry(FTransform::Identity);
+		//		Parent->StartScanPoseEntry(FTransform::Identity);
+		//		//Parent->AddNumPixels(12);
+		//		Parent->AddImageEntry("Mask", TArray<uint8>());
+		//		Parent->AddImageEntry("UnMask", TArray<uint8>());
 		//		Parent->FinishScanPoseEntry();
 		//	}
 		//
@@ -428,11 +432,14 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		CurrItemIdx * ScanPoses.Num() * ViewModes.Num() + CurrPoseIdx * ViewModes.Num() + CurrViewModeIdx + 1,
 		ScanItems.Num() * ScanPoses.Num() * ViewModes.Num());
 
-	// Count how many pixels does the item occupy in the image (works with view mode mask/unlit)
-	CountItemPixelNum(Bitmap);
+	// Count and check how many pixels does the item occupy in the image (works with view mode mask/unlit)
+	//CountItemPixelNumWithCheck(Bitmap);
+
+	// Add the number of pixels that the item occpies to the doc
 	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
 	{
-		//Parent->AddImageNumPixels(ItemPixelNum);
+		//Parent->AddNumPixels(GetItemPixelNum(Bitmap));
+		ScanPoseData.NumPixels = GetItemPixelNum(Bitmap);
 	}
 	
 	//// Remove const-ness from array
@@ -443,10 +450,9 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
 
 	// Add image to gridfs
-	//Parent->AddToGridFs(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
-	
+	//Parent->AddImageEntry(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
+	ScanPoseData.Images.Emplace(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 
-	
 	// Save the png locally
 	if(bIncludeLocally)
 	{
@@ -473,13 +479,18 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		// Check for next camera poses
 		if(SetupNextScanPose())
 		{
-			Parent->FinishScanPoseEntry();
-			Parent->InitScanPoseEntry(ScanPoses[CurrPoseIdx]);
+			//Parent->FinishScanPoseEntry();
+			//Parent->StartScanPoseEntry(ScanPoses[CurrPoseIdx]);
+			Parent->AddScanPoseEntry(ScanPoseData);
+			ScanPoseData.Images.Empty();
+			ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
 			RequestScreenshot();
 		}
 		else
 		{
-			Parent->FinishScanPoseEntry();
+			//Parent->FinishScanPoseEntry();
+			Parent->AddScanPoseEntry(ScanPoseData);
+			ScanPoseData.Images.Empty();
 			Parent->FinishScanEntry();
 			
 			if(SetupNextItem())
@@ -494,9 +505,10 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 				// No other scan poses found, set next item and first camera scan pose
 				SetupFirstScanPose();
 
-				Parent->InitScanEntry(ScanItems[CurrItemIdx].Value, Resolution);
-				Parent->InitScanPoseEntry(ScanPoses[CurrPoseIdx]);
-			
+				Parent->StartScanEntry(ScanItems[CurrItemIdx].Value, Resolution);
+				//Parent->StartScanPoseEntry(ScanPoses[CurrPoseIdx]);
+				ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
+				
 				RequestScreenshot();
 			}
 			else
@@ -511,7 +523,7 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 }
 
 // Count (and check) the number of pixels the item uses in the image
-void USLItemScanner::CountItemPixelNum(const TArray<FColor>& Bitmap)
+void USLItemScanner::CountItemPixelNumWithCheck(const TArray<FColor>& Bitmap)
 {
 	// Count pixel colors
 	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
@@ -554,6 +566,20 @@ void USLItemScanner::CountItemPixelNum(const TArray<FColor>& Bitmap)
 					*FString(__func__), __LINE__, PrevItemPixelNum, ItemPixelNum);
 			}
 		}
+	}
+}
+
+// Get the number of pixels that the item occupies in the image
+int32 USLItemScanner::GetItemPixelNum(const TArray<FColor>& Bitmap)
+{
+	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
+	{
+		return GetColorPixelNum(Bitmap, FColor::White);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Only works in Mask mode, returning -1"), *FString(__func__));
+		return INDEX_NONE;
 	}
 }
 
