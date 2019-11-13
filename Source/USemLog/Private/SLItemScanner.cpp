@@ -123,26 +123,8 @@ void USLItemScanner::Start(USLMetadataLogger* InParent)
 
 		// Create scan document
 		Parent->StartScanEntry(ScanItems[CurrItemIdx].Value, Resolution);
-		//Parent->StartScanPoseEntry(ScanPoses[CurrPoseIdx]);
 		ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
-		
-		//for(int32 j = 0; j < 2; j++)
-		//{
-		//	Parent->StartScanEntry("Class1", Resolution);
-		//
-		//	for(int32 i = 0; i < 2; i++)
-		//	{
-		//		Parent->StartScanPoseEntry(FTransform::Identity);
-		//		//Parent->AddNumPixels(12);
-		//		Parent->AddImageEntry("Mask", TArray<uint8>());
-		//		Parent->AddImageEntry("UnMask", TArray<uint8>());
-		//		Parent->FinishScanPoseEntry();
-		//	}
-		//
-		//	Parent->FinishScanEntry();
-		//}
 
-		
 		// Start the dominoes
 		RequestScreenshot();
 
@@ -435,10 +417,9 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	// Count and check how many pixels does the item occupy in the image (works with view mode mask/unlit)
 	//CountItemPixelNumWithCheck(Bitmap);
 
-	// Add the number of pixels that the item occpies to the doc
+	// Add the number of pixels that the item occupies to the doc
 	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
 	{
-		//Parent->AddNumPixels(GetItemPixelNum(Bitmap));
 		ScanPoseData.NumPixels = GetItemPixelNum(Bitmap);
 	}
 	
@@ -450,7 +431,6 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
 
 	// Add image to gridfs
-	//Parent->AddImageEntry(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 	ScanPoseData.Images.Emplace(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 
 	// Save the png locally
@@ -460,8 +440,6 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		FPaths::RemoveDuplicateSlashes(Path);
 		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 	}
-
-	//Parent->AddImageEntry(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 
 	// Item and camera in position, check for other view modes
 	if(SetupNextViewMode())
@@ -479,16 +457,14 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		// Check for next camera poses
 		if(SetupNextScanPose())
 		{
-			//Parent->FinishScanPoseEntry();
-			//Parent->StartScanPoseEntry(ScanPoses[CurrPoseIdx]);
 			Parent->AddScanPoseEntry(ScanPoseData);
 			ScanPoseData.Images.Empty();
 			ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
+			
 			RequestScreenshot();
 		}
 		else
 		{
-			//Parent->FinishScanPoseEntry();
 			Parent->AddScanPoseEntry(ScanPoseData);
 			ScanPoseData.Images.Empty();
 			Parent->FinishScanEntry();
@@ -506,7 +482,6 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 				SetupFirstScanPose();
 
 				Parent->StartScanEntry(ScanItems[CurrItemIdx].Value, Resolution);
-				//Parent->StartScanPoseEntry(ScanPoses[CurrPoseIdx]);
 				ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
 				
 				RequestScreenshot();

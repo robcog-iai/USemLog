@@ -260,90 +260,6 @@ void USLMetadataLogger::StartScanEntry(const FString& Class, FIntPoint Resolutio
 #endif //SL_WITH_LIBMONGO_C
 }
 
-// Create the camera pose location entry (it will contain the rendered images at the given camera pose)
-void USLMetadataLogger::StartScanPoseEntry(const FTransform& Pose)
-{
-#if SL_WITH_LIBMONGO_C
-//	if(scan_pose_doc || scan_img_arr)
-//	{
-//		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry should have been un-initialized.. aborting.."), *FString(__func__), __LINE__);
-//		return;
-//	}
-//	
-//	if(scan_pose_arr)
-//	{
-//		scan_pose_doc = bson_new();
-//		scan_img_arr = bson_new();
-//		scan_img_arr_idx = 0;
-//		
-//		char key_str[16];
-//		const char *key;
-//		bson_uint32_to_string(scan_pose_arr_idx, &key, key_str, sizeof key_str);
-///*
-// *	* <-- BEGIN "scan" array entry -->
-// */		
-//		BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, key, scan_pose_doc);
-//
-//		AddPoseChild(Pose.GetLocation(), Pose.GetRotation(), scan_pose_doc);
-//
-///*
-// *	*	* <-- BEGIN "images" array -->
-// */
-//		BSON_APPEND_ARRAY_BEGIN(scan_pose_doc, "images", scan_img_arr);
-//
-//	}
-//	else
-//	{
-//		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose array NOT initialized.. aborting.."), *FString(__func__), __LINE__);
-//		return;
-//	}
-#endif //SL_WITH_LIBMONGO_C
-}
-
-// Add the number of pixels the scanned objects has in the image
-void USLMetadataLogger::AddNumPixels(int32 NumPixels)
-{
-#if SL_WITH_LIBMONGO_C
-	//if(scan_pose_doc)
-	//{
-	//	BSON_APPEND_INT32(scan_pose_doc, "num_pixels", NumPixels);
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry NOT initialized.. aborting.."), *FString(__func__), __LINE__);
-	//}
-#endif //SL_WITH_LIBMONGO_C
-}
-
-// Add image to gridfs, update the image array entry with the oid of the file
-void USLMetadataLogger::AddImageEntry(const FString& ViewType, const TArray<uint8>& CompressedBitmap)
-{
-#if SL_WITH_LIBMONGO_C
-	//if(scan_img_arr)
-	//{
-	//	bson_t img_arr_obj;
-	//	bson_oid_t file_oid;
-	//
-	//	char key_str[16];
-	//	const char *key;
-
-	//	AddToGridFs(CompressedBitmap, &file_oid);
-	//
-	//	bson_uint32_to_string(scan_img_arr_idx, &key, key_str, sizeof key_str);
-	//	
-	//	BSON_APPEND_DOCUMENT_BEGIN(scan_img_arr, key, &img_arr_obj);
-	//		BSON_APPEND_UTF8(&img_arr_obj, "type", TCHAR_TO_UTF8(*ViewType));
-	//		BSON_APPEND_OID(&img_arr_obj, "file_id", (const bson_oid_t*)&file_oid);
-	//	bson_append_document_end(scan_img_arr, &img_arr_obj);
-	//	scan_img_arr_idx++;
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Scan iumage array NOT initialized.. aborting.."), *FString(__func__), __LINE__);
-	//}
-#endif //SL_WITH_LIBMONGO_C
-}
-
 // Add pose scan data
 void USLMetadataLogger::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 {
@@ -390,34 +306,6 @@ void USLMetadataLogger::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 	bson_append_document_end(scan_pose_arr,&scan_pose_doc);
 	scan_pose_arr_idx++;
 	
-#endif //SL_WITH_LIBMONGO_C
-}
-
-// Add pose entry to the scan entry document
-void USLMetadataLogger::FinishScanPoseEntry()
-{
-#if SL_WITH_LIBMONGO_C
-//	if(scan_pose_doc && scan_img_arr)
-//	{
-//		//bson_append_array_end(scan_pose_doc, scan_img_arr);
-//		bson_append_array_end(scan_pose_doc, scan_img_arr);
-///*
-// *	*	* <-- END "images" array -->
-// */
-//
-//		bson_append_document_end(scan_pose_arr, scan_pose_doc);
-///*
-// *	* <-- END "scan" array entry -->
-// */		
-//		scan_pose_arr_idx++;
-//
-//		bson_clear(&scan_img_arr);
-//		bson_clear(&scan_pose_doc);
-//	}
-//	else
-//	{
-//		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan pose entry NOT initialized.. aborting.."), *FString(__func__), __LINE__);
-//	}
 #endif //SL_WITH_LIBMONGO_C
 }
 

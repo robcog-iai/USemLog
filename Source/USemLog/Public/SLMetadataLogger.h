@@ -66,20 +66,8 @@ private:
 	// Create the scan entry bson document (a scan entry contains all the scan images of a given class)
 	void StartScanEntry(const FString& Class, FIntPoint Resolution);
 
-	// Create the camera pose location entry (it will contain the rendered images at the given camera pose)
-	void StartScanPoseEntry(const FTransform& Pose);
-
-	// Add the number of pixels the scanned objects has in the image to the scan pose doc
-	void AddNumPixels(int32 NumPixels);
-	
-	// Add scan image to the scan entry (raw data to the gridfs and the pointer in the scan entry)
-	void AddImageEntry(const FString& ViewType, const TArray<uint8>& CompressedBitmap);
-
 	// Add pose scan data
 	void AddScanPoseEntry(const FSLScanPoseData& ScanPoseData);
-	
-	// Add pose entry to the scan entry document
-	void FinishScanPoseEntry();
 	
 	// Write and clear the scan entry to the database
 	void FinishScanEntry();
@@ -142,14 +130,5 @@ private:
 
 	// Image scan array doc index
 	uint32_t scan_pose_arr_idx;
-
-	// Scan pose obj doc (will be added to the array)
-	//bson_t* scan_pose_doc;
-
-	// Holds the variously rendered images from the same camera position
-	//bson_t* scan_img_arr;
-
-	// Image scan array doc index
-	//uint32_t scan_img_arr_idx;
 #endif //SL_WITH_LIBMONGO_C
 };
