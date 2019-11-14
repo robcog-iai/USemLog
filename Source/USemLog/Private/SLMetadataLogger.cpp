@@ -29,7 +29,7 @@ USLMetadataLogger::~USLMetadataLogger()
 
 // Init logger
 void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		 bool bScanItems, FIntPoint Resolution, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally, bool bOverwrite)
+		 bool bScanItems, FIntPoint Resolution, int32 NumberOfScanPoints, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -42,7 +42,7 @@ void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, 
 		{
 			ItemsScanner = NewObject<USLItemScanner>(this);
 			ItemsScanner->Init(InTaskId, InServerIp, InServerPort,
-				Resolution, InViewModes, bIncludeScansLocally);
+				Resolution, NumberOfScanPoints, InViewModes, bIncludeScansLocally);
 		}
 
 		bIsInit = true;
@@ -77,7 +77,7 @@ void USLMetadataLogger::Start(const FString& InTaskDescription)
 		// Start the item scanner, for every finished scan it will trigger an update call on the logger
 		if(ItemsScanner)
 		{
-			ItemsScanner->Start(this);
+			ItemsScanner->Start();
 		}
 		
 		bIsStarted = true;
@@ -233,7 +233,7 @@ void USLMetadataLogger::Disconnect()
 }
 
 // Create the scan entry bson document
-void USLMetadataLogger::StartScanEntry(const FString& Class, FIntPoint Resolution)
+void USLMetadataLogger::StartScanEntry(const FString& Class, int32 ResX, int32 ResY)
 {
 #if SL_WITH_LIBMONGO_C
 	if(scan_entry_doc || scan_pose_arr)
@@ -249,8 +249,8 @@ void USLMetadataLogger::StartScanEntry(const FString& Class, FIntPoint Resolutio
 
 	bson_t res_obj;
 	BSON_APPEND_DOCUMENT_BEGIN(scan_entry_doc, "res", &res_obj);
-		BSON_APPEND_INT32(&res_obj, "x", Resolution.X);
-		BSON_APPEND_INT32(&res_obj, "y", Resolution.Y);
+		BSON_APPEND_INT32(&res_obj, "x", ResX);
+		BSON_APPEND_INT32(&res_obj, "y", ResY);
 	bson_append_document_end(scan_entry_doc, &res_obj);
 
 /*

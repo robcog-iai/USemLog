@@ -22,7 +22,7 @@ ASLManager::ASLManager()
 	// Semantic logger default values
 	TaskId = TEXT("DefaultTaskId");
 	bUseCustomEpisodeId = false;
-	EpisodeId = TEXT("autogen");
+	EpisodeId = TEXT("");
 	TaskDescription = TEXT("Write task description here");
 	bStartAtBeginPlay = true;
 	bStartAtFirstTick = false;
@@ -41,7 +41,8 @@ ASLManager::ASLManager()
 	bScanItems = false;
 	ScanResolution.X = 1920;
 	ScanResolution.Y = 1080;
-	ScanViewModes.Add(ESLItemScannerViewMode::Lit);
+	NumberOfScanPoints = 64;
+	ScanViewModes.Add(ESLItemScannerViewMode::Color);
 	ScanViewModes.Add(ESLItemScannerViewMode::Unlit);
 	ScanViewModes.Add(ESLItemScannerViewMode::Mask);
 	ScanViewModes.Add(ESLItemScannerViewMode::Depth);
@@ -178,7 +179,7 @@ void ASLManager::Init()
 			// Create and init world state logger
 			MetadataLogger = NewObject<USLMetadataLogger>(this);
 			MetadataLogger->Init(TaskId, ServerIp, ServerPort,
-				bScanItems, ScanResolution, ScanViewModes, bIncludeScansLocally, bOverwriteMetadata);
+				bScanItems, ScanResolution, NumberOfScanPoints, ScanViewModes, bIncludeScansLocally, bOverwriteMetadata);
 		}
 		else
 		{
@@ -325,7 +326,7 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bUseCustomEpisodeId))
 	{
 		if (bUseCustomEpisodeId) { EpisodeId = FIds::NewGuidInBase64Url(); }
-		else { EpisodeId = TEXT("autogen"); };
+		else { EpisodeId = TEXT(""); };
 	}
 }
 

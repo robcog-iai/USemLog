@@ -21,7 +21,7 @@ UENUM()
 enum class ESLItemScannerViewMode : uint8
 {
 	NONE					UMETA(DisplayName = "None"),
-	Lit						UMETA(DisplayName = "Color"),
+	Color					UMETA(DisplayName = "Color"),
 	Unlit					UMETA(DisplayName = "Unlit"),
 	Mask					UMETA(DisplayName = "Mask"),
 	Depth					UMETA(DisplayName = "Depth"),
@@ -67,10 +67,10 @@ public:
 
 	// Setup scanning room
 	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		FIntPoint InResolution, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally);
+		FIntPoint Resolution, int32 NumberOfScanPoints, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally);
 
-	// Start scanning
-	void Start(USLMetadataLogger* InParent);
+	// Start scanning, set camera into the first pose and trigger the screenshot
+	void Start();
 
 	// Finish scanning
 	void Finish();
@@ -85,14 +85,11 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 private:
-	//// Load scan box actor
-	//bool LoadScanBoxActor();
-
 	// Load scan camera convenience actor
 	bool LoadScanCameraPoseActor();
 
 	// Load scanning points
-	bool LoadScanPoints();
+	bool LoadScanPoints(int32 NumberOfScanPoints, float DistanceToCamera);
 
 	// Load items to scan
 	bool LoadScanItems(bool bWithContactShape = false);
@@ -100,13 +97,16 @@ private:
 	// Load mask dynamic material
 	bool LoadMaskMaterial();
 
+	// Init hi-res screenshot resolution
+	void InitScreenshotResolution(FIntPoint Resolution);
+
 	// Init render parameters (resolution, view mode)
 	void InitRenderParameters();
 
 	// Setup view mode
 	bool SetupFirstViewMode();
 
-	// Setup next view mode (bCircular, if the last value is reached, jump to the first one)
+	// Setup next view mode
 	bool SetupNextViewMode();
 	
 	// Move first item in the scan box
@@ -127,38 +127,52 @@ private:
 	// Called when the screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
-	// Count the number of pixels the item represents in the image;
-	void CountItemPixelNumWithCheck(const TArray<FColor>& Bitmap);
-
-	// Get the number of pixels that the item occupies in the image
-	int32 GetItemPixelNum(const TArray<FColor>& Bitmap);
-
-	// Get the number of pixels of the given color in the image
-	int32 GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor& Color) const;
-	
-	// Get the number of pixels of the given two colors in the image
-	void GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor& ColorA, int32& OutNumA, const FColor& ColorB, int32& OutNumB);
-	
 	// Apply view mode
 	void ApplyViewMode(ESLItemScannerViewMode Mode);
-
-	// Get view mode name
-	FString GetViewModeName(ESLItemScannerViewMode Mode) const;
 
 	// Apply mask material to current item
 	void ApplyMaskMaterial();
 
 	// Apply original material to current item
 	void ApplyOriginalMaterial();
+
+	// Clean exit, all the Finish() methods will be triggered
+	void QuitEditor();
+
+
+	/* Helpers */
+	// Get the bounding box and the number of pixels the item occupies in the image
+	void GetItemPixelNumAndBB(const TArray<FColor>& InBitmap, int32 Width, int32 Height, int32& OutPixelNum, FIntPoint& OutBBMin, FIntPoint& OutBBMax);
+
+	// Get the bounding box and the number of pixels the color occupies in the image
+	void GetColorPixelNumAndBB(const TArray<FColor>& InBitmap, const FColor& Color, int32 Width, int32 Height, int32& OutPixelNum, FIntPoint& OutBBMin, FIntPoint& OutBBMax);
+	
+	// Get the bounding box of the item in the image
+	void GetItemBB(const TArray<FColor>& InBitmap, int32 Width, int32 Height, FIntPoint& OutBBMin, FIntPoint& OutBBMax);
+
+	// Get the bounding box of the color in the image
+	void GetColorBB(const TArray<FColor>& InBitmap, const FColor& Color, int32 Width, int32 Height, FIntPoint& OutBBMin, FIntPoint& OutBBMax);
+	
+	// Get the number of pixels that the item occupies in the image
+	int32 GetItemPixelNum(const TArray<FColor>& Bitmap);
+
+	// Get the number of pixels of the given color in the image
+	int32 GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor& Color) const;
+	
+	// Count and check validity of the number of pixels the item represents in the image;
+	void CountItemPixelNumWithCheck(const TArray<FColor>& Bitmap, int32 ResX, int32 ResY);
+	
+	// Get the number of pixels of the given two colors in the image
+	void GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor& ColorA, int32& OutNumA, const FColor& ColorB, int32& OutNumB);
+
+	// Get view mode name
+	FString GetViewModeName(ESLItemScannerViewMode Mode) const;
 	
 	// Check if the item should be scanned
 	bool IsHandheldItem(UStaticMeshComponent* SMC) const;
 
 	// Check if the item is wrapped in a semantic contact shape (has a SLContactShapeInterface sibling)
 	bool HasSemanticContactShape(UStaticMeshComponent* SMC) const;
-	
-	// Clean exit, all the Finish() methods will be triggered
-	void QuitEditor();
 
 	// Generate sphere scan poses
 	void GenerateSphereScanPoses(uint32 MaxNumOfPoints, float Radius, TArray<FTransform>& OutTransforms);
@@ -223,19 +237,15 @@ private:
 	// Currently scanned item index in map
 	int32 CurrItemIdx;
 	
-	// TODO
-	//// Actor duplicates with mask material (avoids switching materials, which can lead to some texture artifacts)
-	//UPROPERTY() // Avoid GC
-	//TArray<AActor*> MaskDuplicates;
+	// Actor clones with mask material (avoids switching materials, which can lead to some texture artifacts)
+	UPROPERTY() // Avoid GC
+	TArray<AActor*> MaskClones;
 
 	// Cache the previous view mode
 	ESLItemScannerViewMode PrevViewMode;
 
-	// Scan image resolution
-	FIntPoint Resolution;
-
 	// Currently counted number of pixels of the item
-	int32 ItemPixelNum;
+	int32 TempItemPixelNum;
 
 	/* Constants */
 	// Volume limit in cubic centimeters (1000cm^3 = 1 Liter) of items to scan
@@ -244,6 +254,10 @@ private:
 	// Length limit of its bounding box points (cm) 
 	constexpr static const float LengthLimit = 75.f;
 
-	// Number of scans
-	constexpr static const int32 NumScanPoints = 2;
+	// Mask color
+	constexpr static const FColor MaskColor = FColor(255,255,255);
+
+	// Distance to scan camera
+	constexpr static float DistanceToCamera = 0.25f;
+	
 };

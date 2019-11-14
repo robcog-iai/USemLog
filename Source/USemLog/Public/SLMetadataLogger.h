@@ -39,7 +39,7 @@ public:
 	
 	// Init logger
 	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		bool bScanItems, FIntPoint Resolution, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally,  bool bOverwrite = false);
+		bool bScanItems, FIntPoint Resolution, int32 NumberOfScanPoints, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally,  bool bOverwrite = false);
 
 	// Start logger
 	void Start(const FString& InTaskDescription);
@@ -64,7 +64,7 @@ private:
 	void Disconnect();
 
 	// Create the scan entry bson document (a scan entry contains all the scan images of a given class)
-	void StartScanEntry(const FString& Class, FIntPoint Resolution);
+	void StartScanEntry(const FString& Class, int32 ResX, int32 ResY);
 
 	// Add pose scan data
 	void AddScanPoseEntry(const FSLScanPoseData& ScanPoseData);

@@ -162,6 +162,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	FIntPoint ScanResolution;
 
+	// Number of camera poses on the sphere pointed toward the object
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
+	int32 NumberOfScanPoints;
+
 	// Scan view modes
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	TSet<ESLItemScannerViewMode> ScanViewModes;
