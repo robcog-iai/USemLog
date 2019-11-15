@@ -38,8 +38,8 @@ public:
 	~USLMetadataLogger();
 	
 	// Init logger
-	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		bool bScanItems, FIntPoint Resolution, int32 NumberOfScanPoints, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally,  bool bOverwrite = false);
+	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort, 
+		bool bOverWrite = false, bool bScanItems = false, FSLItemScanParams ScanParams = FSLItemScanParams());
 
 	// Start logger
 	void Start(const FString& InTaskDescription);
@@ -62,6 +62,9 @@ private:
 
 	// Disconnect and clean db connection
 	void Disconnect();
+
+	// Create indexes on the data
+	void CreateIndexes();
 
 	// Create the scan entry bson document (a scan entry contains all the scan images of a given class)
 	void StartScanEntry(const FString& Class, int32 ResX, int32 ResY);

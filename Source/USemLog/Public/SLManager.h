@@ -154,6 +154,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogMetadata;
 
+	// Overwrite existing entries
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bLogMetadata"))
+	bool bOverwriteMetadata;
+
 	// Perform a 3d sphere image scan of all the handheld items
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bLogMetadata"))
 	bool bScanItems;
@@ -166,6 +170,14 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	int32 NumberOfScanPoints;
 
+	// The maximum volume (cm^3) of an item that should be scanned (0 = no limit)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
+	float MaxScanItemVolume;
+
+	// The distance of the camera to the scanned item (0 = calculated relative to the object size)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
+	float CameraDistanceToScanItem;
+	
 	// Scan view modes
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	TSet<ESLItemScannerViewMode> ScanViewModes;
@@ -174,9 +186,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	bool bIncludeScansLocally;
 
-	// Overwrite existing entries
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bLogMetadata"))
-	bool bOverwriteMetadata;
 	
 	// Metadata logger, use UPROPERTY to avoid GC
 	UPROPERTY()

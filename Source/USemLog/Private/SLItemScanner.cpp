@@ -17,6 +17,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "SLMetadataLogger.h"
 #include "Engine/Light.h"
+#include "Engine/Engine.h"
 
 // Ctor
 USLItemScanner::USLItemScanner()
@@ -25,6 +26,7 @@ USLItemScanner::USLItemScanner()
 	bIsStarted = false;
 	bIsFinished = false;
 	bIncludeLocally = false;
+	bWithItemRelativeCameraDistance = false;
 	CurrViewModeIdx = INDEX_NONE;
 	CurrPoseIdx = INDEX_NONE;
 	CurrItemIdx = INDEX_NONE;
@@ -42,24 +44,23 @@ USLItemScanner::~USLItemScanner()
 }
 
 // Init scanner
-void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		 FIntPoint Resolution, int32 NumberOfScanPoints, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally)
+void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort, FSLItemScanParams ScanParams)
 {
 	if (!bIsInit)
 	{
 		// Check if owner is of type USLMetadataLogger, used to access the mongodb calls
-		if(USLMetadataLogger* ML = Cast<USLMetadataLogger>(GetOuter()))
+		if(USLMetadataLogger* MLOuter = Cast<USLMetadataLogger>(GetOuter()))
 		{
-			Parent = ML;
+			MetadataLoggerParent = MLOuter;
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Parent is not of type USLMetadataLogger.. aborting.."), *FString(__func__), __LINE__);
 		}
 		
-		Location = InTaskId;
-		ViewModes = InViewModes.Array();
-		bIncludeLocally = bIncludeScansLocally;
+		FolderName = InTaskId;
+		ViewModes = ScanParams.ViewModes;
+		bIncludeLocally = ScanParams.bIncludeScansLocally;
 
 		// If no view modes are available, add a default one
 		if(ViewModes.Num() == 0)
@@ -67,21 +68,25 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No view modes found, added default one (lit).."), *FString(__func__), __LINE__);
 			ViewModes.Add(ESLItemScannerViewMode::Color);
 		}
-		else
-		{
-			if (ViewModes.Contains(ESLItemScannerViewMode::Mask))
-			{
-				if(!LoadMaskMaterial())
-				{
-					ViewModes.Remove(ESLItemScannerViewMode::Mask);
-				}
-			}
-		}
 
-		// Spawn helper actors, load scan items and points
-		if(!LoadScanCameraPoseActor() || !LoadScanPoints(NumberOfScanPoints, DistanceToCamera) || !LoadScanItems(true))
+		// Spawn helper actors, items and scan poses, skip items larger that the distance to camera
+		if(!LoadScanCameraPoseActor() 
+			|| !LoadScanPoses(ScanParams.NumberOfScanPoints, ScanParams.CameraDistanceToScanItem)
+			|| !LoadScanItems(ScanParams.MaxItemVolume, ScanParams.CameraDistanceToScanItem, true))
 		{
 			return;
+		}
+
+		if (ViewModes.Contains(ESLItemScannerViewMode::Mask))
+		{
+			if(LoadMaskMaterial())
+			{
+				SetupMaskClones();
+			}
+			else
+			{
+				ViewModes.Remove(ESLItemScannerViewMode::Mask);
+			}
 		}
 
 		// Used for the screenshot requests
@@ -107,10 +112,10 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 		}
 
 		// Open the first scan document in mongodb
-		Parent->StartScanEntry(ScanItems[CurrItemIdx].Value, Resolution.X, Resolution.Y);
+		MetadataLoggerParent->StartScanEntry(ScanItems[CurrItemIdx].Value, ScanParams.Resolution.X, ScanParams.Resolution.Y);
 
 		// Set the screenshot resolution;
-		InitScreenshotResolution(Resolution);
+		InitScreenshotResolution(ScanParams.Resolution);
 		
 		// Set scan image resolution and various rendering paramaters
 		InitRenderParameters();
@@ -191,10 +196,18 @@ bool USLItemScanner::LoadScanCameraPoseActor()
 }
 
 // Load scanning points
-bool USLItemScanner::LoadScanPoints(int32 NumberOfScanPoints, float DistanceToCamera)
+bool USLItemScanner::LoadScanPoses(int32 NumScanPose, float DistanceToCamera)
 {
-	GenerateSphereScanPoses(NumberOfScanPoints, DistanceToCamera, ScanPoses);
-
+	if(DistanceToCamera < 0.01f)
+	{
+		bWithItemRelativeCameraDistance = true;
+		GenerateSphereScanPoses(NumScanPose, 1, ScanPoses);
+	}
+	else
+	{
+		GenerateSphereScanPoses(NumScanPose, DistanceToCamera, ScanPoses);
+	}
+	
 	if(ScanPoses.Num() == 0)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d No scan poses added.."), *FString(__func__), __LINE__);
@@ -204,7 +217,7 @@ bool USLItemScanner::LoadScanPoints(int32 NumberOfScanPoints, float DistanceToCa
 }
 
 // Load items to scan
-bool USLItemScanner::LoadScanItems(bool bWithContactShape)
+bool USLItemScanner::LoadScanItems(float MaxVolume, float MaxBoundsLength, bool bWithContactShape)
 {
 	// Cache the classes that were already iterated
 	TSet<FString> ConsultedClasses;
@@ -227,28 +240,23 @@ bool USLItemScanner::LoadScanItems(bool bWithContactShape)
 			}
 			ConsultedClasses.Emplace(Class);
 
+			// Make sure the static mesh component is valid
 			if(UStaticMeshComponent* SMC = AsSMA->GetStaticMeshComponent())
 			{
-				if(IsHandheldItem(SMC))
+				if(HasScanningRequirements(SMC, MaxVolume, MaxBoundsLength, bWithContactShape, false))
 				{
-					if(bWithContactShape && !HasSemanticContactShape(SMC))
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t %s has no semantic contact shape, skipping item scan.."),
-							*FString(__func__), __LINE__, *Class);
-						continue;
-					}
-
 					SMC->SetSimulatePhysics(false);
+					AsSMA->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+					SMC->SetMobility(EComponentMobility::Movable);
+					ActItr->SetActorTransform(FTransform::Identity);
 					
 					ScanItems.Emplace(SMC, Class);
-					//MaskDuplicates.EmplaceAt()
-					
 					UE_LOG(LogTemp, Warning, TEXT("%s::%d Added %s to the scan items list.."),
 						*FString(__func__), __LINE__, *Class);
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d \t %s is not a handheld item (too large, not movable), skipping item scan.."),
+					UE_LOG(LogTemp, Error, TEXT("%s::%d \t %s does not meet scanning requirements, skipping item scan.."),
 						*FString(__func__), __LINE__, *Class);
 				}
 			}
@@ -295,6 +303,46 @@ bool USLItemScanner::LoadMaskMaterial()
 	return true;
 }
 
+// Create clones of the items with mask material on top
+bool USLItemScanner::SetupMaskClones()
+{
+	if(ScanItems.Num() == 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find any items to clone.."), *FString(__func__), __LINE__);
+		return false;
+	}
+
+	int32 EmplaceIdx = 0;
+	for(const auto& Pair : ScanItems)
+	{
+		if(AStaticMeshActor* SMA = Cast<AStaticMeshActor>(Pair.Key->GetOwner()))
+		{
+			FActorSpawnParameters Parameters;
+			Parameters.Template = SMA;
+			Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			//Parameters.Instigator = SMA->GetInstigator();
+			Parameters.Name = FName(*(SMA->GetName() + TEXT("_MaskClone")));
+			AStaticMeshActor* SMAClone =  GetWorld()->SpawnActor<AStaticMeshActor>(SMA->GetClass(), Parameters);
+
+			if(UStaticMeshComponent* SMC = SMAClone->GetStaticMeshComponent())
+			{
+				for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
+				{
+					SMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+				}
+			}
+			SMAClone->SetActorHiddenInGame(true);
+			MaskClones.EmplaceAt(EmplaceIdx, SMAClone);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		}
+		EmplaceIdx++;
+	}
+	return true;
+}
+
 // Init hi-res screenshot resolution
 void USLItemScanner::InitScreenshotResolution(FIntPoint Resolution)
 {
@@ -312,7 +360,21 @@ void USLItemScanner::InitRenderParameters()
 	//// Avoid triggering the callback be overwriting the resolution -> SetResolution() sets GIsHighResScreenshot to true, which triggers the callback (ScreenshotCB)
 	//GIsHighResScreenshot = false;
 
-	// 	AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
+	// Defines the memory layout used for the GBuffer,
+	// 0: lower precision (8bit per component, for profiling), 1: low precision (default)
+	// 3: high precision normals encoding, 5: high precision
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.GBufferFormat"))->Set(5);
+
+	
+	// Set the near clipping plane (in cm)
+	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetNearClipPlane"))->Set(0); // Not a console variable, but a command
+	//GNearClippingPlane = 0; // View is distorted after finishing the scanning
+	if(GEngine)
+	{
+		GEngine->DeferredCommands.Add(TEXT("r.SetNearClipPlane 0"));
+	}
+	
+	// AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AntiAliasing"))->Set(AAM_None);
 
 	// Whether the default for AutoExposure is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
@@ -360,8 +422,13 @@ bool USLItemScanner::SetupFirstScanItem()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid item index [%ld].."), *FString(__func__), __LINE__, CurrItemIdx);
 		return false;
 	}
-	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorLocation(FVector::ZeroVector);
+	
 	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(false);
+	
+	if(bWithItemRelativeCameraDistance)
+	{
+		CurrItemCameraDistance = GetItemRelativeCameraDistance(ScanItems[CurrItemIdx].Key);
+	}
 	return true;
 }
 
@@ -378,8 +445,13 @@ bool USLItemScanner::SetupNextItem()
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Last item [%ld] reached.."), *FString(__func__), __LINE__, CurrItemIdx-1);
 		return false;
 	}
-	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorLocation(FVector::ZeroVector);
+
 	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(false);
+	
+	if(bWithItemRelativeCameraDistance)
+	{
+		CurrItemCameraDistance = GetItemRelativeCameraDistance(ScanItems[CurrItemIdx].Key);
+	}
 	return true;
 }
 
@@ -392,7 +464,18 @@ bool USLItemScanner::SetupFirstScanPose()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid pose index [%ld].."), *FString(__func__), __LINE__, CurrPoseIdx);
 		return false;
 	}
-	CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
+	
+	if(bWithItemRelativeCameraDistance)
+	{
+		FTransform TempT = ScanPoses[CurrPoseIdx];
+		TempT.SetTranslation(TempT.GetTranslation() * CurrItemCameraDistance);
+		CameraPoseActor->SetActorTransform(TempT);
+	}
+	else
+	{
+		CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
+	}
+	
 	GetWorld()->GetFirstPlayerController()->SetViewTarget(CameraPoseActor); // Cannot be called before BeginPlay
 	return true;
 }
@@ -406,7 +489,18 @@ bool USLItemScanner::SetupNextScanPose()
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Last pose [%ld] reached .."), *FString(__func__), __LINE__, CurrPoseIdx-1)
 		return false;
 	}
-	CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
+
+	if(bWithItemRelativeCameraDistance)
+	{
+		FTransform TempT = ScanPoses[CurrPoseIdx];
+		TempT.SetTranslation(TempT.GetTranslation() * CurrItemCameraDistance);
+		CameraPoseActor->SetActorTransform(TempT);
+	}
+	else
+	{
+		CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
+	}
+	
 	GetWorld()->GetFirstPlayerController()->SetViewTarget(CameraPoseActor);
 	return true;
 }
@@ -433,7 +527,7 @@ void USLItemScanner::RequestScreenshot()
 // Called when screenshot is captured
 void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Progress=[Item=%ld/%ld; Pose=%ld/%ld; ViewMode=%ld/%ld; Scan=%ld/%ld]"),
+	UE_LOG(LogTemp, Log, TEXT("%s::%d [%f] Progress=[Item=%ld/%ld; Pose=%ld/%ld; ViewMode=%ld/%ld; Scan=%ld/%ld]"),
 		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
 		CurrItemIdx + 1, ScanItems.Num(),
 		CurrPoseIdx + 1, ScanPoses.Num(),
@@ -447,7 +541,6 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	// Add the number of pixels that the item occupies to the doc
 	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
 	{
-		//GetItemBB(Bitmap, SizeX, SizeY, ScanPoseData.BBMin, ScanPoseData.BBMax);
 		GetItemPixelNumAndBB(Bitmap, SizeX, SizeY, ScanPoseData.NumPixels, ScanPoseData.BBMin, ScanPoseData.BBMax);
 	}
 	
@@ -464,7 +557,7 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	// Save the png locally
 	if(bIncludeLocally)
 	{
-		FString Path = FPaths::ProjectDir() + "/SemLog/" + Location + "/Meta/" + CurrScanName + ".png";
+		FString Path = FPaths::ProjectDir() + "/SemLog/" + FolderName + "/Meta/" + CurrScanName + ".png";
 		FPaths::RemoveDuplicateSlashes(Path);
 		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 	}
@@ -485,7 +578,7 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		// Check for next camera poses
 		if(SetupNextScanPose())
 		{
-			Parent->AddScanPoseEntry(ScanPoseData);
+			MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
 			ScanPoseData.Images.Empty();
 			ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
 			
@@ -493,9 +586,9 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		}
 		else
 		{
-			Parent->AddScanPoseEntry(ScanPoseData);
+			MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
 			ScanPoseData.Images.Empty();
-			Parent->FinishScanEntry();
+			MetadataLoggerParent->FinishScanEntry();
 			
 			if(SetupNextItem())
 			{
@@ -509,7 +602,7 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 				// No other scan poses found, set next item and first camera scan pose
 				SetupFirstScanPose();
 
-				Parent->StartScanEntry(ScanItems[CurrItemIdx].Value, SizeX, SizeY);
+				MetadataLoggerParent->StartScanEntry(ScanItems[CurrItemIdx].Value, SizeX, SizeY);
 				ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
 				
 				RequestScreenshot();
@@ -776,40 +869,46 @@ void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 // Apply mask material to current item
 void USLItemScanner::ApplyMaskMaterial()
 {
-	if(OriginalMaterials.Num() == 0)
-	{
-		UStaticMeshComponent* SMC = ScanItems[CurrItemIdx].Key;
-		OriginalMaterials = SMC->GetMaterials();
-		
-		//FColor MaskColor(FColor::FromHex(ScanItems[CurrItemIdx].Value.VisualMask));
-		//FLinearColor LinMaskColorSRGB(FLinearColor::FromSRGBColor(MaskColor));
-		//FLinearColor LinMaskColorPow22(FLinearColor::FromPow22Color(MaskColor));
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d InHex=%s; OutColor=%s; OutHex=%s;"),
-		//	*FString(__func__), __LINE__, *ScanItems[CurrItemIdx].Value.VisualMask, *MaskColor.ToString(), *MaskColor.ToHex());
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d LinMaskColorSRGB=%s; LinMaskColorPow22=%s; "),
-		//	*FString(__func__), __LINE__, *LinMaskColorSRGB.ToString(), *LinMaskColorPow22.ToString());
-		//DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromPow22Color(MaskColor));
-		////DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
-		
-		for (int32 Idx = 0; Idx < SMC->GetNumMaterials(); ++Idx)
-		{
-			SMC->SetMaterial(Idx, DynamicMaskMaterial);
-		}
-	}
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(true);
+	MaskClones[CurrItemIdx]->SetActorHiddenInGame(false);
+	
+	//if(OriginalMaterials.Num() == 0)
+	//{
+	//	UStaticMeshComponent* SMC = ScanItems[CurrItemIdx].Key;
+	//	OriginalMaterials = SMC->GetMaterials();
+	//	
+	//	//FColor MaskColor(FColor::FromHex(ScanItems[CurrItemIdx].Value.VisualMask));
+	//	//FLinearColor LinMaskColorSRGB(FLinearColor::FromSRGBColor(MaskColor));
+	//	//FLinearColor LinMaskColorPow22(FLinearColor::FromPow22Color(MaskColor));
+	//	//UE_LOG(LogTemp, Warning, TEXT("%s::%d InHex=%s; OutColor=%s; OutHex=%s;"),
+	//	//	*FString(__func__), __LINE__, *ScanItems[CurrItemIdx].Value.VisualMask, *MaskColor.ToString(), *MaskColor.ToHex());
+	//	//UE_LOG(LogTemp, Warning, TEXT("%s::%d LinMaskColorSRGB=%s; LinMaskColorPow22=%s; "),
+	//	//	*FString(__func__), __LINE__, *LinMaskColorSRGB.ToString(), *LinMaskColorPow22.ToString());
+	//	//DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromPow22Color(MaskColor));
+	//	////DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
+	//	
+	//	for (int32 Idx = 0; Idx < SMC->GetNumMaterials(); ++Idx)
+	//	{
+	//		SMC->SetMaterial(Idx, DynamicMaskMaterial);
+	//	}
+	//}
 }
 
 // Apply original material to current item
 void USLItemScanner::ApplyOriginalMaterial()
 {
-	if(OriginalMaterials.Num() > 0)
-	{
-		int32 Idx = 0;
-		for(const auto& M : OriginalMaterials)
-		{
-			ScanItems[CurrItemIdx].Key->SetMaterial(Idx, M);
-		}
-		OriginalMaterials.Empty();
-	}
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(false);
+	MaskClones[CurrItemIdx]->SetActorHiddenInGame(true);
+
+	//if(OriginalMaterials.Num() > 0)
+	//{
+	//	int32 Idx = 0;
+	//	for(const auto& M : OriginalMaterials)
+	//	{
+	//		ScanItems[CurrItemIdx].Key->SetMaterial(Idx, M);
+	//	}
+	//	OriginalMaterials.Empty();
+	//}
 }
 
 // Quit the editor once the scanning is finished
@@ -829,12 +928,12 @@ void USLItemScanner::QuitEditor()
 
 /* Helpers */
 // Get the bounding box and the number of pixels the item occupies in the image
-void USLItemScanner::GetItemPixelNumAndBB(const TArray<FColor>& InBitmap, int32 Width, int32 Height, int32& OutPixelNum, FIntPoint& OutBBMin,
-	FIntPoint& OutBBMax)
+void USLItemScanner::GetItemPixelNumAndBB(const TArray<FColor>& InBitmap, int32 Width, int32 Height,
+	int32& OutPixelNum, FIntPoint& OutBBMin, FIntPoint& OutBBMax)
 {
 	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
 	{
-		GetColorPixelNumAndBB(InBitmap, MaskColor, Width, Height,OutPixelNum, OutBBMin, OutBBMin);
+		GetColorPixelNumAndBB(InBitmap, MaskColorConst, Width, Height,OutPixelNum, OutBBMin, OutBBMax);
 	}
 	else
 	{
@@ -891,17 +990,17 @@ void USLItemScanner::GetColorPixelNumAndBB(const TArray<FColor>& InBitmap, const
 			}
 		}
 
-		// DEBUG
-		if(bIsMaskColor)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d [\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
-				*FString(__func__), __LINE__, RowIdx, ColIdx, Min.X, Min.Y, Max.X, Max.Y);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
-				*FString(__func__), __LINE__, RowIdx, ColIdx, Min.X, Min.Y, Max.X, Max.Y);
-		}
+		//// DEBUG
+		//if(bIsMaskColor)
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d [\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
+		//		*FString(__func__), __LINE__, RowIdx, ColIdx, OutBBMin.X, OutBBMin.Y, OutBBMax.X, OutBBMax.Y);
+		//}
+		//else
+		//{
+		//	UE_LOG(LogTemp, Error, TEXT("%s::%d [\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
+		//		*FString(__func__), __LINE__, RowIdx, ColIdx, OutBBMin.X, OutBBMin.Y, OutBBMax.X, OutBBMax.Y);
+		//}
 
 		// Next column
 		ColIdx++;
@@ -913,7 +1012,7 @@ void USLItemScanner::GetItemBB(const TArray<FColor>& InBitmap, int32 Width, int3
 {
 	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
 	{
-		GetColorBB(InBitmap, MaskColor, Width, Height, OutBBMin, OutBBMin);
+		GetColorBB(InBitmap, MaskColorConst, Width, Height, OutBBMin, OutBBMin);
 	}
 	else
 	{
@@ -986,7 +1085,7 @@ int32 USLItemScanner::GetItemPixelNum(const TArray<FColor>& Bitmap)
 {
 	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
 	{
-		return GetColorPixelNum(Bitmap, MaskColor);
+		return GetColorPixelNum(Bitmap, MaskColorConst);
 	}
 	else
 	{
@@ -1037,7 +1136,7 @@ void USLItemScanner::CountItemPixelNumWithCheck(const TArray<FColor>& Bitmap, in
 		int32 PrevItemPixelNum = TempItemPixelNum;
 		
 		int32 NumBackgroundPixels = 0;
-		GetColorsPixelNum(Bitmap, FColor::Black, NumBackgroundPixels, MaskColor, TempItemPixelNum);
+		GetColorsPixelNum(Bitmap, FColor::Black, NumBackgroundPixels, MaskColorConst, TempItemPixelNum);
 		if(TempItemPixelNum + NumBackgroundPixels != ResX * ResY)
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Number of item [%ld] + background [%ld] pixels, differs of number image total [%ld]."),
@@ -1104,11 +1203,43 @@ FString USLItemScanner::GetViewModeName(ESLItemScannerViewMode Mode) const
 }
 
 // Check if the items meets the requirements to be scanned
-bool USLItemScanner::IsHandheldItem(UStaticMeshComponent* SMC) const
+float USLItemScanner::GetItemRelativeCameraDistance(UStaticMeshComponent* SMC) const
 {
-	return SMC->Mobility == EComponentMobility::Movable &&
-		SMC->Bounds.GetBox().GetVolume() < VolumeLimit &&
-		SMC->Bounds.SphereRadius * 2.f < LengthLimit;
+	return SMC->Bounds.SphereRadius * 1.5f;
+}
+
+// Check against varios properties if the item should be scanned
+bool USLItemScanner::HasScanningRequirements(UStaticMeshComponent* SMC, float MaxVolume, float MaxBoundsLength,
+	bool bWithSemanticContactShape, bool bOnlyMovable) const
+{
+	bool bShouldBeScanned = true;
+	if(bOnlyMovable && SMC->Mobility != EComponentMobility::Movable)
+	{
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t %s is not movable, skipping item scan.."),
+		//	*FString(__func__), __LINE__, *SMC->GetOwner()->GetName());
+		return false;
+	}
+
+	if(bWithSemanticContactShape && !HasSemanticContactShape(SMC))
+	{
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t %s has no semantic contact shape, skipping item scan.."),
+		//	*FString(__func__), __LINE__, *SMC->GetOwner()->GetName());
+		return false;
+	}
+
+	// If MaxVolume is 0, all items should be considered
+	if(bShouldBeScanned && MaxVolume > 0.01f)
+	{
+		bShouldBeScanned = SMC->Bounds.GetBox().GetVolume() < MaxVolume;
+	}
+
+	// If bounds length is 0, consider all items
+	if(bShouldBeScanned && MaxBoundsLength > 0.01f)
+	{
+		bShouldBeScanned = SMC->Bounds.SphereRadius < MaxBoundsLength;
+	}
+
+	return bShouldBeScanned;
 }
 
 // Check if the item is wrapped in a semantic contact shape (has a SLContactShapeInterface sibling)

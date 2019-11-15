@@ -38,17 +38,20 @@ ASLManager::ASLManager()
 	
 	// Task metadata logger default values
 	bLogMetadata = false;
+	bOverwriteMetadata = false;
 	bScanItems = false;
 	ScanResolution.X = 1920;
 	ScanResolution.Y = 1080;
 	NumberOfScanPoints = 64;
+	MaxScanItemVolume = 0.f;
+	CameraDistanceToScanItem = 0.f;
 	ScanViewModes.Add(ESLItemScannerViewMode::Color);
 	ScanViewModes.Add(ESLItemScannerViewMode::Unlit);
 	ScanViewModes.Add(ESLItemScannerViewMode::Mask);
 	ScanViewModes.Add(ESLItemScannerViewMode::Depth);
 	ScanViewModes.Add(ESLItemScannerViewMode::Normal);
 	bIncludeScansLocally = false;
-	bOverwriteMetadata = false;
+
 
 	
 	// World state logger default values
@@ -179,7 +182,9 @@ void ASLManager::Init()
 			// Create and init world state logger
 			MetadataLogger = NewObject<USLMetadataLogger>(this);
 			MetadataLogger->Init(TaskId, ServerIp, ServerPort,
-				bScanItems, ScanResolution, NumberOfScanPoints, ScanViewModes, bIncludeScansLocally, bOverwriteMetadata);
+				bOverwriteMetadata, bScanItems, 
+				FSLItemScanParams(ScanResolution, NumberOfScanPoints, MaxScanItemVolume, CameraDistanceToScanItem,
+				ScanViewModes.Array(), bIncludeScansLocally));
 		}
 		else
 		{

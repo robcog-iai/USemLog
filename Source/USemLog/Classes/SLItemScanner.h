@@ -28,6 +28,51 @@ enum class ESLItemScannerViewMode : uint8
 	Normal					UMETA(DisplayName = "Normal"),
 };
 
+
+/**
+* Parameters for creating scanning the semantic map items
+*/
+struct FSLItemScanParams
+{
+	// Scan image resolution
+	FIntPoint Resolution;
+
+	// Number of camera poses on the sphere pointed toward the object
+	int32 NumberOfScanPoints;
+
+	// The maximum volume (cm^3) of an item that should be scanned (0 = no limit)
+	float MaxItemVolume;
+
+	// The distance of the camera to the scanned item (0 = calculated relative to the object size)
+	float CameraDistanceToScanItem;
+	
+	// Scan view modes
+	TArray<ESLItemScannerViewMode> ViewModes;
+	
+	// Save the scanned images locally
+	bool bIncludeScansLocally;
+
+	// Default constructor
+	FSLItemScanParams() {};
+	
+	// Constructor
+	FSLItemScanParams(
+		FIntPoint InScanResolution,
+		int32 InNumberOfScanPoints,
+		float InMaxScanItemVolume,
+		float InCameraDistanceToScanItem,
+		const TArray<ESLItemScannerViewMode>& InScanViewModes,
+		bool bNewIncludeScansLocally = false)
+		:
+		Resolution(InScanResolution),
+		NumberOfScanPoints(InNumberOfScanPoints),
+		MaxItemVolume(InMaxScanItemVolume),
+		CameraDistanceToScanItem(InCameraDistanceToScanItem),
+		ViewModes(InScanViewModes),
+		bIncludeScansLocally(bNewIncludeScansLocally)
+	{};
+};
+
 /**
  * One camera position scan data (number of pixels, rendered images array, object image bounds)
  */
@@ -66,8 +111,7 @@ public:
 	~USLItemScanner();
 
 	// Setup scanning room
-	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		FIntPoint Resolution, int32 NumberOfScanPoints, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally);
+	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort, FSLItemScanParams ScanParams);
 
 	// Start scanning, set camera into the first pose and trigger the screenshot
 	void Start();
@@ -89,13 +133,16 @@ private:
 	bool LoadScanCameraPoseActor();
 
 	// Load scanning points
-	bool LoadScanPoints(int32 NumberOfScanPoints, float DistanceToCamera);
+	bool LoadScanPoses(int32 NumScanPose, float DistanceToCamera);
 
 	// Load items to scan
-	bool LoadScanItems(bool bWithContactShape = false);
+	bool LoadScanItems(float MaxVolume = 0.f, float MaxBoundsLength = 0.f, bool bWithContactShape = false);
 
 	// Load mask dynamic material
 	bool LoadMaskMaterial();
+
+	// Create clones of the items with mask material on top
+	bool SetupMaskClones();
 
 	// Init hi-res screenshot resolution
 	void InitScreenshotResolution(FIntPoint Resolution);
@@ -168,9 +215,13 @@ private:
 	// Get view mode name
 	FString GetViewModeName(ESLItemScannerViewMode Mode) const;
 	
-	// Check if the item should be scanned
-	bool IsHandheldItem(UStaticMeshComponent* SMC) const;
+	// Get the camera distance for the selected item relative to its size
+	float GetItemRelativeCameraDistance(UStaticMeshComponent* SMC) const;
 
+	// Check against various properties if the item should be scanned
+	bool HasScanningRequirements(UStaticMeshComponent* SMC, float MaxVolume, float MaxBoundsLength,
+		bool bWithSemanticContactShape = false, bool bOnlyMovable = false) const;
+	
 	// Check if the item is wrapped in a semantic contact shape (has a SLContactShapeInterface sibling)
 	bool HasSemanticContactShape(UStaticMeshComponent* SMC) const;
 
@@ -194,10 +245,10 @@ private:
 	bool bIncludeLocally;
 
 	// Pointer to the parent, used for updating the metadata mongo document;
-	USLMetadataLogger* Parent;
+	USLMetadataLogger* MetadataLoggerParent;
 	
 	// Location on where to save the data
-	FString Location;
+	FString FolderName;
 
 	// Current name of scan (for saving locally, and progress update purposes)
 	FString CurrScanName;
@@ -241,6 +292,12 @@ private:
 	UPROPERTY() // Avoid GC
 	TArray<AActor*> MaskClones;
 
+	// True if the camera distance should be relative to the item size
+	bool bWithItemRelativeCameraDistance;
+
+	// Value of the camera distance for the current item
+	float CurrItemCameraDistance;
+
 	// Cache the previous view mode
 	ESLItemScannerViewMode PrevViewMode;
 
@@ -248,16 +305,16 @@ private:
 	int32 TempItemPixelNum;
 
 	/* Constants */
-	// Volume limit in cubic centimeters (1000cm^3 = 1 Liter) of items to scan
-	constexpr static const float VolumeLimit = 14000.f;
+	//// Volume limit in cubic centimeters (1000cm^3 = 1 Liter) of items to scan
+	//constexpr static const float VolumeLimitConst = 14000.f;
 
-	// Length limit of its bounding box points (cm) 
-	constexpr static const float LengthLimit = 75.f;
+	//// Length limit of its bounding box points (cm) 
+	//constexpr static const float LengthLimitConst = 75.f;
 
 	// Mask color
-	constexpr static const FColor MaskColor = FColor(255,255,255);
+	constexpr static const FColor MaskColorConst = FColor(255,255,255);
 
-	// Distance to scan camera
-	constexpr static float DistanceToCamera = 0.25f;
+	//// Distance to scan camera (cm)
+	//constexpr static float DistanceToCameraConst = 25.f;
 	
 };

@@ -28,8 +28,8 @@ USLMetadataLogger::~USLMetadataLogger()
 }
 
 // Init logger
-void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort,
-		 bool bScanItems, FIntPoint Resolution, int32 NumberOfScanPoints, const TSet<ESLItemScannerViewMode>& InViewModes, bool bIncludeScansLocally, bool bOverwrite)
+void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort, 
+	bool bOverwrite, bool bScanItems, FSLItemScanParams ScanParams)
 {
 	if (!bIsInit)
 	{
@@ -41,8 +41,7 @@ void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, 
 		if(bScanItems)
 		{
 			ItemsScanner = NewObject<USLItemScanner>(this);
-			ItemsScanner->Init(InTaskId, InServerIp, InServerPort,
-				Resolution, NumberOfScanPoints, InViewModes, bIncludeScansLocally);
+			ItemsScanner->Init(InTaskId, InServerIp, InServerPort, ScanParams);
 		}
 
 		bIsInit = true;
@@ -232,6 +231,171 @@ void USLMetadataLogger::Disconnect()
 #endif //SL_WITH_LIBMONGO_C
 }
 
+void USLMetadataLogger::CreateIndexes()
+{
+	if(!bIsInit)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Try again when initialized.."), *FString(__func__), __LINE__);
+		return;
+	}
+	
+#if SLVIS_WITH_LIBMONGO_C
+	//bson_t idx_id;
+	//bson_init(&idx_id);
+	//BSON_APPEND_INT32(&idx_id, "camera_views.id", 1);
+	//char* idx_id_str = mongoc_collection_keys_to_index_string(&idx_id);
+
+	//bson_t idx_cls;
+	//bson_init(&idx_cls);
+	//BSON_APPEND_INT32(&idx_cls, "camera_views.class", 1);
+	//char* idx_cls_str = mongoc_collection_keys_to_index_string(&idx_cls);
+
+	//bson_t idx_ne;
+	//bson_init(&idx_ne);
+	//BSON_APPEND_INT32(&idx_ne, "camera_views.number_entities", 1);
+	//char* idx_ne_str = mongoc_collection_keys_to_index_string(&idx_ne);
+
+	//bson_t idx_dp;
+	//bson_init(&idx_dp);
+	//BSON_APPEND_INT32(&idx_dp, "camera_views.duplicate", 1);
+	//char* idx_dp_str = mongoc_collection_keys_to_index_string(&idx_dp);
+
+	//bson_t idx_tld;
+	//bson_init(&idx_tld);
+	//BSON_APPEND_INT32(&idx_tld, "camera_views.total_linear_distance", 1);
+	//char* idx_tld_str = mongoc_collection_keys_to_index_string(&idx_tld);
+
+	//bson_t idx_tad;
+	//bson_init(&idx_tad);
+	//BSON_APPEND_INT32(&idx_tad, "camera_views.total_angular_distance", 1);
+	//char* idx_tad_str = mongoc_collection_keys_to_index_string(&idx_tad);
+
+	//bson_t idx_eid;
+	//bson_init(&idx_eid);
+	//BSON_APPEND_INT32(&idx_eid, "camera_views.entities.id", 1);
+	//char* idx_eid_str = mongoc_collection_keys_to_index_string(&idx_eid);
+
+	//bson_t idx_ecls;
+	//bson_init(&idx_ecls);
+	//BSON_APPEND_INT32(&idx_ecls, "camera_views.entities.class", 1);
+	//char* idx_ecls_str = mongoc_collection_keys_to_index_string(&idx_ecls);
+
+	//bson_t idx_edp;
+	//bson_init(&idx_edp);
+	//BSON_APPEND_INT32(&idx_edp, "camera_views.entities.duplicate", 1);
+	//char* idx_edp_str = mongoc_collection_keys_to_index_string(&idx_edp);
+
+	//bson_t idx_bcls;
+	//bson_init(&idx_bcls);
+	//BSON_APPEND_INT32(&idx_bcls, "camera_views.entities.bones.class", 1);
+	//char* idx_bcls_str = mongoc_collection_keys_to_index_string(&idx_bcls);
+
+
+	//bson_t* index_command;
+	//bson_error_t error;
+
+	//index_command = BCON_NEW("createIndexes",
+	//	BCON_UTF8(mongoc_collection_get_name(collection)),
+	//	"indexes",
+	//	"[",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_id),
+	//			"name",
+	//			BCON_UTF8(idx_id_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_cls),
+	//			"name",
+	//			BCON_UTF8(idx_cls_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_ne),
+	//			"name",
+	//			BCON_UTF8(idx_ne_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_dp),
+	//			"name",
+	//			BCON_UTF8(idx_dp_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_tld),
+	//			"name",
+	//			BCON_UTF8(idx_tld_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_tad),
+	//			"name",
+	//			BCON_UTF8(idx_tad_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_eid),
+	//			"name",
+	//			BCON_UTF8(idx_eid_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_ecls),
+	//			"name",
+	//			BCON_UTF8(idx_ecls_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_edp),
+	//			"name",
+	//			BCON_UTF8(idx_edp_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//		"{",
+	//			"key",
+	//			BCON_DOCUMENT(&idx_bcls),
+	//			"name",
+	//			BCON_UTF8(idx_bcls_str),
+	//			//"unique",
+	//			//BCON_BOOL(false),
+	//		"}",
+	//	"]");
+
+	//if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
+	//		*FString(__func__), __LINE__, *FString(error.message));
+	//	bson_destroy(index_command);
+	//	bson_free(idx_id_str);
+	//	return;
+	//}
+
+	//// Clean up
+	//bson_destroy(index_command);
+	//bson_free(idx_id_str);
+	//bson_free(idx_eid_str);
+#endif //SLVIS_WITH_LIBMONGO_C
+}
+
 // Create the scan entry bson document
 void USLMetadataLogger::StartScanEntry(const FString& Class, int32 ResX, int32 ResY)
 {
@@ -267,6 +431,12 @@ void USLMetadataLogger::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 	if(!scan_entry_doc)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan entry is not initialized.. aborting.."), *FString(__func__), __LINE__);
+		return;
+	}
+
+	if(ScanPoseData.NumPixels == 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Scan entry has no item pixels, skipping entry.."), *FString(__func__), __LINE__);
 		return;
 	}
 
