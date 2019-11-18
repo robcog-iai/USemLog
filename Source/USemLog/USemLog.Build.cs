@@ -48,16 +48,27 @@ public class USemLog : ModuleRules
 				"UTags",
 				"UIds",
 				"UConversions",
-				"UMCGrasp", // SL_WITH_MC_GRASP
+				"UMCGrasp",				// SL_WITH_MC_GRASP
 				//"libmongo",
-				//"SlicingLogic",	  //SL_WITH_SLICING
-				"MongoC", // SL_WITH_LIBMONGO_C
-				//"MongoCxx", // SL_WITH_LIBMONGO_CXX
-				"SRanipal", // SL_WITH_EYE_TRACKING
-				"Boost", // SL_WITH_BOOST
-				// ... add private dependencies that you statically link with here ...	
+				//"SlicingLogic",		// SL_WITH_SLICING
+				"MongoC",				// SL_WITH_LIBMONGO_C
+				//"MongoCxx",			// SL_WITH_LIBMONGO_CXX
+				"SRanipal",			// SL_WITH_EYE_TRACKING
+				//"Boost",				// SL_WITH_BOOST
+				// ... add private dependencies that you statically link with here ...
 			}
 			);
+		
+		// Avoiding depending on the editor when packaging
+		if(Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.AddRange(
+				new string[]
+				{
+					"UnrealEd",
+				}
+				);
+		}
 
 		// TODO
 		// SL Vision currently only works in developer mode

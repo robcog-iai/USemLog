@@ -52,6 +52,7 @@ void USLMetadataLogger::Start(const FString& InTaskDescription)
 {
 	if (!bIsStarted && bIsInit)
 	{
+#if SL_WITH_LIBMONGO_C
 		// Create the environment and task description document
 		bson_oid_t oid;
 		bson_t* doc = bson_new();
@@ -77,10 +78,10 @@ void USLMetadataLogger::Start(const FString& InTaskDescription)
 		{
 			ItemsScanner->Start();
 		}
+		bson_destroy(doc);
 		
 		bIsStarted = true;
-
-		bson_destroy(doc);
+#endif //SL_WITH_LIBMONGO_C
 	}
 }
 
@@ -239,7 +240,7 @@ void USLMetadataLogger::CreateIndexes()
 		return;
 	}
 	
-#if SLVIS_WITH_LIBMONGO_C
+#if SL_WITH_LIBMONGO_C
 	bson_t idx_task;
 	bson_init(&idx_task);
 	BSON_APPEND_INT32(&idx_task, "task_description", 1);
@@ -285,7 +286,7 @@ void USLMetadataLogger::CreateIndexes()
 	bson_destroy(index_command);
 	bson_free(idx_task_str);
 	bson_free(idx_cls_str);
-#endif //SLVIS_WITH_LIBMONGO_C
+#endif //SL_WITH_LIBMONGO_C
 }
 
 // Create the scan entry bson document

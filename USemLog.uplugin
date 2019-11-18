@@ -15,31 +15,33 @@
   "IsBetaVersion": false,
   "Installed": false,
   "Modules": [
-		{
-			"Name": "USemLog",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "USemLogSkel",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "USemLogEd",
-			"Type": "Editor"
-		},
-		{
-			"Name": "USemLogVision",
-			"Type": "Developer",
-			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "USemLogOwl",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		}
-	],
+    {
+      "Name": "USemLog",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "USemLogSkel",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "USemLogEd",
+      "Type": "Developer",
+      "LoadingPhase": "Default"
+
+    },
+    {
+      "Name": "USemLogVision",
+      "Type": "Developer",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "USemLogOwl",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
   "Plugins": [
     {
       "Name": "UUtils",

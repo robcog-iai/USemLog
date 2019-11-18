@@ -85,7 +85,7 @@ void FSLWorldStateWriterJson::Write(float Timestamp,
 bool FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
 	const FString Filename = InEpisodeId + TEXT("_WS.json");
-	FString EpisodesDirPath = FPaths::ProjectDir() + LogDirectory + TEXT("/Episodes/");
+	FString EpisodesDirPath = FPaths::ProjectDir() + "/SemLog/" + LogDirectory + TEXT("/Episodes/");
 	FPaths::RemoveDuplicateSlashes(EpisodesDirPath);
 
 	const FString FilePath = EpisodesDirPath + Filename;

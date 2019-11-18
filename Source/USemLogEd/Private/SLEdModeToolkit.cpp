@@ -20,6 +20,7 @@
 #include "Tags.h"
 #include "ScopedTransaction.h"
 #include "Animation/SkeletalMeshActor.h"
+//#include "SLManager.h"
 
 #define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"
 
@@ -234,14 +235,33 @@ bool FSLEdModeToolkit::AreActorsSelected()
 // Generate semantic map from editor world
 FReply FSLEdModeToolkit::GenerateSemanticMap()
 {
+	// TODO use bOverwriteSemanticMap
 	// Create writer
 	FSLSemanticMapWriter SemMapWriter;
+	FString TaskDir = "NONE";
 
-	// TODO use bOverwriteSemanticMap
+	// TODO cannot compile with manager, the Ed module is loaded before the runtime,
+	// therefore it fails to load the compiler flags such as SL_WITH_LIBMONGO_C
+	//ASLManager* SLManager = nullptr;
+	//for (TActorIterator<ASLManager> ActItr(GEditor->GetWorld()); ActItr; ++ActItr)
+	//{
+	//	SLManager = *ActItr;
+	//	break;
+	//}
+	//if(SLManager)
+	//{
+	//	TaskDir = SLManager->GetTaskId();
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find the semantic manager to read the task id, set to NONE.."),
+	//		*FString(__func__), __LINE__);
+	//}
 
+	
 	// Generate map and write to file
 	SemMapWriter.WriteToFile(GEditor->GetEditorWorldContext().World(),
-		ESLOwlSemanticMapTemplate::IAIKitchen, TEXT("SemLog"), TEXT("SemanticMap"));
+		ESLOwlSemanticMapTemplate::IAIKitchen, TaskDir, TEXT("SemanticMap"));
 
 	return FReply::Handled();
 }
@@ -773,7 +793,7 @@ FReply FSLEdModeToolkit::RemoveAllTags()
 // Add semantic overlap shapes
 FReply FSLEdModeToolkit::AddSLContactBoxes()
 {
-	FScopedTransaction Transaction(LOCTEXT("AddSLContactBoxs", "Add contact overlap shapes"));
+	FScopedTransaction Transaction(LOCTEXT("AddSLContactBoxes", "Add contact overlap shapes"));
 	// Iterate only static mesh actors
 	for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
 	{

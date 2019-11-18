@@ -35,7 +35,7 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 	AddAllIndividuals(SemMap, World);
 
 	// Write map to file
-	FString FullFilePath = FPaths::ProjectDir() +
+	FString FullFilePath = FPaths::ProjectDir() + "/SemLog/" +
 		InDirectory + TEXT("/") + InFilename + TEXT(".owl");
 	FPaths::RemoveDuplicateSlashes(FullFilePath);
 	return FFileHelper::SaveStringToFile(SemMap->ToString(), *FullFilePath);

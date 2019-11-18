@@ -308,6 +308,9 @@ private:
 	// Mask color
 	constexpr static const FColor MaskColorConst = FColor(255,255,255);
 
+	// Scan items only with SL Contact components
+	constexpr static const bool bScanItemsOnlyWithSLContact = false;
+	
 	//// Distance to scan camera (cm)
 	//constexpr static float DistanceToCameraConst = 25.f;
 	

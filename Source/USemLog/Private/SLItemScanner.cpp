@@ -72,7 +72,7 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 		// Spawn helper actors, items and scan poses, skip items larger that the distance to camera
 		if(!LoadScanCameraPoseActor() 
 			|| !LoadScanPoses(ScanParams.NumberOfScanPoints, ScanParams.CameraDistanceToScanItem)
-			|| !LoadScanItems(ScanParams.MaxItemVolume, ScanParams.CameraDistanceToScanItem, true))
+			|| !LoadScanItems(ScanParams.MaxItemVolume, ScanParams.CameraDistanceToScanItem, bScanItemsOnlyWithSLContact))
 		{
 			return;
 		}
@@ -228,6 +228,20 @@ bool USLItemScanner::LoadScanItems(float MaxVolume, float MaxBoundsLength, bool 
 		// Check if the item has a visual
 		if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(*ActItr))
 		{
+			// Make all actors movable without physics, detached from any other components/actors
+			// -- avoids errors of moving attached, or actors with attachments
+			AsSMA->DisableComponentsSimulatePhysics();
+			AsSMA->SetMobility(EComponentMobility::Movable);
+			AsSMA->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			//AsSMA->DetachAllSceneComponents(AsSMA->GetRootComponent(), FDetachmentTransformRules::KeepWorldTransform);
+			TArray<AActor*> AttachedActors;
+			AsSMA->GetAttachedActors(AttachedActors);
+			for(auto& A : AttachedActors)
+			{
+				A->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+				//A->DetachAllSceneComponents(A->GetRootComponent(), FDetachmentTransformRules::KeepWorldTransform);
+			}
+			
 			// Everything is hidden by default
 			AsSMA->SetActorHiddenInGame(true);
 			
@@ -245,9 +259,10 @@ bool USLItemScanner::LoadScanItems(float MaxVolume, float MaxBoundsLength, bool 
 			{
 				if(HasScanningRequirements(SMC, MaxVolume, MaxBoundsLength, bWithContactShape, false))
 				{
-					SMC->SetSimulatePhysics(false);
-					AsSMA->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-					SMC->SetMobility(EComponentMobility::Movable);
+					//SMC->SetSimulatePhysics(false);
+					//AsSMA->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+					//AsSMA->DetachAllSceneComponents(AsSMA->GetRootComponent(), FDetachmentTransformRules::KeepWorldTransform);
+					//SMC->SetMobility(EComponentMobility::Movable);
 					ActItr->SetActorTransform(FTransform::Identity);
 					
 					ScanItems.Emplace(SMC, Class);

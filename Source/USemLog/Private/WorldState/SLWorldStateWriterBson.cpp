@@ -62,7 +62,7 @@ void FSLWorldStateWriterBson::Write(float Timestamp,
 bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
 	const FString Filename = InEpisodeId + TEXT("_WS.bson");
-	FString EpisodesDirPath = FPaths::ProjectDir() + LogDirectory + TEXT("/Episodes/");
+	FString EpisodesDirPath = FPaths::ProjectDir() + "/SemLog/" + LogDirectory + TEXT("/Episodes/");
 	FPaths::RemoveDuplicateSlashes(EpisodesDirPath);
 
 	const FString FilePath = EpisodesDirPath + Filename;

@@ -40,7 +40,7 @@ ASLManager::ASLManager()
 	bLogMetadata = false;
 	bOverwriteMetadata = false;
 	bScanItems = false;
-	ScanResolution.X = 1920;
+	ScanResolution.X = 1080;
 	ScanResolution.Y = 1080;
 	NumberOfScanPoints = 64;
 	MaxScanItemVolume = 0.f;
@@ -76,10 +76,20 @@ ASLManager::ASLManager()
 
 	
 	// Vision data logger default values
-	bLogVisionData = true;
+	bLogVisionData = false;
 	MaxRecordHz = 120.f;
 	MinRecordHz = 30.f;
 
+	// Editor Logger default values
+	bLogEditorData = false;
+	bOverwriteEditorData = false;
+	bWriteSemanticMap = false;
+	bWriteClassProperties = false;
+	bWriteUniqueIdProperties = false;
+	bWriteVisualMaskProperties = false;
+	bGenerateVisualMasksRandomly = false;
+	
+	
 #if WITH_EDITOR
 	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.5;
@@ -186,6 +196,11 @@ void ASLManager::Init()
 				FSLItemScanParams(ScanResolution, NumberOfScanPoints, MaxScanItemVolume, CameraDistanceToScanItem,
 				ScanViewModes.Array(), bIncludeScansLocally));
 		}
+		else if(bLogEditorData)
+		{
+			EditorLogger = NewObject<USLEditorLogger>(this);
+			EditorLogger->Init(TaskId);
+		}
 		else
 		{
 			if (bLogWorldState)
@@ -228,9 +243,22 @@ void ASLManager::Start()
 		if(bLogMetadata)
 		{
 			// Start metadata logger
-			if ( MetadataLogger)
+			if (MetadataLogger)
 			{
 				MetadataLogger->Start(TaskDescription);
+			}
+		}
+		else if(bLogEditorData)
+		{
+			if(EditorLogger)
+			{
+				EditorLogger->Start(
+					bOverwriteEditorData, 
+					bWriteSemanticMap,
+					bWriteClassProperties,
+					bWriteUniqueIdProperties,
+					bWriteVisualMaskProperties,
+					bGenerateVisualMasksRandomly);
 			}
 		}
 		else
@@ -269,6 +297,13 @@ void ASLManager::Finish(const float Time, bool bForced)
 			if (MetadataLogger)
 			{
 				MetadataLogger->Finish(bForced);
+			}
+		}
+		else if(bLogEditorData)
+		{
+			if(EditorLogger)
+			{
+				EditorLogger->Finish(bForced);
 			}
 		}
 		else
@@ -325,6 +360,24 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartFromUserInput))
 	{
 		if (bStartFromUserInput) {bStartAtBeginPlay = false;  bStartWithDelay = false; bStartAtFirstTick = false;}
+	}
+
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
+	{
+		if (bLogMetadata) {bLogWorldState = false; bLogEventData = false; bLogEditorData = false;};
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEditorData))
+	{
+		if (bLogEditorData) {bLogWorldState = false; bLogEventData = false; bLogMetadata = false;};
+	}
+	
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogWorldState))
+	{
+		if (bLogWorldState) {bLogEditorData = false; bLogMetadata = false;};
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEventData))
+	{
+		if (bLogEventData) {bLogEditorData = false; bLogMetadata = false;};
 	}
 	
 	// Generate an editable unique id

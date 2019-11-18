@@ -30,7 +30,7 @@ public class USemLogEd : ModuleRules
 			new string[]
 			{
 				"Core",
-				"USemLog",
+				
 				"USemLogSkel",
 				"UTags",
 				"UIds",
@@ -42,6 +42,7 @@ public class USemLogEd : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
+				"USemLog",
 				"CoreUObject",
 				"Engine",
 				"Slate",

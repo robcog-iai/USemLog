@@ -8,6 +8,7 @@
 #include "SLEventLogger.h"
 #include "SLMetadataLogger.h"
 #include "SLVisionLogger.h"
+#include "SLEditorLogger.h"
 #include "SLManager.generated.h"
 
 /**
@@ -88,7 +89,9 @@ private:
 	// Set when manager is finished
 	bool bIsFinished;
 
+	/*******************************************************************************************************/
 	/* Semantic logger */
+	/******************************************************************************************************/
 	// Log directory (or the database name if saving to mongodb)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomTaskId"))
 	FString TaskId;
@@ -148,8 +151,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (ClampMin = 0, ClampMax = 65535))
 	uint16 ServerPort;
 	
-
-	/* Begin task metadata logger properties */
+	/******************************************************************************************************/
+	/* Begin task Metadata Logger properties */
+	/******************************************************************************************************/
 	// Include task related metadata
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogMetadata;
@@ -192,8 +196,10 @@ private:
 	USLMetadataLogger* MetadataLogger;
 	/* End task metadata logger properties */
 	
-	
-	/* Begin world state logger properties */
+
+	/******************************************************************************************************/
+	/* Begin World State Logger properties */
+	/******************************************************************************************************/
 	// Log world state
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogWorldState;
@@ -224,7 +230,9 @@ private:
 	/* End world state logger properties */
 
 
-	/* Begin event data logger properties */
+	/******************************************************************************************************/
+	/* Begin Event Data Logger properties */
+	/******************************************************************************************************/
 	// Log event data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogEventData;
@@ -266,8 +274,9 @@ private:
 	USLEventLogger* EventDataLogger;
 	/* End event data logger properties */
 
-
-	/* Begin vision data logger properties */
+	/******************************************************************************************************/
+	/* Begin Vision Data Logger properties */
+	/******************************************************************************************************/
 	// Log vision data (this will cause the episode to be replayed for logging image data)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogVisionData;
@@ -283,5 +292,42 @@ private:
 	// Vision data logger, use UPROPERTY to avoid GC
 	UPROPERTY()
 	USLVisionLogger* VisionDataLogger;
+	/* End vision data logger properties */
+
+	/******************************************************************************************************/
+	/* Begin Editor Logger properties */
+	/******************************************************************************************************/
+	// Log editor related data, workaround to access actors from sublevels
+	// (GEditor->GetEditorWorldContext().World() does not seem to store data on the sublevels)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bLogEditorData;
+
+	// Overwrite existing editor related entries
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	bool bOverwriteEditorData;
+
+	// Save data so an owl semantic map
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	bool bWriteSemanticMap;
+
+	// Add class property to tags
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	bool bWriteClassProperties;
+
+	// Add unique id property to tags
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	bool bWriteUniqueIdProperties;
+	
+	// Add visual mask data
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	bool bWriteVisualMaskProperties;
+
+	// Generate visual masks randomly or incrementally
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bWriteVisualMaskProperty"))
+	bool bGenerateVisualMasksRandomly;
+	
+	// Vision data logger, use UPROPERTY to avoid GC
+	UPROPERTY()
+	USLEditorLogger* EditorLogger;
 	/* End vision data logger properties */
 };
