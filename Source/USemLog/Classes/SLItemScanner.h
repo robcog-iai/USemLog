@@ -193,13 +193,7 @@ private:
 
 	// Get the bounding box and the number of pixels the color occupies in the image
 	void GetColorPixelNumAndBB(const TArray<FColor>& InBitmap, const FColor& Color, int32 Width, int32 Height, int32& OutPixelNum, FIntPoint& OutBBMin, FIntPoint& OutBBMax);
-	
-	// Get the bounding box of the item in the image
-	void GetItemBB(const TArray<FColor>& InBitmap, int32 Width, int32 Height, FIntPoint& OutBBMin, FIntPoint& OutBBMax);
 
-	// Get the bounding box of the color in the image
-	void GetColorBB(const TArray<FColor>& InBitmap, const FColor& Color, int32 Width, int32 Height, FIntPoint& OutBBMin, FIntPoint& OutBBMax);
-	
 	// Get the number of pixels that the item occupies in the image
 	int32 GetItemPixelNum(const TArray<FColor>& Bitmap);
 

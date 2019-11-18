@@ -160,7 +160,7 @@ void USLItemScanner::Finish()
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d Finish"), *FString(__func__), __LINE__);		
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d Finish"), *FString(__func__), __LINE__);
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
@@ -953,33 +953,18 @@ void USLItemScanner::GetColorPixelNumAndBB(const TArray<FColor>& InBitmap, const
 
 	for (const auto& C : InBitmap)
 	{
-		const bool bIsMaskColor = (C == Color);
-
-		if(bIsMaskColor)
+		if(C == Color)
 		{
 			OutPixelNum++;
-		}
-
-		// Check for row change
-		if(ColIdx > Width - 1)
-		{
-			ColIdx = 0;
-			RowIdx++;
 			
-			if(bIsMaskColor)
+			if(RowIdx < OutBBMin.Y)
 			{
-				if(RowIdx < OutBBMin.Y)
-				{
-					OutBBMin.Y = RowIdx;
-				}
-				if(RowIdx > OutBBMax.Y)
-				{
-					OutBBMax.Y = RowIdx;
-				}
+				OutBBMin.Y = RowIdx;
 			}
-		}
-		else if(bIsMaskColor)
-		{
+			if(RowIdx > OutBBMax.Y)
+			{
+				OutBBMax.Y = RowIdx;
+			}
 			if(ColIdx < OutBBMin.X)
 			{
 				OutBBMin.X = ColIdx;
@@ -991,92 +976,26 @@ void USLItemScanner::GetColorPixelNumAndBB(const TArray<FColor>& InBitmap, const
 		}
 
 		//// DEBUG
-		//if(bIsMaskColor)
+		//if(C == Color)
 		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d [\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t[\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
 		//		*FString(__func__), __LINE__, RowIdx, ColIdx, OutBBMin.X, OutBBMin.Y, OutBBMax.X, OutBBMax.Y);
 		//}
 		//else
 		//{
-		//	UE_LOG(LogTemp, Error, TEXT("%s::%d [\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
+		//	UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t[\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
 		//		*FString(__func__), __LINE__, RowIdx, ColIdx, OutBBMin.X, OutBBMin.Y, OutBBMax.X, OutBBMax.Y);
 		//}
 
 		// Next column
 		ColIdx++;
-	}
-}
-
-// Get the bounding box of the color in the image
-void USLItemScanner::GetItemBB(const TArray<FColor>& InBitmap, int32 Width, int32 Height, FIntPoint& OutBBMin, FIntPoint& OutBBMax)
-{
-	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
-	{
-		GetColorBB(InBitmap, MaskColorConst, Width, Height, OutBBMin, OutBBMin);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Only works in Mask mode.."), *FString(__func__));
-	}
-}
-
-// Get the bounding box of the color in the image
-void USLItemScanner::GetColorBB(const TArray<FColor>& InBitmap, const FColor& Color, int32 Width, int32 Height,
-	FIntPoint& OutBBMin, FIntPoint& OutBBMax)
-{
-	int32 RowIdx = 0;
-	int32 ColIdx = 0;
-	OutBBMin = FIntPoint(Width, Height);
-	OutBBMax = FIntPoint(0,0);
-
-	for (const auto& C : InBitmap)
-	{
-		const bool bIsMaskColor = (C == Color);
 
 		// Check for row change
 		if(ColIdx > Width - 1)
 		{
 			ColIdx = 0;
 			RowIdx++;
-			
-			if(bIsMaskColor)
-			{
-				if(RowIdx < OutBBMin.Y)
-				{
-					OutBBMin.Y = RowIdx;
-				}
-				if(RowIdx > OutBBMax.Y)
-				{
-					OutBBMax.Y = RowIdx;
-				}
-			}
 		}
-		else if(bIsMaskColor)
-		{
-			if(ColIdx < OutBBMin.X)
-			{
-				OutBBMin.X = ColIdx;
-			}
-			if(ColIdx > OutBBMax.X)
-			{
-				OutBBMax.X = ColIdx;
-			}
-		}
-
-		//// DEBUG
-		//if(bIsMaskColor)
-		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d [\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
-		//		*FString(__func__), __LINE__, RowIdx, ColIdx, OutBBMin.X, OutBBMin.Y, OutBBMax.X, OutBBMax.Y);
-		//}
-		//else
-		//{
-		//	UE_LOG(LogTemp, Error, TEXT("%s::%d [\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
-		//		*FString(__func__), __LINE__, RowIdx, ColIdx, OutBBMin.X, OutBBMin.Y, OutBBMax.X, OutBBMax.Y);
-		//}
-
-		// Next column
-		ColIdx++;
 	}
 }
 
