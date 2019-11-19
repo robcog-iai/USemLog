@@ -302,14 +302,26 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogEditorData;
 
-	// Overwrite existing editor related entries
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
-	bool bOverwriteEditorData;
-
 	// Save data so an owl semantic map
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
 	bool bWriteSemanticMap;
 
+	// Clear all tags (if ClearOnlyThisTagType is empty)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	bool bClearTags;
+
+	// Clear only tags with this tag type (empty means clear all tags everything)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bClearTags"))
+	FString ClearTagType;
+
+	// Remove only the given key from the tag type (if empty, it removes all keys)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bClearTags"))
+	FString ClearKeyType;
+	
+	// Overwrite existing editor related entries
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	bool bOverwriteProperties;
+	
 	// Add class property to tags
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
 	bool bWriteClassProperties;
@@ -322,9 +334,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
 	bool bWriteVisualMaskProperties;
 
+	// Min distance between the mask colors
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bWriteVisualMaskProperty"))
+	int32 VisualMaskColorMinDistance;
+	
 	// Generate visual masks randomly or incrementally
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bWriteVisualMaskProperty"))
-	bool bGenerateVisualMasksRandomly;
+	bool bRandomVisualMaskGenerator;
 	
 	// Vision data logger, use UPROPERTY to avoid GC
 	UPROPERTY()

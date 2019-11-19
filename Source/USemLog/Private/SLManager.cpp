@@ -82,12 +82,16 @@ ASLManager::ASLManager()
 
 	// Editor Logger default values
 	bLogEditorData = false;
-	bOverwriteEditorData = false;
 	bWriteSemanticMap = false;
+	bClearTags = false;
+	ClearTagType = "SemLog";
+	ClearKeyType = "";
+	bOverwriteProperties = false;
 	bWriteClassProperties = false;
 	bWriteUniqueIdProperties = false;
 	bWriteVisualMaskProperties = false;
-	bGenerateVisualMasksRandomly = false;
+	VisualMaskColorMinDistance = 17;
+	bRandomVisualMaskGenerator = false;
 	
 	
 #if WITH_EDITOR
@@ -175,8 +179,11 @@ void ASLManager::Init()
 
 	if (!bIsInit)
 	{
-		// Init the semantic items content singleton
-		FSLEntitiesManager::GetInstance()->Init(GetWorld());
+		if(!bLogEditorData)
+		{
+			// Init the semantic items content singleton
+			FSLEntitiesManager::GetInstance()->Init(GetWorld());
+		}
 
 		// If the episode Id is not manually added, generate new unique id
 		if (!bUseCustomEpisodeId)
@@ -253,12 +260,17 @@ void ASLManager::Start()
 			if(EditorLogger)
 			{
 				EditorLogger->Start(
-					bOverwriteEditorData, 
 					bWriteSemanticMap,
+					bClearTags,
+					ClearTagType,
+					ClearKeyType,
+					bOverwriteProperties,
 					bWriteClassProperties,
 					bWriteUniqueIdProperties,
 					bWriteVisualMaskProperties,
-					bGenerateVisualMasksRandomly);
+					VisualMaskColorMinDistance,
+					bRandomVisualMaskGenerator);
+				EditorLogger->Finish(); // Safely quit the editor
 			}
 		}
 		else
@@ -303,7 +315,7 @@ void ASLManager::Finish(const float Time, bool bForced)
 		{
 			if(EditorLogger)
 			{
-				EditorLogger->Finish(bForced);
+				EditorLogger->Finish(true);
 			}
 		}
 		else
@@ -344,8 +356,15 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
-	// Radio button style between start flags
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtBeginPlay))
+	/* Logger Properties */
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bUseCustomEpisodeId))
+	{
+		if (bUseCustomEpisodeId) { EpisodeId = FIds::NewGuidInBase64Url(); }
+		else { EpisodeId = TEXT(""); };
+	}
+	
+	/* Start Properties*/
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtBeginPlay))
 	{
 		if (bStartAtBeginPlay) {bStartAtFirstTick = false; bStartWithDelay = false; bStartFromUserInput = false;}
 	}
@@ -362,6 +381,7 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 		if (bStartFromUserInput) {bStartAtBeginPlay = false;  bStartWithDelay = false; bStartAtFirstTick = false;}
 	}
 
+	/* Metadata Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
 	{
 		if (bLogMetadata) {bLogWorldState = false; bLogEventData = false; bLogEditorData = false;};
@@ -370,7 +390,8 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	{
 		if (bLogEditorData) {bLogWorldState = false; bLogEventData = false; bLogMetadata = false;};
 	}
-	
+
+	/* World State Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogWorldState))
 	{
 		if (bLogWorldState) {bLogEditorData = false; bLogMetadata = false;};
@@ -379,12 +400,23 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	{
 		if (bLogEventData) {bLogEditorData = false; bLogMetadata = false;};
 	}
-	
-	// Generate an editable unique id
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bUseCustomEpisodeId))
+
+	/* Editor Logger Properties*/
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bClearTags))
 	{
-		if (bUseCustomEpisodeId) { EpisodeId = FIds::NewGuidInBase64Url(); }
-		else { EpisodeId = TEXT(""); };
+		if (bClearTags) {bWriteClassProperties = false; bWriteUniqueIdProperties = false; bWriteVisualMaskProperties = false;}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteClassProperties))
+	{
+		if (bWriteClassProperties) {bClearTags = false;}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteUniqueIdProperties))
+	{
+		if (bWriteUniqueIdProperties) {bClearTags = false;}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteVisualMaskProperties))
+	{
+		if (bWriteVisualMaskProperties) {bClearTags = false;}
 	}
 }
 

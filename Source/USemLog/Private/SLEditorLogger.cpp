@@ -34,12 +34,17 @@ void USLEditorLogger::Init(const FString& InTaskId)
 }
 
 // Start logger
-void USLEditorLogger::Start(bool bOverwrite,
+void USLEditorLogger::Start(
 	bool bWriteSemanticMap,
+	bool bClearTags,
+	const FString& ClearTagType,
+	const FString& ClearKeyType,
+	bool bOverwriteProperties,
 	bool bWriteClassProperties,
 	bool bWriteUniqueIdProperties,
 	bool bWriteVisualMaskProperties,
-	bool bGenerateVisualMasksRandomly)
+	int32 VisualMaskColorMinDistance,
+	bool bRandomMaskGenerator)
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -47,17 +52,27 @@ void USLEditorLogger::Start(bool bOverwrite,
 
 		if(bWriteSemanticMap)
 		{
-			FSLEditorToolkit::WriteSemanticMap(GetWorld(), bOverwrite, TaskId);
+			FSLEditorToolkit::WriteSemanticMap(GetWorld(), TaskId);
+		}
+
+		if(bClearTags)
+		{
+			FSLEditorToolkit::ClearTags(GetWorld(), ClearTagType, ClearKeyType);
 		}
 
 		if(bWriteClassProperties)
 		{
-			FSLEditorToolkit::WriteClassProperties(GetWorld(), bOverwrite);
+			FSLEditorToolkit::WriteClassProperties(GetWorld(), bOverwriteProperties);
 		}
 
 		if(bWriteUniqueIdProperties)
 		{
-			FSLEditorToolkit::WriteUniqueIdProperties(GetWorld(), bOverwrite);
+			FSLEditorToolkit::WriteUniqueIdProperties(GetWorld(), bOverwriteProperties);
+		}
+
+		if(bWriteVisualMaskProperties)
+		{
+			FSLEditorToolkit::WriteUniqueMaskProperties(GetWorld(), bOverwriteProperties, VisualMaskColorMinDistance, bRandomMaskGenerator);
 		}
 		
 		bIsStarted = true;
@@ -71,7 +86,7 @@ void USLEditorLogger::Finish(bool bForced)
 	{
 		if(!bForced)
 		{
-			//QuitEditor();
+			QuitEditor();
 		}
 	}
 }
@@ -83,10 +98,11 @@ void USLEditorLogger::QuitEditor()
 	//
 	//FGameDelegates::Get().GetExitCommandDelegate().Broadcast();
 	//FPlatformMisc::RequestExit(0);
-
+#if WITH_EDITOR
 	// Make sure you can quit even if Init or Start could not work out
 	if (GEngine)
 	{
 		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
 	}
+#endif // WITH_EDITOR
 }

@@ -26,12 +26,17 @@ public:
 	void Init(const FString& InTaskId);
 
 	// Start logger
-	void Start(bool bOverwrite,
+	void Start(
 		bool bWriteSemanticMap,
+		bool bClearTags,
+		const FString& ClearTagType,
+		const FString& ClearKeyType,
+		bool bOverwriteProperties,
 		bool bWriteClassProperties,
 		bool bWriteUniqueIdProperties,
 		bool bWriteVisualMaskProperties,
-		bool bGenerateVisualMasksRandomly);
+		int32 VisualMaskColorMinDistance,
+		bool bRandomMaskGenerator);
 	
 	// Finish logger
 	void Finish(bool bForced = false);
