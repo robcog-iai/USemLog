@@ -125,6 +125,45 @@ void FSLEditorToolkit::WriteUniqueMaskProperties(UWorld* World, bool bOverwrite,
 	}
 }
 
+// Tag non-movable objects as static
+void FSLEditorToolkit::TagNonMovableEntities(UWorld* World, bool bOverwriteProperties)
+{
+	const FString TagType = "SemLog";
+	const FString KeyType = "Mobility";
+	const FString KeyValue = "Static";
+
+	// Check if actor is non movable lambda
+	auto IsNonMovableLambda = [](AActor* Actor)->bool
+	{
+		return false;
+	};
+	
+	
+	/* Static mesh actors */
+	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
+	{
+		// For an actor to be non-movable it has to have physics de-activated, including all the outermosts physics.
+		if(FTags::HasKeyValuePair(*ActItr, TagType, KeyType, KeyValue))
+		{
+			if(!IsNonMovableLambda(*ActItr))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s is movable, tagged as non-movable, removing tag.."),
+					*FString(__func__), __LINE__, *ActItr->GetName());
+				FTags::RemoveKeyValuePair(*ActItr, TagType, KeyType);
+			}
+		}
+		else
+		{
+			if(IsNonMovableLambda(*ActItr))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is non-movable, adding tag.."),
+					*FString(__func__), __LINE__, *ActItr->GetName());
+				FTags::AddKeyValuePair(*ActItr, TagType, KeyType, KeyValue);
+			}
+		}
+	}
+}
+
 // Randomly generate unique visual masks
 void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrite, int32 VisualMaskColorMinDistance)
 {

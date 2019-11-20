@@ -34,6 +34,9 @@ public:
 
 	// Write unique mask properties
 	static void WriteUniqueMaskProperties(UWorld* World, bool bOverwrite, int32 VisualMaskColorMinDistance, bool bRandomGenerator);
+
+	// Tag non-movable objects as static
+	static void TagNonMovableEntities(UWorld* World, bool bOverwriteProperties);
 	
 private:
 	// Randomly generate unique visual masks

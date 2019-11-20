@@ -19,7 +19,6 @@ USLEditorLogger::~USLEditorLogger()
 	{
 		Finish(true);
 	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__func__), __LINE__);
 }
 
 // Init Logger
@@ -28,7 +27,6 @@ void USLEditorLogger::Init(const FString& InTaskId)
 	if (!bIsInit)
 	{
 		TaskId = InTaskId;
-		UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__func__), __LINE__);
 		bIsInit = true;
 	}
 }
@@ -44,7 +42,8 @@ void USLEditorLogger::Start(
 	bool bWriteUniqueIdProperties,
 	bool bWriteVisualMaskProperties,
 	int32 VisualMaskColorMinDistance,
-	bool bRandomMaskGenerator)
+	bool bRandomMaskGenerator,
+	bool bTagStaticEntities)
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -73,6 +72,11 @@ void USLEditorLogger::Start(
 		if(bWriteVisualMaskProperties)
 		{
 			FSLEditorToolkit::WriteUniqueMaskProperties(GetWorld(), bOverwriteProperties, VisualMaskColorMinDistance, bRandomMaskGenerator);
+		}
+
+		if(bTagStaticEntities)
+		{
+			FSLEditorToolkit::TagNonMovableEntities(GetWorld(), bOverwriteProperties);
 		}
 		
 		bIsStarted = true;

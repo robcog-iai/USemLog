@@ -108,19 +108,19 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString TaskDescription;
 
+	// Reset start time to 0 when starting to log
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bResetStartTime;
+	
 	// Start at load time
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartAtBeginPlay;
 
-	// Start after begin play, in the first tick TODO inserts twice timestamp 0 in mongo
-	// this might be because we set the time back to 0 to sync it with the replay function
-	// however this seems to have the side effect that tick is called twice at timestamp 0 (this theory has not been tested)
+	// Start after begin play, in the first tick 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartAtFirstTick;
 
-	// Start after a given delay TODO inserts twice timestamp 0 in mongo
-	// this might be because we set the time back to 0 to sync it with the replay function
-	// however this seems to have the side effect that tick is called twice at timestamp 0 (this theory has not been tested)
+	// Start after a given delay
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartWithDelay;
 
@@ -128,9 +128,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartWithDelay"))
 	float StartDelay;
 
-	// Start from external user input TODO inserts twice timestamp 0 in mongo
-	// this might be because we set the time back to 0 to sync it with the replay function
-	// however this seems to have the side effect that tick is called twice at timestamp 0 (this theory has not been tested)
+	// Start from external user input
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartFromUserInput;
 
@@ -140,8 +138,7 @@ private:
 
 	// Action name for finishing from user input
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartFromUserInput"))
-	FName FinishInputActionName;
-
+	FName FinishInputActionName;	
 
 	// Mongodb server IP
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -282,6 +279,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogVisionData;
 
+	// Resolution of the images
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))
+	FIntPoint VisionImageResolution;
+	
 	// Update rate of the vision logger (0 - updates at every available frame)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))
 	float VisionUpdateRate;
@@ -338,6 +339,10 @@ private:
 	// Generate visual masks randomly or incrementally
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bWriteVisualMaskProperty"))
 	bool bRandomVisualMaskGenerator;
+
+	// Tag non-movable entities
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bWriteVisualMaskProperty"))
+	bool bWriteNonMovableProperties;
 	
 	// Vision data logger, use UPROPERTY to avoid GC
 	UPROPERTY()

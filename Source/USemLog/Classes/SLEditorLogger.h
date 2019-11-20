@@ -36,7 +36,8 @@ public:
 		bool bWriteUniqueIdProperties,
 		bool bWriteVisualMaskProperties,
 		int32 VisualMaskColorMinDistance,
-		bool bRandomMaskGenerator);
+		bool bRandomMaskGenerator,
+		bool bTagStaticEntities);
 	
 	// Finish logger
 	void Finish(bool bForced = false);

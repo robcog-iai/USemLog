@@ -4,6 +4,7 @@
 #include "SLItemScanner.h"
 #include "Tags.h"
 #include "SLContactShapeInterface.h"
+#include "SLMetadataLogger.h"
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
 #include "Async.h"
@@ -15,7 +16,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "SLMetadataLogger.h"
 #include "Engine/Light.h"
 #include "Engine/Engine.h"
 
@@ -97,13 +97,6 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 			return;
 		}
 
-		// Disable physics on all actors
-		for (TActorIterator<AActor> Act(GetWorld()); Act; ++Act)
-		{
-			Act->DisableComponentsSimulatePhysics();
-		}
-
-
 		// Move the first item in position
 		if(!SetupFirstScanItem())
 		{
@@ -117,7 +110,7 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 		// Set the screenshot resolution;
 		InitScreenshotResolution(ScanParams.Resolution);
 		
-		// Set scan image resolution and various rendering paramaters
+		// Set rendering parameters
 		InitRenderParameters();
 
 		// Bind the screenshot callback
@@ -934,11 +927,13 @@ void USLItemScanner::QuitEditor()
 	//FGameDelegates::Get().GetExitCommandDelegate().Broadcast();
 	//FPlatformMisc::RequestExit(0);
 
+#if WITH_EDITOR	
 	// Make sure you can quit even if Init or Start could not work out
 	if (GEngine)
 	{
 		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
 	}
+#endif // WITH_EDITOR
 }
 
 /* Helpers */

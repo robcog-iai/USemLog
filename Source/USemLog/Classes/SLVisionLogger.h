@@ -5,13 +5,59 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+
+#if SL_WITH_LIBMONGO_C
+THIRD_PARTY_INCLUDES_START
+#if PLATFORM_WINDOWS
+#include "Windows/AllowWindowsPlatformTypes.h"
+#include <mongoc/mongoc.h>
+#include "Windows/HideWindowsPlatformTypes.h"
+#else
+#include <mongoc/mongoc.h>
+#endif // #if PLATFORM_WINDOWS
+THIRD_PARTY_INCLUDES_END
+#endif //SL_WITH_LIBMONGO_C
 #include "SLVisionLogger.generated.h"
+
+// Forward declarations
+class UMaterialInterface;
+class UGameViewportClient;
 
 /**
 * Vision logger parameters
 */
 struct FSLVisionLoggerParams
 {
+	// Update rate
+	float UpdateRate;
+
+	// Resolution
+	FIntPoint Resolution;
+
+	// Default ctor
+	FSLVisionLoggerParams();
+
+	// Init ctor
+	FSLVisionLoggerParams(
+		float InUpdateRate,
+		FIntPoint InResolution) :
+		UpdateRate(InUpdateRate),
+		Resolution(InResolution)
+	{};
+};
+
+/**
+* View modes
+*/
+UENUM()
+enum class ESLVisLoggerViewMode : uint8
+{
+	NONE					UMETA(DisplayName = "None"),
+	Color					UMETA(DisplayName = "Color"),
+	Unlit					UMETA(DisplayName = "Unlit"),
+	Mask					UMETA(DisplayName = "Mask"),
+	Depth					UMETA(DisplayName = "Depth"),
+	Normal					UMETA(DisplayName = "Normal"),
 };
 
 /**
@@ -31,7 +77,8 @@ public:
 	~USLVisionLogger();
 
 	// Init Logger
-	void Init(const FString& InTaskId, const FString& InEpisodeId, const FString& InServerIp, uint16 InServerPort, float InUpdateRate);
+	void Init(const FString& InTaskId, const FString& InEpisodeId, const FString& InServerIp, uint16 InServerPort,
+		const FSLVisionLoggerParams& Params);
 
 	// Start logger
 	void Start(const FString& EpisodeId);
@@ -39,6 +86,43 @@ public:
 	// Finish logger
 	void Finish(bool bForced = false);
 
+private:
+	// Called when the screenshot is captured
+	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
+	
+	// Connect to the database
+	bool Connect(const FString& DBName, const FString& CollName, const FString& ServerIp, uint16 ServerPort);
+
+	// Disconnect and clean db connection
+	void Disconnect();
+
+	// Disable physics and set to movable
+	void DisablePhysics();
+
+	// Create clones of the items with mask material on top
+	bool SetupMaskClones();
+
+	// Init hi-res screenshot resolution
+	void InitScreenshotResolution(FIntPoint Resolution);
+
+	// Init render parameters (resolution, view mode)
+	void InitRenderParameters();
+
+	// Request a screenshot
+	void RequestScreenshot();
+	
+	// Apply view mode
+	void ApplyViewMode(ESLVisLoggerViewMode Mode);
+
+	// Apply mask materials 
+	void ApplyMaskMaterials();
+
+	// Apply original material to current item
+	void ApplyOriginalMaterials();
+	
+	// Clean exit, all the Finish() methods will be triggered
+	void QuitEditor();
+	
 private:
 	// Set when initialized
 	bool bIsInit;
@@ -48,4 +132,31 @@ private:
 
 	// Set when finished
 	bool bIsFinished;
+
+	// Dynamic mask material
+	UPROPERTY() // Avoid GC
+	UMaterialInstanceDynamic* DynamicMaskMaterial;
+
+	// Used for triggering the screenshot request
+	UGameViewportClient* ViewportClient;
+
+	// View modes
+	TArray<ESLVisLoggerViewMode> ViewModes;
+
+	// Currently active view mode
+	int32 CurrViewModeIdx;
+	
+#if SL_WITH_LIBMONGO_C
+	// Server uri
+	mongoc_uri_t* uri;
+
+	// MongoC connection client
+	mongoc_client_t* client;
+
+	// Database to access
+	mongoc_database_t* database;
+
+	// Database collection
+	mongoc_collection_t* collection;
+#endif //SL_WITH_LIBMONGO_C	
 };

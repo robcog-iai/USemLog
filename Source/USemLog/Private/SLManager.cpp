@@ -22,6 +22,7 @@ ASLManager::ASLManager()
 	bUseCustomEpisodeId = false;
 	EpisodeId = TEXT("");
 	TaskDescription = TEXT("Write task description here");
+	bResetStartTime = false;
 	bStartAtBeginPlay = true;
 	bStartAtFirstTick = false;
 	bStartWithDelay = false;
@@ -76,6 +77,7 @@ ASLManager::ASLManager()
 	// Vision data logger default values
 	bLogVisionData = false;
 	VisionUpdateRate = 0.f;
+	VisionImageResolution = FIntPoint(1920, 1080);
 
 	// Editor Logger default values
 	bLogEditorData = false;
@@ -89,6 +91,7 @@ ASLManager::ASLManager()
 	bWriteVisualMaskProperties = false;
 	VisualMaskColorMinDistance = 17;
 	bRandomVisualMaskGenerator = false;
+	bWriteNonMovableProperties = false;
 	
 	
 #if WITH_EDITOR
@@ -177,12 +180,8 @@ void ASLManager::Init()
 			EpisodeId = FIds::NewGuidInBase64Url();
 		}
 
-		// Metadata logging happens exclusively
 		if (bLogMetadata)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Logging metadata only.."), *FString(__func__), __LINE__);
-
-			// Create and init world state logger
 			MetadataLogger = NewObject<USLMetadataLogger>(this);
 			MetadataLogger->Init(TaskId, ServerIp, ServerPort,
 				bOverwriteMetadata, bScanItems, 
@@ -197,13 +196,13 @@ void ASLManager::Init()
 		else if (bLogVisionData)
 		{
 			VisionDataLogger = NewObject<USLVisionLogger>(this);
-			VisionDataLogger->Init(TaskId, EpisodeId, ServerIp, ServerPort, VisionUpdateRate);
+			VisionDataLogger->Init(TaskId, EpisodeId, ServerIp, ServerPort, 
+				FSLVisionLoggerParams(VisionUpdateRate, VisionImageResolution));
 		}
 		else
 		{
 			if (bLogWorldState)
 			{
-				// Create and init world state logger
 				WorldStateLogger = NewObject<USLWorldStateLogger>(this);
 				WorldStateLogger->Init(WriterType, FSLWorldStateWriterParams(
 					LinearDistance, AngularDistance, TaskId, EpisodeId, ServerIp, ServerPort, bOverwriteWorldState));
@@ -211,7 +210,6 @@ void ASLManager::Init()
 
 			if (bLogEventData)
 			{
-				// Create and init event data logger
 				EventDataLogger = NewObject<USLEventLogger>(this);
 				EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(TaskId, EpisodeId),
 					bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines);
@@ -229,15 +227,14 @@ void ASLManager::Start()
 	if (!bIsStarted && bIsInit)
 	{
 		// Reset world time
-		GetWorld()->TimeSeconds = 0.f;
-
-		if(bLogMetadata)
+		if(bResetStartTime)
 		{
-			// Start metadata logger
-			if (MetadataLogger)
-			{
-				MetadataLogger->Start(TaskDescription);
-			}
+			GetWorld()->TimeSeconds = 0.f;
+		}
+
+		if(bLogMetadata && MetadataLogger)
+		{
+			MetadataLogger->Start(TaskDescription);
 		}
 		else if(bLogEditorData)
 		{
@@ -253,10 +250,16 @@ void ASLManager::Start()
 					bWriteUniqueIdProperties,
 					bWriteVisualMaskProperties,
 					VisualMaskColorMinDistance,
-					bRandomVisualMaskGenerator);
+					bRandomVisualMaskGenerator,
+					bWriteNonMovableProperties);
 				Finish(GetWorld()->GetTimeSeconds(),false); // Finish the manager directly
 				//EditorLogger->Finish(); // Quit the editor before the manager finishes
 			}
+		}
+		else if (bLogVisionData && VisionDataLogger)
+		{
+			// Start the vision data logger
+			VisionDataLogger->Start(EpisodeId);
 		}
 		else
 		{
@@ -271,14 +274,7 @@ void ASLManager::Start()
 			{
 				EventDataLogger->Start();
 			}
-
-			// Start the vision data logger
-			if (bLogVisionData && VisionDataLogger)
-			{
-				VisionDataLogger->Start(EpisodeId);
-			}
 		}
-
 		// Mark manager as started
 		bIsStarted = true;
 	}
@@ -289,40 +285,31 @@ void ASLManager::Finish(const float Time, bool bForced)
 {
 	if (!bIsFinished && (bIsStarted || bIsInit))
 	{
-		if(bLogMetadata)
+		if(bLogMetadata && MetadataLogger)
 		{
-			if (MetadataLogger)
-			{
-				MetadataLogger->Finish(bForced);
-			}
+			MetadataLogger->Finish(bForced);
 		}
-		else if(bLogEditorData)
+		else if(bLogEditorData && EditorLogger)
 		{
-			if(EditorLogger)
-			{
-				EditorLogger->Finish(bForced);
-			}
+			EditorLogger->Finish(bForced);
 		}
-		else if(bLogVisionData)
+		else if(bLogVisionData && VisionDataLogger)
 		{
-			if(VisionDataLogger)
-			{
-				VisionDataLogger->Finish(bForced);
-			}
+			VisionDataLogger->Finish(bForced);
 		}
 		else
 		{
-			if (WorldStateLogger)
+			if (bLogWorldState && WorldStateLogger)
 			{
 				WorldStateLogger->Finish(bForced);
 			}
 
-			if (EventDataLogger)
+			if (bLogEventData && EventDataLogger)
 			{
 				EventDataLogger->Finish(Time, bForced);
 			}
 		}
-
+		
 		// Delete the semantic items content instance
 		FSLEntitiesManager::DeleteInstance();
 
@@ -391,7 +378,7 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	/* Vision Data Logger Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogVisionData))
 	{
-		if (bLogWorldState) {bLogEditorData = false; bLogMetadata = false; bLogWorldState = false; bLogEventData = false;};
+		if (bLogWorldState) {bUseCustomEpisodeId = true; bLogEditorData = false; bLogMetadata = false; bLogWorldState = false; bLogEventData = false;};
 	}
 	
 	/* Editor Logger Properties*/
