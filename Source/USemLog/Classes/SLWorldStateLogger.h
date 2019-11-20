@@ -72,8 +72,4 @@ private:
 
 	// Async worker to log the raw data on a separate thread
 	FAsyncTask<FSLWorldStateAsyncWorker>* AsyncWorker;
-
-#if SL_WITH_SLVIS
-	FString ReplayRecordingName;
-#endif // SL_WITH_SLVIS
 };

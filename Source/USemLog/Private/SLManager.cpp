@@ -4,9 +4,7 @@
 #include "SLManager.h"
 #include "SLEntitiesManager.h"
 #include "Ids.h"
-#if SL_WITH_SLVIS
-#include "Engine/DemoNetDriver.h"
-#endif //SL_WITH_SLVIS
+
 
 // Sets default values
 ASLManager::ASLManager()
@@ -165,17 +163,6 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 // Init loggers
 void ASLManager::Init()
 {
-#if SL_WITH_SLVIS
-	//// TODO needed, since un-replicating the manager did not seem to work
-	////SetReplicateMovement(false);
-	////SetReplicates(false);
-	//// Init can be called even if it is a demo replay, skip if it is the case
-	//if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
-	//{
-	//	return;
-	//}
-#endif // SL_WITH_SLVIS
-
 	if (!bIsInit)
 	{
 		if(!bLogEditorData)
@@ -384,23 +371,29 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	/* Metadata Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
 	{
-		if (bLogMetadata) {bLogWorldState = false; bLogEventData = false; bLogEditorData = false;};
+		if (bLogMetadata) {bLogWorldState = false; bLogEventData = false; bLogEditorData = false; bLogVisionData = false;};
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEditorData))
 	{
-		if (bLogEditorData) {bLogWorldState = false; bLogEventData = false; bLogMetadata = false;};
+		if (bLogEditorData) {bLogWorldState = false; bLogEventData = false; bLogMetadata = false; bLogVisionData = false;};
 	}
 
-	/* World State Properties */
+	/* World State / Event Logger Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogWorldState))
 	{
-		if (bLogWorldState) {bLogEditorData = false; bLogMetadata = false;};
+		if (bLogWorldState) {bLogEditorData = false; bLogMetadata = false; bLogVisionData = false;};
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEventData))
 	{
-		if (bLogEventData) {bLogEditorData = false; bLogMetadata = false;};
+		if (bLogEventData) {bLogEditorData = false; bLogMetadata = false; bLogVisionData = false;};
 	}
 
+	/* Vision Data Logger Properties */
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogVisionData))
+	{
+		if (bLogWorldState) {bLogEditorData = false; bLogMetadata = false; bLogWorldState = false; bLogEventData = false;};
+	}
+	
 	/* Editor Logger Properties*/
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bClearTags))
 	{
@@ -442,14 +435,7 @@ bool ASLManager::CanEditChange(const UProperty* InProperty) const
 	{
 		return (WriterType == ESLWorldStateWriterType::MongoCxx) || (WriterType == ESLWorldStateWriterType::MongoC);
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogVisionData))
-	{
-#if SL_WITH_SLVIS
-		return true;
-#else
-		return false;
-#endif //SL_WITH_SLVIS
-	}
+
 	return ParentVal;
 }
 #endif // WITH_EDITOR
