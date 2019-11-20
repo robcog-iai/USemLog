@@ -28,7 +28,7 @@ USLMetadataLogger::~USLMetadataLogger()
 }
 
 // Init logger
-void USLMetadataLogger::Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort, 
+void USLMetadataLogger::Init(const FString& InTaskId, const FString& InServerIp, uint16 InServerPort, 
 	bool bOverwrite, bool bScanItems, FSLItemScanParams ScanParams)
 {
 	if (!bIsInit)

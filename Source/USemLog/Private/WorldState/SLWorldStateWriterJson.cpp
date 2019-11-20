@@ -55,6 +55,7 @@ void FSLWorldStateWriterJson::Write(float Timestamp,
 	FSLGazeData& GazeData,
 	bool bCheckAndRemoveInvalidEntities)
 {
+#if SL_WITH_JSON
 	// Json root object
 	TSharedPtr<FJsonObject> JsonRootObj = MakeShareable(new FJsonObject);
 
@@ -78,8 +79,8 @@ void FSLWorldStateWriterJson::Write(float Timestamp,
 		// Write entry to file
 		FSLWorldStateWriterJson::WriteToFile(JsonRootObj);
 	}
+#endif // SL_WITH_JSON
 }
-
 
 // Set the file handle for the logger
 bool FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
@@ -97,6 +98,7 @@ bool FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const F
 	return FileHandle != nullptr;
 }
 
+#if SL_WITH_JSON
 // Get non skeletal actors as json array
 void FSLWorldStateWriterJson::AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
@@ -293,3 +295,4 @@ void FSLWorldStateWriterJson::WriteToFile(const TSharedPtr<FJsonObject>& InRootO
 		FileHandle->Write((const uint8*)TCHAR_TO_ANSI(*JsonString), JsonString.Len());
 	}
 }
+#endif // SL_WITH_JSON

@@ -38,7 +38,8 @@ public:
 private:
 	// Set the file handle for the logger
 	bool SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId);
-
+	
+#if SL_WITH_JSON
 	// Add non skeletal actors to json array
 	void AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 		TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr);
@@ -57,7 +58,8 @@ private:
 
 	// Write entry to file
 	void WriteToFile(const TSharedPtr<FJsonObject>& InRootObj);
-
+#endif SL_WITH_JSON
+	
 	// File handle to write the raw data to file
 	IFileHandle* FileHandle;
 };

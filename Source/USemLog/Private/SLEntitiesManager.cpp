@@ -2,8 +2,10 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLEntitiesManager.h"
-#include "SLVisViewActor.h"
 #include "Tags.h"
+#if SL_WITH_SLVIS
+#include "SLVisViewActor.h"
+#endif // SL_WITH_SLVIS
 #include "Animation/SkeletalMeshActor.h"
 
 TSharedPtr<FSLEntitiesManager> FSLEntitiesManager::StaticInstance;
@@ -45,12 +47,14 @@ void FSLEntitiesManager::Init(UWorld* World)
 				ObjectsSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass,
 					FTags::GetValue(*ActorItr, "SemLog", "VisMask")));
 
+#if SL_WITH_SLVIS
 				// Create a separate list with the camera views
 				if (ActorItr->IsA(ASLVisViewActor::StaticClass()))
 				{
 					CameraViewSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass));
 				}
-
+#endif // SL_WITH_SLVIS
+				
 				// Store quick map of id to actor pointer
 				if(AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(*ActorItr))
 				{

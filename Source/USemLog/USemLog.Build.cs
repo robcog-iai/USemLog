@@ -43,8 +43,8 @@ public class USemLog : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"Json",
-				"JsonUtilities",
+				//"Json",
+				//"JsonUtilities",
 				"UTags",
 				"UIds",
 				"UConversions",
@@ -53,7 +53,7 @@ public class USemLog : ModuleRules
 				//"SlicingLogic",		// SL_WITH_SLICING
 				"MongoC",				// SL_WITH_LIBMONGO_C
 				//"MongoCxx",			// SL_WITH_LIBMONGO_CXX
-				"SRanipal",			// SL_WITH_EYE_TRACKING
+				"SRanipal",				// SL_WITH_EYE_TRACKING
 				//"Boost",				// SL_WITH_BOOST
 				// ... add private dependencies that you statically link with here ...
 			}
@@ -70,19 +70,18 @@ public class USemLog : ModuleRules
 				);
 		}
 
-		// TODO
-		// SL Vision currently only works in developer mode
-		// (https://docs.unrealengine.com/en-us/Programming/UnrealBuildSystem/TargetFiles)
-		if (Target.Type == TargetRules.TargetType.Editor)
-		//if(Target.Type == TargetRules.TargetType.Program)
-		{
-			PrivateDependencyModuleNames.Add("USemLogVision");
-			PublicDefinitions.Add("SL_WITH_SLVIS=1");
-		}
-		else
-		{
-			PublicDefinitions.Add("SL_WITH_SLVIS=0");
-		}
+		//// SL Vision currently only works in developer mode
+		//// (https://docs.unrealengine.com/en-us/Programming/UnrealBuildSystem/TargetFiles)
+		//if (Target.Type == TargetRules.TargetType.Editor)
+		////if(Target.Type == TargetRules.TargetType.Program)
+		//{
+		//	PrivateDependencyModuleNames.Add("USemLogVision");
+		//	PublicDefinitions.Add("SL_WITH_SLVIS=1");
+		//}
+		//else
+		//{
+		//	PublicDefinitions.Add("SL_WITH_SLVIS=0");
+		//}
 
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
@@ -160,6 +159,17 @@ public class USemLog : ModuleRules
 		else
 		{
 			PublicDefinitions.Add("VIZ_WITH_BOOST=1");
+		}
+		
+		string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));
+		string JsonUtil = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("JsonUtilities"));
+		if (string.IsNullOrEmpty(Json) || string.IsNullOrEmpty(JsonUtil))
+		{
+			PublicDefinitions.Add("SL_WITH_JSON=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("SL_WITH_JSON=1");
 		}
 	}
 }

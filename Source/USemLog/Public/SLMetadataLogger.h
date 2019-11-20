@@ -38,7 +38,7 @@ public:
 	~USLMetadataLogger();
 	
 	// Init logger
-	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort, 
+	void Init(const FString& InTaskId, const FString& InServerIp, uint16 InServerPort,
 		bool bOverWrite = false, bool bScanItems = false, FSLItemScanParams ScanParams = FSLItemScanParams());
 
 	// Start logger

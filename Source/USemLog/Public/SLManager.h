@@ -210,7 +210,7 @@ private:
 
 	// Update rate (s) of world state logging (0.f means logging on every tick) (not fixed nor guaranteed)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
-	float UpdateRate;
+	float WorldStateUpdateRate;
 
 	// Distance (cm) threshold difference for logging a given item
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"), meta = (ClampMin = 0))
@@ -274,6 +274,7 @@ private:
 	USLEventLogger* EventDataLogger;
 	/* End event data logger properties */
 
+
 	/******************************************************************************************************/
 	/* Begin Vision Data Logger properties */
 	/******************************************************************************************************/
@@ -281,13 +282,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogVisionData;
 
-	// Maximum number of demo frames recorded per second
+	// Update rate of the vision logger (0 - updates at every available frame)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))
-	float MaxRecordHz;
-
-	// Minimum number of demo frames recorded per second
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))
-	float MinRecordHz;
+	float VisionUpdateRate;
 
 	// Vision data logger, use UPROPERTY to avoid GC
 	UPROPERTY()

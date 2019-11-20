@@ -57,7 +57,7 @@ ASLManager::ASLManager()
 	// World state logger default values
 	bLogWorldState = true;
 	bOverwriteWorldState = false;
-	UpdateRate = 0.0f;
+	WorldStateUpdateRate = 0.0f;
 	LinearDistance = 0.5f; // cm
 	AngularDistance = 0.1f; // rad
 	WriterType = ESLWorldStateWriterType::MongoC;
@@ -77,8 +77,7 @@ ASLManager::ASLManager()
 	
 	// Vision data logger default values
 	bLogVisionData = false;
-	MaxRecordHz = 120.f;
-	MinRecordHz = 30.f;
+	VisionUpdateRate = 0.f;
 
 	// Editor Logger default values
 	bLogEditorData = false;
@@ -167,14 +166,14 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ASLManager::Init()
 {
 #if SL_WITH_SLVIS
-	// TODO needed, since un-replicating the manager did not seem to work
-	//SetReplicateMovement(false);
-	//SetReplicates(false);
-	// Init can be called even if it is a demo replay, skip if it is the case
-	if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
-	{
-		return;
-	}
+	//// TODO needed, since un-replicating the manager did not seem to work
+	////SetReplicateMovement(false);
+	////SetReplicates(false);
+	//// Init can be called even if it is a demo replay, skip if it is the case
+	//if (GetWorld()->DemoNetDriver && GetWorld()->DemoNetDriver->IsPlaying())
+	//{
+	//	return;
+	//}
 #endif // SL_WITH_SLVIS
 
 	if (!bIsInit)
@@ -208,6 +207,11 @@ void ASLManager::Init()
 			EditorLogger = NewObject<USLEditorLogger>(this);
 			EditorLogger->Init(TaskId);
 		}
+		else if (bLogVisionData)
+		{
+			VisionDataLogger = NewObject<USLVisionLogger>(this);
+			VisionDataLogger->Init(TaskId, EpisodeId, ServerIp, ServerPort, VisionUpdateRate);
+		}
 		else
 		{
 			if (bLogWorldState)
@@ -224,13 +228,6 @@ void ASLManager::Init()
 				EventDataLogger = NewObject<USLEventLogger>(this);
 				EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(TaskId, EpisodeId),
 					bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines);
-			}
-
-			if (bLogVisionData)
-			{
-				// Create and init vision logger
-				VisionDataLogger = NewObject<USLVisionLogger>(this);
-				VisionDataLogger->Init(MinRecordHz, MaxRecordHz);
 			}
 		}
 
@@ -270,7 +267,8 @@ void ASLManager::Start()
 					bWriteVisualMaskProperties,
 					VisualMaskColorMinDistance,
 					bRandomVisualMaskGenerator);
-				EditorLogger->Finish(); // Safely quit the editor
+				Finish(GetWorld()->GetTimeSeconds(),false); // Finish the manager directly
+				//EditorLogger->Finish(); // Quit the editor before the manager finishes
 			}
 		}
 		else
@@ -278,7 +276,7 @@ void ASLManager::Start()
 			// Start world state logger
 			if (bLogWorldState && WorldStateLogger)
 			{
-				WorldStateLogger->Start(UpdateRate);
+				WorldStateLogger->Start(WorldStateUpdateRate);
 			}
 
 			// Start event data logger
@@ -315,7 +313,14 @@ void ASLManager::Finish(const float Time, bool bForced)
 		{
 			if(EditorLogger)
 			{
-				EditorLogger->Finish(true);
+				EditorLogger->Finish(bForced);
+			}
+		}
+		else if(bLogVisionData)
+		{
+			if(VisionDataLogger)
+			{
+				VisionDataLogger->Finish(bForced);
 			}
 		}
 		else
@@ -328,11 +333,6 @@ void ASLManager::Finish(const float Time, bool bForced)
 			if (EventDataLogger)
 			{
 				EventDataLogger->Finish(Time, bForced);
-			}
-		
-			if (VisionDataLogger)
-			{
-				VisionDataLogger->Finish(bForced);
 			}
 		}
 
