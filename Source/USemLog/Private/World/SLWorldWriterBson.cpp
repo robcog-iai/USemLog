@@ -1,26 +1,26 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "WorldState/SLWorldStateWriterBson.h"
+#include "World/SLWorldWriterBson.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Conversions.h"
 
 // Constr
-FSLWorldStateWriterBson::FSLWorldStateWriterBson()
+FSLWorldWriterBson::FSLWorldWriterBson()
 {
 	bIsInit = false;
 }
 
 // Init constructor
-FSLWorldStateWriterBson::FSLWorldStateWriterBson(const FSLWorldStateWriterParams& InParams)
+FSLWorldWriterBson::FSLWorldWriterBson(const FSLWorldWriterParams& InParams)
 {
 	bIsInit = false;
-	FSLWorldStateWriterBson::Init(InParams);
+	FSLWorldWriterBson::Init(InParams);
 }
 
 // Destr
-FSLWorldStateWriterBson::~FSLWorldStateWriterBson()
+FSLWorldWriterBson::~FSLWorldWriterBson()
 {
 	if (FileHandle)
 	{
@@ -29,7 +29,7 @@ FSLWorldStateWriterBson::~FSLWorldStateWriterBson()
 }
 
 // Init
-void FSLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
+void FSLWorldWriterBson::Init(const FSLWorldWriterParams& InParams)
 {
 	LinDistSqMin = InParams.LinearDistanceSquared;
 	AngDistMin = InParams.AngularDistance;
@@ -37,7 +37,7 @@ void FSLWorldStateWriterBson::Init(const FSLWorldStateWriterParams& InParams)
 }
 
 // Finish
-void FSLWorldStateWriterBson::Finish()
+void FSLWorldWriterBson::Finish()
 {
 	if (bIsInit)
 	{
@@ -46,7 +46,7 @@ void FSLWorldStateWriterBson::Finish()
 }
 
 // Called to write the data
-void FSLWorldStateWriterBson::Write(float Timestamp,
+void FSLWorldWriterBson::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
@@ -59,7 +59,7 @@ void FSLWorldStateWriterBson::Write(float Timestamp,
 }
 
 // Set the file handle for the logger
-bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
+bool FSLWorldWriterBson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
 	const FString Filename = InEpisodeId + TEXT("_WS.bson");
 	FString EpisodesDirPath = FPaths::ProjectDir() + "/SemLog/" + LogDirectory + TEXT("/Episodes/");
@@ -75,7 +75,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 }
 #if SL_WITH_LIBMONGO_CXX
 //// Add actors
-//void FSLWorldStateWriterBson::AddActors(bson_t& OutBsonEntitiesArr)
+//void FSLWorldWriterBson::AddActors(bson_t& OutBsonEntitiesArr)
 //{
 //	// Iterate actors
 //	for (auto WorldStateActItr(WorkerParent->WorldStateActors.CreateIterator()); WorldStateActItr; ++WorldStateActItr)
@@ -92,7 +92,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //				WorldStateActItr->PrevLoc = CurrLoc;
 //
 //				// Get current entry as Bson object
-//				bson_t BsonActorEntry = FSLWorldStateWriterBson::GetAsBsonEntry(
+//				bson_t BsonActorEntry = FSLWorldWriterBson::GetAsBsonEntry(
 //					WorldStateActItr->Id, WorldStateActItr->Class, CurrLoc, CurrQuat);
 //				
 //				// If actor is skeletal, save bones data as well
@@ -124,7 +124,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(BoneName);
 //
 //						// Get current entry as Bson object
-//						bson_t BsonBoneEntry = FSLWorldStateWriterBson::GetAsBsonEntry(
+//						bson_t BsonBoneEntry = FSLWorldWriterBson::GetAsBsonEntry(
 //							TEXT(""), BoneName.ToString(), CurrLoc, CurrQuat);
 //						
 //						keylen = bson_uint32_to_string(keynum, &key, keybuf, sizeof keybuf);
@@ -151,7 +151,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //}
 //
 //// Add components
-//void FSLWorldStateWriterBson::AddComponents(bson_t& OutBsonEntitiesArr)
+//void FSLWorldWriterBson::AddComponents(bson_t& OutBsonEntitiesArr)
 //{
 //	// Iterate components
 //	for (auto WorldStateCompItr(WorkerParent->WorldStateComponents.CreateIterator()); WorldStateCompItr; ++WorldStateCompItr)
@@ -167,7 +167,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //				WorldStateCompItr->PrevLoc = CurrLoc;
 //
 //				// Get current entry as Bson object
-//				bson_t BsonCompEntry = FSLWorldStateWriterBson::GetAsBsonEntry(
+//				bson_t BsonCompEntry = FSLWorldWriterBson::GetAsBsonEntry(
 //					WorldStateCompItr->Id, WorldStateCompItr->Class, CurrLoc, CurrQuat);
 //				
 //				// If comp is skeletal, save bones data as well
@@ -196,7 +196,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //						const FQuat CurrQuat = SkelComp->GetBoneQuaternion(BoneName);
 //
 //						// Get current entry as Bson object
-//						bson_t BsonBoneEntry = FSLWorldStateWriterBson::GetAsBsonEntry(
+//						bson_t BsonBoneEntry = FSLWorldWriterBson::GetAsBsonEntry(
 //							TEXT(""), BoneName.ToString(), CurrLoc, CurrQuat);
 //
 //
@@ -223,7 +223,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //}
 //
 //// Get entry as Bson object
-//bson_t FSLWorldStateWriterBson::GetAsBsonEntry(const FString& InId,
+//bson_t FSLWorldWriterBson::GetAsBsonEntry(const FString& InId,
 //	const FString& InClass,
 //	const FVector& InLoc,
 //	const FQuat& InQuat)
@@ -265,7 +265,7 @@ bool FSLWorldStateWriterBson::SetFileHandle(const FString& LogDirectory, const F
 //}
 //
 //// Write entry to file
-//void FSLWorldStateWriterBson::WriteData(uint8* memorybuffer, int64 bufferlen)
+//void FSLWorldWriterBson::WriteData(uint8* memorybuffer, int64 bufferlen)
 //{
 //
 //	if (FileHandle)

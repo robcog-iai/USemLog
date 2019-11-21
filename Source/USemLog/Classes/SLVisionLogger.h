@@ -5,6 +5,8 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "Engine/StaticMeshActor.h"
+#include "Animation/SkeletalMeshActor.h"
 
 #if SL_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
@@ -20,8 +22,23 @@ THIRD_PARTY_INCLUDES_END
 #include "SLVisionLogger.generated.h"
 
 // Forward declarations
-class UMaterialInterface;
+class UMaterialInstanceDynamic;
 class UGameViewportClient;
+class ASLVisionCamera;
+
+/**
+* View modes
+*/
+UENUM()
+enum class ESLVisionLoggerViewMode : uint8
+{
+	NONE					UMETA(DisplayName = "None"),
+	Color					UMETA(DisplayName = "Color"),
+	Unlit					UMETA(DisplayName = "Unlit"),
+	Mask					UMETA(DisplayName = "Mask"),
+	Depth					UMETA(DisplayName = "Depth"),
+	Normal					UMETA(DisplayName = "Normal"),
+};
 
 /**
 * Vision logger parameters
@@ -47,18 +64,40 @@ struct FSLVisionLoggerParams
 };
 
 /**
-* View modes
+* Episode frame data
 */
-UENUM()
-enum class ESLVisLoggerViewMode : uint8
+struct FSLVisionEpisodeFrame
 {
-	NONE					UMETA(DisplayName = "None"),
-	Color					UMETA(DisplayName = "Color"),
-	Unlit					UMETA(DisplayName = "Unlit"),
-	Mask					UMETA(DisplayName = "Mask"),
-	Depth					UMETA(DisplayName = "Depth"),
-	Normal					UMETA(DisplayName = "Normal"),
+	// Frame timestamp
+	float Timestamp;
+
+	// Entity poses
+	TMap<FString, FTransform> EntityPoses;
+
+	// Skeletal poses
+	TMap<FString, TMap<FString, FTransform>> SkeletalPoses;
 };
+
+/**
+* The whole episode data
+*/
+struct FSLVisionEpisode
+{
+	// All the frames from the episode
+	TArray<FSLVisionEpisodeFrame> Frames;
+
+	// Id to static mesh actor
+	TMap<FString, AStaticMeshActor*> IdToSMA;
+
+	// Id to skeletal mesh actor
+	TMap<FString, ASkeletalMeshActor*> IdToSkMA;
+
+	
+	//TMap<AActor*, FString> EntityIdMap;
+
+	//TMap<
+};
+
 
 /**
  * Vision logger, can only be used with USemLogVision module
@@ -96,8 +135,14 @@ private:
 	// Disconnect and clean db connection
 	void Disconnect();
 
+	// Get episode data from the database
+	bool GetEpisodeData();
+
 	// Disable physics and set to movable
 	void DisablePhysics();
+
+	// Load mask dynamic material
+	bool LoadMaskMaterial();
 
 	// Create clones of the items with mask material on top
 	bool SetupMaskClones();
@@ -112,7 +157,7 @@ private:
 	void RequestScreenshot();
 	
 	// Apply view mode
-	void ApplyViewMode(ESLVisLoggerViewMode Mode);
+	void ApplyViewMode(ESLVisionLoggerViewMode Mode);
 
 	// Apply mask materials 
 	void ApplyMaskMaterials();
@@ -133,6 +178,9 @@ private:
 	// Set when finished
 	bool bIsFinished;
 
+	// Episode data to replay
+	FSLVisionEpisode EpisodeData;
+
 	// Dynamic mask material
 	UPROPERTY() // Avoid GC
 	UMaterialInstanceDynamic* DynamicMaskMaterial;
@@ -140,9 +188,15 @@ private:
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
 
+	// Array of the virtual cameras
+	TArray<ASLVisionCamera*> VirtualCameras;
+	
 	// View modes
-	TArray<ESLVisLoggerViewMode> ViewModes;
+	TArray<ESLVisionLoggerViewMode> ViewModes;
 
+	// Currently active virtual camera view
+	int32 CurrVirtualCameraIdx;
+	
 	// Currently active view mode
 	int32 CurrViewModeIdx;
 	

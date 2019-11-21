@@ -5,7 +5,7 @@
 
 #include "USemLog.h"
 #include "UObject/NoExportTypes.h"
-#include "SLItemScanner.h"
+#include "Meta/SLItemScanner.h"
 #if SL_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
 #if PLATFORM_WINDOWS

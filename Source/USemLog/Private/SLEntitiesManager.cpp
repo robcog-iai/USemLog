@@ -4,13 +4,12 @@
 #include "SLEntitiesManager.h"
 #include "Tags.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "SLVisionCamera.h"
 
 TSharedPtr<FSLEntitiesManager> FSLEntitiesManager::StaticInstance;
 
 // Constructor
-FSLEntitiesManager::FSLEntitiesManager() : bIsInit(false) 
-{
-}
+FSLEntitiesManager::FSLEntitiesManager() : bIsInit(false) {}
 
 // Get singleton
 FSLEntitiesManager* FSLEntitiesManager::GetInstance()
@@ -43,7 +42,13 @@ void FSLEntitiesManager::Init(UWorld* World)
 			{
 				ObjectsSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass,
 					FTags::GetValue(*ActorItr, "SemLog", "VisMask")));
-				
+
+				// Create a separate list with the camera views
+				if (ActorItr->IsA(ASLVisionCamera::StaticClass()))
+				{
+					CameraViewSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass));
+				}
+
 				// Store quick map of id to actor pointer
 				if(AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(*ActorItr))
 				{
@@ -276,5 +281,35 @@ bool FSLEntitiesManager::GetValidAncestor(UObject* Object, UObject* OutAncestor)
 			Child = Outer;
 		}
 	}
+	return false;
+}
+
+// Check if there are any empty of duplicate values in the camera views
+bool FSLEntitiesManager::EmptyOrDuplicatesInTheCameraViews()
+{
+	TSet<FString> UsedClassNames;
+	TArray<FSLEntity> CameraEntities;
+	GetCameraViewsDataArray(CameraEntities);
+
+	for(const auto& Pair : CameraViewSemanticData)
+	{
+		const FString ClassName = Pair.Value.Class;
+		if(ClassName.IsEmpty())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Camera entity %s has no class name.."),
+				*FString(__func__), __LINE__, *Pair.Key->GetName());
+			return true;
+		}
+
+		if(UsedClassNames.Contains(ClassName))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Class name %s from camera entity %s is already used.."),
+				*FString(__func__), __LINE__, *ClassName, *Pair.Key->GetName());
+			return true;
+		}
+		
+		UsedClassNames.Emplace(ClassName);
+	}
+
 	return false;
 }

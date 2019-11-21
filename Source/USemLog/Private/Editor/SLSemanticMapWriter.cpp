@@ -1,7 +1,8 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLSemanticMapWriter.h"
+#include "Editor/SLSemanticMapWriter.h"
+
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "Components/PrimitiveComponent.h"
 #include "Engine/StaticMeshActor.h"

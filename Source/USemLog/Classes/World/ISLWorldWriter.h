@@ -10,7 +10,7 @@
 /**
 * Parameters for creating a world state data writer
 */
-struct FSLWorldStateWriterParams
+struct FSLWorldWriterParams
 {
 	// Min linear movement (squared for efficiency) in order to log an entity
 	float LinearDistanceSquared;
@@ -34,7 +34,7 @@ struct FSLWorldStateWriterParams
 	bool bOverwrite;
 
 	// Constructor
-	FSLWorldStateWriterParams(
+	FSLWorldWriterParams(
 		float InLinearDistance,
 		float InAngularDistance,
 		const FString& InTaskId,
@@ -56,14 +56,14 @@ struct FSLWorldStateWriterParams
 /**
  * Base class for world state data writer
  */
-class ISLWorldStateWriter
+class ISLWorldWriter
 {
 public:
 	// Virtual dtor
-	virtual ~ISLWorldStateWriter(){};
+	virtual ~ISLWorldWriter(){};
 	
 	// Init the writer
-	virtual void Init(const FSLWorldStateWriterParams& InParams) = 0;
+	virtual void Init(const FSLWorldWriterParams& InParams) = 0;
 	
 	// Finish
 	virtual void Finish() = 0;

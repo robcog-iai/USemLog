@@ -5,9 +5,9 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "WorldState/SLWorldStateAsyncWorker.h"
+#include "World/SLWorldAsyncWorker.h"
 #include "Tickable.h"
-#include "SLWorldStateLogger.generated.h"
+#include "SLWorldLogger.generated.h"
 
 /**
  * Raw (subsymbolic) data logger, 
@@ -15,19 +15,19 @@
  * Inherit from FTickableGameObject to have it's own tick
  */
 UCLASS()
-class USEMLOG_API USLWorldStateLogger : public UObject, public FTickableGameObject
+class USEMLOG_API USLWorldLogger : public UObject, public FTickableGameObject
 {
 	GENERATED_BODY()
 
 public:
 	// Constructor
-	USLWorldStateLogger();
+	USLWorldLogger();
 
 	// Destructor
-	~USLWorldStateLogger();
+	~USLWorldLogger();
 
 	// Init Logger
-	void Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams);
+	void Init(ESLWorldWriterType WriterType, const FSLWorldWriterParams& InWriterParams);
 
 	// Start logger
 	void Start(const float UpdateRate);
@@ -71,5 +71,5 @@ private:
 	FTimerHandle TimerHandle;
 
 	// Async worker to log the raw data on a separate thread
-	FAsyncTask<FSLWorldStateAsyncWorker>* AsyncWorker;
+	FAsyncTask<FSLWorldAsyncWorker>* AsyncWorker;
 };

@@ -59,7 +59,7 @@ ASLManager::ASLManager()
 	WorldStateUpdateRate = 0.0f;
 	LinearDistance = 0.5f; // cm
 	AngularDistance = 0.1f; // rad
-	WriterType = ESLWorldStateWriterType::MongoC;
+	WriterType = ESLWorldWriterType::MongoC;
 
 	
 	// Events logger default values
@@ -203,8 +203,8 @@ void ASLManager::Init()
 		{
 			if (bLogWorldState)
 			{
-				WorldStateLogger = NewObject<USLWorldStateLogger>(this);
-				WorldStateLogger->Init(WriterType, FSLWorldStateWriterParams(
+				WorldStateLogger = NewObject<USLWorldLogger>(this);
+				WorldStateLogger->Init(WriterType, FSLWorldWriterParams(
 					LinearDistance, AngularDistance, TaskId, EpisodeId, ServerIp, ServerPort, bOverwriteWorldState));
 			}
 
@@ -412,15 +412,15 @@ bool ASLManager::CanEditChange(const UProperty* InProperty) const
 	// HostIP and HostPort can only be edited if the world state writer is of type Mongo
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerIp))
 	{
-		return (WriterType == ESLWorldStateWriterType::MongoCxx) || (WriterType == ESLWorldStateWriterType::MongoC);
+		return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerPort))
 	{
-		return (WriterType == ESLWorldStateWriterType::MongoCxx) || (WriterType == ESLWorldStateWriterType::MongoC);
+		return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
 	{
-		return (WriterType == ESLWorldStateWriterType::MongoCxx) || (WriterType == ESLWorldStateWriterType::MongoC);
+		return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
 	}
 
 	return ParentVal;

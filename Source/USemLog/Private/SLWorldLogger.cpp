@@ -1,11 +1,11 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLWorldStateLogger.h"
-#include "Kismet/GameplayStatics.h"
+#include "SLWorldLogger.h"
+#include "SLEntitiesManager.h"
 
 // Constructor
-USLWorldStateLogger::USLWorldStateLogger()
+USLWorldLogger::USLWorldLogger()
 {
 	// State flags
 	bIsInit = false;
@@ -14,7 +14,7 @@ USLWorldStateLogger::USLWorldStateLogger()
 }
 
 // Destructor
-USLWorldStateLogger::~USLWorldStateLogger()
+USLWorldLogger::~USLWorldLogger()
 {
 	if (!bIsFinished && !IsTemplate())
 	{
@@ -23,12 +23,20 @@ USLWorldStateLogger::~USLWorldStateLogger()
 }
 
 // Init Logger
-void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType, const FSLWorldStateWriterParams& InWriterParams)
+void USLWorldLogger::Init(ESLWorldWriterType WriterType, const FSLWorldWriterParams& InWriterParams)
 {
 	if (!bIsInit)
 	{
+		// Check that the virtual camera class names are not empty or duplicates
+		FSLEntitiesManager::GetInstance()->Init(GetWorld());
+		if(FSLEntitiesManager::GetInstance()->EmptyOrDuplicatesInTheCameraViews())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Empty or duplicate class names within the vision cameras, aborting.."), *FString(__func__), __LINE__);
+			return;
+		}
+		
 		// Create async worker to do the writing on a separate thread
-		AsyncWorker = new FAsyncTask<FSLWorldStateAsyncWorker>();
+		AsyncWorker = new FAsyncTask<FSLWorldAsyncWorker>();
 
 		// Init async worker (create the writer and set logging parameters)
 		if (AsyncWorker)
@@ -43,7 +51,7 @@ void USLWorldStateLogger::Init(ESLWorldStateWriterType WriterType, const FSLWorl
 }
 
 // Start logger
-void USLWorldStateLogger::Start(const float UpdateRate)
+void USLWorldLogger::Start(const float UpdateRate)
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -60,7 +68,7 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 			// Update logger on custom timer tick (does not guarantees the UpdateRate value,
 			// since it will be eventually triggered from the game thread tick
 			GetWorld()->GetTimerManager().SetTimer(TimerHandle, this,
-				&USLWorldStateLogger::Update, UpdateRate, true);
+				&USLWorldLogger::Update, UpdateRate, true);
 		}
 		else
 		{
@@ -74,7 +82,7 @@ void USLWorldStateLogger::Start(const float UpdateRate)
 }
 
 // Finish logger
-void USLWorldStateLogger::Finish(bool bForced)
+void USLWorldLogger::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -112,27 +120,27 @@ void USLWorldStateLogger::Finish(bool bForced)
 
 /** Begin FTickableGameObject interface */
 // Called after ticking all actors, DeltaTime is the time passed since the last call.
-void USLWorldStateLogger::Tick(float DeltaTime)
+void USLWorldLogger::Tick(float DeltaTime)
 {
 	// Call update on tick
 	Update();
 }
 
 // Return if object is ready to be ticked
-bool USLWorldStateLogger::IsTickable() const
+bool USLWorldLogger::IsTickable() const
 {
 	return bIsTickable;
 }
 
 // Return the stat id to use for this tickable
-TStatId USLWorldStateLogger::GetStatId() const
+TStatId USLWorldLogger::GetStatId() const
 {
-	RETURN_QUICK_DECLARE_CYCLE_STAT(USLWorldStateLogger, STATGROUP_Tickables);
+	RETURN_QUICK_DECLARE_CYCLE_STAT(USLWorldLogger, STATGROUP_Tickables);
 }
 /** End FTickableGameObject interface */
 
 // Log initial state of the world (static and dynamic entities)
-void USLWorldStateLogger::InitialUpdate()
+void USLWorldLogger::InitialUpdate()
 {
 	// Start async worker
 	AsyncWorker->StartBackgroundTask();
@@ -145,7 +153,7 @@ void USLWorldStateLogger::InitialUpdate()
 }
 
 // Log current state of the world (dynamic objects that moved more than the distance threshold)
-void USLWorldStateLogger::Update()
+void USLWorldLogger::Update()
 {
 	// Start task if worker is done with its previous work
 	if (AsyncWorker->IsDone())
@@ -154,6 +162,6 @@ void USLWorldStateLogger::Update()
 	}
 	else
 	{
-		UE_LOG(LogSL, Error, TEXT("%s::%d Previous task not finished, SKIPPING new task.."), *FString(__func__), __LINE__);
+		UE_LOG(LogSL, Error, TEXT("%s::%d [%f] Previous task not finished, SKIPPING new task.."), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 	}
 }

@@ -4,25 +4,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ISLWorldStateWriter.h"
+#include "ISLWorldWriter.h"
 
 /**
  * Raw data logger to json format
  */
-class FSLWorldStateWriterJson : public ISLWorldStateWriter
+class FSLWorldWriterJson : public ISLWorldWriter
 {
 public:
 	// Constructor
-	FSLWorldStateWriterJson();
+	FSLWorldWriterJson();
 
 	// Init constructor
-	FSLWorldStateWriterJson(const FSLWorldStateWriterParams& InParams);
+	FSLWorldWriterJson(const FSLWorldWriterParams& InParams);
 
 	// Destr
-	virtual ~FSLWorldStateWriterJson();
+	virtual ~FSLWorldWriterJson();
 
 	// Init
-	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
+	virtual void Init(const FSLWorldWriterParams& InParams) override;
 
 	// Finish
 	virtual void Finish() override;

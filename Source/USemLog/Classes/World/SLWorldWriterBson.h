@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ISLWorldStateWriter.h"
+#include "ISLWorldWriter.h"
 #if SL_WITH_LIBMONGO_CXX
 THIRD_PARTY_INCLUDES_START
 #include <bsoncxx/builder/stream/array.hpp>
@@ -17,20 +17,20 @@ THIRD_PARTY_INCLUDES_END
 /**
  * Raw data logger to bson format
  */
-class FSLWorldStateWriterBson : public ISLWorldStateWriter
+class FSLWorldWriterBson : public ISLWorldWriter
 {
 public:
 	// Default constr
-	FSLWorldStateWriterBson();
+	FSLWorldWriterBson();
 
 	// Init constructor
-	FSLWorldStateWriterBson(const FSLWorldStateWriterParams& InParams);
+	FSLWorldWriterBson(const FSLWorldWriterParams& InParams);
 
 	// Destr
-	virtual ~FSLWorldStateWriterBson();
+	virtual ~FSLWorldWriterBson();
 
 	// Init
-	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
+	virtual void Init(const FSLWorldWriterParams& InParams) override;
 
 	// Finish
 	virtual void Finish() override;

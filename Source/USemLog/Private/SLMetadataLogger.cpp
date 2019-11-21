@@ -33,6 +33,14 @@ void USLMetadataLogger::Init(const FString& InTaskId, const FString& InServerIp,
 {
 	if (!bIsInit)
 	{
+		// Check that the virtual camera class names are not empty or duplicates
+		FSLEntitiesManager::GetInstance()->Init(GetWorld());
+		if(FSLEntitiesManager::GetInstance()->EmptyOrDuplicatesInTheCameraViews())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Empty or duplicate class names within the vision cameras, aborting.."), *FString(__func__), __LINE__);
+			return;
+		}
+		
 		if(!Connect(InTaskId, InServerIp, InServerPort, bOverwrite))
 		{
 			return;
@@ -232,6 +240,7 @@ void USLMetadataLogger::Disconnect()
 #endif //SL_WITH_LIBMONGO_C
 }
 
+// Create indexes on the documents
 void USLMetadataLogger::CreateIndexes()
 {
 	if(!bIsInit)

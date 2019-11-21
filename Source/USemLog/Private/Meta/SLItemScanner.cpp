@@ -1,10 +1,10 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLItemScanner.h"
-#include "Tags.h"
+#include "Meta/SLItemScanner.h"
 #include "SLContactShapeInterface.h"
 #include "SLMetadataLogger.h"
+
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
 #include "Async.h"
@@ -18,6 +18,10 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/Light.h"
 #include "Engine/Engine.h"
+
+//UUtils
+#include "Tags.h"
+
 
 // Ctor
 USLItemScanner::USLItemScanner()

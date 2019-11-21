@@ -87,7 +87,7 @@ public:
 	// Get the map of objects to the semantic items
 	void GetSemanticSkeletalDataArray(TArray<USLSkeletalDataComponent*>& OutArray) const { ObjectsSemanticSkeletalData.GenerateValueArray(OutArray); }
 
-
+	
 	// Get the map of objects to the semantic items
 	TMap<UObject*, FSLEntity>& GetCameraViewsSemanticData() { return CameraViewSemanticData; }
 
@@ -97,6 +97,9 @@ public:
 	// Get the map of objects to the semantic items
 	void GetCameraViewsDataArray(TArray<FSLEntity>& OutArray) const { CameraViewSemanticData.GenerateValueArray(OutArray); }
 
+	// Check if there are any empty of duplicate values in the camera views
+	bool EmptyOrDuplicatesInTheCameraViews();
+	
 	// Get static mesh actor
 	FORCEINLINE AStaticMeshActor* GetStaticMeshActor(const FString& Id) const 
 	{

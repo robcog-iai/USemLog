@@ -3,6 +3,10 @@
 
 #include "SLEdModeToolkit.h"
 #include "SLEdMode.h"
+#include "SLSkeletalDataComponent.h"
+#include "Events/SLContactBox.h"
+#include "Editor/SLSemanticMapWriter.h"
+
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Input/SCheckBox.h"
@@ -13,13 +17,12 @@
 #include "Components/StaticMeshComponent.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
-#include "SLSemanticMapWriter.h"
-#include "SLContactBox.h"
-#include "SLSkeletalDataComponent.h"
-#include "Ids.h"
-#include "Tags.h"
 #include "ScopedTransaction.h"
 #include "Animation/SkeletalMeshActor.h"
+
+// UUtils
+#include "Ids.h"
+#include "Tags.h"
 //#include "SLManager.h"
 
 #define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"

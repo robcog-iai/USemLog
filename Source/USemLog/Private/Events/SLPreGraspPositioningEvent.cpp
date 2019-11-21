@@ -2,6 +2,8 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLPreGraspPositioningEvent.h"
+
+// Owl
 #include "SLOwlExperimentStatics.h"
 
 // Constructor with initialization

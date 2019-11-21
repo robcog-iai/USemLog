@@ -1,26 +1,26 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "WorldState/SLWorldStateWriterMongoC.h"
+#include "World/SLWorldWriterMongoC.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Conversions.h"
 #include "SLEntitiesManager.h"
 
 // Constr
-FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC()
+FSLWorldWriterMongoC::FSLWorldWriterMongoC()
 {
 	bIsInit = false;
 }
 
 // Init constr
-FSLWorldStateWriterMongoC::FSLWorldStateWriterMongoC(const FSLWorldStateWriterParams& InParams)
+FSLWorldWriterMongoC::FSLWorldWriterMongoC(const FSLWorldWriterParams& InParams)
 {
 	bIsInit = false;
 	Init(InParams);
 }
 
 // Destr
-FSLWorldStateWriterMongoC::~FSLWorldStateWriterMongoC()
+FSLWorldWriterMongoC::~FSLWorldWriterMongoC()
 {
 	Finish();
 	
@@ -29,7 +29,7 @@ FSLWorldStateWriterMongoC::~FSLWorldStateWriterMongoC()
 }
 
 // Init
-void FSLWorldStateWriterMongoC::Init(const FSLWorldStateWriterParams& InParams)
+void FSLWorldWriterMongoC::Init(const FSLWorldWriterParams& InParams)
 {
 	if(!bIsInit)
 	{
@@ -44,7 +44,7 @@ void FSLWorldStateWriterMongoC::Init(const FSLWorldStateWriterParams& InParams)
 }
 
 // Finish
-void FSLWorldStateWriterMongoC::Finish()
+void FSLWorldWriterMongoC::Finish()
 {
 	if (bIsInit)
 	{
@@ -54,7 +54,7 @@ void FSLWorldStateWriterMongoC::Finish()
 }
 
 // Write data to document
-void FSLWorldStateWriterMongoC::Write(float Timestamp,
+void FSLWorldWriterMongoC::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
@@ -125,7 +125,7 @@ void FSLWorldStateWriterMongoC::Write(float Timestamp,
 }
 
 // Connect to the database
-bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& CollectionName, const FString& ServerIp, uint16 ServerPort, bool bOverwrite)
+bool FSLWorldWriterMongoC::Connect(const FString& DBName, const FString& CollectionName, const FString& ServerIp, uint16 ServerPort, bool bOverwrite)
 {
 #if SL_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
@@ -205,7 +205,7 @@ bool FSLWorldStateWriterMongoC::Connect(const FString& DBName, const FString& Co
 }
 
 // Disconnect and clean db connection
-void FSLWorldStateWriterMongoC::Disconnect()
+void FSLWorldWriterMongoC::Disconnect()
 {
 #if SL_WITH_LIBMONGO_C
 	// Release handles and clean up mongoc
@@ -230,7 +230,7 @@ void FSLWorldStateWriterMongoC::Disconnect()
 }
 
 // Create indexes from the logged data, usually called after logging
-bool FSLWorldStateWriterMongoC::CreateIndexes() const
+bool FSLWorldWriterMongoC::CreateIndexes() const
 {
 	if (!bIsInit)
 	{
@@ -333,7 +333,7 @@ bool FSLWorldStateWriterMongoC::CreateIndexes() const
 
 #if SL_WITH_LIBMONGO_C
 // Add non skeletal actors to array
-void FSLWorldStateWriterMongoC::AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+void FSLWorldWriterMongoC::AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	bson_t* out_doc, uint32_t& idx) const
 {
 	bson_t arr_obj;
@@ -376,7 +376,7 @@ void FSLWorldStateWriterMongoC::AddActorEntities(TArray<TSLEntityPreviousPose<AA
 }
 
 // Add non skeletal components to array
-void FSLWorldStateWriterMongoC::AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+void FSLWorldWriterMongoC::AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	bson_t* out_doc, uint32_t& idx) const
 {
 	bson_t arr_obj;
@@ -422,7 +422,7 @@ void FSLWorldStateWriterMongoC::AddComponentEntities(TArray<TSLEntityPreviousPos
 }
 
 // Add skeletal actors to array
-void FSLWorldStateWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+void FSLWorldWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
 	bson_t* out_doc, uint32_t& idx) const
 {
 	bson_t arr_obj;
@@ -471,7 +471,7 @@ void FSLWorldStateWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose
 }
 
 // Add gaze data to document
-void FSLWorldStateWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc) const
+void FSLWorldWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc) const
 {
 	const FVector ROSTargetLoc = FConversions::UToROS(GazeData.Target);
 	const FVector ROSOrigLoc = FConversions::UToROS(GazeData.Origin);
@@ -499,7 +499,7 @@ void FSLWorldStateWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t*
 }
 
 // Add skeletal bones to array
-void FSLWorldStateWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc) const
+void FSLWorldWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc) const
 {
 	bson_t bones_arr;
 	bson_t arr_obj;
@@ -531,7 +531,7 @@ void FSLWorldStateWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelCom
 }
 
 // Add pose to document
-void FSLWorldStateWriterMongoC::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc) const
+void FSLWorldWriterMongoC::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc) const
 {
 	// Switch to right handed ROS transformation
 	const FVector ROSLoc = FConversions::UToROS(InLoc);

@@ -1,30 +1,22 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLEditorToolkit.h"
+#include "Editor/SLEditorToolkit.h"
+#include "SLVisionCamera.h"
+
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
+#include "Animation/SkeletalMeshActor.h"
+#include "PhysicsEngine/PhysicsConstraintActor.h"
 
 // UUtils
 #include "Ids.h"
 #include "Tags.h"
-#include "Animation/SkeletalMeshActor.h"
-#include "PhysicsEngine/PhysicsConstraintActor.h"
+
 
 #if WITH_EDITOR
 #include "Editor.h"
 #endif // WITH_EDITOR
-
-
-// Ctor
-FSLEditorToolkit::FSLEditorToolkit()
-{
-}
-
-// Dtor
-FSLEditorToolkit::~FSLEditorToolkit()
-{
-}
 
 // Create the semantic map
 void FSLEditorToolkit::WriteSemanticMap(UWorld* World, const FString& TaskId, const FString& Filename, ESLOwlSemanticMapTemplate Template)
@@ -85,6 +77,12 @@ void FSLEditorToolkit::WriteClassProperties(UWorld* World, bool bOverwrite)
 	{
 		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, GetClassName(*ActItr), bOverwrite);
 	}
+
+	/* Vision cameras */
+	for (TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
+	{
+		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, GenerateClassName(*ActItr), bOverwrite);
+	}
 }
 
 // Write unique id properties
@@ -107,6 +105,12 @@ void FSLEditorToolkit::WriteUniqueIdProperties(UWorld* World, bool bOverwrite)
 
 	/* Constraint actors */
 	for (TActorIterator<APhysicsConstraintActor> ActItr(World); ActItr; ++ActItr)
+	{
+		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
+	}
+
+	/* Vision cameras */
+	for (TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
 	{
 		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
 	}
@@ -161,6 +165,38 @@ void FSLEditorToolkit::TagNonMovableEntities(UWorld* World, bool bOverwritePrope
 				FTags::AddKeyValuePair(*ActItr, TagType, KeyType, KeyValue);
 			}
 		}
+	}
+}
+
+// Return true if there any duplicates in the class names of the vision cameras
+void FSLEditorToolkit::CheckForVisionCameraClassNameDuplicates(UWorld* World)
+{
+	const FString TagType = "SemLog";
+	const FString TagKey = "Class";
+	
+	TSet<FString> UsedClassNames;
+	for(TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
+	{
+		FString ClassName = "";
+#if WITH_EDITOR
+		if(AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(*ActItr))
+		{
+			ClassName = FTags::GetValue(EdAct, TagType, TagKey);
+		}
+#endif // WITH_EDITOR
+		
+		if(ClassName.IsEmpty())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Vision camera %s has no class name.."),
+				*FString(__func__), __LINE__, *ActItr->GetName());
+		}
+		else if(UsedClassNames.Contains(ClassName))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Class name %s from %s is already used, please rename.."),
+				*FString(__func__), __LINE__, *ClassName, *ActItr->GetName());
+		}
+		
+		UsedClassNames.Emplace(ClassName);
 	}
 }
 
@@ -332,6 +368,38 @@ FString FSLEditorToolkit::GetClassName(AActor* Actor, bool bDefaultToLabel)
 		ClassName = "NONE";
 	}
 	return ClassName;
+}
+
+// Generate class name for the vision camera
+FString FSLEditorToolkit::GenerateClassName(ASLVisionCamera* Actor, bool bDefaultToLabel)
+{
+	const FString DefaultValue = "VisionCamera";
+	const FString TagType = "SemLog";
+	const FString TagKey = "Class";
+	
+	if(AActor* AttAct = Actor->GetAttachParentActor())
+	{
+#if WITH_EDITOR
+		// Apply the changes in the editor world
+		if(AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(AttAct))
+		{
+			const FString AttClassName = FTags::GetValue(EdAct, TagType, TagKey);
+			return AttClassName + DefaultValue;
+		}
+#endif // WITH_EDITOR
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.. saving as default value %s .."),
+			*FString(__func__), __LINE__, *AttAct->GetName(), *DefaultValue);
+		return DefaultValue;
+	}
+
+	if (bDefaultToLabel)
+	{
+		return Actor->GetActorLabel();
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not use any rule to name the vision camera.. saving as default value %s .."),
+		*FString(__func__), __LINE__, *Actor->GetName(), *DefaultValue);
+	return DefaultValue;
 }
 
 // Write to editor counterpart

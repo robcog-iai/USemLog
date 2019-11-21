@@ -1,7 +1,7 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "WorldState/SLWorldStateWriterMongoCxx.h"
+#include "World/SLWorldWriterMongoCxx.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Conversions.h"
 #if SL_WITH_LIBMONGO_CXX
@@ -16,25 +16,25 @@ using bsoncxx::builder::basic::kvp;
 #endif //SL_WITH_LIBMONGO_CXX
 
 // Constr
-FSLWorldStateWriterMongoCxx::FSLWorldStateWriterMongoCxx()
+FSLWorldWriterMongoCxx::FSLWorldWriterMongoCxx()
 {
 	bIsInit = false;
 }
 
 // Init Constr
-FSLWorldStateWriterMongoCxx::FSLWorldStateWriterMongoCxx(const FSLWorldStateWriterParams& InParams)
+FSLWorldWriterMongoCxx::FSLWorldWriterMongoCxx(const FSLWorldWriterParams& InParams)
 {
 	bIsInit = false;
-	FSLWorldStateWriterMongoCxx::Init(InParams);
+	FSLWorldWriterMongoCxx::Init(InParams);
 }
 
 // Destr
-FSLWorldStateWriterMongoCxx::~FSLWorldStateWriterMongoCxx()
+FSLWorldWriterMongoCxx::~FSLWorldWriterMongoCxx()
 {
 }
 
 // Init
-void FSLWorldStateWriterMongoCxx::Init(const FSLWorldStateWriterParams& InParams)
+void FSLWorldWriterMongoCxx::Init(const FSLWorldWriterParams& InParams)
 {
 	LinDistSqMin = InParams.LinearDistanceSquared;
 	AngDistMin = InParams.AngularDistance;
@@ -42,17 +42,17 @@ void FSLWorldStateWriterMongoCxx::Init(const FSLWorldStateWriterParams& InParams
 }
 
 // Finish
-void FSLWorldStateWriterMongoCxx::Finish()
+void FSLWorldWriterMongoCxx::Finish()
 {
 	if (bIsInit)
 	{
-		FSLWorldStateWriterMongoCxx::CreateIndexes();
+		FSLWorldWriterMongoCxx::CreateIndexes();
 		bIsInit = false;
 	}
 }
 
 // Called to write the data
-//void FSLWorldStateWriterMongoCxx::Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+//void FSLWorldWriterMongoCxx::Write(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
 //	TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
 //	TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 //	float Timestamp)
@@ -63,9 +63,9 @@ void FSLWorldStateWriterMongoCxx::Finish()
 //		bsoncxx::builder::basic::array bson_arr{};
 //
 //		// Add entities to the bson array
-//		FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
-//		FSLWorldStateWriterMongoCxx::AddSkeletalActors(SkeletalActorPool, bson_arr);
-//		FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
+//		FSLWorldWriterMongoCxx::AddNonSkeletalActors(NonSkeletalActorPool, bson_arr);
+//		FSLWorldWriterMongoCxx::AddSkeletalActors(SkeletalActorPool, bson_arr);
+//		FSLWorldWriterMongoCxx::AddNonSkeletalComponents(NonSkeletalComponentPool, bson_arr);
 //
 //		// Avoid inserting empty entries
 //		if (!bson_arr.view().empty())
@@ -85,7 +85,7 @@ void FSLWorldStateWriterMongoCxx::Finish()
 //#endif //SL_WITH_LIBMONGO_CXX
 //}
 
-void FSLWorldStateWriterMongoCxx::Write(float Timestamp,
+void FSLWorldWriterMongoCxx::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
@@ -96,7 +96,7 @@ void FSLWorldStateWriterMongoCxx::Write(float Timestamp,
 }
 
 // Connect to the database
-bool FSLWorldStateWriterMongoCxx::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
+bool FSLWorldWriterMongoCxx::Connect(const FString& DBName, const FString& EpisodeId, const FString& ServerIp, uint16 ServerPort)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Params: DBName=%s; Collection=%s; IP=%s; Port=%d;"),
 		*FString(__func__), __LINE__, *DBName, *EpisodeId, *ServerIp, ServerPort);
@@ -163,7 +163,7 @@ bool FSLWorldStateWriterMongoCxx::Connect(const FString& DBName, const FString& 
 }
 
 // Create indexes from the logged data, usually called after logging
-bool FSLWorldStateWriterMongoCxx::CreateIndexes()
+bool FSLWorldWriterMongoCxx::CreateIndexes()
 {
 #if SL_WITH_LIBMONGO_CXX
 	if (!bIsInit)
@@ -191,7 +191,7 @@ bool FSLWorldStateWriterMongoCxx::CreateIndexes()
 
 #if SL_WITH_LIBMONGO_CXX
 // Get non skeletal actors as bson array
-void FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
+void FSLWorldWriterMongoCxx::AddNonSkeletalActors(TArray<TSLEntityPreviousPose<AActor>>& NonSkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -219,7 +219,7 @@ void FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(TArray<TSLEntityPreviousP
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongoCxx::AddPoseToDocument(CurrLoc, CurrQuat, bson_entity_doc);
+				FSLWorldWriterMongoCxx::AddPoseToDocument(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Add document to array
 				out_bson_arr.append(bson_entity_doc);
@@ -234,7 +234,7 @@ void FSLWorldStateWriterMongoCxx::AddNonSkeletalActors(TArray<TSLEntityPreviousP
 }
 
 // Get skeletal actors as bson array
-void FSLWorldStateWriterMongoCxx::AddSkeletalActors(TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
+void FSLWorldWriterMongoCxx::AddSkeletalActors(TArray<TSLEntityPreviousPose<ASLSkeletalMeshActor>>& SkeletalActorPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -262,7 +262,7 @@ void FSLWorldStateWriterMongoCxx::AddSkeletalActors(TArray<TSLEntityPreviousPose
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongoCxx::AddPoseToDocument(CurrLoc, CurrQuat, bson_entity_doc);
+				FSLWorldWriterMongoCxx::AddPoseToDocument(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Array of bones
 				bsoncxx::builder::basic::array bson_bone_arr{};
@@ -285,7 +285,7 @@ void FSLWorldStateWriterMongoCxx::AddSkeletalActors(TArray<TSLEntityPreviousPose
 							bson_bone_doc.append(kvp("class", TCHAR_TO_UTF8(*Pair.Value)));
 
 							// Add the pose information
-							FSLWorldStateWriterMongoCxx::AddPoseToDocument(CurrLoc, CurrQuat, bson_bone_doc);
+							FSLWorldWriterMongoCxx::AddPoseToDocument(CurrLoc, CurrQuat, bson_bone_doc);
 
 							// Add bone to  array
 							bson_bone_arr.append(bson_bone_doc);
@@ -308,7 +308,7 @@ void FSLWorldStateWriterMongoCxx::AddSkeletalActors(TArray<TSLEntityPreviousPose
 }
 
 // Get non skeletal components as bson array
-void FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
+void FSLWorldWriterMongoCxx::AddNonSkeletalComponents(TArray<TSLEntityPreviousPose<USceneComponent>>& NonSkeletalComponentPool,
 	bsoncxx::builder::basic::array& out_bson_arr)
 {
 	// Iterate items
@@ -336,7 +336,7 @@ void FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(TArray<TSLEntityPrevi
 				bson_entity_doc.append(kvp("class", TCHAR_TO_UTF8(*Itr->Item.Class)));
 
 				// Add the pose information
-				FSLWorldStateWriterMongoCxx::AddPoseToDocument(CurrLoc, CurrQuat, bson_entity_doc);
+				FSLWorldWriterMongoCxx::AddPoseToDocument(CurrLoc, CurrQuat, bson_entity_doc);
 
 				// Add document to array
 				out_bson_arr.append(bson_entity_doc);
@@ -351,7 +351,7 @@ void FSLWorldStateWriterMongoCxx::AddNonSkeletalComponents(TArray<TSLEntityPrevi
 }
 
 // Add pose data to document
-void FSLWorldStateWriterMongoCxx::AddPoseToDocument(const FVector& InLoc, const FQuat& InQuat,
+void FSLWorldWriterMongoCxx::AddPoseToDocument(const FVector& InLoc, const FQuat& InQuat,
 	bsoncxx::builder::basic::document& out_doc)
 {
 	// Switch to right handed ROS transformation

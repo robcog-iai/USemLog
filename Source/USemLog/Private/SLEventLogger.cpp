@@ -2,10 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLEventLogger.h"
-#include "Misc/Paths.h"
-#include "Misc/FileHelper.h"
-#include "EngineUtils.h"
-
 #include "Events/SLContactEventHandler.h"
 #include "Events/SLManipulatorContactEventHandler.h"
 //#include "Events/SLSupportedByEventHandler.h"
@@ -13,13 +9,19 @@
 #include "Events/SLReachEventHandler.h"
 #include "Events/SLPickAndPlaceEventsHandler.h"
 #include "Events/SLContainerEventHandler.h"
+#include "Events/SLContactShapeInterface.h"
+#include "Events/SLManipulatorListener.h"
+#include "Events/SLReachListener.h"
+#include "Events/SLPickAndPlaceListener.h"
+#include "Events/SLContainerListener.h"
+#include "Events/SLGoogleCharts.h"
+
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
+#include "EngineUtils.h"
+
+// OWL
 #include "SLOwlExperimentStatics.h"
-#include "SLContactShapeInterface.h"
-#include "SLManipulatorListener.h"
-#include "SLReachListener.h"
-#include "SLPickAndPlaceListener.h"
-#include "SLContainerListener.h"
-#include "SLGoogleCharts.h"
 
 // UUtils
 #include "Ids.h"

@@ -1,17 +1,17 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "WorldState/SLWorldStateAsyncWorker.h"
+#include "World/SLWorldAsyncWorker.h"
 #include "SLEntitiesManager.h"
-#include "WorldState/SLWorldStateWriterJson.h"
-#include "WorldState/SLWorldStateWriterBson.h"
-#include "WorldState/SLWorldStateWriterMongoC.h"
-#include "WorldState/SLWorldStateWriterMongoCxx.h"
+#include "World/SLWorldWriterJson.h"
+#include "World/SLWorldWriterBson.h"
+#include "World/SLWorldWriterMongoC.h"
+#include "World/SLWorldWriterMongoCxx.h"
 #include "Tags.h"
 #include "Animation/SkeletalMeshActor.h"
 
 // Constructor
-FSLWorldStateAsyncWorker::FSLWorldStateAsyncWorker()
+FSLWorldAsyncWorker::FSLWorldAsyncWorker()
 {
 	// Flags
 	bIsInit = false;
@@ -20,15 +20,15 @@ FSLWorldStateAsyncWorker::FSLWorldStateAsyncWorker()
 }
 
 // Destructor
-FSLWorldStateAsyncWorker::~FSLWorldStateAsyncWorker()
+FSLWorldAsyncWorker::~FSLWorldAsyncWorker()
 {
 	Finish(true);
 }
 
 // Init writer, load items from sl mapping singleton
-void FSLWorldStateAsyncWorker::Init(UWorld* InWorld,
-	ESLWorldStateWriterType InWriterType,
-	const FSLWorldStateWriterParams& InParams)
+void FSLWorldAsyncWorker::Init(UWorld* InWorld,
+	ESLWorldWriterType InWriterType,
+	const FSLWorldWriterParams& InParams)
 {
 	if(!bIsInit)
 	{
@@ -45,20 +45,20 @@ void FSLWorldStateAsyncWorker::Init(UWorld* InWorld,
 		// Create the writer object
 		switch(WriterType)
 		{
-		case ESLWorldStateWriterType::Json:
-			Writer = MakeShareable(new FSLWorldStateWriterJson(InParams));
+		case ESLWorldWriterType::Json:
+			Writer = MakeShareable(new FSLWorldWriterJson(InParams));
 			break;
-		case ESLWorldStateWriterType::Bson:
-			Writer = MakeShareable(new FSLWorldStateWriterBson(InParams));
+		case ESLWorldWriterType::Bson:
+			Writer = MakeShareable(new FSLWorldWriterBson(InParams));
 			break;
-		case ESLWorldStateWriterType::MongoC:
-			Writer = MakeShareable(new FSLWorldStateWriterMongoC(InParams));
+		case ESLWorldWriterType::MongoC:
+			Writer = MakeShareable(new FSLWorldWriterMongoC(InParams));
 			break;
-		case ESLWorldStateWriterType::MongoCxx:
-			Writer = MakeShareable(new FSLWorldStateWriterMongoCxx(InParams));
+		case ESLWorldWriterType::MongoCxx:
+			Writer = MakeShareable(new FSLWorldWriterMongoCxx(InParams));
 			break;
 		default:
-			Writer = MakeShareable(new FSLWorldStateWriterJson(InParams));
+			Writer = MakeShareable(new FSLWorldWriterJson(InParams));
 			break;
 		}
 
@@ -67,9 +67,6 @@ void FSLWorldStateAsyncWorker::Init(UWorld* InWorld,
 		{
 			return;
 		}
-
-		// Make sure the semantic items are initialized
-		FSLEntitiesManager::GetInstance()->Init(World);
 
 		// Iterate all annotated entities, ignore skeletal ones
 		TArray<FSLEntity> SemanticEntities;
@@ -113,7 +110,7 @@ void FSLWorldStateAsyncWorker::Init(UWorld* InWorld,
 }
 
 // Prepare worker for starting to log
-void FSLWorldStateAsyncWorker::Start()
+void FSLWorldAsyncWorker::Start()
 {
 	if(!bIsStarted && bIsInit)
 	{
@@ -125,7 +122,7 @@ void FSLWorldStateAsyncWorker::Start()
 }
 
 // Finish up worker
-void FSLWorldStateAsyncWorker::Finish(bool bForced)
+void FSLWorldAsyncWorker::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsStarted || bIsInit))
 	{
@@ -134,17 +131,17 @@ void FSLWorldStateAsyncWorker::Finish(bool bForced)
 			// Check if mongo writer
 			if (Writer.IsValid())
 			{
-				if (WriterType == ESLWorldStateWriterType::MongoCxx)
+				if (WriterType == ESLWorldWriterType::MongoCxx)
 				{
 					// We cannot cast dynamically if it is not an UObject
-					TSharedPtr<FSLWorldStateWriterMongoCxx> AsMongoCxxWriter = StaticCastSharedPtr<FSLWorldStateWriterMongoCxx>(Writer);
+					TSharedPtr<FSLWorldWriterMongoCxx> AsMongoCxxWriter = StaticCastSharedPtr<FSLWorldWriterMongoCxx>(Writer);
 					// Finish writer (create database indexes for example)
 					AsMongoCxxWriter->Finish();
 				}
-				else if (WriterType == ESLWorldStateWriterType::MongoC)
+				else if (WriterType == ESLWorldWriterType::MongoC)
 				{
 					// We cannot cast dynamically if it is not an UObject
-					TSharedPtr<FSLWorldStateWriterMongoC> AsMongoCWriter = StaticCastSharedPtr<FSLWorldStateWriterMongoC>(Writer);
+					TSharedPtr<FSLWorldWriterMongoC> AsMongoCWriter = StaticCastSharedPtr<FSLWorldWriterMongoC>(Writer);
 					// Finish writer (create database indexes for example)
 					AsMongoCWriter->Finish();
 				}
@@ -160,7 +157,7 @@ void FSLWorldStateAsyncWorker::Finish(bool bForced)
 }
 
 // Remove all items that are semantically marked as static
-void FSLWorldStateAsyncWorker::RemoveStaticItems()
+void FSLWorldAsyncWorker::RemoveStaticItems()
 {
 	// Non-skeletal actors
 	for (auto Itr(ActorEntitites.CreateIterator()); Itr; ++Itr)
@@ -186,7 +183,7 @@ void FSLWorldStateAsyncWorker::RemoveStaticItems()
 }
 
 // Async work done here
-void FSLWorldStateAsyncWorker::DoWork()
+void FSLWorldAsyncWorker::DoWork()
 {
 	FSLGazeData GazeData;
 	GazeDataHandler.GetData(GazeData);
@@ -194,7 +191,7 @@ void FSLWorldStateAsyncWorker::DoWork()
 }
 
 // Needed by the engine API
-FORCEINLINE TStatId FSLWorldStateAsyncWorker::GetStatId() const
+FORCEINLINE TStatId FSLWorldAsyncWorker::GetStatId() const
 {
-	RETURN_QUICK_DECLARE_CYCLE_STAT(FSLWorldStateAsyncWorker, STATGROUP_ThreadPoolAsyncTasks);
+	RETURN_QUICK_DECLARE_CYCLE_STAT(FSLWorldAsyncWorker, STATGROUP_ThreadPoolAsyncTasks);
 }

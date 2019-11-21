@@ -4,7 +4,7 @@
 #pragma once
 
 #include "Async/AsyncWork.h"
-#include "ISLWorldStateWriter.h"
+#include "ISLWorldWriter.h"
 #include "SLStructs.h"
 #include "SLGazeDataHandler.h"
 
@@ -12,7 +12,7 @@
 * Type of world state loggers
 */
 UENUM()
-enum class ESLWorldStateWriterType : uint8
+enum class ESLWorldWriterType : uint8
 {
 	Json					UMETA(DisplayName = "Json"),
 	Bson					UMETA(DisplayName = "Bson"),
@@ -23,23 +23,23 @@ enum class ESLWorldStateWriterType : uint8
 /**
  * Async worker to log raw data
  */
-class FSLWorldStateAsyncWorker : public FNonAbandonableTask
+class FSLWorldAsyncWorker : public FNonAbandonableTask
 {
 	// Needed if DoWork() needs access private data from this class
-	friend class FAsyncTask<FSLWorldStateAsyncWorker>;
-	//friend class FAutoDeleteAsyncTask<SLWorldStateAsyncWorker>;
+	friend class FAsyncTask<FSLWorldAsyncWorker>;
+	//friend class FAutoDeleteAsyncTask<SLWorldAsyncWorker>;
 
 public:
 	// Constructor
-	FSLWorldStateAsyncWorker();
+	FSLWorldAsyncWorker();
 
 	// Destructor
-	virtual ~FSLWorldStateAsyncWorker();
+	virtual ~FSLWorldAsyncWorker();
 
 	// Init worker, load models to log from world
 	void Init(UWorld* InWorld,
-		ESLWorldStateWriterType InWriterType,
-		const FSLWorldStateWriterParams& InParams);
+		ESLWorldWriterType InWriterType,
+		const FSLWorldWriterParams& InParams);
 
 	// Prepare worker for starting to log
 	void Start();
@@ -91,13 +91,13 @@ private:
 	UWorld* World;
 
 	// Cache of the writer thy that is active
-	ESLWorldStateWriterType WriterType;
+	ESLWorldWriterType WriterType;
 
 	// Distance squared threshold
 	float LinearDistanceSquared;
 
 	// Raw data writer
-	TSharedPtr<ISLWorldStateWriter> Writer;
+	TSharedPtr<ISLWorldWriter> Writer;
 
 	// Array of semantically annotated actors that are not skeletal
 	TArray<TSLEntityPreviousPose<AActor>> ActorEntitites;

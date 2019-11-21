@@ -1,28 +1,28 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "WorldState/SLWorldStateWriterJson.h"
+#include "World/SLWorldWriterJson.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Conversions.h"
 
 // Constructor
-FSLWorldStateWriterJson::FSLWorldStateWriterJson()
+FSLWorldWriterJson::FSLWorldWriterJson()
 {
 	bIsInit = false;
 }
 
 // Init constructor
-FSLWorldStateWriterJson::FSLWorldStateWriterJson(const FSLWorldStateWriterParams& InParams)
+FSLWorldWriterJson::FSLWorldWriterJson(const FSLWorldWriterParams& InParams)
 {
 	bIsInit = false;
-	FSLWorldStateWriterJson::Init(InParams);
+	FSLWorldWriterJson::Init(InParams);
 }
 
 // Destr
-FSLWorldStateWriterJson::~FSLWorldStateWriterJson()
+FSLWorldWriterJson::~FSLWorldWriterJson()
 {
-	FSLWorldStateWriterJson::Finish();
+	FSLWorldWriterJson::Finish();
 	if (FileHandle)
 	{
 		delete FileHandle;
@@ -30,7 +30,7 @@ FSLWorldStateWriterJson::~FSLWorldStateWriterJson()
 }
 
 // Init
-void FSLWorldStateWriterJson::Init(const FSLWorldStateWriterParams& InParams)
+void FSLWorldWriterJson::Init(const FSLWorldWriterParams& InParams)
 {
 	LinDistSqMin = InParams.LinearDistanceSquared;
 	AngDistMin = InParams.AngularDistance;
@@ -39,7 +39,7 @@ void FSLWorldStateWriterJson::Init(const FSLWorldStateWriterParams& InParams)
 
 
 // Finish
-void FSLWorldStateWriterJson::Finish()
+void FSLWorldWriterJson::Finish()
 {
 	if (bIsInit)
 	{
@@ -48,7 +48,7 @@ void FSLWorldStateWriterJson::Finish()
 }
 
 // Called to write the data (it also removes invalid item -> e.g. deleted ones)
-void FSLWorldStateWriterJson::Write(float Timestamp,
+void FSLWorldWriterJson::Write(float Timestamp,
 	TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
@@ -63,9 +63,9 @@ void FSLWorldStateWriterJson::Write(float Timestamp,
 	TArray<TSharedPtr<FJsonValue>> JsonEntitiesArr;
 
 	// Add entities to json array
-	FSLWorldStateWriterJson::AddActorEntities(ActorEntities, JsonEntitiesArr);
-	FSLWorldStateWriterJson::AddComponentEntities(ComponentEntities, JsonEntitiesArr);
-	FSLWorldStateWriterJson::AddSkeletalEntities(SkeletalEntities, JsonEntitiesArr);
+	FSLWorldWriterJson::AddActorEntities(ActorEntities, JsonEntitiesArr);
+	FSLWorldWriterJson::AddComponentEntities(ComponentEntities, JsonEntitiesArr);
+	FSLWorldWriterJson::AddSkeletalEntities(SkeletalEntities, JsonEntitiesArr);
 
 	// Avoid appending empty entries
 	if (JsonEntitiesArr.Num() > 0)
@@ -77,13 +77,13 @@ void FSLWorldStateWriterJson::Write(float Timestamp,
 		JsonRootObj->SetArrayField("entities", JsonEntitiesArr);
 
 		// Write entry to file
-		FSLWorldStateWriterJson::WriteToFile(JsonRootObj);
+		FSLWorldWriterJson::WriteToFile(JsonRootObj);
 	}
 #endif // SL_WITH_JSON
 }
 
 // Set the file handle for the logger
-bool FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
+bool FSLWorldWriterJson::SetFileHandle(const FString& LogDirectory, const FString& InEpisodeId)
 {
 	const FString Filename = InEpisodeId + TEXT("_WS.json");
 	FString EpisodesDirPath = FPaths::ProjectDir() + "/SemLog/" + LogDirectory + TEXT("/Episodes/");
@@ -100,7 +100,7 @@ bool FSLWorldStateWriterJson::SetFileHandle(const FString& LogDirectory, const F
 
 #if SL_WITH_JSON
 // Get non skeletal actors as json array
-void FSLWorldStateWriterJson::AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
+void FSLWorldWriterJson::AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,
 	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
 {
 	// Iterate items
@@ -121,7 +121,7 @@ void FSLWorldStateWriterJson::AddActorEntities(TArray<TSLEntityPreviousPose<AAct
 				Itr->PrevQuat = CurrQuat;
 
 				// Get current entry as json object
-				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
+				TSharedPtr<FJsonObject> JsonEntry = FSLWorldWriterJson::GetAsJsonEntry(
 					TMap<FString, FString>{ {"id", Itr->Entity.Id}, { "class", Itr->Entity.Class } },
 					CurrLoc, CurrQuat);
 
@@ -138,7 +138,7 @@ void FSLWorldStateWriterJson::AddActorEntities(TArray<TSLEntityPreviousPose<AAct
 }
 
 // Get non skeletal components as json array
-void FSLWorldStateWriterJson::AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
+void FSLWorldWriterJson::AddComponentEntities(TArray<TSLEntityPreviousPose<USceneComponent>>& ComponentEntities,
 	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
 {
 	// Iterate items
@@ -159,7 +159,7 @@ void FSLWorldStateWriterJson::AddComponentEntities(TArray<TSLEntityPreviousPose<
 				Itr->PrevQuat = CurrQuat;
 
 				// Get current entry as json object
-				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
+				TSharedPtr<FJsonObject> JsonEntry = FSLWorldWriterJson::GetAsJsonEntry(
 					TMap<FString, FString>{ {"id", Itr->Entity.Id}, { "class", Itr->Entity.Class } },
 					CurrLoc, CurrQuat);
 
@@ -176,7 +176,7 @@ void FSLWorldStateWriterJson::AddComponentEntities(TArray<TSLEntityPreviousPose<
 }
 
 // Get skeletal actors as json array
-void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
+void FSLWorldWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLSkeletalDataComponent>>& SkeletalEntities,
 	TArray<TSharedPtr<FJsonValue>>& OutJsonEntitiesArr)
 {
 	// Iterate items
@@ -197,7 +197,7 @@ void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<U
 				Itr->PrevQuat = CurrQuat;
 
 				// Get current entry as json object
-				TSharedPtr<FJsonObject> JsonEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
+				TSharedPtr<FJsonObject> JsonEntry = FSLWorldWriterJson::GetAsJsonEntry(
 					TMap<FString, FString>{ {"id", Itr->Entity.Id}, { "class", Itr->Entity.Class } },
 					CurrLoc, CurrQuat);
 
@@ -224,7 +224,7 @@ void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<U
 							SemanticData.Add("mask_hex", Pair.Value.VisualMask);
 						}
 
-						TSharedPtr<FJsonObject> JsonBoneEntry = FSLWorldStateWriterJson::GetAsJsonEntry(
+						TSharedPtr<FJsonObject> JsonBoneEntry = FSLWorldWriterJson::GetAsJsonEntry(
 							SemanticData, CurrBoneLoc, CurrBoneQuat);
 
 						// Add bone to Json array
@@ -247,7 +247,7 @@ void FSLWorldStateWriterJson::AddSkeletalEntities(TArray<TSLEntityPreviousPose<U
 }
 
 // Get key value pairs as json entry
-TSharedPtr<FJsonObject> FSLWorldStateWriterJson::GetAsJsonEntry(const TMap<FString, FString>& InKeyValMap,
+TSharedPtr<FJsonObject> FSLWorldWriterJson::GetAsJsonEntry(const TMap<FString, FString>& InKeyValMap,
 	const FVector& InLoc, const FQuat& InQuat)
 {
 	// New json entity object
@@ -282,7 +282,7 @@ TSharedPtr<FJsonObject> FSLWorldStateWriterJson::GetAsJsonEntry(const TMap<FStri
 }
 
 // Write entry to file
-void FSLWorldStateWriterJson::WriteToFile(const TSharedPtr<FJsonObject>& InRootObj)
+void FSLWorldWriterJson::WriteToFile(const TSharedPtr<FJsonObject>& InRootObj)
 {
 	// Transform to string
 	FString JsonString;

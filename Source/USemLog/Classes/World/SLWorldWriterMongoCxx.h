@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ISLWorldStateWriter.h"
+#include "ISLWorldWriter.h"
 #if SL_WITH_LIBMONGO_CXX
 THIRD_PARTY_INCLUDES_START
 #include <mongocxx/client.hpp>
@@ -14,20 +14,20 @@ THIRD_PARTY_INCLUDES_END
 /**
  * Raw data logger to mongo database
  */
-class FSLWorldStateWriterMongoCxx : public ISLWorldStateWriter
+class FSLWorldWriterMongoCxx : public ISLWorldWriter
 {
 public:
 	// Default constr
-	FSLWorldStateWriterMongoCxx();
+	FSLWorldWriterMongoCxx();
 
 	// Init constr
-	FSLWorldStateWriterMongoCxx(const FSLWorldStateWriterParams& InParams);
+	FSLWorldWriterMongoCxx(const FSLWorldWriterParams& InParams);
 
 	// Destr
-	virtual ~FSLWorldStateWriterMongoCxx();
+	virtual ~FSLWorldWriterMongoCxx();
 
 	// Init
-	virtual void Init(const FSLWorldStateWriterParams& InParams) override;
+	virtual void Init(const FSLWorldWriterParams& InParams) override;
 
 	// Finish
 	virtual void Finish() override;

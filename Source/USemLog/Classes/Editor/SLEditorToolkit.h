@@ -4,7 +4,10 @@
 #pragma once
 
 #include "USemLog.h"
-#include "SLSemanticMapWriter.h"
+#include "Editor/SLSemanticMapWriter.h"
+
+// Forward declaration
+class ASLVisionCamera;
 
 /**
  * Helper functions of the editor functionalities
@@ -12,12 +15,6 @@
 class FSLEditorToolkit
 {
 public:
-	// Ctor
-	FSLEditorToolkit();
-
-	// Dtor
-	~FSLEditorToolkit();
-
 	// Write the semantic map
 	static void WriteSemanticMap(UWorld* World, const FString& TaskId,
 		const FString& Filename = "SemanticMap",
@@ -37,7 +34,10 @@ public:
 
 	// Tag non-movable objects as static
 	static void TagNonMovableEntities(UWorld* World, bool bOverwriteProperties);
-	
+
+	// Return true if there any duplicates in the class names of the vision cameras
+	static void CheckForVisionCameraClassNameDuplicates(UWorld* World);
+
 private:
 	// Randomly generate unique visual masks
 	static void RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrite, int32 VisualMaskColorMinDistance);
@@ -47,6 +47,9 @@ private:
 	
 	// Get the class name of the actor
 	static FString GetClassName(AActor* Actor, bool bDefaultToLabel = false);
+
+	// Generate class name for the vision camera
+	static FString GenerateClassName(ASLVisionCamera* Actor, bool bDefaultToLabel = false);
 	
 	// Write to editor counterpart
 	static bool WriteKVToEditorCounterpart(AActor* Actor, const FString& TagType, const FString& TagKey, const FString& TagValue, bool bReplaceExisting);

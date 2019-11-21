@@ -4,7 +4,7 @@
 
 #include "USemLog.h"
 #include "GameFramework/Info.h"
-#include "SLWorldStateLogger.h"
+#include "SLWorldLogger.h"
 #include "SLEventLogger.h"
 #include "SLMetadataLogger.h"
 #include "SLVisionLogger.h"
@@ -219,11 +219,11 @@ private:
 
 	// Writer type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|World State Logger", meta = (editcondition = "bLogWorldState"))
-	ESLWorldStateWriterType WriterType;
+	ESLWorldWriterType WriterType;
 
 	// World state logger, use UPROPERTY to avoid GC
 	UPROPERTY()
-	USLWorldStateLogger* WorldStateLogger;
+	USLWorldLogger* WorldStateLogger;
 	/* End world state logger properties */
 
 

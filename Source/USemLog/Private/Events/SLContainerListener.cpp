@@ -1,11 +1,14 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLContainerListener.h"
-#include "SLEntitiesManager.h"
+#include "Events/SLContainerListener.h"
 #include "SLManipulatorListener.h"
+#include "SLEntitiesManager.h"
+
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
+
+// UUtils
 #include "Tags.h"
 
 // Sets default values for this component's properties

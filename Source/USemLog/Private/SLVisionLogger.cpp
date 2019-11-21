@@ -2,6 +2,8 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisionLogger.h"
+#include "Vision/SLVisionToolkit.h"
+
 #include "SLEntitiesManager.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
@@ -13,11 +15,11 @@
 // Constructor
 USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
 {
-	ViewModes.Add(ESLVisLoggerViewMode::Color);
-	ViewModes.Add(ESLVisLoggerViewMode::Unlit);
-	ViewModes.Add(ESLVisLoggerViewMode::Mask);
-	ViewModes.Add(ESLVisLoggerViewMode::Depth);
-	ViewModes.Add(ESLVisLoggerViewMode::Normal);
+	ViewModes.Add(ESLVisionLoggerViewMode::Color);
+	ViewModes.Add(ESLVisionLoggerViewMode::Unlit);
+	ViewModes.Add(ESLVisionLoggerViewMode::Mask);
+	ViewModes.Add(ESLVisionLoggerViewMode::Depth);
+	ViewModes.Add(ESLVisionLoggerViewMode::Normal);
 }
 
 // Destructor
@@ -38,10 +40,15 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
 		if(!Connect(InTaskId, InEpisodeId, InServerIp, InServerPort))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not connect to the DB.."), *FString(__func__), __LINE__);
+			return;
+		}
+
+		if(!GetEpisodeData())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could download the episode data.."), *FString(__func__), __LINE__);
 			return;
 		}
 
@@ -101,6 +108,8 @@ void USLVisionLogger::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+
+		
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
 		// Mark logger as finished
 		bIsStarted = false;
@@ -201,6 +210,67 @@ void USLVisionLogger::Disconnect()
 #endif //SL_WITH_LIBMONGO_C
 }
 
+// Get the episode data from the database
+bool USLVisionLogger::GetEpisodeData()
+{
+#if SL_WITH_LIBMONGO_C
+	bson_error_t error;
+	const bson_t *doc;
+	mongoc_cursor_t *cursor;
+	bson_t *pipeline;
+
+	pipeline = BCON_NEW("pipeline", "[",
+		"{",
+			"$match",
+			"{",
+				"timestamp",
+				"{",
+					"$exists", BCON_BOOL(true),
+				"}",
+			"}",
+		"}",
+		"{",
+			"$sort",
+			"{",
+				"timestamp", BCON_INT32(1),
+			"}",
+		"}",
+		"{",
+			"$project",
+			"{",
+				"_id", BCON_INT32(0),
+				"timestamp", BCON_INT32(1),
+				"entities", BCON_UTF8("$entities"),
+				"skeletals", BCON_UTF8("$skel_entities"),
+			"}",
+		"}",
+	"]");
+
+	cursor = mongoc_collection_aggregate(
+		collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+
+	while (mongoc_cursor_next(cursor, &doc))
+	{
+			
+	}
+
+	// if there is error
+	if (mongoc_cursor_error(cursor, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to iterate all documents.. Err. %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+		return false;
+	}
+
+	mongoc_cursor_destroy(cursor);
+	bson_destroy(pipeline);
+	
+	return true;
+#else
+	return false;
+#endif //SL_WITH_LIBMONGO_C
+}
+
 // Disable physics and set to movable
 void USLVisionLogger::DisablePhysics()
 {
@@ -284,7 +354,7 @@ void USLVisionLogger::RequestScreenshot()
 }
 
 // Apply view mode
-void USLVisionLogger::ApplyViewMode(ESLVisLoggerViewMode Mode)
+void USLVisionLogger::ApplyViewMode(ESLVisionLoggerViewMode Mode)
 {
 }
 

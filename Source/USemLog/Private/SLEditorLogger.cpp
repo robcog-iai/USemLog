@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLEditorLogger.h"
-#include "SLEditorToolkit.h"
+#include "Editor/SLEditorToolkit.h"
 
 // Constructor
 USLEditorLogger::USLEditorLogger()
@@ -47,8 +47,6 @@ void USLEditorLogger::Start(
 {
 	if (!bIsStarted && bIsInit)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__func__), __LINE__);
-
 		if(bWriteSemanticMap)
 		{
 			FSLEditorToolkit::WriteSemanticMap(GetWorld(), TaskId);
@@ -90,6 +88,8 @@ void USLEditorLogger::Finish(bool bForced)
 	{
 		if(!bForced)
 		{
+			// Give warnings for the users to fix any duplicate camera view class names;
+			FSLEditorToolkit::CheckForVisionCameraClassNameDuplicates(GetWorld());
 			QuitEditor();
 		}
 	}
