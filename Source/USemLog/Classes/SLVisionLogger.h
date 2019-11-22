@@ -8,7 +8,10 @@
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 
+#include "Vision/SLVisionPoseableMeshActor.h"
+
 #if SL_WITH_LIBMONGO_C
+class ASLVisionPoseableMeshActor;
 THIRD_PARTY_INCLUDES_START
 #if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
@@ -66,16 +69,33 @@ struct FSLVisionLoggerParams
 /**
 * Episode frame data
 */
-struct FSLVisionEpisodeFrame
+struct FSLVisionFrame
 {
 	// Frame timestamp
 	float Timestamp;
 
 	// Entity poses
-	TMap<FString, FTransform> EntityPoses;
+	TMap<AActor*, FTransform> ActorPoses;
 
-	// Skeletal poses
-	TMap<FString, TMap<FString, FTransform>> SkeletalPoses;
+	// Skeletal (poseable) meshes bone transformation
+	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> PMActorPoses;
+
+	// Apply transformations, return the timestamp
+	float ApplyTransformations()
+	{
+		// Move the static meshes
+		for(const auto& Pair : ActorPoses)
+		{
+			Pair.Key->SetActorTransform(Pair.Value);
+		}
+
+		// Move the skeletal(poseable) meshes
+		for(const auto& Pair : PMActorPoses)
+		{
+			Pair.Key->SetBoneTransforms(Pair.Value);
+		}
+		return Timestamp;
+	}
 };
 
 /**
@@ -84,18 +104,38 @@ struct FSLVisionEpisodeFrame
 struct FSLVisionEpisode
 {
 	// All the frames from the episode
-	TArray<FSLVisionEpisodeFrame> Frames;
+	TArray<FSLVisionFrame> Frames;
 
-	// Id to static mesh actor
-	TMap<FString, AStaticMeshActor*> IdToSMA;
+	// Default ctor
+	FSLVisionEpisode() : FrameIdx(INDEX_NONE) {};
 
-	// Id to skeletal mesh actor
-	TMap<FString, ASkeletalMeshActor*> IdToSkMA;
+	// Move actors to the first frame
+	bool GotoFirstFrame(float& OutTimestamp)
+	{
+		FrameIdx = 0;
+		if(Frames.IsValidIndex(FrameIdx))
+		{
+			OutTimestamp = Frames[FrameIdx].ApplyTransformations();
+			return true;
+		}
+		return false;
+	}
 
+	// Move actors to the next frame transformations, return false if no more frames are available
+	bool GotoNextFrame(float& OutTimestamp)
+	{
+		FrameIdx++;
+		if(Frames.IsValidIndex(FrameIdx))
+		{
+			OutTimestamp = Frames[FrameIdx].ApplyTransformations();
+		}
+		FrameIdx = INDEX_NONE;
+		return false;
+	}
 	
-	//TMap<AActor*, FString> EntityIdMap;
-
-	//TMap<
+private:
+	// Current frame index
+	int32 FrameIdx;
 };
 
 
@@ -128,6 +168,24 @@ public:
 private:
 	// Called when the screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
+
+	// Goto the first episode frame
+	bool GotoFirstEpisodeFrame();
+
+	// Goto next episode frame, return false if there are no other left
+	bool GotoNextEpisodeFrame();
+	
+	// Goto the first virtual camera view
+	bool GotoFirstCameraView();
+
+	// Goto next camera view, return false if there are no other left
+	bool GotoNextCameraView();
+
+	// Goto first view mode (render type)
+	bool GotoFirstViewMode();
+
+	// Goto next view mode (render type), return false if there are no other left
+	bool GotoNextViewMode();
 	
 	// Connect to the database
 	bool Connect(const FString& DBName, const FString& CollName, const FString& ServerIp, uint16 ServerPort);
@@ -138,8 +196,14 @@ private:
 	// Get episode data from the database
 	bool GetEpisodeData();
 
-	// Disable physics and set to movable
-	void DisablePhysics();
+	// Prepare th world entities by disabling physics and setting them to movable
+	void SetupWorldMobilty();
+	
+	// Setup the poseable mesh clones for the skeletal ones
+	void SetupPoseableMeshes();
+
+	// Load the pointers to the virtual cameras
+	bool LoadVirtualCameras();
 
 	// Load mask dynamic material
 	bool LoadMaskMaterial();
@@ -181,6 +245,10 @@ private:
 	// Episode data to replay
 	FSLVisionEpisode EpisodeData;
 
+	// Map from the skeletal entities to the poseable meshes
+	UPROPERTY() // Avoid GC
+	TMap<ASkeletalMeshActor*, ASLVisionPoseableMeshActor*> SkMAToPMA;
+	
 	// Dynamic mask material
 	UPROPERTY() // Avoid GC
 	UMaterialInstanceDynamic* DynamicMaskMaterial;
@@ -195,7 +263,7 @@ private:
 	TArray<ESLVisionLoggerViewMode> ViewModes;
 
 	// Currently active virtual camera view
-	int32 CurrVirtualCameraIdx;
+	int32 CurrCameraIdx;
 	
 	// Currently active view mode
 	int32 CurrViewModeIdx;

@@ -3,14 +3,18 @@
 
 #include "SLVisionLogger.h"
 #include "Vision/SLVisionToolkit.h"
-
+#include "Vision/SLVisionPoseableMeshActor.h"
 #include "SLEntitiesManager.h"
+
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/GameViewportClient.h"
 #include "HighResScreenshot.h"
+
+// UUtils
+#include "Conversions.h"
 
 // Constructor
 USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
@@ -20,6 +24,8 @@ USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinis
 	ViewModes.Add(ESLVisionLoggerViewMode::Mask);
 	ViewModes.Add(ESLVisionLoggerViewMode::Depth);
 	ViewModes.Add(ESLVisionLoggerViewMode::Normal);
+	CurrViewModeIdx = INDEX_NONE;
+	CurrCameraIdx = INDEX_NONE;
 }
 
 // Destructor
@@ -40,24 +46,38 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 {
 	if (!bIsInit)
 	{
+		// Make sure the semantic entities instance is initialized
+		FSLEntitiesManager::GetInstance()->Init(GetWorld());
+		
+		// Create skeletally movable clones of the skeletal meshes 
+		SetupPoseableMeshes();
+
+		// Connect to the database
 		if(!Connect(InTaskId, InEpisodeId, InServerIp, InServerPort))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not connect to the DB.."), *FString(__func__), __LINE__);
 			return;
 		}
 
+		// Load the episode data (the poseable meshes should be setup before)
 		if(!GetEpisodeData())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could download the episode data.."), *FString(__func__), __LINE__);
 			return;
 		}
 
-		// If no view modes are available, add a default one
 		if(ViewModes.Num() == 0)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No view modes found.."), *FString(__func__), __LINE__);
 			return;
 		}
+
+		if(!LoadVirtualCameras())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d No virtual cameras found.."), *FString(__func__), __LINE__);
+			return;
+		}
+		
 
 		// Used for the screenshot requests
 		ViewportClient = GetWorld()->GetGameViewport();
@@ -67,13 +87,14 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 			return;
 		}
 
+		// Dynamic material used to add the mask colors
 		if(!LoadMaskMaterial())
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load the mask material.."), *FString(__func__), __LINE__);
 			return;
 		}
-
-		// Create clones of every visible entity with the mask color 
+		
+		// Create clones of every visible entity with the mask color
 		SetupMaskClones();
 
 		// Set the captured image resolution
@@ -83,7 +104,7 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		InitRenderParameters();
 
 		// Disable physics on all entities and make sure they are movable
-		DisablePhysics();
+		SetupWorldMobilty();
 
 		// Bind the screenshot callback
 		ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLVisionLogger::ScreenshotCB);
@@ -97,6 +118,13 @@ void USLVisionLogger::Start(const FString& EpisodeId)
 {
 	if (!bIsStarted && bIsInit)
 	{
+		// Cannot be called before BeginPlay, GetFirstPlayerController() is nullptr
+		if(!GotoFirstCameraView())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could setup first camera view.."), *FString(__func__), __LINE__);
+			return;
+		}
+		
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
 		// Mark as started
 		bIsStarted = true;
@@ -121,6 +149,42 @@ void USLVisionLogger::Finish(bool bForced)
 // Called when the screenshot is captured
 void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
 {
+}
+
+// Goto the first episode frame
+bool USLVisionLogger::GotoFirstEpisodeFrame()
+{
+}
+
+// Goto next episode frame, return false if there are no other left
+bool USLVisionLogger::GotoNextEpisodeFrame()
+{
+}
+
+// Goto the first virtual camera view
+bool USLVisionLogger::GotoFirstCameraView()
+{
+	CurrCameraIdx = 0;
+	if(VirtualCameras.IsValidIndex(CurrCameraIdx))
+	{
+		GetWorld()->GetFirstPlayerController()->SetViewTarget(VirtualCameras[CurrCameraIdx]);
+		return true;
+	}
+	CurrCameraIdx = INDEX_NONE;
+	return false;
+}
+
+// Goto next camera view, return false if there are no other
+bool USLVisionLogger::GotoNextCameraView()
+{
+	CurrCameraIdx++;
+	if(VirtualCameras.IsValidIndex(CurrCameraIdx))
+	{
+		GetWorld()->GetFirstPlayerController()->SetViewTarget(VirtualCameras[CurrCameraIdx]);
+		return true;
+	}
+	CurrCameraIdx = INDEX_NONE;
+	return false;
 }
 
 // Connect to the database
@@ -241,7 +305,7 @@ bool USLVisionLogger::GetEpisodeData()
 				"_id", BCON_INT32(0),
 				"timestamp", BCON_INT32(1),
 				"entities", BCON_UTF8("$entities"),
-				"skeletals", BCON_UTF8("$skel_entities"),
+				"skel_entities", BCON_UTF8("$skel_entities"),
 			"}",
 		"}",
 	"]");
@@ -249,12 +313,168 @@ bool USLVisionLogger::GetEpisodeData()
 	cursor = mongoc_collection_aggregate(
 		collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
 
+	bson_iter_t doc_iter;
+	bson_iter_t child_iter;				// entities, skel_entities
+	bson_iter_t sub_child_iter;			// id, bones, loc, rot
+	bson_iter_t sub_sub_child_iter;		// x,y,z,w (entity), bones (array)
+	
 	while (mongoc_cursor_next(cursor, &doc))
 	{
-			
-	}
+		FSLVisionFrame Frame;
 
-	// if there is error
+		if (bson_iter_init(&doc_iter, doc))
+		{
+			// Iterate entities
+			if (bson_iter_find(&doc_iter, "entities"))
+			{
+				// Check if there are any entities
+				if (bson_iter_recurse(&doc_iter, &child_iter))
+				{
+					FString Id;
+					FVector Loc;
+					FQuat Quat;
+					
+					while(bson_iter_next(&child_iter))
+					{
+						if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find(&sub_child_iter, "id"))
+						{
+							Id = FString(bson_iter_utf8(&sub_child_iter, NULL));
+						}
+						if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "loc.x", &sub_sub_child_iter))
+						{
+							Loc.X = bson_iter_double(&sub_sub_child_iter);
+						}
+						if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "loc.y", &sub_sub_child_iter))
+						{
+							Loc.Y = bson_iter_double(&sub_sub_child_iter);
+						}
+						if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "loc.z", &sub_sub_child_iter))
+						{
+							Loc.Z = bson_iter_double(&sub_sub_child_iter);
+						}
+						if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "rot.x", &sub_sub_child_iter))
+						{
+							Quat.X = bson_iter_double(&sub_sub_child_iter);
+						}
+						if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "rot.y", &sub_sub_child_iter))
+						{
+							Quat.Y = bson_iter_double(&sub_sub_child_iter);
+						}
+						if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "rot.z", &sub_sub_child_iter))
+						{
+							Quat.Z = bson_iter_double(&sub_sub_child_iter);
+						}
+						if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "rot.w", &sub_sub_child_iter))
+						{
+							Quat.W = bson_iter_double(&sub_sub_child_iter);
+						}
+
+						// Add entity
+						if(AActor* Act = FSLEntitiesManager::GetInstance()->GetActor(Id))
+						{
+							Frame.ActorPoses.Emplace(Act, FConversions::ROSToU(FTransform(Quat, Loc)));
+						}
+					}
+				}
+			}
+
+			// Iterate skeletal entities
+			if (bson_iter_find(&doc_iter, "skel_entities"))
+			{
+				if (bson_iter_recurse(&doc_iter, &child_iter))
+				{
+					FString Id;
+					TMap<FName, FTransform> BonesMap;
+					
+					while (bson_iter_next(&child_iter))
+					{
+						if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find(&sub_child_iter, "id"))
+						{
+							Id = FString(bson_iter_utf8(&sub_child_iter, NULL));
+						}
+						
+						if (bson_iter_recurse(&child_iter, &sub_sub_child_iter) && bson_iter_find(&sub_sub_child_iter, "bones"))
+						{
+							bson_iter_t bones_child;			// array  obj
+							bson_iter_t bones_sub_child;		// name, loc, rot
+							bson_iter_t bones_sub_sub_child;	// x, y , z, w
+							
+							FName BoneName;
+							FVector Loc;
+							FQuat Quat;
+							
+							if (bson_iter_recurse(&sub_sub_child_iter, &bones_child))
+							{
+								while (bson_iter_next(&bones_child))
+								{
+									if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find(&bones_sub_child, "name"))
+									{
+										BoneName = FName(bson_iter_utf8(&bones_sub_child, NULL));
+									}
+									if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "loc.x", &bones_sub_sub_child))
+									{
+										Loc.X = bson_iter_double(&bones_sub_sub_child);
+									}
+									if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "loc.y", &bones_sub_sub_child))
+									{
+										Loc.Y = bson_iter_double(&bones_sub_sub_child);
+									}
+									if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "loc.z", &bones_sub_sub_child))
+									{
+										Loc.Z = bson_iter_double(&bones_sub_sub_child);
+									}
+									if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "rot.x", &bones_sub_sub_child))
+									{
+										Quat.X = bson_iter_double(&bones_sub_sub_child);
+									}
+									if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "rot.y", &bones_sub_sub_child))
+									{
+										Quat.Y = bson_iter_double(&bones_sub_sub_child);
+									}
+									if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "rot.z", &bones_sub_sub_child))
+									{
+										Quat.Z = bson_iter_double(&bones_sub_sub_child);
+									}
+									if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "rot.w", &bones_sub_sub_child))
+									{
+										Quat.W = bson_iter_double(&bones_sub_sub_child);
+									}
+									
+									BonesMap.Add(BoneName, FConversions::ROSToU(FTransform(Quat, Loc)));
+								}
+							}
+						}
+
+						// Add skeletal entity
+						if(ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor((Id)))
+						{
+							if(ASLVisionPoseableMeshActor** PMA = SkMAToPMA.Find(SkMA))
+							{
+								Frame.PMActorPoses.Emplace(*PMA, BonesMap);
+							}
+							else
+							{
+								UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find poseable mesh clone actor for %s, did you run the setup before?"),
+									*FString(__func__), __LINE__, *SkMA->GetName());
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Add to episode only if there are any changes
+		if(Frame.ActorPoses.Num() != 0 || Frame.PMActorPoses.Num() != 0)
+		{
+			if (bson_iter_find(&doc_iter, "timestamp"))
+			{
+				Frame.Timestamp = bson_iter_double(&doc_iter);
+			}
+			EpisodeData.Frames.Emplace(Frame);
+		}
+	}
+	
+	// Check if any errors appeared while iterating the cursor
 	if (mongoc_cursor_error(cursor, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to iterate all documents.. Err. %s"),
@@ -271,14 +491,55 @@ bool USLVisionLogger::GetEpisodeData()
 #endif //SL_WITH_LIBMONGO_C
 }
 
-// Disable physics and set to movable
-void USLVisionLogger::DisablePhysics()
+// Setup the poseable mesh clones for the skeletal ones
+void USLVisionLogger::SetupPoseableMeshes()
+{
+	TArray<ASkeletalMeshActor*> SkeletalActors;
+	FSLEntitiesManager::GetInstance()->GetSkeletalMeshActors(SkeletalActors);
+	for(const auto& SkMA : SkeletalActors)
+	{
+		// Create a custom actor with a poseable mesh component
+		FActorSpawnParameters SpawnParams;
+		const FString LabelName = FString(TEXT("PMA_")).Append(SkMA->GetName());
+		SpawnParams.Name = FName(*LabelName);
+		ASLVisionPoseableMeshActor* PMA = GetWorld()->SpawnActor<ASLVisionPoseableMeshActor>(
+			ASLVisionPoseableMeshActor::StaticClass(), SpawnParams);
+		PMA->SetActorLabel(LabelName);
+
+		if(PMA->Init(SkMA))
+		{
+			// Add actor to the quick access map
+			SkMAToPMA.Emplace(SkMA, PMA);
+		}
+
+		// Hide orginal actor
+		SkMA->SetActorHiddenInGame(true);
+	}
+}
+
+// Load the pointers to the virtual cameras
+bool USLVisionLogger::LoadVirtualCameras()
+{
+	FSLEntitiesManager::GetInstance()->GetCameraViewsObjects(VirtualCameras);
+	return VirtualCameras.Num() > 0;
+}
+
+// Disable all actors physics and set them to movable
+void USLVisionLogger::SetupWorldMobilty()
 {
 	// Disable physics on all actors
 	for (TActorIterator<AActor> Act(GetWorld()); Act; ++Act)
 	{
 		Act->DisableComponentsSimulatePhysics();
-		Act->GetRootComponent()->SetMobility(EComponentMobility::Movable); // TODO check if lights should be skipped
+		if(Act->GetRootComponent())
+		{
+			// TODO check if lights should be skipped
+			Act->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no root component"), *FString(__func__), __LINE__, *Act->GetName());
+		}
 	}
 }
 
@@ -330,16 +591,18 @@ void USLVisionLogger::InitRenderParameters()
 	// Set the near clipping plane (in cm)
 	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetNearClipPlane"))->Set(0); // Not a console variable, but a command
 	//GNearClippingPlane = 0; // View is distorted after finishing the scanning
+#if WITH_EDITOR	
 	if(GEngine)
 	{
 		GEngine->DeferredCommands.Add(TEXT("r.SetNearClipPlane 0"));
 	}
+#endif // WITH_EDITOR
 	
-	// AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
-	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AntiAliasing"))->Set(AAM_None);
+	//// AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
+	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AntiAliasing"))->Set(AAM_None);
 
-	// Whether the default for AutoExposure is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
-	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AutoExposure"))->Set(0);
+	//// Whether the default for AutoExposure is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
+	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AutoExposure"))->Set(0);
 
 	// Whether the default for MotionBlur is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.MotionBlur"))->Set(0);

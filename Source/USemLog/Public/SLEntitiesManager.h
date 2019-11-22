@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "SLStructs.h"
 #include "SLSkeletalDataComponent.h"
+#include "SLVisionCamera.h"
 
 class AStaticMeshActor;
 class ASkeletalMeshActor;
@@ -79,27 +80,27 @@ public:
 
 
 	// Get the map of objects to the semantic items
-	TMap<UObject*, USLSkeletalDataComponent*>& GetObjectsSkeletalSemanticData() { return ObjectsSemanticSkeletalData; }
+	TMap<UObject*, USLSkeletalDataComponent*>& GetObjectsSkeletalSemanticData() { return ObjectsSemanticSkelData; }
 
 	// Get the array of semantically annotated objects (returns the number of keys)
-	int32 GetSemanticSkeltalObjects(TArray<UObject*>& OutArray) const { return ObjectsSemanticSkeletalData.GetKeys(OutArray); }
+	int32 GetSemanticSkeletalObjects(TArray<UObject*>& OutArray) const { return ObjectsSemanticSkelData.GetKeys(OutArray); }
 
 	// Get the map of objects to the semantic items
-	void GetSemanticSkeletalDataArray(TArray<USLSkeletalDataComponent*>& OutArray) const { ObjectsSemanticSkeletalData.GenerateValueArray(OutArray); }
+	void GetSemanticSkeletalDataArray(TArray<USLSkeletalDataComponent*>& OutArray) const { ObjectsSemanticSkelData.GenerateValueArray(OutArray); }
 
 	
 	// Get the map of objects to the semantic items
-	TMap<UObject*, FSLEntity>& GetCameraViewsSemanticData() { return CameraViewSemanticData; }
+	TMap<ASLVisionCamera*, FSLEntity>& GetCameraViewsSemanticData() { return CameraViewSemanticData; }
 
 	// Get the array of semantically annotated objects (returns the number of keys)
-	int32 GetCameraViewsObjects(TArray<UObject*>& OutArray) const { return CameraViewSemanticData.GetKeys(OutArray); }
+	int32 GetCameraViewsObjects(TArray<ASLVisionCamera*>& OutArray) const { return CameraViewSemanticData.GetKeys(OutArray); }
 
 	// Get the map of objects to the semantic items
 	void GetCameraViewsDataArray(TArray<FSLEntity>& OutArray) const { CameraViewSemanticData.GenerateValueArray(OutArray); }
 
 	// Check if there are any empty of duplicate values in the camera views
 	bool EmptyOrDuplicatesInTheCameraViews();
-	
+
 	// Get static mesh actor
 	FORCEINLINE AStaticMeshActor* GetStaticMeshActor(const FString& Id) const 
 	{
@@ -110,16 +111,64 @@ public:
 		return nullptr;
 	};
 
+	// Get all the semantically annotated static mesh actors
+	void GetStaticMeshActors(TArray<AStaticMeshActor*>& OutArray) const
+	{
+		return IdToStaticMeshActor.GenerateValueArray(OutArray);
+	}
+
 	// Get skeletal mesh actor
 	FORCEINLINE ASkeletalMeshActor* GetSkeletalMeshActor(const FString& Id) const 
 	{
-	if(auto* Value = IdToSkeletalMeshActor.Find(Id))
-		{
-			return *Value;
-		}
-		return nullptr;
+		if(auto* Value = IdToSkeletalMeshActor.Find(Id))
+			{
+				return *Value;
+			}
+			return nullptr;
 	};
 
+	// Get all the semantically annotated skeletal mesh actors
+	void GetSkeletalMeshActors(TArray<ASkeletalMeshActor*>& OutArray) const
+	{
+		return IdToSkeletalMeshActor.GenerateValueArray(OutArray);
+	}
+
+	// Get the semantically annotated actor
+	FORCEINLINE AActor* GetActor(const FString& Id) const 
+	{
+		if(auto* Value = IdToActor.Find(Id))
+			{
+				return *Value;
+			}
+			return nullptr;
+	};
+
+	// Get all semantically annotated actors
+	void GetActors(TArray<AActor*>& OutArray) const
+	{
+		return IdToActor.GenerateValueArray(OutArray);
+	}
+
+	// Get entity id (empty string if not found)
+	FORCEINLINE FString GetEntityId(UObject* Object) const 
+	{
+		if(auto* Value = ObjectsSemanticData.Find(Object))
+		{
+			return Value->Id;
+		}
+		return FString();
+	};
+
+	// Get skeletal entity id (empty string if not found)
+	FORCEINLINE FString GetSkeletalId(UObject* Object) const 
+	{
+		if(auto* Value = ObjectsSemanticSkelData.Find(Object))
+		{
+			return (*Value)->GetId();
+		}
+		return FString();
+	};
+	
 private:
 	// Instance of the singleton
 	static TSharedPtr<FSLEntitiesManager> StaticInstance;
@@ -127,18 +176,23 @@ private:
 	// Flag showing the data has been init
 	bool bIsInit;
 
+	// TODO remove UObject and use AActor as the uppermost class type
 	// Map of UObject pointer to object structure
 	TMap<UObject*, FSLEntity> ObjectsSemanticData;
+	//TMap<AActor*, FSLEntity> ActorSemanticData;
 
 	// Map of UObject (Owner -- actor or component) to skeletal data component
-	TMap<UObject*, USLSkeletalDataComponent*> ObjectsSemanticSkeletalData;
+	TMap<UObject*, USLSkeletalDataComponent*> ObjectsSemanticSkelData;
 
 	// Map of Camera View Actors pointer to object structure
-	TMap<UObject*, FSLEntity> CameraViewSemanticData;
+	TMap<ASLVisionCamera*, FSLEntity> CameraViewSemanticData;
 
 	// Id to static mesh actor
 	TMap<FString, AStaticMeshActor*> IdToStaticMeshActor;
 
 	// Id to static mesh actor
 	TMap<FString, ASkeletalMeshActor*> IdToSkeletalMeshActor;
+
+	// Id to AActor
+	TMap<FString, AActor*> IdToActor;
 };

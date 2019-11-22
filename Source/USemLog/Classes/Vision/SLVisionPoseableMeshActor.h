@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "SLVisionPoseableMeshActor.generated.h"
 
+class ASkeletalMeshActor;
 class UPoseableMeshComponent;
 
 UCLASS()
@@ -19,16 +20,20 @@ public:
 	ASLVisionPoseableMeshActor();
 
 	// Setup the poseable mesh
-	bool Init(USkeletalMeshComponent* SkeletalMesh);
+	bool Init(ASkeletalMeshActor* SkMA);
 
 	// Check if the actor is initialized
 	bool IsInit() const { return bIsInit; };
+
+	// Apply bone transformations
+	void SetBoneTransforms(const TMap<FName, FTransform>& BoneTransfroms);
 	
 private:
 	// Init flab
 	bool bIsInit;
-	
+
+	// Clone of the skeletal mesh component with movable capabilities
 	UPROPERTY()
-	UPoseableMeshComponent* PoseableMesh;
+	UPoseableMeshComponent* PoseableMeshComponent;
 
 };

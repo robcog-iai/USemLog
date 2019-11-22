@@ -42,11 +42,13 @@ void FSLEntitiesManager::Init(UWorld* World)
 			{
 				ObjectsSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass,
 					FTags::GetValue(*ActorItr, "SemLog", "VisMask")));
+				//ActorSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass,
+				//	FTags::GetValue(*ActorItr, "SemLog", "VisMask")));
 
 				// Create a separate list with the camera views
-				if (ActorItr->IsA(ASLVisionCamera::StaticClass()))
+				if (ASLVisionCamera* VCA = Cast<ASLVisionCamera>(*ActorItr))
 				{
-					CameraViewSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass));
+					CameraViewSemanticData.Emplace(VCA, FSLEntity(*ActorItr, ActId, ActClass));
 				}
 
 				// Store quick map of id to actor pointer
@@ -86,7 +88,7 @@ void FSLEntitiesManager::Init(UWorld* World)
 				{
 					if (AsSkelData->Init())
 					{
-						ObjectsSemanticSkeletalData.Add(AsSkelData->OwnerSemanticData.Obj, AsSkelData);
+						ObjectsSemanticSkelData.Add(AsSkelData->OwnerSemanticData.Obj, AsSkelData);
 					}
 				}
 			}

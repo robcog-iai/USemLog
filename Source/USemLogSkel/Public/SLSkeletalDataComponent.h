@@ -72,6 +72,9 @@ public:
 	// Check if the component is init (and valid)
 	bool IsInit() const { return bInit; };
 
+	// Get the id of the skeletal component
+	FString GetId() const { return OwnerSemanticData.Id; };
+
 private:
 	// Update the data from the data asset
 	void LoadFromDataAsset();
