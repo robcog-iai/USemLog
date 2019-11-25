@@ -539,13 +539,7 @@ void USLItemScanner::RequestScreenshot()
 // Called when screenshot is captured
 void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d [%f] Progress=[Item=%ld/%ld; Pose=%ld/%ld; ViewMode=%ld/%ld; Scan=%ld/%ld]"),
-		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-		CurrItemIdx + 1, ScanItems.Num(),
-		CurrPoseIdx + 1, ScanPoses.Num(),
-		CurrViewModeIdx + 1, ViewModes.Num(),
-		CurrItemIdx * ScanPoses.Num() * ViewModes.Num() + CurrPoseIdx * ViewModes.Num() + CurrViewModeIdx + 1,
-		ScanItems.Num() * ScanPoses.Num() * ViewModes.Num());
+	PrintProgress();
 
 	// Count and check how many pixels does the item occupy in the image (works with view mode mask/unlit)
 	//CountItemPixelNumWithCheck(Bitmap);
@@ -662,28 +656,7 @@ void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 		}
-		ViewModePostfix = "L";
-		
-		//if(bBufferVisOn)
-		//{
-		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
-		//	bBufferVisOn = false;
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bBufferVisOn = false "), *FString(__func__), __LINE__);
-		//}
-		//if(bMaskMatOn)
-		//{
-		//	ApplyOriginalMaterial();
-		//	bMaskMatOn = false;
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bMaskMatOn = false "), *FString(__func__), __LINE__);
-		//}
-		//if(bUnlitOn)
-		//{
-		//	GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-		//	bUnlitOn = false;
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bUnlitOn = false "), *FString(__func__), __LINE__);
-		//}
-		//
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d \t ************** L **************"), *FString(__func__), __LINE__);
+		ViewModePostfix = "C";
 	}
 	else if(Mode == ESLItemScannerViewMode::Unlit)
 	{
@@ -706,27 +679,6 @@ void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
 		ViewModePostfix = "U";
-		
-		//if(bBufferVisOn)
-		//{
-		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
-		//	bBufferVisOn = false;
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bBufferVisOn = false "), *FString(__func__), __LINE__);
-		//}
-		//if(bMaskMatOn)
-		//{
-		//	ApplyOriginalMaterial();
-		//	bMaskMatOn = false;
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bMaskMatOn = false "), *FString(__func__), __LINE__);
-		//}
-		//if(!bUnlitOn)
-		//{
-		//	GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
-		//	bUnlitOn = true;
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bUnlitOn = true "), *FString(__func__), __LINE__);
-		//}
-		//
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d \t ************** U ************** "), *FString(__func__), __LINE__);
 	}
 	else if(Mode == ESLItemScannerViewMode::Mask)
 	{
@@ -752,23 +704,6 @@ void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
 		ViewModePostfix = "M";
-		
-		//if(bBufferVisOn)
-		//{
-		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
-		//	bBufferVisOn = false;
-		//}
-		//if(!bMaskMatOn)
-		//{
-		//	ApplyMaskMaterial();
-		//	bMaskMatOn = true;
-		//}
-		//if(!bUnlitOn)
-		//{
-		//	GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
-		//	bUnlitOn = true;
-		//}
-		//ViewModePostfix = "M";
 	}
 	else if(Mode == ESLItemScannerViewMode::Depth)
 	{
@@ -802,26 +737,6 @@ void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
 		}
 		ViewModePostfix = "D";
-
-		
-		//if(bMaskMatOn)
-		//{
-		//	ApplyOriginalMaterial();
-		//	bMaskMatOn = false;
-		//}
-		//if(!bBufferVisOn)
-		//{
-		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-		//	bBufferVisOn = true;
-		//}
-		//if(!bDepthVisOn)
-		//{
-		//	BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
-		//	bDepthVisOn = true;
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t bUnlitOn = true "), *FString(__func__), __LINE__);
-		//}
-		//ViewModePostfix = "D";
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d \t ************** D ************** "), *FString(__func__), __LINE__);
 	}
 	else if(Mode == ESLItemScannerViewMode::Normal)
 	{
@@ -855,23 +770,6 @@ void USLItemScanner::ApplyViewMode(ESLItemScannerViewMode Mode)
 			BufferVisTargetCV->Set(*FString("WorldNormal"));
 		}
 		ViewModePostfix = "N";
-		
-		//if(bMaskMatOn)
-		//{
-		//	ApplyOriginalMaterial();
-		//	bMaskMatOn = false;
-		//}
-		//if(!bBufferVisOn)
-		//{
-		//	ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-		//	bBufferVisOn = true;
-		//}
-		//if(bDepthVisOn)
-		//{
-		//	BufferVisTargetCV->Set(*FString("WorldNormal"));
-		//	bDepthVisOn = false;
-		//}
-		//ViewModePostfix = "N";
 	}
 
 	// Cache as previous view mode
@@ -1222,4 +1120,16 @@ void USLItemScanner::GenerateSphereScanPoses(uint32 MaxNumOfPoints, float Radius
 			OutTransforms.Emplace(Quat, Point);
 		}
 	}
+}
+
+// Output progress to terminal
+void USLItemScanner::PrintProgress() const
+{
+	UE_LOG(LogTemp, Log, TEXT("%s::%d [%f] Progress=[Item=%ld/%ld; Pose=%ld/%ld; ViewMode=%ld/%ld; Scan=%ld/%ld]"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
+		CurrItemIdx + 1, ScanItems.Num(),
+		CurrPoseIdx + 1, ScanPoses.Num(),
+		CurrViewModeIdx + 1, ViewModes.Num(),
+		CurrItemIdx * ScanPoses.Num() * ViewModes.Num() + CurrPoseIdx * ViewModes.Num() + CurrViewModeIdx + 1,
+		ScanItems.Num() * ScanPoses.Num() * ViewModes.Num());
 }

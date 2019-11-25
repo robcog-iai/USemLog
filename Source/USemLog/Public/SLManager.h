@@ -280,13 +280,17 @@ private:
 	bool bLogVisionData;
 
 	// Resolution of the images
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 1))
 	FIntPoint VisionImageResolution;
 	
 	// Update rate of the vision logger (0 - updates at every available frame)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))
 	float VisionUpdateRate;
 
+	// Store the images locally in the task folder
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"))
+	bool bIncludeImagesLocally;
+	
 	// Vision data logger, use UPROPERTY to avoid GC
 	UPROPERTY()
 	USLVisionLogger* VisionDataLogger;

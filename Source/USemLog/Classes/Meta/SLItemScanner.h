@@ -221,6 +221,9 @@ private:
 
 	// Generate sphere scan poses
 	void GenerateSphereScanPoses(uint32 MaxNumOfPoints, float Radius, TArray<FTransform>& OutTransforms);
+
+	// Print progress
+	void PrintProgress() const;
 	
 private:
 	// Set when initialized

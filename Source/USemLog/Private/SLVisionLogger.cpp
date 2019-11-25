@@ -7,11 +7,16 @@
 #include "SLEntitiesManager.h"
 
 #include "EngineUtils.h"
+#include "GameFramework/PlayerController.h"
+#include "Engine/Engine.h"
 #include "Engine/StaticMeshActor.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/GameViewportClient.h"
 #include "HighResScreenshot.h"
+#include "ImageUtils.h"
+#include "Async.h"
+#include "FileHelper.h"
 
 // UUtils
 #include "Conversions.h"
@@ -25,7 +30,9 @@ USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinis
 	ViewModes.Add(ESLVisionLoggerViewMode::Depth);
 	ViewModes.Add(ESLVisionLoggerViewMode::Normal);
 	CurrViewModeIdx = INDEX_NONE;
-	CurrCameraIdx = INDEX_NONE;
+	CurrVirtualCameraIdx = INDEX_NONE;
+	CurrTimestamp = -1.f;
+	PrevViewMode = ESLVisionLoggerViewMode::NONE;
 }
 
 // Destructor
@@ -46,10 +53,16 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 {
 	if (!bIsInit)
 	{
-		// Make sure the semantic entities instance is initialized
+		// Save the folder name if the images are going to be stored locally as well
+		if(Params.bIncludeLocally)
+		{
+			ImgsFolderName = InTaskId;
+		}
+		
+		// Init the semantic instances
 		FSLEntitiesManager::GetInstance()->Init(GetWorld());
 		
-		// Create skeletally movable clones of the skeletal meshes 
+		// Make sure the poseable mesh actors are created before
 		SetupPoseableMeshes();
 
 		// Connect to the database
@@ -72,6 +85,7 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 			return;
 		}
 
+		// Make sure the semantic entities are init before
 		if(!LoadVirtualCameras())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No virtual cameras found.."), *FString(__func__), __LINE__);
@@ -104,7 +118,7 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		InitRenderParameters();
 
 		// Disable physics on all entities and make sure they are movable
-		SetupWorldMobilty();
+		SetupWorldEntities();
 
 		// Bind the screenshot callback
 		ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLVisionLogger::ScreenshotCB);
@@ -119,13 +133,29 @@ void USLVisionLogger::Start(const FString& EpisodeId)
 	if (!bIsStarted && bIsInit)
 	{
 		// Cannot be called before BeginPlay, GetFirstPlayerController() is nullptr
-		if(!GotoFirstCameraView())
+		if(!SetupFirstEpisodeFrame())
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could setup first camera view.."), *FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup the first world frame.."), *FString(__func__), __LINE__);
 			return;
 		}
 		
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
+		// Cannot be called before BeginPlay, GetFirstPlayerController() is nullptr
+		if(!GotoFirstCameraView())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup first camera view.."), *FString(__func__), __LINE__);
+			return;
+		}
+
+		// Set the first render type
+		if(!SetupFirstViewMode())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup first view mode.."), *FString(__func__), __LINE__);
+			return;
+		}
+		
+		// Start the dominoes
+		RequestScreenshot();
+		
 		// Mark as started
 		bIsStarted = true;
 	}
@@ -136,9 +166,6 @@ void USLVisionLogger::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
-
-		
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d"), *FString(__func__), __LINE__);
 		// Mark logger as finished
 		bIsStarted = false;
 		bIsInit = false;
@@ -146,45 +173,152 @@ void USLVisionLogger::Finish(bool bForced)
 	}
 }
 
+// Trigger the screenshot on the game thread
+void USLVisionLogger::RequestScreenshot()
+{
+	AsyncTask(ENamedThreads::GameThread, [this]()
+	{
+		//// FrameNum_CameraName_ViewMode
+		//CurrImageFilename = FString::FromInt(EpisodeData.GetActiveFrameNum()) + "_" + 
+		//	VirtualCameras[CurrCameraIdx]->GetClassName() + "_" + CurrViewModePostfix;
+		
+		// FrameNum_CameraNum_Ts_Viewmode
+		CurrImageFilename = FString::FromInt(Episode.GetCurrIndex()) + "_" + 
+			FString::FromInt(CurrVirtualCameraIdx) + "_" + 
+			FString::SanitizeFloat(CurrTimestamp) + "_" + CurrViewModePostfix;
+		
+		GetHighResScreenshotConfig().FilenameOverride = CurrImageFilename;
+		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
+		//GetHighResScreenshotConfig().SetHDRCapture(true);
+		ViewportClient->Viewport->TakeHighResScreenShot();
+	});
+}
+
+
 // Called when the screenshot is captured
 void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
 {
+	PrintProgress();
+
+	// Compress image
+	TArray<uint8> CompressedBitmap;
+	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
+
+	// Save the png locally
+	if(!ImgsFolderName.IsEmpty())
+	{
+		FString Path = FPaths::ProjectDir() + "/SemLog/" + ImgsFolderName + "/" + CurrImageFilename + ".png";
+		FPaths::RemoveDuplicateSlashes(Path);
+		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
+	}
+
+	if(SetupNextViewMode())
+	{
+		RequestScreenshot();
+	}
+	else
+	{
+		SetupFirstViewMode();
+
+		if(GotoNextCameraView())
+		{
+			RequestScreenshot();
+		}
+		else
+		{
+			GotoFirstCameraView();
+			
+			if(SetupNextEpisodeFrame())
+			{
+				RequestScreenshot();
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished visual logger.."),
+					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+				QuitEditor();
+			}
+		}
+	}
+	
 }
 
 // Goto the first episode frame
-bool USLVisionLogger::GotoFirstEpisodeFrame()
+bool USLVisionLogger::SetupFirstEpisodeFrame()
 {
+	if(!Episode.SetupFirstFrame(CurrTimestamp))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup the episode first frame.."), *FString(__func__), __LINE__);
+		return false;
+	}
+	return true;
 }
 
 // Goto next episode frame, return false if there are no other left
-bool USLVisionLogger::GotoNextEpisodeFrame()
+bool USLVisionLogger::SetupNextEpisodeFrame()
 {
+	if(Episode.SetupNextFrame(CurrTimestamp))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup the episode next frame.."), *FString(__func__), __LINE__);
+		return false;
+	}
+	return true;
 }
 
 // Goto the first virtual camera view
 bool USLVisionLogger::GotoFirstCameraView()
 {
-	CurrCameraIdx = 0;
-	if(VirtualCameras.IsValidIndex(CurrCameraIdx))
+	CurrVirtualCameraIdx = 0;
+	if(!VirtualCameras.IsValidIndex(CurrVirtualCameraIdx))
 	{
-		GetWorld()->GetFirstPlayerController()->SetViewTarget(VirtualCameras[CurrCameraIdx]);
-		return true;
+		CurrVirtualCameraIdx = INDEX_NONE;
+		return false;
 	}
-	CurrCameraIdx = INDEX_NONE;
-	return false;
+	
+	GetWorld()->GetFirstPlayerController()->SetViewTarget(VirtualCameras[CurrVirtualCameraIdx]);
+	return true;
+
 }
 
 // Goto next camera view, return false if there are no other
 bool USLVisionLogger::GotoNextCameraView()
 {
-	CurrCameraIdx++;
-	if(VirtualCameras.IsValidIndex(CurrCameraIdx))
+	CurrVirtualCameraIdx++;
+	if(!VirtualCameras.IsValidIndex(CurrVirtualCameraIdx))
 	{
-		GetWorld()->GetFirstPlayerController()->SetViewTarget(VirtualCameras[CurrCameraIdx]);
-		return true;
+		CurrVirtualCameraIdx = INDEX_NONE;
+		return false;
 	}
-	CurrCameraIdx = INDEX_NONE;
-	return false;
+
+	GetWorld()->GetFirstPlayerController()->SetViewTarget(VirtualCameras[CurrVirtualCameraIdx]);
+	return true;
+}
+
+// Setup first view mode (render type)
+bool USLVisionLogger::SetupFirstViewMode()
+{
+	CurrViewModeIdx = 0;
+	if(!ViewModes.IsValidIndex(CurrViewModeIdx))
+	{
+		return false;
+	}
+	
+	ApplyViewMode(ViewModes[CurrViewModeIdx]);
+	return true;
+}
+
+// Setup next view mode (render type), return false if there are no other left
+bool USLVisionLogger::SetupNextViewMode()
+{
+	CurrViewModeIdx++;
+	if(!ViewModes.IsValidIndex(CurrViewModeIdx))
+	{
+		CurrViewModeIdx = INDEX_NONE;
+		return false;
+	}
+
+	ApplyViewMode(ViewModes[CurrViewModeIdx]);
+	return true;
 }
 
 // Connect to the database
@@ -450,7 +584,7 @@ bool USLVisionLogger::GetEpisodeData()
 						{
 							if(ASLVisionPoseableMeshActor** PMA = SkMAToPMA.Find(SkMA))
 							{
-								Frame.PMActorPoses.Emplace(*PMA, BonesMap);
+								Frame.PoseableMeshPoses.Emplace(*PMA, BonesMap);
 							}
 							else
 							{
@@ -464,13 +598,13 @@ bool USLVisionLogger::GetEpisodeData()
 		}
 
 		// Add to episode only if there are any changes
-		if(Frame.ActorPoses.Num() != 0 || Frame.PMActorPoses.Num() != 0)
+		if(Frame.ActorPoses.Num() != 0 || Frame.PoseableMeshPoses.Num() != 0)
 		{
 			if (bson_iter_find(&doc_iter, "timestamp"))
 			{
 				Frame.Timestamp = bson_iter_double(&doc_iter);
 			}
-			EpisodeData.Frames.Emplace(Frame);
+			Episode.AddFrame(Frame);
 		}
 	}
 	
@@ -525,7 +659,7 @@ bool USLVisionLogger::LoadVirtualCameras()
 }
 
 // Disable all actors physics and set them to movable
-void USLVisionLogger::SetupWorldMobilty()
+void USLVisionLogger::SetupWorldEntities()
 {
 	// Disable physics on all actors
 	for (TActorIterator<AActor> Act(GetWorld()); Act; ++Act)
@@ -591,7 +725,7 @@ void USLVisionLogger::InitRenderParameters()
 	// Set the near clipping plane (in cm)
 	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetNearClipPlane"))->Set(0); // Not a console variable, but a command
 	//GNearClippingPlane = 0; // View is distorted after finishing the scanning
-#if WITH_EDITOR	
+#if WITH_EDITOR
 	if(GEngine)
 	{
 		GEngine->DeferredCommands.Add(TEXT("r.SetNearClipPlane 0"));
@@ -611,14 +745,156 @@ void USLVisionLogger::InitRenderParameters()
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
 }
 
-// Request a screenshot
-void USLVisionLogger::RequestScreenshot()
-{
-}
-
 // Apply view mode
 void USLVisionLogger::ApplyViewMode(ESLVisionLoggerViewMode Mode)
 {
+	// No change in the rendering view mode
+	if(Mode == PrevViewMode)
+	{
+		return;
+	}
+
+	// Get the console variable for switching buffer views
+	static IConsoleVariable* BufferVisTargetCV = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));
+
+	if(Mode == ESLVisionLoggerViewMode::Color) // viewmode=lit, buffer=false, materials=original;
+	{
+		if(PrevViewMode == ESLVisionLoggerViewMode::Depth || PrevViewMode == ESLVisionLoggerViewMode::Normal)
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Unlit)
+		{
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Mask)
+		{
+			ApplyOriginalMaterials();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+		}
+		else
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+		}
+		CurrViewModePostfix = "C";
+	}
+	else if(Mode == ESLVisionLoggerViewMode::Unlit) // viewmode=unlit, buffer=false, materials=original;
+	{
+		if(PrevViewMode == ESLVisionLoggerViewMode::Color)
+		{
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Mask)
+		{
+			ApplyOriginalMaterials();
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Depth || PrevViewMode == ESLVisionLoggerViewMode::Normal)
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		}
+		else
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		}
+		CurrViewModePostfix = "U";
+	}
+	else if(Mode == ESLVisionLoggerViewMode::Mask) // viewmode=unlit, buffer=false, materials=mask;
+	{
+		if(PrevViewMode == ESLVisionLoggerViewMode::Unlit)
+		{
+			ApplyMaskMaterials();
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Color)
+		{
+			ApplyMaskMaterials();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Depth || PrevViewMode == ESLVisionLoggerViewMode::Normal)
+		{
+			ApplyMaskMaterials();
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		}
+		else
+		{
+			ApplyMaskMaterials();
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		}
+		CurrViewModePostfix = "M";
+	}
+	else if(Mode == ESLVisionLoggerViewMode::Depth) // viewmode=unlit, buffer=false, materials=original;
+	{
+		if(PrevViewMode == ESLVisionLoggerViewMode::Mask)
+		{
+			ApplyOriginalMaterials();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Unlit)
+		{
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Color)
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Normal)
+		{
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		else
+		{
+			ApplyOriginalMaterials();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+		}
+		CurrViewModePostfix = "D";
+	}
+	else if(Mode == ESLVisionLoggerViewMode::Normal) // viewmode=lit, buffer=true, materials=original;
+	{
+		if(PrevViewMode == ESLVisionLoggerViewMode::Depth)
+		{
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Mask)
+		{
+			ApplyOriginalMaterials();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Unlit)
+		{
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		else if(PrevViewMode == ESLVisionLoggerViewMode::Color)
+		{
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		else
+		{
+			ApplyOriginalMaterials();
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+			BufferVisTargetCV->Set(*FString("WorldNormal"));
+		}
+		CurrViewModePostfix = "N";
+	}
+
+	// Cache as previous view mode
+	PrevViewMode = Mode;
 }
 
 // Apply mask materials 
@@ -646,4 +922,22 @@ void USLVisionLogger::QuitEditor()
 		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
 	}
 #endif // WITH_EDITOR
+}
+
+// Output progress to terminal
+void USLVisionLogger::PrintProgress() const
+{
+	const int32 CurrFrameNr = Episode.GetCurrIndex() + 1;
+	const int32 TotalFrames = Episode.GetFramesNum();
+	const int32 CurrCameraNr = CurrVirtualCameraIdx + 1;
+	const int32 TotalCameras = VirtualCameras.Num();
+	const int32 CurrViewModeNr = CurrViewModeIdx + 1;
+	const int32 TotalViewModes = ViewModes.Num();
+	UE_LOG(LogTemp, Log, TEXT("%s::%d \t\t [%f] \t\t Progress= \t\t Frame=%ld/%ld; \t\t Camera=%ld/%ld; \t\t ViewMode=%ld/%ld; \t\t Image=%ld/%ld;"),
+		*FString(__func__), __LINE__, CurrTimestamp,
+		CurrFrameNr, TotalFrames,
+		CurrCameraNr, TotalCameras,
+		CurrViewModeNr, TotalViewModes,
+		CurrFrameNr * TotalFrames * TotalViewModes + CurrCameraNr * TotalViewModes + CurrViewModeNr,
+		TotalFrames * TotalCameras * TotalViewModes);
 }

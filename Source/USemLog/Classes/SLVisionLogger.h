@@ -54,15 +54,20 @@ struct FSLVisionLoggerParams
 	// Resolution
 	FIntPoint Resolution;
 
+	// Include locally
+	bool bIncludeLocally;
+
 	// Default ctor
 	FSLVisionLoggerParams();
 
 	// Init ctor
 	FSLVisionLoggerParams(
 		float InUpdateRate,
-		FIntPoint InResolution) :
+		FIntPoint InResolution,
+		bool bInIncludeLocally) :
 		UpdateRate(InUpdateRate),
-		Resolution(InResolution)
+		Resolution(InResolution),
+		bIncludeLocally(bInIncludeLocally)
 	{};
 };
 
@@ -78,7 +83,7 @@ struct FSLVisionFrame
 	TMap<AActor*, FTransform> ActorPoses;
 
 	// Skeletal (poseable) meshes bone transformation
-	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> PMActorPoses;
+	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> PoseableMeshPoses;
 
 	// Apply transformations, return the timestamp
 	float ApplyTransformations()
@@ -90,7 +95,7 @@ struct FSLVisionFrame
 		}
 
 		// Move the skeletal(poseable) meshes
-		for(const auto& Pair : PMActorPoses)
+		for(const auto& Pair : PoseableMeshPoses)
 		{
 			Pair.Key->SetBoneTransforms(Pair.Value);
 		}
@@ -101,16 +106,23 @@ struct FSLVisionFrame
 /**
 * The whole episode data
 */
-struct FSLVisionEpisode
+class FSLVisionEpisode
 {
-	// All the frames from the episode
-	TArray<FSLVisionFrame> Frames;
-
+public:
 	// Default ctor
 	FSLVisionEpisode() : FrameIdx(INDEX_NONE) {};
 
+	// Add a new frame
+	int32 AddFrame(const FSLVisionFrame& Frame) { return Frames.Emplace(Frame); };
+	
+	// Get the active frame in the episode
+	int32 GetCurrIndex() const { return FrameIdx; };
+
+	// Get the total number of frames
+	int32 GetFramesNum() const { return Frames.Num(); };
+
 	// Move actors to the first frame
-	bool GotoFirstFrame(float& OutTimestamp)
+	bool SetupFirstFrame(float& OutTimestamp)
 	{
 		FrameIdx = 0;
 		if(Frames.IsValidIndex(FrameIdx))
@@ -122,18 +134,22 @@ struct FSLVisionEpisode
 	}
 
 	// Move actors to the next frame transformations, return false if no more frames are available
-	bool GotoNextFrame(float& OutTimestamp)
+	bool SetupNextFrame(float& OutTimestamp)
 	{
 		FrameIdx++;
 		if(Frames.IsValidIndex(FrameIdx))
 		{
 			OutTimestamp = Frames[FrameIdx].ApplyTransformations();
+			return true;
 		}
 		FrameIdx = INDEX_NONE;
 		return false;
 	}
 	
 private:
+	// All the frames from the episode
+	TArray<FSLVisionFrame> Frames;
+	
 	// Current frame index
 	int32 FrameIdx;
 };
@@ -165,15 +181,18 @@ public:
 	// Finish logger
 	void Finish(bool bForced = false);
 
-private:
+protected:
+	// Trigger the screenshot on the game thread
+	void RequestScreenshot();
+	
 	// Called when the screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
-	// Goto the first episode frame
-	bool GotoFirstEpisodeFrame();
+	// Move actors to the poses from the first frame from the episode data
+	bool SetupFirstEpisodeFrame();
 
 	// Goto next episode frame, return false if there are no other left
-	bool GotoNextEpisodeFrame();
+	bool SetupNextEpisodeFrame();
 	
 	// Goto the first virtual camera view
 	bool GotoFirstCameraView();
@@ -181,12 +200,13 @@ private:
 	// Goto next camera view, return false if there are no other left
 	bool GotoNextCameraView();
 
-	// Goto first view mode (render type)
-	bool GotoFirstViewMode();
+	// Setup first view mode (render type)
+	bool SetupFirstViewMode();
 
-	// Goto next view mode (render type), return false if there are no other left
-	bool GotoNextViewMode();
-	
+	// Setup next view mode (render type), return false if there are no other left
+	bool SetupNextViewMode();
+
+private:
 	// Connect to the database
 	bool Connect(const FString& DBName, const FString& CollName, const FString& ServerIp, uint16 ServerPort);
 
@@ -197,7 +217,7 @@ private:
 	bool GetEpisodeData();
 
 	// Prepare th world entities by disabling physics and setting them to movable
-	void SetupWorldMobilty();
+	void SetupWorldEntities();
 	
 	// Setup the poseable mesh clones for the skeletal ones
 	void SetupPoseableMeshes();
@@ -208,7 +228,7 @@ private:
 	// Load mask dynamic material
 	bool LoadMaskMaterial();
 
-	// Create clones of the items with mask material on top
+	// Create clones of the items with mask material on top, set them to hidden by default
 	bool SetupMaskClones();
 
 	// Init hi-res screenshot resolution
@@ -216,9 +236,6 @@ private:
 
 	// Init render parameters (resolution, view mode)
 	void InitRenderParameters();
-
-	// Request a screenshot
-	void RequestScreenshot();
 	
 	// Apply view mode
 	void ApplyViewMode(ESLVisionLoggerViewMode Mode);
@@ -231,8 +248,15 @@ private:
 	
 	// Clean exit, all the Finish() methods will be triggered
 	void QuitEditor();
+
+
+	// Save image locally
 	
-private:
+	
+	// Output progress to terminal
+	void PrintProgress() const;
+
+protected:
 	// Set when initialized
 	bool bIsInit;
 
@@ -242,8 +266,12 @@ private:
 	// Set when finished
 	bool bIsFinished;
 
+private:
+	// Current frame timestamp
+	float CurrTimestamp;
+
 	// Episode data to replay
-	FSLVisionEpisode EpisodeData;
+	FSLVisionEpisode Episode;
 
 	// Map from the skeletal entities to the poseable meshes
 	UPROPERTY() // Avoid GC
@@ -261,12 +289,27 @@ private:
 	
 	// View modes
 	TArray<ESLVisionLoggerViewMode> ViewModes;
-
+	
 	// Currently active virtual camera view
-	int32 CurrCameraIdx;
+	int32 CurrVirtualCameraIdx;
 	
 	// Currently active view mode
 	int32 CurrViewModeIdx;
+
+	// Previous view mode
+	ESLVisionLoggerViewMode PrevViewMode;
+
+	// Viewmode postfix (filename helpers)
+	FString CurrViewModePostfix;
+
+	// Image filename if it is going to be saved locally (plus a visual msg from editor when the image is saved)
+	FString CurrImageFilename;
+
+	// Folder name where to store the images if they are going to be stored locally
+	FString ImgsFolderName;
+
+	//
+	
 	
 #if SL_WITH_LIBMONGO_C
 	// Server uri

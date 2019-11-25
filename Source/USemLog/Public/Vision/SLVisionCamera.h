@@ -17,4 +17,11 @@ class USEMLOG_API ASLVisionCamera : public ACameraActor
 
 	// Sets default values for this actor's properties
 	ASLVisionCamera();
+
+public:
+	// Get the semantic class name of the virtual camera
+	FString GetClassName();
+
+private:
+	FString ClassName;
 };

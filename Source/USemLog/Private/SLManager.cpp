@@ -78,6 +78,7 @@ ASLManager::ASLManager()
 	bLogVisionData = false;
 	VisionUpdateRate = 0.f;
 	VisionImageResolution = FIntPoint(1920, 1080);
+	bIncludeImagesLocally = false;
 
 	// Editor Logger default values
 	bLogEditorData = false;
@@ -197,7 +198,7 @@ void ASLManager::Init()
 		{
 			VisionDataLogger = NewObject<USLVisionLogger>(this);
 			VisionDataLogger->Init(TaskId, EpisodeId, ServerIp, ServerPort, 
-				FSLVisionLoggerParams(VisionUpdateRate, VisionImageResolution));
+				FSLVisionLoggerParams(VisionUpdateRate, VisionImageResolution, bIncludeImagesLocally));
 		}
 		else
 		{
