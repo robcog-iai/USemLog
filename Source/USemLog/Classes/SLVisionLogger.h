@@ -83,9 +83,9 @@ struct FSLVisionFrame
 	TMap<AActor*, FTransform> ActorPoses;
 
 	// Skeletal (poseable) meshes bone transformation
-	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> PoseableMeshPoses;
+	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> SkeletalPoses;
 
-	// Apply transformations, return the timestamp
+	// Apply transformations, return the frame timestamp
 	float ApplyTransformations()
 	{
 		// Move the static meshes
@@ -95,12 +95,16 @@ struct FSLVisionFrame
 		}
 
 		// Move the skeletal(poseable) meshes
-		for(const auto& Pair : PoseableMeshPoses)
+		for(const auto& Pair : SkeletalPoses)
 		{
 			Pair.Key->SetBoneTransforms(Pair.Value);
 		}
+		
 		return Timestamp;
 	}
+
+	// Clear time and poses
+	void Clear() { Timestamp = -1.f; ActorPoses.Empty(); SkeletalPoses.Empty(); };
 };
 
 /**
@@ -145,6 +149,12 @@ public:
 		FrameIdx = INDEX_NONE;
 		return false;
 	}
+
+	// Get first timestamp
+	FORCEINLINE float GetFirstTimestamp() const { return Frames.IsValidIndex(0) ? Frames[0].Timestamp : -1.f; };
+
+	// Get last timestamp
+	FORCEINLINE float GetLastTimestamp() const { return Frames.Num() > 0 ? Frames.Last().Timestamp : -1.f; };
 	
 private:
 	// All the frames from the episode
@@ -213,14 +223,14 @@ private:
 	// Disconnect and clean db connection
 	void Disconnect();
 
-	// Get episode data from the database
-	bool GetEpisodeData();
+	// Get episode data from the database (UpdateRate = 0 means all the data)
+	bool LoadEpisode(float UpdateRate);
 
 	// Prepare th world entities by disabling physics and setting them to movable
-	void SetupWorldEntities();
+	void InitWorldEntities();
 	
-	// Setup the poseable mesh clones for the skeletal ones
-	void SetupPoseableMeshes();
+	// Create movable clones of the skeletal meshes, hide originals (call before loading the episode data)
+	void CreatePoseableMeshes();
 
 	// Load the pointers to the virtual cameras
 	bool LoadVirtualCameras();
@@ -229,7 +239,7 @@ private:
 	bool LoadMaskMaterial();
 
 	// Create clones of the items with mask material on top, set them to hidden by default
-	bool SetupMaskClones();
+	bool CreateMaskClones();
 
 	// Init hi-res screenshot resolution
 	void InitScreenshotResolution(FIntPoint Resolution);
@@ -248,14 +258,21 @@ private:
 	
 	// Clean exit, all the Finish() methods will be triggered
 	void QuitEditor();
-
-
-	// Save image locally
 	
+	// Save the compressed screenshot image locally
+	void SaveImageLocally(const TArray<uint8>& CompressedBitmap);
 	
 	// Output progress to terminal
 	void PrintProgress() const;
 
+#if SL_WITH_LIBMONGO_C
+	// Get the entities data out of the bson iterator, returns false if there are no entities
+	bool GetEntityDataInFrame(bson_iter_t* doc, TMap<AActor*, FTransform>& OutEntityPoses) const;
+
+	// Get the entities data out of the bson iterator, returns false if there are no entities
+	bool GetSkeletalEntityDataInFrame(bson_iter_t* doc, TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>>& OutSkeletalPoses) const;
+#endif //SL_WITH_LIBMONGO_C
+	
 protected:
 	// Set when initialized
 	bool bIsInit;
@@ -306,10 +323,7 @@ private:
 	FString CurrImageFilename;
 
 	// Folder name where to store the images if they are going to be stored locally
-	FString ImgsFolderName;
-
-	//
-	
+	FString TaskId;
 	
 #if SL_WITH_LIBMONGO_C
 	// Server uri

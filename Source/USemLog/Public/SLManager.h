@@ -116,10 +116,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartAtBeginPlay;
 
+	// TODO world logger write first entry timestamp as duplicate
 	// Start after begin play, in the first tick 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartAtFirstTick;
 
+	// TODO world logger write first entry timestamp as duplicate
 	// Start after a given delay
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bStartWithDelay;

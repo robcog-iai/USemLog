@@ -152,6 +152,10 @@ void ASLManager::BeginPlay()
 		// Bind user input
 		SetupInputBindings();
 	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Start() will not be called.."), *FString(__func__), __LINE__);
+	}
 }
 
 // Called when actor removed from game or game ended

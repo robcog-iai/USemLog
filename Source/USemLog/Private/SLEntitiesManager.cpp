@@ -45,6 +45,8 @@ void FSLEntitiesManager::Init(UWorld* World)
 				//ActorSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass,
 				//	FTags::GetValue(*ActorItr, "SemLog", "VisMask")));
 
+				IdToActor.Emplace(ActId, *ActorItr);
+				
 				// Create a separate list with the camera views
 				if (ASLVisionCamera* VCA = Cast<ASLVisionCamera>(*ActorItr))
 				{

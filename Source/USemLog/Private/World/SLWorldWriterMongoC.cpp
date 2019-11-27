@@ -89,7 +89,7 @@ void FSLWorldWriterMongoC::Write(float Timestamp,
 	bson_append_array_end(ws_doc, &entities_arr);
 
 	
-	// Avoid writing empty documents
+	// Avoid writing empty documents (this is empty if there are no skeletals in the map, not if there are no changes)
 	if(SkeletalEntities.Num() > 0)
 	{
 		// Add skel entities to array
