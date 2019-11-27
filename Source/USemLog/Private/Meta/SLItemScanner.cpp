@@ -85,7 +85,7 @@ void USLItemScanner::Init(const FString& InTaskId, const FString InServerIp, uin
 		{
 			if(LoadMaskMaterial())
 			{
-				SetupMaskClones();
+				CreateMaskClones();
 			}
 			else
 			{
@@ -316,7 +316,7 @@ bool USLItemScanner::LoadMaskMaterial()
 }
 
 // Create clones of the items with mask material on top
-bool USLItemScanner::SetupMaskClones()
+bool USLItemScanner::CreateMaskClones()
 {
 	if(ScanItems.Num() == 0)
 	{

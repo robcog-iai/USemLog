@@ -10,6 +10,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Engine/Engine.h"
 #include "Engine/StaticMeshActor.h"
+#include "Components/StaticMeshComponent.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/GameViewportClient.h"
@@ -20,6 +21,8 @@
 
 // UUtils
 #include "Conversions.h"
+#include "Tags.h"
+
 
 // Constructor
 USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
@@ -111,17 +114,15 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		// Bind the screenshot captured callback
 		ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLVisionLogger::ScreenshotCB);
 
-
-		// TODO combine the next two
-		// Dynamic material used to add the mask colors
-		if(!LoadMaskMaterial())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load the mask material.."), *FString(__func__), __LINE__);
-			return;
-		}
-
 		// Create clones of every visible entity with the mask color
-		CreateMaskClones();
+		if(ViewModes.Contains(ESLVisionLoggerViewMode::Mask))
+		{
+			if(!CreateMaskClones())
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not create mask clones, removing view type.."), *FString(__func__), __LINE__);
+				ViewModes.Remove(ESLVisionLoggerViewMode::Mask);
+			}
+		}
 		
 		bIsInit = true;
 	}
@@ -251,7 +252,7 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 // Goto the first episode frame
 bool USLVisionLogger::SetupFirstEpisodeFrame()
 {
-	if(!Episode.SetupFirstFrame(CurrTimestamp))
+	if(!Episode.SetupFirstFrame(CurrTimestamp, true, OrigToMaskClones, OrigToSkelMaskClones))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d First frame not available.."), *FString(__func__), __LINE__);
 		return false;
@@ -262,7 +263,7 @@ bool USLVisionLogger::SetupFirstEpisodeFrame()
 // Goto next episode frame, return false if there are no other left
 bool USLVisionLogger::SetupNextEpisodeFrame()
 {
-	if(!Episode.SetupNextFrame(CurrTimestamp))
+	if(!Episode.SetupNextFrame(CurrTimestamp, true, OrigToMaskClones, OrigToSkelMaskClones))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup the episode next frame.."), *FString(__func__), __LINE__);
 		return false;
@@ -562,30 +563,68 @@ void USLVisionLogger::InitWorldEntities()
 	}
 }
 
-// Load mask dynamic material
-bool USLVisionLogger::LoadMaskMaterial()
-{
-	UMaterial* DefaultMaskMaterial = LoadObject<UMaterial>(this,
-	TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask"));
-	if (!DefaultMaskMaterial)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material.."),
-			*FString(__func__), __LINE__);
-		return false;
-	}
-	
-	DefaultMaskMaterial->bUsedWithStaticLighting = true;
-	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
-
-	// Create the dynamic mask material from the default one
-	DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-	DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::White);
-	return true;
-}
-
 // Create clones of the items with mask material on top
 bool USLVisionLogger::CreateMaskClones()
 {
+	// Load the default mask material
+	// this will be used as a template to create the colored mask materials to add to the clones
+	UMaterial* DefaultMaskMaterial = LoadObject<UMaterial>(this,
+		TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask"));
+	if (!DefaultMaskMaterial)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material.."), *FString(__func__), __LINE__);
+		return false;
+	}
+
+	DefaultMaskMaterial->bUsedWithStaticLighting = true;
+	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
+
+	TArray<AStaticMeshActor*> SMActors;
+	FSLEntitiesManager::GetInstance()->GetStaticMeshActors(SMActors);
+	for(const auto& SMA : SMActors)
+	{
+		if(UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
+		{
+			// Get the mask color, will be black if it does not exist
+			FColor SemColor(FColor::FromHex(FTags::GetValue(SMA, "SemLog", "VisMask")));
+			if(SemColor == FColor::Black)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask, setting to black.."), *FString(__func__), __LINE__, *SMA->GetName());
+			}
+			
+			// Create the mask material with the color
+			UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+			DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
+
+			// Create the mask clone 
+			FActorSpawnParameters Parameters;
+			Parameters.Template = SMA;
+			Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			Parameters.Name = FName(*(SMA->GetName() + TEXT("_MaskClone")));
+			AStaticMeshActor* SMAClone =  GetWorld()->SpawnActor<AStaticMeshActor>(SMA->GetClass(), Parameters);
+
+			// Apply the generated mask material to the clone
+			if(UStaticMeshComponent* CloneSMC = SMAClone->GetStaticMeshComponent())
+			{
+				for (int32 MatIdx = 0; MatIdx < CloneSMC->GetNumMaterials(); ++MatIdx)
+				{
+					CloneSMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+				}
+			}
+
+			// Hide and store the clone
+			SMAClone->SetActorHiddenInGame(true);
+			OrigToMaskClones.Emplace(SMA, SMAClone);
+		}
+	}
+
+	TArray<ASkeletalMeshActor*> SkMActors;
+	FSLEntitiesManager::GetInstance()->GetSkeletalMeshActors(SkMActors);
+	for(const auto& Pair : SkMAToPMA)
+	{
+		
+	}
+	
 	return true;
 }
 
@@ -829,7 +868,7 @@ void USLVisionLogger::PrintProgress() const
 	const int32 TotalViewModes = ViewModes.Num();
 	const float LastTs = Episode.GetLastTimestamp();
 	const int32 CurrImgNr = Episode.GetCurrIndex() * TotalCameras * TotalViewModes + CurrVirtualCameraIdx * TotalViewModes + CurrViewModeNr;
-	const int32 TotalImgs = TotalFrames * TotalCameras * TotalViewModes;	
+	const int32 TotalImgs = TotalFrames * TotalCameras * TotalViewModes;
 
 	UE_LOG(LogTemp, Log, TEXT("%s::%d \t\t Frame=%ld/%ld; \t\t Camera=%ld/%ld; \t\t ViewMode=%ld/%ld; \t\t Image=%ld/%ld; \t\t Ts=%f/%f;"),
 		*FString(__func__), __LINE__,

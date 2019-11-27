@@ -140,7 +140,7 @@ private:
 
 	// Action name for finishing from user input
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartFromUserInput"))
-	FName FinishInputActionName;	
+	FName FinishInputActionName;
 
 	// Mongodb server IP
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

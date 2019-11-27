@@ -142,7 +142,7 @@ private:
 	bool LoadMaskMaterial();
 
 	// Create clones of the items with mask material on top
-	bool SetupMaskClones();
+	bool CreateMaskClones();
 
 	// Init hi-res screenshot resolution
 	void InitScreenshotResolution(FIntPoint Resolution);

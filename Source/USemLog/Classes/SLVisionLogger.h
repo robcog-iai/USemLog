@@ -86,20 +86,36 @@ struct FSLVisionFrame
 	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> SkeletalPoses;
 
 	// Apply transformations, return the frame timestamp
-	float ApplyTransformations()
+	float ApplyTransformations(
+		bool bIncludeMasks,
+		TMap<AActor*, AStaticMeshActor*>& MaskClones,
+		TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*>& SkelMaskClones)
 	{
 		// Move the static meshes
 		for(const auto& Pair : ActorPoses)
 		{
 			Pair.Key->SetActorTransform(Pair.Value);
+			if(bIncludeMasks)
+			{
+				if(AStaticMeshActor** SMAClone = MaskClones.Find(Pair.Key))
+				{
+					(*SMAClone)->SetActorTransform(Pair.Value);
+				}
+			}
 		}
 
 		// Move the skeletal(poseable) meshes
 		for(const auto& Pair : SkeletalPoses)
 		{
 			Pair.Key->SetBoneTransforms(Pair.Value);
+			if(bIncludeMasks)
+			{
+				if(ASLVisionPoseableMeshActor** PMAClone = SkelMaskClones.Find(Pair.Key))
+				{
+					(*PMAClone)->SetBoneTransforms(Pair.Value);
+				}
+			}
 		}
-		
 		return Timestamp;
 	}
 
@@ -126,24 +142,30 @@ public:
 	int32 GetFramesNum() const { return Frames.Num(); };
 
 	// Move actors to the first frame
-	bool SetupFirstFrame(float& OutTimestamp)
+	bool SetupFirstFrame(float& OutTimestamp,
+		bool bIncludeMasks,
+		TMap<AActor*, AStaticMeshActor*>& MaskClones,
+		TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*>& SkelMaskClones)
 	{
 		FrameIdx = 0;
 		if(Frames.IsValidIndex(FrameIdx))
 		{
-			OutTimestamp = Frames[FrameIdx].ApplyTransformations();
+			OutTimestamp = Frames[FrameIdx].ApplyTransformations(bIncludeMasks, MaskClones, SkelMaskClones);
 			return true;
 		}
 		return false;
 	}
 
 	// Move actors to the next frame transformations, return false if no more frames are available
-	bool SetupNextFrame(float& OutTimestamp)
+	bool SetupNextFrame(float& OutTimestamp,
+		bool bIncludeMasks,
+		TMap<AActor*, AStaticMeshActor*>& MaskClones,
+		TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*>& SkelMaskClones)
 	{
 		FrameIdx++;
 		if(Frames.IsValidIndex(FrameIdx))
 		{
-			OutTimestamp = Frames[FrameIdx].ApplyTransformations();
+			OutTimestamp = Frames[FrameIdx].ApplyTransformations(bIncludeMasks, MaskClones, SkelMaskClones);
 			return true;
 		}
 		FrameIdx = INDEX_NONE;
@@ -235,9 +257,6 @@ private:
 	// Load the pointers to the virtual cameras
 	bool LoadVirtualCameras();
 
-	// Load mask dynamic material
-	bool LoadMaskMaterial();
-
 	// Create clones of the items with mask material on top, set them to hidden by default
 	bool CreateMaskClones();
 
@@ -293,10 +312,19 @@ private:
 	// Map from the skeletal entities to the poseable meshes
 	UPROPERTY() // Avoid GC
 	TMap<ASkeletalMeshActor*, ASLVisionPoseableMeshActor*> SkMAToPMA;
-	
-	// Dynamic mask material
+
+	// Copies of the static meshes with mask materials on top
 	UPROPERTY() // Avoid GC
-	UMaterialInstanceDynamic* DynamicMaskMaterial;
+	TMap<AActor*, AStaticMeshActor*> OrigToMaskClones;
+
+	// Copies of the (poseable) skeletal meshes with mask materials on top
+	UPROPERTY() // Avoid GC
+	TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*> OrigToSkelMaskClones;
+	
+	//// Dynamic mask material
+	//// TODO rm
+	//UPROPERTY() // Avoid GC
+	//UMaterialInstanceDynamic* DynamicMaskMaterial;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
