@@ -23,13 +23,12 @@
 #include "Conversions.h"
 #include "Tags.h"
 
-
 // Constructor
 USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
 {
 	ViewModes.Add(ESLVisionLoggerViewMode::Color);
 	//ViewModes.Add(ESLVisionLoggerViewMode::Unlit);
-	//ViewModes.Add(ESLVisionLoggerViewMode::Mask);
+	ViewModes.Add(ESLVisionLoggerViewMode::Mask);
 	//ViewModes.Add(ESLVisionLoggerViewMode::Depth);
 	//ViewModes.Add(ESLVisionLoggerViewMode::Normal);
 	CurrViewModeIdx = INDEX_NONE;
@@ -593,8 +592,8 @@ bool USLVisionLogger::CreateMaskClones()
 			}
 			
 			// Create the mask material with the color
-			UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-			DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
+			//UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+			//DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 
 			// Create the mask clone 
 			FActorSpawnParameters Parameters;
@@ -603,14 +602,14 @@ bool USLVisionLogger::CreateMaskClones()
 			Parameters.Name = FName(*(SMA->GetName() + TEXT("_MaskClone")));
 			AStaticMeshActor* SMAClone =  GetWorld()->SpawnActor<AStaticMeshActor>(SMA->GetClass(), Parameters);
 
-			// Apply the generated mask material to the clone
-			if(UStaticMeshComponent* CloneSMC = SMAClone->GetStaticMeshComponent())
-			{
-				for (int32 MatIdx = 0; MatIdx < CloneSMC->GetNumMaterials(); ++MatIdx)
-				{
-					CloneSMC->SetMaterial(MatIdx, DynamicMaskMaterial);
-				}
-			}
+			//// Apply the generated mask material to the clone
+			//if(UStaticMeshComponent* CloneSMC = SMAClone->GetStaticMeshComponent())
+			//{
+			//	for (int32 MatIdx = 0; MatIdx < CloneSMC->GetNumMaterials(); ++MatIdx)
+			//	{
+			//		CloneSMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+			//	}
+			//}
 
 			// Hide and store the clone
 			SMAClone->SetActorHiddenInGame(true);
@@ -824,11 +823,21 @@ void USLVisionLogger::ApplyViewMode(ESLVisionLoggerViewMode Mode)
 // Apply mask materials 
 void USLVisionLogger::ApplyMaskMaterials()
 {
+	for(const auto& Pair : OrigToMaskClones)
+	{
+		//Pair.Key->SetActorHiddenInGame(true);
+		//Pair.Value->SetActorHiddenInGame(false);
+	}
 }
 
 // Apply original material to current item
 void USLVisionLogger::ApplyOriginalMaterials()
 {
+	for(const auto& Pair : OrigToMaskClones)
+	{
+		//Pair.Key->SetActorHiddenInGame(false);
+		//Pair.Value->SetActorHiddenInGame(true);
+	}
 }
 
 // Clean exit, all the Finish() methods will be triggered

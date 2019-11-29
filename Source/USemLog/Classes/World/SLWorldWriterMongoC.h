@@ -57,6 +57,9 @@ private:
 	// Create indexes on the logged data, usually called after logging
 	bool CreateIndexes() const;
 
+	// Get the actors that moved since the previous log time
+	//void GetMovedEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities, TArray<FSLEntity>& OutMovedEntities)
+	
 #if SL_WITH_LIBMONGO_C
 	// Add non skeletal actors to array
 	void AddActorEntities(TArray<TSLEntityPreviousPose<AActor>>& ActorEntities,

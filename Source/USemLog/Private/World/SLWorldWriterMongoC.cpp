@@ -61,6 +61,7 @@ void FSLWorldWriterMongoC::Write(float Timestamp,
 	FSLGazeData& GazeData,
 	bool bCheckAndRemoveInvalidEntities)
 {
+	// todo can be removed, the array size only changes when an entity is deleted from the world
 	// Avoid writing empty documents
 	if (ActorEntities.Num() == 0 && ComponentEntities.Num() == 0 && SkeletalEntities.Num() == 0)
 	{
