@@ -3,6 +3,7 @@
 
 #include "Editor/SLEditorToolkit.h"
 #include "SLVisionCamera.h"
+#include "SLSkeletalDataComponent.h"
 
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
@@ -12,6 +13,7 @@
 // UUtils
 #include "Ids.h"
 #include "Tags.h"
+
 
 
 #if WITH_EDITOR
@@ -207,10 +209,10 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 	const FString KeyType = "VisMask";
 	const int32 MaxTrials = 100;
 
-	// Array has FindByPredicate, TSet does not
+	// Aray is susedArray has FindByPredicate, TSet does not
 	TArray<FColor> ConsumedColors;
 
-	// Cache used colors
+	// Load already used colors to avoid generating similar ones
 	if(!bOverwrite)
 	{
 		/* Static mesh actors */
@@ -219,16 +221,32 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 			FString ColHexStr = FTags::GetValue(*ActItr, TagType, KeyType);
 			if(!ColHexStr.IsEmpty())
 			{
-				bool bIsAlreadyInSet = false;
-				FColor C = FColor::FromHex(ColHexStr);
-				ConsumedColors.Add(C);
+				ConsumedColors.Add(FColor::FromHex(ColHexStr));
 			}
 		}
 		
 		/* Skeletal mesh actors */
-		// TODO Skeletal
 		for (TActorIterator<ASkeletalMeshActor> ActItr(World); ActItr; ++ActItr)
 		{
+			// Get the semantic data component containing the semantics (class names mask colors) about the bones
+			if(UActorComponent* AC = ActItr->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+			{
+				// Load existing visual mask values from the skeletal data
+				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+				for (auto& Pair : SkDC->SemanticBonesData)
+				{
+					// Check if the bone has a semantic class and and a visual mask
+					if (Pair.Value.IsSet() && !Pair.Value.VisualMask.IsEmpty())
+					{
+						ConsumedColors.Add(FColor::FromHex(Pair.Value.VisualMask));
+					}
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
+					*FString(__func__), __LINE__, *ActItr->GetName());
+			}
 		}
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Number of previously stored visual masks=%ld"),
 		//	*FString(__func__), __LINE__, ConsumedColors.Num());
@@ -315,9 +333,79 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 	}
 
 	/* Skeletal mesh actors */
-	// TODO Skeletal
 	for (TActorIterator<ASkeletalMeshActor> ActItr(World); ActItr; ++ActItr)
 	{
+#if WITH_EDITOR
+		// Get the skletal actor from the editor world
+		if(AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(*ActItr))
+		{
+			// Get the semantic data component containing the semantics (class names mask colors) about the bones
+			if(UActorComponent* AC = EdAct->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+			{
+				// Load existing visual mask values from the skeletal data
+				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+				for (auto& Pair : SkDC->SemanticBonesData)
+				{
+					// Check if bone has a semantic class
+					if(!Pair.Value.IsSet())
+					{
+						continue;
+					}
+
+					// Check if the bone has a visual mask
+					if (!Pair.Value.VisualMask.IsEmpty())
+					{
+						if(!bOverwrite)
+						{
+							continue;
+						}
+
+						Pair.Value.VisualMask = GenerateANewUniqueColorLambda(VisualMaskColorMinDistance, MaxTrials, ConsumedColors);
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Addding new visual mask, hex=%s, to %s --> %s, new total=%ld.."),
+							*FString(__func__), __LINE__, *Pair.Value.VisualMask, *EdAct->GetName(), *Pair.Value.Class, ConsumedColors.Num());
+
+						// Add the mask to the map used at runtime as well
+						if(SkDC->AllBonesData.Contains(Pair.Key))
+						{
+							SkDC->AllBonesData[Pair.Key].VisualMask = Pair.Value.VisualMask;
+						}
+						else
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+								*FString(__func__), __LINE__, *Pair.Key.ToString());
+						}
+					}
+					else
+					{
+						Pair.Value.VisualMask = GenerateANewUniqueColorLambda(VisualMaskColorMinDistance, MaxTrials, ConsumedColors);
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Addding new visual mask, hex=%s, to %s --> %s, new total=%ld.."),
+							*FString(__func__), __LINE__, *Pair.Value.VisualMask, *EdAct->GetName(), *Pair.Value.Class, ConsumedColors.Num());
+
+						// Add the mask to the map used at runtime as well
+						if(SkDC->AllBonesData.Contains(Pair.Key))
+						{
+							SkDC->AllBonesData[Pair.Key].VisualMask = Pair.Value.VisualMask;
+						}
+						else
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+								*FString(__func__), __LINE__, *Pair.Key.ToString());
+						}
+					}
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
+					*FString(__func__), __LINE__, *EdAct->GetName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.."),
+				*FString(__func__), __LINE__, *ActItr->GetName());
+		}
+#endif //WITH_EDITOR
 	}
 }
 
@@ -402,7 +490,7 @@ FString FSLEditorToolkit::GenerateClassName(ASLVisionCamera* Actor, bool bDefaul
 	return DefaultValue;
 }
 
-// Write to editor counterpart
+// Write tag changes to editor counterpart actor
 bool FSLEditorToolkit::WriteKVToEditorCounterpart(AActor* Actor, const FString& TagType, const FString& TagKey,
 	const FString& TagValue, bool bReplaceExisting)
 {

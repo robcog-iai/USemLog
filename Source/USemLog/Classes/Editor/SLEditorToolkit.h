@@ -51,7 +51,7 @@ private:
 	// Generate class name for the vision camera
 	static FString GenerateClassName(ASLVisionCamera* Actor, bool bDefaultToLabel = false);
 	
-	// Write to editor counterpart
+	// Write tag changes to editor counterpart actor
 	static bool WriteKVToEditorCounterpart(AActor* Actor, const FString& TagType, const FString& TagKey, const FString& TagValue, bool bReplaceExisting);
 
 	/* Helpers */

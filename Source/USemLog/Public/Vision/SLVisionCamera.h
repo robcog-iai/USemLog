@@ -23,5 +23,6 @@ public:
 	FString GetClassName();
 
 private:
+	// Semantic class name of the virtual vision camera
 	FString ClassName;
 };

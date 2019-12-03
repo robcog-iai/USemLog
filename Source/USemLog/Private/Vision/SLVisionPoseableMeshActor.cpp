@@ -38,21 +38,6 @@ bool ASLVisionPoseableMeshActor::Init(ASkeletalMeshActor* SkMA)
 		}
 	}
 	return false;
-	
-	//UPoseableMeshComponent* MeshComponent = NewObject<UPoseableMeshComponent>(parent->GetOwner(), *name);
-	//MeshComponent->AttachToComponent(parent, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	//MeshComponent->RegisterComponent();
-
-	//MeshComponent->bCastDynamicShadow = false;
-	//MeshComponent->CastShadow = false;
-	//MeshComponent->bRenderCustomDepth = false;
-	//MeshComponent->bRenderInMainPass = true;
-	//MeshComponent->SetVisibility(false, true);
-
-	//AddMeshComponent(assetID, MeshComponent);
-
-	//return MeshComponent;
-	//return true;
 }
 
 // Apply bone transformations
@@ -62,4 +47,15 @@ void ASLVisionPoseableMeshActor::SetBoneTransforms(const TMap<FName, FTransform>
 	{
 		PoseableMeshComponent->SetBoneTransformByName(Pair.Key, Pair.Value, EBoneSpaces::WorldSpace);
 	}
+}
+
+// Set a custom material on the skeletal mesh at the given index
+bool ASLVisionPoseableMeshActor::SetCustomMaterial(int32 ElementIndex, UMaterialInterface* Material)
+{
+	if(bIsInit)
+	{
+		PoseableMeshComponent->SetMaterial(ElementIndex, Material);
+		return true;
+	}
+	return false;
 }

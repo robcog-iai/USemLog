@@ -387,6 +387,10 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	}
 	
 	/* Editor Logger Properties*/
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEditorData))
+	{
+		if (bLogEditorData) { bLogVisionData = false; bLogMetadata = false; bLogWorldState = false; bLogEventData = false; };
+	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bClearTags))
 	{
 		if (bClearTags) {bWriteClassProperties = false; bWriteUniqueIdProperties = false; bWriteVisualMaskProperties = false;}

@@ -311,7 +311,7 @@ private:
 
 	// Map from the skeletal entities to the poseable meshes
 	UPROPERTY() // Avoid GC
-	TMap<ASkeletalMeshActor*, ASLVisionPoseableMeshActor*> SkMAToPMA;
+	TMap<ASkeletalMeshActor*, ASLVisionPoseableMeshActor*> SkelToPoseableMap;
 
 	// Copies of the static meshes with mask materials on top
 	UPROPERTY() // Avoid GC
@@ -319,12 +319,7 @@ private:
 
 	// Copies of the (poseable) skeletal meshes with mask materials on top
 	UPROPERTY() // Avoid GC
-	TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*> OrigToSkelMaskClones;
-	
-	//// Dynamic mask material
-	//// TODO rm
-	//UPROPERTY() // Avoid GC
-	//UMaterialInstanceDynamic* DynamicMaskMaterial;
+	TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*> SkelOrigToMaskClones;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;

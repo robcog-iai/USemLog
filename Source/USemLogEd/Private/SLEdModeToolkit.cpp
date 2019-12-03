@@ -692,8 +692,8 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 						}
 						else
 						{
-							// This should not happen, the two maps should be synced
-							UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot find bone %s, maps are not synced.."),
+							// This should not happen, the two mappings should be synced
+							UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot find bone %s, mappings are not synced.."),
 								*FString(__func__), __LINE__, *Pair.Key.ToString());
 						}
 					}

@@ -27,7 +27,10 @@ public:
 
 	// Apply bone transformations
 	void SetBoneTransforms(const TMap<FName, FTransform>& BoneTransfroms);
-	
+
+	// Set a custom material on the skeletal mesh at the given index
+	bool SetCustomMaterial(int32 ElementIndex, UMaterialInterface* Material);
+
 private:
 	// Init flab
 	bool bIsInit;

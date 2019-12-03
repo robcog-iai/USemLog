@@ -251,9 +251,9 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 // Goto the first episode frame
 bool USLVisionLogger::SetupFirstEpisodeFrame()
 {
-	if(!Episode.SetupFirstFrame(CurrTimestamp, true, OrigToMaskClones, OrigToSkelMaskClones))
+	if(!Episode.SetupFirstFrame(CurrTimestamp, true, OrigToMaskClones, SkelOrigToMaskClones))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d First frame not available.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d First frame not available.."), *FString(__func__), __LINE__);
 		return false;
 	}
 	return true;
@@ -262,9 +262,9 @@ bool USLVisionLogger::SetupFirstEpisodeFrame()
 // Goto next episode frame, return false if there are no other left
 bool USLVisionLogger::SetupNextEpisodeFrame()
 {
-	if(!Episode.SetupNextFrame(CurrTimestamp, true, OrigToMaskClones, OrigToSkelMaskClones))
+	if(!Episode.SetupNextFrame(CurrTimestamp, true, OrigToMaskClones, SkelOrigToMaskClones))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup the episode next frame.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d No new frames.."), *FString(__func__), __LINE__);
 		return false;
 	}
 	return true;
@@ -528,10 +528,10 @@ void USLVisionLogger::CreatePoseableMeshes()
 		if(PMA->Init(SkMA))
 		{
 			// Add actor to the quick access map
-			SkMAToPMA.Emplace(SkMA, PMA);
+			SkelToPoseableMap.Emplace(SkMA, PMA);
 		}
 
-		// Hide orginal actor
+		// Hide original actor
 		SkMA->SetActorHiddenInGame(true);
 	}
 }
@@ -552,7 +552,8 @@ void USLVisionLogger::InitWorldEntities()
 		Act->DisableComponentsSimulatePhysics();
 		if(Act->GetRootComponent())
 		{
-			// TODO check if lights should be skipped
+			Act->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			// TODO check if static lights should be skipped
 			Act->GetRootComponent()->SetMobility(EComponentMobility::Movable);
 		}
 		else
@@ -578,6 +579,7 @@ bool USLVisionLogger::CreateMaskClones()
 	DefaultMaskMaterial->bUsedWithStaticLighting = true;
 	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
 
+	/* Static meshes */
 	TArray<AStaticMeshActor*> SMActors;
 	FSLEntitiesManager::GetInstance()->GetStaticMeshActors(SMActors);
 	for(const auto& SMA : SMActors)
@@ -592,8 +594,8 @@ bool USLVisionLogger::CreateMaskClones()
 			}
 			
 			// Create the mask material with the color
-			//UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-			//DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
+			UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+			DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(SemColor));
 
 			// Create the mask clone 
 			FActorSpawnParameters Parameters;
@@ -602,14 +604,14 @@ bool USLVisionLogger::CreateMaskClones()
 			Parameters.Name = FName(*(SMA->GetName() + TEXT("_MaskClone")));
 			AStaticMeshActor* SMAClone =  GetWorld()->SpawnActor<AStaticMeshActor>(SMA->GetClass(), Parameters);
 
-			//// Apply the generated mask material to the clone
-			//if(UStaticMeshComponent* CloneSMC = SMAClone->GetStaticMeshComponent())
-			//{
-			//	for (int32 MatIdx = 0; MatIdx < CloneSMC->GetNumMaterials(); ++MatIdx)
-			//	{
-			//		CloneSMC->SetMaterial(MatIdx, DynamicMaskMaterial);
-			//	}
-			//}
+			// Apply the generated mask material to the clone
+			if(UStaticMeshComponent* CloneSMC = SMAClone->GetStaticMeshComponent())
+			{
+				for (int32 MatIdx = 0; MatIdx < CloneSMC->GetNumMaterials(); ++MatIdx)
+				{
+					CloneSMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+				}
+			}
 
 			// Hide and store the clone
 			SMAClone->SetActorHiddenInGame(true);
@@ -617,11 +619,64 @@ bool USLVisionLogger::CreateMaskClones()
 		}
 	}
 
+	/* Skeletal meshes */
 	TArray<ASkeletalMeshActor*> SkMActors;
 	FSLEntitiesManager::GetInstance()->GetSkeletalMeshActors(SkMActors);
-	for(const auto& Pair : SkMAToPMA)
+	for(const auto& SkMA : SkMActors)
 	{
-		
+		// Get the semantic data component containing the semantics (class names mask colors) about the bones
+		if (UActorComponent* AC = SkMA->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+		{
+			// Create a custom actor with a poseable mesh component
+			FActorSpawnParameters SpawnParams;
+			const FString LabelName = FString(TEXT("PMA_")).Append(SkMA->GetName()).Append("_MaskClone");
+			SpawnParams.Name = FName(*LabelName);
+			ASLVisionPoseableMeshActor* PMA = GetWorld()->SpawnActor<ASLVisionPoseableMeshActor>(
+				ASLVisionPoseableMeshActor::StaticClass(), SpawnParams);
+			PMA->SetActorLabel(LabelName);
+
+			if (!PMA->Init(SkMA))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init the poseable mesh actor %s.."),
+					*FString(__func__), __LINE__, *PMA->GetName());
+				PMA->Destroy();
+				continue;
+			}
+
+			// Apply mask materials
+			USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+			for (auto& Pair : SkDC->SemanticBonesData)
+			{
+				// Check if bone class and visual mask is set
+				if(Pair.Value.IsSet())
+				{
+					// Get the mask color, will be black if it does not exist
+					FColor SemColor(FColor::FromHex(Pair.Value.VisualMask));
+					if (SemColor == FColor::Black)
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d %s --> %s has no visual mask, setting to black.."),
+							*FString(__func__), __LINE__, *SkMA->GetName(), *Pair.Value.Class);
+					}
+
+					// Create the mask material with the color
+					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
+						FLinearColor::FromSRGBColor(FColor::FromHex(Pair.Value.VisualMask)));
+
+					PMA->SetCustomMaterial(Pair.Value.MaskMaterialIndex, DynamicMaskMaterial);
+				}
+			}
+
+			// Hide and store the skeletal clone
+			PMA->SetActorHiddenInGame(true);
+			/*SkelToPoseableMap.Contains()
+			SkelOrigToMaskClones*/
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
+				*FString(__func__), __LINE__, *SkMA->GetName());
+		}
 	}
 	
 	return true;
@@ -825,8 +880,13 @@ void USLVisionLogger::ApplyMaskMaterials()
 {
 	for(const auto& Pair : OrigToMaskClones)
 	{
-		//Pair.Key->SetActorHiddenInGame(true);
-		//Pair.Value->SetActorHiddenInGame(false);
+		Pair.Key->SetActorHiddenInGame(true);
+		Pair.Value->SetActorHiddenInGame(false);
+	}
+	for (const auto& Pair : SkelOrigToMaskClones)
+	{
+		Pair.Key->SetActorHiddenInGame(true);
+		Pair.Value->SetActorHiddenInGame(false);
 	}
 }
 
@@ -835,8 +895,13 @@ void USLVisionLogger::ApplyOriginalMaterials()
 {
 	for(const auto& Pair : OrigToMaskClones)
 	{
-		//Pair.Key->SetActorHiddenInGame(false);
-		//Pair.Value->SetActorHiddenInGame(true);
+		Pair.Key->SetActorHiddenInGame(false);
+		Pair.Value->SetActorHiddenInGame(true);
+	}
+	for (const auto& Pair : SkelOrigToMaskClones)
+	{
+		Pair.Key->SetActorHiddenInGame(false);
+		Pair.Value->SetActorHiddenInGame(true);
 	}
 }
 
@@ -1033,7 +1098,7 @@ bool USLVisionLogger::GetSkeletalEntityDataInFrame(bson_iter_t* doc, TMap<ASLVis
 				// Add skeletal entity
 				if(ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor((Id)))
 				{
-					if(ASLVisionPoseableMeshActor* const* PMA = SkMAToPMA.Find(SkMA))
+					if(ASLVisionPoseableMeshActor* const* PMA = SkelToPoseableMap.Find(SkMA))
 					{
 						OutSkeletalPoses.Emplace(*PMA, BonesMap);
 					}
