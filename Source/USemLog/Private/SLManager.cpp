@@ -383,7 +383,7 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	/* Vision Data Logger Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogVisionData))
 	{
-		if (bLogWorldState) {bUseCustomEpisodeId = true; bLogEditorData = false; bLogMetadata = false; bLogWorldState = false; bLogEventData = false;};
+		if (bLogVisionData) {bUseCustomEpisodeId = true; bLogEditorData = false; bLogMetadata = false; bLogWorldState = false; bLogEventData = false;};
 	}
 	
 	/* Editor Logger Properties*/

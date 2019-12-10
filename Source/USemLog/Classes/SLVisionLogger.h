@@ -8,6 +8,7 @@
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 
+#include "Vision/SLVisionLoggerStructs.h"
 #include "Vision/SLVisionPoseableMeshActor.h"
 
 #if SL_WITH_LIBMONGO_C
@@ -25,167 +26,9 @@ THIRD_PARTY_INCLUDES_END
 #include "SLVisionLogger.generated.h"
 
 // Forward declarations
-class UMaterialInstanceDynamic;
+//class UMaterialInstanceDynamic;
 class UGameViewportClient;
 class ASLVisionCamera;
-
-/**
-* View modes
-*/
-UENUM()
-enum class ESLVisionLoggerViewMode : uint8
-{
-	NONE					UMETA(DisplayName = "None"),
-	Color					UMETA(DisplayName = "Color"),
-	Unlit					UMETA(DisplayName = "Unlit"),
-	Mask					UMETA(DisplayName = "Mask"),
-	Depth					UMETA(DisplayName = "Depth"),
-	Normal					UMETA(DisplayName = "Normal"),
-};
-
-/**
-* Vision logger parameters
-*/
-struct FSLVisionLoggerParams
-{
-	// Update rate
-	float UpdateRate;
-
-	// Resolution
-	FIntPoint Resolution;
-
-	// Include locally
-	bool bIncludeLocally;
-
-	// Default ctor
-	FSLVisionLoggerParams();
-
-	// Init ctor
-	FSLVisionLoggerParams(
-		float InUpdateRate,
-		FIntPoint InResolution,
-		bool bInIncludeLocally) :
-		UpdateRate(InUpdateRate),
-		Resolution(InResolution),
-		bIncludeLocally(bInIncludeLocally)
-	{};
-};
-
-/**
-* Episode frame data
-*/
-struct FSLVisionFrame
-{
-	// Frame timestamp
-	float Timestamp;
-
-	// Entity poses
-	TMap<AActor*, FTransform> ActorPoses;
-
-	// Skeletal (poseable) meshes bone transformation
-	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> SkeletalPoses;
-
-	// Apply transformations, return the frame timestamp
-	float ApplyTransformations(
-		bool bIncludeMasks,
-		TMap<AActor*, AStaticMeshActor*>& MaskClones,
-		TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*>& SkelMaskClones)
-	{
-		// Move the static meshes
-		for(const auto& Pair : ActorPoses)
-		{
-			Pair.Key->SetActorTransform(Pair.Value);
-			if(bIncludeMasks)
-			{
-				if(AStaticMeshActor** SMAClone = MaskClones.Find(Pair.Key))
-				{
-					(*SMAClone)->SetActorTransform(Pair.Value);
-				}
-			}
-		}
-
-		// Move the skeletal(poseable) meshes
-		for(const auto& Pair : SkeletalPoses)
-		{
-			Pair.Key->SetBoneTransforms(Pair.Value);
-			if(bIncludeMasks)
-			{
-				if(ASLVisionPoseableMeshActor** PMAClone = SkelMaskClones.Find(Pair.Key))
-				{
-					(*PMAClone)->SetBoneTransforms(Pair.Value);
-				}
-			}
-		}
-		return Timestamp;
-	}
-
-	// Clear time and poses
-	void Clear() { Timestamp = -1.f; ActorPoses.Empty(); SkeletalPoses.Empty(); };
-};
-
-/**
-* The whole episode data
-*/
-class FSLVisionEpisode
-{
-public:
-	// Default ctor
-	FSLVisionEpisode() : FrameIdx(INDEX_NONE) {};
-
-	// Add a new frame
-	int32 AddFrame(const FSLVisionFrame& Frame) { return Frames.Emplace(Frame); };
-	
-	// Get the active frame in the episode
-	int32 GetCurrIndex() const { return FrameIdx; };
-
-	// Get the total number of frames
-	int32 GetFramesNum() const { return Frames.Num(); };
-
-	// Move actors to the first frame
-	bool SetupFirstFrame(float& OutTimestamp,
-		bool bIncludeMasks,
-		TMap<AActor*, AStaticMeshActor*>& MaskClones,
-		TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*>& SkelMaskClones)
-	{
-		FrameIdx = 0;
-		if(Frames.IsValidIndex(FrameIdx))
-		{
-			OutTimestamp = Frames[FrameIdx].ApplyTransformations(bIncludeMasks, MaskClones, SkelMaskClones);
-			return true;
-		}
-		return false;
-	}
-
-	// Move actors to the next frame transformations, return false if no more frames are available
-	bool SetupNextFrame(float& OutTimestamp,
-		bool bIncludeMasks,
-		TMap<AActor*, AStaticMeshActor*>& MaskClones,
-		TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*>& SkelMaskClones)
-	{
-		FrameIdx++;
-		if(Frames.IsValidIndex(FrameIdx))
-		{
-			OutTimestamp = Frames[FrameIdx].ApplyTransformations(bIncludeMasks, MaskClones, SkelMaskClones);
-			return true;
-		}
-		FrameIdx = INDEX_NONE;
-		return false;
-	}
-
-	// Get first timestamp
-	FORCEINLINE float GetFirstTimestamp() const { return Frames.IsValidIndex(0) ? Frames[0].Timestamp : -1.f; };
-
-	// Get last timestamp
-	FORCEINLINE float GetLastTimestamp() const { return Frames.Num() > 0 ? Frames.Last().Timestamp : -1.f; };
-	
-private:
-	// All the frames from the episode
-	TArray<FSLVisionFrame> Frames;
-	
-	// Current frame index
-	int32 FrameIdx;
-};
-
 
 /**
  * Vision logger, can only be used with USemLogVision module
@@ -248,7 +91,7 @@ private:
 	// Get episode data from the database (UpdateRate = 0 means all the data)
 	bool LoadEpisode(float UpdateRate);
 
-	// Prepare th world entities by disabling physics and setting them to movable
+	// Prepare the world entities by disabling physics and setting them to movable
 	void InitWorldEntities();
 	
 	// Create movable clones of the skeletal meshes, hide originals (call before loading the episode data)
@@ -308,6 +151,9 @@ private:
 
 	// Episode data to replay
 	FSLVisionEpisode Episode;
+
+	// Vision data in the current frame (timestamp)
+	TArray<FSLVisionViewData> ViewsData;
 
 	// Map from the skeletal entities to the poseable meshes
 	UPROPERTY() // Avoid GC

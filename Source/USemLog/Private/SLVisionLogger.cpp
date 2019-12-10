@@ -631,15 +631,15 @@ bool USLVisionLogger::CreateMaskClones()
 			FActorSpawnParameters SpawnParams;
 			const FString LabelName = FString(TEXT("PMA_")).Append(SkMA->GetName()).Append("_MaskClone");
 			SpawnParams.Name = FName(*LabelName);
-			ASLVisionPoseableMeshActor* PMA = GetWorld()->SpawnActor<ASLVisionPoseableMeshActor>(
+			ASLVisionPoseableMeshActor* PMAClone = GetWorld()->SpawnActor<ASLVisionPoseableMeshActor>(
 				ASLVisionPoseableMeshActor::StaticClass(), SpawnParams);
-			PMA->SetActorLabel(LabelName);
+			PMAClone->SetActorLabel(LabelName);
 
-			if (!PMA->Init(SkMA))
+			if (!PMAClone->Init(SkMA))
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init the poseable mesh actor %s.."),
-					*FString(__func__), __LINE__, *PMA->GetName());
-				PMA->Destroy();
+					*FString(__func__), __LINE__, *PMAClone->GetName());
+				PMAClone->Destroy();
 				continue;
 			}
 
@@ -663,14 +663,22 @@ bool USLVisionLogger::CreateMaskClones()
 					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
 						FLinearColor::FromSRGBColor(FColor::FromHex(Pair.Value.VisualMask)));
 
-					PMA->SetCustomMaterial(Pair.Value.MaskMaterialIndex, DynamicMaskMaterial);
+					PMAClone->SetCustomMaterial(Pair.Value.MaskMaterialIndex, DynamicMaskMaterial);
 				}
 			}
 
 			// Hide and store the skeletal clone
-			PMA->SetActorHiddenInGame(true);
-			/*SkelToPoseableMap.Contains()
-			SkelOrigToMaskClones*/
+			PMAClone->SetActorHiddenInGame(true);
+			if(ASLVisionPoseableMeshActor** PMAOrig = SkelToPoseableMap.Find(SkMA))
+			{
+				SkelOrigToMaskClones.Add(*PMAOrig, PMAClone);
+			}
+			else
+			{
+				PMAClone->Destroy();
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no poseable mesh conterpart, mask clone will not be used.."),
+					*FString(__func__), __LINE__, *SkMA->GetName());
+			}
 		}
 		else
 		{
@@ -678,7 +686,6 @@ bool USLVisionLogger::CreateMaskClones()
 				*FString(__func__), __LINE__, *SkMA->GetName());
 		}
 	}
-	
 	return true;
 }
 
