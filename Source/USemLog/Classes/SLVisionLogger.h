@@ -104,7 +104,7 @@ private:
 	bool CreateMaskClones();
 
 	// Init hi-res screenshot resolution
-	void InitScreenshotResolution(FIntPoint Resolution);
+	void InitScreenshotResolution(FIntPoint InResolution);
 
 	// Init render parameters (resolution, view mode)
 	void InitRenderParameters();
@@ -122,7 +122,7 @@ private:
 	void WriteFrameData() const;
 
 	// Remove any previously added vision data from the database
-	void ClearPreviousEntries() const;
+	void ClearPreviousEntries(const FString& DBName, const FString& CollName) const;
 	
 	// Clean exit, all the Finish() methods will be triggered
 	void QuitEditor();
@@ -142,6 +142,9 @@ private:
 
 	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
 	bool ReadFrameSkeletalEntityDataFromBsonIterator(bson_iter_t* doc, TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>>& OutSkeletalPoses) const;
+
+	// Save image to gridfs, get the file oid and return true if succeeded
+	bool AddToGridFs(const TArray<uint8>& InData, bson_oid_t* out_oid) const;
 
 	// Write the bson doc containing the vision data to the entry corresponding to the timestamp
 	bool UpdateDBWithFrameData(bson_t* doc, float Timestamp) const;
@@ -253,5 +256,8 @@ private:
 
 	// Database collection
 	mongoc_collection_t* collection;
+
+	// Store image binaries
+	mongoc_gridfs_t* gridfs;
 #endif //SL_WITH_LIBMONGO_C	
 };

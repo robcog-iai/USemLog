@@ -76,7 +76,7 @@ ASLManager::ASLManager()
 	
 	// Vision data logger default values
 	bLogVisionData = false;
-	bOverwriteVisionData = false;
+	bOverwriteVisionData = true;
 	VisionUpdateRate = 0.f;
 	VisionImageResolution = FIntPoint(1920, 1080);
 	bIncludeImagesLocally = false;

@@ -27,10 +27,11 @@
 USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
 {
 	ViewModes.Add(ESLVisionLoggerViewMode::Color);
-	//ViewModes.Add(ESLVisionLoggerViewMode::Unlit);
+	ViewModes.Add(ESLVisionLoggerViewMode::Unlit);
 	ViewModes.Add(ESLVisionLoggerViewMode::Mask);
-	//ViewModes.Add(ESLVisionLoggerViewMode::Depth);
-	//ViewModes.Add(ESLVisionLoggerViewMode::Normal);
+	ViewModes.Add(ESLVisionLoggerViewMode::Depth);
+	ViewModes.Add(ESLVisionLoggerViewMode::Normal);
+
 	CurrViewModeIdx = INDEX_NONE;
 	CurrVirtualCameraIdx = INDEX_NONE;
 	CurrTimestamp = -1.f;
@@ -226,7 +227,7 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 	}
 
 	// Add the image and the view mode to the array
-	CurrViewData.Images.Emplace(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
+	CurrViewData.Images.Emplace(FSLVisionImageData(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap));
 
 	// If mask mode is currently active, read out the entity data as well
 	if(ViewModes[CurrViewModeIdx] == ESLVisionLoggerViewMode::Mask)
@@ -417,6 +418,15 @@ bool USLVisionLogger::Connect(const FString& DBName, const FString& CollName, co
 	}
 	collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*CollName));
 
+	// Create a gridfs handle prefixed by fs */
+	gridfs = mongoc_client_get_gridfs(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*CollName), &error);
+	if (!gridfs)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+			*FString(__func__), __LINE__, *Uri, *FString(error.message));
+		return false;
+	}
+
 	// Double check that the server is alive. Ping the "admin" database
 	bson_t* server_ping_cmd;
 	server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
@@ -432,7 +442,7 @@ bool USLVisionLogger::Connect(const FString& DBName, const FString& CollName, co
 	// Remove previously added vision data
 	if(bRemovePrevEntries)
 	{
-		ClearPreviousEntries();
+		ClearPreviousEntries(DBName,CollName);
 	}
 
 	return true;
@@ -743,10 +753,10 @@ bool USLVisionLogger::CreateMaskClones()
 }
 
 // Init hi-res screenshot resolution
-void USLVisionLogger::InitScreenshotResolution(FIntPoint Resolution)
+void USLVisionLogger::InitScreenshotResolution(FIntPoint InResolution)
 {
 	// Set screenshot image and viewport resolution size
-	GetHighResScreenshotConfig().SetResolution(Resolution.X, Resolution.Y, 1.0f);
+	GetHighResScreenshotConfig().SetResolution(InResolution.X, InResolution.Y, 1.0f);
 	// Avoid triggering the callback be overwriting the resolution -> SetResolution() sets GIsHighResScreenshot to true, which triggers the callback (ScreenshotCB)
 	GIsHighResScreenshot = false;	
 }
@@ -987,8 +997,8 @@ void USLVisionLogger::WriteFrameData() const
 	bson_t entities_arr;
 	bson_t entities_arr_obj;
 
-	//bson_t skel_arr;
-	//bson_t skel_arr_obj;
+	bson_t imgs_arr;
+	bson_t imgs_arr_obj;
 
 	bson_t bones_arr;
 	bson_t bones_arr_obj;
@@ -1004,6 +1014,8 @@ void USLVisionLogger::WriteFrameData() const
 	char k_str[16];
 	const char *k_key;
 	uint32_t k = 0;
+
+	bson_oid_t file_oid;
 
 	// Begin adding views data tot the 
 	BSON_APPEND_ARRAY_BEGIN(&frame_doc, "views", &views_arr);
@@ -1065,6 +1077,24 @@ void USLVisionLogger::WriteFrameData() const
 			}
 			bson_append_array_end(&views_arr_obj, &entities_arr);
 
+			// Create the images array
+			k = 0;
+			BSON_APPEND_ARRAY_BEGIN(&views_arr_obj, "images", &imgs_arr);
+			for (const auto& Img : ViewData.Images)
+			{
+				if (AddToGridFs(Img.Data, &file_oid))
+				{
+					bson_uint32_to_string(k, &k_key, k_str, sizeof k_str);
+					BSON_APPEND_DOCUMENT_BEGIN(&imgs_arr, k_key, &imgs_arr_obj);
+
+					BSON_APPEND_UTF8(&imgs_arr_obj, "type", TCHAR_TO_UTF8(*Img.Type));
+					BSON_APPEND_OID(&imgs_arr_obj, "file_id", (const bson_oid_t*)&file_oid);
+
+					bson_append_document_end(&imgs_arr, &imgs_arr_obj);
+					k++;
+				}
+			}
+			bson_append_array_end(&views_arr_obj, &imgs_arr);
 
 		// End array entry
 		bson_append_document_end(&views_arr, &views_arr_obj);
@@ -1080,7 +1110,7 @@ void USLVisionLogger::WriteFrameData() const
 }
 
 // Remove any previously added vision data from the database
-void USLVisionLogger::ClearPreviousEntries() const
+void USLVisionLogger::ClearPreviousEntries(const FString& DBName, const FString& CollName) const
 {
 #if SL_WITH_LIBMONGO_C
 	// Remove all previous entries
@@ -1100,6 +1130,18 @@ void USLVisionLogger::ClearPreviousEntries() const
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Number of removed entries = %d"),
 			*FString(__func__), __LINE__, bson_iter_int32(&iter));
+	}
+
+	// Remove gridfs data
+	if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(CollName + ".chunks"))), &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(CollName + ".files"))), &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+			*FString(__func__), __LINE__, *FString(error.message));
 	}
 
 	// Drop previous indexes to allow fast inserts
@@ -1489,6 +1531,62 @@ bool USLVisionLogger::ReadFrameSkeletalEntityDataFromBsonIterator(bson_iter_t* d
 		return OutSkeletalPoses.Num() > 0;
 	}
 	return false;
+}
+
+// Save image to gridfs, get the file oid and return true if succeeded
+bool USLVisionLogger::AddToGridFs(const TArray<uint8>& InData, bson_oid_t* out_oid) const
+{
+	mongoc_gridfs_file_t *file;
+	mongoc_gridfs_file_opt_t file_opt = { 0 };
+	const bson_value_t* file_id_val;
+	mongoc_iovec_t iov;
+	bson_error_t error;
+
+	//bson_t* metadata_doc;
+	//metadata_doc = BCON_NEW(
+	//	"type", BCON_UTF8(TCHAR_TO_UTF8(*ImgData.RenderType))
+	//);
+	//file_opt.filename = "no_name";
+	//file_opt.metadata = metadata_doc;
+
+	// Create new file
+	file = mongoc_gridfs_create_file(gridfs, &file_opt);
+
+	// Set data binary and length
+	iov.iov_base = (char*)(InData.GetData());
+	iov.iov_len = InData.Num();
+
+	// Write data to gridfs
+	if (iov.iov_len != mongoc_gridfs_file_writev(file, &iov, 1, 0))
+	{
+		if (mongoc_gridfs_file_error(file, &error))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
+				*FString(__func__), __LINE__, *FString(error.message));
+		}
+		mongoc_gridfs_file_destroy(file);
+		return false;
+	}
+
+	// Saves modifications to file to the MongoDB server
+	if (!mongoc_gridfs_file_save(file))
+	{
+		mongoc_gridfs_file_error(file, &error);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+		mongoc_gridfs_file_destroy(file);
+		return false;
+	}
+
+	// Set the out oid
+	file_id_val = mongoc_gridfs_file_get_id(file);
+	bson_oid_copy(&file_id_val->value.v_oid, out_oid);
+
+	// Clean up
+	//bson_destroy(metadata_doc);
+	mongoc_gridfs_file_destroy(file);
+
+	return true;
 }
 
 // Write the bson doc containing the vision data to the entry corresponding to the timestamp

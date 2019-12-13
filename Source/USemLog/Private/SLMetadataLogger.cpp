@@ -159,6 +159,16 @@ bool USLMetadataLogger::Connect(const FString& DBName, const FString& ServerIp, 
 					*FString(__func__), __LINE__, *FString(error.message));
 				return false;
 			}
+			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(MetaCollName + ".chunks"))), &error))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+					*FString(__func__), __LINE__, *FString(error.message));
+			}
+			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(MetaCollName + ".files"))), &error))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+					*FString(__func__), __LINE__, *FString(error.message));
+			}
 		}
 		else
 		{
@@ -169,7 +179,7 @@ bool USLMetadataLogger::Connect(const FString& DBName, const FString& ServerIp, 
 	}
 	else 
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Meta collection %s does not exist, creating a new one.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating a new meta collection %s .."),
 			*FString(__func__), __LINE__, *MetaCollName);
 	}
 

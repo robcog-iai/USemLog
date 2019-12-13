@@ -557,7 +557,7 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	TArray<uint8> CompressedBitmap;
 	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
 
-	// Add image to gridfs
+	// Add image current scan data
 	ScanPoseData.Images.Emplace(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 
 	// Save the png locally

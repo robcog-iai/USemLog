@@ -241,6 +241,24 @@ struct FSLVisionViewSkelData
 };
 
 /**
+* Image data
+*/
+struct FSLVisionImageData
+{
+	// Default ctor
+	FSLVisionImageData() {};
+	
+	// Init ctor
+	FSLVisionImageData(const FString& InType, const TArray<uint8> InData) : Type(InType), Data(InData) {};
+
+	// Image type
+	FString Type;
+
+	// Data
+	TArray<uint8> Data;
+};
+
+/**
 * Data from the view
 */
 struct FSLVisionViewData
@@ -261,7 +279,7 @@ struct FSLVisionViewData
 	TArray<FSLVisionViewSkelData> SkelEntities;
 
 	// Array of image data pair, render type name to binary data
-	TArray<TPair<FString, TArray<uint8>>> Images;
+	TArray<FSLVisionImageData> Images;
 
 	// Set the initial values
 	void Init(const FString& InId, const FString& InClass)
