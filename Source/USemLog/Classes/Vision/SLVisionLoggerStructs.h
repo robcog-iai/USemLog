@@ -25,6 +25,9 @@ enum class ESLVisionLoggerViewMode : uint8
 	Normal					UMETA(DisplayName = "Normal"),
 };
 
+
+
+
 /**
 * Vision logger parameters
 */
@@ -176,6 +179,9 @@ struct FSLVisionViewEntitiyData
 	// Default ctor
 	FSLVisionViewEntitiyData() {};
 
+	// Init ctor
+	FSLVisionViewEntitiyData(const FString& InId, const FString& InClass) : Id(InId), Class(InClass) {};
+
 	// Unique id of the entity
 	FString Id;
 
@@ -194,8 +200,23 @@ struct FSLVisionViewEntitiyData
 	// Percentage of the image that is clipped by the edge
 	float ClippedPercentage;
 
-	// Relative transform from the view (virtual camera)
-	FTransform RelativePose;
+	//// Relative transform from the view (virtual camera)
+	//FTransform RelativePose;
+};
+
+/**
+* Semantic skeletal entities data in the view
+*/
+struct FSLVisionViewSkelBoneData
+{
+	// Default ctor
+	FSLVisionViewSkelBoneData() {};
+
+	// Init ctor
+	FSLVisionViewSkelBoneData(const FString& InClass) : Class(InClass) {};
+
+	// Bone class
+	FString Class;
 };
 
 /**
@@ -216,9 +237,7 @@ struct FSLVisionViewSkelData
 	FString Class;
 
 	// Bones data
-	//TArray<FSLVisionViewBoneData> Bones;
-
-	// TODO
+	TArray<FSLVisionViewSkelBoneData> Bones;
 };
 
 /**
@@ -244,17 +263,49 @@ struct FSLVisionViewData
 	// Array of image data pair, render type name to binary data
 	TArray<TPair<FString, TArray<uint8>>> Images;
 
-	// Clear all data
+	// Set the initial values
+	void Init(const FString& InId, const FString& InClass)
+	{
+		Id = InId;
+		Class = InClass;
+	}
+
+	// Clear data
 	void Clear()
 	{
-		Id.Empty();
-		Class.Empty();
 		Entities.Empty();
 		SkelEntities.Empty();
 		Images.Empty();
 	}
+};
 
-private:
-	// Init state flag
-	bool bIsInit;
+/**
+* Vision data in the frame
+*/
+struct FSLVisionFrameData
+{
+	// Default ctor
+	FSLVisionFrameData() {};
+
+	// Timestamp of the frame
+	float Timestamp;
+
+	// Resolution of the images
+	FIntPoint Resolution;
+
+	// Array of the views in the frame
+	TArray<FSLVisionViewData> Views;
+
+	// Set the initial values
+	void Init(float InTimestamp, const FIntPoint& InResolution)
+	{
+		Timestamp = InTimestamp;
+		Resolution = InResolution;
+	}
+
+	// Clear data
+	void Clear()
+	{
+		Views.Empty();
+	}
 };

@@ -51,10 +51,12 @@ USLVisionLogger::~USLVisionLogger()
 
 // Init Logger
 void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, const FString& InServerIp, uint16 InServerPort,
-	const FSLVisionLoggerParams& Params)
+	bool bOverwriteVisionData, const FSLVisionLoggerParams& Params)
 {
 	if (!bIsInit)
 	{
+		Resolution = Params.Resolution;
+
 		// Save the folder name if the images are going to be stored locally as well
 		if(Params.bIncludeLocally)
 		{
@@ -77,7 +79,7 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		CreatePoseableMeshes();
 
 		// Connect to the database
-		if(!Connect(InTaskId, InEpisodeId, InServerIp, InServerPort))
+		if(!Connect(InTaskId, InEpisodeId, InServerIp, InServerPort, bOverwriteVisionData))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not connect to the DB.."), *FString(__func__), __LINE__);
 			return;
@@ -155,6 +157,9 @@ void USLVisionLogger::Start(const FString& EpisodeId)
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup first view mode.."), *FString(__func__), __LINE__);
 			return;
 		}
+
+		CurrFrameData.Init(CurrTimestamp, Resolution);
+		CurrViewData.Init(VirtualCameras[CurrVirtualCameraIdx]->GetId(), VirtualCameras[CurrVirtualCameraIdx]->GetClassName());
 		
 		// Start the dominoes
 		RequestScreenshot();
@@ -169,6 +174,9 @@ void USLVisionLogger::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+		// Index the entries in the db
+		CreateIndexes();
+
 		// Mark logger as finished
 		bIsStarted = false;
 		bIsInit = false;
@@ -217,24 +225,63 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 		SaveImageLocally(CompressedBitmap);
 	}
 
+	// Add the image and the view mode to the array
+	CurrViewData.Images.Emplace(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
+
+	// If mask mode is currently active, read out the entity data as well
+	if(ViewModes[CurrViewModeIdx] == ESLVisionLoggerViewMode::Mask)
+	{
+		FSLVisionViewEntitiyData Entity("anId", "aClass");
+		CurrViewData.Entities.Emplace(Entity);
+		Entity.Class = "aClass2";
+		Entity.Id = "anId2";
+		CurrViewData.Entities.Emplace(Entity);
+
+		FSLVisionViewSkelData Skel("aSkelId","sSkelClass");
+		Skel.Bones.Emplace(FSLVisionViewSkelBoneData("ABoneName"));
+		Skel.Bones.Emplace(FSLVisionViewSkelBoneData("ABoneName2"));
+		CurrViewData.SkelEntities.Emplace(Skel);
+
+		FSLVisionViewSkelData Skel2("aSkelId2", "sSkelClass2");
+		Skel.Bones.Emplace(FSLVisionViewSkelBoneData("ABoneName2"));
+		Skel.Bones.Emplace(FSLVisionViewSkelBoneData("ABoneName22"));
+		CurrViewData.SkelEntities.Emplace(Skel2);
+	}
+
 	if(SetupNextViewMode())
 	{
 		RequestScreenshot();
 	}
 	else
 	{
+		// Current view is processed, cache the data
+		CurrFrameData.Views.Emplace(CurrViewData);
+
 		SetupFirstViewMode();
 
 		if(GotoNextCameraView())
 		{
+			// Start a new view data
+			CurrViewData.Clear();
+			CurrViewData.Init(VirtualCameras[CurrVirtualCameraIdx]->GetId(), VirtualCameras[CurrVirtualCameraIdx]->GetClassName());
+
 			RequestScreenshot();
 		}
 		else
 		{
-			GotoFirstCameraView();
+			// Write vision frame data to the database
+			WriteFrameData();
 			
 			if(SetupNextEpisodeFrame())
 			{
+				GotoFirstCameraView();
+
+				CurrViewData.Clear();
+				CurrViewData.Init(VirtualCameras[CurrVirtualCameraIdx]->GetId(), VirtualCameras[CurrVirtualCameraIdx]->GetClassName());
+
+				CurrFrameData.Clear();
+				CurrFrameData.Init(CurrTimestamp, Resolution);
+
 				RequestScreenshot();
 			}
 			else
@@ -328,7 +375,7 @@ bool USLVisionLogger::SetupNextViewMode()
 
 // Connect to the database
 bool USLVisionLogger::Connect(const FString& DBName, const FString& CollName, const FString& ServerIp,
-	uint16 ServerPort)
+	uint16 ServerPort, bool bRemovePrevEntries)
 {
 #if SL_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
@@ -380,8 +427,14 @@ bool USLVisionLogger::Connect(const FString& DBName, const FString& CollName, co
 		bson_destroy(server_ping_cmd);
 		return false;
 	}
-
 	bson_destroy(server_ping_cmd);
+
+	// Remove previously added vision data
+	if(bRemovePrevEntries)
+	{
+		ClearPreviousEntries();
+	}
+
 	return true;
 #else
 	return false;
@@ -471,10 +524,10 @@ bool USLVisionLogger::LoadEpisode(float UpdateRate)
 			}
 
 			// Accumulate entity changes in the frame until the desired update rate is reached
-			GetEntityDataInFrame(&doc_iter, Frame.ActorPoses);
+			ReadFramEntityDataFromBsonIterator(&doc_iter, Frame.ActorPoses);
 
 			// Accumulate skeletal entity changes in the frame until the desired update rate is reached
-			GetSkeletalEntityDataInFrame(&doc_iter, Frame.SkeletalPoses);
+			ReadFrameSkeletalEntityDataFromBsonIterator(&doc_iter, Frame.SkeletalPoses);
 
 			// Check if the desired update rate is reached
 			if(CurrTs - PrevTs >= UpdateRate)
@@ -912,6 +965,191 @@ void USLVisionLogger::ApplyOriginalMaterials()
 	}
 }
 
+// Write the current vision frame data to the database
+void USLVisionLogger::WriteFrameData() const
+{
+#if SL_WITH_LIBMONGO_C
+	// Document holding the frame data in bson format
+	bson_t frame_doc;
+	bson_init(&frame_doc);
+
+	// Add resolution sub doc
+	bson_t res_sub_doc;
+
+	BSON_APPEND_DOCUMENT_BEGIN(&frame_doc, "res", &res_sub_doc);
+	BSON_APPEND_INT32(&res_sub_doc, "x", CurrFrameData.Resolution.X);
+	BSON_APPEND_INT32(&res_sub_doc, "y", CurrFrameData.Resolution.Y);
+	bson_append_document_end(&frame_doc, &res_sub_doc);
+
+	bson_t views_arr;
+	bson_t views_arr_obj;
+
+	bson_t entities_arr;
+	bson_t entities_arr_obj;
+
+	//bson_t skel_arr;
+	//bson_t skel_arr_obj;
+
+	bson_t bones_arr;
+	bson_t bones_arr_obj;
+
+	char i_str[16];
+	const char *i_key;
+	uint32_t i = 0;
+
+	char j_str[16];
+	const char *j_key;
+	uint32_t j = 0;
+
+	char k_str[16];
+	const char *k_key;
+	uint32_t k = 0;
+
+	// Begin adding views data tot the 
+	BSON_APPEND_ARRAY_BEGIN(&frame_doc, "views", &views_arr);
+	
+	// Iterate views (virtual cameras)
+	for (const auto& ViewData : CurrFrameData.Views)
+	{
+		// Start array entry
+		bson_uint32_to_string(i, &i_key, i_str, sizeof i_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&views_arr, i_key, &views_arr_obj);
+
+			BSON_APPEND_UTF8(&views_arr_obj, "class", TCHAR_TO_UTF8(*ViewData.Class));
+			BSON_APPEND_UTF8(&views_arr_obj, "id", TCHAR_TO_UTF8(*ViewData.Id));
+
+			// Create the entities array
+			j = 0;
+			BSON_APPEND_ARRAY_BEGIN(&views_arr_obj, "entities", &entities_arr);
+			for (const auto& Entity : ViewData.Entities)
+			{
+				bson_uint32_to_string(j, &j_key, j_str, sizeof j_str);
+				BSON_APPEND_DOCUMENT_BEGIN(&entities_arr, j_key, &entities_arr_obj);
+
+					BSON_APPEND_UTF8(&entities_arr_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
+					BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
+
+				bson_append_document_end(&entities_arr, &entities_arr_obj);
+				j++;
+			}
+			bson_append_array_end(&views_arr_obj, &entities_arr);
+
+			// Create the skeletal entities array
+			j = 0;
+			BSON_APPEND_ARRAY_BEGIN(&views_arr_obj, "skel_entities", &entities_arr);
+			for (const auto& SkelEntity : ViewData.SkelEntities)
+			{
+				bson_uint32_to_string(j, &j_key, j_str, sizeof j_str);
+				BSON_APPEND_DOCUMENT_BEGIN(&entities_arr, j_key, &entities_arr_obj);
+
+					BSON_APPEND_UTF8(&entities_arr_obj, "id", TCHAR_TO_UTF8(*SkelEntity.Id));
+					BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*SkelEntity.Class));
+
+					// Create the bones array
+					k = 0;
+					BSON_APPEND_ARRAY_BEGIN(&entities_arr_obj, "bones", &bones_arr);
+					for (const auto& Bone : SkelEntity.Bones)
+					{
+						bson_uint32_to_string(k, &k_key, k_str, sizeof k_str);
+						BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, k_key, &bones_arr_obj);
+
+							BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*Bone.Class));
+
+						bson_append_document_end(&bones_arr, &bones_arr_obj);
+						k++;
+					}
+					bson_append_array_end(&entities_arr_obj, &bones_arr);
+
+				bson_append_document_end(&entities_arr, &entities_arr_obj);
+				j++;
+			}
+			bson_append_array_end(&views_arr_obj, &entities_arr);
+
+
+		// End array entry
+		bson_append_document_end(&views_arr, &views_arr_obj);
+		i++;
+	}
+	bson_append_array_end(&frame_doc, &views_arr);
+
+	// Update DB at the given timestamp with the document
+	UpdateDBWithFrameData(&frame_doc, CurrFrameData.Timestamp);
+
+	bson_destroy(&frame_doc);
+#endif //SL_WITH_LIBMONGO_C
+}
+
+// Remove any previously added vision data from the database
+void USLVisionLogger::ClearPreviousEntries() const
+{
+#if SL_WITH_LIBMONGO_C
+	// Remove all previous entries
+	bson_t *selector = BCON_NEW("vision", "{", "$exists", BCON_BOOL(true), "}");
+	bson_t *update = BCON_NEW("$unset", "{", "vision", BCON_BOOL(true), "}");
+	bson_t reply;
+	bson_error_t error;
+	if (!mongoc_collection_update_many(collection, selector, update, NULL, &reply, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+
+	// Check the number removed entries
+	bson_iter_t iter;
+	if (bson_iter_init_find(&iter, &reply, "modifiedCount") && BSON_ITER_HOLDS_INT(&iter))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Number of removed entries = %d"),
+			*FString(__func__), __LINE__, bson_iter_int32(&iter));
+	}
+
+	// Drop previous indexes to allow fast inserts
+	if (!mongoc_collection_drop_index(collection, "vision_1", &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	if (!mongoc_collection_drop_index(collection, "vision.views.id_1", &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	if (!mongoc_collection_drop_index(collection, "vision.views.class_1", &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	if (!mongoc_collection_drop_index(collection, "vision.views.entities.id_1", &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	if (!mongoc_collection_drop_index(collection, "vision.views.entities.class_1", &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	if (!mongoc_collection_drop_index(collection, "vision.views.skel_entities.id_1", &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	if (!mongoc_collection_drop_index(collection, "vision.views.skel_entities.class_1", &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	if (!mongoc_collection_drop_index(collection, "vision.views.skel_entities.bones.class_1", &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+
+	bson_destroy(selector);
+	bson_destroy(update);
+	bson_destroy(&reply);
+#endif //SL_WITH_LIBMONGO_C
+}
+
 // Clean exit, all the Finish() methods will be triggered
 void USLVisionLogger::QuitEditor()
 {
@@ -960,9 +1198,140 @@ void USLVisionLogger::PrintProgress() const
 		CurrTimestamp, LastTs);
 }
 
+// Create indexes on the inserted data
+void USLVisionLogger::CreateIndexes() const
+{
+#if SL_WITH_LIBMONGO_C
+	bson_t* index_command;
+	bson_error_t error;
+
+	bson_t index;
+	bson_init(&index);
+	BSON_APPEND_INT32(&index, "vision", 1);
+	char* index_str = mongoc_collection_keys_to_index_string(&index);
+
+	bson_t idx_id;
+	bson_init(&idx_id);
+	BSON_APPEND_INT32(&idx_id, "vision.views.id", 1);
+	char* idx_id_str = mongoc_collection_keys_to_index_string(&idx_id);
+
+	bson_t idx_cls;
+	bson_init(&idx_cls);
+	BSON_APPEND_INT32(&idx_cls, "vision.views.class", 1);
+	char* idx_cls_str = mongoc_collection_keys_to_index_string(&idx_cls);
+
+	bson_t idx_eid;
+	bson_init(&idx_eid);
+	BSON_APPEND_INT32(&idx_eid, "vision.views.entities.id", 1);
+	char* idx_eid_str = mongoc_collection_keys_to_index_string(&idx_eid);
+
+	bson_t idx_ecls;
+	bson_init(&idx_ecls);
+	BSON_APPEND_INT32(&idx_ecls, "vision.views.entities.class", 1);
+	char* idx_ecls_str = mongoc_collection_keys_to_index_string(&idx_ecls);
+
+	bson_t idx_skeid;
+	bson_init(&idx_skeid);
+	BSON_APPEND_INT32(&idx_skeid, "vision.views.skel_entities.id", 1);
+	char* idx_skeid_str = mongoc_collection_keys_to_index_string(&idx_skeid);
+
+	bson_t idx_skecls;
+	bson_init(&idx_skecls);
+	BSON_APPEND_INT32(&idx_skecls, "vision.views.skel_entities.class", 1);
+	char* idx_skecls_str = mongoc_collection_keys_to_index_string(&idx_skecls);
+
+	bson_t idx_skebcls;
+	bson_init(&idx_skebcls);
+	BSON_APPEND_INT32(&idx_skebcls, "vision.views.skel_entities.bones.class", 1);
+	char* idx_skebcls_str = mongoc_collection_keys_to_index_string(&idx_skebcls);
+
+	index_command = BCON_NEW("createIndexes",
+		BCON_UTF8(mongoc_collection_get_name(collection)),
+		"indexes",
+		"[",
+			"{",
+				"key",
+				BCON_DOCUMENT(&index),
+				"name",
+				BCON_UTF8(index_str),
+				//"unique",
+				//BCON_BOOL(true),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_id),
+				"name",
+				BCON_UTF8(idx_id_str),
+				//"unique",
+				//BCON_BOOL(true),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_cls),
+				"name",
+				BCON_UTF8(idx_cls_str),
+				//"unique",
+				//BCON_BOOL(true),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_eid),
+				"name",
+				BCON_UTF8(idx_eid_str),
+				//"unique",
+				//BCON_BOOL(true),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_ecls),
+				"name",
+				BCON_UTF8(idx_ecls_str),
+				//"unique",
+				//BCON_BOOL(true),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_skeid),
+				"name",
+				BCON_UTF8(idx_skeid_str),
+				//"unique",
+				//BCON_BOOL(true),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_skecls),
+				"name",
+				BCON_UTF8(idx_skecls_str),
+				//"unique",
+				//BCON_BOOL(true),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_skebcls),
+				"name",
+				BCON_UTF8(idx_skebcls_str),
+				//"unique",
+				//BCON_BOOL(true),
+			"}",
+		"]");
+
+	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+
+	// Clean up
+	bson_destroy(index_command);
+	bson_free(index_str);
+	bson_free(idx_id_str);
+	bson_free(idx_cls_str);
+#endif //SL_WITH_LIBMONGO_C
+}
+
 #if SL_WITH_LIBMONGO_C
 // Get the entities data out of the bson iterator
-bool USLVisionLogger::GetEntityDataInFrame(bson_iter_t* doc, TMap<AActor*, FTransform>& OutEntityPoses) const
+bool USLVisionLogger::ReadFramEntityDataFromBsonIterator(bson_iter_t* doc, TMap<AActor*, FTransform>& OutEntityPoses) const
 {
 	// Iterate entities
 	if (bson_iter_find(doc, "entities"))
@@ -1029,7 +1398,7 @@ bool USLVisionLogger::GetEntityDataInFrame(bson_iter_t* doc, TMap<AActor*, FTran
 }
 
 // Get the entities data out of the bson iterator, returns false if there are no entities
-bool USLVisionLogger::GetSkeletalEntityDataInFrame(bson_iter_t* doc, TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>>& OutSkeletalPoses) const
+bool USLVisionLogger::ReadFrameSkeletalEntityDataFromBsonIterator(bson_iter_t* doc, TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>>& OutSkeletalPoses) const
 {
 	// Iterate skeletal entities
 	if (bson_iter_find(doc, "skel_entities"))
@@ -1120,5 +1489,55 @@ bool USLVisionLogger::GetSkeletalEntityDataInFrame(bson_iter_t* doc, TMap<ASLVis
 		return OutSkeletalPoses.Num() > 0;
 	}
 	return false;
+}
+
+// Write the bson doc containing the vision data to the entry corresponding to the timestamp
+bool USLVisionLogger::UpdateDBWithFrameData(bson_t* doc, float Timestamp) const
+{
+	// Return flag
+	bool bSuccess = true;
+
+	// Update the entry at the given timestamp
+	bson_t* selector = BCON_NEW("timestamp", BCON_DOUBLE(CurrFrameData.Timestamp));
+	bson_t* update = BCON_NEW("$set", "{", "vision", BCON_DOCUMENT(doc), "}");
+	bson_t reply;
+	bson_error_t error;
+	if (!mongoc_collection_update_one(collection, selector, update, NULL, &reply, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+
+	// Check if the entry was updated
+	bson_iter_t iter;
+	if (bson_iter_init_find(&iter, &reply, "modifiedCount") && BSON_ITER_HOLDS_INT(&iter))
+	{
+		int32 NumOfUpdatedEntries = bson_iter_int32(&iter);
+		if (NumOfUpdatedEntries == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not update entry at timestamp %f"),
+				*FString(__func__), __LINE__, CurrFrameData.Timestamp);
+			bSuccess = false;
+		}
+		else if (NumOfUpdatedEntries > 1)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Updated more than one (%d) entry at timestamp %f, this should not happen.."),
+				*FString(__func__), __LINE__, NumOfUpdatedEntries, CurrFrameData.Timestamp);
+			bSuccess = false;
+		}
+		else if (NumOfUpdatedEntries == 1)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succesfully updated entry at timestamp %f"),
+				*FString(__func__), __LINE__, CurrFrameData.Timestamp);
+			bSuccess = true;
+		}
+	}
+
+	// Cleanup
+	bson_destroy(selector);
+	bson_destroy(update);
+	bson_destroy(&reply);
+
+	return bSuccess;
 }
 #endif //SL_WITH_LIBMONGO_C

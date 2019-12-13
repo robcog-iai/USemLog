@@ -76,6 +76,7 @@ ASLManager::ASLManager()
 	
 	// Vision data logger default values
 	bLogVisionData = false;
+	bOverwriteVisionData = false;
 	VisionUpdateRate = 0.f;
 	VisionImageResolution = FIntPoint(1920, 1080);
 	bIncludeImagesLocally = false;
@@ -201,7 +202,7 @@ void ASLManager::Init()
 		else if (bLogVisionData)
 		{
 			VisionDataLogger = NewObject<USLVisionLogger>(this);
-			VisionDataLogger->Init(TaskId, EpisodeId, ServerIp, ServerPort, 
+			VisionDataLogger->Init(TaskId, EpisodeId, ServerIp, ServerPort, bOverwriteVisionData,
 				FSLVisionLoggerParams(VisionUpdateRate, VisionImageResolution, bIncludeImagesLocally));
 		}
 		else

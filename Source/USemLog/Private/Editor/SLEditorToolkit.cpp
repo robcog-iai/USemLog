@@ -185,6 +185,11 @@ void FSLEditorToolkit::CheckForVisionCameraClassNameDuplicates(UWorld* World)
 		{
 			ClassName = FTags::GetValue(EdAct, TagType, TagKey);
 		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find %s in the editor world.."),
+				*FString(__func__), __LINE__, *ActItr->GetName());
+		}
 #endif // WITH_EDITOR
 		
 		if(ClassName.IsEmpty())

@@ -22,7 +22,13 @@ public:
 	// Get the semantic class name of the virtual camera
 	FString GetClassName();
 
+	// Get the unique id of the virtual camera
+	FString GetId();
+
 private:
 	// Semantic class name of the virtual vision camera
 	FString ClassName;
+
+	// Semantic uinque id of the virtual vision camera
+	FString Id;
 };

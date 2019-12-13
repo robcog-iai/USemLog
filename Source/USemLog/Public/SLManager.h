@@ -188,7 +188,6 @@ private:
 	// Save the scanned images locally
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	bool bIncludeScansLocally;
-
 	
 	// Metadata logger, use UPROPERTY to avoid GC
 	UPROPERTY()
@@ -280,6 +279,10 @@ private:
 	// Log vision data (this will cause the episode to be replayed for logging image data)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogVisionData;
+
+	// Remove any previously existing entries from the collection
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"))
+	bool bOverwriteVisionData;
 
 	// Resolution of the images
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 1))

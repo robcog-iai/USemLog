@@ -184,7 +184,7 @@ bool FSLWorldWriterMongoC::Connect(const FString& DBName, const FString& Collect
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Collection %s does not exist, creating a new one.."),
 			*FString(__func__), __LINE__, *CollectionName);
 	}
-	
+
 	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*CollectionName));
 
 	// Check server. Ping the "admin" database
@@ -277,8 +277,8 @@ bool FSLWorldWriterMongoC::CreateIndexes() const
 					BCON_DOCUMENT(&index),
 					"name",
 					BCON_UTF8(index_name),
-					//"unique",
-					//BCON_BOOL(false),
+					"unique",
+					BCON_BOOL(true),
 				"}",
 				"{",
 					"key",

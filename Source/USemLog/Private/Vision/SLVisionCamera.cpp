@@ -25,3 +25,13 @@ FString ASLVisionCamera::GetClassName()
 	}
 	return ClassName;
 }
+
+// Get the unique id of the virtual camera
+FString ASLVisionCamera::GetId()
+{
+	if (Id.IsEmpty())
+	{
+		Id = FTags::GetValue(this, "SemLog", "Id");
+	}
+	return Id;
+}

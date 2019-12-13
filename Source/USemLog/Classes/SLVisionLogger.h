@@ -26,7 +26,6 @@ THIRD_PARTY_INCLUDES_END
 #include "SLVisionLogger.generated.h"
 
 // Forward declarations
-//class UMaterialInstanceDynamic;
 class UGameViewportClient;
 class ASLVisionCamera;
 
@@ -48,7 +47,7 @@ public:
 
 	// Init Logger
 	void Init(const FString& InTaskId, const FString& InEpisodeId, const FString& InServerIp, uint16 InServerPort,
-		const FSLVisionLoggerParams& Params);
+		bool bOverwriteVisionData, const FSLVisionLoggerParams& Params);
 
 	// Start logger
 	void Start(const FString& EpisodeId);
@@ -83,7 +82,8 @@ protected:
 
 private:
 	// Connect to the database
-	bool Connect(const FString& DBName, const FString& CollName, const FString& ServerIp, uint16 ServerPort);
+	bool Connect(const FString& DBName, const FString& CollName, const FString& ServerIp,
+		uint16 ServerPort, bool bRemovePrevEntries = false);
 
 	// Disconnect and clean db connection
 	void Disconnect();
@@ -117,6 +117,12 @@ private:
 
 	// Apply original material to current item
 	void ApplyOriginalMaterials();
+
+	// Write the current vision frame data to the database
+	void WriteFrameData() const;
+
+	// Remove any previously added vision data from the database
+	void ClearPreviousEntries() const;
 	
 	// Clean exit, all the Finish() methods will be triggered
 	void QuitEditor();
@@ -127,14 +133,49 @@ private:
 	// Output progress to terminal
 	void PrintProgress() const;
 
-#if SL_WITH_LIBMONGO_C
-	// Get the entities data out of the bson iterator, returns false if there are no entities
-	bool GetEntityDataInFrame(bson_iter_t* doc, TMap<AActor*, FTransform>& OutEntityPoses) const;
+	// Create indexes on the inserted data
+	void CreateIndexes() const;
 
-	// Get the entities data out of the bson iterator, returns false if there are no entities
-	bool GetSkeletalEntityDataInFrame(bson_iter_t* doc, TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>>& OutSkeletalPoses) const;
+#if SL_WITH_LIBMONGO_C
+	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
+	bool ReadFramEntityDataFromBsonIterator(bson_iter_t* doc, TMap<AActor*, FTransform>& OutEntityPoses) const;
+
+	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
+	bool ReadFrameSkeletalEntityDataFromBsonIterator(bson_iter_t* doc, TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>>& OutSkeletalPoses) const;
+
+	// Write the bson doc containing the vision data to the entry corresponding to the timestamp
+	bool UpdateDBWithFrameData(bson_t* doc, float Timestamp) const;
 #endif //SL_WITH_LIBMONGO_C
-	
+
+	/* Inline helpers */
+	FString GetViewModeName(ESLVisionLoggerViewMode Mode) const 
+	{
+		if (Mode == ESLVisionLoggerViewMode::Color)
+		{
+			return FString("Color");
+		}
+		else if (Mode == ESLVisionLoggerViewMode::Unlit)
+		{
+			return FString("Unlit");
+		}
+		else if (Mode == ESLVisionLoggerViewMode::Mask)
+		{
+			return FString("Mask");
+		}
+		else if (Mode == ESLVisionLoggerViewMode::Depth)
+		{
+			return FString("Depth");
+		}
+		else if (Mode == ESLVisionLoggerViewMode::Normal)
+		{
+			return FString("Normal");
+		}
+		else
+		{
+			return FString("Other");
+		}
+	}
+
 protected:
 	// Set when initialized
 	bool bIsInit;
@@ -152,8 +193,11 @@ private:
 	// Episode data to replay
 	FSLVisionEpisode Episode;
 
-	// Vision data in the current frame (timestamp)
-	TArray<FSLVisionViewData> ViewsData;
+	// Holds the vision data of all the views
+	FSLVisionFrameData CurrFrameData;
+
+	// Holds the current view vision data
+	FSLVisionViewData CurrViewData;
 
 	// Map from the skeletal entities to the poseable meshes
 	UPROPERTY() // Avoid GC
@@ -193,6 +237,9 @@ private:
 
 	// Folder name where to store the images if they are going to be stored locally
 	FString TaskId;
+
+	// Image resolution 
+	FIntPoint Resolution;
 	
 #if SL_WITH_LIBMONGO_C
 	// Server uri
