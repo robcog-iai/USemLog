@@ -26,16 +26,16 @@
 // Constructor
 USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
 {
-	ViewModes.Add(ESLVisionLoggerViewMode::Color);
-	ViewModes.Add(ESLVisionLoggerViewMode::Unlit);
-	ViewModes.Add(ESLVisionLoggerViewMode::Mask);
-	ViewModes.Add(ESLVisionLoggerViewMode::Depth);
-	ViewModes.Add(ESLVisionLoggerViewMode::Normal);
+	ViewModes.Add(ESLVisionViewMode::Color);
+	ViewModes.Add(ESLVisionViewMode::Unlit);
+	ViewModes.Add(ESLVisionViewMode::Mask);
+	ViewModes.Add(ESLVisionViewMode::Depth);
+	ViewModes.Add(ESLVisionViewMode::Normal);
 
 	CurrViewModeIdx = INDEX_NONE;
 	CurrVirtualCameraIdx = INDEX_NONE;
 	CurrTimestamp = -1.f;
-	PrevViewMode = ESLVisionLoggerViewMode::NONE;
+	PrevViewMode = ESLVisionViewMode::NONE;
 }
 
 // Destructor
@@ -47,7 +47,7 @@ USLVisionLogger::~USLVisionLogger()
 	}
 
 	// Disconnect and clean db connection
-	Disconnect();
+	DBHandler.Disconnect();
 }
 
 // Init Logger
@@ -80,14 +80,14 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		CreatePoseableMeshes();
 
 		// Connect to the database
-		if(!Connect(InTaskId, InEpisodeId, InServerIp, InServerPort, bOverwriteVisionData))
+		if (!DBHandler.Connect(InTaskId, InEpisodeId, InServerIp, InServerPort, bOverwriteVisionData))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not connect to the DB.."), *FString(__func__), __LINE__);
 			return;
 		}
 
-		// Load the episode data (the poseable meshes should be setup before) 
-		if(!LoadEpisode(Params.UpdateRate))
+		// Load the episode data (the poseable meshes should be setup before)
+		if (!DBHandler.GetEpisodeData(Params.UpdateRate, SkelToPoseableMap, Episode))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not download the episode data.."), *FString(__func__), __LINE__);
 			return;
@@ -117,12 +117,12 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLVisionLogger::ScreenshotCB);
 
 		// Create clones of every visible entity with the mask color
-		if(ViewModes.Contains(ESLVisionLoggerViewMode::Mask))
+		if(ViewModes.Contains(ESLVisionViewMode::Mask))
 		{
 			if(!CreateMaskClones())
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not create mask clones, removing view type.."), *FString(__func__), __LINE__);
-				ViewModes.Remove(ESLVisionLoggerViewMode::Mask);
+				ViewModes.Remove(ESLVisionViewMode::Mask);
 			}
 		}
 		
@@ -176,7 +176,7 @@ void USLVisionLogger::Finish(bool bForced)
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		// Index the entries in the db
-		CreateIndexes();
+		DBHandler.CreateIndexes();
 
 		// Mark logger as finished
 		bIsStarted = false;
@@ -230,7 +230,7 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 	CurrViewData.Images.Emplace(FSLVisionImageData(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap));
 
 	// If mask mode is currently active, read out the entity data as well
-	if(ViewModes[CurrViewModeIdx] == ESLVisionLoggerViewMode::Mask)
+	if(ViewModes[CurrViewModeIdx] == ESLVisionViewMode::Mask)
 	{
 		FSLVisionViewEntitiyData Entity("anId", "aClass");
 		CurrViewData.Entities.Emplace(Entity);
@@ -271,7 +271,7 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 		else
 		{
 			// Write vision frame data to the database
-			WriteFrameData();
+			DBHandler.WriteFrame(CurrFrameData);
 			
 			if(SetupNextEpisodeFrame())
 			{
@@ -372,205 +372,6 @@ bool USLVisionLogger::SetupNextViewMode()
 
 	ApplyViewMode(ViewModes[CurrViewModeIdx]);
 	return true;
-}
-
-// Connect to the database
-bool USLVisionLogger::Connect(const FString& DBName, const FString& CollName, const FString& ServerIp,
-	uint16 ServerPort, bool bRemovePrevEntries)
-{
-#if SL_WITH_LIBMONGO_C
-	// Required to initialize libmongoc's internals	
-	mongoc_init();
-
-	// Stores any error that might appear during the connection
-	bson_error_t error;
-
-	// Safely create a MongoDB URI object from the given string
-	FString Uri = TEXT("mongodb://") + ServerIp + TEXT(":") + FString::FromInt(ServerPort);
-	uri = mongoc_uri_new_with_error(TCHAR_TO_UTF8(*Uri), &error);
-	if (!uri)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s; [Uri=%s]"),
-			*FString(__func__), __LINE__, *FString(error.message), *Uri);
-		return false;
-	}
-
-	// Create a new client instance
-	client = mongoc_client_new_from_uri(uri);
-	if (!client)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not create a mongo client.."), *FString(__func__), __LINE__);
-		return false;
-	}
-
-	// Register the application name so we can track it in the profile logs on the server
-	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SLVIS_" + CollName)));
-	
-	// Get a handle on the database "db_name" and collection "coll_name"
-	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
-
-	// Give a warning if the collection already exists or not
-	if (!mongoc_database_has_collection(database, TCHAR_TO_UTF8(*CollName), &error))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Collection %s does not exist, abort.."),
-			*FString(__func__), __LINE__, *CollName);
-		return false;
-	}
-	collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*CollName));
-
-	// Create a gridfs handle prefixed by fs */
-	gridfs = mongoc_client_get_gridfs(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*CollName), &error);
-	if (!gridfs)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			*FString(__func__), __LINE__, *Uri, *FString(error.message));
-		return false;
-	}
-
-	// Double check that the server is alive. Ping the "admin" database
-	bson_t* server_ping_cmd;
-	server_ping_cmd = BCON_NEW("ping", BCON_INT32(1));
-	if (!mongoc_client_command_simple(client, "admin", server_ping_cmd, NULL, NULL, &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Check server err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-		bson_destroy(server_ping_cmd);
-		return false;
-	}
-	bson_destroy(server_ping_cmd);
-
-	// Remove previously added vision data
-	if(bRemovePrevEntries)
-	{
-		ClearPreviousEntries(DBName,CollName);
-	}
-
-	return true;
-#else
-	return false;
-#endif //SL_WITH_LIBMONGO_C
-}
-
-// Disconnect and clean db connection
-void USLVisionLogger::Disconnect()
-{
-#if SL_WITH_LIBMONGO_C
-	// Release handles and clean up mongoc
-	if(uri)
-	{
-		mongoc_uri_destroy(uri);
-	}
-	if(client)
-	{
-		mongoc_client_destroy(client);
-	}
-	if(database)
-	{
-		mongoc_database_destroy(database);
-	}
-	if(collection)
-	{
-		mongoc_collection_destroy(collection);
-	}
-	mongoc_cleanup();
-#endif //SL_WITH_LIBMONGO_C
-}
-
-// Get the episode data from the database
-bool USLVisionLogger::LoadEpisode(float UpdateRate)
-{
-	float CurrTs = 0.f;
-	float PrevTs = - BIG_NUMBER; // this to make sure the first entry is loaded every time
-	
-#if SL_WITH_LIBMONGO_C
-	bson_error_t error;
-	const bson_t *doc;
-	mongoc_cursor_t *cursor;
-	bson_t *pipeline;
-
-	pipeline = BCON_NEW("pipeline", "[",
-		"{",
-			"$match",
-			"{",
-				"timestamp",
-				"{",
-					"$exists", BCON_BOOL(true),
-				"}",
-			"}",
-		"}",
-		"{",
-			"$sort",
-			"{",
-				"timestamp", BCON_INT32(1),
-			"}",
-		"}",
-		"{",
-			"$project",
-			"{",
-				"_id", BCON_INT32(0),
-				"timestamp", BCON_INT32(1),
-				"entities", BCON_UTF8("$entities"),
-				"skel_entities", BCON_UTF8("$skel_entities"),
-			"}",
-		"}",
-	"]");
-
-	cursor = mongoc_collection_aggregate(
-		collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
-
-	bson_iter_t doc_iter;
-
-	// Store the changes from the previous frame until this one
-	FSLVisionFrame Frame;
-	
-	while (mongoc_cursor_next(cursor, &doc))
-	{
-		if (bson_iter_init(&doc_iter, doc))
-		{
-			// Get the current timestamp
-			if (bson_iter_find(&doc_iter, "timestamp"))
-			{
-				CurrTs = bson_iter_double(&doc_iter);
-			}
-
-			// Accumulate entity changes in the frame until the desired update rate is reached
-			ReadFramEntityDataFromBsonIterator(&doc_iter, Frame.ActorPoses);
-
-			// Accumulate skeletal entity changes in the frame until the desired update rate is reached
-			ReadFrameSkeletalEntityDataFromBsonIterator(&doc_iter, Frame.SkeletalPoses);
-
-			// Check if the desired update rate is reached
-			if(CurrTs - PrevTs >= UpdateRate)
-			{
-				// Update the previous timestamp
-				PrevTs = CurrTs;
-
-				// Add frame to episode and clear it for new data
-				if(Frame.ActorPoses.Num() != 0 || Frame.SkeletalPoses.Num() != 0)
-				{
-					Frame.Timestamp = CurrTs;
-					Episode.AddFrame(Frame);
-					Frame.Clear();
-				}
-			}
-		}
-	}
-	
-	// Check if any errors appeared while iterating the cursor
-	if (mongoc_cursor_error(cursor, &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to iterate all documents.. Err. %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-		return false;
-	}
-
-	mongoc_cursor_destroy(cursor);
-	bson_destroy(pipeline);
-	
-	return true;
-#else
-	return false;
-#endif //SL_WITH_LIBMONGO_C
 }
 
 // Create movable clones of the skeletal meshes, hide originals (call before loading the episode data)
@@ -794,7 +595,7 @@ void USLVisionLogger::InitRenderParameters()
 }
 
 // Apply view mode
-void USLVisionLogger::ApplyViewMode(ESLVisionLoggerViewMode Mode)
+void USLVisionLogger::ApplyViewMode(ESLVisionViewMode Mode)
 {
 	// No change in the rendering view mode
 	if(Mode == PrevViewMode)
@@ -805,17 +606,17 @@ void USLVisionLogger::ApplyViewMode(ESLVisionLoggerViewMode Mode)
 	// Get the console variable for switching buffer views
 	static IConsoleVariable* BufferVisTargetCV = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));
 
-	if(Mode == ESLVisionLoggerViewMode::Color) // viewmode=lit, buffer=false, materials=original;
+	if(Mode == ESLVisionViewMode::Color) // viewmode=lit, buffer=false, materials=original;
 	{
-		if(PrevViewMode == ESLVisionLoggerViewMode::Depth || PrevViewMode == ESLVisionLoggerViewMode::Normal)
+		if(PrevViewMode == ESLVisionViewMode::Depth || PrevViewMode == ESLVisionViewMode::Normal)
 		{
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Unlit)
+		else if(PrevViewMode == ESLVisionViewMode::Unlit)
 		{
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Mask)
+		else if(PrevViewMode == ESLVisionViewMode::Mask)
 		{
 			ApplyOriginalMaterials();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
@@ -827,17 +628,17 @@ void USLVisionLogger::ApplyViewMode(ESLVisionLoggerViewMode Mode)
 		}
 		CurrViewModePostfix = "C";
 	}
-	else if(Mode == ESLVisionLoggerViewMode::Unlit) // viewmode=unlit, buffer=false, materials=original;
+	else if(Mode == ESLVisionViewMode::Unlit) // viewmode=unlit, buffer=false, materials=original;
 	{
-		if(PrevViewMode == ESLVisionLoggerViewMode::Color)
+		if(PrevViewMode == ESLVisionViewMode::Color)
 		{
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Mask)
+		else if(PrevViewMode == ESLVisionViewMode::Mask)
 		{
 			ApplyOriginalMaterials();
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Depth || PrevViewMode == ESLVisionLoggerViewMode::Normal)
+		else if(PrevViewMode == ESLVisionViewMode::Depth || PrevViewMode == ESLVisionViewMode::Normal)
 		{
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
@@ -849,18 +650,18 @@ void USLVisionLogger::ApplyViewMode(ESLVisionLoggerViewMode Mode)
 		}
 		CurrViewModePostfix = "U";
 	}
-	else if(Mode == ESLVisionLoggerViewMode::Mask) // viewmode=unlit, buffer=false, materials=mask;
+	else if(Mode == ESLVisionViewMode::Mask) // viewmode=unlit, buffer=false, materials=mask;
 	{
-		if(PrevViewMode == ESLVisionLoggerViewMode::Unlit)
+		if(PrevViewMode == ESLVisionViewMode::Unlit)
 		{
 			ApplyMaskMaterials();
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Color)
+		else if(PrevViewMode == ESLVisionViewMode::Color)
 		{
 			ApplyMaskMaterials();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Depth || PrevViewMode == ESLVisionLoggerViewMode::Normal)
+		else if(PrevViewMode == ESLVisionViewMode::Depth || PrevViewMode == ESLVisionViewMode::Normal)
 		{
 			ApplyMaskMaterials();
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
@@ -874,27 +675,27 @@ void USLVisionLogger::ApplyViewMode(ESLVisionLoggerViewMode Mode)
 		}
 		CurrViewModePostfix = "M";
 	}
-	else if(Mode == ESLVisionLoggerViewMode::Depth) // viewmode=unlit, buffer=false, materials=original;
+	else if(Mode == ESLVisionViewMode::Depth) // viewmode=unlit, buffer=false, materials=original;
 	{
-		if(PrevViewMode == ESLVisionLoggerViewMode::Mask)
+		if(PrevViewMode == ESLVisionViewMode::Mask)
 		{
 			ApplyOriginalMaterials();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Unlit)
+		else if(PrevViewMode == ESLVisionViewMode::Unlit)
 		{
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Color)
+		else if(PrevViewMode == ESLVisionViewMode::Color)
 		{
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Normal)
+		else if(PrevViewMode == ESLVisionViewMode::Normal)
 		{
 			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
 		}
@@ -907,26 +708,26 @@ void USLVisionLogger::ApplyViewMode(ESLVisionLoggerViewMode Mode)
 		}
 		CurrViewModePostfix = "D";
 	}
-	else if(Mode == ESLVisionLoggerViewMode::Normal) // viewmode=lit, buffer=true, materials=original;
+	else if(Mode == ESLVisionViewMode::Normal) // viewmode=lit, buffer=true, materials=original;
 	{
-		if(PrevViewMode == ESLVisionLoggerViewMode::Depth)
+		if(PrevViewMode == ESLVisionViewMode::Depth)
 		{
 			BufferVisTargetCV->Set(*FString("WorldNormal"));
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Mask)
+		else if(PrevViewMode == ESLVisionViewMode::Mask)
 		{
 			ApplyOriginalMaterials();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("WorldNormal"));
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Unlit)
+		else if(PrevViewMode == ESLVisionViewMode::Unlit)
 		{
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("WorldNormal"));
 		}
-		else if(PrevViewMode == ESLVisionLoggerViewMode::Color)
+		else if(PrevViewMode == ESLVisionViewMode::Color)
 		{
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("WorldNormal"));
@@ -973,223 +774,6 @@ void USLVisionLogger::ApplyOriginalMaterials()
 		Pair.Key->SetActorHiddenInGame(false);
 		Pair.Value->SetActorHiddenInGame(true);
 	}
-}
-
-// Write the current vision frame data to the database
-void USLVisionLogger::WriteFrameData() const
-{
-#if SL_WITH_LIBMONGO_C
-	// Document holding the frame data in bson format
-	bson_t frame_doc;
-	bson_init(&frame_doc);
-
-	// Add resolution sub doc
-	bson_t res_sub_doc;
-
-	BSON_APPEND_DOCUMENT_BEGIN(&frame_doc, "res", &res_sub_doc);
-	BSON_APPEND_INT32(&res_sub_doc, "x", CurrFrameData.Resolution.X);
-	BSON_APPEND_INT32(&res_sub_doc, "y", CurrFrameData.Resolution.Y);
-	bson_append_document_end(&frame_doc, &res_sub_doc);
-
-	bson_t views_arr;
-	bson_t views_arr_obj;
-
-	bson_t entities_arr;
-	bson_t entities_arr_obj;
-
-	bson_t imgs_arr;
-	bson_t imgs_arr_obj;
-
-	bson_t bones_arr;
-	bson_t bones_arr_obj;
-
-	char i_str[16];
-	const char *i_key;
-	uint32_t i = 0;
-
-	char j_str[16];
-	const char *j_key;
-	uint32_t j = 0;
-
-	char k_str[16];
-	const char *k_key;
-	uint32_t k = 0;
-
-	bson_oid_t file_oid;
-
-	// Begin adding views data tot the 
-	BSON_APPEND_ARRAY_BEGIN(&frame_doc, "views", &views_arr);
-	
-	// Iterate views (virtual cameras)
-	for (const auto& ViewData : CurrFrameData.Views)
-	{
-		// Start array entry
-		bson_uint32_to_string(i, &i_key, i_str, sizeof i_str);
-		BSON_APPEND_DOCUMENT_BEGIN(&views_arr, i_key, &views_arr_obj);
-
-			BSON_APPEND_UTF8(&views_arr_obj, "class", TCHAR_TO_UTF8(*ViewData.Class));
-			BSON_APPEND_UTF8(&views_arr_obj, "id", TCHAR_TO_UTF8(*ViewData.Id));
-
-			// Create the entities array
-			j = 0;
-			BSON_APPEND_ARRAY_BEGIN(&views_arr_obj, "entities", &entities_arr);
-			for (const auto& Entity : ViewData.Entities)
-			{
-				bson_uint32_to_string(j, &j_key, j_str, sizeof j_str);
-				BSON_APPEND_DOCUMENT_BEGIN(&entities_arr, j_key, &entities_arr_obj);
-
-					BSON_APPEND_UTF8(&entities_arr_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
-					BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
-
-				bson_append_document_end(&entities_arr, &entities_arr_obj);
-				j++;
-			}
-			bson_append_array_end(&views_arr_obj, &entities_arr);
-
-			// Create the skeletal entities array
-			j = 0;
-			BSON_APPEND_ARRAY_BEGIN(&views_arr_obj, "skel_entities", &entities_arr);
-			for (const auto& SkelEntity : ViewData.SkelEntities)
-			{
-				bson_uint32_to_string(j, &j_key, j_str, sizeof j_str);
-				BSON_APPEND_DOCUMENT_BEGIN(&entities_arr, j_key, &entities_arr_obj);
-
-					BSON_APPEND_UTF8(&entities_arr_obj, "id", TCHAR_TO_UTF8(*SkelEntity.Id));
-					BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*SkelEntity.Class));
-
-					// Create the bones array
-					k = 0;
-					BSON_APPEND_ARRAY_BEGIN(&entities_arr_obj, "bones", &bones_arr);
-					for (const auto& Bone : SkelEntity.Bones)
-					{
-						bson_uint32_to_string(k, &k_key, k_str, sizeof k_str);
-						BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, k_key, &bones_arr_obj);
-
-							BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*Bone.Class));
-
-						bson_append_document_end(&bones_arr, &bones_arr_obj);
-						k++;
-					}
-					bson_append_array_end(&entities_arr_obj, &bones_arr);
-
-				bson_append_document_end(&entities_arr, &entities_arr_obj);
-				j++;
-			}
-			bson_append_array_end(&views_arr_obj, &entities_arr);
-
-			// Create the images array
-			k = 0;
-			BSON_APPEND_ARRAY_BEGIN(&views_arr_obj, "images", &imgs_arr);
-			for (const auto& Img : ViewData.Images)
-			{
-				if (AddToGridFs(Img.Data, &file_oid))
-				{
-					bson_uint32_to_string(k, &k_key, k_str, sizeof k_str);
-					BSON_APPEND_DOCUMENT_BEGIN(&imgs_arr, k_key, &imgs_arr_obj);
-
-					BSON_APPEND_UTF8(&imgs_arr_obj, "type", TCHAR_TO_UTF8(*Img.Type));
-					BSON_APPEND_OID(&imgs_arr_obj, "file_id", (const bson_oid_t*)&file_oid);
-
-					bson_append_document_end(&imgs_arr, &imgs_arr_obj);
-					k++;
-				}
-			}
-			bson_append_array_end(&views_arr_obj, &imgs_arr);
-
-		// End array entry
-		bson_append_document_end(&views_arr, &views_arr_obj);
-		i++;
-	}
-	bson_append_array_end(&frame_doc, &views_arr);
-
-	// Update DB at the given timestamp with the document
-	UpdateDBWithFrameData(&frame_doc, CurrFrameData.Timestamp);
-
-	bson_destroy(&frame_doc);
-#endif //SL_WITH_LIBMONGO_C
-}
-
-// Remove any previously added vision data from the database
-void USLVisionLogger::ClearPreviousEntries(const FString& DBName, const FString& CollName) const
-{
-#if SL_WITH_LIBMONGO_C
-	// Remove all previous entries
-	bson_t *selector = BCON_NEW("vision", "{", "$exists", BCON_BOOL(true), "}");
-	bson_t *update = BCON_NEW("$unset", "{", "vision", BCON_BOOL(true), "}");
-	bson_t reply;
-	bson_error_t error;
-	if (!mongoc_collection_update_many(collection, selector, update, NULL, &reply, &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-
-	// Check the number removed entries
-	bson_iter_t iter;
-	if (bson_iter_init_find(&iter, &reply, "modifiedCount") && BSON_ITER_HOLDS_INT(&iter))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Number of removed entries = %d"),
-			*FString(__func__), __LINE__, bson_iter_int32(&iter));
-	}
-
-	// Remove gridfs data
-	if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(CollName + ".chunks"))), &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(CollName + ".files"))), &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-
-	// Drop previous indexes to allow fast inserts
-	if (!mongoc_collection_drop_index(collection, "vision_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.id_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.class_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.entities.id_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.entities.class_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.skel_entities.id_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.skel_entities.class_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.skel_entities.bones.class_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-
-	bson_destroy(selector);
-	bson_destroy(update);
-	bson_destroy(&reply);
-#endif //SL_WITH_LIBMONGO_C
 }
 
 // Clean exit, all the Finish() methods will be triggered
@@ -1240,402 +824,32 @@ void USLVisionLogger::PrintProgress() const
 		CurrTimestamp, LastTs);
 }
 
-// Create indexes on the inserted data
-void USLVisionLogger::CreateIndexes() const
+// Get view mode as string
+FString USLVisionLogger::GetViewModeName(ESLVisionViewMode Mode) const
 {
-#if SL_WITH_LIBMONGO_C
-	bson_t* index_command;
-	bson_error_t error;
-
-	bson_t index;
-	bson_init(&index);
-	BSON_APPEND_INT32(&index, "vision", 1);
-	char* index_str = mongoc_collection_keys_to_index_string(&index);
-
-	bson_t idx_id;
-	bson_init(&idx_id);
-	BSON_APPEND_INT32(&idx_id, "vision.views.id", 1);
-	char* idx_id_str = mongoc_collection_keys_to_index_string(&idx_id);
-
-	bson_t idx_cls;
-	bson_init(&idx_cls);
-	BSON_APPEND_INT32(&idx_cls, "vision.views.class", 1);
-	char* idx_cls_str = mongoc_collection_keys_to_index_string(&idx_cls);
-
-	bson_t idx_eid;
-	bson_init(&idx_eid);
-	BSON_APPEND_INT32(&idx_eid, "vision.views.entities.id", 1);
-	char* idx_eid_str = mongoc_collection_keys_to_index_string(&idx_eid);
-
-	bson_t idx_ecls;
-	bson_init(&idx_ecls);
-	BSON_APPEND_INT32(&idx_ecls, "vision.views.entities.class", 1);
-	char* idx_ecls_str = mongoc_collection_keys_to_index_string(&idx_ecls);
-
-	bson_t idx_skeid;
-	bson_init(&idx_skeid);
-	BSON_APPEND_INT32(&idx_skeid, "vision.views.skel_entities.id", 1);
-	char* idx_skeid_str = mongoc_collection_keys_to_index_string(&idx_skeid);
-
-	bson_t idx_skecls;
-	bson_init(&idx_skecls);
-	BSON_APPEND_INT32(&idx_skecls, "vision.views.skel_entities.class", 1);
-	char* idx_skecls_str = mongoc_collection_keys_to_index_string(&idx_skecls);
-
-	bson_t idx_skebcls;
-	bson_init(&idx_skebcls);
-	BSON_APPEND_INT32(&idx_skebcls, "vision.views.skel_entities.bones.class", 1);
-	char* idx_skebcls_str = mongoc_collection_keys_to_index_string(&idx_skebcls);
-
-	index_command = BCON_NEW("createIndexes",
-		BCON_UTF8(mongoc_collection_get_name(collection)),
-		"indexes",
-		"[",
-			"{",
-				"key",
-				BCON_DOCUMENT(&index),
-				"name",
-				BCON_UTF8(index_str),
-				//"unique",
-				//BCON_BOOL(true),
-			"}",
-			"{",
-				"key",
-				BCON_DOCUMENT(&idx_id),
-				"name",
-				BCON_UTF8(idx_id_str),
-				//"unique",
-				//BCON_BOOL(true),
-			"}",
-			"{",
-				"key",
-				BCON_DOCUMENT(&idx_cls),
-				"name",
-				BCON_UTF8(idx_cls_str),
-				//"unique",
-				//BCON_BOOL(true),
-			"}",
-			"{",
-				"key",
-				BCON_DOCUMENT(&idx_eid),
-				"name",
-				BCON_UTF8(idx_eid_str),
-				//"unique",
-				//BCON_BOOL(true),
-			"}",
-			"{",
-				"key",
-				BCON_DOCUMENT(&idx_ecls),
-				"name",
-				BCON_UTF8(idx_ecls_str),
-				//"unique",
-				//BCON_BOOL(true),
-			"}",
-			"{",
-				"key",
-				BCON_DOCUMENT(&idx_skeid),
-				"name",
-				BCON_UTF8(idx_skeid_str),
-				//"unique",
-				//BCON_BOOL(true),
-			"}",
-			"{",
-				"key",
-				BCON_DOCUMENT(&idx_skecls),
-				"name",
-				BCON_UTF8(idx_skecls_str),
-				//"unique",
-				//BCON_BOOL(true),
-			"}",
-			"{",
-				"key",
-				BCON_DOCUMENT(&idx_skebcls),
-				"name",
-				BCON_UTF8(idx_skebcls_str),
-				//"unique",
-				//BCON_BOOL(true),
-			"}",
-		"]");
-
-	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
+	if (Mode == ESLVisionViewMode::Color)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
+		return FString("Color");
 	}
-
-	// Clean up
-	bson_destroy(index_command);
-	bson_free(index_str);
-	bson_free(idx_id_str);
-	bson_free(idx_cls_str);
-#endif //SL_WITH_LIBMONGO_C
-}
-
-#if SL_WITH_LIBMONGO_C
-// Get the entities data out of the bson iterator
-bool USLVisionLogger::ReadFramEntityDataFromBsonIterator(bson_iter_t* doc, TMap<AActor*, FTransform>& OutEntityPoses) const
-{
-	// Iterate entities
-	if (bson_iter_find(doc, "entities"))
+	else if (Mode == ESLVisionViewMode::Unlit)
 	{
-		bson_iter_t child_iter;				// entities,
-		bson_iter_t sub_child_iter;			// id, loc, rot
-		bson_iter_t sub_sub_child_iter;		// x,y,z,w (entity)
-		
-		// Check if there are any entities
-		if (bson_iter_recurse(doc, &child_iter))
-		{
-			FString Id;
-			FVector Loc;
-			FQuat Quat;
-					
-			while(bson_iter_next(&child_iter))
-			{
-				if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find(&sub_child_iter, "id"))
-				{
-					Id = FString(bson_iter_utf8(&sub_child_iter, NULL));
-				}
-				if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "loc.x", &sub_sub_child_iter))
-				{
-					Loc.X = bson_iter_double(&sub_sub_child_iter);
-				}
-				if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "loc.y", &sub_sub_child_iter))
-				{
-					Loc.Y = bson_iter_double(&sub_sub_child_iter);
-				}
-				if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "loc.z", &sub_sub_child_iter))
-				{
-					Loc.Z = bson_iter_double(&sub_sub_child_iter);
-				}
-				if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "rot.x", &sub_sub_child_iter))
-				{
-					Quat.X = bson_iter_double(&sub_sub_child_iter);
-				}
-				if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "rot.y", &sub_sub_child_iter))
-				{
-					Quat.Y = bson_iter_double(&sub_sub_child_iter);
-				}
-				if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "rot.z", &sub_sub_child_iter))
-				{
-					Quat.Z = bson_iter_double(&sub_sub_child_iter);
-				}
-				if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find_descendant(&sub_child_iter, "rot.w", &sub_sub_child_iter))
-				{
-					Quat.W = bson_iter_double(&sub_sub_child_iter);
-				}
-
-				// Add entity
-				if(AActor* Act = FSLEntitiesManager::GetInstance()->GetActor(Id))
-				{
-					OutEntityPoses.Emplace(Act, FConversions::ROSToU(FTransform(Quat, Loc)));
-				}
-			}
-		}
-		return OutEntityPoses.Num() > 0;
+		return FString("Unlit");
+	}
+	else if (Mode == ESLVisionViewMode::Mask)
+	{
+		return FString("Mask");
+	}
+	else if (Mode == ESLVisionViewMode::Depth)
+	{
+		return FString("Depth");
+	}
+	else if (Mode == ESLVisionViewMode::Normal)
+	{
+		return FString("Normal");
 	}
 	else
 	{
-		return false;
+		return FString("Other");
 	}
 }
 
-// Get the entities data out of the bson iterator, returns false if there are no entities
-bool USLVisionLogger::ReadFrameSkeletalEntityDataFromBsonIterator(bson_iter_t* doc, TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>>& OutSkeletalPoses) const
-{
-	// Iterate skeletal entities
-	if (bson_iter_find(doc, "skel_entities"))
-	{
-		bson_iter_t child_iter;				// skel_entities
-		bson_iter_t sub_child_iter;			// bones
-		bson_iter_t sub_sub_child_iter;		// bones (array)
-		
-		if (bson_iter_recurse(doc, &child_iter))
-		{
-			FString Id;
-			TMap<FName, FTransform> BonesMap;
-					
-			while (bson_iter_next(&child_iter))
-			{
-				if (bson_iter_recurse(&child_iter, &sub_child_iter) && bson_iter_find(&sub_child_iter, "id"))
-				{
-					Id = FString(bson_iter_utf8(&sub_child_iter, NULL));
-				}
-						
-				if (bson_iter_recurse(&child_iter, &sub_sub_child_iter) && bson_iter_find(&sub_sub_child_iter, "bones"))
-				{
-					bson_iter_t bones_child;			// array  obj
-					bson_iter_t bones_sub_child;		// name, loc, rot
-					bson_iter_t bones_sub_sub_child;	// x, y , z, w
-							
-					FName BoneName;
-					FVector Loc;
-					FQuat Quat;
-							
-					if (bson_iter_recurse(&sub_sub_child_iter, &bones_child))
-					{
-						while (bson_iter_next(&bones_child))
-						{
-							if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find(&bones_sub_child, "name"))
-							{
-								BoneName = FName(bson_iter_utf8(&bones_sub_child, NULL));
-							}
-							if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "loc.x", &bones_sub_sub_child))
-							{
-								Loc.X = bson_iter_double(&bones_sub_sub_child);
-							}
-							if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "loc.y", &bones_sub_sub_child))
-							{
-								Loc.Y = bson_iter_double(&bones_sub_sub_child);
-							}
-							if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "loc.z", &bones_sub_sub_child))
-							{
-								Loc.Z = bson_iter_double(&bones_sub_sub_child);
-							}
-							if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "rot.x", &bones_sub_sub_child))
-							{
-								Quat.X = bson_iter_double(&bones_sub_sub_child);
-							}
-							if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "rot.y", &bones_sub_sub_child))
-							{
-								Quat.Y = bson_iter_double(&bones_sub_sub_child);
-							}
-							if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "rot.z", &bones_sub_sub_child))
-							{
-								Quat.Z = bson_iter_double(&bones_sub_sub_child);
-							}
-							if (bson_iter_recurse(&bones_child, &bones_sub_child) && bson_iter_find_descendant(&bones_sub_child, "rot.w", &bones_sub_sub_child))
-							{
-								Quat.W = bson_iter_double(&bones_sub_sub_child);
-							}
-									
-							BonesMap.Add(BoneName, FConversions::ROSToU(FTransform(Quat, Loc)));
-						}
-					}
-				}
-
-				// Add skeletal entity
-				if(ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor((Id)))
-				{
-					if(ASLVisionPoseableMeshActor* const* PMA = SkelToPoseableMap.Find(SkMA))
-					{
-						OutSkeletalPoses.Emplace(*PMA, BonesMap);
-					}
-					else
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find poseable mesh clone actor for %s, did you run the setup before?"),
-							*FString(__func__), __LINE__, *SkMA->GetName());
-					}
-				}
-			}
-		}
-		return OutSkeletalPoses.Num() > 0;
-	}
-	return false;
-}
-
-// Save image to gridfs, get the file oid and return true if succeeded
-bool USLVisionLogger::AddToGridFs(const TArray<uint8>& InData, bson_oid_t* out_oid) const
-{
-	mongoc_gridfs_file_t *file;
-	mongoc_gridfs_file_opt_t file_opt = { 0 };
-	const bson_value_t* file_id_val;
-	mongoc_iovec_t iov;
-	bson_error_t error;
-
-	//bson_t* metadata_doc;
-	//metadata_doc = BCON_NEW(
-	//	"type", BCON_UTF8(TCHAR_TO_UTF8(*ImgData.RenderType))
-	//);
-	//file_opt.filename = "no_name";
-	//file_opt.metadata = metadata_doc;
-
-	// Create new file
-	file = mongoc_gridfs_create_file(gridfs, &file_opt);
-
-	// Set data binary and length
-	iov.iov_base = (char*)(InData.GetData());
-	iov.iov_len = InData.Num();
-
-	// Write data to gridfs
-	if (iov.iov_len != mongoc_gridfs_file_writev(file, &iov, 1, 0))
-	{
-		if (mongoc_gridfs_file_error(file, &error))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
-				*FString(__func__), __LINE__, *FString(error.message));
-		}
-		mongoc_gridfs_file_destroy(file);
-		return false;
-	}
-
-	// Saves modifications to file to the MongoDB server
-	if (!mongoc_gridfs_file_save(file))
-	{
-		mongoc_gridfs_file_error(file, &error);
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Err.:%s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-		mongoc_gridfs_file_destroy(file);
-		return false;
-	}
-
-	// Set the out oid
-	file_id_val = mongoc_gridfs_file_get_id(file);
-	bson_oid_copy(&file_id_val->value.v_oid, out_oid);
-
-	// Clean up
-	//bson_destroy(metadata_doc);
-	mongoc_gridfs_file_destroy(file);
-
-	return true;
-}
-
-// Write the bson doc containing the vision data to the entry corresponding to the timestamp
-bool USLVisionLogger::UpdateDBWithFrameData(bson_t* doc, float Timestamp) const
-{
-	// Return flag
-	bool bSuccess = true;
-
-	// Update the entry at the given timestamp
-	bson_t* selector = BCON_NEW("timestamp", BCON_DOUBLE(CurrFrameData.Timestamp));
-	bson_t* update = BCON_NEW("$set", "{", "vision", BCON_DOCUMENT(doc), "}");
-	bson_t reply;
-	bson_error_t error;
-	if (!mongoc_collection_update_one(collection, selector, update, NULL, &reply, &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-
-	// Check if the entry was updated
-	bson_iter_t iter;
-	if (bson_iter_init_find(&iter, &reply, "modifiedCount") && BSON_ITER_HOLDS_INT(&iter))
-	{
-		int32 NumOfUpdatedEntries = bson_iter_int32(&iter);
-		if (NumOfUpdatedEntries == 0)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not update entry at timestamp %f"),
-				*FString(__func__), __LINE__, CurrFrameData.Timestamp);
-			bSuccess = false;
-		}
-		else if (NumOfUpdatedEntries > 1)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Updated more than one (%d) entry at timestamp %f, this should not happen.."),
-				*FString(__func__), __LINE__, NumOfUpdatedEntries, CurrFrameData.Timestamp);
-			bSuccess = false;
-		}
-		else if (NumOfUpdatedEntries == 1)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succesfully updated entry at timestamp %f"),
-				*FString(__func__), __LINE__, CurrFrameData.Timestamp);
-			bSuccess = true;
-		}
-	}
-
-	// Cleanup
-	bson_destroy(selector);
-	bson_destroy(update);
-	bson_destroy(&reply);
-
-	return bSuccess;
-}
-#endif //SL_WITH_LIBMONGO_C

@@ -8,21 +8,10 @@
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 
-#include "Vision/SLVisionLoggerStructs.h"
+#include "Vision/SLVisionStructs.h"
 #include "Vision/SLVisionPoseableMeshActor.h"
+#include "Vision/SLVisionDBHandler.h"
 
-#if SL_WITH_LIBMONGO_C
-class ASLVisionPoseableMeshActor;
-THIRD_PARTY_INCLUDES_START
-#if PLATFORM_WINDOWS
-#include "Windows/AllowWindowsPlatformTypes.h"
-#include <mongoc/mongoc.h>
-#include "Windows/HideWindowsPlatformTypes.h"
-#else
-#include <mongoc/mongoc.h>
-#endif // #if PLATFORM_WINDOWS
-THIRD_PARTY_INCLUDES_END
-#endif //SL_WITH_LIBMONGO_C
 #include "SLVisionLogger.generated.h"
 
 // Forward declarations
@@ -30,8 +19,8 @@ class UGameViewportClient;
 class ASLVisionCamera;
 
 /**
- * Vision logger, can only be used with USemLogVision module
- * it saves the episode as a replay
+ * Replays episodes from different perspectives and view modes,
+ * while updating the data with vision related annotations
  */
 UCLASS()
 class USLVisionLogger : public UObject
@@ -81,16 +70,6 @@ protected:
 	bool SetupNextViewMode();
 
 private:
-	// Connect to the database
-	bool Connect(const FString& DBName, const FString& CollName, const FString& ServerIp,
-		uint16 ServerPort, bool bRemovePrevEntries = false);
-
-	// Disconnect and clean db connection
-	void Disconnect();
-
-	// Get episode data from the database (UpdateRate = 0 means all the data)
-	bool LoadEpisode(float UpdateRate);
-
 	// Prepare the world entities by disabling physics and setting them to movable
 	void InitWorldEntities();
 	
@@ -110,7 +89,7 @@ private:
 	void InitRenderParameters();
 	
 	// Apply view mode
-	void ApplyViewMode(ESLVisionLoggerViewMode Mode);
+	void ApplyViewMode(ESLVisionViewMode Mode);
 
 	// Apply mask materials 
 	void ApplyMaskMaterials();
@@ -118,12 +97,6 @@ private:
 	// Apply original material to current item
 	void ApplyOriginalMaterials();
 
-	// Write the current vision frame data to the database
-	void WriteFrameData() const;
-
-	// Remove any previously added vision data from the database
-	void ClearPreviousEntries(const FString& DBName, const FString& CollName) const;
-	
 	// Clean exit, all the Finish() methods will be triggered
 	void QuitEditor();
 	
@@ -133,51 +106,8 @@ private:
 	// Output progress to terminal
 	void PrintProgress() const;
 
-	// Create indexes on the inserted data
-	void CreateIndexes() const;
-
-#if SL_WITH_LIBMONGO_C
-	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
-	bool ReadFramEntityDataFromBsonIterator(bson_iter_t* doc, TMap<AActor*, FTransform>& OutEntityPoses) const;
-
-	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
-	bool ReadFrameSkeletalEntityDataFromBsonIterator(bson_iter_t* doc, TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>>& OutSkeletalPoses) const;
-
-	// Save image to gridfs, get the file oid and return true if succeeded
-	bool AddToGridFs(const TArray<uint8>& InData, bson_oid_t* out_oid) const;
-
-	// Write the bson doc containing the vision data to the entry corresponding to the timestamp
-	bool UpdateDBWithFrameData(bson_t* doc, float Timestamp) const;
-#endif //SL_WITH_LIBMONGO_C
-
-	/* Inline helpers */
-	FString GetViewModeName(ESLVisionLoggerViewMode Mode) const 
-	{
-		if (Mode == ESLVisionLoggerViewMode::Color)
-		{
-			return FString("Color");
-		}
-		else if (Mode == ESLVisionLoggerViewMode::Unlit)
-		{
-			return FString("Unlit");
-		}
-		else if (Mode == ESLVisionLoggerViewMode::Mask)
-		{
-			return FString("Mask");
-		}
-		else if (Mode == ESLVisionLoggerViewMode::Depth)
-		{
-			return FString("Depth");
-		}
-		else if (Mode == ESLVisionLoggerViewMode::Normal)
-		{
-			return FString("Normal");
-		}
-		else
-		{
-			return FString("Other");
-		}
-	}
+	// Get view mode as string
+	FString GetViewModeName(ESLVisionViewMode Mode) const;
 
 protected:
 	// Set when initialized
@@ -190,6 +120,9 @@ protected:
 	bool bIsFinished;
 
 private:
+	// Writes and reads the data from the mongo database
+	FSLVisionDBHandler DBHandler;
+
 	// Current frame timestamp
 	float CurrTimestamp;
 
@@ -221,7 +154,7 @@ private:
 	TArray<ASLVisionCamera*> VirtualCameras;
 	
 	// View modes
-	TArray<ESLVisionLoggerViewMode> ViewModes;
+	TArray<ESLVisionViewMode> ViewModes;
 	
 	// Currently active virtual camera view
 	int32 CurrVirtualCameraIdx;
@@ -230,7 +163,7 @@ private:
 	int32 CurrViewModeIdx;
 
 	// Previous view mode
-	ESLVisionLoggerViewMode PrevViewMode;
+	ESLVisionViewMode PrevViewMode;
 
 	// Viewmode postfix (filename helpers)
 	FString CurrViewModePostfix;
@@ -243,21 +176,4 @@ private:
 
 	// Image resolution 
 	FIntPoint Resolution;
-	
-#if SL_WITH_LIBMONGO_C
-	// Server uri
-	mongoc_uri_t* uri;
-
-	// MongoC connection client
-	mongoc_client_t* client;
-
-	// Database to access
-	mongoc_database_t* database;
-
-	// Database collection
-	mongoc_collection_t* collection;
-
-	// Store image binaries
-	mongoc_gridfs_t* gridfs;
-#endif //SL_WITH_LIBMONGO_C	
 };

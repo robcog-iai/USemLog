@@ -5,17 +5,13 @@
 
 #include "CoreMinimal.h"
 #include "Engine/StaticMeshActor.h"
-#include "Animation/SkeletalMeshActor.h"
-
 #include "Vision/SLVisionPoseableMeshActor.h"
-
-
 
 /**
 * View modes
 */
 UENUM()
-enum class ESLVisionLoggerViewMode : uint8
+enum class ESLVisionViewMode : uint8
 {
 	NONE					UMETA(DisplayName = "None"),
 	Color					UMETA(DisplayName = "Color"),
