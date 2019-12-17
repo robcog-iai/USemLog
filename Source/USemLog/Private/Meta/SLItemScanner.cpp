@@ -899,15 +899,7 @@ void USLItemScanner::GetColorPixelNumAndBB(const TArray<FColor>& InBitmap, const
 		//		*FString(__func__), __LINE__, RowIdx, ColIdx, OutBBMin.X, OutBBMin.Y, OutBBMax.X, OutBBMax.Y);
 		//}
 
-		// Next column
-		ColIdx++;
 
-		// Check for row change
-		if(ColIdx > Width - 1)
-		{
-			ColIdx = 0;
-			RowIdx++;
-		}
 	}
 }
 

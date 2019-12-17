@@ -11,6 +11,7 @@
 #include "Vision/SLVisionStructs.h"
 #include "Vision/SLVisionPoseableMeshActor.h"
 #include "Vision/SLVisionDBHandler.h"
+#include "Vision/SLVisionImageHandler.h"
 
 #include "SLVisionLogger.generated.h"
 
@@ -122,6 +123,9 @@ protected:
 private:
 	// Writes and reads the data from the mongo database
 	FSLVisionDBHandler DBHandler;
+
+	// Gathers semantics from the images
+	FSLVisionImageHandler ImgHandler;
 
 	// Current frame timestamp
 	float CurrTimestamp;

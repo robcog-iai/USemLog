@@ -22,8 +22,6 @@ enum class ESLVisionViewMode : uint8
 };
 
 
-
-
 /**
 * Vision logger parameters
 */

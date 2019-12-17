@@ -26,11 +26,11 @@
 // Constructor
 USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
 {
-	ViewModes.Add(ESLVisionViewMode::Color);
-	ViewModes.Add(ESLVisionViewMode::Unlit);
+	//ViewModes.Add(ESLVisionViewMode::Color);
+	//ViewModes.Add(ESLVisionViewMode::Unlit);
 	ViewModes.Add(ESLVisionViewMode::Mask);
-	ViewModes.Add(ESLVisionViewMode::Depth);
-	ViewModes.Add(ESLVisionViewMode::Normal);
+	//ViewModes.Add(ESLVisionViewMode::Depth);
+	//ViewModes.Add(ESLVisionViewMode::Normal);
 
 	CurrViewModeIdx = INDEX_NONE;
 	CurrVirtualCameraIdx = INDEX_NONE;
@@ -124,6 +124,9 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not create mask clones, removing view type.."), *FString(__func__), __LINE__);
 				ViewModes.Remove(ESLVisionViewMode::Mask);
 			}
+
+			// Create color to semantic data mappings on the image handler
+			ImgHandler.Init();
 		}
 		
 		bIsInit = true;
@@ -216,6 +219,12 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 	// Terminal output with the log progress
 	PrintProgress();
 
+	// If mask mode is currently active, read out the entity data as well
+	if (ViewModes[CurrViewModeIdx] == ESLVisionViewMode::Mask)
+	{
+		ImgHandler.GetEntities(Bitmap, SizeX, SizeY, CurrViewData);
+	}
+
 	// Compress image
 	TArray<uint8> CompressedBitmap;
 	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
@@ -229,25 +238,6 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 	// Add the image and the view mode to the array
 	CurrViewData.Images.Emplace(FSLVisionImageData(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap));
 
-	// If mask mode is currently active, read out the entity data as well
-	if(ViewModes[CurrViewModeIdx] == ESLVisionViewMode::Mask)
-	{
-		FSLVisionViewEntitiyData Entity("anId", "aClass");
-		CurrViewData.Entities.Emplace(Entity);
-		Entity.Class = "aClass2";
-		Entity.Id = "anId2";
-		CurrViewData.Entities.Emplace(Entity);
-
-		FSLVisionViewSkelData Skel("aSkelId","sSkelClass");
-		Skel.Bones.Emplace(FSLVisionViewSkelBoneData("ABoneName"));
-		Skel.Bones.Emplace(FSLVisionViewSkelBoneData("ABoneName2"));
-		CurrViewData.SkelEntities.Emplace(Skel);
-
-		FSLVisionViewSkelData Skel2("aSkelId2", "sSkelClass2");
-		Skel.Bones.Emplace(FSLVisionViewSkelBoneData("ABoneName2"));
-		Skel.Bones.Emplace(FSLVisionViewSkelBoneData("ABoneName22"));
-		CurrViewData.SkelEntities.Emplace(Skel2);
-	}
 
 	if(SetupNextViewMode())
 	{

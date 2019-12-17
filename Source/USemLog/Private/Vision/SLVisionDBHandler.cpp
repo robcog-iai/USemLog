@@ -477,7 +477,6 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 #endif //SL_WITH_LIBMONGO_C
 }
 
-
 // Remove any previously added vision data from the database
 void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FString& CollName) const
 {
