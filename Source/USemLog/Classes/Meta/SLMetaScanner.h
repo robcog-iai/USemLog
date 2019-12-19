@@ -1,10 +1,12 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
+
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLStructs.h" // FSLEntity
-#include "SLItemScanner.generated.h"
+#include "SLMetaScannerStructs.h"
+#include "SLMetaScannerHandler.h"
+#include "SLMetaScanner.generated.h"
 
 // Forward declarations
 class USLMetadataLogger; // Parent
@@ -15,103 +17,22 @@ class AStaticMeshActor;
 class APlayerCameraManager;
 
 /**
-* View modes
-*/
-UENUM()
-enum class ESLItemScannerViewMode : uint8
-{
-	NONE					UMETA(DisplayName = "None"),
-	Color					UMETA(DisplayName = "Color"),
-	Unlit					UMETA(DisplayName = "Unlit"),
-	Mask					UMETA(DisplayName = "Mask"),
-	Depth					UMETA(DisplayName = "Depth"),
-	Normal					UMETA(DisplayName = "Normal"),
-};
-
-
-/**
-* Parameters for creating scanning the semantic map items
-*/
-struct FSLItemScanParams
-{
-	// Scan image resolution
-	FIntPoint Resolution;
-
-	// Number of camera poses on the sphere pointed toward the object
-	int32 NumberOfScanPoints;
-
-	// The maximum volume (cm^3) of an item that should be scanned (0 = no limit)
-	float MaxItemVolume;
-
-	// The distance of the camera to the scanned item (0 = calculated relative to the object size)
-	float CameraDistanceToScanItem;
-	
-	// Scan view modes
-	TArray<ESLItemScannerViewMode> ViewModes;
-	
-	// Save the scanned images locally
-	bool bIncludeScansLocally;
-
-	// Default constructor
-	FSLItemScanParams() {};
-	
-	// Constructor
-	FSLItemScanParams(
-		FIntPoint InScanResolution,
-		int32 InNumberOfScanPoints,
-		float InMaxScanItemVolume,
-		float InCameraDistanceToScanItem,
-		const TArray<ESLItemScannerViewMode>& InScanViewModes,
-		bool bNewIncludeScansLocally = false)
-		:
-		Resolution(InScanResolution),
-		NumberOfScanPoints(InNumberOfScanPoints),
-		MaxItemVolume(InMaxScanItemVolume),
-		CameraDistanceToScanItem(InCameraDistanceToScanItem),
-		ViewModes(InScanViewModes),
-		bIncludeScansLocally(bNewIncludeScansLocally)
-	{};
-};
-
-/**
- * One camera position scan data (number of pixels, rendered images array, object image bounds)
- */
-struct FSLScanPoseData
-{
-	// Number of pixels occupied by the item in the image
-	int32 NumPixels;
-
-	// The min bounds coordinates of the image
-	FIntPoint MinBB;
-
-	// The max bounds coordinates of the image
-	FIntPoint MaxBB;
-
-	// Camera pose
-	FTransform Pose;
-
-	// Array of image data pair, render type name to binary data
-	TArray<TPair<FString, TArray<uint8>>> Images;
-};
-
-
-/**
  * Scans handheld items by taking images from unidistributed points form a sphere as a camera location
  */
 UCLASS()
-class USLItemScanner : public UObject
+class USLMetaScanner : public UObject
 {
 	GENERATED_BODY()
 
 public:
 	// Ctor
-	USLItemScanner();
+	USLMetaScanner();
 
 	// Dtor
-	~USLItemScanner();
+	~USLMetaScanner();
 
 	// Setup scanning room
-	void Init(const FString& InTaskId, const FString InServerIp, uint16 InServerPort, FSLItemScanParams ScanParams);
+	void Init(const FString& InTaskId, FSLItemScanParams ScanParams);
 
 	// Start scanning, set camera into the first pose and trigger the screenshot
 	void Start();
@@ -175,7 +96,7 @@ private:
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
 	// Apply view mode
-	void ApplyViewMode(ESLItemScannerViewMode Mode);
+	void ApplyViewMode(ESLMetaScannerViewMode Mode);
 
 	// Apply mask material to current item
 	void ApplyMaskMaterial();
@@ -207,7 +128,7 @@ private:
 	void GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor& ColorA, int32& OutNumA, const FColor& ColorB, int32& OutNumB);
 
 	// Get view mode name
-	FString GetViewModeName(ESLItemScannerViewMode Mode) const;
+	FString GetViewModeName(ESLMetaScannerViewMode Mode) const;
 	
 	// Get the camera distance for the selected item relative to its size
 	float GetItemRelativeCameraDistance(UStaticMeshComponent* SMC) const;
@@ -234,6 +155,9 @@ private:
 
 	// Set when finished
 	bool bIsFinished;
+
+	// Scanner image handler
+	FSLMetaScannerHandler ImgHandler;
 
 	// Contains the data of the current scan in a given camera pose
 	FSLScanPoseData ScanPoseData;
@@ -274,7 +198,7 @@ private:
 	TArray<TPair<UStaticMeshComponent*, FString>> ScanItems;
 	
 	// View modes (lit/unlit/mask etc.)
-	TArray<ESLItemScannerViewMode> ViewModes;
+	TArray<ESLMetaScannerViewMode> ViewModes;
 	
 	// Currently active view mode
 	int32 CurrViewModeIdx;
@@ -296,7 +220,7 @@ private:
 	float CurrItemCameraDistance;
 
 	// Cache the previous view mode
-	ESLItemScannerViewMode PrevViewMode;
+	ESLMetaScannerViewMode PrevViewMode;
 
 	// Currently counted number of pixels of the item
 	int32 TempItemPixelNum;

@@ -44,11 +44,11 @@ ASLManager::ASLManager()
 	NumberOfScanPoints = 64;
 	MaxScanItemVolume = 0.f;
 	CameraDistanceToScanItem = 0.f;
-	ScanViewModes.Add(ESLItemScannerViewMode::Color);
-	ScanViewModes.Add(ESLItemScannerViewMode::Unlit);
-	ScanViewModes.Add(ESLItemScannerViewMode::Mask);
-	ScanViewModes.Add(ESLItemScannerViewMode::Depth);
-	ScanViewModes.Add(ESLItemScannerViewMode::Normal);
+	ScanViewModes.Add(ESLMetaScannerViewMode::Color);
+	ScanViewModes.Add(ESLMetaScannerViewMode::Unlit);
+	ScanViewModes.Add(ESLMetaScannerViewMode::Mask);
+	ScanViewModes.Add(ESLMetaScannerViewMode::Depth);
+	ScanViewModes.Add(ESLMetaScannerViewMode::Normal);
 	bIncludeScansLocally = false;
 
 

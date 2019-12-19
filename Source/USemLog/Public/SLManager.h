@@ -183,7 +183,7 @@ private:
 	
 	// Scan view modes
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
-	TSet<ESLItemScannerViewMode> ScanViewModes;
+	TSet<ESLMetaScannerViewMode> ScanViewModes;
 	
 	// Save the scanned images locally
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))

@@ -3,13 +3,11 @@
 
 #pragma once
 
-#include "USemLog.h"
-#include "UObject/NoExportTypes.h"
-#include "Meta/SLMetaScanner.h"
+#include "CoreMinimal.h"
 #include "Meta/SLMetaScannerStructs.h"
-#include "Meta/SLMetaDBHandler.h"
 
 #if SL_WITH_LIBMONGO_C
+class ASLVisionPoseableMeshActor;
 THIRD_PARTY_INCLUDES_START
 #if PLATFORM_WINDOWS
 #include "Windows/AllowWindowsPlatformTypes.h"
@@ -20,64 +18,38 @@ THIRD_PARTY_INCLUDES_START
 #endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_C
-#include "SLMetadataLogger.generated.h"
 
 /**
- * Writes task and episode related metadata
+ * Helper class for reading and writing vision related data to mongodb
  */
-UCLASS()
-class USEMLOG_API USLMetadataLogger : public UObject
+class FSLMetaDBHandler
 {
-	GENERATED_BODY()
-
-	// Give access to private methods
-	friend class USLMetaScanner;
-	
 public:
 	// Ctor
-	USLMetadataLogger();
+	FSLMetaDBHandler();
 
-	// Dtor
-	~USLMetadataLogger();
-	
-	// Init logger
-	void Init(const FString& InTaskId, const FString& InServerIp, uint16 InServerPort,
-		bool bOverWrite = false, bool bScanItems = false, FSLItemScanParams ScanParams = FSLItemScanParams());
-
-	// Start logger
-	void Start(const FString& InTaskDescription);
-
-	// Finish logger
-	void Finish(bool bForced = false);
-
-	// Get init state
-	bool IsInit() const { return bIsInit; };
-
-	// Get started state
-	bool IsStarted() const { return bIsStarted; };
-
-	// Get finished state
-	bool IsFinished() const { return bIsFinished; };
-
-private:
-	// Connect to the database, if overwrite is true, remove existing collection
-	bool Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bOverwrite);
+	// Connect to the database
+	bool Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bRemovePrevEntries);
 
 	// Disconnect and clean db connection
-	void Disconnect();
+	void Disconnect() const;
 
-	// Create indexes on the data
-	void CreateIndexes();
+	// Create indexes on the inserted data
+	void CreateIndexes() const;
+
+	// Write the first metadata entry
+	void WriteFirstDocument(const FString& InTaskDescription);
 
 	// Create the scan entry bson document (a scan entry contains all the scan images of a given class)
 	void StartScanEntry(const FString& Class, int32 ResX, int32 ResY);
 
 	// Add pose scan data
 	void AddScanPoseEntry(const FSLScanPoseData& ScanPoseData);
-	
+
 	// Write and clear the scan entry to the database
 	void FinishScanEntry();
-	
+
+private:
 #if SL_WITH_LIBMONGO_C
 	// Add image to gridfs, output the oid
 	void AddToGridFs(const TArray<uint8>& CompressedBitmap, bson_oid_t* out_oid);
@@ -97,24 +69,8 @@ private:
 	// Add image bounding box to document
 	void AddBBDoc(const FIntPoint& Min, const FIntPoint& Max, bson_t* doc);
 #endif //SL_WITH_LIBMONGO_C
-	
+
 private:
-	// Set when initialized
-	bool bIsInit;
-
-	// Set when started
-	bool bIsStarted;
-
-	// Set when finished
-	bool bIsFinished;
-
-	// Helper class for scanning the items from the world
-	UPROPERTY() // Avoid GC
-	USLMetaScanner* ItemsScanner;
-
-	// Database handler
-	FSLMetaDBHandler DBHandler;
-
 #if SL_WITH_LIBMONGO_C
 	// Server uri
 	mongoc_uri_t* uri;

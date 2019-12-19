@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLVisionLogger.h"
-#include "Vision/SLVisionToolkit.h"
 #include "Vision/SLVisionPoseableMeshActor.h"
 #include "SLEntitiesManager.h"
 
