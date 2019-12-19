@@ -239,7 +239,7 @@ bool USLSkeletalDataComponent::SetSemanticOwnerData()
 	}
 }
 
-// Set data for all the bones (empty for the ones without semantics)
+// Set data for all the bones (empty fields for the ones without semantics)
 void USLSkeletalDataComponent::SetDataForAllBones()
 {
 	if (SkeletalMeshParent)

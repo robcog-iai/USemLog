@@ -89,10 +89,10 @@ private:
 	void AddCameraViews(bson_t* doc);
 
 	// Add pose to document
-	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* doc);
+	void AddPoseDoc(const FVector& InLoc, const FQuat& InQuat, bson_t* doc);
 
 	// Add image bounding box to document
-	void AddImgBBChild(const FIntPoint& Min, const FIntPoint& Max, bson_t* doc);
+	void AddBBDoc(const FIntPoint& Min, const FIntPoint& Max, bson_t* doc);
 #endif //SL_WITH_LIBMONGO_C
 	
 private:

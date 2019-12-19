@@ -26,11 +26,11 @@
 // Constructor
 USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
 {
-	//ViewModes.Add(ESLVisionViewMode::Color);
-	//ViewModes.Add(ESLVisionViewMode::Unlit);
+	ViewModes.Add(ESLVisionViewMode::Color);
+	ViewModes.Add(ESLVisionViewMode::Unlit);
 	ViewModes.Add(ESLVisionViewMode::Mask);
-	//ViewModes.Add(ESLVisionViewMode::Depth);
-	//ViewModes.Add(ESLVisionViewMode::Normal);
+	ViewModes.Add(ESLVisionViewMode::Depth);
+	ViewModes.Add(ESLVisionViewMode::Normal);
 
 	CurrViewModeIdx = INDEX_NONE;
 	CurrVirtualCameraIdx = INDEX_NONE;
@@ -61,7 +61,7 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		// Save the folder name if the images are going to be stored locally as well
 		if(Params.bIncludeLocally)
 		{
-			TaskId = InTaskId;
+			SaveLocallyFolderName = InTaskId;
 		}
 		
 		// Init the semantic instances
@@ -121,14 +121,17 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		{
 			if(!CreateMaskClones())
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not create mask clones, removing view type.."), *FString(__func__), __LINE__);
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not create mask clones, removing mask view type.."), *FString(__func__), __LINE__);
 				ViewModes.Remove(ESLVisionViewMode::Mask);
 			}
 
 			// Create color to semantic data mappings on the image handler
-			ImgHandler.Init();
+			if(!ImgHandler.Init())
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init image handler, removing mask view type.."), *FString(__func__), __LINE__);
+				ViewModes.Remove(ESLVisionViewMode::Mask);
+			}
 		}
-		
 		bIsInit = true;
 	}
 }
@@ -219,18 +222,27 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 	// Terminal output with the log progress
 	PrintProgress();
 
-	// If mask mode is currently active, read out the entity data as well
-	if (ViewModes[CurrViewModeIdx] == ESLVisionViewMode::Mask)
-	{
-		ImgHandler.GetEntities(Bitmap, SizeX, SizeY, CurrViewData);
-	}
-
 	// Compress image
 	TArray<uint8> CompressedBitmap;
-	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
+
+	// If mask mode is currently active, restore the colors and get the entity data
+	if (ViewModes[CurrViewModeIdx] == ESLVisionViewMode::Mask)
+	{
+		// Remove const-ness from image (needed if you need to restore the image)
+		TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
+
+		//ImgHandler.GetEntities(Bitmap, SizeX, SizeY, CurrViewData);
+		ImgHandler.RestoreImageAndGetEntities(BitmapRef, SizeX, SizeY, CurrViewData);
+
+		FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
+	}
+	else
+	{
+		FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
+	}
 
 	// Check if the image should be saved locally as well
-	if(!TaskId.IsEmpty())
+	if(!SaveLocallyFolderName.IsEmpty())
 	{
 		SaveImageLocally(CompressedBitmap);
 	}
@@ -433,6 +445,7 @@ bool USLVisionLogger::CreateMaskClones()
 	DefaultMaskMaterial->bUsedWithStaticLighting = true;
 	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
 
+	// TODO iterate the whole world, since you want to mark meshes that are not semantically annotated with black clones
 	/* Static meshes */
 	TArray<AStaticMeshActor*> SMActors;
 	FSLEntitiesManager::GetInstance()->GetStaticMeshActors(SMActors);
@@ -502,7 +515,7 @@ bool USLVisionLogger::CreateMaskClones()
 			for (auto& Pair : SkDC->SemanticBonesData)
 			{
 				// Check if bone class and visual mask is set
-				if(Pair.Value.IsSet())
+				if(Pair.Value.IsClassSet())
 				{
 					// Get the mask color, will be black if it does not exist
 					FColor SemColor(FColor::FromHex(Pair.Value.VisualMask));
@@ -787,7 +800,7 @@ void USLVisionLogger::QuitEditor()
 void USLVisionLogger::SaveImageLocally(const TArray<uint8>& CompressedBitmap)
 {
 	const FString FolderName = VirtualCameras[CurrVirtualCameraIdx]->GetClassName() + "_" + CurrViewModePostfix;
-	FString Path = FPaths::ProjectDir() + "/SemLog/" + TaskId + "/" + FolderName + "/" + CurrImageFilename + ".png";
+	FString Path = FPaths::ProjectDir() + "/SemLog/" + SaveLocallyFolderName + "/" + FolderName + "/" + CurrImageFilename + ".png";
 	FPaths::RemoveDuplicateSlashes(Path);
 	FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 }

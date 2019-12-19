@@ -181,8 +181,8 @@ bool FSLWorldWriterMongoC::Connect(const FString& DBName, const FString& Collect
 	}
 	else 
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Collection %s does not exist, creating a new one.."),
-			*FString(__func__), __LINE__, *CollectionName);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating collection %s.%s .."),
+			*FString(__func__), __LINE__, *DBName, *CollectionName);
 	}
 
 	collection = mongoc_client_get_collection(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*CollectionName));
@@ -262,10 +262,20 @@ bool FSLWorldWriterMongoC::CreateIndexes() const
 	BSON_APPEND_INT32(&index4, "skel_entities.bones.name", 1);
 	char* index_name4 = mongoc_collection_keys_to_index_string(&index4);
 
+	//bson_t index5;
+	//bson_init(&index5);
+	//BSON_APPEND_INT32(&index5, "skel_entities.bones.class", 1);
+	//char* index_name5 = mongoc_collection_keys_to_index_string(&index5);
+
 	bson_t index5;
 	bson_init(&index5);
-	BSON_APPEND_INT32(&index5, "gaze.entity_id", 1);
+	BSON_APPEND_INT32(&index5, "skel_entities.bones.id", 1);
 	char* index_name5 = mongoc_collection_keys_to_index_string(&index5);
+
+	bson_t index6;
+	bson_init(&index6);
+	BSON_APPEND_INT32(&index6, "gaze.entity_id", 1);
+	char* index_name6 = mongoc_collection_keys_to_index_string(&index6);
 
 
 	index_command = BCON_NEW("createIndexes",
@@ -309,6 +319,14 @@ bool FSLWorldWriterMongoC::CreateIndexes() const
 					BCON_DOCUMENT(&index5),
 					"name",
 					BCON_UTF8(index_name5),
+					//"unique",
+					//BCON_BOOL(false),
+				"}",
+				"{",
+					"key",
+					BCON_DOCUMENT(&index6),
+					"name",
+					BCON_UTF8(index_name6),
 					//"unique",
 					//BCON_BOOL(false),
 				"}",
@@ -436,7 +454,7 @@ void FSLWorldWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLS
 		// Check if the entity moved more than the threshold since the last logging
 		const FVector CurrLoc = Itr->Obj->GetComponentLocation();
 		const FQuat CurrQuat = Itr->Obj->GetComponentQuat();
-
+		
 		// Check if pointer is valid
 		if (Itr->Obj.IsValid(/*false, true*/))
 		{
@@ -456,7 +474,7 @@ void FSLWorldWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLS
 				// Add bones
 				if (Itr->Obj->SkeletalMeshParent)
 				{
-					AddSkeletalBones(Itr->Obj->SkeletalMeshParent, &arr_obj);
+					AddSkeletalBones(Itr->Obj->SkeletalMeshParent, Itr->Obj->SemanticBonesData, &arr_obj);
 				}
 
 				bson_append_document_end(out_doc, &arr_obj);
@@ -500,7 +518,7 @@ void FSLWorldWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t* out_
 }
 
 // Add skeletal bones to array
-void FSLWorldWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc) const
+void FSLWorldWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelComp, const TMap<FName, FSLBoneData>& BoneClassMap, bson_t* out_doc) const
 {
 	bson_t bones_arr;
 	bson_t arr_obj;
@@ -522,6 +540,13 @@ void FSLWorldWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelComp, bs
 		BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, idx_key, &arr_obj);
 
 		BSON_APPEND_UTF8(&arr_obj, "name", TCHAR_TO_UTF8(*BoneName.ToString()));
+
+		if(const FSLBoneData* BoneData = BoneClassMap.Find(BoneName))
+		{
+			//BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*BoneData->Class));
+			BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*BoneData->Id));
+		}
+
 		AddPoseChild(CurrLoc, CurrQuat, &arr_obj);
 
 		bson_append_document_end(&bones_arr, &arr_obj);

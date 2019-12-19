@@ -547,7 +547,7 @@ void USLItemScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	// Add the number of pixels that the item occupies to the doc
 	if(ViewModes[CurrViewModeIdx] == ESLItemScannerViewMode::Mask)
 	{
-		GetItemPixelNumAndBB(Bitmap, SizeX, SizeY, ScanPoseData.NumPixels, ScanPoseData.BBMin, ScanPoseData.BBMax);
+		GetItemPixelNumAndBB(Bitmap, SizeX, SizeY, ScanPoseData.NumPixels, ScanPoseData.MinBB, ScanPoseData.MaxBB);
 	}
 	
 	//// Remove const-ness from array

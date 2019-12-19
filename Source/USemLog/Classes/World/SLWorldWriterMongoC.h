@@ -77,7 +77,7 @@ private:
 	void AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc) const;
 
 	// Add skeletal bones to array
-	void AddSkeletalBones(USkeletalMeshComponent* SkelComp, bson_t* out_doc) const;
+	void AddSkeletalBones(USkeletalMeshComponent* SkelComp, const TMap<FName, FSLBoneData>& BoneClassMap, bson_t* out_doc) const;
 
 	// Add pose to document
 	void AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc) const;

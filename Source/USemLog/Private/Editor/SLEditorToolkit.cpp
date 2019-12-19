@@ -14,8 +14,6 @@
 #include "Ids.h"
 #include "Tags.h"
 
-
-
 #if WITH_EDITOR
 #include "Editor.h"
 #endif // WITH_EDITOR
@@ -71,19 +69,25 @@ void FSLEditorToolkit::WriteClassProperties(UWorld* World, bool bOverwrite)
 	/* Static mesh actors */
 	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
 	{
-		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, GetClassName(*ActItr), bOverwrite);
+		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, GetClassName(*ActItr), bOverwrite);
 	}
 
 	/* Skeletal actors */
 	for (TActorIterator<ASkeletalMeshActor> ActItr(World); ActItr; ++ActItr)
 	{
-		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, GetClassName(*ActItr), bOverwrite);
+		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, GetClassName(*ActItr), bOverwrite);
+	}
+
+	/* Constraint actors */
+	for (TActorIterator<APhysicsConstraintActor> ActItr(World); ActItr; ++ActItr)
+	{
+		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, GenerateConstraintClassName(*ActItr), bOverwrite);
 	}
 
 	/* Vision cameras */
 	for (TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
 	{
-		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, GenerateClassName(*ActItr), bOverwrite);
+		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, GenerateVisionCameraClassName(*ActItr), bOverwrite);
 	}
 }
 
@@ -96,25 +100,89 @@ void FSLEditorToolkit::WriteUniqueIdProperties(UWorld* World, bool bOverwrite)
 	/* Static mesh actors */
 	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
 	{
-		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
+		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
 	}
 
 	/* Skeletal actors */
 	for (TActorIterator<ASkeletalMeshActor> ActItr(World); ActItr; ++ActItr)
 	{
-		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
+#if WITH_EDITOR
+		// Get the skeletal actor from the editor world
+		if (AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(*ActItr))
+		{
+			FTags::AddKeyValuePair(EdAct, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
+
+			// Get the semantic data component containing the semantics (class names mask colors) about the bones
+			if (UActorComponent* AC = EdAct->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+			{
+				// Load existing visual mask values from the skeletal data
+				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+				for (auto& Pair : SkDC->SemanticBonesData)
+				{
+					// Double check if bone has a semantic class
+					if (!Pair.Value.IsClassSet())
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Semantic bones should have a class name set.."), *FString(__func__), __LINE__);
+						continue;
+					}
+
+					// Check if the bone has id data
+					if (bOverwrite)
+					{
+						Pair.Value.Id = FIds::NewGuidInBase64();
+
+						// Add the data to the map used at by the metadatalogger as well
+						if (SkDC->AllBonesData.Contains(Pair.Key))
+						{
+							SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
+						}
+						else
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+								*FString(__func__), __LINE__, *Pair.Key.ToString());
+						}
+					}
+					else if(Pair.Value.Id.IsEmpty())
+					{
+						Pair.Value.Id = FIds::NewGuidInBase64();
+
+						// Add the data to the map used at runtime as well
+						if (SkDC->AllBonesData.Contains(Pair.Key))
+						{
+							SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
+						}
+						else
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+								*FString(__func__), __LINE__, *Pair.Key.ToString());
+						}
+					}
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
+					*FString(__func__), __LINE__, *EdAct->GetName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.."),
+				*FString(__func__), __LINE__, *ActItr->GetName());
+		}
+#endif //WITH_EDITOR
 	}
 
 	/* Constraint actors */
 	for (TActorIterator<APhysicsConstraintActor> ActItr(World); ActItr; ++ActItr)
 	{
-		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
+		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
 	}
 
 	/* Vision cameras */
 	for (TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
 	{
-		WriteKVToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
+		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
 	}
 }
 
@@ -214,7 +282,7 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 	const FString KeyType = "VisMask";
 	const int32 MaxTrials = 100;
 
-	// Aray is susedArray has FindByPredicate, TSet does not
+	// TArray is used instead of TSet, because ot has FindByPredicate
 	TArray<FColor> ConsumedColors;
 
 	// Load already used colors to avoid generating similar ones
@@ -233,7 +301,7 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 		/* Skeletal mesh actors */
 		for (TActorIterator<ASkeletalMeshActor> ActItr(World); ActItr; ++ActItr)
 		{
-			// Get the semantic data component containing the semantics (class names mask colors) about the bones
+			// Get the semantic data component containing the semantics (ids, class names, mask colors) about the bones
 			if(UActorComponent* AC = ActItr->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
 			{
 				// Load existing visual mask values from the skeletal data
@@ -241,7 +309,7 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 				for (auto& Pair : SkDC->SemanticBonesData)
 				{
 					// Check if the bone has a semantic class and and a visual mask
-					if (Pair.Value.IsSet() && !Pair.Value.VisualMask.IsEmpty())
+					if (Pair.Value.IsClassSet() && !Pair.Value.VisualMask.IsEmpty())
 					{
 						ConsumedColors.Add(FColor::FromHex(Pair.Value.VisualMask));
 					}
@@ -264,25 +332,25 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 		{
 			// Generate a random color that differs of black
 			//FColor RC = FColor::MakeRandomColor(); // Pretty colors, but not many
-			FColor RC = ColorRandomRGB();
+			FColor RandColor = ColorRandomRGB();
 
 			// Avoid very dark colors
-			if(ColorEqual(RC, FColor::Black, 30))
+			if(ColorEqual(RandColor, FColor::Black, BlackColorTolerance))
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Got a very dark color, hex=%s, trying again.."), *FString(__func__), __LINE__, *RC.ToHex());
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Got a very dark color, hex=%s, trying again.."), *FString(__func__), __LINE__, *RandColor.ToHex());
 				continue;
 			}
 
 			/* Nested lambda for FindByPredicate*/
-			const auto EqualWithToleranceLambda = [RC, MinDist](const FColor& Item)
+			const auto EqualWithToleranceLambda = [RandColor, MinDist](const FColor& Item)
 			{
-				return ColorEqual(RC, Item, MinDist);
+				return ColorEqual(RandColor, Item, MinDist);
 			};
 
 			if(!ConsumedColors.FindByPredicate(EqualWithToleranceLambda))
 			{
-				ConsumedColors.Emplace(RC);
-				return RC.ToHex();
+				ConsumedColors.Emplace(RandColor);
+				return RandColor.ToHex();
 			}
 		}
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a unique color, saving as black.."), *FString(__func__), __LINE__);
@@ -352,7 +420,7 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 				for (auto& Pair : SkDC->SemanticBonesData)
 				{
 					// Check if bone has a semantic class
-					if(!Pair.Value.IsSet())
+					if(!Pair.Value.IsClassSet())
 					{
 						continue;
 					}
@@ -463,8 +531,36 @@ FString FSLEditorToolkit::GetClassName(AActor* Actor, bool bDefaultToLabel)
 	return ClassName;
 }
 
+// Generate class name for the constraint actors
+FString FSLEditorToolkit::GenerateConstraintClassName(APhysicsConstraintActor* Actor)
+{
+	FString DefaultValue = "Joint";
+
+	if(UPhysicsConstraintComponent* PCC = Actor->GetConstraintComp())
+	{
+		// Check if linear
+		if(PCC->ConstraintInstance.GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
+			PCC->ConstraintInstance.GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
+			PCC->ConstraintInstance.GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
+		{
+			return "Linear"+DefaultValue;
+		}
+		else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != ELinearConstraintMotion::LCM_Locked ||
+			PCC->ConstraintInstance.GetAngularSwing2Motion() != ELinearConstraintMotion::LCM_Locked ||
+			PCC->ConstraintInstance.GetAngularTwistMotion() != ELinearConstraintMotion::LCM_Locked)
+		{
+			return "Revolute" + DefaultValue;
+		}
+		else
+		{
+			return "Fixed" + DefaultValue;
+		}
+	}
+	return DefaultValue;
+}
+
 // Generate class name for the vision camera
-FString FSLEditorToolkit::GenerateClassName(ASLVisionCamera* Actor, bool bDefaultToLabel)
+FString FSLEditorToolkit::GenerateVisionCameraClassName(ASLVisionCamera* Actor, bool bDefaultToLabel)
 {
 	const FString DefaultValue = "VisionCamera";
 	const FString TagType = "SemLog";
@@ -496,7 +592,7 @@ FString FSLEditorToolkit::GenerateClassName(ASLVisionCamera* Actor, bool bDefaul
 }
 
 // Write tag changes to editor counterpart actor
-bool FSLEditorToolkit::WriteKVToEditorCounterpart(AActor* Actor, const FString& TagType, const FString& TagKey,
+bool FSLEditorToolkit::WritePairToEditorCounterpart(AActor* Actor, const FString& TagType, const FString& TagKey,
 	const FString& TagValue, bool bReplaceExisting)
 {
 #if WITH_EDITOR
@@ -505,7 +601,7 @@ bool FSLEditorToolkit::WriteKVToEditorCounterpart(AActor* Actor, const FString& 
 	{
 		return FTags::AddKeyValuePair(EdAct, TagType, TagKey, TagValue, bReplaceExisting);
 	}
-#endif // WITH_EDITOR	
+#endif // WITH_EDITOR
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.."),
 		*FString(__func__), __LINE__, *Actor->GetName());
 	return false;

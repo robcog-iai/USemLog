@@ -176,7 +176,7 @@ private:
 	FString CurrImageFilename;
 
 	// Folder name where to store the images if they are going to be stored locally
-	FString TaskId;
+	FString SaveLocallyFolderName;
 
 	// Image resolution 
 	FIntPoint Resolution;

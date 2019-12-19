@@ -498,7 +498,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksRand()
 				for (auto& Pair : ObjItr->SemanticBonesData)
 				{
 					// Check if data is set (it has a semantic class)
-					if (Pair.Value.IsSet())
+					if (Pair.Value.IsClassSet())
 					{
 						Pair.Value.VisualMask = GenerateUniqueColorLambda(Tolerance, NrOfTrials, ConsumedColors);
 
@@ -668,7 +668,7 @@ FReply FSLEdModeToolkit::GenerateVisualMasksInc()
 				for (auto& Pair : ObjItr->SemanticBonesData)
 				{
 					// Check if data is set (it has a semantic class)
-					if (Pair.Value.IsSet())
+					if (Pair.Value.IsClassSet())
 					{
 						if (UniqueColors.Num() == 0)
 						{

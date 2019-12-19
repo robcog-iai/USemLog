@@ -168,13 +168,17 @@ private:
 /**
 * Semantic entities data from the view
 */
-struct FSLVisionViewEntitiyData
+struct FSLVisionViewEntityData
 {
 	// Default ctor
-	FSLVisionViewEntitiyData() {};
+	FSLVisionViewEntityData() {};
 
 	// Init ctor
-	FSLVisionViewEntitiyData(const FString& InId, const FString& InClass) : Id(InId), Class(InClass) {};
+	FSLVisionViewEntityData(const FString& InId, const FString& InClass) : Id(InId), Class(InClass) {};
+
+	// Init ctor with BB
+	FSLVisionViewEntityData(const FString& InId, const FString& InClass, const FIntPoint& InMinBB, const FIntPoint& InMaxBB) 
+		: Id(InId), Class(InClass), MinBB(InMinBB), MaxBB(InMaxBB) {};
 
 	// Unique id of the entity
 	FString Id;
@@ -182,24 +186,30 @@ struct FSLVisionViewEntitiyData
 	// Class of the entity
 	FString Class;
 
+	// Min bounding box location
+	FIntPoint MinBB;
+
+	// Max bounding box location
+	FIntPoint MaxBB;
+
 	// The percentage of the entity in the image
-	float ImagePercentage;
+	float ImagePercentage = 0.f;
 
-	// Percentage of the image that is not visible (overlapped + clipped)
-	float BlockedPercentage;
+	//// Percentage of the image that is not visible (overlapped + clipped)
+	//float BlockedPercentage;
 
-	// Percentage of the image that is clipped by the edge
-	float OverlappedPercentage;
+	//// Percentage of the image that is clipped by the edge
+	//float OverlappedPercentage;
 
-	// Percentage of the image that is clipped by the edge
-	float ClippedPercentage;
+	//// Percentage of the image that is clipped by the edge
+	//float ClippedPercentage;
 
 	//// Relative transform from the view (virtual camera)
 	//FTransform RelativePose;
 };
 
 /**
-* Semantic skeletal entities data in the view
+* Semantic skeletal bone data in the view
 */
 struct FSLVisionViewSkelBoneData
 {
@@ -209,8 +219,21 @@ struct FSLVisionViewSkelBoneData
 	// Init ctor
 	FSLVisionViewSkelBoneData(const FString& InClass) : Class(InClass) {};
 
+	// Init ctor with BB
+	FSLVisionViewSkelBoneData( const FString& InClass, const FIntPoint& InMinBB, const FIntPoint& InMaxBB)
+		: Class(InClass), MinBB(InMinBB), MaxBB(InMaxBB) {};
+
 	// Bone class
 	FString Class;
+
+	// Min bounding box location of the bone
+	FIntPoint MinBB;
+
+	// Max bounding box location of the bone
+	FIntPoint MaxBB;
+
+	// The percentage of the entity in the image
+	float ImagePercentage = 0.f;
 };
 
 /**
@@ -224,11 +247,44 @@ struct FSLVisionViewSkelData
 	// Init ctor
 	FSLVisionViewSkelData(const FString& InId, const FString& InClass) : Id(InId), Class(InClass) {};
 
+	// Init ctor with BB
+	FSLVisionViewSkelData(const FString& InId, const FString& InClass, const FIntPoint& InMinBB, const FIntPoint& InMaxBB)
+		: Id(InId), Class(InClass), MinBB(InMinBB), MaxBB(InMaxBB) {};
+
+
+	// Calculate the skeletal parameters from the bones
+	void CalculateParamsFromBones()
+	{
+		if(Bones.Num() == 0) { return; }
+
+		MinBB = Bones[0].MinBB;
+		MaxBB = Bones[0].MaxBB;
+		ImagePercentage = Bones[0].ImagePercentage;
+
+		for(int32 Idx = 1; Idx < Bones.Num(); Idx++)
+		{
+			if(MinBB.X > Bones[Idx].MinBB.X) { MinBB.X = Bones[Idx].MinBB.X; };
+			if(MinBB.Y > Bones[Idx].MinBB.Y) { MinBB.Y = Bones[Idx].MinBB.Y; };
+			if(MaxBB.X < Bones[Idx].MaxBB.X) { MaxBB.X = Bones[Idx].MaxBB.X; };
+			if(MaxBB.Y < Bones[Idx].MaxBB.Y) { MaxBB.Y = Bones[Idx].MaxBB.Y; };
+			ImagePercentage += Bones[Idx].ImagePercentage;
+		}
+	}
+
 	// Unique id of the entity
 	FString Id;
 
 	// Class of the entity
 	FString Class;
+
+	// Min bounding box location of the whole skeleton
+	FIntPoint MinBB;
+
+	// Max bounding box location of the whole skeleton
+	FIntPoint MaxBB;
+
+	// The percentage of the entity in the image
+	float ImagePercentage = 0.f;
 
 	// Bones data
 	TArray<FSLVisionViewSkelBoneData> Bones;
@@ -267,7 +323,7 @@ struct FSLVisionViewData
 	FString Class;
 
 	// Data about the entities visible in the view
-	TArray<FSLVisionViewEntitiyData> Entities;
+	TArray<FSLVisionViewEntityData> Entities;
 
 	// Data about the skeletal entities visible in the view
 	TArray<FSLVisionViewSkelData> SkelEntities;
@@ -300,7 +356,7 @@ struct FSLVisionFrameData
 	FSLVisionFrameData() {};
 
 	// Timestamp of the frame
-	float Timestamp;
+	float Timestamp = 0.f;
 
 	// Resolution of the images
 	FIntPoint Resolution;

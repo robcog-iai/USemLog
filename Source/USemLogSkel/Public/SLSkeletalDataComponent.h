@@ -18,6 +18,10 @@ struct FSLBoneData
 {
 	GENERATED_BODY()
 
+	// Unique id
+	UPROPERTY(EditAnywhere)
+	FString Id;
+
 	// Semantic class name
 	UPROPERTY(EditAnywhere)
 	FString Class;
@@ -38,7 +42,7 @@ struct FSLBoneData
 	//FSLBoneData() : Class(""), MaskColorHex(""), MaskMaterialIndex(INDEX_NONE) {};
 
 	// Checks if the structure has been set
-	bool IsSet() const { return !Class.IsEmpty(); };
+	bool IsClassSet() const { return !Class.IsEmpty(); };
 
 	// Get result as string
 	FString ToString() const
@@ -95,11 +99,12 @@ private:
 	void SetDataForAllBones();
 
 public:
-	// Map of bones to their class names
+	// Map of bones to their semantic data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TMap<FName, FSLBoneData> SemanticBonesData;
 
-	// All bones map
+	// Map of all bones including non semantic data (will be left empty) 
+	// used by the metadata logger to store both semantic and non semantic bones data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TMap<FName, FSLBoneData> AllBonesData;
 

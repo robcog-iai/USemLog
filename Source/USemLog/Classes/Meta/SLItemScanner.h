@@ -82,10 +82,10 @@ struct FSLScanPoseData
 	int32 NumPixels;
 
 	// The min bounds coordinates of the image
-	FIntPoint BBMin;
+	FIntPoint MinBB;
 
 	// The max bounds coordinates of the image
-	FIntPoint BBMax;
+	FIntPoint MaxBB;
 
 	// Camera pose
 	FTransform Pose;

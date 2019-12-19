@@ -254,6 +254,7 @@ bool FSLVisionDBHandler::GetEpisodeData(float UpdateRate, const TMap<ASkeletalMe
 
 #if SL_WITH_LIBMONGO_C
 	bson_error_t error;
+	bson_t opts;
 	const bson_t *doc;
 	mongoc_cursor_t *cursor;
 	bson_t *pipeline;
@@ -285,8 +286,11 @@ bool FSLVisionDBHandler::GetEpisodeData(float UpdateRate, const TMap<ASkeletalMe
 		"}",
 	"]");
 
+	bson_init(&opts);
+	BSON_APPEND_BOOL(&opts, "allowDiskUse", true);
+
 	cursor = mongoc_collection_aggregate(
-		collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+		collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
 
 	bson_iter_t doc_iter;
 
@@ -408,6 +412,8 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 
 			BSON_APPEND_UTF8(&entities_arr_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
 			BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
+			BSON_APPEND_DOUBLE(&entities_arr_obj, "img_perc", Entity.ImagePercentage);
+			AddBBObj(Entity.MinBB, Entity.MaxBB, &entities_arr_obj);
 
 			bson_append_document_end(&entities_arr, &entities_arr_obj);
 			j++;
@@ -424,6 +430,8 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 
 			BSON_APPEND_UTF8(&entities_arr_obj, "id", TCHAR_TO_UTF8(*SkelEntity.Id));
 			BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*SkelEntity.Class));
+			BSON_APPEND_DOUBLE(&entities_arr_obj, "img_perc", SkelEntity.ImagePercentage);
+			AddBBObj(SkelEntity.MinBB, SkelEntity.MaxBB, &entities_arr_obj);
 
 			// Create the bones array
 			k = 0;
@@ -434,6 +442,8 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 				BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, k_key, &bones_arr_obj);
 
 				BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*Bone.Class));
+				BSON_APPEND_DOUBLE(&bones_arr_obj, "img_perc", Bone.ImagePercentage);
+				AddBBObj(Bone.MinBB, Bone.MaxBB, &bones_arr_obj);
 
 				bson_append_document_end(&bones_arr, &bones_arr_obj);
 				k++;
@@ -500,7 +510,7 @@ void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FStrin
 			*FString(__func__), __LINE__, bson_iter_int32(&iter));
 	}
 
-	// Remove gridfs data
+	// Remove gridfs collections
 	if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(CollName + ".chunks"))), &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
@@ -513,45 +523,23 @@ void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FStrin
 	}
 
 	// Drop previous indexes to allow fast inserts
-	if (!mongoc_collection_drop_index(collection, "vision_1", &error))
+	TArray<const char*> Indexes;
+	Indexes.Emplace("vision_1");
+	Indexes.Emplace("vision.views.id_1");
+	Indexes.Emplace("vision.views.class_1");
+	Indexes.Emplace("vision.views.entities.id_1");
+	Indexes.Emplace("vision.views.entities.class_1");
+	Indexes.Emplace("vision.views.skel_entities.id_1");
+	Indexes.Emplace("vision.views.skel_entities.class_1");
+	Indexes.Emplace("vision.views.skel_entities.bones.class_1");
+
+	for(const auto& Idx : Indexes)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.id_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.class_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.entities.id_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.entities.class_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.skel_entities.id_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.skel_entities.class_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-	}
-	if (!mongoc_collection_drop_index(collection, "vision.views.skel_entities.bones.class_1", &error))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
+		if (!mongoc_collection_drop_index(collection, Idx, &error))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+				*FString(__func__), __LINE__, *FString(error.message));
+		}
 	}
 
 	bson_destroy(selector);
@@ -828,5 +816,24 @@ bool FSLVisionDBHandler::PushToDB(bson_t* doc, float Timestamp) const
 	bson_destroy(&reply);
 
 	return bSuccess;
+}
+
+// Add image bounding box to document
+void FSLVisionDBHandler::AddBBObj(const FIntPoint& Min, const FIntPoint& Max, bson_t* doc) const
+{
+	bson_t bb;
+	bson_t child_min_bb;
+	bson_t child_max_bb;
+
+	BSON_APPEND_DOCUMENT_BEGIN(doc, "img_bb", &bb);
+		BSON_APPEND_DOCUMENT_BEGIN(&bb, "min", &child_min_bb);
+			BSON_APPEND_DOUBLE(&child_min_bb, "x", Min.X);
+			BSON_APPEND_DOUBLE(&child_min_bb, "y", Min.Y);
+		bson_append_document_end(&bb, &child_min_bb);
+		BSON_APPEND_DOCUMENT_BEGIN(&bb, "max", &child_max_bb);
+			BSON_APPEND_DOUBLE(&child_max_bb, "x", Max.X);
+			BSON_APPEND_DOUBLE(&child_max_bb, "y", Max.Y);
+		bson_append_document_end(&bb, &child_max_bb);
+	bson_append_document_end(doc, &bb);
 }
 #endif //SL_WITH_LIBMONGO_C

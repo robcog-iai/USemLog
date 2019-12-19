@@ -65,6 +65,9 @@ private:
 
 	// Write the bson doc containing the vision data to the entry corresponding to the timestamp
 	bool PushToDB(bson_t* doc, float Timestamp) const;
+
+	// Add image bounding box to document
+	void AddBBObj(const FIntPoint& Min, const FIntPoint& Max, bson_t* doc) const;
 #endif //SL_WITH_LIBMONGO_C
 
 private:

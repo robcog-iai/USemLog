@@ -7,6 +7,7 @@
 #include "Editor/SLSemanticMapWriter.h"
 
 // Forward declaration
+class APhysicsConstraintActor;
 class ASLVisionCamera;
 
 /**
@@ -48,30 +49,28 @@ private:
 	// Get the class name of the actor
 	static FString GetClassName(AActor* Actor, bool bDefaultToLabel = false);
 
+	// Generate class name for the constraint actors
+	static FString GenerateConstraintClassName(APhysicsConstraintActor* Actor);
+
 	// Generate class name for the vision camera
-	static FString GenerateClassName(ASLVisionCamera* Actor, bool bDefaultToLabel = false);
+	static FString GenerateVisionCameraClassName(ASLVisionCamera* Actor, bool bDefaultToLabel = false);
 	
 	// Write tag changes to editor counterpart actor
-	static bool WriteKVToEditorCounterpart(AActor* Actor, const FString& TagType, const FString& TagKey, const FString& TagValue, bool bReplaceExisting);
+	static bool WritePairToEditorCounterpart(AActor* Actor, const FString& TagType, const FString& TagKey,
+		const FString& TagValue, bool bReplaceExisting);
 
 	/* Helpers */
 	// Get the distance between the colors
-	FORCEINLINE static float ColorDistance(const FColor& C1, const FColor C2)
+	FORCEINLINE static float ColorDistance(const FColor& C1, const FColor& C2)
 	{
 		return FMath::Abs(C1.R - C2.R) + FMath::Abs(C1.G - C2.G) + FMath::Abs(C1.B - C2.B);
 	}
 
 	// Check if the two colors are equal with a tolerance
-	FORCEINLINE static float ColorEqual(const FColor& C1, const FColor C2, int32 Tolerance)
+	FORCEINLINE static bool ColorEqual(const FColor& C1, const FColor& C2, uint8 Tolerance = 0)
 	{
-		if(Tolerance < 1)
-		{
-			return C1 == C2;
-		}
-		else
-		{
-			return ColorDistance(C1, C2) <= Tolerance;
-		}
+		if(Tolerance < 1){ return C1 == C2; }
+		return ColorDistance(C1, C2) <= Tolerance;
 	}
 
 	// Make a random rgb color
@@ -79,5 +78,9 @@ private:
 	{
 		return FColor((uint8)(FMath::FRand()*255.f), (uint8)(FMath::FRand()*255.f), (uint8)(FMath::FRand()*255.f));
 	}
+
+private:
+	/* Constants */
+	constexpr static uint8 BlackColorTolerance = 37;
 };
 

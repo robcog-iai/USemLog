@@ -368,8 +368,8 @@ void USLMetadataLogger::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 	BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, pose_key, &scan_pose_doc);
 
 		BSON_APPEND_INT32(&scan_pose_doc, "num_pixels", ScanPoseData.NumPixels);
-		AddPoseChild(ScanPoseData.Pose.GetLocation(), ScanPoseData.Pose.GetRotation(), &scan_pose_doc);
-		AddImgBBChild(ScanPoseData.BBMin, ScanPoseData.BBMax, &scan_pose_doc);
+		AddPoseDoc(ScanPoseData.Pose.GetLocation(), ScanPoseData.Pose.GetRotation(), &scan_pose_doc);
+		AddBBDoc(ScanPoseData.MinBB, ScanPoseData.MaxBB, &scan_pose_doc);
 
 		// "images" array containing the pointer to the gridfs file and the rendering type
 		BSON_APPEND_ARRAY_BEGIN(&scan_pose_doc, "images", &scan_img_arr);
@@ -521,13 +521,13 @@ void USLMetadataLogger::AddEnvironmentData(bson_t* doc)
 		{
 			const FVector Loc = ObjAsAct->GetActorLocation();
 			const FQuat Quat = ObjAsAct->GetActorQuat();
-			AddPoseChild(Loc, Quat, &arr_obj);
+			AddPoseDoc(Loc, Quat, &arr_obj);
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
 		{
 			const FVector Loc = ObjAsSceneComp->GetComponentLocation();
 			const FQuat Quat = ObjAsSceneComp->GetComponentQuat();
-			AddPoseChild(Loc, Quat, &arr_obj);
+			AddPoseDoc(Loc, Quat, &arr_obj);
 		}
 
 		// Finish array doc
@@ -559,13 +559,13 @@ void USLMetadataLogger::AddEnvironmentData(bson_t* doc)
 		{
 			const FVector Loc = ObjAsAct->GetActorLocation();
 			const FQuat Quat = ObjAsAct->GetActorQuat();
-			AddPoseChild(Loc, Quat, &arr_obj);
+			AddPoseDoc(Loc, Quat, &arr_obj);
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemOwner))
 		{
 			const FVector Loc = ObjAsSceneComp->GetComponentLocation();
 			const FQuat Quat = ObjAsSceneComp->GetComponentQuat();
-			AddPoseChild(Loc, Quat, &arr_obj);
+			AddPoseDoc(Loc, Quat, &arr_obj);
 		}
 
 		// Check if the skeletal mesh is valid
@@ -594,6 +594,7 @@ void USLMetadataLogger::AddEnvironmentData(bson_t* doc)
 				if (!BoneData.Class.IsEmpty())
 				{
 					BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*BoneData.Class));
+					BSON_APPEND_UTF8(&bones_arr_obj, "id", TCHAR_TO_UTF8(*BoneData.Id));
 
 					if (!BoneData.VisualMask.IsEmpty())
 					{
@@ -601,7 +602,7 @@ void USLMetadataLogger::AddEnvironmentData(bson_t* doc)
 					}
 				}
 
-				AddPoseChild(BoneLoc, BoneQuat, &bones_arr_obj);
+				AddPoseDoc(BoneLoc, BoneQuat, &bones_arr_obj);
 
 				bson_append_document_end(&bones_arr, &bones_arr_obj);
 				jdx++;
@@ -651,13 +652,13 @@ void USLMetadataLogger::AddCameraViews(bson_t* doc)
 		{
 			const FVector Loc = ObjAsAct->GetActorLocation();
 			const FQuat Quat = ObjAsAct->GetActorQuat();
-			AddPoseChild(Loc, Quat, &arr_obj);
+			AddPoseDoc(Loc, Quat, &arr_obj);
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
 		{
 			const FVector Loc = ObjAsSceneComp->GetComponentLocation();
 			const FQuat Quat = ObjAsSceneComp->GetComponentQuat();
-			AddPoseChild(Loc, Quat, &arr_obj);
+			AddPoseDoc(Loc, Quat, &arr_obj);
 		}
 
 		// Finish array doc
@@ -669,7 +670,7 @@ void USLMetadataLogger::AddCameraViews(bson_t* doc)
 }
 
 // Add pose to document
-void USLMetadataLogger::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* doc)
+void USLMetadataLogger::AddPoseDoc(const FVector& InLoc, const FQuat& InQuat, bson_t* doc)
 {
 	// Switch to right handed ROS transformation
 	const FVector ROSLoc = FConversions::UToROS(InLoc);
@@ -693,7 +694,7 @@ void USLMetadataLogger::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, 
 }
 
 // Add image bounding box to document
-void USLMetadataLogger::AddImgBBChild(const FIntPoint& Min, const FIntPoint& Max, bson_t* doc)
+void USLMetadataLogger::AddBBDoc(const FIntPoint& Min, const FIntPoint& Max, bson_t* doc)
 {
 	bson_t bb;
 	bson_t child_min_bb;
