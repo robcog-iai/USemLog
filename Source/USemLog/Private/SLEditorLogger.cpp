@@ -97,7 +97,7 @@ void USLEditorLogger::Finish(bool bForced)
 
 			// Give warnings for the users to fix any duplicate camera view class names;
 			FSLEditorToolkit::CheckForVisionCameraClassNameDuplicates(GetWorld());
-			QuitEditor();
+			//QuitEditor();
 		}
 	}
 }

@@ -82,7 +82,7 @@ void FSLVisionImageHandler::Reset()
 	ColorToSkelInfo.Empty();
 }
 
-// Get entities from mask image
+// Get entities data from the mask image
 void FSLVisionImageHandler::GetEntities(const TArray<FColor>& InMaskBitmap, int32 ImgWidth, int32 ImgHeight, FSLVisionViewData& OutViewData) const
 {
 	// Index position of the image matrix in rows and columns (used for storing the bounding box of the entities)

@@ -351,6 +351,7 @@ private:
 	bool bWriteNonMovableTags;
 
 	// Calibrate the rendered mask colors (there is a difference between the actual value and the rendered pixel values)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
 	bool bCalibrateRenderedMaskColors;
 	
 	// Vision data logger, use UPROPERTY to avoid GC
