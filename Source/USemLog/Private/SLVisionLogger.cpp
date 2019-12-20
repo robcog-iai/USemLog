@@ -25,16 +25,16 @@
 // Constructor
 USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
 {
+	CurrViewModeIdx = INDEX_NONE;
+	CurrVirtualCameraIdx = INDEX_NONE;
+	CurrTimestamp = -1.f;
+	PrevViewMode = ESLVisionViewMode::NONE;
+
 	ViewModes.Add(ESLVisionViewMode::Color);
 	ViewModes.Add(ESLVisionViewMode::Unlit);
 	ViewModes.Add(ESLVisionViewMode::Mask);
 	ViewModes.Add(ESLVisionViewMode::Depth);
 	ViewModes.Add(ESLVisionViewMode::Normal);
-
-	CurrViewModeIdx = INDEX_NONE;
-	CurrVirtualCameraIdx = INDEX_NONE;
-	CurrTimestamp = -1.f;
-	PrevViewMode = ESLVisionViewMode::NONE;
 }
 
 // Destructor

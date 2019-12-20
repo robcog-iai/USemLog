@@ -14,7 +14,7 @@ enum class ESLMetaScannerViewMode : uint8
 	NONE					UMETA(DisplayName = "None"),
 	Color					UMETA(DisplayName = "Color"),
 	Unlit					UMETA(DisplayName = "Unlit"),
-	Mask					UMETA(DisplayName = "Mask"),
+	White					UMETA(DisplayName = "Mask"),
 	Depth					UMETA(DisplayName = "Depth"),
 	Normal					UMETA(DisplayName = "Normal"),
 };
@@ -23,7 +23,7 @@ enum class ESLMetaScannerViewMode : uint8
 /**
 * Parameters for creating scanning the semantic map items
 */
-struct FSLItemScanParams
+struct FSLMetaScannerParams
 {
 	// Scan image resolution
 	FIntPoint Resolution;
@@ -44,22 +44,20 @@ struct FSLItemScanParams
 	bool bIncludeScansLocally;
 
 	// Default constructor
-	FSLItemScanParams() {};
+	FSLMetaScannerParams() {};
 
 	// Constructor
-	FSLItemScanParams(
+	FSLMetaScannerParams(
 		FIntPoint InScanResolution,
 		int32 InNumberOfScanPoints,
 		float InMaxScanItemVolume,
 		float InCameraDistanceToScanItem,
-		const TArray<ESLMetaScannerViewMode>& InScanViewModes,
 		bool bNewIncludeScansLocally = false)
 		:
 		Resolution(InScanResolution),
 		NumberOfScanPoints(InNumberOfScanPoints),
 		MaxItemVolume(InMaxScanItemVolume),
 		CameraDistanceToScanItem(InCameraDistanceToScanItem),
-		ViewModes(InScanViewModes),
 		bIncludeScansLocally(bNewIncludeScansLocally)
 	{};
 };
@@ -79,7 +77,7 @@ struct FSLScanPoseData
 	FIntPoint MaxBB;
 
 	// Camera pose
-	FTransform Pose;
+	FTransform CameraPose;
 
 	// Array of image data pair, render type name to binary data
 	TArray<TPair<FString, TArray<uint8>>> Images;

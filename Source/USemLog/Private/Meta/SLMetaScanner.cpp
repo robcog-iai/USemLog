@@ -19,7 +19,7 @@
 #include "Engine/Light.h"
 #include "Engine/Engine.h"
 
-//UUtils
+// UUtils
 #include "Tags.h"
 
 // Ctor
@@ -28,13 +28,18 @@ USLMetaScanner::USLMetaScanner()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
-	bIncludeLocally = false;
 	bWithItemRelativeCameraDistance = false;
 	CurrViewModeIdx = INDEX_NONE;
 	CurrPoseIdx = INDEX_NONE;
 	CurrItemIdx = INDEX_NONE;
 	TempItemPixelNum = INDEX_NONE;
 	PrevViewMode = ESLMetaScannerViewMode::NONE;
+
+	ViewModes.Add(ESLMetaScannerViewMode::Color);
+	ViewModes.Add(ESLMetaScannerViewMode::Unlit);
+	ViewModes.Add(ESLMetaScannerViewMode::White);
+	ViewModes.Add(ESLMetaScannerViewMode::Depth);
+	ViewModes.Add(ESLMetaScannerViewMode::Normal);
 }
 
 // Dtor
@@ -47,7 +52,7 @@ USLMetaScanner::~USLMetaScanner()
 }
 
 // Init scanner
-void USLMetaScanner::Init(const FString& InTaskId, FSLItemScanParams ScanParams)
+void USLMetaScanner::Init(const FString& InTaskId, FSLMetaScannerParams ScanParams)
 {
 	if (!bIsInit)
 	{
@@ -61,9 +66,11 @@ void USLMetaScanner::Init(const FString& InTaskId, FSLItemScanParams ScanParams)
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Parent is not of type USLMetadataLogger.. aborting.."), *FString(__func__), __LINE__);
 		}
 		
-		FolderName = InTaskId;
-		ViewModes = ScanParams.ViewModes;
-		bIncludeLocally = ScanParams.bIncludeScansLocally;
+		// Check if the scans should be stored locally as well
+		if(ScanParams.bIncludeScansLocally)
+		{
+			IncludeLocallyFolderName = InTaskId;
+		}
 
 		// If no view modes are available, add a default one
 		if(ViewModes.Num() == 0)
@@ -73,22 +80,31 @@ void USLMetaScanner::Init(const FString& InTaskId, FSLItemScanParams ScanParams)
 		}
 
 		// Spawn helper actors, items and scan poses, skip items larger that the distance to camera
-		if(!LoadScanCameraPoseActor() 
-			|| !LoadScanPoses(ScanParams.NumberOfScanPoints, ScanParams.CameraDistanceToScanItem)
-			|| !LoadScanItems(ScanParams.MaxItemVolume, ScanParams.CameraDistanceToScanItem, bScanItemsOnlyWithSLContact))
+		if(!LoadScanCameraPoseActor())
 		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load a camera dummy mesh for moving the target view.."), *FString(__func__), __LINE__);
 			return;
 		}
 
-		if (ViewModes.Contains(ESLMetaScannerViewMode::Mask))
+		if (!LoadScanPoses(ScanParams.NumberOfScanPoints, ScanParams.CameraDistanceToScanItem))
 		{
-			if(LoadMaskMaterial())
+			UE_LOG(LogTemp, Error, TEXT("%s::%d No scan poses loaded.."), *FString(__func__), __LINE__);
+			return;
+		}
+
+		if (!LoadScanItems(ScanParams.MaxItemVolume, ScanParams.CameraDistanceToScanItem, bScanItemsOnlyWithSLContact))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d No scan items loaded.."), *FString(__func__), __LINE__);
+			return;
+		}
+
+		// Setup actor clones with custom material (white)
+		if (ViewModes.Contains(ESLMetaScannerViewMode::White))
+		{
+			if(!LoadMaskMaterial() || !CreateWhiteMaterialClones())
 			{
-				CreateMaskClones();
-			}
-			else
-			{
-				ViewModes.Remove(ESLMetaScannerViewMode::Mask);
+				ViewModes.Remove(ESLMetaScannerViewMode::White);
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup clones with white material.."), *FString(__func__), __LINE__);
 			}
 		}
 
@@ -107,6 +123,7 @@ void USLMetaScanner::Init(const FString& InTaskId, FSLItemScanParams ScanParams)
 			return;
 		}
 
+		// TODO different approach, store gridfs oids in an array, and update the db after each finished item
 		// Open the first scan document in mongodb
 		MetadataLoggerParent->StartScanEntry(ScanItems[CurrItemIdx].Value, ScanParams.Resolution.X, ScanParams.Resolution.Y);
 
@@ -129,14 +146,14 @@ void USLMetaScanner::Start()
 	if(!bIsStarted && bIsInit)
 	{
 		// Cannot be called before BeginPlay, GetFirstPlayerController() is nullptr
-		if(!SetupFirstScanPose())
+		if(!GotoFirstScanPose())
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not trigger the first scan.."), *FString(__func__), __LINE__);
 			return;
 		}
 
 		// Store the first scan camera pose into the data
-		ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
+		ScanPoseData.CameraPose = CameraPoseActor->GetActorTransform(); //ScanPoses[CurrPoseIdx];
 
 		// Cannot be called in Init() because GetFirstPlayerController() is nullptr before BeginPlay
 		SetupFirstViewMode();
@@ -156,11 +173,236 @@ void USLMetaScanner::Finish()
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d Finish"), *FString(__func__), __LINE__);
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
 	}
+}
+
+// Request a screenshot
+void USLMetaScanner::RequestScreenshot()
+{
+	// Request screenshot on game thread
+	AsyncTask(ENamedThreads::GameThread, [this]()
+	{
+		CurrScanName = FString::FromInt(CurrItemIdx) + "_" + ScanItems[CurrItemIdx].Value + "_" + FString::FromInt(CurrPoseIdx);
+		if (!ViewModePostfix.IsEmpty())
+		{
+			CurrScanName.Append("_" + ViewModePostfix);
+		}
+
+		GetHighResScreenshotConfig().FilenameOverride = CurrScanName;
+		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
+		//GetHighResScreenshotConfig().SetHDRCapture(true);
+		ViewportClient->Viewport->TakeHighResScreenShot();
+	});
+}
+
+// Called when screenshot is captured
+void USLMetaScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
+{
+	PrintProgress();
+
+	// Count and check how many pixels does the item occupy in the image (works with view mode mask/unlit)
+	//CountItemPixelNumWithCheck(Bitmap);
+
+	// Add the number of pixels that the item occupies to the doc
+	if (ViewModes[CurrViewModeIdx] == ESLMetaScannerViewMode::White)
+	{
+		ScanToolkit.GetItemPixelNumAndBB(Bitmap, SizeX, SizeY, ScanPoseData.NumPixels, ScanPoseData.MinBB, ScanPoseData.MaxBB);
+		//GetItemPixelNumAndBB(Bitmap, SizeX, SizeY, ScanPoseData.NumPixels, ScanPoseData.MinBB, ScanPoseData.MaxBB);
+	}
+
+	//// Remove const-ness from array
+	//TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap)
+
+	// Compress image
+	TArray<uint8> CompressedBitmap;
+	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
+
+	// Add image current scan data
+	ScanPoseData.Images.Emplace(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
+
+	// Save the png locally
+	if (!IncludeLocallyFolderName.IsEmpty())
+	{
+		FString Path = FPaths::ProjectDir() + "/SemLog/" + IncludeLocallyFolderName + "/Meta/" + CurrScanName + ".png";
+		FPaths::RemoveDuplicateSlashes(Path);
+		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
+	}
+
+	// Item and camera in position, check for other view modes
+	if (SetupNextViewMode())
+	{
+		RequestScreenshot();
+	}
+	else
+	{
+		// No other view modes, keep or set the first one
+		SetupFirstViewMode();
+
+		// New camera or image location will be set, reset the number of item pixels
+		TempItemPixelNum = INDEX_NONE;
+
+		// Check for next camera poses
+		if (GotoNextScanPose())
+		{
+			MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
+			ScanPoseData.Images.Empty();
+			ScanPoseData.CameraPose = CameraPoseActor->GetActorTransform(); //ScanPoses[CurrPoseIdx];
+
+			RequestScreenshot();
+		}
+		else
+		{
+			MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
+			ScanPoseData.Images.Empty();
+			MetadataLoggerParent->FinishScanEntry();
+
+			if (SetupNextItem())
+			{
+				// If in mask mode, apply the mask material on the current item as well
+				if (ViewModes[CurrViewModeIdx] == ESLMetaScannerViewMode::White)
+				{
+					OriginalMaterials.Empty();
+					ApplyMaskMaterial();
+				}
+
+				// No other scan poses found, set next item and first camera scan pose
+				GotoFirstScanPose();
+
+				MetadataLoggerParent->StartScanEntry(ScanItems[CurrItemIdx].Value, SizeX, SizeY);
+				ScanPoseData.CameraPose = CameraPoseActor->GetActorTransform(); //ScanPoses[CurrPoseIdx];
+
+				RequestScreenshot();
+			}
+			else
+			{
+				// No more items, or camera scan poses
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished scanning.."),
+					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+				QuitEditor();
+			}
+		}
+	}
+}
+
+// Set view mode
+bool USLMetaScanner::SetupFirstViewMode()
+{
+	CurrViewModeIdx = 0;
+	if (!ViewModes.IsValidIndex(CurrViewModeIdx))
+	{
+		return false;
+	}
+
+	ApplyViewMode(ViewModes[CurrViewModeIdx]);
+	return true;
+}
+
+// Setup next view mode
+bool USLMetaScanner::SetupNextViewMode()
+{
+	CurrViewModeIdx++;
+	if (!ViewModes.IsValidIndex(CurrViewModeIdx))
+	{
+		return false;
+	}
+
+	ApplyViewMode(ViewModes[CurrViewModeIdx]);
+	return true;
+}
+
+// Setup first item in the scan box
+bool USLMetaScanner::SetupFirstScanItem()
+{
+	CurrItemIdx = 0;
+	if (!ScanItems.IsValidIndex(CurrItemIdx))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid item index [%ld].."), *FString(__func__), __LINE__, CurrItemIdx);
+		return false;
+	}
+
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(false);
+
+	if (bWithItemRelativeCameraDistance)
+	{
+		CurrItemCameraDistance = GetItemRelativeCameraDistance(ScanItems[CurrItemIdx].Key);
+	}
+	return true;
+}
+
+// Set next item in the scan box, return false if there are no more items
+bool USLMetaScanner::SetupNextItem()
+{
+	// Hide previous actor
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(true);
+
+	// Bring next item
+	CurrItemIdx++;
+	if (!ScanItems.IsValidIndex(CurrItemIdx))
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Last item [%ld] reached.."), *FString(__func__), __LINE__, CurrItemIdx-1);
+		return false;
+	}
+
+	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(false);
+
+	if (bWithItemRelativeCameraDistance)
+	{
+		CurrItemCameraDistance = GetItemRelativeCameraDistance(ScanItems[CurrItemIdx].Key);
+	}
+	return true;
+}
+
+// Scan item from the first camera pose (cannot be called before BeginPlay, GetFirstPlayerController() is nullptr)
+bool USLMetaScanner::GotoFirstScanPose()
+{
+	CurrPoseIdx = 0;
+	if (!ScanPoses.IsValidIndex(CurrPoseIdx))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid pose index [%ld].."), *FString(__func__), __LINE__, CurrPoseIdx);
+		return false;
+	}
+
+	if (bWithItemRelativeCameraDistance)
+	{
+		FTransform TempT = ScanPoses[CurrPoseIdx];
+		TempT.SetTranslation(TempT.GetTranslation() * CurrItemCameraDistance);
+		CameraPoseActor->SetActorTransform(TempT);
+	}
+	else
+	{
+		CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
+	}
+
+	GetWorld()->GetFirstPlayerController()->SetViewTarget(CameraPoseActor); // Cannot be called before BeginPlay
+	return true;
+}
+
+// Scan item from the next camera pose, return false if there are no more poses
+bool USLMetaScanner::GotoNextScanPose()
+{
+	CurrPoseIdx++;
+	if (!ScanPoses.IsValidIndex(CurrPoseIdx))
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Last pose [%ld] reached .."), *FString(__func__), __LINE__, CurrPoseIdx-1)
+		return false;
+	}
+
+	if (bWithItemRelativeCameraDistance)
+	{
+		FTransform TempT = ScanPoses[CurrPoseIdx];
+		TempT.SetTranslation(TempT.GetTranslation() * CurrItemCameraDistance);
+		CameraPoseActor->SetActorTransform(TempT);
+	}
+	else
+	{
+		CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
+	}
+
+	GetWorld()->GetFirstPlayerController()->SetViewTarget(CameraPoseActor);
+	return true;
 }
 
 // Load scan camera convenience actor
@@ -197,11 +439,11 @@ bool USLMetaScanner::LoadScanPoses(int32 NumScanPose, float DistanceToCamera)
 	if(DistanceToCamera < 0.01f)
 	{
 		bWithItemRelativeCameraDistance = true;
-		GenerateSphereScanPoses(NumScanPose, 1, ScanPoses);
+		ScanToolkit.GenerateSphereScanPoses(NumScanPose, 1, ScanPoses);
 	}
 	else
 	{
-		GenerateSphereScanPoses(NumScanPose, DistanceToCamera, ScanPoses);
+		ScanToolkit.GenerateSphereScanPoses(NumScanPose, DistanceToCamera, ScanPoses);
 	}
 	
 	if(ScanPoses.Num() == 0)
@@ -315,7 +557,7 @@ bool USLMetaScanner::LoadMaskMaterial()
 }
 
 // Create clones of the items with mask material on top
-bool USLMetaScanner::CreateMaskClones()
+bool USLMetaScanner::CreateWhiteMaterialClones()
 {
 	if(ScanItems.Num() == 0)
 	{
@@ -350,6 +592,11 @@ bool USLMetaScanner::CreateMaskClones()
 			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
 		}
 		EmplaceIdx++;
+	}
+	if(MaskClones.Num() == 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No mask clones where generated.."), *FString(__func__), __LINE__);
+		return false;
 	}
 	return true;
 }
@@ -398,231 +645,6 @@ void USLMetaScanner::InitRenderParameters()
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
 }
 
-// Set view mode
-bool USLMetaScanner::SetupFirstViewMode()
-{
-	CurrViewModeIdx = 0;
-	if(!ViewModes.IsValidIndex(CurrViewModeIdx))
-	{
-		return false;
-	}
-	
-	ApplyViewMode(ViewModes[CurrViewModeIdx]);
-	return true;
-}
-
-// Setup next view mode
-bool USLMetaScanner::SetupNextViewMode()
-{
-	CurrViewModeIdx++;
-	if(!ViewModes.IsValidIndex(CurrViewModeIdx))
-	{
-		return false;
-	}
-
-	ApplyViewMode(ViewModes[CurrViewModeIdx]);
-	return true;
-}
-
-// Setup first item in the scan box
-bool USLMetaScanner::SetupFirstScanItem()
-{
-	CurrItemIdx = 0;
-	if(!ScanItems.IsValidIndex(CurrItemIdx))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid item index [%ld].."), *FString(__func__), __LINE__, CurrItemIdx);
-		return false;
-	}
-	
-	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(false);
-	
-	if(bWithItemRelativeCameraDistance)
-	{
-		CurrItemCameraDistance = GetItemRelativeCameraDistance(ScanItems[CurrItemIdx].Key);
-	}
-	return true;
-}
-
-// Set next item in the scan box, return false if there are no more items
-bool USLMetaScanner::SetupNextItem()
-{
-	// Hide previous actor
-	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(true);
-	
-	// Bring next item
-	CurrItemIdx++;
-	if(!ScanItems.IsValidIndex(CurrItemIdx))
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Last item [%ld] reached.."), *FString(__func__), __LINE__, CurrItemIdx-1);
-		return false;
-	}
-
-	ScanItems[CurrItemIdx].Key->GetOwner()->SetActorHiddenInGame(false);
-	
-	if(bWithItemRelativeCameraDistance)
-	{
-		CurrItemCameraDistance = GetItemRelativeCameraDistance(ScanItems[CurrItemIdx].Key);
-	}
-	return true;
-}
-
-// Scan item from the first camera pose (cannot be called before BeginPlay, GetFirstPlayerController() is nullptr)
-bool USLMetaScanner::SetupFirstScanPose()
-{
-	CurrPoseIdx = 0;
-	if(!ScanPoses.IsValidIndex(CurrPoseIdx))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid pose index [%ld].."), *FString(__func__), __LINE__, CurrPoseIdx);
-		return false;
-	}
-	
-	if(bWithItemRelativeCameraDistance)
-	{
-		FTransform TempT = ScanPoses[CurrPoseIdx];
-		TempT.SetTranslation(TempT.GetTranslation() * CurrItemCameraDistance);
-		CameraPoseActor->SetActorTransform(TempT);
-	}
-	else
-	{
-		CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
-	}
-	
-	GetWorld()->GetFirstPlayerController()->SetViewTarget(CameraPoseActor); // Cannot be called before BeginPlay
-	return true;
-}
-
-// Scan item from the next camera pose, return false if there are no more poses
-bool USLMetaScanner::SetupNextScanPose()
-{
-	CurrPoseIdx++;
-	if(!ScanPoses.IsValidIndex(CurrPoseIdx))
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Last pose [%ld] reached .."), *FString(__func__), __LINE__, CurrPoseIdx-1)
-		return false;
-	}
-
-	if(bWithItemRelativeCameraDistance)
-	{
-		FTransform TempT = ScanPoses[CurrPoseIdx];
-		TempT.SetTranslation(TempT.GetTranslation() * CurrItemCameraDistance);
-		CameraPoseActor->SetActorTransform(TempT);
-	}
-	else
-	{
-		CameraPoseActor->SetActorTransform(ScanPoses[CurrPoseIdx]);
-	}
-	
-	GetWorld()->GetFirstPlayerController()->SetViewTarget(CameraPoseActor);
-	return true;
-}
-
-// Request a screenshot
-void USLMetaScanner::RequestScreenshot()
-{
-	// Request screenshot on game thread
-	AsyncTask(ENamedThreads::GameThread, [this]()
-	{
-		CurrScanName = FString::FromInt(CurrItemIdx) + "_" + ScanItems[CurrItemIdx].Value + "_" + FString::FromInt(CurrPoseIdx);
-		if(!ViewModePostfix.IsEmpty())
-		{
-			CurrScanName.Append("_" + ViewModePostfix);
-		}
-
-		GetHighResScreenshotConfig().FilenameOverride = CurrScanName;
-		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
-		//GetHighResScreenshotConfig().SetHDRCapture(true);
-		ViewportClient->Viewport->TakeHighResScreenShot();
-	});
-}
-
-// Called when screenshot is captured
-void USLMetaScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
-{
-	PrintProgress();
-
-	// Count and check how many pixels does the item occupy in the image (works with view mode mask/unlit)
-	//CountItemPixelNumWithCheck(Bitmap);
-
-	// Add the number of pixels that the item occupies to the doc
-	if(ViewModes[CurrViewModeIdx] == ESLMetaScannerViewMode::Mask)
-	{
-		GetItemPixelNumAndBB(Bitmap, SizeX, SizeY, ScanPoseData.NumPixels, ScanPoseData.MinBB, ScanPoseData.MaxBB);
-	}
-	
-	//// Remove const-ness from array
-	//TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap)
-	
-	// Compress image
-	TArray<uint8> CompressedBitmap;
-	FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
-
-	// Add image current scan data
-	ScanPoseData.Images.Emplace(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
-
-	// Save the png locally
-	if(bIncludeLocally)
-	{
-		FString Path = FPaths::ProjectDir() + "/SemLog/" + FolderName + "/Meta/" + CurrScanName + ".png";
-		FPaths::RemoveDuplicateSlashes(Path);
-		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
-	}
-
-	// Item and camera in position, check for other view modes
-	if(SetupNextViewMode())
-	{
-		RequestScreenshot();
-	}
-	else
-	{
-		// No other view modes, keep or set the first one
-		SetupFirstViewMode();
-
-		// New camera or image location will be set, reset the number of item pixels
-		TempItemPixelNum = INDEX_NONE;
-
-		// Check for next camera poses
-		if(SetupNextScanPose())
-		{
-			MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
-			ScanPoseData.Images.Empty();
-			ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
-			
-			RequestScreenshot();
-		}
-		else
-		{
-			MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
-			ScanPoseData.Images.Empty();
-			MetadataLoggerParent->FinishScanEntry();
-			
-			if(SetupNextItem())
-			{
-				// If in mask mode, apply the mask material on the current item as well
-				if(ViewModes[CurrViewModeIdx] == ESLMetaScannerViewMode::Mask)
-				{
-					OriginalMaterials.Empty();
-					ApplyMaskMaterial();
-				}
-			
-				// No other scan poses found, set next item and first camera scan pose
-				SetupFirstScanPose();
-
-				MetadataLoggerParent->StartScanEntry(ScanItems[CurrItemIdx].Value, SizeX, SizeY);
-				ScanPoseData.Pose = ScanPoses[CurrPoseIdx];
-				
-				RequestScreenshot();
-			}
-			else
-			{
-				// No more items, or camera scan poses
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished scanning.."),
-					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-				QuitEditor();
-			}
-		}
-	}
-}
-
 // Apply view mode
 void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 {
@@ -645,7 +667,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 		{
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 		}
-		else if(PrevViewMode == ESLMetaScannerViewMode::Mask)
+		else if(PrevViewMode == ESLMetaScannerViewMode::White)
 		{
 			ApplyOriginalMaterial();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
@@ -663,7 +685,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 		{
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
-		else if(PrevViewMode == ESLMetaScannerViewMode::Mask)
+		else if(PrevViewMode == ESLMetaScannerViewMode::White)
 		{
 			ApplyOriginalMaterial();
 		}
@@ -679,7 +701,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 		}
 		ViewModePostfix = "U";
 	}
-	else if(Mode == ESLMetaScannerViewMode::Mask)
+	else if(Mode == ESLMetaScannerViewMode::White)
 	{
 		if(PrevViewMode == ESLMetaScannerViewMode::Unlit)
 		{
@@ -706,7 +728,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 	}
 	else if(Mode == ESLMetaScannerViewMode::Depth)
 	{
-		if(PrevViewMode == ESLMetaScannerViewMode::Mask)
+		if(PrevViewMode == ESLMetaScannerViewMode::White)
 		{
 			ApplyOriginalMaterial();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
@@ -743,7 +765,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 		{
 			BufferVisTargetCV->Set(*FString("WorldNormal"));
 		}
-		else if(PrevViewMode == ESLMetaScannerViewMode::Mask)
+		else if(PrevViewMode == ESLMetaScannerViewMode::White)
 		{
 			ApplyOriginalMaterial();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
@@ -837,162 +859,16 @@ void USLMetaScanner::QuitEditor()
 #endif // WITH_EDITOR
 }
 
-/* Helpers */
-// Get the bounding box and the number of pixels the item occupies in the image
-void USLMetaScanner::GetItemPixelNumAndBB(const TArray<FColor>& InBitmap, int32 Width, int32 Height,
-	int32& OutPixelNum, FIntPoint& OutBBMin, FIntPoint& OutBBMax)
+// Output progress to terminal
+void USLMetaScanner::PrintProgress() const
 {
-	if(ViewModes[CurrViewModeIdx] == ESLMetaScannerViewMode::Mask)
-	{
-		GetColorPixelNumAndBB(InBitmap, MaskColorConst, Width, Height,OutPixelNum, OutBBMin, OutBBMax);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Only works in Mask mode.."), *FString(__func__));
-	}
-}
-
-// Get the bounding box and the number of pixels the color occupies in the image
-void USLMetaScanner::GetColorPixelNumAndBB(const TArray<FColor>& InBitmap, const FColor& Color, int32 Width,
-	int32 Height, int32& OutPixelNum, FIntPoint& OutBBMin, FIntPoint& OutBBMax)
-{
-	int32 RowIdx = 0;
-	int32 ColIdx = 0;
-	OutPixelNum = 0;
-	OutBBMin = FIntPoint(Width, Height);
-	OutBBMax = FIntPoint(0,0);
-
-	for (const auto& C : InBitmap)
-	{
-		if(C == Color)
-		{
-			OutPixelNum++;
-			
-			if(RowIdx < OutBBMin.Y)
-			{
-				OutBBMin.Y = RowIdx;
-			}
-			if(RowIdx > OutBBMax.Y)
-			{
-				OutBBMax.Y = RowIdx;
-			}
-			if(ColIdx < OutBBMin.X)
-			{
-				OutBBMin.X = ColIdx;
-			}
-			if(ColIdx > OutBBMax.X)
-			{
-				OutBBMax.X = ColIdx;
-			}
-		}
-
-		//// DEBUG
-		//if(C == Color)
-		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t[\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
-		//		*FString(__func__), __LINE__, RowIdx, ColIdx, OutBBMin.X, OutBBMin.Y, OutBBMax.X, OutBBMax.Y);
-		//}
-		//else
-		//{
-		//	UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t[\t%ld\t|\t%ld\t];\t\t||\t\tMin=[\t%ld\t|\t%ld\t];\t\t||\t\tMax=[\t%ld\t|\t%ld\t]]"),
-		//		*FString(__func__), __LINE__, RowIdx, ColIdx, OutBBMin.X, OutBBMin.Y, OutBBMax.X, OutBBMax.Y);
-		//}
-
-
-	}
-}
-
-// Get the number of pixels that the item occupies in the image
-int32 USLMetaScanner::GetItemPixelNum(const TArray<FColor>& Bitmap)
-{
-	if(ViewModes[CurrViewModeIdx] == ESLMetaScannerViewMode::Mask)
-	{
-		return GetColorPixelNum(Bitmap, MaskColorConst);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Only works in Mask mode, returning -1"), *FString(__func__));
-		return INDEX_NONE;
-	}
-}
-
-// Get the number of pixels of the given color in the image
-int32 USLMetaScanner::GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor& Color) const
-{
-	int32 Num = 0;
-	for (const auto& C : Bitmap)
-	{
-		if(C == Color)
-		{
-			Num++;
-		}
-	}
-	return Num++;
-}
-
-// Get the number of pixels of the given two colors in the image
-void USLMetaScanner::GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor& ColorA, int32& OutNumA, const FColor& ColorB, int32& OutNumB)
-{
-	OutNumA = 0;
-	OutNumB = 0;
-	for (const auto& C : Bitmap)
-	{
-		if(C == ColorA)
-		{
-			OutNumA++;
-		}
-		else if(C == ColorB)
-		{
-			OutNumB++;
-		}
-	}
-}
-
-// Count (and check) the number of pixels the item uses in the image
-void USLMetaScanner::CountItemPixelNumWithCheck(const TArray<FColor>& Bitmap, int32 ResX, int32 ResY)
-{
-	// Count pixel colors
-	if(ViewModes[CurrViewModeIdx] == ESLMetaScannerViewMode::Mask)
-	{
-		// Cache the previous number of item pixels
-		int32 PrevItemPixelNum = TempItemPixelNum;
-		
-		int32 NumBackgroundPixels = 0;
-		GetColorsPixelNum(Bitmap, FColor::Black, NumBackgroundPixels, MaskColorConst, TempItemPixelNum);
-		if(TempItemPixelNum + NumBackgroundPixels != ResX * ResY)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Number of item [%ld] + background [%ld] pixels, differs of number image total [%ld]."),
-				*FString(__func__), __LINE__, TempItemPixelNum, NumBackgroundPixels, ResX * ResY);
-		}
-
-		// Compare against previous (other view mode) number item pixels
-		if(PrevItemPixelNum != INDEX_NONE)
-		{
-			if(TempItemPixelNum != PrevItemPixelNum)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Prev number [%ld] of item pixels differs of current one [%ld]."),
-					*FString(__func__), __LINE__, PrevItemPixelNum, TempItemPixelNum);
-			}
-		}
-	}
-	else if(ViewModes[CurrViewModeIdx] == ESLMetaScannerViewMode::Unlit)
-	{
-		// Cache the previous number of item pixels
-		int32 PrevItemPixelNum = TempItemPixelNum;
-		
-		int32 NumBackgroundPixels = GetColorPixelNum(Bitmap, FColor::Black);
-		TempItemPixelNum = ResX * ResY - NumBackgroundPixels;
-
-		// Compare against previous (other view mode) number item pixels
-		if(PrevItemPixelNum != INDEX_NONE)
-		{
-			if(TempItemPixelNum != PrevItemPixelNum)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Prev number [%ld] of item pixels differs of current one [%ld]."),
-					*FString(__func__), __LINE__, PrevItemPixelNum, TempItemPixelNum);
-			}
-		}
-	}
+	UE_LOG(LogTemp, Log, TEXT("%s::%d [%f] Progress=[Item=%ld/%ld; Pose=%ld/%ld; ViewMode=%ld/%ld; Scan=%ld/%ld]"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
+		CurrItemIdx + 1, ScanItems.Num(),
+		CurrPoseIdx + 1, ScanPoses.Num(),
+		CurrViewModeIdx + 1, ViewModes.Num(),
+		CurrItemIdx * ScanPoses.Num() * ViewModes.Num() + CurrPoseIdx * ViewModes.Num() + CurrViewModeIdx + 1,
+		ScanItems.Num() * ScanPoses.Num() * ViewModes.Num());
 }
 
 // Get the view mode string name
@@ -1006,7 +882,7 @@ FString USLMetaScanner::GetViewModeName(ESLMetaScannerViewMode Mode) const
 	{
 		return FString("Unlit");
 	}
-	else if(Mode == ESLMetaScannerViewMode::Mask)
+	else if(Mode == ESLMetaScannerViewMode::White)
 	{
 		return FString("Mask");
 	}
@@ -1077,50 +953,3 @@ bool USLMetaScanner::HasSemanticContactShape(UStaticMeshComponent* SMC) const
 	return false;
 }
 
-// Generate sphere scan poses
-void USLMetaScanner::GenerateSphereScanPoses(uint32 MaxNumOfPoints, float Radius, TArray<FTransform>& OutTransforms)
-{
-	// (https://www.cmu.edu/biolphys/deserno/pdf/sphere_equi.pdf)
-	const float Area = 4 * PI / MaxNumOfPoints;
-	const float Distance = FMath::Sqrt(Area);
-
-	// Num of latitudes
-	const int32 MTheta = FMath::RoundToInt(PI/Distance);
-	const float DTheta = PI / MTheta;
-	const float DPhi = Area / DTheta;
-
-	// Iterate latitude lines
-	for (int32 M = 0; M < MTheta; M++)
-	{
-		// 0 <= Theta <= PI
-		const float Theta = PI * (float(M) + 0.5) / MTheta;
-
-		// Num of longitudes
-		const int32 MPhi = FMath::RoundToInt(2 * PI * FMath::Sin(Theta) / DPhi);
-		for (int32 N = 0; N < MPhi; N++)
-		{
-			// 0 <= Phi < 2pi 
-			const float Phi = 2 * PI * N / MPhi;
-
-			FVector Point;
-			Point.X = FMath::Sin(Theta) * FMath::Cos(Phi) * Radius;
-			Point.Y = FMath::Sin(Theta) * FMath::Sin(Phi) * Radius;
-			Point.Z = FMath::Cos(Theta) * Radius;
-			FQuat Quat = (-Point).ToOrientationQuat();
-
-			OutTransforms.Emplace(Quat, Point);
-		}
-	}
-}
-
-// Output progress to terminal
-void USLMetaScanner::PrintProgress() const
-{
-	UE_LOG(LogTemp, Log, TEXT("%s::%d [%f] Progress=[Item=%ld/%ld; Pose=%ld/%ld; ViewMode=%ld/%ld; Scan=%ld/%ld]"),
-		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-		CurrItemIdx + 1, ScanItems.Num(),
-		CurrPoseIdx + 1, ScanPoses.Num(),
-		CurrViewModeIdx + 1, ViewModes.Num(),
-		CurrItemIdx * ScanPoses.Num() * ViewModes.Num() + CurrPoseIdx * ViewModes.Num() + CurrViewModeIdx + 1,
-		ScanItems.Num() * ScanPoses.Num() * ViewModes.Num());
-}

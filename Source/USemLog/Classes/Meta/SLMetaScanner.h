@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "SLMetaScannerStructs.h"
-#include "SLMetaScannerHandler.h"
+#include "SLMetaScannerToolkit.h"
 #include "SLMetaScanner.generated.h"
 
 // Forward declarations
@@ -32,7 +32,7 @@ public:
 	~USLMetaScanner();
 
 	// Setup scanning room
-	void Init(const FString& InTaskId, FSLItemScanParams ScanParams);
+	void Init(const FString& InTaskId, FSLMetaScannerParams ScanParams);
 
 	// Start scanning, set camera into the first pose and trigger the screenshot
 	void Start();
@@ -49,6 +49,31 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
+protected:
+	// Request a screenshot
+	void RequestScreenshot();
+
+	// Called when the screenshot is captured
+	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
+
+	// Setup view mode
+	bool SetupFirstViewMode();
+
+	// Setup next view mode
+	bool SetupNextViewMode();
+
+	// Move first item in the scan box
+	bool SetupFirstScanItem();
+
+	// Set next item in the scan box, return false if there are no more items
+	bool SetupNextItem();
+
+	// Move camera in position for the first scan
+	bool GotoFirstScanPose();
+
+	// Move camera in position for the next scan, return false if there are no more poses
+	bool GotoNextScanPose();
+
 private:
 	// Load scan camera convenience actor
 	bool LoadScanCameraPoseActor();
@@ -62,38 +87,14 @@ private:
 	// Load mask dynamic material
 	bool LoadMaskMaterial();
 
-	// Create clones of the items with mask material on top
-	bool CreateMaskClones();
+	// Create clones of the items with a white unlit material
+	bool CreateWhiteMaterialClones();
 
 	// Init hi-res screenshot resolution
 	void InitScreenshotResolution(FIntPoint Resolution);
 
 	// Init render parameters (resolution, view mode)
 	void InitRenderParameters();
-
-	// Setup view mode
-	bool SetupFirstViewMode();
-
-	// Setup next view mode
-	bool SetupNextViewMode();
-	
-	// Move first item in the scan box
-	bool SetupFirstScanItem();
-
-	// Set next item in the scan box, return false if there are no more items
-	bool SetupNextItem();
-
-	// Move camera in position for the first scan
-	bool SetupFirstScanPose();
-
-	// Move camera in position for the next scan, return false if there are no more poses
-	bool SetupNextScanPose();
-
-	// Request a screenshot
-	void RequestScreenshot();
-	
-	// Called when the screenshot is captured
-	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
 	// Apply view mode
 	void ApplyViewMode(ESLMetaScannerViewMode Mode);
@@ -107,25 +108,8 @@ private:
 	// Clean exit, all the Finish() methods will be triggered
 	void QuitEditor();
 
-
-	/* Helpers */
-	// Get the bounding box and the number of pixels the item occupies in the image
-	void GetItemPixelNumAndBB(const TArray<FColor>& InBitmap, int32 Width, int32 Height, int32& OutPixelNum, FIntPoint& OutBBMin, FIntPoint& OutBBMax);
-
-	// Get the bounding box and the number of pixels the color occupies in the image
-	void GetColorPixelNumAndBB(const TArray<FColor>& InBitmap, const FColor& Color, int32 Width, int32 Height, int32& OutPixelNum, FIntPoint& OutBBMin, FIntPoint& OutBBMax);
-
-	// Get the number of pixels that the item occupies in the image
-	int32 GetItemPixelNum(const TArray<FColor>& Bitmap);
-
-	// Get the number of pixels of the given color in the image
-	int32 GetColorPixelNum(const TArray<FColor>& Bitmap, const FColor& Color) const;
-	
-	// Count and check validity of the number of pixels the item represents in the image;
-	void CountItemPixelNumWithCheck(const TArray<FColor>& Bitmap, int32 ResX, int32 ResY);
-	
-	// Get the number of pixels of the given two colors in the image
-	void GetColorsPixelNum(const TArray<FColor>& Bitmap, const FColor& ColorA, int32& OutNumA, const FColor& ColorB, int32& OutNumB);
+	// Print progress
+	void PrintProgress() const;
 
 	// Get view mode name
 	FString GetViewModeName(ESLMetaScannerViewMode Mode) const;
@@ -139,14 +123,8 @@ private:
 	
 	// Check if the item is wrapped in a semantic contact shape (has a SLContactShapeInterface sibling)
 	bool HasSemanticContactShape(UStaticMeshComponent* SMC) const;
-
-	// Generate sphere scan poses
-	void GenerateSphereScanPoses(uint32 MaxNumOfPoints, float Radius, TArray<FTransform>& OutTransforms);
-
-	// Print progress
-	void PrintProgress() const;
 	
-private:
+protected:
 	// Set when initialized
 	bool bIsInit;
 
@@ -156,20 +134,18 @@ private:
 	// Set when finished
 	bool bIsFinished;
 
+private:
 	// Scanner image handler
-	FSLMetaScannerHandler ImgHandler;
+	FSLMetaScannerToolkit ScanToolkit;
 
 	// Contains the data of the current scan in a given camera pose
 	FSLScanPoseData ScanPoseData;
 
-	// Flag to save the scanned images locally as well
-	bool bIncludeLocally;
-
 	// Pointer to the parent, used for updating the metadata mongo document;
 	USLMetadataLogger* MetadataLoggerParent;
 	
-	// Location on where to save the data
-	FString FolderName;
+	// Location on where to save the data locally (skip if empty)
+	FString IncludeLocallyFolderName;
 
 	// Current name of scan (for saving locally, and progress update purposes)
 	FString CurrScanName;

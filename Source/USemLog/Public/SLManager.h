@@ -177,13 +177,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	float MaxScanItemVolume;
 
-	// The distance of the camera to the scanned item (0 = calculated relative to the object size)
+	// The distance of the camera to the scanned item (0 = automatically calculated relative to the item size)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
 	float CameraDistanceToScanItem;
-	
-	// Scan view modes
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
-	TSet<ESLMetaScannerViewMode> ScanViewModes;
 	
 	// Save the scanned images locally
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Metadata Logger", meta = (editcondition = "bScanItems"))
@@ -309,49 +305,53 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bLogEditorData;
 
-	// Save data so an owl semantic map
+	// Overwrite existing editor related entries (where applicable)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	bool bOverwriteEditorData;
+
+	// Save data to an owl semantic map
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
 	bool bWriteSemanticMap;
 
 	// Clear all tags (if ClearOnlyThisTagType is empty)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
-	bool bClearTags;
+	bool bClearAllTags;
 
 	// Clear only tags with this tag type (empty means clear all tags everything)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bClearTags"))
-	FString ClearTagType;
+	FString TagTypeToClear;
 
 	// Remove only the given key from the tag type (if empty, it removes all keys)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bClearTags"))
-	FString ClearKeyType;
-	
-	// Overwrite existing editor related entries
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
-	bool bOverwriteProperties;
+	FString TagKeyToClear;
+
 	
 	// Add class property to tags
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
-	bool bWriteClassProperties;
+	bool bWriteClassTags;
 
 	// Add unique id property to tags
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
-	bool bWriteUniqueIdProperties;
+	bool bWriteUniqueIdTags;
 	
 	// Add visual mask data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
-	bool bWriteVisualMaskProperties;
+	bool bWriteUniqueMaskColors;
 
 	// Min distance between the mask colors
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bWriteVisualMaskProperty"))
-	int32 VisualMaskColorMinDistance;
+	uint8 MinColorManhattanDistance;
 	
 	// Generate visual masks randomly or incrementally
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bWriteVisualMaskProperty"))
-	bool bRandomVisualMaskGenerator;
+	bool bUseRandomColorGeneration;
 
 	// Tag non-movable entities
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bWriteVisualMaskProperty"))
-	bool bWriteNonMovableProperties;
+	bool bWriteNonMovableTags;
+
+	// Calibrate the rendered mask colors (there is a difference between the actual value and the rendered pixel values)
+	bool bCalibrateRenderedMaskColors;
 	
 	// Vision data logger, use UPROPERTY to avoid GC
 	UPROPERTY()

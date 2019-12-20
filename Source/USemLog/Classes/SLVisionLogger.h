@@ -45,6 +45,15 @@ public:
 	// Finish logger
 	void Finish(bool bForced = false);
 
+	// Get init state
+	bool IsInit() const { return bIsInit; };
+
+	// Get started state
+	bool IsStarted() const { return bIsStarted; };
+
+	// Get finished state
+	bool IsFinished() const { return bIsFinished; };
+
 protected:
 	// Trigger the screenshot on the game thread
 	void RequestScreenshot();

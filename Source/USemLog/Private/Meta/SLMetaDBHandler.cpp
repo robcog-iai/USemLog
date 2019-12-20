@@ -6,6 +6,7 @@
 
 // UUtils
 #include "Conversions.h"
+#include "Tags.h"
 
 // Ctor
 FSLMetaDBHandler::FSLMetaDBHandler() {}
@@ -171,22 +172,22 @@ void FSLMetaDBHandler::CreateIndexes() const
 		BCON_UTF8(mongoc_collection_get_name(collection)),
 		"indexes",
 		"[",
-		"{",
-		"key",
-		BCON_DOCUMENT(&idx_task),
-		"name",
-		BCON_UTF8(idx_task_str),
-		//"unique",
-		//BCON_BOOL(false),
-		"}",
-		"{",
-		"key",
-		BCON_DOCUMENT(&idx_cls),
-		"name",
-		BCON_UTF8(idx_cls_str),
-		//"unique",
-		//BCON_BOOL(false),
-		"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_task),
+				"name",
+				BCON_UTF8(idx_task_str),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
+			"{",
+				"key",
+				BCON_DOCUMENT(&idx_cls),
+				"name",
+				BCON_UTF8(idx_cls_str),
+				//"unique",
+				//BCON_BOOL(false),
+			"}",
 		"]");
 
 	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
@@ -232,6 +233,8 @@ void FSLMetaDBHandler::WriteFirstDocument(const FString& InTaskDescription)
 // Create the scan entry bson document
 void FSLMetaDBHandler::StartScanEntry(const FString& Class, int32 ResX, int32 ResY)
 {
+	TotalNumPixels = ResX * ResY;
+
 #if SL_WITH_LIBMONGO_C
 	if (scan_entry_doc || scan_pose_arr)
 	{
@@ -260,6 +263,8 @@ void FSLMetaDBHandler::StartScanEntry(const FString& Class, int32 ResX, int32 Re
 // Add pose scan data
 void FSLMetaDBHandler::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 {
+	const float ImgPrec = (float) ScanPoseData.NumPixels / TotalNumPixels;
+
 #if SL_WITH_LIBMONGO_C
 	if (!scan_entry_doc)
 	{
@@ -288,8 +293,8 @@ void FSLMetaDBHandler::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 	bson_uint32_to_string(scan_pose_arr_idx, &pose_key, pose_key_str, sizeof pose_key_str);
 	BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, pose_key, &scan_pose_doc);
 
-	BSON_APPEND_INT32(&scan_pose_doc, "num_pixels", ScanPoseData.NumPixels);
-	AddPoseDoc(ScanPoseData.Pose.GetLocation(), ScanPoseData.Pose.GetRotation(), &scan_pose_doc);
+	BSON_APPEND_DOUBLE(&scan_pose_doc, "img_prec", ImgPrec);
+	AddPoseDoc(ScanPoseData.CameraPose.GetLocation(), ScanPoseData.CameraPose.GetRotation(), &scan_pose_doc);
 	AddBBDoc(ScanPoseData.MinBB, ScanPoseData.MaxBB, &scan_pose_doc);
 
 	// "images" array containing the pointer to the gridfs file and the rendering type
@@ -440,15 +445,15 @@ void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 		// Check if location data is available
 		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
 		{
-			const FVector Loc = ObjAsAct->GetActorLocation();
-			const FQuat Quat = ObjAsAct->GetActorQuat();
-			AddPoseDoc(Loc, Quat, &arr_obj);
+			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
 		{
-			const FVector Loc = ObjAsSceneComp->GetComponentLocation();
-			const FQuat Quat = ObjAsSceneComp->GetComponentQuat();
-			AddPoseDoc(Loc, Quat, &arr_obj);
+			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
 		}
 
 		// Finish array doc

@@ -71,6 +71,9 @@ private:
 #endif //SL_WITH_LIBMONGO_C
 
 private:
+	// Total number of pixels in the current image
+	int64 TotalNumPixels;
+
 #if SL_WITH_LIBMONGO_C
 	// Server uri
 	mongoc_uri_t* uri;

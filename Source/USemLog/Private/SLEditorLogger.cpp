@@ -3,6 +3,7 @@
 
 #include "SLEditorLogger.h"
 #include "Editor/SLEditorToolkit.h"
+#include "Editor/SLMaskCalibrationTool.h"
 
 // Constructor
 USLEditorLogger::USLEditorLogger()
@@ -22,62 +23,63 @@ USLEditorLogger::~USLEditorLogger()
 }
 
 // Init Logger
-void USLEditorLogger::Init(const FString& InTaskId)
+void USLEditorLogger::Init(const FString& InTaskId, bool bCalibrateRenderedMaskColors)
 {
 	if (!bIsInit)
 	{
 		TaskId = InTaskId;
+
+		if(bCalibrateRenderedMaskColors)
+		{
+			CalibrationTool = NewObject<USLMaskCalibrationTool>(this);
+			CalibrationTool->Init();
+		}
+
 		bIsInit = true;
 	}
 }
 
 // Start logger
-void USLEditorLogger::Start(
-	bool bWriteSemanticMap,
-	bool bClearTags,
-	const FString& ClearTagType,
-	const FString& ClearKeyType,
-	bool bOverwriteProperties,
-	bool bWriteClassProperties,
-	bool bWriteUniqueIdProperties,
-	bool bWriteVisualMaskProperties,
-	int32 VisualMaskColorMinDistance,
-	bool bRandomMaskGenerator,
-	bool bTagStaticEntities)
+void USLEditorLogger::Start(const FSLEditorLoggerParams& InParams)
 {
 	if (!bIsStarted && bIsInit)
 	{
-		if(bWriteSemanticMap)
+		bIsStarted = true;
+
+		if (InParams.bWriteSemanticMap)
 		{
 			FSLEditorToolkit::WriteSemanticMap(GetWorld(), TaskId);
 		}
 
-		if(bClearTags)
+		if (InParams.bClearAllTags)
 		{
-			FSLEditorToolkit::ClearTags(GetWorld(), ClearTagType, ClearKeyType);
+			FSLEditorToolkit::ClearTags(GetWorld(), InParams.TagTypeToClear, InParams.TagKeyToClear);
 		}
 
-		if(bWriteClassProperties)
+		if (InParams.bWriteClassTags)
 		{
-			FSLEditorToolkit::WriteClassProperties(GetWorld(), bOverwriteProperties);
+			FSLEditorToolkit::WriteClassProperties(GetWorld(), InParams.bOverwrite);
 		}
 
-		if(bWriteUniqueIdProperties)
+		if (InParams.bWriteUniqueIdTags)
 		{
-			FSLEditorToolkit::WriteUniqueIdProperties(GetWorld(), bOverwriteProperties);
+			FSLEditorToolkit::WriteUniqueIdProperties(GetWorld(), InParams.bOverwrite);
 		}
 
-		if(bWriteVisualMaskProperties)
+		if (InParams.bWriteUniqueMaskColors)
 		{
-			FSLEditorToolkit::WriteUniqueMaskProperties(GetWorld(), bOverwriteProperties, VisualMaskColorMinDistance, bRandomMaskGenerator);
+			FSLEditorToolkit::WriteUniqueMaskProperties(GetWorld(), InParams.bOverwrite, InParams.MinColorManhattanDistance, InParams.bUseRandomColorGeneration);
 		}
 
-		if(bTagStaticEntities)
+		//if (InParams.bMarkStaticEntities)
+		//{
+		//	FSLEditorToolkit::TagNonMovableEntities(GetWorld(), bOverwriteProperties);
+		//}
+
+		if (CalibrationTool)
 		{
-			FSLEditorToolkit::TagNonMovableEntities(GetWorld(), bOverwriteProperties);
+			CalibrationTool->Start();
 		}
-		
-		bIsStarted = true;
 	}
 }
 
@@ -88,6 +90,11 @@ void USLEditorLogger::Finish(bool bForced)
 	{
 		if(!bForced)
 		{
+			if(CalibrationTool)
+			{
+				CalibrationTool->Finish();
+			}
+
 			// Give warnings for the users to fix any duplicate camera view class names;
 			FSLEditorToolkit::CheckForVisionCameraClassNameDuplicates(GetWorld());
 			QuitEditor();

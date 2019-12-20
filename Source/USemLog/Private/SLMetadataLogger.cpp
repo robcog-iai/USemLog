@@ -3,7 +3,6 @@
 
 #include "SLMetadataLogger.h"
 #include "SLEntitiesManager.h"
-#include "Conversions.h"
 #include "Tags.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -29,7 +28,7 @@ USLMetadataLogger::~USLMetadataLogger()
 
 // Init logger
 void USLMetadataLogger::Init(const FString& InTaskId, const FString& InServerIp, uint16 InServerPort, 
-	bool bOverwrite, bool bScanItems, FSLItemScanParams ScanParams)
+	bool bOverwrite, bool bScanItems, FSLMetaScannerParams ScanParams)
 {
 	if (!bIsInit)
 	{

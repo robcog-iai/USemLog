@@ -44,14 +44,7 @@ ASLManager::ASLManager()
 	NumberOfScanPoints = 64;
 	MaxScanItemVolume = 0.f;
 	CameraDistanceToScanItem = 0.f;
-	ScanViewModes.Add(ESLMetaScannerViewMode::Color);
-	ScanViewModes.Add(ESLMetaScannerViewMode::Unlit);
-	ScanViewModes.Add(ESLMetaScannerViewMode::Mask);
-	ScanViewModes.Add(ESLMetaScannerViewMode::Depth);
-	ScanViewModes.Add(ESLMetaScannerViewMode::Normal);
 	bIncludeScansLocally = false;
-
-
 	
 	// World state logger default values
 	bLogWorldState = true;
@@ -83,18 +76,18 @@ ASLManager::ASLManager()
 
 	// Editor Logger default values
 	bLogEditorData = false;
+	bOverwriteEditorData = false;
 	bWriteSemanticMap = false;
-	bClearTags = false;
-	ClearTagType = "SemLog";
-	ClearKeyType = "";
-	bOverwriteProperties = false;
-	bWriteClassProperties = false;
-	bWriteUniqueIdProperties = false;
-	bWriteVisualMaskProperties = false;
-	VisualMaskColorMinDistance = 17;
-	bRandomVisualMaskGenerator = false;
-	bWriteNonMovableProperties = false;
-	
+	bClearAllTags = false;
+	TagTypeToClear = "SemLog";
+	TagKeyToClear = "";
+	bWriteClassTags = false;
+	bWriteUniqueIdTags = false;
+	bWriteUniqueMaskColors = false;
+	MinColorManhattanDistance = 17;
+	bUseRandomColorGeneration = false;
+	bWriteNonMovableTags = false;
+	bCalibrateRenderedMaskColors = false;
 	
 #if WITH_EDITOR
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -191,13 +184,12 @@ void ASLManager::Init()
 			MetadataLogger = NewObject<USLMetadataLogger>(this);
 			MetadataLogger->Init(TaskId, ServerIp, ServerPort,
 				bOverwriteMetadata, bScanItems, 
-				FSLItemScanParams(ScanResolution, NumberOfScanPoints, MaxScanItemVolume, CameraDistanceToScanItem,
-				ScanViewModes.Array(), bIncludeScansLocally));
+				FSLMetaScannerParams(ScanResolution, NumberOfScanPoints, MaxScanItemVolume, CameraDistanceToScanItem, bIncludeScansLocally));
 		}
 		else if(bLogEditorData)
 		{
 			EditorLogger = NewObject<USLEditorLogger>(this);
-			EditorLogger->Init(TaskId);
+			EditorLogger->Init(TaskId, bCalibrateRenderedMaskColors);
 		}
 		else if (bLogVisionData)
 		{
@@ -246,18 +238,16 @@ void ASLManager::Start()
 		{
 			if(EditorLogger)
 			{
-				EditorLogger->Start(
+				EditorLogger->Start(FSLEditorLoggerParams(bOverwriteEditorData,
 					bWriteSemanticMap,
-					bClearTags,
-					ClearTagType,
-					ClearKeyType,
-					bOverwriteProperties,
-					bWriteClassProperties,
-					bWriteUniqueIdProperties,
-					bWriteVisualMaskProperties,
-					VisualMaskColorMinDistance,
-					bRandomVisualMaskGenerator,
-					bWriteNonMovableProperties);
+					bClearAllTags,
+					TagTypeToClear,
+					TagKeyToClear,
+					bWriteClassTags,
+					bWriteUniqueIdTags,
+					bWriteUniqueMaskColors,
+					MinColorManhattanDistance,
+					bUseRandomColorGeneration));
 				Finish(GetWorld()->GetTimeSeconds(),false); // Finish the manager directly
 				//EditorLogger->Finish(); // Quit the editor before the manager finishes
 			}
@@ -392,21 +382,21 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	{
 		if (bLogEditorData) { bLogVisionData = false; bLogMetadata = false; bLogWorldState = false; bLogEventData = false; };
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bClearTags))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bClearAllTags))
 	{
-		if (bClearTags) {bWriteClassProperties = false; bWriteUniqueIdProperties = false; bWriteVisualMaskProperties = false;}
+		if (bClearAllTags) {bWriteClassTags = false; bWriteUniqueIdTags = false; bWriteUniqueMaskColors = false;}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteClassProperties))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteClassTags))
 	{
-		if (bWriteClassProperties) {bClearTags = false;}
+		if (bWriteClassTags) {bClearAllTags = false;}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteUniqueIdProperties))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteUniqueIdTags))
 	{
-		if (bWriteUniqueIdProperties) {bClearTags = false;}
+		if (bWriteUniqueIdTags) {bClearAllTags = false;}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteVisualMaskProperties))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteUniqueMaskColors))
 	{
-		if (bWriteVisualMaskProperties) {bClearTags = false;}
+		if (bWriteUniqueMaskColors) {bClearAllTags = false;}
 	}
 }
 
