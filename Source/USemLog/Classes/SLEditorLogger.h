@@ -7,6 +7,16 @@
 #include "UObject/NoExportTypes.h"
 #include "SLEditorLogger.generated.h"
 
+UENUM()
+enum class ESLAssetAction : uint8
+{
+	NONE				UMETA(DisplayName = "NONE"),
+	Download			UMETA(DisplayName = "Download Assets"),
+	Move				UMETA(DisplayName = "Move Assets"),
+	Upload				UMETA(DisplayName = "Upload Assets"),
+	MoveAndUpload		UMETA(DisplayName = "Move then Upload Assets"),
+};
+
 /*
 * Editor logger parameters
 */
@@ -83,6 +93,7 @@ struct FSLEditorLoggerParams
 
 // Forward declarations
 class USLMaskCalibrationTool;
+class USLAssetManager;
 
 /**
  * Workaround to use the editor functionalities including the sublevel actors
@@ -100,7 +111,7 @@ public:
 	~USLEditorLogger();
 
 	// Init Logger
-	void Init(const FString& InTaskId, bool bCalibrateRenderedMaskColors = false);
+	void Init(const FString& InTaskId, bool bCalibrateRenderedMaskColors = false, ESLAssetAction AssetAction = ESLAssetAction::NONE);
 
 	// Start logger
 	void Start(const FSLEditorLoggerParams& InParams);
@@ -126,6 +137,11 @@ private:
 	// there is a difference between the given mask color, and the rendered one
 	UPROPERTY() // Avoid GC
 	USLMaskCalibrationTool* CalibrationTool;
+
+	// Used for downloading / uploading the assets used in the current task
+	UPROPERTY()
+	USLAssetManager* AssetManager;
+
 
 	// Task id
 	FString TaskId;

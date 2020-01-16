@@ -4,6 +4,7 @@
 #include "SLEditorLogger.h"
 #include "Editor/SLEditorToolkit.h"
 #include "Editor/SLMaskCalibrationTool.h"
+#include "Editor/SLAssetManager.h"
 
 // Constructor
 USLEditorLogger::USLEditorLogger()
@@ -23,17 +24,26 @@ USLEditorLogger::~USLEditorLogger()
 }
 
 // Init Logger
-void USLEditorLogger::Init(const FString& InTaskId, bool bCalibrateRenderedMaskColors)
+void USLEditorLogger::Init(const FString& InTaskId, bool bCalibrateRenderedMaskColors, ESLAssetAction AssetAction)
 {
 	if (!bIsInit)
 	{
 		TaskId = InTaskId;
 
-		if(bCalibrateRenderedMaskColors)
+		if (AssetAction == ESLAssetAction::NONE)
 		{
-			CalibrationTool = NewObject<USLMaskCalibrationTool>(this);
-			CalibrationTool->Init();
+			if (bCalibrateRenderedMaskColors)
+			{
+				CalibrationTool = NewObject<USLMaskCalibrationTool>(this);
+				CalibrationTool->Init();
+			}
 		}
+		else
+		{
+			AssetManager = NewObject<USLAssetManager>(this);
+		}
+
+
 
 		bIsInit = true;
 	}

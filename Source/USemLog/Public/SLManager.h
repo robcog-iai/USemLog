@@ -353,6 +353,10 @@ private:
 	// Calibrate the rendered mask colors (there is a difference between the actual value and the rendered pixel values)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
 	bool bCalibrateRenderedMaskColors;
+
+	// Calibrate the rendered mask colors (there is a difference between the actual value and the rendered pixel values)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	ESLAssetAction EditorAssetAction;
 	
 	// Vision data logger, use UPROPERTY to avoid GC
 	UPROPERTY()

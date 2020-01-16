@@ -88,6 +88,7 @@ ASLManager::ASLManager()
 	bUseRandomColorGeneration = false;
 	bWriteNonMovableTags = false;
 	bCalibrateRenderedMaskColors = false;
+	EditorAssetAction = ESLAssetAction::NONE;
 	
 #if WITH_EDITOR
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -189,7 +190,7 @@ void ASLManager::Init()
 		else if(bLogEditorData)
 		{
 			EditorLogger = NewObject<USLEditorLogger>(this);
-			EditorLogger->Init(TaskId, bCalibrateRenderedMaskColors);
+			EditorLogger->Init(TaskId, bCalibrateRenderedMaskColors, EditorAssetAction);
 		}
 		else if (bLogVisionData)
 		{

@@ -126,7 +126,8 @@ void FSLWorldWriterMongoC::Write(float Timestamp,
 }
 
 // Connect to the database
-bool FSLWorldWriterMongoC::Connect(const FString& DBName, const FString& CollectionName, const FString& ServerIp, uint16 ServerPort, bool bOverwrite)
+bool FSLWorldWriterMongoC::Connect(const FString& DBName, const FString& CollectionName, const FString& ServerIp,
+	uint16 ServerPort, bool bOverwrite)
 {
 #if SL_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
@@ -153,12 +154,12 @@ bool FSLWorldWriterMongoC::Connect(const FString& DBName, const FString& Collect
 	}
 
 	// Register the application name so we can track it in the profile logs on the server
-	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SL_" + CollectionName)));
+	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SLWorldWriter_" + CollectionName)));
 
 	// Get a handle on the database "db_name" and collection "coll_name"
 	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
 
-	// Abort if we connect to an existing collection
+	// Check if the collection already exists
 	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*CollectionName), &error))
 	{
 		if(bOverwrite)
