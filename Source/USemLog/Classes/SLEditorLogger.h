@@ -29,7 +29,7 @@ public:
 
 	// Init Logger
 	void Init(const FString& InTaskId, const FString& ServerIp,
-		uint16 ServerPort, ESLAssetAction InAction = ESLAssetAction::NONE, bool bCalibrateRenderedMaskColors = false, bool bOverwrite = false);
+		uint16 ServerPort, ESLAssetAction InAction = ESLAssetAction::NONE, bool bCalibrateRenderedMaskColors = false, bool bMaskColorsOnlyDemo = false, bool bOverwrite = false);
 
 	// Start logger
 	void Start(const FSLEditorLoggerParams& InParams);

@@ -25,7 +25,7 @@ USLEditorLogger::~USLEditorLogger()
 
 // Init Logger
 void USLEditorLogger::Init(const FString& InTaskId, const FString& ServerIp,
-	uint16 ServerPort, ESLAssetAction InAction, bool bCalibrateRenderedMaskColors, bool bOverwrite)
+	uint16 ServerPort, ESLAssetAction InAction, bool bCalibrateRenderedMaskColors, bool bMaskColorsOnlyDemo, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -36,7 +36,7 @@ void USLEditorLogger::Init(const FString& InTaskId, const FString& ServerIp,
 			if (bCalibrateRenderedMaskColors)
 			{
 				CalibrationTool = NewObject<USLMaskCalibrationTool>(this);
-				CalibrationTool->Init();
+				CalibrationTool->Init(bMaskColorsOnlyDemo);
 			}
 		}
 		else

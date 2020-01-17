@@ -30,6 +30,11 @@ struct FSLBoneData
 	UPROPERTY(EditAnywhere)
 	FString VisualMask;
 
+	// The actual value that gets rendered and saved as as screenshot
+	UPROPERTY(EditAnywhere)
+	FString RenderedVisualMask;
+
+
 	//// Mask material instance 
 	//UPROPERTY(EditAnywhere)
 	//UMaterialInterface* MaskMaterial;

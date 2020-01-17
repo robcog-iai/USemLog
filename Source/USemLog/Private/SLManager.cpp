@@ -88,6 +88,7 @@ ASLManager::ASLManager()
 	bUseRandomColorGeneration = false;
 	bWriteNonMovableTags = false;
 	bCalibrateRenderedMaskColors = false;
+	bMaskColorsOnlyDemo = false;
 	EditorAssetAction = ESLAssetAction::NONE;
 	
 #if WITH_EDITOR
@@ -190,7 +191,7 @@ void ASLManager::Init()
 		else if(bLogEditorData)
 		{
 			EditorLogger = NewObject<USLEditorLogger>(this);
-			EditorLogger->Init(TaskId, ServerIp, ServerPort, EditorAssetAction, bCalibrateRenderedMaskColors, bOverwriteEditorData);
+			EditorLogger->Init(TaskId, ServerIp, ServerPort, EditorAssetAction, bCalibrateRenderedMaskColors, bMaskColorsOnlyDemo, bOverwriteEditorData);
 		}
 		else if (bLogVisionData)
 		{

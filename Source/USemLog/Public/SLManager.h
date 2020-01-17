@@ -297,6 +297,7 @@ private:
 	USLVisionLogger* VisionDataLogger;
 	/* End vision data logger properties */
 
+
 	/******************************************************************************************************/
 	/* Begin Editor Logger properties */
 	/******************************************************************************************************/
@@ -353,6 +354,10 @@ private:
 	// Calibrate the rendered mask colors (there is a difference between the actual value and the rendered pixel values)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
 	bool bCalibrateRenderedMaskColors;
+
+	// Set the calibration renderer to only show the visual masks as a demo
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bCalibrateRenderedMaskColors"))
+	bool bMaskColorsOnlyDemo;
 
 	// Calibrate the rendered mask colors (there is a difference between the actual value and the rendered pixel values)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
