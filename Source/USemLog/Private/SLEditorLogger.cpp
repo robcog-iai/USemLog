@@ -24,13 +24,14 @@ USLEditorLogger::~USLEditorLogger()
 }
 
 // Init Logger
-void USLEditorLogger::Init(const FString& InTaskId, bool bCalibrateRenderedMaskColors, ESLAssetAction AssetAction)
+void USLEditorLogger::Init(const FString& InTaskId, const FString& ServerIp,
+	uint16 ServerPort, ESLAssetAction InAction, bool bCalibrateRenderedMaskColors, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
 		TaskId = InTaskId;
 
-		if (AssetAction == ESLAssetAction::NONE)
+		if (InAction == ESLAssetAction::NONE)
 		{
 			if (bCalibrateRenderedMaskColors)
 			{
@@ -41,9 +42,8 @@ void USLEditorLogger::Init(const FString& InTaskId, bool bCalibrateRenderedMaskC
 		else
 		{
 			AssetManager = NewObject<USLAssetManager>(this);
+			AssetManager->Init(InTaskId, ServerIp, ServerPort, InAction, bOverwrite);
 		}
-
-
 
 		bIsInit = true;
 	}
@@ -56,39 +56,46 @@ void USLEditorLogger::Start(const FSLEditorLoggerParams& InParams)
 	{
 		bIsStarted = true;
 
-		if (InParams.bWriteSemanticMap)
+		if (AssetManager)
 		{
-			FSLEditorToolkit::WriteSemanticMap(GetWorld(), TaskId);
+			AssetManager->Start();	
 		}
-
-		if (InParams.bClearAllTags)
+		else
 		{
-			FSLEditorToolkit::ClearTags(GetWorld(), InParams.TagTypeToClear, InParams.TagKeyToClear);
-		}
+			if (InParams.bWriteSemanticMap)
+			{
+				FSLEditorToolkit::WriteSemanticMap(GetWorld(), TaskId);
+			}
 
-		if (InParams.bWriteClassTags)
-		{
-			FSLEditorToolkit::WriteClassProperties(GetWorld(), InParams.bOverwrite);
-		}
+			if (InParams.bClearAllTags)
+			{
+				FSLEditorToolkit::ClearTags(GetWorld(), InParams.TagTypeToClear, InParams.TagKeyToClear);
+			}
 
-		if (InParams.bWriteUniqueIdTags)
-		{
-			FSLEditorToolkit::WriteUniqueIdProperties(GetWorld(), InParams.bOverwrite);
-		}
+			if (InParams.bWriteClassTags)
+			{
+				FSLEditorToolkit::WriteClassProperties(GetWorld(), InParams.bOverwrite);
+			}
 
-		if (InParams.bWriteUniqueMaskColors)
-		{
-			FSLEditorToolkit::WriteUniqueMaskProperties(GetWorld(), InParams.bOverwrite, InParams.MinColorManhattanDistance, InParams.bUseRandomColorGeneration);
-		}
+			if (InParams.bWriteUniqueIdTags)
+			{
+				FSLEditorToolkit::WriteUniqueIdProperties(GetWorld(), InParams.bOverwrite);
+			}
 
-		//if (InParams.bMarkStaticEntities)
-		//{
-		//	FSLEditorToolkit::TagNonMovableEntities(GetWorld(), bOverwriteProperties);
-		//}
+			if (InParams.bWriteUniqueMaskColors)
+			{
+				FSLEditorToolkit::WriteUniqueMaskProperties(GetWorld(), InParams.bOverwrite, InParams.MinColorManhattanDistance, InParams.bUseRandomColorGeneration);
+			}
 
-		if (CalibrationTool)
-		{
-			CalibrationTool->Start();
+			//if (InParams.bMarkStaticEntities)
+			//{
+			//	FSLEditorToolkit::TagNonMovableEntities(GetWorld(), bOverwriteProperties);
+			//}
+
+			if (CalibrationTool)
+			{
+				CalibrationTool->Start();
+			}
 		}
 	}
 }
@@ -103,6 +110,11 @@ void USLEditorLogger::Finish(bool bForced)
 			if(CalibrationTool)
 			{
 				CalibrationTool->Finish();
+			}
+
+			if (AssetManager)
+			{
+				AssetManager->Finish();
 			}
 
 			// Give warnings for the users to fix any duplicate camera view class names;

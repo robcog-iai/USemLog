@@ -190,7 +190,7 @@ void ASLManager::Init()
 		else if(bLogEditorData)
 		{
 			EditorLogger = NewObject<USLEditorLogger>(this);
-			EditorLogger->Init(TaskId, bCalibrateRenderedMaskColors, EditorAssetAction);
+			EditorLogger->Init(TaskId, ServerIp, ServerPort, EditorAssetAction, bCalibrateRenderedMaskColors, bOverwriteEditorData);
 		}
 		else if (bLogVisionData)
 		{

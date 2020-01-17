@@ -7,9 +7,20 @@
 FSLAssetDBHandler::FSLAssetDBHandler() {}
 
 // Connect to the database
-bool FSLAssetDBHandler::Connect(const FString& DBName, const FString& CollName, const FString& ServerIp,
-	uint16 ServerPort, bool bUploadAction, bool bOverwrite)
+bool FSLAssetDBHandler::Connect(const FString& DBName, const FString& ServerIp,
+	uint16 ServerPort, ESLAssetAction InAction, bool bOverwrite)
 {
+	Action = InAction;
+
+	if(Action != ESLAssetAction::Upload || Action != ESLAssetAction::Download)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Wrong action type.."),
+			*FString(__func__), __LINE__);
+		return false;
+	}
+
+	const FString CollName = DBName + ".assets";
+
 #if SL_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
 	mongoc_init();
@@ -42,7 +53,7 @@ bool FSLAssetDBHandler::Connect(const FString& DBName, const FString& CollName, 
 	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
 
 	// Check if the collection already exists
-	if (bUploadAction)
+	if (Action == ESLAssetAction::Upload)
 	{
 		if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*CollName), &error))
 		{
@@ -79,7 +90,7 @@ bool FSLAssetDBHandler::Connect(const FString& DBName, const FString& CollName, 
 			return false;
 		}
 	}
-	else
+	else if(Action == ESLAssetAction::Download)
 	{
 		// Download read/only
 		if (!mongoc_database_has_collection(database, TCHAR_TO_UTF8(*CollName), &error))
@@ -88,6 +99,12 @@ bool FSLAssetDBHandler::Connect(const FString& DBName, const FString& CollName, 
 				*FString(__func__), __LINE__, *CollName);
 			return false;
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Wrong action type.."),
+			*FString(__func__), __LINE__);
+		return false;
 	}
 	collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*CollName));
 
@@ -189,6 +206,29 @@ void FSLAssetDBHandler::CreateIndexes() const
 	bson_free(idx_id_str);
 	
 #endif //SL_WITH_LIBMONGO_C
+}
+
+// 
+void FSLAssetDBHandler::Execute()
+{
+	if (Action == ESLAssetAction::Upload)
+	{
+		Upload();
+	}
+	else if (Action == ESLAssetAction::Download)
+	{
+		Download();
+	}
+}
+
+//
+void FSLAssetDBHandler::Upload()
+{
+}
+
+//
+void FSLAssetDBHandler::Download()
+{
 }
 
 // Save image to gridfs, get the file oid and return true if succeeded
