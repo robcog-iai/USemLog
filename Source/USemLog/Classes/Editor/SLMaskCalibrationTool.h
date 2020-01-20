@@ -62,20 +62,24 @@ protected:
 
 
 private:
-	// Create mask clones of the available entities, hide everything else
-	bool SetupWorld(bool bOnlyDemo = false);
-
 	// Init hi-res screenshot resolution
 	void InitScreenshotResolution(FIntPoint InResolution);
 
 	// Init render parameters (resolution, view mode)
 	void InitRenderParameters();
 
-	// Load scan camera convenience actor
-	bool LoadScanCameraPoseActor();
+	// Load mesh that will be used to render all the mask colors on screen
+	bool LoadMaskRenderMesh();
 
-	// Set view mode to unlit
-	void ApplyUnlitViewMode();
+	// Load camera convenience actor
+	bool LoadTargetCameraPoseActor();
+
+	// Load the mask colors to their entities mapping (while hiding all the actors in the world)
+	bool LoadMaskMappings();
+
+	/* Legacy */
+	// Create mask clones of the available entities, hide everything else
+	bool SetupWorld(bool bOnlyDemo = false);
 
 protected:
 	// Set when initialized
@@ -88,12 +92,24 @@ protected:
 	bool bIsFinished;
 
 private:
-	// Map from the cloned actors to the real ones
-	TArray<TPair<AStaticMeshActor*, AStaticMeshActor*>> CloneToRealArray;
+	// Mesh used to load all the mask materials and rendered on screen
+	UPROPERTY() // Avoid GC
+	AStaticMeshActor* MaskRenderActor;
 
 	// Convenience actor for setting the camera pose (SetViewTarget(InActor))
 	UPROPERTY() // Avoid GC
 	AStaticMeshActor* CameraPoseActor;
+
+	// Mask color to actor mapping
+	TMap<FColor, AStaticMeshActor*> MaskToEntity;
+
+	// Mask color to skeletal actor bone mapping
+	TMap<FColor, TPair<ASkeletalMeshActor*, FName>> MaskToSkeletalBone;
+
+
+	/* Legacy */
+	// Map from the cloned actors to the real ones
+	TArray<TPair<AStaticMeshActor*, AStaticMeshActor*>> CloneToRealArray;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
