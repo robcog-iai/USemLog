@@ -40,8 +40,10 @@ void FSLEntitiesManager::Init(UWorld* World)
 			FString ActClass = FTags::GetValue(*ActorItr, "SemLog", "Class");
 			if (!ActId.IsEmpty() && !ActClass.IsEmpty())
 			{
-				ObjectsSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass,
-					FTags::GetValue(*ActorItr, "SemLog", "VisMask")));
+				FSLEntity SemEntity(*ActorItr, ActId, ActClass);
+				SemEntity.VisualMask = FTags::GetValue(*ActorItr, "SemLog", "VisMask");
+				SemEntity.RenderedVisualMask = FTags::GetValue(*ActorItr, "SemLog", "RenderedVisMask");
+				ObjectsSemanticData.Emplace(*ActorItr, SemEntity);
 				//ActorSemanticData.Emplace(*ActorItr, FSLEntity(*ActorItr, ActId, ActClass,
 				//	FTags::GetValue(*ActorItr, "SemLog", "VisMask")));
 
@@ -72,6 +74,13 @@ void FSLEntitiesManager::Init(UWorld* World)
 					}
 				}
 			}
+			else
+			{
+				UntaggedActors.Add(*ActorItr);
+				//UE_LOG(LogTemp, Warning, TEXT("%s::%d Add %s as un-tagged actor.."),
+				//	*FString(__func__), __LINE__, *ActorItr->GetName());
+			}
+			
 
 			// Iterate components of the actor
 			for (const auto& CompItr : ActorItr->GetComponents())

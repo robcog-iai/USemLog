@@ -506,8 +506,17 @@ void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FStrin
 	bson_iter_t iter;
 	if (bson_iter_init_find(&iter, &reply, "modifiedCount") && BSON_ITER_HOLDS_INT(&iter))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Number of removed entries = %d"),
-			*FString(__func__), __LINE__, bson_iter_int32(&iter));
+		int32 NumOfRemovedEntries = bson_iter_int32(&iter);
+		if (NumOfRemovedEntries > 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Removed %d previous entries.."),
+				*FString(__func__), __LINE__, NumOfRemovedEntries);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d No previous entries removed.."),
+				*FString(__func__), __LINE__, NumOfRemovedEntries);
+		}
 	}
 
 	// Remove gridfs collections
@@ -827,12 +836,12 @@ void FSLVisionDBHandler::AddBBObj(const FIntPoint& Min, const FIntPoint& Max, bs
 
 	BSON_APPEND_DOCUMENT_BEGIN(doc, "img_bb", &bb);
 		BSON_APPEND_DOCUMENT_BEGIN(&bb, "min", &child_min_bb);
-			BSON_APPEND_DOUBLE(&child_min_bb, "x", Min.X);
-			BSON_APPEND_DOUBLE(&child_min_bb, "y", Min.Y);
+			BSON_APPEND_INT32(&child_min_bb, "x", Min.X);
+			BSON_APPEND_INT32(&child_min_bb, "y", Min.Y);
 		bson_append_document_end(&bb, &child_min_bb);
 		BSON_APPEND_DOCUMENT_BEGIN(&bb, "max", &child_max_bb);
-			BSON_APPEND_DOUBLE(&child_max_bb, "x", Max.X);
-			BSON_APPEND_DOUBLE(&child_max_bb, "y", Max.Y);
+			BSON_APPEND_INT32(&child_max_bb, "x", Max.X);
+			BSON_APPEND_INT32(&child_max_bb, "y", Max.Y);
 		bson_append_document_end(&bb, &child_max_bb);
 	bson_append_document_end(doc, &bb);
 }

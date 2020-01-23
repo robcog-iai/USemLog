@@ -146,7 +146,13 @@ public:
 	// Get all semantically annotated actors
 	void GetActors(TArray<AActor*>& OutArray) const
 	{
-		return IdToActor.GenerateValueArray(OutArray);
+		IdToActor.GenerateValueArray(OutArray);
+	}
+
+	// Get all un-tagged actors
+	const TArray<AActor*> GetUntaggedActors() const
+	{
+		return UntaggedActors;
 	}
 
 	// Get entity id (empty string if not found)
@@ -195,4 +201,7 @@ private:
 
 	// Id to AActor
 	TMap<FString, AActor*> IdToActor;
+
+	// Un-tagged actors
+	TArray<AActor*> UntaggedActors;
 };

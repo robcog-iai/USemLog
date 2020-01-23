@@ -54,12 +54,17 @@ protected:
 	// Called when the screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
-	// Move first item in position
-	bool SetupFirstItem();
+	// Render the color of te first mask
+	bool SetupFirstMaskColor();
 
-	// Move thenext item in position, return false if there are no more items
-	bool SetupNextItem();
+	// Render the color of te next mask
+	bool SetupNextMaskColor();
 
+	// Return the actual mask rendered color
+	FColor GetRenderedColor(const TArray<FColor>& Bitmap);
+
+	// Store the rendered color
+	bool StoreRenderedColor(const FColor& InRenderedColor);
 
 private:
 	// Init hi-res screenshot resolution
@@ -69,17 +74,35 @@ private:
 	void InitRenderParameters();
 
 	// Load mesh that will be used to render all the mask colors on screen
-	bool LoadMaskRenderMesh();
+	bool CreateMaskRenderMesh();
 
 	// Load camera convenience actor
-	bool LoadTargetCameraPoseActor();
+	bool CreateTargetCameraPoseActor();
 
 	// Load the mask colors to their entities mapping (while hiding all the actors in the world)
 	bool LoadMaskMappings();
 
+	// Render the color of te first entity mask
+	bool SetupFirstEntityMaskColor();
+
+	// Render the color of te next entity mask
+	bool SetupNextEntityMaskColor();
+
+	// Render the color of te firt skel mask
+	bool SetupFirstSkelMaskColor();
+
+	// Render the color of te next skel mask
+	bool SetupNextSkelMaskColor();
+
+	// Output progress to terminal
+	void PrintProgress(AActor* Parent, FColor OrigColor, FColor RenderedColor, FString = "") const;
+
+	// Quit the editor once the scanning is finished
+	void QuitEditor();
+
 	/* Legacy */
 	// Create mask clones of the available entities, hide everything else
-	bool SetupWorld(bool bOnlyDemo = false);
+	bool SetupMaskColorsWorld(bool bOnlyDemo = false);
 
 protected:
 	// Set when initialized
@@ -92,6 +115,9 @@ protected:
 	bool bIsFinished;
 
 private:
+	// True if the skel entities are started
+	bool bSkelMasksActive;
+
 	// Mesh used to load all the mask materials and rendered on screen
 	UPROPERTY() // Avoid GC
 	AStaticMeshActor* MaskRenderActor;
@@ -100,16 +126,18 @@ private:
 	UPROPERTY() // Avoid GC
 	AStaticMeshActor* CameraPoseActor;
 
+	// Material to apply to the render mesh
+	UPROPERTY() // Avoid GC
+	UMaterialInstanceDynamic* DynamicMaskMaterial;
+
+	// Pointer to the render SMA mesh
+	class UStaticMesh* MaskRenderMesh;
+
 	// Mask color to actor mapping
-	TMap<FColor, AStaticMeshActor*> MaskToEntity;
+	TArray<TPair<FColor, AStaticMeshActor*>> MaskToEntity;
 
 	// Mask color to skeletal actor bone mapping
-	TMap<FColor, TPair<ASkeletalMeshActor*, FName>> MaskToSkeletalBone;
-
-
-	/* Legacy */
-	// Map from the cloned actors to the real ones
-	TArray<TPair<AStaticMeshActor*, AStaticMeshActor*>> CloneToRealArray;
+	TArray<TPair<FColor, TPair<ASkeletalMeshActor*, FName>>> MaskToSkelAndBone;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
@@ -117,12 +145,16 @@ private:
 	// Location on where to save the data locally (skip if empty)
 	FString IncludeLocallyFolderName;
 
-	// Current name of scan (for saving locally, and progress update purposes)
+	// Current name of scan (for saving locally, and progress update logging)
 	FString CurrImgName;
 
 	// Currently active item index in map
-	int32 CurrItemIdx;
+	int32 CurrEntityIdx;
 
-	// Currently active entity
-	AStaticMeshActor* CurrEntity;
+	// Currently active skeletal item index in map
+	int32 CurrSkelIdx;
+
+	/* Legacy */
+	// Map from the cloned actors to the real ones
+	TArray<TPair<AStaticMeshActor*, AStaticMeshActor*>> CloneToRealArray;
 };

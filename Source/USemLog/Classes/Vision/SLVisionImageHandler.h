@@ -13,16 +13,21 @@
 struct FSLVisionEntityInfo
 {
 	// Default ctor
-	FSLVisionEntityInfo(){};
+	FSLVisionEntityInfo() {};
 	
 	// Init ctor
-	FSLVisionEntityInfo(const FString& InClass, const FString& InId) : Class(InClass), Id(InId) {};
+	FSLVisionEntityInfo(const FString& InClass, const FString& InId, const FString& InOrigMaskColor) :
+		Class(InClass), Id(InId), OrigMaskColor(InOrigMaskColor) {};
 
 	// Class name
 	FString Class;
 
 	// Id
 	FString Id;
+
+	// Original mask color (used for direct access for restoring the mask image)
+	FString OrigMaskColor;
+
 };
 
 /**
@@ -34,8 +39,8 @@ struct FSLVisionSkelInfo
 	FSLVisionSkelInfo() {};
 
 	// Init ctor
-	FSLVisionSkelInfo(const FString& InClass, const FString& InId, const FString& InBoneClass) : 
-		Class(InClass), Id(InId), BoneClass(InBoneClass) {};
+	FSLVisionSkelInfo(const FString& InClass, const FString& InId, const FString& InBoneClass, const FString& InOrigMaskColor) :
+		Class(InClass), Id(InId), BoneClass(InBoneClass), OrigMaskColor(InOrigMaskColor) {};
 
 	// Skeletal entity class name
 	FString Class;
@@ -45,18 +50,21 @@ struct FSLVisionSkelInfo
 
 	// Bone class
 	FString BoneClass;
+
+	// Original mask color (used for direct access for restoring the mask image)
+	FString OrigMaskColor;
 };
 
 /**
 * Image pixel color related data, eventually the pixel color will be mapped to its semantic values (class, id..)
 */
-struct FSLVisionImagePixelColorInfo
+struct FSLVisionImageColorInfo
 {
 	// Default constructor
-	FSLVisionImagePixelColorInfo() : Num(0) {};
+	FSLVisionImageColorInfo() : Num(0) {};
 
 	// Init ctor
-	FSLVisionImagePixelColorInfo(int32 InNum, const FIntPoint& InMinBB, const FIntPoint& InMaxBB) : Num(InNum), MinBB(InMinBB), MaxBB(InMaxBB) {};
+	FSLVisionImageColorInfo(int32 InNum, const FIntPoint& InMinBB, const FIntPoint& InMaxBB) : Num(InNum), MinBB(InMinBB), MaxBB(InMaxBB) {};
 
 	// Number of pixels in image
 	int32 Num;
@@ -66,6 +74,9 @@ struct FSLVisionImagePixelColorInfo
 
 	// Max bounding box value in image
 	FIntPoint MaxBB;
+
+	// Cache the original mask color represented by the pixel
+	FColor OriginalMaskColor;
 };
 
 /**
@@ -83,16 +94,16 @@ public:
 	// Clear init flag and mappings
 	void Reset();
 
-	// Get entities from mask image
-	void GetEntities(const TArray<FColor>& InMaskBitmap, int32 ImgWidth, int32 ImgHeight, FSLVisionViewData& OutViewData) const;
+	//// Get entities from mask image
+	//void GetEntities(const TArray<FColor>& InMaskBitmap, int32 ImgWidth, int32 ImgHeight, FSLVisionViewData& OutViewData) const;
 
 	// Restore image (the screenshot image pixel colors are a bit offseted from the supposed mask value) and get the entities from mask image
-	void RestoreImageAndGetEntities(TArray<FColor>& MaskBitmap, int32 ImgWidth, int32 ImgHeight, FSLVisionViewData& OutViewData) const;
+	void GetDataAndRestoreImage(TArray<FColor>& MaskBitmap, int32 ImgWidth, int32 ImgHeight, FSLVisionViewData& OutViewData) const;
 
 private:
 	/* Helper functions */
 	// Restore the color of the pixel to its original mask value (offseted by screenshot rendering artifacts), returns true if restoration happened
-	FORCEINLINE bool RestoreColorValue(FColor& PixelColor) const;
+	bool RestoreColorValueFromArray(FColor& PixelColor, const TArray<FColor>& InOriginalMaskColors, uint8 Tolerance = 13) const;
 
 	// Check if the two colors are equal with a tolerance
 	FORCEINLINE static bool AlmostEqual(const FColor& C1, const FColor& C2, uint8 Tolerance = 0)
@@ -104,16 +115,19 @@ private:
 	// Init flag
 	bool bIsInit;
 
-	// Color to entity data
-	TMap<FColor, FSLVisionEntityInfo> ColorToEntityInfo;
+	// Rendered color to entity data
+	TMap<FColor, FSLVisionEntityInfo> RenderedColorToEntityInfo;
 
-	// Color to skeletal entity data
-	TMap<FColor, FSLVisionSkelInfo> ColorToSkelInfo;
+	// Rendered color to skeletal entity data
+	TMap<FColor, FSLVisionSkelInfo> RenderedColorToSkelInfo;
 
-	// Used for quick checks for offseted colors actual value (TArray is used instead of TSet, because it has FindByPredicate functionality)
-	TArray<FColor> OriginalMaskColors;
+	//// Used to check the mapping from the rendered color to the original one
+	//TMap<FColor, FColor> RenderedToOriginal;
 
-	/* Constants */
-	// Mask color equality tolerance
-	constexpr static uint8 ColorTolerance = 13;
+	//// Used for quick checks for offseted colors actual value (TArray is used instead of TSet, because it has FindByPredicate functionality)
+	//TArray<FColor> OriginalMaskColors;
+
+	///* Constants */
+	//// Mask color equality tolerance
+	//constexpr static uint8 ColorDiffTolerance = 13;
 };

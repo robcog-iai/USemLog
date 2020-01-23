@@ -26,6 +26,9 @@ struct FSLEntity
 	// Visual mask of the entity
 	FString VisualMask;
 
+	// Visual mask of the entity
+	FString RenderedVisualMask;
+
 	// Default constructor
 	FSLEntity() = default;
 
@@ -67,8 +70,11 @@ struct FSLEntity
 	bool IsSet() const { return Obj != nullptr && !Id.IsEmpty() && !Class.IsEmpty(); }
 
 	// Check if visual is set
-	bool HasVisualMask() const { return !VisualMask.IsEmpty(); }
+	FORCEINLINE bool HasVisualMask() const { return !VisualMask.IsEmpty(); }
 	
+	// Check if rendered visual is set
+	FORCEINLINE bool HasRenderedVisualMask() const { return !RenderedVisualMask.IsEmpty(); }
+
 	// Get result as string
 	FString ToString() const
 	{

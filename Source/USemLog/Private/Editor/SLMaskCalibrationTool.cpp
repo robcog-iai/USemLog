@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "Engine/StaticMesh.h"
 #include "Components/StaticMeshComponent.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -20,12 +21,20 @@
 // UUtils
 #include "Tags.h"
 
+#if WITH_EDITOR
+#include "Editor.h"
+#endif // WITH_EDITOR
+
 // Ctor
 USLMaskCalibrationTool::USLMaskCalibrationTool()
 {
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
+
+	CurrEntityIdx = INDEX_NONE;
+	CurrSkelIdx = INDEX_NONE;
+	bSkelMasksActive = false;
 }
 
 // Dtor
@@ -37,37 +46,44 @@ USLMaskCalibrationTool::~USLMaskCalibrationTool()
 	}
 }
 
-
 // Init scanner
 void USLMaskCalibrationTool::Init(bool bOnlyDemo, const FString& InFolderName)
 {
 	if (!bIsInit)
 	{
 		IncludeLocallyFolderName = InFolderName;
+		//IncludeLocallyFolderName = "CalibrationImages";
 
 		// Create mask clones of the available entities, hide everything else
-		//if (!SetupWorld(bOnlyDemo))
 		if (bOnlyDemo)
 		{
-			SetupWorld(bOnlyDemo);
+			SetupMaskColorsWorld(bOnlyDemo);
 			return;
 		}
 
-		if(!LoadMaskMappings())
+		// Load the mask colors to their entities mapping
+		if (!LoadMaskMappings())
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d No entities with visual masks loaded.."), *FString(__func__), __LINE__);
 			return;
 		}
 
 		// Spawn helper actors, items and scan poses, skip items larger that the distance to camera
-		if (!LoadTargetCameraPoseActor())
+		if (!CreateMaskRenderMesh())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load a mesh dummy mesh for applying the mask colors.."), *FString(__func__), __LINE__);
+			return;
+		}
+
+		// Spawn helper actors, items and scan poses, skip items larger that the distance to camera
+		if (!CreateTargetCameraPoseActor())
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load a camera dummy mesh for moving the target view.."), *FString(__func__), __LINE__);
 			return;
 		}
 
 		// Set the screenshot resolution;
-		InitScreenshotResolution(FIntPoint(320,240));
+		InitScreenshotResolution(FIntPoint(160,120));
 
 		// Set rendering parameters
 		InitRenderParameters();
@@ -79,6 +95,8 @@ void USLMaskCalibrationTool::Init(bool bOnlyDemo, const FString& InFolderName)
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access the GameViewport.."), *FString(__func__), __LINE__);
 			return;
 		}
+
+		// Bind screenshot callback
 		ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLMaskCalibrationTool::ScreenshotCB);
 
 		bIsInit = true;
@@ -89,8 +107,10 @@ void USLMaskCalibrationTool::Init(bool bOnlyDemo, const FString& InFolderName)
 void USLMaskCalibrationTool::Start()
 {
 	if (!bIsStarted && bIsInit)
-	{
-		
+	{	
+		// Make sure the spawned render actor is visible
+		MaskRenderActor->SetActorHiddenInGame(false);
+
 		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 		{
 			// Hide default pawn
@@ -101,6 +121,12 @@ void USLMaskCalibrationTool::Start()
 
 			// Set view target to dummy camera
 			PC->SetViewTarget(CameraPoseActor);
+
+			// Set frist mask color
+			if (!SetupFirstMaskColor())
+			{
+				return;
+			}
 		}
 		else
 		{
@@ -108,6 +134,8 @@ void USLMaskCalibrationTool::Start()
 			return;
 		}		
 
+		// Start the dominoes
+		RequestScreenshot();
 
 		bIsStarted = true;
 	}
@@ -127,27 +155,181 @@ void USLMaskCalibrationTool::Finish()
 // Request a screenshot
 void USLMaskCalibrationTool::RequestScreenshot()
 {
+	// Request screenshot on game thread
+	AsyncTask(ENamedThreads::GameThread, [this]()
+	{
+		if (CurrEntityIdx != INDEX_NONE)
+		{
+			CurrImgName = FString::FromInt(CurrEntityIdx) + "_" 
+				+ MaskToEntity[CurrEntityIdx].Value->GetName() + "_" 
+				+ MaskToEntity[CurrEntityIdx].Key.ToHex();
+		}
+		else if (CurrSkelIdx != INDEX_NONE)
+		{
+			CurrImgName = FString::FromInt(CurrSkelIdx) + "_" 
+				+ MaskToSkelAndBone[CurrSkelIdx].Value.Key->GetName() + "_" 
+				+ MaskToSkelAndBone[CurrSkelIdx].Value.Value.ToString() + "_"
+				+ MaskToSkelAndBone[CurrSkelIdx].Key.ToHex();
+		}
+		else
+		{
+			CurrImgName = "NONE";
+		}
 
+		GetHighResScreenshotConfig().FilenameOverride = CurrImgName;
+		ViewportClient->Viewport->TakeHighResScreenShot();
+	});
 }
 
 // Called when screenshot is captured
 void USLMaskCalibrationTool::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
-{
+{	
+	// Get the actual rendered color
+	FColor RenderedColor = GetRenderedColor(Bitmap);
+	StoreRenderedColor(RenderedColor);
 
+	// Save the png locally
+	if (!IncludeLocallyFolderName.IsEmpty())
+	{
+		// Compress image
+		TArray<uint8> CompressedBitmap;
+		FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
+		FString Path = FPaths::ProjectDir() + "/SemLog/" + IncludeLocallyFolderName + "/Editor/" + CurrImgName + ".png";
+		FPaths::RemoveDuplicateSlashes(Path);
+		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
+	}
+
+	if (SetupNextMaskColor())
+	{
+		RequestScreenshot();
+	}
+	else
+	{
+		// No more masks
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished.."),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		QuitEditor();
+	}
 }
 
-// Move first item in position
-bool USLMaskCalibrationTool::SetupFirstItem()
+// Render the color of te first mask
+bool USLMaskCalibrationTool::SetupFirstMaskColor()
 {
+	if (SetupFirstEntityMaskColor())
+	{
+		return true;
+	}
+	else if (SetupFirstSkelMaskColor())
+	{		
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+// Render the color of te next mask
+bool USLMaskCalibrationTool::SetupNextMaskColor()
+{
+	if (!bSkelMasksActive)
+	{
+		if (SetupNextEntityMaskColor())
+		{
+			return true;
+		}
+		else 
+		{
+			return SetupFirstSkelMaskColor();
+		}
+	}
+	else
+	{
+		return SetupNextSkelMaskColor();
+	}
+}
+
+// Return the actual mask rendered color
+FColor USLMaskCalibrationTool::GetRenderedColor(const TArray<FColor>& Bitmap)
+{
+	bool bRenderedColorIsSet = false;
+	FColor RenderedColor;
+
+	for (const auto& C : Bitmap)
+	{
+		if (C != FColor::Black)
+		{
+			if (bRenderedColorIsSet)
+			{
+				if (C != RenderedColor)
+				{
+					// Make sure no other nuances appear
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Different color nuance found %s/%s;"),
+						*FString(__func__), __LINE__, *C.ToString(), *RenderedColor.ToString());
+				}
+			}
+			else
+			{
+				RenderedColor = C;
+				bRenderedColorIsSet = true;
+			}
+		}
+	}
+	return RenderedColor;
+}
+
+// Store the rendered color
+bool USLMaskCalibrationTool::StoreRenderedColor(const FColor & InRenderedColor)
+{
+	// Store the color value
+	if (!bSkelMasksActive)
+	{
+		FColor OriginalColor = MaskToEntity[CurrEntityIdx].Key;
+		AActor* Parent = MaskToEntity[CurrEntityIdx].Value;
+#if WITH_EDITOR
+		// Apply the changes in the editor world
+		if (AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(Parent))
+		{
+			FTags::AddKeyValuePair(EdAct, "SemLog", "RenderedVisMask", InRenderedColor.ToHex());
+			PrintProgress(Parent, OriginalColor, InRenderedColor);
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.."),
+				*FString(__func__), __LINE__, *Parent->GetName());
+		}
+#endif // WITH_EDITOR
+	}
+	else
+	{
+		FColor OriginalColor = MaskToSkelAndBone[CurrSkelIdx].Key;
+		AActor* Parent = MaskToSkelAndBone[CurrSkelIdx].Value.Key;
+		FName BoneName = MaskToSkelAndBone[CurrSkelIdx].Value.Value;
+#if WITH_EDITOR
+		// Apply the changes in the editor world
+		if (AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(Parent))
+		{
+			if (UActorComponent* AC = EdAct->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+			{
+				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+				if (FSLBoneData* BoneData = SkDC->SemanticBonesData.Find(BoneName))
+				{
+					BoneData->RenderedVisualMask = InRenderedColor.ToHex();
+					PrintProgress(Parent, OriginalColor, InRenderedColor, BoneName.ToString());
+					return true;
+				}
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.."),
+				*FString(__func__), __LINE__, *Parent->GetName());
+		}
+#endif // WITH_EDITOR
+	}
 	return false;
 }
-
-// Move thenext item in position, return false if there are no more items
-bool USLMaskCalibrationTool::SetupNextItem()
-{
-	return false;
-}
-
 
 // Init hi-res screenshot resolution
 void USLMaskCalibrationTool::InitScreenshotResolution(FIntPoint InResolution)
@@ -170,12 +352,12 @@ void USLMaskCalibrationTool::InitRenderParameters()
 	// Set the near clipping plane (in cm)
 	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetNearClipPlane"))->Set(0); // Not a console variable, but a command
 	//GNearClippingPlane = 0; // View is distorted after finishing the scanning
-#if WITH_EDITOR
-	if (GEngine)
-	{
-		GEngine->DeferredCommands.Add(TEXT("r.SetNearClipPlane 0"));
-	}
-#endif // WITH_EDITOR
+//#if WITH_EDITOR
+//	if (GEngine)
+//	{
+//		GEngine->DeferredCommands.Add(TEXT("r.SetNearClipPlane 0"));
+//	}
+//#endif // WITH_EDITOR
 
 	//// AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
 	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AntiAliasing"))->Set(AAM_None);
@@ -191,12 +373,12 @@ void USLMaskCalibrationTool::InitRenderParameters()
 }
 
 // Load mesh that will be used to render all the mask colors on screen
-bool USLMaskCalibrationTool::LoadMaskRenderMesh()
+bool USLMaskCalibrationTool::CreateMaskRenderMesh()
 {
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SM_MaskRenderDummy");
 	MaskRenderActor = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(),
-		FTransform(FRotator::ZeroRotator, FVector(300.f, 0.f, 0.f)), SpawnParams);
+		FTransform(FRotator::ZeroRotator, FVector(150.f, 0.f, 0.f)), SpawnParams);
 	if (!MaskRenderActor)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not spawn convenience camera pose actor.."), *FString(__func__), __LINE__);
@@ -206,22 +388,37 @@ bool USLMaskCalibrationTool::LoadMaskRenderMesh()
 	MaskRenderActor->SetActorLabel(FString(TEXT("SM_MaskRenderDummy")));
 #endif // WITH_EDITOR
 
-	UStaticMesh* DummyMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/USemLog/Vision/MaskRenderDummy/SM_MaskRenderDummy.SM_MaskRenderDummy"));
-	if (!DummyMesh)
+	MaskRenderMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/USemLog/Vision/MaskRenderDummy/SM_MaskRenderDummy.SM_MaskRenderDummy"));
+	if (!MaskRenderMesh)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find mask render dummy mesh.."), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find mask render mask mesh.."), *FString(__func__), __LINE__);
 		MaskRenderActor->Destroy();
 		return false;
 	}
-	MaskRenderActor->GetStaticMeshComponent()->SetStaticMesh(DummyMesh);
+	MaskRenderActor->GetStaticMeshComponent()->SetStaticMesh(MaskRenderMesh);
 	MaskRenderActor->SetMobility(EComponentMobility::Movable);
 
+	//UMaterialInterface* DefaultMaskMaterial = MaskRenderMesh->GetMaterial(0);
+	UMaterial* DefaultMaskMaterial = LoadObject<UMaterial>(this,
+		TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask"));
+	if (!DefaultMaskMaterial)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material.."), *FString(__func__), __LINE__);
+		return false;
+	}
+	//DefaultMaskMaterial->bUsedWithStaticLighting = true;
+	//DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
+	
+	DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+	DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::White);
+
+	MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
 
 	return true;
 }
 
 // Load scan camera convenience actor
-bool USLMaskCalibrationTool::LoadTargetCameraPoseActor()
+bool USLMaskCalibrationTool::CreateTargetCameraPoseActor()
 {
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SM_ScanCameraPoseDummy");
@@ -260,18 +457,19 @@ bool USLMaskCalibrationTool::LoadMaskMappings()
 		/*  Static mesh actors */
 		if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(*ActItr))
 		{
-			// Get the mask color, will be black if it does not exist
-			FColor MaskColor(FColor::FromHex(FTags::GetValue(SMA, "SemLog", "VisMask")));
-			if (MaskColor == FColor::Black)
+			FString MaskStr = FTags::GetValue(SMA, "SemLog", "VisMask");
+			if (!MaskStr.IsEmpty())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; VisualMask=%s;"), *FString(__func__), __LINE__, *ActItr->GetName(), *MaskStr);
+				FColor MaskColor(FColor::FromHex(MaskStr));
+				MaskToEntity.Emplace(MakeTuple(MaskColor, SMA));
+			}
+			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask.."), *FString(__func__), __LINE__, *ActItr->GetName());
 				continue;
 			}
-
-			// Temporally store the actors and their designated mask color
-			MaskToEntity.Emplace(MaskColor, SMA);
 		}
-
 		/* Skeletal mesh actors */
 		else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(*ActItr))
 		{
@@ -283,30 +481,155 @@ bool USLMaskCalibrationTool::LoadMaskMappings()
 				for (const auto& BoneDataPair : SkDC->SemanticBonesData)
 				{
 					FName BoneName = BoneDataPair.Key;
-					FSLBoneData BoneData = BoneDataPair.Value;
+					FString MaskStr = BoneDataPair.Value.VisualMask;
 
-					// Get the mask color, will be black if it does not exist
-					FColor MaskColor(FColor::FromHex(BoneData.VisualMask));
-					if (MaskColor == FColor::Black)
+					if (!MaskStr.IsEmpty())
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; VisualMask=%s;"), *FString(__func__), __LINE__,
+							*ActItr->GetName(), *BoneName.ToString(),*MaskStr);
+						FColor MaskColor(FColor::FromHex(MaskStr));
+						MaskToSkelAndBone.Emplace(MakeTuple(MaskColor, MakeTuple(SkMA, BoneName)));
+					}
+					else
 					{
 						UE_LOG(LogTemp, Error, TEXT("%s::%d %s - %s has no visual mask.."), *FString(__func__), __LINE__,
 							*ActItr->GetName(), *BoneName.ToString());
 						continue;
-					}
-					
-					MaskToSkeletalBone.Emplace(MaskColor, MakeTuple(SkMA, BoneName));					
+					}					
 				}
 			}
 		}
 	}
 
-	return MaskToEntity.Num() > 0 || MaskToSkeletalBone.Num() > 0;
+	return MaskToEntity.Num() > 0 || MaskToSkelAndBone.Num() > 0;
+}
+
+// Render the color of te next entity mask
+bool USLMaskCalibrationTool::SetupFirstEntityMaskColor()
+{
+	if (CurrEntityIdx == INDEX_NONE && MaskToEntity.Num() > 0)
+	{
+		CurrEntityIdx = 0;
+		FColor MaskColor = MaskToEntity[0].Key;
+		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
+		MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no entity mask array loaded.."), *FString(__func__), __LINE__);
+		return false;
+	}
+}
+
+// Render the color of te next entity mask
+bool USLMaskCalibrationTool::SetupNextEntityMaskColor()
+{
+	if (CurrEntityIdx != INDEX_NONE)
+	{
+		CurrEntityIdx++;
+		if (!MaskToEntity.IsValidIndex(CurrEntityIdx))
+		{
+			CurrEntityIdx = INDEX_NONE;
+			return false;
+		}
+		else
+		{
+			FColor MaskColor = MaskToEntity[CurrEntityIdx].Key;
+			DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
+			MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
+			return true;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Not set yet.."), *FString(__func__), __LINE__);
+		return false;
+	}
+}
+
+// Render the color of te first skeletal mask
+bool USLMaskCalibrationTool::SetupFirstSkelMaskColor()
+{
+	if (CurrSkelIdx == INDEX_NONE && MaskToSkelAndBone.Num() > 0)
+	{
+		CurrSkelIdx = 0;
+		FColor MaskColor = MaskToSkelAndBone[0].Key;
+		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
+		MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
+		bSkelMasksActive = true;
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no skel mask array loaded.."), *FString(__func__), __LINE__);
+		return false;
+	}
+}
+
+// Render the color of te next skeletal mask
+bool USLMaskCalibrationTool::SetupNextSkelMaskColor()
+{
+	if (CurrSkelIdx != INDEX_NONE)
+	{
+		CurrSkelIdx++;
+		if (!MaskToSkelAndBone.IsValidIndex(CurrSkelIdx))
+		{
+			CurrSkelIdx = INDEX_NONE;
+			return false;
+		}
+		else
+		{
+			FColor MaskColor = MaskToSkelAndBone[CurrSkelIdx].Key;
+			DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
+			MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
+			return true;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Not set yet.."), *FString(__func__), __LINE__);
+		return false;
+	}
+}
+
+// Output progress to terminal
+void USLMaskCalibrationTool::PrintProgress(AActor* Parent, FColor OrigColor, FColor RenderedColor, FString BoneName) const
+{
+	if (!BoneName.IsEmpty())
+	{
+		BoneName.InsertAt(0, "- ");
+	}
+
+	int32 ManhattanDistance = FMath::Abs((OrigColor.R - RenderedColor.R) + (OrigColor.G - RenderedColor.G) + (OrigColor.B - RenderedColor.B));
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t[%2.f] \t%s %s: t%s\t->\t%s; \tManDis=%ld;"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
+		*Parent->GetName(), *BoneName,
+		*OrigColor.ToString(), *RenderedColor.ToString(),
+		ManhattanDistance);
+}
+
+// Quit the editor once the scanning is finished
+void USLMaskCalibrationTool::QuitEditor()
+{
+	//FGenericPlatformMisc::RequestExit(false);
+	//
+	//FGameDelegates::Get().GetExitCommandDelegate().Broadcast();
+	//FPlatformMisc::RequestExit(0);
+
+#if WITH_EDITOR	
+	// Make sure you can quit even if Init or Start could not work out
+	if (GEngine)
+	{
+		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
+	}
+#endif // WITH_EDITOR
 }
 
 
 /* Legacy */
 // Create mask clones of the available entities, hide everything else
-bool USLMaskCalibrationTool::SetupWorld(bool bOnlyDemo)
+bool USLMaskCalibrationTool::SetupMaskColorsWorld(bool bOnlyDemo)
 {
 	// Load the default mask material
 	// this will be used as a template to create the colored mask materials to add to the clones
@@ -367,8 +690,8 @@ bool USLMaskCalibrationTool::SetupWorld(bool bOnlyDemo)
 		AStaticMeshActor* SMA = Pair.Value;
 
 		// Create the mask material with the color
-		UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
+		UMaterialInstanceDynamic* LocalDynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+		LocalDynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
 
 		// Create a clone of the actor
 		FActorSpawnParameters Parameters;
@@ -383,7 +706,7 @@ bool USLMaskCalibrationTool::SetupWorld(bool bOnlyDemo)
 		{
 			for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
 			{
-				SMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+				SMC->SetMaterial(MatIdx, LocalDynamicMaskMaterial);
 			}
 		}
 
@@ -422,10 +745,10 @@ bool USLMaskCalibrationTool::SetupWorld(bool bOnlyDemo)
 					}
 
 					// Create the mask material with the color
-					UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
+					UMaterialInstanceDynamic* LocalDynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+					LocalDynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
 						FLinearColor::FromSRGBColor(FColor::FromHex(NameToBoneDataPair.Value.VisualMask)));
-					SkMAClone->GetSkeletalMeshComponent()->SetMaterial(NameToBoneDataPair.Value.MaskMaterialIndex, DynamicMaskMaterial);
+					SkMAClone->GetSkeletalMeshComponent()->SetMaterial(NameToBoneDataPair.Value.MaskMaterialIndex, LocalDynamicMaskMaterial);
 				}
 			}
 

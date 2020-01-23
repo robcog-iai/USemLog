@@ -586,7 +586,7 @@ FString FSLEditorToolkit::GenerateVisionCameraClassName(ASLVisionCamera* Actor, 
 		return Actor->GetActorLabel();
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not use any rule to name the vision camera.. saving as default value %s .."),
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not use any rule to name the vision camera %s.. saving as default value %s .."),
 		*FString(__func__), __LINE__, *Actor->GetName(), *DefaultValue);
 	return DefaultValue;
 }

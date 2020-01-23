@@ -49,6 +49,12 @@ struct FSLBoneData
 	// Checks if the structure has been set
 	bool IsClassSet() const { return !Class.IsEmpty(); };
 
+	// Check if visual is set
+	FORCEINLINE bool HasVisualMask() const { return !VisualMask.IsEmpty(); }
+
+	// Check if rendered visual is set
+	FORCEINLINE bool HasRenderedVisualMask() const { return !RenderedVisualMask.IsEmpty(); }
+
 	// Get result as string
 	FString ToString() const
 	{

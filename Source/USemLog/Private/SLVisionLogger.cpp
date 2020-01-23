@@ -76,36 +76,37 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		InitWorldEntities();
 
 		// Create movable clones of the skeletal meshes, hide originals (call before loading the episode data)
-		CreatePoseableMeshes();
+		CreatePoseableMeshesClones();
 
-		// Connect to the database
+		// Connect to the database for writing the image data
 		if (!DBHandler.Connect(InTaskId, InEpisodeId, InServerIp, InServerPort, bOverwriteVisionData))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not connect to the DB.."), *FString(__func__), __LINE__);
 			return;
 		}
 
-		// Load the episode data (the poseable meshes should be setup before)
+		// Download the whole episode data (make sure the poseable mesh clones are created before this)
 		if (!DBHandler.GetEpisodeData(Params.UpdateRate, SkelToPoseableMap, Episode))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not download the episode data.."), *FString(__func__), __LINE__);
 			return;
 		}
 
+		// Make sure rendering modes are selected
 		if(ViewModes.Num() == 0)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No view modes found.."), *FString(__func__), __LINE__);
 			return;
 		}
 
-		// Make sure the semantic entities are init before
+		// Get access to the virtual cameras (make sure the semantic entities are init before)
 		if(!LoadVirtualCameras())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No virtual cameras found.."), *FString(__func__), __LINE__);
 			return;
 		}
 
-		// Used for the screenshot requests
+		// Access the viewport (used for the screenshot requests)
 		ViewportClient = GetWorld()->GetGameViewport();
 		if(!ViewportClient)
 		{
@@ -115,21 +116,27 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		// Bind the screenshot captured callback
 		ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLVisionLogger::ScreenshotCB);
 
-		// Create clones of every visible entity with the mask color
+		// Create clones of every visible entity with a mask color
 		if(ViewModes.Contains(ESLVisionViewMode::Mask))
 		{
-			if(!CreateMaskClones())
+			if(CreateMaskClones())
+			{
+				// Create color to semantic data mappings on the image handler, setup the rendered to original mask mapping
+				if (!ImgHandler.Init())
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init image handler, removing mask view type.."), *FString(__func__), __LINE__);
+					ViewModes.Remove(ESLVisionViewMode::Mask);
+				}
+				
+				MaskViewModeBlacklistedActors = FSLEntitiesManager::GetInstance()->GetUntaggedActors();
+			}
+			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not create mask clones, removing mask view type.."), *FString(__func__), __LINE__);
 				ViewModes.Remove(ESLVisionViewMode::Mask);
 			}
 
-			// Create color to semantic data mappings on the image handler
-			if(!ImgHandler.Init())
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init image handler, removing mask view type.."), *FString(__func__), __LINE__);
-				ViewModes.Remove(ESLVisionViewMode::Mask);
-			}
+
 		}
 		bIsInit = true;
 	}
@@ -227,11 +234,10 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 	// If mask mode is currently active, restore the colors and get the entity data
 	if (ViewModes[CurrViewModeIdx] == ESLVisionViewMode::Mask)
 	{
-		// Remove const-ness from image (needed if you need to restore the image)
+		// Remove const-ness from image (needed for restore the image masks from the rendered values to the original ones)
 		TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
 
-		//ImgHandler.GetEntities(Bitmap, SizeX, SizeY, CurrViewData);
-		ImgHandler.RestoreImageAndGetEntities(BitmapRef, SizeX, SizeY, CurrViewData);
+		ImgHandler.GetDataAndRestoreImage(BitmapRef, SizeX, SizeY, CurrViewData);
 
 		FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
 	}
@@ -376,7 +382,7 @@ bool USLVisionLogger::SetupNextViewMode()
 }
 
 // Create movable clones of the skeletal meshes, hide originals (call before loading the episode data)
-void USLVisionLogger::CreatePoseableMeshes()
+void USLVisionLogger::CreatePoseableMeshesClones()
 {
 	TArray<ASkeletalMeshActor*> SkeletalActors;
 	FSLEntitiesManager::GetInstance()->GetSkeletalMeshActors(SkeletalActors);
@@ -423,7 +429,7 @@ void USLVisionLogger::InitWorldEntities()
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no root component"), *FString(__func__), __LINE__, *Act->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s does not need to be detached.."), *FString(__func__), __LINE__, *Act->GetName());
 		}
 	}
 }
@@ -761,6 +767,10 @@ void USLVisionLogger::ApplyMaskMaterials()
 		Pair.Key->SetActorHiddenInGame(true);
 		Pair.Value->SetActorHiddenInGame(false);
 	}
+	for (const auto& Act : MaskViewModeBlacklistedActors)
+	{
+		Act->SetActorHiddenInGame(true);
+	}
 }
 
 // Apply original material to current item
@@ -775,6 +785,10 @@ void USLVisionLogger::ApplyOriginalMaterials()
 	{
 		Pair.Key->SetActorHiddenInGame(false);
 		Pair.Value->SetActorHiddenInGame(true);
+	}
+	for (const auto& Act : MaskViewModeBlacklistedActors)
+	{
+		Act->SetActorHiddenInGame(false);
 	}
 }
 

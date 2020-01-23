@@ -84,7 +84,7 @@ private:
 	void InitWorldEntities();
 	
 	// Create movable clones of the skeletal meshes, hide originals (call before loading the episode data)
-	void CreatePoseableMeshes();
+	void CreatePoseableMeshesClones();
 
 	// Load the pointers to the virtual cameras
 	bool LoadVirtualCameras();
@@ -159,6 +159,9 @@ private:
 	// Copies of the (poseable) skeletal meshes with mask materials on top
 	UPROPERTY() // Avoid GC
 	TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*> SkelOrigToMaskClones;
+
+	// Actors to hide when in mask mode
+	TArray<AActor*> MaskViewModeBlacklistedActors;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
