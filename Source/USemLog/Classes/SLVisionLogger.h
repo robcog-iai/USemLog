@@ -62,6 +62,12 @@ protected:
 	// Called when the screenshot is captured
 	void ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap);
 
+	// Start the dominoes, setup the first frame, camera and view mode, return true if succesfull
+	bool FirstStep();
+
+	// Proceed to the next step (frame, camera, or view mode), return true if successfull
+	bool NextStep();
+
 	// Move actors to the poses from the first frame from the episode data
 	bool SetupFirstEpisodeFrame();
 

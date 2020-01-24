@@ -128,7 +128,11 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 					ViewModes.Remove(ESLVisionViewMode::Mask);
 				}
 				
+				// Actors that need to be hidden in mask mode (skylight, fog etc.)
 				MaskViewModeBlacklistedActors = FSLEntitiesManager::GetInstance()->GetUntaggedActors();
+
+				// Create the overlap calc object
+				OverlapCalc = NewObject<USLVisionOverlapCalc>(this);
 			}
 			else
 			{
@@ -148,37 +152,16 @@ void USLVisionLogger::Start(const FString& EpisodeId)
 	if (!bIsStarted && bIsInit)
 	{
 		// Hide default pawn from scene
-		GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
+		GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);		
 		
-		// Cannot be called before BeginPlay, GetFirstPlayerController() is nullptr
-		if(!SetupFirstEpisodeFrame())
+		// Setup the first frame, camera and view mode
+		if (FirstStep())
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup the first world frame.."), *FString(__func__), __LINE__);
-			return;
-		}
-		
-		// Cannot be called before BeginPlay, GetFirstPlayerController() is nullptr at this point
-		if(!GotoFirstCameraView())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup first camera view.."), *FString(__func__), __LINE__);
-			return;
-		}
-
-		// Set the first render type
-		if(!SetupFirstViewMode())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup first view mode.."), *FString(__func__), __LINE__);
-			return;
-		}
-
-		CurrFrameData.Init(CurrTimestamp, Resolution);
-		CurrViewData.Init(VirtualCameras[CurrVirtualCameraIdx]->GetId(), VirtualCameras[CurrVirtualCameraIdx]->GetClassName());
-		
-		// Start the dominoes
-		RequestScreenshot();
-		
-		// Mark as started
-		bIsStarted = true;
+			CurrFrameData.Init(CurrTimestamp, Resolution);
+			CurrViewData.Init(VirtualCameras[CurrVirtualCameraIdx]->GetId(), VirtualCameras[CurrVirtualCameraIdx]->GetClassName());
+			RequestScreenshot();
+			bIsStarted = true;
+		}		
 	}
 }
 
@@ -237,12 +220,26 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 		// Remove const-ness from image (needed for restore the image masks from the rendered values to the original ones)
 		TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
 
+		// Get information from the mask image and restore any rendering artefacts to the original mask colors
 		ImgHandler.GetDataAndRestoreImage(BitmapRef, SizeX, SizeY, CurrViewData);
 
+		// Compress the restored bitmap image
 		FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
+
+		// Setup for computing overlaps
+		if (!OverlapCalc->IsInit())
+		{
+			OverlapCalc->Init();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, overlap calc should not be init here.."),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		}
 	}
 	else
 	{
+		// Compress the original bitmap image
 		FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
 	}
 
@@ -252,13 +249,71 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 		SaveImageLocally(CompressedBitmap);
 	}
 
-	// Add the image and the view mode to the array
+	// Cache the image binary
 	CurrViewData.Images.Emplace(FSLVisionImageData(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap));
 
-
-	if(SetupNextViewMode())
+	// Check if overlap computations should happen before going to the next step
+	if (OverlapCalc->IsInit())
 	{
-		RequestScreenshot();
+		if (!OverlapCalc->IsStarted())
+		{
+			OverlapCalc->Start();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, overlap calc should not be started here.."),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		}
+	}
+	else
+	{
+		// Go to next frame/camera/view mode
+		if (NextStep())
+		{
+			RequestScreenshot();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished visual logger.."),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			QuitEditor();
+		}
+	}
+}
+
+// Start the dominoes, setup the first frame, camera and view mode, return true if succesfull
+bool USLVisionLogger::FirstStep()
+{
+	// Cannot be called before BeginPlay, GetFirstPlayerController() is nullptr
+	if (!SetupFirstEpisodeFrame())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup the first world frame.."), *FString(__func__), __LINE__);
+		return false;
+	}
+
+	// Cannot be called before BeginPlay, GetFirstPlayerController() is nullptr at this point
+	if (!GotoFirstCameraView())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup first camera view.."), *FString(__func__), __LINE__);
+		return false;
+	}
+
+	// Set the first render type
+	if (!SetupFirstViewMode())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup first view mode.."), *FString(__func__), __LINE__);
+		return false;
+	}
+
+	return true;
+}
+
+// Proceed to the next step (frame, camera, or view mode), return true if successfull
+bool USLVisionLogger::NextStep()
+{
+	if (SetupNextViewMode())
+	{
+		return true;
 	}
 	else
 	{
@@ -267,20 +322,20 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 
 		SetupFirstViewMode();
 
-		if(GotoNextCameraView())
+		if (GotoNextCameraView())
 		{
 			// Start a new view data
 			CurrViewData.Clear();
 			CurrViewData.Init(VirtualCameras[CurrVirtualCameraIdx]->GetId(), VirtualCameras[CurrVirtualCameraIdx]->GetClassName());
 
-			RequestScreenshot();
+			return true;
 		}
 		else
 		{
 			// Write vision frame data to the database
 			DBHandler.WriteFrame(CurrFrameData);
-			
-			if(SetupNextEpisodeFrame())
+
+			if (SetupNextEpisodeFrame())
 			{
 				GotoFirstCameraView();
 
@@ -290,17 +345,15 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 				CurrFrameData.Clear();
 				CurrFrameData.Init(CurrTimestamp, Resolution);
 
-				RequestScreenshot();
+				return true;
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished visual logger.."),
-					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-				QuitEditor();
+				// Last episode frame, with the last camera location and the last view mode was proccessed
+				return false;
 			}
 		}
 	}
-	
 }
 
 // Goto the first episode frame
