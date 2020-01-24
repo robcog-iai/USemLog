@@ -29,12 +29,6 @@
       "Name": "USemLogEd",
       "Type": "Developer",
       "LoadingPhase": "Default"
-
-    },
-    {
-      "Name": "USemLogVision",
-      "Type": "Developer",
-      "LoadingPhase": "Default"
     },
     {
       "Name": "USemLogOwl",

@@ -12,6 +12,7 @@
 #include "Vision/SLVisionPoseableMeshActor.h"
 #include "Vision/SLVisionDBHandler.h"
 #include "Vision/SLVisionImageHandler.h"
+#include "Vision/SLVisionOverlapCalc.h"
 
 #include "SLVisionLogger.generated.h"
 
@@ -135,6 +136,10 @@ private:
 
 	// Gathers semantics from the images
 	FSLVisionImageHandler ImgHandler;
+
+	// Calculates entities overlap percentages in images
+	UPROPERTY() // Avoid GC
+	USLVisionOverlapCalc* OverlapCalc;
 
 	// Current frame timestamp
 	float CurrTimestamp;
