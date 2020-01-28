@@ -23,7 +23,7 @@
 #include "Tags.h"
 
 // Constructor
-USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false)
+USLVisionLogger::USLVisionLogger() : bIsInit(false), bIsStarted(false), bIsFinished(false), bIsPaused(false)
 {
 	CurrViewModeIdx = INDEX_NONE;
 	CurrVirtualCameraIdx = INDEX_NONE;
@@ -60,14 +60,14 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		// Save the folder name if the images are going to be stored locally as well
 		if(Params.bIncludeLocally)
 		{
-			SaveLocallyFolderName = InTaskId;
+			SaveLocallyFolderName = InTaskId + "/" + InEpisodeId;
 		}
 		
 		// Init the semantic instances
 		FSLEntitiesManager::GetInstance()->Init(GetWorld());
 
 		// Set the captured image resolution
-		InitScreenshotResolution(Params.Resolution);
+		InitScreenshotResolution(Resolution);
 
 		// Set rendering parameters
 		InitRenderParameters();
@@ -114,7 +114,7 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 			return;
 		}
 		// Bind the screenshot captured callback
-		ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLVisionLogger::ScreenshotCB);
+		ScreenshotCallbackHandle = ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLVisionLogger::ScreenshotCB);
 
 		// Create clones of every visible entity with a mask color
 		if(ViewModes.Contains(ESLVisionViewMode::Mask))
@@ -122,7 +122,7 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 			if(CreateMaskClones())
 			{
 				// Create color to semantic data mappings on the image handler, setup the rendered to original mask mapping
-				if (!ImgHandler.Init())
+				if (!MaskImgHandler.Init())
 				{
 					UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init image handler, removing mask view type.."), *FString(__func__), __LINE__);
 					ViewModes.Remove(ESLVisionViewMode::Mask);
@@ -131,8 +131,13 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 				// Actors that need to be hidden in mask mode (skylight, fog etc.)
 				MaskViewModeBlacklistedActors = FSLEntitiesManager::GetInstance()->GetUntaggedActors();
 
-				// Create the overlap calc object
-				OverlapCalc = NewObject<USLVisionOverlapCalc>(this);
+				if (bCalcOverlaps)
+				{
+					// Create the overlap calc object
+					OverlapCalc = NewObject<USLVisionOverlapCalc>(this);
+					// Give control to the overlap calc to pause and start the vision logger
+					OverlapCalc->Init(this, Resolution);
+				}
 			}
 			else
 			{
@@ -157,8 +162,11 @@ void USLVisionLogger::Start(const FString& EpisodeId)
 		// Setup the first frame, camera and view mode
 		if (FirstStep())
 		{
+			// Init data
 			CurrFrameData.Init(CurrTimestamp, Resolution);
 			CurrViewData.Init(VirtualCameras[CurrVirtualCameraIdx]->GetId(), VirtualCameras[CurrVirtualCameraIdx]->GetClassName());
+
+			// Start recursion
 			RequestScreenshot();
 			bIsStarted = true;
 		}		
@@ -176,8 +184,78 @@ void USLVisionLogger::Finish(bool bForced)
 		// Mark logger as finished
 		bIsStarted = false;
 		bIsInit = false;
-		bIsFinished = true;
+		bIsPaused = false;
+		bIsFinished = true;		
 	}
+}
+
+// Can be called if init
+void USLVisionLogger::Pause(bool Value)
+{
+	if (bIsStarted)
+	{
+		if (bIsPaused != Value)
+		{
+			if (Value)
+			{
+				// Remove the screenshot callback
+				ViewportClient->OnScreenshotCaptured().Remove(ScreenshotCallbackHandle);
+
+				bIsPaused = true;
+			}
+			else
+			{
+				// Re-bind the screenshot captured callback
+				ScreenshotCallbackHandle = ViewportClient->OnScreenshotCaptured().AddUObject(this, &USLVisionLogger::ScreenshotCB);
+
+				// Set the captured image resolution
+				InitScreenshotResolution(Resolution);	
+
+				// Go to next frame/camera/view mode
+				if (NextStep())
+				{
+					RequestScreenshot();
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished visual logger.."),
+						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+					QuitEditor();
+				}
+
+				bIsPaused = false;
+			}
+		}
+	}
+}
+
+// Get access to the static mesh clone from the id
+AStaticMeshActor* USLVisionLogger::GetStaticMeshMaskClone(const FString& Id)
+{
+	if (AStaticMeshActor* SMA = FSLEntitiesManager::GetInstance()->GetStaticMeshActor(Id))
+	{
+		if (AStaticMeshActor** SMAClone = OrigToMaskClones.Find(SMA))
+		{
+			return *SMAClone;
+		}
+	}
+	return nullptr;
+}
+
+// Get access to the poseable skeletal mesh clone from the id
+ASLVisionPoseableMeshActor* USLVisionLogger::GetPoseableSkeletalMaskClone(const FString& Id)
+{
+	if (ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor(Id))
+	{
+		if (ASLVisionPoseableMeshActor** PMAClone = SkelToPoseableMap.Find(SkMA))
+		{
+			if (ASLVisionPoseableMeshActor** PMAMaskClone = PoseableOrigToMaskClones.Find(*PMAClone))
+			{
+				return *PMAMaskClone;
+			}
+		}
+	}
+	return nullptr;
 }
 
 // Trigger the screenshot on the game thread
@@ -221,20 +299,27 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 		TArray<FColor>& BitmapRef = const_cast<TArray<FColor>&>(Bitmap);
 
 		// Get information from the mask image and restore any rendering artefacts to the original mask colors
-		ImgHandler.GetDataAndRestoreImage(BitmapRef, SizeX, SizeY, CurrViewData);
+		MaskImgHandler.GetDataAndRestoreImage(BitmapRef, SizeX, SizeY, CurrViewData);
 
 		// Compress the restored bitmap image
 		FImageUtils::CompressImageArray(SizeX, SizeY, BitmapRef, CompressedBitmap);
+	
+		if (OverlapCalc)
+		{
+			// Check if the image should be saved locally as well
+			if (!SaveLocallyFolderName.IsEmpty())
+			{
+				SaveImageLocally(CompressedBitmap);
+			}
 
-		// Setup for computing overlaps
-		if (!OverlapCalc->IsInit())
-		{
-			OverlapCalc->Init();
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, overlap calc should not be init here.."),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			// Cache the image binary
+			CurrViewData.Images.Emplace(FSLVisionImageData(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap));
+
+			// Bind the screenshot callback for calculating overlaps
+			OverlapCalc->Start(&CurrViewData);
+
+			// Wait for next step until the overlaps were calculated
+			return;
 		}
 	}
 	else
@@ -252,32 +337,16 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 	// Cache the image binary
 	CurrViewData.Images.Emplace(FSLVisionImageData(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap));
 
-	// Check if overlap computations should happen before going to the next step
-	if (OverlapCalc->IsInit())
+	// Go to next frame/camera/view mode
+	if (NextStep())
 	{
-		if (!OverlapCalc->IsStarted())
-		{
-			OverlapCalc->Start();
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, overlap calc should not be started here.."),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-		}
+		RequestScreenshot();
 	}
 	else
 	{
-		// Go to next frame/camera/view mode
-		if (NextStep())
-		{
-			RequestScreenshot();
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished visual logger.."),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-			QuitEditor();
-		}
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Finished visual logger.."),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		QuitEditor();
 	}
 }
 
@@ -359,7 +428,7 @@ bool USLVisionLogger::NextStep()
 // Goto the first episode frame
 bool USLVisionLogger::SetupFirstEpisodeFrame()
 {
-	if(!Episode.SetupFirstFrame(CurrTimestamp, true, OrigToMaskClones, SkelOrigToMaskClones))
+	if(!Episode.SetupFirstFrame(CurrTimestamp, true, OrigToMaskClones, PoseableOrigToMaskClones))
 	{
 		//UE_LOG(LogTemp, Error, TEXT("%s::%d First frame not available.."), *FString(__func__), __LINE__);
 		return false;
@@ -370,7 +439,7 @@ bool USLVisionLogger::SetupFirstEpisodeFrame()
 // Goto next episode frame, return false if there are no other left
 bool USLVisionLogger::SetupNextEpisodeFrame()
 {
-	if(!Episode.SetupNextFrame(CurrTimestamp, true, OrigToMaskClones, SkelOrigToMaskClones))
+	if(!Episode.SetupNextFrame(CurrTimestamp, true, OrigToMaskClones, PoseableOrigToMaskClones))
 	{
 		//UE_LOG(LogTemp, Error, TEXT("%s::%d No new frames.."), *FString(__func__), __LINE__);
 		return false;
@@ -503,7 +572,6 @@ bool USLVisionLogger::CreateMaskClones()
 	DefaultMaskMaterial->bUsedWithStaticLighting = true;
 	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
 
-	// TODO iterate the whole world, since you want to mark meshes that are not semantically annotated with black clones
 	/* Static meshes */
 	TArray<AStaticMeshActor*> SMActors;
 	FSLEntitiesManager::GetInstance()->GetStaticMeshActors(SMActors);
@@ -596,7 +664,7 @@ bool USLVisionLogger::CreateMaskClones()
 			PMAClone->SetActorHiddenInGame(true);
 			if(ASLVisionPoseableMeshActor** PMAOrig = SkelToPoseableMap.Find(SkMA))
 			{
-				SkelOrigToMaskClones.Add(*PMAOrig, PMAClone);
+				PoseableOrigToMaskClones.Add(*PMAOrig, PMAClone);
 			}
 			else
 			{
@@ -815,7 +883,7 @@ void USLVisionLogger::ApplyMaskMaterials()
 		Pair.Key->SetActorHiddenInGame(true);
 		Pair.Value->SetActorHiddenInGame(false);
 	}
-	for (const auto& Pair : SkelOrigToMaskClones)
+	for (const auto& Pair : PoseableOrigToMaskClones)
 	{
 		Pair.Key->SetActorHiddenInGame(true);
 		Pair.Value->SetActorHiddenInGame(false);
@@ -834,7 +902,7 @@ void USLVisionLogger::ApplyOriginalMaterials()
 		Pair.Key->SetActorHiddenInGame(false);
 		Pair.Value->SetActorHiddenInGame(true);
 	}
-	for (const auto& Pair : SkelOrigToMaskClones)
+	for (const auto& Pair : PoseableOrigToMaskClones)
 	{
 		Pair.Key->SetActorHiddenInGame(false);
 		Pair.Value->SetActorHiddenInGame(true);

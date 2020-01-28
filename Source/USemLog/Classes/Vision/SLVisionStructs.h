@@ -37,7 +37,7 @@ struct FSLVisionLoggerParams
 	bool bIncludeLocally;
 
 	// Default ctor
-	FSLVisionLoggerParams();
+	FSLVisionLoggerParams() {};
 
 	// Init ctor
 	FSLVisionLoggerParams(
@@ -59,7 +59,7 @@ struct FSLVisionFrame
 	float Timestamp;
 
 	// Entity poses
-	TMap<AActor*, FTransform> ActorPoses;
+	TMap<AStaticMeshActor*, FTransform> ActorPoses;
 
 	// Skeletal (poseable) meshes bone transformation
 	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> SkeletalPoses;
@@ -67,7 +67,7 @@ struct FSLVisionFrame
 	// Apply transformations, return the frame timestamp
 	float ApplyTransformations(
 		bool bIncludeMasks,
-		TMap<AActor*, AStaticMeshActor*>& MaskClones,
+		TMap<AStaticMeshActor*, AStaticMeshActor*>& MaskClones,
 		TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*>& SkelMaskClones)
 	{
 		// Move the static meshes
@@ -123,7 +123,7 @@ public:
 	// Move actors to the first frame
 	bool SetupFirstFrame(float& OutTimestamp,
 		bool bIncludeMasks,
-		TMap<AActor*, AStaticMeshActor*>& MaskClones,
+		TMap<AStaticMeshActor*, AStaticMeshActor*>& MaskClones,
 		TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*>& SkelMaskClones)
 	{
 		FrameIdx = 0;
@@ -138,7 +138,7 @@ public:
 	// Move actors to the next frame transformations, return false if no more frames are available
 	bool SetupNextFrame(float& OutTimestamp,
 		bool bIncludeMasks,
-		TMap<AActor*, AStaticMeshActor*>& MaskClones,
+		TMap<AStaticMeshActor*, AStaticMeshActor*>& MaskClones,
 		TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*>& SkelMaskClones)
 	{
 		FrameIdx++;
@@ -195,8 +195,11 @@ struct FSLVisionViewEntityData
 	// The percentage of the entity in the image
 	float ImagePercentage = 0.f;
 
-	//// Percentage of the image that is not visible (overlapped + clipped)
-	//float BlockedPercentage;
+	// Percentage of the image that is occluded by other items
+	float OcclusionPercentage = -1.f;
+
+	// True if the image is partially outside of the image
+	bool bClipped = false;
 
 	//// Percentage of the image that is clipped by the edge
 	//float OverlappedPercentage;
@@ -234,6 +237,12 @@ struct FSLVisionViewSkelBoneData
 
 	// The percentage of the entity in the image
 	float ImagePercentage = 0.f;
+
+	// Percentage of the image that is occluded by other items
+	float OcclusionPercentage = -1.f;
+
+	// True if the image is partially outside of the image
+	bool bClipped = false;
 };
 
 /**
@@ -285,6 +294,12 @@ struct FSLVisionViewSkelData
 
 	// The percentage of the entity in the image
 	float ImagePercentage = 0.f;
+
+	// Percentage of the image that is occluded by other items
+	float OcclusionPercentage = -1.f;
+
+	// True if the image is partially outside of the image
+	bool bClipped = false;
 
 	// Bones data
 	TArray<FSLVisionViewSkelBoneData> Bones;

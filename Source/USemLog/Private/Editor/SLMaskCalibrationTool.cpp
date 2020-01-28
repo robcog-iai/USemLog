@@ -407,8 +407,8 @@ bool USLMaskCalibrationTool::CreateMaskRenderMesh()
 		return false;
 	}
 	//DefaultMaskMaterial->bUsedWithStaticLighting = true;
-	//DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
-	
+	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
+		
 	DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 	DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::White);
 
@@ -543,7 +543,7 @@ bool USLMaskCalibrationTool::SetupNextEntityMaskColor()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Not set yet.."), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d First entity was not set before.."), *FString(__func__), __LINE__);
 		return false;
 	}
 }
@@ -756,7 +756,6 @@ bool USLMaskCalibrationTool::SetupMaskColorsWorld(bool bOnlyDemo)
 			SkMAClone->SetActorHiddenInGame(!bOnlyDemo);
 		}
 	}
-
 
 	if (CloneToRealArray.Num() == 0)
 	{

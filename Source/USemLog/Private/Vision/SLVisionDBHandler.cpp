@@ -413,6 +413,9 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 			BSON_APPEND_UTF8(&entities_arr_obj, "id", TCHAR_TO_UTF8(*Entity.Id));
 			BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
 			BSON_APPEND_DOUBLE(&entities_arr_obj, "img_perc", Entity.ImagePercentage);
+			BSON_APPEND_DOUBLE(&entities_arr_obj, "occl_perc", Entity.OcclusionPercentage);
+			BSON_APPEND_BOOL(&entities_arr_obj, "clipped", Entity.bClipped);
+		
 			AddBBObj(Entity.MinBB, Entity.MaxBB, &entities_arr_obj);
 
 			bson_append_document_end(&entities_arr, &entities_arr_obj);
@@ -431,6 +434,8 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 			BSON_APPEND_UTF8(&entities_arr_obj, "id", TCHAR_TO_UTF8(*SkelEntity.Id));
 			BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*SkelEntity.Class));
 			BSON_APPEND_DOUBLE(&entities_arr_obj, "img_perc", SkelEntity.ImagePercentage);
+			BSON_APPEND_DOUBLE(&entities_arr_obj, "occl_perc", SkelEntity.OcclusionPercentage);
+			BSON_APPEND_BOOL(&entities_arr_obj, "clipped", SkelEntity.bClipped);
 			AddBBObj(SkelEntity.MinBB, SkelEntity.MaxBB, &entities_arr_obj);
 
 			// Create the bones array
@@ -443,6 +448,9 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 
 				BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*Bone.Class));
 				BSON_APPEND_DOUBLE(&bones_arr_obj, "img_perc", Bone.ImagePercentage);
+				BSON_APPEND_DOUBLE(&bones_arr_obj, "occl_perc", Bone.OcclusionPercentage);
+				BSON_APPEND_BOOL(&bones_arr_obj, "clipped", Bone.bClipped);
+
 				AddBBObj(Bone.MinBB, Bone.MaxBB, &bones_arr_obj);
 
 				bson_append_document_end(&bones_arr, &bones_arr_obj);
@@ -559,7 +567,7 @@ void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FStrin
 
 #if SL_WITH_LIBMONGO_C
 // Get the entities data out of the bson iterator
-bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc, TMap<AActor*, FTransform>& OutEntityPoses) const
+bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc, TMap<AStaticMeshActor*, FTransform>& OutEntityPoses) const
 {
 	// Iterate entities
 	if (bson_iter_find(doc, "entities"))
@@ -611,7 +619,7 @@ bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc, TMap<AActor*, FTransf
 				}
 
 				// Add entity
-				if (AActor* Act = FSLEntitiesManager::GetInstance()->GetActor(Id))
+				if (AStaticMeshActor* Act = FSLEntitiesManager::GetInstance()->GetStaticMeshActor(Id))
 				{
 					OutEntityPoses.Emplace(Act, FConversions::ROSToU(FTransform(Quat, Loc)));
 				}

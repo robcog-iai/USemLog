@@ -11,7 +11,7 @@
 #include "Vision/SLVisionStructs.h"
 #include "Vision/SLVisionPoseableMeshActor.h"
 #include "Vision/SLVisionDBHandler.h"
-#include "Vision/SLVisionImageHandler.h"
+#include "Vision/SLVisionMaskImageHandler.h"
 #include "Vision/SLVisionOverlapCalc.h"
 
 #include "SLVisionLogger.generated.h"
@@ -40,11 +40,14 @@ public:
 	void Init(const FString& InTaskId, const FString& InEpisodeId, const FString& InServerIp, uint16 InServerPort,
 		bool bOverwriteVisionData, const FSLVisionLoggerParams& Params);
 
-	// Start logger
+	// Can be called if init
 	void Start(const FString& EpisodeId);
 
-	// Finish logger
+	// Can be called if init or started
 	void Finish(bool bForced = false);
+
+	// Can be called if init
+	void Pause(bool Value);
 
 	// Get init state
 	bool IsInit() const { return bIsInit; };
@@ -54,6 +57,15 @@ public:
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
+
+	// Get paused state
+	bool IsPaused() const { return bIsPaused; };
+
+	// Get access to the static mesh clone from the id
+	AStaticMeshActor* GetStaticMeshMaskClone(const FString& Id);
+
+	// Get access to the poseable skeletal mesh clone from the id
+	ASLVisionPoseableMeshActor* GetPoseableSkeletalMaskClone(const FString& Id);
 
 protected:
 	// Trigger the screenshot on the game thread
@@ -130,18 +142,21 @@ protected:
 	// Set when initialized
 	bool bIsInit;
 
-	// Set when started
+	// Can be set after init
 	bool bIsStarted;
 
-	// Set when finished
+	// Can be set after init, or start
 	bool bIsFinished;
+
+	// Can be set after started (e.g. the overlaps are being calculated
+	bool bIsPaused;
 
 private:
 	// Writes and reads the data from the mongo database
 	FSLVisionDBHandler DBHandler;
 
 	// Gathers semantics from the images
-	FSLVisionImageHandler ImgHandler;
+	FSLVisionMaskImageHandler MaskImgHandler;
 
 	// Calculates entities overlap percentages in images
 	UPROPERTY() // Avoid GC
@@ -165,17 +180,20 @@ private:
 
 	// Copies of the static meshes with mask materials on top
 	UPROPERTY() // Avoid GC
-	TMap<AActor*, AStaticMeshActor*> OrigToMaskClones;
+	TMap<AStaticMeshActor*, AStaticMeshActor*> OrigToMaskClones;
 
 	// Copies of the (poseable) skeletal meshes with mask materials on top
 	UPROPERTY() // Avoid GC
-	TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*> SkelOrigToMaskClones;
+	TMap<ASLVisionPoseableMeshActor*, ASLVisionPoseableMeshActor*> PoseableOrigToMaskClones;
 
 	// Actors to hide when in mask mode
 	TArray<AActor*> MaskViewModeBlacklistedActors;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
+
+	// Handler for the screenshot callbacks, used to remove the callback when doing the overlap calculations
+	FDelegateHandle ScreenshotCallbackHandle;
 
 	// Array of the virtual cameras
 	TArray<ASLVisionCamera*> VirtualCameras;
@@ -203,4 +221,7 @@ private:
 
 	// Image resolution 
 	FIntPoint Resolution;
+
+	/* Constants */
+	constexpr static bool bCalcOverlaps = true;
 };

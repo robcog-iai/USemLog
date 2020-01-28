@@ -53,7 +53,7 @@ private:
 
 #if SL_WITH_LIBMONGO_C
 	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
-	bool GetEntitiesData(bson_iter_t* doc, TMap<AActor*, FTransform>& OutEntityPoses) const;
+	bool GetEntitiesData(bson_iter_t* doc, TMap<AStaticMeshActor*, FTransform>& OutEntityPoses) const;
 
 	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
 	bool GetSkeletalEntitiesData(bson_iter_t* doc,

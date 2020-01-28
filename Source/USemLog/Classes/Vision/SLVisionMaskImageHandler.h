@@ -10,13 +10,13 @@
 /**
 * Image pixel color related data, convenient mapping of mask colors to their semantic data
 */
-struct FSLVisionEntityInfo
+struct FSLVisionMaskEntityInfo
 {
 	// Default ctor
-	FSLVisionEntityInfo() {};
+	FSLVisionMaskEntityInfo() {};
 	
 	// Init ctor
-	FSLVisionEntityInfo(const FString& InClass, const FString& InId, const FString& InOrigMaskColor) :
+	FSLVisionMaskEntityInfo(const FString& InClass, const FString& InId, const FString& InOrigMaskColor) :
 		Class(InClass), Id(InId), OrigMaskColor(InOrigMaskColor) {};
 
 	// Class name
@@ -33,13 +33,13 @@ struct FSLVisionEntityInfo
 /**
 * Image pixel color related data, convenient mapping of mask colors to their semantic data
 */
-struct FSLVisionSkelInfo
+struct FSLVisionMaskSkelInfo
 {
 	// Default ctor
-	FSLVisionSkelInfo() {};
+	FSLVisionMaskSkelInfo() {};
 
 	// Init ctor
-	FSLVisionSkelInfo(const FString& InClass, const FString& InId, const FString& InBoneClass, const FString& InOrigMaskColor) :
+	FSLVisionMaskSkelInfo(const FString& InClass, const FString& InId, const FString& InBoneClass, const FString& InOrigMaskColor) :
 		Class(InClass), Id(InId), BoneClass(InBoneClass), OrigMaskColor(InOrigMaskColor) {};
 
 	// Skeletal entity class name
@@ -82,20 +82,17 @@ struct FSLVisionImageColorInfo
 /**
  * 
  */
-class FSLVisionImageHandler
+class FSLVisionMaskImageHandler
 {
 public:
 	// Ctor
-	FSLVisionImageHandler();
+	FSLVisionMaskImageHandler();
 
 	// Load the color to entities mapping
 	bool Init();
 
 	// Clear init flag and mappings
 	void Reset();
-
-	//// Get entities from mask image
-	//void GetEntities(const TArray<FColor>& InMaskBitmap, int32 ImgWidth, int32 ImgHeight, FSLVisionViewData& OutViewData) const;
 
 	// Restore image (the screenshot image pixel colors are a bit offseted from the supposed mask value) and get the entities from mask image
 	void GetDataAndRestoreImage(TArray<FColor>& MaskBitmap, int32 ImgWidth, int32 ImgHeight, FSLVisionViewData& OutViewData) const;
@@ -116,18 +113,8 @@ private:
 	bool bIsInit;
 
 	// Rendered color to entity data
-	TMap<FColor, FSLVisionEntityInfo> RenderedColorToEntityInfo;
+	TMap<FColor, FSLVisionMaskEntityInfo> RenderedColorToEntityInfo;
 
 	// Rendered color to skeletal entity data
-	TMap<FColor, FSLVisionSkelInfo> RenderedColorToSkelInfo;
-
-	//// Used to check the mapping from the rendered color to the original one
-	//TMap<FColor, FColor> RenderedToOriginal;
-
-	//// Used for quick checks for offseted colors actual value (TArray is used instead of TSet, because it has FindByPredicate functionality)
-	//TArray<FColor> OriginalMaskColors;
-
-	///* Constants */
-	//// Mask color equality tolerance
-	//constexpr static uint8 ColorDiffTolerance = 13;
+	TMap<FColor, FSLVisionMaskSkelInfo> RenderedColorToSkelInfo;
 };
