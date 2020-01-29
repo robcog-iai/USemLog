@@ -279,14 +279,14 @@ void USLVisionOverlapCalc::ApplyMaterial()
 			/*FLinearColor LC = FLinearColor::Blue;
 			SMAClone->GetStaticMeshComponent()->SetVectorParameterValueOnMaterials(FName("MaskColorParam"), LC);*/
 
-			for (auto & MatInterf : SMAClone->GetStaticMeshComponent()->GetMaterials())
-			{
-				UMaterial* Mat = MatInterf->GetMaterial();
-				FLinearColor LC = FLinearColor::Blue;
-				Mat->SetVectorParameterValueEditorOnly(FName("MaskColorParam"), LC);
-				//Mat->GetVectorParameterValue(FName("MaskColorParam"), LC);
-				Mat->bDisableDepthTest;
-			}
+			//for (auto & MatInterf : SMAClone->GetStaticMeshComponent()->GetMaterials())
+			//{
+			//	UMaterial* Mat = MatInterf->GetMaterial();
+			//	FLinearColor LC = FLinearColor::Blue;
+			//	Mat->SetVectorParameterValueEditorOnly(FName("MaskColorParam"), LC);
+			//	//Mat->GetVectorParameterValue(FName("MaskColorParam"), LC);
+			//	Mat->bDisableDepthTest;
+			//}
 
 			(*Entities)[EntityIndex].OcclusionPercentage = 0.69f;
 			(*Entities)[EntityIndex].bClipped = true;

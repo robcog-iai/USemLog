@@ -163,10 +163,10 @@ void FSLVisionDBHandler::CreateIndexes() const
 	//bson_init(&index);
 	//BSON_APPEND_INT32(&index, "vision", 1);
 	//char* index_str = mongoc_collection_keys_to_index_string(&index);
-	bson_t index;
-	bson_init(&index);
-	BSON_APPEND_INT32(&index, "timestamp", 1);
-	char* index_str = mongoc_collection_keys_to_index_string(&index);
+	bson_t idx_ts;
+	bson_init(&idx_ts);
+	BSON_APPEND_INT32(&idx_ts, "timestamp", 1);
+	char* idx_ts_str = mongoc_collection_keys_to_index_string(&idx_ts);
 
 	bson_t idx_id;
 	bson_init(&idx_id);
@@ -204,14 +204,14 @@ void FSLVisionDBHandler::CreateIndexes() const
 	char* idx_skebcls_str = mongoc_collection_keys_to_index_string(&idx_skebcls);
 
 	index_command = BCON_NEW("createIndexes",
-		BCON_UTF8(mongoc_collection_get_name(collection)),
+		BCON_UTF8(mongoc_collection_get_name(vis_collection)),
 		"indexes",
 		"[",
 			"{",
 				"key",
-				BCON_DOCUMENT(&index),
+				BCON_DOCUMENT(&idx_ts),
 				"name",
-				BCON_UTF8(index_str),
+				BCON_UTF8(idx_ts_str),
 				//"unique",
 				//BCON_BOOL(true),
 			"}",
@@ -273,7 +273,7 @@ void FSLVisionDBHandler::CreateIndexes() const
 			"}",
 		"]");
 
-	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
+	if (!mongoc_collection_write_command_with_opts(vis_collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
 			*FString(__func__), __LINE__, *FString(error.message));
@@ -281,7 +281,7 @@ void FSLVisionDBHandler::CreateIndexes() const
 
 	// Clean up
 	bson_destroy(index_command);
-	bson_free(index_str);
+	bson_free(idx_ts_str);
 	bson_free(idx_id_str);
 	bson_free(idx_cls_str);
 	bson_free(idx_eid_str);
