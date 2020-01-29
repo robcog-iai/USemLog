@@ -49,6 +49,9 @@ public:
 
 private:
 	// Remove any previously added vision data from the database
+	void DropPreviousEntriesFromWorldColl_Legacy(const FString& DBName, const FString& CollName) const;
+
+	// Remove any previously added vision data from the database
 	void DropPreviousEntries(const FString& DBName, const FString& CollName) const;
 
 #if SL_WITH_LIBMONGO_C
@@ -64,7 +67,10 @@ private:
 	bool AddToGridFs(const TArray<uint8>& InData, bson_oid_t* out_oid) const;
 
 	// Write the bson doc containing the vision data to the entry corresponding to the timestamp
-	bool PushToDB(bson_t* doc, float Timestamp) const;
+	bool WriteToWorldColl_Legacy(bson_t* doc, float Timestamp) const;
+
+	// Write the bson doc containing the vision data to the entry corresponding to the timestamp
+	bool WriteToVisionColl(bson_t* doc) const;
 
 	// Add image bounding box to document
 	void AddBBObj(const FIntPoint& Min, const FIntPoint& Max, bson_t* doc) const;
@@ -83,6 +89,9 @@ private:
 
 	// Database collection
 	mongoc_collection_t* collection;
+
+	// Vision collection
+	mongoc_collection_t* vis_collection;
 
 	// Store image binaries
 	mongoc_gridfs_t* gridfs;

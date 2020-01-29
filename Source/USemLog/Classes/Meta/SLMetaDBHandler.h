@@ -87,6 +87,9 @@ private:
 	// Database collection
 	mongoc_collection_t* collection;
 
+	// Collection for storing the scans
+	mongoc_collection_t* scans_collection;
+
 	// Insert scans binaries
 	mongoc_gridfs_t* gridfs;
 

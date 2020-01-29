@@ -15,6 +15,8 @@ FSLVisionDBHandler::FSLVisionDBHandler() {}
 bool FSLVisionDBHandler::Connect(const FString& DBName, const FString& CollName, const FString& ServerIp,
 	uint16 ServerPort, bool bRemovePrevEntries)
 {
+	const FString VisCollName = CollName + ".vis";
+
 #if SL_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
 	mongoc_init();
@@ -55,8 +57,40 @@ bool FSLVisionDBHandler::Connect(const FString& DBName, const FString& CollName,
 	}
 	collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*CollName));
 
-	// Create a gridfs handle prefixed by fs */
-	gridfs = mongoc_client_get_gridfs(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*CollName), &error);
+	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*VisCollName), &error))
+	{
+		if (bRemovePrevEntries)
+		{
+			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*VisCollName)), &error))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+					*FString(__func__), __LINE__, *FString(error.message));
+			}
+			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(VisCollName + ".chunks"))), &error))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+					*FString(__func__), __LINE__, *FString(error.message));
+			}
+			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(VisCollName + ".files"))), &error))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+					*FString(__func__), __LINE__, *FString(error.message));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Vis collection %s already exists and should not be overwritten, skipping vision logging.."),
+				*FString(__func__), __LINE__, *VisCollName);
+			return false;
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating a new vis collection %s .."),
+		*FString(__func__), __LINE__, *VisCollName);
+	vis_collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*VisCollName));
+
+	// Create a gridfs handle prefixed the vision collection
+	gridfs = mongoc_client_get_gridfs(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*VisCollName), &error);
 	if (!gridfs)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
@@ -79,6 +113,7 @@ bool FSLVisionDBHandler::Connect(const FString& DBName, const FString& CollName,
 	// Remove previously added vision data
 	if (bRemovePrevEntries)
 	{
+		//DropPreviousEntriesFromWorldColl_Legacy(DBName, CollName);
 		DropPreviousEntries(DBName, CollName);
 	}
 
@@ -109,6 +144,10 @@ void FSLVisionDBHandler::Disconnect() const
 	{
 		mongoc_collection_destroy(collection);
 	}
+	if (vis_collection)
+	{
+		mongoc_collection_destroy(vis_collection);
+	}
 	mongoc_cleanup();
 #endif //SL_WITH_LIBMONGO_C
 }
@@ -120,44 +159,48 @@ void FSLVisionDBHandler::CreateIndexes() const
 	bson_t* index_command;
 	bson_error_t error;
 
+	//bson_t index;
+	//bson_init(&index);
+	//BSON_APPEND_INT32(&index, "vision", 1);
+	//char* index_str = mongoc_collection_keys_to_index_string(&index);
 	bson_t index;
 	bson_init(&index);
-	BSON_APPEND_INT32(&index, "vision", 1);
+	BSON_APPEND_INT32(&index, "timestamp", 1);
 	char* index_str = mongoc_collection_keys_to_index_string(&index);
 
 	bson_t idx_id;
 	bson_init(&idx_id);
-	BSON_APPEND_INT32(&idx_id, "vision.views.id", 1);
+	BSON_APPEND_INT32(&idx_id, "views.id", 1);
 	char* idx_id_str = mongoc_collection_keys_to_index_string(&idx_id);
 
 	bson_t idx_cls;
 	bson_init(&idx_cls);
-	BSON_APPEND_INT32(&idx_cls, "vision.views.class", 1);
+	BSON_APPEND_INT32(&idx_cls, "views.class", 1);
 	char* idx_cls_str = mongoc_collection_keys_to_index_string(&idx_cls);
 
 	bson_t idx_eid;
 	bson_init(&idx_eid);
-	BSON_APPEND_INT32(&idx_eid, "vision.views.entities.id", 1);
+	BSON_APPEND_INT32(&idx_eid, "views.entities.id", 1);
 	char* idx_eid_str = mongoc_collection_keys_to_index_string(&idx_eid);
 
 	bson_t idx_ecls;
 	bson_init(&idx_ecls);
-	BSON_APPEND_INT32(&idx_ecls, "vision.views.entities.class", 1);
+	BSON_APPEND_INT32(&idx_ecls, "views.entities.class", 1);
 	char* idx_ecls_str = mongoc_collection_keys_to_index_string(&idx_ecls);
 
 	bson_t idx_skeid;
 	bson_init(&idx_skeid);
-	BSON_APPEND_INT32(&idx_skeid, "vision.views.skel_entities.id", 1);
+	BSON_APPEND_INT32(&idx_skeid, "views.skel_entities.id", 1);
 	char* idx_skeid_str = mongoc_collection_keys_to_index_string(&idx_skeid);
 
 	bson_t idx_skecls;
 	bson_init(&idx_skecls);
-	BSON_APPEND_INT32(&idx_skecls, "vision.views.skel_entities.class", 1);
+	BSON_APPEND_INT32(&idx_skecls, "views.skel_entities.class", 1);
 	char* idx_skecls_str = mongoc_collection_keys_to_index_string(&idx_skecls);
 
 	bson_t idx_skebcls;
 	bson_init(&idx_skebcls);
-	BSON_APPEND_INT32(&idx_skebcls, "vision.views.skel_entities.bones.class", 1);
+	BSON_APPEND_INT32(&idx_skebcls, "views.skel_entities.bones.class", 1);
 	char* idx_skebcls_str = mongoc_collection_keys_to_index_string(&idx_skebcls);
 
 	index_command = BCON_NEW("createIndexes",
@@ -241,6 +284,11 @@ void FSLVisionDBHandler::CreateIndexes() const
 	bson_free(index_str);
 	bson_free(idx_id_str);
 	bson_free(idx_cls_str);
+	bson_free(idx_eid_str);
+	bson_free(idx_ecls_str);
+	bson_free(idx_skeid_str);
+	bson_free(idx_skecls_str);
+	bson_free(idx_skebcls_str);
 #endif //SL_WITH_LIBMONGO_C
 }
 
@@ -389,6 +437,9 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 
 	bson_oid_t file_oid;
 
+	// Add timestamp
+	BSON_APPEND_DOUBLE(&frame_doc, "timestamp", Frame.Timestamp);
+
 	// Begin adding views data tot the 
 	BSON_APPEND_ARRAY_BEGIN(&frame_doc, "views", &views_arr);
 
@@ -489,14 +540,15 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 	bson_append_array_end(&frame_doc, &views_arr);
 
 	// Update DB at the given timestamp with the document
-	PushToDB(&frame_doc, Frame.Timestamp);
+	//WriteToWorldColl_Legacy(&frame_doc, Frame.Timestamp);
+	WriteToVisionColl(&frame_doc);
 
 	bson_destroy(&frame_doc);
 #endif //SL_WITH_LIBMONGO_C
 }
 
 // Remove any previously added vision data from the database
-void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FString& CollName) const
+void FSLVisionDBHandler::DropPreviousEntriesFromWorldColl_Legacy(const FString& DBName, const FString& CollName) const
 {
 #if SL_WITH_LIBMONGO_C
 	// Remove all previous entries
@@ -563,6 +615,12 @@ void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FStrin
 	bson_destroy(update);
 	bson_destroy(&reply);
 #endif //SL_WITH_LIBMONGO_C
+}
+
+// Remove any previously added vision data from the database
+void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FString& CollName) const
+{
+
 }
 
 #if SL_WITH_LIBMONGO_C
@@ -786,7 +844,7 @@ bool FSLVisionDBHandler::AddToGridFs(const TArray<uint8>& InData, bson_oid_t* ou
 }
 
 // Write the bson doc containing the vision data to the entry corresponding to the timestamp
-bool FSLVisionDBHandler::PushToDB(bson_t* doc, float Timestamp) const
+bool FSLVisionDBHandler::WriteToWorldColl_Legacy(bson_t* doc, float Timestamp) const
 {
 	// Return flag
 	bool bSuccess = true;
@@ -833,6 +891,19 @@ bool FSLVisionDBHandler::PushToDB(bson_t* doc, float Timestamp) const
 	bson_destroy(&reply);
 
 	return bSuccess;
+}
+
+// Write the bson doc containing the vision data to the entry corresponding to the timestamp
+bool FSLVisionDBHandler::WriteToVisionColl(bson_t* doc) const
+{
+	bson_error_t error;
+	if (!mongoc_collection_insert_one(vis_collection, doc, NULL, NULL, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+		return false;
+	}
+	return true;
 }
 
 // Add image bounding box to document

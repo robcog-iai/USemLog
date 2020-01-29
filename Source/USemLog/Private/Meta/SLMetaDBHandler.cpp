@@ -15,6 +15,7 @@ FSLMetaDBHandler::FSLMetaDBHandler() {}
 bool FSLMetaDBHandler::Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bRemovePrevEntries)
 {
 	const FString MetaCollName = DBName + ".meta";
+	const FString ScansCollName = DBName + ".scans";
 
 #if SL_WITH_LIBMONGO_C
 	// Required to initialize libmongoc's internals	
@@ -47,6 +48,7 @@ bool FSLMetaDBHandler::Connect(const FString& DBName, const FString& ServerIp, u
 	// Get a handle on the database "db_name" and collection "coll_name"
 	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
 
+	// TODO split these
 	// Give a warning if the collection already exists or not
 	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*MetaCollName), &error))
 	{
@@ -60,12 +62,17 @@ bool FSLMetaDBHandler::Connect(const FString& DBName, const FString& ServerIp, u
 					*FString(__func__), __LINE__, *FString(error.message));
 				return false;
 			}
-			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(MetaCollName + ".chunks"))), &error))
+			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*ScansCollName)), &error))
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
 					*FString(__func__), __LINE__, *FString(error.message));
 			}
-			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(MetaCollName + ".files"))), &error))
+			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(ScansCollName + ".chunks"))), &error))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+					*FString(__func__), __LINE__, *FString(error.message));
+			}
+			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(ScansCollName + ".files"))), &error))
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
 					*FString(__func__), __LINE__, *FString(error.message));
@@ -78,17 +85,17 @@ bool FSLMetaDBHandler::Connect(const FString& DBName, const FString& ServerIp, u
 			return false;
 		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating a new meta collection %s .."),
-			*FString(__func__), __LINE__, *MetaCollName);
-	}
 
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating a new meta collection %s .."),
+		*FString(__func__), __LINE__, *MetaCollName);
 	collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*MetaCollName));
 
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating a new scans collection %s .."),
+		*FString(__func__), __LINE__, *ScansCollName);
+	scans_collection = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*ScansCollName));
 
-	// Create a gridfs handle prefixed by fs */
-	gridfs = mongoc_client_get_gridfs(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*MetaCollName), &error);
+	// Create a gridfs handle prefixed by scan coll name
+	gridfs = mongoc_client_get_gridfs(client, TCHAR_TO_UTF8(*DBName), TCHAR_TO_UTF8(*ScansCollName), &error);
 	if (!gridfs)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
@@ -139,6 +146,10 @@ void FSLMetaDBHandler::Disconnect() const
 	{
 		mongoc_collection_destroy(collection);
 	}
+	if (scans_collection)
+	{
+		mongoc_collection_destroy(scans_collection);
+	}
 	//if(scan_entry_doc)
 	//{
 	//	bson_destroy(scan_entry_doc);
@@ -155,10 +166,10 @@ void FSLMetaDBHandler::Disconnect() const
 void FSLMetaDBHandler::CreateIndexes() const
 {
 #if SL_WITH_LIBMONGO_C
-	bson_t idx_task;
-	bson_init(&idx_task);
-	BSON_APPEND_INT32(&idx_task, "task_description", 1);
-	char* idx_task_str = mongoc_collection_keys_to_index_string(&idx_task);
+	//bson_t idx_task;
+	//bson_init(&idx_task);
+	//BSON_APPEND_INT32(&idx_task, "task_description", 1);
+	//char* idx_task_str = mongoc_collection_keys_to_index_string(&idx_task);
 
 	bson_t idx_cls;
 	bson_init(&idx_cls);
@@ -169,17 +180,17 @@ void FSLMetaDBHandler::CreateIndexes() const
 	bson_error_t error;
 
 	index_command = BCON_NEW("createIndexes",
-		BCON_UTF8(mongoc_collection_get_name(collection)),
+		BCON_UTF8(mongoc_collection_get_name(scans_collection)),
 		"indexes",
 		"[",
-			"{",
-				"key",
-				BCON_DOCUMENT(&idx_task),
-				"name",
-				BCON_UTF8(idx_task_str),
-				//"unique",
-				//BCON_BOOL(false),
-			"}",
+			//"{",
+			//	"key",
+			//	BCON_DOCUMENT(&idx_task),
+			//	"name",
+			//	BCON_UTF8(idx_task_str),
+			//	//"unique",
+			//	//BCON_BOOL(false),
+			//"}",
 			"{",
 				"key",
 				BCON_DOCUMENT(&idx_cls),
@@ -198,7 +209,7 @@ void FSLMetaDBHandler::CreateIndexes() const
 
 	// Clean up
 	bson_destroy(index_command);
-	bson_free(idx_task_str);
+	//bson_free(idx_task_str);
 	bson_free(idx_cls_str);
 #endif //SL_WITH_LIBMONGO_C
 }
@@ -263,7 +274,7 @@ void FSLMetaDBHandler::StartScanEntry(const FString& Class, int32 ResX, int32 Re
 // Add pose scan data
 void FSLMetaDBHandler::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 {
-	const float ImgPrec = (float) ScanPoseData.NumPixels / TotalNumPixels;
+	const float ImgPerc = (float) ScanPoseData.NumPixels / TotalNumPixels;
 
 #if SL_WITH_LIBMONGO_C
 	if (!scan_entry_doc)
@@ -293,7 +304,7 @@ void FSLMetaDBHandler::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 	bson_uint32_to_string(scan_pose_arr_idx, &pose_key, pose_key_str, sizeof pose_key_str);
 	BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, pose_key, &scan_pose_doc);
 
-	BSON_APPEND_DOUBLE(&scan_pose_doc, "img_prec", ImgPrec);
+	BSON_APPEND_DOUBLE(&scan_pose_doc, "img_perc", ImgPerc);
 	AddPoseDoc(ScanPoseData.CameraPose.GetLocation(), ScanPoseData.CameraPose.GetRotation(), &scan_pose_doc);
 	AddBBDoc(ScanPoseData.MinBB, ScanPoseData.MaxBB, &scan_pose_doc);
 
@@ -331,7 +342,7 @@ void FSLMetaDBHandler::FinishScanEntry()
 
 		 // Write entry to the collection
 		bson_error_t error;
-		if (!mongoc_collection_insert_one(collection, scan_entry_doc, NULL, NULL, &error))
+		if (!mongoc_collection_insert_one(scans_collection, scan_entry_doc, NULL, NULL, &error))
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
 				*FString(__func__), __LINE__, *FString(error.message));

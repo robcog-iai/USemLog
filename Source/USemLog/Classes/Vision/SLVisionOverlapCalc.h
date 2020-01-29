@@ -100,7 +100,7 @@ private:
 	TArray<FSLVisionViewSkelData>* SkelEntities;
 
 	// Chached mask materials of the active instance
-	//TArray<UMaterialInterface*> CachedMaterials;
+	TArray<UMaterialInterface*> CachedMaterials;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
