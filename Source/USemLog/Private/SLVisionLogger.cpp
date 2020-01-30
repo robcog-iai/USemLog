@@ -230,7 +230,7 @@ void USLVisionLogger::Pause(bool Value)
 }
 
 // Get access to the static mesh clone from the id
-AStaticMeshActor* USLVisionLogger::GetStaticMeshMaskClone(const FString& Id)
+AStaticMeshActor* USLVisionLogger::GetStaticMeshMaskCloneFromId(const FString& Id)
 {
 	if (AStaticMeshActor* SMA = FSLEntitiesManager::GetInstance()->GetStaticMeshActor(Id))
 	{
@@ -243,7 +243,7 @@ AStaticMeshActor* USLVisionLogger::GetStaticMeshMaskClone(const FString& Id)
 }
 
 // Get access to the poseable skeletal mesh clone from the id
-ASLVisionPoseableMeshActor* USLVisionLogger::GetPoseableSkeletalMaskClone(const FString& Id)
+ASLVisionPoseableMeshActor* USLVisionLogger::GetPoseableSkeletalMaskCloneFromId(const FString& Id)
 {
 	if (ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor(Id))
 	{

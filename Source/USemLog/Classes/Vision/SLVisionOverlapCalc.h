@@ -10,6 +10,8 @@
 // Forward declaration
 class UGameViewportClient;
 class USLVisionLogger;
+class AStaticMeshActor;
+class UMaterialInterface;
 
 /**
  * Calculates overlap percentages for entities in an image
@@ -29,10 +31,10 @@ public:
 	// Give control to the overlap calc to pause and start its parent (vision logger)
 	void Init(USLVisionLogger* InParent, FIntPoint InResolution);
 
-	// Calculate overlaps for the givent scene
+	// Calculate overlaps for the given scene
 	void Start(struct FSLVisionViewData* CurrViewData);
 
-	// Called when the scene is done, this un-pauses the parent as well
+	// Reset all flags and temporaries, called when the scene overlaps are calculated, this un-pauses the parent as well
 	void Finish();
 
 	// Get init state
@@ -54,27 +56,30 @@ protected:
 	// Overwrite previous resolution (typically smaller since the overlaps will be calculated in percentage)
 	void InitScreenshotResolution(FIntPoint InResolution);
 
-	// 
-	bool SetupFirstItem();
+	// Select the first item (static or skeletal)
+	bool SelectFirstItem();
 
-	// 
-	bool SetupNextItem();
+	// Select the next item (static or skeletal), return false when no more items are available
+	bool SelectNextItem();
 
 private:
-	// 
-	bool SetupFirstEntity();
+	// Select the first entity in the array (if not empty)
+	bool SelectFirstEntity();
 
-	// 
-	bool SetupNextEntity();
+	// Select the next entity in the array (if available)
+	bool SelectNextEntity();
 
-	// 
-	bool SetupFirstSkel();
+	// Select the first skel entity in the array (if not empty)
+	bool SelectFirstSkel();
 
-	// 
-	bool SetupNextSkel();
+	// Select the next skeletal entity in the array (if available)
+	bool SelectNextSkel();
 
-	// 
-	void ApplyMaterial();
+	// Apply the non occluding material to the currently selected item
+	void ApplyNonOccludingMaterial();
+
+	// Re-apply the original material to the currently selected item
+	void ReApplyOriginalMaterial();
 
 protected:
 	// Set when initialized
@@ -99,7 +104,11 @@ private:
 	// Pointer to the skeletal entities visible in the view
 	TArray<FSLVisionViewSkelData>* SkelEntities;
 
+	UPROPERTY() // Avoid GC
+	UMaterial* DefaultNonOccludingMaterial;
+
 	// Chached mask materials of the active instance
+	UPROPERTY() // Avoid GC
 	TArray<UMaterialInterface*> CachedMaterials;
 
 	// Used for triggering the screenshot request
@@ -119,6 +128,12 @@ private:
 
 	//
 	int32 SkelIndex;
+
+	// Pointer to the current mask clone
+	AStaticMeshActor* CurrSMAClone;
+
+	// Pointer to the current skel mask clone
+	ASLVisionPoseableMeshActor* CurrPMAClone;
 
 	//
 	FIntPoint Resolution;

@@ -62,10 +62,10 @@ public:
 	bool IsPaused() const { return bIsPaused; };
 
 	// Get access to the static mesh clone from the id
-	AStaticMeshActor* GetStaticMeshMaskClone(const FString& Id);
+	AStaticMeshActor* GetStaticMeshMaskCloneFromId(const FString& Id);
 
 	// Get access to the poseable skeletal mesh clone from the id
-	ASLVisionPoseableMeshActor* GetPoseableSkeletalMaskClone(const FString& Id);
+	ASLVisionPoseableMeshActor* GetPoseableSkeletalMaskCloneFromId(const FString& Id);
 
 protected:
 	// Trigger the screenshot on the game thread

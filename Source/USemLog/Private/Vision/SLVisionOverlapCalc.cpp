@@ -2,7 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Vision/SLVisionOverlapCalc.h"
+#include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/PoseableMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -21,6 +23,8 @@ USLVisionOverlapCalc::USLVisionOverlapCalc() : bIsInit(false), bIsStarted(false)
 {
 	EntityIndex = INDEX_NONE;
 	SkelIndex = INDEX_NONE;
+	CurrSMAClone = nullptr;
+	CurrPMAClone = nullptr;
 	bSkelArrayActive = false;
 }
 
@@ -37,17 +41,29 @@ void USLVisionOverlapCalc::Init(USLVisionLogger* InParent, FIntPoint InResolutio
 		Parent = InParent;
 		ViewportClient = GetWorld()->GetGameViewport();
 		Resolution = InResolution / 4;
-
 		SaveLocallyFolderName = "OverlapTest";
+
+		// Load the default mask material
+		// this will be used as a template to create the non-occluding mask materials to add to the clones
+		DefaultNonOccludingMaterial = LoadObject<UMaterial>(this,
+			TEXT("/USemLog/Vision/M_SLNonOccludingDefaultMask.M_SLNonOccludingDefaultMask"));
+		if (!DefaultNonOccludingMaterial)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material.."), *FString(__func__), __LINE__);
+			return;
+		}
+		DefaultNonOccludingMaterial->bUsedWithStaticLighting = true;
+		DefaultNonOccludingMaterial->bUsedWithSkeletalMesh = true;
+		DefaultNonOccludingMaterial->bDisableDepthTest = true;
 
 		if (Parent && ViewportClient)
 		{
 			bIsInit = true;
-		}		
+		}
 	}
 }
 
-// 
+// Calculate overlaps for the given scene
 void USLVisionOverlapCalc::Start(FSLVisionViewData* CurrViewData)
 {
 	if (!bIsStarted && bIsInit)
@@ -55,12 +71,13 @@ void USLVisionOverlapCalc::Start(FSLVisionViewData* CurrViewData)
 		Entities = &CurrViewData->Entities;
 		SkelEntities = &CurrViewData->SkelEntities;
 
-		if (!SetupFirstItem())
+		if (!SelectFirstItem())
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d No items found in the scene.."), *FString(__func__), __LINE__);
 			return;
 		}
-		ApplyMaterial();
+
+		ApplyNonOccludingMaterial();
 
 
 		// Switch callback functions and pause parent
@@ -77,17 +94,21 @@ void USLVisionOverlapCalc::Start(FSLVisionViewData* CurrViewData)
 	}
 }
 
-// 
+// Reset all flags and temporaries, called when the scene overlaps are calculated, this un-pauses the parent as well
 void USLVisionOverlapCalc::Finish()
 {
 	if (!bIsFinished && bIsStarted)
 	{
 		EntityIndex = INDEX_NONE;
 		SkelIndex = INDEX_NONE;
+		
 		bSkelArrayActive = false;
 		
 		Entities = nullptr;
 		SkelEntities = nullptr;
+
+		CurrSMAClone = nullptr;
+		CurrPMAClone = nullptr;
 
 		// Switch callback functions, and re-start parent
 		ViewportClient->OnScreenshotCaptured().Remove(ScreenshotCallbackHandle);
@@ -124,10 +145,13 @@ void USLVisionOverlapCalc::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<F
 		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 	}
 
+	// Re-apply original material before selecting the next item
+	ReApplyOriginalMaterial();
+
 	// Check if there are any other items in the scene
-	if (SetupNextItem())
+	if (SelectNextItem())
 	{
-		ApplyMaterial();
+		ApplyNonOccludingMaterial();
 		RequestScreenshot();
 	}
 	else
@@ -146,15 +170,14 @@ void USLVisionOverlapCalc::InitScreenshotResolution(FIntPoint InResolution)
 	GIsHighResScreenshot = false;
 }
 
-
-// 
-bool USLVisionOverlapCalc::SetupFirstItem()
+// Select the first item (static or skeletal)
+bool USLVisionOverlapCalc::SelectFirstItem()
 {
-	if (SetupFirstEntity())
+	if (SelectFirstEntity())
 	{
 		return true;
 	}
-	else if (SetupFirstSkel())
+	else if (SelectFirstSkel())
 	{
 		return true;
 	}
@@ -164,32 +187,39 @@ bool USLVisionOverlapCalc::SetupFirstItem()
 	}
 }
 
-// 
-bool USLVisionOverlapCalc::SetupNextItem()
+// Select the next item (static or skeletal), return false when no more items are available
+bool USLVisionOverlapCalc::SelectNextItem()
 {
 	if (!bSkelArrayActive)
 	{
-		if (SetupNextEntity())
+		if (SelectNextEntity())
 		{
 			return true;
 		}
 		else
 		{
-			return SetupFirstSkel();
+			return SelectFirstSkel();
 		}
 	}
 	else
 	{
-		return SetupNextSkel();
+		return SelectNextSkel();
 	}
 }
 
-// 
-bool USLVisionOverlapCalc::SetupFirstEntity()
+// Select the first entity in the array (if not empty)
+bool USLVisionOverlapCalc::SelectFirstEntity()
 {
 	if (EntityIndex == INDEX_NONE && Entities && Entities->Num() > 0)
 	{
 		EntityIndex = 0;
+		CurrSMAClone = Parent->GetStaticMeshMaskCloneFromId((*Entities)[EntityIndex].Id);
+		if (!CurrSMAClone)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find pointer to entity %s - %s, continuing.."),
+				*FString(__func__), __LINE__, *(*Entities)[EntityIndex].Class, *(*Entities)[EntityIndex].Id);
+			return SelectNextEntity();
+		}
 		return true;
 	}
 	else
@@ -199,8 +229,8 @@ bool USLVisionOverlapCalc::SetupFirstEntity()
 	}
 }
 
-// 
-bool USLVisionOverlapCalc::SetupNextEntity()
+// Select the next entity in the array (if available)
+bool USLVisionOverlapCalc::SelectNextEntity()
 {
 	if (EntityIndex != INDEX_NONE)
 	{
@@ -208,10 +238,18 @@ bool USLVisionOverlapCalc::SetupNextEntity()
 		if (!Entities->IsValidIndex(EntityIndex))
 		{
 			EntityIndex = INDEX_NONE;
+			CurrSMAClone = nullptr;
 			return false;
 		}
 		else
 		{
+			CurrSMAClone = Parent->GetStaticMeshMaskCloneFromId((*Entities)[EntityIndex].Id);
+			if (!CurrSMAClone)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find pointer to entity %s - %s, continuing.."),
+					*FString(__func__), __LINE__, *(*Entities)[EntityIndex].Class, *(*Entities)[EntityIndex].Id);
+				return SelectNextEntity();
+			}
 			return true;
 		}
 	}
@@ -222,13 +260,20 @@ bool USLVisionOverlapCalc::SetupNextEntity()
 	}
 }
 
-// 
-bool USLVisionOverlapCalc::SetupFirstSkel()
+// Select the first skel entity in the array (if not empty)
+bool USLVisionOverlapCalc::SelectFirstSkel()
 {
 	if (SkelIndex == INDEX_NONE && SkelEntities && SkelEntities->Num() > 0)
 	{		
 		SkelIndex = 0;
 		bSkelArrayActive = true;
+		CurrPMAClone = Parent->GetPoseableSkeletalMaskCloneFromId((*SkelEntities)[SkelIndex].Id);
+		if (!CurrPMAClone)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find pointer to skel entity %s - %s, continuing.."),
+				*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id);
+			return SelectNextSkel();
+		}
 		return true;
 	}
 	else
@@ -238,8 +283,8 @@ bool USLVisionOverlapCalc::SetupFirstSkel()
 	}
 }
 
-// 
-bool USLVisionOverlapCalc::SetupNextSkel()
+// Select the next skeletal entity in the array (if available)
+bool USLVisionOverlapCalc::SelectNextSkel()
 {
 	if (SkelIndex != INDEX_NONE)
 	{
@@ -247,11 +292,19 @@ bool USLVisionOverlapCalc::SetupNextSkel()
 		if (!SkelEntities->IsValidIndex(SkelIndex))
 		{
 			SkelIndex = INDEX_NONE;
+			CurrPMAClone = nullptr;
 			return false;
 		}
 		else
 		{
-			return true;
+			CurrPMAClone = Parent->GetPoseableSkeletalMaskCloneFromId((*SkelEntities)[SkelIndex].Id);
+			if (!CurrPMAClone)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find pointer to skel entity %s - %s, continuing.."),
+					*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id);
+				return SelectNextSkel();
+			}
+			return true;;
 		}
 	}
 	else
@@ -261,53 +314,139 @@ bool USLVisionOverlapCalc::SetupNextSkel()
 	}
 }
 
-//
-void USLVisionOverlapCalc::ApplyMaterial()
+// Apply the non occluding material to the currently selected item
+void USLVisionOverlapCalc::ApplyNonOccludingMaterial()
 {
 	if (!bSkelArrayActive)
 	{
-		if (AStaticMeshActor* SMAClone = Parent->GetStaticMeshMaskClone((*Entities)[EntityIndex].Id))
+		if (CurrSMAClone)
 		{
-			// Clear any previously cached materials
-			/*CachedMaterials.Empty();
-			CachedMaterials = SMAClone->GetStaticMeshComponent()->GetMaterials();*/
+			if (UStaticMeshComponent* MC = CurrSMAClone->GetStaticMeshComponent())
+			{
+				// Create the non-occluding material
+				UMaterialInstanceDynamic* OccludingDynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultNonOccludingMaterial, GetTransientPackage());
+				OccludingDynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::Red);
+				
+				int32 TotalNumMaterials = MC->GetNumMaterials();
+				if (TotalNumMaterials > 0)
+				{
+					// Set array length
+					CachedMaterials.AddZeroed(TotalNumMaterials);
+					for (int32 MaterialIndex = 0; MaterialIndex < TotalNumMaterials; ++MaterialIndex)
+					{
+						// Cache material
+						CachedMaterials[MaterialIndex] = MC->GetMaterial(MaterialIndex);
 
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Clone %s: %s - %s;"),
-				*FString(__func__), __LINE__, *SMAClone->GetName(),
-				*(*Entities)[EntityIndex].Class,
-				*(*Entities)[EntityIndex].Id);
-			/*FLinearColor LC = FLinearColor::Blue;
-			SMAClone->GetStaticMeshComponent()->SetVectorParameterValueOnMaterials(FName("MaskColorParam"), LC);*/
+						// Switch material
+						MC->SetMaterial(MaterialIndex, OccludingDynamicMaskMaterial);
+					}
+				}
 
-			//for (auto & MatInterf : SMAClone->GetStaticMeshComponent()->GetMaterials())
-			//{
-			//	UMaterial* Mat = MatInterf->GetMaterial();
-			//	FLinearColor LC = FLinearColor::Blue;
-			//	Mat->SetVectorParameterValueEditorOnly(FName("MaskColorParam"), LC);
-			//	//Mat->GetVectorParameterValue(FName("MaskColorParam"), LC);
-			//	Mat->bDisableDepthTest;
-			//}
+				//CachedMaterials = MC->GetMaterials();
 
-			(*Entities)[EntityIndex].OcclusionPercentage = 0.69f;
-			(*Entities)[EntityIndex].bClipped = true;
+				//for (auto& MI : MC->GetMaterials())
+				//{
+				//	MI->GetMaterial()->bDisableDepthTest = true;					
+				//}
+				//MC->MarkRenderStateDirty();
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find entity %s - %s;"),
-				*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."),	*FString(__func__), __LINE__);
 		}
-
-
-
-
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Active item= %s - %s;"),
-			*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id);
+		if (CurrPMAClone)
+		{		
+			if (UPoseableMeshComponent* PMC = CurrPMAClone->GetPoseableMeshComponent())
+			{
+				// Create the non-occluding material
+				UMaterialInstanceDynamic* OccludingDynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultNonOccludingMaterial, GetTransientPackage());
+				OccludingDynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::Red);
+
+				int32 TotalNumMaterials = PMC->GetNumMaterials();
+				if (TotalNumMaterials > 0)
+				{
+					// Set array length
+					CachedMaterials.AddZeroed(TotalNumMaterials);
+					for (int32 MaterialIndex = 0; MaterialIndex < TotalNumMaterials; ++MaterialIndex)
+					{
+						// Cache material
+						CachedMaterials[MaterialIndex] = PMC->GetMaterial(MaterialIndex);
+
+						// Switch material
+						PMC->SetMaterial(MaterialIndex, OccludingDynamicMaskMaterial);
+					}
+				}
+
+				//CachedMaterials = PMC->GetMaterials();
+
+				//for (auto& MI : PMC->GetMaterials())
+				//{
+				//	MI->GetMaterial()->bDisableDepthTest = true;					
+				//}
+				//PMC->MarkRenderStateDirty();
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		}
 	}
 	//FColor MaskColor = MaskToEntity[0].Key;
 	//DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
 	//MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
 	//DefaultMaskMaterial->bDisableDepthTest
+}
+
+// Re-apply the original material to the currently selected item
+void USLVisionOverlapCalc::ReApplyOriginalMaterial()
+{
+	if (!bSkelArrayActive)
+	{
+		if (CurrSMAClone)
+		{
+			if (UStaticMeshComponent* MC = CurrSMAClone->GetStaticMeshComponent())
+			{
+				int32 TotalNumMaterials = MC->GetNumMaterials();
+				if (TotalNumMaterials > 0)
+				{
+					for (int32 MaterialIndex = 0; MaterialIndex < TotalNumMaterials; ++MaterialIndex)
+					{
+						// Switch material
+						MC->SetMaterial(MaterialIndex, CachedMaterials[MaterialIndex]);
+					}
+				}
+				CachedMaterials.Empty();
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		}
+	}
+	else
+	{
+		if (CurrPMAClone)
+		{
+			if (UPoseableMeshComponent* PMC = CurrPMAClone->GetPoseableMeshComponent())
+			{
+				int32 TotalNumMaterials = PMC->GetNumMaterials();
+				if (TotalNumMaterials > 0)
+				{
+					for (int32 MaterialIndex = 0; MaterialIndex < TotalNumMaterials; ++MaterialIndex)
+					{
+						PMC->SetMaterial(MaterialIndex, CachedMaterials[MaterialIndex]);
+					}
+				}
+				CachedMaterials.Empty();
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		}
+	}
 }
