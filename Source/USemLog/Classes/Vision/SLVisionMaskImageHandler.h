@@ -67,7 +67,7 @@ struct FSLVisionImageColorInfo
 	FSLVisionImageColorInfo(int32 InNum, const FIntPoint& InMinBB, const FIntPoint& InMaxBB) : Num(InNum), MinBB(InMinBB), MaxBB(InMaxBB) {};
 
 	// Number of pixels in image
-	int32 Num;
+	int64 Num;
 
 	// Min bounding box value in image
 	FIntPoint MinBB;

@@ -60,8 +60,8 @@ private:
 		const FString& TagValue, bool bReplaceExisting);
 
 	/* Helpers */
-	// Get the distance between the colors
-	FORCEINLINE static float ColorDistance(const FColor& C1, const FColor& C2)
+	// Get the manhattan distance between the colors
+	FORCEINLINE static float ColorManhattanDistance(const FColor& C1, const FColor& C2)
 	{
 		return FMath::Abs(C1.R - C2.R) + FMath::Abs(C1.G - C2.G) + FMath::Abs(C1.B - C2.B);
 	}
@@ -70,7 +70,7 @@ private:
 	FORCEINLINE static bool ColorEqual(const FColor& C1, const FColor& C2, uint8 Tolerance = 0)
 	{
 		if(Tolerance < 1){ return C1 == C2; }
-		return ColorDistance(C1, C2) <= Tolerance;
+		return ColorManhattanDistance(C1, C2) <= Tolerance;
 	}
 
 	// Make a random rgb color
@@ -81,6 +81,10 @@ private:
 
 private:
 	/* Constants */
+	// Manhattan distance from the color black
 	constexpr static uint8 BlackColorTolerance = 37;
+
+	// Manhattan distance from the color black
+	constexpr static uint8 WhiteColorTolerance = 23;
 };
 

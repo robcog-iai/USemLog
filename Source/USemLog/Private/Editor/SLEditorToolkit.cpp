@@ -334,10 +334,10 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 			//FColor RC = FColor::MakeRandomColor(); // Pretty colors, but not many
 			FColor RandColor = ColorRandomRGB();
 
-			// Avoid very dark colors
-			if(ColorEqual(RandColor, FColor::Black, BlackColorTolerance))
+			// Avoid very dark colors, or very bright (
+			if(ColorEqual(RandColor, FColor::Black, BlackColorTolerance) || ColorEqual(RandColor, FColor::White, WhiteColorTolerance))
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Got a very dark color, hex=%s, trying again.."), *FString(__func__), __LINE__, *RandColor.ToHex());
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Got a very dark or bright (reserved) color, hex=%s, trying again.."), *FString(__func__), __LINE__, *RandColor.ToHex());
 				continue;
 			}
 

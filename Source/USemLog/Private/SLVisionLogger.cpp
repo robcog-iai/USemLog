@@ -243,10 +243,15 @@ AStaticMeshActor* USLVisionLogger::GetStaticMeshMaskCloneFromId(const FString& I
 }
 
 // Get access to the poseable skeletal mesh clone from the id
-ASLVisionPoseableMeshActor* USLVisionLogger::GetPoseableSkeletalMaskCloneFromId(const FString& Id)
+ASLVisionPoseableMeshActor* USLVisionLogger::GetPoseableSkeletalMaskCloneFromId(const FString& Id, USLSkeletalDataComponent** OutSkelDataComp)
 {
 	if (ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor(Id))
 	{
+		if (OutSkelDataComp != nullptr)
+		{
+			*OutSkelDataComp = CastChecked<USLSkeletalDataComponent>(SkMA->GetComponentByClass(USLSkeletalDataComponent::StaticClass()));
+		}
+
 		if (ASLVisionPoseableMeshActor** PMAClone = SkelToPoseableMap.Find(SkMA))
 		{
 			if (ASLVisionPoseableMeshActor** PMAMaskClone = PoseableOrigToMaskClones.Find(*PMAClone))

@@ -151,6 +151,7 @@ void USLSkeletalDataComponent::Refresh()
 		SetSemanticOwnerData();
 
 		// Make sure that the non-annotated bones have an empty semantics structure
+		// todo only used by some loggers, just for convenience access
 		SetDataForAllBones();
 		
 	}

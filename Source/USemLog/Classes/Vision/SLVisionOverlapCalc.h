@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "Vision/SLVisionStructs.h"
 #include "SLVisionOverlapCalc.generated.h"
 
 // Forward declaration
@@ -12,6 +13,8 @@ class UGameViewportClient;
 class USLVisionLogger;
 class AStaticMeshActor;
 class UMaterialInterface;
+class UMaterial;
+class USLSkeletalDataComponent;
 
 /**
  * Calculates overlap percentages for entities in an image
@@ -75,11 +78,24 @@ private:
 	// Select the next skeletal entity in the array (if available)
 	bool SelectNextSkel();
 
+	// Select the first skel bone in the array
+	bool SelectFirstSkelBone();
+
+	// Select the next skeletal bone in the array (if available)
+	bool SelectNextSkelBone();
+
 	// Apply the non occluding material to the currently selected item
 	void ApplyNonOccludingMaterial();
 
 	// Re-apply the original material to the currently selected item
 	void ReApplyOriginalMaterial();
+
+	// Calculate overlap
+	void CalculateOverlap(const TArray<FColor>& NonOccludedImage, int32 ImgWidth, int32 ImgHeight);
+
+	/* Helper */
+	// Return INDEX_NONE if not possible
+	int32 GetMaterialIndexOfCurrentlySelectedBone();
 
 protected:
 	// Set when initialized
@@ -94,6 +110,9 @@ protected:
 private:
 	// True if the skel entities are started
 	bool bSkelArrayActive;
+
+	// True if the active item is a bone
+	bool bSkelBoneActive;
 
 	// Use this to let the parent know that the overlap calc is done
 	USLVisionLogger* Parent;
@@ -123,11 +142,14 @@ private:
 	// Folder name where to store the images if they are going to be stored locally
 	FString SaveLocallyFolderName;
 
-	//
+	// Index of the entity in the array (INDEX_NONE if not active/set)
 	int32 EntityIndex;
 
-	//
+	// Index of the skel entity in the array (INDEX_NONE if not active/set)
 	int32 SkelIndex;
+
+	// Index of the skel entity in the array (INDEX_NONE if not active/set)
+	int32 BoneIndex;
 
 	// Pointer to the current mask clone
 	AStaticMeshActor* CurrSMAClone;
@@ -135,6 +157,12 @@ private:
 	// Pointer to the current skel mask clone
 	ASLVisionPoseableMeshActor* CurrPMAClone;
 
-	//
+	// Currently active skeletal data component
+	USLSkeletalDataComponent* CurrSkelDataComp;
+
+	// Currently selected bone material index
+	int32 CurrBoneMaterialIndex;
+
+	// Screenshor resolution for the overlap calculation images (usually lower than the visual logger)
 	FIntPoint Resolution;
 };

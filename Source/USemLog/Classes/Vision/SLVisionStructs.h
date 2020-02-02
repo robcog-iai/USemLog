@@ -199,7 +199,7 @@ struct FSLVisionViewEntityData
 	float OcclusionPercentage = -1.f;
 
 	// True if the image is partially outside of the image
-	bool bClipped = false;
+	bool bIsClipped = false;
 
 	//// Percentage of the image that is clipped by the edge
 	//float OverlappedPercentage;
@@ -242,7 +242,7 @@ struct FSLVisionViewSkelBoneData
 	float OcclusionPercentage = -1.f;
 
 	// True if the image is partially outside of the image
-	bool bClipped = false;
+	bool bIsClipped = false;
 };
 
 /**
@@ -299,7 +299,7 @@ struct FSLVisionViewSkelData
 	float OcclusionPercentage = -1.f;
 
 	// True if the image is partially outside of the image
-	bool bClipped = false;
+	bool bIsClipped = false;
 
 	// Bones data
 	TArray<FSLVisionViewSkelBoneData> Bones;

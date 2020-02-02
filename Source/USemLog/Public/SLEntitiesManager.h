@@ -174,6 +174,16 @@ public:
 		}
 		return FString();
 	};
+
+	// Get skeletal entity id (empty string if not found)
+	FORCEINLINE USLSkeletalDataComponent* GetSkeletalDataComponent(UObject* Object) const
+	{
+		if (auto* Value = ObjectsSemanticSkelData.Find(Object))
+		{
+			return (*Value);
+		}
+		return nullptr;
+	};
 	
 private:
 	// Instance of the singleton

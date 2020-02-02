@@ -19,6 +19,7 @@
 // Forward declarations
 class UGameViewportClient;
 class ASLVisionCamera;
+class USLSkeletalDataComponent;
 
 /**
  * Replays episodes from different perspectives and view modes,
@@ -65,7 +66,7 @@ public:
 	AStaticMeshActor* GetStaticMeshMaskCloneFromId(const FString& Id);
 
 	// Get access to the poseable skeletal mesh clone from the id
-	ASLVisionPoseableMeshActor* GetPoseableSkeletalMaskCloneFromId(const FString& Id);
+	ASLVisionPoseableMeshActor* GetPoseableSkeletalMaskCloneFromId(const FString& Id, USLSkeletalDataComponent** OutSkelDataAsset = nullptr);
 
 protected:
 	// Trigger the screenshot on the game thread

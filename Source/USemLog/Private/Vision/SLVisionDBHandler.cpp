@@ -465,7 +465,7 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 			BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*Entity.Class));
 			BSON_APPEND_DOUBLE(&entities_arr_obj, "img_perc", Entity.ImagePercentage);
 			BSON_APPEND_DOUBLE(&entities_arr_obj, "occl_perc", Entity.OcclusionPercentage);
-			BSON_APPEND_BOOL(&entities_arr_obj, "clipped", Entity.bClipped);
+			BSON_APPEND_BOOL(&entities_arr_obj, "clipped", Entity.bIsClipped);
 		
 			AddBBObj(Entity.MinBB, Entity.MaxBB, &entities_arr_obj);
 
@@ -486,7 +486,7 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 			BSON_APPEND_UTF8(&entities_arr_obj, "class", TCHAR_TO_UTF8(*SkelEntity.Class));
 			BSON_APPEND_DOUBLE(&entities_arr_obj, "img_perc", SkelEntity.ImagePercentage);
 			BSON_APPEND_DOUBLE(&entities_arr_obj, "occl_perc", SkelEntity.OcclusionPercentage);
-			BSON_APPEND_BOOL(&entities_arr_obj, "clipped", SkelEntity.bClipped);
+			BSON_APPEND_BOOL(&entities_arr_obj, "clipped", SkelEntity.bIsClipped);
 			AddBBObj(SkelEntity.MinBB, SkelEntity.MaxBB, &entities_arr_obj);
 
 			// Create the bones array
@@ -500,7 +500,7 @@ void FSLVisionDBHandler::WriteFrame(const FSLVisionFrameData& Frame) const
 				BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*Bone.Class));
 				BSON_APPEND_DOUBLE(&bones_arr_obj, "img_perc", Bone.ImagePercentage);
 				BSON_APPEND_DOUBLE(&bones_arr_obj, "occl_perc", Bone.OcclusionPercentage);
-				BSON_APPEND_BOOL(&bones_arr_obj, "clipped", Bone.bClipped);
+				BSON_APPEND_BOOL(&bones_arr_obj, "clipped", Bone.bIsClipped);
 
 				AddBBObj(Bone.MinBB, Bone.MaxBB, &bones_arr_obj);
 
