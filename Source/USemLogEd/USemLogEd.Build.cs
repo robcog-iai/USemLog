@@ -30,8 +30,6 @@ public class USemLogEd : ModuleRules
 			new string[]
 			{
 				"Core",
-				
-				"USemLogSkel",
 				"UTags",
 				"UIds",
 				// ... add other public dependencies that you statically link with here ...

@@ -21,11 +21,6 @@
       "LoadingPhase": "Default"
     },
     {
-      "Name": "USemLogSkel",
-      "Type": "Runtime",
-      "LoadingPhase": "Default"
-    },
-    {
       "Name": "USemLogEd",
       "Type": "Developer",
       "LoadingPhase": "Default"

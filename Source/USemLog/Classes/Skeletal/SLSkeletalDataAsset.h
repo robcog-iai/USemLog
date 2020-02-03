@@ -11,7 +11,7 @@
  * Data asset containing the mapping of skeletal bones to their semantic names
  */
 UCLASS(ClassGroup = (SL), meta = (DisplayName = "SL Skeletal Map Data Asset"))
-class USEMLOGSKEL_API USLSkeletalDataAsset : public UDataAsset
+class USEMLOG_API USLSkeletalDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 

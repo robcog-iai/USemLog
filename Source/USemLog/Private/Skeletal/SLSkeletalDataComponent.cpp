@@ -1,7 +1,7 @@
 // Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLSkeletalDataComponent.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Tags.h"
 

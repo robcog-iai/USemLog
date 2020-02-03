@@ -30,7 +30,6 @@ public class USemLog : ModuleRules
 			{
 				"Core",
 				"USemLogOwl",
-				"USemLogSkel", // NEeded for external access of SLStructs.h, for example through SLEtntitesManager
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

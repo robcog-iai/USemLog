@@ -7,7 +7,7 @@
 #include "Components/SceneComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "SLStructs.h"
-#include "SLSkeletalDataAsset.h"
+#include "Skeletal/SLSkeletalDataAsset.h"
 #include "SLSkeletalDataComponent.generated.h"
 
 /**
@@ -67,7 +67,7 @@ struct FSLBoneData
  * SceneComponent so it can be added to skeletal components that are not inheriting from a SkeletalMeshActor
  */
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), hidecategories = (HLOD, Cooking, Transform, Animation, Mesh, Materials), DisplayName="SL Skeletal Data")
-class USEMLOGSKEL_API USLSkeletalDataComponent : public USceneComponent
+class USEMLOG_API USLSkeletalDataComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
