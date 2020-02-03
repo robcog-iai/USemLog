@@ -57,6 +57,7 @@ bool USLSkeletalDataComponent::Init()
 	{
 		if (SetSemanticOwnerData() && SetSkeletalParent())
 		{
+			CreateBoneClassToMaterialIndexMapping();
 			bInit = true;
 		}
 		else 
@@ -115,6 +116,9 @@ void USLSkeletalDataComponent::LoadFromDataAsset()
 			// Set owner and the semantic bone data
 			SetSemanticOwnerData();
 
+			// Cache the bone class mapping to the material index (quick access for overlap calulation)
+			CreateBoneClassToMaterialIndexMapping();
+
 			// Make sure that the non-annotated bones have an empty semantics structure
 			SetDataForAllBones();
 		}
@@ -149,6 +153,9 @@ void USLSkeletalDataComponent::Refresh()
 
 		// Set owner and the semantic bone data
 		SetSemanticOwnerData();
+
+		// Cache the bone class mapping to the material index (quick access for overlap calulation)
+		CreateBoneClassToMaterialIndexMapping();
 
 		// Make sure that the non-annotated bones have an empty semantics structure
 		// todo only used by some loggers, just for convenience access
@@ -237,6 +244,15 @@ bool USLSkeletalDataComponent::SetSemanticOwnerData()
 				return false;
 			}
 		}
+	}
+}
+
+// Cache the bone class mapping to the material index (quick access for overlap calulation)
+void USLSkeletalDataComponent::CreateBoneClassToMaterialIndexMapping()
+{
+	for (const auto& BoneData : SemanticBonesData)
+	{
+		BoneClassToMaterialIndex.Emplace(BoneData.Value.Class, BoneData.Value.MaskMaterialIndex);
 	}
 }
 

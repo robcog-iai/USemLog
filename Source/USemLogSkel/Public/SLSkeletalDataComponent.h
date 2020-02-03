@@ -106,6 +106,9 @@ private:
 	// Set the semantic parent and its data, returns true if successful or is already set
 	bool SetSemanticOwnerData();
 
+	// Cache the bone class mapping to the material index (quick access for overlap calulation)
+	void CreateBoneClassToMaterialIndexMapping();
+
 	// Set data for all the bones (empty for the ones without semantics)
 	void SetDataForAllBones();
 
@@ -113,6 +116,10 @@ public:
 	// Map of bones to their semantic data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TMap<FName, FSLBoneData> SemanticBonesData;
+
+	// Convenience access from bone class to the material index
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	TMap<FString, int32> BoneClassToMaterialIndex;
 
 	// Map of all bones including non semantic data (will be left empty) 
 	// used by the metadata logger to store both semantic and non semantic bones data

@@ -165,4 +165,7 @@ private:
 
 	// Screenshor resolution for the overlap calculation images (usually lower than the visual logger)
 	FIntPoint Resolution;
+
+	/* Constants */
+	constexpr static uint8 ResolutionDivider = 2;
 };

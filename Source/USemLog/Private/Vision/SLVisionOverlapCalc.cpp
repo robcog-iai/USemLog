@@ -44,7 +44,7 @@ void USLVisionOverlapCalc::Init(USLVisionLogger* InParent, FIntPoint InResolutio
 	{
 		Parent = InParent;
 		ViewportClient = GetWorld()->GetGameViewport();
-		Resolution = InResolution / 4;
+		Resolution = InResolution / ResolutionDivider;
 		SaveLocallyFolderName = "OverlapTest";
 
 		// Load the default mask material
@@ -450,10 +450,11 @@ void USLVisionOverlapCalc::ApplyNonOccludingMaterial()
 		}
 		else
 		{
+			// Cache only the active bone
 			if (CurrBoneMaterialIndex != INDEX_NONE)
 			{
 				// Cache original material
-				CachedMaterials.AddZeroed(0);
+				CachedMaterials.AddZeroed(1);
 				CachedMaterials[0] = CurrPMAClone->GetPoseableMeshComponent()->GetMaterial(CurrBoneMaterialIndex);
 
 				// Add non occluding material
@@ -489,17 +490,20 @@ void USLVisionOverlapCalc::ReApplyOriginalMaterial()
 	}
 	else if(CurrPMAClone)
 	{
-		if (UPoseableMeshComponent* PMC = CurrPMAClone->GetPoseableMeshComponent())
+		if (!bSkelBoneActive)
 		{
-			int32 TotalNumMaterials = PMC->GetNumMaterials();
-			if (TotalNumMaterials > 0)
+			if (UPoseableMeshComponent* PMC = CurrPMAClone->GetPoseableMeshComponent())
 			{
-				for (int32 MaterialIndex = 0; MaterialIndex < TotalNumMaterials; ++MaterialIndex)
+				int32 TotalNumMaterials = PMC->GetNumMaterials();
+				if (TotalNumMaterials > 0)
 				{
-					PMC->SetMaterial(MaterialIndex, CachedMaterials[MaterialIndex]);
+					for (int32 MaterialIndex = 0; MaterialIndex < TotalNumMaterials; ++MaterialIndex)
+					{
+						PMC->SetMaterial(MaterialIndex, CachedMaterials[MaterialIndex]);
+					}
 				}
+				CachedMaterials.Empty();
 			}
-			CachedMaterials.Empty();
 		}
 		else
 		{
@@ -601,8 +605,8 @@ void USLVisionOverlapCalc::CalculateOverlap(const TArray<FColor>& NonOccludedIma
 
 			UE_LOG(LogTemp, Error, TEXT("%s::%d [%s-%s-%s] \t\t ImgPerc=%.8f; NonOccImgPerc=%.8f; OccPerc=%.8f; bIsClipped=%d;"),
 				*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id, *(*SkelEntities)[SkelIndex].Bones[BoneIndex].Class,
-				(*SkelEntities)[SkelIndex].ImagePercentage, NonOccImgPerc, (*SkelEntities)[SkelIndex].OcclusionPercentage,
-				(*SkelEntities)[SkelIndex].bIsClipped);
+				(*SkelEntities)[SkelIndex].Bones[BoneIndex].ImagePercentage, NonOccImgPerc, (*SkelEntities)[SkelIndex].Bones[BoneIndex].OcclusionPercentage,
+				(*SkelEntities)[SkelIndex].Bones[BoneIndex].bIsClipped);
 		}
 	}	
 }
@@ -621,20 +625,14 @@ int32 USLVisionOverlapCalc::GetMaterialIndexOfCurrentlySelectedBone()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Curr skeltal data is not set, cannot receive index without this.."), *FString(__func__), __LINE__);
 		return INDEX_NONE;
 	}
-
-	const FString BoneNameStr = (*SkelEntities)[SkelIndex].Bones[BoneIndex].Class;
-	const FName BoneName = FName(*(*SkelEntities)[SkelIndex].Bones[BoneIndex].Class);
-
-	for (const auto& P : CurrSkelDataComp->SemanticBonesData)
+	if (int32* Idx = CurrSkelDataComp->BoneClassToMaterialIndex.Find((*SkelEntities)[SkelIndex].Bones[BoneIndex].Class))
 	{
-		FString Name = P.Key.ToString();
-
-		UE_LOG(LogTemp, Error, TEXT("%s::%d PK=%s PV=%s"), *FString(__func__), __LINE__, *Name, *Name);
+		return *Idx;
 	}
-
-	// TODO you need to access this via the bone name not the bone-class name (hence find returns nullptr)
-
-	int32 Index = CurrSkelDataComp->SemanticBonesData[BoneName].MaskMaterialIndex;
-	return Index;
-	//return CurrSkelDataComp->SemanticBonesData[FName(*(*SkelEntities)[SkelIndex].Bones[BoneIndex].Class)].MaskMaterialIndex;
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find a material index mapping for bone class %s"),
+			*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Bones[BoneIndex].Class);
+		return INDEX_NONE;
+	}
 }
