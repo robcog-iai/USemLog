@@ -65,7 +65,7 @@ public:
 	void Start();
 
 	// Stop publishing grasp events
-	void Finish(bool bForced = false);
+	void Finish(float EndTime, bool bForced = false);
 
 	// Get init state
 	bool IsInit() const { return bIsInit; };
@@ -93,7 +93,7 @@ private:
 	void Update();
 
 	// Object released, terminate active even
-	void FinishActiveEvent();
+	void FinishActiveEvent(float CurrTime);
 
 	// Backtrace and check if a put-down event happened
 	bool HasPutDownEventHappened(const float CurrTime,const FVector& CurrObjLocation,  uint32& OutPutDownEndIdx);

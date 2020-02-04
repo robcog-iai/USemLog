@@ -58,7 +58,7 @@ void FSLPickAndPlaceEventsHandler::Finish(float EndTime, bool bForced)
 		// Let parent finish first
 		if(!Parent->IsFinished())
 		{
-			Parent->Finish();
+			Parent->Finish(EndTime);
 		}
 
 		// TODO use dynamic delegates to be able to unbind from them

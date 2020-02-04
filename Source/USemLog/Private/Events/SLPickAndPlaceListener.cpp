@@ -88,12 +88,12 @@ void USLPickAndPlaceListener::Start()
 
 
 // Stop publishing grasp events
-void USLPickAndPlaceListener::Finish(bool bForced)
+void USLPickAndPlaceListener::Finish(float EndTime, bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		// Finish any active event
-		FinishActiveEvent();
+		FinishActiveEvent(EndTime);
 
 		// Mark as finished
 		bIsStarted = false;
@@ -210,7 +210,7 @@ void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other,
 		UpdateFunctionPtr = &USLPickAndPlaceListener::Update_NONE;
 
 		// Terminate active event
-		FinishActiveEvent();
+		FinishActiveEvent(Time);
 
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s removed as grasped object.."),
 		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
@@ -234,10 +234,8 @@ void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other,
 }
 
 // Object released, terminate active even
-void USLPickAndPlaceListener::FinishActiveEvent()
+void USLPickAndPlaceListener::FinishActiveEvent(float CurrTime)
 {
-	const float CurrTime = GetWorld()->GetTimeSeconds();
-
 	if(EventCheck == ESLPaPStateCheck::Slide)
 	{
 		//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## SLIDE ##############  [%f <--> %f]"),

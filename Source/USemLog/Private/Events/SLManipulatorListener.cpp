@@ -519,6 +519,12 @@ void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
 				// Remove contact object
 				ObjectsInContact.Remove(OtherActor);
 				
+				if (!GetWorld())
+				{
+					// Episode already finished, continuing would be futile
+					return;
+				}
+
 				// Manipulator contact ended
 				RecentlyEndedContactEvents.Emplace(FSLContactEndEvent(*OtherItem, GetWorld()->GetTimeSeconds()));
 				

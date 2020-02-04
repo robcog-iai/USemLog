@@ -476,6 +476,12 @@ void USLReachListener::OnSLManipulatorContactEnd(const FSLEntity& Self, const FS
 			// Cache the event
 			RecentlyEndedManipulatorContactEvents.Emplace(AsSMA, Time);
 
+			if (!GetWorld())
+			{
+				// The episode finished, going further is futile
+				return;
+			}
+
 			// Delay reseting the reach time, it might be a small disconnection with the hand
 			if(!GetWorld()->GetTimerManager().IsTimerActive(ManipulatorContactDelayTimerHandle))
 			{
@@ -485,6 +491,7 @@ void USLReachListener::OnSLManipulatorContactEnd(const FSLEntity& Self, const FS
 		}
 		else
 		{
+			// 
 			// It can happen, during the grasp there is a contact with the manipulator
 			// when the contact ends after the grasp, this gets called and there are no items in ObjectsInContactWithManipulator
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
