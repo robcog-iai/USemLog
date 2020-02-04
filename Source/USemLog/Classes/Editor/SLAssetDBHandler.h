@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Editor/SLEditorStructs.h"
+#include "AssetData.h"
 #if SL_WITH_LIBMONGO_C
 	THIRD_PARTY_INCLUDES_START
 	#if PLATFORM_WINDOWS
@@ -46,6 +47,18 @@ private:
 	// Download assets
 	void Download();
 
+	// Upload all files under the specified folder to the GridFS
+	void UploadAllFileToGridFS(const FString& Dir);
+
+	// Upload one single file to GridFS
+	bool UploadFileToGridFS(const FString& Path, const FString& FileName, FString& InId);
+
+	// Write file id and path in the document
+	bool WriteFilesToDocument(TMap<FString, FString> Files);
+	
+	// Download file from GridFS given the file id
+	bool DownloadFileFromGridFS(const FString& Path, const FString& Id);
+		
 #if SL_WITH_LIBMONGO_C
 	// Save image to gridfs, get the file oid and return true if succeeded
 	bool AddToGridFs(const TArray<uint8>& InData, bson_oid_t* out_oid) const;
@@ -54,6 +67,9 @@ private:
 private:
 	// Cache the action
 	ESLAssetAction Action;
+
+	// Cache the database name
+	FString TaskId;
 
 #if SL_WITH_LIBMONGO_C
 	// Server uri

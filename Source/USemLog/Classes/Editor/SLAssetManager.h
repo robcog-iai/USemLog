@@ -45,7 +45,16 @@ public:
 
 private:
 	// Move assets to folder
-	bool MoveAssets(const FString& Path);
+	bool MoveCurrentLevelAssets(const FString& Path);
+
+	// return the current level name 
+	FName GetCurrentLevel();
+
+	// Get the referenced assets and move them
+	void MoveReferencedObjects(FName PackageName, const FString& SourceBasePath, const FString& DestBasePath);
+
+	// Move the assets to destination path
+	void MoveAssets(TArray<FAssetData> AssetList, const FString& DestPath, const FString& SourcePath);
 
 protected:
 	// Set when initialized
