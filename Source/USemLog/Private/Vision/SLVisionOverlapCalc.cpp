@@ -38,14 +38,14 @@ USLVisionOverlapCalc::~USLVisionOverlapCalc()
 }
 
 // Give control to the overlap calc to pause and start its parent (vision logger)
-void USLVisionOverlapCalc::Init(USLVisionLogger* InParent, FIntPoint InResolution)
+void USLVisionOverlapCalc::Init(USLVisionLogger* InParent, FIntPoint InResolution, const FString& InSaveLocallyPath)
 {
 	if (!bIsInit)
 	{
 		Parent = InParent;
 		ViewportClient = GetWorld()->GetGameViewport();
 		Resolution = InResolution / ResolutionDivider;
-		SaveLocallyFolderName = "OverlapTest";
+		SaveLocallyFolderName = InSaveLocallyPath;
 
 		// Load the default mask material
 		// this will be used as a template to create the non-occluding mask materials to add to the clones
@@ -72,8 +72,11 @@ void USLVisionOverlapCalc::Start(FSLVisionViewData* CurrViewData)
 {
 	if (!bIsStarted && bIsInit)
 	{
+		SubFolderName.Empty();
+		SubFolderName = CurrViewData->Class + "_O";
 		Entities = &CurrViewData->Entities;
 		SkelEntities = &CurrViewData->SkelEntities;
+		
 
 		if (!SelectFirstItem())
 		{
@@ -129,7 +132,7 @@ void USLVisionOverlapCalc::RequestScreenshot()
 {
 	AsyncTask(ENamedThreads::GameThread, [this]()
 	{
-		CurrImageFilename = "OverlapTest_" + FString::SanitizeFloat(GetWorld()->GetTimeSeconds()) + "_" + FString::FromInt(EntityIndex);
+		CurrImageFilename = FString::SanitizeFloat(GetWorld()->GetTimeSeconds()) + "_" + FString::FromInt(EntityIndex) + "_O";
 		GetHighResScreenshotConfig().FilenameOverride = CurrImageFilename;
 		ViewportClient->Viewport->TakeHighResScreenShot();
 	});
@@ -147,7 +150,7 @@ void USLVisionOverlapCalc::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<F
 		// Compress image
 		TArray<uint8> CompressedBitmap;
 		FImageUtils::CompressImageArray(SizeX, SizeY, Bitmap, CompressedBitmap);
-		FString Path = FPaths::ProjectDir() + "/SemLog/" + SaveLocallyFolderName + "/" + CurrImageFilename + ".png";
+		FString Path = FPaths::ProjectDir() + "/SemLog/" + SaveLocallyFolderName + "/" + SubFolderName + "/" + CurrImageFilename + ".png";
 		FPaths::RemoveDuplicateSlashes(Path);
 		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 	}
@@ -571,10 +574,11 @@ void USLVisionOverlapCalc::CalculateOverlap(const TArray<FColor>& NonOccludedIma
 		// Set flag showing if the entity is clipped (touches the edge of the image)
 		(*Entities)[EntityIndex].bIsClipped = bIsClipped;
 
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%s-%s] \t\t ImgPerc=%.8f; NonOccImgPerc=%.8f; OccPerc=%.8f; bIsClipped=%d;"),
-			*FString(__func__), __LINE__, *(*Entities)[EntityIndex].Class, *(*Entities)[EntityIndex].Id,
-			(*Entities)[EntityIndex].ImagePercentage, NonOccImgPerc, (*Entities)[EntityIndex].OcclusionPercentage,
-			(*Entities)[EntityIndex].bIsClipped);
+		//// DEBUG
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d [%s-%s] \t\t ImgPerc=%.8f; NonOccImgPerc=%.8f; OccPerc=%.8f; bIsClipped=%d;"),
+		//	*FString(__func__), __LINE__, *(*Entities)[EntityIndex].Class, *(*Entities)[EntityIndex].Id,
+		//	(*Entities)[EntityIndex].ImagePercentage, NonOccImgPerc, (*Entities)[EntityIndex].OcclusionPercentage,
+		//	(*Entities)[EntityIndex].bIsClipped);
 	}
 	else
 	{
@@ -588,10 +592,11 @@ void USLVisionOverlapCalc::CalculateOverlap(const TArray<FColor>& NonOccludedIma
 			// Set flag showing if the entity is clipped (touches the edge of the image)
 			(*SkelEntities)[SkelIndex].bIsClipped = bIsClipped;
 
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%s-%s] \t\t ImgPerc=%.8f; NonOccImgPerc=%.8f; OccPerc=%.8f; bIsClipped=%d;"),
-				*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id,
-				(*SkelEntities)[SkelIndex].ImagePercentage, NonOccImgPerc, (*SkelEntities)[SkelIndex].OcclusionPercentage,
-				(*SkelEntities)[SkelIndex].bIsClipped);
+			//// DEBUG
+			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%s-%s] \t\t ImgPerc=%.8f; NonOccImgPerc=%.8f; OccPerc=%.8f; bIsClipped=%d;"),
+			//	*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id,
+			//	(*SkelEntities)[SkelIndex].ImagePercentage, NonOccImgPerc, (*SkelEntities)[SkelIndex].OcclusionPercentage,
+			//	(*SkelEntities)[SkelIndex].bIsClipped);
 		}
 		else
 		{
@@ -603,10 +608,11 @@ void USLVisionOverlapCalc::CalculateOverlap(const TArray<FColor>& NonOccludedIma
 			// Set flag showing if the entity is clipped (touches the edge of the image)
 			(*SkelEntities)[SkelIndex].Bones[BoneIndex].bIsClipped = bIsClipped;
 
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%s-%s-%s] \t\t ImgPerc=%.8f; NonOccImgPerc=%.8f; OccPerc=%.8f; bIsClipped=%d;"),
-				*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id, *(*SkelEntities)[SkelIndex].Bones[BoneIndex].Class,
-				(*SkelEntities)[SkelIndex].Bones[BoneIndex].ImagePercentage, NonOccImgPerc, (*SkelEntities)[SkelIndex].Bones[BoneIndex].OcclusionPercentage,
-				(*SkelEntities)[SkelIndex].Bones[BoneIndex].bIsClipped);
+			//// DEBUG
+			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%s-%s-%s] \t\t ImgPerc=%.8f; NonOccImgPerc=%.8f; OccPerc=%.8f; bIsClipped=%d;"),
+			//	*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id, *(*SkelEntities)[SkelIndex].Bones[BoneIndex].Class,
+			//	(*SkelEntities)[SkelIndex].Bones[BoneIndex].ImagePercentage, NonOccImgPerc, (*SkelEntities)[SkelIndex].Bones[BoneIndex].OcclusionPercentage,
+			//	(*SkelEntities)[SkelIndex].Bones[BoneIndex].bIsClipped);
 		}
 	}	
 }

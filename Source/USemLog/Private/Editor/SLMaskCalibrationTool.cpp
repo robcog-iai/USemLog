@@ -601,7 +601,7 @@ void USLMaskCalibrationTool::PrintProgress(AActor* Parent, FColor OrigColor, FCo
 		BoneName.InsertAt(0, "- ");
 	}
 
-	int32 ManhattanDistance = FMath::Abs((OrigColor.R - RenderedColor.R) + (OrigColor.G - RenderedColor.G) + (OrigColor.B - RenderedColor.B));
+	int32 ManhattanDistance = FMath::Abs((OrigColor.R - RenderedColor.R)) + FMath::Abs((OrigColor.G - RenderedColor.G)) + FMath::Abs((OrigColor.B - RenderedColor.B));
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t[%2.f] \t%s %s: t%s\t->\t%s; \tManDis=%ld;"),
 		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
 		*Parent->GetName(), *BoneName,

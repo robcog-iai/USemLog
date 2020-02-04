@@ -136,7 +136,7 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 					// Create the overlap calc object
 					OverlapCalc = NewObject<USLVisionOverlapCalc>(this);
 					// Give control to the overlap calc to pause and start the vision logger
-					OverlapCalc->Init(this, Resolution);
+					OverlapCalc->Init(this, Resolution, SaveLocallyFolderName);
 				}
 			}
 			else

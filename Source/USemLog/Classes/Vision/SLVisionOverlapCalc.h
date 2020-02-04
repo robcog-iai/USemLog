@@ -32,7 +32,7 @@ public:
 	~USLVisionOverlapCalc();
 
 	// Give control to the overlap calc to pause and start its parent (vision logger)
-	void Init(USLVisionLogger* InParent, FIntPoint InResolution);
+	void Init(USLVisionLogger* InParent, FIntPoint InResolution, const FString& InSaveLocallyPath = FString());
 
 	// Calculate overlaps for the given scene
 	void Start(struct FSLVisionViewData* CurrViewData);
@@ -141,6 +141,9 @@ private:
 
 	// Folder name where to store the images if they are going to be stored locally
 	FString SaveLocallyFolderName;
+
+	// Subfolder name for saving locally
+	FString SubFolderName;
 
 	// Index of the entity in the array (INDEX_NONE if not active/set)
 	int32 EntityIndex;
