@@ -53,9 +53,7 @@ void USLEditorLogger::Init(const FString& InTaskId, const FString& ServerIp,
 void USLEditorLogger::Start(const FSLEditorLoggerParams& InParams)
 {
 	if (!bIsStarted && bIsInit)
-	{
-		bIsStarted = true;
-
+	{	
 		if (AssetManager)
 		{
 			AssetManager->Start();	
@@ -97,6 +95,8 @@ void USLEditorLogger::Start(const FSLEditorLoggerParams& InParams)
 				CalibrationTool->Start();
 			}
 		}
+
+		bIsStarted = true;
 	}
 }
 
