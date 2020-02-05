@@ -72,8 +72,8 @@ void USLWorldLogger::Start(const float UpdateRate)
 		}
 		else
 		{
-			// Update logger on tick (updates every game thread tick, update rate can vary)
-			bIsTickable = true;
+			// Update logger on tick (starting next tick) (updates every game thread tick, update rate can vary)			
+			GetWorld()->GetTimerManager().SetTimerForNextTick([&]() { bIsTickable = true; });
 		}
 
 		// Set flags

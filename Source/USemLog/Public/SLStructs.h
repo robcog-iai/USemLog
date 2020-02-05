@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/MeshComponent.h"
 #include "SLStructs.generated.h"
 
 /************************************************************************/
