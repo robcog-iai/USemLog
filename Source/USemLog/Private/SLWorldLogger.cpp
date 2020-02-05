@@ -155,6 +155,10 @@ void USLWorldLogger::InitialUpdate()
 // Log current state of the world (dynamic objects that moved more than the distance threshold)
 void USLWorldLogger::Update()
 {
+	// TODO get gaze data here
+	// Create a Thread-safe Shared Pointer to the gaze data
+	//TSharedPtr<FMyObjectType, ESPMode::ThreadSafe> NewThreadsafePointer = MakeShared<FMyObjectType, ESPMode::ThreadSafe>(MyArgs);
+
 	// Start task if worker is done with its previous work
 	if (AsyncWorker->IsDone())
 	{

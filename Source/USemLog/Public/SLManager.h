@@ -73,11 +73,8 @@ private:
 	// Setup user input bindings
 	void SetupInputBindings();
 
-	// Call start from user input
-	void StartFromInput();
-
-	// Call finish from user input
-	void FinishFromInput();
+	// Start/finish logger from user input
+	void UserInputToggleCallback();
 
 private:
 	// Set when manager is initialized
@@ -136,11 +133,7 @@ private:
 
 	// Action name for starting from user input
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartFromUserInput"))
-	FName StartInputActionName;
-
-	// Action name for finishing from user input
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bStartFromUserInput"))
-	FName FinishInputActionName;
+	FName UserInputActionName;
 
 	// Mongodb server IP
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

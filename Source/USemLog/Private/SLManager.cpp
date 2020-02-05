@@ -28,8 +28,7 @@ ASLManager::ASLManager()
 	bStartWithDelay = false;
 	StartDelay = 0.5f;
 	bStartFromUserInput = false;
-	StartInputActionName = "SLStart";
-	FinishInputActionName = "SLFinish";
+	UserInputActionName = "SLStartFinish";
 
 	// Server TaskId
 	ServerIp = TEXT("127.0.0.1");
@@ -436,20 +435,26 @@ void ASLManager::SetupInputBindings()
 	{
 		if (UInputComponent* IC = PC->InputComponent)
 		{
-			IC->BindAction(StartInputActionName, IE_Pressed, this, &ASLManager::StartFromInput);
-			IC->BindAction(FinishInputActionName, IE_Pressed, this, &ASLManager::FinishFromInput);
+			IC->BindAction(UserInputActionName, IE_Pressed, this, &ASLManager::UserInputToggleCallback);
 		}
 	}
 }
 
 // Start input binding
-void ASLManager::StartFromInput()
+void ASLManager::UserInputToggleCallback()
 {
-	ASLManager::Start();
-}
-
-// Start input binding
-void ASLManager::FinishFromInput()
-{	
-	ASLManager::Finish(GetWorld()->GetTimeSeconds());
+	if (bIsInit && !bIsStarted)
+	{
+		ASLManager::Start();
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("[%.2f] SemLog started.."), GetWorld()->GetTimeSeconds()));
+	}
+	else if(bIsStarted && !bIsFinished)
+	{		
+		ASLManager::Finish(GetWorld()->GetTimeSeconds());
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("[%.2f] SemLog finished.."), GetWorld()->GetTimeSeconds()));
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] Something went wrong, try again.."), GetWorld()->GetTimeSeconds()));
+	}
 }

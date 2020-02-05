@@ -43,6 +43,10 @@
     {
       "Name": "libmongo",
       "Enabled": true
+    },
+    {
+      "Name": "SRanipal",
+      "Enabled": true
     }
   ]
 }

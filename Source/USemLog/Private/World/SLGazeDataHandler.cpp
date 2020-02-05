@@ -44,7 +44,7 @@ void FSLGazeDataHandler::Init(UWorld* InWorld)
 
 		if (GazeProxy->Start())
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Eye tracking framework successfully started.."), *FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Eye tracking framework successfully started.."), *FString(__func__), __LINE__);
 			bIsInit = true;
 		}	
 #endif // SL_WITH_EYE_TRACKING
@@ -111,18 +111,22 @@ bool FSLGazeDataHandler::GetData(FSLGazeData& OutData)
 		// Line trace
 		if(RayRadius == 0.f)
 		{
+			// TODO async might be needed since this is run in a separate thread
+			//World->AsyncLineTraceByChannel
 			if(World->LineTraceSingleByChannel(HitResult, RaycastOrigin, RaycastTarget, ECC_Pawn, TraceParam))
 			{
 				FSLEntity Entity;
 				if(FSLEntitiesManager::GetInstance()->GetEntity(HitResult.Actor.Get(),Entity))
 				{
 					OutData.SetData(RaycastOrigin, HitResult.ImpactPoint, Entity);
+					// TODO debug lines should not run on the separate thread
 					DrawDebugLine(World, RaycastOrigin, RaycastTarget, FColor::Green);
 					DrawDebugSphere(World, HitResult.ImpactPoint, 2.f, 32, FColor::Red);
 					return true;
 				}
 				else
 				{
+					// TODO debug lines should not run on the separate thread
 					DrawDebugLine(World, RaycastOrigin, RaycastTarget, FColor::Emerald);
 					return false;
 				}
@@ -130,6 +134,8 @@ bool FSLGazeDataHandler::GetData(FSLGazeData& OutData)
 		}
 		else
 		{
+			// TODO async might be needed since this is run in a separate thread
+			//World->AsyncLineTraceByChannel
 			FCollisionShape Sphere;
 			Sphere.SetSphere(RayRadius);
 			if(World->SweepSingleByChannel(HitResult,RaycastOrigin, RaycastTarget, FQuat::Identity, 
@@ -139,12 +145,14 @@ bool FSLGazeDataHandler::GetData(FSLGazeData& OutData)
 				if(FSLEntitiesManager::GetInstance()->GetEntity(HitResult.Actor.Get(),Entity))
 				{
 					OutData.SetData(RaycastOrigin, HitResult.ImpactPoint, Entity);
+					// TODO debug lines should not run on the separate thread
 					DrawDebugLine(World, RaycastOrigin, RaycastTarget, FColor::Green);
 					DrawDebugSphere(World, HitResult.ImpactPoint, RayRadius, 32, FColor::Red);
 					return true;
 				}
 				else
 				{
+					// TODO debug lines should not run on the separate thread
 					DrawDebugLine(World, RaycastOrigin, RaycastTarget, FColor::Emerald);
 					return false;
 				}
