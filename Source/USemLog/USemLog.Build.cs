@@ -5,7 +5,10 @@ using UnrealBuildTool;
 
 public class USemLog : ModuleRules
 {
-	public USemLog(ReadOnlyTargetRules Target) : base(Target)
+    // Set to false if you don't need eye tracking
+    private bool WithEyeTracking { get { return true; } }
+
+    public USemLog(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		//PrivatePCHHeaderFile = "Public/USemLog.h";
@@ -52,7 +55,7 @@ public class USemLog : ModuleRules
 				//"SlicingLogic",		// SL_WITH_SLICING
 				"MongoC",				// SL_WITH_LIBMONGO_C
 				//"MongoCxx",			// SL_WITH_LIBMONGO_CXX
-				//"SRanipal",				// SL_WITH_EYE_TRACKING
+				"SRanipal",				// SL_WITH_EYE_TRACKING
 				//"Boost",				// SL_WITH_BOOST
 				// ... add private dependencies that you statically link with here ...
 			}

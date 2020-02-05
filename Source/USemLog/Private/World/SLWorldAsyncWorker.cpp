@@ -102,7 +102,7 @@ void FSLWorldAsyncWorker::Init(UWorld* InWorld,
 		}
 
 		// Init the gaze handler
-		GazeDataHandler.Init();
+		GazeDataHandler.Init(World);
 
 		// Can start working
 		bIsInit = true;
@@ -115,7 +115,7 @@ void FSLWorldAsyncWorker::Start()
 	if(!bIsStarted && bIsInit)
 	{
 		// Start the gaze handler
-		GazeDataHandler.Start(World);
+		GazeDataHandler.Start();
 
 		bIsStarted = true;
 	}

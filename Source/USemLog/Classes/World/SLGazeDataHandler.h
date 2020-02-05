@@ -59,10 +59,10 @@ public:
 	FSLGazeDataHandler();
 
 	// Setup the eye tracking software
-	void Init();
+	void Init(UWorld* InWorld);
 
 	// Setup the active camera
-	void Start(UWorld* InWorld);
+	void Start();
 	
 	// Stop the eye tracking software
 	void Finish();
@@ -94,6 +94,9 @@ private:
 
 	// Used for getting the gaze origin point
 	APlayerCameraManager* PlayerCameraRef;
+
+	// Custom made sranipal proxy to avoid compilation issues
+	class ASLGazeProxy* GazeProxy;
 
 	/* Constants */
 	constexpr static float RayLength = 1000.f;

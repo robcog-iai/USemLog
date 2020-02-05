@@ -4,13 +4,11 @@
 #include "World/SLGazeDataHandler.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "EngineUtils.h"
 #include "SLEntitiesManager.h"
 
 #if SL_WITH_EYE_TRACKING
-//#include "SRanipal_Enums.h" // Moved to USemLog before CoreMinimal.h otherwise weird namespace errors occur
-#include "SRanipal_API.h"
-#include "SRanipal_Eye.h"
-#include "SRanipal_FunctionLibrary_Eye.h"
+#include "SLGazeProxy.h"
 #endif // SL_WITH_EYE_TRACKING
 
 // Default ctor
@@ -25,28 +23,40 @@ FSLGazeDataHandler::FSLGazeDataHandler()
 }
 
 // Setup the eye tracking software
-void FSLGazeDataHandler::Init()
+void FSLGazeDataHandler::Init(UWorld* InWorld)
 {
 	if(!bIsInit)
 	{
 #if SL_WITH_EYE_TRACKING
+		World = InWorld;
 
-		if(ViveSR::anipal::Initial(ViveSR::anipal::Eye::ANIPAL_TYPE_EYE, nullptr) == ViveSR::Error::WORK)
+		for (TActorIterator<ASLGazeProxy> GazeItr(InWorld); GazeItr; ++GazeItr)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Eye tracking framework init!"), *FString(__func__), __LINE__);
-			bIsInit = true;
+			GazeProxy = *GazeItr;
+			break;
 		}
+		
+		if (!GazeProxy)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d No ASLGazeProxy found in the world, eye tracking will be disabled.."), *FString(__func__), __LINE__);
+			return;
+		}
+
+		if (GazeProxy->Start())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Eye tracking framework successfully started.."), *FString(__func__), __LINE__);
+			bIsInit = true;
+		}	
 #endif // SL_WITH_EYE_TRACKING
 	}
 }
 
 	// Setup the active camera
-void FSLGazeDataHandler::Start(UWorld* InWorld)
+void FSLGazeDataHandler::Start()
 {
 	if(!bIsStarted && bIsInit)
 	{
 #if SL_WITH_EYE_TRACKING
-		World = InWorld;
 		if(World)
 		{
 			if(UGameplayStatics::GetPlayerController(World, 0))
@@ -59,27 +69,20 @@ void FSLGazeDataHandler::Start(UWorld* InWorld)
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d GetPlayerController failed, this should be called after BeginPlay!"), *FString(__func__), __LINE__);
+				UE_LOG(LogTemp, Error, TEXT("%s::%d calling GetPlayerController failed, this should be called after BeginPlay!"), *FString(__func__), __LINE__);
 			}
 		}
 #endif // SL_WITH_EYE_TRACKING
 	}
 }
 
+// Stop the eye tracking framework
 void FSLGazeDataHandler::Finish()
 {
 	if (!bIsFinished && (bIsStarted || bIsInit))
 	{
 #if SL_WITH_EYE_TRACKING
-		if(ViveSR::anipal::Release(ViveSR::anipal::Eye::ANIPAL_TYPE_EYE) != ViveSR::Error::WORK)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Release eye tracking framework FAILED!"), *FString(__func__), __LINE__);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Released eye tracking framework!"), *FString(__func__), __LINE__);
-		}
-		
+		GazeProxy->Stop();		
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
@@ -96,12 +99,12 @@ bool FSLGazeDataHandler::GetData(FSLGazeData& OutData)
 	}
 
 #if SL_WITH_EYE_TRACKING
-	FVector CameraGazeOriginNotUsed, CameraGazeDirection;
-	if(USRanipal_FunctionLibrary_Eye::GetGazeRay(GazeIndex::COMBINE, CameraGazeOriginNotUsed, CameraGazeDirection))
+	FVector RelativeGazeDirection;
+	if (GazeProxy->GetRelativeGazeDirection(RelativeGazeDirection))
 	{
 		const FVector RaycastOrigin = PlayerCameraRef->GetCameraLocation();
-		const FVector RaycastTarget =  PlayerCameraRef->GetCameraRotation().RotateVector(RaycastOrigin + CameraGazeDirection * RayLength);
-		
+		const FVector RaycastTarget =  PlayerCameraRef->GetCameraRotation().RotateVector(RaycastOrigin + RelativeGazeDirection * RayLength);
+
 		FCollisionQueryParams TraceParam = FCollisionQueryParams(FName("EyeTraceParam"), true, PlayerCameraRef);
 		FHitResult HitResult;
 
@@ -148,54 +151,7 @@ bool FSLGazeDataHandler::GetData(FSLGazeData& OutData)
 			}
 		}
 	}
-#endif // SL_WITH_EYE_TRACKING
-	
-	return false;
+#endif // SL_WITH_EYE_TRACKING	
+return false;
 }
 
-
-//
-//void FSLGazeDataHandler::TestGazeData()
-//{
-//	if(bIsStarted)
-//	{
-//#if SL_WITH_EYE_TRACKING
-//		float RayLength = 1000.0f;
-//		float RayRadius = 0.5f;
-//			
-//		FVector CameraGazeOrigin, CameraGazeDirection;
-//		FVector RayCastOrigin, RayCastDirection;
-//
-//		FVector PlayerMainCameraLocation;
-//		FRotator PlayerMainCameraRotation;
-//
-//		bool valid = USRanipal_FunctionLibrary_Eye::GetGazeRay(GazeIndex::COMBINE, CameraGazeOrigin, CameraGazeDirection);
-//		if (valid) 
-//		{
-//			// Find the ray cast origin and target positon.
-//			PlayerMainCameraLocation = PlayerCameraRef->GetCameraLocation();
-//			PlayerMainCameraRotation = PlayerCameraRef->GetCameraRotation();
-//			RayCastOrigin = PlayerMainCameraLocation + FVector(0.f, 0.f, -4.f);
-//			RayCastDirection = PlayerMainCameraRotation.RotateVector(
-//				PlayerMainCameraLocation + CameraGazeDirection * RayLength
-//			);
-//
-//			DrawDebugLine(
-//				World,
-//				RayCastOrigin, RayCastDirection,
-//				FColor::Emerald,
-//				false, -1, 0,
-//				RayRadius
-//			);
-//
-//			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s Loc %s"), *FString(__func__), __LINE__, 
-//				*PlayerCameraRef->GetName(), *PlayerCameraRef->GetCameraLocation().ToString());
-//
-//		}
-//		else
-//		{
-//			UE_LOG(LogTemp, Log, TEXT("[SRanipal] Notvalid gaze ray"));
-//		}
-//#endif // SL_WITH_EYE_TRACKING
-//	}
-//}

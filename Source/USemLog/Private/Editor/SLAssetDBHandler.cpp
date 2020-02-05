@@ -441,7 +441,7 @@ void FSLAssetDBHandler::UploadAllFileToGridFS(const FString& Dir)
 	{
 		FString Path = Data.PackagePath.ToString();
 		Path.RemoveFromStart(TEXT("/Game/"));
-		FString ContentDir = FPaths::GameContentDir() + Path + TEXT("/");
+		FString ContentDir = FPaths::ProjectContentDir() + Path + TEXT("/");
 
 		FString Id;
 		if (Data.AssetClass.ToString().Equals(TEXT("World")))
