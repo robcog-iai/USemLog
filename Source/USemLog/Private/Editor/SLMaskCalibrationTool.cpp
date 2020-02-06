@@ -47,7 +47,7 @@ USLMaskCalibrationTool::~USLMaskCalibrationTool()
 }
 
 // Init scanner
-void USLMaskCalibrationTool::Init(bool bOnlyDemo, const FString& InFolderName)
+void USLMaskCalibrationTool::Init(bool bOverwrite, bool bOnlyDemo, const FString& InFolderName)
 {
 	if (!bIsInit)
 	{
@@ -62,7 +62,7 @@ void USLMaskCalibrationTool::Init(bool bOnlyDemo, const FString& InFolderName)
 		}
 
 		// Load the mask colors to their entities mapping
-		if (!LoadMaskMappings())
+		if (!LoadMaskMappings(bOverwrite))
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d No entities with visual masks loaded.."), *FString(__func__), __LINE__);
 			return;
@@ -447,7 +447,7 @@ bool USLMaskCalibrationTool::CreateTargetCameraPoseActor()
 }
 
 // Load the mask colors to their entities mapping
-bool USLMaskCalibrationTool::LoadMaskMappings()
+bool USLMaskCalibrationTool::LoadMaskMappings(bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 	{
@@ -460,14 +460,21 @@ bool USLMaskCalibrationTool::LoadMaskMappings()
 			FString MaskStr = FTags::GetValue(SMA, "SemLog", "VisMask");
 			if (!MaskStr.IsEmpty())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; VisualMask=%s;"), *FString(__func__), __LINE__, *ActItr->GetName(), *MaskStr);
-				FColor MaskColor(FColor::FromHex(MaskStr));
-				MaskToEntity.Emplace(MakeTuple(MaskColor, SMA));
+				if (!bOverwrite && FTags::HasKey(SMA, "SemLog", "RenderedVisMask"))
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; Already has a rendered visual mask, skipping.."),
+						*FString(__func__), __LINE__, *ActItr->GetName());
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; VisualMask=%s;"), *FString(__func__), __LINE__, *ActItr->GetName(), *MaskStr);
+					FColor MaskColor(FColor::FromHex(MaskStr));
+					MaskToEntity.Emplace(MakeTuple(MaskColor, SMA));
+				}
 			}
 			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask.."), *FString(__func__), __LINE__, *ActItr->GetName());
-				continue;
 			}
 		}
 		/* Skeletal mesh actors */
@@ -485,10 +492,18 @@ bool USLMaskCalibrationTool::LoadMaskMappings()
 
 					if (!MaskStr.IsEmpty())
 					{
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; VisualMask=%s;"), *FString(__func__), __LINE__,
-							*ActItr->GetName(), *BoneName.ToString(),*MaskStr);
-						FColor MaskColor(FColor::FromHex(MaskStr));
-						MaskToSkelAndBone.Emplace(MakeTuple(MaskColor, MakeTuple(SkMA, BoneName)));
+						if (!bOverwrite && !BoneDataPair.Value.RenderedVisualMask.IsEmpty())
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; Already has a rendered visual mask, skipping.."),
+								*FString(__func__), __LINE__, *ActItr->GetName(), *BoneName.ToString());
+						}
+						else
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; VisualMask=%s;"), *FString(__func__), __LINE__,
+								*ActItr->GetName(), *BoneName.ToString(), *MaskStr);
+							FColor MaskColor(FColor::FromHex(MaskStr));
+							MaskToSkelAndBone.Emplace(MakeTuple(MaskColor, MakeTuple(SkMA, BoneName)));
+						}
 					}
 					else
 					{
@@ -517,7 +532,7 @@ bool USLMaskCalibrationTool::SetupFirstEntityMaskColor()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no entity mask array loaded.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no entity mask array loaded.."), *FString(__func__), __LINE__);
 		return false;
 	}
 }
@@ -543,7 +558,7 @@ bool USLMaskCalibrationTool::SetupNextEntityMaskColor()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d First entity was not set before.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d First entity was not set before.."), *FString(__func__), __LINE__);
 		return false;
 	}
 }
@@ -562,7 +577,7 @@ bool USLMaskCalibrationTool::SetupFirstSkelMaskColor()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no skel mask array loaded.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no skel mask array loaded.."), *FString(__func__), __LINE__);
 		return false;
 	}
 }
@@ -588,7 +603,7 @@ bool USLMaskCalibrationTool::SetupNextSkelMaskColor()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Not set yet.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d Not set yet.."), *FString(__func__), __LINE__);
 		return false;
 	}
 }

@@ -117,6 +117,23 @@ public:
 		return IdToStaticMeshActor.GenerateValueArray(OutArray);
 	}
 
+	// Get virtual camera actor
+	FORCEINLINE ASLVisionCamera* GetVisionCameraActor(const FString& Id) const
+	{
+		if (auto* Value = IdToVisionCamera.Find(Id))
+		{
+			return *Value;
+		}
+		return nullptr;
+	};
+
+	// Get all the semantically annotated static mesh actors
+	void GetVisionCameraActors(TArray<ASLVisionCamera*>& OutArray) const
+	{
+		return IdToVisionCamera.GenerateValueArray(OutArray);
+	}
+
+
 	// Get skeletal mesh actor
 	FORCEINLINE ASkeletalMeshActor* GetSkeletalMeshActor(const FString& Id) const 
 	{
@@ -208,6 +225,9 @@ private:
 
 	// Id to static mesh actor
 	TMap<FString, ASkeletalMeshActor*> IdToSkeletalMeshActor;
+
+	// Id to virtual camera actor
+	TMap<FString, ASLVisionCamera*> IdToVisionCamera;
 
 	// Id to AActor
 	TMap<FString, AActor*> IdToActor;

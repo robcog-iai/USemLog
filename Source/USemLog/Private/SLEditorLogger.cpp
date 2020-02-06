@@ -36,7 +36,7 @@ void USLEditorLogger::Init(const FString& InTaskId, const FString& ServerIp,
 			if (bCalibrateRenderedMaskColors)
 			{
 				CalibrationTool = NewObject<USLMaskCalibrationTool>(this);
-				CalibrationTool->Init(bMaskColorsOnlyDemo);
+				CalibrationTool->Init(bOverwrite, bMaskColorsOnlyDemo);
 			}
 		}
 		else

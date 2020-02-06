@@ -61,6 +61,9 @@ struct FSLVisionFrame
 	// Entity poses
 	TMap<AStaticMeshActor*, FTransform> ActorPoses;
 
+	// Virtual camera poses
+	TMap<ASLVisionCamera*, FTransform> VisionCameraPoses;
+
 	// Skeletal (poseable) meshes bone transformation
 	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> SkeletalPoses;
 
@@ -95,11 +98,17 @@ struct FSLVisionFrame
 				}
 			}
 		}
+
+		// Move the virtual cameras
+		for (const auto& Pair : VisionCameraPoses)
+		{
+			Pair.Key->SetActorTransform(Pair.Value);
+		}
 		return Timestamp;
 	}
 
 	// Clear time and poses
-	void Clear() { Timestamp = -1.f; ActorPoses.Empty(); SkeletalPoses.Empty(); };
+	void Clear() { Timestamp = -1.f; ActorPoses.Empty(); SkeletalPoses.Empty(); VisionCameraPoses.Empty(); };
 };
 
 /**

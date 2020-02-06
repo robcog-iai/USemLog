@@ -30,7 +30,7 @@ public:
 	~USLMaskCalibrationTool();
 
 	// Setup scanning room
-	void Init(bool bMaskColorsOnlyDemo = false, const FString& InFolderName = FString());
+	void Init(bool bOverwrite = false, bool bMaskColorsOnlyDemo = false, const FString& InFolderName = FString());
 
 	// Start scanning, set camera into the first pose and trigger the screenshot
 	void Start();
@@ -80,7 +80,7 @@ private:
 	bool CreateTargetCameraPoseActor();
 
 	// Load the mask colors to their entities mapping (while hiding all the actors in the world)
-	bool LoadMaskMappings();
+	bool LoadMaskMappings(bool bOverwrite);
 
 	// Render the color of te first entity mask
 	bool SetupFirstEntityMaskColor();

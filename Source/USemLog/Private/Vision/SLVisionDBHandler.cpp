@@ -356,7 +356,7 @@ bool FSLVisionDBHandler::GetEpisodeData(float UpdateRate, const TMap<ASkeletalMe
 			}
 
 			// Accumulate entity changes in the frame until the desired update rate is reached
-			GetEntitiesData(&doc_iter, Frame.ActorPoses);
+			GetEntitiesData(&doc_iter, Frame.ActorPoses, Frame.CameraPoses);
 
 			// Accumulate skeletal entity changes in the frame until the desired update rate is reached
 			GetSkeletalEntitiesData(&doc_iter, InSkelToPoseableMap, Frame.SkeletalPoses);
@@ -625,7 +625,9 @@ void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FStrin
 
 #if SL_WITH_LIBMONGO_C
 // Get the entities data out of the bson iterator
-bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc, TMap<AStaticMeshActor*, FTransform>& OutEntityPoses) const
+bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc,
+	TMap<AStaticMeshActor*, FTransform>& OutEntityPoses,
+	TMap<AStaticMeshActor*, FTransform>& OutVirtualCameraPoses) const
 {
 	// Iterate entities
 	if (bson_iter_find(doc, "entities"))
@@ -678,6 +680,10 @@ bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc, TMap<AStaticMeshActor
 
 				// Add entity
 				if (AStaticMeshActor* Act = FSLEntitiesManager::GetInstance()->GetStaticMeshActor(Id))
+				{
+					OutEntityPoses.Emplace(Act, FConversions::ROSToU(FTransform(Quat, Loc)));
+				}
+				else if (ASLVisionCamera* Act = FSLEntitiesManager::GetInstance()->GetVisionCameraActor(Id))
 				{
 					OutEntityPoses.Emplace(Act, FConversions::ROSToU(FTransform(Quat, Loc)));
 				}

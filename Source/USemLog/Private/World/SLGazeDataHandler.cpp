@@ -18,6 +18,7 @@ FSLGazeDataHandler::FSLGazeDataHandler()
 	bIsStarted = false;
 	bIsFinished = false;
 	
+	GazeProxy = nullptr;
 	World = nullptr;
 	PlayerCameraRef = nullptr;
 }
@@ -36,7 +37,7 @@ void FSLGazeDataHandler::Init(UWorld* InWorld)
 			break;
 		}
 		
-		if (!GazeProxy)
+		if (!GazeProxy || !GazeProxy->IsValidLowLevel())
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d No ASLGazeProxy found in the world, eye tracking will be disabled.."), *FString(__func__), __LINE__);
 			return;

@@ -248,7 +248,7 @@ bool USLVisionOverlapCalc::SelectFirstEntity()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no entity array loaded.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no entity array loaded.."), *FString(__func__), __LINE__);
 		return false;
 	}
 }
@@ -279,7 +279,7 @@ bool USLVisionOverlapCalc::SelectNextEntity()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d First entity was not set before.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d First entity was not set before.."), *FString(__func__), __LINE__);
 		return false;
 	}
 }
@@ -304,7 +304,7 @@ bool USLVisionOverlapCalc::SelectFirstSkel()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no skel array loaded.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d Already set, or no skel array loaded.."), *FString(__func__), __LINE__);
 		return false;
 	}
 }
@@ -335,7 +335,7 @@ bool USLVisionOverlapCalc::SelectNextSkel()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d First skel was not set before.."), *FString(__func__), __LINE__);
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d First skel was not set before.."), *FString(__func__), __LINE__);
 		return false;
 	}
 }

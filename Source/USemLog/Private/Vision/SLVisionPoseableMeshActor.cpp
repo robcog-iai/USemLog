@@ -45,7 +45,17 @@ void ASLVisionPoseableMeshActor::SetBoneTransforms(const TMap<FName, FTransform>
 {
 	for(const auto& Pair : BoneTransfroms)
 	{
-		PoseableMeshComponent->SetBoneTransformByName(Pair.Key, Pair.Value, EBoneSpaces::WorldSpace);
+		// TODO hack to cut off hands
+		if (Pair.Key.IsEqual(FName("LeftHand")) || Pair.Key.IsEqual(FName("RightHand")))
+		{
+			FTransform Scale0(Pair.Value);
+			Scale0.SetScale3D(FVector(0.f));
+			PoseableMeshComponent->SetBoneTransformByName(Pair.Key, Scale0, EBoneSpaces::WorldSpace);
+		}
+		else
+		{
+			PoseableMeshComponent->SetBoneTransformByName(Pair.Key, Pair.Value, EBoneSpaces::WorldSpace);
+		}
 	}
 }
 

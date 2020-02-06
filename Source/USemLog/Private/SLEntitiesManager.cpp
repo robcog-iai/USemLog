@@ -53,6 +53,7 @@ void FSLEntitiesManager::Init(UWorld* World)
 				if (ASLVisionCamera* VCA = Cast<ASLVisionCamera>(*ActorItr))
 				{
 					CameraViewSemanticData.Emplace(VCA, FSLEntity(*ActorItr, ActId, ActClass));
+					IdToVisionCamera.Emplace(ActId, VCA);
 				}
 
 				// Store quick map of id to actor pointer
