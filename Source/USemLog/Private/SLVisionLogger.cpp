@@ -60,7 +60,7 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 		// Save the folder name if the images are going to be stored locally as well
 		if(Params.bIncludeLocally)
 		{
-			SaveLocallyFolderName = InTaskId + "/" + InEpisodeId;
+			SaveLocallyFolderName = InTaskId + "/" + InEpisodeId + "_Vis";
 		}
 		
 		// Init the semantic instances
@@ -266,24 +266,29 @@ ASLVisionPoseableMeshActor* USLVisionLogger::GetPoseableSkeletalMaskCloneFromId(
 // Trigger the screenshot on the game thread
 void USLVisionLogger::RequestScreenshot()
 {
+	//// FrameNum_CameraName_ViewMode
+	//CurrImageFilename = FString::FromInt(EpisodeData.GetActiveFrameNum()) + "_" + 
+	//	VirtualCameras[CurrCameraIdx]->GetClassName() + "_" + CurrViewModePostfix;
+
+	// FrameNum_CameraNum_s-ms_Viewmode
+	//CurrImageFilename = FString::FromInt(Episode.GetCurrIndex()) + "_" + 
+	//	FString::FromInt(CurrVirtualCameraIdx) + "_" + 
+	//	FString::SanitizeFloat(CurrTimestamp).Replace(TEXT("."),TEXT("-")) + "_" + CurrViewModePostfix;
+
+	// FrameNum_CameraNum_Viewmode
+	//CurrImageFilename = FString::FromInt(Episode.GetCurrIndex()) + "_" + 
+	//	FString::FromInt(CurrVirtualCameraIdx) + "_" + CurrViewModePostfix;
+
+	// Sec-Ms_FrameNum_Viewmode
+	CurrImageFilename = FString::Printf(TEXT("%.2f"), CurrTimestamp).Replace(TEXT("."), TEXT("-")) + "_" +
+		FString::FromInt(Episode.GetCurrIndex()) + "_" + CurrViewModePostfix;
+
+	GetHighResScreenshotConfig().FilenameOverride = CurrImageFilename;
+	//GetHighResScreenshotConfig().SetForce128BitRendering(true);
+	//GetHighResScreenshotConfig().SetHDRCapture(true);
+
 	AsyncTask(ENamedThreads::GameThread, [this]()
 	{
-		//// FrameNum_CameraName_ViewMode
-		//CurrImageFilename = FString::FromInt(EpisodeData.GetActiveFrameNum()) + "_" + 
-		//	VirtualCameras[CurrCameraIdx]->GetClassName() + "_" + CurrViewModePostfix;
-		
-		// FrameNum_CameraNum_s-ms_Viewmode
-		//CurrImageFilename = FString::FromInt(Episode.GetCurrIndex()) + "_" + 
-		//	FString::FromInt(CurrVirtualCameraIdx) + "_" + 
-		//	FString::SanitizeFloat(CurrTimestamp).Replace(TEXT("."),TEXT("-")) + "_" + CurrViewModePostfix;
-
-		// FrameNum_CameraNum_Viewmode
-		CurrImageFilename = FString::FromInt(Episode.GetCurrIndex()) + "_" + 
-			FString::FromInt(CurrVirtualCameraIdx) + "_" + CurrViewModePostfix;
-		
-		GetHighResScreenshotConfig().FilenameOverride = CurrImageFilename;
-		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
-		//GetHighResScreenshotConfig().SetHDRCapture(true);
 		ViewportClient->Viewport->TakeHighResScreenShot();
 	});
 }
@@ -321,7 +326,7 @@ void USLVisionLogger::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor
 			CurrViewData.Images.Emplace(FSLVisionImageData(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap));
 
 			// Bind the screenshot callback for calculating overlaps
-			OverlapCalc->Start(&CurrViewData);
+			OverlapCalc->Start(&CurrViewData, CurrTimestamp, Episode.GetCurrIndex());
 
 			// Wait for next step until the overlaps were calculated
 			return;
@@ -957,13 +962,13 @@ void USLVisionLogger::PrintProgress() const
 	const int32 CurrImgNr = Episode.GetCurrIndex() * TotalCameras * TotalViewModes + CurrVirtualCameraIdx * TotalViewModes + CurrViewModeNr;
 	const int32 TotalImgs = TotalFrames * TotalCameras * TotalViewModes;
 
-	UE_LOG(LogTemp, Log, TEXT("%s::%d \t\t Frame=%ld/%ld; \t\t Camera=%ld/%ld; \t\t ViewMode=%ld/%ld; \t\t Image=%ld/%ld; \t\t Ts=%f/%f;"),
-		*FString(__func__), __LINE__,
-		CurrFrameNr, TotalFrames,
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t Camera=%ld/%ld; \t\t ViewMode=%ld/%ld; \t\t Image=%ld/%ld; \t\t Ts=%.2f/%.2f; \t\t Frame=%ld/%ld;"),
+		*FString(__func__), __LINE__,		
 		CurrCameraNr, TotalCameras,
 		CurrViewModeNr, TotalViewModes,
 		CurrImgNr, TotalImgs,
-		CurrTimestamp, LastTs);
+		CurrTimestamp, LastTs,
+		CurrFrameNr, TotalFrames);
 }
 
 // Get view mode as string

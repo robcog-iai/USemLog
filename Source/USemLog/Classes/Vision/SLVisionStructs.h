@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "Engine/StaticMeshActor.h"
 #include "Vision/SLVisionPoseableMeshActor.h"
+#include "Vision/SLVisionCamera.h"
 
 /**
 * View modes

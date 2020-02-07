@@ -130,7 +130,7 @@ struct FSLGoogleCharts
 
 		// Write map to file
 		FString FullFilePath = FPaths::ProjectDir() + "/SemLog/" +
-			InLogDir + TEXT("/Episodes/") + InEpId + TEXT("_TL.html");
+			InLogDir + /*+ TEXT("/Episodes/")*/+ "/" + InEpId + TEXT("_TL.html");
 		FPaths::RemoveDuplicateSlashes(FullFilePath);
 		return FFileHelper::SaveStringToFile(TimelineStr, *FullFilePath);
 	}

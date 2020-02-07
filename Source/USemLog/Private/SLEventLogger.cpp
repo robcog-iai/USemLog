@@ -449,7 +449,7 @@ bool USLEventLogger::WriteToFile()
 
 	// Write experiment to file
 	FString FullFilePath = FPaths::ProjectDir() + "/SemLog/" +
-		LogDirectory + TEXT("/Episodes/") + EpisodeId + TEXT("_ED.owl");
+		LogDirectory /*+ TEXT("/Episodes/")*/+ "/" + EpisodeId + TEXT("_ED.owl");
 	FPaths::RemoveDuplicateSlashes(FullFilePath);
 	return FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);
 }

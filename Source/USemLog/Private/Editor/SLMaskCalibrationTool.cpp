@@ -462,12 +462,13 @@ bool USLMaskCalibrationTool::LoadMaskMappings(bool bOverwrite)
 			{
 				if (!bOverwrite && FTags::HasKey(SMA, "SemLog", "RenderedVisMask"))
 				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; Already has a rendered visual mask, skipping.."),
-						*FString(__func__), __LINE__, *ActItr->GetName());
+					//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; Already has a rendered visual mask, skipping.."),
+					//	*FString(__func__), __LINE__, *ActItr->GetName());
 				}
 				else
 				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; VisualMask=%s;"), *FString(__func__), __LINE__, *ActItr->GetName(), *MaskStr);
+					//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; VisualMask=%s;"), *FString(__func__), __LINE__,
+					//	*ActItr->GetName(), *MaskStr);
 					FColor MaskColor(FColor::FromHex(MaskStr));
 					MaskToEntity.Emplace(MakeTuple(MaskColor, SMA));
 				}
@@ -494,13 +495,13 @@ bool USLMaskCalibrationTool::LoadMaskMappings(bool bOverwrite)
 					{
 						if (!bOverwrite && !BoneDataPair.Value.RenderedVisualMask.IsEmpty())
 						{
-							UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; Already has a rendered visual mask, skipping.."),
-								*FString(__func__), __LINE__, *ActItr->GetName(), *BoneName.ToString());
+							//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; Already has a rendered visual mask, skipping.."),
+							//	*FString(__func__), __LINE__, *ActItr->GetName(), *BoneName.ToString());
 						}
 						else
 						{
-							UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; VisualMask=%s;"), *FString(__func__), __LINE__,
-								*ActItr->GetName(), *BoneName.ToString(), *MaskStr);
+							//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; VisualMask=%s;"), *FString(__func__), __LINE__,
+							//	*ActItr->GetName(), *BoneName.ToString(), *MaskStr);
 							FColor MaskColor(FColor::FromHex(MaskStr));
 							MaskToSkelAndBone.Emplace(MakeTuple(MaskColor, MakeTuple(SkMA, BoneName)));
 						}
@@ -617,7 +618,7 @@ void USLMaskCalibrationTool::PrintProgress(AActor* Parent, FColor OrigColor, FCo
 	}
 
 	int32 ManhattanDistance = FMath::Abs((OrigColor.R - RenderedColor.R)) + FMath::Abs((OrigColor.G - RenderedColor.G)) + FMath::Abs((OrigColor.B - RenderedColor.B));
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t[%2.f] \t%s %s: t%s\t->\t%s; \tManDis=%ld;"),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t[%.2f] \t%s %s: t%s\t->\t%s; \tManDis=%ld;"),
 		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
 		*Parent->GetName(), *BoneName,
 		*OrigColor.ToString(), *RenderedColor.ToString(),

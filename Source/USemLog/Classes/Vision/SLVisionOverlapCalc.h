@@ -35,7 +35,7 @@ public:
 	void Init(USLVisionLogger* InParent, FIntPoint InResolution, const FString& InSaveLocallyPath = FString());
 
 	// Calculate overlaps for the given scene
-	void Start(struct FSLVisionViewData* CurrViewData);
+	void Start(struct FSLVisionViewData* CurrViewData, float Timestamp, int32 FrameIdx);
 
 	// Reset all flags and temporaries, called when the scene overlaps are calculated, this un-pauses the parent as well
 	void Finish();
@@ -92,6 +92,9 @@ private:
 
 	// Calculate overlap
 	void CalculateOverlap(const TArray<FColor>& NonOccludedImage, int32 ImgWidth, int32 ImgHeight);
+
+	// Print out the progress in the terminal
+	void PrintProgress() const;
 
 	/* Helper */
 	// Return INDEX_NONE if not possible
@@ -169,6 +172,18 @@ private:
 	// Screenshor resolution for the overlap calculation images (usually lower than the visual logger)
 	FIntPoint Resolution;
 
+	// Current overlap frame, every screenshot counts as a frame
+	int32 CurrOverlapCalcIdx;
+
+	// Total number of overlap frames
+	int32 TotalOverlapCalcNum;
+
+	// Current timestamp from the vision logger
+	float CurrTs;
+
+	// Current frame index from the vision logger
+	int32 CurrFrameIdx;
+
 	/* Constants */
-	constexpr static uint8 ResolutionDivider = 2;
+	constexpr static uint8 ResolutionDivider = 1;
 };

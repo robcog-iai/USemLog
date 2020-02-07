@@ -26,6 +26,7 @@ USLVisionOverlapCalc::USLVisionOverlapCalc() : bIsInit(false), bIsStarted(false)
 	SkelIndex = INDEX_NONE;
 	BoneIndex = INDEX_NONE;
 	CurrBoneMaterialIndex = INDEX_NONE;
+	CurrOverlapCalcIdx = INDEX_NONE;
 	CurrSMAClone = nullptr;
 	CurrPMAClone = nullptr;
 	bSkelArrayActive = false;
@@ -42,6 +43,7 @@ void USLVisionOverlapCalc::Init(USLVisionLogger* InParent, FIntPoint InResolutio
 {
 	if (!bIsInit)
 	{
+		CurrOverlapCalcIdx = 0;
 		Parent = InParent;
 		ViewportClient = GetWorld()->GetGameViewport();
 		Resolution = InResolution / ResolutionDivider;
@@ -68,16 +70,25 @@ void USLVisionOverlapCalc::Init(USLVisionLogger* InParent, FIntPoint InResolutio
 }
 
 // Calculate overlaps for the given scene
-void USLVisionOverlapCalc::Start(FSLVisionViewData* CurrViewData)
+void USLVisionOverlapCalc::Start(FSLVisionViewData* CurrViewData, float Timestamp, int32 FrameIdx)
 {
 	if (!bIsStarted && bIsInit)
 	{
+		CurrTs = Timestamp;
+		CurrFrameIdx = FrameIdx;
 		SubFolderName.Empty();
 		SubFolderName = CurrViewData->Class + "_O";
 		Entities = &CurrViewData->Entities;
 		SkelEntities = &CurrViewData->SkelEntities;
-		
 
+		CurrOverlapCalcIdx = 0;		
+		int32 NumBones = 0;
+		for (const auto& SkE : *SkelEntities)
+		{
+			NumBones += SkE.Bones.Num();
+		}
+		TotalOverlapCalcNum = Entities->Num() + SkelEntities->Num() + NumBones;
+		
 		if (!SelectFirstItem())
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d No items found in the scene.."), *FString(__func__), __LINE__);
@@ -94,7 +105,7 @@ void USLVisionOverlapCalc::Start(FSLVisionViewData* CurrViewData)
 		// Overwrite to the overlap calc screenshot resolution
 		InitScreenshotResolution(Resolution);
 
-		RequestScreenshot();		
+		RequestScreenshot();
 		
 		bIsFinished = false;
 		bIsStarted = true;		
@@ -106,6 +117,7 @@ void USLVisionOverlapCalc::Finish()
 {
 	if (!bIsFinished && bIsStarted)
 	{
+		CurrOverlapCalcIdx = INDEX_NONE;
 		EntityIndex = INDEX_NONE;
 		SkelIndex = INDEX_NONE;
 		
@@ -130,10 +142,14 @@ void USLVisionOverlapCalc::Finish()
 // Trigger the screenshot on the game thread
 void USLVisionOverlapCalc::RequestScreenshot()
 {
+	// Sec-Ms_FrameNum_OverlapFrame_Viewmode
+	CurrImageFilename = FString::Printf(TEXT("%.2f"), CurrTs).Replace(TEXT("."), TEXT("-")) + "_" +
+		FString::FromInt(CurrFrameIdx) + "_" + FString::FromInt(CurrOverlapCalcIdx) + "_O";
+
+	GetHighResScreenshotConfig().FilenameOverride = CurrImageFilename;
+
 	AsyncTask(ENamedThreads::GameThread, [this]()
-	{
-		CurrImageFilename = FString::SanitizeFloat(GetWorld()->GetTimeSeconds()) + "_" + FString::FromInt(EntityIndex) + "_O";
-		GetHighResScreenshotConfig().FilenameOverride = CurrImageFilename;
+	{		
 		ViewportClient->Viewport->TakeHighResScreenShot();
 	});
 }
@@ -141,6 +157,9 @@ void USLVisionOverlapCalc::RequestScreenshot()
 // Called when the screenshot is captured
 void USLVisionOverlapCalc::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>& Bitmap)
 {
+	// Terminal output with the log progress
+	PrintProgress();
+
 	// Calcuate overlap for the currently selected item
 	CalculateOverlap(Bitmap, SizeX, SizeY);
 
@@ -161,6 +180,7 @@ void USLVisionOverlapCalc::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<F
 	// Check if there are any other items in the scene
 	if (SelectNextItem())
 	{
+		CurrOverlapCalcIdx++;
 		ApplyNonOccludingMaterial();
 		RequestScreenshot();
 	}
@@ -323,7 +343,7 @@ bool USLVisionOverlapCalc::SelectNextSkel()
 		}
 		else
 		{
-			CurrPMAClone = Parent->GetPoseableSkeletalMaskCloneFromId((*SkelEntities)[SkelIndex].Id);
+			CurrPMAClone = Parent->GetPoseableSkeletalMaskCloneFromId((*SkelEntities)[SkelIndex].Id, &CurrSkelDataComp);
 			if (!CurrPMAClone)
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find pointer to skel entity %s - %s, continuing.."),
@@ -615,6 +635,13 @@ void USLVisionOverlapCalc::CalculateOverlap(const TArray<FColor>& NonOccludedIma
 			//	(*SkelEntities)[SkelIndex].Bones[BoneIndex].bIsClipped);
 		}
 	}	
+}
+
+// Output progress to terminal
+void USLVisionOverlapCalc::PrintProgress() const
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t\t\t OverlapCalc=%ld/%ld;"),
+		*FString(__func__), __LINE__, CurrOverlapCalcIdx + 1, TotalOverlapCalcNum);
 }
 
 /* Helper */
