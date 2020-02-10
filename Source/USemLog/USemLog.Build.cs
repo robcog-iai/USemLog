@@ -52,8 +52,9 @@ public class USemLog : ModuleRules
 				//"SlicingLogic",		// SL_WITH_SLICING
 				"MongoC",				// SL_WITH_LIBMONGO_C
 				//"MongoCxx",			// SL_WITH_LIBMONGO_CXX
-				//"SRanipal",				// SL_WITH_EYE_TRACKING
+				//"SRanipal",			// SL_WITH_EYE_TRACKING
 				//"Boost",				// SL_WITH_BOOST
+				"UViz", "UMongoQA",	    // SL_WITH_DATA_VIS
 				// ... add private dependencies that you statically link with here ...
 			}
 			);
@@ -169,6 +170,17 @@ public class USemLog : ModuleRules
 		else
 		{
 			PublicDefinitions.Add("SL_WITH_JSON=1");
+		}
+		
+		string UViz = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("UViz"));
+		string UMongoQA = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("UMongoQA"));
+		if (string.IsNullOrEmpty(UViz) || string.IsNullOrEmpty(UMongoQA))
+		{
+			PublicDefinitions.Add("SL_WITH_DATA_VIS=0");
+		}
+		else
+		{
+			PublicDefinitions.Add("SL_WITH_DATA_VIS=1");
 		}
 	}
 }

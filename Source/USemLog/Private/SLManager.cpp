@@ -5,7 +5,6 @@
 #include "SLEntitiesManager.h"
 #include "Ids.h"
 
-
 // Sets default values
 ASLManager::ASLManager()
 {
@@ -91,6 +90,9 @@ ASLManager::ASLManager()
 	bCalibrateRenderedMaskColors = false;
 	bMaskColorsOnlyDemo = false;
 	EditorAssetAction = ESLAssetAction::NONE;
+
+	// Data visualzer default values
+	bVisualizeData = false;
 	
 #if WITH_EDITOR
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -170,17 +172,8 @@ void ASLManager::Init()
 {
 	if (!bIsInit)
 	{
-		if(!bLogEditorData)
-		{
-			// Init the semantic items content singleton
-			FSLEntitiesManager::GetInstance()->Init(GetWorld());
-		}
-
-		// If the episode Id is not manually added, generate new unique id
-		if (!bUseCustomEpisodeId)
-		{
-			EpisodeId = FIds::NewGuidInBase64Url();
-		}
+		// Init the semantic items content singleton
+		FSLEntitiesManager::GetInstance()->Init(GetWorld());
 
 		if (bLogMetadata)
 		{
@@ -200,8 +193,19 @@ void ASLManager::Init()
 			VisionDataLogger->Init(TaskId, EpisodeId, ServerIp, ServerPort, bOverwriteVisionData,
 				FSLVisionLoggerParams(VisionUpdateRate, VisionImageResolution, bIncludeImagesLocally, bCalculateOverlaps, OverlapResolutionDivisor));
 		}
+		else if (bVisualizeData)
+		{
+			DataVisualizer = NewObject<USLDataVisualizer>(this);
+			DataVisualizer->Init(VisQueries);
+		}
 		else
 		{
+			// If the episode Id is not manually added, generate new unique id
+			if (!bUseCustomEpisodeId)
+			{
+				EpisodeId = FIds::NewGuidInBase64Url();
+			}
+
 			if (bLogWorldState)
 			{
 				WorldStateLogger = NewObject<USLWorldLogger>(this);
@@ -237,28 +241,29 @@ void ASLManager::Start()
 		{
 			MetadataLogger->Start(TaskDescription);
 		}
-		else if(bLogEditorData)
+		else if(bLogEditorData && EditorLogger)
 		{
-			if(EditorLogger)
-			{
-				EditorLogger->Start(FSLEditorLoggerParams(bOverwriteEditorData,
-					bWriteSemanticMap,
-					bClearAllTags,
-					TagTypeToClear,
-					TagKeyToClear,
-					bWriteClassTags,
-					bWriteUniqueIdTags,
-					bWriteUniqueMaskColors,
-					MinColorManhattanDistance,
-					bUseRandomColorGeneration));
-				Finish(GetWorld()->GetTimeSeconds(),false); // Finish the manager directly
-				//EditorLogger->Finish(); // Quit the editor before the manager finishes
-			}
+			EditorLogger->Start(FSLEditorLoggerParams(bOverwriteEditorData,
+				bWriteSemanticMap,
+				bClearAllTags,
+				TagTypeToClear,
+				TagKeyToClear,
+				bWriteClassTags,
+				bWriteUniqueIdTags,
+				bWriteUniqueMaskColors,
+				MinColorManhattanDistance,
+				bUseRandomColorGeneration));
+			Finish(GetWorld()->GetTimeSeconds(),false); // Finish the manager directly
+			//EditorLogger->Finish(); // Quit the editor before the manager finishes
 		}
 		else if (bLogVisionData && VisionDataLogger)
 		{
 			// Start the vision data logger
 			VisionDataLogger->Start(EpisodeId);
+		}
+		else if (bVisualizeData && DataVisualizer)
+		{
+			DataVisualizer->Start(UserInputActionName);
 		}
 		else
 		{
@@ -295,6 +300,10 @@ void ASLManager::Finish(const float Time, bool bForced)
 		else if(bLogVisionData && VisionDataLogger)
 		{
 			VisionDataLogger->Finish(bForced);
+		}
+		else if (bVisualizeData && DataVisualizer)
+		{
+			DataVisualizer->Finish(bForced);
 		}
 		else
 		{
@@ -357,33 +366,64 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	/* Metadata Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
 	{
-		if (bLogMetadata) {bLogWorldState = false; bLogEventData = false; bLogEditorData = false; bLogVisionData = false;};
+		if (bLogMetadata) 
+		{
+			bLogWorldState = false;
+			bLogEventData = false;
+			bLogEditorData = false;
+			bLogVisionData = false;
+			bVisualizeData = false;
+		};
 	}
+
+	/* Editor Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEditorData))
 	{
-		if (bLogEditorData) {bLogWorldState = false; bLogEventData = false; bLogMetadata = false; bLogVisionData = false;};
+		if (bLogEditorData) 
+		{
+			bLogWorldState = false;
+			bLogEventData = false;
+			bLogMetadata = false;
+			bLogVisionData = false;
+			bVisualizeData = false;
+		};
 	}
 
 	/* World State / Event Logger Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogWorldState))
 	{
-		if (bLogWorldState) {bLogEditorData = false; bLogMetadata = false; bLogVisionData = false;};
+		if (bLogWorldState) {bLogEditorData = false; bLogMetadata = false; bLogVisionData = false; bVisualizeData = false;};
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEventData))
 	{
-		if (bLogEventData) {bLogEditorData = false; bLogMetadata = false; bLogVisionData = false;};
+		if (bLogEventData) {bLogEditorData = false; bLogMetadata = false; bLogVisionData = false; bVisualizeData = false;};
 	}
 
 	/* Vision Data Logger Properties */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogVisionData))
 	{
-		if (bLogVisionData) {bUseCustomEpisodeId = true; bLogEditorData = false; bLogMetadata = false; bLogWorldState = false; bLogEventData = false;};
+		if (bLogVisionData) 
+		{
+			bUseCustomEpisodeId = true;
+			bLogEditorData = false;
+			bLogMetadata = false;
+			bLogWorldState = false;
+			bLogEventData = false;
+			bVisualizeData = false;
+		};
 	}
 	
 	/* Editor Logger Properties*/
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogEditorData))
 	{
-		if (bLogEditorData) { bLogVisionData = false; bLogMetadata = false; bLogWorldState = false; bLogEventData = false; };
+		if (bLogEditorData) 
+		{ 
+			bLogVisionData = false;
+			bLogMetadata = false;
+			bLogWorldState = false;
+			bLogEventData = false;
+			bVisualizeData = false;
+		};
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bClearAllTags))
 	{
@@ -400,6 +440,20 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bWriteUniqueMaskColors))
 	{
 		if (bWriteUniqueMaskColors) {bClearAllTags = false;}
+	}
+
+	/* Data Visualizer Properties */
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bVisualizeData))
+	{
+		if (bVisualizeData) 
+		{ 
+			bUseCustomEpisodeId = true;
+			bLogVisionData = false;
+			bLogEditorData = false;
+			bLogMetadata = false;
+			bLogWorldState = false;
+			bLogEventData = false; 
+		};
 	}
 }
 

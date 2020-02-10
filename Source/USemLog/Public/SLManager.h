@@ -9,6 +9,7 @@
 #include "SLMetadataLogger.h"
 #include "SLVisionLogger.h"
 #include "SLEditorLogger.h"
+#include "SLDataVisualizer.h"
 #include "SLManager.generated.h"
 
 /**
@@ -366,4 +367,21 @@ private:
 	UPROPERTY()
 	USLEditorLogger* EditorLogger;
 	/* End vision data logger properties */
+
+
+	/******************************************************************************************************/
+	/* Begin Data Visualizer properties */
+	/******************************************************************************************************/
+	// Visualize logged data
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bVisualizeData;
+
+	// Add unique id property to tags
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	class USLDataVisQueries* VisQueries;
+
+	// Data visualizer, use UPROPERTY to avoid GC
+	UPROPERTY()
+	USLDataVisualizer* DataVisualizer;
+	/* End data visualizer properties */
 };
