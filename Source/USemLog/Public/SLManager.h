@@ -274,6 +274,14 @@ private:
 	// Resolution of the images
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 1))
 	FIntPoint VisionImageResolution;
+
+	// Calculate overlaps of every object in the scene
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"))
+	bool bCalculateOverlaps;
+
+	// Make screenshots for calculating overlaps smaller for faster logging
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"))
+	uint8 OverlapResolutionDivisor;
 	
 	// Update rate of the vision logger (0 - updates at every available frame)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Vision Data Logger", meta = (editcondition = "bLogVisionData"), meta = (ClampMin = 0))

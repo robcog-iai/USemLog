@@ -183,7 +183,4 @@ private:
 
 	// Current frame index from the vision logger
 	int32 CurrFrameIdx;
-
-	/* Constants */
-	constexpr static uint8 ResolutionDivider = 1;
 };

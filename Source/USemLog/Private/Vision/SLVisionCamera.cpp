@@ -16,6 +16,20 @@ ASLVisionCamera::ASLVisionCamera()
 #endif // WITH_EDITORONLY_DATA
 }
 
+// Called when the game starts or when spawned
+void ASLVisionCamera::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+// Called every frame
+void ASLVisionCamera::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] [%s] Loc= \t %s"),
+	//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GetName(), *GetActorLocation().ToCompactString());
+}
+
 // Get the semantic class name of the virtual camera
 FString ASLVisionCamera::GetClassName()
 {

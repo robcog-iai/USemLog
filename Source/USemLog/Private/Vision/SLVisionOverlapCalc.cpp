@@ -46,7 +46,7 @@ void USLVisionOverlapCalc::Init(USLVisionLogger* InParent, FIntPoint InResolutio
 		CurrOverlapCalcIdx = 0;
 		Parent = InParent;
 		ViewportClient = GetWorld()->GetGameViewport();
-		Resolution = InResolution / ResolutionDivider;
+		Resolution = InResolution;
 		SaveLocallyFolderName = InSaveLocallyPath;
 
 		// Load the default mask material

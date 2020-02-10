@@ -37,6 +37,12 @@ struct FSLVisionLoggerParams
 	// Include locally
 	bool bIncludeLocally;
 
+	// Calculate overlaps
+	bool bCalculateOverlaps;
+
+	// Make screenshots for calculating overlaps smaller for faster logging
+	uint8 OverlapResolutionDivisor;
+
 	// Default ctor
 	FSLVisionLoggerParams() {};
 
@@ -44,10 +50,14 @@ struct FSLVisionLoggerParams
 	FSLVisionLoggerParams(
 		float InUpdateRate,
 		FIntPoint InResolution,
-		bool bInIncludeLocally) :
+		bool bInIncludeLocally,
+		bool InCalculateOverlaps,
+		uint8 InOverlapResolutionDivisor) :
 		UpdateRate(InUpdateRate),
 		Resolution(InResolution),
-		bIncludeLocally(bInIncludeLocally)
+		bIncludeLocally(bInIncludeLocally),
+		bCalculateOverlaps(InCalculateOverlaps),
+		OverlapResolutionDivisor(InOverlapResolutionDivisor)
 	{};
 };
 

@@ -71,6 +71,8 @@ ASLManager::ASLManager()
 	bOverwriteVisionData = true;
 	VisionUpdateRate = 0.f;
 	VisionImageResolution = FIntPoint(1920, 1080);
+	bCalculateOverlaps = true;
+	OverlapResolutionDivisor = 4;
 	bIncludeImagesLocally = false;
 
 	// Editor Logger default values
@@ -196,7 +198,7 @@ void ASLManager::Init()
 		{
 			VisionDataLogger = NewObject<USLVisionLogger>(this);
 			VisionDataLogger->Init(TaskId, EpisodeId, ServerIp, ServerPort, bOverwriteVisionData,
-				FSLVisionLoggerParams(VisionUpdateRate, VisionImageResolution, bIncludeImagesLocally));
+				FSLVisionLoggerParams(VisionUpdateRate, VisionImageResolution, bIncludeImagesLocally, bCalculateOverlaps, OverlapResolutionDivisor));
 		}
 		else
 		{

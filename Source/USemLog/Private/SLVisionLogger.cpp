@@ -131,12 +131,12 @@ void USLVisionLogger::Init(const FString& InTaskId, const FString& InEpisodeId, 
 				// Actors that need to be hidden in mask mode (skylight, fog etc.)
 				MaskViewModeBlacklistedActors = FSLEntitiesManager::GetInstance()->GetUntaggedActors();
 
-				if (bCalcOverlaps)
+				if (Params.bCalculateOverlaps)
 				{
 					// Create the overlap calc object
 					OverlapCalc = NewObject<USLVisionOverlapCalc>(this);
 					// Give control to the overlap calc to pause and start the vision logger
-					OverlapCalc->Init(this, Resolution, SaveLocallyFolderName);
+					OverlapCalc->Init(this, Resolution/Params.OverlapResolutionDivisor, SaveLocallyFolderName);
 				}
 			}
 			else

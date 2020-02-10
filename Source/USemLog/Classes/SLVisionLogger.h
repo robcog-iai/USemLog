@@ -222,7 +222,4 @@ private:
 
 	// Image resolution 
 	FIntPoint Resolution;
-
-	/* Constants */
-	constexpr static bool bCalcOverlaps = true;
 };

@@ -10,7 +10,7 @@
 /**
  * Virtual camera logging the transformations of the cameras that need to re-render the scene
  */
-UCLASS()
+UCLASS(ClassGroup = (SL), DisplayName = "Vision Camera")
 class USEMLOG_API ASLVisionCamera : public ACameraActor
 {
 	GENERATED_BODY()
@@ -18,7 +18,14 @@ class USEMLOG_API ASLVisionCamera : public ACameraActor
 	// Sets default values for this actor's properties
 	ASLVisionCamera();
 
+protected:	
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
 public:
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
 	// Get the semantic class name of the virtual camera
 	FString GetClassName();
 

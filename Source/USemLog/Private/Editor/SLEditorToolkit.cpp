@@ -568,6 +568,7 @@ FString FSLEditorToolkit::GenerateVisionCameraClassName(ASLVisionCamera* Actor, 
 	
 	if(AActor* AttAct = Actor->GetAttachParentActor())
 	{
+		// TODO check if skeletal actor, read the bone name for setting the class name
 #if WITH_EDITOR
 		// Apply the changes in the editor world
 		if(AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(AttAct))
