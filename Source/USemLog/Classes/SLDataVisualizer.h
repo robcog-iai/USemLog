@@ -6,6 +6,12 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "DataVis/SLDataVisQueries.h"
+
+#if SL_WITH_DATA_VIS
+#include "MongoQA.h"
+#include "VizManager.h"
+#endif //SL_WITH_DATA_VIS
+
 #include "SLDataVisualizer.generated.h"
 
 /**
@@ -61,4 +67,18 @@ protected:
 private:
 	// Queries to be visualized
 	USLDataVisQueries* VisQueries;
+
+	// Current query index
+	int32 QueryIdx;
+
+	// Previous database
+	FString PrevDBName;
+
+	// Previous collection
+	FString PrevCollName;
+
+#if SL_WITH_DATA_VIS
+	// Mongo query handler
+	class FMongoQA QAHandler;
+#endif //SL_WITH_DATA_VIS
 };

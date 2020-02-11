@@ -5,13 +5,10 @@
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
 
-#if SL_WITH_DATA_VIS
-#include "MongoQA.h"
-#endif //SL_WITH_DATA_VIS
-
 // Constructor
 USLDataVisualizer::USLDataVisualizer() : bIsInit(false), bIsStarted(false), bIsFinished(false)
 {
+	QueryIdx = INDEX_NONE;
 }
 
 // Destructor
@@ -28,11 +25,18 @@ void USLDataVisualizer::Init(USLDataVisQueries* InQueries)
 {
 	if (!bIsInit)
 	{
-		if (InQueries)
+		if (!InQueries)
 		{
-			VisQueries = InQueries;
+			return;
 		}
-		bIsInit = true;
+		VisQueries = InQueries;
+
+#if SL_WITH_DATA_VIS
+		if (QAHandler.ConnectToServer(VisQueries->ServerIP, VisQueries->ServerPort))
+		{
+			bIsInit = true;
+		}		
+#endif //SL_WITH_DATA_VIS
 	}
 }
 
@@ -53,6 +57,10 @@ void USLDataVisualizer::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
+#if SL_WITH_DATA_VIS
+		QAHandler.Disconnect();
+#endif //SL_WITH_DATA_VIS
+
 		// Mark logger as finished
 		bIsStarted = false;
 		bIsInit = false;
@@ -87,5 +95,31 @@ bool USLDataVisualizer::SetupUserInput(const FName& UserInputActionName)
 // Visualize current query
 void USLDataVisualizer::Visualize()
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d "), *FString(__func__), __LINE__);
+	QueryIdx++;
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d QueryIdx=%ld;"), *FString(__func__), __LINE__, QueryIdx);
+
+#if SL_WITH_DATA_VIS
+	if (VisQueries->Queries.IsValidIndex(QueryIdx))
+	{
+		const FString DBName = VisQueries->Queries[QueryIdx].TaskId;
+		if (!PrevDBName.Equals(DBName))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Setting database to %s.."), *FString(__func__), __LINE__, *DBName);
+			QAHandler.SetDatabase(DBName);
+			PrevDBName = DBName;
+		}
+
+		const FString CollName = VisQueries->Queries[QueryIdx].EpisodeId;
+		if (!PrevCollName.Equals(CollName))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Setting collection to %s.."), *FString(__func__), __LINE__, *CollName);
+			QAHandler.SetCollection(CollName);
+			PrevCollName = CollName;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No more queries.."), *FString(__func__), __LINE__);
+	}
+#endif //SL_WITH_DATA_VIS
 }

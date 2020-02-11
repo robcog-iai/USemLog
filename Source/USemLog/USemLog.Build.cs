@@ -49,11 +49,11 @@ public class USemLog : ModuleRules
 				"UConversions",
 				"UMCGrasp",				// SL_WITH_MC_GRASP
 				//"libmongo",
-				//"SlicingLogic",		// SL_WITH_SLICING
+				//"SlicingLogic",		    // SL_WITH_SLICING
 				"MongoC",				// SL_WITH_LIBMONGO_C
-				//"MongoCxx",			// SL_WITH_LIBMONGO_CXX
-				//"SRanipal",			// SL_WITH_EYE_TRACKING
-				//"Boost",				// SL_WITH_BOOST
+				//"MongoCxx",			    // SL_WITH_LIBMONGO_CXX
+				//"SRanipal",			    // SL_WITH_EYE_TRACKING
+				//"Boost",				    // SL_WITH_BOOST
 				"UViz", "UMongoQA",	    // SL_WITH_DATA_VIS
 				// ... add private dependencies that you statically link with here ...
 			}

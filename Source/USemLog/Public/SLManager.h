@@ -377,7 +377,7 @@ private:
 	bool bVisualizeData;
 
 	// Add unique id property to tags
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor Logger", meta = (editcondition = "bLogEditorData"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Data Visualizer", meta = (editcondition = "bVisualizeData"))
 	class USLDataVisQueries* VisQueries;
 
 	// Data visualizer, use UPROPERTY to avoid GC
