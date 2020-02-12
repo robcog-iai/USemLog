@@ -9,7 +9,7 @@
 
 #if SL_WITH_DATA_VIS
 #include "MongoQA.h"
-#include "VizManager.h"
+#include "VizMarkerManager.h"
 #endif //SL_WITH_DATA_VIS
 
 #include "SLDataVisualizer.generated.h"
@@ -79,6 +79,9 @@ private:
 
 #if SL_WITH_DATA_VIS
 	// Mongo query handler
-	class FMongoQA QAHandler;
+	FMongoQA QAHandler;
+
+	// Spawns and keeps track of markers
+	AVizMarkerManager* MarkerManager;
 #endif //SL_WITH_DATA_VIS
 };

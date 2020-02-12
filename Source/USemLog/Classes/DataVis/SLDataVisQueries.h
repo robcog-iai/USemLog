@@ -8,6 +8,25 @@
 #include "SLDataVisQueries.generated.h"
 
 /**
+ * Query types
+ */
+UENUM()
+enum class ESLVisQueryType : uint8
+{
+	None				UMETA(DisplayName = NONE),
+	EntityPose			UMETA(DisplayName = EntityPose),
+	EntityTraj			UMETA(DisplayName = EntityTraj),
+	BonePose			UMETA(DisplayName = BonePose),
+	BoneTraj			UMETA(DisplayName = BoneTraj),
+	SkeletalPose		UMETA(DisplayName = SkeletalPose),
+	SkeletalTraj		UMETA(DisplayName = SkeletalTraj),
+	GazePose			UMETA(DisplayName = GazePose),
+	GazeTraj			UMETA(DisplayName = GazeTraj),
+	WorldState			UMETA(DisplayName = WorldState),
+	Episode				UMETA(DisplayName = Episode),
+};
+
+/**
  * Query structure
  */
 USTRUCT()
@@ -22,6 +41,26 @@ struct FSLVisQuery
 	// Episode id (mongo collection name)
 	UPROPERTY(EditAnywhere)
 	FString EpisodeId;
+
+	// Query type
+	UPROPERTY(EditAnywhere)
+	ESLVisQueryType QueryType;
+
+	// Id of the entity one is searching for
+	UPROPERTY(EditAnywhere)
+	FString EntityId;
+
+	// Used for skeletal bone searches only
+	UPROPERTY(EditAnywhere)
+	FString BoneName;
+
+	// Query timestamp, or start time for trajectories/timelines
+	UPROPERTY(EditAnywhere)
+	float StartTimestamp;
+
+	// End time for trajectories/timelines
+	UPROPERTY(EditAnywhere)
+	float EndTimestamp;
 };
 
 /**
