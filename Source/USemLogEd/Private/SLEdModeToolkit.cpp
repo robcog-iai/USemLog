@@ -19,6 +19,7 @@
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "ScopedTransaction.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "AssetRegistryModule.h"
 
 // UUtils
 #include "Ids.h"
@@ -206,6 +207,16 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 						.Text(LOCTEXT("TagSelectedAsContainers", "Tag Selected As Containers"))
 					.IsEnabled(true)
 					.OnClicked(this, &FSLEdModeToolkit::TagSelectedAsContainers)
+					]
+				////
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("EnableMaterialForInstancedStaticMesh", "Enable Material For Instanced Static Mesh"))
+					.IsEnabled(true)
+					.OnClicked(this, &FSLEdModeToolkit::EnableMaterialForInstancedStaticMesh)
 					]
 		];
 
@@ -890,6 +901,29 @@ FReply FSLEdModeToolkit::TagSelectedAsContainers()
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no Class tag, skipping.."), 
 				*FString(__func__), __LINE__, *ActItr->GetName());
+		}
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::EnableMaterialForInstancedStaticMesh()
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+	TArray<FAssetData> AllAsset;
+	AssetRegistryModule.Get().GetAssetsByPath(TEXT("/Game/"), AllAsset, true, false);
+
+	for (FAssetData Data : AllAsset)
+	{
+		if (Data.AssetClass.ToString().Equals(TEXT("Material")))
+		{
+			UMaterial* Material = Cast<UMaterial>(Data.GetAsset());
+			if (!Material->bUsedWithInstancedStaticMeshes)
+			{
+				Material->bUsedWithInstancedStaticMeshes = true;
+				Data.GetPackage()->MarkPackageDirty();
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Material: %s is enabled for instanced static mesh.."), *FString(__func__), __LINE__, *Data.GetPackage()->GetFName().ToString());
+			}
 		}
 	}
 
