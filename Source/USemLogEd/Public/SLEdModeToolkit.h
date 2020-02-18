@@ -83,6 +83,9 @@ private:
 	// Tag selected meshes as containers
 	FReply TagSelectedAsContainers();
 
+	// Iterate all materials and enable for instanced static mesh
+	FReply EnableMaterialForInstancedStaticMesh();
+
 private:
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;
