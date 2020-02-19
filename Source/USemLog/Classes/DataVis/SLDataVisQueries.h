@@ -1,4 +1,4 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -23,7 +23,7 @@ enum class ESLVisQueryType : uint8
 	GazePose			UMETA(DisplayName = GazePose),
 	GazeTraj			UMETA(DisplayName = GazeTraj),
 	WorldState			UMETA(DisplayName = WorldState),
-	Episode				UMETA(DisplayName = Episode),
+	AllWorldStates		UMETA(DisplayName = AllWorldStates),
 };
 
 /**
@@ -61,6 +61,10 @@ struct FSLVisQuery
 	// End time for trajectories/timelines
 	UPROPERTY(EditAnywhere)
 	float EndTimestamp;
+
+	// End time for trajectories/timelines
+	UPROPERTY(EditAnywhere)
+	FString Description;
 };
 
 /**

@@ -340,13 +340,12 @@ bool FSLVisionDBHandler::GetEpisodeData(float UpdateRate, const TMap<ASkeletalMe
 	cursor = mongoc_collection_aggregate(
 		collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
 
-	bson_iter_t doc_iter;
-
-	// Store the changes from the previous frame until this one
-	FSLVisionFrame Frame;
-
 	while (mongoc_cursor_next(cursor, &doc))
 	{
+		// Store the changes from the previous frame until this one
+		FSLVisionFrame Frame;
+
+		bson_iter_t doc_iter;
 		if (bson_iter_init(&doc_iter, doc))
 		{
 			// Get the current timestamp
