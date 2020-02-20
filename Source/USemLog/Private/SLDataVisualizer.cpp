@@ -82,7 +82,23 @@ void USLDataVisualizer::Start(const FName& UserInputActionName)
 #if SL_WITH_DATA_VIS
 		if (VizWorldManager)
 		{
-			VizWorldManager->RemoveNonVisualComponents();
+			// Keep only visual elements in the world
+			VizWorldManager->RemoveNonVisualComponentsFromWorld();
+
+			// Create poseable mesh components for the skeletal actors (hide original skeletal components)
+			TArray<ASkeletalMeshActor*> SkeletalActors;
+			FSLEntitiesManager::GetInstance()->GetSkeletalMeshActors(SkeletalActors);
+			VizWorldManager->CreatePoseableMeshComponents(SkeletalActors);
+			
+			// Get the episode data from mongo
+			TArray<FMQWorldStateFrame> Episode;
+			QAHandler.GetAllWorldStates(Episode);
+
+			// Set up episode in the world manager
+			for (const auto Frame : Episode)
+			{
+
+			}
 		}
 #endif //SL_WITH_DATA_VIS
 
