@@ -81,14 +81,12 @@ void USLDataVisualizer::Start(const FName& UserInputActionName)
 	{
 #if SL_WITH_DATA_VIS
 		if (VizWorldManager)
-		{
-			// Keep only visual elements in the world
-			VizWorldManager->RemoveNonVisualComponentsFromWorld();
-
-			// Create poseable mesh components for the skeletal actors (hide original skeletal components)
+		{			
 			TArray<ASkeletalMeshActor*> SkeletalActors;
 			FSLEntitiesManager::GetInstance()->GetSkeletalMeshActors(SkeletalActors);
-			VizWorldManager->CreatePoseableMeshComponents(SkeletalActors);
+			// Set world to visual only + create poseable mesh components for the skeletal actors (hide original skeletal components)
+			
+			VizWorldManager->Init(SkeletalActors);
 			
 			// Get the episode data from mongo
 			TArray<FMQWorldStateFrame> Episode;
@@ -97,7 +95,13 @@ void USLDataVisualizer::Start(const FName& UserInputActionName)
 			// Set up episode in the world manager
 			for (const auto Frame : Episode)
 			{
+				//TODO
+				// Re-create map using actor pointer
+				TMap<AStaticMeshActor*, FTransform> SMAPoses;
+				TMap<ASkeletalMeshActor*, TPair<FTransform, TMap<FString, FTransform>>> SkMAPoses;
 
+
+				VizWorldManager->AddFrame(Frame.Timestamp, SMAPoses, SkMAPoses);
 			}
 		}
 #endif //SL_WITH_DATA_VIS
