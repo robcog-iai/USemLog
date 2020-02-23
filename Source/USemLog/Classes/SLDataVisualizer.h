@@ -80,18 +80,6 @@ private:
 	void WorldStateQuery();
 	void AllWorldStatesQuery();
 
-	/* Forwarded query results */
-	void EntityPoseResult(const FString& Id, float Ts, const FTransform& Pose);
-	void EntityTrajResult(const FString& Id, float StartTime, float EndTime, const TArray<FTransform>& Traj);
-	void BonePoseResult(const FString& Id, const FString& BoneName, float Ts, const FTransform& Pose);
-	void BoneTrajResult(const FString& Id, const FString& BoneName, float StartTime, float EndTime, const TArray<FTransform>& Traj);
-	void SkelPoseResult(const FString& Id, float Ts, const TPair<FTransform, TMap<FString, FTransform>>& SkelPose);
-	void SkelTrajResult(const FString& Id, float StartTime, float EndTime, const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkelTraj);
-	void GazePoseResult(float Ts, FVector Target, FVector Origin);
-	void GazeTrajResult(float StartTime, float EndTime, const TArray<FVector>& Targets, const TArray<FVector>& Origins);
-	void WorldStateResult(float Ts, const TMap<FString, FTransform>& Entities, const TMap<FString, TPair<FTransform, TMap<FString, FTransform>>>& Skeletals);
-	void AllWorldStatesResult(const TArray<FMQWorldStateFrame>& WorldStates);
-
 protected:
 	// Set when initialized
 	bool bIsInit;

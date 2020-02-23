@@ -156,7 +156,12 @@ void USLDataVisualizer::Query()
 		if (!PrevDBName.Equals(DBName))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Setting database to %s.."), *FString(__func__), __LINE__, *DBName);
-			QAHandler.SetDatabase(DBName);
+			if (!QAHandler.SetDatabase(DBName))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not set database to %s, aborting query.."),
+					*FString(__func__), __LINE__, *DBName);
+				return;
+			}
 			PrevDBName = DBName;
 		}
 
@@ -164,7 +169,12 @@ void USLDataVisualizer::Query()
 		if (!PrevCollName.Equals(CollName))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Setting collection to %s.."), *FString(__func__), __LINE__, *CollName);
-			QAHandler.SetCollection(CollName);
+			if (!QAHandler.SetCollection(CollName))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not set collection to %s, aborting query.."),
+					*FString(__func__), __LINE__, *FString(DBName + "." + CollName));
+				return;
+			}
 			PrevCollName = CollName;
 
 			// Pre-load world states
@@ -592,128 +602,6 @@ void USLDataVisualizer::AllWorldStatesQuery()
 		VizWorldManager->Replay();
 	}
 }
-
-
-/* Results */
-void USLDataVisualizer::EntityPoseResult(const FString& Id, float Ts, const FTransform& Pose)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityPose \t [%s:%f] :\t T=[%s];"),
-		*FString(__FUNCTION__), __LINE__, *Id, Ts, *Pose.ToString());
-}
-
-void USLDataVisualizer::EntityTrajResult(const FString& Id, float StartTime, float EndTime, const TArray<FTransform>& Traj)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityTraj \t [%s:%f-%f] :\t TNum=[%ld];"),
-		*FString(__FUNCTION__), __LINE__, *Id, StartTime, EndTime, Traj.Num());
-}
-
-void USLDataVisualizer::BonePoseResult(const FString& Id, const FString& BoneName, float Ts, const FTransform& Pose)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d BonePose \t [%s-%s:%f] :\t T=[%s];"),
-		*FString(__FUNCTION__), __LINE__, *Id, *BoneName, Ts, *Pose.ToString());
-}
-
-void USLDataVisualizer::BoneTrajResult(const FString& Id, const FString& BoneName, float StartTime, float EndTime, const TArray<FTransform>& Traj)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d BoneTraj \t [%s-%s:%f-%f] :\t TNum=[%ld];"),
-		*FString(__FUNCTION__), __LINE__, *Id, *BoneName, StartTime, EndTime, Traj.Num());
-}
-
-void USLDataVisualizer::SkelPoseResult(const FString& Id, float Ts, const TPair<FTransform, TMap<FString, FTransform>>& SkelPose)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d SkeletalPose \t [%s:%f] :\t T=[%s]; TBoneNum=[%ld];"),
-		*FString(__FUNCTION__), __LINE__, *Id, Ts, *SkelPose.Key.ToString(), SkelPose.Value.Num());
-
-	//if (ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor(Id))
-	//{
-	//	FLinearColor Col = FLinearColor::Blue;
-	//	Col.A = 0.3;
-	//	VizMarkerManager->CreateMarker(SkelPose, SkMA->GetSkeletalMeshComponent(), 2, false, Col);
-	//	UE_LOG(LogTemp, Error, TEXT(" !!!! Skeletal pose created"));
-	//}
-}
-
-void USLDataVisualizer::SkelTrajResult(const FString& Id, float StartTime, float EndTime, const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkelTraj)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d SkeletalTraj \t [%s:%f-%f] :\t TNum=[%ld];"),
-		*FString(__FUNCTION__), __LINE__, *Id, StartTime, EndTime, SkelTraj.Num());
-
-	//if (ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor(VisQueries->Queries[QueryIdx].EntityId))
-	//{
-	//	FLinearColor Col = FLinearColor::Red;
-	//	Col.A = 0.3;
-	//	VizMarkerManager->CreateMarker(SkeletalTraj, SkMA->GetSkeletalMeshComponent(), 5, false, Col);
-
-	//	UE_LOG(LogTemp, Log, TEXT(" !!!! Skeletal Traj created"));
-	//}
-}
-
-void USLDataVisualizer::GazePoseResult(float Ts, FVector Target, FVector Origin)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d GazePose \t [%f] :\t Target=[%s]; Origin=[%s]"),
-		*FString(__FUNCTION__), __LINE__, Ts, *Target.ToString(), *Origin.ToString());
-}
-
-void USLDataVisualizer::GazeTrajResult(float StartTime, float EndTime, const TArray<FVector>& Targets, const TArray<FVector>& Origins)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d GazeTraj \t [%f-%f] :\t TargetNum=[%ld]; OriginNum=[%ld]"),
-		*FString(__FUNCTION__), __LINE__, StartTime, EndTime, Targets.Num(), Origins.Num());
-}
-
-void USLDataVisualizer::WorldStateResult(float Ts, const TMap<FString, FTransform>& Entities, const TMap<FString, TPair<FTransform, TMap<FString, FTransform>>>& Skeletals)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d WorldState \t [%f] :\t EntitiesNum=[%ld]; SkelNum=[%ld]"),
-		*FString(__FUNCTION__), __LINE__, Ts, Entities.Num(), Skeletals.Num());
-}
-
-void USLDataVisualizer::AllWorldStatesResult(const TArray<FMQWorldStateFrame>& WorldStates)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d AllWorldStates \t :\t StatesNum=[%ld];"),
-		*FString(__FUNCTION__), __LINE__, WorldStates.Num());
-	
-	// Gives us the id to actor mappings
-	const auto EntitiesMgr = FSLEntitiesManager::GetInstance();
-
-	// Set up episode in the world manager
-	for (const auto& Frame : WorldStates)
-	{
-		// Re-create map using static mesh actor pointers
-		TMap<AStaticMeshActor*, FTransform> SMAPoses;
-		for (const auto& SMIdToPosePair : Frame.EntityPoses)
-		{
-			if (AStaticMeshActor* SMA = EntitiesMgr->GetStaticMeshActor(SMIdToPosePair.Key))
-			{
-				SMAPoses.Emplace(SMA, SMIdToPosePair.Value);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find static mesh actor with id=%s, this should not happen.."),
-					*FString(__FUNCTION__), __LINE__, *SMIdToPosePair.Key);
-			}
-		}
-
-		// Re-create map using skeletal mesh actor pointers
-		TMap<ASkeletalMeshActor*, TPair<FTransform, TMap<FString, FTransform>>> SkMAPoses;
-		for (const auto& SkMIdToPosePair : Frame.SkeletalPoses)
-		{
-			if (ASkeletalMeshActor* SkMA = EntitiesMgr->GetSkeletalMeshActor(SkMIdToPosePair.Key))
-			{
-				SkMAPoses.Emplace(SkMA, SkMIdToPosePair.Value);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find skeletal mesh actor with id=%s, this should not happen.."),
-					*FString(__FUNCTION__), __LINE__, *SkMIdToPosePair.Key);
-			}
-		}
-
-		// Add frame to the world manager
-		VizWorldManager->AddFrame(Frame.Timestamp, SMAPoses, SkMAPoses);
-	}
-
-	VizWorldManager->Replay();
-}
-
 
 // TESTS
 void USLDataVisualizer::SMTest()

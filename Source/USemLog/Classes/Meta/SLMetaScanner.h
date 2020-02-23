@@ -76,7 +76,10 @@ protected:
 
 private:
 	// Load scan camera convenience actor
-	bool LoadScanCameraPoseActor();
+	bool SpawnCameraPoseActorDummy();
+
+	// Spawn extra lights to avoid dark corners on images
+	void SpawnExtraLights();
 
 	// Load scanning points
 	bool LoadScanPoses(int32 NumScanPose, float DistanceToCamera);
@@ -107,6 +110,9 @@ private:
 
 	// Clean exit, all the Finish() methods will be triggered
 	void QuitEditor();
+
+	// Save the compressed screenshot image locally
+	void SaveImageLocally(const TArray<uint8>& CompressedBitmap);
 
 	// Print progress
 	void PrintProgress() const;
@@ -145,7 +151,7 @@ private:
 	USLMetadataLogger* MetadataLoggerParent;
 	
 	// Location on where to save the data locally (skip if empty)
-	FString IncludeLocallyFolderName;
+	FString SaveLocallyFolderName;
 
 	// Current name of scan (for saving locally, and progress update purposes)
 	FString CurrScanName;

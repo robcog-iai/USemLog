@@ -17,7 +17,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/Light.h"
-#include "Engine/Engine.h"
+#include "Engine/DirectionalLight.h"
 
 // UUtils
 #include "Tags.h"
@@ -69,7 +69,7 @@ void USLMetaScanner::Init(const FString& InTaskId, FSLMetaScannerParams ScanPara
 		// Check if the scans should be stored locally as well
 		if(ScanParams.bIncludeScansLocally)
 		{
-			IncludeLocallyFolderName = InTaskId;
+			SaveLocallyFolderName = "/SemLog/" + InTaskId + "/3dscan/";
 		}
 
 		// If no view modes are available, add a default one
@@ -77,13 +77,6 @@ void USLMetaScanner::Init(const FString& InTaskId, FSLMetaScannerParams ScanPara
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No view modes found, added default one (lit).."), *FString(__func__), __LINE__);
 			ViewModes.Add(ESLMetaScannerViewMode::Color);
-		}
-
-		// Spawn helper actors, items and scan poses, skip items larger that the distance to camera
-		if(!LoadScanCameraPoseActor())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load a camera dummy mesh for moving the target view.."), *FString(__func__), __LINE__);
-			return;
 		}
 
 		if (!LoadScanPoses(ScanParams.NumberOfScanPoints, ScanParams.CameraDistanceToScanItem))
@@ -97,6 +90,16 @@ void USLMetaScanner::Init(const FString& InTaskId, FSLMetaScannerParams ScanPara
 			UE_LOG(LogTemp, Error, TEXT("%s::%d No scan items loaded.."), *FString(__func__), __LINE__);
 			return;
 		}
+
+		// Spawn helper actors, items and scan poses, skip items larger that the distance to camera
+		if (!SpawnCameraPoseActorDummy())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load a camera dummy mesh for moving the target view.."), *FString(__func__), __LINE__);
+			return;
+		}
+
+		// Spawn extra lights to avoid dark corneres
+		SpawnExtraLights();
 
 		// Setup actor clones with custom material (white)
 		if (ViewModes.Contains(ESLMetaScannerViewMode::White))
@@ -182,18 +185,19 @@ void USLMetaScanner::Finish()
 // Request a screenshot
 void USLMetaScanner::RequestScreenshot()
 {
+	CurrScanName = /*FString::FromInt(CurrItemIdx) + "_" + */ScanItems[CurrItemIdx].Value + "_" + FString::FromInt(CurrPoseIdx);
+	if (!ViewModePostfix.IsEmpty())
+	{
+		CurrScanName.Append("_" + ViewModePostfix);
+	}
+
+	GetHighResScreenshotConfig().FilenameOverride = CurrScanName;
+	//GetHighResScreenshotConfig().SetForce128BitRendering(true);
+	//GetHighResScreenshotConfig().SetHDRCapture(true);
+
 	// Request screenshot on game thread
 	AsyncTask(ENamedThreads::GameThread, [this]()
 	{
-		CurrScanName = FString::FromInt(CurrItemIdx) + "_" + ScanItems[CurrItemIdx].Value + "_" + FString::FromInt(CurrPoseIdx);
-		if (!ViewModePostfix.IsEmpty())
-		{
-			CurrScanName.Append("_" + ViewModePostfix);
-		}
-
-		GetHighResScreenshotConfig().FilenameOverride = CurrScanName;
-		//GetHighResScreenshotConfig().SetForce128BitRendering(true);
-		//GetHighResScreenshotConfig().SetHDRCapture(true);
 		ViewportClient->Viewport->TakeHighResScreenShot();
 	});
 }
@@ -224,11 +228,9 @@ void USLMetaScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 	ScanPoseData.Images.Emplace(GetViewModeName(ViewModes[CurrViewModeIdx]), CompressedBitmap);
 
 	// Save the png locally
-	if (!IncludeLocallyFolderName.IsEmpty())
+	if (!SaveLocallyFolderName.IsEmpty())
 	{
-		FString Path = FPaths::ProjectDir() + "/SemLog/" + IncludeLocallyFolderName + "/Meta/" + CurrScanName + ".png";
-		FPaths::RemoveDuplicateSlashes(Path);
-		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
+		SaveImageLocally(CompressedBitmap);
 	}
 
 	// Item and camera in position, check for other view modes
@@ -406,7 +408,7 @@ bool USLMetaScanner::GotoNextScanPose()
 }
 
 // Load scan camera convenience actor
-bool USLMetaScanner::LoadScanCameraPoseActor()
+bool USLMetaScanner::SpawnCameraPoseActorDummy()
 {
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SM_ScanCameraPoseDummy");
@@ -431,6 +433,50 @@ bool USLMetaScanner::LoadScanCameraPoseActor()
 	CameraPoseActor->SetMobility(EComponentMobility::Movable);
 
 	return true;
+}
+
+// Spawn extra lights to avoid dark corners on images
+void USLMetaScanner::SpawnExtraLights()
+{
+	FActorSpawnParameters SpawnParams;
+	FTransform SpawnTransform;
+
+	/* Top light */
+	SpawnParams.Name = TEXT("SL_ExtraLight_Top");
+	SpawnTransform = FTransform(FRotator(-90.f, 0.f, 0.f), FVector(0.f, 0.f, 300.f));
+	ADirectionalLight* TopLight = GetWorld()->SpawnActor<ADirectionalLight>(
+		ADirectionalLight::StaticClass(), SpawnTransform, SpawnParams);
+	if (TopLight)
+	{
+		TopLight->SetMobility(EComponentMobility::Movable);
+		TopLight->GetLightComponent()->SetIntensity(0.6f);
+#if WITH_EDITOR
+		TopLight->SetActorLabel(FString(TEXT("SL_ExtraLight_Top")));
+#endif // WITH_EDITOR
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not spawn extra light.."), *FString(__func__), __LINE__);
+	}
+
+	/* Bottom light */
+	SpawnParams.Name = TEXT("SL_ExtraLight_Bottom");
+	SpawnTransform = FTransform(FRotator(90.f, 0.f, 0.f), FVector(0.f, 0.f, -300.f));
+	ADirectionalLight* BottomLight = GetWorld()->SpawnActor<ADirectionalLight>(
+		ADirectionalLight::StaticClass(), SpawnTransform, SpawnParams);
+	if (BottomLight)
+	{
+		BottomLight->SetMobility(EComponentMobility::Movable);
+		BottomLight->GetLightComponent()->SetIntensity(1.2f);
+#if WITH_EDITOR
+		BottomLight->SetActorLabel(FString(TEXT("SL_ExtraLight_Bottom")));
+#endif // WITH_EDITOR
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not spawn extra light.."), *FString(__func__), __LINE__);
+	}
+
 }
 
 // Load scanning points
@@ -483,10 +529,9 @@ bool USLMetaScanner::LoadScanItems(float MaxVolume, float MaxBoundsLength, bool 
 			// Everything is hidden by default
 			AsSMA->SetActorHiddenInGame(true);
 			
+			// Skip if class was already checked (or empty)
 			const FString Class = FTags::GetValue(*ActItr, "SemLog", "Class");
-
-			// Skip if class was already checked
-			if(ConsultedClasses.Contains(Class))
+			if(Class.IsEmpty() || ConsultedClasses.Contains(Class))
 			{
 				continue;
 			}
@@ -857,6 +902,15 @@ void USLMetaScanner::QuitEditor()
 		GEngine->DeferredCommands.Add(TEXT("QUIT_EDITOR"));
 	}
 #endif // WITH_EDITOR
+}
+
+// Save the compressed screenshot image locally
+void USLMetaScanner::SaveImageLocally(const TArray<uint8>& CompressedBitmap)
+{
+	FString ItemClassFolder = ScanItems[CurrItemIdx].Value + "_" + ViewModePostfix + "/";
+	FString Path = FPaths::ProjectDir() + SaveLocallyFolderName + ItemClassFolder + CurrScanName + ".png";
+	FPaths::RemoveDuplicateSlashes(Path);
+	FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 }
 
 // Output progress to terminal
