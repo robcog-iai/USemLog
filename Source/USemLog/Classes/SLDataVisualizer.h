@@ -48,12 +48,37 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
-private:
+protected:
 	// Setup the user input bindings
 	bool SetupUserInput(const FName& UserInputActionName);
 
 	// Execute the query type
 	void Query();
+
+private:
+	// Clean world from unnecesary actors/components
+	void CleanWorld();
+
+	// Spawn marker viz manager actor
+	bool SpawnVizMarkerManager();
+
+	// Spawn world viz manager actor
+	bool SpawnVizWorldManager();
+
+	// Pre-load workl states for the selected episode
+	void PreLoadWorldStates(const TArray<FMQWorldStateFrame>& WorldStates);
+
+	/* Query cases */
+	void EntityPoseQuery();
+	void EntityTrajQuery();
+	void BonePoseQuery();
+	void BoneTrajQuery();
+	void SkelPoseQuery();
+	void SkelTrajQuery();
+	void GazePoseQuery();
+	void GazeTrajQuery();
+	void WorldStateQuery();
+	void AllWorldStatesQuery();
 
 	/* Forwarded query results */
 	void EntityPoseResult(const FString& Id, float Ts, const FTransform& Pose);

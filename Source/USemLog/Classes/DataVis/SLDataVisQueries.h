@@ -60,7 +60,11 @@ struct FSLVisQuery
 
 	// End time for trajectories/timelines
 	UPROPERTY(EditAnywhere)
-	float EndTimestamp;
+	float EndTimestamp = -1.f;
+
+	// Delta time for trajectories
+	UPROPERTY(EditAnywhere)
+	float DeltaT = -1.f;
 
 	// End time for trajectories/timelines
 	UPROPERTY(EditAnywhere)

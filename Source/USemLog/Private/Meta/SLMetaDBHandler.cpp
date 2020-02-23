@@ -2,6 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Meta/SLMetaDBHandler.h"
+#include "Engine/StaticMeshActor.h"
+#include "Animation/SkeletalMeshActor.h"
+#include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "SLEntitiesManager.h"
 
 // UUtils
@@ -427,15 +430,15 @@ void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 	const char *idx_key;
 	uint32_t idx = 0;
 
-	// Add entities to array
+	// Add visual entities to array
 	BSON_APPEND_ARRAY_BEGIN(doc, "entities", &arr);
 	// Iterate non skeletal semantic entities
 	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
 	{
 		const FSLEntity SemEntity = Pair.Value;
 
-		// Ignore skeletal entities
-		if (Cast<ASkeletalMeshActor>(SemEntity.Obj) || Cast<USkeletalMeshComponent>(SemEntity.Obj))
+		// Ignore non static mesh
+		if (!Cast<AStaticMeshActor>(SemEntity.Obj))
 		{
 			continue;
 		}
@@ -553,6 +556,94 @@ void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 		idx++;
 	}
 	bson_append_array_end(doc, &sk_arr);
+
+	// Add visual entities to array
+	BSON_APPEND_ARRAY_BEGIN(doc, "joint_entities", &arr);
+	// Iterate non skeletal semantic entities
+	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
+	{
+		const FSLEntity SemEntity = Pair.Value;
+
+		// Ignore non static mesh
+		if (!Cast<APhysicsConstraintActor>(SemEntity.Obj))
+		{
+			continue;
+		}
+
+		// Start array doc
+		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
+
+		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
+		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
+
+		FString ColorHex = FTags::GetValue(Pair.Value.Obj, "SemLog", "VisMask");
+		if (!ColorHex.IsEmpty())
+		{
+			BSON_APPEND_UTF8(&arr_obj, "mask_hex", TCHAR_TO_UTF8(*ColorHex));
+		}
+
+		// Check if location data is available
+		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
+		{
+			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+		}
+		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
+		{
+			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+		}
+
+		// Finish array doc
+		bson_append_document_end(&arr, &arr_obj);
+		idx++;
+	}
+	bson_append_array_end(doc, &arr);
+
+
+	// Add all entities to array (lights, joints, visuals..)
+	BSON_APPEND_ARRAY_BEGIN(doc, "all_entities", &arr);
+	// Iterate non skeletal semantic entities
+	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
+	{
+		const FSLEntity SemEntity = Pair.Value;
+
+		// Start array doc
+		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
+
+		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
+		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
+
+		FString ColorHex = FTags::GetValue(Pair.Value.Obj, "SemLog", "VisMask");
+		if (!ColorHex.IsEmpty())
+		{
+			BSON_APPEND_UTF8(&arr_obj, "mask_hex", TCHAR_TO_UTF8(*ColorHex));
+		}
+
+		// Check if location data is available
+		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
+		{
+			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+		}
+		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
+		{
+			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+		}
+
+		// Finish array doc
+		bson_append_document_end(&arr, &arr_obj);
+		idx++;
+	}
+	bson_append_array_end(doc, &arr);
+	
 }
 
 // Add camera views
