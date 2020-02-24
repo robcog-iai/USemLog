@@ -41,7 +41,7 @@
       "Enabled": true
     },
     {
-      "Name": "libmongo",
+      "Name": "UMongoC",
       "Enabled": true
     },
     {
