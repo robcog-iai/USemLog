@@ -47,6 +47,14 @@
     {
       "Name": "SRanipal",
       "Enabled": true
+    },
+    {
+      "Name": "UMongoQA",
+      "Enabled": true
+    },
+    {
+      "Name": "UViz",
+      "Enabled": true
     }
   ]
 }
