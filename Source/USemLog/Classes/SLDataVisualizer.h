@@ -65,8 +65,10 @@ private:
 	// Spawn world viz manager actor
 	bool SpawnVizWorldManager();
 
+#if SL_WITH_DATA_VIS
 	// Pre-load workl states for the selected episode
 	void PreLoadWorldStates(const TArray<FMQWorldStateFrame>& WorldStates);
+#endif //SL_WITH_DATA_VIS
 
 	/* Query cases */
 	void EntityPoseQuery();

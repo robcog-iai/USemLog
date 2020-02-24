@@ -9,9 +9,9 @@
 #include "EngineUtils.h"
 #include "SLEntitiesManager.h"
 
+#if SL_WITH_DATA_VIS
 // Clean world White-/black-listed components/actors
 #include "Skeletal/SLSkeletalDataComponent.h"
-#include "VizMarkerManager.h"
 #include "Landscape.h"
 #include "Camera/CameraActor.h"
 #include "Camera/PlayerCameraManager.h"
@@ -27,6 +27,7 @@
 #include "GameFramework/HUD.h"
 #include "Particles/ParticleEventManager.h"
 #include "AIController.h"
+#endif //SL_WITH_DATA_VIS
 
 // Constructor
 USLDataVisualizer::USLDataVisualizer() : bIsInit(false), bIsStarted(false), bIsFinished(false)
@@ -258,6 +259,7 @@ void USLDataVisualizer::Query()
 // Clean world from unnecesary actors/components
 void USLDataVisualizer::CleanWorld()
 {
+#if SL_WITH_DATA_VIS
 	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 	{
 		// Blacklisted actors, remove them from the world
@@ -317,6 +319,7 @@ void USLDataVisualizer::CleanWorld()
 			C->ConditionalBeginDestroy();
 		}
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 // Spawn marker viz manager actor
@@ -334,7 +337,7 @@ bool USLDataVisualizer::SpawnVizMarkerManager()
 	}
 	VizMarkerManager->SetActorLabel(TEXT("SL_VizMarkerManager"));
 	return true;
-#elif
+#else
 	return false;
 #endif //SL_WITH_DATA_VIS
 }
@@ -354,11 +357,12 @@ bool USLDataVisualizer::SpawnVizWorldManager()
 	}
 	VizWorldManager->SetActorLabel(TEXT("SL_VizWorldManager"));
 	return true;
-#elif
+#else
 	return false;
 #endif //SL_WITH_DATA_VIS
 }
 
+#if SL_WITH_DATA_VIS
 // Pre-load workl states for the selected episode
 void USLDataVisualizer::PreLoadWorldStates(const TArray<FMQWorldStateFrame>& WorldStates)
 {
@@ -407,10 +411,12 @@ void USLDataVisualizer::PreLoadWorldStates(const TArray<FMQWorldStateFrame>& Wor
 		VizWorldManager->AddFrame(Frame.Timestamp, SMAPoses, SkMAPoses);
 	}
 }
+#endif //SL_WITH_DATA_VIS
 
 /* Query cases */
 void USLDataVisualizer::EntityPoseQuery()
 {
+#if SL_WITH_DATA_VIS
 	FTransform Pose;
 	FString Id = VisQueries->Queries[QueryIdx].EntityId;
 	float Ts = VisQueries->Queries[QueryIdx].StartTimestamp;
@@ -423,10 +429,12 @@ void USLDataVisualizer::EntityPoseQuery()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d EntityPose query failed.."), *FString(__FUNCTION__), __LINE__);
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::EntityTrajQuery()
 {
+#if SL_WITH_DATA_VIS
 	TArray<FTransform> Traj;
 	FString Id = VisQueries->Queries[QueryIdx].EntityId;
 	float StartTime = VisQueries->Queries[QueryIdx].StartTimestamp;
@@ -441,10 +449,12 @@ void USLDataVisualizer::EntityTrajQuery()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d EntityTraj query failed.."), *FString(__FUNCTION__), __LINE__);
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::BonePoseQuery()
 {
+#if SL_WITH_DATA_VIS
 	FTransform Pose;
 	FString Id = VisQueries->Queries[QueryIdx].EntityId;
 	FString BoneName = VisQueries->Queries[QueryIdx].BoneName;
@@ -458,10 +468,12 @@ void USLDataVisualizer::BonePoseQuery()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d BonePose query failed.."), *FString(__FUNCTION__), __LINE__);
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::BoneTrajQuery()
 {
+#if SL_WITH_DATA_VIS
 	TArray<FTransform> Traj;
 	FString Id = VisQueries->Queries[QueryIdx].EntityId;
 	FString BoneName = VisQueries->Queries[QueryIdx].BoneName;
@@ -477,10 +489,12 @@ void USLDataVisualizer::BoneTrajQuery()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d BoneTraj query failed.."), *FString(__FUNCTION__), __LINE__);
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::SkelPoseQuery()
 {
+#if SL_WITH_DATA_VIS
 	TPair<FTransform, TMap<FString, FTransform>> SkeletalPose;
 	FTransform Pose;
 	FString Id = VisQueries->Queries[QueryIdx].EntityId;
@@ -502,10 +516,12 @@ void USLDataVisualizer::SkelPoseQuery()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d SkeletalPose query failed.."), *FString(__FUNCTION__), __LINE__);
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::SkelTrajQuery()
 {
+#if SL_WITH_DATA_VIS
 	TArray<TPair<FTransform, TMap<FString, FTransform>>> SkeletalTraj;
 	FString Id = VisQueries->Queries[QueryIdx].EntityId;
 	float StartTime = VisQueries->Queries[QueryIdx].StartTimestamp;
@@ -529,10 +545,12 @@ void USLDataVisualizer::SkelTrajQuery()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d SkeletalTraj query failed.."), *FString(__FUNCTION__), __LINE__);
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::GazePoseQuery()
 {
+#if SL_WITH_DATA_VIS
 	FVector Target;
 	FVector Origin;
 	float Ts = VisQueries->Queries[QueryIdx].StartTimestamp;
@@ -545,10 +563,12 @@ void USLDataVisualizer::GazePoseQuery()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d GazePose query failed.."), *FString(__FUNCTION__), __LINE__);
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::GazeTrajQuery()
 {
+#if SL_WITH_DATA_VIS
 	TArray<FVector> Targets;
 	TArray<FVector> Origins;
 	float StartTime = VisQueries->Queries[QueryIdx].StartTimestamp;
@@ -564,10 +584,12 @@ void USLDataVisualizer::GazeTrajQuery()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d GazeTraj query failed.."), *FString(__FUNCTION__), __LINE__);
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::WorldStateQuery()
 {
+#if SL_WITH_DATA_VIS
 	//TMap<FString, FTransform> Entities;
 	//TMap<FString, TPair<FTransform, TMap<FString, FTransform>>> Skeletals;
 	//if (QAHandler.GetWorldStateAt(VisQueries->Queries[QueryIdx].StartTimestamp, Entities, Skeletals))
@@ -583,10 +605,12 @@ void USLDataVisualizer::WorldStateQuery()
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d WorldState query, goto ts.."), *FString(__FUNCTION__), __LINE__);
 		VizWorldManager->GoTo(VisQueries->Queries[QueryIdx].StartTimestamp);
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::AllWorldStatesQuery()
 {
+#if SL_WITH_DATA_VIS
 	//TArray<FMQWorldStateFrame> WorldStates;
 	//if (QAHandler.GetAllWorldStates(WorldStates))
 	//{
@@ -601,11 +625,13 @@ void USLDataVisualizer::AllWorldStatesQuery()
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d AllWorldStates query, starting replay.."), *FString(__FUNCTION__), __LINE__);
 		VizWorldManager->Replay();
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 // TESTS
 void USLDataVisualizer::SMTest()
 {
+#if SL_WITH_DATA_VIS
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d .."), *FString(__func__), __LINE__);
 
 	if (AStaticMeshActor* DoorSMA = FSLEntitiesManager::GetInstance()->GetStaticMeshActor("zUDyz+WsLE6Onk4Nv5lhzg"))
@@ -619,10 +645,12 @@ void USLDataVisualizer::SMTest()
 		Col.A = 0.3;
 		UVizMarker* M = VizMarkerManager->CreateMarker(SMLocations, DoorSMA->GetStaticMeshComponent());
 	}
+#endif //SL_WITH_DATA_VIS
 }
 
 void USLDataVisualizer::MarkerTests()
 {
+#if SL_WITH_DATA_VIS
 	TArray<FVector> Locations;
 	for (uint32 Idx = 0; Idx < 1300; Idx++)
 	{
@@ -700,4 +728,5 @@ void USLDataVisualizer::MarkerTests()
 
 	//uint32 MarkerId = MarkerManager->CreateMarkerArray(Locations);
 	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Marker %ld created.."), *FString(__func__), __LINE__, MarkerId);
+#endif //SL_WITH_DATA_VIS
 }
