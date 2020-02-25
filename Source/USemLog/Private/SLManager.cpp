@@ -27,7 +27,7 @@ ASLManager::ASLManager()
 	bStartWithDelay = false;
 	StartDelay = 0.5f;
 	bStartFromUserInput = false;
-	UserInputActionName = "SLStartFinish";
+	UserInputActionName = "SLTrigger";
 
 	// Server TaskId
 	ServerIp = TEXT("127.0.0.1");

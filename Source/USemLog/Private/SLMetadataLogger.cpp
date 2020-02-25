@@ -41,7 +41,7 @@ void USLMetadataLogger::Init(const FString& InTaskId, const FString& InServerIp,
 		}
 
 		// Connect to the db
-		if (!DBHandler.Connect(InTaskId, InServerIp, InServerPort, bOverwrite))
+		if (!DBHandler.Connect(InTaskId, InServerIp, InServerPort, bOverwrite, bScanItems))
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not connect to the db.."), *FString(__func__), __LINE__);
 			return;

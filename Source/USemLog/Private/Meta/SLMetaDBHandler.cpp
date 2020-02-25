@@ -15,7 +15,7 @@
 FSLMetaDBHandler::FSLMetaDBHandler() {}
 
 // Connect to the database
-bool FSLMetaDBHandler::Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bRemovePrevEntries)
+bool FSLMetaDBHandler::Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bRemovePrevEntries, bool bScanItems)
 {
 	const FString MetaCollName = DBName + ".meta";
 	const FString ScansCollName = DBName + ".scans";
@@ -65,20 +65,23 @@ bool FSLMetaDBHandler::Connect(const FString& DBName, const FString& ServerIp, u
 					*FString(__func__), __LINE__, *FString(error.message));
 				return false;
 			}
-			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*ScansCollName)), &error))
+			if (bScanItems)
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
-					*FString(__func__), __LINE__, *FString(error.message));
-			}
-			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(ScansCollName + ".chunks"))), &error))
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
-					*FString(__func__), __LINE__, *FString(error.message));
-			}
-			if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(ScansCollName + ".files"))), &error))
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
-					*FString(__func__), __LINE__, *FString(error.message));
+				if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*ScansCollName)), &error))
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+						*FString(__func__), __LINE__, *FString(error.message));
+				}
+				if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(ScansCollName + ".chunks"))), &error))
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+						*FString(__func__), __LINE__, *FString(error.message));
+				}
+				if (!mongoc_collection_drop(mongoc_database_get_collection(database, TCHAR_TO_UTF8(*(ScansCollName + ".files"))), &error))
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Could not drop collection, err.:%s;"),
+						*FString(__func__), __LINE__, *FString(error.message));
+				}
 			}
 		}
 		else

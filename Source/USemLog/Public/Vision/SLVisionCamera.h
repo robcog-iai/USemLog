@@ -10,7 +10,7 @@
 /**
  * Virtual camera logging the transformations of the cameras that need to re-render the scene
  */
-UCLASS(ClassGroup = (SL), DisplayName = "Vision Camera")
+UCLASS(ClassGroup = (SL), DisplayName = "SL Vision Camera")
 class USEMLOG_API ASLVisionCamera : public ACameraActor
 {
 	GENERATED_BODY()
@@ -32,10 +32,24 @@ public:
 	// Get the unique id of the virtual camera
 	FString GetId();
 
+#if WITH_EDITOR
+private:
+	// UObject interface
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	// End of UObject interface
+#endif // WITH_EDITOR
+
 private:
 	// Semantic class name of the virtual vision camera
 	FString ClassName;
 
 	// Semantic uinque id of the virtual vision camera
 	FString Id;
+
+#if WITH_EDITOR
+	// Mimics a button to set its relative tranform to 0
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bResetTransformButtton;
+#endif // WITH_EDITOR
 };

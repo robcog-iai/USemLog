@@ -29,7 +29,7 @@ public:
 	FSLMetaDBHandler();
 
 	// Connect to the database
-	bool Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bRemovePrevEntries);
+	bool Connect(const FString& DBName, const FString& ServerIp, uint16 ServerPort, bool bRemovePrevEntries, bool bScanItems);
 
 	// Disconnect and clean db connection
 	void Disconnect() const;

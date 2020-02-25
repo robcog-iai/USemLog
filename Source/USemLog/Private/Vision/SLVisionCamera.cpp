@@ -14,6 +14,11 @@ ASLVisionCamera::ASLVisionCamera()
 	// Scale the camera mesh size for visual purposes
 	GetCameraComponent()->SetWorldScale3D(FVector(0.1));
 #endif // WITH_EDITORONLY_DATA
+
+#if WITH_EDITOR
+	// Mimics a button
+	bResetTransformButtton = false;
+#endif // WITH_EDITOR
 }
 
 // Called when the game starts or when spawned
@@ -49,3 +54,23 @@ FString ASLVisionCamera::GetId()
 	}
 	return Id;
 }
+
+#if WITH_EDITOR
+// Called when a property is changed in the editor
+void ASLVisionCamera::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property and member names
+	FName PropertyName = PropertyChangedEvent.GetPropertyName();
+
+	FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != NULL) ?
+		PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+
+	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(ASLVisionCamera, bResetTransformButtton))
+	{
+		SetActorRelativeTransform(FTransform::Identity);
+		bResetTransformButtton = false;
+	}
+}
+#endif // WITH_EDITOR

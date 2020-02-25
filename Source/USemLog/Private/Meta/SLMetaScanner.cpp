@@ -449,7 +449,7 @@ void USLMetaScanner::SpawnExtraLights()
 	if (TopLight)
 	{
 		TopLight->SetMobility(EComponentMobility::Movable);
-		TopLight->GetLightComponent()->SetIntensity(0.6f);
+		TopLight->GetLightComponent()->SetIntensity(1.6f);
 #if WITH_EDITOR
 		TopLight->SetActorLabel(FString(TEXT("SL_ExtraLight_Top")));
 #endif // WITH_EDITOR
@@ -467,7 +467,7 @@ void USLMetaScanner::SpawnExtraLights()
 	if (BottomLight)
 	{
 		BottomLight->SetMobility(EComponentMobility::Movable);
-		BottomLight->GetLightComponent()->SetIntensity(1.2f);
+		BottomLight->GetLightComponent()->SetIntensity(2.2f);
 #if WITH_EDITOR
 		BottomLight->SetActorLabel(FString(TEXT("SL_ExtraLight_Bottom")));
 #endif // WITH_EDITOR
