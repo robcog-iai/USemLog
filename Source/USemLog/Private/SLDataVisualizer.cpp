@@ -316,12 +316,18 @@ bool USLDataVisualizer::SpawnVizWorldManager()
 // Execute active query
 void USLDataVisualizer::ExecuteQuery(const FSLVisQuery& Query)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d ArrQ[%ld] - Q[%ld];"), *FString(__FUNCTION__), __LINE__, QueryArrayIdx, ActiveQueryIdx);
+
 
 	if (Query.bSkip)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d bSkip set to true, skipping this query.."), *FString(__FUNCTION__), __LINE__, ActiveQueryIdx);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d ArrQ[%ld] - Q[%ld]: Description=%s; bSkip set to true, skipping this query.."),
+			*FString(__FUNCTION__), __LINE__, QueryArrayIdx, ActiveQueryIdx, *Query.Description);
 		return;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d ArrQ[%ld] - Q[%ld]: Description=%s;"),
+			*FString(__FUNCTION__), __LINE__, QueryArrayIdx, ActiveQueryIdx, *Query.Description);
 	}
 
 	/* Connection */
@@ -496,12 +502,30 @@ void USLDataVisualizer::EntityPoseQuery(const FSLVisQuery& Query)
 	float Ts = Query.StartTimestamp;
 	if (QAHandler.GetEntityPoseAt(Id, Ts, Pose))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityPose \t [%s:%f] :\t T=[%s];"),
-			*FString(__FUNCTION__), __LINE__, *Id, Ts, *Pose.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityPose \t [%s:%f] :\t T=[%s];"),
+		//	*FString(__FUNCTION__), __LINE__, *Id, Ts, *Pose.ToString());
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d EntityPose query failed.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	if (Query.Action.MarkerType == ESLVisMarkerType::StaticMesh)
+	{
+		if (AStaticMeshActor* SMA = FSLEntitiesManager::GetInstance()->GetStaticMeshActor(Id))
+		{
+			VizMarkerManager->CreateMarker(Pose, SMA->GetStaticMeshComponent(),
+				Query.Action.bUseOriginalMaterials, Query.Action.Color, Query.Action.bUnlit);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find static mesh %s .."), *FString(__FUNCTION__), __LINE__, *Id);
+		}
+	}
+	else if (Query.Action.MarkerType == ESLVisMarkerType::PrimitiveMesh)
+	{
+		VizMarkerManager->CreateMarker(Pose, ToOrigPrimitiveMarkerType(Query.Action.PrimitiveMarkerType),
+			Query.Action.Scale, Query.Action.Color, Query.Action.bUnlit);
 	}
 #endif //SL_WITH_DATA_VIS
 }
@@ -516,8 +540,8 @@ void USLDataVisualizer::EntityTrajQuery(const FSLVisQuery& Query)
 	float DeltaT = Query.DeltaT;
 	if (QAHandler.GetEntityTrajectory(Id, StartTime, EndTime, Traj, DeltaT))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityTraj \t [%s:%f-%f:%f] :\t TNum=[%ld];"),
-			*FString(__FUNCTION__), __LINE__, *Id, StartTime, EndTime, DeltaT, Traj.Num());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d EntityTraj \t [%s:%f-%f:%f] :\t TNum=[%ld];"),
+		//	*FString(__FUNCTION__), __LINE__, *Id, StartTime, EndTime, DeltaT, Traj.Num());
 	}
 	else
 	{
@@ -553,8 +577,8 @@ void USLDataVisualizer::BonePoseQuery(const FSLVisQuery& Query)
 	float Ts = Query.StartTimestamp;
 	if (QAHandler.GetBonePoseAt(Id,	BoneName, Ts, Pose))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d BonePose \t [%s-%s:%f] :\t T=[%s];"),
-			*FString(__FUNCTION__), __LINE__, *Id, *BoneName, Ts, *Pose.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d BonePose \t [%s-%s:%f] :\t T=[%s];"),
+		//	*FString(__FUNCTION__), __LINE__, *Id, *BoneName, Ts, *Pose.ToString());
 	}
 	else
 	{
@@ -593,8 +617,8 @@ void USLDataVisualizer::SkelPoseQuery(const FSLVisQuery& Query)
 	float Ts = Query.StartTimestamp;
 	if (QAHandler.GetSkeletalPoseAt(Id, Ts, SkeletalPose))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d SkeletalPose \t [%s:%f] :\t T=[%s]; TBoneNum=[%ld];"),
-			*FString(__FUNCTION__), __LINE__, *Id, Ts, *SkeletalPose.Key.ToString(), SkeletalPose.Value.Num());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d SkeletalPose \t [%s:%f] :\t T=[%s]; TBoneNum=[%ld];"),
+		//	*FString(__FUNCTION__), __LINE__, *Id, Ts, *SkeletalPose.Key.ToString(), SkeletalPose.Value.Num());
 	}
 	else
 	{
@@ -626,8 +650,8 @@ void USLDataVisualizer::SkelTrajQuery(const FSLVisQuery& Query)
 	float DeltaT = Query.DeltaT;
 	if (QAHandler.GetSkeletalTrajectory(Id, StartTime, EndTime, SkeletalTraj, DeltaT))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d SkeletalTraj \t [%s:%f-%f:%f] :\t TNum=[%ld];"),
-			*FString(__FUNCTION__), __LINE__, *Id, StartTime, EndTime, DeltaT, SkeletalTraj.Num());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d SkeletalTraj \t [%s:%f-%f:%f] :\t TNum=[%ld];"),
+		//	*FString(__FUNCTION__), __LINE__, *Id, StartTime, EndTime, DeltaT, SkeletalTraj.Num());
 	}
 	else
 	{
@@ -668,8 +692,8 @@ void USLDataVisualizer::GazePoseQuery(const FSLVisQuery& Query)
 	float Ts = Query.StartTimestamp;
 	if (QAHandler.GetGazePose(Ts, Target, Origin))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d GazePose \t [%f] :\t Target=[%s]; Origin=[%s]"),
-			*FString(__FUNCTION__), __LINE__, Ts, *Target.ToString(), *Origin.ToString());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d GazePose \t [%f] :\t Target=[%s]; Origin=[%s]"),
+		//	*FString(__FUNCTION__), __LINE__, Ts, *Target.ToString(), *Origin.ToString());
 	}
 	else
 	{
@@ -689,8 +713,8 @@ void USLDataVisualizer::GazeTrajQuery(const FSLVisQuery& Query)
 
 	if (QAHandler.GetGazeTrajectory(StartTime, EndTime, Targets, Origins, DeltaT))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d GazeTraj \t [%f-%f:%f] :\t TargetNum=[%ld]; OriginNum=[%ld]"),
-			*FString(__FUNCTION__), __LINE__, StartTime, EndTime, DeltaT, Targets.Num(), Origins.Num());
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d GazeTraj \t [%f-%f:%f] :\t TargetNum=[%ld]; OriginNum=[%ld]"),
+		//	*FString(__FUNCTION__), __LINE__, StartTime, EndTime, DeltaT, Targets.Num(), Origins.Num());
 	}
 	else
 	{
@@ -724,7 +748,7 @@ void USLDataVisualizer::WorldStateQuery(const FSLVisQuery& Query)
 	//}
 	if (VizWorldManager)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d WorldState query, goto ts.."), *FString(__FUNCTION__), __LINE__);
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d WorldState query, goto ts.."), *FString(__FUNCTION__), __LINE__);
 		VizWorldManager->GoTo(Query.StartTimestamp);
 	}
 #endif //SL_WITH_DATA_VIS
@@ -744,7 +768,7 @@ void USLDataVisualizer::AllWorldStatesQuery(const FSLVisQuery& Query)
 	//}
 	if (VizWorldManager)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d AllWorldStates query, starting replay.."), *FString(__FUNCTION__), __LINE__);
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d AllWorldStates query, starting replay.."), *FString(__FUNCTION__), __LINE__);
 		//VizWorldManager->Replay();
 	}
 #endif //SL_WITH_DATA_VIS
