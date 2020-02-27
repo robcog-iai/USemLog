@@ -378,7 +378,7 @@ private:
 
 	// Add unique id property to tags
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Data Visualizer", meta = (editcondition = "bVisualizeData"))
-	class USLDataVisQueries* VisQueries;
+	TArray<class USLDataVisQueries*> VisQueriesArray;
 
 	// Data visualizer, use UPROPERTY to avoid GC
 	UPROPERTY()

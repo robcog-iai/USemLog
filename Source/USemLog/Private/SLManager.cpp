@@ -196,7 +196,7 @@ void ASLManager::Init()
 		else if (bVisualizeData)
 		{
 			DataVisualizer = NewObject<USLDataVisualizer>(this);
-			DataVisualizer->Init(VisQueries);
+			DataVisualizer->Init(VisQueriesArray);
 		}
 		else
 		{

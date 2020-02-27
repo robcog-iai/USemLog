@@ -55,7 +55,7 @@ public class USemLog : ModuleRules
 				//"MongoCxx",			    // SL_WITH_LIBMONGO_CXX
 				"SRanipal",			    // SL_WITH_EYE_TRACKING
 				//"Boost",				    // SL_WITH_BOOST
-				//"UViz", "UMongoQA",	    // SL_WITH_DATA_VIS
+				"UViz", "UMongoQA",	    // SL_WITH_DATA_VIS
 				// ... add private dependencies that you statically link with here ...
 			}
 			);

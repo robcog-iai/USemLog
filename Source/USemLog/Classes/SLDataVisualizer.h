@@ -31,7 +31,7 @@ public:
 	~USLDataVisualizer();
 
 	// Init vis
-	void Init(USLDataVisQueries* InQueries);
+	void Init(const TArray<USLDataVisQueries*>& InQueries);
 
 	// Start logger
 	void Start(const FName& UserInputActionName);
@@ -49,11 +49,17 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 protected:
+	// Query trigger
+	void Trigger();
+
 	// Setup the user input bindings
 	bool SetupUserInput(const FName& UserInputActionName);
 
 	// Execute the query type
-	void Query();
+	bool SetNextQuery();
+
+	// Set the next query from the array
+	bool SetNextActiveQueries();
 
 private:
 	// Clean world from unnecesary actors/components
@@ -65,22 +71,30 @@ private:
 	// Spawn world viz manager actor
 	bool SpawnVizWorldManager();
 
+	// Execute active query
+	void ExecuteQuery(const FSLVisQuery& Query);
+
 #if SL_WITH_DATA_VIS
 	// Pre-load workl states for the selected episode
 	void PreLoadWorldStates(const TArray<FMQWorldStateFrame>& WorldStates);
+
+	// Convert from EVizMarkerTypeVQ to EVizMarkerType
+	FORCEINLINE EVizMarkerType ToOrigPrimitiveMarkerType(EVizMarkerTypeVQ VQType);
 #endif //SL_WITH_DATA_VIS
 
 	/* Query cases */
-	void EntityPoseQuery();
-	void EntityTrajQuery();
-	void BonePoseQuery();
-	void BoneTrajQuery();
-	void SkelPoseQuery();
-	void SkelTrajQuery();
-	void GazePoseQuery();
-	void GazeTrajQuery();
-	void WorldStateQuery();
-	void AllWorldStatesQuery();
+	void EntityPoseQuery(const FSLVisQuery& Query);
+	void EntityTrajQuery(const FSLVisQuery& Query);
+	void BonePoseQuery(const FSLVisQuery& Query);
+	void BoneTrajQuery(const FSLVisQuery& Query);
+	void SkelPoseQuery(const FSLVisQuery& Query);
+	void SkelTrajQuery(const FSLVisQuery& Query);
+	void GazePoseQuery(const FSLVisQuery& Query);
+	void GazeTrajQuery(const FSLVisQuery& Query);
+	void WorldStateQuery(const FSLVisQuery& Query);
+	void AllWorldStatesQuery(const FSLVisQuery& Query);
+
+	/* Action cases */
 
 protected:
 	// Set when initialized
@@ -94,10 +108,16 @@ protected:
 
 private:
 	// Queries to be visualized
-	USLDataVisQueries* VisQueries;
+	USLDataVisQueries* ActiveQueries;
+
+	// Array of queries
+	TArray<USLDataVisQueries*> QueriesArray;
+
+	// Current query array index
+	int32 QueryArrayIdx;
 
 	// Current query index
-	int32 QueryIdx;
+	int32 ActiveQueryIdx;
 
 	// Previous database
 	FString PrevDBName;
