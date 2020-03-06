@@ -1,10 +1,14 @@
-// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "World/SLWorldWriterMongoC.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "Conversions.h"
 #include "SLEntitiesManager.h"
+
+// Utils
+#if SL_WITH_ROS_CONVERSIONS
+#include "Conversions.h"
+#endif // SL_WITH_ROS_CONVERSIONS
 
 // Constr
 FSLWorldWriterMongoC::FSLWorldWriterMongoC()
@@ -493,8 +497,15 @@ void FSLWorldWriterMongoC::AddSkeletalEntities(TArray<TSLEntityPreviousPose<USLS
 // Add gaze data to document
 void FSLWorldWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t* out_doc) const
 {
-	const FVector ROSTargetLoc = FConversions::UToROS(GazeData.Target);
-	const FVector ROSOrigLoc = FConversions::UToROS(GazeData.Origin);
+	FVector TargetLoc;
+	FVector OrigLoc;
+#if SL_WITH_ROS_CONVERSIONS
+	TargetLoc = FConversions::UToROS(GazeData.Target);
+	OrigLoc = FConversions::UToROS(GazeData.Origin);
+#else
+	TargetLoc = GazeData.Target;
+	OrigLoc = GazeData.Origin;
+#endif // SL_WITH_ROS_CONVERSIONS
 
 	// When nesting objects, parent needs to be init to a base state !!! 
 	bson_t gaze_obj = BSON_INITIALIZER; 
@@ -504,15 +515,15 @@ void FSLWorldWriterMongoC::AddGazeData(const FSLGazeData& GazeData, bson_t* out_
 	BSON_APPEND_UTF8(&gaze_obj, "entity_id", TCHAR_TO_UTF8(*GazeData.Entity.Id));
 	
 	BSON_APPEND_DOCUMENT_BEGIN(&gaze_obj, "target", &target_loc);
-	BSON_APPEND_DOUBLE(&target_loc, "x", ROSTargetLoc.X);
-	BSON_APPEND_DOUBLE(&target_loc, "y", ROSTargetLoc.Y);
-	BSON_APPEND_DOUBLE(&target_loc, "z", ROSTargetLoc.Z);
+	BSON_APPEND_DOUBLE(&target_loc, "x", TargetLoc.X);
+	BSON_APPEND_DOUBLE(&target_loc, "y", TargetLoc.Y);
+	BSON_APPEND_DOUBLE(&target_loc, "z", TargetLoc.Z);
 	bson_append_document_end(&gaze_obj, &target_loc);
 
 	BSON_APPEND_DOCUMENT_BEGIN(&gaze_obj, "origin", &origin_loc);
-	BSON_APPEND_DOUBLE(&origin_loc, "x", ROSOrigLoc.X);
-	BSON_APPEND_DOUBLE(&origin_loc, "y", ROSOrigLoc.Y);
-	BSON_APPEND_DOUBLE(&origin_loc, "z", ROSOrigLoc.Z);
+	BSON_APPEND_DOUBLE(&origin_loc, "x", OrigLoc.X);
+	BSON_APPEND_DOUBLE(&origin_loc, "y", OrigLoc.Y);
+	BSON_APPEND_DOUBLE(&origin_loc, "z", OrigLoc.Z);
 	bson_append_document_end(&gaze_obj, &origin_loc);
 	
 	BSON_APPEND_DOCUMENT(out_doc, "gaze", &gaze_obj);
@@ -560,24 +571,30 @@ void FSLWorldWriterMongoC::AddSkeletalBones(USkeletalMeshComponent* SkelComp, co
 // Add pose to document
 void FSLWorldWriterMongoC::AddPoseChild(const FVector& InLoc, const FQuat& InQuat, bson_t* out_doc) const
 {
-	// Switch to right handed ROS transformation
-	const FVector ROSLoc = FConversions::UToROS(InLoc);
-	const FQuat ROSQuat = FConversions::UToROS(InQuat);
+	FVector Loc;
+	FQuat Quat;
+#if SL_WITH_ROS_CONVERSIONS
+	Loc = FConversions::UToROS(InLoc);
+	Quat = FConversions::UToROS(InQuat);
+#else
+	Loc = InLoc;
+	Quat = InQuat;
+#endif // SL_WITH_ROS_CONVERSIONS
 
 	bson_t child_obj_loc;
 	bson_t child_obj_rot;
 	
 	BSON_APPEND_DOCUMENT_BEGIN(out_doc, "loc", &child_obj_loc);
-	BSON_APPEND_DOUBLE(&child_obj_loc, "x", ROSLoc.X);
-	BSON_APPEND_DOUBLE(&child_obj_loc, "y", ROSLoc.Y);
-	BSON_APPEND_DOUBLE(&child_obj_loc, "z", ROSLoc.Z);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "x", Loc.X);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "y", Loc.Y);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "z", Loc.Z);
 	bson_append_document_end(out_doc, &child_obj_loc);
 
 	BSON_APPEND_DOCUMENT_BEGIN(out_doc, "rot", &child_obj_rot);
-	BSON_APPEND_DOUBLE(&child_obj_rot, "x", ROSQuat.X);
-	BSON_APPEND_DOUBLE(&child_obj_rot, "y", ROSQuat.Y);
-	BSON_APPEND_DOUBLE(&child_obj_rot, "z", ROSQuat.Z);
-	BSON_APPEND_DOUBLE(&child_obj_rot, "w", ROSQuat.W);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "x", Quat.X);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "y", Quat.Y);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "z", Quat.Z);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "w", Quat.W);
 	bson_append_document_end(out_doc, &child_obj_rot);
 }
 #endif //SL_WITH_LIBMONGO_C

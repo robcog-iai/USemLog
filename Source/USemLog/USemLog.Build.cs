@@ -1,10 +1,33 @@
-// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 using UnrealBuildTool;
 
 public class USemLog : ModuleRules
 {
+	// Set the given preprocessor as a public definition with  0 or 1 (check as private and public module)
+	private void SetDependencyPrepreocessorDefinition(string ModuleName, string PreprocessorDefinition)
+	{
+		string Result = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals(ModuleName));
+		if (string.IsNullOrEmpty(Result))
+		{
+			Result = PublicDependencyModuleNames.Find(DependencyName => DependencyName.Equals(ModuleName));
+			if (string.IsNullOrEmpty(Result))
+			{
+				PublicDefinitions.Add(PreprocessorDefinition + "=0");
+			}
+            else
+            {
+				PublicDefinitions.Add(PreprocessorDefinition + "=1");
+			}
+			
+		}
+		else
+		{
+			PublicDefinitions.Add(PreprocessorDefinition + "=1");
+		}
+	}
+	
     public USemLog(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
@@ -47,15 +70,14 @@ public class USemLog : ModuleRules
 				"Landscape", "AIModule", // whitelisted actors when setting the world to visual only
 				"UTags",
 				"UIds",
-				"UConversions",
-				"UMCGrasp",				// SL_WITH_MC_GRASP
-				//"libmongo",
+				//"UConversions",			// SL_WITH_ROS_CONVERSIONS
+				//"UMCGrasp",				// SL_WITH_MC_GRASP
 				//"SlicingLogic",		    // SL_WITH_SLICING
-				"MongoC",				// SL_WITH_LIBMONGO_C
+				//"MongoC",					// SL_WITH_LIBMONGO_C
 				//"MongoCxx",			    // SL_WITH_LIBMONGO_CXX
-				"SRanipal",			    // SL_WITH_EYE_TRACKING
+				//"SRanipal",			    // SL_WITH_EYE_TRACKING
 				//"Boost",				    // SL_WITH_BOOST
-				"UViz", "UMongoQA",	    // SL_WITH_DATA_VIS
+				//"UViz", "UMongoQA",	    // SL_WITH_DATA_VIS
 				// ... add private dependencies that you statically link with here ...
 			}
 			);
@@ -71,19 +93,6 @@ public class USemLog : ModuleRules
 				);
 		}
 
-		//// SL Vision currently only works in developer mode
-		//// (https://docs.unrealengine.com/en-us/Programming/UnrealBuildSystem/TargetFiles)
-		//if (Target.Type == TargetRules.TargetType.Editor)
-		////if(Target.Type == TargetRules.TargetType.Program)
-		//{
-		//	PrivateDependencyModuleNames.Add("USemLogVision");
-		//	PublicDefinitions.Add("SL_WITH_SLVIS=1");
-		//}
-		//else
-		//{
-		//	PublicDefinitions.Add("SL_WITH_SLVIS=0");
-		//}
-
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
 			{
@@ -92,75 +101,12 @@ public class USemLog : ModuleRules
 			);
 
 		// Check included dependencies and set preprocessor flags accordingly
-		string UMCGrasp = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("UMCGrasp"));
-		if (string.IsNullOrEmpty(UMCGrasp))
-		{
-			PublicDefinitions.Add("SL_WITH_MC_GRASP=0");
-		}
-		else
-		{
-			PublicDefinitions.Add("SL_WITH_MC_GRASP=1");
-		}
-
-		string MongoC = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("MongoC"));
-		if (string.IsNullOrEmpty(MongoC))
-		{
-			PublicDefinitions.Add("SL_WITH_LIBMONGO_C=0");
-		}
-		else
-		{
-			PublicDefinitions.Add("SL_WITH_LIBMONGO_C=1");
-
-			// Needed to ignore various warnings from libmongo
-			bEnableUndefinedIdentifierWarnings = false;
-			bEnableExceptions = true;
-			//bUseRTTI = true;
-		}
-
-		string MongoCxx = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("MongoCxx"));
-		if (string.IsNullOrEmpty(MongoCxx))
-		{
-			PublicDefinitions.Add("SL_WITH_LIBMONGO_CXX=0");
-		}
-		else
-		{
-			PublicDefinitions.Add("SL_WITH_LIBMONGO_CXX=1");
-
-			// Needed to ignore various warnings from libmongo
-			bEnableUndefinedIdentifierWarnings = false;
-			bEnableExceptions = true;
-			//bUseRTTI = true;
-		}
-
-		string SRanipal = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("SRanipal"));
-		if (string.IsNullOrEmpty(SRanipal))
-		{
-			PublicDefinitions.Add("SL_WITH_EYE_TRACKING=0");
-		}
-		else
-		{
-			PublicDefinitions.Add("SL_WITH_EYE_TRACKING=1");
-		}
-
-		string SlicingLogic = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("SlicingLogic"));
-		if (string.IsNullOrEmpty(SlicingLogic))
-		{
-			PublicDefinitions.Add("SL_WITH_SLICING=0");
-		}
-		else
-		{
-			PublicDefinitions.Add("SL_WITH_SLICING=1");
-		}
-		
-		string Boost = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Boost"));
-		if (string.IsNullOrEmpty(Boost))
-		{
-			PublicDefinitions.Add("VIZ_WITH_BOOST=0");
-		}
-		else
-		{
-			PublicDefinitions.Add("VIZ_WITH_BOOST=1");
-		}
+		SetDependencyPrepreocessorDefinition("UConversions", "SL_WITH_ROS_CONVERSIONS");
+		SetDependencyPrepreocessorDefinition("UMCGrasp", "SL_WITH_MC_GRASP");
+		SetDependencyPrepreocessorDefinition("MongoC", "SL_WITH_LIBMONGO_C");
+		SetDependencyPrepreocessorDefinition("MongoCxx", "SL_WITH_LIBMONGO_CXX");
+		SetDependencyPrepreocessorDefinition("SRanipal", "SL_WITH_EYE_TRACKING");
+		SetDependencyPrepreocessorDefinition("SlicingLogic", "SL_WITH_SLICING");
 		
 		string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));
 		string JsonUtil = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("JsonUtilities"));

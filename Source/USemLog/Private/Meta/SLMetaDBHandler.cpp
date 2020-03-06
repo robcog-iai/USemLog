@@ -8,7 +8,10 @@
 #include "SLEntitiesManager.h"
 
 // UUtils
+#if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
+#endif // SL_WITH_ROS_CONVERSIONS
+
 #include "Tags.h"
 
 // Ctor
@@ -311,7 +314,13 @@ void FSLMetaDBHandler::AddScanPoseEntry(const FSLScanPoseData& ScanPoseData)
 	BSON_APPEND_DOCUMENT_BEGIN(scan_pose_arr, pose_key, &scan_pose_doc);
 
 	BSON_APPEND_DOUBLE(&scan_pose_doc, "img_perc", ImgPerc);
+#if SL_WITH_ROS_CONVERSIONS
+	const FVector ROSLoc = FConversions::UToROS(ScanPoseData.CameraPose.GetLocation());
+	const FQuat RosQuat = FConversions::UToROS(ScanPoseData.CameraPose.GetRotation());
+	AddPoseDoc(ROSLoc, RosQuat, &scan_pose_doc);
+#else
 	AddPoseDoc(ScanPoseData.CameraPose.GetLocation(), ScanPoseData.CameraPose.GetRotation(), &scan_pose_doc);
+#endif // SL_WITH_ROS_CONVERSIONS
 	AddBBDoc(ScanPoseData.MinBB, ScanPoseData.MaxBB, &scan_pose_doc);
 
 	// "images" array containing the pointer to the gridfs file and the rendering type
@@ -462,15 +471,24 @@ void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 		// Check if location data is available
 		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
 		{
+#if SL_WITH_ROS_CONVERSIONS
 			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
 			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
 			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
+
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
 		{
+#if SL_WITH_ROS_CONVERSIONS
 			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
 			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
 			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
 		}
 
 		// Finish array doc
@@ -500,15 +518,23 @@ void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 		// Add semantic owner (component or actor) location
 		if (AActor* ObjAsAct = Cast<AActor>(SemOwner))
 		{
-			const FVector Loc = ObjAsAct->GetActorLocation();
-			const FQuat Quat = ObjAsAct->GetActorQuat();
-			AddPoseDoc(Loc, Quat, &arr_obj);
+#if SL_WITH_ROS_CONVERSIONS
+			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemOwner))
 		{
-			const FVector Loc = ObjAsSceneComp->GetComponentLocation();
-			const FQuat Quat = ObjAsSceneComp->GetComponentQuat();
-			AddPoseDoc(Loc, Quat, &arr_obj);
+#if SL_WITH_ROS_CONVERSIONS
+			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+			const FQuat RosQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
 		}
 
 		// Check if the skeletal mesh is valid
@@ -526,8 +552,6 @@ void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 			{
 				const FName BoneName = BoneNameToDataPair.Key;
 				const FSLBoneData BoneData = BoneNameToDataPair.Value;
-				const FVector BoneLoc = SkMComp->GetBoneLocation(BoneName);
-				const FQuat BoneQuat = SkMComp->GetBoneQuaternion(BoneName);
 
 				bson_uint32_to_string(jdx, &jdx_key, jdx_str, sizeof jdx_str);
 				BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, jdx_key, &bones_arr_obj);
@@ -545,7 +569,13 @@ void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 					}
 				}
 
-				AddPoseDoc(BoneLoc, BoneQuat, &bones_arr_obj);
+#if SL_WITH_ROS_CONVERSIONS
+				const FVector ROSLoc = FConversions::UToROS(SkMComp->GetBoneLocation(BoneName));
+				const FQuat RosQuat = FConversions::UToROS(SkMComp->GetBoneQuaternion(BoneName));
+				AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+#else
+				AddPoseDoc(SkMComp->GetBoneLocation(BoneName), SkMComp->GetBoneQuaternion(BoneName), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
 
 				bson_append_document_end(&bones_arr, &bones_arr_obj);
 				jdx++;
@@ -589,15 +619,23 @@ void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 		// Check if location data is available
 		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
 		{
+#if SL_WITH_ROS_CONVERSIONS
 			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
 			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
 			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
 		{
+#if SL_WITH_ROS_CONVERSIONS
 			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
 			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
 			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
 		}
 
 		// Finish array doc
@@ -630,15 +668,25 @@ void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 		// Check if location data is available
 		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
 		{
+#if SL_WITH_ROS_CONVERSIONS
 			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
 			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
 			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
 		{
+#if SL_WITH_ROS_CONVERSIONS
 			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
 			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
 			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
+
+
 		}
 
 		// Finish array doc
@@ -681,15 +729,23 @@ void FSLMetaDBHandler::AddCameraViews(bson_t* doc)
 		// Check if location data is available
 		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
 		{
-			const FVector Loc = ObjAsAct->GetActorLocation();
-			const FQuat Quat = ObjAsAct->GetActorQuat();
-			AddPoseDoc(Loc, Quat, &arr_obj);
+#if SL_WITH_ROS_CONVERSIONS
+			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+			const FQuat ROSQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
 		}
 		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
 		{
-			const FVector Loc = ObjAsSceneComp->GetComponentLocation();
-			const FQuat Quat = ObjAsSceneComp->GetComponentQuat();
-			AddPoseDoc(Loc, Quat, &arr_obj);
+#if SL_WITH_ROS_CONVERSIONS
+			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+#else
+			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+#endif // SL_WITH_ROS_CONVERSIONS
 		}
 
 		// Finish array doc
@@ -703,24 +759,20 @@ void FSLMetaDBHandler::AddCameraViews(bson_t* doc)
 // Add pose to document
 void FSLMetaDBHandler::AddPoseDoc(const FVector& InLoc, const FQuat& InQuat, bson_t* doc)
 {
-	// Switch to right handed ROS transformation
-	const FVector ROSLoc = FConversions::UToROS(InLoc);
-	const FQuat ROSQuat = FConversions::UToROS(InQuat);
-
 	bson_t child_obj_loc;
 	bson_t child_obj_rot;
 
 	BSON_APPEND_DOCUMENT_BEGIN(doc, "loc", &child_obj_loc);
-	BSON_APPEND_DOUBLE(&child_obj_loc, "x", ROSLoc.X);
-	BSON_APPEND_DOUBLE(&child_obj_loc, "y", ROSLoc.Y);
-	BSON_APPEND_DOUBLE(&child_obj_loc, "z", ROSLoc.Z);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "x", InLoc.X);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "y", InLoc.Y);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "z", InLoc.Z);
 	bson_append_document_end(doc, &child_obj_loc);
 
 	BSON_APPEND_DOCUMENT_BEGIN(doc, "rot", &child_obj_rot);
-	BSON_APPEND_DOUBLE(&child_obj_rot, "x", ROSQuat.X);
-	BSON_APPEND_DOUBLE(&child_obj_rot, "y", ROSQuat.Y);
-	BSON_APPEND_DOUBLE(&child_obj_rot, "z", ROSQuat.Z);
-	BSON_APPEND_DOUBLE(&child_obj_rot, "w", ROSQuat.W);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "x", InQuat.X);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "y", InQuat.Y);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "z", InQuat.Z);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "w", InQuat.W);
 	bson_append_document_end(doc, &child_obj_rot);
 }
 

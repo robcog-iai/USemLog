@@ -1,26 +1,26 @@
-// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 #include "SLContactShapeInterface.h"
-#include "SLContactBox.generated.h"
+#include "SLContactSphere.generated.h"
 
 /**
  * Collision area listening for semantic collision events
  */
-UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Box")
-class USEMLOG_API USLContactBox : public UBoxComponent, public ISLContactShapeInterface
+UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Sphere")
+class USEMLOG_API USLContactSphere : public USphereComponent, public ISLContactShapeInterface
 {
 	GENERATED_BODY()
 public:
 	// Default constructor
-	USLContactBox();
+	USLContactSphere();
 
 	// Dtor
-	~USLContactBox();
+	~USLContactSphere();
 
 	/* Begin ISLContactShapeInterface*/
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
@@ -73,20 +73,20 @@ private:
 private:
 	// Init and start at begin play
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bStartAtBeginPlay;
+		bool bStartAtBeginPlay;
 
 #if WITH_EDITOR
 	// Box extent scale factor (smaller will be chosen)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float BoxExtentScaleFactor;
+	float SphereScaleFactor;
 
 	// The box extent will be at least this big
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float BoxExtentMin;
+	float SphereMinSize;
 
 	// The box extent will be at most this big
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float BoxExtentMax;
+	float SphereMaxSize;
 
 	// Mimics a button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

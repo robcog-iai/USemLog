@@ -1,4 +1,4 @@
-// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Editor/SLSemanticMapWriter.h"
@@ -16,7 +16,10 @@
 // UUtils
 #include "Tags.h"
 #include "Ids.h"
+
+#if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
+#endif // SL_WITH_ROS_CONVERSIONS
 
 // Default constructor
 FSLSemanticMapWriter::FSLSemanticMapWriter()
@@ -195,10 +198,15 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		InSemMap->AddIndividual(ObjIndividual);
 
 		// Create pose individual
+#if SL_WITH_ROS_CONVERSIONS
 		const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
 		const FQuat ROSQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
 		InSemMap->AddIndividual(FSLOwlSemanticMapStatics::CreatePoseIndividual(
 			MapPrefix, PoseId, ROSLoc, ROSQuat));
+#else
+		InSemMap->AddIndividual(FSLOwlSemanticMapStatics::CreatePoseIndividual(
+			MapPrefix, PoseId, ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat()));
+#endif // SL_WITH_ROS_CONVERSIONS
 	}
 	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
 	{
@@ -227,10 +235,15 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		InSemMap->AddIndividual(ObjIndividual);
 
 		// Create pose individual
+#if SL_WITH_ROS_CONVERSIONS
 		const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
 		const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
 		InSemMap->AddIndividual(FSLOwlSemanticMapStatics::CreatePoseIndividual(
 			MapPrefix, PoseId, ROSLoc, ROSQuat));
+#else
+		InSemMap->AddIndividual(FSLOwlSemanticMapStatics::CreatePoseIndividual(
+			MapPrefix, PoseId, ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat()));
+#endif // SL_WITH_ROS_CONVERSIONS
 	}
 	else
 	{
@@ -274,8 +287,12 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 	{
 		if (UStaticMeshComponent* SMComp = ObjAsSMAct->GetStaticMeshComponent())
 		{
-			const FVector BBSize = FConversions::CmToM(
-				SMComp->Bounds.GetBox().GetSize());
+			FVector BBSize;
+#if SL_WITH_ROS_CONVERSIONS
+			BBSize = FConversions::CmToM(SMComp->Bounds.GetBox().GetSize());
+#else
+			BBSize = SMComp->Bounds.GetBox().GetSize();
+#endif // SL_WITH_ROS_CONVERSIONS
 			if (!BBSize.IsZero())
 			{
 				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
@@ -288,8 +305,12 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 	{
 		if (USkeletalMeshComponent* SkelComp = ObjAsSkelAct->GetSkeletalMeshComponent())
 		{
-			const FVector BBSize = FConversions::CmToM(
-				SkelComp->Bounds.GetBox().GetSize());
+			FVector BBSize;
+#if SL_WITH_ROS_CONVERSIONS
+			BBSize = FConversions::CmToM(SkelComp->Bounds.GetBox().GetSize());
+#else
+			BBSize = SkelComp->Bounds.GetBox().GetSize();
+#endif // SL_WITH_ROS_CONVERSIONS
 			if (!BBSize.IsZero())
 			{
 				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
@@ -306,8 +327,13 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 		}
 	}
 	else if (USkeletalMeshComponent* ObjAsSkelComp = Cast<USkeletalMeshComponent>(Object))
-	{
-		const FVector BBSize = FConversions::CmToM(ObjAsSkelComp->Bounds.GetBox().GetSize());
+	{		
+		FVector BBSize;
+#if SL_WITH_ROS_CONVERSIONS
+		BBSize = FConversions::CmToM(ObjAsSkelComp->Bounds.GetBox().GetSize());
+#else
+		BBSize = ObjAsSkelComp->Bounds.GetBox().GetSize();
+#endif // SL_WITH_ROS_CONVERSIONS
 		if (!BBSize.IsZero())
 		{
 			ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
@@ -325,8 +351,12 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 	}
 	else if(UPrimitiveComponent* ObjAsPrimComp = Cast<UPrimitiveComponent>(Object))
 	{
-		const FVector BBSize = FConversions::CmToM(
-			ObjAsPrimComp->Bounds.GetBox().GetSize());
+		FVector BBSize;
+#if SL_WITH_ROS_CONVERSIONS
+		BBSize = FConversions::CmToM(ObjAsPrimComp->Bounds.GetBox().GetSize());
+#else
+		BBSize = ObjAsPrimComp->Bounds.GetBox().GetSize();
+#endif // SL_WITH_ROS_CONVERSIONS
 		if (!BBSize.IsZero())
 		{
 			ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
@@ -384,16 +414,26 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap>
 			InSemMap->AddIndividual(ConstrIndividual);
 
 			// Create pose individual
+#if SL_WITH_ROS_CONVERSIONS
 			const FVector ROSLoc = FConversions::UToROS(ConstraintComp->GetComponentLocation());
 			const FQuat ROSQuat = FConversions::UToROS(ConstraintComp->GetComponentQuat());
 			InSemMap->AddIndividual(FSLOwlSemanticMapStatics::CreatePoseIndividual(
 				MapPrefix, PoseId, ROSLoc, ROSQuat));
+#else
+			InSemMap->AddIndividual(FSLOwlSemanticMapStatics::CreatePoseIndividual(
+				MapPrefix, PoseId, ConstraintComp->GetComponentLocation(), ConstraintComp->GetComponentQuat()));
+#endif // SL_WITH_ROS_CONVERSIONS
 
 			// Create linear constraint individual
 			const uint8 LinXMotion = ConstraintComp->ConstraintInstance.GetLinearXMotion();
 			const uint8 LinYMotion = ConstraintComp->ConstraintInstance.GetLinearYMotion();
 			const uint8 LinZMotion = ConstraintComp->ConstraintInstance.GetLinearZMotion();
-			const float LinLimit = FConversions::CmToM(ConstraintComp->ConstraintInstance.GetLinearLimit());
+			float LinLimit;
+#if SL_WITH_ROS_CONVERSIONS
+			LinLimit = FConversions::CmToM(ConstraintComp->ConstraintInstance.GetLinearLimit());
+#else
+			LinLimit =ConstraintComp->ConstraintInstance.GetLinearLimit();
+#endif // SL_WITH_ROS_CONVERSIONS
 			const bool bLinSoftConstraint = ConstraintComp->ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint;
 			const float LinStiffness = ConstraintComp->ConstraintInstance.ProfileInstance.LinearLimit.Stiffness;
 			const float LinDamping = ConstraintComp->ConstraintInstance.ProfileInstance.LinearLimit.Damping;

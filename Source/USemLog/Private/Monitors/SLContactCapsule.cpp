@@ -1,8 +1,9 @@
-// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLContactSphere.h"
+#include "Monitors/SLContactCapsule.h"
 #include "SLEntitiesManager.h"
+
 #include "Animation/SkeletalMeshActor.h"
 
 // UUTils
@@ -10,7 +11,7 @@
 #include "Ids.h"
 
 // Default constructor
-USLContactSphere::USLContactSphere()
+USLContactCapsule::USLContactCapsule()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -20,17 +21,17 @@ USLContactSphere::USLContactSphere()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
-
-	bLogSupportedByEvents = true;
 	
+	bLogSupportedByEvents = true;
+
 	// Is started by the event logger
 	bStartAtBeginPlay = false;
 
 #if WITH_EDITOR
 	// Box extent scale
-	SphereScaleFactor = 1.25f;
-	SphereMinSize = 0.25f;
-	SphereMaxSize = 1.f;
+	CapsuleScaleFactor = 1.03f;
+	CapsuleMinSize = 0.25f;
+	CapsuleMaxSize = 1.f;
 
 	// Mimics a button
 	bReCalcShapeButton = false;
@@ -38,7 +39,7 @@ USLContactSphere::USLContactSphere()
 }
 
 // Destructor
-USLContactSphere::~USLContactSphere()
+USLContactCapsule::~USLContactCapsule()
 {
 	if (!bIsFinished)
 	{
@@ -47,7 +48,7 @@ USLContactSphere::~USLContactSphere()
 }
 
 // Called at level startup
-void USLContactSphere::BeginPlay()
+void USLContactCapsule::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -59,7 +60,7 @@ void USLContactSphere::BeginPlay()
 }
 
 // Called when actor removed from game or game ended
-void USLContactSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void USLContactCapsule::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
@@ -70,7 +71,7 @@ void USLContactSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Setup pointers to outer, check if semantically annotated
-void USLContactSphere::Init(bool bInLogSupportedByEvents)
+void USLContactCapsule::Init(bool bInLogSupportedByEvents)
 {
 	if (!bIsInit)
 	{
@@ -125,7 +126,7 @@ void USLContactSphere::Init(bool bInLogSupportedByEvents)
 }
 
 // Start overlap events, trigger currently overlapping objects
-void USLContactSphere::Start()
+void USLContactCapsule::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -138,20 +139,20 @@ void USLContactSphere::Start()
 		SetGenerateOverlapEvents(true);
 
 		// Broadcast currently overlapping components
-		USLContactSphere::TriggerInitialOverlaps();
+		TriggerInitialOverlaps();
 
 		// Bind future overlapping event delegates
-		OnComponentBeginOverlap.AddDynamic(this, &USLContactSphere::OnOverlapBegin);
-		OnComponentEndOverlap.AddDynamic(this, &USLContactSphere::OnOverlapEnd);
+		OnComponentBeginOverlap.AddDynamic(this, &USLContactCapsule::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLContactCapsule::OnOverlapEnd);
 
 		// Mark as started
 		bIsStarted = true;
 	}
 }
 
-#if WITH_EDITOR
+#ifdef WITH_EDITOR
 // Update bounds visual (red/green -- parent is not/is semantically annotated)
-void USLContactSphere::UpdateVisualColor()
+void USLContactCapsule::UpdateVisualColor()
 {
 	// Set the default color of the shape
 	if (FTags::HasKey(GetOuter(), "SemLog", "Class"))
@@ -173,22 +174,22 @@ void USLContactSphere::UpdateVisualColor()
 }
 
 // Called after the C++ constructor and after the properties have been initialized
-void USLContactSphere::PostInitProperties()
+void USLContactCapsule::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	if (!USLContactSphere::LoadShapeBounds())
+	if (!USLContactCapsule::LoadShapeBounds())
 	{
-		USLContactSphere::CalcShapeBounds();
-		USLContactSphere::StoreShapeBounds();
+		USLContactCapsule::CalcShapeBounds();
+		USLContactCapsule::StoreShapeBounds();
 	}
 
 	// Set bounds visual corresponding color 
-	USLContactSphere::UpdateVisualColor();
+	USLContactCapsule::UpdateVisualColor();
 }
 
 // Called when a property is changed in the editor
-void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLContactCapsule::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -198,12 +199,17 @@ void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 	FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != NULL) ?
 		PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, SphereRadius))
+	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactCapsule, CapsuleRadius))
 	{
-			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "Radius",
-				FString::SanitizeFloat(SphereRadius));
+		FTags::AddKeyValuePair(GetOuter(), TagTypeName, "Radius",
+			FString::SanitizeFloat(CapsuleRadius));
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, RelativeLocation))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactCapsule, CapsuleHalfHeight))
+	{
+		FTags::AddKeyValuePair(GetOuter(), TagTypeName, "HalfHeight",
+			FString::SanitizeFloat(CapsuleHalfHeight));
+	}
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactCapsule, RelativeLocation))
 	{
 		if (PropertyName == FName("X"))
 		{
@@ -221,7 +227,17 @@ void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 				FString::SanitizeFloat(RelativeLocation.Y));
 		}
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, bReCalcShapeButton))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactCapsule, RelativeRotation))
+	{
+		const FQuat RelQuat = GetRelativeTransform().GetRotation();
+		TMap<FString, FString> KeyValMap;
+		KeyValMap.Add("QuatW", FString::SanitizeFloat(RelQuat.W));
+		KeyValMap.Add("QuatX", FString::SanitizeFloat(RelQuat.X));
+		KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
+		KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
+		FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
+	}
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactCapsule, bReCalcShapeButton))
 	{
 		CalcShapeBounds();
 		bReCalcShapeButton = false;
@@ -229,10 +245,12 @@ void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 }
 
 // Called when this component is moved in the editor
-void USLContactSphere::PostEditComponentMove(bool bFinished)
+void USLContactCapsule::PostEditComponentMove(bool bFinished)
 {
 	// Update tags with the new transform
-	const FVector RelLoc = GetRelativeTransform().GetLocation();
+	const FTransform RelTransf = GetRelativeTransform();
+	const FVector RelLoc = RelTransf.GetLocation();
+	const FQuat RelQuat = RelTransf.GetRotation();
 
 	TMap<FString, FString> KeyValMap;
 
@@ -240,11 +258,16 @@ void USLContactSphere::PostEditComponentMove(bool bFinished)
 	KeyValMap.Add("LocY", FString::SanitizeFloat(RelLoc.Y));
 	KeyValMap.Add("LocZ", FString::SanitizeFloat(RelLoc.Z));
 
+	KeyValMap.Add("QuatW", FString::SanitizeFloat(RelQuat.W));
+	KeyValMap.Add("QuatX", FString::SanitizeFloat(RelQuat.X));
+	KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
+	KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
+
 	FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
 }
 
 // Read values from tags
-bool USLContactSphere::LoadShapeBounds()
+bool USLContactCapsule::LoadShapeBounds()
 {
 	TMap<FString, FString> TagKeyValMap =
 		FTags::GetKeyValuePairs(GetOuter(), TagTypeName);
@@ -255,6 +278,10 @@ bool USLContactSphere::LoadShapeBounds()
 	if (FString* ValPtr = TagKeyValMap.Find("Radius")) { Radius = FCString::Atof(**ValPtr); }
 	else { return false; }
 
+	float HalfHeight;
+	if (FString* ValPtr = TagKeyValMap.Find("HalfHeight")) { HalfHeight = FCString::Atof(**ValPtr); }
+	else { return false; }
+
 	FVector RelLoc;
 	if (FString* ValPtr = TagKeyValMap.Find("LocX")) { RelLoc.X = FCString::Atof(**ValPtr); }
 	else { return false; }
@@ -263,28 +290,40 @@ bool USLContactSphere::LoadShapeBounds()
 	if (FString* ValPtr = TagKeyValMap.Find("LocZ")) { RelLoc.Z = FCString::Atof(**ValPtr); }
 	else { return false; }
 
-	SetSphereRadius(Radius);
-	SetRelativeLocation(RelLoc);
+	FQuat RelQuat;
+	if (FString* ValPtr = TagKeyValMap.Find("QuatW")) { RelQuat.W = FCString::Atof(**ValPtr); }
+	else { return false; }
+	if (FString* ValPtr = TagKeyValMap.Find("QuatX")) { RelQuat.X = FCString::Atof(**ValPtr); }
+	else { return false; }
+	if (FString* ValPtr = TagKeyValMap.Find("QuatY")) { RelQuat.Y = FCString::Atof(**ValPtr); }
+	else { return false; }
+	if (FString* ValPtr = TagKeyValMap.Find("QuatZ")) { RelQuat.Z = FCString::Atof(**ValPtr); }
+	else { return false; }
+
+	SetCapsuleSize(Radius, HalfHeight);
+	SetRelativeTransform(FTransform(RelQuat, RelLoc));
 	return true;
 }
 
 // Calculate trigger area size
-bool USLContactSphere::CalcShapeBounds()
+bool USLContactCapsule::CalcShapeBounds()
 {
 	// Get the static mesh component
 	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
 	{
 		if (UStaticMeshComponent* SMComp = OuterAsSMAct->GetStaticMeshComponent())
 		{
-			// Apply smallest sphere size
+			// Apply smallest box extent
 			FVector BBMin;
 			FVector BBMax;
 			SMComp->GetLocalBounds(BBMin, BBMax);
-			FBoxSphereBounds BoxSphere(FBox(BBMin*0.5f, BBMax*0.5f));
-			float Radius = FMath::Clamp(BoxSphere.SphereRadius * SphereScaleFactor,
-				BoxSphere.SphereRadius + SphereMinSize, BoxSphere.SphereRadius + SphereMaxSize);
 
-			SetSphereRadius(Radius);
+			// TODO fit capsule in the box
+			FBoxSphereBounds BoxSphere(FBox(BBMin*0.5f, BBMax*0.5f));
+			float Radius = FMath::Clamp(BoxSphere.SphereRadius * CapsuleScaleFactor,
+				BoxSphere.SphereRadius + CapsuleMinSize, BoxSphere.SphereRadius + CapsuleMaxSize);
+			SetCapsuleSize(Radius, Radius * 2.f);
+
 			return true;
 		}
 	}
@@ -292,17 +331,25 @@ bool USLContactSphere::CalcShapeBounds()
 }
 
 // Save values to tags
-bool USLContactSphere::StoreShapeBounds()
+bool USLContactCapsule::StoreShapeBounds()
 {
-	const FVector RelLoc = GetRelativeTransform().GetLocation();
+	const FTransform RelTransf = GetRelativeTransform();
+	const FVector RelLoc = RelTransf.GetLocation();
+	const FQuat RelQuat = RelTransf.GetRotation();
 
 	TMap<FString, FString> KeyValMap;
 
-	KeyValMap.Add("Radius", FString::SanitizeFloat(SphereRadius));
+	KeyValMap.Add("Radius", FString::SanitizeFloat(CapsuleRadius));
+	KeyValMap.Add("HalfHeight", FString::SanitizeFloat(CapsuleHalfHeight));
 
 	KeyValMap.Add("LocX", FString::SanitizeFloat(RelLoc.X));
 	KeyValMap.Add("LocY", FString::SanitizeFloat(RelLoc.Y));
 	KeyValMap.Add("LocZ", FString::SanitizeFloat(RelLoc.Z));
+
+	KeyValMap.Add("QuatW", FString::SanitizeFloat(RelQuat.W));
+	KeyValMap.Add("QuatX", FString::SanitizeFloat(RelQuat.X));
+	KeyValMap.Add("QuatY", FString::SanitizeFloat(RelQuat.Y));
+	KeyValMap.Add("QuatZ", FString::SanitizeFloat(RelQuat.Z));
 
 	return FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
 }

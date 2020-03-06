@@ -34,7 +34,7 @@ void ASLGazeVisualizer::BeginPlay()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not start the eye tracking software.."), *FString(__func__), __LINE__);
 	}
-#elif
+#else
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Eye tracking module not enabled.."), *FString(__func__), __LINE__);
 #endif // SL_WITH_EYE_TRACKING
 	

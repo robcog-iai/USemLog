@@ -1,10 +1,10 @@
-// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLEdModeToolkit.h"
 #include "SLEdMode.h"
 #include "SLSkeletalDataComponent.h"
-#include "Events/SLContactBox.h"
+#include "Monitors/SLContactBox.h"
 #include "Editor/SLSemanticMapWriter.h"
 
 #include "Widgets/Input/SButton.h"

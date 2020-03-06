@@ -1,9 +1,13 @@
-// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "World/SLWorldWriterMongoCxx.h"
 #include "Animation/SkeletalMeshActor.h"
+
+#if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
+#endif // SL_WITH_ROS_CONVERSIONS
+
 #if SL_WITH_LIBMONGO_CXX
 THIRD_PARTY_INCLUDES_START
 #include <mongocxx/instance.hpp>

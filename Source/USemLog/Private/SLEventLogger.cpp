@@ -1,4 +1,4 @@
-// Copyright 2017-2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLEventLogger.h"
@@ -9,11 +9,11 @@
 #include "Events/SLReachEventHandler.h"
 #include "Events/SLPickAndPlaceEventsHandler.h"
 #include "Events/SLContainerEventHandler.h"
-#include "Events/SLContactShapeInterface.h"
-#include "Events/SLManipulatorListener.h"
-#include "Events/SLReachListener.h"
-#include "Events/SLPickAndPlaceListener.h"
-#include "Events/SLContainerListener.h"
+#include "Monitors/SLContactShapeInterface.h"
+#include "Monitors/SLManipulatorListener.h"
+#include "Monitors/SLReachListener.h"
+#include "Monitors/SLPickAndPlaceListener.h"
+#include "Monitors/SLContainerListener.h"
 #include "Events/SLGoogleCharts.h"
 
 #include "Misc/Paths.h"

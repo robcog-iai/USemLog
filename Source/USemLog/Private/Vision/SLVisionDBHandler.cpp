@@ -5,7 +5,9 @@
 #include "SLEntitiesManager.h"
 
 // UUtils
+#if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
+#endif // SL_WITH_ROS_CONVERSIONS
 
 
 // Ctor
@@ -680,11 +682,19 @@ bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc,
 				// Add entity
 				if (AStaticMeshActor* SMA = FSLEntitiesManager::GetInstance()->GetStaticMeshActor(Id))
 				{
+#if SL_WITH_ROS_CONVERSIONS
 					OutEntityPoses.Emplace(SMA, FConversions::ROSToU(FTransform(Quat, Loc)));
+#else
+					OutEntityPoses.Emplace(SMA, FTransform(Quat, Loc));
+#endif // SL_WITH_ROS_CONVERSIONS
 				}
 				else if (ASLVisionCamera* VCA = FSLEntitiesManager::GetInstance()->GetVisionCameraActor(Id))
-				{
+				{					
+#if SL_WITH_ROS_CONVERSIONS
 					OutVirtualCameraPoses.Emplace(VCA, FConversions::ROSToU(FTransform(Quat, Loc)));
+#else
+					OutVirtualCameraPoses.Emplace(VCA, FTransform(Quat, Loc));
+#endif // SL_WITH_ROS_CONVERSIONS
 				}
 			}
 		}
@@ -766,8 +776,11 @@ bool FSLVisionDBHandler::GetSkeletalEntitiesData(bson_iter_t* doc,
 							{
 								Quat.W = bson_iter_double(&bones_sub_sub_child);
 							}
-
+#if SL_WITH_ROS_CONVERSIONS
 							BonesMap.Add(BoneName, FConversions::ROSToU(FTransform(Quat, Loc)));
+#else
+							BonesMap.Add(BoneName, FTransform(Quat, Loc));
+#endif // SL_WITH_ROS_CONVERSIONS
 						}
 					}
 				}

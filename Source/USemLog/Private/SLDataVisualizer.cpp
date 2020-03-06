@@ -183,6 +183,8 @@ bool USLDataVisualizer::SetNextQuery()
 	{
 		return false;
 	}
+#else
+	return false;
 #endif //SL_WITH_DATA_VIS
 }
 
@@ -316,12 +318,12 @@ bool USLDataVisualizer::SpawnVizWorldManager()
 // Execute active query
 void USLDataVisualizer::ExecuteQuery(const FSLVisQuery& Query)
 {
-
-
+#if SL_WITH_DATA_VIS
 	if (Query.bSkip)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d ArrQ[%ld] - Q[%ld]: Description=%s; bSkip set to true, skipping this query.."),
 			*FString(__FUNCTION__), __LINE__, QueryArrayIdx, ActiveQueryIdx, *Query.Description);
+		Trigger();
 		return;
 	}
 	else
@@ -425,6 +427,7 @@ void USLDataVisualizer::ExecuteQuery(const FSLVisQuery& Query)
 	default:
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Unknown query type.."), *FString(__FUNCTION__), __LINE__);
 	}
+#endif // SL_WITH_DATA_VIS
 }
 
 #if SL_WITH_DATA_VIS

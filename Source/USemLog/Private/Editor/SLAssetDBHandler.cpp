@@ -372,10 +372,10 @@ void FSLAssetDBHandler::Download()
 #endif
 }
 
+#if SL_WITH_LIBMONGO_C
 // Save image to gridfs, get the file oid and return true if succeeded
 bool FSLAssetDBHandler::AddToGridFs(const TArray<uint8>& InData, bson_oid_t* out_oid) const
 {
-#if SL_WITH_LIBMONGO_C
 	mongoc_gridfs_file_t *file;
 	mongoc_gridfs_file_opt_t file_opt = { 0 };
 	const bson_value_t* file_id_val;
@@ -427,8 +427,8 @@ bool FSLAssetDBHandler::AddToGridFs(const TArray<uint8>& InData, bson_oid_t* out
 	mongoc_gridfs_file_destroy(file);
 
 	return true;
-#endif
 }
+#endif
 
 void FSLAssetDBHandler::UploadAllFileToGridFS(const FString& Dir)
 {
