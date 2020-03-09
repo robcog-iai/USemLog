@@ -26,3 +26,9 @@ void ASLEntityVisualizer::Tick(float DeltaTime)
 
 }
 
+// True if it should tick in the editor
+bool ASLEntityVisualizer::ShouldTickIfViewportsOnly() const
+{
+	return false;
+}
+

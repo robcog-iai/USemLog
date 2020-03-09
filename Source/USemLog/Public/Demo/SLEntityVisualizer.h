@@ -7,6 +7,21 @@
 #include "GameFramework/Actor.h"
 #include "SLEntityVisualizer.generated.h"
 
+/*
+* Struct holding the text info about the actors
+*/
+struct FSLEntityTextInfo
+{
+	// Class name
+	FString ClassName;
+
+	// Unique identifier
+	FString Id;
+};
+
+/*
+* Demo actor to attach text components with text data to the world entities
+*/
 UCLASS()
 class ASLEntityVisualizer : public AActor
 {
@@ -23,6 +38,9 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	// True if it should tick in the editor
+	virtual bool ShouldTickIfViewportsOnly() const override;
 
 private:
 	// Update orientation
