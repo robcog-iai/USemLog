@@ -22,7 +22,7 @@
     },
     {
       "Name": "USemLogEd",
-      "Type": "Developer",
+      "Type": "DeveloperTool",
       "LoadingPhase": "Default"
     },
     {
