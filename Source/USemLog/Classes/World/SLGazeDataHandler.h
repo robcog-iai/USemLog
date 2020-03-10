@@ -93,7 +93,7 @@ private:
 	UWorld* World;
 
 	// Used for getting the gaze origin point
-	APlayerCameraManager* PlayerCameraRef;
+	APlayerCameraManager* CameraManager;
 
 	// Custom made sranipal proxy to avoid compilation issues
 	class ASLGazeProxy* GazeProxy;

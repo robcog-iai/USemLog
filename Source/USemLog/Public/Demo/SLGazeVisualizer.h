@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Camera/PlayerCameraManager.h"
 
 #if SL_WITH_EYE_TRACKING
 #include "SLGazeProxy.h"
@@ -27,7 +28,7 @@ struct FSLGazeTextInfo
 /*
 * Demo actor used for appending semantic information text on the viewed actors
 */
-UCLASS()
+UCLASS(ClassGroup = (SL),  DisplayName = "SL Gaze Visualizer")
 class ASLGazeVisualizer : public AActor
 {
 	GENERATED_BODY()
@@ -45,6 +46,36 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
+	// Process the gaze trace
+	void GazeTrace_NONE(const FVector& Origin, const FVector& Target);
+	void GazeTrace_Line(const FVector& Origin, const FVector& Target);
+	void GazeTrace_Sphere(const FVector& Origin, const FVector& Target);
+
+	// Print out the gaze hit info
+	void ProcessGazeHit(AActor* Actor);
+
+private:
+	// Process update function
+	typedef void(ASLGazeVisualizer::* ProcessGazeFunctionPointerType)(const FVector& Origin, const FVector& Target);
+	ProcessGazeFunctionPointerType ProcessGazeFuncPtr;
+
+	// Raytrace limit
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float RayLength = 1000.f;
+
+	// Sphere raytrace radius
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float RayRadius = 1.5f;
+
+	// Parameters used for the trace
+	FCollisionQueryParams TraceParams;
+
+	// Collision shape used for the sweep
+	FCollisionShape SphereShape;
+
+	// Used for getting the gaze origin point
+	APlayerCameraManager* CameraManager;
+
 #if SL_WITH_EYE_TRACKING
 	// Custom made sranipal proxy to avoid compilation issues
 	class ASLGazeProxy* GazeProxy;

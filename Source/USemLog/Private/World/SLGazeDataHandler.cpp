@@ -20,7 +20,7 @@ FSLGazeDataHandler::FSLGazeDataHandler()
 	
 	GazeProxy = nullptr;
 	World = nullptr;
-	PlayerCameraRef = nullptr;
+	CameraManager = nullptr;
 }
 
 // Setup the eye tracking software
@@ -62,8 +62,8 @@ void FSLGazeDataHandler::Start()
 		{
 			if(UGameplayStatics::GetPlayerController(World, 0))
 			{
-				PlayerCameraRef = UGameplayStatics::GetPlayerController(World, 0)->PlayerCameraManager;
-				if(PlayerCameraRef)
+				CameraManager = UGameplayStatics::GetPlayerController(World, 0)->PlayerCameraManager;
+				if(CameraManager)
 				{
 					bIsStarted = true;
 				}
@@ -103,10 +103,10 @@ bool FSLGazeDataHandler::GetData(FSLGazeData& OutData)
 	FVector RelativeGazeDirection;
 	if (GazeProxy->GetRelativeGazeDirection(RelativeGazeDirection))
 	{
-		const FVector RaycastOrigin = PlayerCameraRef->GetCameraLocation();
-		const FVector RaycastTarget =  PlayerCameraRef->GetCameraRotation().RotateVector(RaycastOrigin + RelativeGazeDirection * RayLength);
+		const FVector RaycastOrigin = CameraManager->GetCameraLocation();
+		const FVector RaycastTarget =  CameraManager->GetCameraRotation().RotateVector(RaycastOrigin + RelativeGazeDirection * RayLength);
 
-		FCollisionQueryParams TraceParam = FCollisionQueryParams(FName("EyeTraceParam"), true, PlayerCameraRef);
+		FCollisionQueryParams TraceParam = FCollisionQueryParams(FName("EyeTraceParam"), true, CameraManager);
 		FHitResult HitResult;
 
 		// Line trace
@@ -117,7 +117,7 @@ bool FSLGazeDataHandler::GetData(FSLGazeData& OutData)
 			if(World->LineTraceSingleByChannel(HitResult, RaycastOrigin, RaycastTarget, ECC_Pawn, TraceParam))
 			{
 				FSLEntity Entity;
-				if(FSLEntitiesManager::GetInstance()->GetEntity(HitResult.Actor.Get(),Entity))
+				if(FSLEntitiesManager::GetInstance()->GetEntity(HitResult.Actor.Get(), Entity))
 				{
 					OutData.SetData(RaycastOrigin, HitResult.ImpactPoint, Entity);
 					// TODO debug lines should not run on the separate thread
