@@ -9,7 +9,7 @@
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "GameFramework/PlayerController.h"
-
+#include "Kismet/KismetMathLibrary.h"
 #include "SLSkeletalDataComponent.h"
 
 // UUtils
@@ -25,6 +25,8 @@ ASLGazeVisualizer::ASLGazeVisualizer()
 	// Create the visual component
 	GazeVisual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("GazeVisual"));
 	GazeVisual->SetMobility(EComponentMobility::Movable);
+	GazeVisual->SetGenerateOverlapEvents(false);
+	GazeVisual->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	RootComponent = GazeVisual;
 	
 	// Create the text component
@@ -32,7 +34,7 @@ ASLGazeVisualizer::ASLGazeVisualizer()
 	GazeText->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
 	GazeText->SetVerticalAlignment(EVerticalTextAligment::EVRTA_TextCenter);
 	GazeText->SetText(FText::FromString("NONE"));
-	GazeText->SetWorldSize(1.f);
+	GazeText->SetWorldSize(2.5f);
 	GazeText->SetTextRenderColor(FColor::Red);
 	GazeText->SetupAttachment(RootComponent);
 
@@ -56,6 +58,9 @@ ASLGazeVisualizer::ASLGazeVisualizer()
 void ASLGazeVisualizer::BeginPlay()
 {
 	Super::BeginPlay();
+
+	/*SetActorEnableCollision(false);
+	SetActorEnableCollision(ECollisionEnabled::NoCollision);*/
 
 #if SL_WITH_EYE_TRACKING
 	for (TActorIterator<ASLGazeProxy> GazeItr(GetWorld()); GazeItr; ++GazeItr)
@@ -120,10 +125,7 @@ void ASLGazeVisualizer::Tick(float DeltaTime)
 		const FVector TargetLoc = CameraManager->GetCameraRotation().RotateVector(OriginLoc + RelativeGazeDirection * RayLength);
 		(this->*GazeTraceFuncPtr)(OriginLoc, TargetLoc);
 	}
-#endif // SL_WITH_EYE_TRACKING	
-
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Log message %.2f"),
-		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
+#endif // SL_WITH_EYE_TRACKING
 }
 
 // Load info from tags
@@ -235,6 +237,10 @@ void ASLGazeVisualizer::ProcessGazeHit(const FHitResult& HitResult)
 	// Move visual to the hit location
 	SetActorLocation(HitResult.Location);
 
+	// Look at camera
+	SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), CameraManager->GetCameraLocation()));
+
+
 	AActor* HitActor = HitResult.Actor.Get();
 	if (PrevActor != HitActor)
 	{		
@@ -244,9 +250,6 @@ void ASLGazeVisualizer::ProcessGazeHit(const FHitResult& HitResult)
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Hit=%s; BoneName=%s;"),
 			*FString(__FUNCTION__), __LINE__, *HitActor->GetName(), *HitResult.BoneName.ToString());
 
-
-
-
 		PrevActor = HitActor;
 	}
 	else if(!PrevBoneName.IsEqual(HitResult.BoneName))
@@ -255,6 +258,5 @@ void ASLGazeVisualizer::ProcessGazeHit(const FHitResult& HitResult)
 
 		PrevBoneName = HitResult.BoneName;
 	}
-
 }
 
