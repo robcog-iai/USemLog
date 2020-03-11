@@ -47,13 +47,16 @@ struct FSLBoneData
 	//FSLBoneData() : Class(""), MaskColorHex(""), MaskMaterialIndex(INDEX_NONE) {};
 
 	// Checks if the structure has been set
-	bool IsClassSet() const { return !Class.IsEmpty(); };
+	FORCEINLINE bool IsClassSet() const { return !Class.IsEmpty(); };
 
 	// Check if visual is set
 	FORCEINLINE bool HasVisualMask() const { return !VisualMask.IsEmpty(); }
 
 	// Check if rendered visual is set
 	FORCEINLINE bool HasRenderedVisualMask() const { return !RenderedVisualMask.IsEmpty(); }
+
+	// Checks if the structure has been set
+	FORCEINLINE bool IsSet() const { return !Id.IsEmpty() && !Class.IsEmpty() && !VisualMask.IsEmpty(); };
 
 	// Get result as string
 	FString ToString() const

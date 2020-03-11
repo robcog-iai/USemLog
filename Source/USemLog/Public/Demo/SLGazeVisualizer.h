@@ -12,9 +12,9 @@
 #include "SLGazeVisualizer.generated.h"
 
 /*
-* Struct holding the text info about the actors
+* Semantic data of static mesh actors
 */
-struct FSLGazeSemanticData
+struct FSLGazeEntityData
 {
 	// Class name
 	FString ClassName;
@@ -24,6 +24,36 @@ struct FSLGazeSemanticData
 
 	// Color
 	FColor MaskColor;
+};
+
+/*
+* Semantic data of skeletal mesh actors
+*/
+struct FSLGazeBoneData
+{
+	// Class name
+	FString ClassName;
+
+	// Unique identifier
+	FString Id;
+
+	// Color
+	FColor MaskColor;
+};
+
+/*
+* Semantic data of skeletal mesh actors
+*/
+struct FSLGazeSkelData
+{
+	// Class name
+	FString ClassName;
+
+	// Unique identifier
+	FString Id;
+
+	// Color
+	TMap<FName, FSLGazeBoneData> BonesData;
 };
 
 /*
@@ -96,9 +126,15 @@ private:
 	// Collision shape used for the sweep
 	FCollisionShape SphereShape;
 
-	// Map of the semantically annotated actors and their text info
-	TMap<AStaticMeshActor*, FSLGazeSemanticData> SMActorSemanticData;
+	// Map of the semantically annotated actors and their semantic info
+	TMap<AActor*, FSLGazeEntityData> EntitySemanticData;
+
+	// Map of the semantically annotated skeletal actors and their semantic info
+	TMap<AActor*, FSLGazeSkelData> SkelSemanticData;
 
 	// Skip reading the semantic data if we are looking at the same actor
 	AActor* PrevActor;
+
+	// Previous hit bone name
+	FName PrevBoneName;
 };

@@ -10,6 +10,11 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "GameFramework/PlayerController.h"
 
+#include "SLSkeletalDataComponent.h"
+
+// UUtils
+#include "Tags.h"
+
 // Sets default values
 ASLGazeVisualizer::ASLGazeVisualizer()
 {
@@ -26,7 +31,7 @@ ASLGazeVisualizer::ASLGazeVisualizer()
 	GazeText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("GazeText"));	
 	GazeText->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
 	GazeText->SetVerticalAlignment(EVerticalTextAligment::EVRTA_TextCenter);
-	GazeText->SetText("NONE");
+	GazeText->SetText(FText::FromString("NONE"));
 	GazeText->SetWorldSize(1.f);
 	GazeText->SetTextRenderColor(FColor::Red);
 	GazeText->SetupAttachment(RootComponent);
@@ -124,15 +129,77 @@ void ASLGazeVisualizer::Tick(float DeltaTime)
 // Load info from tags
 void ASLGazeVisualizer::LoadSemanticData()
 {
+	/* Get static mesh data */
 	for (TActorIterator<AStaticMeshActor> SMAItr(GetWorld()); SMAItr; ++SMAItr)
-	{
-		FSLGazeSemanticData Data;
+	{		
+		FString Id = FTags::GetValue(*SMAItr, "SemLog", "Id");
+		FString Class = FTags::GetValue(*SMAItr, "SemLog", "Class");
+		FString ColorHex = FTags::GetValue(*SMAItr, "SemLog", "VisMask");
 
+		if (!Id.IsEmpty() && !Class.IsEmpty() && !ColorHex.IsEmpty())
+		{
+			FSLGazeEntityData EntityData;
+			EntityData.ClassName = Class;
+			EntityData.Id = Id;
+			EntityData.MaskColor = FColor::FromHex(ColorHex);
+
+			EntitySemanticData.Emplace(*SMAItr, EntityData);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has missing data in tags, will not be considered for gaze visualization.."),
+				*FString(__FUNCTION__), __LINE__, *SMAItr->GetName());
+		}
 	}
 
+	/* Get skeletal data */
 	for (TActorIterator<ASkeletalMeshActor> SkMAItr(GetWorld()); SkMAItr; ++SkMAItr)
 	{
+		FString Id = FTags::GetValue(*SkMAItr, "SemLog", "Id");
+		FString Class = FTags::GetValue(*SkMAItr, "SemLog", "Class");
 
+		if (!Id.IsEmpty() && !Class.IsEmpty())
+		{
+			if (UActorComponent* AC = SkMAItr->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+			{
+				FSLGazeSkelData SkelData;
+				SkelData.ClassName = Class;
+				SkelData.Id = Id;
+				
+				// Get the bone (body parts) data from the component
+				USLSkeletalDataComponent* SLSkelData = CastChecked<USLSkeletalDataComponent>(AC);
+				SLSkelData->Init();				
+				for (const auto& DataPair : SLSkelData->SemanticBonesData)
+				{
+					if (DataPair.Value.IsSet())
+					{
+						FSLGazeBoneData BoneData;
+						BoneData.ClassName = DataPair.Value.Class;
+						BoneData.Id = DataPair.Value.Id;
+						BoneData.MaskColor = FColor::FromHex(DataPair.Value.VisualMask);
+
+						SkelData.BonesData.Add(DataPair.Key, BoneData);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s-%s has missing semantic data, will not be considered for gaze visualization...."),
+							*FString(__FUNCTION__), __LINE__, *SkMAItr->GetName(), *DataPair.Key.ToString());
+					}
+				}
+
+				SkelSemanticData.Emplace(*SkMAItr, SkelData);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has missing semantic body parts data, will not be considered for gaze visualization...."),
+					*FString(__FUNCTION__), __LINE__, *SkMAItr->GetName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has missing data in tags, will not be considered for gaze visualization.."),
+				*FString(__FUNCTION__), __LINE__, *SkMAItr->GetName());
+		}
 	}
 }
 
@@ -165,19 +232,28 @@ void ASLGazeVisualizer::GazeTrace_Sphere(const FVector& Origin, const FVector& T
 // Print out the gaze hit info
 void ASLGazeVisualizer::ProcessGazeHit(const FHitResult& HitResult)
 {
+	// Move visual to the hit location
+	SetActorLocation(HitResult.Location);
+
 	AActor* HitActor = HitResult.Actor.Get();
 	if (PrevActor != HitActor)
-	{
-		// Move visual to the hit location
-		SetActorLocation(HitResult.Location);
-		GazeText->SetText(HitActor->GetName());
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Hit=%s "),
-			*FString(__FUNCTION__), __LINE__, *HitActor->GetName());
+	{		
+		GazeText->SetText(FText::FromString(HitActor->GetName()));
+
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Hit=%s; BoneName=%s;"),
+			*FString(__FUNCTION__), __LINE__, *HitActor->GetName(), *HitResult.BoneName.ToString());
 
 
 
 
 		PrevActor = HitActor;
+	}
+	else if(!PrevBoneName.IsEqual(HitResult.BoneName))
+	{
+		GazeText->SetText(FText::FromString(HitActor->GetName()));
+
+		PrevBoneName = HitResult.BoneName;
 	}
 
 }
