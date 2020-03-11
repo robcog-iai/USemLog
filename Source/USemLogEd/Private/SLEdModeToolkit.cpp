@@ -21,6 +21,7 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "AssetRegistryModule.h"
 
+
 // UUtils
 #include "Ids.h"
 #include "Tags.h"
@@ -214,9 +215,19 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 					.HAlign(HAlign_Center)
 					[
 						SNew(SButton)
-						.Text(LOCTEXT("EnableMaterialForInstancedStaticMesh", "Enable Material For Instanced Static Mesh"))
+						.Text(LOCTEXT("EnableMaterialsForInstancedStaticMesh", "Enable Materials for Instanced Static Mesh"))
 					.IsEnabled(true)
-					.OnClicked(this, &FSLEdModeToolkit::EnableMaterialForInstancedStaticMesh)
+					.OnClicked(this, &FSLEdModeToolkit::EnableMaterialsForInstancedStaticMesh)
+					]
+				////
+				+ SVerticalBox::Slot()
+					.AutoHeight()
+					.HAlign(HAlign_Center)
+					[
+						SNew(SButton)
+						.Text(LOCTEXT("ShowSemanticData", "Show Semantic Data"))
+					.IsEnabled(true)
+					.OnClicked(this, &FSLEdModeToolkit::ShowSemanticData)
 					]
 		];
 
@@ -907,7 +918,7 @@ FReply FSLEdModeToolkit::TagSelectedAsContainers()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::EnableMaterialForInstancedStaticMesh()
+FReply FSLEdModeToolkit::EnableMaterialsForInstancedStaticMesh()
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 	TArray<FAssetData> AllAsset;
@@ -923,6 +934,38 @@ FReply FSLEdModeToolkit::EnableMaterialForInstancedStaticMesh()
 				Material->bUsedWithInstancedStaticMeshes = true;
 				Data.GetPackage()->MarkPackageDirty();
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Material: %s is enabled for instanced static mesh.."), *FString(__func__), __LINE__, *Data.GetPackage()->GetFName().ToString());
+			}
+		}
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::ShowSemanticData()
+{
+	UWorld* World = GEditor->GetEditorWorldContext().World();
+	for (ULevelStreaming* LevelStreaming : World->GetStreamingLevels())
+	{
+		if (LevelStreaming && LevelStreaming->IsLevelVisible())
+		{	
+			if (ULevel* Level = LevelStreaming->GetLoadedLevel())
+			{
+				// Iterate method 1
+				for (TActorIterator<AStaticMeshActor> ActorItr(Level->GetWorld()); ActorItr; ++ActorItr)
+				{
+					// Same as with the Object Iterator, access the subclass instance with the * or -> operators.
+					AStaticMeshActor* Mesh = *ActorItr;
+					Mesh->AddActorLocalOffset(FVector(500, 500, 500));
+				}
+				// Iterate method 2
+				for (AActor* Actor : Level->Actors)
+				{
+					// Store quick map of id to actor pointer
+					if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Actor))
+					{
+						AsSMA->AddActorLocalOffset(FVector(1000, 1000, 100));
+					}
+				}
 			}
 		}
 	}

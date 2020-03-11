@@ -84,7 +84,10 @@ private:
 	FReply TagSelectedAsContainers();
 
 	// Iterate all materials and enable for instanced static mesh
-	FReply EnableMaterialForInstancedStaticMesh();
+	FReply EnableMaterialsForInstancedStaticMesh();
+
+	// Show semantic data in the editor
+	FReply ShowSemanticData();
 
 private:
 	// Widget pointer
