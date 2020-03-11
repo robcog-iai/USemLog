@@ -6,23 +6,24 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Camera/PlayerCameraManager.h"
-
 #if SL_WITH_EYE_TRACKING
 #include "SLGazeProxy.h"
 #endif // SL_WITH_EYE_TRACKING
-
 #include "SLGazeVisualizer.generated.h"
 
 /*
 * Struct holding the text info about the actors
 */
-struct FSLGazeTextInfo
+struct FSLGazeSemanticData
 {
 	// Class name
 	FString ClassName;
 
 	// Unique identifier
 	FString Id;
+
+	// Color
+	FColor MaskColor;
 };
 
 /*
@@ -46,18 +47,28 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
+	// Load each actor's info from tags
+	void LoadSemanticData();
+
 	// Process the gaze trace
 	void GazeTrace_NONE(const FVector& Origin, const FVector& Target);
 	void GazeTrace_Line(const FVector& Origin, const FVector& Target);
 	void GazeTrace_Sphere(const FVector& Origin, const FVector& Target);
 
 	// Print out the gaze hit info
-	void ProcessGazeHit(AActor* Actor);
+	void ProcessGazeHit(const FHitResult& HitResult);
 
 private:
-	// Process update function
-	typedef void(ASLGazeVisualizer::* ProcessGazeFunctionPointerType)(const FVector& Origin, const FVector& Target);
-	ProcessGazeFunctionPointerType ProcessGazeFuncPtr;
+	// Screen text
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	class UTextRenderComponent* GazeText;
+
+	// Visual component of the gaze target
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	class UStaticMeshComponent* GazeVisual;
+
+	// Material for the gaze visual
+	class UMaterial* VisualMaterial;
 
 	// Raytrace limit
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -67,20 +78,27 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float RayRadius = 1.5f;
 
+#if SL_WITH_EYE_TRACKING
+	// Custom made sranipal proxy to avoid compilation issues
+	class ASLGazeProxy* GazeProxy;
+#endif // SL_WITH_EYE_TRACKING
+
+	// Used for getting the gaze origin point
+	APlayerCameraManager* CameraManager;
+
+	// Process update function
+	typedef void(ASLGazeVisualizer::* GazeTraceFuncPtrType)(const FVector& Origin, const FVector& Target);
+	GazeTraceFuncPtrType GazeTraceFuncPtr;
+
 	// Parameters used for the trace
 	FCollisionQueryParams TraceParams;
 
 	// Collision shape used for the sweep
 	FCollisionShape SphereShape;
 
-	// Used for getting the gaze origin point
-	APlayerCameraManager* CameraManager;
-
-#if SL_WITH_EYE_TRACKING
-	// Custom made sranipal proxy to avoid compilation issues
-	class ASLGazeProxy* GazeProxy;
-#endif // SL_WITH_EYE_TRACKING
-
 	// Map of the semantically annotated actors and their text info
-	TMap<AActor*, FSLGazeTextInfo> ActorToGazeInfo;
+	TMap<AStaticMeshActor*, FSLGazeSemanticData> SMActorSemanticData;
+
+	// Skip reading the semantic data if we are looking at the same actor
+	AActor* PrevActor;
 };
