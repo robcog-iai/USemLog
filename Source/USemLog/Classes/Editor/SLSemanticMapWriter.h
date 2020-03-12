@@ -20,7 +20,8 @@ public:
 	bool WriteToFile(UWorld* World,
 		ESLOwlSemanticMapTemplate TemplateType = ESLOwlSemanticMapTemplate::NONE,
 		const FString& InDirectory = TEXT("SemLog"),
-		const FString& InFilename = TEXT("SemanticMap"));
+		const FString& InFilename = TEXT("SemanticMap"),
+		bool bOverwrite = false);
 
 private:
 	// Create semantic map template

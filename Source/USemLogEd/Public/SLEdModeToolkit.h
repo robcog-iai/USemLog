@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "Toolkits/BaseToolkit.h"
 
+
 /**
  * Editor mode toolkit
  */
@@ -25,18 +26,14 @@ public:
 	virtual TSharedPtr<class SWidget> GetInlineContent() const override { return ToolkitWidget; }
 
 private:
-	/** Callbacks */
-	// Return true if any actors are selected in the viewport
-	bool AreActorsSelected();
-
+	/** Button callbacks */
 	// Generate semantic map from editor world
-	FReply GenerateSemanticMap();
+	FReply OnGenSemMap();
 
-	// Set flag attribute depending on the checkbox state
-	void OnCheckedOverwriteSemanticMap(ECheckBoxState NewCheckedState);
+
 
 	// Generate new semantic ids
-	FReply GenerateNewSemanticIds();
+	FReply OnGenSemIds();
 
 	// Remove all semantic ids
 	FReply RemoveAllSemanticIds();
@@ -86,26 +83,30 @@ private:
 	// Iterate all materials and enable for instanced static mesh
 	FReply EnableMaterialsForInstancedStaticMesh();
 
+	// Generate semantic components for each actor
+	FReply GenerateSemanticComponents();
+
 	// Show semantic data in the editor
 	FReply ShowSemanticData();
+
+	// Return true if any actors are selected in the viewport
+	bool AreActorsSelected();
+
+
+	/* Checkbox callbacks */
+	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
 
 private:
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;
 
-	// If true, overwrite existing semantic map
-	bool bOverwriteSemanticMap;
+	/* Checkbox states */
+	bool bOverwriteSemMap;
 
-	// If true, overwrite existing class names
+	bool bOverwrite;
+
 	bool bOverwriteExistingClassNames;
-
-	// If true, overwrite existing mask values
 	bool bOverwriteVisualMaskValues;
-
-	// If true, generate random colors
 	bool bGenerateRandomVisualMasks;
-
-	// Apply changed to selected actors only
 	bool bOnlySelected;
-
 };

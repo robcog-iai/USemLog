@@ -16,6 +16,7 @@
 // UUtils
 #include "Tags.h"
 #include "Ids.h"
+#include "Utils/SLTagIO.h"
 
 #if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
@@ -30,8 +31,18 @@ FSLSemanticMapWriter::FSLSemanticMapWriter()
 bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 	ESLOwlSemanticMapTemplate TemplateType,
 	const FString& InDirectory,
-	const FString& InFilename)
+	const FString& InFilename,
+	bool bOverwrite)
 {
+	FString FullFilePath = FPaths::ProjectDir() + "/SemLog/" +
+		InDirectory + TEXT("/") + InFilename + TEXT(".owl");
+
+	// Check if map already exists
+	if (!bOverwrite && FPaths::FileExists(FullFilePath))
+	{
+		return false;
+	}
+
 	// Create the semantic map template
 	TSharedPtr<FSLOwlSemanticMap> SemMap = CreateSemanticMapDocTemplate(TemplateType);
 
@@ -39,8 +50,7 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 	AddAllIndividuals(SemMap, World);
 
 	// Write map to file
-	FString FullFilePath = FPaths::ProjectDir() + "/SemLog/" +
-		InDirectory + TEXT("/") + InFilename + TEXT(".owl");
+	
 	FPaths::RemoveDuplicateSlashes(FullFilePath);
 	return FFileHelper::SaveStringToFile(SemMap->ToString(), *FullFilePath);
 }
@@ -69,11 +79,11 @@ TSharedPtr<FSLOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate
 void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FSLOwlSemanticMap> InSemMap, UWorld* World)
 {
 	// Iterate objects with SemLog tag key
-	for (const auto& ObjToTagsItr : FTags::GetObjectKeyValuePairsMap(World, "SemLog"))
+	for (const auto& ActorPairs : FSLTagIO::GetAllKVPairs(World, "SemLog"))
 	{
 		// Get Id and Class of items
-		const FString* IdPtr = ObjToTagsItr.Value.Find("Id");
-		const FString* ClassPtr = ObjToTagsItr.Value.Find("Class");
+		const FString* IdPtr = ActorPairs.Value.Find("Id");
+		const FString* ClassPtr = ActorPairs.Value.Find("Class");
 
 		// Take into account only objects with an id
 		if (IdPtr)
@@ -81,25 +91,21 @@ void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FSLOwlSemanticMap> InSem
 			// Check if class is also available
 			if (ClassPtr)
 			{
-				AddObjectIndividual(InSemMap, ObjToTagsItr.Key, *IdPtr, *ClassPtr);
+				AddObjectIndividual(InSemMap, ActorPairs.Key, *IdPtr, *ClassPtr);
 			}
 			// No class is available, check for other types, e.g. constraints can be actors or components
-			else if (APhysicsConstraintActor* ConstrAct = Cast<APhysicsConstraintActor>(ObjToTagsItr.Key))
+			else if (APhysicsConstraintActor* ConstrAct = Cast<APhysicsConstraintActor>(ActorPairs.Key))
 			{
 				AddConstraintIndividual(InSemMap, ConstrAct->GetConstraintComp(), *IdPtr, ConstrAct->Tags);
-			}
-			else if (UPhysicsConstraintComponent* ConstrComp = Cast<UPhysicsConstraintComponent>(ObjToTagsItr.Key))
-			{
-				AddConstraintIndividual(InSemMap, ConstrComp, *IdPtr, ConstrComp->ComponentTags);
 			}
 		}
 
 		// Add class individuals (Id not mandatory)
 		if (ClassPtr)
 		{
-			const FString* SubClassOfPtr = ObjToTagsItr.Value.Find("SubClassOf");
+			const FString* SubClassOfPtr = ActorPairs.Value.Find("SubClassOf");
 			const FString SubClassOf = SubClassOfPtr ? *SubClassOfPtr : "";
-			AddClassDefinition(InSemMap, ObjToTagsItr.Key, *ClassPtr, SubClassOf);
+			AddClassDefinition(InSemMap, ActorPairs.Key, *ClassPtr, SubClassOf);
 		}
 	}
 }
