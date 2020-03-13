@@ -79,7 +79,7 @@ TSharedPtr<FSLOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate
 void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FSLOwlSemanticMap> InSemMap, UWorld* World)
 {
 	// Iterate objects with SemLog tag key
-	for (const auto& ActorPairs : FSLTagIO::GetAllKVPairs(World, "SemLog"))
+	for (const auto& ActorPairs : FSLTagIO::GetWorldKVPairs(World, "SemLog"))
 	{
 		// Get Id and Class of items
 		const FString* IdPtr = ActorPairs.Value.Find("Id");

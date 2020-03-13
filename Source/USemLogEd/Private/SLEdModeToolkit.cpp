@@ -69,13 +69,13 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 				.AutoWidth()
 				[
 					SNew(STextBlock)
-					.Text(LOCTEXT("OverwriteTextLabel", "Overwrite Any Changes:"))
+					.Text(LOCTEXT("OverwriteTextLabel", "Overwrite existing data? "))
 				]
 
 				+ SHorizontalBox::Slot()
 				[
 					SNew(SCheckBox)
-					.ToolTipText(LOCTEXT("CheckBoxOverwrite", "Overwrites any existing changes, use with caution"))
+					.ToolTipText(LOCTEXT("CheckBoxOverwrite", "Overwrites any existing data, use with caution"))
 					.IsChecked(ECheckBoxState::Unchecked)
 					.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwrite)
 				]
@@ -88,25 +88,11 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			.Padding(5)
 			.HAlign(HAlign_Center)
 			[
-				SNew(SHorizontalBox)
-
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("GenSemMap", "Generate Semantic Map"))
-					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("GenSemMapTooltip", "Exports the generated semantic map to file"))
-					.OnClicked(this, &FSLEdModeToolkit::OnGenSemMap)
-				]
-
-				+ SHorizontalBox::Slot()
-				[
-					SNew(SCheckBox)
-					.ToolTipText(LOCTEXT("CheckBoxGenSemMapTooltip", "Overwrites any existing file"))
-					.IsChecked(ECheckBoxState::Unchecked)
-					.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwrite)
-				]
+				SNew(SButton)
+				.Text(LOCTEXT("GenSemMap", "Generate Semantic Map"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("GenSemMapTip", "Exports the generated semantic map to file"))
+				.OnClicked(this, &FSLEdModeToolkit::OnGenSemMap)
 			]
 
 			////
@@ -118,6 +104,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 				SNew(SButton)
 				.Text(LOCTEXT("GenSemIds", "Generate Ids"))
 				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("GenSemMapTip", "Generates unique ids for every semantic entity"))
 				.OnClicked(this, &FSLEdModeToolkit::OnGenSemIds)
 			]
 
@@ -127,8 +114,9 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			.HAlign(HAlign_Center)
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("RemoveSemIds", "Remove All Ids"))
+				.Text(LOCTEXT("RmSemIds", "Remove Ids"))
 				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("RmSemIdsTip", "Removes all generated ids"))
 				.OnClicked(this, &FSLEdModeToolkit::RemoveAllSemanticIds)
 			]
 
@@ -320,7 +308,7 @@ class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 // Generate semantic map from editor world
 FReply FSLEdModeToolkit::OnGenSemMap()
 {
-	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwriteSemMap);
+	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	return FReply::Handled();
 }
 
@@ -328,24 +316,7 @@ FReply FSLEdModeToolkit::OnGenSemMap()
 FReply FSLEdModeToolkit::OnGenSemIds()
 {
 	FScopedTransaction Transaction(LOCTEXT("GenerateNewSemanticIds", "Generate new Ids"));
-	for (TActorIterator<AActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
-	{
-		int32 TagIndex = FTags::GetTagTypeIndex(*ActItr, "SemLog");
-		if (TagIndex != INDEX_NONE)
-		{
-			FTags::AddKeyValuePair(ActItr->Tags[TagIndex], "Id", FIds::NewGuidInBase64Url(), true, *ActItr);
-		}
-
-		// Check component tags as well
-		for (const auto& CompItr : ActItr->GetComponents())
-		{
-			int32 CompTagIndex = FTags::GetTagTypeIndex(CompItr, "SemLog");
-			if (CompTagIndex != INDEX_NONE)
-			{
-				FTags::AddKeyValuePair(CompItr->ComponentTags[CompTagIndex], "Id", FIds::NewGuidInBase64(), true, CompItr);
-			}
-		}
-	}
+	FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	return FReply::Handled();
 }
 

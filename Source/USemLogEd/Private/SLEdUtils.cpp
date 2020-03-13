@@ -7,6 +7,10 @@
 #include "Editor/SLSemanticMapWriter.h"
 #include "SLManager.h"
 
+// Utils
+#include "Utils/SLTagIO.h"
+#include "Utils/SLUUid.h"
+
 // Ctor
 FSLEdUtils::FSLEdUtils() {}
 
@@ -31,4 +35,19 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 	
 	// Generate map and write to file
 	SemMapWriter.WriteToFile(World, ESLOwlSemanticMapTemplate::IAIKitchen, TaskDir, TEXT("SemanticMap"), bOverwrite);
+}
+
+// Write unique IDs
+void FSLEdUtils::WriteUniqueIds(UWorld* World, bool bOverwrite)
+{
+	static const FString TagType = TEXT("SemLog");
+	static const FString TagKey = TEXT("Id");
+
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		if (ActItr->IsA(AStaticMeshActor::StaticClass()))
+		{
+			FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
+		}
+	}
 }

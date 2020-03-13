@@ -17,4 +17,7 @@ public:
 	/* Functionalities */
 	// Write the semantic map
 	static void WriteSemanticMap(UWorld* World, bool bOverwrite = false);
+
+	// Write unique IDs
+	static void WriteUniqueIds(UWorld* World, bool bOverwrite = false);
 };

@@ -101,7 +101,6 @@ private:
 	TSharedPtr<SWidget> ToolkitWidget;
 
 	/* Checkbox states */
-	bool bOverwriteSemMap;
 
 	bool bOverwrite;
 
