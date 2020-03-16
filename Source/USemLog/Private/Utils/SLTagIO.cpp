@@ -4,6 +4,7 @@
 #include "Utils/SLTagIO.h"
 #include "EngineUtils.h"
 
+/* Read */
 // Get all tag key value pairs from world
 TMap<AActor*, TMap<FString, FString>> FSLTagIO::GetWorldKVPairs(UWorld* World, const FString& TagType)
 {
@@ -50,6 +51,21 @@ TMap<FString, FString> FSLTagIO::GetKVPairs(AActor* Actor, const FString& TagTyp
 	return KVPairs;
 }
 
+// Get tag key value from actor
+FString FSLTagIO::GetValue(AActor* Actor, const FString& TagType, const FString& TagKey)
+{
+	// Check if type exists and return index of its location in the array
+	int32 TagIndex = IndexOfType(Actor->Tags, TagType);
+	if (TagIndex != INDEX_NONE)
+	{
+		return GetValue(Actor->Tags[TagIndex], TagKey);
+	}
+	// Tag type not found
+	return FString();
+}
+
+
+/* Create / Update */
 // Add key value pair to the tag value
 bool FSLTagIO::AddKVPair(FName& Tag, const FString& TagKey, const FString& TagValue, bool bOverwrite)
 {
@@ -101,6 +117,43 @@ bool FSLTagIO::AddKVPair(AActor* Actor, const FString& TagType, const FString& T
 }
 
 
+/* Delete */
+// Remove all tag key value pairs from world
+void FSLTagIO::RemoveWorldKVPairs(UWorld* World, const FString& TagType, const FString& TagKey)
+{
+	for (TActorIterator<AActor> ActorItr(World); ActorItr; ++ActorItr)
+	{
+		FSLTagIO::RemoveKVPair(*ActorItr, TagType, TagKey);
+	}
+}
+
+// Remove the pair with the given type and key (return true if the key existed)
+bool FSLTagIO::RemoveKVPair(AActor* Actor, const FString& TagType, const FString& TagKey)
+{
+	// Check if type exists and return index of its location in the array
+	int32 TagIndex = IndexOfType(Actor->Tags, TagType);
+	if (TagIndex != INDEX_NONE)
+	{
+		// Copy of the current tag as FString
+		FString TagStr = Actor->Tags[TagIndex].ToString();
+		const FString ToRemove = TagKey + TEXT(",") + GetValue(Actor->Tags[TagIndex], TagKey) + TEXT(";");
+		int32 FindPos = TagStr.Find(ToRemove, ESearchCase::CaseSensitive);
+		if (FindPos != INDEX_NONE)
+		{
+			Actor->Modify();
+			TagStr.RemoveAt(FindPos, ToRemove.Len());
+			Actor->Tags[TagIndex] = FName(*TagStr);
+			return true;
+		}
+		// "TagKey,TagValue;" combo could not be found
+		return false;
+	}
+	// Tag type not found, nothing to remove
+	return false;
+}
+
+
+/* Utils */
 // Get tag key value from tag
 FString FSLTagIO::GetValue(const FName& InTag, const FString& TagKey)
 {

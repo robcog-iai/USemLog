@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Toolkits/BaseToolkit.h"
+#include "Widgets/SBoxPanel.h"
 
 
 /**
@@ -26,17 +27,26 @@ public:
 	virtual TSharedPtr<class SWidget> GetInlineContent() const override { return ToolkitWidget; }
 
 private:
-	/** Button callbacks */
-	// Generate semantic map from editor world
+	/* Create vertical slot entries */	
+	SVerticalBox::FSlot& CreateOverwriteSlot();
+	SVerticalBox::FSlot& CreateOnlySelectedSlot();
+	SVerticalBox::FSlot& CreateGenSemMapSlot();
+	SVerticalBox::FSlot& CreateGenIdsSlot();
+	SVerticalBox::FSlot& CreateRmIdsSlot();
+	SVerticalBox::FSlot& CreateWriteClassNamesSlot();
+
+	/* Button callbacks */
 	FReply OnGenSemMap();
-
-
-
-	// Generate new semantic ids
 	FReply OnGenSemIds();
+	FReply OnRmSemIds();
+	FReply OnWriteClassNames();
 
-	// Remove all semantic ids
-	FReply RemoveAllSemanticIds();
+	/* Checkbox callbacks */
+	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
+	void OnCheckedOnlySelected(ECheckBoxState NewCheckedState);
+
+
+
 
 	// Generate semantic ids for constraints
 	FReply SemanticallyAnnotateConstraints();
@@ -56,7 +66,7 @@ private:
 	// Set unique mask colors in hex for the entities (incremental generator)
 	FReply GenerateVisualMasksInc();
 
-	// Set flag attribute depending on the checkbox state
+
 	void OnCheckedOverwriteVisualMasks(ECheckBoxState NewCheckedState);
 
 	// Set flag attribute depending on the checkbox state
@@ -94,7 +104,7 @@ private:
 
 
 	/* Checkbox callbacks */
-	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
+
 
 private:
 	// Widget pointer
@@ -103,9 +113,9 @@ private:
 	/* Checkbox states */
 
 	bool bOverwrite;
+	bool bOnlySelected;
 
 	bool bOverwriteExistingClassNames;
 	bool bOverwriteVisualMaskValues;
 	bool bGenerateRandomVisualMasks;
-	bool bOnlySelected;
 };

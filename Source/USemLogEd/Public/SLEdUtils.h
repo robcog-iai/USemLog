@@ -11,13 +11,16 @@
 class USEMLOGED_API FSLEdUtils
 {
 public:
-	FSLEdUtils();
-	~FSLEdUtils() = default;
-
-	/* Functionalities */
 	// Write the semantic map
 	static void WriteSemanticMap(UWorld* World, bool bOverwrite = false);
 
 	// Write unique IDs
 	static void WriteUniqueIds(UWorld* World, bool bOverwrite = false);
+
+	// Write class names
+	static void WriteClassNames(UWorld* World, bool bOverwrite = false);
+
+private:
+	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
+	static FString GetClassName(AActor* Actor, bool bDefaultToLabelName = false);
 };

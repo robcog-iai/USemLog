@@ -14,19 +14,34 @@ struct USEMLOG_API FSLTagIO
 {
 	GENERATED_BODY();
 
-	// Get all tag key value pairs from world
+	/* Read */
+	// Get all pairs of the given type
 	static TMap<AActor*, TMap<FString, FString>> GetWorldKVPairs(UWorld* World, const FString& TagType);
 
 	// Get tag key value pairs from actor
 	static TMap<FString, FString> GetKVPairs(AActor* Actor, const FString& TagType);
 
+	// Get tag key value from actor
+	static FString GetValue(AActor* Actor, const FString& TagType, const FString& TagKey);
+
+
+	/* Create / Update */
 	// Add key value pair to the tag value
 	static bool AddKVPair(FName& Tag, const FString& TagKey, const FString& TagValue, bool bOverwrite = false);
 
 	// Add key value pair to actor
 	static bool AddKVPair(AActor* Actor, const FString& TagType, const FString& TagKey, const FString& TagValue, bool bOverwrite = false);
 
+
+	/* Delete */
+	// Remove all pairs with the given type and key
+	static void RemoveWorldKVPairs(UWorld* World, const FString& TagType, const FString& TagKey);
+
+	// Remove the pair with the given type and key (return true if the key existed)
+	static bool RemoveKVPair(AActor* Actor, const FString& TagType, const FString& TagKey);
+
 private:
+	/* Utils */
 	// Get tag key value from tag
 	FORCEINLINE static FString GetValue(const FName& InTag, const FString& TagKey);
 
