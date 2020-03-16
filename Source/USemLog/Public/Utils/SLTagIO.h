@@ -24,6 +24,9 @@ struct USEMLOG_API FSLTagIO
 	// Get tag key value from actor
 	static FString GetValue(AActor* Actor, const FString& TagType, const FString& TagKey);
 
+	// Check if key exists
+	static bool HasKey(AActor* Actor, const FString& TagType, const FString& TagKey);
+
 
 	/* Create / Update */
 	// Add key value pair to the tag value

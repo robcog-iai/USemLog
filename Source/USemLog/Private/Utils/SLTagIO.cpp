@@ -64,6 +64,19 @@ FString FSLTagIO::GetValue(AActor* Actor, const FString& TagType, const FString&
 	return FString();
 }
 
+// Check if key exists
+bool FSLTagIO::HasKey(AActor* Actor, const FString& TagType, const FString& TagKey)
+{
+	// Check if type exists and return index of its location in the array
+	int32 TagIndex = IndexOfType(Actor->Tags, TagType);
+	if (TagIndex != INDEX_NONE)
+	{
+		return Actor->Tags[TagIndex].ToString().Find(";" + TagKey + ",") != INDEX_NONE;
+	}
+	// Type was not found, return false
+	return false;
+}
+
 
 /* Create / Update */
 // Add key value pair to the tag value

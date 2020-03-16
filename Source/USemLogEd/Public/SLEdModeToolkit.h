@@ -31,46 +31,25 @@ private:
 	SVerticalBox::FSlot& CreateOverwriteSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedSlot();
 	SVerticalBox::FSlot& CreateGenSemMapSlot();
-	SVerticalBox::FSlot& CreateGenIdsSlot();
+	SVerticalBox::FSlot& CreateWriteIdsSlot();
 	SVerticalBox::FSlot& CreateRmIdsSlot();
 	SVerticalBox::FSlot& CreateWriteClassNamesSlot();
+	SVerticalBox::FSlot& CreateRmClassNamesSlot();
+	SVerticalBox::FSlot& CreateWriteVisualMasksSlot();
+	SVerticalBox::FSlot& CreateRmVisualMasksSlot();
 
 	/* Button callbacks */
 	FReply OnGenSemMap();
-	FReply OnGenSemIds();
+	FReply OnWriteSemIds();
 	FReply OnRmSemIds();
 	FReply OnWriteClassNames();
+	FReply OnRmClassNames();
+	FReply OnWriteVisualMasks();
+	FReply OnRmVisualMasks();
 
 	/* Checkbox callbacks */
 	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
 	void OnCheckedOnlySelected(ECheckBoxState NewCheckedState);
-
-
-
-
-	// Generate semantic ids for constraints
-	FReply SemanticallyAnnotateConstraints();
-
-	// Name semantic classes from asset name
-	FReply SetClassNamesToDefault();
-
-	// Set flag attribute depending on the checkbox state
-	void OnCheckedOverwriteClassNames(ECheckBoxState NewCheckedState);
-
-	// Set unique mask colors in hex for the entities (random or incremental)
-	FReply GenerateVisualMasks();
-
-	// Set unique mask colors in hex for the entities (random generator)
-	FReply GenerateVisualMasksRand();
-
-	// Set unique mask colors in hex for the entities (incremental generator)
-	FReply GenerateVisualMasksInc();
-
-
-	void OnCheckedOverwriteVisualMasks(ECheckBoxState NewCheckedState);
-
-	// Set flag attribute depending on the checkbox state
-	void OnCheckedOverwriteGenerateRandomVisualMasks(ECheckBoxState NewCheckedState);
 
 	// Update legacy namings from tags
 	FReply UpdateLegacyNames();
@@ -86,9 +65,6 @@ private:
 
 	// Enable all overlaps
 	FReply EnableAllOverlaps();
-
-	// Tag selected meshes as containers
-	FReply TagSelectedAsContainers();
 
 	// Iterate all materials and enable for instanced static mesh
 	FReply EnableMaterialsForInstancedStaticMesh();
@@ -114,8 +90,4 @@ private:
 
 	bool bOverwrite;
 	bool bOnlySelected;
-
-	bool bOverwriteExistingClassNames;
-	bool bOverwriteVisualMaskValues;
-	bool bGenerateRandomVisualMasks;
 };
