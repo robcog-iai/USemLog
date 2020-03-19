@@ -5,8 +5,10 @@
 #include "SLEdUtils.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
+#include "Components/StaticMeshComponent.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
+#include "AssetRegistryModule.h"
 
 // SL
 #include "Editor/SLSemanticMapWriter.h"
@@ -153,6 +155,184 @@ void FSLEdUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
 	WriteRandomlyGeneratedVisualMasks(World, bOverwrite);
 }
 
+// Remove all tag keys
+void FSLEdUtils::RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey)
+{
+	FSLTagIO::RemoveWorldKVPairs(World, TagType, TagKey);
+}
+
+// Remove all tags of the "SemLog" type
+void FSLEdUtils::RemoveTagType(UWorld* World, const FString& TagType)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		int32 Pos = INDEX_NONE;
+		if (FSLTagIO::HasType(*ActItr, TagType, &Pos))
+		{
+			ActItr->Modify();
+			ActItr->Tags.RemoveAt(Pos);
+		}
+	}
+}
+
+// Add semantic monitor components to the actors
+void FSLEdUtils::AddSemanticMonitorComponents(UWorld* World, bool bOverwrite)
+{
+	//// Iterate only static mesh actors
+	//for (TActorIterator<AStaticMeshActor> ActItr(GEditor->GetEditorWorldContext().World()); ActItr; ++ActItr)
+	//{
+	//	// Continue only if a valid mesh component is available
+	//	if (UStaticMeshComponent* SMC = ActItr->GetStaticMeshComponent())
+	//	{
+	//		// Ignore if actor is not tagged
+	//		if (FTags::HasKey(*ActItr, "SemLog", "Class"))
+	//		{
+	//			// Continue if no previous components are created
+	//			TArray<USLContactBox*> Comps;
+	//			ActItr->GetComponents<USLContactBox>(Comps);
+	//			//if (Comps.Num() == 0)
+	//			//{
+	//			//	USLContactBox* Comp = NewObject<USLContactBox>(*ActItr);
+	//			//	Comp->RegisterComponent();
+	//			//	/*FTransform T;
+	//			//	ActItr->AddComponent("USLContactBox", false, T, USLContactBox::StaticClass());*/
+	//			//}
+	//		}
+	//	}
+	//}
+}
+
+// Add semantic data components to the actors
+void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
+{
+	//for (ULevelStreaming* LevelStreaming : World->GetStreamingLevels())
+	//{
+	//	if (LevelStreaming && LevelStreaming->IsLevelVisible())
+	//	{
+	//		if (ULevel* Level = LevelStreaming->GetLoadedLevel())
+	//		{
+	//			// Iterate method 1
+	//			for (TActorIterator<AStaticMeshActor> ActorItr(Level->GetWorld()); ActorItr; ++ActorItr)
+	//			{
+	//				// Same as with the Object Iterator, access the subclass instance with the * or -> operators.
+	//				AStaticMeshActor* Mesh = *ActorItr;
+	//				Mesh->AddActorLocalOffset(FVector(500, 500, 500));
+	//			}
+	//			// Iterate method 2
+	//			for (AActor* Actor : Level->Actors)
+	//			{
+	//				// Store quick map of id to actor pointer
+	//				if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Actor))
+	//				{
+	//					AsSMA->AddActorLocalOffset(FVector(1000, 1000, 100));
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+}
+
+// Enable overlaps on actors
+void FSLEdUtils::EnableOverlaps(UWorld* World)
+{
+	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
+	{
+		if (UStaticMeshComponent* SMC = ActItr->GetStaticMeshComponent())
+		{
+			SMC->SetGenerateOverlapEvents(true);
+		}
+	}
+}
+
+// Enable all materials for instanced static mesh rendering
+void FSLEdUtils::EnableAllMaterialsForInstancedStaticMesh()
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+	TArray<FAssetData> AllAsset;
+	AssetRegistryModule.Get().GetAssetsByPath(TEXT("/Game/"), AllAsset, true, false);
+
+	for (FAssetData Data : AllAsset)
+	{
+		if (Data.AssetClass.ToString().Equals(TEXT("Material")))
+		{
+			UMaterial* Material = Cast<UMaterial>(Data.GetAsset());
+			if (!Material->bUsedWithInstancedStaticMeshes)
+			{
+				Material->bUsedWithInstancedStaticMeshes = true;
+				Data.GetPackage()->MarkPackageDirty();
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Material: %s is enabled for instanced static mesh.."), *FString(__func__), __LINE__, *Data.GetPackage()->GetFName().ToString());
+			}
+		}
+	}
+
+}
+
+// Toggle between showing the semantic data of the entities in the world
+void FSLEdUtils::ShowSemanticData(UWorld* World)
+{
+	for (TActorIterator<AActor> It(World); It; ++It)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t\t\t Act=%s;"),
+			*FString(__FUNCTION__), __LINE__, *It->GetName());
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("%s::%d **********************"),
+		*FString(__FUNCTION__), __LINE__);
+
+	for (ULevelStreaming* LevelStreaming : World->GetStreamingLevels())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t Streaming level=%s;"),
+			*FString(__FUNCTION__), __LINE__, *LevelStreaming->GetName());
+		if (LevelStreaming && LevelStreaming->IsLevelVisible())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Is visible=%s;"),
+				*FString(__FUNCTION__), __LINE__, *LevelStreaming->GetName());
+			if (ULevel* Level = LevelStreaming->GetLoadedLevel())
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t Loaded level=%s;"),
+					*FString(__FUNCTION__), __LINE__, *Level->GetName());
+				for (AActor* Actor : Level->Actors)
+				{
+					if (Actor)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t\t Act=%s;"),
+							*FString(__FUNCTION__), __LINE__, *Actor->GetName());
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t\t Act=nullptr;"),
+							*FString(__FUNCTION__), __LINE__);
+					}
+
+
+
+					//// Make sure the actor does not have a component already
+					//if (Actor->GetComponentByClass(USLDataComponent::StaticClass()))
+					//{
+					//	//USLDataComponent* SemanticDataComponent = NewObject<USLDataComponent>(USLDataComponent::StaticClass(), Actor);
+					//	//UE_LOG(LogTemp, Error, TEXT("%s::%d %s received a new semantic data component (%s).."), *FString(__FUNCTION__), __LINE__, *Actor->GetName(), *SemanticDataComponent->GetName());
+					//}
+					//else
+					//{
+					//	//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s already has a semantic data component.."), *FString(__FUNCTION__), __LINE__, *Actor->GetName());
+					//}
+				}
+
+
+				UE_LOG(LogTemp, Error, TEXT("%s::%d ----"), *FString(__FUNCTION__), __LINE__);
+
+				// Iterate method 1
+				for (TActorIterator<AActor> ActorItr(Level->GetWorld()); ActorItr; ++ActorItr)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t\t Act=%s;"),
+						*FString(__FUNCTION__), __LINE__, *ActorItr->GetName());
+				}
+			}
+		}
+	}
+}
+
+
 // Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 FString FSLEdUtils::GetClassName(AActor* Actor, bool bDefaultToLabelName)
 {
@@ -267,7 +447,6 @@ FString FSLEdUtils::GetClassName(AActor* Actor, bool bDefaultToLabelName)
 		return FString();
 	}
 }
-
 
 // Generate unique visual masks using randomization
 void FSLEdUtils::WriteRandomlyGeneratedVisualMasks(UWorld* World, bool bOverwrite)

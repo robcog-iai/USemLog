@@ -30,13 +30,19 @@ private:
 	/* Create vertical slot entries */	
 	SVerticalBox::FSlot& CreateOverwriteSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedSlot();
+
 	SVerticalBox::FSlot& CreateGenSemMapSlot();
-	SVerticalBox::FSlot& CreateWriteIdsSlot();
-	SVerticalBox::FSlot& CreateRmIdsSlot();
-	SVerticalBox::FSlot& CreateWriteClassNamesSlot();
-	SVerticalBox::FSlot& CreateRmClassNamesSlot();
+
+	SVerticalBox::FSlot& CreateIdsSlot();
+	SVerticalBox::FSlot& CreateClassNamesSlot();
 	SVerticalBox::FSlot& CreateWriteVisualMasksSlot();
-	SVerticalBox::FSlot& CreateRmVisualMasksSlot();
+
+	SVerticalBox::FSlot& CreateRmAllSlot();
+	SVerticalBox::FSlot& CreateAddSemMonSlot();
+	SVerticalBox::FSlot& CreateAddSemDataSlot();
+	SVerticalBox::FSlot& CreateEnableOverlapsSlot();
+	SVerticalBox::FSlot& CreateShowSemData();
+	SVerticalBox::FSlot& CreateEnableInstacedMeshMaterialsSlot();
 
 	/* Button callbacks */
 	FReply OnGenSemMap();
@@ -46,47 +52,23 @@ private:
 	FReply OnRmClassNames();
 	FReply OnWriteVisualMasks();
 	FReply OnRmVisualMasks();
+	FReply OnRmAll();
+	FReply OnAddSemMon();
+	FReply OnAddSemData();
+	FReply OnEnableOverlaps();
+	FReply OnShowSemData();
+	FReply OnEnableMaterialsForInstancedStaticMesh();
 
 	/* Checkbox callbacks */
 	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
 	void OnCheckedOnlySelected(ECheckBoxState NewCheckedState);
 
-	// Update legacy namings from tags
-	FReply UpdateLegacyNames();
-
-	// Remove all tags
-	FReply RemoveAllTags();
-
-	// Add contact overlap shapes
-	FReply AddSLContactBoxes();
-
-	// Update semantic visual shape visuals
-	FReply UpdateSLContactBoxColors();
-
-	// Enable all overlaps
-	FReply EnableAllOverlaps();
-
-	// Iterate all materials and enable for instanced static mesh
-	FReply EnableMaterialsForInstancedStaticMesh();
-
-	// Generate semantic components for each actor
-	FReply GenerateSemanticComponents();
-
-	// Show semantic data in the editor
-	FReply ShowSemanticData();
-
 	// Return true if any actors are selected in the viewport
 	bool AreActorsSelected();
-
-
-	/* Checkbox callbacks */
-
 
 private:
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;
-
-	/* Checkbox states */
 
 	bool bOverwrite;
 	bool bOnlySelected;

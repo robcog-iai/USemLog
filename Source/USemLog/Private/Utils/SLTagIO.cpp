@@ -77,6 +77,20 @@ bool FSLTagIO::HasKey(AActor* Actor, const FString& TagType, const FString& TagK
 	return false;
 }
 
+// Check if type exists, optionally return the position in the array
+bool FSLTagIO::HasType(AActor* Actor, const FString& TagType, int32* OutPos)
+{
+	if (OutPos)
+	{
+		*OutPos = IndexOfType(Actor->Tags, TagType);
+		return *OutPos != INDEX_NONE;
+	}
+	else
+	{
+		return IndexOfType(Actor->Tags, TagType) != INDEX_NONE;
+	}
+}
+
 
 /* Create / Update */
 // Add key value pair to the tag value

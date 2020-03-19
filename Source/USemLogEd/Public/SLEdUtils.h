@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 
 /**
- * 
+ * Static helpers functions for the semantic logger editor module tookit
  */
 class USEMLOGED_API FSLEdUtils
 {
@@ -22,6 +22,27 @@ public:
 
 	// Write unique visual masks
 	static void WriteVisualMasks(UWorld* World, bool bOverwrite = false);
+
+	// Remove all tag keys
+	static void RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);
+
+	// Remove all types
+	static void RemoveTagType(UWorld* World, const FString& TagType);
+
+	// Add the semantic monitor components registered to tags to the actors
+	static void AddSemanticMonitorComponents(UWorld* World, bool bOverwrite = false);
+
+	// Add data components to the actors containing all the information from the tags
+	static void AddSemanticDataComponents(UWorld* World, bool bOverwrite = false);
+
+	// Enable overlaps on actors
+	static void EnableOverlaps(UWorld* World);
+
+	// Enable all materials for instanced static mesh rendering
+	static void EnableAllMaterialsForInstancedStaticMesh();
+
+	// Toggle between showing the semantic data of the entities in the world
+	static void ShowSemanticData(UWorld* World);
 
 private:
 	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)

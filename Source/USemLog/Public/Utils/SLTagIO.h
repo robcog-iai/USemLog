@@ -27,6 +27,9 @@ struct USEMLOG_API FSLTagIO
 	// Check if key exists
 	static bool HasKey(AActor* Actor, const FString& TagType, const FString& TagKey);
 
+	// Check if type exists, optionally return the position in the array
+	static bool HasType(AActor* Actor, const FString& TagType, int32* OutPos = nullptr);
+
 
 	/* Create / Update */
 	// Add key value pair to the tag value
