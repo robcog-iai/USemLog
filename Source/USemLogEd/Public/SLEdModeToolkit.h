@@ -9,7 +9,7 @@
 
 
 /**
- * Editor mode toolkit
+ * SL editor mode toolkit
  */
 class FSLEdModeToolkit : public FModeToolkit
 {
@@ -30,13 +30,10 @@ private:
 	/* Create vertical slot entries */	
 	SVerticalBox::FSlot& CreateOverwriteSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedSlot();
-
 	SVerticalBox::FSlot& CreateGenSemMapSlot();
-
 	SVerticalBox::FSlot& CreateIdsSlot();
 	SVerticalBox::FSlot& CreateClassNamesSlot();
 	SVerticalBox::FSlot& CreateWriteVisualMasksSlot();
-
 	SVerticalBox::FSlot& CreateRmAllSlot();
 	SVerticalBox::FSlot& CreateAddSemMonSlot();
 	SVerticalBox::FSlot& CreateAddSemDataSlot();
@@ -63,8 +60,8 @@ private:
 	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
 	void OnCheckedOnlySelected(ECheckBoxState NewCheckedState);
 
-	// Return true if any actors are selected in the viewport
-	bool AreActorsSelected();
+	/* Helper */
+	TArray<AActor*> GetSelectedActors() const;
 
 private:
 	// Widget pointer

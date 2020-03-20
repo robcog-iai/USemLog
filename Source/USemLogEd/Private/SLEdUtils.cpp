@@ -41,92 +41,24 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 	SemMapWriter.WriteToFile(World, ESLOwlSemanticMapTemplate::IAIKitchen, TaskDir, TEXT("SemanticMap"), bOverwrite);
 }
 
+
 // Write unique IDs
 void FSLEdUtils::WriteUniqueIds(UWorld* World, bool bOverwrite)
 {
-	static const FString TagType = TEXT("SemLog");
-	static const FString TagKey = TEXT("Id");
-
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		/* SMA */
-		if (ActItr->IsA(AStaticMeshActor::StaticClass()))
-		{
-			FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
-		}
-
-		/* SkMA */
-		if (ActItr->IsA(ASkeletalMeshActor::StaticClass()))
-		{
-			FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
-
-			// Get the semantic data component containing the semantics (class names mask colors) about the bones
-			if (UActorComponent* AC = ActItr->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
-			{
-				// Load existing visual mask values from the skeletal data
-				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
-				for (auto& Pair : SkDC->SemanticBonesData)
-				{
-					// Double check if bone has a semantic class
-					if (!Pair.Value.IsClassSet())
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Semantic bones should have a class name set.."), *FString(__func__), __LINE__);
-						continue;
-					}
-
-					// Check if the bone has id data
-					if (bOverwrite)
-					{
-						Pair.Value.Id = FSLUuid::NewGuidInBase64Url();
-
-						// Add the data to the map used at by the metadatalogger as well
-						if (SkDC->AllBonesData.Contains(Pair.Key))
-						{
-							SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
-						}
-						else
-						{
-							UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
-								*FString(__func__), __LINE__, *Pair.Key.ToString());
-						}
-					}
-					else if (Pair.Value.Id.IsEmpty())
-					{
-						Pair.Value.Id = FSLUuid::NewGuidInBase64Url();
-
-						// Add the data to the map used at runtime as well
-						if (SkDC->AllBonesData.Contains(Pair.Key))
-						{
-							SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
-						}
-						else
-						{
-							UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
-								*FString(__func__), __LINE__, *Pair.Key.ToString());
-						}
-					}
-				}
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
-					*FString(__func__), __LINE__, *ActItr->GetName());
-			}
-		}
-
-		/* Joints */
-		if (ActItr->IsA(APhysicsConstraintActor::StaticClass()))
-		{
-			FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
-		}
-
-		/* Vision cameras */
-		if (ActItr->IsA(ASLVisionCamera::StaticClass()))
-		{
-			FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
-		}
+		AddUniqueId(*ActItr, bOverwrite);
 	}
 }
+
+void FSLEdUtils::WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite)
+{
+	for (const auto& Act : Actors)
+	{
+		AddUniqueId(Act, bOverwrite);
+	}
+}
+
 
 // Write class names
 void FSLEdUtils::WriteClassNames(UWorld* World, bool bOverwrite)
@@ -149,17 +81,55 @@ void FSLEdUtils::WriteClassNames(UWorld* World, bool bOverwrite)
 	}
 }
 
+void FSLEdUtils::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
+{
+	static const FString TagType = TEXT("SemLog");
+	static const FString TagKey = TEXT("Class");
+
+	for (const auto& Act : Actors)
+	{
+		FString ClassName = GetClassName(Act);
+		if (!ClassName.IsEmpty())
+		{
+			FSLTagIO::AddKVPair(Act, TagType, TagKey, ClassName, bOverwrite);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not get the class name for %s.."),
+				*FString(__func__), __LINE__, *Act->GetName());
+		}
+	}
+}
+
+
 // Write unique visual masks
 void FSLEdUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
 {
 	WriteRandomlyGeneratedVisualMasks(World, bOverwrite);
+	// TODO incremental
 }
+
+void FSLEdUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite)
+{
+	WriteRandomlyGeneratedVisualMasks(Actors, World, bOverwrite);
+	// TODO incremental
+}
+
 
 // Remove all tag keys
 void FSLEdUtils::RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey)
 {
 	FSLTagIO::RemoveWorldKVPairs(World, TagType, TagKey);
 }
+
+void FSLEdUtils::RemoveTagKey(const TArray<AActor*>& Actors, const FString& TagType, const FString& TagKey)
+{
+	for (const auto& Act : Actors)
+	{
+		FSLTagIO::RemoveKVPair(Act, TagType, TagKey);
+	}
+}
+
 
 // Remove all tags of the "SemLog" type
 void FSLEdUtils::RemoveTagType(UWorld* World, const FString& TagType)
@@ -174,6 +144,20 @@ void FSLEdUtils::RemoveTagType(UWorld* World, const FString& TagType)
 		}
 	}
 }
+
+void FSLEdUtils::RemoveTagType(const TArray<AActor*>& Actors, const FString& TagType)
+{
+	for (const auto& Act : Actors)
+	{
+		int32 Pos = INDEX_NONE;
+		if (FSLTagIO::HasType(Act, TagType, &Pos))
+		{
+			Act->Modify();
+			Act->Tags.RemoveAt(Pos);
+		}
+	}
+}
+
 
 // Add semantic monitor components to the actors
 void FSLEdUtils::AddSemanticMonitorComponents(UWorld* World, bool bOverwrite)
@@ -201,6 +185,11 @@ void FSLEdUtils::AddSemanticMonitorComponents(UWorld* World, bool bOverwrite)
 	//	}
 	//}
 }
+
+void FSLEdUtils::AddSemanticMonitorComponents(const TArray<AActor*>& Actors, bool bOverwrite)
+{
+}
+
 
 // Add semantic data components to the actors
 void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
@@ -232,6 +221,11 @@ void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
 	//}
 }
 
+void FSLEdUtils::AddSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite)
+{
+}
+
+
 // Enable overlaps on actors
 void FSLEdUtils::EnableOverlaps(UWorld* World)
 {
@@ -244,28 +238,20 @@ void FSLEdUtils::EnableOverlaps(UWorld* World)
 	}
 }
 
-// Enable all materials for instanced static mesh rendering
-void FSLEdUtils::EnableAllMaterialsForInstancedStaticMesh()
+void FSLEdUtils::EnableOverlaps(const TArray<AActor*>& Actors)
 {
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
-	TArray<FAssetData> AllAsset;
-	AssetRegistryModule.Get().GetAssetsByPath(TEXT("/Game/"), AllAsset, true, false);
-
-	for (FAssetData Data : AllAsset)
+	for (const auto& Act : Actors)
 	{
-		if (Data.AssetClass.ToString().Equals(TEXT("Material")))
+		if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(Act))
 		{
-			UMaterial* Material = Cast<UMaterial>(Data.GetAsset());
-			if (!Material->bUsedWithInstancedStaticMeshes)
+			if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
 			{
-				Material->bUsedWithInstancedStaticMeshes = true;
-				Data.GetPackage()->MarkPackageDirty();
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Material: %s is enabled for instanced static mesh.."), *FString(__func__), __LINE__, *Data.GetPackage()->GetFName().ToString());
+				SMC->SetGenerateOverlapEvents(true);
 			}
 		}
 	}
-
 }
+
 
 // Toggle between showing the semantic data of the entities in the world
 void FSLEdUtils::ShowSemanticData(UWorld* World)
@@ -332,6 +318,123 @@ void FSLEdUtils::ShowSemanticData(UWorld* World)
 	}
 }
 
+void FSLEdUtils::ShowSemanticData(const TArray<AActor*>& Actors)
+{
+}
+
+
+// Enable all materials for instanced static mesh rendering
+void FSLEdUtils::EnableAllMaterialsForInstancedStaticMesh()
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+	TArray<FAssetData> AllAsset;
+	AssetRegistryModule.Get().GetAssetsByPath(TEXT("/Game/"), AllAsset, true, false);
+
+	for (FAssetData Data : AllAsset)
+	{
+		if (Data.AssetClass.ToString().Equals(TEXT("Material")))
+		{
+			UMaterial* Material = Cast<UMaterial>(Data.GetAsset());
+			if (!Material->bUsedWithInstancedStaticMeshes)
+			{
+				Material->bUsedWithInstancedStaticMeshes = true;
+				Data.GetPackage()->MarkPackageDirty();
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Material: %s is enabled for instanced static mesh.."), *FString(__func__), __LINE__, *Data.GetPackage()->GetFName().ToString());
+			}
+		}
+	}
+
+}
+
+
+// Add unique id if the actor is a known type
+bool FSLEdUtils::AddUniqueId(AActor* Actor, bool bOverwrite)
+{
+	static const FString TagType = TEXT("SemLog");
+	static const FString TagKey = TEXT("Id");
+
+	/* SMA */
+	if (Actor->IsA(AStaticMeshActor::StaticClass()))
+	{
+		return FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
+	}
+
+	/* SkMA */
+	if (Actor->IsA(ASkeletalMeshActor::StaticClass()))
+	{
+		FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
+
+		// Get the semantic data component containing the semantics (class names mask colors) about the bones
+		if (UActorComponent* AC = Actor->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+		{
+			// Load existing visual mask values from the skeletal data
+			USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+			for (auto& Pair : SkDC->SemanticBonesData)
+			{
+				// Double check if bone has a semantic class
+				if (!Pair.Value.IsClassSet())
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Semantic bones should have a class name set.."), *FString(__func__), __LINE__);
+					continue;
+				}
+
+				// Check if the bone has id data
+				if (bOverwrite)
+				{
+					Pair.Value.Id = FSLUuid::NewGuidInBase64Url();
+
+					// Add the data to the map used at by the metadatalogger as well
+					if (SkDC->AllBonesData.Contains(Pair.Key))
+					{
+						SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+							*FString(__func__), __LINE__, *Pair.Key.ToString());
+					}
+				}
+				else if (Pair.Value.Id.IsEmpty())
+				{
+					Pair.Value.Id = FSLUuid::NewGuidInBase64Url();
+
+					// Add the data to the map used at runtime as well
+					if (SkDC->AllBonesData.Contains(Pair.Key))
+					{
+						SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+							*FString(__func__), __LINE__, *Pair.Key.ToString());
+					}
+				}
+			}			
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
+				*FString(__func__), __LINE__, *Actor->GetName());
+			return false;
+		}
+	}
+
+	/* Joints */
+	if (Actor->IsA(APhysicsConstraintActor::StaticClass()))
+	{
+		return FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);		
+	}
+
+	/* Vision cameras */
+	if (Actor->IsA(ASLVisionCamera::StaticClass()))
+	{
+		return FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
+	}
+
+	// Unkown actor type
+	return false;
+}
 
 // Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 FString FSLEdUtils::GetClassName(AActor* Actor, bool bDefaultToLabelName)
@@ -451,174 +554,31 @@ FString FSLEdUtils::GetClassName(AActor* Actor, bool bDefaultToLabelName)
 // Generate unique visual masks using randomization
 void FSLEdUtils::WriteRandomlyGeneratedVisualMasks(UWorld* World, bool bOverwrite)
 {
-	static const FString TagType = TEXT("SemLog");
-	static const FString TagKey = TEXT("VisMask");
-	
-	static const int32 MaxTrials = 100;
-	static const uint8 BlackColorTolerance = 37;
-	static const uint8 WhiteColorTolerance = 23;
-	static const uint8 MinColorDistance = 29;
-
-	// TArray is used instead of TSet, because ot has FindByPredicate
+	// TArray is used instead of TSet, because of the FindByPredicate funcionality
 	TArray<FColor> ConsumedColors;
 
 	// Load already used colors to avoid generating similar ones
-	if (!bOverwrite)
-	{
-		/* Static mesh actors */
-		for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
-		{
-			FString ColHexStr = FSLTagIO::GetValue(*ActItr, TagType, TagKey);
-			if (!ColHexStr.IsEmpty())
-			{
-				ConsumedColors.Add(FColor::FromHex(ColHexStr));
-			}
-		}
+	ConsumedColors = GetConsumedVisualMaskColors(World);
 
-		/* Skeletal mesh actors */
-		for (TActorIterator<ASkeletalMeshActor> ActItr(World); ActItr; ++ActItr)
-		{
-			// Get the semantic data component containing the semantics (ids, class names, mask colors) about the bones
-			if (UActorComponent* AC = ActItr->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
-			{
-				// Load existing visual mask values from the skeletal data
-				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
-				for (auto& Pair : SkDC->SemanticBonesData)
-				{
-					// Check if the bone has a semantic class and and a visual mask
-					if (Pair.Value.IsClassSet() && !Pair.Value.VisualMask.IsEmpty())
-					{
-						ConsumedColors.Add(FColor::FromHex(Pair.Value.VisualMask));
-					}
-				}
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
-					*FString(__func__), __LINE__, *ActItr->GetName());
-			}
-		}
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Number of previously stored visual masks=%ld"),
-		//	*FString(__func__), __LINE__, ConsumedColors.Num());
+	// Add unique mask avoiding existing ones
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		AddUniqueVisualMask(*ActItr, ConsumedColors, bOverwrite);
 	}
+}
 
-	/* Lambda to return a new unique random color, black if it failed to generate one */
-	const auto GenerateANewUniqueColorLambda = [](const int32 MinDist, int32 MaxNumTrials, TArray<FColor>& ConsumedColors)->FString
+void FSLEdUtils::WriteRandomlyGeneratedVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite)
+{
+	// TArray is used instead of TSet, because of the FindByPredicate funcionality
+	TArray<FColor> ConsumedColors;
+
+	// Load already used colors to avoid generating similar ones
+	ConsumedColors = GetConsumedVisualMaskColors(World);
+
+	// Add unique mask avoiding existing ones
+	for (const auto& Act : Actors)
 	{
-		for (int32 TrialIdx = 0; TrialIdx < MaxNumTrials; TrialIdx++)
-		{
-			// Generate a random color that differs of black
-			//FColor RC = FColor::MakeRandomColor(); // Pretty colors, but not many
-			FColor RandColor = ColorRandomRGB();
-
-			// Avoid very dark colors, or very bright (
-			if (ColorEqual(RandColor, FColor::Black, BlackColorTolerance) || ColorEqual(RandColor, FColor::White, WhiteColorTolerance))
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Got a very dark or bright (reserved) color, hex=%s, trying again.."), *FString(__func__), __LINE__, *RandColor.ToHex());
-				continue;
-			}
-
-			/* Nested lambda for FindByPredicate*/
-			const auto EqualWithToleranceLambda = [RandColor, MinDist](const FColor& Item)
-			{
-				return ColorEqual(RandColor, Item, MinDist);
-			};
-
-			if (!ConsumedColors.FindByPredicate(EqualWithToleranceLambda))
-			{
-				ConsumedColors.Emplace(RandColor);
-				return RandColor.ToHex();
-			}
-		}
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a unique color, saving as black.."), *FString(__func__), __LINE__);
-		return FColor::Black.ToHex();
-	};
-
-	// Write new colors
-	/* Static mesh actors */
-	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
-	{
-		// Explicit overwrite check here, instead when writing to the tag (faster this way)
-		if (FSLTagIO::HasKey(*ActItr, TagType, TagKey) && bOverwrite)
-		{
-			if (bOverwrite)
-			{
-				const FString MaskHex = GenerateANewUniqueColorLambda(MinColorDistance, MaxTrials, ConsumedColors);
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Overwriting with new visual mask, hex=%s, to %s, new total=%ld.."),
-					*FString(__func__), __LINE__, *MaskHex, *ActItr->GetName(), ConsumedColors.Num());
-				FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, MaskHex);
-			}
-		}
-		else
-		{
-			const FString MaskHex = GenerateANewUniqueColorLambda(MinColorDistance, MaxTrials, ConsumedColors);
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Addding new visual mask, hex=%s, to %s, new total=%ld.."),
-				*FString(__func__), __LINE__, *MaskHex, *ActItr->GetName(), ConsumedColors.Num());
-			FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, MaskHex);
-		}
-	}
-
-	/* Skeletal mesh actors */
-	for (TActorIterator<ASkeletalMeshActor> ActItr(World); ActItr; ++ActItr)
-	{
-		// Get the semantic data component containing the semantics (class names mask colors) about the bones
-		if (UActorComponent* AC = ActItr->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
-		{
-			// Load existing visual mask values from the skeletal data
-			USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
-			for (auto& Pair : SkDC->SemanticBonesData)
-			{
-				// Check if bone has a semantic class
-				if (!Pair.Value.IsClassSet())
-				{
-					continue;
-				}
-
-				// Check if the bone has a visual mask
-				if (Pair.Value.HasVisualMask())
-				{
-					if (bOverwrite)
-					{
-						Pair.Value.VisualMask = GenerateANewUniqueColorLambda(MinColorDistance, MaxTrials, ConsumedColors);
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Addding new visual mask, hex=%s, to %s --> %s, new total=%ld.."),
-							*FString(__func__), __LINE__, *Pair.Value.VisualMask, *ActItr->GetName(), *Pair.Value.Class, ConsumedColors.Num());
-
-						// Add the mask to the map used at runtime as well
-						if (SkDC->AllBonesData.Contains(Pair.Key))
-						{
-							SkDC->AllBonesData[Pair.Key].VisualMask = Pair.Value.VisualMask;
-						}
-						else
-						{
-							UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
-								*FString(__func__), __LINE__, *Pair.Key.ToString());
-						}
-					}
-				}
-				else
-				{
-					Pair.Value.VisualMask = GenerateANewUniqueColorLambda(MinColorDistance, MaxTrials, ConsumedColors);
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Addding new visual mask, hex=%s, to %s --> %s, new total=%ld.."),
-						*FString(__func__), __LINE__, *Pair.Value.VisualMask, *ActItr->GetName(), *Pair.Value.Class, ConsumedColors.Num());
-
-					// Add the mask to the map used at runtime as well
-					if (SkDC->AllBonesData.Contains(Pair.Key))
-					{
-						SkDC->AllBonesData[Pair.Key].VisualMask = Pair.Value.VisualMask;
-					}
-					else
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
-							*FString(__func__), __LINE__, *Pair.Key.ToString());
-					}
-				}
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
-				*FString(__func__), __LINE__, *ActItr->GetName());
-		}
+		AddUniqueVisualMask(Act, ConsumedColors, bOverwrite);
 	}
 }
 
@@ -804,3 +764,252 @@ void FSLEdUtils::WriteIncrementallyGeneratedVisualMasks(UWorld* World, bool bOve
 	//	}
 	//}
 }
+
+// Get already used visual mask colors
+TArray<FColor> FSLEdUtils::GetConsumedVisualMaskColors(UWorld* World)
+{
+	static const FString TagType = TEXT("SemLog");
+	static const FString TagKey = TEXT("VisMask");
+	TArray<FColor> ConsumedColors;
+
+	/* Static mesh actors */
+	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
+	{
+		FString ColHexStr = FSLTagIO::GetValue(*ActItr, TagType, TagKey);
+		if (!ColHexStr.IsEmpty())
+		{
+			ConsumedColors.Add(FColor::FromHex(ColHexStr));
+		}
+	}
+
+	/* Skeletal mesh actors */
+	for (TActorIterator<ASkeletalMeshActor> ActItr(World); ActItr; ++ActItr)
+	{
+		// Get the semantic data component containing the semantics (ids, class names, mask colors) about the bones
+		if (UActorComponent* AC = ActItr->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+		{
+			// Load existing visual mask values from the skeletal data
+			USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+			for (auto& Pair : SkDC->SemanticBonesData)
+			{
+				// Check if the bone has a semantic class and and a visual mask
+				if (Pair.Value.IsClassSet() && !Pair.Value.VisualMask.IsEmpty())
+				{
+					ConsumedColors.Add(FColor::FromHex(Pair.Value.VisualMask));
+				}
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
+				*FString(__func__), __LINE__, *ActItr->GetName());
+		}
+	}
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Number of previously stored visual masks=%ld"),
+	//	*FString(__func__), __LINE__, ConsumedColors.Num());
+	return ConsumedColors;
+}
+
+// Add unique mask color
+bool FSLEdUtils::AddUniqueVisualMask(AActor* Actor, TArray<FColor>& ConsumedColors, bool bOverwrite)
+{
+	static const FString TagType = TEXT("SemLog");
+	static const FString TagKey = TEXT("VisMask");
+	static const int32 MaxTrials = 100;
+	static const uint8 BlackColorTolerance = 37;
+	static const uint8 WhiteColorTolerance = 23;
+	static const uint8 MinColorDistance = 29;
+
+	/* Static mesh actors */
+	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(Actor))
+	{
+		// Check if actor already has a visual mask
+		FColor PrevMask = FColor::FromHex(FSLTagIO::GetValue(SMA, TagType, TagKey));
+		if (PrevMask != FColor::Black)
+		{		
+			// Explicit overwrite check here, instead when writing to the tag (faster this way)
+			if (bOverwrite)
+			{
+				// Remove soon to be overwritten color from consumed array
+				int32 PrevIdx = ConsumedColors.Find(PrevMask);
+				if (PrevIdx != INDEX_NONE)
+				{
+					ConsumedColors.RemoveAt(PrevIdx);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d To be overwritten color for %s is not in the consumed colors array, this should not happen  .."),
+						*FString(__func__), __LINE__, *Actor->GetName());
+				}
+
+				const FColor MaskColor = NewRandomlyGeneratedUniqueColor(ConsumedColors, MaxTrials, MinColorDistance);
+				if (MaskColor == FColor::Black)
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a new visual mask for %s .."),
+						*FString(__func__), __LINE__, *Actor->GetName());
+					return false;
+				}
+				else
+				{
+					const FString MaskColorHex = MaskColor.ToHex();
+					//UE_LOG(LogTemp, Warning, TEXT("%s::%d Overwriting with new visual mask, hex=%s, to %s, new total=%ld.."),
+					//	*FString(__func__), __LINE__, *MaskColorHex, *Actor->GetName(), ConsumedColors.Num());
+					return FSLTagIO::AddKVPair(SMA, TagType, TagKey, MaskColorHex);
+				}				
+			}
+			return false; // Prev color should not be overwritten
+		}
+		else
+		{
+			const FColor MaskColor = NewRandomlyGeneratedUniqueColor(ConsumedColors, MaxTrials, MinColorDistance);
+			if (MaskColor == FColor::Black)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a new visual mask for %s .."),
+					*FString(__func__), __LINE__, *Actor->GetName());
+				return false;
+			}
+			else
+			{
+				const FString MaskColorHex = MaskColor.ToHex();
+				//UE_LOG(LogTemp, Warning, TEXT("%s::%d Overwriting with new visual mask, hex=%s, to %s, new total=%ld.."),
+				//	*FString(__func__), __LINE__, *MaskColorHex, *ActItr->GetName(), ConsumedColors.Num());
+				return FSLTagIO::AddKVPair(SMA, TagType, TagKey, MaskColorHex);
+			}
+		}
+	}
+
+
+	/* Skeletal mesh actors */
+	if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(Actor))
+	{
+		// Get the semantic data component containing the semantics (class names mask colors) about the bones
+		if (UActorComponent* AC = SkMA->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+		{
+			// Iterate visual mask values from the skeletal data
+			USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+			for (auto& BoneNameToDataPair : SkDC->SemanticBonesData)
+			{
+				// Check if bone has a semantic class
+				if (!BoneNameToDataPair.Value.IsClassSet())
+				{
+					continue;
+				}
+
+				// Check if the bone has a visual mask
+				if (BoneNameToDataPair.Value.HasVisualMask())
+				{
+					if (bOverwrite)
+					{
+						// Remove soon to be overwritten color from consumed array
+						int32 PrevIdx = ConsumedColors.Find(FColor::FromHex(BoneNameToDataPair.Value.VisualMask));
+						if (PrevIdx != INDEX_NONE)
+						{
+							ConsumedColors.RemoveAt(PrevIdx);
+						}
+						else
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d To be overwritten color for %s-%s is not in the consumed colors array, this should not happen  .."),
+								*FString(__func__), __LINE__, *Actor->GetName(), *BoneNameToDataPair.Value.Class);
+						}
+
+						const FColor MaskColor = NewRandomlyGeneratedUniqueColor(ConsumedColors, MaxTrials, MinColorDistance);
+						if (MaskColor == FColor::Black)
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a new visual mask for %s-%s .."),
+								*FString(__func__), __LINE__, *Actor->GetName(), *BoneNameToDataPair.Value.Class);
+						}
+						else
+						{
+							const FString MaskColorHex = MaskColor.ToHex();
+							//UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Addding new visual mask, hex=%s, to %s --> %s, new total=%ld.."),
+							//	*FString(__func__), __LINE__, *BoneNameToDataPair.Value.VisualMask, *ActItr->GetName(), *BoneNameToDataPair.Value.Class, ConsumedColors.Num());
+							BoneNameToDataPair.Value.VisualMask = MaskColorHex;
+						}
+
+						// Add the mask to the map used at runtime as well
+						if (SkDC->AllBonesData.Contains(BoneNameToDataPair.Key))
+						{
+							SkDC->AllBonesData[BoneNameToDataPair.Key].VisualMask = BoneNameToDataPair.Value.VisualMask;
+						}
+						else
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+								*FString(__func__), __LINE__, *BoneNameToDataPair.Key.ToString());
+						}
+					}
+				}
+				else
+				{
+					const FColor MaskColor = NewRandomlyGeneratedUniqueColor(ConsumedColors, MaxTrials, MinColorDistance);
+					if (MaskColor == FColor::Black)
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a new visual mask for %s-%s .."),
+							*FString(__func__), __LINE__, *Actor->GetName(), *BoneNameToDataPair.Value.Class);
+					}
+					else
+					{
+						const FString MaskColorHex = MaskColor.ToHex();
+						//UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Addding new visual mask, hex=%s, to %s --> %s, new total=%ld.."),
+						//	*FString(__func__), __LINE__, *BoneNameToDataPair.Value.VisualMask, *ActItr->GetName(), *BoneNameToDataPair.Value.Class, ConsumedColors.Num());
+						BoneNameToDataPair.Value.VisualMask = MaskColorHex;
+					}
+
+					// Add the mask to the map used at runtime as well
+					if (SkDC->AllBonesData.Contains(BoneNameToDataPair.Key))
+					{
+						SkDC->AllBonesData[BoneNameToDataPair.Key].VisualMask = BoneNameToDataPair.Value.VisualMask;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+							*FString(__func__), __LINE__, *BoneNameToDataPair.Key.ToString());
+					}
+				}
+			}
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
+				*FString(__func__), __LINE__, *Actor->GetName());
+			return false;
+		}
+	}	
+	return false; // Not a visual actor
+}
+
+// Generate a new unique color avoiding any from the used up array
+FColor FSLEdUtils::NewRandomlyGeneratedUniqueColor(TArray<FColor>& ConsumedColors, int32 NumberOfTrials, int32 MinManhattanDistance)
+{
+	static const uint8 BlackColorDistance = 37;
+	static const uint8 WhiteColorDistance = 23;
+	for (int32 TrialIdx = 0; TrialIdx < NumberOfTrials; ++TrialIdx)
+	{
+		// Generate a random color that differs of black
+		//FColor RC = FColor::MakeRandomColor(); // Pretty colors, but not many
+		FColor RandColor = ColorRandomRGB();
+
+		// Avoid very dark colors, or very bright (
+		if (ColorEqual(RandColor, FColor::Black, BlackColorDistance) || ColorEqual(RandColor, FColor::White, WhiteColorDistance))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Got a very dark or bright (reserved) color, hex=%s, trying again.."), *FString(__func__), __LINE__, *RandColor.ToHex());
+			continue;
+		}
+
+		/* Nested lambda for FindByPredicate*/
+		const auto EqualWithToleranceLambda = [RandColor, MinManhattanDistance](const FColor& Item)
+		{
+			return ColorEqual(RandColor, Item, MinManhattanDistance);
+		};
+
+		// Check that the randomly generated color is not in the consumed color array
+		if (!ConsumedColors.FindByPredicate(EqualWithToleranceLambda))
+		{
+			ConsumedColors.Emplace(RandColor);
+			return RandColor;
+		}
+	}
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not generate a unique color, saving as black.."), *FString(__func__), __LINE__);
+	return FColor::Black;
+}
+

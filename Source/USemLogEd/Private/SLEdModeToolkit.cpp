@@ -76,6 +76,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 	FModeToolkit::Init(InitToolkitHost);
 }
 
+
 /** IToolkit interface */
 FName FSLEdModeToolkit::GetToolkitFName() const
 {
@@ -92,104 +93,107 @@ class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 	return GLevelEditorModeTools().GetActiveMode(FSLEdMode::EM_SLEdModeId);
 }
 
+
 /* Vertical slot entries */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteSlot()
 {
 	return SVerticalBox::Slot()
-			.AutoHeight()
-			.Padding(2)
-			.HAlign(HAlign_Center)
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
 			[
-				SNew(SHorizontalBox)
+				SNew(STextBlock)
+				.Text(LOCTEXT("OverwriteTextLabel", "Overwrite existing data? "))
+			]
 
 				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(STextBlock)
-					.Text(LOCTEXT("OverwriteTextLabel", "Overwrite existing data? "))
-				]
-
-					+ SHorizontalBox::Slot()
-				[
-					SNew(SCheckBox)
-					.ToolTipText(LOCTEXT("CheckBoxOverwrite", "Overwrites any existing data, use with caution"))
-					.IsChecked(ECheckBoxState::Unchecked)
-					.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwrite)
-				]
-			];
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("CheckBoxOverwrite", "Overwrites any existing data, use with caution"))
+				.IsChecked(ECheckBoxState::Unchecked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwrite)
+			]
+		];
 }
 
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedSlot()
 {
 	return SVerticalBox::Slot()
-			.AutoHeight()
-			.Padding(2)
-			.HAlign(HAlign_Center)
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
 			[
-				SNew(SHorizontalBox)
+				SNew(STextBlock)
+				.Text(LOCTEXT("OnlySelectedTextLabel", "Consider only selected actors? "))
+			]
 
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(STextBlock)
-					.Text(LOCTEXT("OnlySelectedTextLabel", "Consider only selected actors? "))
-				]
-
-				+ SHorizontalBox::Slot()
-				[
-					SNew(SCheckBox)
-					.ToolTipText(LOCTEXT("CheckBoxOnlySelected", "Consider only selected actors"))
-					.IsChecked(ECheckBoxState::Unchecked)
-					.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOnlySelected)
-				]
-			];
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("CheckBoxOnlySelected", "Consider only selected actors"))
+				.IsChecked(ECheckBoxState::Unchecked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOnlySelected)
+			]
+		];
 }
 
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenSemMapSlot()
 {
 	return SVerticalBox::Slot()
-			.AutoHeight()
-			.Padding(5)
-			.HAlign(HAlign_Center)
-			[
-				SNew(SButton)
-				.Text(LOCTEXT("GenSemMap", "Generate Semantic Map"))
-				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("GenSemMapTip", "Exports the generated semantic map to file"))
-				.OnClicked(this, &FSLEdModeToolkit::OnGenSemMap)
-			];
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SButton)
+			.Text(LOCTEXT("GenSemMap", "Generate Semantic Map"))
+			.IsEnabled(true)
+			.ToolTipText(LOCTEXT("GenSemMapTip", "Exports the generated semantic map to file"))
+			.OnClicked(this, &FSLEdModeToolkit::OnGenSemMap)
+		];
 }
 
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateIdsSlot()
 {
 	return 	SVerticalBox::Slot()
-			.AutoHeight()
-			.Padding(5)
-			.HAlign(HAlign_Center)
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
 			[
-				SNew(SHorizontalBox)
+				SNew(SButton)
+				.Text(LOCTEXT("GenSemIds", "Write Ids"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("GenSemMapTip", "Generates unique ids for every semantic entity"))
+				.OnClicked(this, &FSLEdModeToolkit::OnWriteSemIds)
+			]
 
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("GenSemIds", "Write Ids"))
-					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("GenSemMapTip", "Generates unique ids for every semantic entity"))
-					.OnClicked(this, &FSLEdModeToolkit::OnWriteSemIds)
-				]
-
-				+ SHorizontalBox::Slot()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("RmSemIds", "Remove Ids"))
-					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("RmSemIdsTip", "Removes all generated ids"))
-					.OnClicked(this, &FSLEdModeToolkit::OnRmSemIds)
-				]
-			];
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("RmSemIds", "Remove Ids"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("RmSemIdsTip", "Removes all generated ids"))
+				.OnClicked(this, &FSLEdModeToolkit::OnRmSemIds)
+			]
+		];
 }
-
 
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateClassNamesSlot()
 {
@@ -198,29 +202,31 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateClassNamesSlot()
 		.Padding(5)
 		.HAlign(HAlign_Center)
 		[
-				SNew(SHorizontalBox)
+			SNew(SHorizontalBox)
 
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("WriteClassNames", "Write Class Names"))
-					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("WriteClassNames", "Writes known class names"))
-					.OnClicked(this, &FSLEdModeToolkit::OnWriteClassNames)
-				]
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("WriteClassNames", "Write Class Names"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("WriteClassNames", "Writes known class names"))
+				.OnClicked(this, &FSLEdModeToolkit::OnWriteClassNames)
+			]
 
-				+ SHorizontalBox::Slot()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("RmClassNames", "Remove Class Names"))
-					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("RmClassNamesTip", "Removes all class names"))
-					.OnClicked(this, &FSLEdModeToolkit::OnRmClassNames)
-				]
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("RmClassNames", "Remove Class Names"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("RmClassNamesTip", "Removes all class names"))
+				.OnClicked(this, &FSLEdModeToolkit::OnRmClassNames)
+			]
 		];
 }
-
 
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateWriteVisualMasksSlot()
 {
@@ -229,30 +235,31 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateWriteVisualMasksSlot()
 		.Padding(5)
 		.HAlign(HAlign_Center)
 		[
-				SNew(SHorizontalBox)
+			SNew(SHorizontalBox)
 
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("WriteVisualMasks", "Write Visual Masks"))
-					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("WriteVisualMasksTip", "Writes unique visual masks for visual entities"))
-					.OnClicked(this, &FSLEdModeToolkit::OnWriteClassNames)
-				]
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("WriteVisualMasks", "Write Visual Masks"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("WriteVisualMasksTip", "Writes unique visual masks for visual entities"))
+				.OnClicked(this, &FSLEdModeToolkit::OnWriteVisualMasks)
+			]
 
-				+ SHorizontalBox::Slot()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("RmVisualMasks", "Remove Visual Masks"))
-					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("RmVisualMasksTip", "Removes all visual masks"))
-					.OnClicked(this, &FSLEdModeToolkit::OnRmClassNames)
-				]
-
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("RmVisualMasks", "Remove Visual Masks"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("RmVisualMasksTip", "Removes all visual masks"))
+				.OnClicked(this, &FSLEdModeToolkit::OnRmVisualMasks)
+			]
 		];
 }
-
 
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateRmAllSlot()
 {
@@ -344,8 +351,8 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableInstacedMeshMaterialsSlot()
 		];
 }
 
+
 /* Button callbacks */
-// Generate semantic map from editor world
 FReply FSLEdModeToolkit::OnGenSemMap()
 {
 	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwrite);
@@ -354,84 +361,161 @@ FReply FSLEdModeToolkit::OnGenSemMap()
 
 FReply FSLEdModeToolkit::OnWriteSemIds()
 {
-	FScopedTransaction Transaction(LOCTEXT("GenNewSemIds", "Generate new semantic Ids"));
-	FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	FScopedTransaction Transaction(LOCTEXT("GenSemIdsST", "Generate new semantic Ids"));	
+	if (bOnlySelected)
+	{
+		FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnRmSemIds()
 {
-	FScopedTransaction Transaction(LOCTEXT("RmSemIds", "Remove all semantic Ids"));
-	FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
+	FScopedTransaction Transaction(LOCTEXT("RmSemIdsST", "Remove all semantic Ids"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "Id");
+	}
+	else
+	{
+		FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
+	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnWriteClassNames()
 {
-	FScopedTransaction Transaction(LOCTEXT("WriteClassNames", "Write class names"));
-	FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	FScopedTransaction Transaction(LOCTEXT("WriteClassNamesST", "Write class names"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}	
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnRmClassNames()
 {
-	FScopedTransaction Transaction(LOCTEXT("RmClassNames", "Remove all class names"));
-	FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Class");
+	FScopedTransaction Transaction(LOCTEXT("RmClassNamesST", "Remove all class names"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "Class");
+	}
+	else
+	{
+		FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Class");
+	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnWriteVisualMasks()
 {
-	FScopedTransaction Transaction(LOCTEXT("WriteVisualMasks", "Write visual masks"));
-	FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	FScopedTransaction Transaction(LOCTEXT("WriteVisualMasksST", "Write visual masks"));	
+	if (bOnlySelected)
+	{
+		FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnRmVisualMasks()
 {
-	FScopedTransaction Transaction(LOCTEXT("RmVisualMasks", "Remove all visual masks names"));
-	FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "VisMask");
+	FScopedTransaction Transaction(LOCTEXT("RmVisualMasksST", "Remove all visual masks names"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "VisMask");
+	}
+	else
+	{
+		FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "VisMask");
+	}	
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnRmAll ()
 {
-	FScopedTransaction Transaction(LOCTEXT("RmAll", "Remove all SemLog tags"));
-	FSLEdUtils::RemoveTagType(GEditor->GetEditorWorldContext().World(), "SemLog");
+	FScopedTransaction Transaction(LOCTEXT("RmAllST", "Remove all SemLog tags"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::RemoveTagType(GetSelectedActors(), "SemLog");
+	}
+	else
+	{
+		FSLEdUtils::RemoveTagType(GEditor->GetEditorWorldContext().World(), "SemLog");		
+	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnAddSemMon()
 {
-	FScopedTransaction Transaction(LOCTEXT("AddSemMonitors", "Add semantic monitor components"));
-	FSLEdUtils::AddSemanticMonitorComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	FScopedTransaction Transaction(LOCTEXT("AddSemMonitorsST", "Add semantic monitor components"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::AddSemanticMonitorComponents(GetSelectedActors(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::AddSemanticMonitorComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnAddSemData()
 {
-	FScopedTransaction Transaction(LOCTEXT("AddSemanticDataComp", "Add semantic data components"));
-	FSLEdUtils::AddSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	FScopedTransaction Transaction(LOCTEXT("AddSemanticDataCompST", "Add semantic data components"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::AddSemanticDataComponents(GetSelectedActors(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::AddSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnEnableOverlaps()
 {
-	FScopedTransaction Transaction(LOCTEXT("EnableOverlaps", "Enable overlaps"));
-	FSLEdUtils::EnableOverlaps(GEditor->GetEditorWorldContext().World());
+	FScopedTransaction Transaction(LOCTEXT("EnableOverlapsST", "Enable overlaps"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::EnableOverlaps(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::EnableOverlaps(GEditor->GetEditorWorldContext().World());
+	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnShowSemData()
 {
-	FScopedTransaction Transaction(LOCTEXT("ShowSemData", "Show semantic data"));
-	FSLEdUtils::ShowSemanticData(GEditor->GetEditorWorldContext().World());
+	FScopedTransaction Transaction(LOCTEXT("ShowSemDataST", "Show semantic data"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::ShowSemanticData(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::ShowSemanticData(GEditor->GetEditorWorldContext().World());
+	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnEnableMaterialsForInstancedStaticMesh()
 {
-	FScopedTransaction Transaction(LOCTEXT("AllMatForInstancedStaticMesh", "Enable all materials for instanced static mesh rendering"));
+	FScopedTransaction Transaction(LOCTEXT("AllMatForInstancedStaticMeshST", "Enable all materials for instanced static mesh rendering"));
 	FSLEdUtils::EnableAllMaterialsForInstancedStaticMesh();
 	return FReply::Handled();
 }
@@ -449,10 +533,19 @@ void FSLEdModeToolkit::OnCheckedOnlySelected(ECheckBoxState NewCheckedState)
 }
 
 
-// Return true if any actors are selected in the viewport
-bool FSLEdModeToolkit::AreActorsSelected()
+/* Helper functions */
+TArray<AActor*> FSLEdModeToolkit::GetSelectedActors() const
 {
-	return GEditor->GetSelectedActors()->Num() != 0;
+	USelection* SelectedActors = GEditor->GetSelectedActors();
+	TArray<AActor*> Actors;
+	for (FSelectionIterator Iter(*SelectedActors); Iter; ++Iter)
+	{
+		if (AActor* Actor = Cast<AActor>(*Iter))
+		{
+			Actors.Add(Actor);
+		}
+	}
+	return Actors;
 }
 
 #undef LOCTEXT_NAMESPACE
