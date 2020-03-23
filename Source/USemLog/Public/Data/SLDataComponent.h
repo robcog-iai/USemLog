@@ -5,10 +5,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Data/SLData.h"
 #include "SLDataComponent.generated.h"
 
 
-UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Data Component")
 class USEMLOG_API USLDataComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -21,9 +22,39 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
 
-		
+public:
+	// Print stored data to string
+	FString ToString() const;
+
+	//// Print data to tag
+	//void WriteToTag();
+
+	//// Read data from tag
+	//void ReadFromTag();
+
+private:
+	// Semantic data
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FSLIndividualData SemanticData;
+
+	//// Individual unique id
+	//UPROPERTY(EditAnywhere, Category = "SL")
+	//FString Id;
+
+	//// Idividual class
+	//UPROPERTY(EditAnywhere, Category = "SL")
+	//FString Class;
+
+	//// Visual mask color in hex
+	//UPROPERTY(EditAnywhere, Category = "SL")
+	//FString VisualMaskHex;
+
+	//// The rendered value of the visual mask hex
+	//UPROPERTY(EditAnywhere, Category = "SL")
+	//FString CalibratedVisualMaskHex;
 };
