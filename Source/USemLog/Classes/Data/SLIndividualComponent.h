@@ -5,20 +5,23 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Data/SLData.h"
-#include "SLDataComponent.generated.h"
+#include "Data/SLIndividualBase.h"
+#include "SLIndividualComponent.generated.h"
 
 
-UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Data Component")
-class USEMLOG_API USLDataComponent : public UActorComponent
+UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Individual Component")
+class USEMLOG_API USLIndividualComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	USLDataComponent();
+	USLIndividualComponent();
 
 protected:
+	// Called when a component is created(not loaded).This can happen in the editor or during gameplay
+	virtual void OnComponentCreated() override;
+
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -26,6 +29,8 @@ protected:
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
+
+
 
 public:
 	// Print stored data to string
@@ -38,23 +43,15 @@ public:
 	//void ReadFromTag();
 
 private:
+	// Convert datat type object to the selected class type
+	void DoConvertDataType();
+
+private:
 	// Semantic data
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	USLIndividualBase* SemanticIndividual;
+
+	// Manually convert datatype to the chosen type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FSLIndividualData SemanticData;
-
-	//// Individual unique id
-	//UPROPERTY(EditAnywhere, Category = "SL")
-	//FString Id;
-
-	//// Idividual class
-	//UPROPERTY(EditAnywhere, Category = "SL")
-	//FString Class;
-
-	//// Visual mask color in hex
-	//UPROPERTY(EditAnywhere, Category = "SL")
-	//FString VisualMaskHex;
-
-	//// The rendered value of the visual mask hex
-	//UPROPERTY(EditAnywhere, Category = "SL")
-	//FString CalibratedVisualMaskHex;
+	TSubclassOf<USLIndividual> ConvertToSemanticIndividual;
 };

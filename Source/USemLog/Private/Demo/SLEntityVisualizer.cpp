@@ -57,9 +57,9 @@ void ASLEntityVisualizer::BeginPlay()
 
 
 					//// Make sure the actor does not have a component already
-					//if (Actor->GetComponentByClass(USLDataComponent::StaticClass()))
+					//if (Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
 					//{
-					//	//USLDataComponent* SemanticDataComponent = NewObject<USLDataComponent>(USLDataComponent::StaticClass(), Actor);
+					//	//USLIndividualComponent* SemanticDataComponent = NewObject<USLIndividualComponent>(USLIndividualComponent::StaticClass(), Actor);
 					//	//UE_LOG(LogTemp, Error, TEXT("%s::%d %s received a new semantic data component (%s).."), *FString(__FUNCTION__), __LINE__, *Actor->GetName(), *SemanticDataComponent->GetName());
 					//}
 					//else
