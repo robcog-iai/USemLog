@@ -13,6 +13,7 @@
 // SL
 #include "Editor/SLSemanticMapWriter.h"
 #include "Vision/SLVisionCamera.h"
+#include "Data/SLIndividualComponent.h"
 #include "SLManager.h"
 
 // Utils
@@ -194,6 +195,27 @@ void FSLEdUtils::AddSemanticMonitorComponents(const TArray<AActor*>& Actors, boo
 // Add semantic data components to the actors
 void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
 {
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		//if (ActItr->GetComponentByClass(USLIndividualComponent::StaticClass()))
+		//{
+		//	continue;
+		//}
+		//USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(*ActItr);
+		//NewComp->RegisterComponent();
+		//if (NewComp->IsRegistered())
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is successfully registered"), *FString(__FUNCTION__), __LINE__, *NewComp->GetName());
+		//}
+		//else
+		//{
+		//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s FAILED to register"), *FString(__FUNCTION__), __LINE__, *NewComp->GetName());
+		//}
+		//ActItr->AddOwnedComponent(NewComp);
+		//ActItr->AddInstanceComponent(NewComp);
+		//ActItr->Modify();
+	}
+
 	//for (ULevelStreaming* LevelStreaming : World->GetStreamingLevels())
 	//{
 	//	if (LevelStreaming && LevelStreaming->IsLevelVisible())

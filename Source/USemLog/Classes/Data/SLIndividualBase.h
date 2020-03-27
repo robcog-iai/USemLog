@@ -15,7 +15,14 @@ class USLIndividualBase : public UObject
 {
 	GENERATED_BODY()
 
+public:
+	// Ctor
+	USLIndividualBase();
+
+	// Destructor
+	~USLIndividualBase();
+
 private:
-	// Pointer to the actor owning the semantic individual
-	AActor* SemanticOwner;
+	// Pointer to the actor described by the semantic description class
+	AActor* Owner;
 };

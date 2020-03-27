@@ -13,11 +13,14 @@
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s"), *FString(__FUNCTION__), __LINE__, *GetName());
+}
 
-	// ...
+// Dtor
+USLIndividualComponent::~USLIndividualComponent()
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d %s"), *FString(__FUNCTION__), __LINE__, *GetName());
 }
 
 // Called when a component is created(not loaded).This can happen in the editor or during gameplay

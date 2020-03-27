@@ -18,6 +18,9 @@ public:
 	// Sets default values for this component's properties
 	USLIndividualComponent();
 
+	// Dtor
+	~USLIndividualComponent();
+
 protected:
 	// Called when a component is created(not loaded).This can happen in the editor or during gameplay
 	virtual void OnComponentCreated() override;
@@ -53,5 +56,5 @@ private:
 
 	// Manually convert datatype to the chosen type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TSubclassOf<USLIndividual> ConvertToSemanticIndividual;
+	TSubclassOf<class USLIndividual> ConvertToSemanticIndividual;
 };
