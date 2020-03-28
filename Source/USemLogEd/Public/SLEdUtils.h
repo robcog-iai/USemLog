@@ -57,6 +57,9 @@ private:
 	// Add unique id if the actor is a known type
 	static bool AddUniqueId(AActor* Actor, bool bOverwrite = false);
 
+	// Add a semantic individual component
+	static void AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite = false);
+
 	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 	static FString GetClassName(AActor* Actor, bool bDefaultToLabelName = false);
 

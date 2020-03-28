@@ -30,28 +30,28 @@ void USLIndividualComponent::OnComponentCreated()
 
 	AActor* Owner = GetOwner();
 
-	// Check if actor already has a semantic data component
-	for (const auto AC : Owner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
-	{
-		if (AC != this)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component:%s, self-destruction commenced.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
-			DestroyComponent();
-			return;
-		}
-	}
+	//// Check if actor already has a semantic data component
+	//for (const auto AC : Owner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
+	//{
+	//	if (AC != this)
+	//	{
+	//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component:%s, self-destruction commenced.."),
+	//			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+	//		DestroyComponent();
+	//		return;
+	//	}
+	//}
 
 	// Set semantic individual type depending on owner
 	if (Owner->IsA(AStaticMeshActor::StaticClass()))
 	{
 		ConvertToSemanticIndividual = USLVisualIndividual::StaticClass();
-		SemanticIndividual = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+		SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
 	}
 	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
 	{
 		ConvertToSemanticIndividual = USLSkeletalIndividual::StaticClass();
-		SemanticIndividual = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+		SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
 	}
 	else
 	{
@@ -60,13 +60,14 @@ void USLIndividualComponent::OnComponentCreated()
 		ConditionalBeginDestroy();
 		return;
 	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Created component .... "), *FString(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Created component .... "), *FString(__FUNCTION__), __LINE__);
 }
 
 // Called when the game starts
 void USLIndividualComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Error, TEXT("%s::%d ******** %s .... "), *FString(__FUNCTION__), __LINE__, *GetName());
 	ToString();
 	// ...
 	
@@ -111,32 +112,32 @@ void USLIndividualComponent::DoConvertDataType()
 {
 	if (ConvertToSemanticIndividual)
 	{		
-		if (SemanticIndividual && !SemanticIndividual->IsPendingKill())
+		if (SemanticIndividualObject && !SemanticIndividualObject->IsPendingKill())
 		{
-			if(SemanticIndividual->StaticClass() != ConvertToSemanticIndividual)
+			if(SemanticIndividualObject->StaticClass() != ConvertToSemanticIndividual)
 			{
-				SemanticIndividual->ConditionalBeginDestroy();
-				SemanticIndividual = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+				SemanticIndividualObject->ConditionalBeginDestroy();
+				SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
 				UE_LOG(LogTemp, Warning, TEXT("%s::%d Converted datatype to %s (%s).."),
-					*FString(__FUNCTION__), __LINE__, *ConvertToSemanticIndividual->GetName(), *SemanticIndividual->StaticClass()->GetName());
+					*FString(__FUNCTION__), __LINE__, *ConvertToSemanticIndividual->GetName(), *SemanticIndividualObject->StaticClass()->GetName());
 			}
 			else
 			{
 				UE_LOG(LogTemp, Warning, TEXT("%s::%d Current datatype %s is of the same type as %s.."),
-					*FString(__FUNCTION__), __LINE__, *SemanticIndividual->StaticClass()->GetName(), *ConvertToSemanticIndividual->GetName());
+					*FString(__FUNCTION__), __LINE__, *SemanticIndividualObject->StaticClass()->GetName(), *ConvertToSemanticIndividual->GetName());
 			}
 		}
 		else
 		{
-			SemanticIndividual = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+			SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating new %s datatype (%s).."),
-				*FString(__FUNCTION__), __LINE__, *ConvertToSemanticIndividual->GetName(), *SemanticIndividual->StaticClass()->GetName());
+				*FString(__FUNCTION__), __LINE__, *ConvertToSemanticIndividual->GetName(), *SemanticIndividualObject->StaticClass()->GetName());
 		}
 	}
-	else if (SemanticIndividual && !SemanticIndividual->IsPendingKill())
+	else if (SemanticIndividualObject && !SemanticIndividualObject->IsPendingKill())
 	{
-		SemanticIndividual->ConditionalBeginDestroy();
-		SemanticIndividual = nullptr;
+		SemanticIndividualObject->ConditionalBeginDestroy();
+		SemanticIndividualObject = nullptr;
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Removed existing datatype.."),
 			*FString(__FUNCTION__), __LINE__);
 	}

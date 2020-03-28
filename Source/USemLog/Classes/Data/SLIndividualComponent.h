@@ -21,10 +21,10 @@ public:
 	// Dtor
 	~USLIndividualComponent();
 
-protected:
 	// Called when a component is created(not loaded).This can happen in the editor or during gameplay
 	virtual void OnComponentCreated() override;
 
+protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -52,7 +52,7 @@ private:
 private:
 	// Semantic data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	USLIndividualBase* SemanticIndividual;
+	USLIndividualBase* SemanticIndividualObject;
 
 	// Manually convert datatype to the chosen type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

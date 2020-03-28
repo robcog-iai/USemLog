@@ -9,6 +9,7 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "AssetRegistryModule.h"
+#include "Kismet2/ComponentEditorUtils.h"
 
 // SL
 #include "Editor/SLSemanticMapWriter.h"
@@ -197,54 +198,16 @@ void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		//if (ActItr->GetComponentByClass(USLIndividualComponent::StaticClass()))
-		//{
-		//	continue;
-		//}
-		//USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(*ActItr);
-		//NewComp->RegisterComponent();
-		//if (NewComp->IsRegistered())
-		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is successfully registered"), *FString(__FUNCTION__), __LINE__, *NewComp->GetName());
-		//}
-		//else
-		//{
-		//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s FAILED to register"), *FString(__FUNCTION__), __LINE__, *NewComp->GetName());
-		//}
-		//ActItr->AddOwnedComponent(NewComp);
-		//ActItr->AddInstanceComponent(NewComp);
-		//ActItr->Modify();
+		AddSemanticIndividualComponent(*ActItr, bOverwrite);
 	}
-
-	//for (ULevelStreaming* LevelStreaming : World->GetStreamingLevels())
-	//{
-	//	if (LevelStreaming && LevelStreaming->IsLevelVisible())
-	//	{
-	//		if (ULevel* Level = LevelStreaming->GetLoadedLevel())
-	//		{
-	//			// Iterate method 1
-	//			for (TActorIterator<AStaticMeshActor> ActorItr(Level->GetWorld()); ActorItr; ++ActorItr)
-	//			{
-	//				// Same as with the Object Iterator, access the subclass instance with the * or -> operators.
-	//				AStaticMeshActor* Mesh = *ActorItr;
-	//				Mesh->AddActorLocalOffset(FVector(500, 500, 500));
-	//			}
-	//			// Iterate method 2
-	//			for (AActor* Actor : Level->Actors)
-	//			{
-	//				// Store quick map of id to actor pointer
-	//				if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Actor))
-	//				{
-	//					AsSMA->AddActorLocalOffset(FVector(1000, 1000, 100));
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
 }
 
 void FSLEdUtils::AddSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite)
 {
+	for (const auto Act : Actors)
+	{
+		AddSemanticIndividualComponent(Act, bOverwrite);
+	}
 }
 
 
@@ -458,6 +421,39 @@ bool FSLEdUtils::AddUniqueId(AActor* Actor, bool bOverwrite)
 	return false;
 }
 
+// Add a semantic individual component
+void FSLEdUtils::AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
+{
+	// Skip it already has a component
+	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	{
+		if (bOverwrite)
+		{
+			USLIndividualComponent* SLC = CastChecked<USLIndividualComponent>(AC);
+			//SLC->Reset();
+		}
+		return;
+	}
+
+	// Save modify transaction to buffer (allows undo)
+	Actor->Modify();
+
+	// Create an appropriate name for the new component (avoid duplicates)
+	FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(USLIndividualComponent::StaticClass(), Actor);
+
+	// Create a new component
+	USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(Actor, NewComponentName, RF_Transactional);
+
+	// Make visible in the components list in the editor
+	Actor->AddInstanceComponent(NewComp);
+	//Actor->AddOwnedComponent(NewComp);
+
+	//NewComp->OnComponentCreated();
+
+	NewComp->RegisterComponent();
+	//Actor->Modify();
+}
+
 // Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 FString FSLEdUtils::GetClassName(AActor* Actor, bool bDefaultToLabelName)
 {
@@ -573,6 +569,7 @@ FString FSLEdUtils::GetClassName(AActor* Actor, bool bDefaultToLabelName)
 	}
 }
 
+
 // Generate unique visual masks using randomization
 void FSLEdUtils::WriteRandomlyGeneratedVisualMasks(UWorld* World, bool bOverwrite)
 {
@@ -603,6 +600,7 @@ void FSLEdUtils::WriteRandomlyGeneratedVisualMasks(const TArray<AActor*>& Actors
 		AddUniqueVisualMask(Act, ConsumedColors, bOverwrite);
 	}
 }
+
 
 // Generate unique visual masks using incremental heuristic
 void FSLEdUtils::WriteIncrementallyGeneratedVisualMasks(UWorld* World, bool bOverwrite)
