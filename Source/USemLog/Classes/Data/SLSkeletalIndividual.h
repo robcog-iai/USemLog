@@ -22,10 +22,7 @@ struct FSLBoneIndividual
 
     // Skeletal body part individual class
     UPROPERTY(EditAnywhere, Category = "SL")
-    FString CalibratedVisualMask;
-
-    // Check if the visual data is set
-    FORCEINLINE bool IsSet() const { return !VisualMask.IsEmpty() && !CalibratedVisualMask.IsEmpty(); }
+    FString CalibratedVisualMask;    
 };
 
 /**
@@ -35,8 +32,8 @@ UCLASS()
 class USEMLOG_API USLSkeletalIndividual : public USLVisualIndividual
 {
 	GENERATED_BODY()
-	
-public:
+
+protected:
     // Skeletal body part individual unique id
     UPROPERTY(EditAnywhere, Category = "SL")
     TMap<FName, FSLBoneIndividual> Bones;

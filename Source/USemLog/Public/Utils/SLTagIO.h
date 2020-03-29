@@ -32,9 +32,6 @@ struct USEMLOG_API FSLTagIO
 
 
 	/* Create / Update */
-	// Add key value pair to the tag value
-	static bool AddKVPair(FName& Tag, const FString& TagKey, const FString& TagValue, bool bOverwrite = false);
-
 	// Add key value pair to actor
 	static bool AddKVPair(AActor* Actor, const FString& TagType, const FString& TagKey, const FString& TagValue, bool bOverwrite = false);
 
@@ -48,6 +45,9 @@ struct USEMLOG_API FSLTagIO
 
 private:
 	/* Utils */
+	// Add key value pair to the tag value
+	static bool AddKVPair(FName& Tag, const FString& TagKey, const FString& TagValue, bool bOverwrite = false);
+
 	// Get tag key value from tag
 	FORCEINLINE static FString GetValue(const FName& InTag, const FString& TagKey);
 

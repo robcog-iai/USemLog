@@ -3,14 +3,24 @@
 
 #include "Data/SLIndividualBase.h"
 
-// Ctor
-USLIndividualBase::USLIndividualBase()
+// Save data to owners tag
+bool USLIndividualBase::SaveToTag(bool bOverwrite)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t %s"), *FString(__FUNCTION__), __LINE__, *GetName());
+	if (!Owner)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner not set, cannot write to tags.."), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
+	return true;
 }
 
-// Dtor
-USLIndividualBase::~USLIndividualBase()
+// Load data from owners tag
+bool USLIndividualBase::LoadFromTag(bool bOverwrite)
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d \t %s"), *FString(__FUNCTION__), __LINE__, *GetName());
+	if (!Owner)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner not set, cannot read from tags.."), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
+	return true;
 }

@@ -93,30 +93,6 @@ bool FSLTagIO::HasType(AActor* Actor, const FString& TagType, int32* OutPos)
 
 
 /* Create / Update */
-// Add key value pair to the tag value
-bool FSLTagIO::AddKVPair(FName& Tag, const FString& TagKey, const FString& TagValue, bool bOverwrite)
-{
-	// Check if the value is already present
-	const FString CurrVal = FSLTagIO::GetValue(Tag, TagKey);
-	if (CurrVal.IsEmpty())
-	{
-		// Key does not exist, add new one at the end
-		Tag = FName(*AppendKV(Tag, TagKey, TagValue));
-		return true;
-	}
-	else if (bOverwrite)
-	{
-		// Key exist, replace
-		const FString Old = TagKey + "," + CurrVal;
-		const FString New = TagKey + "," + TagValue;
-		Tag = FName(*Tag.ToString().Replace(*Old, *New));
-		Tag = FName(*Tag.ToString().Replace(*CurrVal, *TagValue));
-		return true;
-	}
-	// Cannot overwrite value, return false
-	return false;
-}
-
 // Add key value pair to actor
 bool FSLTagIO::AddKVPair(AActor* Actor, const FString& TagType, const FString& TagKey, const FString& TagValue, bool bOverwrite)
 {
@@ -181,6 +157,30 @@ bool FSLTagIO::RemoveKVPair(AActor* Actor, const FString& TagType, const FString
 
 
 /* Utils */
+// Add key value pair to the tag value
+bool FSLTagIO::AddKVPair(FName& Tag, const FString& TagKey, const FString& TagValue, bool bOverwrite)
+{
+	// Check if the value is already present
+	const FString CurrVal = FSLTagIO::GetValue(Tag, TagKey);
+	if (CurrVal.IsEmpty())
+	{
+		// Key does not exist, add new one at the end
+		Tag = FName(*AppendKV(Tag, TagKey, TagValue));
+		return true;
+	}
+	else if (bOverwrite)
+	{
+		// Key exist, replace
+		const FString Old = TagKey + "," + CurrVal;
+		const FString New = TagKey + "," + TagValue;
+		Tag = FName(*Tag.ToString().Replace(*Old, *New));
+		Tag = FName(*Tag.ToString().Replace(*CurrVal, *TagValue));
+		return true;
+	}
+	// Cannot overwrite value, return false
+	return false;
+}
+
 // Get tag key value from tag
 FString FSLTagIO::GetValue(const FName& InTag, const FString& TagKey)
 {
