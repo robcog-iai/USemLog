@@ -14,12 +14,12 @@ bool USLVisualIndividual::SaveToTag(bool bOverwrite)
 
 	if (!VisualMask.IsEmpty())
 	{
-		FSLTagIO::AddKVPair(Owner, "SemLog", "VisualMask", VisualMask, bOverwrite);
+		FSLTagIO::AddKVPair(SemOwner, TagTypeConst, "VisualMask", VisualMask, bOverwrite);
 	}
 
 	if (!CalibratedVisualMask.IsEmpty())
 	{
-		FSLTagIO::AddKVPair(Owner, "SemLog", "CalibratedVisualMask", CalibratedVisualMask, bOverwrite);
+		FSLTagIO::AddKVPair(SemOwner, TagTypeConst, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite);
 	}
 
 	return true;
@@ -35,13 +35,24 @@ bool USLVisualIndividual::LoadFromTag(bool bOverwrite)
 
 	if (VisualMask.IsEmpty() || bOverwrite)
 	{
-		VisualMask = FSLTagIO::GetValue(Owner, "SemLog", "VisualMask");
+		VisualMask = FSLTagIO::GetValue(SemOwner, TagTypeConst, "VisualMask");
 	}
 
 	if (CalibratedVisualMask.IsEmpty() || bOverwrite)
 	{
-		CalibratedVisualMask = FSLTagIO::GetValue(Owner, "SemLog", "CalibratedVisualMask");
+		CalibratedVisualMask = FSLTagIO::GetValue(SemOwner, TagTypeConst, "CalibratedVisualMask");
 	}
 
 	return true;
+}
+
+// All properties are set for runtime
+bool USLVisualIndividual::IsRuntimeReady() const
+{
+	if (!Super::IsRuntimeReady())
+	{
+		return false;
+	}
+
+	return !VisualMask.IsEmpty() && !CalibratedVisualMask.IsEmpty();
 }

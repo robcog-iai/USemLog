@@ -14,12 +14,12 @@ bool USLIndividual::SaveToTag(bool bOverwrite)
 
 	if (!Id.IsEmpty())
 	{
-		FSLTagIO::AddKVPair(Owner, "SemLog", "Id", Id, bOverwrite);
+		FSLTagIO::AddKVPair(SemOwner, TagTypeConst, "Id", Id, bOverwrite);
 	}
 
 	if (!Class.IsEmpty())
 	{
-		FSLTagIO::AddKVPair(Owner, "SemLog", "Class", Class, bOverwrite);
+		FSLTagIO::AddKVPair(SemOwner, TagTypeConst, "Class", Class, bOverwrite);
 	}
 
 	return true;
@@ -35,13 +35,24 @@ bool USLIndividual::LoadFromTag(bool bOverwrite)
 	
 	if (Id.IsEmpty() || bOverwrite)
 	{
-		Id = FSLTagIO::GetValue(Owner, "SemLog", "Id");
+		Id = FSLTagIO::GetValue(SemOwner, TagTypeConst, "Id");
 	}
 
 	if (Class.IsEmpty() || bOverwrite)
 	{
-		Class = FSLTagIO::GetValue(Owner, "SemLog", "Class");
+		Class = FSLTagIO::GetValue(SemOwner, TagTypeConst, "Class");
 	}
 
 	return true;
+}
+
+// All properties are set for runtime
+bool USLIndividual::IsRuntimeReady() const
+{
+	if (!Super::IsRuntimeReady())
+	{
+		return false;
+	}
+
+	return !Id.IsEmpty() && !Class.IsEmpty();
 }

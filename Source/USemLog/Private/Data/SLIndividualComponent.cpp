@@ -14,6 +14,11 @@
 USLIndividualComponent::USLIndividualComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+
+	bOverwriteEditChanges = false;
+	bSaveToTagButton = false;
+	bLoadFromTagButton = false;
+
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s"), *FString(__FUNCTION__), __LINE__, *GetName());
 }
 
@@ -30,37 +35,39 @@ void USLIndividualComponent::OnComponentCreated()
 
 	AActor* Owner = GetOwner();
 
-	//// Check if actor already has a semantic data component
-	//for (const auto AC : Owner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
-	//{
-	//	if (AC != this)
-	//	{
-	//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component:%s, self-destruction commenced.."),
-	//			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
-	//		DestroyComponent();
-	//		return;
-	//	}
-	//}
+	// Check if actor already has a semantic data component
+	for (const auto AC : Owner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
+	{
+		if (AC != this)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+			//DestroyComponent();
+			ConditionalBeginDestroy();
+			return;
+		}
+	}
 
 	// Set semantic individual type depending on owner
 	if (Owner->IsA(AStaticMeshActor::StaticClass()))
 	{
 		ConvertToSemanticIndividual = USLVisualIndividual::StaticClass();
 		SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+		SemanticIndividualObject->SetSemOwner(Owner);
 	}
 	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
 	{
 		ConvertToSemanticIndividual = USLSkeletalIndividual::StaticClass();
 		SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+		SemanticIndividualObject->SetSemOwner(Owner);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for generating a semantic individual component %s.."),
-			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for generating a semantic individual component %s, self-destruction commenced.."),
+			*FString(__FUNCTION__), __LINE__, *Owner->GetName());
 		ConditionalBeginDestroy();
 		return;
 	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Created component .... "), *FString(__FUNCTION__), __LINE__);
 }
 
 // Called when the game starts
@@ -68,7 +75,6 @@ void USLIndividualComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	UE_LOG(LogTemp, Error, TEXT("%s::%d ******** %s .... "), *FString(__FUNCTION__), __LINE__, *GetName());
-	ToString();
 	// ...
 	
 }
@@ -88,23 +94,36 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 	{
 		DoConvertDataType();
 	}
+
+	/* Button workaround triggers */
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bSaveToTagButton))
+	{
+		bSaveToTagButton = false;
+		SaveToTag(bOverwriteEditChanges);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bLoadFromTagButton))
+	{
+		bLoadFromTagButton = false;
+		LoadFromTag(bOverwriteEditChanges);
+	}
 }
 
-FString USLIndividualComponent::ToString() const
+// Save data to owners tag
+void USLIndividualComponent::SaveToTag(bool bOverwrite)
 {
-	for (TFieldIterator<UProperty> It(GetClass()); It; ++It)
+	if (SemanticIndividualObject)
 	{
-		if (It->HasAnyPropertyFlags(CPF_Transient))
-		{
-			continue;
-		}
-
-	
-
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d UP=%s"), *FString(__FUNCTION__), __LINE__, *It->GetName());
-		//It->HasMetaData
+		SemanticIndividualObject->SaveToTag(bOverwrite);
 	}
-	return FString();
+}
+
+// Load data from owners tag
+void USLIndividualComponent::LoadFromTag(bool bOverwrite)
+{
+	if (SemanticIndividualObject)
+	{
+		SemanticIndividualObject->LoadFromTag(bOverwrite);
+	}
 }
 
 // Convert datat type object to the selected class type

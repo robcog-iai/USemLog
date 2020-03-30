@@ -33,17 +33,12 @@ protected:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
-
-
 public:
-	// Print stored data to string
-	FString ToString() const;
+	// Save data to owners tag
+	void SaveToTag(bool bOverwrite = false);
 
-	//// Print data to tag
-	//void WriteToTag();
-
-	//// Read data from tag
-	//void ReadFromTag();
+	// Load data from owners tag
+	void LoadFromTag(bool bOverwrite = false);
 
 private:
 	// Convert datat type object to the selected class type
@@ -55,6 +50,19 @@ private:
 	USLIndividualBase* SemanticIndividualObject;
 
 	// Manually convert datatype to the chosen type
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
 	TSubclassOf<class USLIndividual> ConvertToSemanticIndividual;
+	
+	/* Button workarounds */
+	// Ovewrite any changes
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bOverwriteEditChanges;
+
+	// Save data to tag
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bSaveToTagButton;
+
+	// Load data from tag
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bLoadFromTagButton;
 };

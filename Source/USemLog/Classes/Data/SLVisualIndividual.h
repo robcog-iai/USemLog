@@ -22,6 +22,9 @@ class USEMLOG_API USLVisualIndividual : public USLIndividual
     // Load data from owners tag
     virtual bool LoadFromTag(bool bOverwrite = false) override;
 
+    // All properties are set for runtime
+    virtual bool IsRuntimeReady() const;
+
     // Set get visual mask
     void SetVisualMask(const FString& InVisualMask) { VisualMask = InVisualMask; };
     FString GetVisualMask() const { return VisualMask; };

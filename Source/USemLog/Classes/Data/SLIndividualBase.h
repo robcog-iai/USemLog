@@ -23,13 +23,16 @@ public:
 	virtual bool LoadFromTag(bool bOverwrite = false);
 
 	// All properties are set for runtime
-	//virtual bool IsRuntimeReady() const { return Owner == nullptr; };
+	virtual bool IsRuntimeReady() const;
 
-	// Set/get owner
-	void SetOwner(AActor* InOwner) { Owner = InOwner; };
-	AActor* GetOwner() const { return Owner; };
+	// Set/get semantic owner
+	void SetSemOwner(AActor* InSemOwner) { SemOwner = InSemOwner; };
+	AActor* GetSemOwner() const { return SemOwner; };
 
 protected:
 	// Pointer to the actor described by the semantic description class
-	AActor* Owner;
+	AActor* SemOwner;
+	
+	/* Constants */
+	static constexpr char TagTypeConst[] = "SL";
 };

@@ -43,6 +43,59 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 	SemMapWriter.WriteToFile(World, ESLOwlSemanticMapTemplate::IAIKitchen, TaskDir, TEXT("SemanticMap"), bOverwrite);
 }
 
+// Add semantic data components to the actors
+void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		AddSemanticIndividualComponent(*ActItr, bOverwrite);
+	}
+}
+
+void FSLEdUtils::AddSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite)
+{
+	for (const auto Act : Actors)
+	{
+		AddSemanticIndividualComponent(Act, bOverwrite);
+	}
+}
+
+// Save components data to tags
+void FSLEdUtils::SaveComponentDataToTag(UWorld* World, bool bOverwrite)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		SaveSemanticIndividualDataToTag(*ActItr, bOverwrite);
+	}
+}
+
+void FSLEdUtils::SaveComponentDataToTag(const TArray<AActor*>& Actors, bool bOverwrite)
+{
+	for (const auto Act : Actors)
+	{
+		SaveSemanticIndividualDataToTag(Act, bOverwrite);
+	}
+}
+
+// Loads components data from tags
+void FSLEdUtils::LoadComponentDataFromTag(UWorld* World, bool bOverwrite)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		LoadSemanticIndividualDataFromTag(*ActItr, bOverwrite);
+	}
+}
+
+void FSLEdUtils::LoadComponentDataFromTag(const TArray<AActor*>& Actors, bool bOverwrite)
+{
+	for (const auto Act : Actors)
+	{
+		LoadSemanticIndividualDataFromTag(Act, bOverwrite);
+	}
+}
+
+
+
 
 // Write unique IDs
 void FSLEdUtils::WriteUniqueIds(UWorld* World, bool bOverwrite)
@@ -192,23 +245,6 @@ void FSLEdUtils::AddSemanticMonitorComponents(const TArray<AActor*>& Actors, boo
 {
 }
 
-
-// Add semantic data components to the actors
-void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
-{
-	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	{
-		AddSemanticIndividualComponent(*ActItr, bOverwrite);
-	}
-}
-
-void FSLEdUtils::AddSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite)
-{
-	for (const auto Act : Actors)
-	{
-		AddSemanticIndividualComponent(Act, bOverwrite);
-	}
-}
 
 
 // Enable overlaps on actors
@@ -430,7 +466,7 @@ void FSLEdUtils::AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
 		if (bOverwrite)
 		{
 			USLIndividualComponent* SLC = CastChecked<USLIndividualComponent>(AC);
-			//SLC->Reset();
+			//SLC->ClearData();
 		}
 		return;
 	}
@@ -452,6 +488,26 @@ void FSLEdUtils::AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
 
 	NewComp->RegisterComponent();
 	//Actor->Modify();
+}
+
+// Save semantic individual data to tag
+void FSLEdUtils::SaveSemanticIndividualDataToTag(AActor* Actor, bool bOverwrite)
+{
+	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	{
+		USLIndividualComponent* SLC = CastChecked<USLIndividualComponent>(AC);
+		SLC->SaveToTag(bOverwrite);
+	}
+}
+
+// Save semantic individual data to tag
+void FSLEdUtils::LoadSemanticIndividualDataFromTag(AActor* Actor, bool bOverwrite)
+{
+	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	{
+		USLIndividualComponent* SLC = CastChecked<USLIndividualComponent>(AC);
+		SLC->LoadFromTag(bOverwrite);
+	}
 }
 
 // Get class name of actor (if not known use label name if bDefaultToLabelName is true)

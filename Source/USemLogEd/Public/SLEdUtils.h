@@ -14,6 +14,18 @@ public:
 	// Write the semantic map
 	static void WriteSemanticMap(UWorld* World, bool bOverwrite = false);
 
+	// Add data components to the actors containing all the information from the tags
+	static void AddSemanticDataComponents(UWorld* World, bool bOverwrite = false);
+	static void AddSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
+
+	// Save components data to tags
+	static void SaveComponentDataToTag(UWorld* World, bool bOverwrite = false);
+	static void SaveComponentDataToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+
+	// Loads components data from tags
+	static void LoadComponentDataFromTag(UWorld* World, bool bOverwrite = false);
+	static void LoadComponentDataFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+
 	// Write unique IDs
 	static void WriteUniqueIds(UWorld* World, bool bOverwrite = false);
 	static void WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
@@ -38,10 +50,6 @@ public:
 	static void AddSemanticMonitorComponents(UWorld* World, bool bOverwrite = false);
 	static void AddSemanticMonitorComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
-	// Add data components to the actors containing all the information from the tags
-	static void AddSemanticDataComponents(UWorld* World, bool bOverwrite = false);
-	static void AddSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
-
 	// Enable overlaps on actors
 	static void EnableOverlaps(UWorld* World);
 	static void EnableOverlaps(const TArray<AActor*>& Actors);
@@ -59,6 +67,12 @@ private:
 
 	// Add a semantic individual component
 	static void AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite = false);
+
+	// Save semantic individual data to tag
+	static void SaveSemanticIndividualDataToTag(AActor* Actor, bool bOverwrite = false);
+
+	// Save semantic individual data to tag
+	static void LoadSemanticIndividualDataFromTag(AActor* Actor, bool bOverwrite = false);
 
 	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 	static FString GetClassName(AActor* Actor, bool bDefaultToLabelName = false);

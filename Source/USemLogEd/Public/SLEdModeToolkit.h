@@ -30,19 +30,22 @@ private:
 	/* Create vertical slot entries */	
 	SVerticalBox::FSlot& CreateOverwriteSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedSlot();
+	SVerticalBox::FSlot& CreateSemDataSlot();
 	SVerticalBox::FSlot& CreateGenSemMapSlot();
 	SVerticalBox::FSlot& CreateIdsSlot();
 	SVerticalBox::FSlot& CreateClassNamesSlot();
 	SVerticalBox::FSlot& CreateWriteVisualMasksSlot();
 	SVerticalBox::FSlot& CreateRmAllSlot();
-	SVerticalBox::FSlot& CreateAddSemMonSlot();
-	SVerticalBox::FSlot& CreateAddSemDataSlot();
+	SVerticalBox::FSlot& CreateAddSemMonSlot();	
 	SVerticalBox::FSlot& CreateEnableOverlapsSlot();
 	SVerticalBox::FSlot& CreateShowSemData();
 	SVerticalBox::FSlot& CreateEnableInstacedMeshMaterialsSlot();
 
 	/* Button callbacks */
 	FReply OnGenSemMap();
+	FReply OnAddSemDataComp();
+	FReply OnSaveToTag();
+	FReply OnLoadFromTag();
 	FReply OnWriteSemIds();
 	FReply OnRmSemIds();
 	FReply OnWriteClassNames();
@@ -50,8 +53,7 @@ private:
 	FReply OnWriteVisualMasks();
 	FReply OnRmVisualMasks();
 	FReply OnRmAll();
-	FReply OnAddSemMon();
-	FReply OnAddSemData();
+	FReply OnAddSemMon();	
 	FReply OnEnableOverlaps();
 	FReply OnShowSemData();
 	FReply OnEnableMaterialsForInstancedStaticMesh();
@@ -69,4 +71,5 @@ private:
 
 	bool bOverwrite;
 	bool bOnlySelected;
+	bool bUseTags;
 };

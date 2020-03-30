@@ -6,7 +6,7 @@
 // Save data to owners tag
 bool USLIndividualBase::SaveToTag(bool bOverwrite)
 {
-	if (!Owner)
+	if (!SemOwner)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner not set, cannot write to tags.."), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -17,10 +17,16 @@ bool USLIndividualBase::SaveToTag(bool bOverwrite)
 // Load data from owners tag
 bool USLIndividualBase::LoadFromTag(bool bOverwrite)
 {
-	if (!Owner)
+	if (!SemOwner)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner not set, cannot read from tags.."), *FString(__FUNCTION__), __LINE__);
 		return false;
 	}
 	return true;
+}
+
+// All properties are set for runtime
+bool USLIndividualBase::IsRuntimeReady() const
+{
+	return SemOwner != nullptr;
 }

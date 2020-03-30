@@ -23,6 +23,9 @@ public:
 	// Load data from owners tag
 	virtual bool LoadFromTag(bool bOverwrite = false) override;
 
+	// All properties are set for runtime
+	virtual bool IsRuntimeReady() const;
+
 	// Set get Id
 	void SetId(const FString& InId) { Id = InId; };
 	FString GetId() const { return Id; };

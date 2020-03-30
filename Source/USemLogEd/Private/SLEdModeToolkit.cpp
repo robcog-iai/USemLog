@@ -12,7 +12,6 @@
 #include "Engine/Selection.h"
 #include "ScopedTransaction.h"
 
-
 // UUtils
 #include "SLEdUtils.h"
 
@@ -45,6 +44,9 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateGenSemMapSlot()
 
 			////
+			+ CreateSemDataSlot()
+
+			////
 			+ CreateIdsSlot()
 
 			////
@@ -58,9 +60,6 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 
 			////
 			+ CreateAddSemMonSlot()
-
-			////
-			+ CreateAddSemDataSlot()
 
 			////
 			+ CreateEnableOverlapsSlot()
@@ -161,6 +160,51 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenSemMapSlot()
 			.OnClicked(this, &FSLEdModeToolkit::OnGenSemMap)
 		];
 }
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("AddSemDataComp", "Add Semantic Data Components"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("AddSemDataCompTip", "Creates semantic data components.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnAddSemDataComp)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SaveToTag", "Save"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SaveToTagTip", "Save data to tag.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnSaveToTag)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("LoadFromTag", "Load"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("LoadFromTagTip", "Load data from tag.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnLoadFromTag)
+			]
+		];
+}
+
 
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateIdsSlot()
 {
@@ -291,21 +335,6 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemMonSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemDataSlot()
-{
-	return SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(5)
-		.HAlign(HAlign_Center)
-		[
-			SNew(SButton)
-			.Text(LOCTEXT("AddSemData", "Add Semantic Data Components"))
-			.IsEnabled(true)
-			.ToolTipText(LOCTEXT("AddSemDataTip", "Creates or updates semantic data components.."))
-			.OnClicked(this, &FSLEdModeToolkit::OnAddSemData)
-		];
-}
-
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableOverlapsSlot()
 {
 	return SVerticalBox::Slot()
@@ -356,6 +385,48 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableInstacedMeshMaterialsSlot()
 FReply FSLEdModeToolkit::OnGenSemMap()
 {
 	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnAddSemDataComp()
+{
+	FScopedTransaction Transaction(LOCTEXT("AddSemanticDataCompST", "Add semantic data components"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::AddSemanticDataComponents(GetSelectedActors(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::AddSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnSaveToTag()
+{
+	FScopedTransaction Transaction(LOCTEXT("SaveDataToTagST", "Save semantic data to owners tag.."));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::SaveComponentDataToTag(GetSelectedActors(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::SaveComponentDataToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnLoadFromTag()
+{
+	FScopedTransaction Transaction(LOCTEXT("LoadDataFromTagST", "Load semantic data from owners tag.."));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::LoadComponentDataFromTag(GetSelectedActors(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::LoadComponentDataFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
 	return FReply::Handled();
 }
 
@@ -467,20 +538,6 @@ FReply FSLEdModeToolkit::OnAddSemMon()
 	else
 	{
 		FSLEdUtils::AddSemanticMonitorComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
-	}
-	return FReply::Handled();
-}
-
-FReply FSLEdModeToolkit::OnAddSemData()
-{
-	FScopedTransaction Transaction(LOCTEXT("AddSemanticDataCompST", "Add semantic data components"));
-	if (bOnlySelected)
-	{
-		FSLEdUtils::AddSemanticDataComponents(GetSelectedActors(), bOverwrite);
-	}
-	else
-	{
-		FSLEdUtils::AddSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 	return FReply::Handled();
 }
