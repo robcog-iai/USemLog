@@ -28,10 +28,12 @@ class USEMLOG_API USLVisualIndividual : public USLIndividual
     // Set get visual mask
     void SetVisualMask(const FString& InVisualMask) { VisualMask = InVisualMask; };
     FString GetVisualMask() const { return VisualMask; };
+    bool HasVisualMask() const { return !VisualMask.IsEmpty(); };
 
     // Set get calibrated visual mask
     void SetCalibratedVisualMask(const FString& InCalibratedVisualMask) { CalibratedVisualMask = InCalibratedVisualMask; };
     FString GetCalibratedVisualMask() const { return CalibratedVisualMask; };
+    bool HasCalibratedVisualMask() const { return !CalibratedVisualMask.IsEmpty(); };
 
 protected:
     // Skeletal body part individual unique id

@@ -6,6 +6,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Data/SLIndividualBase.h"
+#include "Data/SLIndividual.h"
+#include "Data/SLIndividualUtils.h"
 #include "SLIndividualComponent.generated.h"
 
 
@@ -34,11 +36,31 @@ protected:
 #endif // WITH_EDITOR
 
 public:
+	//// Get the semantic individual object
+	//USLIndividualBase* GetIndividualObject() const { return SemanticIndividualObject; };
+
+	//// Get the semantic individual using a cast class (nullptr if cast is unsuccessfull)
+	//template <typename ClassType>
+	//ClassType* GetCastedIndividualObject() const {	return Cast<ClassType>(SemanticIndividualObject); };
+
 	// Save data to owners tag
 	void SaveToTag(bool bOverwrite = false);
 
 	// Load data from owners tag
 	void LoadFromTag(bool bOverwrite = false);
+
+	/* Individual object utils */
+	// Write new id to the individual object
+	bool WriteId(bool bOverwrite = false);
+
+	// Clear the id
+	bool ClearId();
+
+	// Write class name to the individual object
+	bool WriteClass(bool bOverwrite = false);
+
+	// Clear the class name
+	bool ClearClass();
 
 private:
 	// Convert datat type object to the selected class type
@@ -50,19 +72,19 @@ private:
 	USLIndividualBase* SemanticIndividualObject;
 
 	// Manually convert datatype to the chosen type
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
 	TSubclassOf<class USLIndividual> ConvertToSemanticIndividual;
 	
 	/* Button workarounds */
 	// Ovewrite any changes
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
 	bool bOverwriteEditChanges;
 
 	// Save data to tag
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
 	bool bSaveToTagButton;
 
 	// Load data from tag
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
 	bool bLoadFromTagButton;
 };

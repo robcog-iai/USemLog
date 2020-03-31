@@ -5,10 +5,13 @@
 #include "Data/SLIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
 #include "Data/SLVisualIndividual.h"
-#include "ScopedTransaction.h"
+//#include "ScopedTransaction.h"
 
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
+
+// Utils
+#include "Utils/SLUUid.h"
 
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
@@ -125,6 +128,66 @@ void USLIndividualComponent::LoadFromTag(bool bOverwrite)
 		SemanticIndividualObject->LoadFromTag(bOverwrite);
 	}
 }
+
+
+/* Individual object utils */
+// Write new id to the individual object
+bool USLIndividualComponent::WriteId(bool bOverwrite)
+{
+	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividualObject))
+	{
+		if (!SLI->HasId() || bOverwrite)
+		{
+			SLI->SetId(FSLUuid::NewGuidInBase64Url());
+			return true;
+		}
+	}
+	return false;
+}
+
+// Clear any available id
+bool USLIndividualComponent::ClearId()
+{
+	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividualObject))
+	{
+		if (SLI->HasId())
+		{
+			SLI->SetId("");
+			return true;
+		}
+	}
+	return false;
+}
+
+// Write class name to the individual object
+bool USLIndividualComponent::WriteClass(bool bOverwrite)
+{
+	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividualObject))
+	{
+		if (!SLI->HasClass() || bOverwrite)
+		{
+			SLI->SetClass(FSLIndividualUtils::GetClassName(GetOwner()));
+			return true;
+		}
+	}
+	return false;
+}
+
+// Clear the class name
+bool USLIndividualComponent::ClearClass()
+{
+	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividualObject))
+	{
+		if (SLI->HasClass())
+		{
+			SLI->SetClass("");
+			return true;
+		}
+	}
+	return false;
+}
+
+
 
 // Convert datat type object to the selected class type
 void USLIndividualComponent::DoConvertDataType()

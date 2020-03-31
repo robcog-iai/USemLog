@@ -30,9 +30,18 @@ public:
 	static void WriteUniqueIds(UWorld* World, bool bOverwrite = false);
 	static void WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
+	// Remove unique IDs
+	static void RemoveUniqueIds(UWorld* World);
+	static void RemoveUniqueIds(const TArray<AActor*>& Actors);
+
 	// Write class names
 	static void WriteClassNames(UWorld* World, bool bOverwrite = false);
 	static void WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
+
+	// Remove class names
+	static void RemoveClassNames(UWorld* World);
+	static void RemoveClassNames(const TArray<AActor*>& Actors);
+
 
 	// Write unique visual masks
 	static void WriteVisualMasks(UWorld* World, bool bOverwrite = false);
@@ -62,9 +71,6 @@ public:
 	static void EnableAllMaterialsForInstancedStaticMesh();
 
 private:
-	// Add unique id if the actor is a known type
-	static bool AddUniqueId(AActor* Actor, bool bOverwrite = false);
-
 	// Add a semantic individual component
 	static void AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite = false);
 
@@ -74,8 +80,24 @@ private:
 	// Save semantic individual data to tag
 	static void LoadSemanticIndividualDataFromTag(AActor* Actor, bool bOverwrite = false);
 
-	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-	static FString GetClassName(AActor* Actor, bool bDefaultToLabelName = false);
+
+	// Add unique id to the semantic component of the actor
+	static bool AddUniqueIdToIndividual(AActor* Actor, bool bOverwrite = false);
+
+	// Remove unique id from individual
+	static bool RemoveUniqueIdFromIndividual(AActor* Actor);
+
+
+	// Add class name to individual
+	static bool AddClassNameToIndividual(AActor* Actor, bool bOverwrite = false);
+
+	// Remove class name from individual
+	static bool RemoveClassNameFromIndividual(AActor* Actor);
+
+	
+
+
+
 
 	// Generate unique visual masks using randomization
 	static void WriteRandomlyGeneratedVisualMasks(UWorld* World, bool bOverwrite = false);
@@ -92,6 +114,10 @@ private:
 
 	// Generate a new unique color in hex, avoiding any from the used up array
 	static FColor NewRandomlyGeneratedUniqueColor(TArray<FColor>& ConsumedColors, int32 NumberOfTrials = 100, int32 MinManhattanDistance = 29);
+
+	/* Helpers */
+	// Get the individual component of the actor (nullptr if none found)
+	FORCEINLINE static class USLIndividualComponent* GetIndividualComponent(AActor* Actor);
 
 	/* Color helpers */
 	// Get the manhattan distance between the colors
@@ -112,4 +138,11 @@ private:
 	{
 		return FColor((uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f));
 	}
+
+	// Backlog
+	// Add unique id to the tag of the actor if the actor is a known type
+	static bool AddUniqueIdToTag(AActor* Actor, bool bOverwrite = false);
+
+	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
+	static FString GetClassName(AActor* Actor, bool bDefaultToLabelName = false);
 };

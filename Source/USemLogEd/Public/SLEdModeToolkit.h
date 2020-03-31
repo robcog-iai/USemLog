@@ -27,10 +27,11 @@ public:
 	virtual TSharedPtr<class SWidget> GetInlineContent() const override { return ToolkitWidget; }
 
 private:
-	/* Create vertical slot entries */	
+	/* Vertical slot entries */
+	// Create checkbox entry slot to set overwrite flag
 	SVerticalBox::FSlot& CreateOverwriteSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedSlot();
-	SVerticalBox::FSlot& CreateSemDataSlot();
+	SVerticalBox::FSlot& CreateAddSemDataComponentsSlot();
 	SVerticalBox::FSlot& CreateGenSemMapSlot();
 	SVerticalBox::FSlot& CreateIdsSlot();
 	SVerticalBox::FSlot& CreateClassNamesSlot();

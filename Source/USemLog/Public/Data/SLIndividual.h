@@ -29,10 +29,12 @@ public:
 	// Set get Id
 	void SetId(const FString& InId) { Id = InId; };
 	FString GetId() const { return Id; };
+	bool HasId() const { return !Id.IsEmpty(); };
 
 	// Set get class
 	void SetClass(const FString& InClass) { Class = InClass; };
 	FString GetClass() const { return Class; };
+	bool HasClass() const { return !Class.IsEmpty(); };
 
 protected:
 	// Individual unique id

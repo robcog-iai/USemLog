@@ -31,8 +31,8 @@ public:
 
 protected:
 	// Pointer to the actor described by the semantic description class
-	AActor* SemOwner;
+	class AActor* SemOwner;
 	
 	/* Constants */
-	static constexpr char TagTypeConst[] = "SL";
+	static constexpr char TagTypeConst[] = "SemLog";
 };

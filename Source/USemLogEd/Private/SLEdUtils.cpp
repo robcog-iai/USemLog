@@ -1,7 +1,6 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-
 #include "SLEdUtils.h"
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
@@ -14,7 +13,10 @@
 // SL
 #include "Editor/SLSemanticMapWriter.h"
 #include "Vision/SLVisionCamera.h"
+//#include "Data/SLIndividualBase.h"
+//#include "Data/SLIndividual.h"
 #include "Data/SLIndividualComponent.h"
+
 #include "SLManager.h"
 
 // Utils
@@ -94,15 +96,12 @@ void FSLEdUtils::LoadComponentDataFromTag(const TArray<AActor*>& Actors, bool bO
 	}
 }
 
-
-
-
 // Write unique IDs
 void FSLEdUtils::WriteUniqueIds(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		AddUniqueId(*ActItr, bOverwrite);
+		AddUniqueIdToIndividual(*ActItr, bOverwrite);
 	}
 }
 
@@ -110,34 +109,59 @@ void FSLEdUtils::WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite)
 {
 	for (const auto& Act : Actors)
 	{
-		AddUniqueId(Act, bOverwrite);
+		AddUniqueIdToIndividual(Act, bOverwrite);
 	}
 }
 
+// Remove unique IDs
+void FSLEdUtils::RemoveUniqueIds(UWorld* World)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		RemoveUniqueIdFromIndividual(*ActItr);
+	}
+}
+
+void FSLEdUtils::RemoveUniqueIds(const TArray<AActor*>& Actors)
+{
+	for (const auto& Act : Actors)
+	{
+		RemoveUniqueIdFromIndividual(Act);
+	}
+}
 
 // Write class names
 void FSLEdUtils::WriteClassNames(UWorld* World, bool bOverwrite)
 {
-	static const FString TagType = TEXT("SemLog");
-	static const FString TagKey = TEXT("Class");
-
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		FString ClassName = GetClassName(*ActItr);
-		if (!ClassName.IsEmpty())
-		{
-			FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, ClassName, bOverwrite);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not get the class name for %s.."),
-				*FString(__func__), __LINE__, *ActItr->GetName());
-		}
+		AddClassNameToIndividual(*ActItr, bOverwrite);
 	}
+	//static const FString TagType = TEXT("SemLog");
+	//static const FString TagKey = TEXT("Class");
+
+	//for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	//{
+	//	FString ClassName = GetClassName(*ActItr);
+	//	if (!ClassName.IsEmpty())
+	//	{
+	//		FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, ClassName, bOverwrite);
+	//	}
+	//	else
+	//	{
+	//		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not get the class name for %s.."),
+	//			*FString(__func__), __LINE__, *ActItr->GetName());
+	//	}
+	//}
 }
 
 void FSLEdUtils::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
 {
+	for (const auto& Act : Actors)
+	{
+		AddClassNameToIndividual(Act, bOverwrite);
+	}
+
 	static const FString TagType = TEXT("SemLog");
 	static const FString TagKey = TEXT("Class");
 
@@ -156,6 +180,23 @@ void FSLEdUtils::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
 	}
 }
 
+// Remove class names
+void FSLEdUtils::RemoveClassNames(UWorld* World)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		RemoveClassNameFromIndividual(*ActItr);
+	}
+}
+
+void FSLEdUtils::RemoveClassNames(const TArray<AActor*>& Actors)
+{
+	for (const auto& Act : Actors)
+	{
+		RemoveClassNameFromIndividual(Act);
+	}
+}
+
 
 // Write unique visual masks
 void FSLEdUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
@@ -170,7 +211,6 @@ void FSLEdUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, 
 	// TODO incremental
 }
 
-
 // Remove all tag keys
 void FSLEdUtils::RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey)
 {
@@ -184,7 +224,6 @@ void FSLEdUtils::RemoveTagKey(const TArray<AActor*>& Actors, const FString& TagT
 		FSLTagIO::RemoveKVPair(Act, TagType, TagKey);
 	}
 }
-
 
 // Remove all tags of the "SemLog" type
 void FSLEdUtils::RemoveTagType(UWorld* World, const FString& TagType)
@@ -212,7 +251,6 @@ void FSLEdUtils::RemoveTagType(const TArray<AActor*>& Actors, const FString& Tag
 		}
 	}
 }
-
 
 // Add semantic monitor components to the actors
 void FSLEdUtils::AddSemanticMonitorComponents(UWorld* World, bool bOverwrite)
@@ -246,7 +284,6 @@ void FSLEdUtils::AddSemanticMonitorComponents(const TArray<AActor*>& Actors, boo
 }
 
 
-
 // Enable overlaps on actors
 void FSLEdUtils::EnableOverlaps(UWorld* World)
 {
@@ -272,7 +309,6 @@ void FSLEdUtils::EnableOverlaps(const TArray<AActor*>& Actors)
 		}
 	}
 }
-
 
 // Toggle between showing the semantic data of the entities in the world
 void FSLEdUtils::ShowSemanticData(UWorld* World)
@@ -343,7 +379,6 @@ void FSLEdUtils::ShowSemanticData(const TArray<AActor*>& Actors)
 {
 }
 
-
 // Enable all materials for instanced static mesh rendering
 void FSLEdUtils::EnableAllMaterialsForInstancedStaticMesh()
 {
@@ -368,106 +403,15 @@ void FSLEdUtils::EnableAllMaterialsForInstancedStaticMesh()
 }
 
 
-// Add unique id if the actor is a known type
-bool FSLEdUtils::AddUniqueId(AActor* Actor, bool bOverwrite)
-{
-	static const FString TagType = TEXT("SemLog");
-	static const FString TagKey = TEXT("Id");
-
-	/* SMA */
-	if (Actor->IsA(AStaticMeshActor::StaticClass()))
-	{
-		return FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
-	}
-
-	/* SkMA */
-	if (Actor->IsA(ASkeletalMeshActor::StaticClass()))
-	{
-		FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
-
-		// Get the semantic data component containing the semantics (class names mask colors) about the bones
-		if (UActorComponent* AC = Actor->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
-		{
-			// Load existing visual mask values from the skeletal data
-			USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
-			for (auto& Pair : SkDC->SemanticBonesData)
-			{
-				// Double check if bone has a semantic class
-				if (!Pair.Value.IsClassSet())
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Semantic bones should have a class name set.."), *FString(__func__), __LINE__);
-					continue;
-				}
-
-				// Check if the bone has id data
-				if (bOverwrite)
-				{
-					Pair.Value.Id = FSLUuid::NewGuidInBase64Url();
-
-					// Add the data to the map used at by the metadatalogger as well
-					if (SkDC->AllBonesData.Contains(Pair.Key))
-					{
-						SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
-					}
-					else
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
-							*FString(__func__), __LINE__, *Pair.Key.ToString());
-					}
-				}
-				else if (Pair.Value.Id.IsEmpty())
-				{
-					Pair.Value.Id = FSLUuid::NewGuidInBase64Url();
-
-					// Add the data to the map used at runtime as well
-					if (SkDC->AllBonesData.Contains(Pair.Key))
-					{
-						SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
-					}
-					else
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
-							*FString(__func__), __LINE__, *Pair.Key.ToString());
-					}
-				}
-			}			
-			return true;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
-				*FString(__func__), __LINE__, *Actor->GetName());
-			return false;
-		}
-	}
-
-	/* Joints */
-	if (Actor->IsA(APhysicsConstraintActor::StaticClass()))
-	{
-		return FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);		
-	}
-
-	/* Vision cameras */
-	if (Actor->IsA(ASLVisionCamera::StaticClass()))
-	{
-		return FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
-	}
-
-	// Unkown actor type
-	return false;
-}
-
+/* Private */
 // Add a semantic individual component
 void FSLEdUtils::AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
 {
 	// Skip it already has a component
-	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
 	{
-		if (bOverwrite)
-		{
-			USLIndividualComponent* SLC = CastChecked<USLIndividualComponent>(AC);
-			//SLC->ClearData();
-		}
+		// TODO overwrite case
+		//SLC->Reset
 		return;
 	}
 
@@ -493,9 +437,8 @@ void FSLEdUtils::AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
 // Save semantic individual data to tag
 void FSLEdUtils::SaveSemanticIndividualDataToTag(AActor* Actor, bool bOverwrite)
 {
-	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
 	{
-		USLIndividualComponent* SLC = CastChecked<USLIndividualComponent>(AC);
 		SLC->SaveToTag(bOverwrite);
 	}
 }
@@ -503,127 +446,56 @@ void FSLEdUtils::SaveSemanticIndividualDataToTag(AActor* Actor, bool bOverwrite)
 // Save semantic individual data to tag
 void FSLEdUtils::LoadSemanticIndividualDataFromTag(AActor* Actor, bool bOverwrite)
 {
-	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
 	{
-		USLIndividualComponent* SLC = CastChecked<USLIndividualComponent>(AC);
 		SLC->LoadFromTag(bOverwrite);
 	}
 }
 
-// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-FString FSLEdUtils::GetClassName(AActor* Actor, bool bDefaultToLabelName)
-{
-	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(Actor))
-	{
-		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
-		{
-			FString ClassName = SMC->GetStaticMesh()->GetFullName();
-			int32 FindCharPos;
-			ClassName.FindLastChar('.', FindCharPos);
-			ClassName.RemoveAt(0, FindCharPos + 1);
-			if (!ClassName.RemoveFromStart(TEXT("SM_")))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s StaticMesh has no SM_ prefix in its name.."),
-					*FString(__func__), __LINE__, *Actor->GetName());
-			}
-			return ClassName;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SMC.."),
-				*FString(__func__), __LINE__, *Actor->GetName());
-			return FString();
-		}
-	}
-	else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(Actor))
-	{
-		if (USkeletalMeshComponent* SkMC = SkMA->GetSkeletalMeshComponent())
-		{
-			FString ClassName = SkMC->SkeletalMesh->GetFullName();
-			int32 FindCharPos;
-			ClassName.FindLastChar('.', FindCharPos);
-			ClassName.RemoveAt(0, FindCharPos + 1);
-			ClassName.RemoveFromStart(TEXT("SK_"));
-			return ClassName;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SkMC.."),
-				*FString(__func__), __LINE__, *Actor->GetName());
-			return FString();
-		}
-	}
-	else if (ASLVisionCamera* VCA = Cast<ASLVisionCamera>(Actor))
-	{
-		static const FString TagType = "SemLog";
-		static const FString TagKey = "Class";
-		FString ClassName = "View";
 
-		// Check attachment actor
-		if (AActor* AttAct = Actor->GetAttachParentActor())
-		{
-			if (Actor->GetAttachParentSocketName() != NAME_None)
-			{
-				return Actor->GetAttachParentSocketName().ToString() + ClassName;
-			}
-			else
-			{
-				FString AttParentClass = FSLTagIO::GetValue(AttAct, TagType, TagKey);
-				if (!AttParentClass.IsEmpty())
-				{
-					return AttParentClass + ClassName;
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached parent %s has no semantic class (yet?).."),
-						*FString(__func__), __LINE__, *AttAct->GetName());
-					return ClassName;
-				}
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not attached to any actor.."),
-				*FString(__func__), __LINE__, *Actor->GetName());
-			return ClassName;
-		}
-	}
-	else if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(Actor))
+// Add unique id to the semantic component of the actor
+bool FSLEdUtils::AddUniqueIdToIndividual(AActor* Actor, bool bOverwrite)
+{	
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
 	{
-		FString ClassName = "Joint";
-
-		if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
-		{
-			if (PCC->ConstraintInstance.GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
-			{
-				return "Linear" + ClassName;
-			}
-			else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetAngularSwing2Motion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetAngularTwistMotion() != ELinearConstraintMotion::LCM_Locked)
-			{
-				return "Revolute" + ClassName;
-			}
-			else
-			{
-				return "Fixed" + ClassName;
-			}
-		}
-		return ClassName;
-	}
-	else if (bDefaultToLabelName)
-	{
-		return Actor->GetActorLabel();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not get the semantic class for %s .."),
-			*FString(__func__), __LINE__, *Actor->GetName());
-		return FString();
-	}
+		return SLC->WriteId(bOverwrite);
+	}	
+	return false;
 }
+
+// Remove unique id from individual
+bool FSLEdUtils::RemoveUniqueIdFromIndividual(AActor* Actor)
+{
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	{
+		return SLC->ClearId();
+	}
+	return false;
+}
+
+
+// Add class name to individual
+bool FSLEdUtils::AddClassNameToIndividual(AActor* Actor, bool bOverwrite)
+{
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	{
+		return SLC->WriteClass(bOverwrite);
+	}
+	return false;
+}
+
+// Remove class name from individual
+bool FSLEdUtils::RemoveClassNameFromIndividual(AActor* Actor)
+{
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	{
+		return SLC->ClearClass();
+	}
+	return false;
+}
+
+
+
 
 
 // Generate unique visual masks using randomization
@@ -656,7 +528,6 @@ void FSLEdUtils::WriteRandomlyGeneratedVisualMasks(const TArray<AActor*>& Actors
 		AddUniqueVisualMask(Act, ConsumedColors, bOverwrite);
 	}
 }
-
 
 // Generate unique visual masks using incremental heuristic
 void FSLEdUtils::WriteIncrementallyGeneratedVisualMasks(UWorld* World, bool bOverwrite)
@@ -1089,3 +960,218 @@ FColor FSLEdUtils::NewRandomlyGeneratedUniqueColor(TArray<FColor>& ConsumedColor
 	return FColor::Black;
 }
 
+// Get the individual component of the actor (nullptr if none found)
+USLIndividualComponent* FSLEdUtils::GetIndividualComponent(AActor* Actor)
+{
+	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	{
+		return CastChecked<USLIndividualComponent>(AC);
+	}
+	return nullptr;
+}
+
+//// Backlog
+// Add unique id if the actor is a known type
+bool FSLEdUtils::AddUniqueIdToTag(AActor* Actor, bool bOverwrite)
+{
+	static const FString TagType = TEXT("SemLog");
+	static const FString TagKey = TEXT("Id");
+
+	/* SMA */
+	if (Actor->IsA(AStaticMeshActor::StaticClass()))
+	{
+		return FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
+	}
+
+	/* SkMA */
+	if (Actor->IsA(ASkeletalMeshActor::StaticClass()))
+	{
+		FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
+
+		// Get the semantic data component containing the semantics (class names mask colors) about the bones
+		if (UActorComponent* AC = Actor->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+		{
+			// Load existing visual mask values from the skeletal data
+			USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+			for (auto& Pair : SkDC->SemanticBonesData)
+			{
+				// Double check if bone has a semantic class
+				if (!Pair.Value.IsClassSet())
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Semantic bones should have a class name set.."), *FString(__func__), __LINE__);
+					continue;
+				}
+
+				// Check if the bone has id data
+				if (bOverwrite)
+				{
+					Pair.Value.Id = FSLUuid::NewGuidInBase64Url();
+
+					// Add the data to the map used at by the metadatalogger as well
+					if (SkDC->AllBonesData.Contains(Pair.Key))
+					{
+						SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+							*FString(__func__), __LINE__, *Pair.Key.ToString());
+					}
+				}
+				else if (Pair.Value.Id.IsEmpty())
+				{
+					Pair.Value.Id = FSLUuid::NewGuidInBase64Url();
+
+					// Add the data to the map used at runtime as well
+					if (SkDC->AllBonesData.Contains(Pair.Key))
+					{
+						SkDC->AllBonesData[Pair.Key].Id = Pair.Value.Id;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t Cannot find bone %s, mappings are not synced.."),
+							*FString(__func__), __LINE__, *Pair.Key.ToString());
+					}
+				}
+			}
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
+				*FString(__func__), __LINE__, *Actor->GetName());
+			return false;
+		}
+	}
+
+	/* Joints */
+	if (Actor->IsA(APhysicsConstraintActor::StaticClass()))
+	{
+		return FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
+	}
+
+	/* Vision cameras */
+	if (Actor->IsA(ASLVisionCamera::StaticClass()))
+	{
+		return FSLTagIO::AddKVPair(Actor, TagType, TagKey, FSLUuid::NewGuidInBase64Url(), bOverwrite);
+	}
+
+	// Unkown actor type
+	return false;
+}
+
+
+// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
+FString FSLEdUtils::GetClassName(AActor* Actor, bool bDefaultToLabelName)
+{
+	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(Actor))
+	{
+		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
+		{
+			FString ClassName = SMC->GetStaticMesh()->GetFullName();
+			int32 FindCharPos;
+			ClassName.FindLastChar('.', FindCharPos);
+			ClassName.RemoveAt(0, FindCharPos + 1);
+			if (!ClassName.RemoveFromStart(TEXT("SM_")))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s StaticMesh has no SM_ prefix in its name.."),
+					*FString(__func__), __LINE__, *Actor->GetName());
+			}
+			return ClassName;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SMC.."),
+				*FString(__func__), __LINE__, *Actor->GetName());
+			return FString();
+		}
+	}
+	else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(Actor))
+	{
+		if (USkeletalMeshComponent* SkMC = SkMA->GetSkeletalMeshComponent())
+		{
+			FString ClassName = SkMC->SkeletalMesh->GetFullName();
+			int32 FindCharPos;
+			ClassName.FindLastChar('.', FindCharPos);
+			ClassName.RemoveAt(0, FindCharPos + 1);
+			ClassName.RemoveFromStart(TEXT("SK_"));
+			return ClassName;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SkMC.."),
+				*FString(__func__), __LINE__, *Actor->GetName());
+			return FString();
+		}
+	}
+	else if (ASLVisionCamera* VCA = Cast<ASLVisionCamera>(Actor))
+	{
+		static const FString TagType = "SemLog";
+		static const FString TagKey = "Class";
+		FString ClassName = "View";
+
+		// Check attachment actor
+		if (AActor* AttAct = Actor->GetAttachParentActor())
+		{
+			if (Actor->GetAttachParentSocketName() != NAME_None)
+			{
+				return Actor->GetAttachParentSocketName().ToString() + ClassName;
+			}
+			else
+			{
+				FString AttParentClass = FSLTagIO::GetValue(AttAct, TagType, TagKey);
+				if (!AttParentClass.IsEmpty())
+				{
+					return AttParentClass + ClassName;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached parent %s has no semantic class (yet?).."),
+						*FString(__func__), __LINE__, *AttAct->GetName());
+					return ClassName;
+				}
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not attached to any actor.."),
+				*FString(__func__), __LINE__, *Actor->GetName());
+			return ClassName;
+		}
+	}
+	else if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(Actor))
+	{
+		FString ClassName = "Joint";
+
+		if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
+		{
+			if (PCC->ConstraintInstance.GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
+				PCC->ConstraintInstance.GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
+				PCC->ConstraintInstance.GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
+			{
+				return "Linear" + ClassName;
+			}
+			else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != ELinearConstraintMotion::LCM_Locked ||
+				PCC->ConstraintInstance.GetAngularSwing2Motion() != ELinearConstraintMotion::LCM_Locked ||
+				PCC->ConstraintInstance.GetAngularTwistMotion() != ELinearConstraintMotion::LCM_Locked)
+			{
+				return "Revolute" + ClassName;
+			}
+			else
+			{
+				return "Fixed" + ClassName;
+			}
+		}
+		return ClassName;
+	}
+	else if (bDefaultToLabelName)
+	{
+		return Actor->GetActorLabel();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not get the semantic class for %s .."),
+			*FString(__func__), __LINE__, *Actor->GetName());
+		return FString();
+	}
+}

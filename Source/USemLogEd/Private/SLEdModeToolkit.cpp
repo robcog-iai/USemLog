@@ -15,6 +15,7 @@
 // UUtils
 #include "SLEdUtils.h"
 
+
 #define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"
 
 // Ctor
@@ -44,7 +45,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateGenSemMapSlot()
 
 			////
-			+ CreateSemDataSlot()
+			+ CreateAddSemDataComponentsSlot()
 
 			////
 			+ CreateIdsSlot()
@@ -161,7 +162,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenSemMapSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemDataComponentsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -382,12 +383,14 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableInstacedMeshMaterialsSlot()
 
 
 /* Button callbacks */
+////
 FReply FSLEdModeToolkit::OnGenSemMap()
 {
 	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	return FReply::Handled();
 }
 
+////
 FReply FSLEdModeToolkit::OnAddSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("AddSemanticDataCompST", "Add semantic data components"));
@@ -430,6 +433,7 @@ FReply FSLEdModeToolkit::OnLoadFromTag()
 	return FReply::Handled();
 }
 
+////
 FReply FSLEdModeToolkit::OnWriteSemIds()
 {
 	FScopedTransaction Transaction(LOCTEXT("GenSemIdsST", "Generate new semantic Ids"));	
@@ -449,15 +453,18 @@ FReply FSLEdModeToolkit::OnRmSemIds()
 	FScopedTransaction Transaction(LOCTEXT("RmSemIdsST", "Remove all semantic Ids"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "Id");
+		FSLEdUtils::RemoveUniqueIds(GetSelectedActors());
+		//FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "Id");
 	}
 	else
 	{
-		FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
+		FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
+		//FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
 	}
 	return FReply::Handled();
 }
 
+////
 FReply FSLEdModeToolkit::OnWriteClassNames()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteClassNamesST", "Write class names"));
@@ -477,15 +484,18 @@ FReply FSLEdModeToolkit::OnRmClassNames()
 	FScopedTransaction Transaction(LOCTEXT("RmClassNamesST", "Remove all class names"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "Class");
+		FSLEdUtils::RemoveClassNames(GetSelectedActors());
+		//FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "Class");
 	}
 	else
 	{
-		FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Class");
+		FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
+		//FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Class");
 	}
 	return FReply::Handled();
 }
 
+////
 FReply FSLEdModeToolkit::OnWriteVisualMasks()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteVisualMasksST", "Write visual masks"));	

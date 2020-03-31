@@ -12,7 +12,6 @@ public class USemLogEd : ModuleRules
 
 		PublicIncludePaths.AddRange(
 			new string[] {
-				//"USemLogEd/Public"
 				// ... add public include paths required here ...
 			}
 			);
@@ -20,7 +19,6 @@ public class USemLogEd : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				//"USemLogEd/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -30,6 +28,7 @@ public class USemLogEd : ModuleRules
 			new string[]
 			{
 				"Core",
+				"USemLog",
 				"UTags",
 				"UIds",
 				// ... add other public dependencies that you statically link with here ...
