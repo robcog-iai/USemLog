@@ -9,6 +9,8 @@
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "AssetRegistryModule.h"
 #include "Kismet2/ComponentEditorUtils.h"
+#include "Data/SLIndividualUtils.h"
+
 
 // SL
 #include "Editor/SLSemanticMapWriter.h"
@@ -45,6 +47,7 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 	SemMapWriter.WriteToFile(World, ESLOwlSemanticMapTemplate::IAIKitchen, TaskDir, TEXT("SemanticMap"), bOverwrite);
 }
 
+
 // Add semantic data components to the actors
 void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
 {
@@ -61,6 +64,24 @@ void FSLEdUtils::AddSemanticDataComponents(const TArray<AActor*>& Actors, bool b
 		AddSemanticIndividualComponent(Act, bOverwrite);
 	}
 }
+
+// Remove semantic data components
+void FSLEdUtils::RemoveSemanticDataComponents(UWorld* World)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		RemoveSemanticIndividualComponent(*ActItr);
+	}
+}
+
+void FSLEdUtils::RemoveSemanticDataComponents(const TArray<AActor*>& Actors)
+{
+	for (const auto Act : Actors)
+	{
+		RemoveSemanticIndividualComponent(Act);
+	}
+}
+
 
 // Save components data to tags
 void FSLEdUtils::SaveComponentDataToTag(UWorld* World, bool bOverwrite)
@@ -96,12 +117,14 @@ void FSLEdUtils::LoadComponentDataFromTag(const TArray<AActor*>& Actors, bool bO
 	}
 }
 
-// Write unique IDs
+
+
+/* Ids */
 void FSLEdUtils::WriteUniqueIds(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		AddUniqueIdToIndividual(*ActItr, bOverwrite);
+		FSLIndividualUtils::WriteId(*ActItr, bOverwrite);
 	}
 }
 
@@ -109,16 +132,15 @@ void FSLEdUtils::WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite)
 {
 	for (const auto& Act : Actors)
 	{
-		AddUniqueIdToIndividual(Act, bOverwrite);
+		FSLIndividualUtils::WriteId(Act, bOverwrite);
 	}
 }
 
-// Remove unique IDs
 void FSLEdUtils::RemoveUniqueIds(UWorld* World)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		RemoveUniqueIdFromIndividual(*ActItr);
+		FSLIndividualUtils::ClearId(*ActItr);
 	}
 }
 
@@ -126,9 +148,10 @@ void FSLEdUtils::RemoveUniqueIds(const TArray<AActor*>& Actors)
 {
 	for (const auto& Act : Actors)
 	{
-		RemoveUniqueIdFromIndividual(Act);
+		FSLIndividualUtils::ClearId(Act);
 	}
 }
+
 
 // Write class names
 void FSLEdUtils::WriteClassNames(UWorld* World, bool bOverwrite)
@@ -198,17 +221,31 @@ void FSLEdUtils::RemoveClassNames(const TArray<AActor*>& Actors)
 }
 
 
-// Write unique visual masks
+/* Visual masks */
 void FSLEdUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
 {
-	WriteRandomlyGeneratedVisualMasks(World, bOverwrite);
-	// TODO incremental
+	FSLIndividualUtils::WriteVisualMasks(World, bOverwrite);
 }
 
 void FSLEdUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite)
 {
-	WriteRandomlyGeneratedVisualMasks(Actors, World, bOverwrite);
-	// TODO incremental
+	FSLIndividualUtils::WriteVisualMasks(Actors, World, bOverwrite);
+}
+
+void FSLEdUtils::RemoveVisualMasks(UWorld* World)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		FSLIndividualUtils::ClearVisualMask(*ActItr);
+	}
+}
+
+void FSLEdUtils::RemoveVisualMasks(const TArray<AActor*>& Actors)
+{
+	for (const auto& Act : Actors)
+	{
+		FSLIndividualUtils::ClearVisualMask(Act);
+	}
 }
 
 // Remove all tag keys
@@ -434,6 +471,19 @@ void FSLEdUtils::AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
 	//Actor->Modify();
 }
 
+// Remove semantic individual component
+void FSLEdUtils::RemoveSemanticIndividualComponent(AActor* Actor)
+{
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	{
+		// todo, cannot undo, check how 'delete' button handles removing components and allowing undo
+		Actor->Modify();
+		Actor->RemoveInstanceComponent(SLC);
+		SLC->ConditionalBeginDestroy();
+		//SLC->DestroyComponent();		
+	}
+}
+
 // Save semantic individual data to tag
 void FSLEdUtils::SaveSemanticIndividualDataToTag(AActor* Actor, bool bOverwrite)
 {
@@ -456,20 +506,20 @@ void FSLEdUtils::LoadSemanticIndividualDataFromTag(AActor* Actor, bool bOverwrit
 // Add unique id to the semantic component of the actor
 bool FSLEdUtils::AddUniqueIdToIndividual(AActor* Actor, bool bOverwrite)
 {	
-	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
-	{
-		return SLC->WriteId(bOverwrite);
-	}	
+	//if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	//{
+	//	return SLC->WriteId(bOverwrite);
+	//}	
 	return false;
 }
 
 // Remove unique id from individual
 bool FSLEdUtils::RemoveUniqueIdFromIndividual(AActor* Actor)
 {
-	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
-	{
-		return SLC->ClearId();
-	}
+	//if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	//{
+	//	return SLC->ClearId();
+	//}
 	return false;
 }
 
@@ -527,6 +577,24 @@ void FSLEdUtils::WriteRandomlyGeneratedVisualMasks(const TArray<AActor*>& Actors
 	{
 		AddUniqueVisualMask(Act, ConsumedColors, bOverwrite);
 	}
+}
+
+bool FSLEdUtils::AddVisualMaskToIndividual(AActor* Actor, const FString& Value, bool bOverwrite)
+{
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	{
+		//return SLC->WriteVisualMask(Value);
+	}
+	return false;
+}
+
+bool FSLEdUtils::RemoveVisualMaskFromIndividual(AActor* Actor)
+{
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	{
+		//return SLC->ClearVisualMask();
+	}
+	return false;
 }
 
 // Generate unique visual masks using incremental heuristic
@@ -802,6 +870,7 @@ bool FSLEdUtils::AddUniqueVisualMask(AActor* Actor, TArray<FColor>& ConsumedColo
 					//UE_LOG(LogTemp, Warning, TEXT("%s::%d Overwriting with new visual mask, hex=%s, to %s, new total=%ld.."),
 					//	*FString(__func__), __LINE__, *MaskColorHex, *Actor->GetName(), ConsumedColors.Num());
 					return FSLTagIO::AddKVPair(SMA, TagType, TagKey, MaskColorHex);
+					//return AddVisualMaskToIndividual(SMA, MaskColorHex);
 				}				
 			}
 			return false; // Prev color should not be overwritten

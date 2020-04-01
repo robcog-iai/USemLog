@@ -18,6 +18,10 @@ public:
 	static void AddSemanticDataComponents(UWorld* World, bool bOverwrite = false);
 	static void AddSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
+	// Remove semantic data components
+	static void RemoveSemanticDataComponents(UWorld* World);
+	static void RemoveSemanticDataComponents(const TArray<AActor*>& Actors);
+
 	// Save components data to tags
 	static void SaveComponentDataToTag(UWorld* World, bool bOverwrite = false);
 	static void SaveComponentDataToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
@@ -26,26 +30,25 @@ public:
 	static void LoadComponentDataFromTag(UWorld* World, bool bOverwrite = false);
 	static void LoadComponentDataFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
-	// Write unique IDs
+	/* Ids */
 	static void WriteUniqueIds(UWorld* World, bool bOverwrite = false);
 	static void WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
-
-	// Remove unique IDs
 	static void RemoveUniqueIds(UWorld* World);
 	static void RemoveUniqueIds(const TArray<AActor*>& Actors);
 
-	// Write class names
+	// Class names
 	static void WriteClassNames(UWorld* World, bool bOverwrite = false);
 	static void WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
-	// Remove class names
 	static void RemoveClassNames(UWorld* World);
 	static void RemoveClassNames(const TArray<AActor*>& Actors);
 
 
-	// Write unique visual masks
+	/* Visual masks */
 	static void WriteVisualMasks(UWorld* World, bool bOverwrite = false);
 	static void WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite = false);
+	static void RemoveVisualMasks(UWorld* World);
+	static void RemoveVisualMasks(const TArray<AActor*>& Actors);
 
 	// Remove all tag keys
 	static void RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);
@@ -74,6 +77,9 @@ private:
 	// Add a semantic individual component
 	static void AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite = false);
 
+	// Remove semantic individual component
+	static void RemoveSemanticIndividualComponent(AActor* Actor);
+
 	// Save semantic individual data to tag
 	static void SaveSemanticIndividualDataToTag(AActor* Actor, bool bOverwrite = false);
 
@@ -95,13 +101,19 @@ private:
 	static bool RemoveClassNameFromIndividual(AActor* Actor);
 
 	
-
-
-
-
 	// Generate unique visual masks using randomization
 	static void WriteRandomlyGeneratedVisualMasks(UWorld* World, bool bOverwrite = false);
 	static void WriteRandomlyGeneratedVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite = false);
+
+	// Add visual mask to individual
+	static bool AddVisualMaskToIndividual(AActor* Actor, const FString& Value, bool bOverwrite = false);
+
+	// Remove visual mask value from individual
+	static bool RemoveVisualMaskFromIndividual(AActor* Actor);
+
+
+
+
 
 	// Generate unique visual masks using incremental heuristic
 	static void WriteIncrementallyGeneratedVisualMasks(UWorld* World, bool bOverwrite = false);

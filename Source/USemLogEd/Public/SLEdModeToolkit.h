@@ -31,11 +31,11 @@ private:
 	// Create checkbox entry slot to set overwrite flag
 	SVerticalBox::FSlot& CreateOverwriteSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedSlot();
-	SVerticalBox::FSlot& CreateAddSemDataComponentsSlot();
+	SVerticalBox::FSlot& CreateSemDataComponentsSlot();
 	SVerticalBox::FSlot& CreateGenSemMapSlot();
 	SVerticalBox::FSlot& CreateIdsSlot();
 	SVerticalBox::FSlot& CreateClassNamesSlot();
-	SVerticalBox::FSlot& CreateWriteVisualMasksSlot();
+	SVerticalBox::FSlot& CreateVisualMasksSlot();
 	SVerticalBox::FSlot& CreateRmAllSlot();
 	SVerticalBox::FSlot& CreateAddSemMonSlot();	
 	SVerticalBox::FSlot& CreateEnableOverlapsSlot();
@@ -45,8 +45,9 @@ private:
 	/* Button callbacks */
 	FReply OnGenSemMap();
 	FReply OnAddSemDataComp();
-	FReply OnSaveToTag();
-	FReply OnLoadFromTag();
+	FReply OnRmSemDataComp();
+	FReply OnSaveSemDataComp();
+	FReply OnLoadSemDataComp();
 	FReply OnWriteSemIds();
 	FReply OnRmSemIds();
 	FReply OnWriteClassNames();

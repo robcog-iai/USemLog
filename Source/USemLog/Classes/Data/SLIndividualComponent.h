@@ -36,12 +36,12 @@ protected:
 #endif // WITH_EDITOR
 
 public:
-	//// Get the semantic individual object
-	//USLIndividualBase* GetIndividualObject() const { return SemanticIndividualObject; };
+	// Get the semantic individual object
+	USLIndividualBase* GetIndividualObject() const { return SemanticIndividual; };
 
-	//// Get the semantic individual using a cast class (nullptr if cast is unsuccessfull)
-	//template <typename ClassType>
-	//ClassType* GetCastedIndividualObject() const {	return Cast<ClassType>(SemanticIndividualObject); };
+	// Get the semantic individual using a cast class (nullptr if cast is unsuccessfull)
+	template <typename ClassType>
+	ClassType* GetCastedIndividualObject() const {	return Cast<ClassType>(SemanticIndividual); };
 
 	// Save data to owners tag
 	void SaveToTag(bool bOverwrite = false);
@@ -50,12 +50,6 @@ public:
 	void LoadFromTag(bool bOverwrite = false);
 
 	/* Individual object utils */
-	// Write new id to the individual object
-	bool WriteId(bool bOverwrite = false);
-
-	// Clear the id
-	bool ClearId();
-
 	// Write class name to the individual object
 	bool WriteClass(bool bOverwrite = false);
 
@@ -69,11 +63,11 @@ private:
 private:
 	// Semantic data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	USLIndividualBase* SemanticIndividualObject;
+	USLIndividualBase* SemanticIndividual;
 
-	// Manually convert datatype to the chosen type
+	// Manually convert the semantic individual to the chosen type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	TSubclassOf<class USLIndividual> ConvertToSemanticIndividual;
+	TSubclassOf<class USLIndividual> ConvertTo;
 	
 	/* Button workarounds */
 	// Ovewrite any changes

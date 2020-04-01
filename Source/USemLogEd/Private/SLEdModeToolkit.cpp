@@ -45,7 +45,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateGenSemMapSlot()
 
 			////
-			+ CreateAddSemDataComponentsSlot()
+			+ CreateSemDataComponentsSlot()
 
 			////
 			+ CreateIdsSlot()
@@ -54,7 +54,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateClassNamesSlot()
 
 			////
-			+ CreateWriteVisualMasksSlot()
+			+ CreateVisualMasksSlot()
 
 			////
 			+ CreateRmAllSlot()
@@ -162,7 +162,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenSemMapSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemDataComponentsSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataComponentsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -176,10 +176,21 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemDataComponentsSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("AddSemDataComp", "Add Semantic Data Components"))
+				.Text(LOCTEXT("AddSemDataComp", "Create Semantic Data Components"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("AddSemDataCompTip", "Creates semantic data components.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnAddSemDataComp)
+			]
+
+		+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("RmSemDataComp", "Remove"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("RmSemDataCompTip", "Remove semantic data components.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataComp)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -190,7 +201,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemDataComponentsSlot()
 				.Text(LOCTEXT("SaveToTag", "Save"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SaveToTagTip", "Save data to tag.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnSaveToTag)
+				.OnClicked(this, &FSLEdModeToolkit::OnSaveSemDataComp)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -201,7 +212,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemDataComponentsSlot()
 				.Text(LOCTEXT("LoadFromTag", "Load"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("LoadFromTagTip", "Load data from tag.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnLoadFromTag)
+				.OnClicked(this, &FSLEdModeToolkit::OnLoadSemDataComp)
 			]
 		];
 }
@@ -273,7 +284,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateClassNamesSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateWriteVisualMasksSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateVisualMasksSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -405,7 +416,21 @@ FReply FSLEdModeToolkit::OnAddSemDataComp()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnSaveToTag()
+FReply FSLEdModeToolkit::OnRmSemDataComp()
+{
+	FScopedTransaction Transaction(LOCTEXT("RemoveSemanticDataCompST", "Remove semantic data components"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::RemoveSemanticDataComponents(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::RemoveSemanticDataComponents(GEditor->GetEditorWorldContext().World());
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnSaveSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SaveDataToTagST", "Save semantic data to owners tag.."));
 	if (bOnlySelected)
@@ -419,7 +444,7 @@ FReply FSLEdModeToolkit::OnSaveToTag()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnLoadFromTag()
+FReply FSLEdModeToolkit::OnLoadSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("LoadDataFromTagST", "Load semantic data from owners tag.."));
 	if (bOnlySelected)
@@ -454,12 +479,10 @@ FReply FSLEdModeToolkit::OnRmSemIds()
 	if (bOnlySelected)
 	{
 		FSLEdUtils::RemoveUniqueIds(GetSelectedActors());
-		//FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "Id");
 	}
 	else
 	{
 		FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
-		//FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Id");
 	}
 	return FReply::Handled();
 }
@@ -515,11 +538,11 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 	FScopedTransaction Transaction(LOCTEXT("RmVisualMasksST", "Remove all visual masks names"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "VisMask");
+		FSLEdUtils::RemoveVisualMasks(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "VisMask");
+		FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
 	}	
 	return FReply::Handled();
 }

@@ -5,10 +5,6 @@
 #include "Data/SLIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
 #include "Data/SLVisualIndividual.h"
-//#include "ScopedTransaction.h"
-
-#include "Engine/StaticMeshActor.h"
-#include "Animation/SkeletalMeshActor.h"
 
 // Utils
 #include "Utils/SLUUid.h"
@@ -52,25 +48,41 @@ void USLIndividualComponent::OnComponentCreated()
 	}
 
 	// Set semantic individual type depending on owner
-	if (Owner->IsA(AStaticMeshActor::StaticClass()))
+	if (UClass* IndividualClass = FSLIndividualUtils::CreateIndividualObject(this, Owner, SemanticIndividual))
 	{
-		ConvertToSemanticIndividual = USLVisualIndividual::StaticClass();
-		SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
-		SemanticIndividualObject->SetSemOwner(Owner);
-	}
-	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
-	{
-		ConvertToSemanticIndividual = USLSkeletalIndividual::StaticClass();
-		SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
-		SemanticIndividualObject->SetSemOwner(Owner);
+		// Cache the current individual class type
+		ConvertTo = IndividualClass;
+		if (SemanticIndividual)
+		{
+			SemanticIndividual->SetSemOwner(Owner);
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for generating a semantic individual component %s, self-destruction commenced.."),
-			*FString(__FUNCTION__), __LINE__, *Owner->GetName());
 		ConditionalBeginDestroy();
 		return;
 	}
+	
+
+	//if (Owner->IsA(AStaticMeshActor::StaticClass()))
+	//{
+	//	ConvertToSemanticIndividual = USLVisualIndividual::StaticClass();
+	//	IndividualObj = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+	//	IndividualObj->SetSemOwner(Owner);
+	//}
+	//else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
+	//{
+	//	ConvertToSemanticIndividual = USLSkeletalIndividual::StaticClass();
+	//	IndividualObj = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+	//	IndividualObj->SetSemOwner(Owner);
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for generating a semantic individual component %s, self-destruction commenced.."),
+	//		*FString(__FUNCTION__), __LINE__, *Owner->GetName());
+	//	ConditionalBeginDestroy();
+	//	return;
+	//}
 }
 
 // Called when the game starts
@@ -93,9 +105,9 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	// Convert datatype
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, ConvertToSemanticIndividual))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, ConvertTo))
 	{
-		DoConvertDataType();
+		FSLIndividualUtils::ConvertIndividualObject(SemanticIndividual, ConvertTo);
 	}
 
 	/* Button workaround triggers */
@@ -114,59 +126,29 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 // Save data to owners tag
 void USLIndividualComponent::SaveToTag(bool bOverwrite)
 {
-	if (SemanticIndividualObject)
+	if (SemanticIndividual)
 	{
-		SemanticIndividualObject->SaveToTag(bOverwrite);
+		SemanticIndividual->SaveToTag(bOverwrite);
 	}
 }
 
 // Load data from owners tag
 void USLIndividualComponent::LoadFromTag(bool bOverwrite)
 {
-	if (SemanticIndividualObject)
+	if (SemanticIndividual)
 	{
-		SemanticIndividualObject->LoadFromTag(bOverwrite);
+		SemanticIndividual->LoadFromTag(bOverwrite);
 	}
-}
-
-
-/* Individual object utils */
-// Write new id to the individual object
-bool USLIndividualComponent::WriteId(bool bOverwrite)
-{
-	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividualObject))
-	{
-		if (!SLI->HasId() || bOverwrite)
-		{
-			SLI->SetId(FSLUuid::NewGuidInBase64Url());
-			return true;
-		}
-	}
-	return false;
-}
-
-// Clear any available id
-bool USLIndividualComponent::ClearId()
-{
-	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividualObject))
-	{
-		if (SLI->HasId())
-		{
-			SLI->SetId("");
-			return true;
-		}
-	}
-	return false;
 }
 
 // Write class name to the individual object
 bool USLIndividualComponent::WriteClass(bool bOverwrite)
 {
-	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividualObject))
+	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividual))
 	{
 		if (!SLI->HasClass() || bOverwrite)
 		{
-			SLI->SetClass(FSLIndividualUtils::GetClassName(GetOwner()));
+			SLI->SetClass(FSLIndividualUtils::GetIndividualClass(GetOwner()));
 			return true;
 		}
 	}
@@ -176,7 +158,7 @@ bool USLIndividualComponent::WriteClass(bool bOverwrite)
 // Clear the class name
 bool USLIndividualComponent::ClearClass()
 {
-	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividualObject))
+	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividual))
 	{
 		if (SLI->HasClass())
 		{
@@ -188,38 +170,37 @@ bool USLIndividualComponent::ClearClass()
 }
 
 
-
 // Convert datat type object to the selected class type
 void USLIndividualComponent::DoConvertDataType()
 {
-	if (ConvertToSemanticIndividual)
+	if (ConvertTo)
 	{		
-		if (SemanticIndividualObject && !SemanticIndividualObject->IsPendingKill())
+		if (SemanticIndividual && !SemanticIndividual->IsPendingKill())
 		{
-			if(SemanticIndividualObject->StaticClass() != ConvertToSemanticIndividual)
+			if(SemanticIndividual->StaticClass() != ConvertTo)
 			{
-				SemanticIndividualObject->ConditionalBeginDestroy();
-				SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+				SemanticIndividual->ConditionalBeginDestroy();
+				SemanticIndividual = NewObject<USLIndividualBase>(this, ConvertTo);
 				UE_LOG(LogTemp, Warning, TEXT("%s::%d Converted datatype to %s (%s).."),
-					*FString(__FUNCTION__), __LINE__, *ConvertToSemanticIndividual->GetName(), *SemanticIndividualObject->StaticClass()->GetName());
+					*FString(__FUNCTION__), __LINE__, *ConvertTo->GetName(), *SemanticIndividual->StaticClass()->GetName());
 			}
 			else
 			{
 				UE_LOG(LogTemp, Warning, TEXT("%s::%d Current datatype %s is of the same type as %s.."),
-					*FString(__FUNCTION__), __LINE__, *SemanticIndividualObject->StaticClass()->GetName(), *ConvertToSemanticIndividual->GetName());
+					*FString(__FUNCTION__), __LINE__, *SemanticIndividual->StaticClass()->GetName(), *ConvertTo->GetName());
 			}
 		}
 		else
 		{
-			SemanticIndividualObject = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
+			SemanticIndividual = NewObject<USLIndividualBase>(this, ConvertTo);
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating new %s datatype (%s).."),
-				*FString(__FUNCTION__), __LINE__, *ConvertToSemanticIndividual->GetName(), *SemanticIndividualObject->StaticClass()->GetName());
+				*FString(__FUNCTION__), __LINE__, *ConvertTo->GetName(), *SemanticIndividual->StaticClass()->GetName());
 		}
 	}
-	else if (SemanticIndividualObject && !SemanticIndividualObject->IsPendingKill())
+	else if (SemanticIndividual && !SemanticIndividual->IsPendingKill())
 	{
-		SemanticIndividualObject->ConditionalBeginDestroy();
-		SemanticIndividualObject = nullptr;
+		SemanticIndividual->ConditionalBeginDestroy();
+		SemanticIndividual = nullptr;
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Removed existing datatype.."),
 			*FString(__FUNCTION__), __LINE__);
 	}

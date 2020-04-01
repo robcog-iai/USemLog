@@ -16,6 +16,7 @@ class USEMLOG_API USLVisualIndividual : public USLIndividual
 {
 	GENERATED_BODY()
 
+public:
     // Save data to owners tag
     virtual bool SaveToTag(bool bOverwrite = false) override;
 
@@ -26,7 +27,11 @@ class USEMLOG_API USLVisualIndividual : public USLIndividual
     virtual bool IsRuntimeReady() const;
 
     // Set get visual mask
-    void SetVisualMask(const FString& InVisualMask) { VisualMask = InVisualMask; };
+    void SetVisualMask(const FString& InVisualMask, bool bResetCalibratedValue = true) 
+    {
+        VisualMask = InVisualMask; 
+        if (bResetCalibratedValue) { CalibratedVisualMask = ""; } 
+    };
     FString GetVisualMask() const { return VisualMask; };
     bool HasVisualMask() const { return !VisualMask.IsEmpty(); };
 
