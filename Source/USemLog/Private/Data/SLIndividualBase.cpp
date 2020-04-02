@@ -3,17 +3,38 @@
 
 #include "Data/SLIndividualBase.h"
 
+// Ctor
+USLIndividualBase::USLIndividualBase()
+{
+	bIsInit = false;
+}
+
 // Set the semantic owner actor
 void USLIndividualBase::PostInitProperties()
 {
 	Super::PostInitProperties();
+	Init();
+}
+
+// Set pointer to the semantic owner
+bool USLIndividualBase::Init()
+{
+	if (bIsInit)
+	{
+		return true;
+	}
 
 	// First outer is the component, second the actor
 	if (AActor* Owner = Cast<AActor>(GetOuter()->GetOuter()))
 	{
-		SetSemOwner(Owner);
+		SetSemanticOwner(Owner);
+		bIsInit = true;
+		return true;
 	}
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not init %s.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
+	return false;
 }
+
 
 // Save data to owners tag
 bool USLIndividualBase::SaveToTag(bool bOverwrite)
@@ -42,3 +63,4 @@ bool USLIndividualBase::IsRuntimeReady() const
 {
 	return SemanticOwner != nullptr;
 }
+

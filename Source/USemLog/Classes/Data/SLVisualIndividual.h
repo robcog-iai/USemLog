@@ -20,8 +20,14 @@ public:
     // Ctor
     USLVisualIndividual();
 
+    // Called before destroying the object.
+    virtual void BeginDestroy() override;
+
     // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
     virtual void PostInitProperties() override;
+
+    // Initialize individual
+    virtual bool Init() override;
 
     // Save data to owners tag
     virtual bool SaveToTag(bool bOverwrite = false) override;
@@ -31,6 +37,15 @@ public:
 
     // All properties are set for runtime
     virtual bool IsRuntimeReady() const;
+
+    // Apply visual mask material
+    bool ApplyVisualMaskMaterials();
+
+    // Apply original materials
+    bool ApplyOriginalMaterials();
+
+    // Toggle between the visual mask and the origina materials
+    bool ToggleMaterials();
     
     /* Visual mask */
     void SetVisualMask(const FString& InVisualMask, bool bClearCalibratedValue = true);
@@ -56,11 +71,22 @@ protected:
     FString CalibratedVisualMask;
 
     // The visual component of the owner
-    class UStaticMeshComponent* VisualStaticMeshComponent;
+    class UStaticMeshComponent* VisualSMC;
 
     // Material template used for creating dynamic materials
     class UMaterial* VisualMaskMaterial;
 
     // Dynamic material used for setting various mask colors
+    UPROPERTY()
     class UMaterialInstanceDynamic* VisualMaskDynamicMaterial;
+
+    // Cached original materials
+    TArray<class UMaterialInterface*> OriginalMaterials;
+
+    // True if the visual masks are currently active on the semantic owner
+    bool bMaskMaterialOn;
+
+private:
+    // True if the individual is init
+    bool bIsInit;
 };

@@ -17,6 +17,12 @@ class USLIndividual : public USLIndividualBase
 	GENERATED_BODY()
 
 public:
+	// Ctor
+	USLIndividual();
+
+	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+	virtual void PostInitProperties() override;
+
 	// Save data to owners tag
 	virtual bool SaveToTag(bool bOverwrite = false) override;
 
@@ -24,7 +30,7 @@ public:
 	virtual bool LoadFromTag(bool bOverwrite = false) override;
 
 	// All properties are set for runtime
-	virtual bool IsRuntimeReady() const;
+	virtual bool IsRuntimeReady() const override;
 
 	// Set get Id
 	void SetId(const FString& InId) { Id = InId; };

@@ -16,8 +16,14 @@ class USLIndividualBase : public UObject
 	GENERATED_BODY()
 
 public:
+	// Ctor
+	USLIndividualBase();
+
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 	virtual void PostInitProperties() override;
+
+	// Initialize individual
+	virtual bool Init();
 
 	// Save data to owners tag
 	virtual bool SaveToTag(bool bOverwrite = false);
@@ -38,4 +44,8 @@ protected:
 	
 	/* Constants */
 	static constexpr char TagTypeConst[] = "SemLog";
+
+private:
+	// True if the individual is init
+	bool bIsInit;
 };

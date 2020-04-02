@@ -20,8 +20,16 @@ public:
 	// Sets default values for this component's properties
 	USLIndividualComponent();
 
-	// Dtor
-	~USLIndividualComponent();
+	// Called before destroying the object.
+	virtual void BeginDestroy() override;
+
+	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+	virtual void PostInitProperties() override;
+
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
 
 	// Called when a component is created(not loaded).This can happen in the editor or during gameplay
 	virtual void OnComponentCreated() override;
@@ -29,11 +37,6 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
-#if WITH_EDITOR
-	// Called when a property is changed in the editor
-	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif // WITH_EDITOR
 
 public:
 	// Get the semantic individual object
@@ -70,4 +73,8 @@ private:
 	// Load data from tag
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
 	bool bLoadFromTagButton;
+
+	// Switch between viewing the real and the visual mask color
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
+	bool bToggleVisualMaskMaterial;
 };

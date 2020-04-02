@@ -14,20 +14,71 @@ USLIndividualComponent::USLIndividualComponent()
 	bOverwriteEditChanges = false;
 	bSaveToTagButton = false;
 	bLoadFromTagButton = false;
+	bToggleVisualMaskMaterial = false;
 
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s"), *FString(__FUNCTION__), __LINE__, *GetName());
 }
 
-// Dtor
-USLIndividualComponent::~USLIndividualComponent()
+// Called before destroying the object.
+void USLIndividualComponent::BeginDestroy()
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d %s"), *FString(__FUNCTION__), __LINE__, *GetName());
+	Super::BeginDestroy();
+	if (SemanticIndividual)
+	{
+		SemanticIndividual->ConditionalBeginDestroy();
+	}
 }
+
+// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+void USLIndividualComponent::PostInitProperties()
+{
+	Super::PostInitProperties();
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d PostInit %s.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
+}
+
+#if WITH_EDITOR
+// Called when a property is changed in the editor
+void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property name
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+		PropertyChangedEvent.Property->GetFName() : NAME_None;
+
+	// Convert datatype
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, ConvertTo))
+	{
+		FSLIndividualUtils::ConvertIndividualObject(SemanticIndividual, ConvertTo);
+	}
+
+	/* Button workaround triggers */
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bSaveToTagButton))
+	{
+		bSaveToTagButton = false;
+		SaveToTag(bOverwriteEditChanges);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bLoadFromTagButton))
+	{
+		bLoadFromTagButton = false;
+		LoadFromTag(bOverwriteEditChanges);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bToggleVisualMaskMaterial))
+	{
+		bToggleVisualMaskMaterial = false;
+		if (USLVisualIndividual* SI = GetCastedIndividualObject<USLVisualIndividual>())
+		{
+			SI->ToggleMaterials();
+		}
+	}
+}
+#endif // WITH_EDITOR
 
 // Called when a component is created(not loaded).This can happen in the editor or during gameplay
 void USLIndividualComponent::OnComponentCreated()
 {
 	Super::OnComponentCreated();
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d OnComponent %s.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
 
 	AActor* Owner = GetOwner();
 
@@ -51,7 +102,7 @@ void USLIndividualComponent::OnComponentCreated()
 		ConvertTo = IndividualClass;
 		if (SemanticIndividual)
 		{
-			SemanticIndividual->SetSemOwner(Owner);
+			SemanticIndividual->SetSemanticOwner(Owner);
 		}
 	}
 	else
@@ -90,36 +141,6 @@ void USLIndividualComponent::BeginPlay()
 	// ...
 	
 }
-
-#if WITH_EDITOR
-// Called when a property is changed in the editor
-void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	// Get the changed property name
-	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
-		PropertyChangedEvent.Property->GetFName() : NAME_None;
-
-	// Convert datatype
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, ConvertTo))
-	{
-		FSLIndividualUtils::ConvertIndividualObject(SemanticIndividual, ConvertTo);
-	}
-
-	/* Button workaround triggers */
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bSaveToTagButton))
-	{
-		bSaveToTagButton = false;
-		SaveToTag(bOverwriteEditChanges);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bLoadFromTagButton))
-	{
-		bLoadFromTagButton = false;
-		LoadFromTag(bOverwriteEditChanges);
-	}
-}
-#endif // WITH_EDITOR
 
 // Save data to owners tag
 void USLIndividualComponent::SaveToTag(bool bOverwrite)
