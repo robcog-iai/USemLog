@@ -3,10 +3,22 @@
 
 #include "Data/SLIndividualBase.h"
 
+// Set the semantic owner actor
+void USLIndividualBase::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	// First outer is the component, second the actor
+	if (AActor* Owner = Cast<AActor>(GetOuter()->GetOuter()))
+	{
+		SetSemOwner(Owner);
+	}
+}
+
 // Save data to owners tag
 bool USLIndividualBase::SaveToTag(bool bOverwrite)
 {
-	if (!SemOwner)
+	if (!SemanticOwner)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner not set, cannot write to tags.."), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -17,7 +29,7 @@ bool USLIndividualBase::SaveToTag(bool bOverwrite)
 // Load data from owners tag
 bool USLIndividualBase::LoadFromTag(bool bOverwrite)
 {
-	if (!SemOwner)
+	if (!SemanticOwner)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner not set, cannot read from tags.."), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -28,5 +40,5 @@ bool USLIndividualBase::LoadFromTag(bool bOverwrite)
 // All properties are set for runtime
 bool USLIndividualBase::IsRuntimeReady() const
 {
-	return SemOwner != nullptr;
+	return SemanticOwner != nullptr;
 }

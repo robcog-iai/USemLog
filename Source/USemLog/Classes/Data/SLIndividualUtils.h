@@ -28,6 +28,13 @@ public:
 	// Clear unique id of the actor
 	static bool ClearId(AActor* Actor);
 
+	/* Class */
+	// Write class name to the actor
+	static bool WriteClass(AActor* Actor, bool bOverwrite);
+
+	// Clear class name of the actor
+	static bool ClearClass(AActor* Actor);
+
 	/* Visual mask */
 	// Write unique visual masks for all visual individuals in the world
 	static void WriteVisualMasks(UWorld* World, bool bOverwrite);
@@ -73,6 +80,9 @@ private:
 		return FColor((uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f));
 	}
 };
+
+
+/* Inline functions */
 
 // Return casted semantic individual object of actor (nullptr if failed)
 template<typename ClassType>

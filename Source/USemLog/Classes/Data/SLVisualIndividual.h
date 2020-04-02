@@ -17,6 +17,12 @@ class USEMLOG_API USLVisualIndividual : public USLIndividual
 	GENERATED_BODY()
 
 public:
+    // Ctor
+    USLVisualIndividual();
+
+    // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+    virtual void PostInitProperties() override;
+
     // Save data to owners tag
     virtual bool SaveToTag(bool bOverwrite = false) override;
 
@@ -25,20 +31,20 @@ public:
 
     // All properties are set for runtime
     virtual bool IsRuntimeReady() const;
-
-    // Set get visual mask
-    void SetVisualMask(const FString& InVisualMask, bool bResetCalibratedValue = true) 
-    {
-        VisualMask = InVisualMask; 
-        if (bResetCalibratedValue) { CalibratedVisualMask = ""; } 
-    };
+    
+    /* Visual mask */
+    void SetVisualMask(const FString& InVisualMask, bool bClearCalibratedValue = true);
     FString GetVisualMask() const { return VisualMask; };
     bool HasVisualMask() const { return !VisualMask.IsEmpty(); };
 
-    // Set get calibrated visual mask
+    /* Calibrated visual mask */
     void SetCalibratedVisualMask(const FString& InCalibratedVisualMask) { CalibratedVisualMask = InCalibratedVisualMask; };
     FString GetCalibratedVisualMask() const { return CalibratedVisualMask; };
     bool HasCalibratedVisualMask() const { return !CalibratedVisualMask.IsEmpty(); };
+
+private:
+    // Apply color to the dynamic material
+    bool ApplyVisualMaskColorToDynamicMaterial();
 
 protected:
     // Skeletal body part individual unique id
@@ -48,4 +54,13 @@ protected:
     // Skeletal body part individual class
     UPROPERTY(EditAnywhere, Category = "SL")
     FString CalibratedVisualMask;
+
+    // The visual component of the owner
+    class UStaticMeshComponent* VisualStaticMeshComponent;
+
+    // Material template used for creating dynamic materials
+    class UMaterial* VisualMaskMaterial;
+
+    // Dynamic material used for setting various mask colors
+    class UMaterialInstanceDynamic* VisualMaskDynamicMaterial;
 };

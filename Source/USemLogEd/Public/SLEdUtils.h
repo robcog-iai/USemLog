@@ -14,11 +14,9 @@ public:
 	// Write the semantic map
 	static void WriteSemanticMap(UWorld* World, bool bOverwrite = false);
 
-	// Add data components to the actors containing all the information from the tags
+	/* Individual actor components */
 	static void AddSemanticDataComponents(UWorld* World, bool bOverwrite = false);
 	static void AddSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
-
-	// Remove semantic data components
 	static void RemoveSemanticDataComponents(UWorld* World);
 	static void RemoveSemanticDataComponents(const TArray<AActor*>& Actors);
 
@@ -36,13 +34,11 @@ public:
 	static void RemoveUniqueIds(UWorld* World);
 	static void RemoveUniqueIds(const TArray<AActor*>& Actors);
 
-	// Class names
+	/* Class names */
 	static void WriteClassNames(UWorld* World, bool bOverwrite = false);
 	static void WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
-
 	static void RemoveClassNames(UWorld* World);
 	static void RemoveClassNames(const TArray<AActor*>& Actors);
-
 
 	/* Visual masks */
 	static void WriteVisualMasks(UWorld* World, bool bOverwrite = false);
@@ -85,33 +81,6 @@ private:
 
 	// Save semantic individual data to tag
 	static void LoadSemanticIndividualDataFromTag(AActor* Actor, bool bOverwrite = false);
-
-
-	// Add unique id to the semantic component of the actor
-	static bool AddUniqueIdToIndividual(AActor* Actor, bool bOverwrite = false);
-
-	// Remove unique id from individual
-	static bool RemoveUniqueIdFromIndividual(AActor* Actor);
-
-
-	// Add class name to individual
-	static bool AddClassNameToIndividual(AActor* Actor, bool bOverwrite = false);
-
-	// Remove class name from individual
-	static bool RemoveClassNameFromIndividual(AActor* Actor);
-
-	
-	// Generate unique visual masks using randomization
-	static void WriteRandomlyGeneratedVisualMasks(UWorld* World, bool bOverwrite = false);
-	static void WriteRandomlyGeneratedVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite = false);
-
-	// Add visual mask to individual
-	static bool AddVisualMaskToIndividual(AActor* Actor, const FString& Value, bool bOverwrite = false);
-
-	// Remove visual mask value from individual
-	static bool RemoveVisualMaskFromIndividual(AActor* Actor);
-
-
 
 
 

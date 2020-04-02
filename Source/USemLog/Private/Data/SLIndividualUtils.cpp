@@ -213,6 +213,35 @@ bool FSLIndividualUtils::ClearId(AActor* Actor)
 }
 
 
+/* Class */
+// Write class name to the actor
+bool FSLIndividualUtils::WriteClass(AActor* Actor, bool bOverwrite)
+{
+	if (USLIndividual* SI = GetCastedIndividualObject<USLIndividual>(Actor))
+	{
+		if (!SI->HasClass() || bOverwrite)
+		{			
+			SI->SetClass(FSLIndividualUtils::GetIndividualClass(Actor));
+			return true;
+		}
+	}
+	return false;
+}
+
+// Clear class name of the actor
+bool FSLIndividualUtils::ClearClass(AActor* Actor)
+{
+	if (USLIndividual* SI = GetCastedIndividualObject<USLIndividual>(Actor))
+	{
+		if (SI->HasClass())
+		{
+			SI->SetClass("");
+			return true;
+		}
+	}
+	return false;
+}
+
 /* Visual mask */
 // Write unique visual masks for all visual individuals in the world
 void FSLIndividualUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)

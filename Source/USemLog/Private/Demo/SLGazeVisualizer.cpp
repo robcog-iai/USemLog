@@ -44,7 +44,7 @@ ASLGazeVisualizer::ASLGazeVisualizer()
 		GazeVisual->SetStaticMesh(VisualAsset.Object);
 	}
 
-	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialAsset(TEXT("StaticMesh'/USemLog/Gaze/M_GazeVisual.M_GazeVisual'"));
+	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialAsset(TEXT("Material'/USemLog/Gaze/M_GazeVisual.M_GazeVisual'"));
 	if (MaterialAsset.Succeeded())
 	{
 		VisualMaterial = MaterialAsset.Object;		

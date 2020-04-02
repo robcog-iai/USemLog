@@ -49,17 +49,6 @@ public:
 	// Load data from owners tag
 	void LoadFromTag(bool bOverwrite = false);
 
-	/* Individual object utils */
-	// Write class name to the individual object
-	bool WriteClass(bool bOverwrite = false);
-
-	// Clear the class name
-	bool ClearClass();
-
-private:
-	// Convert datat type object to the selected class type
-	void DoConvertDataType();
-
 private:
 	// Semantic data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")

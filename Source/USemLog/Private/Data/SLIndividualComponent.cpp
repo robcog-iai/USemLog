@@ -6,9 +6,6 @@
 #include "Data/SLSkeletalIndividual.h"
 #include "Data/SLVisualIndividual.h"
 
-// Utils
-#include "Utils/SLUUid.h"
-
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
 {
@@ -122,6 +119,7 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 		LoadFromTag(bOverwriteEditChanges);
 	}
 }
+#endif // WITH_EDITOR
 
 // Save data to owners tag
 void USLIndividualComponent::SaveToTag(bool bOverwrite)
@@ -140,75 +138,4 @@ void USLIndividualComponent::LoadFromTag(bool bOverwrite)
 		SemanticIndividual->LoadFromTag(bOverwrite);
 	}
 }
-
-// Write class name to the individual object
-bool USLIndividualComponent::WriteClass(bool bOverwrite)
-{
-	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividual))
-	{
-		if (!SLI->HasClass() || bOverwrite)
-		{
-			SLI->SetClass(FSLIndividualUtils::GetIndividualClass(GetOwner()));
-			return true;
-		}
-	}
-	return false;
-}
-
-// Clear the class name
-bool USLIndividualComponent::ClearClass()
-{
-	if (USLIndividual* SLI = Cast<USLIndividual>(SemanticIndividual))
-	{
-		if (SLI->HasClass())
-		{
-			SLI->SetClass("");
-			return true;
-		}
-	}
-	return false;
-}
-
-
-// Convert datat type object to the selected class type
-void USLIndividualComponent::DoConvertDataType()
-{
-	if (ConvertTo)
-	{		
-		if (SemanticIndividual && !SemanticIndividual->IsPendingKill())
-		{
-			if(SemanticIndividual->StaticClass() != ConvertTo)
-			{
-				SemanticIndividual->ConditionalBeginDestroy();
-				SemanticIndividual = NewObject<USLIndividualBase>(this, ConvertTo);
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Converted datatype to %s (%s).."),
-					*FString(__FUNCTION__), __LINE__, *ConvertTo->GetName(), *SemanticIndividual->StaticClass()->GetName());
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Current datatype %s is of the same type as %s.."),
-					*FString(__FUNCTION__), __LINE__, *SemanticIndividual->StaticClass()->GetName(), *ConvertTo->GetName());
-			}
-		}
-		else
-		{
-			SemanticIndividual = NewObject<USLIndividualBase>(this, ConvertTo);
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating new %s datatype (%s).."),
-				*FString(__FUNCTION__), __LINE__, *ConvertTo->GetName(), *SemanticIndividual->StaticClass()->GetName());
-		}
-	}
-	else if (SemanticIndividual && !SemanticIndividual->IsPendingKill())
-	{
-		SemanticIndividual->ConditionalBeginDestroy();
-		SemanticIndividual = nullptr;
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Removed existing datatype.."),
-			*FString(__FUNCTION__), __LINE__);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Nothing to remove.."),
-			*FString(__FUNCTION__), __LINE__);
-	}
-}
-#endif // WITH_EDITOR
 

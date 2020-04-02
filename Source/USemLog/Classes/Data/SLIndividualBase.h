@@ -16,6 +16,9 @@ class USLIndividualBase : public UObject
 	GENERATED_BODY()
 
 public:
+	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+	virtual void PostInitProperties() override;
+
 	// Save data to owners tag
 	virtual bool SaveToTag(bool bOverwrite = false);
 
@@ -26,12 +29,12 @@ public:
 	virtual bool IsRuntimeReady() const;
 
 	// Set/get semantic owner
-	void SetSemOwner(AActor* InSemOwner) { SemOwner = InSemOwner; };
-	AActor* GetSemOwner() const { return SemOwner; };
+	void SetSemanticOwner(AActor* InSemOwner) { SemanticOwner = InSemOwner; };
+	AActor* GetSemanticOwner() const { return SemanticOwner; };
 
 protected:
 	// Pointer to the actor described by the semantic description class
-	class AActor* SemOwner;
+	class AActor* SemanticOwner;
 	
 	/* Constants */
 	static constexpr char TagTypeConst[] = "SemLog";

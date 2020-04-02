@@ -47,8 +47,7 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 	SemMapWriter.WriteToFile(World, ESLOwlSemanticMapTemplate::IAIKitchen, TaskDir, TEXT("SemanticMap"), bOverwrite);
 }
 
-
-// Add semantic data components to the actors
+/* Individual actor components */
 void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
@@ -65,7 +64,6 @@ void FSLEdUtils::AddSemanticDataComponents(const TArray<AActor*>& Actors, bool b
 	}
 }
 
-// Remove semantic data components
 void FSLEdUtils::RemoveSemanticDataComponents(UWorld* World)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
@@ -82,8 +80,6 @@ void FSLEdUtils::RemoveSemanticDataComponents(const TArray<AActor*>& Actors)
 	}
 }
 
-
-// Save components data to tags
 void FSLEdUtils::SaveComponentDataToTag(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
@@ -100,7 +96,6 @@ void FSLEdUtils::SaveComponentDataToTag(const TArray<AActor*>& Actors, bool bOve
 	}
 }
 
-// Loads components data from tags
 void FSLEdUtils::LoadComponentDataFromTag(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
@@ -116,7 +111,6 @@ void FSLEdUtils::LoadComponentDataFromTag(const TArray<AActor*>& Actors, bool bO
 		LoadSemanticIndividualDataFromTag(Act, bOverwrite);
 	}
 }
-
 
 
 /* Ids */
@@ -153,53 +147,20 @@ void FSLEdUtils::RemoveUniqueIds(const TArray<AActor*>& Actors)
 }
 
 
-// Write class names
+/* Class names */
 void FSLEdUtils::WriteClassNames(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		AddClassNameToIndividual(*ActItr, bOverwrite);
+		FSLIndividualUtils::WriteClass(*ActItr, bOverwrite);
 	}
-	//static const FString TagType = TEXT("SemLog");
-	//static const FString TagKey = TEXT("Class");
-
-	//for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	//{
-	//	FString ClassName = GetClassName(*ActItr);
-	//	if (!ClassName.IsEmpty())
-	//	{
-	//		FSLTagIO::AddKVPair(*ActItr, TagType, TagKey, ClassName, bOverwrite);
-	//	}
-	//	else
-	//	{
-	//		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not get the class name for %s.."),
-	//			*FString(__func__), __LINE__, *ActItr->GetName());
-	//	}
-	//}
 }
 
 void FSLEdUtils::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
 {
 	for (const auto& Act : Actors)
 	{
-		AddClassNameToIndividual(Act, bOverwrite);
-	}
-
-	static const FString TagType = TEXT("SemLog");
-	static const FString TagKey = TEXT("Class");
-
-	for (const auto& Act : Actors)
-	{
-		FString ClassName = GetClassName(Act);
-		if (!ClassName.IsEmpty())
-		{
-			FSLTagIO::AddKVPair(Act, TagType, TagKey, ClassName, bOverwrite);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not get the class name for %s.."),
-				*FString(__func__), __LINE__, *Act->GetName());
-		}
+		FSLIndividualUtils::WriteClass(Act, bOverwrite);
 	}
 }
 
@@ -208,7 +169,7 @@ void FSLEdUtils::RemoveClassNames(UWorld* World)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		RemoveClassNameFromIndividual(*ActItr);
+		FSLIndividualUtils::ClearClass(*ActItr);
 	}
 }
 
@@ -216,7 +177,7 @@ void FSLEdUtils::RemoveClassNames(const TArray<AActor*>& Actors)
 {
 	for (const auto& Act : Actors)
 	{
-		RemoveClassNameFromIndividual(Act);
+		FSLIndividualUtils::ClearClass(Act);
 	}
 }
 
@@ -503,100 +464,6 @@ void FSLEdUtils::LoadSemanticIndividualDataFromTag(AActor* Actor, bool bOverwrit
 }
 
 
-// Add unique id to the semantic component of the actor
-bool FSLEdUtils::AddUniqueIdToIndividual(AActor* Actor, bool bOverwrite)
-{	
-	//if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
-	//{
-	//	return SLC->WriteId(bOverwrite);
-	//}	
-	return false;
-}
-
-// Remove unique id from individual
-bool FSLEdUtils::RemoveUniqueIdFromIndividual(AActor* Actor)
-{
-	//if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
-	//{
-	//	return SLC->ClearId();
-	//}
-	return false;
-}
-
-
-// Add class name to individual
-bool FSLEdUtils::AddClassNameToIndividual(AActor* Actor, bool bOverwrite)
-{
-	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
-	{
-		return SLC->WriteClass(bOverwrite);
-	}
-	return false;
-}
-
-// Remove class name from individual
-bool FSLEdUtils::RemoveClassNameFromIndividual(AActor* Actor)
-{
-	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
-	{
-		return SLC->ClearClass();
-	}
-	return false;
-}
-
-
-
-
-
-// Generate unique visual masks using randomization
-void FSLEdUtils::WriteRandomlyGeneratedVisualMasks(UWorld* World, bool bOverwrite)
-{
-	// TArray is used instead of TSet, because of the FindByPredicate funcionality
-	TArray<FColor> ConsumedColors;
-
-	// Load already used colors to avoid generating similar ones
-	ConsumedColors = GetConsumedVisualMaskColors(World);
-
-	// Add unique mask avoiding existing ones
-	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	{
-		AddUniqueVisualMask(*ActItr, ConsumedColors, bOverwrite);
-	}
-}
-
-void FSLEdUtils::WriteRandomlyGeneratedVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite)
-{
-	// TArray is used instead of TSet, because of the FindByPredicate funcionality
-	TArray<FColor> ConsumedColors;
-
-	// Load already used colors to avoid generating similar ones
-	ConsumedColors = GetConsumedVisualMaskColors(World);
-
-	// Add unique mask avoiding existing ones
-	for (const auto& Act : Actors)
-	{
-		AddUniqueVisualMask(Act, ConsumedColors, bOverwrite);
-	}
-}
-
-bool FSLEdUtils::AddVisualMaskToIndividual(AActor* Actor, const FString& Value, bool bOverwrite)
-{
-	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
-	{
-		//return SLC->WriteVisualMask(Value);
-	}
-	return false;
-}
-
-bool FSLEdUtils::RemoveVisualMaskFromIndividual(AActor* Actor)
-{
-	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
-	{
-		//return SLC->ClearVisualMask();
-	}
-	return false;
-}
-
 // Generate unique visual masks using incremental heuristic
 void FSLEdUtils::WriteIncrementallyGeneratedVisualMasks(UWorld* World, bool bOverwrite)
 {
@@ -780,50 +647,6 @@ void FSLEdUtils::WriteIncrementallyGeneratedVisualMasks(UWorld* World, bool bOve
 	//}
 }
 
-// Get already used visual mask colors
-TArray<FColor> FSLEdUtils::GetConsumedVisualMaskColors(UWorld* World)
-{
-	static const FString TagType = TEXT("SemLog");
-	static const FString TagKey = TEXT("VisMask");
-	TArray<FColor> ConsumedColors;
-
-	/* Static mesh actors */
-	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
-	{
-		FString ColHexStr = FSLTagIO::GetValue(*ActItr, TagType, TagKey);
-		if (!ColHexStr.IsEmpty())
-		{
-			ConsumedColors.Add(FColor::FromHex(ColHexStr));
-		}
-	}
-
-	/* Skeletal mesh actors */
-	for (TActorIterator<ASkeletalMeshActor> ActItr(World); ActItr; ++ActItr)
-	{
-		// Get the semantic data component containing the semantics (ids, class names, mask colors) about the bones
-		if (UActorComponent* AC = ActItr->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
-		{
-			// Load existing visual mask values from the skeletal data
-			USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
-			for (auto& Pair : SkDC->SemanticBonesData)
-			{
-				// Check if the bone has a semantic class and and a visual mask
-				if (Pair.Value.IsClassSet() && !Pair.Value.VisualMask.IsEmpty())
-				{
-					ConsumedColors.Add(FColor::FromHex(Pair.Value.VisualMask));
-				}
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Skeletal actor %s has no semantic data component, skipping.."),
-				*FString(__func__), __LINE__, *ActItr->GetName());
-		}
-	}
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Number of previously stored visual masks=%ld"),
-	//	*FString(__func__), __LINE__, ConsumedColors.Num());
-	return ConsumedColors;
-}
 
 // Add unique mask color
 bool FSLEdUtils::AddUniqueVisualMask(AActor* Actor, TArray<FColor>& ConsumedColors, bool bOverwrite)
