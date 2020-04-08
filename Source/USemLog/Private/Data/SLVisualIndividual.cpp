@@ -138,6 +138,14 @@ bool USLVisualIndividual::IsRuntimeReady() const
 // Apply visual mask material
 bool USLVisualIndividual::ApplyVisualMaskMaterials()
 {
+	// TODO apply visual or original if both are ready (original materials are loaded, mask is loaded)
+	// Refresh button, if material is changed, refresh should add that material to the original one
+
+	if (!bIsInit)
+	{
+		return false;
+	}
+
 	if (!bMaskMaterialOn && VisualSMC && VisualMaskDynamicMaterial)
 	{
 		for (int32 MatIdx = 0; MatIdx < VisualSMC->GetNumMaterials(); ++MatIdx)
@@ -153,6 +161,11 @@ bool USLVisualIndividual::ApplyVisualMaskMaterials()
 // Apply original materials
 bool USLVisualIndividual::ApplyOriginalMaterials()
 {
+	if (!bIsInit)
+	{
+		return false;
+	}
+
 	if (bMaskMaterialOn && VisualSMC && OriginalMaterials.Num())
 	{
 		if (VisualSMC->GetNumMaterials() == OriginalMaterials.Num())
