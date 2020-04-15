@@ -35,6 +35,13 @@ bool USLIndividualBase::Init()
 	return false;
 }
 
+// Reinitialize individual
+bool USLIndividualBase::Refresh()
+{
+	bIsInit = false;
+	return Init();
+}
+
 
 // Save data to owners tag
 bool USLIndividualBase::SaveToTag(bool bOverwrite)

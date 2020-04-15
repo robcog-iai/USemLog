@@ -13,7 +13,7 @@ class USEMLOG_API FSLIndividualUtils
 {
 public:
 	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-	static FString GetIndividualClass(AActor* Actor, bool bDefaultToLabelName = false);
+	static FString GetIndividualClassName(AActor* Actor, bool bDefaultToLabelName = false);
 
 	// Create default individual object depending on the owner type (returns nullptr if failed)
 	static UClass* CreateIndividualObject(UObject* Outer, AActor* Owner, class USLIndividualBase*& OutIndividualObject);

@@ -31,7 +31,7 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
-	// Called when a component is created(not loaded).This can happen in the editor or during gameplay
+	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
 	virtual void OnComponentCreated() override;
 
 protected:
@@ -51,6 +51,9 @@ public:
 
 	// Load data from owners tag
 	void LoadFromTag(bool bOverwrite = false);
+
+	// Reload the individual data
+	bool RefreshIndividual();
 
 private:
 	// Semantic data

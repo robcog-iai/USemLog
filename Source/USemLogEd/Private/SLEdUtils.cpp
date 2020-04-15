@@ -11,7 +11,6 @@
 #include "Kismet2/ComponentEditorUtils.h"
 #include "Data/SLIndividualUtils.h"
 
-
 // SL
 #include "Editor/SLSemanticMapWriter.h"
 #include "Vision/SLVisionCamera.h"
@@ -48,19 +47,35 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 }
 
 /* Individual actor components */
-void FSLEdUtils::AddSemanticDataComponents(UWorld* World, bool bOverwrite)
+void FSLEdUtils::CreateSemanticDataComponents(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		AddSemanticIndividualComponent(*ActItr, bOverwrite);
+		CreateSemanticIndividualComponent(*ActItr, bOverwrite);
 	}
 }
 
-void FSLEdUtils::AddSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite)
+void FSLEdUtils::CreateSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite)
 {
 	for (const auto Act : Actors)
 	{
-		AddSemanticIndividualComponent(Act, bOverwrite);
+		CreateSemanticIndividualComponent(Act, bOverwrite);
+	}
+}
+
+void FSLEdUtils::RefreshSemanticDataComponents(UWorld* World)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		RefreshSemanticIndividualComponent(*ActItr);
+	}
+}
+
+void FSLEdUtils::RefreshSemanticDataComponents(const TArray<AActor*>& Actors)
+{
+	for (const auto Act : Actors)
+	{
+		RefreshSemanticIndividualComponent(Act);
 	}
 }
 
@@ -403,13 +418,16 @@ void FSLEdUtils::EnableAllMaterialsForInstancedStaticMesh()
 
 /* Private */
 // Add a semantic individual component
-void FSLEdUtils::AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
+void FSLEdUtils::CreateSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
 {
 	// Skip it already has a component
 	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
 	{
-		// TODO overwrite case
-		//SLC->Reset
+		if (bOverwrite)
+		{
+			// TODO reset?
+			SLC->RefreshIndividual();
+		}
 		return;
 	}
 
@@ -432,6 +450,14 @@ void FSLEdUtils::AddSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
 	//Actor->Modify();
 }
 
+void FSLEdUtils::RefreshSemanticIndividualComponent(AActor* Actor)
+{
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	{
+		SLC->RefreshIndividual();
+	}
+}
+
 // Remove semantic individual component
 void FSLEdUtils::RemoveSemanticIndividualComponent(AActor* Actor)
 {
@@ -441,7 +467,7 @@ void FSLEdUtils::RemoveSemanticIndividualComponent(AActor* Actor)
 		Actor->Modify();
 		Actor->RemoveInstanceComponent(SLC);
 		SLC->ConditionalBeginDestroy();
-		//SLC->DestroyComponent();		
+		//SLC->DestroyComponent();	
 	}
 }
 

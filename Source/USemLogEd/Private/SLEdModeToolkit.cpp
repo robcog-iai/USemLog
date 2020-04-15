@@ -11,6 +11,9 @@
 
 #include "Engine/Selection.h"
 #include "ScopedTransaction.h"
+//#include "SSCSEditor.h"
+#include "UnrealEdGlobals.h" // for GUnrealEd
+#include "Editor/UnrealEdEngine.h"
 
 // UUtils
 #include "SLEdUtils.h"
@@ -31,36 +34,39 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 {
 	SAssignNew(ToolkitWidget, SBorder)
 		.HAlign(HAlign_Center)
-		.Padding(25)
+		.Padding(15)
 		[
 			SNew(SVerticalBox)
 
 			////
 			+ CreateOverwriteSlot()
-
-			////
 			+ CreateOnlySelectedSlot()
 
 			////
-			+ CreateGenSemMapSlot()
+			+ CreateSemMapSlot()
 
 			////
-			+ CreateSemDataComponentsSlot()
+			+ CreateSemDataCompTxtSlot()
+			+ CreateSemDataCompSlot()
 
 			////
-			+ CreateIdsSlot()
+			+ CreateSemDataTxtSlot()
+			+ CreateSemDataAllSlot()
+			+ CreateSemDataIdSlot()
+			+ CreateSemDataClassSlot()
+			+ CreateSemDataMaskSlot()
 
 			////
-			+ CreateClassNamesSlot()
+			+ CreateTagTxtSlot()
+			+ CreateTagDataSlot()
 
 			////
-			+ CreateVisualMasksSlot()
+			+ CreateUtilsTxtSlot()
 
 			////
-			+ CreateRmAllSlot()
 
 			////
-			+ CreateAddSemMonSlot()
+			+ CreateAddSemMonitorsSlot()
 
 			////
 			+ CreateEnableOverlapsSlot()
@@ -71,6 +77,8 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			////
 			+ CreateEnableInstacedMeshMaterialsSlot()
 
+			////
+			+ CreateGenericButtonSlot()
 		];
 
 	FModeToolkit::Init(InitToolkitHost);
@@ -95,6 +103,8 @@ class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 
 
 /* Vertical slot entries */
+
+/* Checkboxes */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteSlot()
 {
 	return SVerticalBox::Slot()
@@ -147,22 +157,49 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenSemMapSlot()
+/* Semantic map */
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemMapSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(10)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.VAlign(VAlign_Center)
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("SemMapTxt", "Semantic Map:  "))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemMapGen", "Generate"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemMapGenTip", "Exports the generated semantic map to an owl file"))
+				.OnClicked(this, &FSLEdModeToolkit::OnWriteSemMap)
+			]
+		];
+}
+
+/* Semantic data components*/
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
 		.Padding(5)
 		.HAlign(HAlign_Center)
 		[
-			SNew(SButton)
-			.Text(LOCTEXT("GenSemMap", "Generate Semantic Map"))
-			.IsEnabled(true)
-			.ToolTipText(LOCTEXT("GenSemMapTip", "Exports the generated semantic map to file"))
-			.OnClicked(this, &FSLEdModeToolkit::OnGenSemMap)
+			SNew(STextBlock)
+			.Text(LOCTEXT("SemDataCompTxt", "Semantic Data Components:"))
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataComponentsSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -176,10 +213,67 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataComponentsSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("AddSemDataComp", "Create Semantic Data Components"))
+				.Text(LOCTEXT("SemDataCompCreate", "Create"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("AddSemDataCompTip", "Creates semantic data components.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnAddSemDataComp)
+				.ToolTipText(LOCTEXT("SemDataCompCreateTip", "Creates semantic data components.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnCreateSemDataComp)
+			]
+
+			+ SHorizontalBox::Slot()
+				.Padding(2)
+				.AutoWidth()
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("SemDataCompRefresh", "Refresh"))
+					.IsEnabled(true)
+					.ToolTipText(LOCTEXT("SemDataCompRefreshTip", "Refresh semantic data components.."))
+					.OnClicked(this, &FSLEdModeToolkit::OnRefreshSemDataComp)
+				]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataCompRm", "Remove"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataCompRmTip", "Remove semantic data components (make sure no related editor windows are open).."))
+				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataComp)
+			]
+		];
+}
+
+/* Semantic data */
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataTxtSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(STextBlock)
+			.Text(LOCTEXT("SemDataTxt", "Semantic Data:"))
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataAllSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("WriteAll", "Write All"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("WriteAllTip", "Generates all data"))
+				.OnClicked(this, &FSLEdModeToolkit::OnWriteSemDataAll)
 			]
 
 		+ SHorizontalBox::Slot()
@@ -187,42 +281,19 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataComponentsSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("RmSemDataComp", "Remove"))
+				.Text(LOCTEXT("RmAll", "Remove All"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("RmSemDataCompTip", "Remove semantic data components.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataComp)
-			]
-
-			+ SHorizontalBox::Slot()
-			.Padding(2)
-			.AutoWidth()
-			[
-				SNew(SButton)
-				.Text(LOCTEXT("SaveToTag", "Save"))
-				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SaveToTagTip", "Save data to tag.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnSaveSemDataComp)
-			]
-
-			+ SHorizontalBox::Slot()
-			.Padding(2)
-			.AutoWidth()
-			[
-				SNew(SButton)
-				.Text(LOCTEXT("LoadFromTag", "Load"))
-				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("LoadFromTagTip", "Load data from tag.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnLoadSemDataComp)
+				.ToolTipText(LOCTEXT("RmAllTip", "Removes all generated data"))
+				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataAll)
 			]
 		];
 }
 
-
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIdsSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataIdSlot()
 {
 	return 	SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(5)
+		.Padding(2)
 		.HAlign(HAlign_Center)
 		[
 			SNew(SHorizontalBox)
@@ -232,10 +303,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIdsSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("GenSemIds", "Write Ids"))
+				.Text(LOCTEXT("WriteIds", "Write Ids"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("GenSemMapTip", "Generates unique ids for every semantic entity"))
-				.OnClicked(this, &FSLEdModeToolkit::OnWriteSemIds)
+				.ToolTipText(LOCTEXT("WriteIdsTip", "Generates unique ids for every semantic entity"))
+				.OnClicked(this, &FSLEdModeToolkit::OnWriteSemDataIds)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -243,19 +314,19 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIdsSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("RmSemIds", "Remove Ids"))
+				.Text(LOCTEXT("RmIds", "Remove Ids"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("RmSemIdsTip", "Removes all generated ids"))
-				.OnClicked(this, &FSLEdModeToolkit::OnRmSemIds)
+				.ToolTipText(LOCTEXT("RmIdsTip", "Removes all generated ids"))
+				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataIds)
 			]
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateClassNamesSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataClassSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(5)
+		.Padding(2)
 		.HAlign(HAlign_Center)
 		[
 			SNew(SHorizontalBox)
@@ -284,11 +355,11 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateClassNamesSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateVisualMasksSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataMaskSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(5)
+		.Padding(2)
 		.HAlign(HAlign_Center)
 		[
 			SNew(SHorizontalBox)
@@ -317,26 +388,81 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateVisualMasksSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateRmAllSlot()
+
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
 		.Padding(5)
 		.HAlign(HAlign_Center)
 		[
-			SNew(SButton)
-			.Text(LOCTEXT("RmAllTags", "Remove all Tags"))
-		.IsEnabled(true)
-		.ToolTipText(LOCTEXT("RmAllTagsTip", "Removes all tags"))
-		.OnClicked(this, &FSLEdModeToolkit::OnRmAll)
+			SNew(STextBlock)
+			.Text(LOCTEXT("TagTxt", "Tags:"))
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemMonSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagDataSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
 		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataCompSave", "Export"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataCompSaveTip", "Save data to tag.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnSaveTagData)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataCompLoad", "Import"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataCompLoadTip", "Load data from tag.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnLoadTagData)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("RemoveTagData", "Clear"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("RemoveTagDataTip", "Removes data stored in tags.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnClearTagData)
+			]
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateUtilsTxtSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(STextBlock)
+			.Text(LOCTEXT("UtilsTxt", "Utils:"))
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemMonitorsSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
 		.HAlign(HAlign_Center)
 		[
 			SNew(SButton)
@@ -351,7 +477,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableOverlapsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(5)
+		.Padding(2)
 		.HAlign(HAlign_Center)
 		[
 			SNew(SButton)
@@ -366,7 +492,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateShowSemData()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(5)
+		.Padding(2)
 		.HAlign(HAlign_Center)
 		[
 			SNew(SButton)
@@ -381,7 +507,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableInstacedMeshMaterialsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(5)
+		.Padding(2)
 		.HAlign(HAlign_Center)
 		[
 			SNew(SButton)
@@ -392,33 +518,79 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableInstacedMeshMaterialsSlot()
 		];
 }
 
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenericButtonSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SButton)
+			.Text(LOCTEXT("GenericButton", "Generic Button"))
+			.IsEnabled(true)
+			.ToolTipText(LOCTEXT("GenericButtonTip", "Test various things.."))
+			.OnClicked(this, &FSLEdModeToolkit::OnGenericButton)
+		];
+}
+
+
+/* Checkbox callbacks */
+void FSLEdModeToolkit::OnCheckedOverwrite(ECheckBoxState NewCheckedState)
+{
+	bOverwrite = (NewCheckedState == ECheckBoxState::Checked);
+}
+
+void FSLEdModeToolkit::OnCheckedOnlySelected(ECheckBoxState NewCheckedState)
+{
+	bOnlySelected = (NewCheckedState == ECheckBoxState::Checked);
+}
+
 
 /* Button callbacks */
 ////
-FReply FSLEdModeToolkit::OnGenSemMap()
+FReply FSLEdModeToolkit::OnWriteSemMap()
 {
 	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	return FReply::Handled();
 }
 
 ////
-FReply FSLEdModeToolkit::OnAddSemDataComp()
+FReply FSLEdModeToolkit::OnCreateSemDataComp()
 {
-	FScopedTransaction Transaction(LOCTEXT("AddSemanticDataCompST", "Add semantic data components"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompCreateST", "Create semantic data components"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::AddSemanticDataComponents(GetSelectedActors(), bOverwrite);
+		FSLEdUtils::CreateSemanticDataComponents(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::AddSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		FSLEdUtils::CreateSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
+
+	GUnrealEd->UpdateFloatingPropertyWindows();
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnRefreshSemDataComp()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompRefreshST", "Refresh semantic data components"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::RefreshSemanticDataComponents(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::RefreshSemanticDataComponents(GEditor->GetEditorWorldContext().World());
 	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnRmSemDataComp()
 {
-	FScopedTransaction Transaction(LOCTEXT("RemoveSemanticDataCompST", "Remove semantic data components"));
+	DeselectComponentsOnly();
+
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompRmST", "Remove semantic data components"));
 	if (bOnlySelected)
 	{
 		FSLEdUtils::RemoveSemanticDataComponents(GetSelectedActors());
@@ -427,39 +599,52 @@ FReply FSLEdModeToolkit::OnRmSemDataComp()
 	{
 		FSLEdUtils::RemoveSemanticDataComponents(GEditor->GetEditorWorldContext().World());
 	}
+
+	GUnrealEd->UpdateFloatingPropertyWindows();
+
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnSaveSemDataComp()
-{
-	FScopedTransaction Transaction(LOCTEXT("SaveDataToTagST", "Save semantic data to owners tag.."));
-	if (bOnlySelected)
-	{
-		FSLEdUtils::SaveComponentDataToTag(GetSelectedActors(), bOverwrite);
-	}
-	else
-	{
-		FSLEdUtils::SaveComponentDataToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
-	}
-	return FReply::Handled();
-}
 
-FReply FSLEdModeToolkit::OnLoadSemDataComp()
-{
-	FScopedTransaction Transaction(LOCTEXT("LoadDataFromTagST", "Load semantic data from owners tag.."));
-	if (bOnlySelected)
-	{
-		FSLEdUtils::LoadComponentDataFromTag(GetSelectedActors(), bOverwrite);
-	}
-	else
-	{
-		FSLEdUtils::LoadComponentDataFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
-	}
-	return FReply::Handled();
-}
 
 ////
-FReply FSLEdModeToolkit::OnWriteSemIds()
+FReply FSLEdModeToolkit::OnWriteSemDataAll()
+{
+	FScopedTransaction Transaction(LOCTEXT("WriteAllSemDataST", "Write all semantic data"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite);
+		FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite);
+		FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnRmSemDataAll()
+{
+	FScopedTransaction Transaction(LOCTEXT("RmAllSemDataST", "Remove all semantic data"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::RemoveUniqueIds(GetSelectedActors());
+		FSLEdUtils::RemoveClassNames(GetSelectedActors());
+		FSLEdUtils::RemoveVisualMasks(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
+		FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
+		FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnWriteSemDataIds()
 {
 	FScopedTransaction Transaction(LOCTEXT("GenSemIdsST", "Generate new semantic Ids"));	
 	if (bOnlySelected)
@@ -473,7 +658,7 @@ FReply FSLEdModeToolkit::OnWriteSemIds()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnRmSemIds()
+FReply FSLEdModeToolkit::OnRmSemDataIds()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmSemIdsST", "Remove all semantic Ids"));
 	if (bOnlySelected)
@@ -487,7 +672,6 @@ FReply FSLEdModeToolkit::OnRmSemIds()
 	return FReply::Handled();
 }
 
-////
 FReply FSLEdModeToolkit::OnWriteClassNames()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteClassNamesST", "Write class names"));
@@ -508,17 +692,14 @@ FReply FSLEdModeToolkit::OnRmClassNames()
 	if (bOnlySelected)
 	{
 		FSLEdUtils::RemoveClassNames(GetSelectedActors());
-		//FSLEdUtils::RemoveTagKey(GetSelectedActors(), "SemLog", "Class");
 	}
 	else
 	{
 		FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
-		//FSLEdUtils::RemoveTagKey(GEditor->GetEditorWorldContext().World(), "SemLog", "Class");
 	}
 	return FReply::Handled();
 }
 
-////
 FReply FSLEdModeToolkit::OnWriteVisualMasks()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteVisualMasksST", "Write visual masks"));	
@@ -547,9 +728,38 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnRmAll ()
+////
+FReply FSLEdModeToolkit::OnSaveTagData()
 {
-	FScopedTransaction Transaction(LOCTEXT("RmAllST", "Remove all SemLog tags"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompSaveST", "Save semantic data tag"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::SaveComponentDataToTag(GetSelectedActors(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::SaveComponentDataToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnLoadTagData()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Load semantic data from tag"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::LoadComponentDataFromTag(GetSelectedActors(), bOverwrite);
+	}
+	else
+	{
+		FSLEdUtils::LoadComponentDataFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnClearTagData()
+{
+	FScopedTransaction Transaction(LOCTEXT("RmTagData", "Remove all SemLog tags"));
 	if (bOnlySelected)
 	{
 		FSLEdUtils::RemoveTagType(GetSelectedActors(), "SemLog");
@@ -561,6 +771,8 @@ FReply FSLEdModeToolkit::OnRmAll ()
 	return FReply::Handled();
 }
 
+
+//
 FReply FSLEdModeToolkit::OnAddSemMon()
 {
 	FScopedTransaction Transaction(LOCTEXT("AddSemMonitorsST", "Add semantic monitor components"));
@@ -610,32 +822,70 @@ FReply FSLEdModeToolkit::OnEnableMaterialsForInstancedStaticMesh()
 	return FReply::Handled();
 }
 
-
-/* Checkbox callbacks */
-void FSLEdModeToolkit::OnCheckedOverwrite(ECheckBoxState NewCheckedState)
+FReply FSLEdModeToolkit::OnGenericButton()
 {
-	bOverwrite = (NewCheckedState == ECheckBoxState::Checked);
-}
+	FScopedTransaction Transaction(LOCTEXT("GenericST", "Generic button"));
 
-void FSLEdModeToolkit::OnCheckedOnlySelected(ECheckBoxState NewCheckedState)
-{
-	bOnlySelected = (NewCheckedState == ECheckBoxState::Checked);
-}
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Selected actors: "), *FString(__func__), __LINE__);
 
+	for (const auto Act : GetSelectedActors())
+	{
+		UE_LOG(LogTemp, Error, TEXT("\t\t Act=%s"), *Act->GetName());
+	}
+	return FReply::Handled();
+}
 
 /* Helper functions */
 TArray<AActor*> FSLEdModeToolkit::GetSelectedActors() const
 {
-	USelection* SelectedActors = GEditor->GetSelectedActors();
 	TArray<AActor*> Actors;
-	for (FSelectionIterator Iter(*SelectedActors); Iter; ++Iter)
+	for (FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
 	{
-		if (AActor* Actor = Cast<AActor>(*Iter))
+		Actors.Add(CastChecked<AActor>(*It));
+	}
+
+	//USelection* SelectedActors = GEditor->GetSelectedActors();
+	//for (FSelectionIterator Iter(*SelectedActors); Iter; ++Iter)
+	//{
+	//	if (AActor* Actor = Cast<AActor>(*Iter))
+	//	{
+	//		Actors.Add(Actor);
+	//	}
+	//}
+
+	return Actors;
+}
+
+// Return the actor that is selected, return nullptr is no or more than one actors are selected
+AActor* FSLEdModeToolkit::GetSingleSelectedActor() const
+{
+	//GEditor->GetSelectedActors()->GetTop<AActor>();
+
+	AActor* SelectedActor = nullptr;
+	// Counter to abort if there are more than one selections
+	int8 NumSelection = 0;
+	for (FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
+	{
+		SelectedActor = CastChecked<AActor>(*It);
+		++NumSelection;
+
+		// Return nullptr if more than one item is selected
+		if (NumSelection >= 2)
 		{
-			Actors.Add(Actor);
+			return nullptr;
 		}
 	}
-	return Actors;
+	return SelectedActor;
+}
+
+// Deselect components to avoid crash when deleting the sl data component
+void FSLEdModeToolkit::DeselectComponentsOnly() const
+{
+	UActorComponent* SelectedActorComp = nullptr;
+	for (FSelectionIterator It(GEditor->GetSelectedComponentIterator()); It; ++It)
+	{
+		GEditor->SelectComponent(CastChecked<UActorComponent>(*It), false, true);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

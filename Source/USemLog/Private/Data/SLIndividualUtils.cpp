@@ -23,7 +23,7 @@
 
 
 // Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-FString FSLIndividualUtils::GetIndividualClass(AActor* Actor, bool bDefaultToLabelName)
+FString FSLIndividualUtils::GetIndividualClassName(AActor* Actor, bool bDefaultToLabelName)
 {
 	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(Actor))
 	{
@@ -131,7 +131,7 @@ FString FSLIndividualUtils::GetIndividualClass(AActor* Actor, bool bDefaultToLab
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not get the semantic class for %s .."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not get the semantic class name for %s .."),
 			*FString(__func__), __LINE__, *Actor->GetName());
 		return FString();
 	}
@@ -141,6 +141,7 @@ FString FSLIndividualUtils::GetIndividualClass(AActor* Actor, bool bDefaultToLab
 UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner, USLIndividualBase*& IndividualObject)
 {
 	UClass* IndividualClass = nullptr;
+
 	// Set semantic individual type depending on owner
 	if (Owner->IsA(AStaticMeshActor::StaticClass()))
 	{
@@ -154,8 +155,8 @@ UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for creating a semantic individual %s-%s.."),
-			*FString(__FUNCTION__), __LINE__, *Owner->GetClass()->GetName(), *Owner->GetName());
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for creating a semantic individual %s-%s.."),
+		//	*FString(__FUNCTION__), __LINE__, *Owner->GetClass()->GetName(), *Owner->GetName());
 	}
 	return IndividualClass;
 }
@@ -167,7 +168,7 @@ bool FSLIndividualUtils::ConvertIndividualObject(USLIndividualBase*& IndividualO
 	{
 		if (IndividualObject->GetClass() != ConvertToClass)
 		{
-			// todo cache common individual data to copy to the newly created individual
+			// TODO cache common individual data to copy to the newly created individual
 			UObject* Outer = IndividualObject->GetOuter();
 			IndividualObject->ConditionalBeginDestroy();
 			IndividualObject = NewObject<USLIndividualBase>(Outer, ConvertToClass);
@@ -175,8 +176,8 @@ bool FSLIndividualUtils::ConvertIndividualObject(USLIndividualBase*& IndividualO
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Same class type (%s-%s), no conversion is required.."),
-				*FString(__FUNCTION__), __LINE__, *IndividualObject->GetClass()->GetName(), *ConvertToClass->GetName());
+			//UE_LOG(LogTemp, Error, TEXT("%s::%d Same class type (%s-%s), no conversion is required.."),
+			//	*FString(__FUNCTION__), __LINE__, *IndividualObject->GetClass()->GetName(), *ConvertToClass->GetName());
 		}
 	}
 	return false;
@@ -221,7 +222,7 @@ bool FSLIndividualUtils::WriteClass(AActor* Actor, bool bOverwrite)
 	{
 		if (!SI->HasClass() || bOverwrite)
 		{			
-			SI->SetClass(FSLIndividualUtils::GetIndividualClass(Actor));
+			SI->SetClass(FSLIndividualUtils::GetIndividualClassName(Actor));
 			return true;
 		}
 	}

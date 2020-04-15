@@ -15,8 +15,6 @@ USLIndividualComponent::USLIndividualComponent()
 	bSaveToTagButton = false;
 	bLoadFromTagButton = false;
 	bToggleVisualMaskMaterial = false;
-
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s"), *FString(__FUNCTION__), __LINE__, *GetName());
 }
 
 // Called before destroying the object.
@@ -33,7 +31,6 @@ void USLIndividualComponent::BeginDestroy()
 void USLIndividualComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d PostInit %s.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
 }
 
 #if WITH_EDITOR
@@ -78,7 +75,6 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 void USLIndividualComponent::OnComponentCreated()
 {
 	Super::OnComponentCreated();
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d OnComponent %s.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
 
 	AActor* Owner = GetOwner();
 
@@ -107,39 +103,16 @@ void USLIndividualComponent::OnComponentCreated()
 	}
 	else
 	{
+		// Unknown individual type, destroy self
 		ConditionalBeginDestroy();
 		return;
 	}
-	
-
-	//if (Owner->IsA(AStaticMeshActor::StaticClass()))
-	//{
-	//	ConvertToSemanticIndividual = USLVisualIndividual::StaticClass();
-	//	IndividualObj = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
-	//	IndividualObj->SetSemOwner(Owner);
-	//}
-	//else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
-	//{
-	//	ConvertToSemanticIndividual = USLSkeletalIndividual::StaticClass();
-	//	IndividualObj = NewObject<USLIndividualBase>(this, ConvertToSemanticIndividual);
-	//	IndividualObj->SetSemOwner(Owner);
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for generating a semantic individual component %s, self-destruction commenced.."),
-	//		*FString(__FUNCTION__), __LINE__, *Owner->GetName());
-	//	ConditionalBeginDestroy();
-	//	return;
-	//}
 }
 
 // Called when the game starts
 void USLIndividualComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Error, TEXT("%s::%d ******** %s .... "), *FString(__FUNCTION__), __LINE__, *GetName());
-	// ...
-	
 }
 
 // Save data to owners tag
@@ -158,5 +131,15 @@ void USLIndividualComponent::LoadFromTag(bool bOverwrite)
 	{
 		SemanticIndividual->LoadFromTag(bOverwrite);
 	}
+}
+
+// Reload the individual data
+bool USLIndividualComponent::RefreshIndividual()
+{
+	if (SemanticIndividual->IsValidLowLevel())
+	{
+		SemanticIndividual->Refresh();
+	}
+	return false;
 }
 

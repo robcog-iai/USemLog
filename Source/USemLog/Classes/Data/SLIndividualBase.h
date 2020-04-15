@@ -25,6 +25,9 @@ public:
 	// Initialize individual
 	virtual bool Init();
 
+	// Reinitialize individual
+	virtual bool Refresh();
+
 	// Save data to owners tag
 	virtual bool SaveToTag(bool bOverwrite = false);
 

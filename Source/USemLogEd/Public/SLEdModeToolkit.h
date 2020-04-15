@@ -31,45 +31,79 @@ private:
 	// Create checkbox entry slot to set overwrite flag
 	SVerticalBox::FSlot& CreateOverwriteSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedSlot();
-	SVerticalBox::FSlot& CreateSemDataComponentsSlot();
-	SVerticalBox::FSlot& CreateGenSemMapSlot();
-	SVerticalBox::FSlot& CreateIdsSlot();
-	SVerticalBox::FSlot& CreateClassNamesSlot();
-	SVerticalBox::FSlot& CreateVisualMasksSlot();
-	SVerticalBox::FSlot& CreateRmAllSlot();
-	SVerticalBox::FSlot& CreateAddSemMonSlot();	
+
+	SVerticalBox::FSlot& CreateSemMapSlot();
+
+	SVerticalBox::FSlot& CreateSemDataCompTxtSlot();
+	SVerticalBox::FSlot& CreateSemDataCompSlot();
+
+	SVerticalBox::FSlot& CreateSemDataTxtSlot();
+	SVerticalBox::FSlot& CreateSemDataAllSlot();
+	SVerticalBox::FSlot& CreateSemDataIdSlot();
+	SVerticalBox::FSlot& CreateSemDataClassSlot();
+	SVerticalBox::FSlot& CreateSemDataMaskSlot();
+
+	SVerticalBox::FSlot& CreateTagTxtSlot();
+	SVerticalBox::FSlot& CreateTagDataSlot();
+
+	SVerticalBox::FSlot& CreateUtilsTxtSlot();
+	SVerticalBox::FSlot& CreateAddSemMonitorsSlot();	
 	SVerticalBox::FSlot& CreateEnableOverlapsSlot();
 	SVerticalBox::FSlot& CreateShowSemData();
 	SVerticalBox::FSlot& CreateEnableInstacedMeshMaterialsSlot();
 
-	/* Button callbacks */
-	FReply OnGenSemMap();
-	FReply OnAddSemDataComp();
-	FReply OnRmSemDataComp();
-	FReply OnSaveSemDataComp();
-	FReply OnLoadSemDataComp();
-	FReply OnWriteSemIds();
-	FReply OnRmSemIds();
-	FReply OnWriteClassNames();
-	FReply OnRmClassNames();
-	FReply OnWriteVisualMasks();
-	FReply OnRmVisualMasks();
-	FReply OnRmAll();
-	FReply OnAddSemMon();	
-	FReply OnEnableOverlaps();
-	FReply OnShowSemData();
-	FReply OnEnableMaterialsForInstancedStaticMesh();
+	SVerticalBox::FSlot& CreateGenericButtonSlot();
+
 
 	/* Checkbox callbacks */
 	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
 	void OnCheckedOnlySelected(ECheckBoxState NewCheckedState);
 
+	/* Button callbacks */
+	FReply OnWriteSemMap();
+
+	FReply OnCreateSemDataComp();
+	FReply OnRefreshSemDataComp();
+	FReply OnRmSemDataComp();
+
+
+	FReply OnWriteSemDataAll();
+	FReply OnRmSemDataAll();
+	FReply OnWriteSemDataIds();
+	FReply OnRmSemDataIds();
+	FReply OnWriteClassNames();
+	FReply OnRmClassNames();
+
+	FReply OnWriteVisualMasks();
+	FReply OnRmVisualMasks();
+	
+	FReply OnSaveTagData();
+	FReply OnLoadTagData();
+	FReply OnClearTagData();
+
+	FReply OnAddSemMon();	
+	FReply OnEnableOverlaps();
+	FReply OnShowSemData();
+	FReply OnEnableMaterialsForInstancedStaticMesh();
+
+	FReply OnGenericButton();
+
 	/* Helper */
+	// Returns all the selected actors in the editor
 	TArray<AActor*> GetSelectedActors() const;
+
+	// Returns the actor that is selected, nullptr if no selection or multiple selections
+	AActor* GetSingleSelectedActor() const;
+
+	// Deselect components to avoid crash when deleting the sl data component
+	void DeselectComponentsOnly() const;
 
 private:
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;
+
+	/** SCS editor, refresh view if an actor is selected when adding/removing components */
+	TSharedPtr<class SSCSEditor> SCSEditor;
 
 	bool bOverwrite;
 	bool bOnlySelected;
