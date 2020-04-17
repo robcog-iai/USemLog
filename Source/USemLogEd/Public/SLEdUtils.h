@@ -17,18 +17,24 @@ public:
 	/* Individual actor components */
 	static void CreateSemanticDataComponents(UWorld* World, bool bOverwrite = false);
 	static void CreateSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static void RefreshSemanticDataComponents(UWorld* World);
-	static void RefreshSemanticDataComponents(const TArray<AActor*>& Actors);
+	static void LoadSemanticDataComponents(UWorld* World);
+	static void LoadSemanticDataComponents(const TArray<AActor*>& Actors);
 	static void RemoveSemanticDataComponents(UWorld* World);
 	static void RemoveSemanticDataComponents(const TArray<AActor*>& Actors);
 
+	/* Semantic data components functionalities*/
+	static void ToggleMasks(UWorld* World);
+	static void ToggleMasks(const TArray<AActor*>& Actors);
+	static void ToggleText(UWorld* World);
+	static void ToggleText(const TArray<AActor*>& Actors);
+
 	// Save components data to tags
-	static void SaveComponentDataToTag(UWorld* World, bool bOverwrite = false);
-	static void SaveComponentDataToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static void ExportToTag(UWorld* World, bool bOverwrite = false);
+	static void ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
 	// Loads components data from tags
-	static void LoadComponentDataFromTag(UWorld* World, bool bOverwrite = false);
-	static void LoadComponentDataFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static void ImportFromTag(UWorld* World, bool bOverwrite = false);
+	static void ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
 	/* Ids */
 	static void WriteUniqueIds(UWorld* World, bool bOverwrite = false);
@@ -75,17 +81,23 @@ private:
 	// Add a semantic individual component
 	static void CreateSemanticIndividualComponent(AActor* Actor, bool bOverwrite = false);
 
-	// Refresh semantic individual component
-	static void RefreshSemanticIndividualComponent(AActor* Actor);
+	// Reset semantic individual component
+	static void LoadSemanticIndividualComponent(AActor* Actor);
 
 	// Remove semantic individual component
 	static void RemoveSemanticIndividualComponent(AActor* Actor);
 
-	// Save semantic individual data to tag
-	static void SaveSemanticIndividualDataToTag(AActor* Actor, bool bOverwrite = false);
+	// Show hide the visual mask 
+	static void ToggleVisualMaskVisibility(AActor* Actor);
+
+	// Show hide semantic text information
+	static void ToggleTextVisibility(AActor* Actor);
 
 	// Save semantic individual data to tag
-	static void LoadSemanticIndividualDataFromTag(AActor* Actor, bool bOverwrite = false);
+	static void ExportIndividualDataToTag(AActor* Actor, bool bOverwrite = false);
+
+	// Save semantic individual data to tag
+	static void ImportIndividualDataFromTag(AActor* Actor, bool bOverwrite = false);
 
 
 

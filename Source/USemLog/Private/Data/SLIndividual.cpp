@@ -7,18 +7,81 @@
 // Ctor
 USLIndividual::USLIndividual()
 {
+	bIsInitPrivate = false;
+	bIsLoadedPrivate = false;
 }
 
 void USLIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
-	Super::Init();
+	Init();
+}
+
+// Set pointer to the semantic owner
+bool USLIndividual::Init(bool bForced)
+{
+	if (bForced)
+	{
+		bIsInitPrivate = false;
+	}
+
+	if (IsInit())
+	{
+		return true;
+	}
+
+	if (!Super::Init(bForced))
+	{
+		return false;
+	}
+
+	bIsInitPrivate = InitImpl();
+	return bIsInitPrivate;
+}
+
+// Check if individual is initialized
+bool USLIndividual::IsInit() const
+{
+	return bIsInitPrivate && Super::IsInit();
+}
+
+// Load semantic data
+bool USLIndividual::Load(bool bForced)
+{
+	if (bForced)
+	{
+		bIsLoadedPrivate = false;
+	}
+
+	if (IsLoaded())
+	{
+		return true;
+	}
+
+	if (!IsInit())
+	{
+		return false;
+	}
+
+	if (!Super::Load(bForced))
+	{
+		return false;
+	}
+
+	bIsLoadedPrivate = LoadImpl();
+	return bIsLoadedPrivate;
+}
+
+// Check if semantic data is succesfully loaded
+bool USLIndividual::IsLoaded() const
+{
+	return bIsLoadedPrivate && Super::IsLoaded();
 }
 
 // Save data to tag
-bool USLIndividual::SaveToTag(bool bOverwrite)
+bool USLIndividual::ExportToTag(bool bOverwrite)
 {
-	if (!Super::SaveToTag(bOverwrite))
+	if (!Super::ExportToTag(bOverwrite))
 	{
 		return false;
 	}
@@ -37,9 +100,9 @@ bool USLIndividual::SaveToTag(bool bOverwrite)
 }
 
 // Load data from owners tag
-bool USLIndividual::LoadFromTag(bool bOverwrite)
+bool USLIndividual::ImportFromTag(bool bOverwrite)
 {
-	if (!Super::LoadFromTag(bOverwrite))
+	if (!Super::ImportFromTag(bOverwrite))
 	{
 		return false;
 	}
@@ -57,13 +120,14 @@ bool USLIndividual::LoadFromTag(bool bOverwrite)
 	return true;
 }
 
-// All properties are set for runtime
-bool USLIndividual::IsRuntimeReady() const
+// Private init implementation
+bool USLIndividual::InitImpl()
 {
-	if (!Super::IsRuntimeReady())
-	{
-		return false;
-	}
+	return true;
+}
 
-	return !Id.IsEmpty() && !Class.IsEmpty();
+// Private load implementation
+bool USLIndividual::LoadImpl()
+{
+	return HasId() && HasClass();
 }

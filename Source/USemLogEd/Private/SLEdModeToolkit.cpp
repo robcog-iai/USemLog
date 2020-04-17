@@ -48,6 +48,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			////
 			+ CreateSemDataCompTxtSlot()
 			+ CreateSemDataCompSlot()
+			+ CreateSemDataCompFuncSlot()
 
 			////
 			+ CreateSemDataTxtSlot()
@@ -186,7 +187,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemMapSlot()
 		];
 }
 
-/* Semantic data components*/
+/* Semantic data components */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompTxtSlot()
 {
 	return SVerticalBox::Slot()
@@ -224,10 +225,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 				.AutoWidth()
 				[
 					SNew(SButton)
-					.Text(LOCTEXT("SemDataCompRefresh", "Refresh"))
+					.Text(LOCTEXT("SemDataCompLoad", "Load"))
 					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("SemDataCompRefreshTip", "Refresh semantic data components.."))
-					.OnClicked(this, &FSLEdModeToolkit::OnRefreshSemDataComp)
+					.ToolTipText(LOCTEXT("SemDataCompLoadTip", "Load semantic data components.."))
+					.OnClicked(this, &FSLEdModeToolkit::OnLoadSemDataComp)
 				]
 
 			+ SHorizontalBox::Slot()
@@ -240,6 +241,40 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 				.ToolTipText(LOCTEXT("SemDataCompRmTip", "Remove semantic data components (make sure no related editor windows are open).."))
 				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataComp)
 			]
+		];
+}
+
+/* Semantic data components functionalities */
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompFuncSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataCompToggleMask", "Toggle Masks"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataCompToggleMaskTip", "Toggle between the visual mask and the original colors.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnToggleMaskSemDataComp)
+			]
+
+			+ SHorizontalBox::Slot()
+				.Padding(2)
+				.AutoWidth()
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("SemDataCompShowText", "Toggle Text"))
+					.IsEnabled(true)
+					.ToolTipText(LOCTEXT("SemDataCompShowTextTip", "Show the semantic data of the components.."))
+					.OnClicked(this, &FSLEdModeToolkit::OnToggleTextSemDataComp)
+				]
 		];
 }
 
@@ -260,7 +295,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataAllSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(2)
+		.Padding(5)
 		.HAlign(HAlign_Center)
 		[
 			SNew(SHorizontalBox)
@@ -572,16 +607,16 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnRefreshSemDataComp()
+FReply FSLEdModeToolkit::OnLoadSemDataComp()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompRefreshST", "Refresh semantic data components"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Load semantic data components"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RefreshSemanticDataComponents(GetSelectedActors());
+		FSLEdUtils::LoadSemanticDataComponents(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RefreshSemanticDataComponents(GEditor->GetEditorWorldContext().World());
+		FSLEdUtils::LoadSemanticDataComponents(GEditor->GetEditorWorldContext().World());
 	}
 	return FReply::Handled();
 }
@@ -602,6 +637,34 @@ FReply FSLEdModeToolkit::OnRmSemDataComp()
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
 
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Load semantic data components"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::ToggleMasks(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::ToggleMasks(GEditor->GetEditorWorldContext().World());
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnToggleTextSemDataComp()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Load semantic data components"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::ToggleText(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::ToggleText(GEditor->GetEditorWorldContext().World());
+	}
 	return FReply::Handled();
 }
 
@@ -734,11 +797,11 @@ FReply FSLEdModeToolkit::OnSaveTagData()
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompSaveST", "Save semantic data tag"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::SaveComponentDataToTag(GetSelectedActors(), bOverwrite);
+		FSLEdUtils::ExportToTag(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::SaveComponentDataToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		FSLEdUtils::ExportToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 	return FReply::Handled();
 }
@@ -748,11 +811,11 @@ FReply FSLEdModeToolkit::OnLoadTagData()
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Load semantic data from tag"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::LoadComponentDataFromTag(GetSelectedActors(), bOverwrite);
+		FSLEdUtils::ImportFromTag(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::LoadComponentDataFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		FSLEdUtils::ImportFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 	return FReply::Handled();
 }
@@ -772,7 +835,7 @@ FReply FSLEdModeToolkit::OnClearTagData()
 }
 
 
-//
+////
 FReply FSLEdModeToolkit::OnAddSemMon()
 {
 	FScopedTransaction Transaction(LOCTEXT("AddSemMonitorsST", "Add semantic monitor components"));

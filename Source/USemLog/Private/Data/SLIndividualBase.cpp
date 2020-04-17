@@ -2,11 +2,13 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Data/SLIndividualBase.h"
+#include "GameFramework/Actor.h"
 
 // Ctor
 USLIndividualBase::USLIndividualBase()
 {
-	bIsInit = false;
+	bIsInitPrivate = false;
+	bIsLoadedPrivate = false;
 }
 
 // Set the semantic owner actor
@@ -17,34 +19,58 @@ void USLIndividualBase::PostInitProperties()
 }
 
 // Set pointer to the semantic owner
-bool USLIndividualBase::Init()
+bool USLIndividualBase::Init(bool bForced)
 {
-	if (bIsInit)
+	if (bForced)
+	{
+		bIsInitPrivate = false;
+	}
+
+	if (IsInit())
 	{
 		return true;
 	}
 
-	// First outer is the component, second the actor
-	if (AActor* Owner = Cast<AActor>(GetOuter()->GetOuter()))
+	bIsInitPrivate = InitImpl();
+	return bIsInitPrivate;
+}
+
+// Check if individual is initialized
+bool USLIndividualBase::IsInit() const
+{
+	return bIsInitPrivate;
+}
+
+// Load semantic data
+bool USLIndividualBase::Load(bool bForced)
+{
+	if (bForced)
 	{
-		SetSemanticOwner(Owner);
-		bIsInit = true;
+		bIsLoadedPrivate = false;
+	}
+
+	if (IsLoaded())
+	{
 		return true;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not init %s.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
-	return false;
+
+	if (!IsInit())
+	{
+		return false;
+	}
+	
+	bIsLoadedPrivate = LoadImpl();
+	return bIsLoadedPrivate;
 }
 
-// Reinitialize individual
-bool USLIndividualBase::Refresh()
+// Check if semantic data is succesfully loaded
+bool USLIndividualBase::IsLoaded() const
 {
-	bIsInit = false;
-	return Init();
+	return bIsLoadedPrivate;
 }
-
 
 // Save data to owners tag
-bool USLIndividualBase::SaveToTag(bool bOverwrite)
+bool USLIndividualBase::ExportToTag(bool bOverwrite)
 {
 	if (!SemanticOwner)
 	{
@@ -55,7 +81,7 @@ bool USLIndividualBase::SaveToTag(bool bOverwrite)
 }
 
 // Load data from owners tag
-bool USLIndividualBase::LoadFromTag(bool bOverwrite)
+bool USLIndividualBase::ImportFromTag(bool bOverwrite)
 {
 	if (!SemanticOwner)
 	{
@@ -65,9 +91,22 @@ bool USLIndividualBase::LoadFromTag(bool bOverwrite)
 	return true;
 }
 
-// All properties are set for runtime
-bool USLIndividualBase::IsRuntimeReady() const
+// Private init implementation
+bool USLIndividualBase::InitImpl()
 {
-	return SemanticOwner != nullptr;
+	SemanticOwner = nullptr;
+	// First outer is the component, second the actor
+	if (AActor* Owner = Cast<AActor>(GetOuter()->GetOuter()))
+	{
+		SemanticOwner = Owner;
+	}
+	return SemanticOwner->IsValidLowLevel();
 }
+
+bool USLIndividualBase::LoadImpl()
+{
+	// Nothing to load for runtime
+	return true;
+}
+
 

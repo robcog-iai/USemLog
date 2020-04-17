@@ -23,14 +23,23 @@ public:
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 	virtual void PostInitProperties() override;
 
+	// Init asset references (bForced forces re-initialization)
+	virtual bool Init(bool bForced = false);
+
+	// Check if individual is initialized
+	virtual bool IsInit() const;
+
+	// Load semantic data (bForced forces re-loading)
+	virtual bool Load(bool bForced = false);
+
+	// Check if semantic data is succesfully loaded
+	virtual bool IsLoaded() const;
+
 	// Save data to owners tag
-	virtual bool SaveToTag(bool bOverwrite = false) override;
+	virtual bool ExportToTag(bool bOverwrite = false) override;
 
 	// Load data from owners tag
-	virtual bool LoadFromTag(bool bOverwrite = false) override;
-
-	// All properties are set for runtime
-	virtual bool IsRuntimeReady() const override;
+	virtual bool ImportFromTag(bool bOverwrite = false) override;
 
 	// Set get Id
 	void SetId(const FString& InId) { Id = InId; };
@@ -42,6 +51,13 @@ public:
 	FString GetClass() const { return Class; };
 	bool HasClass() const { return !Class.IsEmpty(); };
 
+private:
+	// Private init implementation
+	bool InitImpl();
+
+	// Private load implementation
+	bool LoadImpl();
+
 protected:
 	// Individual unique id
 	UPROPERTY(EditAnywhere, Category = "SL")
@@ -50,4 +66,9 @@ protected:
 	// Idividual class
 	UPROPERTY(EditAnywhere, Category = "SL")
 	FString Class;
+
+private:
+	// State of the individual
+	uint8 bIsInitPrivate : 1;
+	uint8 bIsLoadedPrivate : 1;
 };

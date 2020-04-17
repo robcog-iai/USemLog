@@ -26,20 +26,26 @@ public:
     // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
     virtual void PostInitProperties() override;
 
-    // Initialize individual
-    virtual bool Init() override;
+    // Init asset references (bForced forces re-initialization)
+    virtual bool Init(bool bForced = false);
+
+    // Check if individual is initialized
+    virtual bool IsInit() const;
+
+    // Load semantic data (bForced forces re-loading)
+    virtual bool Load(bool bForced = false);
+
+    // Check if semantic data is succesfully loaded
+    virtual bool IsLoaded() const;
 
     // Save data to owners tag
-    virtual bool SaveToTag(bool bOverwrite = false) override;
+    virtual bool ExportToTag(bool bOverwrite = false) override;
 
     // Load data from owners tag
-    virtual bool LoadFromTag(bool bOverwrite = false) override;
-
-    // All properties are set for runtime
-    virtual bool IsRuntimeReady() const;
+    virtual bool ImportFromTag(bool bOverwrite = false) override;
 
     // Apply visual mask material
-    bool ApplyVisualMaskMaterials();
+    bool ApplyVisualMaskMaterials(bool bReload = false);
 
     // Apply original materials
     bool ApplyOriginalMaterials();
@@ -48,7 +54,7 @@ public:
     bool ToggleMaterials();
     
     /* Visual mask */
-    void SetVisualMask(const FString& InVisualMask, bool bClearCalibratedValue = true);
+    void SetVisualMask(const FString& InVisualMask, bool bReload = true, bool bClearCalibratedValue = true);
     FString GetVisualMask() const { return VisualMask; };
     bool HasVisualMask() const { return !VisualMask.IsEmpty(); };
 
@@ -58,15 +64,21 @@ public:
     bool HasCalibratedVisualMask() const { return !CalibratedVisualMask.IsEmpty(); };
 
 private:
+    // Private init implementation
+    bool InitImpl();
+
+    // Private load implementation
+    bool LoadImpl();
+
     // Apply color to the dynamic material
     bool ApplyVisualMaskColorToDynamicMaterial();
 
 protected:
-    // Skeletal body part individual unique id
+    // Mask color as hex
     UPROPERTY(EditAnywhere, Category = "SL")
     FString VisualMask;
 
-    // Skeletal body part individual class
+    // Runtime calibrated mask color as hex
     UPROPERTY(EditAnywhere, Category = "SL")
     FString CalibratedVisualMask;
 
@@ -77,16 +89,20 @@ protected:
     class UMaterial* VisualMaskMaterial;
 
     // Dynamic material used for setting various mask colors
-    UPROPERTY()
+    UPROPERTY() // Avoid GC
     class UMaterialInstanceDynamic* VisualMaskDynamicMaterial;
 
     // Cached original materials
+    UPROPERTY() // Keep persitently
     TArray<class UMaterialInterface*> OriginalMaterials;
 
     // True if the visual masks are currently active on the semantic owner
+    UPROPERTY(EditAnywhere, Category = "SL") // Keep persitently
     bool bMaskMaterialOn;
 
 private:
-    // True if the individual is init
-    bool bIsInit;
+    // State of the individual
+    uint8 bIsInitPrivate : 1;
+    uint8 bIsLoadedPrivate : 1;
+    uint8 bDirty : 1; // e.g.if parent changes material
 };

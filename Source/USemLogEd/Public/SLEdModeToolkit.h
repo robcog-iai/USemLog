@@ -32,20 +32,26 @@ private:
 	SVerticalBox::FSlot& CreateOverwriteSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedSlot();
 
+	// Semantic map
 	SVerticalBox::FSlot& CreateSemMapSlot();
 
+	// Semantic data components
 	SVerticalBox::FSlot& CreateSemDataCompTxtSlot();
 	SVerticalBox::FSlot& CreateSemDataCompSlot();
+	SVerticalBox::FSlot& CreateSemDataCompFuncSlot();
 
+	// Semantic data
 	SVerticalBox::FSlot& CreateSemDataTxtSlot();
 	SVerticalBox::FSlot& CreateSemDataAllSlot();
 	SVerticalBox::FSlot& CreateSemDataIdSlot();
 	SVerticalBox::FSlot& CreateSemDataClassSlot();
 	SVerticalBox::FSlot& CreateSemDataMaskSlot();
-
+	
+	// Tag import export 
 	SVerticalBox::FSlot& CreateTagTxtSlot();
 	SVerticalBox::FSlot& CreateTagDataSlot();
 
+	// Misc
 	SVerticalBox::FSlot& CreateUtilsTxtSlot();
 	SVerticalBox::FSlot& CreateAddSemMonitorsSlot();	
 	SVerticalBox::FSlot& CreateEnableOverlapsSlot();
@@ -60,13 +66,20 @@ private:
 	void OnCheckedOnlySelected(ECheckBoxState NewCheckedState);
 
 	/* Button callbacks */
+	
+	// Semantic map
 	FReply OnWriteSemMap();
 
+	// Semantic data components
 	FReply OnCreateSemDataComp();
-	FReply OnRefreshSemDataComp();
+	FReply OnLoadSemDataComp();
 	FReply OnRmSemDataComp();
 
+	// Semantic data components functionalities
+	FReply OnToggleMaskSemDataComp();
+	FReply OnToggleTextSemDataComp();
 
+	// Semantic data
 	FReply OnWriteSemDataAll();
 	FReply OnRmSemDataAll();
 	FReply OnWriteSemDataIds();

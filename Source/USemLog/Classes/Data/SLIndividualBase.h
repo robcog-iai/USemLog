@@ -22,24 +22,33 @@ public:
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 	virtual void PostInitProperties() override;
 
-	// Initialize individual
-	virtual bool Init();
+	// Init asset references (bForced forces re-initialization)
+	virtual bool Init(bool bForced = false);
 
-	// Reinitialize individual
-	virtual bool Refresh();
+	// Check if individual is initialized
+	virtual bool IsInit() const;
+
+	// Load semantic data (bForced forces re-loading)
+	virtual bool Load(bool bForced = false);
+
+	// Check if semantic data is succesfully loaded
+	virtual bool IsLoaded() const;
 
 	// Save data to owners tag
-	virtual bool SaveToTag(bool bOverwrite = false);
+	virtual bool ExportToTag(bool bOverwrite = false);
 
 	// Load data from owners tag
-	virtual bool LoadFromTag(bool bOverwrite = false);
+	virtual bool ImportFromTag(bool bOverwrite = false);
 
-	// All properties are set for runtime
-	virtual bool IsRuntimeReady() const;
-
-	// Set/get semantic owner
-	void SetSemanticOwner(AActor* InSemOwner) { SemanticOwner = InSemOwner; };
+	// Get semantic owner
 	AActor* GetSemanticOwner() const { return SemanticOwner; };
+
+private:
+	// Private init implementation, set the semantic owner reference
+	bool InitImpl();
+
+	// Private load implementation
+	bool LoadImpl();
 
 protected:
 	// Pointer to the actor described by the semantic description class
@@ -49,6 +58,9 @@ protected:
 	static constexpr char TagTypeConst[] = "SemLog";
 
 private:
-	// True if the individual is init
-	bool bIsInit;
+	// State of the individual
+	uint8 bIsInitPrivate : 1;
+	uint8 bIsLoadedPrivate : 1;
+	uint8 bIsDirty : 1; // TODO
+
 };

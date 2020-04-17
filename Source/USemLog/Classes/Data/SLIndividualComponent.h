@@ -24,7 +24,7 @@ public:
 	virtual void BeginDestroy() override;
 
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-	virtual void PostInitProperties() override;
+	//virtual void PostInitProperties() override;
 
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
@@ -47,13 +47,19 @@ public:
 	ClassType* GetCastedIndividualObject() const {	return Cast<ClassType>(SemanticIndividual); };
 
 	// Save data to owners tag
-	void SaveToTag(bool bOverwrite = false);
+	void ExportToTag(bool bOverwrite = false);
 
 	// Load data from owners tag
-	void LoadFromTag(bool bOverwrite = false);
+	void ImportFromTag(bool bOverwrite = false);
 
 	// Reload the individual data
-	bool RefreshIndividual();
+	bool LoadIndividual();
+
+	// Toggle between original and mask material is possible
+	bool ToggleVisualMaskVisibility();
+
+	// Toggle between showing the semantic data in text form
+	bool ToggleSemanticTextVisibility();
 
 private:
 	// Semantic data
@@ -67,17 +73,21 @@ private:
 	/* Button workarounds */
 	// Ovewrite any changes
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	bool bOverwriteEditChanges;
+	uint8 bOverwriteEditChanges : 1;
 
 	// Save data to tag
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	bool bSaveToTagButton;
+	uint8 bSaveToTagButton : 1;
 
 	// Load data from tag
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	bool bLoadFromTagButton;
+	uint8 bLoadFromTagButton : 1;
+
+	// Switch between viewing the original and the visual mask color
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
+	uint8 bToggleVisualMaskMaterial : 1;
 
 	// Switch between viewing the real and the visual mask color
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	bool bToggleVisualMaskMaterial;
+	uint8 bToggleSemanticText : 1;
 };

@@ -15,6 +15,7 @@ USLIndividualComponent::USLIndividualComponent()
 	bSaveToTagButton = false;
 	bLoadFromTagButton = false;
 	bToggleVisualMaskMaterial = false;
+	bToggleSemanticText = false;
 }
 
 // Called before destroying the object.
@@ -28,10 +29,10 @@ void USLIndividualComponent::BeginDestroy()
 }
 
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-void USLIndividualComponent::PostInitProperties()
-{
-	Super::PostInitProperties();
-}
+//void USLIndividualComponent::PostInitProperties()
+//{
+//	Super::PostInitProperties();
+//}
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
@@ -53,20 +54,22 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bSaveToTagButton))
 	{
 		bSaveToTagButton = false;
-		SaveToTag(bOverwriteEditChanges);
+		ExportToTag(bOverwriteEditChanges);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bLoadFromTagButton))
 	{
 		bLoadFromTagButton = false;
-		LoadFromTag(bOverwriteEditChanges);
+		ImportFromTag(bOverwriteEditChanges);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bToggleVisualMaskMaterial))
 	{
 		bToggleVisualMaskMaterial = false;
-		if (USLVisualIndividual* SI = GetCastedIndividualObject<USLVisualIndividual>())
-		{
-			SI->ToggleMaterials();
-		}
+		ToggleVisualMaskVisibility();
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bToggleSemanticText))
+	{
+		bToggleSemanticText = false;
+		ToggleSemanticTextVisibility();
 	}
 }
 #endif // WITH_EDITOR
@@ -96,10 +99,6 @@ void USLIndividualComponent::OnComponentCreated()
 	{
 		// Cache the current individual class type
 		ConvertTo = IndividualClass;
-		if (SemanticIndividual)
-		{
-			SemanticIndividual->SetSemanticOwner(Owner);
-		}
 	}
 	else
 	{
@@ -116,30 +115,47 @@ void USLIndividualComponent::BeginPlay()
 }
 
 // Save data to owners tag
-void USLIndividualComponent::SaveToTag(bool bOverwrite)
+void USLIndividualComponent::ExportToTag(bool bOverwrite)
 {
 	if (SemanticIndividual)
 	{
-		SemanticIndividual->SaveToTag(bOverwrite);
+		SemanticIndividual->ExportToTag(bOverwrite);
 	}
 }
 
 // Load data from owners tag
-void USLIndividualComponent::LoadFromTag(bool bOverwrite)
+void USLIndividualComponent::ImportFromTag(bool bOverwrite)
 {
 	if (SemanticIndividual)
 	{
-		SemanticIndividual->LoadFromTag(bOverwrite);
+		SemanticIndividual->ImportFromTag(bOverwrite);
 	}
 }
 
 // Reload the individual data
-bool USLIndividualComponent::RefreshIndividual()
+bool USLIndividualComponent::LoadIndividual()
 {
 	if (SemanticIndividual->IsValidLowLevel())
 	{
-		SemanticIndividual->Refresh();
+		SemanticIndividual->Load();
 	}
+	return false;
+}
+
+// Toggle between original and mask material is possible
+bool USLIndividualComponent::ToggleVisualMaskVisibility()
+{
+	if (USLVisualIndividual* SI = GetCastedIndividualObject<USLVisualIndividual>())
+	{
+		return SI->ToggleMaterials();
+	}
+	return false;
+}
+
+// Toggle between showing the semantic data in text form
+bool USLIndividualComponent::ToggleSemanticTextVisibility()
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TEXT FORM"), *FString(__func__), __LINE__);
 	return false;
 }
 

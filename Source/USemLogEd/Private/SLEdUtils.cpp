@@ -14,8 +14,6 @@
 // SL
 #include "Editor/SLSemanticMapWriter.h"
 #include "Vision/SLVisionCamera.h"
-//#include "Data/SLIndividualBase.h"
-//#include "Data/SLIndividual.h"
 #include "Data/SLIndividualComponent.h"
 
 #include "SLManager.h"
@@ -46,7 +44,7 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 	SemMapWriter.WriteToFile(World, ESLOwlSemanticMapTemplate::IAIKitchen, TaskDir, TEXT("SemanticMap"), bOverwrite);
 }
 
-/* Individual actor components */
+/* Semantic data components */
 void FSLEdUtils::CreateSemanticDataComponents(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
@@ -63,19 +61,19 @@ void FSLEdUtils::CreateSemanticDataComponents(const TArray<AActor*>& Actors, boo
 	}
 }
 
-void FSLEdUtils::RefreshSemanticDataComponents(UWorld* World)
+void FSLEdUtils::LoadSemanticDataComponents(UWorld* World)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		RefreshSemanticIndividualComponent(*ActItr);
+		LoadSemanticIndividualComponent(*ActItr);
 	}
 }
 
-void FSLEdUtils::RefreshSemanticDataComponents(const TArray<AActor*>& Actors)
+void FSLEdUtils::LoadSemanticDataComponents(const TArray<AActor*>& Actors)
 {
 	for (const auto Act : Actors)
 	{
-		RefreshSemanticIndividualComponent(Act);
+		LoadSemanticIndividualComponent(Act);
 	}
 }
 
@@ -95,35 +93,72 @@ void FSLEdUtils::RemoveSemanticDataComponents(const TArray<AActor*>& Actors)
 	}
 }
 
-void FSLEdUtils::SaveComponentDataToTag(UWorld* World, bool bOverwrite)
+
+/* Semantic data components functionalities*/
+void FSLEdUtils::ToggleMasks(UWorld* World)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		SaveSemanticIndividualDataToTag(*ActItr, bOverwrite);
+		ToggleVisualMaskVisibility(*ActItr);
 	}
 }
 
-void FSLEdUtils::SaveComponentDataToTag(const TArray<AActor*>& Actors, bool bOverwrite)
+void FSLEdUtils::ToggleMasks(const TArray<AActor*>& Actors)
 {
 	for (const auto Act : Actors)
 	{
-		SaveSemanticIndividualDataToTag(Act, bOverwrite);
+		ToggleVisualMaskVisibility(Act);
 	}
 }
 
-void FSLEdUtils::LoadComponentDataFromTag(UWorld* World, bool bOverwrite)
+void FSLEdUtils::ToggleText(UWorld* World)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		LoadSemanticIndividualDataFromTag(*ActItr, bOverwrite);
+		ToggleTextVisibility(*ActItr);
 	}
 }
 
-void FSLEdUtils::LoadComponentDataFromTag(const TArray<AActor*>& Actors, bool bOverwrite)
+void FSLEdUtils::ToggleText(const TArray<AActor*>& Actors)
 {
 	for (const auto Act : Actors)
 	{
-		LoadSemanticIndividualDataFromTag(Act, bOverwrite);
+		ToggleTextVisibility(Act);
+	}
+}
+
+
+
+/* Tags */
+void FSLEdUtils::ExportToTag(UWorld* World, bool bOverwrite)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		ExportIndividualDataToTag(*ActItr, bOverwrite);
+	}
+}
+
+void FSLEdUtils::ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite)
+{
+	for (const auto Act : Actors)
+	{
+		ExportIndividualDataToTag(Act, bOverwrite);
+	}
+}
+
+void FSLEdUtils::ImportFromTag(UWorld* World, bool bOverwrite)
+{
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		ImportIndividualDataFromTag(*ActItr, bOverwrite);
+	}
+}
+
+void FSLEdUtils::ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite)
+{
+	for (const auto Act : Actors)
+	{
+		ImportIndividualDataFromTag(Act, bOverwrite);
 	}
 }
 
@@ -426,7 +461,7 @@ void FSLEdUtils::CreateSemanticIndividualComponent(AActor* Actor, bool bOverwrit
 		if (bOverwrite)
 		{
 			// TODO reset?
-			SLC->RefreshIndividual();
+			SLC->LoadIndividual();
 		}
 		return;
 	}
@@ -450,11 +485,12 @@ void FSLEdUtils::CreateSemanticIndividualComponent(AActor* Actor, bool bOverwrit
 	//Actor->Modify();
 }
 
-void FSLEdUtils::RefreshSemanticIndividualComponent(AActor* Actor)
+// Reset asset data on the component
+void FSLEdUtils::LoadSemanticIndividualComponent(AActor* Actor)
 {
 	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
 	{
-		SLC->RefreshIndividual();
+		SLC->LoadIndividual();
 	}
 }
 
@@ -471,21 +507,39 @@ void FSLEdUtils::RemoveSemanticIndividualComponent(AActor* Actor)
 	}
 }
 
-// Save semantic individual data to tag
-void FSLEdUtils::SaveSemanticIndividualDataToTag(AActor* Actor, bool bOverwrite)
+// Show hide the visual mask 
+void FSLEdUtils::ToggleVisualMaskVisibility(AActor* Actor)
 {
 	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
 	{
-		SLC->SaveToTag(bOverwrite);
+		SLC->ToggleVisualMaskVisibility();
+	}
+}
+
+// Show hide semantic text information
+void FSLEdUtils::ToggleTextVisibility(AActor* Actor)
+{
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	{
+		SLC->ToggleSemanticTextVisibility();
 	}
 }
 
 // Save semantic individual data to tag
-void FSLEdUtils::LoadSemanticIndividualDataFromTag(AActor* Actor, bool bOverwrite)
+void FSLEdUtils::ExportIndividualDataToTag(AActor* Actor, bool bOverwrite)
 {
 	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
 	{
-		SLC->LoadFromTag(bOverwrite);
+		SLC->ExportToTag(bOverwrite);
+	}
+}
+
+// Save semantic individual data to tag
+void FSLEdUtils::ImportIndividualDataFromTag(AActor* Actor, bool bOverwrite)
+{
+	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
+	{
+		SLC->ImportFromTag(bOverwrite);
 	}
 }
 

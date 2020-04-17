@@ -23,10 +23,11 @@ USLVisualIndividual::USLVisualIndividual()
 		////VisualMaskDynamicMaterial->SetParentInternal(MaterialAsset.Object, false);
 	}
 
-	bIsInit = false;
+	bIsInitPrivate = false;
+	bIsLoadedPrivate = false;
+
 	bMaskMaterialOn = false;
 }
-
 
 // Called before destroying the object.
 void USLVisualIndividual::BeginDestroy()
@@ -41,51 +42,71 @@ void USLVisualIndividual::PostInitProperties()
 	Init();
 }
 
-// Init individual
-bool USLVisualIndividual::Init()
-{	
-	if (bIsInit)
+// Set pointer to the semantic owner
+bool USLVisualIndividual::Init(bool bForced)
+{
+	if (bForced)
+	{
+		bIsInitPrivate = false;
+	}
+
+	if (IsInit())
 	{
 		return true;
 	}
 
-	if (!Super::Init())
+	if (!Super::Init(bForced))
 	{
 		return false;
 	}
 
-	if (!VisualMaskMaterial)
+	bIsInitPrivate = InitImpl();
+	return bIsInitPrivate;
+}
+
+// Check if individual is initialized
+bool USLVisualIndividual::IsInit() const
+{
+	return bIsInitPrivate && Super::IsInit();
+}
+
+// Load semantic data
+bool USLVisualIndividual::Load(bool bForced)
+{
+	if (bForced)
+	{
+		bIsLoadedPrivate = false;
+	}
+
+	if (IsLoaded())
+	{
+		return true;
+	}
+
+	if (!IsInit())
 	{
 		return false;
 	}
-	VisualMaskDynamicMaterial = UMaterialInstanceDynamic::Create(VisualMaskMaterial, this);
-	ApplyVisualMaskColorToDynamicMaterial();
 
-	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(GetSemanticOwner()))
-	{
-		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
-		{
-			VisualSMC = SMC;
-			OriginalMaterials = SMC->GetMaterials();
-		}
-		else
-		{
-			return false;
-		}
-	}
-	else
+	if (!Super::Load(bForced))
 	{
 		return false;
 	}
 
-	bIsInit = true;
-	return true;
+	bIsLoadedPrivate = LoadImpl();
+	return bIsLoadedPrivate;
+}
+
+// Check if semantic data is succesfully loaded
+bool USLVisualIndividual::IsLoaded() const
+{
+	return bIsLoadedPrivate && Super::IsLoaded();
 }
 
 // Save data to owners tag
-bool USLVisualIndividual::SaveToTag(bool bOverwrite)
+bool USLVisualIndividual::ExportToTag(bool bOverwrite)
 {
-	if (!Super::SaveToTag(bOverwrite))
+	if (!Super::ExportToTag(bOverwrite))
 	{
 		return false;
 	}
@@ -104,9 +125,9 @@ bool USLVisualIndividual::SaveToTag(bool bOverwrite)
 }
 
 // Load data from owners tag
-bool USLVisualIndividual::LoadFromTag(bool bOverwrite)
+bool USLVisualIndividual::ImportFromTag(bool bOverwrite)
 {
-	if (!Super::LoadFromTag(bOverwrite))
+	if (!Super::ImportFromTag(bOverwrite))
 	{
 		return false;
 	}
@@ -124,29 +145,16 @@ bool USLVisualIndividual::LoadFromTag(bool bOverwrite)
 	return true;
 }
 
-// All properties are set for runtime
-bool USLVisualIndividual::IsRuntimeReady() const
-{
-	if (!Super::IsRuntimeReady())
-	{
-		return false;
-	}
-
-	return !VisualMask.IsEmpty() && !CalibratedVisualMask.IsEmpty();
-}
-
 // Apply visual mask material
-bool USLVisualIndividual::ApplyVisualMaskMaterials()
+bool USLVisualIndividual::ApplyVisualMaskMaterials(bool bReload)
 {
-	// TODO apply visual or original if both are ready (original materials are loaded, mask is loaded)
-	// Refresh button, if material is changed, refresh should add that material to the original one
 
-	if (!bIsInit)
+	if (!bIsLoadedPrivate)
 	{
 		return false;
 	}
 
-	if (!bMaskMaterialOn && VisualSMC && VisualMaskDynamicMaterial)
+	if (!bMaskMaterialOn || bReload)
 	{
 		for (int32 MatIdx = 0; MatIdx < VisualSMC->GetNumMaterials(); ++MatIdx)
 		{
@@ -161,24 +169,21 @@ bool USLVisualIndividual::ApplyVisualMaskMaterials()
 // Apply original materials
 bool USLVisualIndividual::ApplyOriginalMaterials()
 {
-	if (!bIsInit)
+	if (!bIsLoadedPrivate)
 	{
 		return false;
 	}
 
-	if (bMaskMaterialOn && VisualSMC && OriginalMaterials.Num())
+	if (bMaskMaterialOn)
 	{
-		if (VisualSMC->GetNumMaterials() == OriginalMaterials.Num())
+		int32 MatIdx = 0;
+		for (const auto& Mat : OriginalMaterials)
 		{
-			int32 MatIdx = 0;
-			for (const auto& Mat : OriginalMaterials)
-			{
-				VisualSMC->SetMaterial(MatIdx, Mat);
-				++MatIdx;
-			}
-			bMaskMaterialOn = false;
-			return true;
+			VisualSMC->SetMaterial(MatIdx, Mat);
+			++MatIdx;
 		}
+		bMaskMaterialOn = false;
+		return true;
 	}
 	return false;
 }
@@ -197,18 +202,25 @@ bool USLVisualIndividual::ToggleMaterials()
 }
 
 // Set  visual mask
-void USLVisualIndividual::SetVisualMask(const FString& InVisualMask, bool bClearCalibratedValue)
+void USLVisualIndividual::SetVisualMask(const FString& InVisualMask, bool bReload, bool bClearCalibratedValue)
 {
-	VisualMask = InVisualMask;
-
-	// If there is a new visual mask, there calibrated value is invalid
+	// Clear the calibrated color in case of a new visual mask value
 	if (!VisualMask.Equals(InVisualMask) && bClearCalibratedValue) 
 	{
 		CalibratedVisualMask = ""; 
 	}
+	
+	// Set the new visual mask
+	VisualMask = InVisualMask;
 
-	// Set the dynamic color value
+	// Update the dynamic material
 	ApplyVisualMaskColorToDynamicMaterial();
+	
+	// If the mask visualization is active, dynamically update the colors
+	if (bMaskMaterialOn && bReload)
+	{
+		ApplyVisualMaskMaterials(true);
+	}
 }
 
 // Apply color to the dynamic material
@@ -217,7 +229,46 @@ bool USLVisualIndividual::ApplyVisualMaskColorToDynamicMaterial()
 	if (VisualMaskDynamicMaterial && HasVisualMask())
 	{
 		VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
+		return true;
 	}
 	return false;
 }
 
+// Private init implementation
+bool USLVisualIndividual::InitImpl()
+{
+	if (!VisualMaskMaterial)
+	{
+		return false;
+	}
+	VisualMaskDynamicMaterial = UMaterialInstanceDynamic::Create(VisualMaskMaterial, this);
+
+	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(SemanticOwner))
+	{
+		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
+		{
+			VisualSMC = SMC;
+			OriginalMaterials = SMC->GetMaterials();
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
+}
+
+// Private load implementation
+bool USLVisualIndividual::LoadImpl()
+{
+	if (!HasVisualMask())
+	{
+		return false;
+	}
+	VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
+	return true;
+}
