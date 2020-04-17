@@ -52,6 +52,7 @@ private:
 
 protected:
 	// Pointer to the actor described by the semantic description class
+	UPROPERTY() // Keep persistant
 	class AActor* SemanticOwner;
 	
 	/* Constants */
@@ -61,6 +62,4 @@ private:
 	// State of the individual
 	uint8 bIsInitPrivate : 1;
 	uint8 bIsLoadedPrivate : 1;
-	uint8 bIsDirty : 1; // TODO
-
 };

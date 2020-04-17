@@ -82,9 +82,6 @@ protected:
     UPROPERTY(EditAnywhere, Category = "SL")
     FString CalibratedVisualMask;
 
-    // The visual component of the owner
-    class UStaticMeshComponent* VisualSMC;
-
     // Material template used for creating dynamic materials
     class UMaterial* VisualMaskMaterial;
 
@@ -101,8 +98,10 @@ protected:
     bool bMaskMaterialOn;
 
 private:
+    // The visual component of the owner
+    class UStaticMeshComponent* VisualSMC;
+
     // State of the individual
     uint8 bIsInitPrivate : 1;
     uint8 bIsLoadedPrivate : 1;
-    uint8 bDirty : 1; // e.g.if parent changes material
 };
