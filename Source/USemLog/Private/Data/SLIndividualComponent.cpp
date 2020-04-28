@@ -5,6 +5,7 @@
 #include "Data/SLIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
 #include "Data/SLVisualIndividual.h"
+#include "Components/TextRenderComponent.h"
 
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
@@ -16,6 +17,10 @@ USLIndividualComponent::USLIndividualComponent()
 	bLoadFromTagButton = false;
 	bToggleVisualMaskMaterial = false;
 	bToggleSemanticText = false;
+
+	TextComponent = CreateDefaultSubobject<UTextRenderComponent>(TEXT("SemanticText"));
+	TextComponent->SetText("AbcCDFG");
+	TextComponent->SetHiddenInGame(true);
 }
 
 // Called before destroying the object.
@@ -155,6 +160,7 @@ bool USLIndividualComponent::ToggleVisualMaskVisibility()
 // Toggle between showing the semantic data in text form
 bool USLIndividualComponent::ToggleSemanticTextVisibility()
 {
+	TextComponent->SetHiddenInGame(!TextComponent->IsVisible());
 	UE_LOG(LogTemp, Error, TEXT("%s::%d TEXT FORM"), *FString(__func__), __LINE__);
 	return false;
 }

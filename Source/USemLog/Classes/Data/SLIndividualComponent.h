@@ -65,11 +65,15 @@ private:
 	// Semantic data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	USLIndividualBase* SemanticIndividual;
+	
+	// Manually convert the semantic individual to the chosen type
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	class UTextRenderComponent* TextComponent;
 
 	// Manually convert the semantic individual to the chosen type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
 	TSubclassOf<class USLIndividual> ConvertTo;
-	
+
 	/* Button workarounds */
 	// Ovewrite any changes
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
