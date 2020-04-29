@@ -225,10 +225,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 				.AutoWidth()
 				[
 					SNew(SButton)
-					.Text(LOCTEXT("SemDataCompLoad", "Load"))
+					.Text(LOCTEXT("SemDataCompReLoad", "Re-Load"))
 					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("SemDataCompLoadTip", "Load semantic data components.."))
-					.OnClicked(this, &FSLEdModeToolkit::OnLoadSemDataComp)
+					.ToolTipText(LOCTEXT("SemDataCompReLoadTip", "Re-Load semantic data components.."))
+					.OnClicked(this, &FSLEdModeToolkit::OnReLoadSemDataComp)
 				]
 
 			+ SHorizontalBox::Slot()
@@ -454,7 +454,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagDataSlot()
 				.Text(LOCTEXT("SemDataCompSave", "Export"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataCompSaveTip", "Save data to tag.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnSaveTagData)
+				.OnClicked(this, &FSLEdModeToolkit::OnExportToTag)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -465,7 +465,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagDataSlot()
 				.Text(LOCTEXT("SemDataCompLoad", "Import"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataCompLoadTip", "Load data from tag.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnLoadTagData)
+				.OnClicked(this, &FSLEdModeToolkit::OnImportFromTag)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -603,21 +603,23 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 	}
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
-
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	GEditor->ForceGarbageCollection();
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnLoadSemDataComp()
+FReply FSLEdModeToolkit::OnReLoadSemDataComp()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Load semantic data components"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Re-Load semantic data components"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::LoadSemanticDataComponents(GetSelectedActors());
+		FSLEdUtils::ReLoadSemanticDataComponents(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::LoadSemanticDataComponents(GEditor->GetEditorWorldContext().World());
+		FSLEdUtils::ReLoadSemanticDataComponents(GEditor->GetEditorWorldContext().World());
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -636,7 +638,8 @@ FReply FSLEdModeToolkit::OnRmSemDataComp()
 	}
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
-
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	GEditor->ForceGarbageCollection();
 	return FReply::Handled();
 }
 
@@ -651,6 +654,7 @@ FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 	{
 		FSLEdUtils::ToggleMasks(GEditor->GetEditorWorldContext().World());
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -686,6 +690,7 @@ FReply FSLEdModeToolkit::OnWriteSemDataAll()
 		FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
 		FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -704,6 +709,7 @@ FReply FSLEdModeToolkit::OnRmSemDataAll()
 		FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
 		FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -718,6 +724,7 @@ FReply FSLEdModeToolkit::OnWriteSemDataIds()
 	{
 		FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -732,6 +739,7 @@ FReply FSLEdModeToolkit::OnRmSemDataIds()
 	{
 		FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -745,7 +753,8 @@ FReply FSLEdModeToolkit::OnWriteClassNames()
 	else
 	{
 		FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
-	}	
+	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -760,6 +769,7 @@ FReply FSLEdModeToolkit::OnRmClassNames()
 	{
 		FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -774,6 +784,7 @@ FReply FSLEdModeToolkit::OnWriteVisualMasks()
 	{
 		FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -787,14 +798,15 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 	else
 	{
 		FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
-	}	
+	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
 ////
-FReply FSLEdModeToolkit::OnSaveTagData()
+FReply FSLEdModeToolkit::OnExportToTag()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompSaveST", "Save semantic data tag"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompSaveST", "Export semantic data to tag"));
 	if (bOnlySelected)
 	{
 		FSLEdUtils::ExportToTag(GetSelectedActors(), bOverwrite);
@@ -803,12 +815,13 @@ FReply FSLEdModeToolkit::OnSaveTagData()
 	{
 		FSLEdUtils::ExportToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnLoadTagData()
+FReply FSLEdModeToolkit::OnImportFromTag()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Load semantic data from tag"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Import data from tag"));
 	if (bOnlySelected)
 	{
 		FSLEdUtils::ImportFromTag(GetSelectedActors(), bOverwrite);
@@ -817,6 +830,7 @@ FReply FSLEdModeToolkit::OnLoadTagData()
 	{
 		FSLEdUtils::ImportFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -831,6 +845,7 @@ FReply FSLEdModeToolkit::OnClearTagData()
 	{
 		FSLEdUtils::RemoveTagType(GEditor->GetEditorWorldContext().World(), "SemLog");		
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -847,6 +862,7 @@ FReply FSLEdModeToolkit::OnAddSemMon()
 	{
 		FSLEdUtils::AddSemanticMonitorComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -861,6 +877,7 @@ FReply FSLEdModeToolkit::OnEnableOverlaps()
 	{
 		FSLEdUtils::EnableOverlaps(GEditor->GetEditorWorldContext().World());
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 
@@ -875,6 +892,7 @@ FReply FSLEdModeToolkit::OnShowSemData()
 	{
 		FSLEdUtils::ShowSemanticData(GEditor->GetEditorWorldContext().World());
 	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	return FReply::Handled();
 }
 

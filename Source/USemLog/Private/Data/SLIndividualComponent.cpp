@@ -12,15 +12,14 @@ USLIndividualComponent::USLIndividualComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
+	bIsInit = false;
+	bIsLoaded = false;
+
 	bOverwriteEditChanges = false;
 	bSaveToTagButton = false;
 	bLoadFromTagButton = false;
 	bToggleVisualMaskMaterial = false;
 	bToggleSemanticText = false;
-
-	TextComponent = CreateDefaultSubobject<UTextRenderComponent>(TEXT("SemanticText"));
-	TextComponent->SetText("AbcCDFG");
-	TextComponent->SetHiddenInGame(true);
 }
 
 // Called before destroying the object.
@@ -34,10 +33,13 @@ void USLIndividualComponent::BeginDestroy()
 }
 
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-//void USLIndividualComponent::PostInitProperties()
-//{
-//	Super::PostInitProperties();
-//}
+void USLIndividualComponent::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	Init();
+	Load();
+}
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
@@ -79,44 +81,91 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 }
 #endif // WITH_EDITOR
 
-// Called when a component is created(not loaded).This can happen in the editor or during gameplay
-void USLIndividualComponent::OnComponentCreated()
-{
-	Super::OnComponentCreated();
-
-	AActor* Owner = GetOwner();
-
-	// Check if actor already has a semantic data component
-	for (const auto AC : Owner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
-	{
-		if (AC != this)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
-			//DestroyComponent();
-			ConditionalBeginDestroy();
-			return;
-		}
-	}
-
-	// Set semantic individual type depending on owner
-	if (UClass* IndividualClass = FSLIndividualUtils::CreateIndividualObject(this, Owner, SemanticIndividual))
-	{
-		// Cache the current individual class type
-		ConvertTo = IndividualClass;
-	}
-	else
-	{
-		// Unknown individual type, destroy self
-		ConditionalBeginDestroy();
-		return;
-	}
-}
+//// Called when a component is created(not loaded).This can happen in the editor or during gameplay
+//void USLIndividualComponent::OnComponentCreated()
+//{
+//	Super::OnComponentCreated();
+//
+//	AActor* Owner = GetOwner();
+//
+//	if (Owner)
+//	{
+//		UE_LOG(LogTemp, Log, TEXT("%s::%d"), *FString(__FUNCTION__), __LINE__);
+//	}
+//
+//	// Check if actor already has a semantic data component
+//	for (const auto AC : Owner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
+//	{
+//		if (AC != this)
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
+//				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+//			//DestroyComponent();
+//			ConditionalBeginDestroy();
+//			return;
+//		}
+//	}
+//
+//	// Set semantic individual type depending on owner
+//	if (UClass* IndividualClass = FSLIndividualUtils::CreateIndividualObject(this, Owner, SemanticIndividual))
+//	{
+//		// Cache the current individual class type
+//		ConvertTo = IndividualClass;
+//	}
+//	else
+//	{
+//		// Unknown individual type, destroy self
+//		ConditionalBeginDestroy();
+//		return;
+//	}
+//}
 
 // Called when the game starts
 void USLIndividualComponent::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+//
+bool USLIndividualComponent::Init(bool bForced)
+{
+	if (bForced)
+	{
+		bIsInit = false;
+	}
+
+	if (IsInit())
+	{
+		return true;
+	}
+
+	bIsInit = InitImpl();
+	return bIsInit;
+}
+
+//
+bool USLIndividualComponent::Load(bool bForced)
+{
+	if (bForced)
+	{
+		bIsLoaded = false;
+	}
+
+	if (IsLoaded())
+	{
+		return true;
+	}
+
+	if (!IsInit())
+	{
+		if (!Init(bForced))
+		{
+			return false;
+		}
+	}
+
+	bIsLoaded = LoadImpl();
+	return bIsLoaded;
 }
 
 // Save data to owners tag
@@ -137,15 +186,15 @@ void USLIndividualComponent::ImportFromTag(bool bOverwrite)
 	}
 }
 
-// Reload the individual data
-bool USLIndividualComponent::LoadIndividual()
-{
-	if (SemanticIndividual->IsValidLowLevel())
-	{
-		SemanticIndividual->Load();
-	}
-	return false;
-}
+//// Reload the individual data
+//bool USLIndividualComponent::LoadIndividual()
+//{
+//	if (SemanticIndividual->IsValidLowLevel())
+//	{
+//		SemanticIndividual->Load();
+//	}
+//	return false;
+//}
 
 // Toggle between original and mask material is possible
 bool USLIndividualComponent::ToggleVisualMaskVisibility()
@@ -160,8 +209,60 @@ bool USLIndividualComponent::ToggleVisualMaskVisibility()
 // Toggle between showing the semantic data in text form
 bool USLIndividualComponent::ToggleSemanticTextVisibility()
 {
-	TextComponent->SetHiddenInGame(!TextComponent->IsVisible());
-	UE_LOG(LogTemp, Error, TEXT("%s::%d TEXT FORM"), *FString(__func__), __LINE__);
 	return false;
 }
+
+// Private init implementation
+bool USLIndividualComponent::InitImpl()
+{
+	AActor* Owner = GetOwner();
+
+	if (!Owner)
+	{
+		return false;
+	}
+
+	// Check if actor already has a semantic data component
+	for (const auto AC : Owner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
+	{
+		if (AC != this)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+			//DestroyComponent();
+			ConditionalBeginDestroy();
+			return false;
+		}
+	}
+
+	// Set semantic individual type depending on owner
+	if (UClass* IndividualClass = FSLIndividualUtils::CreateIndividualObject(this, Owner, SemanticIndividual))
+	{
+		// Cache the current individual class type
+		ConvertTo = IndividualClass;		
+		//SemanticIndividual->Init(); // Is being called automatically on PostInitProperties		
+		return true;
+	}
+	else
+	{
+		// Unknown individual type, destroy self
+		ConditionalBeginDestroy();
+		return false;
+	}
+}
+
+// Private load implementation
+bool USLIndividualComponent::LoadImpl()
+{
+	if (SemanticIndividual)
+	{
+		return SemanticIndividual->ImportFromTag() && SemanticIndividual->Load();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
+}
+
 

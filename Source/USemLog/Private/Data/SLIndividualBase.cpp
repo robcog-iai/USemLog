@@ -7,8 +7,8 @@
 // Ctor
 USLIndividualBase::USLIndividualBase()
 {
-	bIsInitPrivate = false;
-	bIsLoadedPrivate = false;
+	bIsInit = false;
+	bIsLoaded = false;
 }
 
 // Set the semantic owner actor
@@ -23,7 +23,7 @@ bool USLIndividualBase::Init(bool bForced)
 {
 	if (bForced)
 	{
-		bIsInitPrivate = false;
+		bIsInit = false;
 	}
 
 	if (IsInit())
@@ -31,14 +31,14 @@ bool USLIndividualBase::Init(bool bForced)
 		return true;
 	}
 
-	bIsInitPrivate = InitImpl();
-	return bIsInitPrivate;
+	bIsInit = InitImpl();
+	return bIsInit;
 }
 
 // Check if individual is initialized
 bool USLIndividualBase::IsInit() const
 {
-	return bIsInitPrivate;
+	return bIsInit;
 }
 
 // Load semantic data
@@ -46,7 +46,7 @@ bool USLIndividualBase::Load(bool bForced)
 {
 	if (bForced)
 	{
-		bIsLoadedPrivate = false;
+		bIsLoaded = false;
 	}
 
 	if (IsLoaded())
@@ -56,17 +56,20 @@ bool USLIndividualBase::Load(bool bForced)
 
 	if (!IsInit())
 	{
-		return false;
+		if (!Init(bForced))
+		{
+			return false;
+		}
 	}
 	
-	bIsLoadedPrivate = LoadImpl();
-	return bIsLoadedPrivate;
+	bIsLoaded = LoadImpl();
+	return bIsLoaded;
 }
 
 // Check if semantic data is succesfully loaded
 bool USLIndividualBase::IsLoaded() const
 {
-	return bIsLoadedPrivate;
+	return bIsLoaded;
 }
 
 // Save data to owners tag
@@ -105,7 +108,6 @@ bool USLIndividualBase::InitImpl()
 
 bool USLIndividualBase::LoadImpl()
 {
-	// Nothing to load for runtime
 	return true;
 }
 

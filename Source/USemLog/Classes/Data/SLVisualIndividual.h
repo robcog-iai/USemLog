@@ -83,25 +83,27 @@ protected:
     FString CalibratedVisualMask;
 
     // Material template used for creating dynamic materials
+    UPROPERTY()
     class UMaterial* VisualMaskMaterial;
 
     // Dynamic material used for setting various mask colors
-    UPROPERTY() // Avoid GC
+    UPROPERTY()
     class UMaterialInstanceDynamic* VisualMaskDynamicMaterial;
 
     // Cached original materials
-    UPROPERTY() // Keep persitently
+    UPROPERTY()
     TArray<class UMaterialInterface*> OriginalMaterials;
 
     // True if the visual masks are currently active on the semantic owner
-    UPROPERTY(EditAnywhere, Category = "SL") // Keep persitently
+    UPROPERTY(EditAnywhere, Category = "SL")
     bool bMaskMaterialOn;
 
 private:
     // The visual component of the owner
+    UPROPERTY()
     class UStaticMeshComponent* VisualSMC;
 
-    // State of the individual
-    uint8 bIsInitPrivate : 1;
-    uint8 bIsLoadedPrivate : 1;
+    //// State of the individual
+    //uint8 bIsInitPrivate : 1;
+    //uint8 bIsLoadedPrivate : 1;
 };

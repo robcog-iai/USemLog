@@ -23,8 +23,8 @@ USLVisualIndividual::USLVisualIndividual()
 		////VisualMaskDynamicMaterial->SetParentInternal(MaterialAsset.Object, false);
 	}
 
-	bIsInitPrivate = false;
-	bIsLoadedPrivate = false;
+	bIsInit = false;
+	bIsLoaded = false;
 
 	bMaskMaterialOn = false;
 }
@@ -32,6 +32,7 @@ USLVisualIndividual::USLVisualIndividual()
 // Called before destroying the object.
 void USLVisualIndividual::BeginDestroy()
 {
+	ApplyOriginalMaterials();
 	Super::BeginDestroy();
 }
 
@@ -47,7 +48,7 @@ bool USLVisualIndividual::Init(bool bForced)
 {
 	if (bForced)
 	{
-		bIsInitPrivate = false;
+		bIsInit = false;
 	}
 
 	if (IsInit())
@@ -60,14 +61,14 @@ bool USLVisualIndividual::Init(bool bForced)
 		return false;
 	}
 
-	bIsInitPrivate = InitImpl();
-	return bIsInitPrivate;
+	bIsInit = InitImpl();
+	return bIsInit;
 }
 
 // Check if individual is initialized
 bool USLVisualIndividual::IsInit() const
 {
-	return bIsInitPrivate && Super::IsInit();
+	return bIsInit && Super::IsInit();
 }
 
 // Load semantic data
@@ -75,7 +76,7 @@ bool USLVisualIndividual::Load(bool bForced)
 {
 	if (bForced)
 	{
-		bIsLoadedPrivate = false;
+		bIsLoaded = false;
 	}
 
 	if (IsLoaded())
@@ -90,17 +91,20 @@ bool USLVisualIndividual::Load(bool bForced)
 
 	if (!Super::Load(bForced))
 	{
-		return false;
+		if (!Init(bForced))
+		{
+			return false;
+		}
 	}
 
-	bIsLoadedPrivate = LoadImpl();
-	return bIsLoadedPrivate;
+	bIsLoaded = LoadImpl();
+	return bIsLoaded;
 }
 
 // Check if semantic data is succesfully loaded
 bool USLVisualIndividual::IsLoaded() const
 {
-	return bIsLoadedPrivate && Super::IsLoaded();
+	return bIsLoaded /*&& Super::IsLoaded()*/;
 }
 
 // Save data to owners tag
@@ -134,12 +138,12 @@ bool USLVisualIndividual::ImportFromTag(bool bOverwrite)
 
 	if (VisualMask.IsEmpty() || bOverwrite)
 	{
-		VisualMask = FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "VisualMask");
+		SetVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "VisualMask"));		
 	}
 
 	if (CalibratedVisualMask.IsEmpty() || bOverwrite)
 	{
-		CalibratedVisualMask = FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "CalibratedVisualMask");
+		SetCalibratedVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "CalibratedVisualMask"));
 	}
 
 	return true;
@@ -149,7 +153,7 @@ bool USLVisualIndividual::ImportFromTag(bool bOverwrite)
 bool USLVisualIndividual::ApplyVisualMaskMaterials(bool bReload)
 {
 
-	if (!bIsLoadedPrivate)
+	if (!bIsLoaded)
 	{
 		return false;
 	}
@@ -169,7 +173,7 @@ bool USLVisualIndividual::ApplyVisualMaskMaterials(bool bReload)
 // Apply original materials
 bool USLVisualIndividual::ApplyOriginalMaterials()
 {
-	if (!bIsLoadedPrivate)
+	if (!bIsLoaded)
 	{
 		return false;
 	}

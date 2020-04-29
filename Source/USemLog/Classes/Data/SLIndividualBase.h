@@ -52,14 +52,22 @@ private:
 
 protected:
 	// Pointer to the actor described by the semantic description class
-	UPROPERTY() // Keep persistant
+	UPROPERTY(VisibleAnywhere, Category = "SL")
 	class AActor* SemanticOwner;
 	
+	// State of the individual
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	uint8 bIsInit : 1;
+
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	uint8 bIsLoaded : 1;
+
 	/* Constants */
+	// Tag type for exporting/importing data from tags
 	static constexpr char TagTypeConst[] = "SemLog";
 
-private:
-	// State of the individual
-	uint8 bIsInitPrivate : 1;
-	uint8 bIsLoadedPrivate : 1;
+//private:
+//	// State of the individual
+//	uint8 bIsInitPrivate : 1;
+//	uint8 bIsLoadedPrivate : 1;
 };

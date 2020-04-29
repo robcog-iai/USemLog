@@ -67,8 +67,8 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "SL")
 	FString Class;
 
-private:
-	// State of the individual
-	uint8 bIsInitPrivate : 1;
-	uint8 bIsLoadedPrivate : 1;
+//private:
+//	// State of the individual
+//	uint8 bIsInitPrivate : 1;
+//	uint8 bIsLoadedPrivate : 1;
 };

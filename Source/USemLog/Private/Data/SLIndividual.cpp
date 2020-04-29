@@ -7,8 +7,8 @@
 // Ctor
 USLIndividual::USLIndividual()
 {
-	bIsInitPrivate = false;
-	bIsLoadedPrivate = false;
+	bIsInit = false;
+	bIsLoaded = false;
 }
 
 void USLIndividual::PostInitProperties()
@@ -22,7 +22,7 @@ bool USLIndividual::Init(bool bForced)
 {
 	if (bForced)
 	{
-		bIsInitPrivate = false;
+		bIsInit = false;
 	}
 
 	if (IsInit())
@@ -35,14 +35,14 @@ bool USLIndividual::Init(bool bForced)
 		return false;
 	}
 
-	bIsInitPrivate = InitImpl();
-	return bIsInitPrivate;
+	bIsInit = InitImpl();
+	return bIsInit;
 }
 
 // Check if individual is initialized
 bool USLIndividual::IsInit() const
 {
-	return bIsInitPrivate && Super::IsInit();
+	return bIsInit && Super::IsInit();
 }
 
 // Load semantic data
@@ -50,7 +50,7 @@ bool USLIndividual::Load(bool bForced)
 {
 	if (bForced)
 	{
-		bIsLoadedPrivate = false;
+		bIsLoaded = false;
 	}
 
 	if (IsLoaded())
@@ -60,7 +60,10 @@ bool USLIndividual::Load(bool bForced)
 
 	if (!IsInit())
 	{
-		return false;
+		if (!Init(bForced))
+		{
+			return false;
+		}
 	}
 
 	if (!Super::Load(bForced))
@@ -68,14 +71,14 @@ bool USLIndividual::Load(bool bForced)
 		return false;
 	}
 
-	bIsLoadedPrivate = LoadImpl();
-	return bIsLoadedPrivate;
+	bIsLoaded = LoadImpl();
+	return bIsLoaded;
 }
 
 // Check if semantic data is succesfully loaded
 bool USLIndividual::IsLoaded() const
 {
-	return bIsLoadedPrivate && Super::IsLoaded();
+	return bIsLoaded /*&& Super::IsLoaded()*/;
 }
 
 // Save data to tag
@@ -109,12 +112,12 @@ bool USLIndividual::ImportFromTag(bool bOverwrite)
 	
 	if (Id.IsEmpty() || bOverwrite)
 	{
-		Id = FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Id");
+		SetId(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Id"));
 	}
 
 	if (Class.IsEmpty() || bOverwrite)
 	{
-		Class = FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Class");
+		SetClass(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Class"));
 	}
 
 	return true;

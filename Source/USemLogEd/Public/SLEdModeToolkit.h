@@ -72,7 +72,7 @@ private:
 
 	// Semantic data components
 	FReply OnCreateSemDataComp();
-	FReply OnLoadSemDataComp();
+	FReply OnReLoadSemDataComp();
 	FReply OnRmSemDataComp();
 
 	// Semantic data components functionalities
@@ -90,8 +90,8 @@ private:
 	FReply OnWriteVisualMasks();
 	FReply OnRmVisualMasks();
 	
-	FReply OnSaveTagData();
-	FReply OnLoadTagData();
+	FReply OnExportToTag();
+	FReply OnImportFromTag();
 	FReply OnClearTagData();
 
 	FReply OnAddSemMon();	

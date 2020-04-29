@@ -61,7 +61,7 @@ void FSLEdUtils::CreateSemanticDataComponents(const TArray<AActor*>& Actors, boo
 	}
 }
 
-void FSLEdUtils::LoadSemanticDataComponents(UWorld* World)
+void FSLEdUtils::ReLoadSemanticDataComponents(UWorld* World)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
@@ -69,7 +69,7 @@ void FSLEdUtils::LoadSemanticDataComponents(UWorld* World)
 	}
 }
 
-void FSLEdUtils::LoadSemanticDataComponents(const TArray<AActor*>& Actors)
+void FSLEdUtils::ReLoadSemanticDataComponents(const TArray<AActor*>& Actors)
 {
 	for (const auto Act : Actors)
 	{
@@ -461,7 +461,9 @@ void FSLEdUtils::CreateSemanticIndividualComponent(AActor* Actor, bool bOverwrit
 		if (bOverwrite)
 		{
 			// TODO reset?
-			SLC->LoadIndividual();
+			SLC->Init(true);
+			SLC->Load(true);
+			//SLC->LoadIndividual();
 		}
 		return;
 	}
@@ -490,7 +492,7 @@ void FSLEdUtils::LoadSemanticIndividualComponent(AActor* Actor)
 {
 	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
 	{
-		SLC->LoadIndividual();
+		SLC->Load(true);
 	}
 }
 

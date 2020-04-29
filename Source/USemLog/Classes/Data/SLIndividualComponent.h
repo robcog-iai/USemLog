@@ -24,21 +24,33 @@ public:
 	virtual void BeginDestroy() override;
 
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-	//virtual void PostInitProperties() override;
+	virtual void PostInitProperties() override;
 
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
-	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
-	virtual void OnComponentCreated() override;
+	//// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
+	//virtual void OnComponentCreated() override;
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:
+	// 
+	bool Init(bool bForced = false);
+
+	// Check if component is initialized
+	bool IsInit() const { return bIsInit; };
+
+	// 
+	bool Load(bool bForced = false);
+
+	// Check if component is loaded
+	bool IsLoaded() const { return bIsLoaded; };
+
 	// Get the semantic individual object
 	USLIndividualBase* GetIndividualObject() const { return SemanticIndividual; };
 
@@ -52,8 +64,8 @@ public:
 	// Load data from owners tag
 	void ImportFromTag(bool bOverwrite = false);
 
-	// Reload the individual data
-	bool LoadIndividual();
+	//// Reload the individual data
+	//bool LoadIndividual();
 
 	// Toggle between original and mask material is possible
 	bool ToggleVisualMaskVisibility();
@@ -62,13 +74,23 @@ public:
 	bool ToggleSemanticTextVisibility();
 
 private:
+	// Private init implementation
+	bool InitImpl();
+
+	// Private load implementation
+	bool LoadImpl();
+
+private:
 	// Semantic data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	USLIndividualBase* SemanticIndividual;
-	
-	// Manually convert the semantic individual to the chosen type
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	class UTextRenderComponent* TextComponent;
+
+	// State of the component
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	uint8 bIsInit : 1;
+
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	uint8 bIsLoaded: 1;
 
 	// Manually convert the semantic individual to the chosen type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
