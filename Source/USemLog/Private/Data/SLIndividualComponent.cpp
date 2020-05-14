@@ -5,7 +5,6 @@
 #include "Data/SLIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
 #include "Data/SLVisualIndividual.h"
-#include "Components/TextRenderComponent.h"
 
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
