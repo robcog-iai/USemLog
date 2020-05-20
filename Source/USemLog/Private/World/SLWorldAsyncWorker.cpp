@@ -187,6 +187,8 @@ void FSLWorldAsyncWorker::DoWork()
 {
 	FSLGazeData GazeData;
 	GazeDataHandler.GetData(GazeData);
+	UE_LOG(LogTemp, Log, TEXT("\t\t\t%s::%d Writing at = %f;"),
+		*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds());
 	Writer->Write(World->GetTimeSeconds(), ActorEntitites, ComponentEntities, SkeletalEntities, GazeData);
 }
 

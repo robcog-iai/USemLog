@@ -54,6 +54,9 @@ private:
 	// Log current state of the world (dynamic objects that moved more than the distance threshold)
 	void Update();
 
+	// Delay function to set tick to true (avoid logging first frame twice)
+	void DelaySetTickTrue();
+
 private:
 	// Set when logger is initialized
 	bool bIsInit;

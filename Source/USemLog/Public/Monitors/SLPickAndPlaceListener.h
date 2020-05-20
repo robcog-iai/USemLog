@@ -112,6 +112,10 @@ public:
 	FSLPaPSubEventSignature OnManipulatorTransportEvent;
 	
 private:
+	// Skip initialization if true
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bIgnore;
+
 	// True if initialized
 	bool bIsInit;
 

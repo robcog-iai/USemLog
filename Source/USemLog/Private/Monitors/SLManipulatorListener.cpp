@@ -17,6 +17,8 @@ USLManipulatorListener::USLManipulatorListener()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	
+	bIgnore = false;
+
 	// State flags
 	bIsInit = false;
 	bIsStarted = false;
@@ -47,6 +49,11 @@ USLManipulatorListener::~USLManipulatorListener()
 // Init listener
 bool USLManipulatorListener::Init(bool bInDetectGrasps, bool bInDetectContacts)
 {
+	if (bIgnore)
+	{
+		return false;
+	}
+
 	if (!bIsInit)
 	{
 		bDetectGrasps = bInDetectGrasps;

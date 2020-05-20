@@ -3,6 +3,7 @@
 
 #include "SLWorldLogger.h"
 #include "SLEntitiesManager.h"
+#include "TimerManager.h"
 
 // Constructor
 USLWorldLogger::USLWorldLogger()
@@ -11,6 +12,9 @@ USLWorldLogger::USLWorldLogger()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
+
+	// Do not tick by default
+	bIsTickable = false;
 }
 
 // Destructor
@@ -72,8 +76,14 @@ void USLWorldLogger::Start(const float UpdateRate)
 		}
 		else
 		{
+			// Delay tick activation
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, this,
+				&USLWorldLogger::DelaySetTickTrue, 0.01, false);
+			
+			// Replaced with delay timer since it was trigerring in the same tick.
 			// Update logger on tick (starting next tick) (updates every game thread tick, update rate can vary)			
-			GetWorld()->GetTimerManager().SetTimerForNextTick([&]() { bIsTickable = true; });
+			//GetWorld()->GetTimerManager().SetTimerForNextTick([&]() {bIsTickable = true;} );
+
 		}
 
 		// Set flags
@@ -122,6 +132,9 @@ void USLWorldLogger::Finish(bool bForced)
 // Called after ticking all actors, DeltaTime is the time passed since the last call.
 void USLWorldLogger::Tick(float DeltaTime)
 {
+	UE_LOG(LogTemp, Log, TEXT("%s::%d !!! !!! TICK time = %f;"),
+		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
+
 	// Call update on tick
 	Update();
 }
@@ -168,4 +181,12 @@ void USLWorldLogger::Update()
 	{
 		UE_LOG(LogSL, Error, TEXT("%s::%d [%f] Previous task not finished, SKIPPING new task.."), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 	}
+}
+
+// Delay function to set tick to true (avoid logging first frame twice)
+void USLWorldLogger::DelaySetTickTrue()
+{
+	UE_LOG(LogTemp, Log, TEXT("%s::%d !!! !!! DELAY Init update time = %f;"),
+		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
+	bIsTickable = true;
 }

@@ -14,6 +14,8 @@ USLPickAndPlaceListener::USLPickAndPlaceListener()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	
+	bIgnore = false;
+
 	// State flags
 	bIsInit = false;
 	bIsStarted = false;
@@ -42,6 +44,11 @@ USLPickAndPlaceListener::~USLPickAndPlaceListener()
 // Init listener
 bool USLPickAndPlaceListener::Init()
 {
+	if (bIgnore)
+	{
+		return false;
+	}
+
 	if (!bIsInit)
 	{
 		// Init the semantic entities manager
