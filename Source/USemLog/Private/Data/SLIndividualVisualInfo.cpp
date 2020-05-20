@@ -15,13 +15,13 @@ ASLIndividualVisualInfo::ASLIndividualVisualInfo()
 	ClassText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("ClassTxt"));
 	ClassText->SetHorizontalAlignment(EHTA_Center);
 	ClassText->SetWorldSize(ClassTextSize);
-	ClassText->SetText(TEXT("ClassVal"));
+	ClassText->SetText(FText::FromString(TEXT("ClassVal")));
 	RootComponent = ClassText;
 
 	IdText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("IdTxt"));
 	IdText->SetHorizontalAlignment(EHTA_Center);
 	IdText->SetWorldSize(50.f);
-	IdText->SetText(TEXT("IdVal"));
+	IdText->SetText(FText::FromString(TEXT("IdVal")));
 	IdText->SetupAttachment(ClassText);
 	IdText->SetRelativeLocation(FVector(0.f, 0.f, -ClassTextSize));
 }

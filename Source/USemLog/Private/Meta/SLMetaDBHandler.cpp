@@ -126,6 +126,8 @@ bool FSLMetaDBHandler::Connect(const FString& DBName, const FString& ServerIp, u
 	bson_destroy(server_ping_cmd);
 	return true;
 #else
+	UE_LOG(LogTemp, Error, TEXT("%s::%d SL_WITH_LIBMONGO_C flag is 0, aborting.."),
+		*FString(__func__), __LINE__);
 	return false;
 #endif //SL_WITH_LIBMONGO_C
 }
