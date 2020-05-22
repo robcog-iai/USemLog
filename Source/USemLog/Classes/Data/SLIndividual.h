@@ -24,13 +24,13 @@ public:
 	virtual void PostInitProperties() override;
 
 	// Init asset references (bForced forces re-initialization)
-	virtual bool Init(bool bForced = false);
+	virtual bool Init(bool bReset = false);
 
 	// Check if individual is initialized
 	virtual bool IsInit() const;
 
 	// Load semantic data (bForced forces re-loading)
-	virtual bool Load(bool bForced = false);
+	virtual bool Load(bool bReset = false);
 
 	// Check if semantic data is succesfully loaded
 	virtual bool IsLoaded() const;

@@ -83,7 +83,6 @@ void USLWorldLogger::Start(const float UpdateRate)
 			// Replaced with delay timer since it was trigerring in the same tick.
 			// Update logger on tick (starting next tick) (updates every game thread tick, update rate can vary)			
 			//GetWorld()->GetTimerManager().SetTimerForNextTick([&]() {bIsTickable = true;} );
-
 		}
 
 		// Set flags
@@ -132,9 +131,6 @@ void USLWorldLogger::Finish(bool bForced)
 // Called after ticking all actors, DeltaTime is the time passed since the last call.
 void USLWorldLogger::Tick(float DeltaTime)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d !!! !!! TICK time = %f;"),
-		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
-
 	// Call update on tick
 	Update();
 }
@@ -186,7 +182,5 @@ void USLWorldLogger::Update()
 // Delay function to set tick to true (avoid logging first frame twice)
 void USLWorldLogger::DelaySetTickTrue()
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d !!! !!! DELAY Init update time = %f;"),
-		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
 	bIsTickable = true;
 }

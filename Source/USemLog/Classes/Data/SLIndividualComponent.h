@@ -39,14 +39,14 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	// 
-	bool Init(bool bForced = false);
+	// Set owner and individual
+	bool Init(bool bReset = false);
 
 	// Check if component is initialized
 	bool IsInit() const { return bIsInit; };
 
-	// 
-	bool Load(bool bForced = false);
+	// Load individual
+	bool Load(bool bReset = false);
 
 	// Check if component is loaded
 	bool IsLoaded() const { return bIsLoaded; };
@@ -69,9 +69,6 @@ public:
 
 	// Toggle between original and mask material is possible
 	bool ToggleVisualMaskVisibility();
-
-	// Toggle between showing the semantic data in text form
-	bool ToggleSemanticTextVisibility();
 
 private:
 	// Private init implementation
@@ -112,8 +109,4 @@ private:
 	// Switch between viewing the original and the visual mask color
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
 	uint8 bToggleVisualMaskMaterial : 1;
-
-	// Switch between viewing the real and the visual mask color
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	uint8 bToggleSemanticText : 1;
 };

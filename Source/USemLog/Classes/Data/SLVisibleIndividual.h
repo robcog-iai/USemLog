@@ -6,19 +6,19 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Data/SLIndividual.h"
-#include "SLVisualIndividual.generated.h"
+#include "SLVisibleIndividual.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class USEMLOG_API USLVisualIndividual : public USLIndividual
+class USEMLOG_API USLVisibleIndividual : public USLIndividual
 {
 	GENERATED_BODY()
 
 public:
     // Ctor
-    USLVisualIndividual();
+    USLVisibleIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
@@ -27,13 +27,13 @@ public:
     virtual void PostInitProperties() override;
 
     // Init asset references (bForced forces re-initialization)
-    virtual bool Init(bool bForced = false);
+    virtual bool Init(bool bReset = false);
 
     // Check if individual is initialized
     virtual bool IsInit() const;
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bForced = false);
+    virtual bool Load(bool bReset = false);
 
     // Check if semantic data is succesfully loaded
     virtual bool IsLoaded() const;

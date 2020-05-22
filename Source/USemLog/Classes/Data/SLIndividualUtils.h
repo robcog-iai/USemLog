@@ -52,7 +52,7 @@ private:
 
 	/* Visual mask generation */
 	// Add visual mask
-	static bool AddVisualMask(class USLVisualIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite);
+	static bool AddVisualMask(class USLVisibleIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite);
 
 	// Get all used up visual masks in the world
 	static TArray<FColor> GetConsumedVisualMaskColors(UWorld* World);

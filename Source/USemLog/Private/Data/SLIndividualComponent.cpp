@@ -4,7 +4,7 @@
 #include "Data/SLIndividualComponent.h"
 #include "Data/SLIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
-#include "Data/SLVisualIndividual.h"
+#include "Data/SLVisibleIndividual.h"
 
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
@@ -18,7 +18,6 @@ USLIndividualComponent::USLIndividualComponent()
 	bSaveToTagButton = false;
 	bLoadFromTagButton = false;
 	bToggleVisualMaskMaterial = false;
-	bToggleSemanticText = false;
 }
 
 // Called before destroying the object.
@@ -72,11 +71,6 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 		bToggleVisualMaskMaterial = false;
 		ToggleVisualMaskVisibility();
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bToggleSemanticText))
-	{
-		bToggleSemanticText = false;
-		ToggleSemanticTextVisibility();
-	}
 }
 #endif // WITH_EDITOR
 
@@ -125,10 +119,10 @@ void USLIndividualComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
-//
-bool USLIndividualComponent::Init(bool bForced)
+// Set owner and individual
+bool USLIndividualComponent::Init(bool bReset)
 {
-	if (bForced)
+	if (bReset)
 	{
 		bIsInit = false;
 	}
@@ -142,10 +136,10 @@ bool USLIndividualComponent::Init(bool bForced)
 	return bIsInit;
 }
 
-//
-bool USLIndividualComponent::Load(bool bForced)
+// Load individual
+bool USLIndividualComponent::Load(bool bReset)
 {
-	if (bForced)
+	if (bReset)
 	{
 		bIsLoaded = false;
 	}
@@ -157,7 +151,7 @@ bool USLIndividualComponent::Load(bool bForced)
 
 	if (!IsInit())
 	{
-		if (!Init(bForced))
+		if (!Init(bReset))
 		{
 			return false;
 		}
@@ -198,16 +192,10 @@ void USLIndividualComponent::ImportFromTag(bool bOverwrite)
 // Toggle between original and mask material is possible
 bool USLIndividualComponent::ToggleVisualMaskVisibility()
 {
-	if (USLVisualIndividual* SI = GetCastedIndividualObject<USLVisualIndividual>())
+	if (USLVisibleIndividual* SI = GetCastedIndividualObject<USLVisibleIndividual>())
 	{
 		return SI->ToggleMaterials();
 	}
-	return false;
-}
-
-// Toggle between showing the semantic data in text form
-bool USLIndividualComponent::ToggleSemanticTextVisibility()
-{
 	return false;
 }
 

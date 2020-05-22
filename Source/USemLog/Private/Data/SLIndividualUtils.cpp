@@ -4,7 +4,7 @@
 #include "Data/SLindividualUtils.h"
 #include "Data/SLIndividual.h"
 #include "Data/SLIndividualBase.h"
-#include "Data/SLVisualIndividual.h"
+#include "Data/SLVisibleIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
 
 #include "EngineUtils.h"
@@ -145,7 +145,7 @@ UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner
 	// Set semantic individual type depending on owner
 	if (Owner->IsA(AStaticMeshActor::StaticClass()))
 	{
-		IndividualClass = USLVisualIndividual::StaticClass();
+		IndividualClass = USLVisibleIndividual::StaticClass();
 		IndividualObject = NewObject<USLIndividualBase>(Outer, IndividualClass);
 	}
 	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
@@ -250,7 +250,7 @@ void FSLIndividualUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
 	TArray<FColor> ConsumedColors = GetConsumedVisualMaskColors(World);
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		if (USLVisualIndividual* VI = GetCastedIndividualObject<USLVisualIndividual>(*ActItr))
+		if (USLVisibleIndividual* VI = GetCastedIndividualObject<USLVisibleIndividual>(*ActItr))
 		{
 			AddVisualMask(VI, ConsumedColors, bOverwrite);
 		}
@@ -263,7 +263,7 @@ void FSLIndividualUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld*
 	TArray<FColor> ConsumedColors = GetConsumedVisualMaskColors(World);
 	for (const auto& Act : Actors)
 	{
-		if (USLVisualIndividual* SI = GetCastedIndividualObject<USLVisualIndividual>(Act))
+		if (USLVisibleIndividual* SI = GetCastedIndividualObject<USLVisibleIndividual>(Act))
 		{
 			AddVisualMask(SI, ConsumedColors, bOverwrite);
 		}
@@ -273,7 +273,7 @@ void FSLIndividualUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld*
 // Clear visual mask of the actor
 bool FSLIndividualUtils::ClearVisualMask(AActor* Actor)
 {
-	if (USLVisualIndividual* SI = GetCastedIndividualObject<USLVisualIndividual>(Actor))
+	if (USLVisibleIndividual* SI = GetCastedIndividualObject<USLVisibleIndividual>(Actor))
 	{
 		SI->SetVisualMask("");
 		return true;
@@ -282,7 +282,7 @@ bool FSLIndividualUtils::ClearVisualMask(AActor* Actor)
 }
 
 // Add visual mask
-bool FSLIndividualUtils::AddVisualMask(USLVisualIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite)
+bool FSLIndividualUtils::AddVisualMask(USLVisibleIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite)
 {
 	static const int32 NumTrials = 100;
 	static const int32 MinManhattanDist = 29;
@@ -344,7 +344,7 @@ TArray<FColor> FSLIndividualUtils::GetConsumedVisualMaskColors(UWorld* World)
 	/* Static mesh actors */
 	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
 	{
-		if (USLVisualIndividual* VI = GetCastedIndividualObject<USLVisualIndividual>(*ActItr))
+		if (USLVisibleIndividual* VI = GetCastedIndividualObject<USLVisibleIndividual>(*ActItr))
 		{
 			if (VI->HasVisualMask())
 			{

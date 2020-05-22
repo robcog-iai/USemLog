@@ -48,7 +48,10 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			////
 			+ CreateSemDataCompTxtSlot()
 			+ CreateSemDataCompSlot()
-			+ CreateSemDataCompFuncSlot()
+
+			////
+			+ CreateSemDataVisInfoTxt()
+			+ CreateSemDataVisInfoSlot()
 
 			////
 			+ CreateSemDataTxtSlot()
@@ -216,20 +219,20 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 				SNew(SButton)
 				.Text(LOCTEXT("SemDataCompCreate", "Create"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataCompCreateTip", "Creates semantic data components.."))
+				.ToolTipText(LOCTEXT("SemDataCompCreateTip", "Create semantic data components.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnCreateSemDataComp)
 			]
 
 			+ SHorizontalBox::Slot()
-				.Padding(2)
-				.AutoWidth()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("SemDataCompReLoad", "Re-Load"))
-					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("SemDataCompReLoadTip", "Re-Load semantic data components.."))
-					.OnClicked(this, &FSLEdModeToolkit::OnReLoadSemDataComp)
-				]
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataCompReLoad", "Re-Load"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataCompReLoadTip", "Re-Load semantic data components.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnReLoadSemDataComp)
+			]
 
 			+ SHorizontalBox::Slot()
 			.Padding(2)
@@ -241,18 +244,6 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 				.ToolTipText(LOCTEXT("SemDataCompRmTip", "Remove semantic data components (make sure no related editor windows are open).."))
 				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataComp)
 			]
-		];
-}
-
-/* Semantic data components functionalities */
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompFuncSlot()
-{
-	return SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(2)
-		.HAlign(HAlign_Center)
-		[
-			SNew(SHorizontalBox)
 
 			+ SHorizontalBox::Slot()
 			.Padding(2)
@@ -264,17 +255,74 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompFuncSlot()
 				.ToolTipText(LOCTEXT("SemDataCompToggleMaskTip", "Toggle between the visual mask and the original colors.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnToggleMaskSemDataComp)
 			]
+		];
+}
+
+/* Semantic data visual info components */
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoTxt()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(STextBlock)
+			.Text(LOCTEXT("SemDataVisInfoTxt", "Semantic Data Visual Info:"))
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
 
 			+ SHorizontalBox::Slot()
-				.Padding(2)
-				.AutoWidth()
-				[
-					SNew(SButton)
-					.Text(LOCTEXT("SemDataCompShowText", "Toggle Text"))
-					.IsEnabled(true)
-					.ToolTipText(LOCTEXT("SemDataCompShowTextTip", "Show the semantic data of the components.."))
-					.OnClicked(this, &FSLEdModeToolkit::OnToggleTextSemDataComp)
-				]
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataVisInfoCreate", "Create"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataVisInfoCreateTip", "Create visual info components.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnCreateSemDataVisInfo)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataVisInfoRefresh", "Refresh"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataVisInfoRefresh", "Refresh visual values.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnRefreshSemDataVisInfo)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataVisInfoRm", "Remove"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataVisInfoRmTip", "Remove visual info components (make sure no related editor windows are open).."))
+				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataVisInfo)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataVisInfoToggle", "Toggle Visibility"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataVisInfoToggleTip", "Toggle visual info visibility.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnToggleSemDataVisInfo)
+			]
 		];
 }
 
@@ -604,7 +652,7 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
 	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	GEditor->ForceGarbageCollection();
+	GEditor->ForceGarbageCollection(true);
 	return FReply::Handled();
 }
 
@@ -639,13 +687,13 @@ FReply FSLEdModeToolkit::OnRmSemDataComp()
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
 	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	GEditor->ForceGarbageCollection();
+	GEditor->ForceGarbageCollection(true);
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Load semantic data components"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompToggleMaskST", "Toggle semantic components visual maks visiblity"));
 	if (bOnlySelected)
 	{
 		FSLEdUtils::ToggleMasks(GetSelectedActors());
@@ -658,16 +706,71 @@ FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnToggleTextSemDataComp()
+
+////
+FReply FSLEdModeToolkit::OnCreateSemDataVisInfo()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Load semantic data components"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoCreateST", "Create visual info components"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::ToggleText(GetSelectedActors());
+		FSLEdUtils::CreateVisualInfoComponents(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::ToggleText(GEditor->GetEditorWorldContext().World());
+		FSLEdUtils::CreateVisualInfoComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	}
+
+	GUnrealEd->UpdateFloatingPropertyWindows();
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	GEditor->ForceGarbageCollection(true);
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnRefreshSemDataVisInfo()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRefreshST", "Refresh visual info components"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::RefreshVisualInfoComponents(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::RefreshVisualInfoComponents(GEditor->GetEditorWorldContext().World());
+	}
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnRmSemDataVisInfo()
+{
+	DeselectComponentsOnly();
+
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRmST", "Remove visual info components"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::RemoveSemanticDataComponents(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::RemoveSemanticDataComponents(GEditor->GetEditorWorldContext().World());
+	}
+
+	GUnrealEd->UpdateFloatingPropertyWindows();
+	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	GEditor->ForceGarbageCollection(true);
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnToggleSemDataVisInfo()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoToggleST", "Toggle visual info components visibility"));
+	if (bOnlySelected)
+	{
+		FSLEdUtils::ToggleVisualInfoComponents(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::ToggleVisualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
 	return FReply::Handled();
 }

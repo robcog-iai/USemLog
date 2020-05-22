@@ -18,9 +18,9 @@ void USLIndividual::PostInitProperties()
 }
 
 // Set pointer to the semantic owner
-bool USLIndividual::Init(bool bForced)
+bool USLIndividual::Init(bool bReset)
 {
-	if (bForced)
+	if (bReset)
 	{
 		bIsInit = false;
 	}
@@ -30,7 +30,7 @@ bool USLIndividual::Init(bool bForced)
 		return true;
 	}
 
-	if (!Super::Init(bForced))
+	if (!Super::Init(bReset))
 	{
 		return false;
 	}
@@ -46,9 +46,9 @@ bool USLIndividual::IsInit() const
 }
 
 // Load semantic data
-bool USLIndividual::Load(bool bForced)
+bool USLIndividual::Load(bool bReset)
 {
-	if (bForced)
+	if (bReset)
 	{
 		bIsLoaded = false;
 	}
@@ -60,13 +60,13 @@ bool USLIndividual::Load(bool bForced)
 
 	if (!IsInit())
 	{
-		if (!Init(bForced))
+		if (!Init(bReset))
 		{
 			return false;
 		}
 	}
 
-	if (!Super::Load(bForced))
+	if (!Super::Load(bReset))
 	{
 		return false;
 	}

@@ -38,7 +38,10 @@ private:
 	// Semantic data components
 	SVerticalBox::FSlot& CreateSemDataCompTxtSlot();
 	SVerticalBox::FSlot& CreateSemDataCompSlot();
-	SVerticalBox::FSlot& CreateSemDataCompFuncSlot();
+
+	// Semantic data visual info
+	SVerticalBox::FSlot& CreateSemDataVisInfoTxt();
+	SVerticalBox::FSlot& CreateSemDataVisInfoSlot();
 
 	// Semantic data
 	SVerticalBox::FSlot& CreateSemDataTxtSlot();
@@ -74,10 +77,13 @@ private:
 	FReply OnCreateSemDataComp();
 	FReply OnReLoadSemDataComp();
 	FReply OnRmSemDataComp();
+	FReply OnToggleMaskSemDataComp();
 
 	// Semantic data components functionalities
-	FReply OnToggleMaskSemDataComp();
-	FReply OnToggleTextSemDataComp();
+	FReply OnCreateSemDataVisInfo();
+	FReply OnRefreshSemDataVisInfo();
+	FReply OnRmSemDataVisInfo();
+	FReply OnToggleSemDataVisInfo();
 
 	// Semantic data
 	FReply OnWriteSemDataAll();

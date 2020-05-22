@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Data/SLVisualIndividual.h"
+#include "Data/SLVisibleIndividual.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/StaticMeshActor.h"
@@ -11,7 +11,7 @@
 #include "Utils/SLTagIO.h"
 
 // Ctor
-USLVisualIndividual::USLVisualIndividual()
+USLVisibleIndividual::USLVisibleIndividual()
 {
 	// Load the mask material
 	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialAsset(
@@ -30,23 +30,23 @@ USLVisualIndividual::USLVisualIndividual()
 }
 
 // Called before destroying the object.
-void USLVisualIndividual::BeginDestroy()
+void USLVisibleIndividual::BeginDestroy()
 {
 	ApplyOriginalMaterials();
 	Super::BeginDestroy();
 }
 
 // Create and set the dynamic material, the owners visual component
-void USLVisualIndividual::PostInitProperties()
+void USLVisibleIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
 	Init();
 }
 
 // Set pointer to the semantic owner
-bool USLVisualIndividual::Init(bool bForced)
+bool USLVisibleIndividual::Init(bool bReset)
 {
-	if (bForced)
+	if (bReset)
 	{
 		bIsInit = false;
 	}
@@ -56,7 +56,7 @@ bool USLVisualIndividual::Init(bool bForced)
 		return true;
 	}
 
-	if (!Super::Init(bForced))
+	if (!Super::Init(bReset))
 	{
 		return false;
 	}
@@ -66,15 +66,15 @@ bool USLVisualIndividual::Init(bool bForced)
 }
 
 // Check if individual is initialized
-bool USLVisualIndividual::IsInit() const
+bool USLVisibleIndividual::IsInit() const
 {
 	return bIsInit && Super::IsInit();
 }
 
 // Load semantic data
-bool USLVisualIndividual::Load(bool bForced)
+bool USLVisibleIndividual::Load(bool bReset)
 {
-	if (bForced)
+	if (bReset)
 	{
 		bIsLoaded = false;
 	}
@@ -89,9 +89,9 @@ bool USLVisualIndividual::Load(bool bForced)
 		return false;
 	}
 
-	if (!Super::Load(bForced))
+	if (!Super::Load(bReset))
 	{
-		if (!Init(bForced))
+		if (!Init(bReset))
 		{
 			return false;
 		}
@@ -102,13 +102,13 @@ bool USLVisualIndividual::Load(bool bForced)
 }
 
 // Check if semantic data is succesfully loaded
-bool USLVisualIndividual::IsLoaded() const
+bool USLVisibleIndividual::IsLoaded() const
 {
 	return bIsLoaded /*&& Super::IsLoaded()*/;
 }
 
 // Save data to owners tag
-bool USLVisualIndividual::ExportToTag(bool bOverwrite)
+bool USLVisibleIndividual::ExportToTag(bool bOverwrite)
 {
 	if (!Super::ExportToTag(bOverwrite))
 	{
@@ -129,7 +129,7 @@ bool USLVisualIndividual::ExportToTag(bool bOverwrite)
 }
 
 // Load data from owners tag
-bool USLVisualIndividual::ImportFromTag(bool bOverwrite)
+bool USLVisibleIndividual::ImportFromTag(bool bOverwrite)
 {
 	if (!Super::ImportFromTag(bOverwrite))
 	{
@@ -150,7 +150,7 @@ bool USLVisualIndividual::ImportFromTag(bool bOverwrite)
 }
 
 // Apply visual mask material
-bool USLVisualIndividual::ApplyVisualMaskMaterials(bool bReload)
+bool USLVisibleIndividual::ApplyVisualMaskMaterials(bool bReload)
 {
 
 	if (!bIsLoaded)
@@ -171,7 +171,7 @@ bool USLVisualIndividual::ApplyVisualMaskMaterials(bool bReload)
 }
 
 // Apply original materials
-bool USLVisualIndividual::ApplyOriginalMaterials()
+bool USLVisibleIndividual::ApplyOriginalMaterials()
 {
 	if (!bIsLoaded)
 	{
@@ -193,7 +193,7 @@ bool USLVisualIndividual::ApplyOriginalMaterials()
 }
 
 // Toggle between the visual mask and the origina materials
-bool USLVisualIndividual::ToggleMaterials()
+bool USLVisibleIndividual::ToggleMaterials()
 {
 	if (bMaskMaterialOn)
 	{
@@ -206,7 +206,7 @@ bool USLVisualIndividual::ToggleMaterials()
 }
 
 // Set  visual mask
-void USLVisualIndividual::SetVisualMask(const FString& InVisualMask, bool bReload, bool bClearCalibratedValue)
+void USLVisibleIndividual::SetVisualMask(const FString& InVisualMask, bool bReload, bool bClearCalibratedValue)
 {
 	// Clear the calibrated color in case of a new visual mask value
 	if (!VisualMask.Equals(InVisualMask) && bClearCalibratedValue) 
@@ -228,7 +228,7 @@ void USLVisualIndividual::SetVisualMask(const FString& InVisualMask, bool bReloa
 }
 
 // Apply color to the dynamic material
-bool USLVisualIndividual::ApplyVisualMaskColorToDynamicMaterial()
+bool USLVisibleIndividual::ApplyVisualMaskColorToDynamicMaterial()
 {	
 	if (VisualMaskDynamicMaterial && HasVisualMask())
 	{
@@ -239,7 +239,7 @@ bool USLVisualIndividual::ApplyVisualMaskColorToDynamicMaterial()
 }
 
 // Private init implementation
-bool USLVisualIndividual::InitImpl()
+bool USLVisibleIndividual::InitImpl()
 {
 	if (!VisualMaskMaterial)
 	{
@@ -267,7 +267,7 @@ bool USLVisualIndividual::InitImpl()
 }
 
 // Private load implementation
-bool USLVisualIndividual::LoadImpl()
+bool USLVisibleIndividual::LoadImpl()
 {
 	if (!HasVisualMask())
 	{
