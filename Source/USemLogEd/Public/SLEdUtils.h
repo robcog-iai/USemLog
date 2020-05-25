@@ -15,8 +15,8 @@ public:
 	static void WriteSemanticMap(UWorld* World, bool bOverwrite = false);
 
 	/* Individual actor components */
-	static void CreateSemanticDataComponents(UWorld* World, bool bOverwrite = false);
-	static void CreateSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static bool CreateSemanticDataComponents(UWorld* World, bool bOverwrite = false);
+	static bool CreateSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
 	static void ReLoadSemanticDataComponents(UWorld* World);
 	static void ReLoadSemanticDataComponents(const TArray<AActor*>& Actors);
 	static void RemoveSemanticDataComponents(UWorld* World);

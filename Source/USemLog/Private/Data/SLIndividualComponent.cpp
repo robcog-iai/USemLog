@@ -24,7 +24,8 @@ USLIndividualComponent::USLIndividualComponent()
 void USLIndividualComponent::BeginDestroy()
 {
 	Super::BeginDestroy();
-	if (SemanticIndividual)
+
+	if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
 	{
 		SemanticIndividual->ConditionalBeginDestroy();
 	}

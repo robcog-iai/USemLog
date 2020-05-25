@@ -39,6 +39,9 @@ protected:
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 	virtual void PostInitProperties() override;
 
+	// Called before destroying the object.
+	virtual void BeginDestroy() override;
+
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -52,7 +55,7 @@ protected:
 
 private:
 	// Class text
-	UPROPERTY(/*EditAnywhere, Category = "Semantic Logger"*/)
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
 	class UTextRenderComponent* ClassText;
 
 	// Id text

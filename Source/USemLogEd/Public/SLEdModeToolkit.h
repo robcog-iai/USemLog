@@ -119,7 +119,7 @@ private:
 	AActor* GetSingleSelectedActor() const;
 
 	// Deselect components to avoid crash when deleting the sl data component
-	void DeselectComponentsOnly() const;
+	void DeselectComponentSelection() const;
 
 	/* Info */
 	// Print out info about uobjects in editor

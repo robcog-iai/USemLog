@@ -27,7 +27,7 @@
 #include "Utils/SLUUid.h"
 
 
-// Add new individual component to actor
+// Add new individual component to actor (return true if component has been created or modified)
 bool FSLIndividualUtils::AddNewIndividualComponent(AActor* Actor, bool bOverwrite)
 {
 	if (SupportsIndividualComponents(Actor))
@@ -42,6 +42,7 @@ bool FSLIndividualUtils::AddNewIndividualComponent(AActor* Actor, bool bOverwrit
 				USLIndividualComponent* ExistingComp = CastChecked<USLIndividualComponent>(AC);
 				ExistingComp->Init(true);
 				ExistingComp->Load(true);
+				return true;
 			}
 			return false;
 		}
@@ -53,6 +54,10 @@ bool FSLIndividualUtils::AddNewIndividualComponent(AActor* Actor, bool bOverwrit
 			// Create an appropriate name for the new component (avoid duplicates)
 			FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(USLIndividualComponent::StaticClass(), Actor);
 
+			// Get the set of owned components that exists prior to instancing the new component.
+			TInlineComponentArray<UActorComponent*> PreInstanceComponents;
+			Actor->GetComponents(PreInstanceComponents);
+
 			// Create a new component
 			USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(Actor, NewComponentName, RF_Transactional);
 
@@ -63,7 +68,19 @@ bool FSLIndividualUtils::AddNewIndividualComponent(AActor* Actor, bool bOverwrit
 			NewComp->OnComponentCreated();
 			NewComp->RegisterComponent();
 
-			//Actor->RerunConstructionScripts();
+			// Register any new components that may have been created during construction of the instanced component, but were not explicitly registered.
+			TInlineComponentArray<UActorComponent*> PostInstanceComponents;
+			Actor->GetComponents(PostInstanceComponents);
+			for (UActorComponent* ActorComponent : PostInstanceComponents)
+			{
+				if (!ActorComponent->IsRegistered() && ActorComponent->bAutoRegister && !ActorComponent->IsPendingKill() && !PreInstanceComponents.Contains(ActorComponent))
+				{
+					ActorComponent->RegisterComponent();
+				}
+			}
+
+			Actor->RerunConstructionScripts();
+
 			return true;
 		}
 
@@ -73,7 +90,7 @@ bool FSLIndividualUtils::AddNewIndividualComponent(AActor* Actor, bool bOverwrit
 	return false;
 }
 
-// Add new visual info component to actor
+// Add new visual info component to actor (return true if component has been created or modified)
 bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrite)
 {
 	// Check if it has an individual component
@@ -86,6 +103,7 @@ bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrit
 			{
 				USLIndividualVisualInfo* ExistingComp = CastChecked<USLIndividualVisualInfo>(AC);
 				ExistingComp->Init(true);
+				return true;
 			}
 			return false;
 		}
@@ -96,6 +114,10 @@ bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrit
 
 			// Create an appropriate name for the new component (avoid duplicates)
 			FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(USLIndividualVisualInfo::StaticClass(), Actor);
+
+			// Get the set of owned components that exists prior to instancing the new component.
+			TInlineComponentArray<UActorComponent*> PreInstanceComponents;
+			Actor->GetComponents(PreInstanceComponents);
 
 			// Create a new component
 			USLIndividualVisualInfo* NewComp = NewObject<USLIndividualVisualInfo>(Actor, NewComponentName, RF_Transactional);
@@ -109,7 +131,19 @@ bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrit
 			NewComp->OnComponentCreated();
 			NewComp->RegisterComponent();
 
-			//Actor->RerunConstructionScripts();
+			// Register any new components that may have been created during construction of the instanced component, but were not explicitly registered.
+			TInlineComponentArray<UActorComponent*> PostInstanceComponents;
+			Actor->GetComponents(PostInstanceComponents);
+			for (UActorComponent* ActorComponent : PostInstanceComponents)
+			{
+				if (!ActorComponent->IsRegistered() && ActorComponent->bAutoRegister && !ActorComponent->IsPendingKill() && !PreInstanceComponents.Contains(ActorComponent))
+				{
+					ActorComponent->RegisterComponent();
+				}
+			}
+
+			Actor->RerunConstructionScripts();
+
 			return true;
 		}
 	}

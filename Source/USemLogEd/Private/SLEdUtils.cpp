@@ -47,20 +47,24 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 }
 
 /* Semantic data components */
-void FSLEdUtils::CreateSemanticDataComponents(UWorld* World, bool bOverwrite)
+bool FSLEdUtils::CreateSemanticDataComponents(UWorld* World, bool bOverwrite)
 {
+	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		FSLIndividualUtils::AddNewIndividualComponent(*ActItr, bOverwrite);
+		bMarkDirty = bMarkDirty || FSLIndividualUtils::AddNewIndividualComponent(*ActItr, bOverwrite);
 	}
+	return bMarkDirty;
 }
 
-void FSLEdUtils::CreateSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite)
+bool FSLEdUtils::CreateSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite)
 {
+	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		FSLIndividualUtils::AddNewIndividualComponent(Act, bOverwrite);
+		bMarkDirty = bMarkDirty || FSLIndividualUtils::AddNewIndividualComponent(Act, bOverwrite);
 	}
+	return bMarkDirty;
 }
 
 void FSLEdUtils::ReLoadSemanticDataComponents(UWorld* World)
@@ -569,11 +573,14 @@ void FSLEdUtils::RemoveVisualInfoComponent(AActor* Actor)
 {
 	if (USLIndividualVisualInfo* SLVI = GetVisualInfoComponent(Actor))
 	{
-		// todo, cannot undo, check how 'delete' button handles removing components and allowing undo
+		// TODO cannot undo, check how 'delete' button handles removing components and allowing undo
+		// SCSSEditor line ~5317 
+		// NewComponent = AddNewNodeForInstancedComponent(MoveTemp(AddTransaction), NewInstanceComponent, Asset, bSetFocusToNewItem);
+
 		Actor->Modify();
 		Actor->RemoveInstanceComponent(SLVI);
 		SLVI->ConditionalBeginDestroy();
-		//SLC->DestroyComponent();	
+		//SLVI->DestroyComponent();	
 	}
 }
 

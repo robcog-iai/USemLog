@@ -74,6 +74,23 @@ void USLIndividualVisualInfo::OnRegister()
 	//Init();
 }
 
+// Called before destroying the object.
+void USLIndividualVisualInfo::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+	if (ClassText && ClassText->IsValidLowLevel())
+	{
+		ClassText->ConditionalBeginDestroy();
+	}
+
+	if (IdText && IdText->IsValidLowLevel())
+	{
+		IdText->ConditionalBeginDestroy();
+	}
+}
+
+
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 void USLIndividualVisualInfo::PostInitProperties()
 {

@@ -12,10 +12,10 @@
 class USEMLOG_API FSLIndividualUtils
 {
 public:
-	// Add new individual component to actor
+	// Add new individual component to actor (return true if component has been created or modified)
 	static bool AddNewIndividualComponent(AActor* Actor, bool bOverwrite);
 
-	// Add new visual info component to actor
+	// Add new visual info component to actor (return true if component has been created or modified)
 	static bool AddNewVisualInfoComponent(AActor* Actor, bool bOverwrite);
 
 	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)

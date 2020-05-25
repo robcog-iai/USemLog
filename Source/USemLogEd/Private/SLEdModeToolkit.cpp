@@ -659,17 +659,22 @@ FReply FSLEdModeToolkit::OnWriteSemMap()
 FReply FSLEdModeToolkit::OnCreateSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompCreateST", "Create semantic data components"));
+	bool bMarkDirty = false;
 	if (bOnlySelected)
 	{
-		FSLEdUtils::CreateSemanticDataComponents(GetSelectedActors(), bOverwrite);
+		bMarkDirty = FSLEdUtils::CreateSemanticDataComponents(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::CreateSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = FSLEdUtils::CreateSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -693,7 +698,7 @@ FReply FSLEdModeToolkit::OnReLoadSemDataComp()
 
 FReply FSLEdModeToolkit::OnRmSemDataComp()
 {
-	DeselectComponentsOnly();
+	DeselectComponentSelection();
 
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompRmST", "Remove semantic data components"));
 	if (bOnlySelected)
@@ -767,7 +772,7 @@ FReply FSLEdModeToolkit::OnRefreshSemDataVisInfo()
 
 FReply FSLEdModeToolkit::OnRmSemDataVisInfo()
 {
-	DeselectComponentsOnly();
+	DeselectComponentSelection();
 
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRmST", "Remove visual info components"));
 	if (bOnlySelected)
@@ -1069,7 +1074,7 @@ FReply FSLEdModeToolkit::OnTriggerGC()
 		//GEditor->ForceGarbageCollection();
 		//GEditor->ForceGarbageCollection(true);
 		GEditor->PerformGarbageCollectionAndCleanupActors();
-		GEditor->GetEditorWorldContext().World()->CleanupWorld();
+		//GEditor->GetEditorWorldContext().World()->CleanupWorld();
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d GC + Cleanup requested.."), *FString(__FUNCTION__), __LINE__);
 	}
 	return FReply::Handled();
@@ -1164,7 +1169,7 @@ AActor* FSLEdModeToolkit::GetSingleSelectedActor() const
 }
 
 // Deselect components to avoid crash when deleting the sl data component
-void FSLEdModeToolkit::DeselectComponentsOnly() const
+void FSLEdModeToolkit::DeselectComponentSelection() const
 {
 	UActorComponent* SelectedActorComp = nullptr;
 	for (FSelectionIterator It(GEditor->GetSelectedComponentIterator()); It; ++It)
