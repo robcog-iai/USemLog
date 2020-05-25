@@ -60,7 +60,9 @@ private:
 	SVerticalBox::FSlot& CreateEnableOverlapsSlot();
 	SVerticalBox::FSlot& CreateShowSemData();
 	SVerticalBox::FSlot& CreateEnableInstacedMeshMaterialsSlot();
+	SVerticalBox::FSlot& CreateTriggerGCSlot();
 
+	// Info
 	SVerticalBox::FSlot& CreateGenericButtonSlot();
 
 
@@ -105,6 +107,8 @@ private:
 	FReply OnShowSemData();
 	FReply OnEnableMaterialsForInstancedStaticMesh();
 
+	FReply OnTriggerGC();
+
 	FReply OnGenericButton();
 
 	/* Helper */
@@ -116,6 +120,10 @@ private:
 
 	// Deselect components to avoid crash when deleting the sl data component
 	void DeselectComponentsOnly() const;
+
+	/* Info */
+	// Print out info about uobjects in editor
+	void LogObjectInfo(UWorld* World) const;
 
 private:
 	// Widget pointer

@@ -7,7 +7,11 @@
 #include "Data/SLVisibleIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
 
+#include "Data/SLIndividualComponent.h"
+#include "Data/SLIndividualVisualInfo.h"
+
 #include "EngineUtils.h"
+#include "Kismet2/ComponentEditorUtils.h" // GenerateValidVariableName
 
 #include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
@@ -18,9 +22,99 @@
 
 #include "Vision/SLVisionCamera.h"
 
+
 // Utils
 #include "Utils/SLUUid.h"
 
+
+// Add new individual component to actor
+bool FSLIndividualUtils::AddNewIndividualComponent(AActor* Actor, bool bOverwrite)
+{
+	if (SupportsIndividualComponents(Actor))
+	{
+		// Check if individual already exists (avoid duplicates)
+		if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
+		{
+			//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s already has an SLIndividualComponent.."),
+			//	*FString(__FUNCTION__), __LINE__, *Actor->GetName());
+			if (bOverwrite)
+			{
+				USLIndividualComponent* ExistingComp = CastChecked<USLIndividualComponent>(AC);
+				ExistingComp->Init(true);
+				ExistingComp->Load(true);
+			}
+			return false;
+		}
+		else
+		{
+			// Create new component
+			Actor->Modify();
+
+			// Create an appropriate name for the new component (avoid duplicates)
+			FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(USLIndividualComponent::StaticClass(), Actor);
+
+			// Create a new component
+			USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(Actor, NewComponentName, RF_Transactional);
+
+			// Make visible in the components list in the editor
+			Actor->AddInstanceComponent(NewComp);
+			//Actor->AddOwnedComponent(NewComp);
+
+			NewComp->OnComponentCreated();
+			NewComp->RegisterComponent();
+
+			//Actor->RerunConstructionScripts();
+			return true;
+		}
+
+	}
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot add SLIndividualComponent to %s, %s is not a supported actor type.."),
+		*FString(__FUNCTION__), __LINE__, *Actor->GetName(), *Actor->GetArchetype()->GetName());
+	return false;
+}
+
+// Add new visual info component to actor
+bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrite)
+{
+	// Check if it has an individual component
+	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	{
+		// Check if a visual info component already exists
+		if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualVisualInfo::StaticClass()))
+		{
+			if (bOverwrite)
+			{
+				USLIndividualVisualInfo* ExistingComp = CastChecked<USLIndividualVisualInfo>(AC);
+				ExistingComp->Init(true);
+			}
+			return false;
+		}
+		else
+		{
+			// Create new component
+			Actor->Modify();
+
+			// Create an appropriate name for the new component (avoid duplicates)
+			FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(USLIndividualVisualInfo::StaticClass(), Actor);
+
+			// Create a new component
+			USLIndividualVisualInfo* NewComp = NewObject<USLIndividualVisualInfo>(Actor, NewComponentName, RF_Transactional);
+
+			// Make visible in the components list in the editor
+			Actor->AddInstanceComponent(NewComp);
+			Actor->AddOwnedComponent(NewComp);
+
+			NewComp->AttachToComponent(Actor->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+
+			NewComp->OnComponentCreated();
+			NewComp->RegisterComponent();
+
+			//Actor->RerunConstructionScripts();
+			return true;
+		}
+	}
+	return false;
+}
 
 // Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 FString FSLIndividualUtils::GetIndividualClassName(AActor* Actor, bool bDefaultToLabelName)
@@ -276,6 +370,21 @@ bool FSLIndividualUtils::ClearVisualMask(AActor* Actor)
 	if (USLVisibleIndividual* SI = GetCastedIndividualObject<USLVisibleIndividual>(Actor))
 	{
 		SI->SetVisualMask("");
+		return true;
+	}
+	return false;
+}
+
+/* Private helpers */
+// Check if actor supports individual components
+bool FSLIndividualUtils::SupportsIndividualComponents(AActor* Actor)
+{
+	if (Actor->IsA(AStaticMeshActor::StaticClass()))
+	{
+		return true;
+	}
+	else if (Actor->IsA(ASkeletalMeshActor::StaticClass()))
+	{
 		return true;
 	}
 	return false;

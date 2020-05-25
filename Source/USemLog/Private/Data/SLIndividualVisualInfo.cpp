@@ -18,23 +18,25 @@ USLIndividualVisualInfo::USLIndividualVisualInfo()
 	//TypeTextSize = 20.f;
 
 	ClassText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("ClassTxt") /*,true*/);
-	//ClassText->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-	ClassText->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	////ClassText->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+	//ClassText->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	ClassText->SetHorizontalAlignment(EHTA_Center);
 	ClassText->SetWorldSize(ClassTextSize);
 	ClassText->SetText(FText::FromString(TEXT("UnknownClass")));
-	ClassText->SetVisibility(true);
-	////ClassText->SetupAttachment(this);
+	//ClassText->SetVisibility(true);
+	//////
+	ClassText->SetupAttachment(this);
 
-	//ClassText->SetFlags(RF_Transactional);
+	////ClassText->SetFlags(RF_Transactional);
 
 	IdText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("IdTxt"));
-	IdText->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
+	//IdText->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	IdText->SetHorizontalAlignment(EHTA_Center);
 	IdText->SetWorldSize(IdTextSize);
 	IdText->SetText(FText::FromString(TEXT("UnknownId")));
-	////IdText->SetupAttachment(this);
-	IdText->SetRelativeLocation(FVector(0.f, 0.f, -ClassTextSize));
+	//////
+	IdText->SetupAttachment(this);
+	//IdText->SetRelativeLocation(FVector(0.f, 0.f, -ClassTextSize));
 }
 
 

@@ -12,6 +12,12 @@
 class USEMLOG_API FSLIndividualUtils
 {
 public:
+	// Add new individual component to actor
+	static bool AddNewIndividualComponent(AActor* Actor, bool bOverwrite);
+
+	// Add new visual info component to actor
+	static bool AddNewVisualInfoComponent(AActor* Actor, bool bOverwrite);
+
 	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 	static FString GetIndividualClassName(AActor* Actor, bool bDefaultToLabelName = false);
 
@@ -46,6 +52,9 @@ public:
 	static bool ClearVisualMask(AActor* Actor);
 
 private:
+	// Check if actor supports individual components
+	static bool SupportsIndividualComponents(AActor* Actor);
+
 	// Get casted individual from actor (nullptr if failed)
 	template <typename ClassType>
 	static ClassType* GetCastedIndividualObject(AActor* Actor);

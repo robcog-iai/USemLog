@@ -3,15 +3,16 @@
 
 #include "SLEdUtils.h"
 #include "EngineUtils.h"
-#include "Engine/StaticMeshActor.h"
-#include "Components/StaticMeshComponent.h"
-#include "Animation/SkeletalMeshActor.h"
-#include "PhysicsEngine/PhysicsConstraintActor.h"
+//#include "Engine/StaticMeshActor.h"
+//#include "Components/StaticMeshComponent.h"
+//#include "Animation/SkeletalMeshActor.h"
+//#include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "AssetRegistryModule.h"
-#include "Kismet2/ComponentEditorUtils.h"
-#include "Data/SLIndividualUtils.h"
+
+
 
 // SL
+#include "Data/SLIndividualUtils.h"
 #include "Editor/SLSemanticMapWriter.h"
 #include "Vision/SLVisionCamera.h"
 #include "Data/SLIndividualComponent.h"
@@ -50,7 +51,7 @@ void FSLEdUtils::CreateSemanticDataComponents(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		CreateSemanticIndividualComponent(*ActItr, bOverwrite);
+		FSLIndividualUtils::AddNewIndividualComponent(*ActItr, bOverwrite);
 	}
 }
 
@@ -58,7 +59,7 @@ void FSLEdUtils::CreateSemanticDataComponents(const TArray<AActor*>& Actors, boo
 {
 	for (const auto Act : Actors)
 	{
-		CreateSemanticIndividualComponent(Act, bOverwrite);
+		FSLIndividualUtils::AddNewIndividualComponent(Act, bOverwrite);
 	}
 }
 
@@ -118,7 +119,7 @@ void FSLEdUtils::CreateVisualInfoComponents(UWorld* World, bool bOverwrite)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		CreateVisualInfoComponent(*ActItr, bOverwrite);
+		FSLIndividualUtils::AddNewVisualInfoComponent(*ActItr, bOverwrite);
 	}
 }
 
@@ -126,7 +127,7 @@ void FSLEdUtils::CreateVisualInfoComponents(const TArray<AActor*>& Actors, bool 
 {
 	for (const auto Act : Actors)
 	{
-		CreateVisualInfoComponent(Act, bOverwrite);
+		FSLIndividualUtils::AddNewVisualInfoComponent(Act, bOverwrite);
 	}
 }
 
@@ -503,42 +504,6 @@ void FSLEdUtils::EnableAllMaterialsForInstancedStaticMesh()
 
 
 /* Private */
-/* Semantic data components */
-// Add a semantic individual component
-void FSLEdUtils::CreateSemanticIndividualComponent(AActor* Actor, bool bOverwrite)
-{
-	// Skip it already has a component
-	if (USLIndividualComponent* SLC = GetIndividualComponent(Actor))
-	{
-		if (bOverwrite)
-		{
-			// TODO reset?
-			SLC->Init(true);
-			SLC->Load(true);
-			//SLC->LoadIndividual();
-		}
-		return;
-	}
-
-	// Save modify transaction to buffer (allows undo)
-	Actor->Modify();
-
-	// Create an appropriate name for the new component (avoid duplicates)
-	FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(USLIndividualComponent::StaticClass(), Actor);
-
-	// Create a new component
-	USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(Actor, NewComponentName, RF_Transactional);
-
-	// Make visible in the components list in the editor
-	Actor->AddInstanceComponent(NewComp);
-	//Actor->AddOwnedComponent(NewComp);
-
-	//NewComp->OnComponentCreated();
-
-	NewComp->RegisterComponent();
-	//Actor->Modify();
-}
-
 // Reset asset data on the component
 void FSLEdUtils::LoadSemanticIndividualComponent(AActor* Actor)
 {
@@ -590,47 +555,6 @@ void FSLEdUtils::ImportIndividualDataFromTag(AActor* Actor, bool bOverwrite)
 
 
 /* Visual info components */
-// Add a visual info component
-void FSLEdUtils::CreateVisualInfoComponent(AActor* Actor, bool bOverwrite)
-{
-	// Skip it already has a component
-	if (USLIndividualVisualInfo* SLVI = GetVisualInfoComponent(Actor))
-	{
-		if (bOverwrite)
-		{
-			// TODO reset?
-		}
-		return;
-	}
-
-	// Skip if there is no individual component
-	if (!GetIndividualComponent(Actor))
-	{
-		return;
-	}
-
-	// Save modify transaction to buffer (allows undo)
-	Actor->Modify();
-
-	// Create an appropriate name for the new component (avoid duplicates)
-	FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(USLIndividualVisualInfo::StaticClass(), Actor);
-
-	// Create a new component
-	USLIndividualVisualInfo* NewComp = NewObject<USLIndividualVisualInfo>(Actor, NewComponentName, RF_Transactional);
-
-	// Make visible in the components list in the editor
-	Actor->AddInstanceComponent(NewComp);
-	//Actor->AddOwnedComponent(NewComp);
-
-	//NewComp->OnComponentCreated();
-
-	//NewComp->AttachToComponent(Actor->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-	NewComp->SetupAttachment(Actor->GetRootComponent());
-
-	NewComp->RegisterComponent();
-	//Actor->Modify();
-}
-
 // Refresh the visual info component
 void FSLEdUtils::RefreshVisualInfoComponent(AActor* Actor)
 {

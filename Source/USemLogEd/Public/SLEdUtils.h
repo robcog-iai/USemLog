@@ -88,9 +88,6 @@ public:
 private:
 
 	/* Semantic data components */
-	// Add a semantic individual component
-	static void CreateSemanticIndividualComponent(AActor* Actor, bool bOverwrite = false);
-
 	// Reset semantic individual component
 	static void LoadSemanticIndividualComponent(AActor* Actor);
 
@@ -108,9 +105,6 @@ private:
 
 
 	/* Visual info components */
-	// Add a visual info component
-	static void CreateVisualInfoComponent(AActor* Actor, bool bOverwrite = false);
-
 	// Refresh the visual info component
 	static void RefreshVisualInfoComponent(AActor* Actor);
 

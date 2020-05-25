@@ -52,11 +52,11 @@ protected:
 
 private:
 	// Class text
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(/*EditAnywhere, Category = "Semantic Logger"*/)
 	class UTextRenderComponent* ClassText;
 
 	// Id text
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(/*EditAnywhere, Category = "Semantic Logger"*/)
 	class UTextRenderComponent* IdText;
 	
 	// Type text

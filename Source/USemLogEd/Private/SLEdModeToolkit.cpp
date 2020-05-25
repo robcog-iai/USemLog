@@ -82,6 +82,9 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateEnableInstacedMeshMaterialsSlot()
 
 			////
+			+ CreateTriggerGCSlot()
+
+			////
 			+ CreateGenericButtonSlot()
 		];
 
@@ -601,6 +604,21 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableInstacedMeshMaterialsSlot()
 		];
 }
 
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateTriggerGCSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SButton)
+			.Text(LOCTEXT("TriggerGC", "GC"))
+			.IsEnabled(true)
+			.ToolTipText(LOCTEXT("TriggerGCTip", "This will triger the garbage collection"))
+			.OnClicked(this, &FSLEdModeToolkit::OnTriggerGC)
+		];
+}
+
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenericButtonSlot()
 {
 	return SVerticalBox::Slot()
@@ -651,8 +669,8 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 	}
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	GEditor->ForceGarbageCollection(true);
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -667,7 +685,9 @@ FReply FSLEdModeToolkit::OnReLoadSemDataComp()
 	{
 		FSLEdUtils::ReLoadSemanticDataComponents(GEditor->GetEditorWorldContext().World());
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -686,8 +706,8 @@ FReply FSLEdModeToolkit::OnRmSemDataComp()
 	}
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	GEditor->ForceGarbageCollection(true);
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -702,7 +722,9 @@ FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 	{
 		FSLEdUtils::ToggleMasks(GEditor->GetEditorWorldContext().World());
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -721,8 +743,8 @@ FReply FSLEdModeToolkit::OnCreateSemDataVisInfo()
 	}
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	GEditor->ForceGarbageCollection(true);
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -737,7 +759,9 @@ FReply FSLEdModeToolkit::OnRefreshSemDataVisInfo()
 	{
 		FSLEdUtils::RefreshVisualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -748,16 +772,16 @@ FReply FSLEdModeToolkit::OnRmSemDataVisInfo()
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRmST", "Remove visual info components"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveSemanticDataComponents(GetSelectedActors());
+		FSLEdUtils::RemoveVisualInfoComponents(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RemoveSemanticDataComponents(GEditor->GetEditorWorldContext().World());
+		FSLEdUtils::RemoveVisualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
 
 	GUnrealEd->UpdateFloatingPropertyWindows();
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	GEditor->ForceGarbageCollection(true);
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -793,7 +817,9 @@ FReply FSLEdModeToolkit::OnWriteSemDataAll()
 		FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
 		FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -812,7 +838,9 @@ FReply FSLEdModeToolkit::OnRmSemDataAll()
 		FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
 		FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -827,7 +855,9 @@ FReply FSLEdModeToolkit::OnWriteSemDataIds()
 	{
 		FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -842,7 +872,9 @@ FReply FSLEdModeToolkit::OnRmSemDataIds()
 	{
 		FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -857,7 +889,9 @@ FReply FSLEdModeToolkit::OnWriteClassNames()
 	{
 		FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -872,7 +906,9 @@ FReply FSLEdModeToolkit::OnRmClassNames()
 	{
 		FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	
 	return FReply::Handled();
 }
 
@@ -887,7 +923,9 @@ FReply FSLEdModeToolkit::OnWriteVisualMasks()
 	{
 		FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -902,7 +940,9 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 	{
 		FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	
 	return FReply::Handled();
 }
 
@@ -918,7 +958,9 @@ FReply FSLEdModeToolkit::OnExportToTag()
 	{
 		FSLEdUtils::ExportToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -933,7 +975,9 @@ FReply FSLEdModeToolkit::OnImportFromTag()
 	{
 		FSLEdUtils::ImportFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -948,7 +992,9 @@ FReply FSLEdModeToolkit::OnClearTagData()
 	{
 		FSLEdUtils::RemoveTagType(GEditor->GetEditorWorldContext().World(), "SemLog");		
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -965,7 +1011,9 @@ FReply FSLEdModeToolkit::OnAddSemMon()
 	{
 		FSLEdUtils::AddSemanticMonitorComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -980,7 +1028,9 @@ FReply FSLEdModeToolkit::OnEnableOverlaps()
 	{
 		FSLEdUtils::EnableOverlaps(GEditor->GetEditorWorldContext().World());
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	
+	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+
 	return FReply::Handled();
 }
 
@@ -1006,16 +1056,67 @@ FReply FSLEdModeToolkit::OnEnableMaterialsForInstancedStaticMesh()
 	return FReply::Handled();
 }
 
+FReply FSLEdModeToolkit::OnTriggerGC()
+{
+	//FScopedTransaction Transaction(LOCTEXT("TriggerGCST", "TriggerGC"));
+	//if (GEngine)
+	//{		
+	//	//GEngine->ForceGarbageCollection();
+	//	//GEngine->ForceGarbageCollection(true);
+	//}
+	if (GEditor)
+	{
+		//GEditor->ForceGarbageCollection();
+		//GEditor->ForceGarbageCollection(true);
+		GEditor->PerformGarbageCollectionAndCleanupActors();
+		GEditor->GetEditorWorldContext().World()->CleanupWorld();
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d GC + Cleanup requested.."), *FString(__FUNCTION__), __LINE__);
+	}
+	return FReply::Handled();
+}
+
 FReply FSLEdModeToolkit::OnGenericButton()
 {
-	FScopedTransaction Transaction(LOCTEXT("GenericST", "Generic button"));
+	FScopedTransaction Transaction(LOCTEXT("GenericST", "Generic button.."));
+	UWorld* CurrWorld = GEditor->GetEditorWorldContext().World();
+	//UE_LOG(LogTemp, Error, TEXT("%s::%d *** -BEGIN-  GenericButton ***"), *FString(__FUNCTION__), __LINE__);
 
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Selected actors: "), *FString(__func__), __LINE__);
+	///* WORLD */
+	//UE_LOG(LogTemp, Log, TEXT("%s::%d CurrWorld:"), *FString(__FUNCTION__), __LINE__);
+	//UE_LOG(LogTemp, Log, TEXT("\t\t\t%s"), *CurrWorld->GetName());
+	//UE_LOG(LogTemp, Log, TEXT("***"));
 
-	for (const auto Act : GetSelectedActors())
-	{
-		UE_LOG(LogTemp, Error, TEXT("\t\t Act=%s"), *Act->GetName());
-	}
+	///* LEVELS */
+	//UE_LOG(LogTemp, Log, TEXT("%s::%d Levels:"), *FString(__FUNCTION__), __LINE__);
+	//for (const auto& Level : CurrWorld->GetLevels())
+	//{
+	//	UE_LOG(LogTemp, Log, TEXT("\t\t\t%s"), *Level->GetName());
+	//}
+	//UE_LOG(LogTemp, Log, TEXT("***"));
+
+	///* STREAMING LEVELS */
+	//UE_LOG(LogTemp, Log, TEXT("%s::%d Streaming levels:"), *FString(__FUNCTION__), __LINE__);
+	//for (const auto& StreamingLevel : CurrWorld->GetStreamingLevels())
+	//{
+	//	UE_LOG(LogTemp, Log, TEXT("\t\t\t%s"), *StreamingLevel->GetName());
+	//}
+	//UE_LOG(LogTemp, Log, TEXT("***"));
+
+
+	/* UOBJECTS INFO */
+	//UE_LOG(LogTemp, Log, TEXT("%s::%d UObject Infos:"), *FString(__FUNCTION__), __LINE__);
+	LogObjectInfo(CurrWorld);
+	UE_LOG(LogTemp, Log, TEXT("***"));
+
+	///* SELECTED ACTORS */
+	//UE_LOG(LogTemp, Log, TEXT("%s::%d Selected actors: "), *FString(__func__), __LINE__);
+	//for (const auto Act : GetSelectedActors())
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("\t\t\t%s"), *Act->GetName());
+	//}
+	//UE_LOG(LogTemp, Log, TEXT("***"));
+
+	//UE_LOG(LogTemp, Error, TEXT("%s::%d *** -END- GenericButton ***"), *FString(__FUNCTION__), __LINE__);
 	return FReply::Handled();
 }
 
@@ -1070,6 +1171,53 @@ void FSLEdModeToolkit::DeselectComponentsOnly() const
 	{
 		GEditor->SelectComponent(CastChecked<UActorComponent>(*It), false, true);
 	}
+}
+
+// Print out info about uobjects in editor
+void FSLEdModeToolkit::LogObjectInfo(UWorld* World) const
+{
+	int32 InWorldNum = 0;
+	int32 IsActorInWorldNum = 0;
+
+	int32 IsPendingKillNum = 0;
+	int32 IsActorPendingKillNum = 0;
+
+	int32 TotalNum = 0;
+	int32 IsActorTotalNum = 0;
+
+	for (TObjectIterator<UObject> ObjectItr; ObjectItr; ++ObjectItr)
+	{
+		/* In world */
+		if (ObjectItr->GetWorld() == World)
+		{
+			InWorldNum++;
+			if (ObjectItr->IsA(AActor::StaticClass()))
+			{
+				IsActorInWorldNum++;
+			}
+		}
+
+		/* Pending kill */
+		if (ObjectItr->IsPendingKill())
+		{
+			IsPendingKillNum++;
+			if (ObjectItr->IsA(AActor::StaticClass()))
+			{
+				IsActorPendingKillNum++;
+			}
+		}
+
+		/* Total */
+		TotalNum++;
+		if (ObjectItr->IsA(AActor::StaticClass()))
+		{
+			IsActorTotalNum++;
+		}
+	}
+	UE_LOG(LogTemp, Log, TEXT("\t\t\tInWorld:%ld(A)/%ld(O); \tPendingKill:%ld(A)/%ld(O); \tTotal:%ld(A)/%ld(O);"),
+		IsActorInWorldNum, InWorldNum,
+		IsActorPendingKillNum, IsPendingKillNum,
+		IsActorTotalNum, TotalNum);
 }
 
 #undef LOCTEXT_NAMESPACE
