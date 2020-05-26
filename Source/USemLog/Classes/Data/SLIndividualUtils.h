@@ -43,10 +43,10 @@ public:
 
 	/* Visual mask */
 	// Write unique visual masks for all visual individuals in the world
-	static void WriteVisualMasks(UWorld* World, bool bOverwrite);
+	static bool WriteVisualMasks(UWorld* World, bool bOverwrite);
 
 	// Write unique visual masks for visual individuals from the actos in the array
-	static void WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite);
+	static bool WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite);
 
 	// Clear visual mask of the actor
 	static bool ClearVisualMask(AActor* Actor);

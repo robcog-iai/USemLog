@@ -59,10 +59,10 @@ public:
 	ClassType* GetCastedIndividualObject() const {	return Cast<ClassType>(SemanticIndividual); };
 
 	// Save data to owners tag
-	void ExportToTag(bool bOverwrite = false);
+	bool ExportToTag(bool bOverwrite = false);
 
 	// Load data from owners tag
-	void ImportFromTag(bool bOverwrite = false);
+	bool ImportFromTag(bool bOverwrite = false);
 
 	//// Reload the individual data
 	//bool LoadIndividual();

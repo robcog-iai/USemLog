@@ -660,6 +660,7 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompCreateST", "Create semantic data components"));
 	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
 		bMarkDirty = FSLEdUtils::CreateSemanticDataComponents(GetSelectedActors(), bOverwrite);
@@ -669,10 +670,9 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 		bMarkDirty = FSLEdUtils::CreateSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
-	GUnrealEd->UpdateFloatingPropertyWindows();
-
 	if (bMarkDirty)
 	{
+		GUnrealEd->UpdateFloatingPropertyWindows();
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 	}
 
@@ -682,36 +682,46 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 FReply FSLEdModeToolkit::OnReLoadSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Re-Load semantic data components"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::ReLoadSemanticDataComponents(GetSelectedActors());
+		bMarkDirty = FSLEdUtils::ReLoadSemanticDataComponents(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::ReLoadSemanticDataComponents(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = FSLEdUtils::ReLoadSemanticDataComponents(GEditor->GetEditorWorldContext().World());
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnRmSemDataComp()
 {
+	FScopedTransaction Transaction(LOCTEXT("SemDataCompRmST", "Remove semantic data components"));
+	bool bMarkDirty = false;
+
 	DeselectComponentSelection();
 
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompRmST", "Remove semantic data components"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveSemanticDataComponents(GetSelectedActors());
+		bMarkDirty = FSLEdUtils::RemoveSemanticDataComponents(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RemoveSemanticDataComponents(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = FSLEdUtils::RemoveSemanticDataComponents(GEditor->GetEditorWorldContext().World());
 	}
 
-	GUnrealEd->UpdateFloatingPropertyWindows();
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GUnrealEd->UpdateFloatingPropertyWindows();
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -719,16 +729,21 @@ FReply FSLEdModeToolkit::OnRmSemDataComp()
 FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompToggleMaskST", "Toggle semantic components visual maks visiblity"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::ToggleMasks(GetSelectedActors());
+		bMarkDirty = FSLEdUtils::ToggleMasks(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::ToggleMasks(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = FSLEdUtils::ToggleMasks(GEditor->GetEditorWorldContext().World());
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -738,17 +753,22 @@ FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 FReply FSLEdModeToolkit::OnCreateSemDataVisInfo()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoCreateST", "Create visual info components"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::CreateVisualInfoComponents(GetSelectedActors(), bOverwrite);
+		bMarkDirty = FSLEdUtils::CreateVisualInfoComponents(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::CreateVisualInfoComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = FSLEdUtils::CreateVisualInfoComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
-	GUnrealEd->UpdateFloatingPropertyWindows();
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GUnrealEd->UpdateFloatingPropertyWindows();
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -756,36 +776,46 @@ FReply FSLEdModeToolkit::OnCreateSemDataVisInfo()
 FReply FSLEdModeToolkit::OnRefreshSemDataVisInfo()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRefreshST", "Refresh visual info components"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RefreshVisualInfoComponents(GetSelectedActors());
+		bMarkDirty = FSLEdUtils::RefreshVisualInfoComponents(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RefreshVisualInfoComponents(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = FSLEdUtils::RefreshVisualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnRmSemDataVisInfo()
 {
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRmST", "Remove visual info components"));
+	bool bMarkDirty = false;
+
 	DeselectComponentSelection();
 
-	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRmST", "Remove visual info components"));
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveVisualInfoComponents(GetSelectedActors());
+		bMarkDirty = FSLEdUtils::RemoveVisualInfoComponents(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RemoveVisualInfoComponents(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = FSLEdUtils::RemoveVisualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
 
-	GUnrealEd->UpdateFloatingPropertyWindows();
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GUnrealEd->UpdateFloatingPropertyWindows();
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -793,14 +823,22 @@ FReply FSLEdModeToolkit::OnRmSemDataVisInfo()
 FReply FSLEdModeToolkit::OnToggleSemDataVisInfo()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoToggleST", "Toggle visual info components visibility"));
+	bool bMarkDirty = false;
+	
 	if (bOnlySelected)
 	{
-		FSLEdUtils::ToggleVisualInfoComponents(GetSelectedActors());
+		bMarkDirty = FSLEdUtils::ToggleVisualInfoComponents(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::ToggleVisualInfoComponents(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = FSLEdUtils::ToggleVisualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
+
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
+
 	return FReply::Handled();
 }
 
@@ -810,20 +848,25 @@ FReply FSLEdModeToolkit::OnToggleSemDataVisInfo()
 FReply FSLEdModeToolkit::OnWriteSemDataAll()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteAllSemDataST", "Write all semantic data"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite);
-		FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite);
-		FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
-		FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
-		FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -831,37 +874,47 @@ FReply FSLEdModeToolkit::OnWriteSemDataAll()
 FReply FSLEdModeToolkit::OnRmSemDataAll()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmAllSemDataST", "Remove all semantic data"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveUniqueIds(GetSelectedActors());
-		FSLEdUtils::RemoveClassNames(GetSelectedActors());
-		FSLEdUtils::RemoveVisualMasks(GetSelectedActors());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveUniqueIds(GetSelectedActors());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveClassNames(GetSelectedActors());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveVisualMasks(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
-		FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
-		FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnWriteSemDataIds()
 {
+	bool bMarkDirty = false;
+
 	FScopedTransaction Transaction(LOCTEXT("GenSemIdsST", "Generate new semantic Ids"));	
 	if (bOnlySelected)
 	{
-		FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -869,16 +922,21 @@ FReply FSLEdModeToolkit::OnWriteSemDataIds()
 FReply FSLEdModeToolkit::OnRmSemDataIds()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmSemIdsST", "Remove all semantic Ids"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveUniqueIds(GetSelectedActors());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveUniqueIds(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -886,16 +944,21 @@ FReply FSLEdModeToolkit::OnRmSemDataIds()
 FReply FSLEdModeToolkit::OnWriteClassNames()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteClassNamesST", "Write class names"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -903,16 +966,21 @@ FReply FSLEdModeToolkit::OnWriteClassNames()
 FReply FSLEdModeToolkit::OnRmClassNames()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmClassNamesST", "Remove all class names"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveClassNames(GetSelectedActors());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveClassNames(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
 	}
 	
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 	
 	return FReply::Handled();
 }
@@ -920,16 +988,21 @@ FReply FSLEdModeToolkit::OnRmClassNames()
 FReply FSLEdModeToolkit::OnWriteVisualMasks()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteVisualMasksST", "Write visual masks"));	
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -937,16 +1010,21 @@ FReply FSLEdModeToolkit::OnWriteVisualMasks()
 FReply FSLEdModeToolkit::OnRmVisualMasks()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmVisualMasksST", "Remove all visual masks names"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveVisualMasks(GetSelectedActors());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveVisualMasks(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
 	}
 	
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 	
 	return FReply::Handled();
 }
@@ -955,16 +1033,21 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 FReply FSLEdModeToolkit::OnExportToTag()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompSaveST", "Export semantic data to tag"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::ExportToTag(GetSelectedActors(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::ExportToTag(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::ExportToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::ExportToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -972,16 +1055,21 @@ FReply FSLEdModeToolkit::OnExportToTag()
 FReply FSLEdModeToolkit::OnImportFromTag()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Import data from tag"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::ImportFromTag(GetSelectedActors(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::ImportFromTag(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::ImportFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::ImportFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -989,16 +1077,21 @@ FReply FSLEdModeToolkit::OnImportFromTag()
 FReply FSLEdModeToolkit::OnClearTagData()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmTagData", "Remove all SemLog tags"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::RemoveTagType(GetSelectedActors(), "SemLog");
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveTagType(GetSelectedActors(), "SemLog");
 	}
 	else
 	{
-		FSLEdUtils::RemoveTagType(GEditor->GetEditorWorldContext().World(), "SemLog");		
+		bMarkDirty = bMarkDirty || FSLEdUtils::RemoveTagType(GEditor->GetEditorWorldContext().World(), "SemLog");
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -1008,16 +1101,21 @@ FReply FSLEdModeToolkit::OnClearTagData()
 FReply FSLEdModeToolkit::OnAddSemMon()
 {
 	FScopedTransaction Transaction(LOCTEXT("AddSemMonitorsST", "Add semantic monitor components"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::AddSemanticMonitorComponents(GetSelectedActors(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::AddSemanticMonitorComponents(GetSelectedActors(), bOverwrite);
 	}
 	else
 	{
-		FSLEdUtils::AddSemanticMonitorComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = bMarkDirty || FSLEdUtils::AddSemanticMonitorComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
 	}
 
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -1025,16 +1123,21 @@ FReply FSLEdModeToolkit::OnAddSemMon()
 FReply FSLEdModeToolkit::OnEnableOverlaps()
 {
 	FScopedTransaction Transaction(LOCTEXT("EnableOverlapsST", "Enable overlaps"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::EnableOverlaps(GetSelectedActors());
+		bMarkDirty = bMarkDirty || FSLEdUtils::EnableOverlaps(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::EnableOverlaps(GEditor->GetEditorWorldContext().World());
+		bMarkDirty = bMarkDirty || FSLEdUtils::EnableOverlaps(GEditor->GetEditorWorldContext().World());
 	}
 	
-	//GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
 
 	return FReply::Handled();
 }
@@ -1042,15 +1145,22 @@ FReply FSLEdModeToolkit::OnEnableOverlaps()
 FReply FSLEdModeToolkit::OnShowSemData()
 {
 	FScopedTransaction Transaction(LOCTEXT("ShowSemDataST", "Show semantic data"));
+	bool bMarkDirty = false;
+
 	if (bOnlySelected)
 	{
-		FSLEdUtils::ShowSemanticData(GetSelectedActors());
+		//FSLEdUtils::ShowSemanticData(GetSelectedActors());
 	}
 	else
 	{
-		FSLEdUtils::ShowSemanticData(GEditor->GetEditorWorldContext().World());
+		//FSLEdUtils::ShowSemanticData(GEditor->GetEditorWorldContext().World());
 	}
-	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
+
 	return FReply::Handled();
 }
 

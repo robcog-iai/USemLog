@@ -27,7 +27,7 @@ public:
 	bool Refresh();
 
 	// Hide/show component
-	void ToggleVisibility();
+	bool ToggleVisibility();
 
 protected:
 	// Called when the game starts

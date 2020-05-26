@@ -163,21 +163,23 @@ bool USLIndividualComponent::Load(bool bReset)
 }
 
 // Save data to owners tag
-void USLIndividualComponent::ExportToTag(bool bOverwrite)
+bool USLIndividualComponent::ExportToTag(bool bOverwrite)
 {
-	if (SemanticIndividual)
+	if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
 	{
-		SemanticIndividual->ExportToTag(bOverwrite);
+		return SemanticIndividual->ExportToTag(bOverwrite);
 	}
+	return false;
 }
 
 // Load data from owners tag
-void USLIndividualComponent::ImportFromTag(bool bOverwrite)
+bool USLIndividualComponent::ImportFromTag(bool bOverwrite)
 {
-	if (SemanticIndividual)
+	if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
 	{
-		SemanticIndividual->ImportFromTag(bOverwrite);
+		return SemanticIndividual->ImportFromTag(bOverwrite);
 	}
+	return false;
 }
 
 //// Reload the individual data

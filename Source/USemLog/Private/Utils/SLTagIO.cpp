@@ -122,12 +122,14 @@ bool FSLTagIO::AddKVPair(AActor* Actor, const FString& TagType, const FString& T
 
 /* Delete */
 // Remove all tag key value pairs from world
-void FSLTagIO::RemoveWorldKVPairs(UWorld* World, const FString& TagType, const FString& TagKey)
+bool FSLTagIO::RemoveWorldKVPairs(UWorld* World, const FString& TagType, const FString& TagKey)
 {
+	bool bRemovedAny = false;
 	for (TActorIterator<AActor> ActorItr(World); ActorItr; ++ActorItr)
 	{
-		FSLTagIO::RemoveKVPair(*ActorItr, TagType, TagKey);
+		bRemovedAny = bRemovedAny || FSLTagIO::RemoveKVPair(*ActorItr, TagType, TagKey);
 	}
+	return bRemovedAny;
 }
 
 // Remove the pair with the given type and key (return true if the key existed)

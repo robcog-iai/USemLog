@@ -150,18 +150,19 @@ bool USLIndividualVisualInfo::Refresh()
 }
 
 // Hide/show component
-void USLIndividualVisualInfo::ToggleVisibility()
+bool USLIndividualVisualInfo::ToggleVisibility()
 {
 	if (IsVisible())
 	{
-		ClassText->SetVisibility(false);
-		IdText->SetVisibility(false);
-		SetVisibility(false);
+		//ClassText->SetVisibility(false);
+		//IdText->SetVisibility(false);
+		SetVisibility(false, true);
 	}
 	else
 	{
-		ClassText->SetVisibility(true);
-		IdText->SetVisibility(true);
-		SetVisibility(true);
+		//ClassText->SetVisibility(true);
+		//IdText->SetVisibility(true);
+		SetVisibility(true, true);
 	}
+	return true;
 }

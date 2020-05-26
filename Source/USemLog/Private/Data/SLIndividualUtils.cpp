@@ -81,6 +81,9 @@ bool FSLIndividualUtils::AddNewIndividualComponent(AActor* Actor, bool bOverwrit
 
 			Actor->RerunConstructionScripts();
 
+			NewComp->Init();
+			NewComp->Load();
+
 			return true;
 		}
 
@@ -97,12 +100,13 @@ bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrit
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
 		// Check if a visual info component already exists
-		if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualVisualInfo::StaticClass()))
+		if (UActorComponent* ACVI = Actor->GetComponentByClass(USLIndividualVisualInfo::StaticClass()))
 		{
 			if (bOverwrite)
 			{
-				USLIndividualVisualInfo* ExistingComp = CastChecked<USLIndividualVisualInfo>(AC);
+				USLIndividualVisualInfo* ExistingComp = CastChecked<USLIndividualVisualInfo>(ACVI);
 				ExistingComp->Init(true);
+				ExistingComp->Refresh();
 				return true;
 			}
 			return false;
@@ -143,6 +147,9 @@ bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrit
 			}
 
 			Actor->RerunConstructionScripts();
+
+			NewComp->Init();
+			NewComp->Refresh();
 
 			return true;
 		}
@@ -320,8 +327,12 @@ bool FSLIndividualUtils::WriteId(AActor* Actor, bool bOverwrite)
 	{
 		if (!SI->HasId() || bOverwrite)
 		{
-			SI->SetId(FSLUuid::NewGuidInBase64Url());
-			return true;
+			const FString NewId = FSLUuid::NewGuidInBase64Url();
+			if (!SI->GetId().Equals(NewId))
+			{
+				SI->SetId(NewId);
+				return true;
+			}
 		}
 	}
 	return false;
@@ -349,9 +360,13 @@ bool FSLIndividualUtils::WriteClass(AActor* Actor, bool bOverwrite)
 	if (USLIndividual* SI = GetCastedIndividualObject<USLIndividual>(Actor))
 	{
 		if (!SI->HasClass() || bOverwrite)
-		{			
-			SI->SetClass(FSLIndividualUtils::GetIndividualClassName(Actor));
-			return true;
+		{
+			const FString NewName = FSLIndividualUtils::GetIndividualClassName(Actor);
+			if (!SI->GetClass().Equals(NewName))
+			{
+				SI->SetClass(NewName);
+				return true;
+			}
 		}
 	}
 	return false;
@@ -373,29 +388,33 @@ bool FSLIndividualUtils::ClearClass(AActor* Actor)
 
 /* Visual mask */
 // Write unique visual masks for all visual individuals in the world
-void FSLIndividualUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
+bool FSLIndividualUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
 {
+	bool bAddedAny = false;
 	TArray<FColor> ConsumedColors = GetConsumedVisualMaskColors(World);
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
 		if (USLVisibleIndividual* VI = GetCastedIndividualObject<USLVisibleIndividual>(*ActItr))
 		{
-			AddVisualMask(VI, ConsumedColors, bOverwrite);
+			bAddedAny = bAddedAny || AddVisualMask(VI, ConsumedColors, bOverwrite);
 		}
 	}
+	return bAddedAny;
 }
 
 // Write unique visual masks for visual individuals from the actos in the array
-void FSLIndividualUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite)
+bool FSLIndividualUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite)
 {
+	bool bAddedAny = false;
 	TArray<FColor> ConsumedColors = GetConsumedVisualMaskColors(World);
 	for (const auto& Act : Actors)
 	{
 		if (USLVisibleIndividual* SI = GetCastedIndividualObject<USLVisibleIndividual>(Act))
 		{
-			AddVisualMask(SI, ConsumedColors, bOverwrite);
+			bAddedAny = bAddedAny || AddVisualMask(SI, ConsumedColors, bOverwrite);
 		}
 	}
+	return bAddedAny;
 }
 
 // Clear visual mask of the actor

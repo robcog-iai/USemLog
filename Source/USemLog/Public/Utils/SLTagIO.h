@@ -38,7 +38,7 @@ struct USEMLOG_API FSLTagIO
 
 	/* Delete */
 	// Remove all pairs with the given type and key
-	static void RemoveWorldKVPairs(UWorld* World, const FString& TagType, const FString& TagKey);
+	static bool RemoveWorldKVPairs(UWorld* World, const FString& TagType, const FString& TagKey);
 
 	// Remove the pair with the given type and key (return true if the key existed)
 	static bool RemoveKVPair(AActor* Actor, const FString& TagType, const FString& TagKey);

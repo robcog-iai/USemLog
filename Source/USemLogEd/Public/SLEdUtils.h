@@ -17,102 +17,97 @@ public:
 	/* Individual actor components */
 	static bool CreateSemanticDataComponents(UWorld* World, bool bOverwrite = false);
 	static bool CreateSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static void ReLoadSemanticDataComponents(UWorld* World);
-	static void ReLoadSemanticDataComponents(const TArray<AActor*>& Actors);
-	static void RemoveSemanticDataComponents(UWorld* World);
-	static void RemoveSemanticDataComponents(const TArray<AActor*>& Actors);
+	static bool ReLoadSemanticDataComponents(UWorld* World);
+	static bool ReLoadSemanticDataComponents(const TArray<AActor*>& Actors);
+	static bool RemoveSemanticDataComponents(UWorld* World);
+	static bool RemoveSemanticDataComponents(const TArray<AActor*>& Actors);
 
 	/* Semantic data components functionalities*/
-	static void ToggleMasks(UWorld* World);
-	static void ToggleMasks(const TArray<AActor*>& Actors);
+	static bool ToggleMasks(UWorld* World);
+	static bool ToggleMasks(const TArray<AActor*>& Actors);
 
 	/* Individual actor visual info */
-	static void CreateVisualInfoComponents(UWorld* World, bool bOverwrite = false);
-	static void CreateVisualInfoComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static void RefreshVisualInfoComponents(UWorld* World);
-	static void RefreshVisualInfoComponents(const TArray<AActor*>& Actors);
-	static void RemoveVisualInfoComponents(UWorld* World);
-	static void RemoveVisualInfoComponents(const TArray<AActor*>& Actors);
-	static void ToggleVisualInfoComponents(UWorld* World);
-	static void ToggleVisualInfoComponents(const TArray<AActor*>& Actors);
+	static bool CreateVisualInfoComponents(UWorld* World, bool bOverwrite = false);
+	static bool CreateVisualInfoComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static bool RefreshVisualInfoComponents(UWorld* World);
+	static bool RefreshVisualInfoComponents(const TArray<AActor*>& Actors);
+	static bool RemoveVisualInfoComponents(UWorld* World);
+	static bool RemoveVisualInfoComponents(const TArray<AActor*>& Actors);
+	static bool ToggleVisualInfoComponents(UWorld* World);
+	static bool ToggleVisualInfoComponents(const TArray<AActor*>& Actors);
 
 	// Save components data to tags
-	static void ExportToTag(UWorld* World, bool bOverwrite = false);
-	static void ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static bool ExportToTag(UWorld* World, bool bOverwrite = false);
+	static bool ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
 	// Loads components data from tags
-	static void ImportFromTag(UWorld* World, bool bOverwrite = false);
-	static void ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static bool ImportFromTag(UWorld* World, bool bOverwrite = false);
+	static bool ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
 	/* Ids */
-	static void WriteUniqueIds(UWorld* World, bool bOverwrite = false);
-	static void WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static void RemoveUniqueIds(UWorld* World);
-	static void RemoveUniqueIds(const TArray<AActor*>& Actors);
+	static bool WriteUniqueIds(UWorld* World, bool bOverwrite = false);
+	static bool WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static bool RemoveUniqueIds(UWorld* World);
+	static bool RemoveUniqueIds(const TArray<AActor*>& Actors);
 
 	/* Class names */
-	static void WriteClassNames(UWorld* World, bool bOverwrite = false);
-	static void WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static void RemoveClassNames(UWorld* World);
-	static void RemoveClassNames(const TArray<AActor*>& Actors);
+	static bool WriteClassNames(UWorld* World, bool bOverwrite = false);
+	static bool WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static bool RemoveClassNames(UWorld* World);
+	static bool RemoveClassNames(const TArray<AActor*>& Actors);
 
 	/* Visual masks */
-	static void WriteVisualMasks(UWorld* World, bool bOverwrite = false);
-	static void WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite = false);
-	static void RemoveVisualMasks(UWorld* World);
-	static void RemoveVisualMasks(const TArray<AActor*>& Actors);
+	static bool WriteVisualMasks(UWorld* World, bool bOverwrite = false);
+	static bool WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite = false);
+	static bool RemoveVisualMasks(UWorld* World);
+	static bool RemoveVisualMasks(const TArray<AActor*>& Actors);
 
 	// Remove all tag keys
-	static void RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);
-	static void RemoveTagKey(const TArray<AActor*>& Actors, const FString& TagType, const FString& TagKey);
+	static bool RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);
+	static bool RemoveTagKey(const TArray<AActor*>& Actors, const FString& TagType, const FString& TagKey);
 
 	// Remove all types
-	static void RemoveTagType(UWorld* World, const FString& TagType);
-	static void RemoveTagType(const TArray<AActor*>& Actors, const FString& TagType);
+	static bool RemoveTagType(UWorld* World, const FString& TagType);
+	static bool RemoveTagType(const TArray<AActor*>& Actors, const FString& TagType);
 
 	// Add the semantic monitor components registered to tags to the actors
-	static void AddSemanticMonitorComponents(UWorld* World, bool bOverwrite = false);
-	static void AddSemanticMonitorComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static bool AddSemanticMonitorComponents(UWorld* World, bool bOverwrite = false);
+	static bool AddSemanticMonitorComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
 	// Enable overlaps on actors
-	static void EnableOverlaps(UWorld* World);
-	static void EnableOverlaps(const TArray<AActor*>& Actors);
-	
-	// Toggle between showing the semantic data of the entities in the world
-	static void ShowSemanticData(UWorld* World);
-	static void ShowSemanticData(const TArray<AActor*>& Actors);
+	static bool EnableOverlaps(UWorld* World);
+	static bool EnableOverlaps(const TArray<AActor*>& Actors);
 
 	// Enable all materials for instanced static mesh rendering
 	static void EnableAllMaterialsForInstancedStaticMesh();
 
 private:
-
 	/* Semantic data components */
 	// Reset semantic individual component
-	static void LoadSemanticIndividualComponent(AActor* Actor);
+	static bool LoadSemanticIndividualComponent(AActor* Actor);
 
 	// Remove semantic individual component
-	static void RemoveSemanticIndividualComponent(AActor* Actor);
+	static bool RemoveSemanticIndividualComponent(AActor* Actor);
 
 	// Show hide the visual mask 
-	static void ToggleVisualMaskVisibility(AActor* Actor);
+	static bool ToggleVisualMaskVisibility(AActor* Actor);
 
 	// Save semantic individual data to tag
-	static void ExportIndividualDataToTag(AActor* Actor, bool bOverwrite = false);
+	static bool ExportIndividualDataToTag(AActor* Actor, bool bOverwrite = false);
 
 	// Save semantic individual data to tag
-	static void ImportIndividualDataFromTag(AActor* Actor, bool bOverwrite = false);
+	static bool ImportIndividualDataFromTag(AActor* Actor, bool bOverwrite = false);
 
 
 	/* Visual info components */
 	// Refresh the visual info component
-	static void RefreshVisualInfoComponent(AActor* Actor);
+	static bool RefreshVisualInfoComponent(AActor* Actor);
 
 	// Remove the visual info component
-	static void RemoveVisualInfoComponent(AActor* Actor);
+	static bool RemoveVisualInfoComponent(AActor* Actor);
 
 	// Show hide semantic text information
-	static void ToggleVisualInfo(AActor* Actor);
+	static bool ToggleVisualInfo(AActor* Actor);
 
 
 	/* Helpers */
