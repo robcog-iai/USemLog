@@ -46,6 +46,11 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+private:
+	// Called when sibling is being destroyed
+	UFUNCTION()
+	void OnSiblingDestroyed();
+
 protected:
 	// Individual component sibling
 	class USLIndividualComponent* Sibling;

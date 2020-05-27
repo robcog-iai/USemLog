@@ -105,6 +105,13 @@ void USLIndividualVisualInfo::TickComponent(float DeltaTime, ELevelTick TickType
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
+// Called when sibling is being destroyed
+void USLIndividualVisualInfo::OnSiblingDestroyed()
+{
+	// Trigger self destruct
+	ConditionalBeginDestroy();
+}
+
 // Connect to sibling individual component
 bool USLIndividualVisualInfo::Init(bool bReset)
 {
@@ -117,6 +124,7 @@ bool USLIndividualVisualInfo::Init(bool bReset)
 	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
 		Sibling = CastChecked<USLIndividualComponent>(AC);
+		Sibling->OnSLComponentDestroyed.AddDynamic(this, &USLIndividualVisualInfo::OnSiblingDestroyed);
 		bIsInit = true;
 		return true;
 	}

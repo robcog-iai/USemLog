@@ -3,13 +3,7 @@
 
 #include "SLEdUtils.h"
 #include "EngineUtils.h"
-//#include "Engine/StaticMeshActor.h"
-//#include "Components/StaticMeshComponent.h"
-//#include "Animation/SkeletalMeshActor.h"
-//#include "PhysicsEngine/PhysicsConstraintActor.h"
-#include "AssetRegistryModule.h"
-
-
+#include "AssetRegistryModule.h" // material search for InstancedStaticMesh
 
 // SL
 #include "Data/SLIndividualUtils.h"
@@ -52,7 +46,7 @@ bool FSLEdUtils::CreateSemanticDataComponents(UWorld* World, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::AddNewIndividualComponent(*ActItr, bOverwrite);
+		bMarkDirty = FSLIndividualUtils::AddNewIndividualComponent(*ActItr, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -62,7 +56,7 @@ bool FSLEdUtils::CreateSemanticDataComponents(const TArray<AActor*>& Actors, boo
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::AddNewIndividualComponent(Act, bOverwrite);
+		bMarkDirty = FSLIndividualUtils::AddNewIndividualComponent(Act, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -72,7 +66,7 @@ bool FSLEdUtils::ReLoadSemanticDataComponents(UWorld* World)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || LoadSemanticIndividualComponent(*ActItr);
+		bMarkDirty = LoadSemanticIndividualComponent(*ActItr) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -82,7 +76,7 @@ bool FSLEdUtils::ReLoadSemanticDataComponents(const TArray<AActor*>& Actors)
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || LoadSemanticIndividualComponent(Act);
+		bMarkDirty = LoadSemanticIndividualComponent(Act) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -92,7 +86,7 @@ bool FSLEdUtils::RemoveSemanticDataComponents(UWorld* World)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || RemoveSemanticIndividualComponent(*ActItr);
+		bMarkDirty = RemoveSemanticIndividualComponent(*ActItr) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -102,7 +96,7 @@ bool FSLEdUtils::RemoveSemanticDataComponents(const TArray<AActor*>& Actors)
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || RemoveSemanticIndividualComponent(Act);
+		bMarkDirty = RemoveSemanticIndividualComponent(Act) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -114,7 +108,7 @@ bool FSLEdUtils::ToggleMasks(UWorld* World)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || ToggleVisualMaskVisibility(*ActItr);
+		bMarkDirty = ToggleVisualMaskVisibility(*ActItr) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -124,7 +118,8 @@ bool FSLEdUtils::ToggleMasks(const TArray<AActor*>& Actors)
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || ToggleVisualMaskVisibility(Act);
+		bMarkDirty = ToggleVisualMaskVisibility(Act) || bMarkDirty;
+
 	}
 	return bMarkDirty;
 }
@@ -136,7 +131,7 @@ bool FSLEdUtils::CreateVisualInfoComponents(UWorld* World, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::AddNewVisualInfoComponent(*ActItr, bOverwrite);
+		bMarkDirty = FSLIndividualUtils::AddNewVisualInfoComponent(*ActItr, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -146,7 +141,7 @@ bool FSLEdUtils::CreateVisualInfoComponents(const TArray<AActor*>& Actors, bool 
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::AddNewVisualInfoComponent(Act, bOverwrite);
+		bMarkDirty = FSLIndividualUtils::AddNewVisualInfoComponent(Act, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -156,7 +151,7 @@ bool FSLEdUtils::RefreshVisualInfoComponents(UWorld* World)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || RefreshVisualInfoComponent(*ActItr);
+		bMarkDirty = RefreshVisualInfoComponent(*ActItr) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -166,7 +161,7 @@ bool FSLEdUtils::RefreshVisualInfoComponents(const TArray<AActor*>& Actors)
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || RefreshVisualInfoComponent(Act);
+		bMarkDirty = RefreshVisualInfoComponent(Act) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -176,7 +171,7 @@ bool FSLEdUtils::RemoveVisualInfoComponents(UWorld* World)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || RemoveVisualInfoComponent(*ActItr);
+		bMarkDirty = RemoveVisualInfoComponent(*ActItr) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -186,7 +181,7 @@ bool FSLEdUtils::RemoveVisualInfoComponents(const TArray<AActor*>& Actors)
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || RemoveVisualInfoComponent(Act);
+		bMarkDirty = RemoveVisualInfoComponent(Act) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -196,7 +191,7 @@ bool FSLEdUtils::ToggleVisualInfoComponents(UWorld* World)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || ToggleVisualInfo(*ActItr);
+		bMarkDirty = ToggleVisualInfo(*ActItr) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -206,7 +201,7 @@ bool FSLEdUtils::ToggleVisualInfoComponents(const TArray<AActor*>& Actors)
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || ToggleVisualInfo(Act);
+		bMarkDirty = ToggleVisualInfo(Act) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -219,7 +214,7 @@ bool FSLEdUtils::ExportToTag(UWorld* World, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || ExportIndividualDataToTag(*ActItr, bOverwrite);
+		bMarkDirty = ExportIndividualDataToTag(*ActItr, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -229,7 +224,7 @@ bool FSLEdUtils::ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || ExportIndividualDataToTag(Act, bOverwrite);
+		bMarkDirty = ExportIndividualDataToTag(Act, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -239,7 +234,7 @@ bool FSLEdUtils::ImportFromTag(UWorld* World, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || ImportIndividualDataFromTag(*ActItr, bOverwrite);
+		bMarkDirty = ImportIndividualDataFromTag(*ActItr, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -249,7 +244,7 @@ bool FSLEdUtils::ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (const auto Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || ImportIndividualDataFromTag(Act, bOverwrite);
+		bMarkDirty = ImportIndividualDataFromTag(Act, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -261,7 +256,7 @@ bool FSLEdUtils::WriteUniqueIds(UWorld* World, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::WriteId(*ActItr, bOverwrite);
+		bMarkDirty = FSLIndividualUtils::WriteId(*ActItr, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -271,7 +266,7 @@ bool FSLEdUtils::WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (const auto& Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::WriteId(Act, bOverwrite);
+		bMarkDirty = FSLIndividualUtils::WriteId(Act, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -281,7 +276,7 @@ bool FSLEdUtils::RemoveUniqueIds(UWorld* World)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::ClearId(*ActItr);
+		bMarkDirty = FSLIndividualUtils::ClearId(*ActItr) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -291,7 +286,7 @@ bool FSLEdUtils::RemoveUniqueIds(const TArray<AActor*>& Actors)
 	bool bMarkDirty = false;
 	for (const auto& Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::ClearId(Act);
+		bMarkDirty = FSLIndividualUtils::ClearId(Act) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -303,7 +298,7 @@ bool FSLEdUtils::WriteClassNames(UWorld* World, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::WriteClass(*ActItr, bOverwrite);
+		bMarkDirty = FSLIndividualUtils::WriteClass(*ActItr, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -313,7 +308,7 @@ bool FSLEdUtils::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
 	bool bMarkDirty = false;
 	for (const auto& Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::WriteClass(Act, bOverwrite);
+		bMarkDirty = FSLIndividualUtils::WriteClass(Act, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -324,7 +319,7 @@ bool FSLEdUtils::RemoveClassNames(UWorld* World)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::ClearClass(*ActItr);
+		bMarkDirty = FSLIndividualUtils::ClearClass(*ActItr) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -334,7 +329,7 @@ bool FSLEdUtils::RemoveClassNames(const TArray<AActor*>& Actors)
 	bool bMarkDirty = false;
 	for (const auto& Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::ClearClass(Act);
+		bMarkDirty = FSLIndividualUtils::ClearClass(Act) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -356,7 +351,7 @@ bool FSLEdUtils::RemoveVisualMasks(UWorld* World)
 	bool bMarkDirty = false;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::ClearVisualMask(*ActItr);
+		bMarkDirty = FSLIndividualUtils::ClearVisualMask(*ActItr) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -366,7 +361,7 @@ bool FSLEdUtils::RemoveVisualMasks(const TArray<AActor*>& Actors)
 	bool bMarkDirty = false;
 	for (const auto& Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || FSLIndividualUtils::ClearVisualMask(Act);
+		bMarkDirty = FSLIndividualUtils::ClearVisualMask(Act) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -382,7 +377,7 @@ bool FSLEdUtils::RemoveTagKey(const TArray<AActor*>& Actors, const FString& TagT
 	bool bMarkDirty = false;
 	for (const auto& Act : Actors)
 	{
-		bMarkDirty = bMarkDirty || FSLTagIO::RemoveKVPair(Act, TagType, TagKey);
+		bMarkDirty = FSLTagIO::RemoveKVPair(Act, TagType, TagKey) || bMarkDirty;
 	}
 	return bMarkDirty;
 }

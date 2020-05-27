@@ -10,7 +10,12 @@
 #include "Data/SLIndividualUtils.h"
 #include "SLIndividualComponent.generated.h"
 
+// Delegate notification when the component is being destroyed
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSLComponentDestroyedSignature);
 
+/**
+* Component storing the semantic individual information of its owner
+*/
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Individual Component")
 class USEMLOG_API USLIndividualComponent : public UActorComponent
 {
@@ -69,6 +74,10 @@ public:
 
 	// Toggle between original and mask material is possible
 	bool ToggleVisualMaskVisibility();
+
+public:
+	// Called when the component is destroyed
+	FSLComponentDestroyedSignature OnSLComponentDestroyed;
 
 private:
 	// Private init implementation
