@@ -7,7 +7,15 @@
 #include "Components/SceneComponent.h"
 #include "SLIndividualVisualInfo.generated.h"
 
+// Forward declarations
+class USLIndividualComponent;
 
+// Delegate notification when the component is being destroyed
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLVisualInfoComponentDestroyedSignature, USLIndividualVisualInfo*, Self);
+
+/**
+* Component storing the visual information of semantic individuals
+*/
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Individual Visual Info")
 class USEMLOG_API USLIndividualVisualInfo : public USceneComponent
 {
@@ -29,6 +37,9 @@ public:
 	// Hide/show component
 	bool ToggleVisibility();
 
+	// Point text towards the camera
+	bool UpdateOrientation();
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -49,11 +60,15 @@ public:
 private:
 	// Called when sibling is being destroyed
 	UFUNCTION()
-	void OnSiblingDestroyed();
+	void OnSiblingDestroyed(USLIndividualComponent* Component);
+
+public:
+	// Called when the component is destroyed
+	FSLVisualInfoComponentDestroyedSignature OnSLComponentDestroyed;
 
 protected:
 	// Individual component sibling
-	class USLIndividualComponent* Sibling;
+	USLIndividualComponent* Sibling;
 
 	// State of the individual
 	bool bIsInit;
@@ -70,9 +85,12 @@ private:
 	// Type text
 	//UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	//class UTextRenderComponent* TypeText;
-
+	
 	// Text sizes
 	float ClassTextSize;
 	float IdTextSize;
 	//float TypeTextSize;
+
+	// Used for getting the gaze origin point
+	class APlayerCameraManager* CameraManager;
 };

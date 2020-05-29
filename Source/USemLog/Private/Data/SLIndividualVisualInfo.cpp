@@ -4,39 +4,37 @@
 #include "Data/SLIndividualVisualInfo.h"
 #include "Data/SLIndividualComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
+
 
 // Sets default values for this component's properties
 USLIndividualVisualInfo::USLIndividualVisualInfo()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+#if WITH_EDITOR
+	//PrimaryComponentTick.bStartWithTickEnabled = true;
+#endif // WITH_EDITOR
 
 	bIsInit = false;
 	ClassTextSize = 50.f;
 	IdTextSize = 25.f;
 	//TypeTextSize = 20.f;
 
-	ClassText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("ClassTxt") /*,true*/);
-	////ClassText->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
-	//ClassText->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	ClassText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("ClassTxt"));
 	ClassText->SetHorizontalAlignment(EHTA_Center);
 	ClassText->SetWorldSize(ClassTextSize);
 	ClassText->SetText(FText::FromString(TEXT("UnknownClass")));
-	//ClassText->SetVisibility(true);
-	//////
 	ClassText->SetupAttachment(this);
 
-	////ClassText->SetFlags(RF_Transactional);
-
 	IdText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("IdTxt"));
-	//IdText->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	IdText->SetHorizontalAlignment(EHTA_Center);
 	IdText->SetWorldSize(IdTextSize);
 	IdText->SetText(FText::FromString(TEXT("UnknownId")));
-	//////
 	IdText->SetupAttachment(this);
-	//IdText->SetRelativeLocation(FVector(0.f, 0.f, -ClassTextSize));
+	IdText->SetRelativeLocation(FVector(0.f, 0.f, -ClassTextSize));
 }
 
 
@@ -56,20 +54,12 @@ void USLIndividualVisualInfo::OnRegister()
 	//ClassText->SetWorldSize(ClassTextSize);
 	//ClassText->SetText(FText::FromString(TEXT("UnknownClass")));	
 	//ClassText->SetupAttachment(this);
+}
 
-	//IdText = NewObject<UTextRenderComponent>(this, TEXT("IdTxt"));
-	//IdText->SetHorizontalAlignment(EHTA_Center);
-	//IdText->SetWorldSize(IdTextSize);
-	//IdText->SetText(FText::FromString(TEXT("UnknownId")));
-	//IdText->SetupAttachment(this);
-	//IdText->SetRelativeLocation(FVector(0.f, 0.f, - ClassTextSize));
-
-	//TypeText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("TypeTxt"));
-	//TypeText->SetHorizontalAlignment(EHTA_Center);
-	//TypeText->SetWorldSize(TypeTextSize);
-	//TypeText->SetText(FText::FromString(TEXT("UnknownType")));
-	//TypeText->SetupAttachment(this);
-	//TypeText->SetRelativeLocation(FVector(0.f, 0.f, - ClassTextSize - IdTextSize));
+// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+void USLIndividualVisualInfo::PostInitProperties()
+{
+	Super::PostInitProperties();
 
 	//Init();
 }
@@ -88,25 +78,19 @@ void USLIndividualVisualInfo::BeginDestroy()
 	{
 		IdText->ConditionalBeginDestroy();
 	}
-}
 
-
-// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-void USLIndividualVisualInfo::PostInitProperties()
-{
-	Super::PostInitProperties();
-
-	//Init();
+	OnSLComponentDestroyed.Broadcast(this);
 }
 
 // Called every frame
 void USLIndividualVisualInfo::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
 }
 
 // Called when sibling is being destroyed
-void USLIndividualVisualInfo::OnSiblingDestroyed()
+void USLIndividualVisualInfo::OnSiblingDestroyed(USLIndividualComponent* Component)
 {
 	// Trigger self destruct
 	ConditionalBeginDestroy();
@@ -173,4 +157,15 @@ bool USLIndividualVisualInfo::ToggleVisibility()
 		SetVisibility(true, true);
 	}
 	return true;
+}
+
+// Point text towards the camera
+bool USLIndividualVisualInfo::UpdateOrientation()
+{
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		CameraManager = PC->PlayerCameraManager;
+		UE_LOG(LogTemp, Log, TEXT("%s::%d CameraLoc=%s;"), *FString(__FUNCTION__), __LINE__, *CameraManager->GetTargetLocation().ToString());
+	}
+	return false;
 }

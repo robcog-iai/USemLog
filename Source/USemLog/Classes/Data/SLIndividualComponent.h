@@ -11,7 +11,7 @@
 #include "SLIndividualComponent.generated.h"
 
 // Delegate notification when the component is being destroyed
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSLComponentDestroyedSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLComponentDestroyedSignature, USLIndividualComponent*, Self);
 
 /**
 * Component storing the semantic individual information of its owner
@@ -75,16 +75,16 @@ public:
 	// Toggle between original and mask material is possible
 	bool ToggleVisualMaskVisibility();
 
-public:
-	// Called when the component is destroyed
-	FSLComponentDestroyedSignature OnSLComponentDestroyed;
-
 private:
 	// Private init implementation
 	bool InitImpl();
 
 	// Private load implementation
 	bool LoadImpl();
+
+public:
+	// Called when the component is destroyed
+	FSLComponentDestroyedSignature OnSLComponentDestroyed;
 
 private:
 	// Semantic data

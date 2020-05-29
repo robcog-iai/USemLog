@@ -14,6 +14,12 @@ public:
 	// Write the semantic map
 	static void WriteSemanticMap(UWorld* World, bool bOverwrite = false);
 
+	// Get the semantic individual manager from the world, add new if none are available
+	static class ASLIndividualManager* GetIndividualManager(UWorld* World, bool bCreateNew = true);
+
+	// Get the vis info manager form the world, add new one if none are available
+	static class ASLIndividualVisualInfoManager* GetVisualInfoManager(UWorld* World, bool bCreateNew = true);
+
 	/* Individual actor components */
 	static bool CreateSemanticDataComponents(UWorld* World, bool bOverwrite = false);
 	static bool CreateSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
@@ -35,6 +41,11 @@ public:
 	static bool RemoveVisualInfoComponents(const TArray<AActor*>& Actors);
 	static bool ToggleVisualInfoComponents(UWorld* World);
 	static bool ToggleVisualInfoComponents(const TArray<AActor*>& Actors);
+
+	static bool UpdateVisualInfoComponents(UWorld* World);
+	static bool UpdateVisualInfoComponents(const TArray<AActor*>& Actors);
+	static bool ToggleLiveUpdateVisualInfoComponents(UWorld* World);
+	static bool ToggleLiveUpdateVisualInfoComponents(const TArray<AActor*>& Actors);
 
 	// Save components data to tags
 	static bool ExportToTag(UWorld* World, bool bOverwrite = false);
@@ -109,6 +120,11 @@ private:
 	// Show hide semantic text information
 	static bool ToggleVisualInfo(AActor* Actor);
 
+	// Point text towards camera
+	static bool UpdateVisualInfo(AActor* Actor);
+
+	// Constantly point text towards camera
+	static bool ToggleLiveUpdateVisualInfo(AActor* Actor);
 
 	/* Helpers */
 	// Get the individual component of the actor (nullptr if none found)

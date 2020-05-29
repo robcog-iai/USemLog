@@ -11,19 +11,23 @@
 
 #include "Engine/Selection.h"
 #include "ScopedTransaction.h"
-//#include "SSCSEditor.h"
 #include "UnrealEdGlobals.h" // for GUnrealEd
 #include "Editor/UnrealEdEngine.h"
 
+// SL
+#include "Data/SLIndividualManager.h"
+#include "Data/SLIndividualVisualInfoManager.h"
+
 // UUtils
 #include "SLEdUtils.h"
-
 
 #define LOCTEXT_NAMESPACE "FSemLogEdModeToolkit"
 
 // Ctor
 FSLEdModeToolkit::FSLEdModeToolkit()
 {
+	IndividualManager = nullptr;
+	VisualInfoMananger = nullptr;
 	/* Checkbox states */
 	bOverwrite = false;
 	bOnlySelected = false;
@@ -46,12 +50,17 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateSemMapSlot()
 
 			////
+			+ CreateSemDataManagersTxtSlot()
+			+ CreateSemDataManagersSlot()
+
+			////
 			+ CreateSemDataCompTxtSlot()
 			+ CreateSemDataCompSlot()
 
 			////
 			+ CreateSemDataVisInfoTxt()
 			+ CreateSemDataVisInfoSlot()
+			+ CreateSemDataVisInfoFuncSlot()
 
 			////
 			+ CreateSemDataTxtSlot()
@@ -193,6 +202,50 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemMapSlot()
 		];
 }
 
+
+/* Semantic data managers */
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataManagersTxtSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(STextBlock)
+			.Text(LOCTEXT("SemDataManagersTxt", "Semantic Data Managers:"))
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataManagersSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(10)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataManagersInit", "Init"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataManagersInitTip", "Loads (or addsn new) managers from (or to) the world, and initializes them.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnInitSemDataManagers)
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataManagersReLoad", "ReLoad"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataManagersReLoadTip", "Re-loads the components from the world (clean + init).."))
+				.OnClicked(this, &FSLEdModeToolkit::OnReLoadSemDataManagers)
+			]
+		];
+}
+
+
 /* Semantic data components */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompTxtSlot()
 {
@@ -261,6 +314,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 		];
 }
 
+
 /* Semantic data visual info components */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoTxt()
 {
@@ -301,7 +355,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 				SNew(SButton)
 				.Text(LOCTEXT("SemDataVisInfoRefresh", "Refresh"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataVisInfoRefresh", "Refresh visual values.."))
+				.ToolTipText(LOCTEXT("SemDataVisInfoRefreshTip", "Refresh visual values.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnRefreshSemDataVisInfo)
 			]
 
@@ -328,6 +382,41 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 			]
 		];
 }
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoFuncSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataVisInfoUpdate", "UpdateOrientation"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataVisInfoUpdateTip", "Point text towards camera.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnUpdateSemDataVisInfo)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("SemDataVisInfoLIveUpdate", "AutoUpdateToggle"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("SemDataVisInfoLIveUpdateTip", "Toggle live update.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnLiveUpdateSemDataVisInfo)
+			]
+
+		];
+}
+
 
 /* Semantic data */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataTxtSlot()
@@ -473,7 +562,6 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataMaskSlot()
 			]
 		];
 }
-
 
 
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagTxtSlot()
@@ -656,6 +744,66 @@ FReply FSLEdModeToolkit::OnWriteSemMap()
 }
 
 ////
+FReply FSLEdModeToolkit::OnInitSemDataManagers()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataManagerInit", "Init/Create+Init semantic data managers"));
+
+	if (IndividualManager && IndividualManager->IsValidLowLevel())
+	{
+		IndividualManager->Init();
+	}
+	else
+	{
+		IndividualManager = FSLEdUtils::GetIndividualManager(GEditor->GetEditorWorldContext().World());
+		if (IndividualManager && IndividualManager->IsValidLowLevel())
+		{
+			IndividualManager->Init();
+		}
+	}
+
+	if (VisualInfoMananger && VisualInfoMananger->IsValidLowLevel())
+	{
+		VisualInfoMananger->Init();
+	}
+	else
+	{
+		VisualInfoMananger = FSLEdUtils::GetVisualInfoManager(GEditor->GetEditorWorldContext().World());
+		if (VisualInfoMananger && VisualInfoMananger->IsValidLowLevel())
+		{
+			VisualInfoMananger->Init();
+		}
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnReLoadSemDataManagers()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataManagerReLoad", "Reload semantic data managers"));
+	const bool bReset = true;
+
+	if (IndividualManager && IndividualManager->IsValidLowLevel())
+	{
+		IndividualManager->Init(bReset);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, call init first.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	if (VisualInfoMananger && VisualInfoMananger->IsValidLowLevel())
+	{
+		VisualInfoMananger->Init(bReset);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual visual manager not set, call init first.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	return FReply::Handled();
+}
+
+////
 FReply FSLEdModeToolkit::OnCreateSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompCreateST", "Create semantic data components"));
@@ -832,6 +980,50 @@ FReply FSLEdModeToolkit::OnToggleSemDataVisInfo()
 	else
 	{
 		bMarkDirty = FSLEdUtils::ToggleVisualInfoComponents(GEditor->GetEditorWorldContext().World());
+	}
+
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnUpdateSemDataVisInfo()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoUpdateST", "Update visual info orientation"));
+	bool bMarkDirty = false;
+
+	if (bOnlySelected)
+	{
+		bMarkDirty = FSLEdUtils::UpdateVisualInfoComponents(GetSelectedActors());
+	}
+	else
+	{
+		bMarkDirty = FSLEdUtils::UpdateVisualInfoComponents(GEditor->GetEditorWorldContext().World());
+	}
+
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnLiveUpdateSemDataVisInfo()
+{
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoLiveUpdateST", "Toggle live visual info orientation"));
+	bool bMarkDirty = false;
+
+	if (bOnlySelected)
+	{
+		bMarkDirty = FSLEdUtils::ToggleLiveUpdateVisualInfoComponents(GetSelectedActors());
+	}
+	else
+	{
+		bMarkDirty = FSLEdUtils::ToggleLiveUpdateVisualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
 
 	if (bMarkDirty)

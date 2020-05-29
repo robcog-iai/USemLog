@@ -35,6 +35,10 @@ private:
 	// Semantic map
 	SVerticalBox::FSlot& CreateSemMapSlot();
 
+	// Semantic data managers
+	SVerticalBox::FSlot& CreateSemDataManagersTxtSlot();
+	SVerticalBox::FSlot& CreateSemDataManagersSlot();
+
 	// Semantic data components
 	SVerticalBox::FSlot& CreateSemDataCompTxtSlot();
 	SVerticalBox::FSlot& CreateSemDataCompSlot();
@@ -42,6 +46,7 @@ private:
 	// Semantic data visual info
 	SVerticalBox::FSlot& CreateSemDataVisInfoTxt();
 	SVerticalBox::FSlot& CreateSemDataVisInfoSlot();
+	SVerticalBox::FSlot& CreateSemDataVisInfoFuncSlot();
 
 	// Semantic data
 	SVerticalBox::FSlot& CreateSemDataTxtSlot();
@@ -75,17 +80,23 @@ private:
 	// Semantic map
 	FReply OnWriteSemMap();
 
+	// Semantic data managers
+	FReply OnInitSemDataManagers();
+	FReply OnReLoadSemDataManagers();
+
 	// Semantic data components
 	FReply OnCreateSemDataComp();
 	FReply OnReLoadSemDataComp();
 	FReply OnRmSemDataComp();
 	FReply OnToggleMaskSemDataComp();
 
-	// Semantic data components functionalities
+	// Semantic data visual info
 	FReply OnCreateSemDataVisInfo();
 	FReply OnRefreshSemDataVisInfo();
 	FReply OnRmSemDataVisInfo();
 	FReply OnToggleSemDataVisInfo();
+	FReply OnUpdateSemDataVisInfo();
+	FReply OnLiveUpdateSemDataVisInfo();
 
 	// Semantic data
 	FReply OnWriteSemDataAll();
@@ -126,6 +137,12 @@ private:
 	void LogObjectInfo(UWorld* World) const;
 
 private:
+	// Provides functionalities over the individuals in the world
+	class ASLIndividualManager* IndividualManager;
+
+	// Provides visual functionalities over the individuals in the world
+	class ASLIndividualVisualInfoManager* VisualInfoMananger;
+
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;
 

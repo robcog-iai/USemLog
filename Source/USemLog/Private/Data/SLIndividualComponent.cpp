@@ -30,7 +30,7 @@ void USLIndividualComponent::BeginDestroy()
 		SemanticIndividual->ConditionalBeginDestroy();
 	}
 
-	OnSLComponentDestroyed.Broadcast();
+	OnSLComponentDestroyed.Broadcast(this);
 }
 
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
