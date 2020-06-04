@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Data/SLVisibleIndividual.h"
+#include "Data/SLPerceivableIndividual.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/StaticMeshActor.h"
@@ -11,7 +11,7 @@
 #include "Utils/SLTagIO.h"
 
 // Ctor
-USLVisibleIndividual::USLVisibleIndividual()
+USLPerceivableIndividual::USLPerceivableIndividual()
 {
 	// Load the mask material
 	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialAsset(
@@ -30,21 +30,21 @@ USLVisibleIndividual::USLVisibleIndividual()
 }
 
 // Called before destroying the object.
-void USLVisibleIndividual::BeginDestroy()
+void USLPerceivableIndividual::BeginDestroy()
 {
 	ApplyOriginalMaterials();
 	Super::BeginDestroy();
 }
 
 // Create and set the dynamic material, the owners visual component
-void USLVisibleIndividual::PostInitProperties()
+void USLPerceivableIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
 	Init();
 }
 
 // Set pointer to the semantic owner
-bool USLVisibleIndividual::Init(bool bReset)
+bool USLPerceivableIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
@@ -66,13 +66,13 @@ bool USLVisibleIndividual::Init(bool bReset)
 }
 
 // Check if individual is initialized
-bool USLVisibleIndividual::IsInit() const
+bool USLPerceivableIndividual::IsInit() const
 {
 	return bIsInit && Super::IsInit();
 }
 
 // Load semantic data
-bool USLVisibleIndividual::Load(bool bReset)
+bool USLPerceivableIndividual::Load(bool bReset)
 {
 	if (bReset)
 	{
@@ -102,55 +102,39 @@ bool USLVisibleIndividual::Load(bool bReset)
 }
 
 // Check if semantic data is succesfully loaded
-bool USLVisibleIndividual::IsLoaded() const
+bool USLPerceivableIndividual::IsLoaded() const
 {
-	return bIsLoaded /*&& Super::IsLoaded()*/;
+	return bIsLoaded && Super::IsLoaded();
 }
 
 // Save data to owners tag
-bool USLVisibleIndividual::ExportToTag(bool bOverwrite)
+bool USLPerceivableIndividual::ExportToTag(bool bOverwrite)
 {
-	if (!Super::ExportToTag(bOverwrite))
-	{
-		return false;
-	}
-
+	bool bMarkDirty = false;
+	bMarkDirty = Super::ExportToTag(bOverwrite) || bMarkDirty;
 	if (!VisualMask.IsEmpty())
 	{
-		FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "VisualMask", VisualMask, bOverwrite);
+		bMarkDirty = FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "VisualMask", VisualMask, bOverwrite) || bMarkDirty;
 	}
-
 	if (!CalibratedVisualMask.IsEmpty())
 	{
-		FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite);
+		bMarkDirty = FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite) || bMarkDirty;
 	}
-
-	return true;
+	return bMarkDirty;
 }
 
 // Load data from owners tag
-bool USLVisibleIndividual::ImportFromTag(bool bOverwrite)
+bool USLPerceivableIndividual::ImportFromTag(bool bOverwrite)
 {
-	if (!Super::ImportFromTag(bOverwrite))
-	{
-		return false;
-	}
-
-	if (VisualMask.IsEmpty() || bOverwrite)
-	{
-		SetVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "VisualMask"));		
-	}
-
-	if (CalibratedVisualMask.IsEmpty() || bOverwrite)
-	{
-		SetCalibratedVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "CalibratedVisualMask"));
-	}
-
-	return true;
+	bool bNewValue = false;
+	bNewValue = Super::ImportFromTag(bOverwrite) || bNewValue;
+	bNewValue = ImportVisualMaskFromTag(bOverwrite) || bNewValue;
+	bNewValue = ImportCalibratedVisualMaskFromTag(bOverwrite) || bNewValue;
+	return bNewValue;
 }
 
 // Apply visual mask material
-bool USLVisibleIndividual::ApplyVisualMaskMaterials(bool bReload)
+bool USLPerceivableIndividual::ApplyVisualMaskMaterials(bool bReload)
 {
 
 	if (!bIsLoaded)
@@ -171,7 +155,7 @@ bool USLVisibleIndividual::ApplyVisualMaskMaterials(bool bReload)
 }
 
 // Apply original materials
-bool USLVisibleIndividual::ApplyOriginalMaterials()
+bool USLPerceivableIndividual::ApplyOriginalMaterials()
 {
 	if (!bIsLoaded)
 	{
@@ -193,7 +177,7 @@ bool USLVisibleIndividual::ApplyOriginalMaterials()
 }
 
 // Toggle between the visual mask and the origina materials
-bool USLVisibleIndividual::ToggleMaterials()
+bool USLPerceivableIndividual::ToggleMaterials()
 {
 	if (bMaskMaterialOn)
 	{
@@ -206,7 +190,7 @@ bool USLVisibleIndividual::ToggleMaterials()
 }
 
 // Set  visual mask
-void USLVisibleIndividual::SetVisualMask(const FString& InVisualMask, bool bReload, bool bClearCalibratedValue)
+void USLPerceivableIndividual::SetVisualMask(const FString& InVisualMask, bool bReload, bool bClearCalibratedValue)
 {
 	// Clear the calibrated color in case of a new visual mask value
 	if (!VisualMask.Equals(InVisualMask) && bClearCalibratedValue) 
@@ -228,7 +212,7 @@ void USLVisibleIndividual::SetVisualMask(const FString& InVisualMask, bool bRelo
 }
 
 // Apply color to the dynamic material
-bool USLVisibleIndividual::ApplyVisualMaskColorToDynamicMaterial()
+bool USLPerceivableIndividual::ApplyVisualMaskColorToDynamicMaterial()
 {	
 	if (VisualMaskDynamicMaterial && HasVisualMask())
 	{
@@ -238,14 +222,58 @@ bool USLVisibleIndividual::ApplyVisualMaskColorToDynamicMaterial()
 	return false;
 }
 
+// Import visual mask from tag, true if new value is written
+bool USLPerceivableIndividual::ImportVisualMaskFromTag(bool bOverwrite)
+{
+	bool bNewValue = false;
+	if (VisualMask.IsEmpty() || bOverwrite)
+	{
+		const FString PrevVal = VisualMask;
+		SetVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "VisualMask"));
+		bNewValue = VisualMask.Equals(PrevVal);
+		if (VisualMask.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d No VisualMask value could be imported from %s's tag.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
+	}
+	return bNewValue;
+}
+
+// Import calibrated visual mask from tag, true if new value is written
+bool USLPerceivableIndividual::ImportCalibratedVisualMaskFromTag(bool bOverwrite)
+{
+	bool bNewValue = false;
+	if (CalibratedVisualMask.IsEmpty() || bOverwrite)
+	{
+		const FString PrevVal = CalibratedVisualMask;
+		SetCalibratedVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "CalibratedVisualMask"));
+		bNewValue = CalibratedVisualMask.Equals(PrevVal);
+		if (CalibratedVisualMask.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d No CalibratedVisualMask value could be imported from %s's tag.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
+	}
+	return bNewValue;
+}
+
 // Private init implementation
-bool USLVisibleIndividual::InitImpl()
+bool USLPerceivableIndividual::InitImpl()
 {
 	if (!VisualMaskMaterial)
 	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask material asset, init failed.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return false;
 	}
 	VisualMaskDynamicMaterial = UMaterialInstanceDynamic::Create(VisualMaskMaterial, this);
+
+	if (!VisualMaskDynamicMaterial)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no VisualMaskDynamicMaterial, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
 
 	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(SemanticOwner))
 	{
@@ -267,12 +295,27 @@ bool USLVisibleIndividual::InitImpl()
 }
 
 // Private load implementation
-bool USLVisibleIndividual::LoadImpl()
+bool USLPerceivableIndividual::LoadImpl()
 {
+	bool bSuccess = true;
 	if (!HasVisualMask())
 	{
+		if (!ImportVisualMaskFromTag())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no VisualMask, tag import failed as well.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+			bSuccess = false;
+		}
 		return false;
 	}
+
 	VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
-	return true;
+
+	if (!bSuccess)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's load failed.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+
+	return bSuccess;
 }

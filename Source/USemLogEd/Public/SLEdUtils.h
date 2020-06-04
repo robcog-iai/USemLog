@@ -15,7 +15,7 @@ public:
 	static void WriteSemanticMap(UWorld* World, bool bOverwrite = false);
 
 	// Get the semantic individual manager from the world, add new if none are available
-	static class ASLIndividualManager* GetIndividualManager(UWorld* World, bool bCreateNew = true);
+	static class ASLIndividualManager* GetOrCreateIndividualManager(UWorld* World, bool bCreateNew = true);
 
 	// Get the vis info manager form the world, add new one if none are available
 	static class ASLIndividualVisualInfoManager* GetVisualInfoManager(UWorld* World, bool bCreateNew = true);
@@ -131,7 +131,7 @@ private:
 	FORCEINLINE static class USLIndividualComponent* GetIndividualComponent(AActor* Actor);
 
 	// Get the visual info component of the actor (nullptr if none found)
-	FORCEINLINE static class USLIndividualVisualInfo* GetVisualInfoComponent(AActor* Actor);
+	FORCEINLINE static class USLIndividualVisualInfoComponent* GetVisualInfoComponent(AActor* Actor);
 
 
 
@@ -174,3 +174,4 @@ private:
 	//// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 	//static FString GetClassName(AActor* Actor, bool bDefaultToLabelName = false);
 };
+

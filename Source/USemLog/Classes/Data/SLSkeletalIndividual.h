@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Data/SLVisibleIndividual.h"
+#include "Data/SLPerceivableIndividual.h"
 #include "SLSkeletalIndividual.generated.h"
 
 
@@ -30,7 +30,7 @@ struct FSLBoneIndividual
  * 
  */
 UCLASS()
-class USEMLOG_API USLSkeletalIndividual : public USLVisibleIndividual
+class USEMLOG_API USLSkeletalIndividual : public USLPerceivableIndividual
 {
 	GENERATED_BODY()
 

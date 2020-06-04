@@ -98,7 +98,7 @@ private:
 	void LoadFromDataAsset();
 
 	// Refresh the values (update material index, remove invalid data)
-	void Refresh();
+	void RefreshComponents();
 
 	// Clear data
 	void ClearData();

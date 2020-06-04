@@ -2,9 +2,8 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Data/SLIndividualComponent.h"
-#include "Data/SLIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
-#include "Data/SLVisibleIndividual.h"
+#include "Data/SLPerceivableIndividual.h"
 
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
@@ -197,7 +196,7 @@ bool USLIndividualComponent::ImportFromTag(bool bOverwrite)
 // Toggle between original and mask material is possible
 bool USLIndividualComponent::ToggleVisualMaskVisibility()
 {
-	if (USLVisibleIndividual* SI = GetCastedIndividualObject<USLVisibleIndividual>())
+	if (USLPerceivableIndividual* SI = GetCastedIndividualObject<USLPerceivableIndividual>())
 	{
 		return SI->ToggleMaterials();
 	}
@@ -248,11 +247,25 @@ bool USLIndividualComponent::LoadImpl()
 {
 	if (SemanticIndividual)
 	{
-		return SemanticIndividual->ImportFromTag() && SemanticIndividual->Load();
+		bool bSuccess = true;
+		if (!SemanticIndividual->ImportFromTag())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s could not import data from tags.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
+
+		if (!SemanticIndividual->Load())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s could not load semantic individual.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+			bSuccess = false;
+		}
+		return bSuccess;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic individual not set for %s, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return false;
 	}
 }

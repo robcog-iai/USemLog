@@ -5,20 +5,20 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Data/SLIndividual.h"
-#include "SLVisibleIndividual.generated.h"
+#include "Data/SLBaseIndividual.h"
+#include "SLPerceivableIndividual.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class USEMLOG_API USLVisibleIndividual : public USLIndividual
+class USEMLOG_API USLPerceivableIndividual : public USLBaseIndividual
 {
 	GENERATED_BODY()
 
 public:
     // Ctor
-    USLVisibleIndividual();
+    USLPerceivableIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
@@ -64,6 +64,12 @@ public:
     bool HasCalibratedVisualMask() const { return !CalibratedVisualMask.IsEmpty(); };
 
 private:
+    // Import visual mask from tag, true if new value is written
+    bool ImportVisualMaskFromTag(bool bOverwrite = false);
+
+    // Import calibrated visual mask from tag, true if new value is written
+    bool ImportCalibratedVisualMaskFromTag(bool bOverwrite = false);
+
     // Private init implementation
     bool InitImpl();
 

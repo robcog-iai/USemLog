@@ -8,7 +8,7 @@
 #include "SLIndividualVisualInfoManager.generated.h"
 
 // Forward declaration
-class USLIndividualVisualInfo;
+class USLIndividualVisualInfoComponent;
 
 /**
 * Manages all individual visual info
@@ -36,15 +36,21 @@ public:
 	// Checks if the manager is initalized
 	bool IsInit() const { return bIsInit; };
 
+	// Refresh all components
+	bool RefreshComponents();
+
+	// Refresh only selected actors components
+	bool RefreshSelected(const TArray<AActor*> Owners);
+
 private:
 	// Remove destroyed individuals from array
 	UFUNCTION()
-	void OnIndividualDestroyed(USLIndividualVisualInfo* Component);
+	void OnIndividualComponentDestroyed(USLIndividualVisualInfoComponent* Component);
 
 private:
 	// Marks manager as initialized
 	bool bIsInit;
 
 	// Array of all visual components
-	TArray<USLIndividualVisualInfo*> VisualComponents;
+	TArray<USLIndividualVisualInfoComponent*> VisualComponents;
 };

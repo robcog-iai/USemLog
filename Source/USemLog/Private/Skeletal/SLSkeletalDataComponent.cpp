@@ -39,7 +39,7 @@ void USLSkeletalDataComponent::PostEditChangeProperty(struct FPropertyChangedEve
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, bRefresh))
 	{
-		Refresh();
+		RefreshComponents();
 		bRefresh = false;
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataComponent, bClearAllDataButton))
@@ -130,7 +130,7 @@ void USLSkeletalDataComponent::LoadFromDataAsset()
 }
 
 // Refresh data, update material indexes remove invalid data
-void USLSkeletalDataComponent::Refresh()
+void USLSkeletalDataComponent::RefreshComponents()
 {
 	// Continue if attachment parent is a skeletal mesh component
 	if (USkeletalMeshComponent* SkMC = Cast<USkeletalMeshComponent>(GetAttachParent()))

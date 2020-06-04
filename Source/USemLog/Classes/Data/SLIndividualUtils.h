@@ -22,10 +22,10 @@ public:
 	static FString GetIndividualClassName(AActor* Actor, bool bDefaultToLabelName = false);
 
 	// Create default individual object depending on the owner type (returns nullptr if failed)
-	static UClass* CreateIndividualObject(UObject* Outer, AActor* Owner, class USLIndividualBase*& OutIndividualObject);
+	static UClass* CreateIndividualObject(UObject* Outer, AActor* Owner, class USLBaseIndividual*& OutIndividualObject);
 
 	// Convert individual to the given type
-	static bool ConvertIndividualObject(class USLIndividualBase*& OutIndividualObject, TSubclassOf<class USLIndividual> ConvertToClass);
+	static bool ConvertIndividualObject(class USLBaseIndividual*& OutIndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass);
 
 	/* Id */
 	// Write unique id to the actor
@@ -61,7 +61,7 @@ private:
 
 	/* Visual mask generation */
 	// Add visual mask
-	static bool AddVisualMask(class USLVisibleIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite);
+	static bool AddVisualMask(class USLPerceivableIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite);
 
 	// Get all used up visual masks in the world
 	static TArray<FColor> GetConsumedVisualMaskColors(UWorld* World);

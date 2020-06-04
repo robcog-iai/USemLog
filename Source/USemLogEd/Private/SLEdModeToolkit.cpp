@@ -226,18 +226,22 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataManagersSlot()
 			SNew(SHorizontalBox)
 
 			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
 			[
 				SNew(SButton)
 				.Text(LOCTEXT("SemDataManagersInit", "Init"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataManagersInitTip", "Loads (or addsn new) managers from (or to) the world, and initializes them.."))
+				.ToolTipText(LOCTEXT("SemDataManagersInitTip", "Loads (or creates) managers from (or to) the world, and initializes them.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnInitSemDataManagers)
 			]
 
 			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataManagersReLoad", "ReLoad"))
+				.Text(LOCTEXT("SemDataManagersReLoad", "Re-Load"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataManagersReLoadTip", "Re-loads the components from the world (clean + init).."))
 				.OnClicked(this, &FSLEdModeToolkit::OnReLoadSemDataManagers)
@@ -746,20 +750,25 @@ FReply FSLEdModeToolkit::OnWriteSemMap()
 ////
 FReply FSLEdModeToolkit::OnInitSemDataManagers()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataManagerInit", "Init/Create+Init semantic data managers"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataManagerInit", "Init semantic data managers"));
 
+	int32 NumIndividualComponents = 0;
 	if (IndividualManager && IndividualManager->IsValidLowLevel())
 	{
-		IndividualManager->Init();
+		NumIndividualComponents = IndividualManager->Init();
 	}
 	else
 	{
-		IndividualManager = FSLEdUtils::GetIndividualManager(GEditor->GetEditorWorldContext().World());
+		IndividualManager = FSLEdUtils::GetOrCreateIndividualManager(GEditor->GetEditorWorldContext().World());
 		if (IndividualManager && IndividualManager->IsValidLowLevel())
 		{
-			IndividualManager->Init();
+			NumIndividualComponents = IndividualManager->Init();
 		}
 	}
+
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Loaded %ld individual components.."),
+		*FString(__FUNCTION__), __LINE__, NumIndividualComponents);
+
 
 	if (VisualInfoMananger && VisualInfoMananger->IsValidLowLevel())
 	{
@@ -784,11 +793,12 @@ FReply FSLEdModeToolkit::OnReLoadSemDataManagers()
 
 	if (IndividualManager && IndividualManager->IsValidLowLevel())
 	{
-		IndividualManager->Init(bReset);
+		IndividualManager->Refresh();
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, call init first.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
 	if (VisualInfoMananger && VisualInfoMananger->IsValidLowLevel())
@@ -797,7 +807,7 @@ FReply FSLEdModeToolkit::OnReLoadSemDataManagers()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual visual manager not set, call init first.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual visual manager not set, init first.."), *FString(__FUNCTION__), __LINE__);
 	}
 
 	return FReply::Handled();
@@ -807,21 +817,31 @@ FReply FSLEdModeToolkit::OnReLoadSemDataManagers()
 FReply FSLEdModeToolkit::OnCreateSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompCreateST", "Create semantic data components"));
-	bool bMarkDirty = false;
+	int32 NumComp = 0;
 
-	if (bOnlySelected)
+	if (IndividualManager && IndividualManager->IsValidLowLevel())
 	{
-		bMarkDirty = FSLEdUtils::CreateSemanticDataComponents(GetSelectedActors(), bOverwrite);
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->AddIndividualComponents(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->AddIndividualComponents();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::CreateSemanticDataComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GUnrealEd->UpdateFloatingPropertyWindows();
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Created %ld new individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 
 	return FReply::Handled();
@@ -830,20 +850,30 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 FReply FSLEdModeToolkit::OnReLoadSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Re-Load semantic data components"));
-	bool bMarkDirty = false;
+	int32 NumComp = 0;
 
-	if (bOnlySelected)
+	if (IndividualManager && IndividualManager->IsValidLowLevel())
 	{
-		bMarkDirty = FSLEdUtils::ReLoadSemanticDataComponents(GetSelectedActors());
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->ReloadIndividualComponents(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->ReloadIndividualComponents();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::ReLoadSemanticDataComponents(GEditor->GetEditorWorldContext().World());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Refreshed %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 
 	return FReply::Handled();
@@ -852,23 +882,33 @@ FReply FSLEdModeToolkit::OnReLoadSemDataComp()
 FReply FSLEdModeToolkit::OnRmSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompRmST", "Remove semantic data components"));
-	bool bMarkDirty = false;
 
 	DeselectComponentSelection();
 
-	if (bOnlySelected)
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel())
 	{
-		bMarkDirty = FSLEdUtils::RemoveSemanticDataComponents(GetSelectedActors());
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->DestroyIndividualComponents(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->DestroyIndividualComponents();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::RemoveSemanticDataComponents(GEditor->GetEditorWorldContext().World());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GUnrealEd->UpdateFloatingPropertyWindows();
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Removed %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 
 	return FReply::Handled();
@@ -928,11 +968,27 @@ FReply FSLEdModeToolkit::OnRefreshSemDataVisInfo()
 
 	if (bOnlySelected)
 	{
-		bMarkDirty = FSLEdUtils::RefreshVisualInfoComponents(GetSelectedActors());
+		if (VisualInfoMananger && VisualInfoMananger->IsValidLowLevel())
+		{
+			VisualInfoMananger->RefreshSelected(GetSelectedActors());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual visual manager not set, init first.."), *FString(__FUNCTION__), __LINE__);
+		}		
+		//bMarkDirty = FSLEdUtils::RefreshVisualInfoComponents(GetSelectedActors());
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::RefreshVisualInfoComponents(GEditor->GetEditorWorldContext().World());
+		if (VisualInfoMananger && VisualInfoMananger->IsValidLowLevel())
+		{
+			VisualInfoMananger->RefreshComponents();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual visual manager not set, init first.."), *FString(__FUNCTION__), __LINE__);
+		}
+		//bMarkDirty = FSLEdUtils::RefreshVisualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
 
 	if (bMarkDirty)
@@ -1096,11 +1152,11 @@ FReply FSLEdModeToolkit::OnWriteSemDataIds()
 	FScopedTransaction Transaction(LOCTEXT("GenSemIdsST", "Generate new semantic Ids"));	
 	if (bOnlySelected)
 	{
-		bMarkDirty = FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite);
+		bMarkDirty = FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite) || bMarkDirty;
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
 	}
 
 	if (bMarkDirty)

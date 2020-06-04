@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Data/SLIndividualVisualInfo.h"
+#include "Data/SLIndividualVisualInfoComponent.h"
 #include "Data/SLIndividualComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -9,7 +9,7 @@
 
 
 // Sets default values for this component's properties
-USLIndividualVisualInfo::USLIndividualVisualInfo()
+USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -39,13 +39,13 @@ USLIndividualVisualInfo::USLIndividualVisualInfo()
 
 
 // Called when the game starts
-void USLIndividualVisualInfo::BeginPlay()
+void USLIndividualVisualInfoComponent::BeginPlay()
 {
 	Super::BeginPlay();	
 }
 
 // Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
-void USLIndividualVisualInfo::OnRegister()
+void USLIndividualVisualInfoComponent::OnRegister()
 {
 	Super::OnRegister();
 
@@ -57,7 +57,7 @@ void USLIndividualVisualInfo::OnRegister()
 }
 
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-void USLIndividualVisualInfo::PostInitProperties()
+void USLIndividualVisualInfoComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
 
@@ -65,10 +65,8 @@ void USLIndividualVisualInfo::PostInitProperties()
 }
 
 // Called before destroying the object.
-void USLIndividualVisualInfo::BeginDestroy()
+void USLIndividualVisualInfoComponent::BeginDestroy()
 {
-	Super::BeginDestroy();
-
 	if (ClassText && ClassText->IsValidLowLevel())
 	{
 		ClassText->ConditionalBeginDestroy();
@@ -80,24 +78,26 @@ void USLIndividualVisualInfo::BeginDestroy()
 	}
 
 	OnSLComponentDestroyed.Broadcast(this);
+
+	Super::BeginDestroy();
 }
 
 // Called every frame
-void USLIndividualVisualInfo::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void USLIndividualVisualInfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
 }
 
 // Called when sibling is being destroyed
-void USLIndividualVisualInfo::OnSiblingDestroyed(USLIndividualComponent* Component)
+void USLIndividualVisualInfoComponent::OnSiblingDestroyed(USLIndividualComponent* Component)
 {
 	// Trigger self destruct
 	ConditionalBeginDestroy();
 }
 
 // Connect to sibling individual component
-bool USLIndividualVisualInfo::Init(bool bReset)
+bool USLIndividualVisualInfoComponent::Init(bool bReset)
 {
 	if (bReset)
 	{
@@ -108,7 +108,7 @@ bool USLIndividualVisualInfo::Init(bool bReset)
 	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
 		Sibling = CastChecked<USLIndividualComponent>(AC);
-		Sibling->OnSLComponentDestroyed.AddDynamic(this, &USLIndividualVisualInfo::OnSiblingDestroyed);
+		Sibling->OnSLComponentDestroyed.AddDynamic(this, &USLIndividualVisualInfoComponent::OnSiblingDestroyed);
 		bIsInit = true;
 		return true;
 	}
@@ -117,13 +117,13 @@ bool USLIndividualVisualInfo::Init(bool bReset)
 }
 
 // Refresh values from parent (returns false if component not init)
-bool USLIndividualVisualInfo::Refresh()
+bool USLIndividualVisualInfoComponent::RefreshComponents()
 {
 	if(!bIsInit)
 	{
 		if (Init())
 		{
-			return Refresh();
+			return RefreshComponents();
 		}
 		else
 		{
@@ -131,7 +131,7 @@ bool USLIndividualVisualInfo::Refresh()
 		}
 	}
 
-	if (USLIndividual* SLI = Sibling->GetCastedIndividualObject<USLIndividual>())
+	if (USLBaseIndividual* SLI = Sibling->GetCastedIndividualObject<USLBaseIndividual>())
 	{
 		ClassText->SetText(FText::FromString(SLI->GetClass()));
 		IdText->SetText(FText::FromString(SLI->GetId()));
@@ -142,7 +142,7 @@ bool USLIndividualVisualInfo::Refresh()
 }
 
 // Hide/show component
-bool USLIndividualVisualInfo::ToggleVisibility()
+bool USLIndividualVisualInfoComponent::ToggleVisibility()
 {
 	if (IsVisible())
 	{
@@ -160,7 +160,7 @@ bool USLIndividualVisualInfo::ToggleVisibility()
 }
 
 // Point text towards the camera
-bool USLIndividualVisualInfo::UpdateOrientation()
+bool USLIndividualVisualInfoComponent::UpdateOrientation()
 {
 	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{

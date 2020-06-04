@@ -2,13 +2,12 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Data/SLindividualUtils.h"
-#include "Data/SLIndividual.h"
-#include "Data/SLIndividualBase.h"
-#include "Data/SLVisibleIndividual.h"
+#include "Data/SLBaseIndividual.h"
+#include "Data/SLPerceivableIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
 
 #include "Data/SLIndividualComponent.h"
-#include "Data/SLIndividualVisualInfo.h"
+#include "Data/SLIndividualVisualInfoComponent.h"
 
 #include "EngineUtils.h"
 #include "Kismet2/ComponentEditorUtils.h" // GenerateValidVariableName
@@ -100,13 +99,13 @@ bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrit
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
 		// Check if a visual info component already exists
-		if (UActorComponent* ACVI = Actor->GetComponentByClass(USLIndividualVisualInfo::StaticClass()))
+		if (UActorComponent* ACVI = Actor->GetComponentByClass(USLIndividualVisualInfoComponent::StaticClass()))
 		{
 			if (bOverwrite)
 			{
-				USLIndividualVisualInfo* ExistingComp = CastChecked<USLIndividualVisualInfo>(ACVI);
+				USLIndividualVisualInfoComponent* ExistingComp = CastChecked<USLIndividualVisualInfoComponent>(ACVI);
 				ExistingComp->Init(true);
-				ExistingComp->Refresh();
+				ExistingComp->RefreshComponents();
 				return true;
 			}
 			return false;
@@ -117,14 +116,14 @@ bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrit
 			Actor->Modify();
 
 			// Create an appropriate name for the new component (avoid duplicates)
-			FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(USLIndividualVisualInfo::StaticClass(), Actor);
+			FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(USLIndividualVisualInfoComponent::StaticClass(), Actor);
 
 			// Get the set of owned components that exists prior to instancing the new component.
 			TInlineComponentArray<UActorComponent*> PreInstanceComponents;
 			Actor->GetComponents(PreInstanceComponents);
 
 			// Create a new component
-			USLIndividualVisualInfo* NewComp = NewObject<USLIndividualVisualInfo>(Actor, NewComponentName, RF_Transactional);
+			USLIndividualVisualInfoComponent* NewComp = NewObject<USLIndividualVisualInfoComponent>(Actor, NewComponentName, RF_Transactional);
 
 			// Make visible in the components list in the editor
 			Actor->AddInstanceComponent(NewComp);
@@ -149,7 +148,7 @@ bool FSLIndividualUtils::AddNewVisualInfoComponent(AActor* Actor, bool bOverwrit
 			Actor->RerunConstructionScripts();
 
 			NewComp->Init();
-			NewComp->Refresh();
+			NewComp->RefreshComponents();
 
 			return true;
 		}
@@ -273,20 +272,20 @@ FString FSLIndividualUtils::GetIndividualClassName(AActor* Actor, bool bDefaultT
 }
 
 // Create default individual object depending on the owner type (returns nullptr if failed)
-UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner, USLIndividualBase*& IndividualObject)
+UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner, USLBaseIndividual*& IndividualObject)
 {
 	UClass* IndividualClass = nullptr;
 
 	// Set semantic individual type depending on owner
 	if (Owner->IsA(AStaticMeshActor::StaticClass()))
 	{
-		IndividualClass = USLVisibleIndividual::StaticClass();
-		IndividualObject = NewObject<USLIndividualBase>(Outer, IndividualClass);
+		IndividualClass = USLPerceivableIndividual::StaticClass();
+		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
 	}
 	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
 	{
 		IndividualClass = USLSkeletalIndividual::StaticClass();
-		IndividualObject = NewObject<USLIndividualBase>(Outer, IndividualClass);
+		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
 	}
 	else
 	{
@@ -297,24 +296,24 @@ UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner
 }
 
 // Convert individual to the given type
-bool FSLIndividualUtils::ConvertIndividualObject(USLIndividualBase*& IndividualObject, TSubclassOf<class USLIndividual> ConvertToClass)
+bool FSLIndividualUtils::ConvertIndividualObject(USLBaseIndividual*& IndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass)
 {
-	if (ConvertToClass && IndividualObject && !IndividualObject->IsPendingKill())
-	{
-		if (IndividualObject->GetClass() != ConvertToClass)
-		{
-			// TODO cache common individual data to copy to the newly created individual
-			UObject* Outer = IndividualObject->GetOuter();
-			IndividualObject->ConditionalBeginDestroy();
-			IndividualObject = NewObject<USLIndividualBase>(Outer, ConvertToClass);
-			return true;
-		}
-		else
-		{
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d Same class type (%s-%s), no conversion is required.."),
-			//	*FString(__FUNCTION__), __LINE__, *IndividualObject->GetClass()->GetName(), *ConvertToClass->GetName());
-		}
-	}
+	//if (ConvertToClass && IndividualObject && !IndividualObject->IsPendingKill())
+	//{
+	//	if (IndividualObject->GetClass() != ConvertToClass)
+	//	{
+	//		// TODO cache common individual data to copy to the newly created individual
+	//		UObject* Outer = IndividualObject->GetOuter();
+	//		IndividualObject->ConditionalBeginDestroy();
+	//		IndividualObject = NewObject<USLBaseIndividual>(Outer, ConvertToClass);
+	//		return true;
+	//	}
+	//	else
+	//	{
+	//		//UE_LOG(LogTemp, Error, TEXT("%s::%d Same class type (%s-%s), no conversion is required.."),
+	//		//	*FString(__FUNCTION__), __LINE__, *IndividualObject->GetClass()->GetName(), *ConvertToClass->GetName());
+	//	}
+	//}
 	return false;
 }
 
@@ -323,7 +322,7 @@ bool FSLIndividualUtils::ConvertIndividualObject(USLIndividualBase*& IndividualO
 // Write unique id to the actor
 bool FSLIndividualUtils::WriteId(AActor* Actor, bool bOverwrite)
 {
-	if (USLIndividual* SI = GetCastedIndividualObject<USLIndividual>(Actor))
+	if (USLBaseIndividual* SI = GetCastedIndividualObject<USLBaseIndividual>(Actor))
 	{
 		if (!SI->HasId() || bOverwrite)
 		{
@@ -341,7 +340,7 @@ bool FSLIndividualUtils::WriteId(AActor* Actor, bool bOverwrite)
 // Clear unique id of the actor
 bool FSLIndividualUtils::ClearId(AActor* Actor)
 {
-	if (USLIndividual* SI = GetCastedIndividualObject<USLIndividual>(Actor))
+	if (USLBaseIndividual* SI = GetCastedIndividualObject<USLBaseIndividual>(Actor))
 	{
 		if (SI->HasId())
 		{
@@ -357,7 +356,7 @@ bool FSLIndividualUtils::ClearId(AActor* Actor)
 // Write class name to the actor
 bool FSLIndividualUtils::WriteClass(AActor* Actor, bool bOverwrite)
 {
-	if (USLIndividual* SI = GetCastedIndividualObject<USLIndividual>(Actor))
+	if (USLBaseIndividual* SI = GetCastedIndividualObject<USLBaseIndividual>(Actor))
 	{
 		if (!SI->HasClass() || bOverwrite)
 		{
@@ -375,7 +374,7 @@ bool FSLIndividualUtils::WriteClass(AActor* Actor, bool bOverwrite)
 // Clear class name of the actor
 bool FSLIndividualUtils::ClearClass(AActor* Actor)
 {
-	if (USLIndividual* SI = GetCastedIndividualObject<USLIndividual>(Actor))
+	if (USLBaseIndividual* SI = GetCastedIndividualObject<USLBaseIndividual>(Actor))
 	{
 		if (SI->HasClass())
 		{
@@ -394,7 +393,7 @@ bool FSLIndividualUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
 	TArray<FColor> ConsumedColors = GetConsumedVisualMaskColors(World);
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		if (USLVisibleIndividual* VI = GetCastedIndividualObject<USLVisibleIndividual>(*ActItr))
+		if (USLPerceivableIndividual* VI = GetCastedIndividualObject<USLPerceivableIndividual>(*ActItr))
 		{
 			bAddedAny = bAddedAny || AddVisualMask(VI, ConsumedColors, bOverwrite);
 		}
@@ -409,7 +408,7 @@ bool FSLIndividualUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld*
 	TArray<FColor> ConsumedColors = GetConsumedVisualMaskColors(World);
 	for (const auto& Act : Actors)
 	{
-		if (USLVisibleIndividual* SI = GetCastedIndividualObject<USLVisibleIndividual>(Act))
+		if (USLPerceivableIndividual* SI = GetCastedIndividualObject<USLPerceivableIndividual>(Act))
 		{
 			bAddedAny = bAddedAny || AddVisualMask(SI, ConsumedColors, bOverwrite);
 		}
@@ -420,7 +419,7 @@ bool FSLIndividualUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld*
 // Clear visual mask of the actor
 bool FSLIndividualUtils::ClearVisualMask(AActor* Actor)
 {
-	if (USLVisibleIndividual* SI = GetCastedIndividualObject<USLVisibleIndividual>(Actor))
+	if (USLPerceivableIndividual* SI = GetCastedIndividualObject<USLPerceivableIndividual>(Actor))
 	{
 		SI->SetVisualMask("");
 		return true;
@@ -444,7 +443,7 @@ bool FSLIndividualUtils::SupportsIndividualComponents(AActor* Actor)
 }
 
 // Add visual mask
-bool FSLIndividualUtils::AddVisualMask(USLVisibleIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite)
+bool FSLIndividualUtils::AddVisualMask(USLPerceivableIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite)
 {
 	static const int32 NumTrials = 100;
 	static const int32 MinManhattanDist = 29;
@@ -506,7 +505,7 @@ TArray<FColor> FSLIndividualUtils::GetConsumedVisualMaskColors(UWorld* World)
 	/* Static mesh actors */
 	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
 	{
-		if (USLVisibleIndividual* VI = GetCastedIndividualObject<USLVisibleIndividual>(*ActItr))
+		if (USLPerceivableIndividual* VI = GetCastedIndividualObject<USLPerceivableIndividual>(*ActItr))
 		{
 			if (VI->HasVisualMask())
 			{

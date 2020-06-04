@@ -78,7 +78,7 @@ struct FSLVisualData
 // *
 // */
 //USTRUCT()
-//struct FSLVisibleIndividualData : public FSLIndividual
+//struct FSLPerceivableIndividualData : public FSLIndividual
 //{
 //    GENERATED_BODY()
 //
@@ -91,7 +91,7 @@ struct FSLVisualData
 // *
 // */
 //USTRUCT()
-//struct FSLSkeletalIndividualData : public FSLVisibleIndividualData
+//struct FSLSkeletalIndividualData : public FSLPerceivableIndividualData
 //{
 //    GENERATED_BODY()
 //

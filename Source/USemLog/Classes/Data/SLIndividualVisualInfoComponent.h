@@ -5,25 +5,25 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
-#include "SLIndividualVisualInfo.generated.h"
+#include "SLIndividualVisualInfoComponent.generated.h"
 
 // Forward declarations
 class USLIndividualComponent;
 
 // Delegate notification when the component is being destroyed
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLVisualInfoComponentDestroyedSignature, USLIndividualVisualInfo*, Self);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLVisualInfoComponentDestroyedSignature, USLIndividualVisualInfoComponent*, Self);
 
 /**
 * Component storing the visual information of semantic individuals
 */
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Individual Visual Info")
-class USEMLOG_API USLIndividualVisualInfo : public USceneComponent
+class USEMLOG_API USLIndividualVisualInfoComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	USLIndividualVisualInfo();
+	USLIndividualVisualInfoComponent();
 
 	// Connect to individual component sibling
 	bool Init(bool bReset = false);
@@ -32,7 +32,7 @@ public:
 	bool IsInit() { return bIsInit; };
 
 	// Refresh values from sibling component (returns false if component not init)
-	bool Refresh();
+	bool RefreshComponents();
 
 	// Hide/show component
 	bool ToggleVisibility();

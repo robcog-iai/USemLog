@@ -10,7 +10,7 @@
 #include "Editor/SLSemanticMapWriter.h"
 #include "Vision/SLVisionCamera.h"
 #include "Data/SLIndividualComponent.h"
-#include "Data/SLIndividualVisualInfo.h"
+#include "Data/SLIndividualVisualInfoComponent.h"
 
 #include "SLManager.h"
 #include "Data/SLIndividualManager.h"
@@ -43,7 +43,7 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 }
 
 // Get the semantic individual manager from the world, add new if none are available
-ASLIndividualManager* FSLEdUtils::GetIndividualManager(UWorld* World, bool bCreateNew)
+ASLIndividualManager* FSLEdUtils::GetOrCreateIndividualManager(UWorld* World, bool bCreateNew)
 {
 	int32 ActNum = 0;
 	ASLIndividualManager* Manager = nullptr;
@@ -675,9 +675,9 @@ bool FSLEdUtils::ImportIndividualDataFromTag(AActor* Actor, bool bOverwrite)
 // Refresh the visual info component
 bool FSLEdUtils::RefreshVisualInfoComponent(AActor* Actor)
 {
-	if (USLIndividualVisualInfo* SLVI = GetVisualInfoComponent(Actor))
+	if (USLIndividualVisualInfoComponent* SLVI = GetVisualInfoComponent(Actor))
 	{
-		return SLVI->Refresh();
+		return SLVI->RefreshComponents();
 	}
 	return false;
 }
@@ -685,7 +685,7 @@ bool FSLEdUtils::RefreshVisualInfoComponent(AActor* Actor)
 // Remove the visual info component
 bool FSLEdUtils::RemoveVisualInfoComponent(AActor* Actor)
 {
-	if (USLIndividualVisualInfo* SLVI = GetVisualInfoComponent(Actor))
+	if (USLIndividualVisualInfoComponent* SLVI = GetVisualInfoComponent(Actor))
 	{
 		// TODO cannot undo, check how 'delete' button handles removing components and allowing undo
 		// SCSSEditor line ~5317 
@@ -703,7 +703,7 @@ bool FSLEdUtils::RemoveVisualInfoComponent(AActor* Actor)
 // Show hide semantic text information
 bool FSLEdUtils::ToggleVisualInfo(AActor* Actor)
 {
-	if (USLIndividualVisualInfo* SLVI = GetVisualInfoComponent(Actor))
+	if (USLIndividualVisualInfoComponent* SLVI = GetVisualInfoComponent(Actor))
 	{
 		return SLVI->ToggleVisibility();
 	}
@@ -713,7 +713,7 @@ bool FSLEdUtils::ToggleVisualInfo(AActor* Actor)
 // Point text towards camera
 bool FSLEdUtils::UpdateVisualInfo(AActor* Actor)
 {
-	if (USLIndividualVisualInfo* SLVI = GetVisualInfoComponent(Actor))
+	if (USLIndividualVisualInfoComponent* SLVI = GetVisualInfoComponent(Actor))
 	{
 		return SLVI->UpdateOrientation();
 	}
@@ -723,7 +723,7 @@ bool FSLEdUtils::UpdateVisualInfo(AActor* Actor)
 // Constantly point text towards camera
 bool FSLEdUtils::ToggleLiveUpdateVisualInfo(AActor* Actor)
 {
-	if (USLIndividualVisualInfo* SLVI = GetVisualInfoComponent(Actor))
+	if (USLIndividualVisualInfoComponent* SLVI = GetVisualInfoComponent(Actor))
 	{
 		// TODO
 		return SLVI->UpdateOrientation();
@@ -743,11 +743,11 @@ USLIndividualComponent* FSLEdUtils::GetIndividualComponent(AActor* Actor)
 }
 
 // Get the visual info component of the actor (nullptr if none found)
-USLIndividualVisualInfo* FSLEdUtils::GetVisualInfoComponent(AActor* Actor)
+USLIndividualVisualInfoComponent* FSLEdUtils::GetVisualInfoComponent(AActor* Actor)
 {
-	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualVisualInfo::StaticClass()))
+	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualVisualInfoComponent::StaticClass()))
 	{
-		return CastChecked<USLIndividualVisualInfo>(AC);
+		return CastChecked<USLIndividualVisualInfoComponent>(AC);
 	}
 	return nullptr;
 }

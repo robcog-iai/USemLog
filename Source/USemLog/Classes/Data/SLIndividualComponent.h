@@ -5,8 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Data/SLIndividualBase.h"
-#include "Data/SLIndividual.h"
+#include "Data/SLBaseIndividual.h"
 #include "Data/SLIndividualUtils.h"
 #include "SLIndividualComponent.generated.h"
 
@@ -57,7 +56,7 @@ public:
 	bool IsLoaded() const { return bIsLoaded; };
 
 	// Get the semantic individual object
-	USLIndividualBase* GetIndividualObject() const { return SemanticIndividual; };
+	USLBaseIndividual* GetIndividualObject() const { return SemanticIndividual; };
 
 	// Get the semantic individual using a cast class (nullptr if cast is unsuccessfull)
 	template <typename ClassType>
@@ -89,7 +88,7 @@ public:
 private:
 	// Semantic data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	USLIndividualBase* SemanticIndividual;
+	USLBaseIndividual* SemanticIndividual;
 
 	// State of the component
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
@@ -100,7 +99,7 @@ private:
 
 	// Manually convert the semantic individual to the chosen type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	TSubclassOf<class USLIndividual> ConvertTo;
+	TSubclassOf<class USLBaseIndividual> ConvertTo;
 
 	/* Button workarounds */
 	// Ovewrite any changes

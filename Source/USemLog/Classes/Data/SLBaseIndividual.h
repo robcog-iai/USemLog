@@ -5,19 +5,19 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "SLIndividualBase.generated.h"
+#include "SLBaseIndividual.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class USLIndividualBase : public UObject
+class USLBaseIndividual : public UObject
 {
 	GENERATED_BODY()
 
 public:
 	// Ctor
-	USLIndividualBase();
+	USLBaseIndividual();
 
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 	virtual void PostInitProperties() override;
@@ -34,16 +34,32 @@ public:
 	// Check if semantic data is succesfully loaded
 	virtual bool IsLoaded() const;
 
-	// Save data to owners tag
+	// Save data to owners tag, true if any new value is written
 	virtual bool ExportToTag(bool bOverwrite = false);
 
-	// Load data from owners tag
+	// Load data from owners tag, true if any new value if imported
 	virtual bool ImportFromTag(bool bOverwrite = false);
 
 	// Get semantic owner
 	AActor* GetSemanticOwner() const { return SemanticOwner; };
 
+	/* Id */
+	void SetId(const FString& InId) { Id = InId; };
+	FString GetId() const { return Id; };
+	bool HasId() const { return !Id.IsEmpty(); };
+
+	/* Class */
+	void SetClass(const FString& InClass) { Class = InClass; };
+	FString GetClass() const { return Class; };
+	bool HasClass() const { return !Class.IsEmpty(); };
+
 private:
+	// Import id from tag, true if new value is written
+	bool ImportIdFromTag(bool bOverwrite = false);
+
+	// Import class from tag, true if new value is written
+	bool ImportClassFromTag(bool bOverwrite = false);
+
 	// Private init implementation, set the semantic owner reference
 	bool InitImpl();
 
@@ -54,6 +70,14 @@ protected:
 	// Pointer to the actor described by the semantic description class
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	class AActor* SemanticOwner;
+
+	// Individual unique id
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	FString Id;
+
+	// Idividual class
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	FString Class;
 	
 	// State of the individual
 	UPROPERTY(VisibleAnywhere, Category = "SL")
@@ -66,8 +90,4 @@ protected:
 	// Tag type for exporting/importing data from tags
 	static constexpr char TagTypeConst[] = "SemLog";
 
-//private:
-//	// State of the individual
-//	uint8 bIsInitPrivate : 1;
-//	uint8 bIsLoadedPrivate : 1;
 };
