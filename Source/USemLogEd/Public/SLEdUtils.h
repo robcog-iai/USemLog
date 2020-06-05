@@ -20,17 +20,6 @@ public:
 	// Get the vis info manager form the world, add new one if none are available
 	static class ASLIndividualVisualInfoManager* GetVisualInfoManager(UWorld* World, bool bCreateNew = true);
 
-	/* Individual actor components */
-	static bool CreateSemanticDataComponents(UWorld* World, bool bOverwrite = false);
-	static bool CreateSemanticDataComponents(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static bool ReLoadSemanticDataComponents(UWorld* World);
-	static bool ReLoadSemanticDataComponents(const TArray<AActor*>& Actors);
-	static bool RemoveSemanticDataComponents(UWorld* World);
-	static bool RemoveSemanticDataComponents(const TArray<AActor*>& Actors);
-
-	/* Semantic data components functionalities*/
-	static bool ToggleMasks(UWorld* World);
-	static bool ToggleMasks(const TArray<AActor*>& Actors);
 
 	/* Individual actor visual info */
 	static bool CreateVisualInfoComponents(UWorld* World, bool bOverwrite = false);
@@ -48,30 +37,30 @@ public:
 	static bool ToggleLiveUpdateVisualInfoComponents(const TArray<AActor*>& Actors);
 
 	// Save components data to tags
-	static bool ExportToTag(UWorld* World, bool bOverwrite = false);
-	static bool ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static int32 ExportToTag(UWorld* World, bool bOverwrite = false);
+	static int32 ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
 	// Loads components data from tags
-	static bool ImportFromTag(UWorld* World, bool bOverwrite = false);
-	static bool ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static int32 ImportFromTag(UWorld* World, bool bOverwrite = false);
+	static int32 ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
 	/* Ids */
-	static bool WriteUniqueIds(UWorld* World, bool bOverwrite = false);
-	static bool WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static bool RemoveUniqueIds(UWorld* World);
-	static bool RemoveUniqueIds(const TArray<AActor*>& Actors);
+	static int32 WriteUniqueIds(UWorld* World, bool bOverwrite = false);
+	static int32 WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static int32 RemoveUniqueIds(UWorld* World);
+	static int32 RemoveUniqueIds(const TArray<AActor*>& Actors);
 
 	/* Class names */
-	static bool WriteClassNames(UWorld* World, bool bOverwrite = false);
-	static bool WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static bool RemoveClassNames(UWorld* World);
-	static bool RemoveClassNames(const TArray<AActor*>& Actors);
+	static int32 WriteClassNames(UWorld* World, bool bOverwrite = false);
+	static int32 WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	static int32 RemoveClassNames(UWorld* World);
+	static int32 RemoveClassNames(const TArray<AActor*>& Actors);
 
 	/* Visual masks */
-	static bool WriteVisualMasks(UWorld* World, bool bOverwrite = false);
-	static bool WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite = false);
-	static bool RemoveVisualMasks(UWorld* World);
-	static bool RemoveVisualMasks(const TArray<AActor*>& Actors);
+	static int32 WriteVisualMasks(UWorld* World, bool bOverwrite = false);
+	static int32 WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite = false);
+	static int32 RemoveVisualMasks(UWorld* World);
+	static int32 RemoveVisualMasks(const TArray<AActor*>& Actors);
 
 	// Remove all tag keys
 	static bool RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);

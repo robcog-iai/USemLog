@@ -4,32 +4,35 @@
 #include "Data/SLIndividualComponent.h"
 #include "Data/SLSkeletalIndividual.h"
 #include "Data/SLPerceivableIndividual.h"
+#include "Data/SLIndividualUtils.h"
 
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
+	SemanticIndividual = nullptr;
+
 	bIsInit = false;
 	bIsLoaded = false;
 
 	bOverwriteEditChanges = false;
-	bSaveToTagButton = false;
-	bLoadFromTagButton = false;
+	bExportToTagButton = false;
+	bImportFromTagButton = false;
 	bToggleVisualMaskMaterial = false;
 }
 
 // Called before destroying the object.
 void USLIndividualComponent::BeginDestroy()
 {
-	Super::BeginDestroy();
-
 	if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
 	{
 		SemanticIndividual->ConditionalBeginDestroy();
 	}
 
-	OnSLComponentDestroyed.Broadcast(this);
+	OnDestroyed.Broadcast(this);
+
+	Super::BeginDestroy();
 }
 
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
@@ -58,14 +61,14 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 	}
 
 	/* Button workaround triggers */
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bSaveToTagButton))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bExportToTagButton))
 	{
-		bSaveToTagButton = false;
+		bExportToTagButton = false;
 		ExportToTag(bOverwriteEditChanges);
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bLoadFromTagButton))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bImportFromTagButton))
 	{
-		bLoadFromTagButton = false;
+		bImportFromTagButton = false;
 		ImportFromTag(bOverwriteEditChanges);
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bToggleVisualMaskMaterial))
@@ -163,6 +166,8 @@ bool USLIndividualComponent::Load(bool bReset)
 	return bIsLoaded;
 }
 
+
+/* Functionalities */
 // Save data to owners tag
 bool USLIndividualComponent::ExportToTag(bool bOverwrite)
 {
@@ -183,16 +188,6 @@ bool USLIndividualComponent::ImportFromTag(bool bOverwrite)
 	return false;
 }
 
-//// Reload the individual data
-//bool USLIndividualComponent::LoadIndividual()
-//{
-//	if (SemanticIndividual->IsValidLowLevel())
-//	{
-//		SemanticIndividual->Load();
-//	}
-//	return false;
-//}
-
 // Toggle between original and mask material is possible
 bool USLIndividualComponent::ToggleVisualMaskVisibility()
 {
@@ -203,18 +198,19 @@ bool USLIndividualComponent::ToggleVisualMaskVisibility()
 	return false;
 }
 
+/* Private */
 // Private init implementation
 bool USLIndividualComponent::InitImpl()
 {
-	AActor* Owner = GetOwner();
+	AActor* CompOwner = GetOwner();
 
-	if (!Owner)
+	if (!CompOwner)
 	{
 		return false;
 	}
 
 	// Check if actor already has a semantic data component
-	for (const auto AC : Owner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
+	for (const auto AC : CompOwner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
 	{
 		if (AC != this)
 		{
@@ -227,7 +223,7 @@ bool USLIndividualComponent::InitImpl()
 	}
 
 	// Set semantic individual type depending on owner
-	if (UClass* IndividualClass = FSLIndividualUtils::CreateIndividualObject(this, Owner, SemanticIndividual))
+	if (UClass* IndividualClass = FSLIndividualUtils::CreateIndividualObject(this, CompOwner, SemanticIndividual))
 	{
 		// Cache the current individual class type
 		ConvertTo = IndividualClass;		
@@ -236,6 +232,8 @@ bool USLIndividualComponent::InitImpl()
 	}
 	else
 	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component has an unsuported type, self-destruction commenced.."),
+			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 		// Unknown individual type, destroy self
 		ConditionalBeginDestroy();
 		return false;
@@ -245,18 +243,12 @@ bool USLIndividualComponent::InitImpl()
 // Private load implementation
 bool USLIndividualComponent::LoadImpl()
 {
-	if (SemanticIndividual)
+	if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
 	{
 		bool bSuccess = true;
-		if (!SemanticIndividual->ImportFromTag())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s could not import data from tags.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-		}
-
 		if (!SemanticIndividual->Load())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s could not load semantic individual.."),
+			UE_LOG(LogTemp, Log, TEXT("%s::%d %s could not load semantic individual.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			bSuccess = false;
 		}
@@ -264,10 +256,9 @@ bool USLIndividualComponent::LoadImpl()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic individual not set for %s, this should not happen.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic individual not set for %s, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return false;
 	}
 }
-
 

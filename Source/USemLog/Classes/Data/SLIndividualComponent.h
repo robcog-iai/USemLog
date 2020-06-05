@@ -6,11 +6,10 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Data/SLBaseIndividual.h"
-#include "Data/SLIndividualUtils.h"
 #include "SLIndividualComponent.generated.h"
 
 // Delegate notification when the component is being destroyed
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLComponentDestroyedSignature, USLIndividualComponent*, Self);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLComponentDestroyedSignature, USLIndividualComponent*, DestroyedComponent);
 
 /**
 * Component storing the semantic individual information of its owner
@@ -62,14 +61,12 @@ public:
 	template <typename ClassType>
 	ClassType* GetCastedIndividualObject() const {	return Cast<ClassType>(SemanticIndividual); };
 
+	/* Functionalities */
 	// Save data to owners tag
 	bool ExportToTag(bool bOverwrite = false);
 
 	// Load data from owners tag
 	bool ImportFromTag(bool bOverwrite = false);
-
-	//// Reload the individual data
-	//bool LoadIndividual();
 
 	// Toggle between original and mask material is possible
 	bool ToggleVisualMaskVisibility();
@@ -83,7 +80,7 @@ private:
 
 public:
 	// Called when the component is destroyed
-	FSLComponentDestroyedSignature OnSLComponentDestroyed;
+	FSLComponentDestroyedSignature OnDestroyed;
 
 private:
 	// Semantic data
@@ -108,11 +105,11 @@ private:
 
 	// Save data to tag
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	uint8 bSaveToTagButton : 1;
+	uint8 bExportToTagButton : 1;
 
 	// Load data from tag
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	uint8 bLoadFromTagButton : 1;
+	uint8 bImportFromTagButton : 1;
 
 	// Switch between viewing the original and the visual mask color
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")

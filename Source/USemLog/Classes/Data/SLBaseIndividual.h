@@ -44,14 +44,16 @@ public:
 	AActor* GetSemanticOwner() const { return SemanticOwner; };
 
 	/* Id */
-	void SetId(const FString& InId) { Id = InId; };
+	// Set the id value, if empty, reset the individual as not loaded
+	void SetId(const FString& NewId);
 	FString GetId() const { return Id; };
-	bool HasId() const { return !Id.IsEmpty(); };
+	FORCEINLINE bool HasId() const { return !Id.IsEmpty(); };
 
 	/* Class */
-	void SetClass(const FString& InClass) { Class = InClass; };
+	// Set the class value, if empty, reset the individual as not loaded
+	void SetClass(const FString& NewClass);
 	FString GetClass() const { return Class; };
-	bool HasClass() const { return !Class.IsEmpty(); };
+	FORCEINLINE bool HasClass() const { return !Class.IsEmpty(); };
 
 private:
 	// Import id from tag, true if new value is written

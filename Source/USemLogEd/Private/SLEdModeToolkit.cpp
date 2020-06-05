@@ -753,14 +753,14 @@ FReply FSLEdModeToolkit::OnInitSemDataManagers()
 	FScopedTransaction Transaction(LOCTEXT("SemDataManagerInit", "Init semantic data managers"));
 
 	int32 NumIndividualComponents = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel())
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
 		NumIndividualComponents = IndividualManager->Init();
 	}
 	else
 	{
 		IndividualManager = FSLEdUtils::GetOrCreateIndividualManager(GEditor->GetEditorWorldContext().World());
-		if (IndividualManager && IndividualManager->IsValidLowLevel())
+		if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 		{
 			NumIndividualComponents = IndividualManager->Init();
 		}
@@ -791,7 +791,7 @@ FReply FSLEdModeToolkit::OnReLoadSemDataManagers()
 	FScopedTransaction Transaction(LOCTEXT("SemDataManagerReLoad", "Reload semantic data managers"));
 	const bool bReset = true;
 
-	if (IndividualManager && IndividualManager->IsValidLowLevel())
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
 		IndividualManager->Refresh();
 	}
@@ -819,7 +819,7 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompCreateST", "Create semantic data components"));
 	int32 NumComp = 0;
 
-	if (IndividualManager && IndividualManager->IsValidLowLevel())
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
 		if (bOnlySelected)
 		{
@@ -852,7 +852,7 @@ FReply FSLEdModeToolkit::OnReLoadSemDataComp()
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Re-Load semantic data components"));
 	int32 NumComp = 0;
 
-	if (IndividualManager && IndividualManager->IsValidLowLevel())
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
 		if (bOnlySelected)
 		{
@@ -886,7 +886,7 @@ FReply FSLEdModeToolkit::OnRmSemDataComp()
 	DeselectComponentSelection();
 
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel())
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
 		if (bOnlySelected)
 		{
@@ -917,20 +917,30 @@ FReply FSLEdModeToolkit::OnRmSemDataComp()
 FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompToggleMaskST", "Toggle semantic components visual maks visiblity"));
-	bool bMarkDirty = false;
-
-	if (bOnlySelected)
+	
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
-		bMarkDirty = FSLEdUtils::ToggleMasks(GetSelectedActors());
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->ToggleMaskMaterialsVisibility(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->ToggleMaskMaterialsVisibility();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::ToggleMasks(GEditor->GetEditorWorldContext().World());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Mask visibility toggled for %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 
 	return FReply::Handled();
@@ -1096,25 +1106,29 @@ FReply FSLEdModeToolkit::OnLiveUpdateSemDataVisInfo()
 FReply FSLEdModeToolkit::OnWriteSemDataAll()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteAllSemDataST", "Write all semantic data"));
-	bool bMarkDirty = false;
+	OnWriteSemDataIds();
+	OnWriteClassNames();
+	OnWriteVisualMasks();
 
-	if (bOnlySelected)
-	{
-		bMarkDirty = FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite) || bMarkDirty;
-		bMarkDirty = FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite) || bMarkDirty;
-		bMarkDirty = FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
-	}
-	else
-	{
-		bMarkDirty = FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
-		bMarkDirty = FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
-		bMarkDirty = FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
-	}
+	//bool bMarkDirty = false;
 
-	if (bMarkDirty)
-	{
-		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	}
+	//if (bOnlySelected)
+	//{
+	//	bMarkDirty = FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite) || bMarkDirty;
+	//	bMarkDirty = FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite) || bMarkDirty;
+	//	bMarkDirty = FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
+	//}
+	//else
+	//{
+	//	bMarkDirty = FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
+	//	bMarkDirty = FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
+	//	bMarkDirty = FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
+	//}
+
+	//if (NumCompId || NumCompClass || )
+	//{
+	//	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	//}
 
 	return FReply::Handled();
 }
@@ -1122,46 +1136,58 @@ FReply FSLEdModeToolkit::OnWriteSemDataAll()
 FReply FSLEdModeToolkit::OnRmSemDataAll()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmAllSemDataST", "Remove all semantic data"));
-	bool bMarkDirty = false;
+	OnRmSemDataIds();
+	OnRmClassNames();
+	OnRmVisualMasks();
+	//bool bMarkDirty = false;
 
-	if (bOnlySelected)
-	{
-		bMarkDirty = FSLEdUtils::RemoveUniqueIds(GetSelectedActors()) || bMarkDirty;
-		bMarkDirty = FSLEdUtils::RemoveClassNames(GetSelectedActors()) || bMarkDirty;
-		bMarkDirty = FSLEdUtils::RemoveVisualMasks(GetSelectedActors()) || bMarkDirty;
-	}
-	else
-	{
-		bMarkDirty = FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World()) || bMarkDirty;
-		bMarkDirty = FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World()) || bMarkDirty;
-		bMarkDirty = FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World()) || bMarkDirty;
-	}
+	//if (bOnlySelected)
+	//{
+	//	bMarkDirty = FSLEdUtils::RemoveUniqueIds(GetSelectedActors()) || bMarkDirty;
+	//	bMarkDirty = FSLEdUtils::RemoveClassNames(GetSelectedActors()) || bMarkDirty;
+	//	bMarkDirty = FSLEdUtils::RemoveVisualMasks(GetSelectedActors()) || bMarkDirty;
+	//}
+	//else
+	//{
+	//	bMarkDirty = FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World()) || bMarkDirty;
+	//	bMarkDirty = FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World()) || bMarkDirty;
+	//	bMarkDirty = FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World()) || bMarkDirty;
+	//}
 
-	if (bMarkDirty)
-	{
-		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	}
+	//if (bMarkDirty)
+	//{
+	//	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	//}
 
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnWriteSemDataIds()
 {
-	bool bMarkDirty = false;
-
 	FScopedTransaction Transaction(LOCTEXT("GenSemIdsST", "Generate new semantic Ids"));	
-	if (bOnlySelected)
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
-		bMarkDirty = FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite) || bMarkDirty;
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->WriteUniqueIds(GetSelectedActors(), bOverwrite);
+		}
+		else
+		{
+			NumComp = IndividualManager->WriteUniqueIds(bOverwrite);
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Generated new ids for %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 
 	return FReply::Handled();
@@ -1170,20 +1196,29 @@ FReply FSLEdModeToolkit::OnWriteSemDataIds()
 FReply FSLEdModeToolkit::OnRmSemDataIds()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmSemIdsST", "Remove all semantic Ids"));
-	bool bMarkDirty = false;
-
-	if (bOnlySelected)
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
-		bMarkDirty = FSLEdUtils::RemoveUniqueIds(GetSelectedActors());
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->RemoveUniqueIds(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->RemoveUniqueIds();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Removed ids from %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 
 	return FReply::Handled();
@@ -1192,42 +1227,59 @@ FReply FSLEdModeToolkit::OnRmSemDataIds()
 FReply FSLEdModeToolkit::OnWriteClassNames()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteClassNamesST", "Write class names"));
-	bool bMarkDirty = false;
-
-	if (bOnlySelected)
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
-		bMarkDirty = FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite);
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->WriteClassNames(GetSelectedActors(), bOverwrite);
+		}
+		else
+		{
+			NumComp = IndividualManager->WriteClassNames(bOverwrite);
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Wrote classes for %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
-
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnRmClassNames()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmClassNamesST", "Remove all class names"));
-	bool bMarkDirty = false;
-
-	if (bOnlySelected)
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
-		bMarkDirty = FSLEdUtils::RemoveClassNames(GetSelectedActors());
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->RemoveClassNames(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->RemoveClassNames();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
-	
-	if (bMarkDirty)
+
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Removed classes from %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 	
 	return FReply::Handled();
@@ -1236,42 +1288,59 @@ FReply FSLEdModeToolkit::OnRmClassNames()
 FReply FSLEdModeToolkit::OnWriteVisualMasks()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteVisualMasksST", "Write visual masks"));	
-	bool bMarkDirty = false;
-
-	if (bOnlySelected)
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
-		bMarkDirty = FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite);
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->WriteVisualMasks(GetSelectedActors(), bOverwrite);
+		}
+		else
+		{
+			NumComp = IndividualManager->WriteVisualMasks(bOverwrite);
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Wrote visual masks for %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
-
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnRmVisualMasks()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmVisualMasksST", "Remove all visual masks names"));
-	bool bMarkDirty = false;
-
-	if (bOnlySelected)
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
-		bMarkDirty = FSLEdUtils::RemoveVisualMasks(GetSelectedActors());
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->RemoveClassNames(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->RemoveClassNames();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
-	
-	if (bMarkDirty)
+
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Removed visual masks from %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 	
 	return FReply::Handled();
@@ -1281,42 +1350,59 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 FReply FSLEdModeToolkit::OnExportToTag()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompSaveST", "Export semantic data to tag"));
-	bool bMarkDirty = false;
-
-	if (bOnlySelected)
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
-		bMarkDirty = FSLEdUtils::ExportToTag(GetSelectedActors(), bOverwrite);
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->RemoveClassNames(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->ExportToTag();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::ExportToTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Exported %ld individual components to tag.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
-
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnImportFromTag()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Import data from tag"));
-	bool bMarkDirty = false;
-
-	if (bOnlySelected)
+	int32 NumComp = 0;
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
-		bMarkDirty = FSLEdUtils::ImportFromTag(GetSelectedActors(), bOverwrite);
+		if (bOnlySelected)
+		{
+			NumComp = IndividualManager->ImportFromTag(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->ImportFromTag();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::ImportFromTag(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Exported %ld individual components to tag.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 
 	return FReply::Handled();

@@ -84,11 +84,11 @@ bool USLBaseIndividual::ExportToTag(bool bOverwrite)
 	}
 
 	bool bMarkDirty = false;
-	if (!Id.IsEmpty())
+	if (HasId())
 	{
 		bMarkDirty = FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "Id", Id, bOverwrite) || bMarkDirty;
 	}
-	if (!Class.IsEmpty())
+	if (HasClass())
 	{
 		bMarkDirty = FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "Class", Class, bOverwrite) || bMarkDirty;
 	}
@@ -111,16 +111,36 @@ bool USLBaseIndividual::ImportFromTag(bool bOverwrite)
 	return bNewValue;
 }
 
+// Set the id value, if it is empty reset the individual as not loaded
+void USLBaseIndividual::SetId(const FString& NewId)
+{
+	Id = NewId;
+	if (!HasId())
+	{
+		bIsLoaded = false;
+	}
+}
+
+// Set the class value, if empty, reset the individual as not loaded
+void USLBaseIndividual::SetClass(const FString& NewClass)
+{
+	Class = NewClass;
+	if (!HasClass())
+	{
+		bIsLoaded = false;
+	}
+}
+
 // Import id from tag, true if new value is written
 bool USLBaseIndividual::ImportIdFromTag(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (Id.IsEmpty() || bOverwrite)
+	if (!HasId() || bOverwrite)
 	{
 		const FString PrevVal = Id;
 		SetId(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Id"));
-		bNewValue = Id.Equals(PrevVal);
-		if (Id.IsEmpty())
+		bNewValue = !Id.Equals(PrevVal);
+		if (!HasId())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No Id value could be imported from %s's tag.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
@@ -133,30 +153,32 @@ bool USLBaseIndividual::ImportIdFromTag(bool bOverwrite)
 bool USLBaseIndividual::ImportClassFromTag(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (Class.IsEmpty() || bOverwrite)
+	if (!HasClass() || bOverwrite)
 	{
 		const FString PrevVal = Class;
 		SetClass(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Class"));
-		bNewValue = Class.Equals(PrevVal);
-		if (Class.IsEmpty())
+		bNewValue = !Class.Equals(PrevVal);
+		if (!HasClass())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No Class value could be imported from %s's tag.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
 		}
 	}
-	return false;
+	return bNewValue;
 }
 
 // Private init implementation
 bool USLBaseIndividual::InitImpl()
 {
-	SemanticOwner = nullptr;
 	// First outer is the component, second the actor
-	if (AActor* Owner = Cast<AActor>(GetOuter()->GetOuter()))
+	if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()))
 	{
-		SemanticOwner = Owner;
+		SemanticOwner = CompOwner;
+		return true;
 	}
-	return SemanticOwner->IsValidLowLevel();
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, has no semantic owner.."),
+		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	return false;
 }
 
 bool USLBaseIndividual::LoadImpl()
@@ -166,7 +188,7 @@ bool USLBaseIndividual::LoadImpl()
 	{
 		if (!ImportIdFromTag())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no Id, tag import failed as well.."),
+			UE_LOG(LogTemp, Log, TEXT("%s::%d %s has no Id, tag import failed as well.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			bSuccess = false;
 		}
@@ -176,7 +198,7 @@ bool USLBaseIndividual::LoadImpl()
 	{
 		if (!ImportClassFromTag())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no Class, tag import failed as well.."),
+			UE_LOG(LogTemp, Log, TEXT("%s::%d %s has no Class, tag import failed as well.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			bSuccess = false;
 		}
@@ -184,7 +206,7 @@ bool USLBaseIndividual::LoadImpl()
 	
 	if (!bSuccess)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's load failed.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s's load failed.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
 

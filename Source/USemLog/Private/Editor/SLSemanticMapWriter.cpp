@@ -27,6 +27,7 @@ FSLSemanticMapWriter::FSLSemanticMapWriter()
 {
 }
 
+// TODO make static
 // Write semantic map to file
 bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 	ESLOwlSemanticMapTemplate TemplateType,

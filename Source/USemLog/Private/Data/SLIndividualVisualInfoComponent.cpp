@@ -108,7 +108,7 @@ bool USLIndividualVisualInfoComponent::Init(bool bReset)
 	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
 		Sibling = CastChecked<USLIndividualComponent>(AC);
-		Sibling->OnSLComponentDestroyed.AddDynamic(this, &USLIndividualVisualInfoComponent::OnSiblingDestroyed);
+		Sibling->OnDestroyed.AddDynamic(this, &USLIndividualVisualInfoComponent::OnSiblingDestroyed);
 		bIsInit = true;
 		return true;
 	}

@@ -54,12 +54,12 @@ public:
     bool ToggleMaterials();
     
     /* Visual mask */
-    void SetVisualMask(const FString& InVisualMask, bool bReload = true, bool bClearCalibratedValue = true);
+    void SetVisualMask(const FString& NewVisualMask, bool bReload = true, bool bClearCalibratedValue = true);
     FString GetVisualMask() const { return VisualMask; };
     bool HasVisualMask() const { return !VisualMask.IsEmpty(); };
 
     /* Calibrated visual mask */
-    void SetCalibratedVisualMask(const FString& InCalibratedVisualMask) { CalibratedVisualMask = InCalibratedVisualMask; };
+    void SetCalibratedVisualMask(const FString& NewCalibratedVisualMask) { CalibratedVisualMask = NewCalibratedVisualMask; };
     FString GetCalibratedVisualMask() const { return CalibratedVisualMask; };
     bool HasCalibratedVisualMask() const { return !CalibratedVisualMask.IsEmpty(); };
 
@@ -81,12 +81,16 @@ private:
 
 protected:
     // Mask color as hex
-    UPROPERTY(EditAnywhere, Category = "SL")
+    UPROPERTY(VisibleAnywhere, Category = "SL")
     FString VisualMask;
 
     // Runtime calibrated mask color as hex
-    UPROPERTY(EditAnywhere, Category = "SL")
+    UPROPERTY(VisibleAnywhere, Category = "SL")
     FString CalibratedVisualMask;
+
+    // True if the visual masks are currently active on the semantic owner
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    bool bMaskMaterialOn;
 
     // Material template used for creating dynamic materials
     UPROPERTY()
@@ -99,10 +103,6 @@ protected:
     // Cached original materials
     UPROPERTY()
     TArray<class UMaterialInterface*> OriginalMaterials;
-
-    // True if the visual masks are currently active on the semantic owner
-    UPROPERTY(EditAnywhere, Category = "SL")
-    bool bMaskMaterialOn;
 
 private:
     // The visual component of the owner

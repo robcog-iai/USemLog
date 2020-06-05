@@ -36,28 +36,55 @@ public:
 	// Re-load and re-register individual components
 	void Refresh() { Init(true); };
 
-	// Add new semantic data components to the actors in the world
+	// Add new semantic data components to the actors
 	int32 AddIndividualComponents();
-
-	// Add new semantic data components to the selected actors
 	int32 AddIndividualComponents(const TArray<AActor*>& Actors);
 
-	// Remove all semantic data components from the world
+	// Remove all semantic data components
 	int32 DestroyIndividualComponents();
-
-	// Remove selected semantic data components
 	int32 DestroyIndividualComponents(const TArray<AActor*>& Actors);
 
 	// Reload components data
 	int32 ReloadIndividualComponents();
-
-	// Reload selected actor components data
 	int32 ReloadIndividualComponents(const TArray<AActor*>& Actors);
 
+	/* Functionalities */
+	// Toggle perceivable individuals mask materials
+	int32 ToggleMaskMaterialsVisibility();
+	int32 ToggleMaskMaterialsVisibility(const TArray<AActor*>& Actors);
+
+	// Write new unique identifiers 
+	int32 WriteUniqueIds(bool bOverwrite = false);
+	int32 WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	int32 RemoveUniqueIds();
+	int32 RemoveUniqueIds(const TArray<AActor*>& Actors);
+
+	// Write class names
+	int32 WriteClassNames(bool bOverwrite = false);
+	int32 WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	int32 RemoveClassNames();
+	int32 RemoveClassNames(const TArray<AActor*>& Actors);
+
+	// Write visual masks
+	int32 WriteVisualMasks(bool bOverwrite = false);
+	int32 WriteVisualMasks(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	int32 RemoveVisualMasks();
+	int32 RemoveVisualMasks(const TArray<AActor*>& Actors);
+
+	// Export/imort data to/from tags
+	int32 ExportToTag(bool bOverwrite = false);
+	int32 ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	int32 ImportFromTag(bool bOverwrite = false);
+	int32 ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+
 private:
-	// Triggered by external destruction to remove from cache
+	// Triggered by external destruction of individual component
 	UFUNCTION()
-	void OnIndividualComponentDestroyed(USLIndividualComponent* Component);
+	void OnIndividualComponentDestroyed(USLIndividualComponent* DestroyedComponent);
+
+	// Triggered by external destruction of semantic owner 
+	UFUNCTION()
+	void OnSemanticOwnerDestroyed(AActor* DestroyedActor);
 
 	// Find the individual component of the actor, return nullptr if none found
 	USLIndividualComponent* GetIndividualComponent(AActor* Actor);
@@ -65,7 +92,7 @@ private:
 	// Create and add new individual component
 	USLIndividualComponent* AddNewIndividualComponent(AActor* Actor);
 
-	// Check if actor is supported for creating an individual component
+	// Check if actor type is supported for creating an individual component
 	bool CanHaveIndividualComponents(AActor* Actor);
 
 	// Remove individual component from owner
@@ -77,12 +104,11 @@ private:
 	// Remove component from cache, unbind delegates
 	bool UnregisterIndividualComponent(USLIndividualComponent* Component);
 
-	// Unregister and clear all cached components
-	void ClearIndividualComponents();
+	// Unregister and clear all cached components (return the number of cleared components)
+	int32 ClearIndividualComponents();
 
 	// Check if component is registered (one check)
-	bool IsIndividualComponentRegisteredFast(USLIndividualComponent* Component) const
-	{ return RegisteredIndividualComponents.Contains(Component); };
+	bool IsIndividualComponentRegisteredFast(USLIndividualComponent* Component) const { return RegisteredIndividualComponents.Contains(Component); };
 
 	// Check if component is registered (full check)
 	bool IsIndividualComponentRegisteredFull(USLIndividualComponent* Component) const;
@@ -94,5 +120,13 @@ private:
 	// Cached components
 	TSet<USLIndividualComponent*> RegisteredIndividualComponents;
 	TMap<AActor*, USLIndividualComponent*> IndividualComponentOwners;
+	// TODO
+	// TSet<ISLIndividualComponent*> PerceivableIndividualComponents;
+
+	// TSet<ISLIndividualComponent*> RigidIndividualComponents;
+	// TSet<ISLIndividualComponent*> SkeletalIndividualComponents;
+	// TSet<ISLIndividualComponent*> RobotIndividualComponents;
+
+	// TSet<ISLIndividualComponent*> ConstraintIndividualComponents;
 };
 

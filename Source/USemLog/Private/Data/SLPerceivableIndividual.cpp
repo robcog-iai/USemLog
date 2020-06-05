@@ -56,19 +56,14 @@ bool USLPerceivableIndividual::Init(bool bReset)
 		return true;
 	}
 
-	if (!Super::Init(bReset))
-	{
-		return false;
-	}
-
-	bIsInit = InitImpl();
+	bIsInit = Super::Init(bReset) && InitImpl();
 	return bIsInit;
 }
 
 // Check if individual is initialized
 bool USLPerceivableIndividual::IsInit() const
 {
-	return bIsInit && Super::IsInit();
+	return bIsInit;
 }
 
 // Load semantic data
@@ -86,25 +81,22 @@ bool USLPerceivableIndividual::Load(bool bReset)
 
 	if (!IsInit())
 	{
-		return false;
-	}
-
-	if (!Super::Load(bReset))
-	{
 		if (!Init(bReset))
 		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot load component individual %s, init fails.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			return false;
 		}
 	}
 
-	bIsLoaded = LoadImpl();
+	bIsLoaded = Super::Load(bReset) && LoadImpl();
 	return bIsLoaded;
 }
 
 // Check if semantic data is succesfully loaded
 bool USLPerceivableIndividual::IsLoaded() const
 {
-	return bIsLoaded && Super::IsLoaded();
+	return bIsLoaded;
 }
 
 // Save data to owners tag
@@ -136,7 +128,6 @@ bool USLPerceivableIndividual::ImportFromTag(bool bOverwrite)
 // Apply visual mask material
 bool USLPerceivableIndividual::ApplyVisualMaskMaterials(bool bReload)
 {
-
 	if (!bIsLoaded)
 	{
 		return false;
@@ -190,16 +181,21 @@ bool USLPerceivableIndividual::ToggleMaterials()
 }
 
 // Set  visual mask
-void USLPerceivableIndividual::SetVisualMask(const FString& InVisualMask, bool bReload, bool bClearCalibratedValue)
+void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool bReload, bool bClearCalibratedValue)
 {
 	// Clear the calibrated color in case of a new visual mask value
-	if (!VisualMask.Equals(InVisualMask) && bClearCalibratedValue) 
+	if (!VisualMask.Equals(NewVisualMask) && bClearCalibratedValue) 
 	{
 		CalibratedVisualMask = ""; 
 	}
 	
 	// Set the new visual mask
-	VisualMask = InVisualMask;
+	VisualMask = NewVisualMask;
+
+	if (!HasVisualMask())
+	{
+		bIsLoaded = false;
+	}
 
 	// Update the dynamic material
 	ApplyVisualMaskColorToDynamicMaterial();
@@ -226,12 +222,12 @@ bool USLPerceivableIndividual::ApplyVisualMaskColorToDynamicMaterial()
 bool USLPerceivableIndividual::ImportVisualMaskFromTag(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (VisualMask.IsEmpty() || bOverwrite)
+	if (!HasVisualMask() || bOverwrite)
 	{
 		const FString PrevVal = VisualMask;
 		SetVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "VisualMask"));
-		bNewValue = VisualMask.Equals(PrevVal);
-		if (VisualMask.IsEmpty())
+		bNewValue = !VisualMask.Equals(PrevVal);
+		if (!HasVisualMask())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No VisualMask value could be imported from %s's tag.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
@@ -244,12 +240,12 @@ bool USLPerceivableIndividual::ImportVisualMaskFromTag(bool bOverwrite)
 bool USLPerceivableIndividual::ImportCalibratedVisualMaskFromTag(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (CalibratedVisualMask.IsEmpty() || bOverwrite)
+	if (!HasCalibratedVisualMask() || bOverwrite)
 	{
 		const FString PrevVal = CalibratedVisualMask;
 		SetCalibratedVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "CalibratedVisualMask"));
-		bNewValue = CalibratedVisualMask.Equals(PrevVal);
-		if (CalibratedVisualMask.IsEmpty())
+		bNewValue = !CalibratedVisualMask.Equals(PrevVal);
+		if (!HasCalibratedVisualMask())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No CalibratedVisualMask value could be imported from %s's tag.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
@@ -271,8 +267,9 @@ bool USLPerceivableIndividual::InitImpl()
 
 	if (!VisualMaskDynamicMaterial)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no VisualMaskDynamicMaterial, this should not happen.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no VisualMaskDynamicMaterial, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
 	}
 
 	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(SemanticOwner))
@@ -285,11 +282,15 @@ bool USLPerceivableIndividual::InitImpl()
 		}
 		else
 		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no StaticMeshComponent, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			return false;
 		}
 	}
 	else
 	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s SemanticOwner is not a StaticMeshActor, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return false;
 	}
 }
@@ -306,7 +307,6 @@ bool USLPerceivableIndividual::LoadImpl()
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			bSuccess = false;
 		}
-		return false;
 	}
 
 	VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
