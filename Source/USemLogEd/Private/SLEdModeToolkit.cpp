@@ -1323,11 +1323,11 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 	{
 		if (bOnlySelected)
 		{
-			NumComp = IndividualManager->RemoveClassNames(GetSelectedActors());
+			NumComp = IndividualManager->RemoveVisualMasks(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = IndividualManager->RemoveClassNames();
+			NumComp = IndividualManager->RemoveVisualMasks();
 		}
 	}
 	else
@@ -1355,7 +1355,7 @@ FReply FSLEdModeToolkit::OnExportToTag()
 	{
 		if (bOnlySelected)
 		{
-			NumComp = IndividualManager->RemoveClassNames(GetSelectedActors());
+			NumComp = IndividualManager->ExportToTag(GetSelectedActors());
 		}
 		else
 		{

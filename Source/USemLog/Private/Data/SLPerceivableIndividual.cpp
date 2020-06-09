@@ -48,7 +48,7 @@ bool USLPerceivableIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
-		bIsInit = false;
+		SetIsInit(false);
 	}
 
 	if (IsInit())
@@ -56,22 +56,17 @@ bool USLPerceivableIndividual::Init(bool bReset)
 		return true;
 	}
 
-	bIsInit = Super::Init(bReset) && InitImpl();
-	return bIsInit;
+	SetIsInit(Super::Init(bReset) && InitImpl());
+	return IsInit();
 }
 
-// Check if individual is initialized
-bool USLPerceivableIndividual::IsInit() const
-{
-	return bIsInit;
-}
 
 // Load semantic data
 bool USLPerceivableIndividual::Load(bool bReset)
 {
 	if (bReset)
 	{
-		bIsLoaded = false;
+		SetIsLoaded(false);
 	}
 
 	if (IsLoaded())
@@ -89,14 +84,8 @@ bool USLPerceivableIndividual::Load(bool bReset)
 		}
 	}
 
-	bIsLoaded = Super::Load(bReset) && LoadImpl();
-	return bIsLoaded;
-}
-
-// Check if semantic data is succesfully loaded
-bool USLPerceivableIndividual::IsLoaded() const
-{
-	return bIsLoaded;
+	SetIsLoaded(Super::Load(bReset) && LoadImpl());
+	return IsLoaded();
 }
 
 // Save data to owners tag
@@ -128,7 +117,7 @@ bool USLPerceivableIndividual::ImportFromTag(bool bOverwrite)
 // Apply visual mask material
 bool USLPerceivableIndividual::ApplyVisualMaskMaterials(bool bReload)
 {
-	if (!bIsLoaded)
+	if (!IsLoaded())
 	{
 		return false;
 	}
@@ -148,7 +137,7 @@ bool USLPerceivableIndividual::ApplyVisualMaskMaterials(bool bReload)
 // Apply original materials
 bool USLPerceivableIndividual::ApplyOriginalMaterials()
 {
-	if (!bIsLoaded)
+	if (!IsLoaded())
 	{
 		return false;
 	}
@@ -194,7 +183,7 @@ void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool 
 
 	if (!HasVisualMask())
 	{
-		bIsLoaded = false;
+		SetIsLoaded(false);
 	}
 
 	// Update the dynamic material

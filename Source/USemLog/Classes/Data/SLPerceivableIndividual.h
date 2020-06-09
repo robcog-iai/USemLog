@@ -29,14 +29,8 @@ public:
     // Init asset references (bForced forces re-initialization)
     virtual bool Init(bool bReset = false);
 
-    // Check if individual is initialized
-    virtual bool IsInit() const;
-
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset = false);
-
-    // Check if semantic data is succesfully loaded
-    virtual bool IsLoaded() const;
 
     // Save data to owners tag
     virtual bool ExportToTag(bool bOverwrite = false) override;

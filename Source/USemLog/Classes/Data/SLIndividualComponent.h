@@ -34,8 +34,8 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
-	//// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
-	//virtual void OnComponentCreated() override;
+	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
+	virtual void OnComponentCreated() override;
 
 protected:
 	// Called when the game starts
@@ -59,7 +59,14 @@ public:
 
 	// Get the semantic individual using a cast class (nullptr if cast is unsuccessfull)
 	template <typename ClassType>
-	ClassType* GetCastedIndividualObject() const {	return Cast<ClassType>(SemanticIndividual); };
+	ClassType* GetCastedIndividualObject() const 
+	{
+		if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
+		{
+			return Cast<ClassType>(SemanticIndividual);
+		}
+		return nullptr;
+	};
 
 	/* Functionalities */
 	// Save data to owners tag
@@ -73,10 +80,15 @@ public:
 
 private:
 	// Private init implementation
-	bool InitImpl();
+	bool CreateIndividual();
 
-	// Private load implementation
-	bool LoadImpl();
+	// Called on individual init flag change
+	UFUNCTION()
+	void OnIndividualInitChange(USLBaseIndividual* Individual, bool bNewValue);
+
+	// Called on individual loaded flag change
+	UFUNCTION()
+	void OnIndividualLoadedChange(USLBaseIndividual* Individual, bool bNewValue);
 
 public:
 	// Called when the component is destroyed
@@ -87,16 +99,17 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	USLBaseIndividual* SemanticIndividual;
 
-	// State of the component
+	// True if the individual is succesfully created and initialized
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsInit : 1;
 
+	// True if the individual is succesfully created and loaded
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	uint8 bIsLoaded: 1;
+	uint8 bIsLoaded : 1;
 
 	// Manually convert the semantic individual to the chosen type
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	TSubclassOf<class USLBaseIndividual> ConvertTo;
+	TSubclassOf<class USLBaseIndividual> IndividualType;
 
 	/* Button workarounds */
 	// Ovewrite any changes

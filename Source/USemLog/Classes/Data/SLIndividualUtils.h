@@ -19,7 +19,7 @@ public:
 	static bool AddNewVisualInfoComponent(AActor* Actor, bool bOverwrite);
 
 	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-	static FString GetIndividualClassName(AActor* Actor, bool bDefaultToLabelName = false);
+	//static FString GetIndividualClassName(AActor* Actor, bool bDefaultToLabelName = false);
 	static FString GetIndividualClassName(USLIndividualComponent* IndividualComponent, bool bDefaultToLabelName = false);
 
 	// Create default individual object depending on the owner type (returns nullptr if failed)
@@ -30,29 +30,36 @@ public:
 
 	/* Id */
 	// Write unique id to the actor
-	static bool WriteId(AActor* Actor, bool bOverwrite);
+	//static bool WriteId(AActor* Actor, bool bOverwrite);
 	static bool WriteId(USLIndividualComponent* IndividualComponent, bool bOverwrite);
 
 	// Clear unique id of the actor
-	static bool ClearId(AActor* Actor);
+	//static bool ClearId(AActor* Actor);
+	static bool ClearId(USLIndividualComponent* IndividualComponent);
 
 	/* Class */
 	// Write class name to the actor
-	static bool WriteClass(AActor* Actor, bool bOverwrite);
+	//static bool WriteClass(AActor* Actor, bool bOverwrite);
 	static bool WriteClass(USLIndividualComponent* IndividualComponent, bool bOverwrite);
 
 	// Clear class name of the actor
-	static bool ClearClass(AActor* Actor);
+	//static bool ClearClass(AActor* Actor);
+	static bool ClearClass(USLIndividualComponent* IndividualComponent);
 
 	/* Visual mask */
 	// Write unique visual masks for all visual individuals in the world
-	static int32 WriteVisualMasks(UWorld* World, bool bOverwrite);
+	//static int32 WriteVisualMasks(UWorld* World, bool bOverwrite);
+	static int32 WriteVisualMasks(const TSet<USLIndividualComponent*>& IndividualComponents, bool bOverwrite);
 
 	// Write unique visual masks for visual individuals from the actos in the array
-	static int32 WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite);
+	//static int32 WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite);
+	static int32 WriteVisualMasks(const TSet<USLIndividualComponent*>& IndividualComponentsSelection,
+		const TSet<USLIndividualComponent*>& RegisteredIndividualComponents,
+		bool bOverwrite);
 
 	// Clear visual mask of the actor
-	static bool ClearVisualMask(AActor* Actor);
+	//static bool ClearVisualMask(AActor* Actor);
+	static bool ClearVisualMask(USLIndividualComponent* IndividualComponent);
 
 private:
 	// Check if actor supports individual components
@@ -68,6 +75,7 @@ private:
 
 	// Get all used up visual masks in the world
 	static TArray<FColor> GetConsumedVisualMaskColors(UWorld* World);
+	static TArray<FColor> GetConsumedVisualMaskColors(const TSet<USLIndividualComponent*>& IndividualComponents);
 
 	// Create a new unique color by randomization
 	static FColor CreateNewUniqueColorRand(TArray<FColor>& ConsumedColors, int32 NumTrials, int32 MinManhattanDist);

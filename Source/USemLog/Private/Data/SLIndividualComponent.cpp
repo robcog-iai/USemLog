@@ -40,8 +40,21 @@ void USLIndividualComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	Init();
-	Load();
+	//// Check if actor already has a semantic data component
+	//for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualComponent::StaticClass()))
+	//{
+	//	if (AC != this)
+	//	{
+	//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
+	//			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+	//		//DestroyComponent();
+	//		ConditionalBeginDestroy();
+	//		return;
+	//	}
+	//}
+
+	//Init();
+	//Load();
 }
 
 #if WITH_EDITOR
@@ -55,9 +68,9 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	// Convert datatype
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, ConvertTo))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, IndividualType))
 	{
-		FSLIndividualUtils::ConvertIndividualObject(SemanticIndividual, ConvertTo);
+		FSLIndividualUtils::ConvertIndividualObject(SemanticIndividual, IndividualType);
 	}
 
 	/* Button workaround triggers */
@@ -79,44 +92,27 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 }
 #endif // WITH_EDITOR
 
-//// Called when a component is created(not loaded).This can happen in the editor or during gameplay
-//void USLIndividualComponent::OnComponentCreated()
-//{
-//	Super::OnComponentCreated();
-//
-//	AActor* Owner = GetOwner();
-//
-//	if (Owner)
-//	{
-//		UE_LOG(LogTemp, Log, TEXT("%s::%d"), *FString(__FUNCTION__), __LINE__);
-//	}
-//
-//	// Check if actor already has a semantic data component
-//	for (const auto AC : Owner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
-//	{
-//		if (AC != this)
-//		{
-//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
-//				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
-//			//DestroyComponent();
-//			ConditionalBeginDestroy();
-//			return;
-//		}
-//	}
-//
-//	// Set semantic individual type depending on owner
-//	if (UClass* IndividualClass = FSLIndividualUtils::CreateIndividualObject(this, Owner, SemanticIndividual))
-//	{
-//		// Cache the current individual class type
-//		ConvertTo = IndividualClass;
-//	}
-//	else
-//	{
-//		// Unknown individual type, destroy self
-//		ConditionalBeginDestroy();
-//		return;
-//	}
-//}
+// Called when a component is created(not loaded).This can happen in the editor or during gameplay
+void USLIndividualComponent::OnComponentCreated()
+{
+	Super::OnComponentCreated();
+
+	// Check if actor already has a semantic data component
+	for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualComponent::StaticClass()))
+	{
+		if (AC != this)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+			//DestroyComponent();
+			ConditionalBeginDestroy();
+			return;
+		}
+	}
+
+	Init();
+	Load();
+}
 
 // Called when the game starts
 void USLIndividualComponent::BeginPlay()
@@ -127,43 +123,39 @@ void USLIndividualComponent::BeginPlay()
 // Set owner and individual
 bool USLIndividualComponent::Init(bool bReset)
 {
-	if (bReset)
+	if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
 	{
-		bIsInit = false;
+		bIsInit = SemanticIndividual->Init(bReset);
+		return bIsInit;
 	}
-
-	if (IsInit())
+	else
 	{
-		return true;
+		if (CreateIndividual())
+		{
+			bIsInit = SemanticIndividual->Init(bReset);
+			return bIsInit;
+		}
 	}
-
-	bIsInit = InitImpl();
-	return bIsInit;
+	return false;
 }
 
 // Load individual
 bool USLIndividualComponent::Load(bool bReset)
 {
-	if (bReset)
+	if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
 	{
-		bIsLoaded = false;
+		bIsLoaded = SemanticIndividual->Load(bReset);
+		return bIsLoaded;
 	}
-
-	if (IsLoaded())
+	else
 	{
-		return true;
-	}
-
-	if (!IsInit())
-	{
-		if (!Init(bReset))
+		if (CreateIndividual())
 		{
-			return false;
+			bIsLoaded = SemanticIndividual->Load(bReset);
+			return bIsLoaded;
 		}
 	}
-
-	bIsLoaded = LoadImpl();
-	return bIsLoaded;
+	return false;
 }
 
 
@@ -199,35 +191,23 @@ bool USLIndividualComponent::ToggleVisualMaskVisibility()
 }
 
 /* Private */
-// Private init implementation
-bool USLIndividualComponent::InitImpl()
+// Create the semantic individual
+bool USLIndividualComponent::CreateIndividual()
 {
-	AActor* CompOwner = GetOwner();
-
-	if (!CompOwner)
+	if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
 	{
-		return false;
-	}
-
-	// Check if actor already has a semantic data component
-	for (const auto AC : CompOwner->GetComponentsByClass(USLIndividualComponent::StaticClass()))
-	{
-		if (AC != this)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
-			//DestroyComponent();
-			ConditionalBeginDestroy();
-			return false;
-		}
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic individual already exists, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__);
+		return true;
 	}
 
 	// Set semantic individual type depending on owner
-	if (UClass* IndividualClass = FSLIndividualUtils::CreateIndividualObject(this, CompOwner, SemanticIndividual))
-	{
+	if (UClass* IndividualCls = FSLIndividualUtils::CreateIndividualObject(this, GetOwner(), SemanticIndividual))
+	{		
 		// Cache the current individual class type
-		ConvertTo = IndividualClass;		
-		//SemanticIndividual->Init(); // Is being called automatically on PostInitProperties		
+		IndividualType = IndividualCls;
+		SemanticIndividual->OnInitChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualInitChange);
+		SemanticIndividual->OnLoadedChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualLoadedChange);
 		return true;
 	}
 	else
@@ -240,25 +220,15 @@ bool USLIndividualComponent::InitImpl()
 	}
 }
 
-// Private load implementation
-bool USLIndividualComponent::LoadImpl()
+// Triggered when the semantic individual init flag changes
+void USLIndividualComponent::OnIndividualInitChange(USLBaseIndividual* Individual, bool bNewValue)
 {
-	if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
-	{
-		bool bSuccess = true;
-		if (!SemanticIndividual->Load())
-		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d %s could not load semantic individual.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-			bSuccess = false;
-		}
-		return bSuccess;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic individual not set for %s, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
+	bIsInit = bNewValue;
+}
+
+// Triggered when the semantic individual loaded flag changes
+void USLIndividualComponent::OnIndividualLoadedChange(USLBaseIndividual* Individual, bool bNewValue)
+{
+	bIsLoaded = bNewValue;
 }
 

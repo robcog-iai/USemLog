@@ -7,6 +7,12 @@
 #include "UObject/NoExportTypes.h"
 #include "SLBaseIndividual.generated.h"
 
+// Notify every time the init status changes
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividuaInitChangeSignature, USLBaseIndividual*, Individual, bool, bNewInitVal);
+
+// Notify every time the loaded status changes
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividuaLoadedChangeSignature, USLBaseIndividual*, Individual, bool, bNewLoadedVal);
+
 /**
  * 
  */
@@ -26,13 +32,13 @@ public:
 	virtual bool Init(bool bReset = false);
 
 	// Check if individual is initialized
-	virtual bool IsInit() const;
+	bool IsInit() const { return bIsInit; };
 
 	// Load semantic data (bReset forces re-loading)
 	virtual bool Load(bool bReset = false);
 
 	// Check if semantic data is succesfully loaded
-	virtual bool IsLoaded() const;
+	bool IsLoaded() const { return bIsLoaded; };
 
 	// Save data to owners tag, true if any new value is written
 	virtual bool ExportToTag(bool bOverwrite = false);
@@ -55,6 +61,13 @@ public:
 	FString GetClass() const { return Class; };
 	FORCEINLINE bool HasClass() const { return !Class.IsEmpty(); };
 
+protected:
+	// Set the init flag, broadcast on new value
+	bool SetIsInit(bool bNewValue);
+
+	// Set the loaded flag, broadcast on new value
+	bool SetIsLoaded(bool bNewValue);
+
 private:
 	// Import id from tag, true if new value is written
 	bool ImportIdFromTag(bool bOverwrite = false);
@@ -67,6 +80,15 @@ private:
 
 	// Private load implementation
 	bool LoadImpl();
+
+
+
+public:
+	// Called when the init status changes
+	FSLIndividuaInitChangeSignature OnInitChanged;
+
+	// Called when the init status changes
+	FSLIndividuaLoadedChangeSignature OnLoadedChanged;
 
 protected:
 	// Pointer to the actor described by the semantic description class

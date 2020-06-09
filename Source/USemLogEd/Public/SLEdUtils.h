@@ -36,31 +36,31 @@ public:
 	static bool ToggleLiveUpdateVisualInfoComponents(UWorld* World);
 	static bool ToggleLiveUpdateVisualInfoComponents(const TArray<AActor*>& Actors);
 
-	// Save components data to tags
-	static int32 ExportToTag(UWorld* World, bool bOverwrite = false);
-	static int32 ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	//// Save components data to tags
+	//static int32 ExportToTag(UWorld* World, bool bOverwrite = false);
+	//static int32 ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
-	// Loads components data from tags
-	static int32 ImportFromTag(UWorld* World, bool bOverwrite = false);
-	static int32 ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	//// Loads components data from tags
+	//static int32 ImportFromTag(UWorld* World, bool bOverwrite = false);
+	//static int32 ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
 
-	/* Ids */
-	static int32 WriteUniqueIds(UWorld* World, bool bOverwrite = false);
-	static int32 WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static int32 RemoveUniqueIds(UWorld* World);
-	static int32 RemoveUniqueIds(const TArray<AActor*>& Actors);
+	///* Ids */
+	//static int32 WriteUniqueIds(UWorld* World, bool bOverwrite = false);
+	//static int32 WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	//static int32 RemoveUniqueIds(UWorld* World);
+	//static int32 RemoveUniqueIds(const TArray<AActor*>& Actors);
 
-	/* Class names */
-	static int32 WriteClassNames(UWorld* World, bool bOverwrite = false);
-	static int32 WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	static int32 RemoveClassNames(UWorld* World);
-	static int32 RemoveClassNames(const TArray<AActor*>& Actors);
+	///* Class names */
+	//static int32 WriteClassNames(UWorld* World, bool bOverwrite = false);
+	//static int32 WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	//static int32 RemoveClassNames(UWorld* World);
+	//static int32 RemoveClassNames(const TArray<AActor*>& Actors);
 
-	/* Visual masks */
-	static int32 WriteVisualMasks(UWorld* World, bool bOverwrite = false);
-	static int32 WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite = false);
-	static int32 RemoveVisualMasks(UWorld* World);
-	static int32 RemoveVisualMasks(const TArray<AActor*>& Actors);
+	///* Visual masks */
+	//static int32 WriteVisualMasks(UWorld* World, bool bOverwrite = false);
+	//static int32 WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite = false);
+	//static int32 RemoveVisualMasks(UWorld* World);
+	//static int32 RemoveVisualMasks(const TArray<AActor*>& Actors);
 
 	// Remove all tag keys
 	static bool RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);

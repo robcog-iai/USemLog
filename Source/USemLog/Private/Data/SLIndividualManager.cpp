@@ -279,6 +279,7 @@ int32 ASLIndividualManager::ToggleMaskMaterialsVisibility(const TArray<AActor*>&
 	return Num;
 }
 
+/* Id */
 // Write new unique identifiers 
 int32 ASLIndividualManager::WriteUniqueIds(bool bOverwrite)
 {
@@ -291,10 +292,10 @@ int32 ASLIndividualManager::WriteUniqueIds(bool bOverwrite)
 	int32 Num = 0;
 	for (const auto& IC : RegisteredIndividualComponents)
 	{
-		//if (FSLIndividualUtils::WriteId(IC, bOverwrite))
-		//{
-		//	Num++;
-		//}
+		if (FSLIndividualUtils::WriteId(IC, bOverwrite))
+		{
+			Num++;
+		}
 	}
 	return Num;
 }
@@ -313,10 +314,10 @@ int32 ASLIndividualManager::WriteUniqueIds(const TArray<AActor*>& Actors, bool b
 	{
 		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
 		{
-			//if (FSLIndividualUtils::WriteId(*FoundIC, bOverwrite))
-			//{
-			//	Num++;
-			//}
+			if (FSLIndividualUtils::WriteId(*FoundIC, bOverwrite))
+			{
+				Num++;
+			}
 		}
 	}
 	return Num;
@@ -324,14 +325,47 @@ int32 ASLIndividualManager::WriteUniqueIds(const TArray<AActor*>& Actors, bool b
 
 int32 ASLIndividualManager::RemoveUniqueIds()
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& IC : RegisteredIndividualComponents)
+	{
+		if (FSLIndividualUtils::ClearId(IC))
+		{
+			Num++;
+		}
+	}
+	return Num;
 }
 
+// Remove selection id values
 int32 ASLIndividualManager::RemoveUniqueIds(const TArray<AActor*>& Actors)
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& Act : Actors)
+	{
+		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		{
+			if (FSLIndividualUtils::ClearId(*FoundIC))
+			{
+				Num++;
+			}
+		}
+	}
+	return Num;
 }
 
+/* Class */
 // Write class names
 int32 ASLIndividualManager::WriteClassNames(bool bOverwrite)
 {
@@ -344,14 +378,13 @@ int32 ASLIndividualManager::WriteClassNames(bool bOverwrite)
 	int32 Num = 0;
 	for (const auto& IC : RegisteredIndividualComponents)
 	{
-		//if (FSLIndividualUtils::WriteClass(IC, bOverwrite))
-		//{
-		//	Num++;
-		//}
+		if (FSLIndividualUtils::WriteClass(IC, bOverwrite))
+		{
+			Num++;
+		}
 	}
 	return Num;
 }
-
 
 // Write class names to selection
 int32 ASLIndividualManager::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
@@ -367,66 +400,219 @@ int32 ASLIndividualManager::WriteClassNames(const TArray<AActor*>& Actors, bool 
 	{
 		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
 		{
-			//if (FSLIndividualUtils::WriteClass(*FoundIC, bOverwrite))
-			//{
-			//	Num++;
-			//}
+			if (FSLIndividualUtils::WriteClass(*FoundIC, bOverwrite))
+			{
+				Num++;
+			}
 		}
 	}
 	return Num;
 }
 
+// Remove all class names
 int32 ASLIndividualManager::RemoveClassNames()
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& IC : RegisteredIndividualComponents)
+	{
+		if (FSLIndividualUtils::ClearClass(IC))
+		{
+			Num++;
+		}
+	}
+	return Num;
 }
 
+// Remove selection class names
 int32 ASLIndividualManager::RemoveClassNames(const TArray<AActor*>& Actors)
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& Act : Actors)
+	{
+		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		{
+			if (FSLIndividualUtils::ClearClass(*FoundIC))
+			{
+				Num++;
+			}
+		}
+	}
+	return Num;
 }
 
+/* Visual mask */
 // Write visual masks
 int32 ASLIndividualManager::WriteVisualMasks(bool bOverwrite)
 {
-	// TODO use cached individuals
-	return FSLIndividualUtils::WriteVisualMasks(GetWorld(), bOverwrite);
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+	return FSLIndividualUtils::WriteVisualMasks(RegisteredIndividualComponents, bOverwrite);
 }
 
+// Write visual masks to selection
 int32 ASLIndividualManager::WriteVisualMasks(const TArray<AActor*>& Actors, bool bOverwrite)
 {
-	// TODO use cached individuals
-	return FSLIndividualUtils::WriteVisualMasks(Actors, GetWorld(), bOverwrite);
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	// Get the selection actors individual components
+	TSet<USLIndividualComponent*> IndividualComponentsSelection;
+	for (const auto& Act : Actors)
+	{
+		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		{
+			IndividualComponentsSelection.Add(*FoundIC);
+		}
+	}
+
+	return FSLIndividualUtils::WriteVisualMasks(IndividualComponentsSelection, RegisteredIndividualComponents, bOverwrite);
 }
 
+// Remove all visual masks
 int32 ASLIndividualManager::RemoveVisualMasks()
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& IC : RegisteredIndividualComponents)
+	{
+		if (FSLIndividualUtils::ClearVisualMask(IC))
+		{
+			Num++;
+		}
+	}
+	return Num;
 }
 
+// Remove selection visual masks
 int32 ASLIndividualManager::RemoveVisualMasks(const TArray<AActor*>& Actors)
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& Act : Actors)
+	{
+		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		{
+			if (FSLIndividualUtils::ClearVisualMask(*FoundIC))
+			{
+				Num++;
+			}
+		}
+	}
+	return Num;
 }
 
+// Export data to tags
 int32 ASLIndividualManager::ExportToTag(bool bOverwrite)
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& IC : RegisteredIndividualComponents)
+	{
+		if(IC->ExportToTag())
+		{
+			Num++;
+		}
+	}
+	return Num;
 }
 
+// Export selection's data to tags
 int32 ASLIndividualManager::ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite)
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& Act : Actors)
+	{
+		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		{
+			if ((*FoundIC)->ExportToTag())
+			{
+				Num++;
+			}
+		}
+	}
+	return Num;
 }
 
+// Import data from tags
 int32 ASLIndividualManager::ImportFromTag(bool bOverwrite)
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& IC : RegisteredIndividualComponents)
+	{
+		if (IC->ImportFromTag())
+		{
+			Num++;
+		}
+	}
+	return Num;
 }
 
+// Import selection's data from tags
 int32 ASLIndividualManager::ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite)
 {
-	return int32();
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& Act : Actors)
+	{
+		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		{
+			if ((*FoundIC)->ImportFromTag())
+			{
+				Num++;
+			}
+		}
+	}
+	return Num;
 }
 
 

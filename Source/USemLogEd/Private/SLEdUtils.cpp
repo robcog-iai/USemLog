@@ -228,199 +228,199 @@ bool FSLEdUtils::ToggleLiveUpdateVisualInfoComponents(const TArray<AActor*>& Act
 
 
 
-/* Tags */
-int32 FSLEdUtils::ExportToTag(UWorld* World, bool bOverwrite)
-{
-	int32 Num = 0;
-	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	{
-		if (ExportIndividualDataToTag(*ActItr, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-int32 FSLEdUtils::ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite)
-{
-	int32 Num = 0;
-	for (const auto Act : Actors)
-	{
-		if (ExportIndividualDataToTag(Act, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-int32 FSLEdUtils::ImportFromTag(UWorld* World, bool bOverwrite)
-{
-	int32 Num = 0;
-	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	{
-		if (ImportIndividualDataFromTag(*ActItr, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-int32 FSLEdUtils::ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite)
-{
-	int32 Num = 0;
-	for (const auto Act : Actors)
-	{
-		if (ImportIndividualDataFromTag(Act, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-
-/* Ids */
-int32 FSLEdUtils::WriteUniqueIds(UWorld* World, bool bOverwrite)
-{
-	int32 Num = 0;
-	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	{
-		if (FSLIndividualUtils::WriteId(*ActItr, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-int32 FSLEdUtils::WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite)
-{
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (FSLIndividualUtils::WriteId(Act, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-int32 FSLEdUtils::RemoveUniqueIds(UWorld* World)
-{
-	int32 Num = 0;
-	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	{
-		if (FSLIndividualUtils::ClearId(*ActItr))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-int32 FSLEdUtils::RemoveUniqueIds(const TArray<AActor*>& Actors)
-{
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (FSLIndividualUtils::ClearId(Act))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-
-/* Class names */
-int32 FSLEdUtils::WriteClassNames(UWorld* World, bool bOverwrite)
-{
-	int32 Num = 0;
-	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	{
-		if (FSLIndividualUtils::WriteClass(*ActItr, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-int32 FSLEdUtils::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
-{
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (FSLIndividualUtils::WriteClass(Act, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-// Remove class names
-int32 FSLEdUtils::RemoveClassNames(UWorld* World)
-{
-	int32 Num = 0;
-	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	{
-		if (FSLIndividualUtils::ClearClass(*ActItr))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-int32 FSLEdUtils::RemoveClassNames(const TArray<AActor*>& Actors)
-{
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (FSLIndividualUtils::ClearClass(Act))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-
-/* Visual masks */
-int32 FSLEdUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
-{
-	return FSLIndividualUtils::WriteVisualMasks(World, bOverwrite);
-}
-
-int32 FSLEdUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite)
-{
-	return FSLIndividualUtils::WriteVisualMasks(Actors, World, bOverwrite);
-}
-
-int32 FSLEdUtils::RemoveVisualMasks(UWorld* World)
-{
-	bool bMarkDirty = false;
-	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
-	{
-		bMarkDirty = FSLIndividualUtils::ClearVisualMask(*ActItr) || bMarkDirty;
-	}
-	return bMarkDirty;
-}
-
-int32 FSLEdUtils::RemoveVisualMasks(const TArray<AActor*>& Actors)
-{
-	bool bMarkDirty = false;
-	for (const auto& Act : Actors)
-	{
-		bMarkDirty = FSLIndividualUtils::ClearVisualMask(Act) || bMarkDirty;
-	}
-	return bMarkDirty;
-}
+///* Tags */
+//int32 FSLEdUtils::ExportToTag(UWorld* World, bool bOverwrite)
+//{
+//	int32 Num = 0;
+//	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+//	{
+//		if (ExportIndividualDataToTag(*ActItr, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//int32 FSLEdUtils::ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite)
+//{
+//	int32 Num = 0;
+//	for (const auto Act : Actors)
+//	{
+//		if (ExportIndividualDataToTag(Act, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//int32 FSLEdUtils::ImportFromTag(UWorld* World, bool bOverwrite)
+//{
+//	int32 Num = 0;
+//	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+//	{
+//		if (ImportIndividualDataFromTag(*ActItr, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//int32 FSLEdUtils::ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite)
+//{
+//	int32 Num = 0;
+//	for (const auto Act : Actors)
+//	{
+//		if (ImportIndividualDataFromTag(Act, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//
+///* Ids */
+//int32 FSLEdUtils::WriteUniqueIds(UWorld* World, bool bOverwrite)
+//{
+//	int32 Num = 0;
+//	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+//	{
+//		if (FSLIndividualUtils::WriteId(*ActItr, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//int32 FSLEdUtils::WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite)
+//{
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (FSLIndividualUtils::WriteId(Act, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//int32 FSLEdUtils::RemoveUniqueIds(UWorld* World)
+//{
+//	int32 Num = 0;
+//	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+//	{
+//		if (FSLIndividualUtils::ClearId(*ActItr))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//int32 FSLEdUtils::RemoveUniqueIds(const TArray<AActor*>& Actors)
+//{
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (FSLIndividualUtils::ClearId(Act))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//
+///* Class names */
+//int32 FSLEdUtils::WriteClassNames(UWorld* World, bool bOverwrite)
+//{
+//	int32 Num = 0;
+//	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+//	{
+//		if (FSLIndividualUtils::WriteClass(*ActItr, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//int32 FSLEdUtils::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
+//{
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (FSLIndividualUtils::WriteClass(Act, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//// Remove class names
+//int32 FSLEdUtils::RemoveClassNames(UWorld* World)
+//{
+//	int32 Num = 0;
+//	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+//	{
+//		if (FSLIndividualUtils::ClearClass(*ActItr))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//int32 FSLEdUtils::RemoveClassNames(const TArray<AActor*>& Actors)
+//{
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (FSLIndividualUtils::ClearClass(Act))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//
+///* Visual masks */
+//int32 FSLEdUtils::WriteVisualMasks(UWorld* World, bool bOverwrite)
+//{
+//	return FSLIndividualUtils::WriteVisualMasks(World, bOverwrite);
+//}
+//
+//int32 FSLEdUtils::WriteVisualMasks(const TArray<AActor*>& Actors, UWorld* World, bool bOverwrite)
+//{
+//	return FSLIndividualUtils::WriteVisualMasks(Actors, World, bOverwrite);
+//}
+//
+//int32 FSLEdUtils::RemoveVisualMasks(UWorld* World)
+//{
+//	bool bMarkDirty = false;
+//	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+//	{
+//		bMarkDirty = FSLIndividualUtils::ClearVisualMask(*ActItr) || bMarkDirty;
+//	}
+//	return bMarkDirty;
+//}
+//
+//int32 FSLEdUtils::RemoveVisualMasks(const TArray<AActor*>& Actors)
+//{
+//	bool bMarkDirty = false;
+//	for (const auto& Act : Actors)
+//	{
+//		bMarkDirty = FSLIndividualUtils::ClearVisualMask(Act) || bMarkDirty;
+//	}
+//	return bMarkDirty;
+//}
 
 // Remove all tag keys
 bool FSLEdUtils::RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey)

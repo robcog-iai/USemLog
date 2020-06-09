@@ -17,7 +17,6 @@ USLBaseIndividual::USLBaseIndividual()
 void USLBaseIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
-	Init();
 }
 
 // Set pointer to the semantic owner
@@ -25,7 +24,7 @@ bool USLBaseIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
-		bIsInit = false;
+		SetIsInit(false);
 	}
 
 	if (IsInit())
@@ -33,14 +32,8 @@ bool USLBaseIndividual::Init(bool bReset)
 		return true;
 	}
 
-	bIsInit = InitImpl();
-	return bIsInit;
-}
-
-// Check if individual is initialized
-bool USLBaseIndividual::IsInit() const
-{
-	return bIsInit;
+	SetIsInit(InitImpl());
+	return IsInit();
 }
 
 // Load semantic data
@@ -48,7 +41,7 @@ bool USLBaseIndividual::Load(bool bReset)
 {
 	if (bReset)
 	{
-		bIsLoaded = false;
+		SetIsLoaded(false);
 	}
 
 	if (IsLoaded())
@@ -64,14 +57,8 @@ bool USLBaseIndividual::Load(bool bReset)
 		}
 	}
 	
-	bIsLoaded = LoadImpl();
-	return bIsLoaded;
-}
-
-// Check if semantic data is succesfully loaded
-bool USLBaseIndividual::IsLoaded() const
-{
-	return bIsLoaded;
+	SetIsLoaded(LoadImpl());
+	return IsLoaded();
 }
 
 // Save data to owners tag
@@ -117,7 +104,7 @@ void USLBaseIndividual::SetId(const FString& NewId)
 	Id = NewId;
 	if (!HasId())
 	{
-		bIsLoaded = false;
+		SetIsLoaded(false);
 	}
 }
 
@@ -127,9 +114,34 @@ void USLBaseIndividual::SetClass(const FString& NewClass)
 	Class = NewClass;
 	if (!HasClass())
 	{
-		bIsLoaded = false;
+		SetIsLoaded(false);
 	}
 }
+
+// Set the init flag, broadcast on new value
+bool USLBaseIndividual::SetIsInit(bool bNewValue)
+{
+	if (bIsInit != bNewValue)
+	{
+		bIsInit = bNewValue;
+		OnInitChanged.Broadcast(this, bNewValue);
+		return true;
+	}
+	return false;
+}
+
+// Set the loaded flag, broadcast on new value
+bool USLBaseIndividual::SetIsLoaded(bool bNewValue)
+{
+	if (bIsLoaded != bNewValue)
+	{
+		bIsLoaded = bNewValue;
+		OnLoadedChanged.Broadcast(this, bNewValue);
+		return true;
+	}
+	return false;
+}
+
 
 // Import id from tag, true if new value is written
 bool USLBaseIndividual::ImportIdFromTag(bool bOverwrite)
@@ -181,6 +193,7 @@ bool USLBaseIndividual::InitImpl()
 	return false;
 }
 
+// Private load implementation
 bool USLBaseIndividual::LoadImpl()
 {
 	bool bSuccess = true;
