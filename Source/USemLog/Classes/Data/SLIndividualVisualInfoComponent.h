@@ -31,8 +31,11 @@ public:
 	// Check if component is visible
 	bool IsInit() { return bIsInit; };
 
-	// Refresh values from sibling component (returns false if component not init)
-	bool RefreshComponents();
+	// Load values from individual sibling
+	bool Load(bool bReset = false);
+
+	// Check if component is loaded
+	bool IsLoaded() const { return bIsLoaded; };
 
 	// Hide/show component
 	bool ToggleVisibility();
@@ -49,6 +52,9 @@ protected:
 
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 	virtual void PostInitProperties() override;
+
+	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
+	virtual void OnComponentCreated() override;
 
 	// Called before destroying the object.
 	virtual void BeginDestroy() override;
@@ -70,8 +76,13 @@ protected:
 	// Individual component sibling
 	USLIndividualComponent* Sibling;
 
-	// State of the individual
-	bool bIsInit;
+	// True if the individual is succesfully created and initialized
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	uint8 bIsInit : 1;
+
+	// True if the individual is succesfully created and loaded
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	uint8 bIsLoaded : 1;
 
 private:
 	// Class text

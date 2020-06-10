@@ -34,7 +34,7 @@ public:
 	bool IsInit() const { return bIsInit; };
 
 	// Re-load and re-register individual components
-	void Refresh() { Init(true); };
+	int32 Reload() { return Init(true); };
 
 	// Add new semantic data components to the actors
 	int32 AddIndividualComponents();
@@ -87,13 +87,13 @@ private:
 	void OnSemanticOwnerDestroyed(AActor* DestroyedActor);
 
 	// Find the individual component of the actor, return nullptr if none found
-	USLIndividualComponent* GetIndividualComponent(AActor* Actor);
+	USLIndividualComponent* GetIndividualComponent(AActor* Actor) const;
 
 	// Create and add new individual component
 	USLIndividualComponent* AddNewIndividualComponent(AActor* Actor);
 
 	// Check if actor type is supported for creating an individual component
-	bool CanHaveIndividualComponents(AActor* Actor);
+	bool CanHaveIndividualComponent(AActor* Actor);
 
 	// Remove individual component from owner
 	void DestroyIndividualComponent(USLIndividualComponent* Component);
@@ -105,7 +105,7 @@ private:
 	bool UnregisterIndividualComponent(USLIndividualComponent* Component);
 
 	// Unregister and clear all cached components (return the number of cleared components)
-	int32 ClearIndividualComponents();
+	int32 ClearCache();
 
 	// Check if component is registered (one check)
 	bool IsIndividualComponentRegisteredFast(USLIndividualComponent* Component) const { return RegisteredIndividualComponents.Contains(Component); };

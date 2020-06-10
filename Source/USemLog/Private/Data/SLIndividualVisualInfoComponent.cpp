@@ -19,6 +19,8 @@ USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 #endif // WITH_EDITOR
 
 	bIsInit = false;
+	bIsLoaded = false;
+
 	ClassTextSize = 50.f;
 	IdTextSize = 25.f;
 	//TypeTextSize = 20.f;
@@ -60,8 +62,28 @@ void USLIndividualVisualInfoComponent::OnRegister()
 void USLIndividualVisualInfoComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
+}
 
-	//Init();
+// Called when a component is created(not loaded).This can happen in the editor or during gameplay
+void USLIndividualVisualInfoComponent::OnComponentCreated()
+{
+	Super::OnComponentCreated();
+
+	// Check if actor already has a semantic data component
+	for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualVisualInfoComponent::StaticClass()))
+	{
+		if (AC != this)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a visual info component (%s), self-destruction commenced.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+			//DestroyComponent();
+			ConditionalBeginDestroy();
+			return;
+		}
+	}
+
+	Init();
+	Load();
 }
 
 // Called before destroying the object.
@@ -92,6 +114,8 @@ void USLIndividualVisualInfoComponent::TickComponent(float DeltaTime, ELevelTick
 // Called when sibling is being destroyed
 void USLIndividualVisualInfoComponent::OnSiblingDestroyed(USLIndividualComponent* Component)
 {
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Sibling %s destroyed, self destroying"),
+		*FString(__FUNCTION__), __LINE__, *Component->GetName());
 	// Trigger self destruct
 	ConditionalBeginDestroy();
 }
@@ -104,41 +128,57 @@ bool USLIndividualVisualInfoComponent::Init(bool bReset)
 		bIsInit = false;
 	}
 
-	// Check if the owner has an individual component
-	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	if (!bIsInit)
 	{
-		Sibling = CastChecked<USLIndividualComponent>(AC);
-		Sibling->OnDestroyed.AddDynamic(this, &USLIndividualVisualInfoComponent::OnSiblingDestroyed);
-		bIsInit = true;
-		return true;
+		// Check if the owner has an individual component
+		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
+		{
+			Sibling = CastChecked<USLIndividualComponent>(AC);
+			Sibling->OnDestroyed.AddDynamic(this, &USLIndividualVisualInfoComponent::OnSiblingDestroyed);
+			bIsInit = true;
+			return true;
+		}
 	}
 
 	return false;
 }
 
 // Refresh values from parent (returns false if component not init)
-bool USLIndividualVisualInfoComponent::RefreshComponents()
+bool USLIndividualVisualInfoComponent::Load(bool bReset)
 {
+	if (bReset)
+	{
+		bIsLoaded = false;
+	}
+
+	if (bIsLoaded)
+	{
+		return true;
+	}
+
 	if(!bIsInit)
 	{
-		if (Init())
-		{
-			return RefreshComponents();
-		}
-		else
+		if (!Init(bReset))
 		{
 			return false;
 		}
 	}
 
-	if (USLBaseIndividual* SLI = Sibling->GetCastedIndividualObject<USLBaseIndividual>())
+	if (Sibling && Sibling->IsValidLowLevel())
 	{
-		ClassText->SetText(FText::FromString(SLI->GetClass()));
-		IdText->SetText(FText::FromString(SLI->GetId()));
-		//TypeText->SetText(FText::FromString(TEXT("Visible Individual")));
+		if (USLBaseIndividual* SLI = Sibling->GetCastedIndividualObject<USLBaseIndividual>())
+		{
+			ClassText->SetText(FText::FromString(SLI->GetClass()));
+			IdText->SetText(FText::FromString(SLI->GetId()));
+			//TypeText->SetText(FText::FromString(TEXT("Visible Individual")));
+		}
 	}
-
-	return true;
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d This should not happen, the sibling should be set here.."),
+			*FString(__FUNCTION__), __LINE__);
+	}
+	return false;
 }
 
 // Hide/show component

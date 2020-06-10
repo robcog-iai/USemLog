@@ -38,7 +38,7 @@ int32 ASLIndividualManager::Init(bool bReset)
 	if (bReset)
 	{
 		bIsInit = false;
-		int32 NumClearedComp = ClearIndividualComponents();
+		int32 NumClearedComp = ClearCache();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Reset: %ld components cleared.."),
 			*FString(__FUNCTION__), __LINE__, NumClearedComp);
 	}
@@ -150,7 +150,7 @@ int32 ASLIndividualManager::DestroyIndividualComponents()
 	}
 
 	// Clear cached individuals
-	ClearIndividualComponents();
+	ClearCache();
 
 	return Num;
 }
@@ -620,7 +620,6 @@ int32 ASLIndividualManager::ImportFromTag(const TArray<AActor*>& Actors, bool bO
 // Remove destroyed individuals from array
 void ASLIndividualManager::OnIndividualComponentDestroyed(USLIndividualComponent* DestroyedComponent)
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
 	if (UnregisterIndividualComponent(DestroyedComponent))
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Unregistered externally destroyed component %s.."),
@@ -640,7 +639,7 @@ void ASLIndividualManager::OnSemanticOwnerDestroyed(AActor* DestroyedActor)
 }
 
 // Find the individual component of the actor, return nullptr if none found
-USLIndividualComponent* ASLIndividualManager::GetIndividualComponent(AActor* Actor)
+USLIndividualComponent* ASLIndividualManager::GetIndividualComponent(AActor* Actor) const
 {
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
@@ -652,7 +651,7 @@ USLIndividualComponent* ASLIndividualManager::GetIndividualComponent(AActor* Act
 // Create and add new individual component
 USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* Actor)
 {
-	if (CanHaveIndividualComponents(Actor))
+	if (CanHaveIndividualComponent(Actor))
 	{
 		if (!GetIndividualComponent(Actor))
 		{
@@ -714,7 +713,7 @@ USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* 
 }
 
 // Check if actor type is supported for creating an individual component
-bool ASLIndividualManager::CanHaveIndividualComponents(AActor* Actor)
+bool ASLIndividualManager::CanHaveIndividualComponent(AActor* Actor)
 {
 	if (Actor->IsA(AStaticMeshActor::StaticClass()))
 	{
@@ -820,7 +819,7 @@ bool ASLIndividualManager::UnregisterIndividualComponent(USLIndividualComponent*
 }
 
 // Unregister all cached components
-int32 ASLIndividualManager::ClearIndividualComponents()
+int32 ASLIndividualManager::ClearCache()
 {
 	int32 NumClearedComponents = 0;
 	for (const auto& C : RegisteredIndividualComponents)

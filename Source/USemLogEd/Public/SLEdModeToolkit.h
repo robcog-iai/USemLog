@@ -82,11 +82,11 @@ private:
 
 	// Semantic data managers
 	FReply OnInitSemDataManagers();
-	FReply OnReLoadSemDataManagers();
+	FReply OnReloadSemDataManagers();
 
 	// Semantic data components
 	FReply OnCreateSemDataComp();
-	FReply OnReLoadSemDataComp();
+	FReply OnReloadSemDataComp();
 	FReply OnRmSemDataComp();
 	FReply OnToggleMaskSemDataComp();
 
@@ -141,7 +141,7 @@ private:
 	class ASLIndividualManager* IndividualManager;
 
 	// Provides visual functionalities over the individuals in the world
-	class ASLIndividualVisualInfoManager* VisualInfoMananger;
+	class ASLIndividualVisualInfoManager* VisualInfoManager;
 
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;

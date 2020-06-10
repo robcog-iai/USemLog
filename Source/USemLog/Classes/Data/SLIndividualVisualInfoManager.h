@@ -31,26 +31,62 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	// Load components from world
-	bool Init(bool bReset = false);
+	int32 Init(bool bReset = false);
 
 	// Checks if the manager is initalized
 	bool IsInit() const { return bIsInit; };
 
-	// Refresh all components
-	bool RefreshComponents();
+	// Re-load and re-register components
+	int32 Reload() { return Init(true); };
 
-	// Refresh only selected actors components
-	bool RefreshSelected(const TArray<AActor*> Owners);
+	// Add new semantic data components to the actors
+	int32 AddVisualInfoComponents();
+	int32 AddVisualInfoComponents(const TArray<AActor*>& Actors);
+
+	// Remove all components
+	int32 DestroyVisualInfoComponents();
+	int32 DestroyVisualInfoComponents(const TArray<AActor*>& Actors);
+
+	// Refresh all components
+	int32 RefreshVisualInfoComponents();
+	int32 RefreshVisualInfoComponents(const TArray<AActor*>& Owners);
+
+	// Toggle visiblity
+	int32 ToggleVisualInfoComponents();
+	int32 ToggleVisualInfoComponents(const TArray<AActor*>& Owners);
 
 private:
 	// Remove destroyed individuals from array
 	UFUNCTION()
 	void OnIndividualComponentDestroyed(USLIndividualVisualInfoComponent* Component);
 
+	// Find the text component of the actor, return nullptr if none found
+	USLIndividualVisualInfoComponent* GetInfoComponent(AActor* Actor) const;
+
+	// Create and add new individual component
+	USLIndividualVisualInfoComponent* AddNewInfoComponent(AActor* Actor);
+
+	// Check if an individual component is present
+	bool CanHaveInfoComponent(AActor* Actor);
+
+	// Remove individual component from owner
+	void DestroyInfoComponent(USLIndividualVisualInfoComponent* Component);
+
+	// Cache component, bind delegates
+	bool RegisterInfoComponent(USLIndividualVisualInfoComponent* Component);
+
+	// Remove component from cache, unbind delegates
+	bool UnregisterInfoComponent(USLIndividualVisualInfoComponent* Component);
+
+	// Unregister and clear all cached components (return the number of cleared components)
+	int32 ClearCache();
+
 private:
 	// Marks manager as initialized
 	bool bIsInit;
 
-	// Array of all visual components
-	TArray<USLIndividualVisualInfoComponent*> VisualComponents;
+	// Cached components
+	TSet<USLIndividualVisualInfoComponent*> RegisteredInfoComponents;
+	TMap<AActor*, USLIndividualVisualInfoComponent*> InfoComponentOwners;
+	TMap<USLIndividualVisualInfoComponent*, USLIndividualComponent*> InfoComponentsIndividuals;
 };

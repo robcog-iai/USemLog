@@ -28,86 +28,143 @@ void ASLIndividualVisualInfoManager::Tick(float DeltaTime)
 }
 
 // Load components from world
-bool ASLIndividualVisualInfoManager::Init(bool bReset)
+int32 ASLIndividualVisualInfoManager::Init(bool bReset)
 {
 	if (bReset)
 	{
 		bIsInit = false;
-		VisualComponents.Empty();
+		int32 NumClearedComp = ClearCache();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Reset: %ld components cleared.."),
+			*FString(__FUNCTION__), __LINE__, NumClearedComp);
 	}
 
+	int32 NumComponentsLoaded = 0;
 	if (!bIsInit)
 	{
-		VisualComponents.Empty();
 		if (GetWorld())
 		{
 			for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 			{
-				if (UActorComponent* AC = ActItr->GetComponentByClass(USLIndividualVisualInfoComponent::StaticClass()))
+				if (USLIndividualVisualInfoComponent* IC = GetInfoComponent(*ActItr))
 				{
-					USLIndividualVisualInfoComponent* VIC = CastChecked<USLIndividualVisualInfoComponent>(AC);
-					VIC->Init();
-
-					if (!VIC->OnSLComponentDestroyed.IsAlreadyBound(this, &ASLIndividualVisualInfoManager::OnIndividualComponentDestroyed))
+					if (IC->Init())
 					{
-						VIC->OnSLComponentDestroyed.AddDynamic(this, &ASLIndividualVisualInfoManager::OnIndividualComponentDestroyed);
-					}
+						if (!IC->Load())
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
+								*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
+						}
 
-					if (!VIC->IsInit())
+						if (RegisterInfoComponent(IC))
+						{
+							NumComponentsLoaded++;
+						}
+					}
+					else
 					{
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual info component of %s is not initalized.."),
-							*FString(__FUNCTION__), __LINE__, *ActItr->GetName());
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d Info component %s could not be init.. the manager will not register it.."),
+							*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
 					}
-
-					VisualComponents.Emplace(VIC);
 				}
 			}
 			bIsInit = true;
-			return true;
 		}
 	}
 
-	return false;
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Init: %ld info components loaded.."),
+		*FString(__FUNCTION__), __LINE__, NumComponentsLoaded);
+	return NumComponentsLoaded;
+}
+
+int32 ASLIndividualVisualInfoManager::AddVisualInfoComponents()
+{
+	return int32();
+}
+
+int32 ASLIndividualVisualInfoManager::AddVisualInfoComponents(const TArray<AActor*>& Actors)
+{
+	return int32();
+}
+
+int32 ASLIndividualVisualInfoManager::DestroyVisualInfoComponents()
+{
+	return int32();
+}
+
+int32 ASLIndividualVisualInfoManager::DestroyVisualInfoComponents(const TArray<AActor*>& Actors)
+{
+	return int32();
 }
 
 // Refresh all components
-bool ASLIndividualVisualInfoManager::RefreshComponents()
+int32 ASLIndividualVisualInfoManager::RefreshVisualInfoComponents()
 {
-	bool bMarkDirty = false;
-	for (const auto& C : VisualComponents)
-	{
-		bMarkDirty = C->RefreshComponents() || bMarkDirty;
-	}
-	return bMarkDirty;
+	return 0;
 }
 
 // Refresh only selected actors components
-bool ASLIndividualVisualInfoManager::RefreshSelected(const TArray<AActor*> Owners)
+int32 ASLIndividualVisualInfoManager::RefreshVisualInfoComponents(const TArray<AActor*>& Owners)
 {
-	bool bMarkDirty = false;
-	for (const auto& Act : Owners)
-	{
-		if (UActorComponent* AC = Act->GetComponentByClass(USLIndividualVisualInfoComponent::StaticClass()))
-		{
-			bMarkDirty = CastChecked<USLIndividualVisualInfoComponent>(AC)-> RefreshComponents() || bMarkDirty;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has not visual info component.."),
-				*FString(__FUNCTION__), __LINE__, *Act->GetName());
-		}
-	}
-	return bMarkDirty;
+	return 0;
+}
+
+int32 ASLIndividualVisualInfoManager::ToggleVisualInfoComponents()
+{
+	return int32();
+}
+
+int32 ASLIndividualVisualInfoManager::ToggleVisualInfoComponents(const TArray<AActor*>& Owners)
+{
+	return int32();
 }
 
 // Remove destroyed individuals from array
 void ASLIndividualVisualInfoManager::OnIndividualComponentDestroyed(USLIndividualVisualInfoComponent* Component)
 {
-	int32 Index = INDEX_NONE;
-	if (VisualComponents.Find(Component, Index))
+	if (RegisteredInfoComponents.Remove(Component))
 	{
-		VisualComponents.RemoveAt(Index);
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Removing %s visual info component.., total comp num: %ld .."),
-			*FString(__FUNCTION__), __LINE__, *Component->GetOwner()->GetName(), VisualComponents.Num());
+		RegisteredInfoComponents.Remove(Component);
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Removing %s's visual info component.., total comp num: %ld .."),
+			*FString(__FUNCTION__), __LINE__, *Component->GetOwner()->GetName(), RegisteredInfoComponents.Num());
 	}
+}
+
+// Find the individual component of the actor, return nullptr if none found
+USLIndividualVisualInfoComponent* ASLIndividualVisualInfoManager::GetInfoComponent(AActor* Actor) const
+{
+	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualVisualInfoComponent::StaticClass()))
+	{
+		return CastChecked<USLIndividualVisualInfoComponent>(AC);
+	}
+	return nullptr;
+}
+
+USLIndividualVisualInfoComponent* ASLIndividualVisualInfoManager::AddNewInfoComponent(AActor* Actor)
+{
+	return nullptr;
+}
+
+bool ASLIndividualVisualInfoManager::CanHaveInfoComponent(AActor* Actor)
+{
+	return false;
+}
+
+void ASLIndividualVisualInfoManager::DestroyInfoComponent(USLIndividualVisualInfoComponent* Component)
+{
+}
+
+bool ASLIndividualVisualInfoManager::RegisterInfoComponent(USLIndividualVisualInfoComponent* Component)
+{
+	return false;
+}
+
+bool ASLIndividualVisualInfoManager::UnregisterInfoComponent(USLIndividualVisualInfoComponent* Component)
+{
+	return false;
+}
+
+// Unregister and clear all cached components (return the number of cleared components)
+int32 ASLIndividualVisualInfoManager::ClearCache()
+{
+	return 0;
 }

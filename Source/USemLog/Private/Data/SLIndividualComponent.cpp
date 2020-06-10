@@ -39,22 +39,6 @@ void USLIndividualComponent::BeginDestroy()
 void USLIndividualComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
-
-	//// Check if actor already has a semantic data component
-	//for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualComponent::StaticClass()))
-	//{
-	//	if (AC != this)
-	//	{
-	//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
-	//			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
-	//		//DestroyComponent();
-	//		ConditionalBeginDestroy();
-	//		return;
-	//	}
-	//}
-
-	//Init();
-	//Load();
 }
 
 #if WITH_EDITOR
@@ -223,12 +207,14 @@ bool USLIndividualComponent::CreateIndividual()
 // Triggered when the semantic individual init flag changes
 void USLIndividualComponent::OnIndividualInitChange(USLBaseIndividual* Individual, bool bNewValue)
 {
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
 	bIsInit = bNewValue;
 }
 
 // Triggered when the semantic individual loaded flag changes
 void USLIndividualComponent::OnIndividualLoadedChange(USLBaseIndividual* Individual, bool bNewValue)
 {
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
 	bIsLoaded = bNewValue;
 }
 
