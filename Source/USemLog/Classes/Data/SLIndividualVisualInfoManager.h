@@ -39,37 +39,45 @@ public:
 	// Re-load and re-register components
 	int32 Reload() { return Init(true); };
 
-	// Add new semantic data components to the actors
+	// Add new visual info components to the actors
 	int32 AddVisualInfoComponents();
 	int32 AddVisualInfoComponents(const TArray<AActor*>& Actors);
 
-	// Remove all components
+	// Remove info components from world and clear manager's cache
 	int32 DestroyVisualInfoComponents();
 	int32 DestroyVisualInfoComponents(const TArray<AActor*>& Actors);
 
 	// Refresh all components
-	int32 RefreshVisualInfoComponents();
-	int32 RefreshVisualInfoComponents(const TArray<AActor*>& Owners);
+	int32 ReloadVisualInfoComponents();
+	int32 ReloadVisualInfoComponents(const TArray<AActor*>& Actors);
 
+	/* Functionalities */
 	// Toggle visiblity
-	int32 ToggleVisualInfoComponents();
-	int32 ToggleVisualInfoComponents(const TArray<AActor*>& Owners);
+	int32 ToggleVisualInfoComponentsVisibility();
+	int32 ToggleVisualInfoComponentsVisibility(const TArray<AActor*>& Actors);
 
 private:
 	// Remove destroyed individuals from array
 	UFUNCTION()
-	void OnIndividualComponentDestroyed(USLIndividualVisualInfoComponent* Component);
+	void OnInfoComponentDestroyed(USLIndividualVisualInfoComponent* DestroyedComponent);
+
+	UFUNCTION()
+	// Triggered by external destruction of semantic owner
+	void OnSemanticOwnerDestroyed(AActor* DestroyedActor);
 
 	// Find the text component of the actor, return nullptr if none found
 	USLIndividualVisualInfoComponent* GetInfoComponent(AActor* Actor) const;
 
-	// Create and add new individual component
+	// Create and add new individual component to actor
 	USLIndividualVisualInfoComponent* AddNewInfoComponent(AActor* Actor);
 
-	// Check if an individual component is present
-	bool CanHaveInfoComponent(AActor* Actor);
+	// Check if actor already has an info component
+	bool HasInfoComponent(AActor* Actor) const;
 
-	// Remove individual component from owner
+	// Info component can be created if there is an individual component present
+	bool HasIndividualComponentSibling(AActor* Actor) const;
+
+	// Removes component from the actors instanced components, triggers destroy
 	void DestroyInfoComponent(USLIndividualVisualInfoComponent* Component);
 
 	// Cache component, bind delegates
@@ -88,5 +96,4 @@ private:
 	// Cached components
 	TSet<USLIndividualVisualInfoComponent*> RegisteredInfoComponents;
 	TMap<AActor*, USLIndividualVisualInfoComponent*> InfoComponentOwners;
-	TMap<USLIndividualVisualInfoComponent*, USLIndividualComponent*> InfoComponentsIndividuals;
 };

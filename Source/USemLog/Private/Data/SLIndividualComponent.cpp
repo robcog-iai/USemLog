@@ -93,9 +93,6 @@ void USLIndividualComponent::OnComponentCreated()
 			return;
 		}
 	}
-
-	Init();
-	Load();
 }
 
 // Called when the game starts
@@ -214,7 +211,6 @@ void USLIndividualComponent::OnIndividualInitChange(USLBaseIndividual* Individua
 // Triggered when the semantic individual loaded flag changes
 void USLIndividualComponent::OnIndividualLoadedChange(USLBaseIndividual* Individual, bool bNewValue)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
 	bIsLoaded = bNewValue;
 }
 

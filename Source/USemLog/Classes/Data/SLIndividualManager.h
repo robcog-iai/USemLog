@@ -89,6 +89,9 @@ private:
 	// Find the individual component of the actor, return nullptr if none found
 	USLIndividualComponent* GetIndividualComponent(AActor* Actor) const;
 
+	// Check if actor already has an individual component
+	bool HasIndividualComponent(AActor* Actor) const;
+
 	// Create and add new individual component
 	USLIndividualComponent* AddNewIndividualComponent(AActor* Actor);
 

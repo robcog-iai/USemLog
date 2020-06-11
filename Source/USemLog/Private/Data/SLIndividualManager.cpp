@@ -167,14 +167,13 @@ int32 ASLIndividualManager::DestroyIndividualComponents(const TArray<AActor*>& A
 	int32 Num = 0;
 	for (const auto& Act : Actors)
 	{
-		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
 		{
 			UnregisterIndividualComponent(*FoundIC);
 			DestroyIndividualComponent(*FoundIC);
 			Num++;
 		}
 	}
-
 	return Num;
 }
 
@@ -217,7 +216,7 @@ int32 ASLIndividualManager::ReloadIndividualComponents(const TArray<AActor*>& Ac
 	int32 Num = 0;
 	for (const auto& Act : Actors)
 	{
-		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
 		{
 			bool bReset = true;
 			if ((*FoundIC)->Load(bReset))
@@ -268,7 +267,7 @@ int32 ASLIndividualManager::ToggleMaskMaterialsVisibility(const TArray<AActor*>&
 	int32 Num = 0;
 	for (const auto& Act : Actors)
 	{
-		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
 		{
 			if ((*FoundIC)->ToggleVisualMaskVisibility())
 			{
@@ -635,7 +634,7 @@ void ASLIndividualManager::OnIndividualComponentDestroyed(USLIndividualComponent
 // Triggered by external destruction of semantic owner
 void ASLIndividualManager::OnSemanticOwnerDestroyed(AActor* DestroyedActor)
 {
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Error, TEXT("%s::%d"), *FString(__FUNCTION__), __LINE__);
 }
 
 // Find the individual component of the actor, return nullptr if none found
@@ -648,66 +647,66 @@ USLIndividualComponent* ASLIndividualManager::GetIndividualComponent(AActor* Act
 	return nullptr;
 }
 
+// Check if actor already has an individual component
+bool ASLIndividualManager::HasIndividualComponent(AActor* Actor) const
+{
+	return Actor->GetComponentByClass(USLIndividualComponent::StaticClass()) != nullptr;
+}
+
 // Create and add new individual component
 USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* Actor)
 {
-	if (CanHaveIndividualComponent(Actor))
+	// Check if the actor type is supported and there is no other existing component
+	if (CanHaveIndividualComponent(Actor) && !HasIndividualComponent(Actor))
 	{
-		if (!GetIndividualComponent(Actor))
+		Actor->Modify();
+
+		// Create an appropriate name for the new component (avoid duplicates)
+		FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(
+			USLIndividualComponent::StaticClass(), Actor);
+
+		// Get the set of owned components that exists prior to instancing the new component.
+		TInlineComponentArray<UActorComponent*> PreInstanceComponents;
+		Actor->GetComponents(PreInstanceComponents);
+
+		// Create a new component
+		USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(Actor, NewComponentName, RF_Transactional);
+
+		// Make visible in the components list in the editor
+		Actor->AddInstanceComponent(NewComp);
+		//Actor->AddOwnedComponent(NewComp);
+
+		//NewComp->OnComponentCreated();
+		NewComp->RegisterComponent();
+
+		// Register any new components that may have been created during construction of the instanced component, but were not explicitly registered.
+		TInlineComponentArray<UActorComponent*> PostInstanceComponents;
+		Actor->GetComponents(PostInstanceComponents);
+		for (UActorComponent* ActorComponent : PostInstanceComponents)
 		{
-			Actor->Modify();
-
-			// Create an appropriate name for the new component (avoid duplicates)
-			FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(
-				USLIndividualComponent::StaticClass(), Actor);
-
-			// Get the set of owned components that exists prior to instancing the new component.
-			TInlineComponentArray<UActorComponent*> PreInstanceComponents;
-			Actor->GetComponents(PreInstanceComponents);
-
-			// Create a new component
-			USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(Actor, NewComponentName, RF_Transactional);
-
-			// Make visible in the components list in the editor
-			Actor->AddInstanceComponent(NewComp);
-			//Actor->AddOwnedComponent(NewComp);
-
-			NewComp->OnComponentCreated();
-			NewComp->RegisterComponent();
-
-			// Register any new components that may have been created during construction of the instanced component, but were not explicitly registered.
-			TInlineComponentArray<UActorComponent*> PostInstanceComponents;
-			Actor->GetComponents(PostInstanceComponents);
-			for (UActorComponent* ActorComponent : PostInstanceComponents)
+			if (!ActorComponent->IsRegistered() && ActorComponent->bAutoRegister && !ActorComponent->IsPendingKill() && !PreInstanceComponents.Contains(ActorComponent))
 			{
-				if (!ActorComponent->IsRegistered() && ActorComponent->bAutoRegister && !ActorComponent->IsPendingKill() && !PreInstanceComponents.Contains(ActorComponent))
-				{
-					ActorComponent->RegisterComponent();
-				}
+				ActorComponent->RegisterComponent();
 			}
-
-			Actor->RerunConstructionScripts();
-
-			if (NewComp->Init())
-			{
-				if (!NewComp->Load())
-				{
-					//UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.. the manager will not register it.."),
-					//	*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
-					//return nullptr;
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
-						*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
-				}
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be init.. the manager will not register it.."),
-					*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
-				return nullptr;
-			}
-
-			return NewComp;
 		}
+
+		Actor->RerunConstructionScripts();
+
+		if (NewComp->Init())
+		{
+			if (!NewComp->Load())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
+					*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be init.. the manager will not register it.."),
+				*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
+			return nullptr;
+		}
+		return NewComp;
 	}
 	return nullptr;
 }
@@ -821,7 +820,7 @@ bool ASLIndividualManager::UnregisterIndividualComponent(USLIndividualComponent*
 // Unregister all cached components
 int32 ASLIndividualManager::ClearCache()
 {
-	int32 NumClearedComponents = 0;
+	int32 Num = 0;
 	for (const auto& C : RegisteredIndividualComponents)
 	{
 		//UnregisterIndividualComponent(C);
@@ -829,7 +828,7 @@ int32 ASLIndividualManager::ClearCache()
 		if (C->OnDestroyed.IsAlreadyBound(this, &ASLIndividualManager::OnIndividualComponentDestroyed))
 		{
 			C->OnDestroyed.RemoveDynamic(this, &ASLIndividualManager::OnIndividualComponentDestroyed);
-			NumClearedComponents++;
+			Num++;
 		}
 		else
 		{
@@ -843,17 +842,17 @@ int32 ASLIndividualManager::ClearCache()
 	//	UnregisterIndividualComponent(*CItr);
 	//}
 
-	if (NumClearedComponents != RegisteredIndividualComponents.Num())
+	if (Num != RegisteredIndividualComponents.Num())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Num of bound delegates (%ld) is out of sync with the num of registered components (%ld).."),
-			*FString(__FUNCTION__), __LINE__, NumClearedComponents, RegisteredIndividualComponents.Num());
-		NumClearedComponents = INDEX_NONE;
+			*FString(__FUNCTION__), __LINE__, Num, RegisteredIndividualComponents.Num());
+		Num = INDEX_NONE;
 	}
 
 	RegisteredIndividualComponents.Empty();
 	IndividualComponentOwners.Empty();
 
-	return NumClearedComponents;
+	return Num;
 }
 
 bool ASLIndividualManager::IsIndividualComponentRegisteredFull(USLIndividualComponent* Component) const

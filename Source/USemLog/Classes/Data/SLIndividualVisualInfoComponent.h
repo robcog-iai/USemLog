@@ -11,7 +11,7 @@
 class USLIndividualComponent;
 
 // Delegate notification when the component is being destroyed
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLVisualInfoComponentDestroyedSignature, USLIndividualVisualInfoComponent*, Self);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLVisualInfoComponentDestroyedSignature, USLIndividualVisualInfoComponent*, DestroyedComponent);
 
 /**
 * Component storing the visual information of semantic individuals
@@ -70,7 +70,7 @@ private:
 
 public:
 	// Called when the component is destroyed
-	FSLVisualInfoComponentDestroyedSignature OnSLComponentDestroyed;
+	FSLVisualInfoComponentDestroyedSignature OnDestroyed;
 
 protected:
 	// Individual component sibling
@@ -96,7 +96,7 @@ private:
 	// Type text
 	//UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	//class UTextRenderComponent* TypeText;
-	
+
 	// Text sizes
 	float ClassTextSize;
 	float IdTextSize;

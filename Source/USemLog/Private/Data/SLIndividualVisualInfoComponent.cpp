@@ -6,6 +6,7 @@
 #include "Components/TextRenderComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Materials/MaterialInterface.h"
 
 
 // Sets default values for this component's properties
@@ -21,8 +22,8 @@ USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 	bIsInit = false;
 	bIsLoaded = false;
 
-	ClassTextSize = 50.f;
-	IdTextSize = 25.f;
+	ClassTextSize = 10.f;
+	IdTextSize = 5.f;
 	//TypeTextSize = 20.f;
 
 	ClassText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("ClassTxt"));
@@ -30,6 +31,8 @@ USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 	ClassText->SetWorldSize(ClassTextSize);
 	ClassText->SetText(FText::FromString(TEXT("UnknownClass")));
 	ClassText->SetupAttachment(this);
+	ClassText->SetTextRenderColor(FColor::Blue);
+
 
 	IdText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("IdTxt"));
 	IdText->SetHorizontalAlignment(EHTA_Center);
@@ -37,6 +40,14 @@ USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 	IdText->SetText(FText::FromString(TEXT("UnknownId")));
 	IdText->SetupAttachment(this);
 	IdText->SetRelativeLocation(FVector(0.f, 0.f, -ClassTextSize));
+	IdText->SetTextRenderColor(FColor::Yellow);
+
+	UMaterialInterface* MI = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), NULL, TEXT("Material'/USemLog/Individual/M_InfoTextTranslucent.M_InfoTextTranslucent'"), NULL, LOAD_None, NULL));
+	if (MI)
+	{
+		ClassText->SetTextMaterial(MI);
+		IdText->SetTextMaterial(MI);
+	}
 }
 
 
@@ -81,9 +92,6 @@ void USLIndividualVisualInfoComponent::OnComponentCreated()
 			return;
 		}
 	}
-
-	Init();
-	Load();
 }
 
 // Called before destroying the object.
@@ -99,7 +107,7 @@ void USLIndividualVisualInfoComponent::BeginDestroy()
 		IdText->ConditionalBeginDestroy();
 	}
 
-	OnSLComponentDestroyed.Broadcast(this);
+	OnDestroyed.Broadcast(this);
 
 	Super::BeginDestroy();
 }
@@ -130,6 +138,7 @@ bool USLIndividualVisualInfoComponent::Init(bool bReset)
 
 	if (!bIsInit)
 	{
+
 		// Check if the owner has an individual component
 		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
@@ -171,6 +180,8 @@ bool USLIndividualVisualInfoComponent::Load(bool bReset)
 			ClassText->SetText(FText::FromString(SLI->GetClass()));
 			IdText->SetText(FText::FromString(SLI->GetId()));
 			//TypeText->SetText(FText::FromString(TEXT("Visible Individual")));
+			bIsLoaded = true;
+			return true;
 		}
 	}
 	else

@@ -324,7 +324,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoTxt()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
-		.Padding(5)
+		.Padding(10)
 		.HAlign(HAlign_Center)
 		[
 			SNew(STextBlock)
@@ -567,7 +567,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataMaskSlot()
 		];
 }
 
-
+/* Tag */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagTxtSlot()
 {
 	return SVerticalBox::Slot()
@@ -624,6 +624,8 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagDataSlot()
 		];
 }
 
+
+/* Misc */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateUtilsTxtSlot()
 {
 	return SVerticalBox::Slot()
@@ -990,11 +992,11 @@ FReply FSLEdModeToolkit::OnRefreshSemDataVisInfo()
 	{
 		if (bOnlySelected)
 		{
-			NumComp = VisualInfoManager->RefreshVisualInfoComponents(GetSelectedActors());
+			NumComp = VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = VisualInfoManager->RefreshVisualInfoComponents();
+			NumComp = VisualInfoManager->ReloadVisualInfoComponents();
 		}
 	}
 	else
@@ -1058,11 +1060,11 @@ FReply FSLEdModeToolkit::OnToggleSemDataVisInfo()
 	{
 		if (bOnlySelected)
 		{
-			NumComp = VisualInfoManager->ToggleVisualInfoComponents(GetSelectedActors());
+			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = VisualInfoManager->ToggleVisualInfoComponents();
+			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility();
 		}
 	}
 	else
@@ -1091,12 +1093,12 @@ FReply FSLEdModeToolkit::OnUpdateSemDataVisInfo()
 		if (bOnlySelected)
 		{
 			// TODO
-			NumComp = VisualInfoManager->ToggleVisualInfoComponents(GetSelectedActors());
+			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility(GetSelectedActors());
 		}
 		else
 		{
 			// TODO
-			NumComp = VisualInfoManager->ToggleVisualInfoComponents();
+			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility();
 		}
 	}
 	else
@@ -1125,12 +1127,12 @@ FReply FSLEdModeToolkit::OnLiveUpdateSemDataVisInfo()
 		if (bOnlySelected)
 		{
 			// TODO
-			NumComp = VisualInfoManager->ToggleVisualInfoComponents(GetSelectedActors());
+			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility(GetSelectedActors());
 		}
 		else
 		{
 			// TODO
-			NumComp = VisualInfoManager->ToggleVisualInfoComponents();
+			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility();
 		}
 	}
 	else
@@ -1150,7 +1152,6 @@ FReply FSLEdModeToolkit::OnLiveUpdateSemDataVisInfo()
 }
 
 
-
 ////
 FReply FSLEdModeToolkit::OnWriteSemDataAll()
 {
@@ -1158,27 +1159,6 @@ FReply FSLEdModeToolkit::OnWriteSemDataAll()
 	OnWriteSemDataIds();
 	OnWriteClassNames();
 	OnWriteVisualMasks();
-
-	//bool bMarkDirty = false;
-
-	//if (bOnlySelected)
-	//{
-	//	bMarkDirty = FSLEdUtils::WriteUniqueIds(GetSelectedActors(), bOverwrite) || bMarkDirty;
-	//	bMarkDirty = FSLEdUtils::WriteClassNames(GetSelectedActors(), bOverwrite) || bMarkDirty;
-	//	bMarkDirty = FSLEdUtils::WriteVisualMasks(GetSelectedActors(), GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
-	//}
-	//else
-	//{
-	//	bMarkDirty = FSLEdUtils::WriteUniqueIds(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
-	//	bMarkDirty = FSLEdUtils::WriteClassNames(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
-	//	bMarkDirty = FSLEdUtils::WriteVisualMasks(GEditor->GetEditorWorldContext().World(), bOverwrite) || bMarkDirty;
-	//}
-
-	//if (NumCompId || NumCompClass || )
-	//{
-	//	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	//}
-
 	return FReply::Handled();
 }
 
@@ -1188,26 +1168,6 @@ FReply FSLEdModeToolkit::OnRmSemDataAll()
 	OnRmSemDataIds();
 	OnRmClassNames();
 	OnRmVisualMasks();
-	//bool bMarkDirty = false;
-
-	//if (bOnlySelected)
-	//{
-	//	bMarkDirty = FSLEdUtils::RemoveUniqueIds(GetSelectedActors()) || bMarkDirty;
-	//	bMarkDirty = FSLEdUtils::RemoveClassNames(GetSelectedActors()) || bMarkDirty;
-	//	bMarkDirty = FSLEdUtils::RemoveVisualMasks(GetSelectedActors()) || bMarkDirty;
-	//}
-	//else
-	//{
-	//	bMarkDirty = FSLEdUtils::RemoveUniqueIds(GEditor->GetEditorWorldContext().World()) || bMarkDirty;
-	//	bMarkDirty = FSLEdUtils::RemoveClassNames(GEditor->GetEditorWorldContext().World()) || bMarkDirty;
-	//	bMarkDirty = FSLEdUtils::RemoveVisualMasks(GEditor->GetEditorWorldContext().World()) || bMarkDirty;
-	//}
-
-	//if (bMarkDirty)
-	//{
-	//	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	//}
-
 	return FReply::Handled();
 }
 
@@ -1234,6 +1194,10 @@ FReply FSLEdModeToolkit::OnWriteSemDataIds()
 
 	if (NumComp)
 	{
+		if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+		{
+			bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
+		}
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Generated new ids for %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumComp);
@@ -1265,6 +1229,10 @@ FReply FSLEdModeToolkit::OnRmSemDataIds()
 
 	if (NumComp)
 	{
+		if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+		{
+			bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
+		}
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Removed ids from %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumComp);
@@ -1296,6 +1264,10 @@ FReply FSLEdModeToolkit::OnWriteClassNames()
 
 	if (NumComp)
 	{
+		if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+		{
+			bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
+		}
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Wrote classes for %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumComp);
@@ -1326,6 +1298,10 @@ FReply FSLEdModeToolkit::OnRmClassNames()
 
 	if (NumComp)
 	{
+		if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+		{
+			bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
+		}
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Removed classes from %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumComp);
@@ -1394,6 +1370,7 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 	
 	return FReply::Handled();
 }
+
 
 ////
 FReply FSLEdModeToolkit::OnExportToTag()
@@ -1617,6 +1594,7 @@ FReply FSLEdModeToolkit::OnGenericButton()
 	//UE_LOG(LogTemp, Error, TEXT("%s::%d *** -END- GenericButton ***"), *FString(__FUNCTION__), __LINE__);
 	return FReply::Handled();
 }
+
 
 /* Helper functions */
 TArray<AActor*> FSLEdModeToolkit::GetSelectedActors() const
