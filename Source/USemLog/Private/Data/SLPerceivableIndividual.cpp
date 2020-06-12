@@ -14,18 +14,22 @@
 USLPerceivableIndividual::USLPerceivableIndividual()
 {
 	// Load the mask material
-	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialAsset(
-		TEXT("Material'/USemLog/Individual/M_VisualIndividualMask.M_VisualIndividualMask'"));
-	if (MaterialAsset.Succeeded())
-	{
-		VisualMaskMaterial = MaterialAsset.Object;		
-		////VisualMaskDynamicMaterial = CreateDefaultSubobject<UMaterialInstanceDynamic>(TEXT("VisualMaskDynamicMaterial"));
-		////VisualMaskDynamicMaterial->SetParentInternal(MaterialAsset.Object, false);
-	}
+	//static ConstructorHelpers::FObjectFinder<UMaterial>MaterialAsset(
+	//	TEXT("Material'/USemLog/Individual/M_VisualIndividualMask.M_VisualIndividualMask'"));
+	//if (MaterialAsset.Succeeded())
+	//{
+	//	VisualMaskMaterial = MaterialAsset.Object;		
+	//	////VisualMaskDynamicMaterial = CreateDefaultSubobject<UMaterialInstanceDynamic>(TEXT("VisualMaskDynamicMaterial"));
+	//	////VisualMaskDynamicMaterial->SetParentInternal(MaterialAsset.Object, false);
+	//}
 
+	VisualMaskMaterial = Cast<UMaterial>(StaticLoadObject(
+		UMaterial::StaticClass(), NULL, TEXT("Material'/USemLog/Individual/M_VisualIndividualMask.M_VisualIndividualMask'"),
+		NULL, LOAD_None, NULL));
+
+	SemanticOwner = nullptr;
 	bIsInit = false;
 	bIsLoaded = false;
-
 	bMaskMaterialOn = false;
 }
 
@@ -108,16 +112,28 @@ bool USLPerceivableIndividual::ExportToTag(bool bOverwrite)
 bool USLPerceivableIndividual::ImportFromTag(bool bOverwrite)
 {
 	bool bNewValue = false;
-	bNewValue = Super::ImportFromTag(bOverwrite) || bNewValue;
-	bNewValue = ImportVisualMaskFromTag(bOverwrite) || bNewValue;
-	bNewValue = ImportCalibratedVisualMaskFromTag(bOverwrite) || bNewValue;
+	if (Super::ImportFromTag(bOverwrite))
+	{
+		bNewValue = true;
+	}
+
+	if (ImportVisualMaskFromTag(bOverwrite))
+	{
+		bNewValue = true;
+	}
+
+	if (ImportCalibratedVisualMaskFromTag(bOverwrite))
+	{
+		bNewValue = true;
+	}
+
 	return bNewValue;
 }
 
 // Apply visual mask material
 bool USLPerceivableIndividual::ApplyVisualMaskMaterials(bool bReload)
 {
-	if (!IsLoaded())
+	if (!IsInit())
 	{
 		return false;
 	}
@@ -137,7 +153,7 @@ bool USLPerceivableIndividual::ApplyVisualMaskMaterials(bool bReload)
 // Apply original materials
 bool USLPerceivableIndividual::ApplyOriginalMaterials()
 {
-	if (!IsLoaded())
+	if (!IsInit())
 	{
 		return false;
 	}
@@ -170,29 +186,29 @@ bool USLPerceivableIndividual::ToggleMaterials()
 }
 
 // Set  visual mask
-void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool bReload, bool bClearCalibratedValue)
+void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool bApplyNewMaterial, bool bClearCalibratedVisualMask)
 {
 	// Clear the calibrated color in case of a new visual mask value
-	if (!VisualMask.Equals(NewVisualMask) && bClearCalibratedValue) 
-	{
-		CalibratedVisualMask = ""; 
-	}
-	
-	// Set the new visual mask
-	VisualMask = NewVisualMask;
+	if (!VisualMask.Equals(NewVisualMask)) 
+	{		
+		VisualMask = NewVisualMask;
+		OnNewVisualMaskValue.Broadcast(this, VisualMask);
+		SetIsLoaded(LoadImpl(false));
 
-	if (!HasVisualMask())
-	{
-		SetIsLoaded(false);
-	}
+		// The calibrated value will be obsolete for a new visual mask
+		if (bClearCalibratedVisualMask)
+		{
+			SetCalibratedVisualMask("");
+		}
 
-	// Update the dynamic material
-	ApplyVisualMaskColorToDynamicMaterial();
-	
-	// If the mask visualization is active, dynamically update the colors
-	if (bMaskMaterialOn && bReload)
-	{
-		ApplyVisualMaskMaterials(true);
+		// Update the dynamic material
+		ApplyVisualMaskColorToDynamicMaterial();
+
+		// If the mask visualization is active, dynamically update the colors
+		if (bMaskMaterialOn && bApplyNewMaterial)
+		{
+			ApplyVisualMaskMaterials(true);
+		}
 	}
 }
 
@@ -285,26 +301,27 @@ bool USLPerceivableIndividual::InitImpl()
 }
 
 // Private load implementation
-bool USLPerceivableIndividual::LoadImpl()
+bool USLPerceivableIndividual::LoadImpl(bool bTryImportFromTags)
 {
 	bool bSuccess = true;
+
 	if (!HasVisualMask())
 	{
-		if (!ImportVisualMaskFromTag())
+		if (bTryImportFromTags)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no VisualMask, tag import failed as well.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
+			if (!ImportVisualMaskFromTag())
+			{
+				bSuccess = false;
+			}
+		}
+		else
+		{
 			bSuccess = false;
 		}
 	}
 
+	// Will be set to black if the visual mask is empty
 	VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
-
-	if (!bSuccess)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's load failed.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-	}
 
 	return bSuccess;
 }

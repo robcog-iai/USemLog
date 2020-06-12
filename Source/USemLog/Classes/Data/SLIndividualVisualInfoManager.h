@@ -56,6 +56,10 @@ public:
 	int32 ToggleVisualInfoComponentsVisibility();
 	int32 ToggleVisualInfoComponentsVisibility(const TArray<AActor*>& Actors);
 
+	// Point text towards camera
+	int32 PointToCamera();
+	int32 PointToCamera(const TArray<AActor*>& Actors);
+
 private:
 	// Remove destroyed individuals from array
 	UFUNCTION()

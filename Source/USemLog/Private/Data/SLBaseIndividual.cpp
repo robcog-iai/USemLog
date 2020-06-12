@@ -101,45 +101,43 @@ bool USLBaseIndividual::ImportFromTag(bool bOverwrite)
 // Set the id value, if it is empty reset the individual as not loaded
 void USLBaseIndividual::SetId(const FString& NewId)
 {
-	Id = NewId;
-	if (!HasId())
+	if (!Id.Equals(NewId))
 	{
-		SetIsLoaded(false);
+		Id = NewId;
+		OnNewIdValue.Broadcast(this, Id);
+		SetIsLoaded(LoadImpl(false));
 	}
 }
 
 // Set the class value, if empty, reset the individual as not loaded
 void USLBaseIndividual::SetClass(const FString& NewClass)
 {
-	Class = NewClass;
-	if (!HasClass())
+	if (!Class.Equals(NewClass))
 	{
-		SetIsLoaded(false);
+		Class = NewClass;
+		OnNewClassValue.Broadcast(this, Class);
+		SetIsLoaded(LoadImpl(false));
 	}
 }
 
 // Set the init flag, broadcast on new value
-bool USLBaseIndividual::SetIsInit(bool bNewValue)
+void USLBaseIndividual::SetIsInit(bool bNewValue)
 {
 	if (bIsInit != bNewValue)
 	{
 		bIsInit = bNewValue;
 		OnInitChanged.Broadcast(this, bNewValue);
-		return true;
 	}
-	return false;
 }
 
 // Set the loaded flag, broadcast on new value
-bool USLBaseIndividual::SetIsLoaded(bool bNewValue)
+void USLBaseIndividual::SetIsLoaded(bool bNewValue)
 {
 	if (bIsLoaded != bNewValue)
 	{
 		bIsLoaded = bNewValue;
 		OnLoadedChanged.Broadcast(this, bNewValue);
-		return true;
 	}
-	return false;
 }
 
 
@@ -152,11 +150,11 @@ bool USLBaseIndividual::ImportIdFromTag(bool bOverwrite)
 		const FString PrevVal = Id;
 		SetId(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Id"));
 		bNewValue = !Id.Equals(PrevVal);
-		if (!HasId())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d No Id value could be imported from %s's tag.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-		}
+		//if (!HasId())
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d No Id value could be imported from %s's tag.."),
+		//		*FString(__FUNCTION__), __LINE__, *GetFullName());
+		//}
 	}
 	return bNewValue;
 }
@@ -170,11 +168,11 @@ bool USLBaseIndividual::ImportClassFromTag(bool bOverwrite)
 		const FString PrevVal = Class;
 		SetClass(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Class"));
 		bNewValue = !Class.Equals(PrevVal);
-		if (!HasClass())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d No Class value could be imported from %s's tag.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-		}
+		//if (!HasClass())
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d No Class value could be imported from %s's tag.."),
+		//		*FString(__FUNCTION__), __LINE__, *GetFullName());
+		//}
 	}
 	return bNewValue;
 }
@@ -194,35 +192,38 @@ bool USLBaseIndividual::InitImpl()
 }
 
 // Private load implementation
-bool USLBaseIndividual::LoadImpl()
+bool USLBaseIndividual::LoadImpl(bool bTryImportFromTags)
 {
 	bool bSuccess = true;
-	if (!HasId())
+	if (!HasId())		
 	{
-		if (!ImportIdFromTag())
+		if (bTryImportFromTags)
 		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d %s has no Id, tag import failed as well.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
+			if (!ImportIdFromTag())
+			{
+				bSuccess = false;
+			}
+		}
+		else
+		{
 			bSuccess = false;
 		}
 	}
 
 	if (!HasClass())
 	{
-		if (!ImportClassFromTag())
+		if (bTryImportFromTags)
 		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d %s has no Class, tag import failed as well.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
+			if (!ImportClassFromTag())
+			{
+				bSuccess = false;
+			}
+		}
+		else
+		{
 			bSuccess = false;
 		}
 	}
-	
-	if (!bSuccess)
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d %s's load failed.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-	}
-
 	return bSuccess;
 }
 

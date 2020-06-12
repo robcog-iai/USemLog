@@ -8,6 +8,61 @@
 // Forward declarations
 class USLIndividualComponent;
 
+// Individual types flags
+enum class ESLIndividualFlags : uint32
+{
+	SLI_None				= 0x00000000u,	///< No flags
+
+	SLI_Base				= 0x00000001u,	///< Has Id and Class
+
+	SLI_Perceivable			= 0x00000002u,	///< Has VisualMask
+	SLI_Static				= 0x00000004u,	///< Has VisualMask
+	SLI_Skeletal			= 0x00000010u,	///< Has VisualMask
+	SLI_Robot				= 0x00000020u,	///< Has VisualMask
+
+	SLI_Constraint			= 0x00000040u,	///< TODO
+
+	SLI_Light				= 0x00000080u,	///< TODO
+};
+
+ENUM_CLASS_FLAGS(ESLIndividualFlags);
+
+/* Individual flag helper class */
+struct FSLIndiviualType
+{
+	// Individual type flag
+	// TODO check if to use uint32
+	ESLIndividualFlags Flag; 
+
+	// Default ctor
+	FSLIndiviualType() : Flag(ESLIndividualFlags::SLI_None) {};
+
+	// Init ctor
+	FSLIndiviualType(ESLIndividualFlags NewFlag) : Flag(NewFlag) {};
+
+	
+	bool IsBase(ESLIndividualFlags InFlag) const
+	{
+		return (InFlag & ESLIndividualFlags::SLI_Base) != ESLIndividualFlags::SLI_None;
+	};
+
+	bool IsPerceivable(ESLIndividualFlags InFlag) const
+	{
+		return (InFlag & ESLIndividualFlags::SLI_Perceivable) != ESLIndividualFlags::SLI_None;
+	};
+
+	FString ToString() const
+	{
+		switch (Flag)
+		{
+		case ESLIndividualFlags::SLI_None:			return FString("UnknownIndividual");		break;
+		case ESLIndividualFlags::SLI_Base:			return FString("BaseIndividual");			break;
+		case ESLIndividualFlags::SLI_Perceivable:	return FString("PerceivableIndividual");	break;
+		default:									return FString("DEFAULT");
+		}
+	};
+};
+
 /**
  * Static helpers functions the semantic individual annotation
  */

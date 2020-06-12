@@ -9,6 +9,7 @@
 
 // Forward declarations
 class USLIndividualComponent;
+class UTextRenderComponent;
 
 // Delegate notification when the component is being destroyed
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLVisualInfoComponentDestroyedSignature, USLIndividualVisualInfoComponent*, DestroyedComponent);
@@ -41,7 +42,7 @@ public:
 	bool ToggleVisibility();
 
 	// Point text towards the camera
-	bool UpdateOrientation();
+	bool PointToCamera();
 
 protected:
 	// Called when the game starts
@@ -66,42 +67,58 @@ public:
 private:
 	// Called when sibling is being destroyed
 	UFUNCTION()
-	void OnSiblingDestroyed(USLIndividualComponent* Component);
+	void OnSiblingIndividualComponentDestroyed(USLIndividualComponent* Component);
+
+	// Called when the individual class value has changed
+	UFUNCTION()
+	void OnIndividualClassChanged(USLBaseIndividual* BI, const FString& NewVal);
+
+	// Called when the individual id value has changed
+	UFUNCTION()
+	void OnIndividualIdChanged(USLBaseIndividual* BI, const FString& NewVal);
+
+	// Set the color of the text depending on the sibling state;
+	void SetStateColor();
+
+	// Render text subobject creation helper
+	UTextRenderComponent* CreateDefaultTextSubobject(float Size,
+		float Offset,
+		const FString& DefaultName,
+		FColor Color,
+		class UMaterialInterface* MaterialInterface = nullptr);
 
 public:
 	// Called when the component is destroyed
 	FSLVisualInfoComponentDestroyedSignature OnDestroyed;
 
 protected:
-	// Individual component sibling
+	// Pointer to the owners individual
 	USLIndividualComponent* Sibling;
 
-	// True if the individual is succesfully created and initialized
+	// Calcuate tranform to point toward the camera
+	class APlayerCameraManager* CameraManager;
+
+	// Individual sibling is set
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsInit : 1;
 
-	// True if the individual is succesfully created and loaded
+	// Text data is loaded from sibling
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsLoaded : 1;
 
 private:
-	// Class text
-	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
-	class UTextRenderComponent* ClassText;
+	// Render text lines
+	UPROPERTY()
+	UTextRenderComponent* FirstLine;
 
-	// Id text
-	UPROPERTY(/*EditAnywhere, Category = "Semantic Logger"*/)
-	class UTextRenderComponent* IdText;
-	
-	// Type text
-	//UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	//class UTextRenderComponent* TypeText;
+	UPROPERTY()
+	UTextRenderComponent* SecondLine;
 
-	// Text sizes
-	float ClassTextSize;
-	float IdTextSize;
-	//float TypeTextSize;
+	UPROPERTY()
+	UTextRenderComponent* ThirdLine;
 
-	// Used for getting the gaze origin point
-	class APlayerCameraManager* CameraManager;
+	// Line sizes
+	float FirstLineSize;
+	float SecondLineSize;
+	float ThirdLineSize;
 };

@@ -44,7 +44,7 @@ private:
 	SVerticalBox::FSlot& CreateSemDataCompSlot();
 
 	// Semantic data visual info
-	SVerticalBox::FSlot& CreateSemDataVisInfoTxt();
+	SVerticalBox::FSlot& CreateSemDataVisInfoTxtSlot();
 	SVerticalBox::FSlot& CreateSemDataVisInfoSlot();
 	SVerticalBox::FSlot& CreateSemDataVisInfoFuncSlot();
 
@@ -95,7 +95,7 @@ private:
 	FReply OnRefreshSemDataVisInfo();
 	FReply OnRmSemDataVisInfo();
 	FReply OnToggleSemDataVisInfo();
-	FReply OnUpdateSemDataVisInfo();
+	FReply OnUpdateTransformSemDataVisInfo();
 	FReply OnLiveUpdateSemDataVisInfo();
 
 	// Semantic data

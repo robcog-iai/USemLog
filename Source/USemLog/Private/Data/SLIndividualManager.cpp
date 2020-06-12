@@ -760,6 +760,11 @@ bool ASLIndividualManager::RegisterIndividualComponent(USLIndividualComponent* C
 		{
 			CompOwner->OnDestroyed.AddDynamic(this, &ASLIndividualManager::OnSemanticOwnerDestroyed);
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Owner %s's on destroyed delegate is already bound, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *CompOwner->GetName());
+		}
 	}
 	else
 	{

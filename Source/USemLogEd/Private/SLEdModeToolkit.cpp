@@ -58,7 +58,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateSemDataCompSlot()
 
 			////
-			+ CreateSemDataVisInfoTxt()
+			+ CreateSemDataVisInfoTxtSlot()
 			+ CreateSemDataVisInfoSlot()
 			+ CreateSemDataVisInfoFuncSlot()
 
@@ -320,7 +320,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 
 
 /* Semantic data visual info components */
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoTxt()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -401,10 +401,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoFuncSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataVisInfoUpdate", "UpdateOrientation"))
+				.Text(LOCTEXT("SemDataVisInfoUpdate", "UpdateTransform"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataVisInfoUpdateTip", "Point text towards camera.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnUpdateSemDataVisInfo)
+				.OnClicked(this, &FSLEdModeToolkit::OnUpdateTransformSemDataVisInfo)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -412,7 +412,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoFuncSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataVisInfoLIveUpdate", "AutoUpdateToggle"))
+				.Text(LOCTEXT("SemDataVisInfoLIveUpdate", "ToggleDynamicUpdate"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataVisInfoLIveUpdateTip", "Toggle live update.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnLiveUpdateSemDataVisInfo)
@@ -566,6 +566,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataMaskSlot()
 			]
 		];
 }
+
 
 /* Tag */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagTxtSlot()
@@ -1083,7 +1084,7 @@ FReply FSLEdModeToolkit::OnToggleSemDataVisInfo()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnUpdateSemDataVisInfo()
+FReply FSLEdModeToolkit::OnUpdateTransformSemDataVisInfo()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoUpdateST", "Update visual info orientation"));
 	int32 NumComp = 0;
@@ -1092,13 +1093,11 @@ FReply FSLEdModeToolkit::OnUpdateSemDataVisInfo()
 	{
 		if (bOnlySelected)
 		{
-			// TODO
-			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility(GetSelectedActors());
+			NumComp = VisualInfoManager->PointToCamera(GetSelectedActors());
 		}
 		else
 		{
-			// TODO
-			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility();
+			NumComp = VisualInfoManager->PointToCamera();
 		}
 	}
 	else
@@ -1229,10 +1228,6 @@ FReply FSLEdModeToolkit::OnRmSemDataIds()
 
 	if (NumComp)
 	{
-		if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
-		{
-			bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
-		}
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Removed ids from %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumComp);
@@ -1264,10 +1259,6 @@ FReply FSLEdModeToolkit::OnWriteClassNames()
 
 	if (NumComp)
 	{
-		if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
-		{
-			bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
-		}
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Wrote classes for %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumComp);
@@ -1298,10 +1289,6 @@ FReply FSLEdModeToolkit::OnRmClassNames()
 
 	if (NumComp)
 	{
-		if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
-		{
-			bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
-		}
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Removed classes from %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumComp);

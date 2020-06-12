@@ -278,6 +278,49 @@ int32 ASLIndividualVisualInfoManager::ToggleVisualInfoComponentsVisibility(const
 	return Num;
 }
 
+// Point text towards camera
+int32 ASLIndividualVisualInfoManager::PointToCamera()
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& IC : RegisteredInfoComponents)
+	{
+		if (IC->PointToCamera())
+		{
+			Num++;
+		}
+	}
+	return Num;
+}
+
+// Point selection text towards camera
+int32 ASLIndividualVisualInfoManager::PointToCamera(const TArray<AActor*>& Actors)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& Act : Actors)
+	{
+		if (auto** FoundIC = InfoComponentOwners.Find(Act))
+		{
+			if ((*FoundIC)->PointToCamera())
+			{
+				Num++;
+			}
+		}
+	}
+	return Num;
+}
+
 // Remove destroyed individuals from array
 void ASLIndividualVisualInfoManager::OnInfoComponentDestroyed(USLIndividualVisualInfoComponent* DestroyedComponent)
 {
@@ -328,10 +371,10 @@ USLIndividualVisualInfoComponent* ASLIndividualVisualInfoManager::AddNewInfoComp
 		// Create a new component
 		USLIndividualVisualInfoComponent* NewComp = NewObject<USLIndividualVisualInfoComponent>(Actor, NewComponentName, RF_Transactional);
 
-		USceneComponent* RootComponent = Actor->GetRootComponent();
-		if (RootComponent)
+		USceneComponent* ActRoot = Actor->GetRootComponent();
+		if (ActRoot)
 		{
-			NewComp->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+			NewComp->AttachToComponent(ActRoot, FAttachmentTransformRules::KeepRelativeTransform);
 		}
 		else
 		{

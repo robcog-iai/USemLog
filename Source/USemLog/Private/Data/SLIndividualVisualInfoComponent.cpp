@@ -22,32 +22,17 @@ USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 	bIsInit = false;
 	bIsLoaded = false;
 
-	ClassTextSize = 10.f;
-	IdTextSize = 5.f;
-	//TypeTextSize = 20.f;
+	FirstLineSize = 10.f;
+	SecondLineSize = 3.f;
+	ThirdLineSize = 4.f;
 
-	ClassText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("ClassTxt"));
-	ClassText->SetHorizontalAlignment(EHTA_Center);
-	ClassText->SetWorldSize(ClassTextSize);
-	ClassText->SetText(FText::FromString(TEXT("UnknownClass")));
-	ClassText->SetupAttachment(this);
-	ClassText->SetTextRenderColor(FColor::Blue);
-
-
-	IdText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("IdTxt"));
-	IdText->SetHorizontalAlignment(EHTA_Center);
-	IdText->SetWorldSize(IdTextSize);
-	IdText->SetText(FText::FromString(TEXT("UnknownId")));
-	IdText->SetupAttachment(this);
-	IdText->SetRelativeLocation(FVector(0.f, 0.f, -ClassTextSize));
-	IdText->SetTextRenderColor(FColor::Yellow);
-
-	UMaterialInterface* MI = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), NULL, TEXT("Material'/USemLog/Individual/M_InfoTextTranslucent.M_InfoTextTranslucent'"), NULL, LOAD_None, NULL));
-	if (MI)
-	{
-		ClassText->SetTextMaterial(MI);
-		IdText->SetTextMaterial(MI);
-	}
+	UMaterialInterface* MI = Cast<UMaterialInterface>(StaticLoadObject(
+		UMaterialInterface::StaticClass(), NULL, TEXT("Material'/USemLog/Individual/M_InfoTextTranslucent.M_InfoTextTranslucent'"),
+		NULL, LOAD_None, NULL));
+	
+	FirstLine = CreateDefaultTextSubobject(FirstLineSize, 0, FString("FirstLine"), FColor::White, MI);
+	SecondLine = CreateDefaultTextSubobject(SecondLineSize, FirstLineSize, FString("SecondLine"), FColor::Blue, MI);
+	ThirdLine = CreateDefaultTextSubobject(ThirdLineSize, FirstLineSize+SecondLineSize, FString("ThirdLine"), FColor::Red, MI);
 }
 
 
@@ -97,17 +82,22 @@ void USLIndividualVisualInfoComponent::OnComponentCreated()
 // Called before destroying the object.
 void USLIndividualVisualInfoComponent::BeginDestroy()
 {
-	if (ClassText && ClassText->IsValidLowLevel())
-	{
-		ClassText->ConditionalBeginDestroy();
-	}
-
-	if (IdText && IdText->IsValidLowLevel())
-	{
-		IdText->ConditionalBeginDestroy();
-	}
-
 	OnDestroyed.Broadcast(this);
+
+	if (FirstLine && FirstLine->IsValidLowLevel())
+	{
+		FirstLine->ConditionalBeginDestroy();
+	}
+
+	if (SecondLine && SecondLine->IsValidLowLevel())
+	{
+		SecondLine->ConditionalBeginDestroy();
+	}
+
+	if (ThirdLine && ThirdLine->IsValidLowLevel())
+	{
+		ThirdLine->ConditionalBeginDestroy();
+	}	
 
 	Super::BeginDestroy();
 }
@@ -120,12 +110,75 @@ void USLIndividualVisualInfoComponent::TickComponent(float DeltaTime, ELevelTick
 }
 
 // Called when sibling is being destroyed
-void USLIndividualVisualInfoComponent::OnSiblingDestroyed(USLIndividualComponent* Component)
+void USLIndividualVisualInfoComponent::OnSiblingIndividualComponentDestroyed(USLIndividualComponent* Component)
 {
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Sibling %s destroyed, self destroying"),
 		*FString(__FUNCTION__), __LINE__, *Component->GetName());
 	// Trigger self destruct
 	ConditionalBeginDestroy();
+}
+
+// Called when the individual class value has changed
+void USLIndividualVisualInfoComponent::OnIndividualClassChanged(USLBaseIndividual* BI, const FString& NewVal)
+{
+	if (NewVal.IsEmpty())
+	{
+		FirstLine->SetText(FText::FromString("---"));
+	}
+	else
+	{
+		FirstLine->SetText(FText::FromString(NewVal));
+	}
+	SetStateColor();
+}
+
+// Called when the individual id value has changed
+void USLIndividualVisualInfoComponent::OnIndividualIdChanged(USLBaseIndividual* BI, const FString& NewVal)
+{
+	if (NewVal.IsEmpty())
+	{
+		SecondLine->SetText(FText::FromString("---"));
+	}
+	else
+	{
+		SecondLine->SetText(FText::FromString(NewVal));
+	}
+	SetStateColor();
+}
+
+// Set the color of the text depending on the sibling state;
+void USLIndividualVisualInfoComponent::SetStateColor()
+{
+	if (Sibling->IsLoaded())
+	{
+		FirstLine->SetTextRenderColor(FColor::Green);
+	}
+	else if (Sibling->IsInit())
+	{
+		FirstLine->SetTextRenderColor(FColor::Yellow);
+	}
+	else
+	{
+		FirstLine->SetTextRenderColor(FColor::Red);
+	}
+}
+
+// Render text subobject creation helper
+UTextRenderComponent* USLIndividualVisualInfoComponent::CreateDefaultTextSubobject(float Size, float Offset, const FString& DefaultName, FColor Color, UMaterialInterface* MaterialInterface)
+{
+	UTextRenderComponent* TRC = CreateDefaultSubobject<UTextRenderComponent>(*DefaultName);
+	TRC->SetHorizontalAlignment(EHTA_Center);
+	TRC->SetVerticalAlignment(EVRTA_TextCenter);
+	TRC->SetWorldSize(Size);
+	TRC->SetText(FText::FromString(DefaultName));
+	TRC->SetTextRenderColor(Color);
+	TRC->SetRelativeLocation(FVector(0.f, 0.f, -Offset));
+	TRC->SetupAttachment(this);
+	if (MaterialInterface)
+	{
+		TRC->SetTextMaterial(MaterialInterface);
+	}
+	return TRC;
 }
 
 // Connect to sibling individual component
@@ -138,12 +191,11 @@ bool USLIndividualVisualInfoComponent::Init(bool bReset)
 
 	if (!bIsInit)
 	{
-
 		// Check if the owner has an individual component
 		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
 			Sibling = CastChecked<USLIndividualComponent>(AC);
-			Sibling->OnDestroyed.AddDynamic(this, &USLIndividualVisualInfoComponent::OnSiblingDestroyed);
+			Sibling->OnDestroyed.AddDynamic(this, &USLIndividualVisualInfoComponent::OnSiblingIndividualComponentDestroyed);
 			bIsInit = true;
 			return true;
 		}
@@ -173,13 +225,37 @@ bool USLIndividualVisualInfoComponent::Load(bool bReset)
 		}
 	}
 
-	if (Sibling && Sibling->IsValidLowLevel())
+	if (Sibling && Sibling->IsValidLowLevel() && Sibling->Init())
 	{
 		if (USLBaseIndividual* SLI = Sibling->GetCastedIndividualObject<USLBaseIndividual>())
 		{
-			ClassText->SetText(FText::FromString(SLI->GetClass()));
-			IdText->SetText(FText::FromString(SLI->GetId()));
-			//TypeText->SetText(FText::FromString(TEXT("Visible Individual")));
+			if (!SLI->OnNewClassValue.IsAlreadyBound(this, &USLIndividualVisualInfoComponent::OnIndividualClassChanged))
+			{
+				SLI->OnNewClassValue.AddDynamic(this, &USLIndividualVisualInfoComponent::OnIndividualClassChanged);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info component on new class delegate is already bound, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+			}
+
+			if (!SLI->OnNewIdValue.IsAlreadyBound(this, &USLIndividualVisualInfoComponent::OnIndividualIdChanged))
+			{
+				SLI->OnNewIdValue.AddDynamic(this, &USLIndividualVisualInfoComponent::OnIndividualIdChanged);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info component on new id delegate is already bound, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+			}
+
+			const FString ClassVal = SLI->HasClass() ?  SLI->GetClass() : "---";
+			const FString IdVal = SLI->HasId() ? SLI->GetId() : "---";
+
+			FirstLine->SetText(FText::FromString(ClassVal));
+			SecondLine->SetText(FText::FromString(IdVal));
+			ThirdLine->SetText(FText::FromString(SLI->GetTypeName()));
+
 			bIsLoaded = true;
 			return true;
 		}
@@ -211,7 +287,7 @@ bool USLIndividualVisualInfoComponent::ToggleVisibility()
 }
 
 // Point text towards the camera
-bool USLIndividualVisualInfoComponent::UpdateOrientation()
+bool USLIndividualVisualInfoComponent::PointToCamera()
 {
 	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{

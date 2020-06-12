@@ -8,6 +8,10 @@
 #include "Data/SLBaseIndividual.h"
 #include "SLPerceivableIndividual.generated.h"
 
+// Notify every time the visual mask changes
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewVisualMaskSignature, USLBaseIndividual*, Individual, FString, NewVisualMask);
+
+
 /**
  * 
  */
@@ -38,6 +42,9 @@ public:
     // Load data from owners tag
     virtual bool ImportFromTag(bool bOverwrite = false) override;
 
+    // Get the type name as string
+    virtual FString GetTypeName() const override { return FString("PerceivableIndividual"); };
+
     // Apply visual mask material
     bool ApplyVisualMaskMaterials(bool bReload = false);
 
@@ -48,7 +55,7 @@ public:
     bool ToggleMaterials();
     
     /* Visual mask */
-    void SetVisualMask(const FString& NewVisualMask, bool bReload = true, bool bClearCalibratedValue = true);
+    void SetVisualMask(const FString& NewVisualMask, bool bApplyNewMaterial = true, bool bClearCalibratedVisualMask = true);
     FString GetVisualMask() const { return VisualMask; };
     bool HasVisualMask() const { return !VisualMask.IsEmpty(); };
 
@@ -68,10 +75,14 @@ private:
     bool InitImpl();
 
     // Private load implementation
-    bool LoadImpl();
+    bool LoadImpl(bool bTryImportFromTags = true);
 
     // Apply color to the dynamic material
     bool ApplyVisualMaskColorToDynamicMaterial();
+
+public:
+    // Called when the init status changes
+    FSLIndividualNewVisualMaskSignature OnNewVisualMaskValue;
 
 protected:
     // Mask color as hex

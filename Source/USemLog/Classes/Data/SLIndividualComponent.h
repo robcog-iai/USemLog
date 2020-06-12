@@ -11,6 +11,13 @@
 // Delegate notification when the component is being destroyed
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLComponentDestroyedSignature, USLIndividualComponent*, DestroyedComponent);
 
+// Notify every time the init status changes
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLComponentInitChangeSignature, USLIndividualComponent*, Component, bool, bNewInitVal);
+
+// Notify every time the loaded status changes
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLComponentLoadedChangeSignature, USLIndividualComponent*, Component, bool, bNewLoadedVal);
+
+
 /**
 * Component storing the semantic individual information of its owner
 */
@@ -42,10 +49,10 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	// Set owner and individual
+	// Call init on the individual
 	bool Init(bool bReset = false);
 
-	// Check if component is initialized
+	// Check if component and  is initialized
 	bool IsInit() const { return bIsInit; };
 
 	// Load individual
@@ -55,15 +62,15 @@ public:
 	bool IsLoaded() const { return bIsLoaded; };
 
 	// Get the semantic individual object
-	USLBaseIndividual* GetIndividualObject() const { return SemanticIndividual; };
+	USLBaseIndividual* GetIndividualObject() const { return HasIndividual() ? ChildIndividual : nullptr; };
 
 	// Get the semantic individual using a cast class (nullptr if cast is unsuccessfull)
 	template <typename ClassType>
 	ClassType* GetCastedIndividualObject() const 
 	{
-		if (SemanticIndividual && SemanticIndividual->IsValidLowLevel())
+		if (ChildIndividual && ChildIndividual->IsValidLowLevel())
 		{
-			return Cast<ClassType>(SemanticIndividual);
+			return Cast<ClassType>(ChildIndividual);
 		}
 		return nullptr;
 	};
@@ -78,7 +85,23 @@ public:
 	// Toggle between original and mask material is possible
 	bool ToggleVisualMaskVisibility();
 
+protected:
+	// Set the init flag, broadcast on new value
+	void SetIsInit(bool bNewValue);
+
+	// Set the loaded flag, broadcast on new value
+	void SetIsLoaded(bool bNewValue);
+
 private:
+	// Create individual if not created and forward init call
+	bool InitImpl(bool bReset = false);
+
+	// Forward load call on individual
+	bool LoadImpl(bool bReset = false);
+
+	// Check if individual was created
+	FORCEINLINE bool HasIndividual() const { return ChildIndividual && ChildIndividual->IsValidLowLevel(); };
+
 	// Private init implementation
 	bool CreateIndividual();
 
@@ -94,10 +117,16 @@ public:
 	// Called when the component is destroyed
 	FSLComponentDestroyedSignature OnDestroyed;
 
+	// Called when the init status changes
+	FSLComponentInitChangeSignature OnInitChanged;
+
+	// Called when the init status changes
+	FSLComponentInitChangeSignature OnLoadedChanged;
+
 private:
 	// Semantic data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	USLBaseIndividual* SemanticIndividual;
+	USLBaseIndividual* ChildIndividual;
 
 	// True if the individual is succesfully created and initialized
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
@@ -111,20 +140,21 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
 	TSubclassOf<class USLBaseIndividual> IndividualType;
 
-	/* Button workarounds */
-	// Ovewrite any changes
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	uint8 bOverwriteEditChanges : 1;
 
-	// Save data to tag
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	uint8 bExportToTagButton : 1;
+	///* Button workarounds */
+	//// Ovewrite any changes
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
+	//uint8 bOverwriteEditChanges : 1;
 
-	// Load data from tag
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	uint8 bImportFromTagButton : 1;
+	//// Save data to tag
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
+	//uint8 bExportToTagButton : 1;
 
-	// Switch between viewing the original and the visual mask color
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	uint8 bToggleVisualMaskMaterial : 1;
+	//// Load data from tag
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
+	//uint8 bImportFromTagButton : 1;
+
+	//// Switch between viewing the original and the visual mask color
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
+	//uint8 bToggleVisualMaskMaterial : 1;
 };

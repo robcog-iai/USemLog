@@ -8,10 +8,16 @@
 #include "SLBaseIndividual.generated.h"
 
 // Notify every time the init status changes
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividuaInitChangeSignature, USLBaseIndividual*, Individual, bool, bNewInitVal);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualInitChangeSignature, USLBaseIndividual*, Individual, bool, bNewInitVal);
 
 // Notify every time the loaded status changes
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividuaLoadedChangeSignature, USLBaseIndividual*, Individual, bool, bNewLoadedVal);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualLoadedChangeSignature, USLBaseIndividual*, Individual, bool, bNewLoadedVal);
+
+// Notify every time the id changes
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewIdSignature, USLBaseIndividual*, Individual, const FString&, NewId);
+
+// Notify every time the class changes
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewClassSignature, USLBaseIndividual*, Individual, const FString&, NewClass);
 
 /**
  * 
@@ -49,6 +55,9 @@ public:
 	// Get semantic owner
 	AActor* GetSemanticOwner() const { return SemanticOwner; };
 
+	// Get the type name as string
+	virtual FString GetTypeName() const { return FString("BaseIndividual"); };
+
 	/* Id */
 	// Set the id value, if empty, reset the individual as not loaded
 	void SetId(const FString& NewId);
@@ -63,10 +72,10 @@ public:
 
 protected:
 	// Set the init flag, broadcast on new value
-	bool SetIsInit(bool bNewValue);
+	void SetIsInit(bool bNewValue);
 
 	// Set the loaded flag, broadcast on new value
-	bool SetIsLoaded(bool bNewValue);
+	void SetIsLoaded(bool bNewValue);
 
 private:
 	// Import id from tag, true if new value is written
@@ -79,16 +88,20 @@ private:
 	bool InitImpl();
 
 	// Private load implementation
-	bool LoadImpl();
-
-
+	bool LoadImpl(bool bTryImportFromTags = true);
 
 public:
 	// Called when the init status changes
-	FSLIndividuaInitChangeSignature OnInitChanged;
+	FSLIndividualInitChangeSignature OnInitChanged;
 
 	// Called when the init status changes
-	FSLIndividuaLoadedChangeSignature OnLoadedChanged;
+	FSLIndividualInitChangeSignature OnLoadedChanged;
+
+	// Called when the id value
+	FSLIndividualNewIdSignature OnNewIdValue;
+
+	// Called when the class value
+	FSLIndividualNewClassSignature OnNewClassValue;
 
 protected:
 	// Pointer to the actor described by the semantic description class
