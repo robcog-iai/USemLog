@@ -244,7 +244,7 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateClassDefinition(const FString& InClas
 
 /* Owl properties creation */
 // Create property
-FSLOwlNode FSLOwlSemanticMapStatics::CreateGenericProperty(const FSLOwlPrefixName& InPrefixName,
+FSLOwlNode FSLOwlSemanticMapStatics::CreateGenericResourceProperty(const FSLOwlPrefixName& InPrefixName,
 	const FSLOwlAttributeValue& InAttributeValue)
 {
 	const FSLOwlPrefixName RdfResource("rdf", "resource");
@@ -364,12 +364,12 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateWidthProperty(float Value)
 }
 
 // Create owl:onProperty meta property
-FSLOwlNode FSLOwlSemanticMapStatics::CreateOnProperty(const FString& InProperty)
+FSLOwlNode FSLOwlSemanticMapStatics::CreateOnProperty(const FString& InProperty, const FString& Ns)
 {
 	const FSLOwlPrefixName OwlOnProp("owl", "onProperty");
 	const FSLOwlPrefixName RdfResource("rdf", "resource");
 
-	return FSLOwlNode(OwlOnProp, FSLOwlAttribute(RdfResource,FSLOwlAttributeValue("knowrob", InProperty)));
+	return FSLOwlNode(OwlOnProp, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(Ns, InProperty)));
 }
 
 // Create a property with a bool value
@@ -511,4 +511,91 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateQuaternionProperty(const FQuat& InQua
 	const FString QuatStr = FString::Printf(TEXT("%f %f %f %f"),
 		InQuat.X, InQuat.Y, InQuat.Z, InQuat.W);
 	return FSLOwlNode(KbQuat, FSLOwlAttribute(RdfDatatype, AttrValString), QuatStr);
+}
+
+/* SRDL */
+// Create srdl has capability properties
+FSLOwlNode FSLOwlSemanticMapStatics::CreateHasCapabilityProperties(const TArray<FString>& Capabilities)
+{
+	const FSLOwlPrefixName RdfsSubClassOf("rdfs", "subClassOf");
+	const FSLOwlPrefixName OwlClass("owl", "Class");
+	const FSLOwlPrefixName OwlIntersectionOf("owl", "intersectionOf");
+	const FSLOwlPrefixName OwlRestriction("owl", "Restriction");
+
+	const FSLOwlPrefixName OwlOnProp("owl", "onProperty");
+	const FSLOwlPrefixName OwlSomeValuesFrom("owl", "someValuesFrom");
+
+	const FSLOwlAttributeValue HasCapabilityAttr("srdl2-cap", "hasCapability");
+
+	FSLOwlNode SubClassOf(RdfsSubClassOf);
+	FSLOwlNode Class(OwlClass);
+	FSLOwlNode IntersectionOf(OwlIntersectionOf);
+	for (const auto& Capability : Capabilities)
+	{
+		FSLOwlNode Restriction(OwlRestriction);
+		Restriction.AddChildNode(CreateGenericResourceProperty(OwlOnProp, HasCapabilityAttr));
+		const FSLOwlAttributeValue CapabilityAttr("srdl2-cap", Capability);
+		Restriction.AddChildNode(CreateGenericResourceProperty(OwlSomeValuesFrom, CapabilityAttr));
+		IntersectionOf.AddChildNode(Restriction);
+	}
+	Class.AddChildNode(IntersectionOf);
+	SubClassOf.AddChildNode(Class);
+	return SubClassOf;
+}
+
+
+// Create srdl skeletal bone property
+FSLOwlNode FSLOwlSemanticMapStatics::CreateSrdlSkeletalBoneProperty(const FString& InDocPrefix, const FString& InId)
+{
+	const FSLOwlPrefixName KbSkelBone("srdl2-comp", "subComponent");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+
+	return FSLOwlNode(KbSkelBone, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, InId)));
+}
+
+// Create a bone individual
+FSLOwlNode FSLOwlSemanticMapStatics::CreateBoneIndividual(
+	const FString& InDocPrefix,
+	const FString& InId,
+	const FString& Class,
+	const FString& BaseLinkId,
+	const FString& EndLinkId,
+	const FString& BoneName)
+{
+	// Prefix name constants
+	const FSLOwlPrefixName OwlNI("owl", "NamedIndividual");
+	const FSLOwlPrefixName RdfAbout("rdf", "about");
+	const FSLOwlPrefixName RdfType("rdf", "type");
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName SrdlBaseLink("srdl2-comp", "baseLinkOfComposition");
+	const FSLOwlPrefixName SrdlEndLink("srdl2-comp", "endLinkOfComposition");
+	const FSLOwlPrefixName KbSkelBone("knowrob", "skeletalBoneName");
+	const FSLOwlPrefixName RdfDatatype("rdf", "datatype");
+		
+	// Attribute values constants
+	const FSLOwlAttributeValue ComponentCompAttr("srdl2-comp", "ComponentComposition");
+	const FSLOwlAttributeValue AttrValString("xsd", "string");
+
+	// Bone individual
+	FSLOwlNode BoneIndividual(OwlNI, FSLOwlAttribute(RdfAbout, FSLOwlAttributeValue(InDocPrefix, InId)));
+	
+	BoneIndividual.Comment = TEXT("Individual " + Class/* + " " + Id*/);
+	BoneIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateClassProperty(Class));
+
+	if (!BaseLinkId.IsEmpty())
+	{
+		FSLOwlNode BaseLinkProperty(SrdlBaseLink, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, BaseLinkId)));
+		BoneIndividual.AddChildNode(BaseLinkProperty);
+	}
+
+	if (!EndLinkId.IsEmpty())
+	{
+		FSLOwlNode EndLinkProperty(SrdlEndLink, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, EndLinkId)));
+		BoneIndividual.AddChildNode(EndLinkProperty);
+	}
+
+	FSLOwlNode BoneNameProperty(KbSkelBone, FSLOwlAttribute(RdfDatatype, AttrValString), BoneName);
+	BoneIndividual.AddChildNode(BoneNameProperty);
+
+	return BoneIndividual;
 }

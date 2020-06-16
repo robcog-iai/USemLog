@@ -4,7 +4,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "SLOwlSemanticMap.h"
 
 /**
@@ -46,7 +45,7 @@ private:
 
 	// Add constraint individual
 	void AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap> InSemMap,
-		UPhysicsConstraintComponent* ConstraintComp,
+		class UPhysicsConstraintComponent* ConstraintComp,
 		const FString& InId,
 		const TArray<FName>& InTags);
 
@@ -61,4 +60,5 @@ private:
 
 	// Get mobility property
 	FString GetMobility(UObject* Object);
+
 };

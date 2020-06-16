@@ -197,12 +197,86 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 			}
 		}
 
+		// If skeletalmesh, add bones as properties
+		// Cache created bone individuals (if any)
+		TArray<FSLOwlNode> BoneIndividuals;
+		if (ASkeletalMeshActor* ActAsSkMA = Cast<ASkeletalMeshActor>(ObjAsAct))
+		{
+			if (USkeletalMeshComponent* SkelComp = ActAsSkMA->GetSkeletalMeshComponent())
+			{
+				// Create and cache unique ids for every bone name
+				TMap<FName, FString> CachedBoneIds;
+
+				// Add bones to the skeletal individual, cache the ids to access them later on
+				TArray<FName> BoneNames;
+				SkelComp->GetBoneNames(BoneNames);
+				for (const auto& BoneName : BoneNames)
+				{
+					// TODO read bone ids from data structure
+					const FString BoneId = FIds::NewGuidInBase64Url();
+					ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateSrdlSkeletalBoneProperty(MapPrefix, BoneId));
+					CachedBoneIds.Add(BoneName, BoneId);
+				}
+
+								
+				// Create bone individuals
+				for (auto& BoneName : BoneNames)
+				{
+					const FString BoneNameStr = BoneName.ToString();
+
+					FString BoneId = "IdNotFound";
+					if (FString* FoundId = CachedBoneIds.Find(BoneName))
+					{
+						BoneId = *FoundId;
+					}
+				
+					// Check for parent bone
+					FString BaseLinkId = "";
+					FName ParentBone = SkelComp->GetParentBone(BoneName);
+					if (!ParentBone.IsNone())
+					{
+						if (FString* FoundBaseId = CachedBoneIds.Find(ParentBone))
+						{
+							BaseLinkId = *FoundBaseId;
+						}
+					}
+					
+					// Check for child bone
+					FString EndLinkId = "";
+					// Check child link by iterating all bones and checking if their parent equals this
+					for (auto& ChildName : BoneNames)
+					{
+						FName CurrParent = SkelComp->GetParentBone(ChildName);
+						if (CurrParent.IsEqual(BoneName))
+						{
+							if (FString* FoundEndId = CachedBoneIds.Find(ChildName))
+							{
+								EndLinkId = *FoundEndId;
+							}
+							break;
+						}
+					}
+
+					// TODO read class from datastructure, otherwise use the bone name
+					const FString BoneClass = BoneNameStr;
+					BoneIndividuals.Add(FSLOwlSemanticMapStatics::CreateBoneIndividual(MapPrefix, BoneId, BoneClass, BaseLinkId, EndLinkId, BoneNameStr));
+
+					// Direct access to bone name
+					//ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateSkeletalBoneProperty(BoneNameStr));
+				}
+			}
+		}
+
 		// Add tags data property
 		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateTagsDataProperty(
 			ObjAsAct->Tags));
 
-		// Add individuals 
+		// Add cached bone individuals (if any)
 		InSemMap->AddIndividual(ObjIndividual);
+		if (BoneIndividuals.Num())
+		{
+			InSemMap->AddIndividuals(BoneIndividuals);
+		}
 
 		// Create pose individual
 #if SL_WITH_ROS_CONVERSIONS
@@ -283,7 +357,10 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 	FSLOwlNode ClassDefinition = FSLOwlSemanticMapStatics::CreateClassDefinition(InClass);
 	ClassDefinition.Comment = TEXT("Class ") + InClass;
 
-	// Check if subclass is known
+	// If object is skeletal, create class definitions for each bone
+	TArray<FSLOwlNode> BonesClassDefintions;
+
+	// Check if upper class is known
 	if (!InSubClassOf.IsEmpty())
 	{
 		ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateSubClassOfProperty(InSubClassOf));
@@ -312,6 +389,12 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 	{
 		if (USkeletalMeshComponent* SkelComp = ObjAsSkelAct->GetSkeletalMeshComponent())
 		{
+			// Set a generic upper class if none is given
+			if (InSubClassOf.IsEmpty())
+			{
+				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateSubClassOfProperty("Person"));
+			}
+
 			FVector BBSize;
 #if SL_WITH_ROS_CONVERSIONS
 			BBSize = FConversions::CmToM(SkelComp->Bounds.GetBox().GetSize());
@@ -325,11 +408,30 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateHeightProperty(BBSize.Z));
 			}
 
+			// Add srdl capabilities
+			TArray<FString> Capabilities = { "GraspingCapability", "move_arm", "move_base"};
+			ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateHasCapabilityProperties(Capabilities));
+
 			TArray<FName> BoneNames;
 			SkelComp->GetBoneNames(BoneNames);
 			for (const auto& BoneName : BoneNames)
 			{
-				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateSkeletalBoneProperty(BoneName.ToString()));
+				const FString BoneNameStr = BoneName.ToString();
+				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateSkeletalBoneProperty(BoneNameStr));
+
+				// Create separate bone class definition
+				FSLOwlNode BoneClassDefinition = FSLOwlSemanticMapStatics::CreateClassDefinition(BoneNameStr);
+				BoneClassDefinition.Comment = TEXT("Bone Class ") + BoneNameStr;
+
+				// TODO read from actor skeletal component
+				const FString BoneSubClassOf = "SkeletalBone";
+				// Check if upper class is known
+				if (!BoneSubClassOf.IsEmpty())
+				{
+					BoneClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateSubClassOfProperty(BoneSubClassOf));
+				}
+
+				BonesClassDefintions.Add(BoneClassDefinition);
 			}
 		}
 	}
@@ -372,6 +474,11 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 		}
 	}
 	InSemMap->ClassDefinitions.Add(ClassDefinition);
+
+	if (BonesClassDefintions.Num())
+	{
+		InSemMap->ClassDefinitions.Append(BonesClassDefintions);
+	}
 }
 
 // Add constraint individual

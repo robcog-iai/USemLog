@@ -91,9 +91,10 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 	
 	/* Owl properties creation */
 	// Create generic property
-	static FSLOwlNode CreateGenericProperty(const FSLOwlPrefixName& InPrefixName,
+	static FSLOwlNode CreateGenericResourceProperty(const FSLOwlPrefixName& InPrefixName,
 		const FSLOwlAttributeValue& InAttributeValue);
 	
+	/* Properties */
 	// Create class property
 	static FSLOwlNode CreateClassProperty(const FString& InClass);
 
@@ -123,7 +124,7 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 	static FSLOwlNode CreateWidthProperty(float Value);
 
 	// Create owl:onProperty meta property
-	static FSLOwlNode CreateOnProperty(const FString& InProperty);
+	static FSLOwlNode CreateOnProperty(const FString& InProperty, const FString& Ns = FString("knowrob"));
 
 	// Create a property with a bool value
 	static FSLOwlNode CreateBoolValueProperty(const FSLOwlPrefixName& InPrefixName, bool bValue);
@@ -166,4 +167,21 @@ struct USEMLOGOWL_API FSLOwlSemanticMapStatics
 
 	// Create a quaternion property
 	static FSLOwlNode CreateQuaternionProperty(const FQuat& InQuat);
+
+
+	/* SRDL */
+	// Create srdl has capability properties
+	static FSLOwlNode CreateHasCapabilityProperties(const TArray<FString>& Capabilities);
+
+	// Create srdl skeletal bone property
+	static FSLOwlNode CreateSrdlSkeletalBoneProperty(const FString& InDocPrefix, const FString& InId);
+
+	// Create a bone individual
+	static FSLOwlNode CreateBoneIndividual(
+		const FString& InDocPrefix,
+		const FString& InId,
+		const FString& Class,
+		const FString& BaseLinkId,
+		const FString& EndLinkId,
+		const FString& BoneName);
 };
