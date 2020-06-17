@@ -87,10 +87,10 @@ public:
 
 protected:
 	// Set the init flag, broadcast on new value
-	void SetIsInit(bool bNewValue);
+	void SetIsInit(bool bNewValue, bool bBroadcast = true);
 
 	// Set the loaded flag, broadcast on new value
-	void SetIsLoaded(bool bNewValue);
+	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
 
 private:
 	// Create individual if not created and forward init call
@@ -100,7 +100,7 @@ private:
 	bool LoadImpl(bool bReset = false);
 
 	// Check if individual was created
-	FORCEINLINE bool HasIndividual() const { return ChildIndividual && ChildIndividual->IsValidLowLevel(); };
+	FORCEINLINE bool HasIndividual() const 	{ return ChildIndividual && ChildIndividual->IsValidLowLevel() && !ChildIndividual->IsPendingKill(); };
 
 	// Private init implementation
 	bool CreateIndividual();

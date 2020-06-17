@@ -26,6 +26,26 @@ public:
 	// Sets default values for this component's properties
 	USLIndividualVisualInfoComponent();
 
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
+
+	// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
+	virtual void OnRegister() override;
+
+	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+	virtual void PostInitProperties() override;
+
+	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
+	virtual void OnComponentCreated() override;
+
+	// Called before destroying the object.
+	virtual void BeginDestroy() override;
+
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+public:	
 	// Connect to individual component sibling
 	bool Init(bool bReset = false);
 
@@ -45,29 +65,65 @@ public:
 	bool PointToCamera();
 
 protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+	// Set the init flag, return true if the state change
+	void SetIsInit(bool bNewValue, bool bBroadcast = true);
 
-	// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
-	virtual void OnRegister() override;
+	// Set the loaded flag
+	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
 
-	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-	virtual void PostInitProperties() override;
+	// Check if sibling component is set
+	FORCEINLINE bool HasOwnerIndividualComponent() const
+	{
+		return OwnerIndividualComponent && OwnerIndividualComponent->IsValidLowLevel() && !OwnerIndividualComponent->IsPendingKill();
+	};
 
-	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
-	virtual void OnComponentCreated() override;
+	// Set the sibling component
+	bool SetOwnerIndividualComponent();
 
-	// Called before destroying the object.
-	virtual void BeginDestroy() override;
+	// Check if individual is set
+	FORCEINLINE bool HasOwnerIndividual() const
+	{
+		return OwnerIndividual && OwnerIndividual->IsValidLowLevel() && !OwnerIndividual->IsPendingKill();
+	};
 
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	// Set the sibling individual
+	bool SetOwnerIndividual();
 
 private:
+	// Private init implementation
+	bool InitImpl();
+
+	// Private load implementation
+	bool LoadImpl();
+
+	// Update info as soon as the individual changes their data
+	bool BindDelegates();
+
+	// Set the color of the text depending on the sibling state;
+	void SetColors();
+
+	// Set the text values to default
+	void ResetText();
+
+	// Render text subobject creation helper
+	UTextRenderComponent* CreateDefaultTextSubobject(float Size,
+		float Offset,
+		const FString& DefaultName,
+		FColor Color,
+		class UMaterialInterface* MaterialInterface = nullptr);
+
+	/* Delegate functions */
+	// Called when siblings init value has changed
+	UFUNCTION()
+	void OnSiblingInitChanged(USLIndividualComponent* Component, bool bNewVal);
+
+	// Called when the siblings load value has changed
+	UFUNCTION()
+	void OnSiblingLoadedChanged(USLIndividualComponent* Component, bool bNewVal);
+
 	// Called when sibling is being destroyed
 	UFUNCTION()
-	void OnSiblingIndividualComponentDestroyed(USLIndividualComponent* Component);
+	void OnSiblingDestroyed(USLIndividualComponent* Component);
 
 	// Called when the individual class value has changed
 	UFUNCTION()
@@ -77,23 +133,16 @@ private:
 	UFUNCTION()
 	void OnIndividualIdChanged(USLBaseIndividual* BI, const FString& NewVal);
 
-	// Set the color of the text depending on the sibling state;
-	void SetStateColor();
-
-	// Render text subobject creation helper
-	UTextRenderComponent* CreateDefaultTextSubobject(float Size,
-		float Offset,
-		const FString& DefaultName,
-		FColor Color,
-		class UMaterialInterface* MaterialInterface = nullptr);
-
 public:
 	// Called when the component is destroyed
 	FSLVisualInfoComponentDestroyedSignature OnDestroyed;
 
 protected:
-	// Pointer to the owners individual
-	USLIndividualComponent* Sibling;
+	// Pointer to the individual component of the same owner
+	USLIndividualComponent* OwnerIndividualComponent;
+
+	// Pointer to the individual of the sibling component
+	USLBaseIndividual* OwnerIndividual;
 
 	// Calcuate tranform to point toward the camera
 	class APlayerCameraManager* CameraManager;

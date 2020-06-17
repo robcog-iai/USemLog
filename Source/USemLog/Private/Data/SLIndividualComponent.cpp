@@ -25,12 +25,15 @@ USLIndividualComponent::USLIndividualComponent()
 // Called before destroying the object.
 void USLIndividualComponent::BeginDestroy()
 {
-	if (ChildIndividual && ChildIndividual->IsValidLowLevel())
+	SetIsInit(false);
+	SetIsLoaded(false);
+
+	OnDestroyed.Broadcast(this);
+
+	if (HasIndividual())
 	{
 		ChildIndividual->ConditionalBeginDestroy();
 	}
-
-	OnDestroyed.Broadcast(this);
 
 	Super::BeginDestroy();
 }
@@ -108,7 +111,7 @@ bool USLIndividualComponent::Init(bool bReset)
 {
 	if (bReset)
 	{
-		SetIsInit(false);
+		SetIsInit(false, false);
 	}
 
 	if (IsInit())
@@ -125,7 +128,7 @@ bool USLIndividualComponent::Load(bool bReset)
 {
 	if (bReset)
 	{
-		SetIsLoaded(false);
+		SetIsLoaded(false, false);
 	}
 
 	if (IsLoaded())
@@ -178,22 +181,33 @@ bool USLIndividualComponent::ToggleVisualMaskVisibility()
 }
 
 // Set the init flag, broadcast on new value
-void USLIndividualComponent::SetIsInit(bool bNewValue)
+void USLIndividualComponent::SetIsInit(bool bNewValue, bool bBroadcast)
 {
 	if (bIsInit != bNewValue)
 	{
+		if (!bNewValue)
+		{
+			SetIsLoaded(false);
+		}
+
 		bIsInit = bNewValue;
-		OnInitChanged.Broadcast(this, bNewValue);
+		if (bBroadcast)
+		{
+			OnInitChanged.Broadcast(this, bNewValue);
+		}
 	}
 }
 
 // Set the loaded flag, broadcast on new value
-void USLIndividualComponent::SetIsLoaded(bool bNewValue)
+void USLIndividualComponent::SetIsLoaded(bool bNewValue, bool bBroadcast)
 {
 	if (bIsLoaded != bNewValue)
 	{
 		bIsLoaded = bNewValue;
-		OnLoadedChanged.Broadcast(this, bNewValue);
+		if (bBroadcast)
+		{
+			OnLoadedChanged.Broadcast(this, bNewValue);
+		}
 	}
 }
 
@@ -224,7 +238,7 @@ bool USLIndividualComponent::LoadImpl(bool bReset)
 // Create the semantic individual
 bool USLIndividualComponent::CreateIndividual()
 {
-	if (ChildIndividual && ChildIndividual->IsValidLowLevel() && !ChildIndividual->IsPendingKill())
+	if (HasIndividual())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic individual already exists, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__);

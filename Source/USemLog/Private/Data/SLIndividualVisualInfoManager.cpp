@@ -40,7 +40,7 @@ int32 ASLIndividualVisualInfoManager::Init(bool bReset)
 			*FString(__FUNCTION__), __LINE__, NumClearedComp);
 	}
 
-	int32 NumComponentsLoaded = 0;
+	int32 NumComp = 0;
 	if (!bIsInit)
 	{
 		if (GetWorld())
@@ -49,17 +49,17 @@ int32 ASLIndividualVisualInfoManager::Init(bool bReset)
 			{
 				if (USLIndividualVisualInfoComponent* IC = GetInfoComponent(*ActItr))
 				{
-					if (IC->Init())
+					if (IC->IsInit() || IC->Init())
 					{
-						if (!IC->Load())
-						{
-							UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
-								*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
-						}
+						//if (!IC->IsLoaded() && !IC->Load())
+						//{
+						//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
+						//		*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
+						//}
 
 						if (RegisterInfoComponent(IC))
 						{
-							NumComponentsLoaded++;
+							NumComp++;
 						}
 					}
 					else
@@ -73,9 +73,9 @@ int32 ASLIndividualVisualInfoManager::Init(bool bReset)
 		}
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Init: %ld info components loaded.."),
-		*FString(__FUNCTION__), __LINE__, NumComponentsLoaded);
-	return NumComponentsLoaded;
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Init: registered %ld info components.."),
+		*FString(__FUNCTION__), __LINE__, NumComp);
+	return NumComp;
 }
 
 // Add new visual info components to all actors
@@ -321,33 +321,15 @@ int32 ASLIndividualVisualInfoManager::PointToCamera(const TArray<AActor*>& Actor
 	return Num;
 }
 
-// Remove destroyed individuals from array
-void ASLIndividualVisualInfoManager::OnInfoComponentDestroyed(USLIndividualVisualInfoComponent* DestroyedComponent)
-{
-	if (UnregisterInfoComponent(DestroyedComponent))
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Unregistered externally destroyed component %s.."),
-			*FString(__FUNCTION__), __LINE__, *DestroyedComponent->GetOwner()->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Externally destroyed component %s is not registered, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, *DestroyedComponent->GetOwner()->GetName());
-	}
-}
-
-// Triggered by external destruction of semantic owner
-void ASLIndividualVisualInfoManager::OnSemanticOwnerDestroyed(AActor* DestroyedActor)
-{
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
-}
-
 // Find the individual component of the actor, return nullptr if none found
 USLIndividualVisualInfoComponent* ASLIndividualVisualInfoManager::GetInfoComponent(AActor* Actor) const
 {
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualVisualInfoComponent::StaticClass()))
 	{
-		return CastChecked<USLIndividualVisualInfoComponent>(AC);
+		if (!AC->IsPendingKillOrUnreachable())
+		{
+			return CastChecked<USLIndividualVisualInfoComponent>(AC);
+		}
 	}
 	return nullptr;
 }
@@ -405,8 +387,8 @@ USLIndividualVisualInfoComponent* ASLIndividualVisualInfoManager::AddNewInfoComp
 		{
 			if (!NewComp->Load())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Info component %s could not be loaded.."),
-					*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
+				//UE_LOG(LogTemp, Warning, TEXT("%s::%d Info component %s could not be loaded.."),
+				//	*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
 			}
 		}
 		else
@@ -444,7 +426,7 @@ void ASLIndividualVisualInfoManager::DestroyInfoComponent(USLIndividualVisualInf
 // Cache component, bind delegates
 bool ASLIndividualVisualInfoManager::RegisterInfoComponent(USLIndividualVisualInfoComponent* Component)
 {
-	bool bSuccess = true;
+	bool bRetVal = true;
 
 	// Cache component
 	if (!RegisteredInfoComponents.Contains(Component))
@@ -455,7 +437,7 @@ bool ASLIndividualVisualInfoManager::RegisterInfoComponent(USLIndividualVisualIn
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Component %s is already registered, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *Component->GetOwner()->GetName());
-		bSuccess = false;
+		bRetVal = false;
 	}
 
 	// Cache components owner
@@ -472,7 +454,7 @@ bool ASLIndividualVisualInfoManager::RegisterInfoComponent(USLIndividualVisualIn
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Owner %s is already registered, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *CompOwner->GetName());
-		bSuccess = false;
+		bRetVal = false;
 	}
 
 	// Bind component events
@@ -484,10 +466,10 @@ bool ASLIndividualVisualInfoManager::RegisterInfoComponent(USLIndividualVisualIn
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Component %s delegate is already bound, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *Component->GetOwner()->GetName());
-		bSuccess = false;
+		bRetVal = false;
 	}
 
-	return bSuccess;
+	return bRetVal;
 }
 
 // Remove component from cache, unbind delegates
@@ -560,4 +542,26 @@ int32 ASLIndividualVisualInfoManager::ClearCache()
 	InfoComponentOwners.Empty();
 
 	return Num;
+}
+
+/* Delegate functions */
+// Remove destroyed individuals from array
+void ASLIndividualVisualInfoManager::OnInfoComponentDestroyed(USLIndividualVisualInfoComponent* DestroyedComponent)
+{
+	if (UnregisterInfoComponent(DestroyedComponent))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Unregistered externally destroyed component %s.."),
+			*FString(__FUNCTION__), __LINE__, *DestroyedComponent->GetOwner()->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Externally destroyed component %s is not registered, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *DestroyedComponent->GetOwner()->GetName());
+	}
+}
+
+// Triggered by external destruction of semantic owner
+void ASLIndividualVisualInfoManager::OnSemanticOwnerDestroyed(AActor* DestroyedActor)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
 }

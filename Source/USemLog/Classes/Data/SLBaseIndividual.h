@@ -31,6 +31,9 @@ public:
 	// Ctor
 	USLBaseIndividual();
 
+	// Called before destroying the object.
+	virtual void BeginDestroy() override;
+
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 	virtual void PostInitProperties() override;
 
@@ -72,10 +75,10 @@ public:
 
 protected:
 	// Set the init flag, broadcast on new value
-	void SetIsInit(bool bNewValue);
+	void SetIsInit(bool bNewValue, bool bBroadcast = true);
 
 	// Set the loaded flag, broadcast on new value
-	void SetIsLoaded(bool bNewValue);
+	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
 
 private:
 	// Import id from tag, true if new value is written

@@ -52,7 +52,7 @@ bool USLPerceivableIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
-		SetIsInit(false);
+		SetIsInit(false, false);
 	}
 
 	if (IsInit())
@@ -70,7 +70,7 @@ bool USLPerceivableIndividual::Load(bool bReset)
 {
 	if (bReset)
 	{
-		SetIsLoaded(false);
+		SetIsLoaded(false, false);
 	}
 
 	if (IsLoaded())

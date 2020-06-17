@@ -61,14 +61,6 @@ public:
 	int32 PointToCamera(const TArray<AActor*>& Actors);
 
 private:
-	// Remove destroyed individuals from array
-	UFUNCTION()
-	void OnInfoComponentDestroyed(USLIndividualVisualInfoComponent* DestroyedComponent);
-
-	UFUNCTION()
-	// Triggered by external destruction of semantic owner
-	void OnSemanticOwnerDestroyed(AActor* DestroyedActor);
-
 	// Find the text component of the actor, return nullptr if none found
 	USLIndividualVisualInfoComponent* GetInfoComponent(AActor* Actor) const;
 
@@ -93,6 +85,15 @@ private:
 	// Unregister and clear all cached components (return the number of cleared components)
 	int32 ClearCache();
 
+	/* Delegate functions */
+	// Remove destroyed individuals from array
+	UFUNCTION()
+	void OnInfoComponentDestroyed(USLIndividualVisualInfoComponent* DestroyedComponent);
+
+	UFUNCTION()
+	// Triggered by external destruction of semantic owner
+	void OnSemanticOwnerDestroyed(AActor* DestroyedActor);
+
 private:
 	// Marks manager as initialized
 	bool bIsInit;
@@ -100,4 +101,8 @@ private:
 	// Cached components
 	TSet<USLIndividualVisualInfoComponent*> RegisteredInfoComponents;
 	TMap<AActor*, USLIndividualVisualInfoComponent*> InfoComponentOwners;
+
+	// bind to init and load delegates as well
+	//TSet<USLIndividualVisualInfoComponent*> InitIndividualComponents;
+	//TSet<USLIndividualVisualInfoComponent*> LoadedIndividualComponents;
 };

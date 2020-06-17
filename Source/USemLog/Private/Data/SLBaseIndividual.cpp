@@ -13,6 +13,15 @@ USLBaseIndividual::USLBaseIndividual()
 	bIsLoaded = false;
 }
 
+// Called before destroying the object.
+void USLBaseIndividual::BeginDestroy()
+{
+	SetIsInit(false);
+	SetIsLoaded(false);
+
+	Super::BeginDestroy();
+}
+
 // Set the semantic owner actor
 void USLBaseIndividual::PostInitProperties()
 {
@@ -24,7 +33,7 @@ bool USLBaseIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
-		SetIsInit(false);
+		SetIsInit(false, false);
 	}
 
 	if (IsInit())
@@ -41,7 +50,7 @@ bool USLBaseIndividual::Load(bool bReset)
 {
 	if (bReset)
 	{
-		SetIsLoaded(false);
+		SetIsLoaded(false, false);
 	}
 
 	if (IsLoaded())
@@ -121,25 +130,35 @@ void USLBaseIndividual::SetClass(const FString& NewClass)
 }
 
 // Set the init flag, broadcast on new value
-void USLBaseIndividual::SetIsInit(bool bNewValue)
+void USLBaseIndividual::SetIsInit(bool bNewValue, bool bBroadcast)
 {
 	if (bIsInit != bNewValue)
 	{
+		if (!bNewValue)
+		{
+			SetIsLoaded(false);
+		}
+
 		bIsInit = bNewValue;
-		OnInitChanged.Broadcast(this, bNewValue);
+		if (bBroadcast)
+		{
+			OnInitChanged.Broadcast(this, bNewValue);
+		}
 	}
 }
 
 // Set the loaded flag, broadcast on new value
-void USLBaseIndividual::SetIsLoaded(bool bNewValue)
+void USLBaseIndividual::SetIsLoaded(bool bNewValue, bool bBroadcast)
 {
 	if (bIsLoaded != bNewValue)
 	{
 		bIsLoaded = bNewValue;
-		OnLoadedChanged.Broadcast(this, bNewValue);
+		if (bBroadcast)
+		{
+			OnLoadedChanged.Broadcast(this, bNewValue);
+		}
 	}
 }
-
 
 // Import id from tag, true if new value is written
 bool USLBaseIndividual::ImportIdFromTag(bool bOverwrite)

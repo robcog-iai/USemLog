@@ -21,20 +21,21 @@ USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 
 	bIsInit = false;
 	bIsLoaded = false;
+	OwnerIndividualComponent = nullptr;
+	OwnerIndividual = nullptr;
 
-	FirstLineSize = 10.f;
-	SecondLineSize = 3.f;
-	ThirdLineSize = 4.f;
+	FirstLineSize = 5.f;
+	SecondLineSize = 2.5f;
+	ThirdLineSize = 2.5f;
 
 	UMaterialInterface* MI = Cast<UMaterialInterface>(StaticLoadObject(
 		UMaterialInterface::StaticClass(), NULL, TEXT("Material'/USemLog/Individual/M_InfoTextTranslucent.M_InfoTextTranslucent'"),
 		NULL, LOAD_None, NULL));
 	
 	FirstLine = CreateDefaultTextSubobject(FirstLineSize, 0, FString("FirstLine"), FColor::White, MI);
-	SecondLine = CreateDefaultTextSubobject(SecondLineSize, FirstLineSize, FString("SecondLine"), FColor::Blue, MI);
-	ThirdLine = CreateDefaultTextSubobject(ThirdLineSize, FirstLineSize+SecondLineSize, FString("ThirdLine"), FColor::Red, MI);
+	SecondLine = CreateDefaultTextSubobject(SecondLineSize, FirstLineSize, FString("SecondLine"), FColor::White, MI);
+	ThirdLine = CreateDefaultTextSubobject(ThirdLineSize, (FirstLineSize + SecondLineSize), FString("ThirdLine"), FColor::White, MI);
 }
-
 
 // Called when the game starts
 void USLIndividualVisualInfoComponent::BeginPlay()
@@ -77,11 +78,17 @@ void USLIndividualVisualInfoComponent::OnComponentCreated()
 			return;
 		}
 	}
+
+	ResetText();
+	SetColors();
 }
 
 // Called before destroying the object.
 void USLIndividualVisualInfoComponent::BeginDestroy()
 {
+	SetIsInit(false);
+	SetIsLoaded(false);
+
 	OnDestroyed.Broadcast(this);
 
 	if (FirstLine && FirstLine->IsValidLowLevel())
@@ -109,99 +116,22 @@ void USLIndividualVisualInfoComponent::TickComponent(float DeltaTime, ELevelTick
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Log message"), *FString(__FUNCTION__), __LINE__);
 }
 
-// Called when sibling is being destroyed
-void USLIndividualVisualInfoComponent::OnSiblingIndividualComponentDestroyed(USLIndividualComponent* Component)
-{
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Sibling %s destroyed, self destroying"),
-		*FString(__FUNCTION__), __LINE__, *Component->GetName());
-	// Trigger self destruct
-	ConditionalBeginDestroy();
-}
-
-// Called when the individual class value has changed
-void USLIndividualVisualInfoComponent::OnIndividualClassChanged(USLBaseIndividual* BI, const FString& NewVal)
-{
-	if (NewVal.IsEmpty())
-	{
-		FirstLine->SetText(FText::FromString("---"));
-	}
-	else
-	{
-		FirstLine->SetText(FText::FromString(NewVal));
-	}
-	SetStateColor();
-}
-
-// Called when the individual id value has changed
-void USLIndividualVisualInfoComponent::OnIndividualIdChanged(USLBaseIndividual* BI, const FString& NewVal)
-{
-	if (NewVal.IsEmpty())
-	{
-		SecondLine->SetText(FText::FromString("---"));
-	}
-	else
-	{
-		SecondLine->SetText(FText::FromString(NewVal));
-	}
-	SetStateColor();
-}
-
-// Set the color of the text depending on the sibling state;
-void USLIndividualVisualInfoComponent::SetStateColor()
-{
-	if (Sibling->IsLoaded())
-	{
-		FirstLine->SetTextRenderColor(FColor::Green);
-	}
-	else if (Sibling->IsInit())
-	{
-		FirstLine->SetTextRenderColor(FColor::Yellow);
-	}
-	else
-	{
-		FirstLine->SetTextRenderColor(FColor::Red);
-	}
-}
-
-// Render text subobject creation helper
-UTextRenderComponent* USLIndividualVisualInfoComponent::CreateDefaultTextSubobject(float Size, float Offset, const FString& DefaultName, FColor Color, UMaterialInterface* MaterialInterface)
-{
-	UTextRenderComponent* TRC = CreateDefaultSubobject<UTextRenderComponent>(*DefaultName);
-	TRC->SetHorizontalAlignment(EHTA_Center);
-	TRC->SetVerticalAlignment(EVRTA_TextCenter);
-	TRC->SetWorldSize(Size);
-	TRC->SetText(FText::FromString(DefaultName));
-	TRC->SetTextRenderColor(Color);
-	TRC->SetRelativeLocation(FVector(0.f, 0.f, -Offset));
-	TRC->SetupAttachment(this);
-	if (MaterialInterface)
-	{
-		TRC->SetTextMaterial(MaterialInterface);
-	}
-	return TRC;
-}
-
 // Connect to sibling individual component
 bool USLIndividualVisualInfoComponent::Init(bool bReset)
 {
 	if (bReset)
 	{
-		bIsInit = false;
+		SetIsInit(false, false);
 	}
 
-	if (!bIsInit)
+	if (IsInit())
 	{
-		// Check if the owner has an individual component
-		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
-		{
-			Sibling = CastChecked<USLIndividualComponent>(AC);
-			Sibling->OnDestroyed.AddDynamic(this, &USLIndividualVisualInfoComponent::OnSiblingIndividualComponentDestroyed);
-			bIsInit = true;
-			return true;
-		}
+		return true;
 	}
 
-	return false;
+	SetIsInit(InitImpl());
+	SetColors();
+	return IsInit();
 }
 
 // Refresh values from parent (returns false if component not init)
@@ -209,15 +139,15 @@ bool USLIndividualVisualInfoComponent::Load(bool bReset)
 {
 	if (bReset)
 	{
-		bIsLoaded = false;
+		SetIsLoaded(false, false);
 	}
 
-	if (bIsLoaded)
+	if (IsLoaded())
 	{
 		return true;
 	}
 
-	if(!bIsInit)
+	if (!IsInit())
 	{
 		if (!Init(bReset))
 		{
@@ -225,47 +155,9 @@ bool USLIndividualVisualInfoComponent::Load(bool bReset)
 		}
 	}
 
-	if (Sibling && Sibling->IsValidLowLevel() && Sibling->Init())
-	{
-		if (USLBaseIndividual* SLI = Sibling->GetCastedIndividualObject<USLBaseIndividual>())
-		{
-			if (!SLI->OnNewClassValue.IsAlreadyBound(this, &USLIndividualVisualInfoComponent::OnIndividualClassChanged))
-			{
-				SLI->OnNewClassValue.AddDynamic(this, &USLIndividualVisualInfoComponent::OnIndividualClassChanged);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info component on new class delegate is already bound, this should not happen.."),
-					*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-			}
-
-			if (!SLI->OnNewIdValue.IsAlreadyBound(this, &USLIndividualVisualInfoComponent::OnIndividualIdChanged))
-			{
-				SLI->OnNewIdValue.AddDynamic(this, &USLIndividualVisualInfoComponent::OnIndividualIdChanged);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info component on new id delegate is already bound, this should not happen.."),
-					*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-			}
-
-			const FString ClassVal = SLI->HasClass() ?  SLI->GetClass() : "---";
-			const FString IdVal = SLI->HasId() ? SLI->GetId() : "---";
-
-			FirstLine->SetText(FText::FromString(ClassVal));
-			SecondLine->SetText(FText::FromString(IdVal));
-			ThirdLine->SetText(FText::FromString(SLI->GetTypeName()));
-
-			bIsLoaded = true;
-			return true;
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d This should not happen, the sibling should be set here.."),
-			*FString(__FUNCTION__), __LINE__);
-	}
-	return false;
+	SetIsLoaded(LoadImpl());
+	SetColors();
+	return IsLoaded();
 }
 
 // Hide/show component
@@ -296,3 +188,331 @@ bool USLIndividualVisualInfoComponent::PointToCamera()
 	}
 	return false;
 }
+
+// Set the init flag, return true if the state change
+void USLIndividualVisualInfoComponent::SetIsInit(bool bNewValue, bool bBroadcast)
+{
+	if (bIsInit != bNewValue)
+	{
+		if (!bNewValue)
+		{
+			SetIsLoaded(false);
+		}
+
+		bIsInit = bNewValue;
+		if (bBroadcast)
+		{
+			// todo see if broadcast is required
+		}
+	}
+}
+
+// Set the loaded flag
+void USLIndividualVisualInfoComponent::SetIsLoaded(bool bNewValue, bool bBroadcast)
+{
+	if (bIsLoaded != bNewValue)
+	{
+		bIsLoaded = bNewValue;
+		if (bBroadcast)
+		{
+			// todo see if broadcast is required
+		}
+	}
+}
+
+// Set the sibling
+bool USLIndividualVisualInfoComponent::SetOwnerIndividualComponent()
+{
+	if (HasOwnerIndividualComponent())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic individual component sibling already exists, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__);
+		return true;
+	}
+
+	// Check if the owner has an individual component
+	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	{
+		OwnerIndividualComponent = CastChecked<USLIndividualComponent>(AC);
+		return true;
+	}
+	return false;
+}
+
+bool USLIndividualVisualInfoComponent::SetOwnerIndividual()
+{
+	if (HasOwnerIndividual())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic individual sibling already exists, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__);
+		return true;
+	}
+
+	if (HasOwnerIndividualComponent() || SetOwnerIndividualComponent())
+	{
+		if (USLBaseIndividual* SLI = OwnerIndividualComponent->GetCastedIndividualObject<USLBaseIndividual>())
+		{
+			OwnerIndividual = SLI;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+// Private init implementation
+bool USLIndividualVisualInfoComponent::InitImpl()
+{
+	bool bIndividualCompSet = HasOwnerIndividualComponent() || SetOwnerIndividualComponent();
+	bool bIndividualSet = HasOwnerIndividual() || SetOwnerIndividual();
+	if (bIndividualCompSet && bIndividualSet)
+	{
+		if (OwnerIndividualComponent->IsInit())
+		{
+			if (BindDelegates())
+			{
+				return true;
+			}
+		}
+		else
+		{
+			ResetText();
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not init info component because the individual component is not init.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+		}
+	}
+	return false;
+}
+
+// Private load implementation
+bool USLIndividualVisualInfoComponent::LoadImpl()
+{
+	if (HasOwnerIndividualComponent() && HasOwnerIndividual())
+	{		
+		if (OwnerIndividualComponent->IsInit() || OwnerIndividualComponent->Init())
+		{
+			// Read any available data
+			if (OwnerIndividual->HasClass())
+			{
+				FirstLine->SetText(FText::FromString("Class : " + OwnerIndividual->GetClass()));
+			}
+			if (OwnerIndividual->HasId())
+			{
+				SecondLine->SetText(FText::FromString("Id : " + OwnerIndividual->GetId()));
+			}
+			if (OwnerIndividual->HasId())
+			{
+				ThirdLine->SetText(FText::FromString("Type : " + OwnerIndividual->GetTypeName()));
+			}
+
+			if (OwnerIndividualComponent->IsLoaded() || OwnerIndividualComponent->Load())
+			{
+				return true;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info comp load failed because sibling is not loaded.."),
+					*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info comp load failed because sibling is not init.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d This should not happen, the sibling component and individual should be set here.."),
+			*FString(__FUNCTION__), __LINE__);
+	}
+	SetColors();
+	return false;
+}
+
+// Update info as soon as the individual changes their data
+bool USLIndividualVisualInfoComponent::BindDelegates()
+{
+	bool bRetVal = true;
+	if (HasOwnerIndividualComponent())
+	{
+		/* Sibling init change */
+		if (!OwnerIndividualComponent->OnInitChanged.IsAlreadyBound(
+			this, &USLIndividualVisualInfoComponent::OnSiblingInitChanged))
+		{
+			OwnerIndividualComponent->OnInitChanged.AddDynamic(
+				this, &USLIndividualVisualInfoComponent::OnSiblingInitChanged);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info component init changed delegate is already bound, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+		}
+
+		/* Sibling load change */
+		if (!OwnerIndividualComponent->OnLoadedChanged.IsAlreadyBound(
+			this, &USLIndividualVisualInfoComponent::OnSiblingLoadedChanged))
+		{
+			OwnerIndividualComponent->OnLoadedChanged.AddDynamic(
+				this, &USLIndividualVisualInfoComponent::OnSiblingLoadedChanged);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info component loaded changed delegate is already bound, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+		}
+
+		/* Sibling destroyed */
+		if (!OwnerIndividualComponent->OnDestroyed.IsAlreadyBound(
+			this, &USLIndividualVisualInfoComponent::OnSiblingDestroyed))
+		{
+			OwnerIndividualComponent->OnDestroyed.AddDynamic(
+				this, &USLIndividualVisualInfoComponent::OnSiblingDestroyed);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info component destroyed delegate is already bound, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+		}
+
+		// Bind data changes
+		if (USLBaseIndividual* SLI = OwnerIndividualComponent->GetCastedIndividualObject<USLBaseIndividual>())
+		{
+			if (!SLI->OnNewClassValue.IsAlreadyBound(this, &USLIndividualVisualInfoComponent::OnIndividualClassChanged))
+			{
+				SLI->OnNewClassValue.AddDynamic(this, &USLIndividualVisualInfoComponent::OnIndividualClassChanged);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info component on new class delegate is already bound, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+			}
+
+			if (!SLI->OnNewIdValue.IsAlreadyBound(this, &USLIndividualVisualInfoComponent::OnIndividualIdChanged))
+			{
+				SLI->OnNewIdValue.AddDynamic(this, &USLIndividualVisualInfoComponent::OnIndividualIdChanged);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info component on new id delegate is already bound, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's sibling individual cannot be reached, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+			bRetVal = false;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's cannot bind delegates, sibling component is not set.."),
+			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+		bRetVal = false;
+	}
+	return bRetVal;
+}
+
+// Set the color of the text depending on the sibling state;
+void USLIndividualVisualInfoComponent::SetColors()
+{
+	if (IsLoaded())
+	{
+		FirstLine->SetTextRenderColor(FColor::Green);
+	}
+	else if (IsInit())
+	{
+		FirstLine->SetTextRenderColor(FColor::Yellow);
+	}
+	else
+	{
+		FirstLine->SetTextRenderColor(FColor::Red);
+	}	
+}
+
+// Set the text values to default
+void USLIndividualVisualInfoComponent::ResetText()
+{
+	FirstLine->SetText(FText::FromString("Class :"));
+	SecondLine->SetText(FText::FromString("Id :"));
+	ThirdLine->SetText(FText::FromString("Type :"));
+}
+
+// Render text subobject creation helper
+UTextRenderComponent* USLIndividualVisualInfoComponent::CreateDefaultTextSubobject(float Size, float Offset, const FString& DefaultName, FColor Color, UMaterialInterface* MaterialInterface)
+{
+	UTextRenderComponent* TRC = CreateDefaultSubobject<UTextRenderComponent>(*DefaultName);
+	TRC->SetHorizontalAlignment(EHTA_Left);
+	TRC->SetVerticalAlignment(EVRTA_TextTop);
+	TRC->SetWorldSize(Size);
+	TRC->SetText(FText::FromString(DefaultName));
+	TRC->SetTextRenderColor(Color);
+	TRC->SetRelativeLocation(FVector(0.f, 0.f, -Offset));
+	TRC->SetupAttachment(this);
+	if (MaterialInterface)
+	{
+		TRC->SetTextMaterial(MaterialInterface);
+	}
+	return TRC;
+}
+
+
+/* Delegate functions */
+// Called when siblings init value has changed
+void USLIndividualVisualInfoComponent::OnSiblingInitChanged(USLIndividualComponent* Component, bool bNewVal)
+{
+	if (!bNewVal)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s's individual component is not init anymore, vis info will need to be re initialized.."),
+			*FString(__FUNCTION__), __LINE__, *Component->GetOwner()->GetName());
+		SetIsInit(false);
+	}
+	SetColors();
+}
+
+// Called when siblings load value has changed
+void USLIndividualVisualInfoComponent::OnSiblingLoadedChanged(USLIndividualComponent* Component, bool bNewVal)
+{
+	if (!bNewVal)
+	{
+		SetIsLoaded(false);
+	}
+	SetColors();
+}
+
+// Called when sibling is being destroyed
+void USLIndividualVisualInfoComponent::OnSiblingDestroyed(USLIndividualComponent* Component)
+{
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Sibling %s destroyed, self destroying"),
+		*FString(__FUNCTION__), __LINE__, *Component->GetName());
+	// Trigger self destruct
+	ConditionalBeginDestroy();
+}
+
+// Called when the individual class value has changed
+void USLIndividualVisualInfoComponent::OnIndividualClassChanged(USLBaseIndividual* BI, const FString& NewVal)
+{
+	if (NewVal.IsEmpty())
+	{
+		FirstLine->SetText(FText::FromString("Class :"));
+	}
+	else
+	{
+		FirstLine->SetText(FText::FromString("Class : " + NewVal));
+	}
+}
+
+// Called when the individual id value has changed
+void USLIndividualVisualInfoComponent::OnIndividualIdChanged(USLBaseIndividual* BI, const FString& NewVal)
+{
+	if (NewVal.IsEmpty())
+	{
+		SecondLine->SetText(FText::FromString("Id :"));
+	}
+	else
+	{
+		SecondLine->SetText(FText::FromString("Id : " + NewVal));
+	}
+}
+

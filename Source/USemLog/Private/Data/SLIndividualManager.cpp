@@ -39,11 +39,11 @@ int32 ASLIndividualManager::Init(bool bReset)
 	{
 		bIsInit = false;
 		int32 NumClearedComp = ClearCache();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Reset: %ld components cleared.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Reset: cleared %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumClearedComp);
 	}
 
-	int32 NumComponentsLoaded = 0;
+	int32 NumComp = 0;
 	if (!bIsInit)
 	{
 		if (GetWorld())
@@ -52,17 +52,17 @@ int32 ASLIndividualManager::Init(bool bReset)
 			{
 				if (USLIndividualComponent* IC = GetIndividualComponent(*ActItr))
 				{
-					if (IC->Init())
-					{
-						if (!IC->Load())
-						{
-							UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
-								*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
-						}
+					if (IC->IsInit() || IC->Init())
+					{						
+						//if (!IC->IsLoaded() && !IC->Load())
+						//{
+						//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
+						//		*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
+						//}
 
 						if (RegisterIndividualComponent(IC))
 						{
-							NumComponentsLoaded++;
+							NumComp++;
 						}
 					}
 					else
@@ -76,9 +76,9 @@ int32 ASLIndividualManager::Init(bool bReset)
 		}
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Init: %ld components loaded.."),
-		*FString(__FUNCTION__), __LINE__, NumComponentsLoaded);
-	return NumComponentsLoaded;
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Init: registered %ld individual components.."),
+		*FString(__FUNCTION__), __LINE__, NumComp);
+	return NumComp;
 }
 
 // Add new semantic data components to the actors in the world
@@ -642,7 +642,10 @@ USLIndividualComponent* ASLIndividualManager::GetIndividualComponent(AActor* Act
 {
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
-		return CastChecked<USLIndividualComponent>(AC);
+		if (!AC->IsPendingKillOrUnreachable())
+		{
+			return CastChecked<USLIndividualComponent>(AC);
+		}
 	}
 	return nullptr;
 }
@@ -696,8 +699,8 @@ USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* 
 		{
 			if (!NewComp->Load())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
-					*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
+				//UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
+				//	*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
 			}
 		}
 		else

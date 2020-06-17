@@ -124,6 +124,10 @@ private:
 	TSet<USLIndividualComponent*> RegisteredIndividualComponents;
 	TMap<AActor*, USLIndividualComponent*> IndividualComponentOwners;
 	// TODO
+	// bind to init and load delegates as well
+	//TSet<USLIndividualComponent*> InitIndividualComponents;
+	//TSet<USLIndividualComponent*> LoadedIndividualComponents;
+
 	// TSet<ISLIndividualComponent*> PerceivableIndividualComponents;
 
 	// TSet<ISLIndividualComponent*> RigidIndividualComponents;
