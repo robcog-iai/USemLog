@@ -271,12 +271,8 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateTagsDataProperty(
 			ObjAsAct->Tags));
 
-		// Add cached bone individuals (if any)
+		// Add skeletal individual
 		InSemMap->AddIndividual(ObjIndividual);
-		if (BoneIndividuals.Num())
-		{
-			InSemMap->AddIndividuals(BoneIndividuals);
-		}
 
 		// Create pose individual
 #if SL_WITH_ROS_CONVERSIONS
@@ -288,6 +284,12 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		InSemMap->AddIndividual(FSLOwlSemanticMapStatics::CreatePoseIndividual(
 			MapPrefix, PoseId, ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat()));
 #endif // SL_WITH_ROS_CONVERSIONS
+
+		// Create and add skeletal bones individuals (if any)
+		if (BoneIndividuals.Num())
+		{
+			InSemMap->AddIndividuals(BoneIndividuals);
+		}
 	}
 	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
 	{

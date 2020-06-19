@@ -13,16 +13,6 @@
 // Ctor
 USLPerceivableIndividual::USLPerceivableIndividual()
 {
-	// Load the mask material
-	//static ConstructorHelpers::FObjectFinder<UMaterial>MaterialAsset(
-	//	TEXT("Material'/USemLog/Individual/M_VisualIndividualMask.M_VisualIndividualMask'"));
-	//if (MaterialAsset.Succeeded())
-	//{
-	//	VisualMaskMaterial = MaterialAsset.Object;		
-	//	////VisualMaskDynamicMaterial = CreateDefaultSubobject<UMaterialInstanceDynamic>(TEXT("VisualMaskDynamicMaterial"));
-	//	////VisualMaskDynamicMaterial->SetParentInternal(MaterialAsset.Object, false);
-	//}
-
 	VisualMaskMaterial = Cast<UMaterial>(StaticLoadObject(
 		UMaterial::StaticClass(), NULL, TEXT("Material'/USemLog/Individual/M_VisualIndividualMask.M_VisualIndividualMask'"),
 		NULL, LOAD_None, NULL));

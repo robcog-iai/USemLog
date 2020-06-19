@@ -30,23 +30,26 @@ public:
 	// Sets default values for this component's properties
 	USLIndividualComponent();
 
-	// Called before destroying the object.
-	virtual void BeginDestroy() override;
-
+protected:
 	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 	virtual void PostInitProperties() override;
+
+	// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
+	virtual void OnRegister() override;
+
+	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
+	virtual void OnComponentCreated() override;
 
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
-	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
-	virtual void OnComponentCreated() override;
-
-protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+	// Called before destroying the object.
+	virtual void BeginDestroy() override;
 
 public:
 	// Call init on the individual
@@ -62,18 +65,19 @@ public:
 	bool IsLoaded() const { return bIsLoaded; };
 
 	// Get the semantic individual object
-	USLBaseIndividual* GetIndividualObject() const { return HasIndividual() ? ChildIndividual : nullptr; };
+	USLBaseIndividual* GetIndividualObject() const { return HasIndividual() ? IndividualObj : nullptr; };
 
 	// Get the semantic individual using a cast class (nullptr if cast is unsuccessfull)
 	template <typename ClassType>
 	ClassType* GetCastedIndividualObject() const 
 	{
-		if (ChildIndividual && ChildIndividual->IsValidLowLevel())
+		if (IndividualObj && IndividualObj->IsValidLowLevel())
 		{
-			return Cast<ClassType>(ChildIndividual);
+			return Cast<ClassType>(IndividualObj);
 		}
 		return nullptr;
 	};
+
 
 	/* Functionalities */
 	// Save data to owners tag
@@ -99,8 +103,11 @@ private:
 	// Forward load call on individual
 	bool LoadImpl(bool bReset = false);
 
+	// Sync states with the individual
+	bool BindDelegates();
+
 	// Check if individual was created
-	FORCEINLINE bool HasIndividual() const 	{ return ChildIndividual && ChildIndividual->IsValidLowLevel() && !ChildIndividual->IsPendingKill(); };
+	FORCEINLINE bool HasIndividual() const 	{ return IndividualObj && IndividualObj->IsValidLowLevel() && !IndividualObj->IsPendingKill(); };
 
 	// Private init implementation
 	bool CreateIndividual();
@@ -126,7 +133,7 @@ public:
 private:
 	// Semantic data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	USLBaseIndividual* ChildIndividual;
+	USLBaseIndividual* IndividualObj;
 
 	// True if the individual is succesfully created and initialized
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
@@ -136,10 +143,11 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsLoaded : 1;
 
-	// Manually convert the semantic individual to the chosen type
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	TSubclassOf<class USLBaseIndividual> IndividualType;
 
+
+	//// Manually convert the semantic individual to the chosen type
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
+	//TSubclassOf<class USLBaseIndividual> IndividualType;
 
 	///* Button workarounds */
 	//// Ovewrite any changes

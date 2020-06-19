@@ -11,7 +11,7 @@ USLIndividualComponent::USLIndividualComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	ChildIndividual = nullptr;
+	IndividualObj = nullptr;
 
 	bIsInit = false;
 	bIsLoaded = false;
@@ -22,26 +22,43 @@ USLIndividualComponent::USLIndividualComponent()
 	//bToggleVisualMaskMaterial = false;
 }
 
-// Called before destroying the object.
-void USLIndividualComponent::BeginDestroy()
-{
-	SetIsInit(false);
-	SetIsLoaded(false);
-
-	OnDestroyed.Broadcast(this);
-
-	if (HasIndividual())
-	{
-		ChildIndividual->ConditionalBeginDestroy();
-	}
-
-	Super::BeginDestroy();
-}
-
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 void USLIndividualComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
+}
+
+// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
+void USLIndividualComponent::OnRegister()
+{
+	Super::OnRegister();
+
+	// Re-bind delegates if the init state 
+	if (IsInit())
+	{
+		BindDelegates();
+	}
+}
+
+// Called when a component is created(not loaded).This can happen in the editor or during gameplay
+void USLIndividualComponent::OnComponentCreated()
+{
+	Super::OnComponentCreated();
+
+	// Check if actor already has a semantic data component
+	for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualComponent::StaticClass()))
+	{
+		if (AC != this)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+			//DestroyComponent();
+			ConditionalBeginDestroy();
+			return;
+		}
+	}
+
+	CreateIndividual();
 }
 
 #if WITH_EDITOR
@@ -79,32 +96,28 @@ void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent
 }
 #endif // WITH_EDITOR
 
-// Called when a component is created(not loaded).This can happen in the editor or during gameplay
-void USLIndividualComponent::OnComponentCreated()
-{
-	Super::OnComponentCreated();
-
-	// Check if actor already has a semantic data component
-	for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualComponent::StaticClass()))
-	{
-		if (AC != this)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
-			//DestroyComponent();
-			ConditionalBeginDestroy();
-			return;
-		}
-	}
-
-	CreateIndividual();
-}
-
 // Called when the game starts
 void USLIndividualComponent::BeginPlay()
 {
 	Super::BeginPlay();
 }
+
+// Called before destroying the object.
+void USLIndividualComponent::BeginDestroy()
+{
+	SetIsInit(false);
+	SetIsLoaded(false);
+
+	OnDestroyed.Broadcast(this);
+
+	if (HasIndividual())
+	{
+		IndividualObj->ConditionalBeginDestroy();
+	}
+
+	Super::BeginDestroy();
+}
+
 
 // Set owner and individual
 bool USLIndividualComponent::Init(bool bReset)
@@ -153,9 +166,9 @@ bool USLIndividualComponent::Load(bool bReset)
 // Save data to owners tag
 bool USLIndividualComponent::ExportToTag(bool bOverwrite)
 {
-	if (ChildIndividual && ChildIndividual->IsValidLowLevel())
+	if (IndividualObj && IndividualObj->IsValidLowLevel())
 	{
-		return ChildIndividual->ExportToTag(bOverwrite);
+		return IndividualObj->ExportToTag(bOverwrite);
 	}
 	return false;
 }
@@ -163,9 +176,9 @@ bool USLIndividualComponent::ExportToTag(bool bOverwrite)
 // Load data from owners tag
 bool USLIndividualComponent::ImportFromTag(bool bOverwrite)
 {
-	if (ChildIndividual && ChildIndividual->IsValidLowLevel())
+	if (IndividualObj && IndividualObj->IsValidLowLevel())
 	{
-		return ChildIndividual->ImportFromTag(bOverwrite);
+		return IndividualObj->ImportFromTag(bOverwrite);
 	}
 	return false;
 }
@@ -216,23 +229,56 @@ bool USLIndividualComponent::InitImpl(bool bReset)
 {
 	if (HasIndividual() || CreateIndividual())
 	{
-		return ChildIndividual->Init(bReset);
+		return IndividualObj->Init(bReset);
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s Could not create individual.."),
 		*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 	return false;
 }
 
+// Forward the laod call to the individual object
 bool USLIndividualComponent::LoadImpl(bool bReset)
 {
 	if (HasIndividual())
 	{
-		return ChildIndividual->Load(bReset);
+		return IndividualObj->Load(bReset);
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s This should not happen, and idividual should be created here.."),
 		*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 	return false;
 }
+
+// Sync states with the individual
+bool USLIndividualComponent::BindDelegates()
+{
+	if (HasIndividual())
+	{
+		// Bind init change delegate
+		if (!IndividualObj->OnInitChanged.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualInitChange))
+		{
+			IndividualObj->OnInitChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualInitChange);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on init delegate is already bound, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+		}
+
+		// Bind load change delegate
+		if (!IndividualObj->OnLoadedChanged.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualLoadedChange))
+		{
+			IndividualObj->OnLoadedChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualLoadedChange);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on loaded delegate is already bound, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+		}
+		return true;
+	}
+	return false;
+}
+
 
 /* Private */
 // Create the semantic individual
@@ -246,33 +292,13 @@ bool USLIndividualComponent::CreateIndividual()
 	}
 
 	// Set semantic individual type depending on owner
-	if (UClass* IndividualCls = FSLIndividualUtils::CreateIndividualObject(this, GetOwner(), ChildIndividual))
-	{		
-		// Cache the current individual class type
-		IndividualType = IndividualCls;
-		
-		// Bind init change delegate
-		if (!ChildIndividual->OnInitChanged.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualInitChange))
-		{
-			ChildIndividual->OnInitChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualInitChange);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on init delegate is already bound, this should not happen.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-		}
+	if (UClass* IndividualCls = FSLIndividualUtils::CreateIndividualObject(this, GetOwner(), IndividualObj))
+	{	
+		// Listen to updates to the individual
+		BindDelegates();
 
-		// Bind load change delegate
-		if (!ChildIndividual->OnLoadedChanged.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualLoadedChange))
-		{
-			ChildIndividual->OnLoadedChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualLoadedChange);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on loaded delegate is already bound, this should not happen.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-		}
-
+		//// Cache the current individual class type
+		//IndividualType = IndividualCls;
 		return true;
 	}
 	else

@@ -27,23 +27,23 @@ public:
 	USLIndividualVisualInfoComponent();
 
 protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+	virtual void PostInitProperties() override;
 
 	// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
 	virtual void OnRegister() override;
 
-	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-	virtual void PostInitProperties() override;
-
 	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
 	virtual void OnComponentCreated() override;
 
-	// Called before destroying the object.
-	virtual void BeginDestroy() override;
+	// Called when the game starts
+	virtual void BeginPlay() override;
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	// Called before destroying the object.
+	virtual void BeginDestroy() override;
 
 public:	
 	// Connect to individual component sibling
@@ -80,14 +80,14 @@ protected:
 	// Set the sibling component
 	bool SetOwnerIndividualComponent();
 
-	// Check if individual is set
-	FORCEINLINE bool HasOwnerIndividual() const
+	// Check if owner individual object is set
+	FORCEINLINE bool HasOwnerIndividualObj() const
 	{
-		return OwnerIndividual && OwnerIndividual->IsValidLowLevel() && !OwnerIndividual->IsPendingKill();
+		return OwnerIndividualObj && OwnerIndividualObj->IsValidLowLevel() && !OwnerIndividualObj->IsPendingKill();
 	};
 
-	// Set the sibling individual
-	bool SetOwnerIndividual();
+	// Set the owner individual object
+	bool SetOwnerIndividualObj();
 
 private:
 	// Private init implementation
@@ -99,39 +99,38 @@ private:
 	// Update info as soon as the individual changes their data
 	bool BindDelegates();
 
-	// Set the color of the text depending on the sibling state;
-	void SetColors();
+	// Set the color of the text depending on the owner individual component state;
+	void SetTextColors();
+
+	// Recalculate the size of the text
+	void ResizeText();
 
 	// Set the text values to default
-	void ResetText();
+	void ResetTextContent();
 
 	// Render text subobject creation helper
-	UTextRenderComponent* CreateDefaultTextSubobject(float Size,
-		float Offset,
-		const FString& DefaultName,
-		FColor Color,
-		class UMaterialInterface* MaterialInterface = nullptr);
+	UTextRenderComponent* CreateDefaultTextSubobject(const FString& DefaultName, class UMaterialInterface* MaterialInterface = nullptr);
 
 	/* Delegate functions */
 	// Called when siblings init value has changed
 	UFUNCTION()
-	void OnSiblingInitChanged(USLIndividualComponent* Component, bool bNewVal);
+	void OnOwnerIndividualComponentInitChanged(USLIndividualComponent* Component, bool bNewVal);
 
 	// Called when the siblings load value has changed
 	UFUNCTION()
-	void OnSiblingLoadedChanged(USLIndividualComponent* Component, bool bNewVal);
+	void OnOwnerIndividualComponentLoadedChanged(USLIndividualComponent* Component, bool bNewVal);
 
 	// Called when sibling is being destroyed
 	UFUNCTION()
-	void OnSiblingDestroyed(USLIndividualComponent* Component);
+	void OnOwnerIndividualComponentDestroyed(USLIndividualComponent* Component);
 
 	// Called when the individual class value has changed
 	UFUNCTION()
-	void OnIndividualClassChanged(USLBaseIndividual* BI, const FString& NewVal);
+	void OnOwnerIndividualClassChanged(USLBaseIndividual* BI, const FString& NewVal);
 
 	// Called when the individual id value has changed
 	UFUNCTION()
-	void OnIndividualIdChanged(USLBaseIndividual* BI, const FString& NewVal);
+	void OnOwnerIndividualIdChanged(USLBaseIndividual* BI, const FString& NewVal);
 
 public:
 	// Called when the component is destroyed
@@ -139,13 +138,12 @@ public:
 
 protected:
 	// Pointer to the individual component of the same owner
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
 	USLIndividualComponent* OwnerIndividualComponent;
 
 	// Pointer to the individual of the sibling component
-	USLBaseIndividual* OwnerIndividual;
-
-	// Calcuate tranform to point toward the camera
-	class APlayerCameraManager* CameraManager;
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
+	USLBaseIndividual* OwnerIndividualObj;
 
 	// Individual sibling is set
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
@@ -166,8 +164,17 @@ private:
 	UPROPERTY()
 	UTextRenderComponent* ThirdLine;
 
-	// Line sizes
-	float FirstLineSize;
-	float SecondLineSize;
-	float ThirdLineSize;
+	// Text size template value 
+	float TextSize;
+
+	// These will be multiplied with the template value to get the final size
+	float FirstLineTextSizeRatio;
+	float SecondLineTextSizeRatio;
+	float ThirdLineTextSizeRatio;
+
+	/* Constants */
+	// Clamp the template text size between these values
+	constexpr static float MinClampTextSize = 3.f;
+	constexpr static float MaxClampTextSize = 6.f;
+
 };
