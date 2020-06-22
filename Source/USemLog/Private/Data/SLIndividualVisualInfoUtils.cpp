@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Data/SLindividualVisualInfoUtils.h"
+#include "Data/SLIndividualVisualInfoUtils.h"
 #include "Data/SLBaseIndividual.h"
 #include "Data/SLPerceivableIndividual.h"
 #include "Data/SLSkeletalIndividual.h"

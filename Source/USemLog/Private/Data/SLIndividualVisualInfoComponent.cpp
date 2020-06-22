@@ -217,7 +217,7 @@ bool USLIndividualVisualInfoComponent::PointToCamera()
 	}
 	else if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{
-		PC->PlayerCameraManager;
+		//PC->PlayerCameraManager; // This will not call or yield anything
 	}
 
 	return false;
