@@ -13,7 +13,7 @@
 
 // Utils
 #include "Utils/SLTagIO.h"
-#include "Utils/SLUUid.h"
+#include "Utils/SLUuid.h"
 
 // Write the semantic map
 void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)

@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Data/SLindividualUtils.h"
+#include "Data/SLIndividualUtils.h"
 #include "Data/SLBaseIndividual.h"
 #include "Data/SLPerceivableIndividual.h"
 #include "Data/SLSkeletalIndividual.h"
@@ -22,7 +22,7 @@
 #include "Vision/SLVisionCamera.h"
 
 // Utils
-#include "Utils/SLUUid.h"
+#include "Utils/SLUuid.h"
 
 // Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* IndividualComponent, bool bDefaultToLabelName)
@@ -115,9 +115,9 @@ FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* Indiv
 			{
 				return "Linear" + ClassName;
 			}
-			else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetAngularSwing2Motion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetAngularTwistMotion() != ELinearConstraintMotion::LCM_Locked)
+			else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
+				PCC->ConstraintInstance.GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
+				PCC->ConstraintInstance.GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
 			{
 				return "Revolute" + ClassName;
 			}
