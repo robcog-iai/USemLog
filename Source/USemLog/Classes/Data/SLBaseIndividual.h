@@ -56,7 +56,7 @@ public:
 	virtual bool ImportFromTag(bool bOverwrite = false);
 
 	// Get semantic owner
-	AActor* GetSemanticOwner() const { return SemanticOwner; };
+	AActor* GetParentActor() const { return ParentActor; };
 
 	// Get the type name as string
 	virtual FString GetTypeName() const { return FString("BaseIndividual"); };
@@ -109,7 +109,7 @@ public:
 protected:
 	// Pointer to the actor described by the semantic description class
 	UPROPERTY(VisibleAnywhere, Category = "SL")
-	class AActor* SemanticOwner;
+	class AActor* ParentActor;
 
 	// Individual unique id
 	UPROPERTY(VisibleAnywhere, Category = "SL")
@@ -119,12 +119,21 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	FString Class;
 	
-	// State of the individual
+	// True if individual is initialized
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	uint8 bIsInit : 1;
 
+	// True if individual is loaded
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	uint8 bIsLoaded : 1;
+
+	// Actor attached to
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	class AActor* PartOfActor;
+
+	// Individual of the attached to actor
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	USLBaseIndividual* PartOfIndividual;
 
 	/* Constants */
 	// Tag type for exporting/importing data from tags

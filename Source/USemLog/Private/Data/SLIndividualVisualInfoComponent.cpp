@@ -19,7 +19,7 @@ USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 #if WITH_EDITOR
 	//PrimaryComponentTick.bStartWithTickEnabled = true;
 #endif // WITH_EDITOR
@@ -44,11 +44,13 @@ USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 	ThirdLine = CreateDefaultTextSubobject("ThirdLine", MI);	
 }
 
+	
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 void USLIndividualVisualInfoComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
-	// UProperties are not set yet here
+	// (UProperty values are not set yet here)
+	//SetComponentTickEnabled(false);
 }
 
 // Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
@@ -56,13 +58,7 @@ void USLIndividualVisualInfoComponent::OnRegister()
 {
 	Super::OnRegister();
 
-	//ClassText = NewObject<UTextRenderComponent>(this, TEXT("ClassTxt"));
-	//ClassText->SetHorizontalAlignment(EHTA_Center);
-	//ClassText->SetWorldSize(ClassTextSize);
-	//ClassText->SetText(FText::FromString(TEXT("UnknownClass")));	
-	//ClassText->SetupAttachment(this);
-
-	// Re-bind delegates if the init state 
+	// Delegates need to be re-bound after a level load
 	if (IsInit())
 	{
 		BindDelegates();
@@ -90,6 +86,7 @@ void USLIndividualVisualInfoComponent::OnComponentCreated()
 	ResizeText();
 	ResetTextContent();
 	SetTextColors();
+	PointToCamera();
 }
 
 // Called when the game starts

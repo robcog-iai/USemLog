@@ -2,13 +2,16 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Data/SLBaseIndividual.h"
+#include "Data/SLIndividualComponent.h"
 #include "GameFramework/Actor.h"
 #include "Utils/SLTagIO.h"
 
 // Ctor
 USLBaseIndividual::USLBaseIndividual()
 {
-	SemanticOwner = nullptr;
+	ParentActor = nullptr;
+	PartOfActor = nullptr;
+	PartOfIndividual = nullptr;
 	bIsInit = false;
 	bIsLoaded = false;
 }
@@ -73,7 +76,7 @@ bool USLBaseIndividual::Load(bool bReset)
 // Save data to owners tag
 bool USLBaseIndividual::ExportToTag(bool bOverwrite)
 {
-	if (!SemanticOwner)
+	if (!ParentActor)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner not set, cannot write to tags.."), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -82,11 +85,11 @@ bool USLBaseIndividual::ExportToTag(bool bOverwrite)
 	bool bMarkDirty = false;
 	if (HasId())
 	{
-		bMarkDirty = FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "Id", Id, bOverwrite) || bMarkDirty;
+		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Id", Id, bOverwrite) || bMarkDirty;
 	}
 	if (HasClass())
 	{
-		bMarkDirty = FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "Class", Class, bOverwrite) || bMarkDirty;
+		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Class", Class, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -94,7 +97,7 @@ bool USLBaseIndividual::ExportToTag(bool bOverwrite)
 // Load data from owners tag
 bool USLBaseIndividual::ImportFromTag(bool bOverwrite)
 {
-	if (!SemanticOwner)
+	if (!ParentActor)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's owner not set, cannot read from tags.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
@@ -167,7 +170,7 @@ bool USLBaseIndividual::ImportIdFromTag(bool bOverwrite)
 	if (!HasId() || bOverwrite)
 	{
 		const FString PrevVal = Id;
-		SetId(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Id"));
+		SetId(FSLTagIO::GetValue(ParentActor, TagTypeConst, "Id"));
 		bNewValue = !Id.Equals(PrevVal);
 		//if (!HasId())
 		//{
@@ -185,7 +188,7 @@ bool USLBaseIndividual::ImportClassFromTag(bool bOverwrite)
 	if (!HasClass() || bOverwrite)
 	{
 		const FString PrevVal = Class;
-		SetClass(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "Class"));
+		SetClass(FSLTagIO::GetValue(ParentActor, TagTypeConst, "Class"));
 		bNewValue = !Class.Equals(PrevVal);
 		//if (!HasClass())
 		//{
@@ -202,7 +205,22 @@ bool USLBaseIndividual::InitImpl()
 	// First outer is the component, second the actor
 	if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()))
 	{
-		SemanticOwner = CompOwner;
+		// Set the parent actor
+		ParentActor = CompOwner;
+
+		// Check if individual is part of another actor
+		if (AActor* AttAct = CompOwner->GetAttachParentActor())
+		{
+			// Get the individual component of the actor
+			if (UActorComponent* AC = AttAct->GetComponentByClass(USLIndividualComponent::StaticClass()))
+			{
+				PartOfActor = AttAct;
+				PartOfIndividual = CastChecked<USLIndividualComponent>(AC)->GetIndividualObject();
+			}
+
+			// TODO check that the individual does not simulate physics (if it does the attachment breaks at runtime)
+		}
+
 		return true;
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, has no semantic owner.."),

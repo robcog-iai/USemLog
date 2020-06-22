@@ -11,21 +11,9 @@ USLIndividualComponent::USLIndividualComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	IndividualObj = nullptr;
-
 	bIsInit = false;
 	bIsLoaded = false;
-
-	//bOverwriteEditChanges = false;
-	//bExportToTagButton = false;
-	//bImportFromTagButton = false;
-	//bToggleVisualMaskMaterial = false;
-}
-
-// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-void USLIndividualComponent::PostInitProperties()
-{
-	Super::PostInitProperties();
+	IndividualObj = nullptr;
 }
 
 // Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
@@ -59,47 +47,6 @@ void USLIndividualComponent::OnComponentCreated()
 	}
 
 	CreateIndividual();
-}
-
-#if WITH_EDITOR
-// Called when a property is changed in the editor
-void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	//// Get the changed property name
-	//FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
-	//	PropertyChangedEvent.Property->GetFName() : NAME_None;
-
-	//// Convert datatype
-	//if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, IndividualType))
-	//{
-	//	FSLIndividualUtils::ConvertIndividualObject(Individual, IndividualType);
-	//}
-
-	///* Button workaround triggers */
-	//else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bExportToTagButton))
-	//{
-	//	bExportToTagButton = false;
-	//	ExportToTag(bOverwriteEditChanges);
-	//}
-	//else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bImportFromTagButton))
-	//{
-	//	bImportFromTagButton = false;
-	//	ImportFromTag(bOverwriteEditChanges);
-	//}
-	//else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bToggleVisualMaskMaterial))
-	//{
-	//	bToggleVisualMaskMaterial = false;
-	//	ToggleVisualMaskVisibility();
-	//}
-}
-#endif // WITH_EDITOR
-
-// Called when the game starts
-void USLIndividualComponent::BeginPlay()
-{
-	Super::BeginPlay();
 }
 
 // Called before destroying the object.

@@ -31,22 +31,11 @@ public:
 	USLIndividualComponent();
 
 protected:
-	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-	virtual void PostInitProperties() override;
-
 	// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
 	virtual void OnRegister() override;
 
 	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
 	virtual void OnComponentCreated() override;
-
-#if WITH_EDITOR
-	// Called when a property is changed in the editor
-	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif // WITH_EDITOR
-
-	// Called when the game starts
-	virtual void BeginPlay() override;
 
 	// Called before destroying the object.
 	virtual void BeginDestroy() override;
@@ -142,27 +131,4 @@ private:
 	// True if the individual is succesfully created and loaded
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsLoaded : 1;
-
-
-
-	//// Manually convert the semantic individual to the chosen type
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	//TSubclassOf<class USLBaseIndividual> IndividualType;
-
-	///* Button workarounds */
-	//// Ovewrite any changes
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	//uint8 bOverwriteEditChanges : 1;
-
-	//// Save data to tag
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	//uint8 bExportToTagButton : 1;
-
-	//// Load data from tag
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	//uint8 bImportFromTagButton : 1;
-
-	//// Switch between viewing the original and the visual mask color
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Manual Edit")
-	//uint8 bToggleVisualMaskMaterial : 1;
 };

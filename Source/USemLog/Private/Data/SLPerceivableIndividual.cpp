@@ -17,7 +17,7 @@ USLPerceivableIndividual::USLPerceivableIndividual()
 		UMaterial::StaticClass(), NULL, TEXT("Material'/USemLog/Individual/M_VisualIndividualMask.M_VisualIndividualMask'"),
 		NULL, LOAD_None, NULL));
 
-	SemanticOwner = nullptr;
+	ParentActor = nullptr;
 	bIsInit = false;
 	bIsLoaded = false;
 	bMaskMaterialOn = false;
@@ -89,11 +89,11 @@ bool USLPerceivableIndividual::ExportToTag(bool bOverwrite)
 	bMarkDirty = Super::ExportToTag(bOverwrite) || bMarkDirty;
 	if (!VisualMask.IsEmpty())
 	{
-		bMarkDirty = FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "VisualMask", VisualMask, bOverwrite) || bMarkDirty;
+		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "VisualMask", VisualMask, bOverwrite) || bMarkDirty;
 	}
 	if (!CalibratedVisualMask.IsEmpty())
 	{
-		bMarkDirty = FSLTagIO::AddKVPair(SemanticOwner, TagTypeConst, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite) || bMarkDirty;
+		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -220,7 +220,7 @@ bool USLPerceivableIndividual::ImportVisualMaskFromTag(bool bOverwrite)
 	if (!HasVisualMask() || bOverwrite)
 	{
 		const FString PrevVal = VisualMask;
-		SetVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "VisualMask"));
+		SetVisualMask(FSLTagIO::GetValue(ParentActor, TagTypeConst, "VisualMask"));
 		bNewValue = !VisualMask.Equals(PrevVal);
 		if (!HasVisualMask())
 		{
@@ -238,7 +238,7 @@ bool USLPerceivableIndividual::ImportCalibratedVisualMaskFromTag(bool bOverwrite
 	if (!HasCalibratedVisualMask() || bOverwrite)
 	{
 		const FString PrevVal = CalibratedVisualMask;
-		SetCalibratedVisualMask(FSLTagIO::GetValue(SemanticOwner, TagTypeConst, "CalibratedVisualMask"));
+		SetCalibratedVisualMask(FSLTagIO::GetValue(ParentActor, TagTypeConst, "CalibratedVisualMask"));
 		bNewValue = !CalibratedVisualMask.Equals(PrevVal);
 		if (!HasCalibratedVisualMask())
 		{
@@ -267,7 +267,7 @@ bool USLPerceivableIndividual::InitImpl()
 		return false;
 	}
 
-	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(SemanticOwner))
+	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(ParentActor))
 	{
 		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
 		{

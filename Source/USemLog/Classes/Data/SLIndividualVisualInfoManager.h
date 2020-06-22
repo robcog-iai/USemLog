@@ -23,12 +23,17 @@ public:
 	ASLIndividualVisualInfoManager();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	// If true, actor is ticked even if TickType == LEVELTICK_ViewportsOnly
+	virtual bool ShouldTickIfViewportsOnly() const override;
 
 	// Load components from world
 	int32 Init(bool bReset = false);
@@ -59,6 +64,9 @@ public:
 	// Point text towards camera
 	int32 PointToCamera();
 	int32 PointToCamera(const TArray<AActor*>& Actors);
+
+	// Enable/disable tick update
+	void ToggleTickUpdate();
 
 private:
 	// Find the text component of the actor, return nullptr if none found
@@ -105,4 +113,8 @@ private:
 	// bind to init and load delegates as well
 	//TSet<USLIndividualVisualInfoComponent*> InitIndividualComponents;
 	//TSet<USLIndividualVisualInfoComponent*> LoadedIndividualComponents;
+
+	/* Buttons */
+	UPROPERTY(EditAnywhere, Category = "Sematic Logger|Editor")
+	bool bToggleTickUpdate;
 };

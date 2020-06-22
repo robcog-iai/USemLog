@@ -6,27 +6,81 @@
 #include "Data/SLIndividualComponent.h"
 #include "EngineUtils.h"
 #include "Kismet2/ComponentEditorUtils.h"
+#if WITH_EDITOR
+#include "LevelEditorViewport.h"
+#include "Editor.h"
+#endif //WITH_EDITOR
 
 // Sets default values
 ASLIndividualVisualInfoManager::ASLIndividualVisualInfoManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+#if WITH_EDITOR
+	PrimaryActorTick.bStartWithTickEnabled = false;
+#endif // WITH_EDITOR
+
+	// Slow update rate
+	SetActorTickInterval(0.25f);
 
 	bIsInit = false;
 
+	/* Buttons hack */
+	bToggleTickUpdate = false;
 }
 
-// Called when the game starts or when spawned
-void ASLIndividualVisualInfoManager::BeginPlay()
+
+#if WITH_EDITOR
+// Called when a property is changed in the editor
+void ASLIndividualVisualInfoManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
-	Super::BeginPlay();	
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property name
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+		PropertyChangedEvent.Property->GetFName() : NAME_None;
+
+	/* Buttons hack */
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualVisualInfoManager, bToggleTickUpdate))
+	{
+		bToggleTickUpdate = false;
+		ToggleTickUpdate();
+	}
 }
+#endif // WITH_EDITOR
 
 // Called every frame
 void ASLIndividualVisualInfoManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	FRotator LookAtRot;
+
+	// True if we are in the editor (this is still true when using Play In Editor). You may want to use GWorld->HasBegunPlay in that case)	
+	if (GIsEditor)
+	{
+#if WITH_EDITOR
+		for (FLevelEditorViewportClient* LevelVC : GEditor->GetLevelViewportClients())
+		{
+			if (LevelVC && LevelVC->IsPerspective())
+			{
+				LookAtRot = LevelVC->GetViewRotation() + FRotator(180.f, 0.f, 180.f);
+				break;
+			}
+		}
+#endif //WITH_EDITOR
+	}
+
+	for (const auto C : RegisteredInfoComponents)
+	{
+		C->SetWorldRotation(LookAtRot);
+	}
+}
+
+// If true, actor is ticked even if TickType == LEVELTICK_ViewportsOnly
+bool ASLIndividualVisualInfoManager::ShouldTickIfViewportsOnly() const
+{
+	return true;
 }
 
 // Load components from world
@@ -319,6 +373,12 @@ int32 ASLIndividualVisualInfoManager::PointToCamera(const TArray<AActor*>& Actor
 		}
 	}
 	return Num;
+}
+
+void ASLIndividualVisualInfoManager::ToggleTickUpdate()
+{
+	SetActorTickEnabled(!IsActorTickEnabled());
+	//SetTickableWhenPaused(bEnable);
 }
 
 // Find the individual component of the actor, return nullptr if none found

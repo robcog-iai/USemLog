@@ -750,7 +750,7 @@ FReply FSLEdModeToolkit::OnWriteSemMap()
 	return FReply::Handled();
 }
 
-////
+//// Managers
 FReply FSLEdModeToolkit::OnInitSemDataManagers()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataManagerInit", "Init semantic data managers"));
@@ -816,7 +816,7 @@ FReply FSLEdModeToolkit::OnReloadSemDataManagers()
 	return FReply::Handled();
 }
 
-////
+//// Individual Components
 FReply FSLEdModeToolkit::OnCreateSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompCreateST", "Create semantic data components"));
@@ -950,7 +950,7 @@ FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 }
 
 
-////
+//// Visual Info Components
 FReply FSLEdModeToolkit::OnCreateSemDataVisInfo()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoCreateST", "Create visual info components"));
@@ -1119,32 +1119,15 @@ FReply FSLEdModeToolkit::OnUpdateTransformSemDataVisInfo()
 FReply FSLEdModeToolkit::OnLiveUpdateSemDataVisInfo()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoLiveUpdateST", "Toggle live visual info orientation"));
-	int32 NumComp = 0;
 
 	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
 	{
-		if (bOnlySelected)
-		{
-			// TODO
-			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility(GetSelectedActors());
-		}
-		else
-		{
-			// TODO
-			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility();
-		}
+		VisualInfoManager->ToggleTickUpdate();
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual info manager not set, init first.."),
 			*FString(__FUNCTION__), __LINE__);
-	}
-
-	if (NumComp)
-	{
-		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Toggled %ld new visual info components.."),
-			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 	
 	return FReply::Handled();
