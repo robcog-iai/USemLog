@@ -79,12 +79,12 @@ bool USLIndividualComponent::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(InitImpl());
+	SetIsInit(InitImpl(bReset));
 	return IsInit();
 }
 
 // Load individual
-bool USLIndividualComponent::Load(bool bReset)
+bool USLIndividualComponent::Load(bool bReset, bool bTryImportFromTags)
 {
 	if (bReset)
 	{
@@ -104,7 +104,7 @@ bool USLIndividualComponent::Load(bool bReset)
 		}
 	}
 
-	SetIsLoaded(LoadImpl());
+	SetIsLoaded(LoadImpl(bReset, bTryImportFromTags));
 	return IsLoaded();
 }
 
@@ -184,11 +184,11 @@ bool USLIndividualComponent::InitImpl(bool bReset)
 }
 
 // Forward the laod call to the individual object
-bool USLIndividualComponent::LoadImpl(bool bReset)
+bool USLIndividualComponent::LoadImpl(bool bReset, bool bTryImportFromTags)
 {
 	if (HasIndividual())
 	{
-		return IndividualObj->Load(bReset);
+		return IndividualObj->Load(bReset, bTryImportFromTags);
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s This should not happen, and idividual should be created here.."),
 		*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
@@ -243,9 +243,6 @@ bool USLIndividualComponent::CreateIndividual()
 	{	
 		// Listen to updates to the individual
 		BindDelegates();
-
-		//// Cache the current individual class type
-		//IndividualType = IndividualCls;
 		return true;
 	}
 	else

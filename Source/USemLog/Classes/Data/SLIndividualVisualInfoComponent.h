@@ -48,18 +48,16 @@ protected:
 public:	
 	// Connect to individual component sibling
 	bool Init(bool bReset = false);
-
-	// Check if component is visible
 	bool IsInit() { return bIsInit; };
 
 	// Load values from individual sibling
 	bool Load(bool bReset = false);
-
-	// Check if component is loaded
 	bool IsLoaded() const { return bIsLoaded; };
-
-	// Hide/show component
-	bool ToggleVisibility();
+	
+	// Hide/show visual info
+	void ToggleVisibility();
+	void HideVisualInfo();
+	void ShowVisualInfo();
 
 	// Point text towards the camera
 	bool PointToCamera();
@@ -109,7 +107,8 @@ private:
 	void ResetTextContent();
 
 	// Render text subobject creation helper
-	UTextRenderComponent* CreateDefaultTextSubobject(const FString& DefaultName, class UMaterialInterface* MaterialInterface = nullptr);
+	UTextRenderComponent* CreateDefaultTextSubobject(const FString& DefaultName, class USLIndividualVisualInfoAssets* Assets = nullptr);
+
 
 	/* Delegate functions */
 	// Called when siblings init value has changed
@@ -154,15 +153,18 @@ protected:
 	uint8 bIsLoaded : 1;
 
 private:
-	// Render text lines
+	/* Text */
+	// First render text line (e.g class)
 	UPROPERTY()
-	UTextRenderComponent* FirstLine;
+	UTextRenderComponent* FirstText;
 
+	// Second render text line (e.g. id)
 	UPROPERTY()
-	UTextRenderComponent* SecondLine;
+	UTextRenderComponent* SecondText;
 
+	// Third render text line (e.g. type)
 	UPROPERTY()
-	UTextRenderComponent* ThirdLine;
+	UTextRenderComponent* ThirdText;
 
 	// Text size template value 
 	float TextSize;
@@ -172,9 +174,31 @@ private:
 	float SecondLineTextSizeRatio;
 	float ThirdLineTextSizeRatio;
 
+
+	/* Lines */
+	// Dynamic material for the line
+	UPROPERTY()
+	class UMaterialInstanceDynamic* LineMid;
+
+	// Dynamic material for the line core
+	UPROPERTY()
+	class UMaterialInstanceDynamic* LaserCoreMid;
+
+	// Spline for the straight line
+	UPROPERTY()
+	class USplineComponent* LineSplineComponent;
+
+	// Spline meshes for curved line
+	UPROPERTY()
+	TArray<class USplineMeshComponent*> LineSplineMeshComponents;
+
+
 	/* Constants */
 	// Clamp the template text size between these values
 	constexpr static float MinClampTextSize = 3.f;
 	constexpr static float MaxClampTextSize = 6.f;
 
+	// SLIndividualVisualInfoAssets'/USemLog/Individual/SLIndividualVisualInfoAssets.SLIndividualVisualInfoAssets'
+	constexpr static TCHAR* AssetContainerPath =  TEXT("/USemLog/Individual/SLIndividualVisualInfoAssets");
+	constexpr static TCHAR* TextMaterialPath = TEXT("Material'/USemLog/Individual/M_InfoTextTranslucent.M_InfoTextTranslucent'");
 };

@@ -232,7 +232,7 @@ int32 ASLIndividualVisualInfoManager::DestroyVisualInfoComponents(const TArray<A
 }
 
 // Refresh all components
-int32 ASLIndividualVisualInfoManager::ReloadVisualInfoComponents()
+int32 ASLIndividualVisualInfoManager::ResetVisualInfoComponents()
 {
 	if (!bIsInit)
 	{
@@ -244,14 +244,14 @@ int32 ASLIndividualVisualInfoManager::ReloadVisualInfoComponents()
 	for (const auto& IC : RegisteredInfoComponents)
 	{
 		bool bReset = true;
-		if (IC->Load(bReset))
+		if (IC->Init(bReset) && IC->Load(bReset))
 		{
 			Num++;
 		}
 		else
 		{
 			//UnregisterInfoComponent(IC);
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not reload info component %s .."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not fully reset info component %s .."),
 				*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
 		}
 	}
@@ -259,7 +259,7 @@ int32 ASLIndividualVisualInfoManager::ReloadVisualInfoComponents()
 }
 
 // Refresh only selected actors components
-int32 ASLIndividualVisualInfoManager::ReloadVisualInfoComponents(const TArray<AActor*>& Actors)
+int32 ASLIndividualVisualInfoManager::ResetVisualInfoComponents(const TArray<AActor*>& Actors)
 {
 	if (!bIsInit)
 	{
@@ -272,15 +272,15 @@ int32 ASLIndividualVisualInfoManager::ReloadVisualInfoComponents(const TArray<AA
 	{
 		if (auto** FoundIC = InfoComponentOwners.Find(Act))
 		{
-			bool bReset = true;
-			if ((*FoundIC)->Load(bReset))
+			bool bReset = true;			
+			if ((*FoundIC)->Init(bReset) && (*FoundIC)->Load(bReset))
 			{
 				Num++;
 			}
 			else
 			{
 				//UnregisterIndividualComponent(*FoundIC);
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not reload individual component %s .."),
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not ully reset info component %s .."),
 					*FString(__FUNCTION__), __LINE__, *(*FoundIC)->GetOwner()->GetName());
 			}
 		}
@@ -298,15 +298,11 @@ int32 ASLIndividualVisualInfoManager::ToggleVisualInfoComponentsVisibility()
 		return INDEX_NONE;
 	}
 
-	int32 Num = 0;
 	for (const auto& IC : RegisteredInfoComponents)
 	{
-		if (IC->ToggleVisibility())
-		{
-			Num++;
-		}
+		IC->ToggleVisibility();
 	}
-	return Num;
+	return RegisteredInfoComponents.Num();
 }
 
 // Toggle visiblity for selected components
@@ -323,10 +319,8 @@ int32 ASLIndividualVisualInfoManager::ToggleVisualInfoComponentsVisibility(const
 	{
 		if (auto** FoundIC = InfoComponentOwners.Find(Act))
 		{
-			if ((*FoundIC)->ToggleVisibility())
-			{
-				Num++;
-			}
+			(*FoundIC)->ToggleVisibility();
+			Num++;
 		}
 	}
 	return Num;

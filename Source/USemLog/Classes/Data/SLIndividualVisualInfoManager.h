@@ -53,8 +53,8 @@ public:
 	int32 DestroyVisualInfoComponents(const TArray<AActor*>& Actors);
 
 	// Refresh all components
-	int32 ReloadVisualInfoComponents();
-	int32 ReloadVisualInfoComponents(const TArray<AActor*>& Actors);
+	int32 ResetVisualInfoComponents();
+	int32 ResetVisualInfoComponents(const TArray<AActor*>& Actors);
 
 	/* Functionalities */
 	// Toggle visiblity

@@ -49,7 +49,7 @@ bool USLBaseIndividual::Init(bool bReset)
 }
 
 // Load semantic data
-bool USLBaseIndividual::Load(bool bReset)
+bool USLBaseIndividual::Load(bool bReset, bool bTryImportFromTags)
 {
 	if (bReset)
 	{
@@ -69,7 +69,7 @@ bool USLBaseIndividual::Load(bool bReset)
 		}
 	}
 	
-	SetIsLoaded(LoadImpl());
+	SetIsLoaded(LoadImpl(bTryImportFromTags));
 	return IsLoaded();
 }
 
@@ -117,7 +117,15 @@ void USLBaseIndividual::SetId(const FString& NewId)
 	{
 		Id = NewId;
 		OnNewIdValue.Broadcast(this, Id);
-		SetIsLoaded(LoadImpl(false));
+		if (!HasId() && IsLoaded())
+		{
+			SetIsLoaded(false);
+		}
+		else if (HasId() && !IsLoaded())
+		{
+			// Check if the individual can now be loaded
+			Load(false, false);
+		}
 	}
 }
 
@@ -128,7 +136,15 @@ void USLBaseIndividual::SetClass(const FString& NewClass)
 	{
 		Class = NewClass;
 		OnNewClassValue.Broadcast(this, Class);
-		SetIsLoaded(LoadImpl(false));
+		if (!HasClass() && IsLoaded())
+		{
+			SetIsLoaded(false);
+		}
+		else if (HasClass() && !IsLoaded())
+		{
+			// Check if the individual can now be loaded
+			Load(false, false);
+		}
 	}
 }
 
@@ -161,6 +177,71 @@ void USLBaseIndividual::SetIsLoaded(bool bNewValue, bool bBroadcast)
 			OnLoadedChanged.Broadcast(this, bNewValue);
 		}
 	}
+}
+
+// Private init implementation
+bool USLBaseIndividual::InitImpl()
+{
+	// First outer is the component, second the actor
+	if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()))
+	{
+		// Set the parent actor
+		ParentActor = CompOwner;
+
+		// Check if individual is part of another actor
+		if (AActor* AttAct = CompOwner->GetAttachParentActor())
+		{
+			// Get the individual component of the actor
+			if (UActorComponent* AC = AttAct->GetComponentByClass(USLIndividualComponent::StaticClass()))
+			{
+				PartOfActor = AttAct;
+				PartOfIndividual = CastChecked<USLIndividualComponent>(AC)->GetIndividualObject();
+			}
+
+			// TODO check that the individual does not simulate physics (if it does the attachment breaks at runtime)
+		}
+
+		return true;
+	}
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, has no semantic owner.."),
+		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	return false;
+}
+
+// Private load implementation
+bool USLBaseIndividual::LoadImpl(bool bTryImportFromTags)
+{
+	bool bRetValue = true;
+	if (!HasId())		
+	{
+		if (bTryImportFromTags)
+		{
+			if (!ImportIdFromTag())
+			{
+				bRetValue = false;
+			}
+		}
+		else
+		{
+			bRetValue = false;
+		}
+	}
+
+	if (!HasClass())
+	{
+		if (bTryImportFromTags)
+		{
+			if (!ImportClassFromTag())
+			{
+				bRetValue = false;
+			}
+		}
+		else
+		{
+			bRetValue = false;
+		}
+	}
+	return bRetValue;
 }
 
 // Import id from tag, true if new value is written
@@ -198,70 +279,4 @@ bool USLBaseIndividual::ImportClassFromTag(bool bOverwrite)
 	}
 	return bNewValue;
 }
-
-// Private init implementation
-bool USLBaseIndividual::InitImpl()
-{
-	// First outer is the component, second the actor
-	if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()))
-	{
-		// Set the parent actor
-		ParentActor = CompOwner;
-
-		// Check if individual is part of another actor
-		if (AActor* AttAct = CompOwner->GetAttachParentActor())
-		{
-			// Get the individual component of the actor
-			if (UActorComponent* AC = AttAct->GetComponentByClass(USLIndividualComponent::StaticClass()))
-			{
-				PartOfActor = AttAct;
-				PartOfIndividual = CastChecked<USLIndividualComponent>(AC)->GetIndividualObject();
-			}
-
-			// TODO check that the individual does not simulate physics (if it does the attachment breaks at runtime)
-		}
-
-		return true;
-	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, has no semantic owner.."),
-		*FString(__FUNCTION__), __LINE__, *GetFullName());
-	return false;
-}
-
-// Private load implementation
-bool USLBaseIndividual::LoadImpl(bool bTryImportFromTags)
-{
-	bool bSuccess = true;
-	if (!HasId())		
-	{
-		if (bTryImportFromTags)
-		{
-			if (!ImportIdFromTag())
-			{
-				bSuccess = false;
-			}
-		}
-		else
-		{
-			bSuccess = false;
-		}
-	}
-
-	if (!HasClass())
-	{
-		if (bTryImportFromTags)
-		{
-			if (!ImportClassFromTag())
-			{
-				bSuccess = false;
-			}
-		}
-		else
-		{
-			bSuccess = false;
-		}
-	}
-	return bSuccess;
-}
-
 

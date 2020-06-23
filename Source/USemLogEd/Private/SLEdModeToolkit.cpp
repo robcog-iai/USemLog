@@ -288,10 +288,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataCompReload", "Reload"))
+				.Text(LOCTEXT("SemDataCompReload", "Reset"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataCompReloadTip", "Reload semantic data components.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnReloadSemDataComp)
+				.ToolTipText(LOCTEXT("SemDataCompReloadTip", "Force init + load.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnResetSemDataComp)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -357,10 +357,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataVisInfoRefresh", "Refresh"))
+				.Text(LOCTEXT("SemDataVisInfoRefresh", "Reset"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataVisInfoRefreshTip", "Refresh visual values.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnRefreshSemDataVisInfo)
+				.ToolTipText(LOCTEXT("SemDataVisInfoRefreshTip", "Force init + load .."))
+				.OnClicked(this, &FSLEdModeToolkit::OnResetSemDataVisInfo)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -401,7 +401,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoFuncSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataVisInfoUpdate", "UpdateTransform"))
+				.Text(LOCTEXT("SemDataVisInfoUpdate", "Update"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataVisInfoUpdateTip", "Point text towards camera.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnUpdateTransformSemDataVisInfo)
@@ -850,7 +850,7 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnReloadSemDataComp()
+FReply FSLEdModeToolkit::OnResetSemDataComp()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Reload semantic data components"));
 	int32 NumComp = 0;
@@ -859,11 +859,11 @@ FReply FSLEdModeToolkit::OnReloadSemDataComp()
 	{
 		if (bOnlySelected)
 		{
-			NumComp = IndividualManager->ReloadIndividualComponents(GetSelectedActors());
+			NumComp = IndividualManager->ResetIndividualComponents(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = IndividualManager->ReloadIndividualComponents();
+			NumComp = IndividualManager->ResetIndividualComponents();
 		}
 	}
 	else
@@ -984,20 +984,20 @@ FReply FSLEdModeToolkit::OnCreateSemDataVisInfo()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnRefreshSemDataVisInfo()
+FReply FSLEdModeToolkit::OnResetSemDataVisInfo()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRefreshST", "Refresh visual info components"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRefreshST", "Reset visual info components"));
 	int32 NumComp = 0;
 
 	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
 	{
 		if (bOnlySelected)
 		{
-			NumComp = VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors());
+			NumComp = VisualInfoManager->ResetVisualInfoComponents(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = VisualInfoManager->ReloadVisualInfoComponents();
+			NumComp = VisualInfoManager->ResetVisualInfoComponents();
 		}
 	}
 	else
@@ -1176,10 +1176,10 @@ FReply FSLEdModeToolkit::OnWriteSemDataIds()
 
 	if (NumComp)
 	{
-		if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
-		{
-			bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
-		}
+		//if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+		//{
+		//	bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
+		//}
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Generated new ids for %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumComp);
@@ -1242,6 +1242,10 @@ FReply FSLEdModeToolkit::OnWriteClassNames()
 
 	if (NumComp)
 	{
+		//if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+		//{
+		//	bOnlySelected ? VisualInfoManager->ReloadVisualInfoComponents(GetSelectedActors()) : VisualInfoManager->ReloadVisualInfoComponents();
+		//}
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Wrote classes for %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, NumComp);

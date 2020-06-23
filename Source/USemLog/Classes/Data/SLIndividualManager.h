@@ -45,8 +45,8 @@ public:
 	int32 DestroyIndividualComponents(const TArray<AActor*>& Actors);
 
 	// Reload components data
-	int32 ReloadIndividualComponents();
-	int32 ReloadIndividualComponents(const TArray<AActor*>& Actors);
+	int32 ResetIndividualComponents();
+	int32 ResetIndividualComponents(const TArray<AActor*>& Actors);
 
 	/* Functionalities */
 	// Toggle perceivable individuals mask materials

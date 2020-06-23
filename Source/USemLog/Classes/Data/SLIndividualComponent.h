@@ -48,7 +48,7 @@ public:
 	bool IsInit() const { return bIsInit; };
 
 	// Load individual
-	bool Load(bool bReset = false);
+	bool Load(bool bReset = false, bool bTryImportFromTags = false);
 
 	// Check if component is loaded
 	bool IsLoaded() const { return bIsLoaded; };
@@ -90,7 +90,7 @@ private:
 	bool InitImpl(bool bReset = false);
 
 	// Forward load call on individual
-	bool LoadImpl(bool bReset = false);
+	bool LoadImpl(bool bReset = false, bool bTryImportFromTags = false);
 
 	// Sync states with the individual
 	bool BindDelegates();

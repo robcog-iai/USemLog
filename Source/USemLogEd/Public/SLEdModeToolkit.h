@@ -86,13 +86,13 @@ private:
 
 	// Semantic data components
 	FReply OnCreateSemDataComp();
-	FReply OnReloadSemDataComp();
+	FReply OnResetSemDataComp();
 	FReply OnRmSemDataComp();
 	FReply OnToggleMaskSemDataComp();
 
 	// Semantic data visual info
 	FReply OnCreateSemDataVisInfo();
-	FReply OnRefreshSemDataVisInfo();
+	FReply OnResetSemDataVisInfo();
 	FReply OnRmSemDataVisInfo();
 	FReply OnToggleSemDataVisInfo();
 	FReply OnUpdateTransformSemDataVisInfo();

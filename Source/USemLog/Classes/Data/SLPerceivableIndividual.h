@@ -34,7 +34,7 @@ public:
     virtual bool Init(bool bReset = false);
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bReset = false);
+    virtual bool Load(bool bReset = false, bool bTryImportFromTags = false);
 
     // Save data to owners tag
     virtual bool ExportToTag(bool bOverwrite = false) override;
@@ -46,10 +46,10 @@ public:
     virtual FString GetTypeName() const override { return FString("PerceivableIndividual"); };
 
     // Apply visual mask material
-    bool ApplyVisualMaskMaterials(bool bReload = false);
+    bool ShowMaskMaterials(bool bReload = false);
 
     // Apply original materials
-    bool ApplyOriginalMaterials();
+    bool ShowOriginalMaterials();
 
     // Toggle between the visual mask and the origina materials
     bool ToggleMaterials();
@@ -64,18 +64,19 @@ public:
     FString GetCalibratedVisualMask() const { return CalibratedVisualMask; };
     bool HasCalibratedVisualMask() const { return !CalibratedVisualMask.IsEmpty(); };
 
+protected:
+    // Private init implementation
+    bool InitImpl();
+
+    // Private load implementation
+    bool LoadImpl(bool bTryImportFromTags = true);
+
 private:
     // Import visual mask from tag, true if new value is written
     bool ImportVisualMaskFromTag(bool bOverwrite = false);
 
     // Import calibrated visual mask from tag, true if new value is written
     bool ImportCalibratedVisualMaskFromTag(bool bOverwrite = false);
-
-    // Private init implementation
-    bool InitImpl();
-
-    // Private load implementation
-    bool LoadImpl(bool bTryImportFromTags = true);
 
     // Apply color to the dynamic material
     bool ApplyVisualMaskColorToDynamicMaterial();
@@ -95,7 +96,7 @@ protected:
 
     // True if the visual masks are currently active on the semantic owner
     UPROPERTY(VisibleAnywhere, Category = "SL")
-    bool bMaskMaterialOn;
+    bool bIsMaskMaterialOn;
 
     // Material template used for creating dynamic materials
     UPROPERTY()

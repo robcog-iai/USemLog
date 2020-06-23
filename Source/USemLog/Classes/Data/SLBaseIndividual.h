@@ -44,7 +44,7 @@ public:
 	bool IsInit() const { return bIsInit; };
 
 	// Load semantic data (bReset forces re-loading)
-	virtual bool Load(bool bReset = false);
+	virtual bool Load(bool bReset = false, bool bTryImportFromTags = false);
 
 	// Check if semantic data is succesfully loaded
 	bool IsLoaded() const { return bIsLoaded; };
@@ -55,8 +55,21 @@ public:
 	// Load data from owners tag, true if any new value if imported
 	virtual bool ImportFromTag(bool bOverwrite = false);
 
-	// Get semantic owner
+	// Get actor represented by the individual
 	AActor* GetParentActor() const { return ParentActor; };
+
+	// True if individual is part of another individual
+	bool IsPartOfAnotherIndividual() const 
+	{ 
+		return PartOfActor && PartOfActor->IsValidLowLevel() && !PartOfActor->IsPendingKill()
+			&& PartOfIndividual && PartOfIndividual->IsValidLowLevel() && !PartOfIndividual->IsPendingKill();
+	}
+
+	// Return the actor this individual is part of
+	class AActor* GetPartOfActor() const { return PartOfActor; };
+
+	// Return the individual this individual is part of
+	class USLBaseIndividual* GetPartOfIndividual() const { return PartOfIndividual; };
 
 	// Get the type name as string
 	virtual FString GetTypeName() const { return FString("BaseIndividual"); };
@@ -80,18 +93,18 @@ protected:
 	// Set the loaded flag, broadcast on new value
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
 
+	// Private init implementation, set the semantic owner reference
+	bool InitImpl();
+
+	// Private load implementation
+	bool LoadImpl(bool bTryImportFromTags = true);
+
 private:
 	// Import id from tag, true if new value is written
 	bool ImportIdFromTag(bool bOverwrite = false);
 
 	// Import class from tag, true if new value is written
 	bool ImportClassFromTag(bool bOverwrite = false);
-
-	// Private init implementation, set the semantic owner reference
-	bool InitImpl();
-
-	// Private load implementation
-	bool LoadImpl(bool bTryImportFromTags = true);
 
 public:
 	// Called when the init status changes

@@ -178,7 +178,7 @@ int32 ASLIndividualManager::DestroyIndividualComponents(const TArray<AActor*>& A
 }
 
 // Reload components data
-int32 ASLIndividualManager::ReloadIndividualComponents()
+int32 ASLIndividualManager::ResetIndividualComponents()
 {
 	if (!bIsInit)
 	{
@@ -190,22 +190,23 @@ int32 ASLIndividualManager::ReloadIndividualComponents()
 	for (const auto& IC : RegisteredIndividualComponents)
 	{
 		bool bReset = true;
-		if (IC->Load(bReset))
+		bool bTryImportFromTags = true;
+		if (IC->Init(bReset) && IC->Load(bReset, bTryImportFromTags))
 		{
 			Num++;
 		}
 		else
 		{
 			//UnregisterIndividualComponent(IC);
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not reload individual component %s .."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not fully reset individual component %s .."),
 				*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
 		}
 	}
 	return Num;
 }
 
-// Reload selected actor components data
-int32 ASLIndividualManager::ReloadIndividualComponents(const TArray<AActor*>& Actors)
+// Call init and load with reset flag true
+int32 ASLIndividualManager::ResetIndividualComponents(const TArray<AActor*>& Actors)
 {
 	if (!bIsInit)
 	{
@@ -219,14 +220,15 @@ int32 ASLIndividualManager::ReloadIndividualComponents(const TArray<AActor*>& Ac
 		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
 		{
 			bool bReset = true;
-			if ((*FoundIC)->Load(bReset))
+			bool bTryImportFromTags = true;
+			if ((*FoundIC)->Init(bReset) && (*FoundIC)->Load(bReset, bTryImportFromTags))
 			{
 				Num++;
 			}
 			else
 			{
 				//UnregisterIndividualComponent(*FoundIC);
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not reload individual component %s .."),
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not fully reset individual component %s .."),
 					*FString(__FUNCTION__), __LINE__, *(*FoundIC)->GetOwner()->GetName());
 			}
 		}
@@ -697,7 +699,7 @@ USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* 
 
 		if (NewComp->Init())
 		{
-			if (!NewComp->Load())
+			if (!NewComp->Load(true, true))
 			{
 				//UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
 				//	*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
