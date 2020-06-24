@@ -63,7 +63,8 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 	bool bInLogGraspEvents,
 	bool bInPickAndPlaceEvents,
 	bool bInLogSlicingEvents,
-	bool bInWriteTimelines)
+	bool bInWriteTimelines,
+	bool bInLogThroughROS)
 {
 	if (!bIsInit)
 	{
@@ -71,6 +72,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		EpisodeId = WriterParams.EpisodeId;
 		OwlDocTemplate = TemplateType;
 		bWriteTimelines = bInWriteTimelines;
+		bLogThroughROS = bInLogThroughROS;
 
 		// Init the semantic mappings (if not already init)
 		FSLEntitiesManager::GetInstance()->Init(GetWorld());
@@ -282,9 +284,30 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 #endif // SL_WITH_SLICING
 		}
 
+		if (bLogThroughROS) {
+#if SL_WITH_ROSBRIDGE
+			ROSHandler = MakeShareable<FROSBridgeHandler>(new FROSBridgeHandler(WriterParams.ServerIp, WriterParams.ServerPort));
+			if (ROSHandler.IsValid()) {
+				ROSHandler->Connect();
+			} else {
+				UE_LOG(LogTemp, Error, TEXT("No FROSBridgeHandler created for Event Logger."));
+			}
+#endif // SL_WITH_ROSBRIDGE
+		}
 		// Mark as initialized
 		bIsInit = true;
 	}
+}
+
+void USLEventLogger::LogThroughROS(TSharedPtr<ISLEvent> Event) {
+
+	FString Msg = Event->ToROSMsg();
+
+#if SL_WITH_ROSBRIDGE
+	TSharedPtr<FROSBridgeSrv::SrvRequest> Request;// = MakeShareable<FROSBridgeSrv::SrvRequest>(new iai_avatar_msgs::Command::Response(Owner->bSuccess, Owner->Message));
+	TSharedPtr<FROSBridgeSrv::SrvResponse> Response;// = MakeShareable<FROSBridgeSrv::SrvResponse>(new iai_avatar_msgs::Command::Response(Owner->bSuccess, Owner->Message));
+	ROSHandler->CallService(ROSClient, Request, Response);
+#endif // SL_WITH_ROSBRIDGE
 }
 
 // Check if the component is valid in the world and has a semantically annotated owner
@@ -419,6 +442,14 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		// Write events to file
 		WriteToFile();
 
+#if SL_WITH_ROSBRIDGE
+		// Finish ROS Connection
+		if (ROSHandler.IsValid())
+		{
+			ROSHandler->Disconnect();
+		}
+#endif // SL_WITH_ROSBRIDGE
+
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
@@ -431,6 +462,10 @@ void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), *FString(__func__), __LINE__, *Event->ToString()));
 	//UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), *FString(__func__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
+
+	if (bLogThroughROS) {
+		LogThroughROS(Event);
+	}
 }
 
 // Write to file

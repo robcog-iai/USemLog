@@ -38,6 +38,9 @@ public:
 
 	// Add the owl representation of the event to the owl document
 	virtual void AddToOwlDoc(FSLOwlDoc* OutDoc) override;
+	
+	// Send through ROSBridge
+	virtual FString ToROSMsg() const override { return ""; };
 
 	// Get event context data as string
 	virtual FString Context() const override;

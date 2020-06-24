@@ -31,30 +31,38 @@
       "LoadingPhase": "Default"
     }
   ],
-  "Plugins": [
-    {
-      "Name": "UUtils",
-      "Enabled": true
-    },
-    {
-      "Name": "UPhysicsBasedMC",
-      "Enabled": true
-    },
-    {
-      "Name": "UMongoC",
-      "Enabled": true
-    },
-    {
-      "Name": "SRanipal",
-      "Enabled": true
-    },
-    {
-      "Name": "UMongoQA",
-      "Enabled": true
-    },
-    {
-      "Name": "UViz",
-      "Enabled": true
-    }
-  ]
+    "Plugins": [
+        {
+            "Name": "UUtils",
+            "Enabled": true
+        },
+        {
+            "Name": "UPhysicsBasedMC",
+            "Enabled": true
+        },
+        {
+            "Name": "UMongoC",
+            "Enabled": false
+        },
+        {
+            "Name": "SRanipal",
+            "Enabled": false
+        },
+        {
+            "Name": "UMongoQA",
+            "Enabled": false
+        },
+        {
+            "Name": "UViz",
+            "Enabled": false
+        },
+        {
+            "Name": "USlicing",
+            "Enabled": true
+        },
+        {
+            "Name": "UROSBridge",
+            "Enabled": true
+        }
+    ]
 }

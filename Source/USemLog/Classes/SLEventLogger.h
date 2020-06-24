@@ -6,6 +6,12 @@
 #include "USemLog.h"
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
+#if SL_WITH_ROSBRIDGE
+#include "ROSBridgeHandler.h"
+#include "std_msgs/String.h"
+#include "SLROSServiceClient.h"
+#endif // SL_WITH_ROSBRIDGE
+
 #include "SLEventLogger.generated.h"
 
 // Forward declaration
@@ -22,32 +28,28 @@ struct FSLEventWriterParams
 	// Episode unique id
 	FString EpisodeId;
 
-	//// Task description
+	// Task description
 	//FString TaskDescription;
 
-	//// Server ip (optional)
-	//FString ServerIp;
+	// Server ip (optional)
+	FString ServerIp;
 
-	//// Server Port (optional)
-	//uint16 ServerPort;
+	// Server Port (optional)
+	uint16 ServerPort;
 
 	// Constructor
 	FSLEventWriterParams(
 		const FString& InTaskId,
-		const FString& InEpisodeId
-		/*,
-		const FString& InTaskDescription,
+		const FString& InEpisodeId,
+		//const FString& InTaskDescription,
 		const FString& InServerIp = "",
 		uint16 InServerPort = 0
-		*/
-		) :
+	) :
 		TaskId(InTaskId),
-		EpisodeId(InEpisodeId)
-		/*,
-		TaskDescription(InTaskDescription),
+		EpisodeId(InEpisodeId),
+		//TaskDescription(InTaskDescription),
 		ServerIp(InServerIp),
 		ServerPort(InServerPort)
-		*/
 	{};
 };
 
@@ -74,7 +76,8 @@ public:
 		bool bInLogGraspEvents,
 		bool bInPickAndPlaceEvents,
 		bool bInLogSlicingEvents,
-		bool bInWriteTimelines);
+		bool bInWriteTimelines,
+		bool bInLogThroughROS);
 	
 
 	// Start logger
@@ -92,6 +95,9 @@ private:
 
 	// Write events to file
 	bool WriteToFile();
+
+	// Log events to KnowRob
+	void LogThroughROS(TSharedPtr<ISLEvent> Event);
 
 	// Create events doc template
 	TSharedPtr<FSLOwlExperiment> CreateEventsDocTemplate(
@@ -119,6 +125,9 @@ private:
 	// Save events to timelines
 	bool bWriteTimelines;
 
+	// Send events through ROS
+	bool bLogThroughROS;
+
 	// Array of finished events
 	TArray<TSharedPtr<ISLEvent>> FinishedEvents;
 
@@ -142,4 +151,12 @@ private:
 
 	// Cache of the container manipulation listeners
 	TArray<class USLContainerListener*> ContainerListeners;
+
+	// ROS Logging
+#if SL_WITH_ROSBRIDGE
+	TSharedPtr<FROSBridgeHandler> ROSHandler;
+	TSharedPtr<SLROSServiceClient> ROSClient;
+
+#endif // SL_WITH_ROSBRIDGE
+
 };

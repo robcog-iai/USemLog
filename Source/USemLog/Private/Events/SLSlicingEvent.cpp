@@ -68,6 +68,12 @@ void FSLSlicingEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
+// Send event through ROS
+FString FSLSlicingEvent::ToROSMsg() const
+{
+	return ToString();
+}
+
 // Get event context data as string (ToString equivalent)
 FString FSLSlicingEvent::Context() const
 {
