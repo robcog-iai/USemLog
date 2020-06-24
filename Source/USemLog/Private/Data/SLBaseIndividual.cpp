@@ -35,8 +35,8 @@ void USLBaseIndividual::PostInitProperties()
 bool USLBaseIndividual::Init(bool bReset)
 {
 	if (bReset)
-	{
-		SetIsInit(false, false);
+	{		
+		InitReset();
 	}
 
 	if (IsInit())
@@ -53,7 +53,7 @@ bool USLBaseIndividual::Load(bool bReset, bool bTryImportFromTags)
 {
 	if (bReset)
 	{
-		SetIsLoaded(false, false);
+		LoadReset();
 	}
 
 	if (IsLoaded())
@@ -123,7 +123,6 @@ void USLBaseIndividual::SetId(const FString& NewId)
 		}
 		else if (HasId() && !IsLoaded())
 		{
-			// Check if the individual can now be loaded
 			Load(false, false);
 		}
 	}
@@ -142,10 +141,37 @@ void USLBaseIndividual::SetClass(const FString& NewClass)
 		}
 		else if (HasClass() && !IsLoaded())
 		{
-			// Check if the individual can now be loaded
 			Load(false, false);
 		}
 	}
+}
+
+// Clear all values of the individual
+void USLBaseIndividual::InitReset()
+{
+	LoadReset();
+	ParentActor = nullptr;
+	PartOfActor = nullptr;
+	PartOfIndividual = nullptr;
+	SetIsInit(false);
+	ClearDelegateBounds();
+}
+
+// Clear all data of the individual
+void USLBaseIndividual::LoadReset()
+{
+	SetIsLoaded(false);
+	SetId("");
+	SetClass("");
+}
+
+// Clear any bound delegates (called when init is reset)
+void USLBaseIndividual::ClearDelegateBounds()
+{
+	OnInitChanged.Clear();
+	OnLoadedChanged.Clear();
+	OnNewIdValue.Clear();
+	OnNewClassValue.Clear();
 }
 
 // Set the init flag, broadcast on new value
@@ -153,7 +179,7 @@ void USLBaseIndividual::SetIsInit(bool bNewValue, bool bBroadcast)
 {
 	if (bIsInit != bNewValue)
 	{
-		if (!bNewValue)
+		if (!bNewValue && IsLoaded())
 		{
 			SetIsLoaded(false);
 		}
@@ -162,6 +188,7 @@ void USLBaseIndividual::SetIsInit(bool bNewValue, bool bBroadcast)
 		if (bBroadcast)
 		{
 			OnInitChanged.Broadcast(this, bNewValue);
+			
 		}
 	}
 }
@@ -179,7 +206,7 @@ void USLBaseIndividual::SetIsLoaded(bool bNewValue, bool bBroadcast)
 	}
 }
 
-// Private init implementation
+// Set references
 bool USLBaseIndividual::InitImpl()
 {
 	// First outer is the component, second the actor
@@ -208,7 +235,7 @@ bool USLBaseIndividual::InitImpl()
 	return false;
 }
 
-// Private load implementation
+// Set data
 bool USLBaseIndividual::LoadImpl(bool bTryImportFromTags)
 {
 	bool bRetValue = true;

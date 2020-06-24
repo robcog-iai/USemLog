@@ -46,10 +46,10 @@ public:
     virtual FString GetTypeName() const override { return FString("PerceivableIndividual"); };
 
     // Apply visual mask material
-    bool ShowMaskMaterials(bool bReload = false);
+    bool ApplyMaskMaterials(bool bReload = false);
 
     // Apply original materials
-    bool ShowOriginalMaterials();
+    bool ApplyOriginalMaterials();
 
     // Toggle between the visual mask and the origina materials
     bool ToggleMaterials();
@@ -65,17 +65,22 @@ public:
     bool HasCalibratedVisualMask() const { return !CalibratedVisualMask.IsEmpty(); };
 
 protected:
-    // Private init implementation
-    bool InitImpl();
+    // Clear all values of the individual
+    virtual void InitReset() override;
 
-    // Private load implementation
-    bool LoadImpl(bool bTryImportFromTags = true);
+    // Clear all data of the individual
+    virtual void LoadReset() override;
+
+    // Clear any bound delegates (called when init is reset)
+    virtual void ClearDelegateBounds() override;
 
 private:
-    // Import visual mask from tag, true if new value is written
-    bool ImportVisualMaskFromTag(bool bOverwrite = false);
+    // States implementations, set references and data
+    bool InitImpl();
+    bool LoadImpl(bool bTryImportFromTags = true);
 
-    // Import calibrated visual mask from tag, true if new value is written
+    // Specific imports from tag, true if new value is written
+    bool ImportVisualMaskFromTag(bool bOverwrite = false);
     bool ImportCalibratedVisualMaskFromTag(bool bOverwrite = false);
 
     // Apply color to the dynamic material

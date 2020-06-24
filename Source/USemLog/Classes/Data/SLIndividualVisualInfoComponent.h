@@ -10,6 +10,8 @@
 // Forward declarations
 class USLIndividualComponent;
 class UTextRenderComponent;
+class USplineMeshComponent;
+class UMaterialInterface;
 
 // Delegate notification when the component is being destroyed
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLVisualInfoComponentDestroyedSignature, USLIndividualVisualInfoComponent*, DestroyedComponent);
@@ -106,9 +108,11 @@ private:
 	// Set the text values to default
 	void ResetTextContent();
 
-	// Render text subobject creation helper
-	UTextRenderComponent* CreateDefaultTextSubobject(const FString& DefaultName, class USLIndividualVisualInfoAssets* Assets = nullptr);
+	// Render text subobject creation helper (should be called in constructor)
+	UTextRenderComponent* CreateTextComponentSubobject(const FString& DefaultName, class USLIndividualVisualInfoAssets* Assets = nullptr);
 
+	// Create spline mesh component (can be called outside of constructor)
+	USplineMeshComponent* CreateSplineMeshComponent(class USLIndividualVisualInfoAssets* Assets = nullptr);
 
 	/* Delegate functions */
 	// Called when siblings init value has changed
@@ -175,23 +179,10 @@ private:
 	float ThirdLineTextSizeRatio;
 
 
-	/* Lines */
-	// Dynamic material for the line
-	UPROPERTY()
-	class UMaterialInstanceDynamic* LineMid;
-
-	// Dynamic material for the line core
-	UPROPERTY()
-	class UMaterialInstanceDynamic* LaserCoreMid;
-
-	// Spline for the straight line
-	UPROPERTY()
-	class USplineComponent* LineSplineComponent;
-
-	// Spline meshes for curved line
-	UPROPERTY()
-	TArray<class USplineMeshComponent*> LineSplineMeshComponents;
-
+	/* Splines */
+	//// Empty if individual is not part of another
+	//UPROPERTY()
+	//USplineMeshComponent* PartOfSplineMesh;	
 
 	/* Constants */
 	// Clamp the template text size between these values

@@ -26,7 +26,7 @@ USLPerceivableIndividual::USLPerceivableIndividual()
 // Called before destroying the object.
 void USLPerceivableIndividual::BeginDestroy()
 {
-	ShowOriginalMaterials();
+	ApplyOriginalMaterials();
 	Super::BeginDestroy();
 }
 
@@ -42,7 +42,7 @@ bool USLPerceivableIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
-		SetIsInit(false, false);
+		InitReset();
 	}
 
 	if (IsInit())
@@ -50,7 +50,7 @@ bool USLPerceivableIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init(bReset) && InitImpl());
+	SetIsInit(Super::Init() && InitImpl());
 	return IsInit();
 }
 
@@ -59,7 +59,7 @@ bool USLPerceivableIndividual::Load(bool bReset, bool bTryImportFromTags)
 {
 	if (bReset)
 	{
-		SetIsLoaded(false, false);
+		LoadReset();
 	}
 
 	if (IsLoaded())
@@ -77,7 +77,7 @@ bool USLPerceivableIndividual::Load(bool bReset, bool bTryImportFromTags)
 		}
 	}
 
-	SetIsLoaded(Super::Load(bReset) && LoadImpl(bTryImportFromTags));
+	SetIsLoaded(Super::Load() && LoadImpl(bTryImportFromTags));
 	return IsLoaded();
 }
 
@@ -120,7 +120,7 @@ bool USLPerceivableIndividual::ImportFromTag(bool bOverwrite)
 }
 
 // Apply visual mask material
-bool USLPerceivableIndividual::ShowMaskMaterials(bool bReload)
+bool USLPerceivableIndividual::ApplyMaskMaterials(bool bReload)
 {
 	if (!IsInit())
 	{
@@ -140,7 +140,7 @@ bool USLPerceivableIndividual::ShowMaskMaterials(bool bReload)
 }
 
 // Apply original materials
-bool USLPerceivableIndividual::ShowOriginalMaterials()
+bool USLPerceivableIndividual::ApplyOriginalMaterials()
 {
 	if (!IsInit())
 	{
@@ -166,11 +166,11 @@ bool USLPerceivableIndividual::ToggleMaterials()
 {
 	if (bIsMaskMaterialOn)
 	{
-		return ShowOriginalMaterials();
+		return ApplyOriginalMaterials();
 	}
 	else
 	{
-		return ShowMaskMaterials();
+		return ApplyMaskMaterials();
 	}
 }
 
@@ -205,7 +205,7 @@ void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool 
 		// If the mask visualization is active, dynamically update the colors
 		if (bIsMaskMaterialOn && bApplyNewMaterial)
 		{
-			ShowMaskMaterials(true);
+			ApplyMaskMaterials(true);
 		}
 	}
 }
@@ -277,6 +277,31 @@ bool USLPerceivableIndividual::LoadImpl(bool bTryImportFromTags)
 	return bRetValue;
 }
 
+// Clear all values of the individual
+void USLPerceivableIndividual::InitReset()
+{
+	LoadReset();
+	ApplyOriginalMaterials();
+	VisualSMC = nullptr;
+	OriginalMaterials.Empty();
+	SetIsInit(false);
+	ClearDelegateBounds();
+	Super::InitReset();
+}
+
+// Clear all data of the individual
+void USLPerceivableIndividual::LoadReset()
+{
+	SetVisualMask("");
+	Super::LoadReset();
+}
+
+// Clear any bound delegates (called when init is reset)
+void USLPerceivableIndividual::ClearDelegateBounds()
+{
+	OnNewVisualMaskValue.Clear();
+}
+
 // Import visual mask from tag, true if new value is written
 bool USLPerceivableIndividual::ImportVisualMaskFromTag(bool bOverwrite)
 {
@@ -316,7 +341,7 @@ bool USLPerceivableIndividual::ImportCalibratedVisualMaskFromTag(bool bOverwrite
 // Apply color to the dynamic material
 bool USLPerceivableIndividual::ApplyVisualMaskColorToDynamicMaterial()
 {	
-	if (VisualMaskDynamicMaterial && HasVisualMask())
+	if (VisualMaskDynamicMaterial)
 	{
 		VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
 		return true;

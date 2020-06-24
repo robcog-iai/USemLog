@@ -40,14 +40,12 @@ public:
 	// Init asset references (bReset forces re-initialization)
 	virtual bool Init(bool bReset = false);
 
-	// Check if individual is initialized
-	bool IsInit() const { return bIsInit; };
-
 	// Load semantic data (bReset forces re-loading)
 	virtual bool Load(bool bReset = false, bool bTryImportFromTags = false);
 
-	// Check if semantic data is succesfully loaded
-	bool IsLoaded() const { return bIsLoaded; };
+	// Return states
+	FORCEINLINE bool IsInit() const { return bIsInit; };
+	FORCEINLINE bool IsLoaded() const { return bIsLoaded; };
 
 	// Save data to owners tag, true if any new value is written
 	virtual bool ExportToTag(bool bOverwrite = false);
@@ -87,36 +85,33 @@ public:
 	FORCEINLINE bool HasClass() const { return !Class.IsEmpty(); };
 
 protected:
-	// Set the init flag, broadcast on new value
-	void SetIsInit(bool bNewValue, bool bBroadcast = true);
+	// Clear all values of the individual
+	virtual void InitReset();
 
-	// Set the loaded flag, broadcast on new value
+	// Clear all data of the individual
+	virtual void LoadReset();
+
+	// Clear any bound delegates (called when init is reset)
+	virtual void ClearDelegateBounds();
+
+	// Set the state flags, can broadcast on new value
+	void SetIsInit(bool bNewValue, bool bBroadcast = true);
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
 
-	// Private init implementation, set the semantic owner reference
+private:
+	// States implementations, set references and data
 	bool InitImpl();
-
-	// Private load implementation
 	bool LoadImpl(bool bTryImportFromTags = true);
 
-private:
-	// Import id from tag, true if new value is written
+	// Specific imports from tag, true if new value is written
 	bool ImportIdFromTag(bool bOverwrite = false);
-
-	// Import class from tag, true if new value is written
 	bool ImportClassFromTag(bool bOverwrite = false);
 
 public:
-	// Called when the init status changes
+	// Public delegates
 	FSLIndividualInitChangeSignature OnInitChanged;
-
-	// Called when the init status changes
 	FSLIndividualInitChangeSignature OnLoadedChanged;
-
-	// Called when the id value
 	FSLIndividualNewIdSignature OnNewIdValue;
-
-	// Called when the class value
 	FSLIndividualNewClassSignature OnNewClassValue;
 
 protected:

@@ -5,9 +5,11 @@
 #include "Data/SLIndividualComponent.h"
 #include "Data/SLIndividualVisualInfoAssets.h"
 #include "Components/TextRenderComponent.h"
+#include "Components/SplineMeshComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Kismet/KismetMathLibrary.h" // FindLookAtRotation
 #if WITH_EDITOR
 #include "LevelEditorViewport.h"
@@ -32,18 +34,46 @@ USLIndividualVisualInfoComponent::USLIndividualVisualInfoComponent()
 	SecondLineTextSizeRatio = 0.8f;
 	ThirdLineTextSizeRatio = 0.8f;
 
-
 	static USLIndividualVisualInfoAssets* AssetsContainer = Cast<USLIndividualVisualInfoAssets>(StaticLoadObject(
 		USLIndividualVisualInfoAssets::StaticClass(), NULL, AssetContainerPath,
 		NULL, LOAD_None, NULL));
 
-	FirstText = CreateDefaultTextSubobject("FirstLine", AssetsContainer);
-	SecondText = CreateDefaultTextSubobject("SecondLine", AssetsContainer);
+	FirstText = CreateTextComponentSubobject("FirstText", AssetsContainer);
+	SecondText = CreateTextComponentSubobject("SecondText", AssetsContainer);
 	SecondText->SetTextRenderColor(FColor::Red);
-	ThirdText = CreateDefaultTextSubobject("ThirdLine", AssetsContainer);
+	ThirdText = CreateTextComponentSubobject("ThirdText", AssetsContainer);
 	ThirdText->SetTextRenderColor(FColor::White);
-}
 
+	//PartOfSplineMesh = CreateDefaultSubobject<USplineMeshComponent>("SplineMesh");
+	//PartOfSplineMesh->SetupAttachment(this);
+	//PartOfSplineMesh->SetMobility(EComponentMobility::Movable);
+	//PartOfSplineMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//PartOfSplineMesh->SetSplineUpDir(FVector::UpVector, false);
+	//PartOfSplineMesh->PrimaryComponentTick.bCanEverTick = false;
+	//PartOfSplineMesh->PostPhysicsComponentTick.bCanEverTick = false;
+	//PartOfSplineMesh->bCastDynamicShadow = false;
+	//PartOfSplineMesh->CastShadow = false;
+
+	//if (AssetsContainer)
+	//{
+	//	if (AssetsContainer->SplineMesh)
+	//	{
+	//		PartOfSplineMesh->SetStaticMesh(AssetsContainer->SplineMesh);
+	//	}
+
+	//	if (AssetsContainer->SplineMaterial)
+	//	{
+	//		PartOfSplineMesh->SetMaterial(0, AssetsContainer->SplineMaterial);
+	//		PartOfSplineMesh->SetMaterial(1, AssetsContainer->SplineMaterial);
+	//	}
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info compoonent asset container is no set.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+	//}
+
+	//PartOfSplineMesh->SetVisibility(true);
+}
 	
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
 void USLIndividualVisualInfoComponent::PostInitProperties()
@@ -312,6 +342,20 @@ bool USLIndividualVisualInfoComponent::InitImpl()
 		BindDelegates();
 		if (OwnerIndividualComponent->IsInit())
 		{
+			if (OwnerIndividualObj->IsPartOfAnotherIndividual())
+			{
+				static USLIndividualVisualInfoAssets* AssetsContainer = Cast<USLIndividualVisualInfoAssets>(StaticLoadObject(
+					USLIndividualVisualInfoAssets::StaticClass(), NULL, AssetContainerPath,
+					NULL, LOAD_None, NULL));
+				//PartOfSplineMesh = CreateSplineMeshComponent(AssetsContainer);
+				FVector StartLoc, StartTangent, EndTangent;
+				//if (PartOfSplineMesh && PartOfSplineMesh->IsValidLowLevel())
+				//{
+				//	PartOfSplineMesh->SetStartAndEnd(StartLoc, StartTangent,
+				//		OwnerIndividualObj->GetPartOfActor()->GetActorLocation(), EndTangent);
+
+				//}
+			}
 			ResizeText();
 			return true;
 		}
@@ -381,6 +425,7 @@ bool USLIndividualVisualInfoComponent::BindDelegates()
 		{
 			OwnerIndividualComponent->OnInitChanged.AddDynamic(
 				this, &USLIndividualVisualInfoComponent::OnOwnerIndividualComponentInitChanged);
+			
 		}
 		else
 		{
@@ -519,13 +564,14 @@ void USLIndividualVisualInfoComponent::ResetTextContent()
 }
 
 // Render text subobject creation helper
-UTextRenderComponent* USLIndividualVisualInfoComponent::CreateDefaultTextSubobject(const FString& DefaultName, USLIndividualVisualInfoAssets* Assets)
+UTextRenderComponent* USLIndividualVisualInfoComponent::CreateTextComponentSubobject(const FString& DefaultName, USLIndividualVisualInfoAssets* Assets)
 {
 	UTextRenderComponent* TRC = CreateDefaultSubobject<UTextRenderComponent>(*DefaultName);
 	TRC->SetHorizontalAlignment(EHTA_Center);
 	TRC->SetVerticalAlignment(EVRTA_TextBottom);
 	TRC->SetText(FText::FromString(DefaultName));
 	TRC->SetupAttachment(this);
+	TRC->PrimaryComponentTick.bCanEverTick = false;
 	if (Assets)
 	{
 		if (Assets->TextMaterialTranslucent)
@@ -541,6 +587,43 @@ UTextRenderComponent* USLIndividualVisualInfoComponent::CreateDefaultTextSubobje
 	return TRC;
 }
 
+// Create spline mesh component (can be called outside of constructor)
+USplineMeshComponent* USLIndividualVisualInfoComponent::CreateSplineMeshComponent(USLIndividualVisualInfoAssets* Assets)
+{
+	USplineMeshComponent* SplineMeshComp = NewObject<USplineMeshComponent>(this);	
+	SplineMeshComp->SetupAttachment(this);
+	SplineMeshComp->SetMobility(EComponentMobility::Movable);
+	SplineMeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SplineMeshComp->SetSplineUpDir(FVector::UpVector, false);
+	SplineMeshComp->PrimaryComponentTick.bCanEverTick = false;
+	SplineMeshComp->PostPhysicsComponentTick.bCanEverTick = false;
+	SplineMeshComp->bCastDynamicShadow = false;
+	SplineMeshComp->CastShadow = false;
+	
+	if (Assets)
+	{
+		if (Assets->SplineMesh)
+		{
+			SplineMeshComp->SetStaticMesh(Assets->SplineMesh);
+		}
+
+		if (Assets->SplineMaterial)
+		{
+			UMaterialInstanceDynamic* SplineMid = UMaterialInstanceDynamic::Create(Assets->SplineMaterial, this);
+			SplineMid->SetVectorParameterValue("Color", FLinearColor::Green);
+			SplineMeshComp->SetMaterial(0, SplineMid);
+			SplineMeshComp->SetMaterial(1, SplineMid);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info compoonent asset container is no set.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+	}
+
+	SplineMeshComp->SetVisibility(true);
+	SplineMeshComp->RegisterComponent();
+	return SplineMeshComp;
+}
 
 /* Delegate functions */
 // Called when owners init value has changed

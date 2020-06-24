@@ -26,13 +26,7 @@ public:
 
 	/* Meshes */
 	UPROPERTY(EditAnywhere, Category = "Mesh")
-	UStaticMesh* LineStartMesh;
-
-	UPROPERTY(EditAnywhere, Category = "Mesh")
-	UStaticMesh* LineMesh;
-
-	UPROPERTY(EditAnywhere, Category = "Mesh")
-	UStaticMesh* LineEndMesh;
+	UStaticMesh* SplineMesh;
 
 	/* Materials */
 	UPROPERTY(EditAnywhere, Category = "Material")
@@ -42,10 +36,7 @@ public:
 	UMaterialInterface* TextMaterialOpaque;
 
 	UPROPERTY(EditAnywhere, Category = "Material")
-	UMaterialInterface* LineMaterial;
-
-	UPROPERTY(EditAnywhere, Category = "Material")
-	UMaterialInterface* LineMaterialTranslucent;
+	UMaterialInterface* SplineMaterial;
 
 	/* Fonts */
 	UPROPERTY(EditAnywhere, Category = Font)
