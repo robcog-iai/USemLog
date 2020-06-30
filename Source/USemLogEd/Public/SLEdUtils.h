@@ -18,7 +18,7 @@ public:
 	static class ASLIndividualManager* GetExistingOrCreateNewIndividualManager(UWorld* World, bool bCreateNew = true);
 
 	// Get the vis info manager form the world, add new one if none are available
-	static class ASLIndividualVisualInfoManager* GetVisualInfoManager(UWorld* World, bool bCreateNew = true);
+	static class ASLIndividualVisualManager* GetVisualInfoManager(UWorld* World, bool bCreateNew = true);
 
 	// Remove all tag keys
 	static bool RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);

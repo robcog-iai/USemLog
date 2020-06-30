@@ -15,8 +15,8 @@
 #include "Editor/UnrealEdEngine.h"
 
 // SL
-#include "Data/SLIndividualManager.h"
-#include "Data/SLIndividualVisualInfoManager.h"
+#include "Individuals/SLIndividualManager.h"
+#include "Individuals/SLIndividualVisualManager.h"
 
 // UUtils
 #include "SLEdUtils.h"

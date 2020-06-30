@@ -8,8 +8,8 @@
 // SL
 #include "Editor/SLSemanticMapWriter.h"
 #include "SLManager.h"
-#include "Data/SLIndividualManager.h"
-#include "Data/SLIndividualVisualInfoManager.h"
+#include "Individuals/SLIndividualManager.h"
+#include "Individuals/SLIndividualVisualManager.h"
 
 // Utils
 #include "Utils/SLTagIO.h"
@@ -69,11 +69,11 @@ ASLIndividualManager* FSLEdUtils::GetExistingOrCreateNewIndividualManager(UWorld
 }
 
 // Get the vis info manager form the world, add new one if none are available
-ASLIndividualVisualInfoManager* FSLEdUtils::GetVisualInfoManager(UWorld* World, bool bCreateNew)
+ASLIndividualVisualManager* FSLEdUtils::GetVisualInfoManager(UWorld* World, bool bCreateNew)
 {
 	int32 ActNum = 0;
-	ASLIndividualVisualInfoManager* Manager = nullptr;
-	for (TActorIterator<ASLIndividualVisualInfoManager> ActItr(World); ActItr; ++ActItr)
+	ASLIndividualVisualManager* Manager = nullptr;
+	for (TActorIterator<ASLIndividualVisualManager> ActItr(World); ActItr; ++ActItr)
 	{
 		Manager = *ActItr;
 		ActNum++;
@@ -89,7 +89,7 @@ ASLIndividualVisualInfoManager* FSLEdUtils::GetVisualInfoManager(UWorld* World, 
 			*FString(__FUNCTION__), __LINE__);
 		FActorSpawnParameters Params;
 		//Params.Name = FName(TEXT("SL_IndividualVisualInfoManager"));
-		Manager = World->SpawnActor<ASLIndividualVisualInfoManager>(Params);		
+		Manager = World->SpawnActor<ASLIndividualVisualManager>(Params);		
 #if WITH_EDITOR
 		Manager->SetActorLabel(TEXT("SL_IndividualVisualInfoManager"));
 #endif // WITH_EDITOR

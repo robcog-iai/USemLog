@@ -141,7 +141,7 @@ private:
 	class ASLIndividualManager* IndividualManager;
 
 	// Provides visual functionalities over the individuals in the world
-	class ASLIndividualVisualInfoManager* VisualInfoManager;
+	class ASLIndividualVisualManager* VisualInfoManager;
 
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;
