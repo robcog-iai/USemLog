@@ -2,10 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLPerceivableIndividual.h"
-#include "UObject/ConstructorHelpers.h"
-#include "Materials/MaterialInstanceDynamic.h"
-#include "Engine/StaticMeshActor.h"
-#include "Components/StaticMeshComponent.h"
 
 // Utils
 #include "Utils/SLTagIO.h"
@@ -14,12 +10,9 @@
 USLPerceivableIndividual::USLPerceivableIndividual()
 {
 	VisualMaskMaterial = Cast<UMaterial>(StaticLoadObject(
-		UMaterial::StaticClass(), NULL, TEXT("Material'/USemLog/Individual/M_VisualIndividualMask.M_VisualIndividualMask'"),
+		UMaterial::StaticClass(), NULL, TEXT("Material'/USemLog/Individuals/M_VisualIndividualMask.M_VisualIndividualMask'"),
 		NULL, LOAD_None, NULL));
 
-	ParentActor = nullptr;
-	bIsInit = false;
-	bIsLoaded = false;
 	bIsMaskMaterialOn = false;
 }
 
@@ -28,13 +21,6 @@ void USLPerceivableIndividual::BeginDestroy()
 {
 	ApplyOriginalMaterials();
 	Super::BeginDestroy();
-}
-
-// Create and set the dynamic material, the owners visual component
-void USLPerceivableIndividual::PostInitProperties()
-{
-	Super::PostInitProperties();
-	Init();
 }
 
 // Set pointer to the semantic owner
@@ -119,48 +105,6 @@ bool USLPerceivableIndividual::ImportFromTag(bool bOverwrite)
 	return bNewValue;
 }
 
-// Apply visual mask material
-bool USLPerceivableIndividual::ApplyMaskMaterials(bool bReload)
-{
-	if (!IsInit())
-	{
-		return false;
-	}
-
-	if (!bIsMaskMaterialOn || bReload)
-	{
-		for (int32 MatIdx = 0; MatIdx < VisualSMC->GetNumMaterials(); ++MatIdx)
-		{
-			VisualSMC->SetMaterial(MatIdx, VisualMaskDynamicMaterial);
-		}
-		bIsMaskMaterialOn = true;
-		return true;
-	}
-	return false;
-}
-
-// Apply original materials
-bool USLPerceivableIndividual::ApplyOriginalMaterials()
-{
-	if (!IsInit())
-	{
-		return false;
-	}
-
-	if (bIsMaskMaterialOn)
-	{
-		int32 MatIdx = 0;
-		for (const auto& Mat : OriginalMaterials)
-		{
-			VisualSMC->SetMaterial(MatIdx, Mat);
-			++MatIdx;
-		}
-		bIsMaskMaterialOn = false;
-		return true;
-	}
-	return false;
-}
-
 // Toggle between the visual mask and the origina materials
 bool USLPerceivableIndividual::ToggleMaterials()
 {
@@ -213,13 +157,16 @@ void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool 
 // Private init implementation
 bool USLPerceivableIndividual::InitImpl()
 {
-	if (!VisualMaskMaterial)
+	if (!HasValidDynamicMaterial())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask material asset, init failed.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
+		if (!VisualMaskMaterial)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask material asset, init failed.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+			return false;
+		}
+		VisualMaskDynamicMaterial = UMaterialInstanceDynamic::Create(VisualMaskMaterial, this);
 	}
-	VisualMaskDynamicMaterial = UMaterialInstanceDynamic::Create(VisualMaskMaterial, this);
 
 	if (!VisualMaskDynamicMaterial)
 	{
@@ -228,27 +175,7 @@ bool USLPerceivableIndividual::InitImpl()
 		return false;
 	}
 
-	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(ParentActor))
-	{
-		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
-		{
-			VisualSMC = SMC;
-			OriginalMaterials = SMC->GetMaterials();
-			return true;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no StaticMeshComponent, this should not happen.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-			return false;
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s SemanticOwner is not a StaticMeshActor, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
+	return true;
 }
 
 // Private load implementation
@@ -282,7 +209,6 @@ void USLPerceivableIndividual::InitReset()
 {
 	LoadReset();
 	ApplyOriginalMaterials();
-	VisualSMC = nullptr;
 	OriginalMaterials.Empty();
 	SetIsInit(false);
 	ClearDelegateBounds();
@@ -292,7 +218,7 @@ void USLPerceivableIndividual::InitReset()
 // Clear all data of the individual
 void USLPerceivableIndividual::LoadReset()
 {
-	SetVisualMask("");
+	ClearVisualMask();
 	Super::LoadReset();
 }
 

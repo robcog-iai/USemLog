@@ -3,7 +3,9 @@
 
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/SLBaseIndividual.h"
-#include "Individuals/SLPerceivableIndividual.h"
+#include "Individuals/SLConstraintIndividual.h"
+#include "Individuals/SLRigidIndividual.h"
+#include "Individuals/SLSkyIndividual.h"
 #include "Individuals/SLSkeletalIndividual.h"
 
 #include "Individuals/SLIndividualComponent.h"
@@ -19,10 +21,32 @@
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
-#include "Vision/SLVisionCamera.h"
+#include "Vision/SLVirtualCameraView.h"
+
+#include "Atmosphere/AtmosphericFog.h"
 
 // Utils
 #include "Utils/SLUuid.h"
+
+// Get the individual component from the actor (nullptr if it does not exist)
+USLIndividualComponent* FSLIndividualUtils::GetIndividualComponent(AActor* Owner)
+{
+	if (UActorComponent* AC =Owner->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	{
+		return CastChecked<USLIndividualComponent>(AC);
+	}
+	return nullptr;
+}
+
+// Get the individual object from the actor (nullptr if it does not exist)
+USLBaseIndividual* FSLIndividualUtils::GetIndividualObject(AActor* Owner)
+{
+	if (USLIndividualComponent* IC = GetIndividualComponent(Owner))
+	{
+		return IC->GetIndividualObject();
+	}
+	return nullptr;
+}
 
 // Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* IndividualComponent, bool bDefaultToLabelName)
@@ -68,7 +92,7 @@ FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* Indiv
 			return FString();
 		}
 	}
-	else if (ASLVisionCamera* VCA = Cast<ASLVisionCamera>(CompOwner))
+	else if (ASLVirtualCameraView* VCA = Cast<ASLVirtualCameraView>(CompOwner))
 	{
 		static const FString TagType = "SemLog";
 		static const FString TagKey = "Class";
@@ -128,6 +152,10 @@ FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* Indiv
 		}
 		return ClassName;
 	}
+	else if (AAtmosphericFog* AAF = Cast<AAtmosphericFog>(CompOwner))
+	{
+		return "AtmosphericFog";
+	}
 	else if (bDefaultToLabelName)
 	{
 		return CompOwner->GetActorLabel();
@@ -140,6 +168,16 @@ FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* Indiv
 	}
 }
 
+// Check if actor supports individual components
+bool FSLIndividualUtils::CanHaveIndividualComponent(AActor* Actor)
+{
+	return Actor->IsA(AStaticMeshActor::StaticClass())
+		|| Actor->IsA(ASkeletalMeshActor::StaticClass())
+		|| Actor->IsA(APhysicsConstraintActor::StaticClass())
+		|| Actor->IsA(AAtmosphericFog::StaticClass())
+		|| Actor->IsA(ASLVirtualCameraView::StaticClass());
+}
+
 // Create default individual object depending on the owner type (returns nullptr if failed)
 UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner, USLBaseIndividual*& IndividualObject)
 {
@@ -148,12 +186,27 @@ UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner
 	// Set semantic individual type depending on owner
 	if (Owner->IsA(AStaticMeshActor::StaticClass()))
 	{
-		IndividualClass = USLPerceivableIndividual::StaticClass();
+		IndividualClass = USLRigidIndividual::StaticClass();
 		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
+	}
+	else if (Owner->IsA(APhysicsConstraintActor::StaticClass()))
+	{
+		IndividualClass = USLConstraintIndividual::StaticClass();
+		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
+	}
+	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
+	{
+		/*IndividualClass = USLConstraintIndividual::StaticClass();
+		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);*/
 	}
 	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
 	{
 		IndividualClass = USLSkeletalIndividual::StaticClass();
+		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
+	}
+	else if (Owner->IsA(AAtmosphericFog::StaticClass()))
+	{
+		IndividualClass = USLSkyIndividual::StaticClass();
 		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
 	}
 	else
@@ -186,6 +239,7 @@ bool FSLIndividualUtils::ConvertIndividualObject(USLBaseIndividual*& IndividualO
 	return false;
 }
 
+
 /* Id */
 // Write unique id to the actor
 bool FSLIndividualUtils::WriteId(USLIndividualComponent* IndividualComponent, bool bOverwrite)
@@ -212,7 +266,7 @@ bool FSLIndividualUtils::ClearId(USLIndividualComponent* IndividualComponent)
 	{
 		if (SI->HasId())
 		{
-			SI->SetId("");
+			SI->ClearId();
 			return true;
 		}
 	}
@@ -246,12 +300,13 @@ bool FSLIndividualUtils::ClearClass(USLIndividualComponent* IndividualComponent)
 	{
 		if (SI->HasClass())
 		{
-			SI->SetClass("");
+			SI->ClearClass();
 			return true;
 		}
 	}
 	return false;
 }
+
 
 /* Visual mask */
 // Write unique visual masks for all visual individuals in the world
@@ -307,7 +362,7 @@ bool FSLIndividualUtils::ClearVisualMask(USLIndividualComponent* IndividualCompo
 {
 	if (USLPerceivableIndividual* SI = IndividualComponent->GetCastedIndividualObject<USLPerceivableIndividual>())
 	{
-		SI->SetVisualMask("");
+		SI->ClearVisualMask();
 		return true;
 	}
 
@@ -318,20 +373,6 @@ bool FSLIndividualUtils::ClearVisualMask(USLIndividualComponent* IndividualCompo
 }
 
 /* Private helpers */
-// Check if actor supports individual components
-bool FSLIndividualUtils::SupportsIndividualComponents(AActor* Actor)
-{
-	if (Actor->IsA(AStaticMeshActor::StaticClass()))
-	{
-		return true;
-	}
-	else if (Actor->IsA(ASkeletalMeshActor::StaticClass()))
-	{
-		return true;
-	}
-	return false;
-}
-
 // Add visual mask
 bool FSLIndividualUtils::AddVisualMask(USLPerceivableIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite)
 {

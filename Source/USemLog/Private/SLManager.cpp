@@ -94,10 +94,10 @@ ASLManager::ASLManager()
 	// Data visualzer default values
 	bVisualizeData = false;
 	
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
-	SpriteScale = 0.5;
-#endif // WITH_EDITOR
+	SpriteScale = 0.45;
+#endif // WITH_EDITORONLY_DATA
 }
 
 // Sets default values

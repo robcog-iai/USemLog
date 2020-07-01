@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Editor/SLEditorToolkit.h"
-#include "SLVisionCamera.h"
+#include "SLVirtualCameraView.h"
 #include "SLSkeletalDataComponent.h"
 
 #include "EngineUtils.h"
@@ -86,7 +86,7 @@ void FSLEditorToolkit::WriteClassProperties(UWorld* World, bool bOverwrite)
 	}
 
 	/* Vision cameras */
-	for (TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
+	for (TActorIterator<ASLVirtualCameraView> ActItr(World); ActItr; ++ActItr)
 	{
 		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, GenerateVisionCameraClassName(*ActItr), bOverwrite);
 	}
@@ -181,7 +181,7 @@ void FSLEditorToolkit::WriteUniqueIdProperties(UWorld* World, bool bOverwrite)
 	}
 
 	/* Vision cameras */
-	for (TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
+	for (TActorIterator<ASLVirtualCameraView> ActItr(World); ActItr; ++ActItr)
 	{
 		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
 	}
@@ -246,7 +246,7 @@ void FSLEditorToolkit::CheckForVisionCameraClassNameDuplicates(UWorld* World)
 	const FString TagKey = "Class";
 	
 	TSet<FString> UsedClassNames;
-	for(TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
+	for(TActorIterator<ASLVirtualCameraView> ActItr(World); ActItr; ++ActItr)
 	{
 		FString ClassName = "";
 #if WITH_EDITOR
@@ -561,7 +561,7 @@ FString FSLEditorToolkit::GenerateConstraintClassName(APhysicsConstraintActor* A
 }
 
 // Generate class name for the vision camera
-FString FSLEditorToolkit::GenerateVisionCameraClassName(ASLVisionCamera* Actor, bool bDefaultToLabel)
+FString FSLEditorToolkit::GenerateVisionCameraClassName(ASLVirtualCameraView* Actor, bool bDefaultToLabel)
 {
 	const FString DefaultValue = "VisionCamera";
 	const FString TagType = "SemLog";

@@ -155,6 +155,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsLoaded : 1;
 
+	// True if the delegates have been bound (not persistent, like delegates)
+	bool bDelegatesBound;
+
 private:
 	/* Text */
 	// First render text line (e.g class)

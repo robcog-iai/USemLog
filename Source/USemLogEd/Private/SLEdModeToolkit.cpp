@@ -14,6 +14,9 @@
 #include "UnrealEdGlobals.h" // for GUnrealEd
 #include "Editor/UnrealEdEngine.h"
 
+
+#include "EngineUtils.h"
+
 // SL
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualVisualManager.h"
@@ -1626,6 +1629,23 @@ void FSLEdModeToolkit::DeselectComponentSelection() const
 // Print out info about uobjects in editor
 void FSLEdModeToolkit::LogObjectInfo(UWorld* World) const
 {
+	/* Iterate all objects */
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d **START** World objects list:"), *FString(__FUNCTION__), __LINE__);
+	//for (TObjectIterator<UObject> ObjectItr; ObjectItr; ++ObjectItr)
+	//{
+	//	UE_LOG(LogTemp, Log, TEXT("\t\t %s \t [%s]"), *ObjectItr->GetName(), *ObjectItr->StaticClass()->GetName());
+	//}
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d **END** World objects list.."), *FString(__FUNCTION__), __LINE__);
+
+	/* Iterate all actors */
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d **START** World actor list:"), *FString(__FUNCTION__), __LINE__);
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		UE_LOG(LogTemp, Log, TEXT("\t\t %s \t [%s]"), *ActItr->GetName(), *ActItr->GetArchetype()->StaticClass()->GetName());
+	}
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d **END** World actor list.."), *FString(__FUNCTION__), __LINE__);
+
+
 	int32 InWorldNum = 0;
 	int32 IsActorInWorldNum = 0;
 

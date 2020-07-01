@@ -3,16 +3,19 @@
 
 #include "Individuals/SLConstraintIndividual.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 // Utils
+#include "Individuals/SLIndividualUtils.h"
 #include "Utils/SLTagIO.h"
 
 // Ctor
 USLConstraintIndividual::USLConstraintIndividual()
 {
-	ParentActor = nullptr;
-	bIsInit = false;
-	bIsLoaded = false;
+	ConstraintActor1 = nullptr;
+	ConstraintIndividual1 = nullptr;
+	ConstraintActor2 = nullptr;
+	ConstraintIndividual2 = nullptr;
 }
 
 // Called before destroying the object.
@@ -95,72 +98,95 @@ bool USLConstraintIndividual::ImportFromTag(bool bOverwrite)
 // Private init implementation
 bool USLConstraintIndividual::InitImpl()
 {
-	if (HasValidParentActor())
+	if (HasValidConstaintEntities())
 	{
-		if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(ParentActor))
+		return true;
+	}
+
+	if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(ParentActor))
+	{
+		if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
 		{
-			
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s parent actor is not a physics constraint actor, init failed.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-			return false;
+			/* Actor and individual 1 */
+			if (PCC->ConstraintActor1)
+			{
+				ConstraintActor1 = PCC->ConstraintActor1;
+				if (USLBaseIndividual* BI1 = FSLIndividualUtils::GetIndividualObject(ConstraintActor1))
+				{
+					ConstraintIndividual1 = BI1;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s constraint components ConstraintActor1 does not have an individual, init failed.."),
+						*FString(__FUNCTION__), __LINE__, *GetFullName());
+					return false;
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s constraint components ConstraintActor1 not set, init failed.."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName());
+				return false;
+			}
+
+			/* Actor and individual 2 */
+			if (PCC->ConstraintActor2)
+			{
+				ConstraintActor2 = PCC->ConstraintActor2;
+				if (USLBaseIndividual* BI2 = FSLIndividualUtils::GetIndividualObject(ConstraintActor2))
+				{
+					ConstraintIndividual2 = BI2;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s constraint components ConstraintActor2 does not have an individual, init failed.."),
+						*FString(__FUNCTION__), __LINE__, *GetFullName());
+					return false;
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s constraint components ConstraintActor2 not set, init failed.."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName());
+				return false;
+			}
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no valid parent actor, init failed.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s parent actor is not a physics constraint actor, this should not happen, init failed.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return false;
 	}
-	return false;
+
+	return true;
 }
 
 // Private load implementation
 bool USLConstraintIndividual::LoadImpl(bool bTryImportFromTags)
-{
-	// bool bRetValue = true;
-
-	// if (!HasVisualMask())
-	// {
-		// if (bTryImportFromTags)
-		// {
-			// if (!ImportVisualMaskFromTag())
-			// {
-				// bRetValue = false;
-			// }
-		// }
-		// else
-		// {
-			// bRetValue = false;
-		// }
-	// }
-
-	// // Will be set to black if the visual mask is empty
-	// VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
-
-	// return bRetValue;
-	
-	return false;
+{	
+#if WITH_EDITORONLY_DATA
+	ParentActor->SpriteScale = 0.4;
+	ParentActor->MarkComponentsRenderStateDirty();
+#endif // WITH_EDITORONLY_DATA
+	return true;
 }
 
 // Clear all values of the individual
 void USLConstraintIndividual::InitReset()
 {
-	// LoadReset();
-	// ApplyOriginalMaterials();
-	// VisualSMC = nullptr;
-	// OriginalMaterials.Empty();
-	// SetIsInit(false);
-	// ClearDelegateBounds();
+	ConstraintActor1 = nullptr;
+	ConstraintActor2 = nullptr;
+	ConstraintIndividual1 = nullptr;
+	ConstraintIndividual2 = nullptr;
+	SetIsInit(false);
+	ClearDelegateBounds();
 	Super::InitReset();
 }
 
 // Clear all data of the individual
 void USLConstraintIndividual::LoadReset()
 {
-	// SetVisualMask("");
 	Super::LoadReset();
 }
 

@@ -11,6 +11,9 @@
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 
+#include "PhysicsEngine/PhysicsConstraintActor.h"
+#include "Vision/SLVirtualCameraView.h"
+
 // Sets default values
 ASLIndividualManager::ASLIndividualManager()
 {
@@ -662,7 +665,7 @@ bool ASLIndividualManager::HasIndividualComponent(AActor* Actor) const
 USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* Actor)
 {
 	// Check if the actor type is supported and there is no other existing component
-	if (CanHaveIndividualComponent(Actor) && !HasIndividualComponent(Actor))
+	if (FSLIndividualUtils::CanHaveIndividualComponent(Actor) && !HasIndividualComponent(Actor))
 	{
 		Actor->Modify();
 
@@ -714,20 +717,6 @@ USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* 
 		return NewComp;
 	}
 	return nullptr;
-}
-
-// Check if actor type is supported for creating an individual component
-bool ASLIndividualManager::CanHaveIndividualComponent(AActor* Actor)
-{
-	if (Actor->IsA(AStaticMeshActor::StaticClass()))
-	{
-		return true;
-	}
-	else if (Actor->IsA(ASkeletalMeshActor::StaticClass()))
-	{
-		return true;
-	}
-	return false;
 }
 
 // Remove individual component from owner

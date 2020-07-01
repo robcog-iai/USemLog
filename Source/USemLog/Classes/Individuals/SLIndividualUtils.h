@@ -69,8 +69,17 @@ struct FSLIndiviualType
 class USEMLOG_API FSLIndividualUtils
 {
 public:
+	// Get the individual component from the actor (nullptr if it does not exist)
+	static USLIndividualComponent* GetIndividualComponent(AActor* Owner);
+
+	// Get the individual object from the actor (nullptr if it does not exist)
+	static USLBaseIndividual* GetIndividualObject(AActor* Owner);
+
 	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
 	static FString GetIndividualClassName(USLIndividualComponent* IndividualComponent, bool bDefaultToLabelName = false);
+
+	// Check if actor supports individual components
+	static bool CanHaveIndividualComponent(AActor* Actor);
 
 	// Create default individual object depending on the owner type (returns nullptr if failed)
 	static UClass* CreateIndividualObject(UObject* Outer, AActor* Owner, class USLBaseIndividual*& OutIndividualObject);
@@ -108,9 +117,6 @@ public:
 	static bool ClearVisualMask(USLIndividualComponent* IndividualComponent);
 
 private:
-	// Check if actor supports individual components
-	static bool SupportsIndividualComponents(AActor* Actor);
-
 	//// Get casted individual from actor (nullptr if failed)
 	//template <typename ClassType>
 	//static ClassType* GetCastedIndividualObject(AActor* Actor);

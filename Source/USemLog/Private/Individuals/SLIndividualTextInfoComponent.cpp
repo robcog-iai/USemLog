@@ -29,6 +29,8 @@ USLIndividualTextInfoComponent::USLIndividualTextInfoComponent()
 	OwnerIndividualComponent = nullptr;
 	OwnerIndividualObj = nullptr;
 
+	bDelegatesBound = false;
+
 	TextSize = 5.f;
 	FirstLineTextSizeRatio = 1.f;
 	SecondLineTextSizeRatio = 0.8f;
@@ -57,7 +59,7 @@ void USLIndividualTextInfoComponent::OnRegister()
 	Super::OnRegister();
 
 	// Delegates need to be re-bound after a level load
-	if (IsInit())
+	if (IsInit() && !bDelegatesBound)
 	{
 		BindDelegates();
 	}
@@ -467,6 +469,7 @@ bool USLIndividualTextInfoComponent::BindDelegates()
 			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 		bRetVal = false;
 	}
+	bDelegatesBound = bRetVal;
 	return bRetVal;
 }
 

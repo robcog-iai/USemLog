@@ -1,12 +1,12 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Vision/SLVisionCamera.h"
+#include "Vision/SLVirtualCameraView.h"
 #include "Camera/CameraComponent.h"
 #include "Tags.h"
 
 // Ctor
-ASLVisionCamera::ASLVisionCamera()
+ASLVirtualCameraView::ASLVirtualCameraView()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -22,13 +22,13 @@ ASLVisionCamera::ASLVisionCamera()
 }
 
 // Called when the game starts or when spawned
-void ASLVisionCamera::BeginPlay()
+void ASLVirtualCameraView::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
 // Called every frame
-void ASLVisionCamera::Tick(float DeltaTime)
+void ASLVirtualCameraView::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] [%s] Loc= \t %s"),
@@ -36,7 +36,7 @@ void ASLVisionCamera::Tick(float DeltaTime)
 }
 
 // Get the semantic class name of the virtual camera
-FString ASLVisionCamera::GetClassName()
+FString ASLVirtualCameraView::GetClassName()
 {
 	if(ClassName.IsEmpty())
 	{
@@ -46,7 +46,7 @@ FString ASLVisionCamera::GetClassName()
 }
 
 // Get the unique id of the virtual camera
-FString ASLVisionCamera::GetId()
+FString ASLVirtualCameraView::GetId()
 {
 	if (Id.IsEmpty())
 	{
@@ -57,7 +57,7 @@ FString ASLVisionCamera::GetId()
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
-void ASLVisionCamera::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void ASLVirtualCameraView::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -67,7 +67,7 @@ void ASLVisionCamera::PostEditChangeProperty(struct FPropertyChangedEvent& Prope
 	FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != NULL) ?
 		PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(ASLVisionCamera, bResetTransformButtton))
+	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(ASLVirtualCameraView, bResetTransformButtton))
 	{
 		SetActorRelativeTransform(FTransform::Identity);
 		bResetTransformButtton = false;

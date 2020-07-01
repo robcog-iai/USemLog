@@ -11,7 +11,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(ClassGroup = SL)
 class USEMLOG_API USLConstraintIndividual : public USLBaseIndividual
 {
 	GENERATED_BODY()
@@ -40,6 +40,27 @@ public:
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("ConstraintIndividual"); };
+
+    // Get the constraint actors
+    AActor* GetConstraintActor1() const { return ConstraintActor1; };
+    AActor* GetConstraintActor2() const { return ConstraintActor2; };
+    
+    // Get the constraint individuals
+    USLBaseIndividual* GetConstraintIndividual1() const { return ConstraintIndividual1; };
+    USLBaseIndividual* GetConstraintIndividual2() const { return ConstraintIndividual2; };
+
+    // Check if the constraint actors are valid
+    bool HasValidConstraintActor1() const { return ConstraintActor1 && ConstraintActor1->IsValidLowLevel() && !ConstraintActor1->IsPendingKill(); };
+    bool HasValidConstraintActor2() const { return ConstraintActor2 && ConstraintActor2->IsValidLowLevel() && !ConstraintActor2->IsPendingKill(); };
+    bool HasValidConstraintActors() const { return HasValidConstraintActor1() && HasValidConstraintActor2(); };
+
+    // Check if the individuals are valid
+    bool HasValidConstraintIndividual1() const { return ConstraintIndividual1 && ConstraintIndividual1->IsValidLowLevel() && !ConstraintIndividual1->IsPendingKill(); };
+    bool HasValidConstraintIndividual2() const { return ConstraintIndividual2 && ConstraintIndividual2->IsValidLowLevel() && !ConstraintIndividual2->IsPendingKill(); };
+    bool HasValidConstraintIndividuals() const { return HasValidConstraintIndividual1() && HasValidConstraintIndividual2(); };
+
+    // Check if all constraint entities are valid
+    bool HasValidConstaintEntities() const { return HasValidConstraintActors() && HasValidConstraintIndividuals(); };
 
 protected:
     // Clear all values of the individual

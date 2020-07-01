@@ -58,7 +58,7 @@ private:
 	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
 	bool GetEntitiesData(bson_iter_t* doc,
 		TMap<AStaticMeshActor*, FTransform>& OutEntityPoses,
-		TMap<ASLVisionCamera*, FTransform>& OutVirtualCameraPoses) const;
+		TMap<ASLVirtualCameraView*, FTransform>& OutVirtualCameraPoses) const;
 
 	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
 	bool GetSkeletalEntitiesData(bson_iter_t* doc,

@@ -2,31 +2,16 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLRigidIndividual.h"
-#include "UObject/ConstructorHelpers.h"
-#include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/StaticMeshActor.h"
-#include "Components/StaticMeshComponent.h"
-
-// Utils
-#include "Utils/SLTagIO.h"
 
 // Ctor
 USLRigidIndividual::USLRigidIndividual()
 {
-	VisualMaskMaterial = Cast<UMaterial>(StaticLoadObject(
-		UMaterial::StaticClass(), NULL, TEXT("Material'/USemLog/Individual/M_VisualIndividualMask.M_VisualIndividualMask'"),
-		NULL, LOAD_None, NULL));
-
-	ParentActor = nullptr;
-	bIsInit = false;
-	bIsLoaded = false;
-	bIsMaskMaterialOn = false;
 }
 
 // Called before destroying the object.
 void USLRigidIndividual::BeginDestroy()
 {
-	ApplyOriginalMaterials();
 	Super::BeginDestroy();
 }
 
@@ -81,43 +66,7 @@ bool USLRigidIndividual::Load(bool bReset, bool bTryImportFromTags)
 	return IsLoaded();
 }
 
-// Save data to owners tag
-bool USLRigidIndividual::ExportToTag(bool bOverwrite)
-{
-	bool bMarkDirty = false;
-	bMarkDirty = Super::ExportToTag(bOverwrite) || bMarkDirty;
-	if (!VisualMask.IsEmpty())
-	{
-		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "VisualMask", VisualMask, bOverwrite) || bMarkDirty;
-	}
-	if (!CalibratedVisualMask.IsEmpty())
-	{
-		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite) || bMarkDirty;
-	}
-	return bMarkDirty;
-}
 
-// Load data from owners tag
-bool USLRigidIndividual::ImportFromTag(bool bOverwrite)
-{
-	bool bNewValue = false;
-	if (Super::ImportFromTag(bOverwrite))
-	{
-		bNewValue = true;
-	}
-
-	if (ImportVisualMaskFromTag(bOverwrite))
-	{
-		bNewValue = true;
-	}
-
-	if (ImportCalibratedVisualMaskFromTag(bOverwrite))
-	{
-		bNewValue = true;
-	}
-
-	return bNewValue;
-}
 
 // Apply visual mask material
 bool USLRigidIndividual::ApplyMaskMaterials(bool bReload)
@@ -129,10 +78,10 @@ bool USLRigidIndividual::ApplyMaskMaterials(bool bReload)
 
 	if (!bIsMaskMaterialOn || bReload)
 	{
-		//for (int32 MatIdx = 0; MatIdx < VisualSMC->GetNumMaterials(); ++MatIdx)
-		//{
-		//	VisualSMC->SetMaterial(MatIdx, VisualMaskDynamicMaterial);
-		//}
+		for (int32 MatIdx = 0; MatIdx < VisualMeshComponent->GetNumMaterials(); ++MatIdx)
+		{
+			VisualMeshComponent->SetMaterial(MatIdx, VisualMaskDynamicMaterial);
+		}
 		bIsMaskMaterialOn = true;
 		return true;
 	}
@@ -152,7 +101,7 @@ bool USLRigidIndividual::ApplyOriginalMaterials()
 		int32 MatIdx = 0;
 		for (const auto& Mat : OriginalMaterials)
 		{
-			//VisualSMC->SetMaterial(MatIdx, Mat);
+			VisualMeshComponent->SetMaterial(MatIdx, Mat);
 			++MatIdx;
 		}
 		bIsMaskMaterialOn = false;
@@ -161,191 +110,54 @@ bool USLRigidIndividual::ApplyOriginalMaterials()
 	return false;
 }
 
-// Toggle between the visual mask and the origina materials
-bool USLRigidIndividual::ToggleMaterials()
-{
-	if (bIsMaskMaterialOn)
-	{
-		return ApplyOriginalMaterials();
-	}
-	else
-	{
-		return ApplyMaskMaterials();
-	}
-}
-
-// Set  visual mask
-void USLRigidIndividual::SetVisualMask(const FString& NewVisualMask, bool bApplyNewMaterial, bool bClearCalibratedVisualMask)
-{
-	// Clear the calibrated color in case of a new visual mask value
-	if (!VisualMask.Equals(NewVisualMask)) 
-	{		
-		VisualMask = NewVisualMask;
-		OnNewVisualMaskValue.Broadcast(this, VisualMask);
-
-		if (!HasVisualMask() && IsLoaded())
-		{
-			SetIsLoaded(false);
-		}
-		else if (HasVisualMask() && !IsLoaded())
-		{
-			// Check if the individual can now be loaded
-			Load(false, false);
-		}
-
-		// The calibrated value will be obsolete for a new visual mask
-		if (bClearCalibratedVisualMask)
-		{
-			SetCalibratedVisualMask("");
-		}
-
-		// Update the dynamic material
-		ApplyVisualMaskColorToDynamicMaterial();
-
-		// If the mask visualization is active, dynamically update the colors
-		if (bIsMaskMaterialOn && bApplyNewMaterial)
-		{
-			ApplyMaskMaterials(true);
-		}
-	}
-}
-
 // Private init implementation
 bool USLRigidIndividual::InitImpl()
 {
-	if (!VisualMaskMaterial)
+	if (!HasValidVisualMesh())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask material asset, init failed.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
-	VisualMaskDynamicMaterial = UMaterialInstanceDynamic::Create(VisualMaskMaterial, this);
-
-	if (!VisualMaskDynamicMaterial)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no VisualMaskDynamicMaterial, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
-
-	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(ParentActor))
-	{
-		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
+		if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(ParentActor))
 		{
-			//VisualSMC = SMC;
-			OriginalMaterials = SMC->GetMaterials();
-			return true;
+			if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
+			{
+				VisualMeshComponent = SMC;
+				OriginalMaterials = SMC->GetMaterials();
+				return true;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no StaticMeshComponent, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName());
+				return false;
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no StaticMeshComponent, this should not happen.."),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s SemanticOwner is not a StaticMeshActor, this should not happen.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			return false;
 		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s SemanticOwner is not a StaticMeshActor, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
+	return false;
 }
 
 // Private load implementation
 bool USLRigidIndividual::LoadImpl(bool bTryImportFromTags)
 {
-	bool bRetValue = true;
-
-	if (!HasVisualMask())
-	{
-		if (bTryImportFromTags)
-		{
-			if (!ImportVisualMaskFromTag())
-			{
-				bRetValue = false;
-			}
-		}
-		else
-		{
-			bRetValue = false;
-		}
-	}
-
-	// Will be set to black if the visual mask is empty
-	VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
-
-	return bRetValue;
+	return true;
 }
 
 // Clear all values of the individual
 void USLRigidIndividual::InitReset()
 {
 	LoadReset();
-	ApplyOriginalMaterials();
-	//VisualSMC = nullptr;
-	OriginalMaterials.Empty();
+	Super::InitReset();
+	VisualMeshComponent = nullptr;
 	SetIsInit(false);
 	ClearDelegateBounds();
-	Super::InitReset();
 }
 
 // Clear all data of the individual
 void USLRigidIndividual::LoadReset()
 {
-	SetVisualMask("");
 	Super::LoadReset();
 }
-
-// Clear any bound delegates (called when init is reset)
-void USLRigidIndividual::ClearDelegateBounds()
-{
-	OnNewVisualMaskValue.Clear();
-}
-
-// Import visual mask from tag, true if new value is written
-bool USLRigidIndividual::ImportVisualMaskFromTag(bool bOverwrite)
-{
-	bool bNewValue = false;
-	if (!HasVisualMask() || bOverwrite)
-	{
-		const FString PrevVal = VisualMask;
-		SetVisualMask(FSLTagIO::GetValue(ParentActor, TagTypeConst, "VisualMask"));
-		bNewValue = !VisualMask.Equals(PrevVal);
-		//if (!HasVisualMask())
-		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d No VisualMask value could be imported from %s's tag.."),
-		//		*FString(__FUNCTION__), __LINE__, *GetFullName());
-		//}
-	}
-	return bNewValue;
-}
-
-// Import calibrated visual mask from tag, true if new value is written
-bool USLRigidIndividual::ImportCalibratedVisualMaskFromTag(bool bOverwrite)
-{
-	bool bNewValue = false;
-	if (!HasCalibratedVisualMask() || bOverwrite)
-	{
-		const FString PrevVal = CalibratedVisualMask;
-		SetCalibratedVisualMask(FSLTagIO::GetValue(ParentActor, TagTypeConst, "CalibratedVisualMask"));
-		bNewValue = !CalibratedVisualMask.Equals(PrevVal);
-		if (!HasCalibratedVisualMask())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d No CalibratedVisualMask value could be imported from %s's tag.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-		}
-	}
-	return bNewValue;
-}
-
-// Apply color to the dynamic material
-bool USLRigidIndividual::ApplyVisualMaskColorToDynamicMaterial()
-{	
-	if (VisualMaskDynamicMaterial)
-	{
-		VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
-		return true;
-	}
-	return false;
-}
-

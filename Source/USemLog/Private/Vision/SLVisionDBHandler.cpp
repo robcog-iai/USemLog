@@ -628,7 +628,7 @@ void FSLVisionDBHandler::DropPreviousEntries(const FString& DBName, const FStrin
 // Get the entities data out of the bson iterator
 bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc,
 	TMap<AStaticMeshActor*, FTransform>& OutEntityPoses,
-	TMap<ASLVisionCamera*, FTransform>& OutVirtualCameraPoses) const
+	TMap<ASLVirtualCameraView*, FTransform>& OutVirtualCameraPoses) const
 {
 	// Iterate entities
 	if (bson_iter_find(doc, "entities"))
@@ -688,7 +688,7 @@ bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc,
 					OutEntityPoses.Emplace(SMA, FTransform(Quat, Loc));
 #endif // SL_WITH_ROS_CONVERSIONS
 				}
-				else if (ASLVisionCamera* VCA = FSLEntitiesManager::GetInstance()->GetVisionCameraActor(Id))
+				else if (ASLVirtualCameraView* VCA = FSLEntitiesManager::GetInstance()->GetVisionCameraActor(Id))
 				{					
 #if SL_WITH_ROS_CONVERSIONS
 					OutVirtualCameraPoses.Emplace(VCA, FConversions::ROSToU(FTransform(Quat, Loc)));

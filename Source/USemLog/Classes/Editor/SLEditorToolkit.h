@@ -8,7 +8,7 @@
 
 // Forward declaration
 class APhysicsConstraintActor;
-class ASLVisionCamera;
+class ASLVirtualCameraView;
 
 /**
  * Helper functions of the editor functionalities
@@ -53,7 +53,7 @@ private:
 	static FString GenerateConstraintClassName(APhysicsConstraintActor* Actor);
 
 	// Generate class name for the vision camera
-	static FString GenerateVisionCameraClassName(ASLVisionCamera* Actor, bool bDefaultToLabel = false);
+	static FString GenerateVisionCameraClassName(ASLVirtualCameraView* Actor, bool bDefaultToLabel = false);
 	
 	// Write tag changes to editor counterpart actor
 	static bool WritePairToEditorCounterpart(AActor* Actor, const FString& TagType, const FString& TagKey,

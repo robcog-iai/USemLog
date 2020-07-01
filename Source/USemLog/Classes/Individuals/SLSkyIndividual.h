@@ -6,20 +6,19 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Individuals/SLPerceivableIndividual.h"
-#include "Components/StaticMeshComponent.h"
-#include "SLRigidIndividual.generated.h"
+#include "SLSkyIndividual.generated.h"
 
 /**
  * 
  */
 UCLASS(ClassGroup = SL)
-class USEMLOG_API USLRigidIndividual : public USLPerceivableIndividual
+class USEMLOG_API USLSkyIndividual : public USLPerceivableIndividual
 {
 	GENERATED_BODY()
 
 public:
     // Ctor
-    USLRigidIndividual();
+    USLSkyIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
@@ -34,7 +33,7 @@ public:
     virtual bool Load(bool bReset = false, bool bTryImportFromTags = false);
 
     // Get the type name as string
-    virtual FString GetTypeName() const override { return FString("RigidIndividual"); };
+    virtual FString GetTypeName() const override { return FString("SkyIndividual"); };
 
     /* Begin Perceivable individual interface */
     // Apply visual mask material
@@ -55,12 +54,4 @@ private:
     // States implementations, set references and data
     bool InitImpl();
     bool LoadImpl(bool bTryImportFromTags = true);
-
-    // Check if the static mesh component is set
-    bool HasValidVisualMesh() const { return VisualMeshComponent && VisualMeshComponent->IsValidLowLevel() && !VisualMeshComponent->IsPendingKill(); }
-
-private:
-    // The visual component of the owner
-    UPROPERTY()
-    UStaticMeshComponent* VisualMeshComponent;
 };

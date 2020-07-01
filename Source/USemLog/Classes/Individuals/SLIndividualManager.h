@@ -95,9 +95,6 @@ private:
 	// Create and add new individual component
 	USLIndividualComponent* AddNewIndividualComponent(AActor* Actor);
 
-	// Check if actor type is supported for creating an individual component
-	bool CanHaveIndividualComponent(AActor* Actor);
-
 	// Remove individual component from owner
 	void DestroyIndividualComponent(USLIndividualComponent* Component);
 

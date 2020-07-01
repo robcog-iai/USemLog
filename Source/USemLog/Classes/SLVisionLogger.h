@@ -18,7 +18,7 @@
 
 // Forward declarations
 class UGameViewportClient;
-class ASLVisionCamera;
+class ASLVirtualCameraView;
 class USLSkeletalDataComponent;
 
 /**
@@ -197,7 +197,7 @@ private:
 	FDelegateHandle ScreenshotCallbackHandle;
 
 	// Array of the virtual cameras
-	TArray<ASLVisionCamera*> VirtualCameras;
+	TArray<ASLVirtualCameraView*> VirtualCameras;
 	
 	// View modes
 	TArray<ESLVisionViewMode> ViewModes;

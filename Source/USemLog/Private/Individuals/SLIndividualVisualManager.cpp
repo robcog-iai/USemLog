@@ -101,7 +101,7 @@ int32 ASLIndividualVisualManager::Init(bool bReset)
 		{
 			for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 			{
-				if (USLIndividualTextInfoComponent* IC = GetInfoComponent(*ActItr))
+				if (USLIndividualTextInfoComponent* IC = GetTextInfoComponent(*ActItr))
 				{
 					if (IC->IsInit() || IC->Init())
 					{
@@ -146,7 +146,7 @@ int32 ASLIndividualVisualManager::AddVisualInfoComponents()
 	{
 		for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 		{
-			if (USLIndividualTextInfoComponent* IC = AddNewInfoComponent(*ActItr))
+			if (USLIndividualTextInfoComponent* IC = AddNewTextInfoComponent(*ActItr))
 			{
 				if (RegisterInfoComponent(IC))
 				{
@@ -174,7 +174,7 @@ int32 ASLIndividualVisualManager::AddVisualInfoComponents(const TArray<AActor*>&
 	int32 Num = 0;
 	for (const auto& Act : Actors)
 	{
-		if (USLIndividualTextInfoComponent* IC = AddNewInfoComponent(Act))
+		if (USLIndividualTextInfoComponent* IC = AddNewTextInfoComponent(Act))
 		{
 			if (RegisterInfoComponent(IC))
 			{
@@ -369,6 +369,7 @@ int32 ASLIndividualVisualManager::PointToCamera(const TArray<AActor*>& Actors)
 	return Num;
 }
 
+// Enable disable tick
 void ASLIndividualVisualManager::ToggleTickUpdate()
 {
 	SetActorTickEnabled(!IsActorTickEnabled());
@@ -376,7 +377,7 @@ void ASLIndividualVisualManager::ToggleTickUpdate()
 }
 
 // Find the individual component of the actor, return nullptr if none found
-USLIndividualTextInfoComponent* ASLIndividualVisualManager::GetInfoComponent(AActor* Actor) const
+USLIndividualTextInfoComponent* ASLIndividualVisualManager::GetTextInfoComponent(AActor* Actor) const
 {
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualTextInfoComponent::StaticClass()))
 	{
@@ -389,7 +390,7 @@ USLIndividualTextInfoComponent* ASLIndividualVisualManager::GetInfoComponent(AAc
 }
 
 // Create and add new individual component to actor
-USLIndividualTextInfoComponent* ASLIndividualVisualManager::AddNewInfoComponent(AActor* Actor)
+USLIndividualTextInfoComponent* ASLIndividualVisualManager::AddNewTextInfoComponent(AActor* Actor)
 {
 	// Make sure actor does not have an info component already, and that it has an individual component
 	if (!HasInfoComponent(Actor) && HasIndividualComponentSibling(Actor))
@@ -423,6 +424,7 @@ USLIndividualTextInfoComponent* ASLIndividualVisualManager::AddNewInfoComponent(
 
 		//NewComp->OnComponentCreated();
 		NewComp->RegisterComponent();
+
 
 		// Register any new components that may have been created during construction of the instanced component, but were not explicitly registered.
 		TInlineComponentArray<UActorComponent*> PostInstanceComponents;

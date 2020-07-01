@@ -70,10 +70,10 @@ public:
 
 private:
 	// Find the text component of the actor, return nullptr if none found
-	USLIndividualTextInfoComponent* GetInfoComponent(AActor* Actor) const;
+	USLIndividualTextInfoComponent* GetTextInfoComponent(AActor* Actor) const;
 
 	// Create and add new individual component to actor
-	USLIndividualTextInfoComponent* AddNewInfoComponent(AActor* Actor);
+	USLIndividualTextInfoComponent* AddNewTextInfoComponent(AActor* Actor);
 
 	// Check if actor already has an info component
 	bool HasInfoComponent(AActor* Actor) const;

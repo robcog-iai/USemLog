@@ -30,7 +30,7 @@ struct FSLBoneIndividual
  * 
  */
 UCLASS()
-class USEMLOG_API USLSkeletalIndividual : public USLPerceivableIndividual
+class USEMLOG_API USLSkeletalIndividual : public /*USLPerceivableIndividual*/ USLBaseIndividual
 {
 	GENERATED_BODY()
 

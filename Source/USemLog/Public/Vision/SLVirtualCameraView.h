@@ -5,18 +5,18 @@
 
 #include "CoreMinimal.h"
 #include "Camera/CameraActor.h"
-#include "SLVisionCamera.generated.h"
+#include "SLVirtualCameraView.generated.h"
 
 /**
  * Virtual camera logging the transformations of the cameras that need to re-render the scene
  */
 UCLASS(ClassGroup = (SL), DisplayName = "SL Vision Camera")
-class USEMLOG_API ASLVisionCamera : public ACameraActor
+class USEMLOG_API ASLVirtualCameraView : public ACameraActor
 {
 	GENERATED_BODY()
 
 	// Sets default values for this actor's properties
-	ASLVisionCamera();
+	ASLVirtualCameraView();
 
 protected:	
 	// Called when the game starts or when spawned

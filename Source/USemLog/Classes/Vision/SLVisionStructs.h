@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 #include "Engine/StaticMeshActor.h"
 #include "Vision/SLVisionPoseableMeshActor.h"
-#include "Vision/SLVisionCamera.h"
+#include "Vision/SLVirtualCameraView.h"
 
 /**
 * View modes
@@ -73,7 +73,7 @@ struct FSLVisionFrame
 	TMap<AStaticMeshActor*, FTransform> ActorPoses;
 
 	// Virtual camera poses
-	TMap<ASLVisionCamera*, FTransform> VisionCameraPoses;
+	TMap<ASLVirtualCameraView*, FTransform> VisionCameraPoses;
 
 	// Skeletal (poseable) meshes bone transformation
 	TMap<ASLVisionPoseableMeshActor*, TMap<FName, FTransform>> SkeletalPoses;

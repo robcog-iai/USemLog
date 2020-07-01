@@ -14,6 +14,8 @@ USLIndividualComponent::USLIndividualComponent()
 	bIsInit = false;
 	bIsLoaded = false;
 	IndividualObj = nullptr;
+
+	bDelegatesBound = false;
 }
 
 // Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
@@ -22,7 +24,7 @@ void USLIndividualComponent::OnRegister()
 	Super::OnRegister();
 
 	// Re-bind delegates if the init state 
-	if (IsInit())
+	if (IsInit() && !bDelegatesBound)
 	{
 		BindDelegates();
 	}
@@ -57,7 +59,7 @@ void USLIndividualComponent::BeginDestroy()
 
 	OnDestroyed.Broadcast(this);
 
-	if (HasIndividual())
+	if (HasValidIndividual())
 	{
 		IndividualObj->ConditionalBeginDestroy();
 	}
@@ -174,7 +176,7 @@ void USLIndividualComponent::SetIsLoaded(bool bNewValue, bool bBroadcast)
 // Create individual if not created and forward init call
 bool USLIndividualComponent::InitImpl(bool bReset)
 {
-	if (HasIndividual() || CreateIndividual())
+	if (HasValidIndividual() || CreateIndividual())
 	{
 		return IndividualObj->Init(bReset);
 	}
@@ -186,7 +188,7 @@ bool USLIndividualComponent::InitImpl(bool bReset)
 // Forward the laod call to the individual object
 bool USLIndividualComponent::LoadImpl(bool bReset, bool bTryImportFromTags)
 {
-	if (HasIndividual())
+	if (HasValidIndividual())
 	{
 		return IndividualObj->Load(bReset, bTryImportFromTags);
 	}
@@ -198,7 +200,7 @@ bool USLIndividualComponent::LoadImpl(bool bReset, bool bTryImportFromTags)
 // Sync states with the individual
 bool USLIndividualComponent::BindDelegates()
 {
-	if (HasIndividual())
+	if (HasValidIndividual())
 	{
 		// Bind init change delegate
 		if (!IndividualObj->OnInitChanged.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualInitChange))
@@ -207,8 +209,8 @@ bool USLIndividualComponent::BindDelegates()
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on init delegate is already bound, this should not happen.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on init delegate is already bound, this should not happen.."),
+			//	*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 		}
 
 		// Bind load change delegate
@@ -218,11 +220,13 @@ bool USLIndividualComponent::BindDelegates()
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on loaded delegate is already bound, this should not happen.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on loaded delegate is already bound, this should not happen.."),
+			//	*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 		}
+		bDelegatesBound = true;
 		return true;
 	}
+	bDelegatesBound = false;
 	return false;
 }
 
@@ -231,7 +235,7 @@ bool USLIndividualComponent::BindDelegates()
 // Create the semantic individual
 bool USLIndividualComponent::CreateIndividual()
 {
-	if (HasIndividual())
+	if (HasValidIndividual())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic individual already exists, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__);
@@ -239,7 +243,7 @@ bool USLIndividualComponent::CreateIndividual()
 	}
 
 	// Set semantic individual type depending on owner
-	if (UClass* IndividualCls = FSLIndividualUtils::CreateIndividualObject(this, GetOwner(), IndividualObj))
+	if (FSLIndividualUtils::CreateIndividualObject(this, GetOwner(), IndividualObj))
 	{	
 		// Listen to updates to the individual
 		BindDelegates();
@@ -247,7 +251,7 @@ bool USLIndividualComponent::CreateIndividual()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component has an unsuported type, self-destruction commenced.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not create an individual object, component will self destruct.."),
 			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 		// Unknown individual type, destroy self
 		ConditionalBeginDestroy();

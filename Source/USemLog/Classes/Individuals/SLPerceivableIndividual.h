@@ -6,15 +6,16 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Individuals/SLBaseIndividual.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "SLPerceivableIndividual.generated.h"
 
 // Notify every time the visual mask changes
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewVisualMaskSignature, USLBaseIndividual*, Individual, FString, NewVisualMask);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewVisualMaskSignature, USLPerceivableIndividual*, PerceivableIndividual, FString, NewVisualMask);
 
 /**
  * 
  */
-UCLASS()
+UCLASS(ClassGroup = SL, abstract)
 class USEMLOG_API USLPerceivableIndividual : public USLBaseIndividual
 {
 	GENERATED_BODY()
@@ -26,8 +27,8 @@ public:
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
-    // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-    virtual void PostInitProperties() override;
+    //// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+    //virtual void PostInitProperties() override;
 
     // Init asset references (bForced forces re-initialization)
     virtual bool Init(bool bReset = false);
@@ -43,23 +44,27 @@ public:
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("PerceivableIndividual"); };
-
+    
+    /* Begin Perceivable individual interface */
     // Apply visual mask material
-    bool ApplyMaskMaterials(bool bReload = false);
+    virtual bool ApplyMaskMaterials(bool bReload = false) { return false; };
 
     // Apply original materials
-    bool ApplyOriginalMaterials();
+    virtual bool ApplyOriginalMaterials() { return false; };
+    /* End Perceivable individual interface */
 
     // Toggle between the visual mask and the origina materials
     bool ToggleMaterials();
-    
+
     /* Visual mask */
     void SetVisualMask(const FString& NewVisualMask, bool bApplyNewMaterial = true, bool bClearCalibratedVisualMask = true);
+    void ClearVisualMask() { SetVisualMask(""); };
     FString GetVisualMask() const { return VisualMask; };
     bool HasVisualMask() const { return !VisualMask.IsEmpty(); };
 
     /* Calibrated visual mask */
     void SetCalibratedVisualMask(const FString& NewCalibratedVisualMask) { CalibratedVisualMask = NewCalibratedVisualMask; };
+    void ClearCalibratedVisualMask() { SetCalibratedVisualMask(""); };
     FString GetCalibratedVisualMask() const { return CalibratedVisualMask; };
     bool HasCalibratedVisualMask() const { return !CalibratedVisualMask.IsEmpty(); };
 
@@ -84,6 +89,12 @@ private:
 
     // Apply color to the dynamic material
     bool ApplyVisualMaskColorToDynamicMaterial();
+
+    // Check if the dynmic material is valid
+    bool HasValidDynamicMaterial() const 
+    {
+        return VisualMaskDynamicMaterial && VisualMaskDynamicMaterial->IsValidLowLevel() && !VisualMaskDynamicMaterial->IsPendingKill();
+    };
 
 public:
     // Called when the init status changes
@@ -113,13 +124,4 @@ protected:
     // Cached original materials
     UPROPERTY()
     TArray<class UMaterialInterface*> OriginalMaterials;
-
-private:
-    // The visual component of the owner
-    UPROPERTY()
-    class UStaticMeshComponent* VisualSMC;
-
-    //// State of the individual
-    //uint8 bIsInitPrivate : 1;
-    //uint8 bIsLoadedPrivate : 1;
 };

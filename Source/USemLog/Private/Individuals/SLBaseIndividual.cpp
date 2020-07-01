@@ -76,7 +76,7 @@ bool USLBaseIndividual::Load(bool bReset, bool bTryImportFromTags)
 // Save data to owners tag
 bool USLBaseIndividual::ExportToTag(bool bOverwrite)
 {
-	if (!ParentActor)
+	if (!HasValidParentActor())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner not set, cannot write to tags.."), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -97,7 +97,7 @@ bool USLBaseIndividual::ExportToTag(bool bOverwrite)
 // Load data from owners tag
 bool USLBaseIndividual::ImportFromTag(bool bOverwrite)
 {
-	if (!ParentActor)
+	if (!HasValidParentActor())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's owner not set, cannot read from tags.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
@@ -161,8 +161,8 @@ void USLBaseIndividual::InitReset()
 void USLBaseIndividual::LoadReset()
 {
 	SetIsLoaded(false);
-	SetId("");
-	SetClass("");
+	ClearId();
+	ClearClass();
 }
 
 // Clear any bound delegates (called when init is reset)
@@ -187,8 +187,7 @@ void USLBaseIndividual::SetIsInit(bool bNewValue, bool bBroadcast)
 		bIsInit = bNewValue;
 		if (bBroadcast)
 		{
-			OnInitChanged.Broadcast(this, bNewValue);
-			
+			OnInitChanged.Broadcast(this, bNewValue);			
 		}
 	}
 }
@@ -209,6 +208,11 @@ void USLBaseIndividual::SetIsLoaded(bool bNewValue, bool bBroadcast)
 // Set references
 bool USLBaseIndividual::InitImpl()
 {
+	if (HasValidParentActor())
+	{
+		return true;
+	}
+
 	// First outer is the component, second the actor
 	if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()))
 	{
@@ -230,7 +234,7 @@ bool USLBaseIndividual::InitImpl()
 
 		return true;
 	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, has no semantic owner.."),
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, could not acess parent actor.."),
 		*FString(__FUNCTION__), __LINE__, *GetFullName());
 	return false;
 }

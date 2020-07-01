@@ -54,13 +54,13 @@ public:
 	bool IsLoaded() const { return bIsLoaded; };
 
 	// Get the semantic individual object
-	USLBaseIndividual* GetIndividualObject() const { return HasIndividual() ? IndividualObj : nullptr; };
+	USLBaseIndividual* GetIndividualObject() const { return HasValidIndividual() ? IndividualObj : nullptr; };
 
 	// Get the semantic individual using a cast class (nullptr if cast is unsuccessfull)
 	template <typename ClassType>
 	ClassType* GetCastedIndividualObject() const 
 	{
-		if (IndividualObj && IndividualObj->IsValidLowLevel())
+		if (IndividualObj && IndividualObj->IsValidLowLevel() && !IndividualObj->IsPendingKill())
 		{
 			return Cast<ClassType>(IndividualObj);
 		}
@@ -96,9 +96,9 @@ private:
 	bool BindDelegates();
 
 	// Check if individual was created
-	FORCEINLINE bool HasIndividual() const 	{ return IndividualObj && IndividualObj->IsValidLowLevel() && !IndividualObj->IsPendingKill(); };
+	FORCEINLINE bool HasValidIndividual() const { return IndividualObj && IndividualObj->IsValidLowLevel() && !IndividualObj->IsPendingKill(); };
 
-	// Private init implementation
+	// Create the individual object
 	bool CreateIndividual();
 
 	// Called on individual init flag change
@@ -131,4 +131,7 @@ private:
 	// True if the individual is succesfully created and loaded
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsLoaded : 1;
+
+	// True if the delegates have been bound (not persistent)
+	bool bDelegatesBound;
 };
