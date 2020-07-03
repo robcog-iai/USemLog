@@ -2,6 +2,8 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLIndividualPartInfoComponent.h"
+#include "Individuals/SLIndividualVisualAssets.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 // Sets default values for this component's properties
 USLIndividualPartInfoComponent::USLIndividualPartInfoComponent()
@@ -188,6 +190,44 @@ void USLIndividualPartInfoComponent::SetIsLoaded(bool bNewValue, bool bBroadcast
 			// todo see if broadcast is required
 		}
 	}
+}
+
+// Create spline mesh component (can be called outside of constructor)
+USplineMeshComponent* USLIndividualPartInfoComponent::CreateSplineMeshComponent(USLIndividualVisualAssets* Assets)
+{
+	USplineMeshComponent* SplineMeshComp = NewObject<USplineMeshComponent>(this);	
+	SplineMeshComp->SetupAttachment(this);
+	SplineMeshComp->SetMobility(EComponentMobility::Movable);
+	SplineMeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SplineMeshComp->SetSplineUpDir(FVector::UpVector, false);
+	SplineMeshComp->PrimaryComponentTick.bCanEverTick = false;
+	SplineMeshComp->PostPhysicsComponentTick.bCanEverTick = false;
+	SplineMeshComp->bCastDynamicShadow = false;
+	SplineMeshComp->CastShadow = false;
+		
+	if (Assets)
+	{
+		if (Assets->SplineMesh)
+		{
+			SplineMeshComp->SetStaticMesh(Assets->SplineMesh);
+		}
+	
+		if (Assets->SplineMaterial)
+		{
+			UMaterialInstanceDynamic* SplineMid = UMaterialInstanceDynamic::Create(Assets->SplineMaterial, this);
+			SplineMid->SetVectorParameterValue("Color", FLinearColor::Green);
+			SplineMeshComp->SetMaterial(0, SplineMid);
+			SplineMeshComp->SetMaterial(1, SplineMid);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info compoonent asset container is no set.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+	}
+	
+	SplineMeshComp->SetVisibility(true);
+	SplineMeshComp->RegisterComponent();
+	return SplineMeshComp;
 }
 
 // Private init implementation

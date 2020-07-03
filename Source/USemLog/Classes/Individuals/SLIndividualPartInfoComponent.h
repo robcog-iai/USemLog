@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "Components/SplineMeshComponent.h"
 #include "SLIndividualPartInfoComponent.generated.h"
 
 class USplineMeshComponent;
@@ -58,6 +59,9 @@ protected:
 
 	// Set the loaded flag
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
+
+	// Create spline mesh component (can be called outside of constructor)
+	USplineMeshComponent* CreateSplineMeshComponent(class USLIndividualVisualAssets* Assets = nullptr);
 
 private:
 	// Private init implementation

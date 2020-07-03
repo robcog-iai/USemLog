@@ -86,7 +86,7 @@ bool USLIndividualComponent::Init(bool bReset)
 }
 
 // Load individual
-bool USLIndividualComponent::Load(bool bReset, bool bTryImportFromTags)
+bool USLIndividualComponent::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
@@ -106,7 +106,7 @@ bool USLIndividualComponent::Load(bool bReset, bool bTryImportFromTags)
 		}
 	}
 
-	SetIsLoaded(LoadImpl(bReset, bTryImportFromTags));
+	SetIsLoaded(LoadImpl(bReset, bTryImport));
 	return IsLoaded();
 }
 
@@ -117,7 +117,7 @@ bool USLIndividualComponent::ExportToTag(bool bOverwrite)
 {
 	if (IndividualObj && IndividualObj->IsValidLowLevel())
 	{
-		return IndividualObj->ExportToTag(bOverwrite);
+		return IndividualObj->ExportValues(bOverwrite);
 	}
 	return false;
 }
@@ -127,17 +127,17 @@ bool USLIndividualComponent::ImportFromTag(bool bOverwrite)
 {
 	if (IndividualObj && IndividualObj->IsValidLowLevel())
 	{
-		return IndividualObj->ImportFromTag(bOverwrite);
+		return IndividualObj->ImportValues(bOverwrite);
 	}
 	return false;
 }
 
 // Toggle between original and mask material is possible
-bool USLIndividualComponent::ToggleVisualMaskVisibility()
+bool USLIndividualComponent::ToggleVisualMaskVisibility(bool bPrioritizeChildren)
 {
 	if (USLPerceivableIndividual* SI = GetCastedIndividualObject<USLPerceivableIndividual>())
 	{
-		return SI->ToggleMaterials();
+		return SI->ToggleMaterials(bPrioritizeChildren);
 	}
 	return false;
 }
@@ -186,11 +186,11 @@ bool USLIndividualComponent::InitImpl(bool bReset)
 }
 
 // Forward the laod call to the individual object
-bool USLIndividualComponent::LoadImpl(bool bReset, bool bTryImportFromTags)
+bool USLIndividualComponent::LoadImpl(bool bReset, bool bTryImport)
 {
 	if (HasValidIndividual())
 	{
-		return IndividualObj->Load(bReset, bTryImportFromTags);
+		return IndividualObj->Load(bReset, bTryImport);
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s This should not happen, and idividual should be created here.."),
 		*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());

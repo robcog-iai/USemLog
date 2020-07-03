@@ -8,34 +8,98 @@
 #include "Individuals/SLPerceivableIndividual.h"
 #include "SLSkeletalIndividual.generated.h"
 
+// Forward declaration
+class USLBoneIndividual;
+class USkeletalMeshComponent;
+class USLSkeletalDataComponent;
 
 /**
  *
  */
-USTRUCT()
-struct FSLBoneIndividual
+UCLASS(ClassGroup = SL)
+class USEMLOG_API USLSkeletalIndividual : public USLPerceivableIndividual
 {
     GENERATED_BODY()
 
-    // Skeletal body part individual unique id
-    UPROPERTY(EditAnywhere, Category = "SL")
-    FString VisualMask;
+public:
+    // Ctor
+    USLSkeletalIndividual();
 
-    // Skeletal body part individual class
-    UPROPERTY(EditAnywhere, Category = "SL")
-    FString CalibratedVisualMask;    
-};
+    // Called before destroying the object.
+    virtual void BeginDestroy() override;
 
-/**
- * 
- */
-UCLASS()
-class USEMLOG_API USLSkeletalIndividual : public /*USLPerceivableIndividual*/ USLBaseIndividual
-{
-	GENERATED_BODY()
+    // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+    virtual void PostInitProperties() override;
+
+    // Init asset references (bForced forces re-initialization)
+    virtual bool Init(bool bReset = false);
+
+    // Load semantic data (bForced forces re-loading)
+    virtual bool Load(bool bReset = false, bool bTryImport = false);
+
+    // Get the type name as string
+    virtual FString GetTypeName() const override { return FString("SkeletalIndividual"); };
+
+    /* Begin Perceivable individual interface */
+    // Apply visual mask material
+    virtual bool ApplyMaskMaterials(bool bPrioritizeChildren = false) override;
+
+    // Apply original materials
+    virtual bool ApplyOriginalMaterials() override;
+    /* End Perceivable individual interface */
 
 protected:
-    // Skeletal body part individual unique id
-    UPROPERTY(EditAnywhere, Category = "SL")
-    TMap<FName, FSLBoneIndividual> Bones;
+    // Clear all values of the individual
+    virtual void InitReset() override;
+
+    // Clear all data of the individual
+    virtual void LoadReset() override;
+
+private:
+    // Set dependencies
+    bool InitImpl();
+
+    // Set data
+    bool LoadImpl(bool bTryImport = true);
+
+    // Check if the static mesh component is set
+    bool HasValidVisualMesh() const;
+
+    // Set sekeletal mesh
+    bool SetSkeletalMesh();
+
+    // Check if skeleltal bone description component is available
+    bool HasValidSkeletalDataComponent() const;
+
+    // Set the skeletal data component
+    bool SetSkeletalDataComponent();
+
+    // Check if all the bones are valid
+    bool HasValidBones() const;
+
+    // Set the bones
+    bool SetBones();
+
+    // Destroy bone individuals
+    void DestroyBones();
+
+    // Reset bone individuals
+    void ResetBones();
+
+protected:
+    // Semantically annotated bones
+    UPROPERTY()
+    TArray<USLBoneIndividual*> BoneIndividuals;
+
+    // Raw bones
+    TArray<FString> RawBones;
+
+private:
+    // The visual component of the owner
+    UPROPERTY()
+    USkeletalMeshComponent* VisualMeshComponent;
+
+    // Semantic data of the skeletal component
+    UPROPERTY()
+    USLSkeletalDataComponent* SkelDataComp;
 };

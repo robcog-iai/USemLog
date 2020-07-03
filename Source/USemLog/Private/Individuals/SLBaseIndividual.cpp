@@ -10,8 +10,8 @@
 USLBaseIndividual::USLBaseIndividual()
 {
 	ParentActor = nullptr;
-	PartOfActor = nullptr;
-	PartOfIndividual = nullptr;
+	AttachedToActor = nullptr;
+	AttachedToIndividual = nullptr;
 	bIsInit = false;
 	bIsLoaded = false;
 }
@@ -49,7 +49,7 @@ bool USLBaseIndividual::Init(bool bReset)
 }
 
 // Load semantic data
-bool USLBaseIndividual::Load(bool bReset, bool bTryImportFromTags)
+bool USLBaseIndividual::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
@@ -69,12 +69,12 @@ bool USLBaseIndividual::Load(bool bReset, bool bTryImportFromTags)
 		}
 	}
 	
-	SetIsLoaded(LoadImpl(bTryImportFromTags));
+	SetIsLoaded(LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
 // Save data to owners tag
-bool USLBaseIndividual::ExportToTag(bool bOverwrite)
+bool USLBaseIndividual::ExportValues(bool bOverwrite)
 {
 	if (!HasValidParentActor())
 	{
@@ -83,11 +83,11 @@ bool USLBaseIndividual::ExportToTag(bool bOverwrite)
 	}
 
 	bool bMarkDirty = false;
-	if (HasId())
+	if (IsIdValueSet())
 	{
 		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Id", Id, bOverwrite) || bMarkDirty;
 	}
-	if (HasClass())
+	if (IsClassValueSet())
 	{
 		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Class", Class, bOverwrite) || bMarkDirty;
 	}
@@ -95,7 +95,7 @@ bool USLBaseIndividual::ExportToTag(bool bOverwrite)
 }
 
 // Load data from owners tag
-bool USLBaseIndividual::ImportFromTag(bool bOverwrite)
+bool USLBaseIndividual::ImportValues(bool bOverwrite)
 {
 	if (!HasValidParentActor())
 	{
@@ -105,23 +105,30 @@ bool USLBaseIndividual::ImportFromTag(bool bOverwrite)
 	}
 
 	bool bNewValue = false;
-	bNewValue = ImportIdFromTag(bOverwrite) || bNewValue;
-	bNewValue = ImportClassFromTag(bOverwrite) || bNewValue;
+	bNewValue = ImportIdValue(bOverwrite) || bNewValue;
+	bNewValue = ImportClassValue(bOverwrite) || bNewValue;
 	return bNewValue;
 }
 
+// True if individual is part of another individual
+bool USLBaseIndividual::IsAttachedToAnotherIndividual() const
+{
+	return AttachedToActor && AttachedToActor->IsValidLowLevel() && !AttachedToActor->IsPendingKill()
+		&& AttachedToIndividual && AttachedToIndividual->IsValidLowLevel() && !AttachedToIndividual->IsPendingKill();
+}
+
 // Set the id value, if it is empty reset the individual as not loaded
-void USLBaseIndividual::SetId(const FString& NewId)
+void USLBaseIndividual::SetIdValue(const FString& NewId)
 {
 	if (!Id.Equals(NewId))
 	{
 		Id = NewId;
 		OnNewIdValue.Broadcast(this, Id);
-		if (!HasId() && IsLoaded())
+		if (!IsIdValueSet() && IsLoaded())
 		{
 			SetIsLoaded(false);
 		}
-		else if (HasId() && !IsLoaded())
+		else if (IsIdValueSet() && !IsLoaded())
 		{
 			Load(false, false);
 		}
@@ -129,17 +136,17 @@ void USLBaseIndividual::SetId(const FString& NewId)
 }
 
 // Set the class value, if empty, reset the individual as not loaded
-void USLBaseIndividual::SetClass(const FString& NewClass)
+void USLBaseIndividual::SetClassValue(const FString& NewClass)
 {
 	if (!Class.Equals(NewClass))
 	{
 		Class = NewClass;
 		OnNewClassValue.Broadcast(this, Class);
-		if (!HasClass() && IsLoaded())
+		if (!IsClassValueSet() && IsLoaded())
 		{
 			SetIsLoaded(false);
 		}
-		else if (HasClass() && !IsLoaded())
+		else if (IsClassValueSet() && !IsLoaded())
 		{
 			Load(false, false);
 		}
@@ -151,8 +158,8 @@ void USLBaseIndividual::InitReset()
 {
 	LoadReset();
 	ParentActor = nullptr;
-	PartOfActor = nullptr;
-	PartOfIndividual = nullptr;
+	AttachedToActor = nullptr;
+	AttachedToIndividual = nullptr;
 	SetIsInit(false);
 	ClearDelegateBounds();
 }
@@ -161,8 +168,8 @@ void USLBaseIndividual::InitReset()
 void USLBaseIndividual::LoadReset()
 {
 	SetIsLoaded(false);
-	ClearId();
-	ClearClass();
+	ClearIdValue();
+	ClearClassValue();
 }
 
 // Clear any bound delegates (called when init is reset)
@@ -205,33 +212,20 @@ void USLBaseIndividual::SetIsLoaded(bool bNewValue, bool bBroadcast)
 	}
 }
 
-// Set references
-bool USLBaseIndividual::InitImpl()
+// Check that the parent actor is set and valid
+bool USLBaseIndividual::HasValidParentActor() const
 {
-	if (HasValidParentActor())
-	{
-		return true;
-	}
+	return ParentActor && ParentActor->IsValidLowLevel() && !ParentActor->IsPendingKill();
+}
 
+// Set pointer to parent actor
+bool USLBaseIndividual::SetParentActor()
+{
 	// First outer is the component, second the actor
 	if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()))
 	{
 		// Set the parent actor
 		ParentActor = CompOwner;
-
-		// Check if individual is part of another actor
-		if (AActor* AttAct = CompOwner->GetAttachParentActor())
-		{
-			// Get the individual component of the actor
-			if (UActorComponent* AC = AttAct->GetComponentByClass(USLIndividualComponent::StaticClass()))
-			{
-				PartOfActor = AttAct;
-				PartOfIndividual = CastChecked<USLIndividualComponent>(AC)->GetIndividualObject();
-			}
-
-			// TODO check that the individual does not simulate physics (if it does the attachment breaks at runtime)
-		}
-
 		return true;
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, could not acess parent actor.."),
@@ -239,15 +233,52 @@ bool USLBaseIndividual::InitImpl()
 	return false;
 }
 
+// Set attachment parent (part of individual)
+bool USLBaseIndividual::SetAttachedToParent()
+{
+	if (!HasValidParentActor())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Parent actor is not set %s, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
+	}
+
+	// Check if individual is part of another actor
+	if (AActor* AttAct = ParentActor->GetAttachParentActor())
+	{
+		// Get the individual component of the actor
+		if (UActorComponent* AC = AttAct->GetComponentByClass(USLIndividualComponent::StaticClass()))
+		{
+			AttachedToActor = AttAct;
+			AttachedToIndividual = CastChecked<USLIndividualComponent>(AC)->GetIndividualObject();
+			return true;
+		}
+
+		// TODO check that the individual does not simulate physics (if it does the attachment breaks at runtime)
+	}
+	return false;
+}
+
+// Set references
+bool USLBaseIndividual::InitImpl()
+{
+	if (HasValidParentActor() || SetParentActor())
+	{
+		SetAttachedToParent();
+		return true;
+	}
+	return false;
+}
+
 // Set data
-bool USLBaseIndividual::LoadImpl(bool bTryImportFromTags)
+bool USLBaseIndividual::LoadImpl(bool bTryImport)
 {
 	bool bRetValue = true;
-	if (!HasId())		
+	if (!IsIdValueSet())		
 	{
-		if (bTryImportFromTags)
+		if (bTryImport)
 		{
-			if (!ImportIdFromTag())
+			if (!ImportIdValue())
 			{
 				bRetValue = false;
 			}
@@ -258,11 +289,11 @@ bool USLBaseIndividual::LoadImpl(bool bTryImportFromTags)
 		}
 	}
 
-	if (!HasClass())
+	if (!IsClassValueSet())
 	{
-		if (bTryImportFromTags)
+		if (bTryImport)
 		{
-			if (!ImportClassFromTag())
+			if (!ImportClassValue())
 			{
 				bRetValue = false;
 			}
@@ -275,14 +306,15 @@ bool USLBaseIndividual::LoadImpl(bool bTryImportFromTags)
 	return bRetValue;
 }
 
+
 // Import id from tag, true if new value is written
-bool USLBaseIndividual::ImportIdFromTag(bool bOverwrite)
+bool USLBaseIndividual::ImportIdValue(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (!HasId() || bOverwrite)
+	if (!IsIdValueSet() || bOverwrite)
 	{
 		const FString PrevVal = Id;
-		SetId(FSLTagIO::GetValue(ParentActor, TagTypeConst, "Id"));
+		SetIdValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "Id"));
 		bNewValue = !Id.Equals(PrevVal);
 		//if (!HasId())
 		//{
@@ -294,13 +326,13 @@ bool USLBaseIndividual::ImportIdFromTag(bool bOverwrite)
 }
 
 // Import class from tag, true if new value is written
-bool USLBaseIndividual::ImportClassFromTag(bool bOverwrite)
+bool USLBaseIndividual::ImportClassValue(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (!HasClass() || bOverwrite)
+	if (!IsClassValueSet() || bOverwrite)
 	{
 		const FString PrevVal = Class;
-		SetClass(FSLTagIO::GetValue(ParentActor, TagTypeConst, "Class"));
+		SetClassValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "Class"));
 		bNewValue = !Class.Equals(PrevVal);
 		//if (!HasClass())
 		//{

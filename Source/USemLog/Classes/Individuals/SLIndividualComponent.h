@@ -48,7 +48,7 @@ public:
 	bool IsInit() const { return bIsInit; };
 
 	// Load individual
-	bool Load(bool bReset = false, bool bTryImportFromTags = false);
+	bool Load(bool bReset = false, bool bTryImport = false);
 
 	// Check if component is loaded
 	bool IsLoaded() const { return bIsLoaded; };
@@ -76,7 +76,7 @@ public:
 	bool ImportFromTag(bool bOverwrite = false);
 
 	// Toggle between original and mask material is possible
-	bool ToggleVisualMaskVisibility();
+	bool ToggleVisualMaskVisibility(bool bPrioritizeChildren = false);
 
 protected:
 	// Set the init flag, broadcast on new value
@@ -90,7 +90,7 @@ private:
 	bool InitImpl(bool bReset = false);
 
 	// Forward load call on individual
-	bool LoadImpl(bool bReset = false, bool bTryImportFromTags = false);
+	bool LoadImpl(bool bReset = false, bool bTryImport = false);
 
 	// Sync states with the individual
 	bool BindDelegates();

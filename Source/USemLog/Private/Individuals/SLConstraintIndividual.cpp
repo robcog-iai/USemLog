@@ -49,7 +49,7 @@ bool USLConstraintIndividual::Init(bool bReset)
 }
 
 // Load semantic data
-bool USLConstraintIndividual::Load(bool bReset, bool bTryImportFromTags)
+bool USLConstraintIndividual::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
@@ -71,29 +71,32 @@ bool USLConstraintIndividual::Load(bool bReset, bool bTryImportFromTags)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImportFromTags));
+	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
-// Save data to owners tag
-bool USLConstraintIndividual::ExportToTag(bool bOverwrite)
+// Clear all values of the individual
+void USLConstraintIndividual::InitReset()
 {
-	bool bMarkDirty = false;
-	bMarkDirty = Super::ExportToTag(bOverwrite) || bMarkDirty;
-	return bMarkDirty;
+	ConstraintActor1 = nullptr;
+	ConstraintActor2 = nullptr;
+	ConstraintIndividual1 = nullptr;
+	ConstraintIndividual2 = nullptr;
+	SetIsInit(false);
+	ClearDelegateBounds();
+	Super::InitReset();
 }
 
-// Load data from owners tag
-bool USLConstraintIndividual::ImportFromTag(bool bOverwrite)
+// Clear all data of the individual
+void USLConstraintIndividual::LoadReset()
 {
-	bool bNewValue = false;
-	if (Super::ImportFromTag(bOverwrite))
-	{
-		bNewValue = true;
-	}
-	return bNewValue;
+	Super::LoadReset();
 }
 
+// Clear any bound delegates (called when init is reset)
+void USLConstraintIndividual::ClearDelegateBounds()
+{
+}
 
 // Private init implementation
 bool USLConstraintIndividual::InitImpl()
@@ -163,35 +166,12 @@ bool USLConstraintIndividual::InitImpl()
 }
 
 // Private load implementation
-bool USLConstraintIndividual::LoadImpl(bool bTryImportFromTags)
-{	
+bool USLConstraintIndividual::LoadImpl(bool bTryImport)
+{
 #if WITH_EDITORONLY_DATA
 	ParentActor->SpriteScale = 0.4;
 	ParentActor->MarkComponentsRenderStateDirty();
 #endif // WITH_EDITORONLY_DATA
 	return true;
-}
-
-// Clear all values of the individual
-void USLConstraintIndividual::InitReset()
-{
-	ConstraintActor1 = nullptr;
-	ConstraintActor2 = nullptr;
-	ConstraintIndividual1 = nullptr;
-	ConstraintIndividual2 = nullptr;
-	SetIsInit(false);
-	ClearDelegateBounds();
-	Super::InitReset();
-}
-
-// Clear all data of the individual
-void USLConstraintIndividual::LoadReset()
-{
-	Super::LoadReset();
-}
-
-// Clear any bound delegates (called when init is reset)
-void USLConstraintIndividual::ClearDelegateBounds()
-{
 }
 

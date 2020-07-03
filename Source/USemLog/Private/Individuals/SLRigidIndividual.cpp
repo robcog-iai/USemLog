@@ -3,10 +3,12 @@
 
 #include "Individuals/SLRigidIndividual.h"
 #include "Engine/StaticMeshActor.h"
+#include "Components/StaticMeshComponent.h"
 
 // Ctor
 USLRigidIndividual::USLRigidIndividual()
 {
+	VisualMeshComponent = nullptr;
 }
 
 // Called before destroying the object.
@@ -40,7 +42,7 @@ bool USLRigidIndividual::Init(bool bReset)
 }
 
 // Load semantic data
-bool USLRigidIndividual::Load(bool bReset, bool bTryImportFromTags)
+bool USLRigidIndividual::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
@@ -62,21 +64,19 @@ bool USLRigidIndividual::Load(bool bReset, bool bTryImportFromTags)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImportFromTags));
+	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
-
-
 // Apply visual mask material
-bool USLRigidIndividual::ApplyMaskMaterials(bool bReload)
+bool USLRigidIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/)
 {
 	if (!IsInit())
 	{
 		return false;
 	}
 
-	if (!bIsMaskMaterialOn || bReload)
+	if (!bIsMaskMaterialOn)
 	{
 		for (int32 MatIdx = 0; MatIdx < VisualMeshComponent->GetNumMaterials(); ++MatIdx)
 		{
@@ -110,6 +110,23 @@ bool USLRigidIndividual::ApplyOriginalMaterials()
 	return false;
 }
 
+// Clear all values of the individual
+void USLRigidIndividual::InitReset()
+{
+	LoadReset();
+	Super::InitReset();
+	VisualMeshComponent = nullptr;
+	SetIsInit(false);
+	ClearDelegateBounds();
+}
+
+// Clear all data of the individual
+void USLRigidIndividual::LoadReset()
+{
+	Super::LoadReset();
+}
+
+
 // Private init implementation
 bool USLRigidIndividual::InitImpl()
 {
@@ -141,23 +158,13 @@ bool USLRigidIndividual::InitImpl()
 }
 
 // Private load implementation
-bool USLRigidIndividual::LoadImpl(bool bTryImportFromTags)
+bool USLRigidIndividual::LoadImpl(bool bTryImport)
 {
 	return true;
 }
 
-// Clear all values of the individual
-void USLRigidIndividual::InitReset()
+// Check if the static mesh component is set
+bool USLRigidIndividual::HasValidVisualMesh() const
 {
-	LoadReset();
-	Super::InitReset();
-	VisualMeshComponent = nullptr;
-	SetIsInit(false);
-	ClearDelegateBounds();
-}
-
-// Clear all data of the individual
-void USLRigidIndividual::LoadReset()
-{
-	Super::LoadReset();
+	return VisualMeshComponent && VisualMeshComponent->IsValidLowLevel() && !VisualMeshComponent->IsPendingKill();
 }

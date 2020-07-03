@@ -1,29 +1,30 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Individuals/SLSkyIndividual.h"
-#include "GameFramework/Actor.h"
+#include "Individuals/SLBoneIndividual.h"
+#include "Individuals/SLSkeletalIndividual.h"
+#include "Animation/SkeletalMeshActor.h"
 
 // Ctor
-USLSkyIndividual::USLSkyIndividual()
+USLBoneIndividual::USLBoneIndividual()
 {
 }
 
 // Called before destroying the object.
-void USLSkyIndividual::BeginDestroy()
+void USLBoneIndividual::BeginDestroy()
 {
 	Super::BeginDestroy();
 }
 
 // Create and set the dynamic material, the owners visual component
-void USLSkyIndividual::PostInitProperties()
+void USLBoneIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
 	Init();
 }
 
 // Set pointer to the semantic owner
-bool USLSkyIndividual::Init(bool bReset)
+bool USLBoneIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
@@ -40,7 +41,7 @@ bool USLSkyIndividual::Init(bool bReset)
 }
 
 // Load semantic data
-bool USLSkyIndividual::Load(bool bReset, bool bTryImport)
+bool USLBoneIndividual::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
@@ -69,7 +70,7 @@ bool USLSkyIndividual::Load(bool bReset, bool bTryImport)
 
 
 // Apply visual mask material
-bool USLSkyIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/)
+bool USLBoneIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/)
 {
 	if (!IsInit())
 	{
@@ -78,8 +79,6 @@ bool USLSkyIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/)
 
 	if (!bIsMaskMaterialOn)
 	{
-		ParentActor->SetIsTemporarilyHiddenInEditor(true);
-		ParentActor->SetActorHiddenInGame(true);
 		bIsMaskMaterialOn = true;
 		return true;
 	}
@@ -87,7 +86,7 @@ bool USLSkyIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/)
 }
 
 // Apply original materials
-bool USLSkyIndividual::ApplyOriginalMaterials()
+bool USLBoneIndividual::ApplyOriginalMaterials()
 {
 	if (!IsInit())
 	{
@@ -96,8 +95,6 @@ bool USLSkyIndividual::ApplyOriginalMaterials()
 
 	if (bIsMaskMaterialOn)
 	{
-		ParentActor->SetIsTemporarilyHiddenInEditor(false);
-		ParentActor->SetActorHiddenInGame(false);
 		bIsMaskMaterialOn = false;
 		return true;
 	}
@@ -105,19 +102,19 @@ bool USLSkyIndividual::ApplyOriginalMaterials()
 }
 
 // Private init implementation
-bool USLSkyIndividual::InitImpl()
+bool USLBoneIndividual::InitImpl()
 {
-	return true;
+	return false;
 }
 
 // Private load implementation
-bool USLSkyIndividual::LoadImpl(bool bTryImport)
+bool USLBoneIndividual::LoadImpl(bool bTryImport)
 {
 	return true;
 }
 
 // Clear all values of the individual
-void USLSkyIndividual::InitReset()
+void USLBoneIndividual::InitReset()
 {
 	LoadReset();
 	Super::InitReset();
@@ -126,7 +123,23 @@ void USLSkyIndividual::InitReset()
 }
 
 // Clear all data of the individual
-void USLSkyIndividual::LoadReset()
+void USLBoneIndividual::LoadReset()
 {
 	Super::LoadReset();
 }
+
+// Set the skeletal actor as parent
+bool USLBoneIndividual::SetParentActor()
+{
+	// First outer is the skeletal individual, second is the component, third is the actor
+	if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()->GetOuter()))
+	{
+		// Set the parent actor
+		ParentActor = CompOwner;
+		return true;
+	}
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, could not acess parent actor.."),
+		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	return false;
+}
+

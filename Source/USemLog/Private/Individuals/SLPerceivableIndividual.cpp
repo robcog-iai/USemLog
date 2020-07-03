@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLPerceivableIndividual.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 // Utils
 #include "Utils/SLTagIO.h"
@@ -41,7 +42,7 @@ bool USLPerceivableIndividual::Init(bool bReset)
 }
 
 // Load semantic data
-bool USLPerceivableIndividual::Load(bool bReset, bool bTryImportFromTags)
+bool USLPerceivableIndividual::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
@@ -63,15 +64,15 @@ bool USLPerceivableIndividual::Load(bool bReset, bool bTryImportFromTags)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImportFromTags));
+	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
 // Save data to owners tag
-bool USLPerceivableIndividual::ExportToTag(bool bOverwrite)
+bool USLPerceivableIndividual::ExportValues(bool bOverwrite)
 {
 	bool bMarkDirty = false;
-	bMarkDirty = Super::ExportToTag(bOverwrite) || bMarkDirty;
+	bMarkDirty = Super::ExportValues(bOverwrite) || bMarkDirty;
 	if (!VisualMask.IsEmpty())
 	{
 		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "VisualMask", VisualMask, bOverwrite) || bMarkDirty;
@@ -84,20 +85,20 @@ bool USLPerceivableIndividual::ExportToTag(bool bOverwrite)
 }
 
 // Load data from owners tag
-bool USLPerceivableIndividual::ImportFromTag(bool bOverwrite)
+bool USLPerceivableIndividual::ImportValues(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (Super::ImportFromTag(bOverwrite))
+	if (Super::ImportValues(bOverwrite))
 	{
 		bNewValue = true;
 	}
 
-	if (ImportVisualMaskFromTag(bOverwrite))
+	if (ImportVisualMaskValue(bOverwrite))
 	{
 		bNewValue = true;
 	}
 
-	if (ImportCalibratedVisualMaskFromTag(bOverwrite))
+	if (ImportCalibratedVisualMaskValue(bOverwrite))
 	{
 		bNewValue = true;
 	}
@@ -106,7 +107,7 @@ bool USLPerceivableIndividual::ImportFromTag(bool bOverwrite)
 }
 
 // Toggle between the visual mask and the origina materials
-bool USLPerceivableIndividual::ToggleMaterials()
+bool USLPerceivableIndividual::ToggleMaterials(bool bPrioritizeChildren /*= false*/)
 {
 	if (bIsMaskMaterialOn)
 	{
@@ -114,12 +115,12 @@ bool USLPerceivableIndividual::ToggleMaterials()
 	}
 	else
 	{
-		return ApplyMaskMaterials();
+		return ApplyMaskMaterials(bPrioritizeChildren);
 	}
 }
 
 // Set  visual mask
-void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool bApplyNewMaterial, bool bClearCalibratedVisualMask)
+void USLPerceivableIndividual::SetVisualMaskValue(const FString& NewVisualMask, bool bApplyNewMaterial, bool bClearCalibratedVisualMask)
 {
 	// Clear the calibrated color in case of a new visual mask value
 	if (!VisualMask.Equals(NewVisualMask)) 
@@ -127,11 +128,11 @@ void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool 
 		VisualMask = NewVisualMask;
 		OnNewVisualMaskValue.Broadcast(this, VisualMask);
 
-		if (!HasVisualMask() && IsLoaded())
+		if (!IsVisualMaskValueSet() && IsLoaded())
 		{
 			SetIsLoaded(false);
 		}
-		else if (HasVisualMask() && !IsLoaded())
+		else if (IsVisualMaskValueSet() && !IsLoaded())
 		{
 			// Check if the individual can now be loaded
 			Load(false, false);
@@ -140,7 +141,7 @@ void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool 
 		// The calibrated value will be obsolete for a new visual mask
 		if (bClearCalibratedVisualMask)
 		{
-			SetCalibratedVisualMask("");
+			SetCalibratedVisualMaskValue("");
 		}
 
 		// Update the dynamic material
@@ -149,7 +150,8 @@ void USLPerceivableIndividual::SetVisualMask(const FString& NewVisualMask, bool 
 		// If the mask visualization is active, dynamically update the colors
 		if (bIsMaskMaterialOn && bApplyNewMaterial)
 		{
-			ApplyMaskMaterials(true);
+			bIsMaskMaterialOn = false; // Force material reload
+			ApplyMaskMaterials();
 		}
 	}
 }
@@ -179,15 +181,15 @@ bool USLPerceivableIndividual::InitImpl()
 }
 
 // Private load implementation
-bool USLPerceivableIndividual::LoadImpl(bool bTryImportFromTags)
+bool USLPerceivableIndividual::LoadImpl(bool bTryImport)
 {
 	bool bRetValue = true;
 
-	if (!HasVisualMask())
+	if (!IsVisualMaskValueSet())
 	{
-		if (bTryImportFromTags)
+		if (bTryImport)
 		{
-			if (!ImportVisualMaskFromTag())
+			if (!ImportVisualMaskValue())
 			{
 				bRetValue = false;
 			}
@@ -218,7 +220,7 @@ void USLPerceivableIndividual::InitReset()
 // Clear all data of the individual
 void USLPerceivableIndividual::LoadReset()
 {
-	ClearVisualMask();
+	ClearVisualMaskValue();
 	Super::LoadReset();
 }
 
@@ -229,13 +231,13 @@ void USLPerceivableIndividual::ClearDelegateBounds()
 }
 
 // Import visual mask from tag, true if new value is written
-bool USLPerceivableIndividual::ImportVisualMaskFromTag(bool bOverwrite)
+bool USLPerceivableIndividual::ImportVisualMaskValue(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (!HasVisualMask() || bOverwrite)
+	if (!IsVisualMaskValueSet() || bOverwrite)
 	{
 		const FString PrevVal = VisualMask;
-		SetVisualMask(FSLTagIO::GetValue(ParentActor, TagTypeConst, "VisualMask"));
+		SetVisualMaskValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "VisualMask"));
 		bNewValue = !VisualMask.Equals(PrevVal);
 		//if (!HasVisualMask())
 		//{
@@ -247,15 +249,15 @@ bool USLPerceivableIndividual::ImportVisualMaskFromTag(bool bOverwrite)
 }
 
 // Import calibrated visual mask from tag, true if new value is written
-bool USLPerceivableIndividual::ImportCalibratedVisualMaskFromTag(bool bOverwrite)
+bool USLPerceivableIndividual::ImportCalibratedVisualMaskValue(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (!HasCalibratedVisualMask() || bOverwrite)
+	if (!IsCalibratedVisualMasValueSet() || bOverwrite)
 	{
 		const FString PrevVal = CalibratedVisualMask;
-		SetCalibratedVisualMask(FSLTagIO::GetValue(ParentActor, TagTypeConst, "CalibratedVisualMask"));
+		SetCalibratedVisualMaskValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "CalibratedVisualMask"));
 		bNewValue = !CalibratedVisualMask.Equals(PrevVal);
-		if (!HasCalibratedVisualMask())
+		if (!IsCalibratedVisualMasValueSet())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d No CalibratedVisualMask value could be imported from %s's tag.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
@@ -273,5 +275,11 @@ bool USLPerceivableIndividual::ApplyVisualMaskColorToDynamicMaterial()
 		return true;
 	}
 	return false;
+}
+
+// Check if the dynmic material is valid
+bool USLPerceivableIndividual::HasValidDynamicMaterial() const
+{
+	return VisualMaskDynamicMaterial && VisualMaskDynamicMaterial->IsValidLowLevel() && !VisualMaskDynamicMaterial->IsPendingKill();
 }
 

@@ -50,8 +50,8 @@ public:
 
 	/* Functionalities */
 	// Toggle perceivable individuals mask materials
-	int32 ToggleMaskMaterialsVisibility();
-	int32 ToggleMaskMaterialsVisibility(const TArray<AActor*>& Actors);
+	int32 ToggleMaskMaterialsVisibility(bool bPrioritizeChildren = false);
+	int32 ToggleMaskMaterialsVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren = false);
 
 	// Write new unique identifiers 
 	int32 WriteUniqueIds(bool bOverwrite = false);

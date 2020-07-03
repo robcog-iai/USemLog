@@ -193,8 +193,8 @@ int32 ASLIndividualManager::ResetIndividualComponents()
 	for (const auto& IC : RegisteredIndividualComponents)
 	{
 		bool bReset = true;
-		bool bTryImportFromTags = true;
-		if (IC->Init(bReset) && IC->Load(bReset, bTryImportFromTags))
+		bool bTryImport = true;
+		if (IC->Init(bReset) && IC->Load(bReset, bTryImport))
 		{
 			Num++;
 		}
@@ -223,8 +223,8 @@ int32 ASLIndividualManager::ResetIndividualComponents(const TArray<AActor*>& Act
 		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
 		{
 			bool bReset = true;
-			bool bTryImportFromTags = true;
-			if ((*FoundIC)->Init(bReset) && (*FoundIC)->Load(bReset, bTryImportFromTags))
+			bool bTryImport = true;
+			if ((*FoundIC)->Init(bReset) && (*FoundIC)->Load(bReset, bTryImport))
 			{
 				Num++;
 			}
@@ -241,7 +241,7 @@ int32 ASLIndividualManager::ResetIndividualComponents(const TArray<AActor*>& Act
 
 /* Functionalities */
 // Toggle perceivable individuals mask materials
-int32 ASLIndividualManager::ToggleMaskMaterialsVisibility()
+int32 ASLIndividualManager::ToggleMaskMaterialsVisibility(bool bPrioritizeChildren)
 {
 	if (!bIsInit)
 	{
@@ -252,7 +252,7 @@ int32 ASLIndividualManager::ToggleMaskMaterialsVisibility()
 	int32 Num = 0;
 	for (const auto& IC : RegisteredIndividualComponents)
 	{
-		if (IC->ToggleVisualMaskVisibility())
+		if (IC->ToggleVisualMaskVisibility(bPrioritizeChildren))
 		{
 			Num++;
 		}
@@ -261,7 +261,7 @@ int32 ASLIndividualManager::ToggleMaskMaterialsVisibility()
 }
 
 // Toggle selected perceivable individuals mask materials
-int32 ASLIndividualManager::ToggleMaskMaterialsVisibility(const TArray<AActor*>& Actors)
+int32 ASLIndividualManager::ToggleMaskMaterialsVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren)
 {
 	if (!bIsInit)
 	{
@@ -274,7 +274,7 @@ int32 ASLIndividualManager::ToggleMaskMaterialsVisibility(const TArray<AActor*>&
 	{
 		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
 		{
-			if ((*FoundIC)->ToggleVisualMaskVisibility())
+			if ((*FoundIC)->ToggleVisualMaskVisibility(bPrioritizeChildren))
 			{
 				Num++;
 			}

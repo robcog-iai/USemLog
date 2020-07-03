@@ -48,6 +48,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			////
 			+ CreateOverwriteSlot()
 			+ CreateOnlySelectedSlot()
+			+ CreateIncludeChildrenSlot()
 
 			////
 			+ CreateSemMapSlot()
@@ -78,8 +79,6 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 
 			////
 			+ CreateUtilsTxtSlot()
-
-			////
 
 			////
 			+ CreateAddSemMonitorsSlot()
@@ -172,6 +171,32 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedSlot()
 				.ToolTipText(LOCTEXT("CheckBoxOnlySelected", "Consider only selected actors"))
 				.IsChecked(ECheckBoxState::Unchecked)
 				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOnlySelected)
+			]
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("IncludeChildrenextLabel", "Include Children:  "))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("CheckBoxIncludeChildren", "Consider children data (e.g. bones/links..)"))
+				.IsChecked(ECheckBoxState::Unchecked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnIncludeChildren)
 			]
 		];
 }
@@ -744,6 +769,11 @@ void FSLEdModeToolkit::OnCheckedOnlySelected(ECheckBoxState NewCheckedState)
 	bOnlySelected = (NewCheckedState == ECheckBoxState::Checked);
 }
 
+void FSLEdModeToolkit::OnIncludeChildren(ECheckBoxState NewCheckedState)
+{
+	bIncludeChildren = (NewCheckedState == ECheckBoxState::Checked);
+}
+
 
 /* Button callbacks */
 ////
@@ -929,11 +959,11 @@ FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 	{
 		if (bOnlySelected)
 		{
-			NumComp = IndividualManager->ToggleMaskMaterialsVisibility(GetSelectedActors());
+			NumComp = IndividualManager->ToggleMaskMaterialsVisibility(GetSelectedActors(), bIncludeChildren);
 		}
 		else
 		{
-			NumComp = IndividualManager->ToggleMaskMaterialsVisibility();
+			NumComp = IndividualManager->ToggleMaskMaterialsVisibility(bIncludeChildren);
 		}
 	}
 	else
@@ -1630,20 +1660,45 @@ void FSLEdModeToolkit::DeselectComponentSelection() const
 void FSLEdModeToolkit::LogObjectInfo(UWorld* World) const
 {
 	/* Iterate all objects */
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d **START** World objects list:"), *FString(__FUNCTION__), __LINE__);
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d **START** UObjects list:"), *FString(__FUNCTION__), __LINE__);
 	//for (TObjectIterator<UObject> ObjectItr; ObjectItr; ++ObjectItr)
 	//{
 	//	UE_LOG(LogTemp, Log, TEXT("\t\t %s \t [%s]"), *ObjectItr->GetName(), *ObjectItr->StaticClass()->GetName());
 	//}
-	//UE_LOG(LogTemp, Warning, TEXT("%s::%d **END** World objects list.."), *FString(__FUNCTION__), __LINE__);
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d **END** UObjects list.."), *FString(__FUNCTION__), __LINE__);
 
 	/* Iterate all actors */
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d **START** World actor list:"), *FString(__FUNCTION__), __LINE__);
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		UE_LOG(LogTemp, Log, TEXT("\t\t %s \t [%s]"), *ActItr->GetName(), *ActItr->GetArchetype()->StaticClass()->GetName());
+		UE_LOG(LogTemp, Log, TEXT("\t\t %s \t [%s]"), *ActItr->GetName(), *ActItr->StaticClass()->GetName());
+		if (ActItr->IsInBlueprint())
+		{
+			UE_LOG(LogTemp, Log, TEXT("\t\t\t IN BP %s \t [%s]"), *ActItr->GetName(), *ActItr->StaticClass()->GetName());
+		}
+
+		if (UBlueprint* InBP = Cast<UBlueprint>(*ActItr))
+		{
+			UE_LOG(LogTemp, Log, TEXT("\t\t BP %s \t [%s]"), *ActItr->GetName(), *InBP->StaticClass()->GetName());
+		}
 	}
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d **END** World actor list.."), *FString(__FUNCTION__), __LINE__);
+
+
+	/* Iterate all blueprints */
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d **START** BP objects list:"), *FString(__FUNCTION__), __LINE__);
+	for (TObjectIterator<UBlueprint> BpItr; BpItr; ++BpItr)
+	{
+		if (BpItr->GetWorld() == World)
+		{
+			UE_LOG(LogTemp, Log, TEXT("\t\t %s \t [%s]"), *BpItr->GetName(), *BpItr->GetArchetype()->StaticClass()->GetName());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("\t\t NOT IN THE WORLD %s \t [%s]"), *BpItr->GetName(), *BpItr->GetArchetype()->StaticClass()->GetName());
+		}
+	}
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d **END** BP objects list.."), *FString(__FUNCTION__), __LINE__);
 
 
 	int32 InWorldNum = 0;

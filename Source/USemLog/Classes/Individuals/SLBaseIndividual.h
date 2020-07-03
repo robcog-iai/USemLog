@@ -7,9 +7,6 @@
 #include "UObject/NoExportTypes.h"
 #include "SLBaseIndividual.generated.h"
 
-// Forward declaration
-class AActor;
-
 // Notify every time the init status changes
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualInitChangeSignature, USLBaseIndividual*, Individual, bool, bNewInitVal);
 
@@ -44,56 +41,51 @@ public:
 	virtual bool Init(bool bReset = false);
 
 	// Load semantic data (bReset forces re-loading)
-	virtual bool Load(bool bReset = false, bool bTryImportFromTags = false);
+	virtual bool Load(bool bReset = false, bool bTryImport = false);
 
-	// Return states
+	// Depenencies set
 	bool IsInit() const { return bIsInit; };
+
+	// Data loaded
 	bool IsLoaded() const { return bIsLoaded; };
 
-	// Save data to owners tag, true if any new value is written
-	virtual bool ExportToTag(bool bOverwrite = false);
+	// Save values externally
+	virtual bool ExportValues(bool bOverwrite = false);
 
-	// Load data from owners tag, true if any new value if imported
-	virtual bool ImportFromTag(bool bOverwrite = false);
+	// Load values externally
+	virtual bool ImportValues(bool bOverwrite = false);
 
 	// Get actor represented by the individual
 	AActor* GetParentActor() const { return ParentActor; };
 
-	// Check that the parent actor is set and valid
-	bool HasValidParentActor() const { return ParentActor && ParentActor->IsValidLowLevel() && !ParentActor->IsPendingKill(); };
-
 	// True if individual is part of another individual
-	bool IsPartOfAnotherIndividual() const 
-	{ 
-		return PartOfActor && PartOfActor->IsValidLowLevel() && !PartOfActor->IsPendingKill()
-			&& PartOfIndividual && PartOfIndividual->IsValidLowLevel() && !PartOfIndividual->IsPendingKill();
-	}
+	bool IsAttachedToAnotherIndividual() const;
 
 	// Return the actor this individual is part of
-	class AActor* GetPartOfActor() const { return PartOfActor; };
+	class AActor* GetPartOfActor() const { return AttachedToActor; };
 
 	// Return the individual this individual is part of
-	class USLBaseIndividual* GetPartOfIndividual() const { return PartOfIndividual; };
+	class USLBaseIndividual* GetPartOfIndividual() const { return AttachedToIndividual; };
 
 	// Get the type name as string
 	virtual FString GetTypeName() const { return FString("BaseIndividual"); };
 
 	/* Id */
 	// Set the id value, if empty, reset the individual as not loaded
-	void SetId(const FString& NewId);
-	void ClearId() { SetId(""); };
-	FString GetId() const { return Id; };
-	bool HasId() const { return !Id.IsEmpty(); };
+	void SetIdValue(const FString& NewVal);
+	void ClearIdValue() { SetIdValue(""); };
+	FString GetIdValue() const { return Id; };
+	bool IsIdValueSet() const { return !Id.IsEmpty(); };
 
 	/* Class */
 	// Set the class value, if empty, reset the individual as not loaded
-	void SetClass(const FString& NewClass);
-	void ClearClass() { SetClass(""); };
-	FString GetClass() const { return Class; };
-	bool HasClass() const { return !Class.IsEmpty(); };
+	void SetClassValue(const FString& NewClass);
+	void ClearClassValue() { SetClassValue(""); };
+	FString GetClassValue() const { return Class; };
+	bool IsClassValueSet() const { return !Class.IsEmpty(); };
 
 protected:
-	// Clear all values of the individual
+	// Clear all references of the individual
 	virtual void InitReset();
 
 	// Clear all data of the individual
@@ -105,15 +97,26 @@ protected:
 	// Set the state flags, can broadcast on new value
 	void SetIsInit(bool bNewValue, bool bBroadcast = true);
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
+	
+	// Check that the parent actor is set and valid
+	bool HasValidParentActor() const;
+
+	// Set pointer to parent actor
+	virtual bool SetParentActor();
+
+	// Set attachment parent (part of individual)
+	bool SetAttachedToParent();
 
 private:
-	// States implementations, set references and data
+	// Set dependencies
 	bool InitImpl();
-	bool LoadImpl(bool bTryImportFromTags = true);
 
-	// Specific imports from tag, true if new value is written
-	bool ImportIdFromTag(bool bOverwrite = false);
-	bool ImportClassFromTag(bool bOverwrite = false);
+	// Set data
+	bool LoadImpl(bool bTryImport = true);
+
+	// Import values expernally
+	bool ImportIdValue(bool bOverwrite = false);
+	bool ImportClassValue(bool bOverwrite = false);
 
 public:
 	// Public delegates
@@ -145,11 +148,11 @@ protected:
 
 	// Actor attached to
 	UPROPERTY(VisibleAnywhere, Category = "SL")
-	AActor* PartOfActor;
+	AActor* AttachedToActor;
 
 	// Individual of the attached to actor
 	UPROPERTY(VisibleAnywhere, Category = "SL")
-	USLBaseIndividual* PartOfIndividual;
+	USLBaseIndividual* AttachedToIndividual;
 
 	/* Constants */
 	// Tag type for exporting/importing data from tags

@@ -31,6 +31,7 @@ private:
 	// Create checkbox entry slot to set overwrite flag
 	SVerticalBox::FSlot& CreateOverwriteSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedSlot();
+	SVerticalBox::FSlot& CreateIncludeChildrenSlot();
 
 	// Semantic map
 	SVerticalBox::FSlot& CreateSemMapSlot();
@@ -74,6 +75,8 @@ private:
 	/* Checkbox callbacks */
 	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
 	void OnCheckedOnlySelected(ECheckBoxState NewCheckedState);
+	void OnIncludeChildren(ECheckBoxState NewCheckedState);
+
 
 	/* Button callbacks */
 	
@@ -151,5 +154,6 @@ private:
 
 	bool bOverwrite;
 	bool bOnlySelected;
+	bool bIncludeChildren;
 	bool bUseTags;
 };

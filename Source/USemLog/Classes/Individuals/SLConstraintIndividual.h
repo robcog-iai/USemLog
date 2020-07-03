@@ -30,13 +30,7 @@ public:
     virtual bool Init(bool bReset = false);
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bReset = false, bool bTryImportFromTags = false);
-
-    // Save data to owners tag
-    virtual bool ExportToTag(bool bOverwrite = false) override;
-
-    // Load data from owners tag
-    virtual bool ImportFromTag(bool bOverwrite = false) override;
+    virtual bool Load(bool bReset = false, bool bTryImport = false);
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("ConstraintIndividual"); };
@@ -73,9 +67,11 @@ protected:
     virtual void ClearDelegateBounds() override;
 
 private:
-    // States implementations, set references and data
+    // Set dependencies
     bool InitImpl();
-    bool LoadImpl(bool bTryImportFromTags = true);
+
+    // Set data
+    bool LoadImpl(bool bTryImport = true);
 
 protected:
     // First constraint actor

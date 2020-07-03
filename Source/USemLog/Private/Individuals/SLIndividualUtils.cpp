@@ -156,6 +156,10 @@ FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* Indiv
 	{
 		return "AtmosphericFog";
 	}
+	else if (CompOwner->GetName().Contains("SkySphere"))
+	{
+		return "SkySphere";
+	}
 	else if (bDefaultToLabelName)
 	{
 		return CompOwner->GetActorLabel();
@@ -175,7 +179,8 @@ bool FSLIndividualUtils::CanHaveIndividualComponent(AActor* Actor)
 		|| Actor->IsA(ASkeletalMeshActor::StaticClass())
 		|| Actor->IsA(APhysicsConstraintActor::StaticClass())
 		|| Actor->IsA(AAtmosphericFog::StaticClass())
-		|| Actor->IsA(ASLVirtualCameraView::StaticClass());
+		|| Actor->IsA(ASLVirtualCameraView::StaticClass())
+		|| Actor->GetName().Contains("SkySphere");
 }
 
 // Create default individual object depending on the owner type (returns nullptr if failed)
@@ -204,7 +209,7 @@ UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner
 		IndividualClass = USLSkeletalIndividual::StaticClass();
 		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
 	}
-	else if (Owner->IsA(AAtmosphericFog::StaticClass()))
+	else if (Owner->IsA(AAtmosphericFog::StaticClass()) || Owner->GetName().Contains("SkySphere"))
 	{
 		IndividualClass = USLSkyIndividual::StaticClass();
 		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
@@ -215,6 +220,39 @@ UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner
 		//	*FString(__FUNCTION__), __LINE__, *Owner->GetClass()->GetName(), *Owner->GetName());
 	}
 	return IndividualClass;
+}
+
+// Create default individual object depending on the owner type (returns nullptr if failed)
+USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner)
+{
+	// Set semantic individual type depending on owner
+	if (Owner->IsA(AStaticMeshActor::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLRigidIndividual::StaticClass());
+	}
+	else if (Owner->IsA(APhysicsConstraintActor::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLConstraintIndividual::StaticClass());
+	}
+	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
+	{
+		/*IndividualClass = USLConstraintIndividual::StaticClass();
+		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);*/
+	}
+	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLSkeletalIndividual::StaticClass());
+	}
+	else if (Owner->IsA(AAtmosphericFog::StaticClass()) || Owner->GetName().Contains("SkySphere"))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLSkyIndividual::StaticClass());
+	}
+	else
+	{
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for creating a semantic individual %s-%s.."),
+		//	*FString(__FUNCTION__), __LINE__, *Owner->GetClass()->GetName(), *Owner->GetName());
+	}
+	return nullptr;
 }
 
 // Convert individual to the given type
@@ -246,12 +284,12 @@ bool FSLIndividualUtils::WriteId(USLIndividualComponent* IndividualComponent, bo
 {
 	if (USLBaseIndividual* SI = IndividualComponent->GetCastedIndividualObject<USLBaseIndividual>())
 	{
-		if (!SI->HasId() || bOverwrite)
+		if (!SI->IsIdValueSet() || bOverwrite)
 		{
 			const FString NewId = FSLUuid::NewGuidInBase64Url();
-			if (!SI->GetId().Equals(NewId))
+			if (!SI->GetIdValue().Equals(NewId))
 			{
-				SI->SetId(NewId);
+				SI->SetIdValue(NewId);
 				return true;
 			}
 		}
@@ -264,9 +302,9 @@ bool FSLIndividualUtils::ClearId(USLIndividualComponent* IndividualComponent)
 {
 	if (USLBaseIndividual* SI = IndividualComponent->GetCastedIndividualObject<USLBaseIndividual>())
 	{
-		if (SI->HasId())
+		if (SI->IsIdValueSet())
 		{
-			SI->ClearId();
+			SI->ClearIdValue();
 			return true;
 		}
 	}
@@ -280,12 +318,12 @@ bool FSLIndividualUtils::WriteClass(USLIndividualComponent* IndividualComponent,
 {
 	if (USLBaseIndividual* SI = IndividualComponent->GetCastedIndividualObject<USLBaseIndividual>())
 	{
-		if (!SI->HasClass() || bOverwrite)
+		if (!SI->IsClassValueSet() || bOverwrite)
 		{
 			const FString NewName = FSLIndividualUtils::GetIndividualClassName(IndividualComponent);
-			if (!SI->GetClass().Equals(NewName))
+			if (!SI->GetClassValue().Equals(NewName))
 			{
-				SI->SetClass(NewName);
+				SI->SetClassValue(NewName);
 				return true;
 			}
 		}
@@ -298,9 +336,9 @@ bool FSLIndividualUtils::ClearClass(USLIndividualComponent* IndividualComponent)
 {
 	if (USLBaseIndividual* SI = IndividualComponent->GetCastedIndividualObject<USLBaseIndividual>())
 	{
-		if (SI->HasClass())
+		if (SI->IsClassValueSet())
 		{
-			SI->ClearClass();
+			SI->ClearClassValue();
 			return true;
 		}
 	}
@@ -323,6 +361,8 @@ int32 FSLIndividualUtils::WriteVisualMasks(const TSet<USLIndividualComponent*>& 
 				NumNewMasks++;
 			}
 		}
+
+		// TODO check for children
 	}
 	return NumNewMasks;
 }
@@ -343,26 +383,21 @@ int32 FSLIndividualUtils::WriteVisualMasks(const TSet<USLIndividualComponent*>& 
 				NumNewMasks++;
 			}
 		}
+		
+		// TODO check for children
+		if (USLSkeletalIndividual* SkI = IC->GetCastedIndividualObject<USLSkeletalIndividual>())
+		{
+
+		}
 	}
 	return NumNewMasks;
 }
-
-//// Clear visual mask of the actor
-//bool FSLIndividualUtils::ClearVisualMask(AActor* Actor)
-//{
-//	//if (USLPerceivableIndividual* SI = GetCastedIndividualObject<USLPerceivableIndividual>(Actor))
-//	//{
-//	//	SI->SetVisualMask("");
-//	//	return true;
-//	//}
-//	return false;
-//}
 
 bool FSLIndividualUtils::ClearVisualMask(USLIndividualComponent* IndividualComponent)
 {
 	if (USLPerceivableIndividual* SI = IndividualComponent->GetCastedIndividualObject<USLPerceivableIndividual>())
 	{
-		SI->ClearVisualMask();
+		SI->ClearVisualMaskValue();
 		return true;
 	}
 
@@ -379,7 +414,7 @@ bool FSLIndividualUtils::AddVisualMask(USLPerceivableIndividual* Individual, TAr
 	static const int32 NumTrials = 100;
 	static const int32 MinManhattanDist = 29;
 
-	if (!Individual->HasVisualMask())
+	if (!Individual->IsVisualMaskValueSet())
 	{
 		// Generate new color
 		FColor NewColor = CreateNewUniqueColorRand(ConsumedColors, NumTrials, MinManhattanDist);
@@ -391,14 +426,14 @@ bool FSLIndividualUtils::AddVisualMask(USLPerceivableIndividual* Individual, TAr
 		}
 		else
 		{
-			Individual->SetVisualMask(NewColor.ToHex());
+			Individual->SetVisualMaskValue(NewColor.ToHex());
 			return true;
 		}
 	}
 	else if(bOverwrite)
 	{
 		// Remove previous color from the consumed array
-		int32 ConsumedColorIdx = ConsumedColors.Find(FColor::FromHex(Individual->GetVisualMask()));
+		int32 ConsumedColorIdx = ConsumedColors.Find(FColor::FromHex(Individual->GetVisualMaskValue()));
 		if (ConsumedColorIdx != INDEX_NONE)
 		{
 			ConsumedColors.RemoveAt(ConsumedColorIdx);
@@ -419,7 +454,7 @@ bool FSLIndividualUtils::AddVisualMask(USLPerceivableIndividual* Individual, TAr
 		}
 		else
 		{
-			Individual->SetVisualMask(NewColor.ToHex());
+			Individual->SetVisualMaskValue(NewColor.ToHex());
 			return true;
 		}
 	}
@@ -438,9 +473,9 @@ TArray<FColor> FSLIndividualUtils::GetConsumedVisualMaskColors(const TSet<USLInd
 	{
 		if (USLPerceivableIndividual* VI = IC->GetCastedIndividualObject<USLPerceivableIndividual>())
 		{
-			if (VI->HasVisualMask())
+			if (VI->IsVisualMaskValueSet())
 			{
-				ConsumedColors.Add(FColor::FromHex(VI->GetVisualMask()));
+				ConsumedColors.Add(FColor::FromHex(VI->GetVisualMaskValue()));
 			}
 		}
 	}

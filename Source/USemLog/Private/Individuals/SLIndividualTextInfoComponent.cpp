@@ -5,7 +5,6 @@
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/SLIndividualVisualAssets.h"
 #include "Components/TextRenderComponent.h"
-#include "Components/SplineMeshComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Materials/MaterialInterface.h"
@@ -31,20 +30,20 @@ USLIndividualTextInfoComponent::USLIndividualTextInfoComponent()
 
 	bDelegatesBound = false;
 
-	TextSize = 5.f;
-	FirstLineTextSizeRatio = 1.f;
-	SecondLineTextSizeRatio = 0.8f;
-	ThirdLineTextSizeRatio = 0.8f;
+	TextScreenSize = 5.f;
+	ScaleText1 = 1.f;
+	ScaleText2 = 0.8f;
+	ScaleText3 = 0.8f;
 
 	static USLIndividualVisualAssets* AssetsContainer = Cast<USLIndividualVisualAssets>(StaticLoadObject(
 		USLIndividualVisualAssets::StaticClass(), NULL, AssetContainerPath,
 		NULL, LOAD_None, NULL));
 
-	FirstText = CreateTextComponentSubobject("FirstText", AssetsContainer);
-	SecondText = CreateTextComponentSubobject("SecondText", AssetsContainer);
-	SecondText->SetTextRenderColor(FColor::Red);
-	ThirdText = CreateTextComponentSubobject("ThirdText", AssetsContainer);
-	ThirdText->SetTextRenderColor(FColor::White);
+	Text1 = CreateTextComponentSubobject("FirstText", AssetsContainer);
+	Text2 = CreateTextComponentSubobject("SecondText", AssetsContainer);
+	Text2->SetTextRenderColor(FColor::Red);
+	Text3 = CreateTextComponentSubobject("ThirdText", AssetsContainer);
+	Text3->SetTextRenderColor(FColor::White);
 }
 	
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
@@ -117,19 +116,19 @@ void USLIndividualTextInfoComponent::BeginDestroy()
 
 	OnDestroyed.Broadcast(this);
 
-	if (FirstText && FirstText->IsValidLowLevel())
+	if (Text1 && Text1->IsValidLowLevel())
 	{
-		FirstText->ConditionalBeginDestroy();
+		Text1->ConditionalBeginDestroy();
 	}
 
-	if (SecondText && SecondText->IsValidLowLevel())
+	if (Text2 && Text2->IsValidLowLevel())
 	{
-		SecondText->ConditionalBeginDestroy();
+		Text2->ConditionalBeginDestroy();
 	}
 
-	if (ThirdText && ThirdText->IsValidLowLevel())
+	if (Text3 && Text3->IsValidLowLevel())
 	{
-		ThirdText->ConditionalBeginDestroy();
+		Text3->ConditionalBeginDestroy();
 	}	
 
 	Super::BeginDestroy();
@@ -314,7 +313,7 @@ bool USLIndividualTextInfoComponent::InitImpl()
 		BindDelegates();
 		if (OwnerIndividualComponent->IsInit())
 		{
-			if (OwnerIndividualObj->IsPartOfAnotherIndividual())
+			if (OwnerIndividualObj->IsAttachedToAnotherIndividual())
 			{
 				static USLIndividualVisualAssets* AssetsContainer = Cast<USLIndividualVisualAssets>(StaticLoadObject(
 					USLIndividualVisualAssets::StaticClass(), NULL, AssetContainerPath,
@@ -349,16 +348,16 @@ bool USLIndividualTextInfoComponent::LoadImpl()
 		if (OwnerIndividualComponent->IsInit() || OwnerIndividualComponent->Init())
 		{
 			// Read any available data
-			if (OwnerIndividualObj->HasClass())
+			if (OwnerIndividualObj->IsClassValueSet())
 			{
-				FirstText->SetText(FText::FromString("class:" + OwnerIndividualObj->GetClass()));
+				Text1->SetText(FText::FromString("class:" + OwnerIndividualObj->GetClassValue()));
 			}
-			if (OwnerIndividualObj->HasId())
+			if (OwnerIndividualObj->IsIdValueSet())
 			{
-				SecondText->SetText(FText::FromString("id:" + OwnerIndividualObj->GetId()));
+				Text2->SetText(FText::FromString("id:" + OwnerIndividualObj->GetIdValue()));
 			}
 			
-			ThirdText->SetText(FText::FromString("type:" + OwnerIndividualObj->GetTypeName()));
+			Text3->SetText(FText::FromString("type:" + OwnerIndividualObj->GetTypeName()));
 
 
 			if (OwnerIndividualComponent->IsLoaded() || OwnerIndividualComponent->Load())
@@ -478,15 +477,15 @@ void USLIndividualTextInfoComponent::SetTextColors()
 {
 	if (IsLoaded())
 	{
-		FirstText->SetTextRenderColor(FColor::Green);
+		Text1->SetTextRenderColor(FColor::Green);
 	}
 	else if (IsInit())
 	{
-		FirstText->SetTextRenderColor(FColor::Yellow);
+		Text1->SetTextRenderColor(FColor::Yellow);
 	}
 	else
 	{
-		FirstText->SetTextRenderColor(FColor::Red);
+		Text1->SetTextRenderColor(FColor::Red);
 	}	
 }
 
@@ -498,42 +497,42 @@ void USLIndividualTextInfoComponent::ResizeText()
 		FVector BoundsOrigin;
 		FVector BoxExtent;
 		GetOwner()->GetActorBounds(false, BoundsOrigin, BoxExtent);
-		TextSize = FMath::Clamp(BoxExtent.Size() / 30.f, MinClampTextSize, MaxClampTextSize);
+		TextScreenSize = FMath::Clamp(BoxExtent.Size() / 30.f, MinClampTextSize, MaxClampTextSize);
 	}
 
-	const float FirstSize = TextSize * FirstLineTextSizeRatio;
-	const float SecondSize = TextSize * SecondLineTextSizeRatio;
-	const float ThirdSize = TextSize * ThirdLineTextSizeRatio;
+	const float FirstSize = TextScreenSize * ScaleText1;
+	const float SecondSize = TextScreenSize * ScaleText2;
+	const float ThirdSize = TextScreenSize * ScaleText3;
 
 	const float FirstRelLoc = (FirstSize + SecondSize + ThirdSize);
 	const float SecondRelLoc = (SecondSize + ThirdSize);
 	const float ThirdRelLoc = ThirdSize;
 
-	if (FirstText && FirstText->IsValidLowLevel() && !FirstText->IsPendingKill())
+	if (Text1 && Text1->IsValidLowLevel() && !Text1->IsPendingKill())
 	{
-		FirstText->SetWorldSize(FirstSize);
-		FirstText->SetRelativeLocation(FVector(0.f, 0.f, FirstRelLoc));
+		Text1->SetWorldSize(FirstSize);
+		Text1->SetRelativeLocation(FVector(0.f, 0.f, FirstRelLoc));
 	}
 
-	if (SecondText && SecondText->IsValidLowLevel() && !SecondText->IsPendingKill())
+	if (Text2 && Text2->IsValidLowLevel() && !Text2->IsPendingKill())
 	{
-		SecondText->SetWorldSize(SecondSize);
-		SecondText->SetRelativeLocation(FVector(0.f, 0.f, SecondRelLoc));
+		Text2->SetWorldSize(SecondSize);
+		Text2->SetRelativeLocation(FVector(0.f, 0.f, SecondRelLoc));
 	}
 
-	if (ThirdText && ThirdText->IsValidLowLevel() && !ThirdText->IsPendingKill())
+	if (Text3 && Text3->IsValidLowLevel() && !Text3->IsPendingKill())
 	{
-		ThirdText->SetWorldSize(ThirdSize);
-		ThirdText->SetRelativeLocation(FVector(0.f, 0.f, ThirdRelLoc));
+		Text3->SetWorldSize(ThirdSize);
+		Text3->SetRelativeLocation(FVector(0.f, 0.f, ThirdRelLoc));
 	}
 }
 
 // Set the text values to default
 void USLIndividualTextInfoComponent::ResetTextContent()
 {
-	FirstText->SetText(FText::FromString("class:"));
-	SecondText->SetText(FText::FromString("id:"));
-	ThirdText->SetText(FText::FromString("type:"));
+	Text1->SetText(FText::FromString("class:"));
+	Text2->SetText(FText::FromString("id:"));
+	Text3->SetText(FText::FromString("type:"));
 }
 
 // Render text subobject creation helper
@@ -560,43 +559,6 @@ UTextRenderComponent* USLIndividualTextInfoComponent::CreateTextComponentSubobje
 	return TRC;
 }
 
-// Create spline mesh component (can be called outside of constructor)
-USplineMeshComponent* USLIndividualTextInfoComponent::CreateSplineMeshComponent(USLIndividualVisualAssets* Assets)
-{
-	USplineMeshComponent* SplineMeshComp = NewObject<USplineMeshComponent>(this);	
-	SplineMeshComp->SetupAttachment(this);
-	SplineMeshComp->SetMobility(EComponentMobility::Movable);
-	SplineMeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SplineMeshComp->SetSplineUpDir(FVector::UpVector, false);
-	SplineMeshComp->PrimaryComponentTick.bCanEverTick = false;
-	SplineMeshComp->PostPhysicsComponentTick.bCanEverTick = false;
-	SplineMeshComp->bCastDynamicShadow = false;
-	SplineMeshComp->CastShadow = false;
-	
-	if (Assets)
-	{
-		if (Assets->SplineMesh)
-		{
-			SplineMeshComp->SetStaticMesh(Assets->SplineMesh);
-		}
-
-		if (Assets->SplineMaterial)
-		{
-			UMaterialInstanceDynamic* SplineMid = UMaterialInstanceDynamic::Create(Assets->SplineMaterial, this);
-			SplineMid->SetVectorParameterValue("Color", FLinearColor::Green);
-			SplineMeshComp->SetMaterial(0, SplineMid);
-			SplineMeshComp->SetMaterial(1, SplineMid);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's info compoonent asset container is no set.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-	}
-
-	SplineMeshComp->SetVisibility(true);
-	SplineMeshComp->RegisterComponent();
-	return SplineMeshComp;
-}
 
 /* Delegate functions */
 // Called when owners init value has changed
@@ -636,11 +598,11 @@ void USLIndividualTextInfoComponent::OnOwnerIndividualClassChanged(USLBaseIndivi
 {
 	if (NewVal.IsEmpty())
 	{
-		FirstText->SetText(FText::FromString("class:"));
+		Text1->SetText(FText::FromString("class:"));
 	}
 	else
 	{
-		FirstText->SetText(FText::FromString("class:" + NewVal));
+		Text1->SetText(FText::FromString("class:" + NewVal));
 	}
 }
 
@@ -649,11 +611,11 @@ void USLIndividualTextInfoComponent::OnOwnerIndividualIdChanged(USLBaseIndividua
 {
 	if (NewVal.IsEmpty())
 	{
-		SecondText->SetText(FText::FromString("id:"));
+		Text2->SetText(FText::FromString("id:"));
 	}
 	else
 	{
-		SecondText->SetText(FText::FromString("id:" + NewVal));
+		Text2->SetText(FText::FromString("id:" + NewVal));
 	}
 }
 

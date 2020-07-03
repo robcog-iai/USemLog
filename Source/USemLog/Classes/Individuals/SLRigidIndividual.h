@@ -6,8 +6,10 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Individuals/SLPerceivableIndividual.h"
-#include "Components/StaticMeshComponent.h"
 #include "SLRigidIndividual.generated.h"
+
+// Forward declarations
+class UStaticMeshComponent;
 
 /**
  * 
@@ -31,14 +33,14 @@ public:
     virtual bool Init(bool bReset = false);
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bReset = false, bool bTryImportFromTags = false);
+    virtual bool Load(bool bReset = false, bool bTryImport = false);
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("RigidIndividual"); };
 
     /* Begin Perceivable individual interface */
     // Apply visual mask material
-    virtual bool ApplyMaskMaterials(bool bReload = false) override;
+    virtual bool ApplyMaskMaterials(bool bPrioritizeChildren = false) override;
 
     // Apply original materials
     virtual bool ApplyOriginalMaterials() override;
@@ -52,12 +54,14 @@ protected:
     virtual void LoadReset() override;
 
 private:
-    // States implementations, set references and data
+    // Set dependencies
     bool InitImpl();
-    bool LoadImpl(bool bTryImportFromTags = true);
+
+    // Set data
+    bool LoadImpl(bool bTryImport = true);
 
     // Check if the static mesh component is set
-    bool HasValidVisualMesh() const { return VisualMeshComponent && VisualMeshComponent->IsValidLowLevel() && !VisualMeshComponent->IsPendingKill(); }
+    bool HasValidVisualMesh() const;
 
 private:
     // The visual component of the owner

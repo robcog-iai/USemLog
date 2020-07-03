@@ -84,6 +84,9 @@ public:
 	// Create default individual object depending on the owner type (returns nullptr if failed)
 	static UClass* CreateIndividualObject(UObject* Outer, AActor* Owner, class USLBaseIndividual*& OutIndividualObject);
 
+	// Create default individual object depending on the owner type (returns nullptr if failed)
+	class USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
+
 	// Convert individual to the given type
 	static bool ConvertIndividualObject(class USLBaseIndividual*& OutIndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass);
 

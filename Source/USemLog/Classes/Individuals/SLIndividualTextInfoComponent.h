@@ -110,9 +110,6 @@ private:
 	// Render text subobject creation helper (should be called in constructor)
 	UTextRenderComponent* CreateTextComponentSubobject(const FString& DefaultName, class USLIndividualVisualAssets* Assets = nullptr);
 
-	// Create spline mesh component (can be called outside of constructor)
-	USplineMeshComponent* CreateSplineMeshComponent(class USLIndividualVisualAssets* Assets = nullptr);
-
 	/* Delegate functions */
 	// Called when siblings init value has changed
 	UFUNCTION()
@@ -162,23 +159,23 @@ private:
 	/* Text */
 	// First render text line (e.g class)
 	UPROPERTY()
-	UTextRenderComponent* FirstText;
+	UTextRenderComponent* Text1;
 
 	// Second render text line (e.g. id)
 	UPROPERTY()
-	UTextRenderComponent* SecondText;
+	UTextRenderComponent* Text2;
 
 	// Third render text line (e.g. type)
 	UPROPERTY()
-	UTextRenderComponent* ThirdText;
+	UTextRenderComponent* Text3;
 
 	// Text size template value 
-	float TextSize;
+	float TextScreenSize;
 
 	// These will be multiplied with the template value to get the final size
-	float FirstLineTextSizeRatio;
-	float SecondLineTextSizeRatio;
-	float ThirdLineTextSizeRatio;
+	float ScaleText1;
+	float ScaleText2;
+	float ScaleText3;
 
 	/* Constants */
 	// Clamp the template text size between these values
