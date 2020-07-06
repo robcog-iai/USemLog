@@ -5,6 +5,9 @@
 #include "Individuals/SLSkeletalIndividual.h"
 #include "Individuals/SLPerceivableIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
+#include "Skeletal/SLSkeletalDataAsset.h"
+
+
 
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
@@ -243,10 +246,27 @@ bool USLIndividualComponent::CreateIndividual()
 	}
 
 	// Set semantic individual type depending on owner
-	if (FSLIndividualUtils::CreateIndividualObject(this, GetOwner(), IndividualObj))
+	if (USLBaseIndividual* BI = FSLIndividualUtils::CreateIndividualObject(this, GetOwner()))
 	{	
+		IndividualObj = BI;
+
 		// Listen to updates to the individual
 		BindDelegates();
+
+		// If skeletal, check for data asset
+		if (BI->IsA(USLSkeletalIndividual::StaticClass()))
+		{
+			if (USLSkeletalDataAsset* SLSK = FSLIndividualUtils::GetSkeletalDataAsset(GetOwner()))
+			{
+				OptionalDataAssets.Add("SkeletalDataAsset", SLSK);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not find skeletal data asset for skeletal actor.."),
+					*FString(__FUNCTION__), __LINE__);
+			}
+		}
+
 		return true;
 	}
 	else

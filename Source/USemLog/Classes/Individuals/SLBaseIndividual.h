@@ -5,6 +5,19 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+
+#if SL_WITH_LIBMONGO_C
+THIRD_PARTY_INCLUDES_START
+	#if PLATFORM_WINDOWS
+	#include "Windows/AllowWindowsPlatformTypes.h"
+	#include <mongoc/mongoc.h>
+	#include "Windows/HideWindowsPlatformTypes.h"
+	#else
+	#include <mongoc/mongoc.h>
+	#endif // #if PLATFORM_WINDOWS
+THIRD_PARTY_INCLUDES_END
+#endif //SL_WITH_LIBMONGO_C
+
 #include "SLBaseIndividual.generated.h"
 
 // Notify every time the init status changes
@@ -84,6 +97,16 @@ public:
 	FString GetClassValue() const { return Class; };
 	bool IsClassValueSet() const { return !Class.IsEmpty(); };
 
+	/*OId*/
+	// BSON Id of the individual, used for db optimized queries
+	void SetOIdValue(const FString& NewVal);
+	void ClearOIdValue() { SetOIdValue(""); };
+	FString GetOIdValue() const { return OId; };
+	bool IsOIdValueSet() const { return !OId.IsEmpty(); };
+#if SL_WITH_LIBMONGO_C
+	bson_oid_t GetOId() const { return oid; };
+#endif // SL_WITH_LIBMONGO_C
+
 protected:
 	// Clear all references of the individual
 	virtual void InitReset();
@@ -117,6 +140,10 @@ private:
 	// Import values expernally
 	bool ImportIdValue(bool bOverwrite = false);
 	bool ImportClassValue(bool bOverwrite = false);
+	bool ImportOIdValue(bool bOverwrite = false);
+
+	// Load the oid value from the persitent OId string (generate a new one if none is available)
+	bool LoadOId(bool bGenerateNew = false);
 
 public:
 	// Public delegates
@@ -137,6 +164,10 @@ protected:
 	// Idividual class
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	FString Class;
+
+	// BSON Id of the individual as persistent string
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	FString OId;
 	
 	// True if individual is initialized
 	UPROPERTY(VisibleAnywhere, Category = "SL")
@@ -153,6 +184,11 @@ protected:
 	// Individual of the attached to actor
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	USLBaseIndividual* AttachedToIndividual;
+
+#if SL_WITH_LIBMONGO_C
+	// Native, non-persistent bson oid of the individual
+	bson_oid_t oid;
+#endif
 
 	/* Constants */
 	// Tag type for exporting/importing data from tags

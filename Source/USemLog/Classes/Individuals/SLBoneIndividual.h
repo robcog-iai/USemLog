@@ -6,9 +6,11 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Individuals/SLPerceivableIndividual.h"
-#include "Individuals/SLSkeletalIndividual.h"
-#include "Animation/SkeletalMeshActor.h"
 #include "SLBoneIndividual.generated.h"
+
+// Forward declaration
+class USkeletalMeshComponent;
+class USLSkeletalDataComponent;
 
 /**
  *
@@ -36,6 +38,12 @@ public:
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset = false, bool bTryImport = false);
 
+    // Save values externally
+    virtual bool ExportValues(bool bOverwrite = false);
+
+    // Load values externally
+    virtual bool ImportValues(bool bOverwrite = false);
+
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("BoneIndividual"); };
 
@@ -47,6 +55,12 @@ public:
     virtual bool ApplyOriginalMaterials() override;
     /* End Perceivable individual interface */
 
+    // Calculate the current bone transform
+    bool CacheCurrentBoneTransform();
+
+    // Get the cached bone transform
+    FTransform GetCachedTranform() const { return CachedTransform; };
+
 protected:
     // Clear all values of the individual
     virtual void InitReset() override;
@@ -57,30 +71,51 @@ protected:
     // Set pointer to parent actor
     virtual bool SetParentActor() override;
 
-    //// Check if the skeletal parent actor and individual is set
-    //bool  HasValidSekeletalParent() const 
-    //{
-    //    return ParentSkeletalActor && ParentSkeletalActor->IsValidLowLevel() && !ParentSkeletalActor->IsPendingKill()
-    //        && ParentSkeletalIndividual && ParentSkeletalIndividual->IsValidLowLevel() && !ParentSkeletalIndividual->IsPendingKill();
-    //}
+    // Check if skeleltal bone description component is available
+    bool HasValidSkeletalMesh() const;
 
-    //// Set pointer to parent skeletal actor
-    //bool SetSkeletalParentActor();
+    // Check if skeleltal bone description component is available
+    bool HasValidSkeletalDataComponent() const;
 
-    //// Set pointer to parent skeletal individual
-    //bool SetSkeletalParentIndividual();
+    // Check if the material index is valid
+    bool HasValidMaterialIndex() const;
+
+    // Check if the bone index is valid
+    bool HasValidBoneIndex() const;
 
 private:
     // States implementations, set references and data
     bool InitImpl();
     bool LoadImpl(bool bTryImport = true);
 
-//protected:
-//    // Persistent pointer to the parent skeletal actor
-//    UPROPERTY()
-//    ASkeletalMeshActor* ParentSkeletalActor;
-//
-//    // Persistent pointer to the parent skeletal individual
-//    UPROPERTY()
-//    USLSkeletalIndividual* ParentSkeletalIndividual;
+protected:
+    // Mask material index
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    int32 MaterialIndex;
+
+    // Bone index
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    int32 BoneIndex;
+
+    // Parent skeletal mesh
+    UPROPERTY()
+    USkeletalMeshComponent* SkeletalMeshComponent;
+
+    // Parent skeletal mesh data
+    UPROPERTY()
+    USLSkeletalDataComponent* SkelDataComp;
+
+    // Cached transform
+    FTransform CachedTransform;
+
+
+    //// FName of the bone
+    //UPROPERTY()
+    //FName BoneName;
+
+    //// Cached transform of the bone
+    //FVector CachedLocation;
+
+    //// Cached transform of the bone
+    //FVector CachedQuat;
 };

@@ -7,6 +7,8 @@
 
 // Forward declarations
 class USLIndividualComponent;
+class USLBaseIndividual;
+class USLSkeletalDataAsset;
 
 // Individual types flags
 enum class ESLIndividualFlags : uint32
@@ -85,11 +87,18 @@ public:
 	static UClass* CreateIndividualObject(UObject* Outer, AActor* Owner, class USLBaseIndividual*& OutIndividualObject);
 
 	// Create default individual object depending on the owner type (returns nullptr if failed)
-	class USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
+	static USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
 
 	// Convert individual to the given type
 	static bool ConvertIndividualObject(class USLBaseIndividual*& OutIndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass);
 
+	// Generate a new bson oid as string, empty string if fails
+	static FString NewOIdAsString();
+
+	// Find the skeletal data asset for the individual
+	static USLSkeletalDataAsset* GetSkeletalDataAsset(AActor* Owner);
+
+	// Get skeletal data asset
 
 	/* Id */
 	// Write unique id to the actor

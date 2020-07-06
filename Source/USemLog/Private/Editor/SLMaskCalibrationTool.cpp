@@ -315,7 +315,7 @@ bool USLMaskCalibrationTool::StoreRenderedColor(const FColor & InRenderedColor)
 				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
 				if (FSLBoneData* BoneData = SkDC->SemanticBonesData.Find(BoneName))
 				{
-					BoneData->RenderedVisualMask = InRenderedColor.ToHex();
+					BoneData->CalibratedVisualMask = InRenderedColor.ToHex();
 					PrintProgress(Parent, OriginalColor, InRenderedColor, BoneName.ToString());
 					return true;
 				}
@@ -493,7 +493,7 @@ bool USLMaskCalibrationTool::LoadMaskMappings(bool bOverwrite)
 
 					if (!MaskStr.IsEmpty())
 					{
-						if (!bOverwrite && !BoneDataPair.Value.RenderedVisualMask.IsEmpty())
+						if (!bOverwrite && !BoneDataPair.Value.CalibratedVisualMask.IsEmpty())
 						{
 							//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; Already has a rendered visual mask, skipping.."),
 							//	*FString(__func__), __LINE__, *ActItr->GetName(), *BoneName.ToString());
@@ -764,7 +764,7 @@ bool USLMaskCalibrationTool::SetupMaskColorsWorld(bool bOnlyDemo)
 					UMaterialInstanceDynamic* LocalDynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 					LocalDynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
 						FLinearColor::FromSRGBColor(FColor::FromHex(NameToBoneDataPair.Value.VisualMask)));
-					SkMAClone->GetSkeletalMeshComponent()->SetMaterial(NameToBoneDataPair.Value.MaskMaterialIndex, LocalDynamicMaskMaterial);
+					SkMAClone->GetSkeletalMeshComponent()->SetMaterial(NameToBoneDataPair.Value.MaterialIndex, LocalDynamicMaskMaterial);
 				}
 			}
 

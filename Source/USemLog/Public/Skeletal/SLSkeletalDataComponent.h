@@ -26,25 +26,25 @@ struct FSLBoneData
 	UPROPERTY(EditAnywhere)
 	FString Class;
 
+	// BSON type id
+	UPROPERTY(EditAnywhere)
+	FString OId;
+
 	// Color mask
 	UPROPERTY(EditAnywhere)
 	FString VisualMask;
 
 	// The actual value that gets rendered and saved as as screenshot
 	UPROPERTY(EditAnywhere)
-	FString RenderedVisualMask;
-
-
-	//// Mask material instance 
-	//UPROPERTY(EditAnywhere)
-	//UMaterialInterface* MaskMaterial;
+	FString CalibratedVisualMask;
 
 	// Mask material index
 	UPROPERTY(EditAnywhere)
-	int32 MaskMaterialIndex;
+	int32 MaterialIndex = INDEX_NONE;
 
-	//// Default constructor
-	//FSLBoneData() : Class(""), MaskColorHex(""), MaskMaterialIndex(INDEX_NONE) {};
+	// Mask material index
+	UPROPERTY(EditAnywhere)
+	int32 BoneIndex = INDEX_NONE;
 
 	// Checks if the structure has been set
 	FORCEINLINE bool IsClassSet() const { return !Class.IsEmpty(); };
@@ -53,7 +53,7 @@ struct FSLBoneData
 	FORCEINLINE bool HasVisualMask() const { return !VisualMask.IsEmpty(); }
 
 	// Check if rendered visual is set
-	FORCEINLINE bool HasRenderedVisualMask() const { return !RenderedVisualMask.IsEmpty(); }
+	FORCEINLINE bool HasCalibratedVisualMask() const { return !CalibratedVisualMask.IsEmpty(); }
 
 	// Checks if the structure has been set
 	FORCEINLINE bool IsSet() const { return !Id.IsEmpty() && !Class.IsEmpty() && !VisualMask.IsEmpty(); };
@@ -61,7 +61,7 @@ struct FSLBoneData
 	// Get result as string
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Class:%s; VisualMask:%s; MaskMaterialIndex:%d"), *Class, *VisualMask, MaskMaterialIndex);
+		return FString::Printf(TEXT("Class:%s; VisualMask:%s; MaskMaterialIndex:%d"), *Class, *VisualMask, MaterialIndex);
 	}
 };
 

@@ -48,9 +48,9 @@ bool FSLVisionMaskImageHandler::Init()
 
 			for (const auto& BonePair : Pair.Value->SemanticBonesData)
 			{
-				if (BonePair.Value.HasVisualMask() && BonePair.Value.HasRenderedVisualMask())
+				if (BonePair.Value.HasVisualMask() && BonePair.Value.HasCalibratedVisualMask())
 				{
-					const FColor RenderedMaskColor = FColor::FromHex(BonePair.Value.RenderedVisualMask);
+					const FColor RenderedMaskColor = FColor::FromHex(BonePair.Value.CalibratedVisualMask);
 					RenderedColorToSkelInfo.Emplace(RenderedMaskColor, 
 						FSLVisionMaskSkelInfo(SkelClass, SkelId, BonePair.Value.Class, BonePair.Value.VisualMask));
 				}

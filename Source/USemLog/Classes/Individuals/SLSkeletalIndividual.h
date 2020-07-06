@@ -63,7 +63,7 @@ private:
     bool LoadImpl(bool bTryImport = true);
 
     // Check if the static mesh component is set
-    bool HasValidVisualMesh() const;
+    bool HasValidSkeletalMesh() const;
 
     // Set sekeletal mesh
     bool SetSkeletalMesh();
@@ -77,8 +77,14 @@ private:
     // Check if all the bones are valid
     bool HasValidBones() const;
 
-    // Set the bones
-    bool SetBones();
+    // Create the bones individuals
+    bool CreateBones();
+
+    // Call init on all bones, true if all succesfully init
+    bool InitAllBones();
+
+    // Call load on all bones, true if all succesfully loaded
+    bool LoadAllBones();
 
     // Destroy bone individuals
     void DestroyBones();
@@ -88,7 +94,7 @@ private:
 
 protected:
     // Semantically annotated bones
-    UPROPERTY()
+    UPROPERTY(VisibleAnywhere, Category = "SL")
     TArray<USLBoneIndividual*> BoneIndividuals;
 
     // Raw bones
@@ -97,7 +103,7 @@ protected:
 private:
     // The visual component of the owner
     UPROPERTY()
-    USkeletalMeshComponent* VisualMeshComponent;
+    USkeletalMeshComponent* SkeletalMeshComponent;
 
     // Semantic data of the skeletal component
     UPROPERTY()

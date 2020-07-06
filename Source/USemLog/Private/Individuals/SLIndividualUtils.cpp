@@ -25,8 +25,25 @@
 
 #include "Atmosphere/AtmosphericFog.h"
 
+// Skeletal data asset search
+#include "AssetRegistryModule.h"
+#include "Skeletal/SLSkeletalDataAsset.h"
+
 // Utils
 #include "Utils/SLUuid.h"
+
+#include <bson/bson.h>
+#if SL_WITH_LIBMONGO_C
+THIRD_PARTY_INCLUDES_START
+	#if PLATFORM_WINDOWS
+	#include "Windows/AllowWindowsPlatformTypes.h"
+	#include <bson/bson.h>
+	#include "Windows/HideWindowsPlatformTypes.h"
+	#else
+	#include <bson/bson.h>
+	#endif // #if PLATFORM_WINDOWS
+THIRD_PARTY_INCLUDES_END
+#endif // SL_WITH_LIBMONGO_C
 
 // Get the individual component from the actor (nullptr if it does not exist)
 USLIndividualComponent* FSLIndividualUtils::GetIndividualComponent(AActor* Owner)
@@ -277,11 +294,60 @@ bool FSLIndividualUtils::ConvertIndividualObject(USLBaseIndividual*& IndividualO
 	return false;
 }
 
+// Generate a new bson oid as string, empty string if fails
+FString FSLIndividualUtils::NewOIdAsString()
+{
+#if SL_WITH_LIBMONGO_C
+	bson_oid_t new_oid;
+	bson_oid_init(&new_oid, NULL);
+	char oid_str[25];
+	bson_oid_to_string(&new_oid, oid_str);
+	return FString(UTF8_TO_TCHAR(oid_str));
+#elif
+	return FString();
+#endif // #if PLATFORM_WINDOWS
+	return FString();
+}
+
+// Find the skeletal data asset for the individual
+USLSkeletalDataAsset* FSLIndividualUtils::GetSkeletalDataAsset(AActor* Owner)
+{
+	if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(Owner))
+	{
+		if (USkeletalMeshComponent* SkMC = SkMA->GetSkeletalMeshComponent())
+		{
+			// Get skeletal mesh name (SK_ABC)
+			FString SkelAssetName = SkMC->SkeletalMesh->GetFullName();
+			int32 FindCharPos;
+			SkelAssetName.FindLastChar('.', FindCharPos);
+			SkelAssetName.RemoveAt(0, FindCharPos + 1);
+
+			// Find data asset (SLSK_ABC)
+			FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+			TArray<FAssetData> AssetData;
+			FARFilter Filter;
+			Filter.PackagePaths.Add("/USemLog/Skeletal");
+			Filter.ClassNames.Add(USLSkeletalDataAsset::StaticClass()->GetFName());
+			AssetRegistryModule.Get().GetAssets(Filter, AssetData);
+			
+			// Search for the results
+			for (const auto& AD : AssetData)
+			{
+				if (AD.AssetName.ToString().Contains(SkelAssetName))
+				{
+					return Cast<USLSkeletalDataAsset>(AD.GetAsset());
+				}
+			}
+		}
+	}
+	return nullptr;
+}
 
 /* Id */
 // Write unique id to the actor
 bool FSLIndividualUtils::WriteId(USLIndividualComponent* IndividualComponent, bool bOverwrite)
 {
+	bool RetVal = false;
 	if (USLBaseIndividual* SI = IndividualComponent->GetCastedIndividualObject<USLBaseIndividual>())
 	{
 		if (!SI->IsIdValueSet() || bOverwrite)
@@ -290,22 +356,39 @@ bool FSLIndividualUtils::WriteId(USLIndividualComponent* IndividualComponent, bo
 			if (!SI->GetIdValue().Equals(NewId))
 			{
 				SI->SetIdValue(NewId);
-				return true;
+				RetVal = true;
+			}
+		}
+
+		if (!SI->IsOIdValueSet() || bOverwrite)
+		{
+			const FString NewOId = NewOIdAsString();
+			if (!SI->GetOIdValue().Equals(NewOId))
+			{
+				SI->SetOIdValue(NewOId);
+				RetVal = true;
 			}
 		}
 	}
-	return false;
+	return RetVal;
 }
 
 // Clear unique id of the actor
 bool FSLIndividualUtils::ClearId(USLIndividualComponent* IndividualComponent)
 {
+	bool RetVal = false;
 	if (USLBaseIndividual* SI = IndividualComponent->GetCastedIndividualObject<USLBaseIndividual>())
 	{
 		if (SI->IsIdValueSet())
 		{
 			SI->ClearIdValue();
-			return true;
+			RetVal = true;
+		}
+
+		if (SI->IsOIdValueSet())
+		{
+			SI->ClearOIdValue();
+			RetVal = true;
 		}
 	}
 	return false;

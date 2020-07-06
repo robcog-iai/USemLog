@@ -3,7 +3,7 @@
 
 #include "Individuals/SLSkeletalIndividual.h"
 #include "Individuals/SLBoneIndividual.h"
-#include "SLSkeletalDataComponent.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -11,7 +11,7 @@
 // Ctor
 USLSkeletalIndividual::USLSkeletalIndividual()
 {
-	VisualMeshComponent = nullptr;
+	SkeletalMeshComponent = nullptr;
 	SkelDataComp = nullptr;
 }
 
@@ -91,9 +91,9 @@ bool USLSkeletalIndividual::ApplyMaskMaterials(bool bPrioritizeChildren)
 		}
 		else
 		{
-			for (int32 MatIdx = 0; MatIdx < VisualMeshComponent->GetNumMaterials(); ++MatIdx)
+			for (int32 MatIdx = 0; MatIdx < SkeletalMeshComponent->GetNumMaterials(); ++MatIdx)
 			{
-				VisualMeshComponent->SetMaterial(MatIdx, VisualMaskDynamicMaterial);
+				SkeletalMeshComponent->SetMaterial(MatIdx, VisualMaskDynamicMaterial);
 			}
 		}
 
@@ -116,7 +116,7 @@ bool USLSkeletalIndividual::ApplyOriginalMaterials()
 		int32 MatIdx = 0;
 		for (const auto& Mat : OriginalMaterials)
 		{
-			VisualMeshComponent->SetMaterial(MatIdx, Mat);
+			SkeletalMeshComponent->SetMaterial(MatIdx, Mat);
 			++MatIdx;
 		}
 		bIsMaskMaterialOn = false;
@@ -138,7 +138,7 @@ void USLSkeletalIndividual::InitReset()
 	LoadReset();
 	Super::InitReset();
 	DestroyBones();
-	VisualMeshComponent = nullptr;
+	SkeletalMeshComponent = nullptr;
 	SetIsInit(false);
 	ClearDelegateBounds();
 }
@@ -154,25 +154,15 @@ void USLSkeletalIndividual::LoadReset()
 bool USLSkeletalIndividual::InitImpl()
 {
 	// Make sure the visual mesh is set
-	if (HasValidVisualMesh() || SetSkeletalMesh())
+	if (HasValidSkeletalMesh() || SetSkeletalMesh())
 	{
 		// Make sure there is a skeletal semantic data component
 		if (HasValidSkeletalDataComponent() || SetSkeletalDataComponent())
 		{
 			// Make sure the bone individuals are created
-			if (HasValidBones() || SetBones())
+			if (HasValidBones() || CreateBones())
 			{
-				bool bAllBonesAreInit = true;
-				for (const auto& BI : BoneIndividuals)
-				{
-					if (!BI->IsInit() && !BI->Init())
-					{
-						bAllBonesAreInit = false;
-						UE_LOG(LogTemp, Error, TEXT("%s::%d %s's bone %s could not be init.."),
-							*FString(__FUNCTION__), __LINE__, *GetFullName(), *BI->GetName());
-					}
-				}
-				return bAllBonesAreInit;
+				return InitAllBones();
 			}
 		}
 	}
@@ -182,13 +172,19 @@ bool USLSkeletalIndividual::InitImpl()
 // Private load implementation
 bool USLSkeletalIndividual::LoadImpl(bool bTryImport)
 {
-	return true;
+	if (HasValidBones())
+	{
+		return LoadAllBones();
+	}
+	UE_LOG(LogTemp, Error, TEXT("%s::%d %s's bones should be valid here, this should not happen.."),
+		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	return false;
 }
 
 // Check if the static mesh component is set
-bool USLSkeletalIndividual::HasValidVisualMesh() const
+bool USLSkeletalIndividual::HasValidSkeletalMesh() const
 {
-	return VisualMeshComponent && VisualMeshComponent->IsValidLowLevel() && !VisualMeshComponent->IsPendingKill();
+	return SkeletalMeshComponent && SkeletalMeshComponent->IsValidLowLevel() && !SkeletalMeshComponent->IsPendingKill();
 }
 
 // Set sekeletal mesh
@@ -198,7 +194,7 @@ bool USLSkeletalIndividual::SetSkeletalMesh()
 	{
 		if (USkeletalMeshComponent* SMC = SkMA->GetSkeletalMeshComponent())
 		{
-			VisualMeshComponent = SMC;
+			SkeletalMeshComponent = SMC;
 			OriginalMaterials = SMC->GetMaterials();
 			return true;
 		}
@@ -265,16 +261,51 @@ bool USLSkeletalIndividual::HasValidBones() const
 	return true;
 }
 
-// Set the bones
-bool USLSkeletalIndividual::SetBones()
+// Create new bone objects
+bool USLSkeletalIndividual::CreateBones()
 {
-	for (const auto& BoneData : SkelDataComp->SemanticBonesData)
+	for (const auto& BoneDataPair : SkelDataComp->SemanticBonesData)
 	{
 		USLBoneIndividual* BI = NewObject<USLBoneIndividual>(this);
-		BoneIndividuals.Emplace(BI);
-		BI->Init();
+		// TODO load from tags?
+		BI->SetClassValue(BoneDataPair.Value.Class);
+		BI->MaterialIndex = BoneDataPair.Value.MaterialIndex;
+		BI->SkeletalMeshComponent = SkeletalMeshComponent;
+		BI->SkelDataComp = SkelDataComp;
 	}
 	return true;
+}
+
+// Call init on all bones, true if all succesfully init
+bool USLSkeletalIndividual::InitAllBones()
+{
+	bool bAllBonesAreInit = true;
+	for (const auto& BI : BoneIndividuals)
+	{
+		if (!BI->IsInit() && !BI->Init())
+		{
+			bAllBonesAreInit = false;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's bone %s could not be init.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName(), *BI->GetName());
+		}
+	}
+	return bAllBonesAreInit;
+}
+
+// Call load on all bones, true if all succesfully loaded
+bool USLSkeletalIndividual::LoadAllBones()
+{
+	bool bAllBonesAreLoaded = true;
+	for (const auto& BI : BoneIndividuals)
+	{
+		if (!BI->IsLoaded() && !BI->Load())
+		{
+			bAllBonesAreLoaded = false;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's bone %s could not be loaded.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName(), *BI->GetName());
+		}
+	}
+	return bAllBonesAreLoaded;
 }
 
 // Destroy bone individuals

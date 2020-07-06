@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Individuals/SLBaseIndividual.h"
+#include "Engine/DataAsset.h"
 #include "SLIndividualComponent.generated.h"
 
 // Delegate notification when the component is being destroyed
@@ -123,6 +124,10 @@ private:
 	// Semantic data
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	USLBaseIndividual* IndividualObj;
+
+	// Semantic data
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	TMap<FString, UDataAsset*> OptionalDataAssets;
 
 	// True if the individual is succesfully created and initialized
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")

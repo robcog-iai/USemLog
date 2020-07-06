@@ -229,6 +229,12 @@ void FSLEdUtils::EnableAllMaterialsForInstancedStaticMesh()
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 	TArray<FAssetData> AllAsset;
 	AssetRegistryModule.Get().GetAssetsByPath(TEXT("/Game/"), AllAsset, true, false);
+	
+	// TODO can be optimized to only search for materials:
+	//FARFilter Filter;
+	//Filter.Classes.Add(UStaticMesh::StaticClass());
+	//Filter.PackagePaths.Add("/Game/Meshes");
+	//AssetRegistryModule.Get().GetAssets(Filter, AssetData);
 
 	for (FAssetData Data : AllAsset)
 	{

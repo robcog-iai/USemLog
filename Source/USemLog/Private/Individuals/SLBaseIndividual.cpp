@@ -76,37 +76,52 @@ bool USLBaseIndividual::Load(bool bReset, bool bTryImport)
 // Save data to owners tag
 bool USLBaseIndividual::ExportValues(bool bOverwrite)
 {
-	if (!HasValidParentActor())
+	if (!IsInit())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner not set, cannot write to tags.."), *FString(__FUNCTION__), __LINE__);
-		return false;
-	}
-
-	bool bMarkDirty = false;
-	if (IsIdValueSet())
-	{
-		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Id", Id, bOverwrite) || bMarkDirty;
-	}
-	if (IsClassValueSet())
-	{
-		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Class", Class, bOverwrite) || bMarkDirty;
-	}
-	return bMarkDirty;
-}
-
-// Load data from owners tag
-bool USLBaseIndividual::ImportValues(bool bOverwrite)
-{
-	if (!HasValidParentActor())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's owner not set, cannot read from tags.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot export values.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return false;
 	}
 
 	bool bNewValue = false;
-	bNewValue = ImportIdValue(bOverwrite) || bNewValue;
-	bNewValue = ImportClassValue(bOverwrite) || bNewValue;
+	if (IsIdValueSet() && FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Id", Id, bOverwrite))
+	{
+		bNewValue = true;
+	}
+	if (IsClassValueSet() && FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Class", Class, bOverwrite))
+	{
+		bNewValue = true;
+	}
+	if (IsOIdValueSet() && FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "OId", OId, bOverwrite))
+	{
+		bNewValue = true;
+	}
+	return bNewValue;
+}
+
+// Load data from owners tag
+bool USLBaseIndividual::ImportValues(bool bOverwrite)
+{
+	if (!IsInit())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot import values.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
+	}
+
+	bool bNewValue = false;
+	if (ImportIdValue(bOverwrite))
+	{
+		bNewValue = true;
+	}
+	if (ImportClassValue(bOverwrite))
+	{
+		bNewValue = true;
+	}
+	if (ImportOIdValue(bOverwrite))
+	{
+		bNewValue = true;
+	}
 	return bNewValue;
 }
 
@@ -118,11 +133,11 @@ bool USLBaseIndividual::IsAttachedToAnotherIndividual() const
 }
 
 // Set the id value, if it is empty reset the individual as not loaded
-void USLBaseIndividual::SetIdValue(const FString& NewId)
+void USLBaseIndividual::SetIdValue(const FString& NewVal)
 {
-	if (!Id.Equals(NewId))
+	if (!Id.Equals(NewVal))
 	{
-		Id = NewId;
+		Id = NewVal;
 		OnNewIdValue.Broadcast(this, Id);
 		if (!IsIdValueSet() && IsLoaded())
 		{
@@ -136,11 +151,11 @@ void USLBaseIndividual::SetIdValue(const FString& NewId)
 }
 
 // Set the class value, if empty, reset the individual as not loaded
-void USLBaseIndividual::SetClassValue(const FString& NewClass)
+void USLBaseIndividual::SetClassValue(const FString& NewVal)
 {
-	if (!Class.Equals(NewClass))
+	if (!Class.Equals(NewVal))
 	{
-		Class = NewClass;
+		Class = NewVal;
 		OnNewClassValue.Broadcast(this, Class);
 		if (!IsClassValueSet() && IsLoaded())
 		{
@@ -150,6 +165,15 @@ void USLBaseIndividual::SetClassValue(const FString& NewClass)
 		{
 			Load(false, false);
 		}
+	}
+}
+
+// Set the bson id value from string, does not check for validity
+void USLBaseIndividual::SetOIdValue(const FString& NewVal)
+{
+	if (!OId.Equals(NewVal))
+	{
+		OId = NewVal;
 	}
 }
 
@@ -221,15 +245,33 @@ bool USLBaseIndividual::HasValidParentActor() const
 // Set pointer to parent actor
 bool USLBaseIndividual::SetParentActor()
 {
-	// First outer is the component, second the actor
-	if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()))
+	if (UActorComponent* AC = Cast<UActorComponent>(GetOuter()))
 	{
-		// Set the parent actor
-		ParentActor = CompOwner;
-		return true;
+		if (AActor* CompOwner = Cast<AActor>(AC->GetOuter()))
+		{
+			ParentActor = CompOwner;
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's second outer should be the parent actor.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
 	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, could not acess parent actor.."),
-		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's outer should be an actor component.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+	//// First outer is the component, second the actor
+	//if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()))
+	//{
+	//	// Set the parent actor
+	//	ParentActor = CompOwner;
+	//	return true;
+	//}
+	//UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, could not acess parent actor.."),
+	//	*FString(__FUNCTION__), __LINE__, *GetFullName());
 	return false;
 }
 
@@ -303,9 +345,17 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 			bRetValue = false;
 		}
 	}
+
+	// Does not influence the load status, oid only required at runtime
+	if (!IsOIdValueSet())
+	{
+		if (bTryImport)
+		{
+			ImportOIdValue();
+		}
+	}
 	return bRetValue;
 }
-
 
 // Import id from tag, true if new value is written
 bool USLBaseIndividual::ImportIdValue(bool bOverwrite)
@@ -341,5 +391,61 @@ bool USLBaseIndividual::ImportClassValue(bool bOverwrite)
 		//}
 	}
 	return bNewValue;
+}
+
+// Import the oid value
+bool USLBaseIndividual::ImportOIdValue(bool bOverwrite)
+{
+	bool bNewValue = false;
+	if (!IsOIdValueSet() || bOverwrite)
+	{
+		const FString PrevVal = OId;
+		SetIdValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "OId"));
+		bNewValue = !OId.Equals(PrevVal);
+		//if (!HasId())
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d No Id value could be imported from %s's tag.."),
+		//		*FString(__FUNCTION__), __LINE__, *GetFullName());
+		//}
+	}
+	return bNewValue;
+}
+
+// Load the oid value from the persitent OId string (generate a new one if none is available)
+bool USLBaseIndividual::LoadOId(bool bGenerateNew)
+{
+#if SL_WITH_LIBMONGO_C
+	if (IsOIdValueSet())
+	{		
+		const char* oid_str = TCHAR_TO_ANSI(*OId);//TCHAR_TO_UTF8
+		if (bson_oid_is_valid(oid_str, sizeof oid_str))
+		{
+			bson_oid_init_from_string(&oid, oid_str);
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's oid (%s) succefully loaded.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName(), ANSI_TO_TCHAR(oid_str));
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's new oid string value (%s) not valid.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName(), ANSI_TO_TCHAR(oid_str));
+			return false;
+		}
+	}
+	else if (bGenerateNew)
+	{
+		bson_oid_init(&oid, NULL);
+		char oid_str[25];
+		bson_oid_to_string(&oid, oid_str);
+		SetOIdValue( UTF8_TO_TCHAR(oid_str));
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's oid (%s) was succefully generated.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName(), *OId);
+		return true;
+	}
+	return false;
+	UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no oid.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
+#elif
+	return false;
+#endif
 }
 
