@@ -5,23 +5,20 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/SLPerceivableIndividual.h"
-#include "SLRigidIndividual.generated.h"
-
-// Forward declarations
-class UStaticMeshComponent;
+#include "Individuals/SLBaseIndividual.h"
+#include "SLVirtualViewIndividual.generated.h"
 
 /**
  * 
  */
 UCLASS(ClassGroup = SL)
-class USEMLOG_API USLRigidIndividual : public USLPerceivableIndividual
+class USEMLOG_API USLVirtualViewIndividual : public USLBaseIndividual
 {
 	GENERATED_BODY()
 
 public:
     // Ctor
-    USLRigidIndividual();
+    USLVirtualViewIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
@@ -36,15 +33,7 @@ public:
     virtual bool Load(bool bReset = false, bool bTryImport = false);
 
     // Get the type name as string
-    virtual FString GetTypeName() const override { return FString("RigidIndividual"); };
-
-    /* Begin Perceivable individual interface */
-    // Apply visual mask material
-    virtual bool ApplyMaskMaterials(bool bPrioritizeChildren = false) override;
-
-    // Apply original materials
-    virtual bool ApplyOriginalMaterials() override;
-    /* End Perceivable individual interface */
+    virtual FString GetTypeName() const override { return FString("VirtualViewIndividual"); };
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
@@ -56,21 +45,13 @@ protected:
     // Clear all data of the individual
     virtual void LoadReset() override;
 
+    // Clear any bound delegates (called when init is reset)
+    virtual void ClearDelegateBounds() override;
+
 private:
     // Set dependencies
     bool InitImpl();
 
     // Set data
     bool LoadImpl(bool bTryImport = true);
-
-    // Check if the static mesh component is set
-    bool HasValidStaticMesh() const;
-
-    // Set the static mesh component
-    bool SetStaticMesh();
-
-private:
-    // The visual component of the owner
-    UPROPERTY()
-    UStaticMeshComponent* StaticMeshComponent;
 };

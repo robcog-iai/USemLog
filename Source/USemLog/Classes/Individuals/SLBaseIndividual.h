@@ -5,7 +5,6 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-
 #if SL_WITH_LIBMONGO_C
 THIRD_PARTY_INCLUDES_START
 	#if PLATFORM_WINDOWS
@@ -17,7 +16,6 @@ THIRD_PARTY_INCLUDES_START
 	#endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_C
-
 #include "SLBaseIndividual.generated.h"
 
 // Notify every time the init status changes
@@ -68,6 +66,9 @@ public:
 	// Load values externally
 	virtual bool ImportValues(bool bOverwrite = false);
 
+	// Clear exported values
+	virtual bool ClearExportedValues();
+
 	// Get actor represented by the individual
 	AActor* GetParentActor() const { return ParentActor; };
 
@@ -75,10 +76,10 @@ public:
 	bool IsAttachedToAnotherIndividual() const;
 
 	// Return the actor this individual is part of
-	class AActor* GetPartOfActor() const { return AttachedToActor; };
+	class AActor* GetAttachedToActor() const { return AttachedToActor; };
 
 	// Return the individual this individual is part of
-	class USLBaseIndividual* GetPartOfIndividual() const { return AttachedToIndividual; };
+	class USLBaseIndividual* GetAttachedToIndividual() const { return AttachedToIndividual; };
 
 	// Get the type name as string
 	virtual FString GetTypeName() const { return FString("BaseIndividual"); };
@@ -108,6 +109,9 @@ public:
 #endif // SL_WITH_LIBMONGO_C
 
 protected:
+	// Generate class name, virtual since each invidiual type will have different name
+	virtual FString GetClassName() const;
+
 	// Clear all references of the individual
 	virtual void InitReset();
 
@@ -117,8 +121,10 @@ protected:
 	// Clear any bound delegates (called when init is reset)
 	virtual void ClearDelegateBounds();
 
-	// Set the state flags, can broadcast on new value
+	// Mark individual as init, broadcast change
 	void SetIsInit(bool bNewValue, bool bBroadcast = true);
+
+	// Mark individual as loaded, broadcast change
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
 	
 	// Check that the parent actor is set and valid
@@ -136,6 +142,9 @@ private:
 
 	// Set data
 	bool LoadImpl(bool bTryImport = true);
+
+	// Generate a new id
+	FString GenerateNewId() const;
 
 	// Import values expernally
 	bool ImportIdValue(bool bOverwrite = false);
@@ -190,7 +199,11 @@ protected:
 	bson_oid_t oid;
 #endif
 
-	/* Constants */
-	// Tag type for exporting/importing data from tags
-	static constexpr char TagTypeConst[] = "SemLog";
+	// SemLog tag key
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	FString ImportTagType;
+
+	///* Constants */
+	//// Tag type for exporting/importing data from tags
+	//static constexpr char TagTypeConst[] = "SemLog";
 };

@@ -7,6 +7,24 @@
 #include "Engine/DataAsset.h"
 #include "SLSkeletalDataAsset.generated.h"
 
+///**
+// * Data stored in the bones array
+// */
+//USTRUCT()
+//struct FSLSkeletalBoneData
+//{
+//	GENERATED_BODY()
+//
+//	UPROPERTY(EditAnywhere)
+//	FName BoneFName;
+//
+//	UPROPERTY(EditAnywhere)
+//	int32 BoneIndex;
+//
+//	UPROPERTY(EditAnywhere)
+//	FString ClassName;
+//};
+
 /**
  * Data asset containing the mapping of skeletal bones to their semantic names
  */
@@ -34,6 +52,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TMap<FName, FString> BoneClasses;
 
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	TMap<int32, FString> BoneIndexClass;
+
 private:
 	// Generate the bones mesh from this skeletal mesh
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -42,10 +63,6 @@ private:
 	// Refresh the data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bReloadData;
-
-	// Clear emtpy entries
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bClearEmptyEntries;
 
 	// Remove all previous data mimic button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

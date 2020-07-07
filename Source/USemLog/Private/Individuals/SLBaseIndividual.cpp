@@ -4,7 +4,11 @@
 #include "Individuals/SLBaseIndividual.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "GameFramework/Actor.h"
+
+// Utils
 #include "Utils/SLTagIO.h"
+#include "Utils/SLUuid.h"
+
 
 // Ctor
 USLBaseIndividual::USLBaseIndividual()
@@ -14,14 +18,13 @@ USLBaseIndividual::USLBaseIndividual()
 	AttachedToIndividual = nullptr;
 	bIsInit = false;
 	bIsLoaded = false;
+	ImportTagType = "SemLog";
 }
 
 // Called before destroying the object.
 void USLBaseIndividual::BeginDestroy()
 {
 	SetIsInit(false);
-	SetIsLoaded(false);
-
 	Super::BeginDestroy();
 }
 
@@ -84,15 +87,15 @@ bool USLBaseIndividual::ExportValues(bool bOverwrite)
 	}
 
 	bool bNewValue = false;
-	if (IsIdValueSet() && FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Id", Id, bOverwrite))
+	if (IsIdValueSet() && FSLTagIO::AddKVPair(ParentActor, ImportTagType, "Id", Id, bOverwrite))
 	{
 		bNewValue = true;
 	}
-	if (IsClassValueSet() && FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "Class", Class, bOverwrite))
+	if (IsClassValueSet() && FSLTagIO::AddKVPair(ParentActor, ImportTagType, "Class", Class, bOverwrite))
 	{
 		bNewValue = true;
 	}
-	if (IsOIdValueSet() && FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "OId", OId, bOverwrite))
+	if (IsOIdValueSet() && FSLTagIO::AddKVPair(ParentActor, ImportTagType, "OId", OId, bOverwrite))
 	{
 		bNewValue = true;
 	}
@@ -125,11 +128,42 @@ bool USLBaseIndividual::ImportValues(bool bOverwrite)
 	return bNewValue;
 }
 
+// Clear exported values
+bool USLBaseIndividual::ClearExportedValues()
+{
+	if (!IsInit())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot remove any exported values values.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
+	}
+
+	int32 Pos = INDEX_NONE;
+	if (FSLTagIO::HasType(ParentActor, ImportTagType, &Pos))
+	{
+		ParentActor->Tags.RemoveAt(Pos);
+		return true;
+	}	
+	return false;
+}
+
 // True if individual is part of another individual
 bool USLBaseIndividual::IsAttachedToAnotherIndividual() const
 {
 	return AttachedToActor && AttachedToActor->IsValidLowLevel() && !AttachedToActor->IsPendingKill()
 		&& AttachedToIndividual && AttachedToIndividual->IsValidLowLevel() && !AttachedToIndividual->IsPendingKill();
+}
+
+// Generate a new id for the individual
+FString USLBaseIndividual::GenerateNewId() const
+{
+	return FSLUuid::NewGuidInBase64Url();
+}
+
+// Generate class name, virtual since each invidiual type will have different name
+FString USLBaseIndividual::GetClassName() const
+{
+	return GetTypeName();
 }
 
 // Set the id value, if it is empty reset the individual as not loaded
@@ -322,12 +356,12 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 		{
 			if (!ImportIdValue())
 			{
-				bRetValue = false;
+				SetIdValue(GenerateNewId());
 			}
 		}
 		else
 		{
-			bRetValue = false;
+			SetIdValue(FSLUuid::NewGuidInBase64Url());
 		}
 	}
 
@@ -337,24 +371,25 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 		{
 			if (!ImportClassValue())
 			{
-				bRetValue = false;
+				SetClassValue(GetClassName());
 			}
 		}
 		else
 		{
-			bRetValue = false;
+			SetClassValue(GetClassName());
 		}
 	}
 
-	// Does not influence the load status, oid only required at runtime
-	if (!IsOIdValueSet())
-	{
-		if (bTryImport)
-		{
-			ImportOIdValue();
-		}
-	}
-	return bRetValue;
+	//// Does not influence the load status, oid only required at runtime
+	//if (!IsOIdValueSet())
+	//{
+	//	if (bTryImport)
+	//	{
+	//		ImportOIdValue();
+	//	}
+	//}
+
+	return IsIdValueSet() && IsClassValueSet();
 }
 
 // Import id from tag, true if new value is written
@@ -364,13 +399,8 @@ bool USLBaseIndividual::ImportIdValue(bool bOverwrite)
 	if (!IsIdValueSet() || bOverwrite)
 	{
 		const FString PrevVal = Id;
-		SetIdValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "Id"));
+		SetIdValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "Id"));
 		bNewValue = !Id.Equals(PrevVal);
-		//if (!HasId())
-		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d No Id value could be imported from %s's tag.."),
-		//		*FString(__FUNCTION__), __LINE__, *GetFullName());
-		//}
 	}
 	return bNewValue;
 }
@@ -382,13 +412,8 @@ bool USLBaseIndividual::ImportClassValue(bool bOverwrite)
 	if (!IsClassValueSet() || bOverwrite)
 	{
 		const FString PrevVal = Class;
-		SetClassValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "Class"));
+		SetClassValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "Class"));
 		bNewValue = !Class.Equals(PrevVal);
-		//if (!HasClass())
-		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d No Class value could be imported from %s's tag.."),
-		//		*FString(__FUNCTION__), __LINE__, *GetFullName());
-		//}
 	}
 	return bNewValue;
 }
@@ -400,13 +425,8 @@ bool USLBaseIndividual::ImportOIdValue(bool bOverwrite)
 	if (!IsOIdValueSet() || bOverwrite)
 	{
 		const FString PrevVal = OId;
-		SetIdValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "OId"));
+		SetIdValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "OId"));
 		bNewValue = !OId.Equals(PrevVal);
-		//if (!HasId())
-		//{
-		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d No Id value could be imported from %s's tag.."),
-		//		*FString(__FUNCTION__), __LINE__, *GetFullName());
-		//}
 	}
 	return bNewValue;
 }

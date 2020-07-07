@@ -8,12 +8,13 @@
 // Ctor
 USLRigidIndividual::USLRigidIndividual()
 {
-	VisualMeshComponent = nullptr;
+	StaticMeshComponent = nullptr;
 }
 
 // Called before destroying the object.
 void USLRigidIndividual::BeginDestroy()
 {
+	SetIsInit(false);
 	Super::BeginDestroy();
 }
 
@@ -78,9 +79,9 @@ bool USLRigidIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/
 
 	if (!bIsMaskMaterialOn)
 	{
-		for (int32 MatIdx = 0; MatIdx < VisualMeshComponent->GetNumMaterials(); ++MatIdx)
+		for (int32 MatIdx = 0; MatIdx < StaticMeshComponent->GetNumMaterials(); ++MatIdx)
 		{
-			VisualMeshComponent->SetMaterial(MatIdx, VisualMaskDynamicMaterial);
+			StaticMeshComponent->SetMaterial(MatIdx, VisualMaskDynamicMaterial);
 		}
 		bIsMaskMaterialOn = true;
 		return true;
@@ -101,7 +102,7 @@ bool USLRigidIndividual::ApplyOriginalMaterials()
 		int32 MatIdx = 0;
 		for (const auto& Mat : OriginalMaterials)
 		{
-			VisualMeshComponent->SetMaterial(MatIdx, Mat);
+			StaticMeshComponent->SetMaterial(MatIdx, Mat);
 			++MatIdx;
 		}
 		bIsMaskMaterialOn = false;
@@ -110,12 +111,42 @@ bool USLRigidIndividual::ApplyOriginalMaterials()
 	return false;
 }
 
+// Get class name, virtual since each invidiual type will have different name
+FString USLRigidIndividual::GetClassName() const
+{
+	if(IsInit())
+	{
+		if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(ParentActor))
+		{
+			if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
+			{
+				FString ClassName = SMC->GetStaticMesh()->GetFullName();
+				int32 FindCharPos;
+				ClassName.FindLastChar('.', FindCharPos);
+				ClassName.RemoveAt(0, FindCharPos + 1);
+				if (!ClassName.RemoveFromStart(TEXT("SM_")))
+				{
+					//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s StaticMesh has no SM_ prefix in its name.."),
+					//	*FString(__func__), __LINE__, *CompOwner->GetName());
+				}
+				return ClassName;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SMC.."),
+					*FString(__func__), __LINE__, *SMA->GetName());
+			}
+		}
+	}
+	return GetTypeName();
+}
+
 // Clear all values of the individual
 void USLRigidIndividual::InitReset()
 {
 	LoadReset();
 	Super::InitReset();
-	VisualMeshComponent = nullptr;
+	StaticMeshComponent = nullptr;
 	SetIsInit(false);
 	ClearDelegateBounds();
 }
@@ -126,33 +157,13 @@ void USLRigidIndividual::LoadReset()
 	Super::LoadReset();
 }
 
-
 // Private init implementation
 bool USLRigidIndividual::InitImpl()
 {
-	if (!HasValidVisualMesh())
+	if (HasValidStaticMesh() || SetStaticMesh())
 	{
-		if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(ParentActor))
-		{
-			if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
-			{
-				VisualMeshComponent = SMC;
-				OriginalMaterials = SMC->GetMaterials();
-				return true;
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no StaticMeshComponent, this should not happen.."),
-					*FString(__FUNCTION__), __LINE__, *GetFullName());
-				return false;
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s SemanticOwner is not a StaticMeshActor, this should not happen.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-			return false;
-		}
+		OriginalMaterials = StaticMeshComponent->GetMaterials();
+		return true;
 	}
 	return false;
 }
@@ -164,7 +175,32 @@ bool USLRigidIndividual::LoadImpl(bool bTryImport)
 }
 
 // Check if the static mesh component is set
-bool USLRigidIndividual::HasValidVisualMesh() const
+bool USLRigidIndividual::HasValidStaticMesh() const
 {
-	return VisualMeshComponent && VisualMeshComponent->IsValidLowLevel() && !VisualMeshComponent->IsPendingKill();
+	return StaticMeshComponent && StaticMeshComponent->IsValidLowLevel() && !StaticMeshComponent->IsPendingKill();
+}
+
+// Set the static mesh component
+bool USLRigidIndividual::SetStaticMesh()
+{
+	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(ParentActor))
+	{
+		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
+		{
+			StaticMeshComponent = SMC;			
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no StaticMeshComponent, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+			return false;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's parent actor is not a StaticMeshActor, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
+	}
 }

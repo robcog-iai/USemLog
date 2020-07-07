@@ -7,6 +7,7 @@
 #include "Individuals/SLRigidIndividual.h"
 #include "Individuals/SLSkyIndividual.h"
 #include "Individuals/SLSkeletalIndividual.h"
+#include "Individuals/SLVirtualViewIndividual.h"
 
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/SLIndividualTextInfoComponent.h"
@@ -201,45 +202,6 @@ bool FSLIndividualUtils::CanHaveIndividualComponent(AActor* Actor)
 }
 
 // Create default individual object depending on the owner type (returns nullptr if failed)
-UClass* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner, USLBaseIndividual*& IndividualObject)
-{
-	UClass* IndividualClass = nullptr;
-
-	// Set semantic individual type depending on owner
-	if (Owner->IsA(AStaticMeshActor::StaticClass()))
-	{
-		IndividualClass = USLRigidIndividual::StaticClass();
-		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
-	}
-	else if (Owner->IsA(APhysicsConstraintActor::StaticClass()))
-	{
-		IndividualClass = USLConstraintIndividual::StaticClass();
-		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
-	}
-	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
-	{
-		/*IndividualClass = USLConstraintIndividual::StaticClass();
-		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);*/
-	}
-	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
-	{
-		IndividualClass = USLSkeletalIndividual::StaticClass();
-		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
-	}
-	else if (Owner->IsA(AAtmosphericFog::StaticClass()) || Owner->GetName().Contains("SkySphere"))
-	{
-		IndividualClass = USLSkyIndividual::StaticClass();
-		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);
-	}
-	else
-	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for creating a semantic individual %s-%s.."),
-		//	*FString(__FUNCTION__), __LINE__, *Owner->GetClass()->GetName(), *Owner->GetName());
-	}
-	return IndividualClass;
-}
-
-// Create default individual object depending on the owner type (returns nullptr if failed)
 USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner)
 {
 	// Set semantic individual type depending on owner
@@ -253,8 +215,7 @@ USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AA
 	}
 	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
 	{
-		/*IndividualClass = USLConstraintIndividual::StaticClass();
-		IndividualObject = NewObject<USLBaseIndividual>(Outer, IndividualClass);*/
+		return NewObject<USLBaseIndividual>(Outer, USLVirtualViewIndividual::StaticClass());
 	}
 	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
 	{
@@ -310,7 +271,7 @@ FString FSLIndividualUtils::NewOIdAsString()
 }
 
 // Find the skeletal data asset for the individual
-USLSkeletalDataAsset* FSLIndividualUtils::GetSkeletalDataAsset(AActor* Owner)
+USLSkeletalDataAsset* FSLIndividualUtils::FindSkeletalDataAsset(AActor* Owner)
 {
 	if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(Owner))
 	{

@@ -10,7 +10,10 @@
 
 // Forward declaration
 class USLBoneIndividual;
+class USLVirtualBoneIndividual;
 class USkeletalMeshComponent;
+class USLSkeletalDataAsset;
+
 class USLSkeletalDataComponent;
 
 /**
@@ -20,6 +23,10 @@ UCLASS(ClassGroup = SL)
 class USEMLOG_API USLSkeletalIndividual : public USLPerceivableIndividual
 {
     GENERATED_BODY()
+
+    // Give bones access to the private members
+    friend class USLBoneIndividual;
+    friend class USLVirtualBoneIndividual;
 
 public:
     // Ctor
@@ -31,11 +38,20 @@ public:
     // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
     virtual void PostInitProperties() override;
 
-    // Init asset references (bForced forces re-initialization)
+    // Init asset references 
     virtual bool Init(bool bReset = false);
 
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset = false, bool bTryImport = false);
+
+    // Save values externally
+    virtual bool ExportValues(bool bOverwrite = false) override;
+
+    // Load values externally
+    virtual bool ImportValues(bool bOverwrite = false) override;
+
+    // Clear exported values
+    virtual bool ClearExportedValues() override;
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("SkeletalIndividual"); };
@@ -49,6 +65,9 @@ public:
     /* End Perceivable individual interface */
 
 protected:
+    // Get class name, virtual since each invidiual type will have different name
+    virtual FString GetClassName() const override;
+
     // Clear all values of the individual
     virtual void InitReset() override;
 
@@ -68,37 +87,38 @@ private:
     // Set sekeletal mesh
     bool SetSkeletalMesh();
 
-    // Check if skeleltal bone description component is available
-    bool HasValidSkeletalDataComponent() const;
+    // Check if skeleltal bone description asset is set
+    bool HasValidSkeletalDataAsset() const;
 
-    // Set the skeletal data component
-    bool SetSkeletalDataComponent();
+    // Set the skeletal bone description data asset
+    bool SetSkeletalDataAsset();
 
     // Check if all the bones are valid
     bool HasValidBones() const;
 
     // Create the bones individuals
-    bool CreateBones();
+    bool CreateBoneIndividuals();
 
     // Call init on all bones, true if all succesfully init
-    bool InitAllBones();
+    bool InitBoneIndividuals();
 
     // Call load on all bones, true if all succesfully loaded
-    bool LoadAllBones();
+    bool LoadBoneIndividuals();
 
     // Destroy bone individuals
-    void DestroyBones();
+    void DestroyBoneIndividuals();
 
     // Reset bone individuals
-    void ResetBones();
+    void ResetBoneIndividuals();
 
 protected:
-    // Semantically annotated bones
-    UPROPERTY(VisibleAnywhere, Category = "SL")
-    TArray<USLBoneIndividual*> BoneIndividuals;
+    //// Semantically annotated bones
+    //UPROPERTY(VisibleAnywhere, Category = "SL")
+    //TArray<USLBoneIndividual*> BoneIndividuals;
 
-    // Raw bones
-    TArray<FString> RawBones;
+    // Bones without visual
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    TArray<USLVirtualBoneIndividual*> VirtualBoneIndividuals;
 
 private:
     // The visual component of the owner
@@ -107,5 +127,5 @@ private:
 
     // Semantic data of the skeletal component
     UPROPERTY()
-    USLSkeletalDataComponent* SkelDataComp;
+    USLSkeletalDataAsset* SkeletalDataAsset;
 };

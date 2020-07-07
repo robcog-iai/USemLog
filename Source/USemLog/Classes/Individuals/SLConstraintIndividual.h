@@ -57,6 +57,9 @@ public:
     bool HasValidConstaintEntities() const { return HasValidConstraintActors() && HasValidConstraintIndividuals(); };
 
 protected:
+    // Get class name, virtual since each invidiual type will have different name
+    virtual FString GetClassName() const override;
+
     // Clear all values of the individual
     virtual void InitReset() override;
 
@@ -89,5 +92,4 @@ protected:
     // Second constraint individual
     UPROPERTY(VisibleAnywhere, Category = "SL")
     USLBaseIndividual* ConstraintIndividual2;
-
 };

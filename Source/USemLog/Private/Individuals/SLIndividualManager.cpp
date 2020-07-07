@@ -545,7 +545,7 @@ int32 ASLIndividualManager::ExportToTag(bool bOverwrite)
 	int32 Num = 0;
 	for (const auto& IC : RegisteredIndividualComponents)
 	{
-		if(IC->ExportToTag())
+		if(IC->ExportValues())
 		{
 			Num++;
 		}
@@ -567,7 +567,7 @@ int32 ASLIndividualManager::ExportToTag(const TArray<AActor*>& Actors, bool bOve
 	{
 		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
 		{
-			if ((*FoundIC)->ExportToTag())
+			if ((*FoundIC)->ExportValues())
 			{
 				Num++;
 			}
@@ -588,7 +588,7 @@ int32 ASLIndividualManager::ImportFromTag(bool bOverwrite)
 	int32 Num = 0;
 	for (const auto& IC : RegisteredIndividualComponents)
 	{
-		if (IC->ImportFromTag())
+		if (IC->ImportValues())
 		{
 			Num++;
 		}
@@ -610,7 +610,7 @@ int32 ASLIndividualManager::ImportFromTag(const TArray<AActor*>& Actors, bool bO
 	{
 		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
 		{
-			if ((*FoundIC)->ImportFromTag())
+			if ((*FoundIC)->ImportValues())
 			{
 				Num++;
 			}

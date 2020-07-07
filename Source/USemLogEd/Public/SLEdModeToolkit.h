@@ -112,9 +112,9 @@ private:
 	FReply OnWriteVisualMasks();
 	FReply OnRmVisualMasks();
 	
-	FReply OnExportToTag();
-	FReply OnImportFromTag();
-	FReply OnClearTagData();
+	FReply OnExportData();
+	FReply OnImportData();
+	FReply OnClearData();
 
 	FReply OnAddSemMon();	
 	FReply OnEnableOverlaps();

@@ -5,30 +5,27 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/SLPerceivableIndividual.h"
-#include "SLBoneIndividual.generated.h"
-
-// Forward declaration
-class USkeletalMeshComponent;
-class USLSkeletalDataComponent;
+#include "Individuals/SLBaseIndividual.h"
+#include "SLVirtualBoneIndividual.generated.h"
 
 /**
- *
+ * 
  */
 UCLASS(ClassGroup = SL)
-class USEMLOG_API USLBoneIndividual : public USLPerceivableIndividual
+class USEMLOG_API USLVirtualBoneIndividual : public USLBaseIndividual
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
+
 public:
     // Ctor
-    USLBoneIndividual();
+    USLVirtualBoneIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
     // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
     virtual void PostInitProperties() override;
-
+    
     // Set the parameters required when initalizing the individual
     bool PreInit(int32 NewBoneIndex, bool bReset = false);
 
@@ -41,22 +38,8 @@ public:
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset = false, bool bTryImport = false);
 
-    // Save values externally
-    virtual bool ExportValues(bool bOverwrite = false);
-
-    // Load values externally
-    virtual bool ImportValues(bool bOverwrite = false);
-
     // Get the type name as string
-    virtual FString GetTypeName() const override { return FString("BoneIndividual"); };
-
-    /* Begin Perceivable individual interface */
-    // Apply visual mask material
-    virtual bool ApplyMaskMaterials(bool bPrioritizeChildren = false) override;
-
-    // Apply original materials
-    virtual bool ApplyOriginalMaterials() override;
-    /* End Perceivable individual interface */
+    virtual FString GetTypeName() const override { return FString("VirtualBoneIndividual"); };
 
     // Calculate the current bone transform
     bool CacheCurrentBoneTransform();
@@ -74,20 +57,11 @@ protected:
     // Clear all data of the individual
     virtual void LoadReset() override;
 
-    // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegateBounds() override;
-
     // Set pointer to parent actor
     virtual bool SetParentActor() override;
 
-    // Check if skeleltal bone description component is available
-    bool HasValidSkeletalDataComponent() const;
-
-    // Check if the material index is valid
-    bool HasValidMaterialIndex() const;
-
-    // Check if the bone index is valid
-    bool HasValidBoneIndex() const;
+    // Clear any bound delegates (called when init is reset)
+    virtual void ClearDelegateBounds() override;
 
 private:
     // Set dependencies
@@ -102,14 +76,10 @@ private:
     // Set sekeletal mesh
     bool SetSkeletalMesh();
 
-protected:
+protected:    
     // Pre init
     UPROPERTY(VisibleAnywhere, Category = "SL")
     bool bIsPreInit;
-
-    // Mask material index
-    UPROPERTY(VisibleAnywhere, Category = "SL")
-    int32 MaterialIndex;
 
     // Bone index
     UPROPERTY(VisibleAnywhere, Category = "SL")
@@ -119,21 +89,6 @@ protected:
     UPROPERTY()
     USkeletalMeshComponent* SkeletalMeshComponent;
 
-    // Parent skeletal mesh data
-    UPROPERTY()
-    USLSkeletalDataComponent* SkelDataComp;
-
     // Cached transform
     FTransform CachedTransform;
-
-
-    //// FName of the bone
-    //UPROPERTY()
-    //FName BoneName;
-
-    //// Cached transform of the bone
-    //FVector CachedLocation;
-
-    //// Cached transform of the bone
-    //FVector CachedQuat;
 };

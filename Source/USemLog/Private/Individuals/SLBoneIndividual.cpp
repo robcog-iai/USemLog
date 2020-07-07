@@ -17,6 +17,7 @@ USLBoneIndividual::USLBoneIndividual()
 // Called before destroying the object.
 void USLBoneIndividual::BeginDestroy()
 {
+	SetIsInit(false);
 	Super::BeginDestroy();
 }
 
@@ -27,9 +28,35 @@ void USLBoneIndividual::PostInitProperties()
 	Init();
 }
 
+// Set the parameters required when initalizing the individual
+bool USLBoneIndividual::PreInit(int32 NewBoneIndex, bool bReset)
+{
+	if (bReset)
+	{
+		bIsPreInit = false;
+	}
+
+	if (IsPreInit())
+	{
+		return true;
+	}
+
+	BoneIndex = NewBoneIndex;
+	ImportTagType += "Bone" + FString::FromInt(BoneIndex);
+	bIsPreInit = true;
+	return true;
+}
+
 // Set pointer to the semantic owner
 bool USLBoneIndividual::Init(bool bReset)
 {
+	if (!IsPreInit())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot init individual %s, pre init need to be called right after creation.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
+	}
+
 	if (bReset)
 	{
 		InitReset();
@@ -293,8 +320,6 @@ bool USLBoneIndividual::CacheCurrentBoneTransform()
 	if (IsInit())
 	{
 		CachedTransform = SkeletalMeshComponent->GetBoneTransform(BoneIndex);
-		//CachedLocation = SkeletalMeshComponent->GetBoneLocation(BoneName);
-		//CachedQuat = SkeletalMeshComponent->GetBoneQuaternion(BoneName);
 		return true;
 	}
 	return false;
@@ -303,6 +328,14 @@ bool USLBoneIndividual::CacheCurrentBoneTransform()
 // Private init implementation
 bool USLBoneIndividual::InitImpl()
 {
+	// Make sure the visual mesh is set
+	if (HasValidSkeletalMesh() || SetSkeletalMesh())
+	{
+		// TODO set parent and child bone individual
+		return true;
+	}
+	return false;
+
 	if (!HasValidSkeletalMesh())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no skeletal mesh.."),
@@ -340,6 +373,28 @@ bool USLBoneIndividual::LoadImpl(bool bTryImport)
 	return true;
 }
 
+// Get class name, virtual since each invidiual type will have different name
+FString USLBoneIndividual::GetClassName() const
+{
+	if (IsInit())
+	{
+		if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+		{
+			if (SkI->HasValidSkeletalDataAsset())
+			{
+				if (FString* BoneClassValue = SkI->SkeletalDataAsset->BoneIndexClass.Find(BoneIndex))
+				{
+					if (!BoneClassValue->IsEmpty())
+					{
+						return *BoneClassValue;
+					}
+				}
+			}
+		}
+	}
+	return GetTypeName();
+}
+
 // Clear all values of the individual
 void USLBoneIndividual::InitReset()
 {
@@ -353,6 +408,11 @@ void USLBoneIndividual::InitReset()
 void USLBoneIndividual::LoadReset()
 {
 	Super::LoadReset();
+}
+
+// Clear any bound delegates (called when init is reset)
+void USLBoneIndividual::ClearDelegateBounds()
+{
 }
 
 // Set the skeletal actor as parent
@@ -387,12 +447,6 @@ bool USLBoneIndividual::SetParentActor()
 	return false;
 }
 
-// Check if the static mesh component is set
-bool USLBoneIndividual::HasValidSkeletalMesh() const
-{
-	return SkeletalMeshComponent && SkeletalMeshComponent->IsValidLowLevel() && !SkeletalMeshComponent->IsPendingKill();
-}
-
 // Check if skeleltal bone description component is available
 bool USLBoneIndividual::HasValidSkeletalDataComponent() const
 {
@@ -413,4 +467,25 @@ bool USLBoneIndividual::HasValidBoneIndex() const
 	return HasValidSkeletalMesh()
 		&& BoneIndex != INDEX_NONE
 		&& BoneIndex < SkeletalMeshComponent->GetNumBones();
+}
+
+// Check if the static mesh component is set
+bool USLBoneIndividual::HasValidSkeletalMesh() const
+{
+	return SkeletalMeshComponent && SkeletalMeshComponent->IsValidLowLevel() && !SkeletalMeshComponent->IsPendingKill();
+}
+
+// Set sekeletal mesh
+bool USLBoneIndividual::SetSkeletalMesh()
+{
+	// Outer should be the skeletal individual
+	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+	{
+		if (SkI->HasValidSkeletalMesh())
+		{
+			SkeletalMeshComponent = SkI->SkeletalMeshComponent;
+			return true;
+		}
+	}
+	return false;
 }

@@ -71,10 +71,13 @@ public:
 
 	/* Functionalities */
 	// Save data to owners tag
-	bool ExportToTag(bool bOverwrite = false);
+	bool ExportValues(bool bOverwrite = false);
 
 	// Load data from owners tag
-	bool ImportFromTag(bool bOverwrite = false);
+	bool ImportValues(bool bOverwrite = false);
+
+	// Clear exported values
+	bool ClearExportedValues();
 
 	// Toggle between original and mask material is possible
 	bool ToggleVisualMaskVisibility(bool bPrioritizeChildren = false);
@@ -125,10 +128,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	USLBaseIndividual* IndividualObj;
 
-	// Semantic data
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TMap<FString, UDataAsset*> OptionalDataAssets;
-
 	// True if the individual is succesfully created and initialized
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsInit : 1;
@@ -139,4 +138,13 @@ private:
 
 	// True if the delegates have been bound (not persistent)
 	bool bDelegatesBound;
+
+public:
+	// Semantic data
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	TMap<FString, UDataAsset*> OptionalDataAssets;
+
+	/* Constants */
+	// Skeletal data asset map key
+	static constexpr char SkelDataAssetKey[] = "SkeletalDataAsset";
 };

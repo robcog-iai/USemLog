@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLSkyIndividual.h"
-#include "GameFramework/Actor.h"
+#include "Atmosphere/AtmosphericFog.h"
 
 // Ctor
 USLSkyIndividual::USLSkyIndividual()
@@ -12,6 +12,7 @@ USLSkyIndividual::USLSkyIndividual()
 // Called before destroying the object.
 void USLSkyIndividual::BeginDestroy()
 {
+	SetIsInit(false);
 	Super::BeginDestroy();
 }
 
@@ -114,6 +115,23 @@ bool USLSkyIndividual::InitImpl()
 bool USLSkyIndividual::LoadImpl(bool bTryImport)
 {
 	return true;
+}
+
+// Get class name, virtual since each invidiual type will have different name
+FString USLSkyIndividual::GetClassName() const
+{
+	if (IsInit())
+	{
+		if (AAtmosphericFog* AAF = Cast<AAtmosphericFog>(ParentActor))
+		{
+			return "AtmosphericFog";
+		}
+		else if (ParentActor->GetName().Contains("SkySphere"))
+		{
+			return "SkySphere";
+		}
+	}
+	return GetTypeName();
 }
 
 // Clear all values of the individual

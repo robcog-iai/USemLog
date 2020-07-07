@@ -626,7 +626,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagDataSlot()
 				.Text(LOCTEXT("SemDataCompSave", "Export"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataCompSaveTip", "Save data to tag.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnExportToTag)
+				.OnClicked(this, &FSLEdModeToolkit::OnExportData)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -637,7 +637,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagDataSlot()
 				.Text(LOCTEXT("SemDataCompLoad", "Import"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataCompLoadTip", "Load data from tag.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnImportFromTag)
+				.OnClicked(this, &FSLEdModeToolkit::OnImportData)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -648,7 +648,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagDataSlot()
 				.Text(LOCTEXT("RemoveTagData", "Clear"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("RemoveTagDataTip", "Removes data stored in tags.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnClearTagData)
+				.OnClicked(this, &FSLEdModeToolkit::OnClearData)
 			]
 		];
 }
@@ -1380,7 +1380,7 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 
 
 ////
-FReply FSLEdModeToolkit::OnExportToTag()
+FReply FSLEdModeToolkit::OnExportData()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompSaveST", "Export semantic data to tag"));
 	int32 NumComp = 0;
@@ -1410,7 +1410,7 @@ FReply FSLEdModeToolkit::OnExportToTag()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnImportFromTag()
+FReply FSLEdModeToolkit::OnImportData()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Import data from tag"));
 	int32 NumComp = 0;
@@ -1441,7 +1441,7 @@ FReply FSLEdModeToolkit::OnImportFromTag()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnClearTagData()
+FReply FSLEdModeToolkit::OnClearData()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmTagData", "Remove all SemLog tags"));
 	bool bMarkDirty = false;

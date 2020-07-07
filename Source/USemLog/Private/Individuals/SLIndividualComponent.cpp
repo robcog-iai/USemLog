@@ -116,9 +116,9 @@ bool USLIndividualComponent::Load(bool bReset, bool bTryImport)
 
 /* Functionalities */
 // Save data to owners tag
-bool USLIndividualComponent::ExportToTag(bool bOverwrite)
+bool USLIndividualComponent::ExportValues(bool bOverwrite)
 {
-	if (IndividualObj && IndividualObj->IsValidLowLevel())
+	if (HasValidIndividual())
 	{
 		return IndividualObj->ExportValues(bOverwrite);
 	}
@@ -126,14 +126,25 @@ bool USLIndividualComponent::ExportToTag(bool bOverwrite)
 }
 
 // Load data from owners tag
-bool USLIndividualComponent::ImportFromTag(bool bOverwrite)
+bool USLIndividualComponent::ImportValues(bool bOverwrite)
 {
-	if (IndividualObj && IndividualObj->IsValidLowLevel())
+	if (HasValidIndividual())
 	{
 		return IndividualObj->ImportValues(bOverwrite);
 	}
 	return false;
 }
+
+// Clear exported values
+bool USLIndividualComponent::ClearExportedValues()
+{
+	if (HasValidIndividual())
+	{
+		return IndividualObj->ClearExportedValues();
+	}
+	return false;
+}
+
 
 // Toggle between original and mask material is possible
 bool USLIndividualComponent::ToggleVisualMaskVisibility(bool bPrioritizeChildren)
@@ -256,9 +267,9 @@ bool USLIndividualComponent::CreateIndividual()
 		// If skeletal, check for data asset
 		if (BI->IsA(USLSkeletalIndividual::StaticClass()))
 		{
-			if (USLSkeletalDataAsset* SLSK = FSLIndividualUtils::GetSkeletalDataAsset(GetOwner()))
+			if (USLSkeletalDataAsset* SLSK = FSLIndividualUtils::FindSkeletalDataAsset(GetOwner()))
 			{
-				OptionalDataAssets.Add("SkeletalDataAsset", SLSK);
+				OptionalDataAssets.Add(SkelDataAssetKey, SLSK);
 			}
 			else
 			{

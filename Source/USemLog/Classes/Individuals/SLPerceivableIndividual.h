@@ -69,6 +69,12 @@ public:
     bool IsCalibratedVisualMasValueSet() const { return !CalibratedVisualMask.IsEmpty(); };
 
 protected:
+    // Get class name, virtual since each invidiual type will have different name
+    virtual FString GetClassName() const override;
+
+    // Randomly generates a new visual mask, does not guarantee uniqueness
+    FString GenerateNewVisualMask() const;
+
     // Clear all values of the individual
     virtual void InitReset() override;
 

@@ -5,9 +5,8 @@
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
-// Utils
+// Utils 
 #include "Individuals/SLIndividualUtils.h"
-#include "Utils/SLTagIO.h"
 
 // Ctor
 USLConstraintIndividual::USLConstraintIndividual()
@@ -21,6 +20,7 @@ USLConstraintIndividual::USLConstraintIndividual()
 // Called before destroying the object.
 void USLConstraintIndividual::BeginDestroy()
 {
+	SetIsInit(false);
 	Super::BeginDestroy();
 }
 
@@ -73,6 +73,37 @@ bool USLConstraintIndividual::Load(bool bReset, bool bTryImport)
 
 	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
 	return IsLoaded();
+}
+
+// Get class name, virtual since each invidiual type will have different name
+FString USLConstraintIndividual::GetClassName() const
+{
+	if (IsInit())
+	{
+		if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(ParentActor))
+		{
+			if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
+			{
+				if (PCC->ConstraintInstance.GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
+					PCC->ConstraintInstance.GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
+					PCC->ConstraintInstance.GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
+				{
+					return "LinearJoint";
+				}
+				else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
+					PCC->ConstraintInstance.GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
+					PCC->ConstraintInstance.GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
+				{
+					return "RevoluteJoint";
+				}
+				else
+				{
+					return "FixedJoint";
+				}
+			}
+		}
+	}
+	return GetTypeName();
 }
 
 // Clear all values of the individual
@@ -162,7 +193,7 @@ bool USLConstraintIndividual::InitImpl()
 		return false;
 	}
 
-	return true;
+	return HasValidConstaintEntities();
 }
 
 // Private load implementation

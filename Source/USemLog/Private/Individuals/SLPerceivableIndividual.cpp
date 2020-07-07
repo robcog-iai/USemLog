@@ -21,6 +21,7 @@ USLPerceivableIndividual::USLPerceivableIndividual()
 void USLPerceivableIndividual::BeginDestroy()
 {
 	ApplyOriginalMaterials();
+	SetIsInit(false);
 	Super::BeginDestroy();
 }
 
@@ -75,11 +76,11 @@ bool USLPerceivableIndividual::ExportValues(bool bOverwrite)
 	bMarkDirty = Super::ExportValues(bOverwrite) || bMarkDirty;
 	if (!VisualMask.IsEmpty())
 	{
-		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "VisualMask", VisualMask, bOverwrite) || bMarkDirty;
+		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, ImportTagType, "VisualMask", VisualMask, bOverwrite) || bMarkDirty;
 	}
 	if (!CalibratedVisualMask.IsEmpty())
 	{
-		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagTypeConst, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite) || bMarkDirty;
+		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, ImportTagType, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -183,27 +184,37 @@ bool USLPerceivableIndividual::InitImpl()
 // Private load implementation
 bool USLPerceivableIndividual::LoadImpl(bool bTryImport)
 {
-	bool bRetValue = true;
-
 	if (!IsVisualMaskValueSet())
 	{
 		if (bTryImport)
 		{
 			if (!ImportVisualMaskValue())
 			{
-				bRetValue = false;
+				SetVisualMaskValue(GenerateNewVisualMask());
 			}
 		}
 		else
 		{
-			bRetValue = false;
+			SetVisualMaskValue(GenerateNewVisualMask());
 		}
 	}
 
 	// Will be set to black if the visual mask is empty
 	VisualMaskDynamicMaterial->SetVectorParameterValue(FName("Color"), FColor::FromHex(VisualMask));
 
-	return bRetValue;
+	return IsVisualMaskValueSet();
+}
+
+// Get class name, virtual since each invidiual type will have different name
+FString USLPerceivableIndividual::GetClassName() const
+{
+	return GetTypeName();
+}
+
+// Randomly generates a new visual mask, does not guarantee uniqueness
+FString USLPerceivableIndividual::GenerateNewVisualMask() const
+{
+	return FColor((uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f)).ToHex();
 }
 
 // Clear all values of the individual
@@ -237,7 +248,7 @@ bool USLPerceivableIndividual::ImportVisualMaskValue(bool bOverwrite)
 	if (!IsVisualMaskValueSet() || bOverwrite)
 	{
 		const FString PrevVal = VisualMask;
-		SetVisualMaskValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "VisualMask"));
+		SetVisualMaskValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "VisualMask"));
 		bNewValue = !VisualMask.Equals(PrevVal);
 		//if (!HasVisualMask())
 		//{
@@ -255,7 +266,7 @@ bool USLPerceivableIndividual::ImportCalibratedVisualMaskValue(bool bOverwrite)
 	if (!IsCalibratedVisualMasValueSet() || bOverwrite)
 	{
 		const FString PrevVal = CalibratedVisualMask;
-		SetCalibratedVisualMaskValue(FSLTagIO::GetValue(ParentActor, TagTypeConst, "CalibratedVisualMask"));
+		SetCalibratedVisualMaskValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "CalibratedVisualMask"));
 		bNewValue = !CalibratedVisualMask.Equals(PrevVal);
 		if (!IsCalibratedVisualMasValueSet())
 		{

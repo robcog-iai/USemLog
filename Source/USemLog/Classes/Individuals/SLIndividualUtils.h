@@ -84,9 +84,6 @@ public:
 	static bool CanHaveIndividualComponent(AActor* Actor);
 
 	// Create default individual object depending on the owner type (returns nullptr if failed)
-	static UClass* CreateIndividualObject(UObject* Outer, AActor* Owner, class USLBaseIndividual*& OutIndividualObject);
-
-	// Create default individual object depending on the owner type (returns nullptr if failed)
 	static USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
 
 	// Convert individual to the given type
@@ -96,7 +93,7 @@ public:
 	static FString NewOIdAsString();
 
 	// Find the skeletal data asset for the individual
-	static USLSkeletalDataAsset* GetSkeletalDataAsset(AActor* Owner);
+	static USLSkeletalDataAsset* FindSkeletalDataAsset(AActor* Owner);
 
 	// Get skeletal data asset
 
