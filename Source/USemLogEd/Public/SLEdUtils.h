@@ -14,11 +14,19 @@ public:
 	// Write the semantic map
 	static void WriteSemanticMap(UWorld* World, bool bOverwrite = false);
 
+	/* Managers */
 	// Get the semantic individual manager from the world, add new if none are available
-	static class ASLIndividualManager* GetExistingOrCreateNewIndividualManager(UWorld* World, bool bCreateNew = true);
+	static class ASLIndividualManager* GetOrCreateNewIndividualManager(UWorld* World, bool bCreateNew = true);
 
 	// Get the vis info manager form the world, add new one if none are available
-	static class ASLIndividualVisualManager* GetVisualInfoManager(UWorld* World, bool bCreateNew = true);
+	static class ASLIndividualVisualManager* GetOrCreateNewVisualInfoManager(UWorld* World, bool bCreateNew = true);
+
+	/* Individuals */
+	// Add new semantic data components to the actors
+	static int32 CreateIndividualComponents(UWorld* World);
+	static int32 CreateIndividualComponents(const TArray<AActor*>& Actors);
+
+
 
 	// Remove all tag keys
 	static bool RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);

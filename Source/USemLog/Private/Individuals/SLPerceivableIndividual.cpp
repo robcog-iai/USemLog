@@ -268,11 +268,11 @@ bool USLPerceivableIndividual::ImportCalibratedVisualMaskValue(bool bOverwrite)
 		const FString PrevVal = CalibratedVisualMask;
 		SetCalibratedVisualMaskValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "CalibratedVisualMask"));
 		bNewValue = !CalibratedVisualMask.Equals(PrevVal);
-		if (!IsCalibratedVisualMasValueSet())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d No CalibratedVisualMask value could be imported from %s's tag.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-		}
+		//if (!IsCalibratedVisualMasValueSet())
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d No CalibratedVisualMask value could be imported from %s's tag.."),
+		//		*FString(__FUNCTION__), __LINE__, *GetFullName());
+		//}
 	}
 	return bNewValue;
 }

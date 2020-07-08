@@ -30,7 +30,7 @@ void USLSkeletalIndividual::BeginDestroy()
 void USLSkeletalIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
-	Init();
+	//Init();
 }
 
 // Set pointer to the semantic owner

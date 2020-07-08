@@ -45,25 +45,25 @@ public:
 	int32 Reload() { return Init(true); };
 
 	// Add new visual info components to the actors
-	int32 AddVisualInfoComponents();
-	int32 AddVisualInfoComponents(const TArray<AActor*>& Actors);
+	int32 AddIndividualInfoComponents();
+	int32 AddIndividualInfoComponents(const TArray<AActor*>& Actors);
 
 	// Remove info components from world and clear manager's cache
-	int32 DestroyVisualInfoComponents();
-	int32 DestroyVisualInfoComponents(const TArray<AActor*>& Actors);
+	int32 DestroyIndividualInfoComponents();
+	int32 DestroyIndividualInfoComponents(const TArray<AActor*>& Actors);
 
 	// Refresh all components
-	int32 ResetVisualInfoComponents();
-	int32 ResetVisualInfoComponents(const TArray<AActor*>& Actors);
+	int32 ResetIndividualInfoComponents();
+	int32 ResetIndividualInfoComponents(const TArray<AActor*>& Actors);
 
 	/* Functionalities */
 	// Toggle visiblity
-	int32 ToggleVisualInfoComponentsVisibility();
-	int32 ToggleVisualInfoComponentsVisibility(const TArray<AActor*>& Actors);
+	int32 ToggleInfoVisibility();
+	int32 ToggleInfoVisibility(const TArray<AActor*>& Actors);
 
 	// Point text towards camera
-	int32 PointToCamera();
-	int32 PointToCamera(const TArray<AActor*>& Actors);
+	int32 LookAtCamera();
+	int32 LookAtCamera(const TArray<AActor*>& Actors);
 
 	// Enable/disable tick update
 	void ToggleTickUpdate();

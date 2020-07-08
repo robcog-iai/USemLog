@@ -55,8 +55,11 @@ int32 ASLIndividualManager::Init(bool bReset)
 			{
 				if (USLIndividualComponent* IC = GetIndividualComponent(*ActItr))
 				{
-					if (IC->IsInit() || IC->Init())
-					{						
+					/* Trigger an init and load on the component */
+					IC->Load();
+
+/*					if (IC->IsInit() || IC->Init())
+					{	*/					
 						//if (!IC->IsLoaded() && !IC->Load())
 						//{
 						//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
@@ -67,12 +70,12 @@ int32 ASLIndividualManager::Init(bool bReset)
 						{
 							NumComp++;
 						}
-					}
-					else
-					{
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be init.. the manager will not register it.."),
-							*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
-					}
+					//}
+					//else
+					//{
+					//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be init.. the manager will not register it.."),
+					//		*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
+					//}
 				}
 			}
 			bIsInit = true;
@@ -241,7 +244,7 @@ int32 ASLIndividualManager::ResetIndividualComponents(const TArray<AActor*>& Act
 
 /* Functionalities */
 // Toggle perceivable individuals mask materials
-int32 ASLIndividualManager::ToggleMaskMaterialsVisibility(bool bPrioritizeChildren)
+int32 ASLIndividualManager::ToggleVisualMaskVisibility(bool bPrioritizeChildren)
 {
 	if (!bIsInit)
 	{
@@ -261,7 +264,7 @@ int32 ASLIndividualManager::ToggleMaskMaterialsVisibility(bool bPrioritizeChildr
 }
 
 // Toggle selected perceivable individuals mask materials
-int32 ASLIndividualManager::ToggleMaskMaterialsVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren)
+int32 ASLIndividualManager::ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren)
 {
 	if (!bIsInit)
 	{
@@ -534,7 +537,7 @@ int32 ASLIndividualManager::RemoveVisualMasks(const TArray<AActor*>& Actors)
 }
 
 // Export data to tags
-int32 ASLIndividualManager::ExportToTag(bool bOverwrite)
+int32 ASLIndividualManager::ExportValues(bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -545,7 +548,7 @@ int32 ASLIndividualManager::ExportToTag(bool bOverwrite)
 	int32 Num = 0;
 	for (const auto& IC : RegisteredIndividualComponents)
 	{
-		if(IC->ExportValues())
+		if(IC->ExportValues(bOverwrite))
 		{
 			Num++;
 		}
@@ -554,7 +557,7 @@ int32 ASLIndividualManager::ExportToTag(bool bOverwrite)
 }
 
 // Export selection's data to tags
-int32 ASLIndividualManager::ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite)
+int32 ASLIndividualManager::ExportValues(const TArray<AActor*>& Actors, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -567,7 +570,7 @@ int32 ASLIndividualManager::ExportToTag(const TArray<AActor*>& Actors, bool bOve
 	{
 		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
 		{
-			if ((*FoundIC)->ExportValues())
+			if ((*FoundIC)->ExportValues(bOverwrite))
 			{
 				Num++;
 			}
@@ -576,8 +579,8 @@ int32 ASLIndividualManager::ExportToTag(const TArray<AActor*>& Actors, bool bOve
 	return Num;
 }
 
-// Import data from tags
-int32 ASLIndividualManager::ImportFromTag(bool bOverwrite)
+// Import data values
+int32 ASLIndividualManager::ImportValues(bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -588,7 +591,7 @@ int32 ASLIndividualManager::ImportFromTag(bool bOverwrite)
 	int32 Num = 0;
 	for (const auto& IC : RegisteredIndividualComponents)
 	{
-		if (IC->ImportValues())
+		if (IC->ImportValues(bOverwrite))
 		{
 			Num++;
 		}
@@ -596,8 +599,8 @@ int32 ASLIndividualManager::ImportFromTag(bool bOverwrite)
 	return Num;
 }
 
-// Import selection's data from tags
-int32 ASLIndividualManager::ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite)
+// Import selection's data values
+int32 ASLIndividualManager::ImportValues(const TArray<AActor*>& Actors, bool bOverwrite)
 {
 	if (!bIsInit)
 	{
@@ -610,7 +613,7 @@ int32 ASLIndividualManager::ImportFromTag(const TArray<AActor*>& Actors, bool bO
 	{
 		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
 		{
-			if ((*FoundIC)->ImportValues())
+			if ((*FoundIC)->ImportValues(bOverwrite))
 			{
 				Num++;
 			}
@@ -619,6 +622,48 @@ int32 ASLIndividualManager::ImportFromTag(const TArray<AActor*>& Actors, bool bO
 	return Num;
 }
 
+// Clear any exported data
+int32 ASLIndividualManager::ClearExportedValues()
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& IC : RegisteredIndividualComponents)
+	{
+		if (IC->ClearExportedValues())
+		{
+			Num++;
+		}
+	}
+	return Num;
+}
+
+// Clear selections exported data
+int32 ASLIndividualManager::ClearExportedValues(const TArray<AActor*>& Actors)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+		return INDEX_NONE;
+	}
+
+	int32 Num = 0;
+	for (const auto& Act : Actors)
+	{
+		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+		{
+			if ((*FoundIC)->ClearExportedValues())
+			{
+				Num++;
+			}
+		}
+	}
+	return Num;
+}
 
 /* Private */
 // Remove destroyed individuals from array
@@ -700,9 +745,10 @@ USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* 
 
 		Actor->RerunConstructionScripts();
 
-		if (NewComp->Init())
+		/* Try init */
+		if (NewComp->IsInit() || NewComp->Init())
 		{
-			if (!NewComp->Load(true, true))
+			if (!NewComp->IsLoaded() && !NewComp->Load(true, true))
 			{
 				//UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
 				//	*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());

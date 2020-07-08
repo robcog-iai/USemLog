@@ -51,7 +51,10 @@ void USLIndividualComponent::OnComponentCreated()
 		}
 	}
 
-	CreateIndividual();
+	if (!HasValidIndividual())
+	{
+		CreateIndividual();
+	}
 }
 
 // Called before destroying the object.
@@ -144,7 +147,6 @@ bool USLIndividualComponent::ClearExportedValues()
 	}
 	return false;
 }
-
 
 // Toggle between original and mask material is possible
 bool USLIndividualComponent::ToggleVisualMaskVisibility(bool bPrioritizeChildren)
@@ -261,9 +263,6 @@ bool USLIndividualComponent::CreateIndividual()
 	{	
 		IndividualObj = BI;
 
-		// Listen to updates to the individual
-		BindDelegates();
-
 		// If skeletal, check for data asset
 		if (BI->IsA(USLSkeletalIndividual::StaticClass()))
 		{
@@ -278,6 +277,8 @@ bool USLIndividualComponent::CreateIndividual()
 			}
 		}
 
+		// Listen to updates to the individual
+		BindDelegates();
 		return true;
 	}
 	else

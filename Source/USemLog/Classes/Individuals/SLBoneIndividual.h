@@ -41,11 +41,12 @@ public:
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset = false, bool bTryImport = false);
 
-    // Save values externally
-    virtual bool ExportValues(bool bOverwrite = false);
+    //// Save values externally
+    //virtual bool ExportValues(bool bOverwrite = false);
 
-    // Load values externally
-    virtual bool ImportValues(bool bOverwrite = false);
+    //// Load values externally
+    //virtual bool ImportValues(bool bOverwrite = false);
+
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("BoneIndividual"); };

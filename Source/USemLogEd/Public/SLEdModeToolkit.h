@@ -29,9 +29,11 @@ public:
 private:
 	/* Vertical slot entries */
 	// Create checkbox entry slot to set overwrite flag
-	SVerticalBox::FSlot& CreateOverwriteSlot();
-	SVerticalBox::FSlot& CreateOnlySelectedSlot();
-	SVerticalBox::FSlot& CreateIncludeChildrenSlot();
+	SVerticalBox::FSlot& CreateOverwriteFlagSlot();
+	SVerticalBox::FSlot& CreateOnlySelectedFlagSlot();
+	SVerticalBox::FSlot& CreateIncludeChildrenFlagSlot();
+	SVerticalBox::FSlot& CreateResetFlagSlot();
+	SVerticalBox::FSlot& CreateTryImportFlagSlot();
 
 	// Semantic map
 	SVerticalBox::FSlot& CreateSemMapSlot();
@@ -41,8 +43,9 @@ private:
 	SVerticalBox::FSlot& CreateSemDataManagersSlot();
 
 	// Semantic data components
-	SVerticalBox::FSlot& CreateSemDataCompTxtSlot();
-	SVerticalBox::FSlot& CreateSemDataCompSlot();
+	SVerticalBox::FSlot& CreateIndividualsTxtSlot();
+	SVerticalBox::FSlot& CreateIndividualsSlot();
+	SVerticalBox::FSlot& CreateIndividualsFuncSlot();
 
 	// Semantic data visual info
 	SVerticalBox::FSlot& CreateSemDataVisInfoTxtSlot();
@@ -73,9 +76,11 @@ private:
 
 
 	/* Checkbox callbacks */
-	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
-	void OnCheckedOnlySelected(ECheckBoxState NewCheckedState);
-	void OnIncludeChildren(ECheckBoxState NewCheckedState);
+	void OnCheckedOverwriteFlag(ECheckBoxState NewCheckedState);
+	void OnCheckedOnlySelectedFlag(ECheckBoxState NewCheckedState);
+	void OnCheckedPrioritizeChildrenFlag(ECheckBoxState NewCheckedState);
+	void OnCheckedResetFlag(ECheckBoxState NewCheckedState);
+	void OnCheckedTryImportFlag(ECheckBoxState NewCheckedState);
 
 
 	/* Button callbacks */
@@ -88,18 +93,19 @@ private:
 	FReply OnReloadSemDataManagers();
 
 	// Semantic data components
-	FReply OnCreateSemDataComp();
-	FReply OnResetSemDataComp();
-	FReply OnRmSemDataComp();
-	FReply OnToggleMaskSemDataComp();
+	FReply OnCreateIndividuals();
+	FReply OnRemoveIndividuals();
+	FReply OnInitIndividuals();
+	FReply OnLoadIndividuals();
+	FReply OnToggleIndividualVisualMaskVisiblity();
 
 	// Semantic data visual info
-	FReply OnCreateSemDataVisInfo();
-	FReply OnResetSemDataVisInfo();
-	FReply OnRmSemDataVisInfo();
-	FReply OnToggleSemDataVisInfo();
-	FReply OnUpdateTransformSemDataVisInfo();
-	FReply OnLiveUpdateSemDataVisInfo();
+	FReply OnCreateIndividualsInfo();
+	FReply OnResetIndividualsInfo();
+	FReply OnRemoveIndividualsInfo();
+	FReply OnToggleIndividualsInfoVisiblity();
+	FReply OnUpdateIndividualsInfoOrientation();
+	FReply OnToggleIndividualsInfoLiveOrientationUpdate();
 
 	// Semantic data
 	FReply OnWriteSemDataAll();
@@ -125,6 +131,14 @@ private:
 
 	FReply OnGenericButton();
 
+
+	/* Managers */
+	bool HasValidIndividualManager() const;
+	bool SetIndividualManager();
+
+	bool HasValidIndividualInfoManager() const;
+	bool SetdIndividualInfoManager();
+
 	/* Helper */
 	// Returns all the selected actors in the editor
 	TArray<AActor*> GetSelectedActors() const;
@@ -144,7 +158,7 @@ private:
 	class ASLIndividualManager* IndividualManager;
 
 	// Provides visual functionalities over the individuals in the world
-	class ASLIndividualVisualManager* VisualInfoManager;
+	class ASLIndividualVisualManager* IndividualInfoManager;
 
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;
@@ -152,8 +166,9 @@ private:
 	/** SCS editor, refresh view if an actor is selected when adding/removing components */
 	TSharedPtr<class SSCSEditor> SCSEditor;
 
-	bool bOverwrite;
-	bool bOnlySelected;
-	bool bIncludeChildren;
-	bool bUseTags;
+	bool bOverwriteFlag;
+	bool bOnlySelectedFlag;
+	bool bProritizeChildrenFlag;
+	bool bResetFlag;
+	bool bTryImportFlag;
 };

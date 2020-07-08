@@ -27,7 +27,7 @@ void USLVirtualBoneIndividual::BeginDestroy()
 void USLVirtualBoneIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
-	Init();
+	//Init();
 }
 
 // Set the parameters required when initalizing the individual

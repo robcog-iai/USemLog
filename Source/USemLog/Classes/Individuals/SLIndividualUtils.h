@@ -95,7 +95,14 @@ public:
 	// Find the skeletal data asset for the individual
 	static USLSkeletalDataAsset* FindSkeletalDataAsset(AActor* Owner);
 
-	// Get skeletal data asset
+	
+	///* Individuals CRUD */
+	//static int32 CreateIndividualComponents(UWorld* World);
+	//static int32 CreateIndividualComponents(const TArray<AActor*>& Actors);
+
+
+
+
 
 	/* Id */
 	// Write unique id to the actor

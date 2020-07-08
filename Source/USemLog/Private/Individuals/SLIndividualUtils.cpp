@@ -290,7 +290,7 @@ USLSkeletalDataAsset* FSLIndividualUtils::FindSkeletalDataAsset(AActor* Owner)
 			Filter.PackagePaths.Add("/USemLog/Skeletal");
 			Filter.ClassNames.Add(USLSkeletalDataAsset::StaticClass()->GetFName());
 			AssetRegistryModule.Get().GetAssets(Filter, AssetData);
-			
+
 			// Search for the results
 			for (const auto& AD : AssetData)
 			{
@@ -303,6 +303,16 @@ USLSkeletalDataAsset* FSLIndividualUtils::FindSkeletalDataAsset(AActor* Owner)
 	}
 	return nullptr;
 }
+
+//int32 FSLIndividualUtils::CreateIndividualComponents(UWorld* World)
+//{
+//	return int32();
+//}
+//
+//int32 FSLIndividualUtils::CreateIndividualComponents(const TArray<AActor*>& Actors)
+//{
+//	return int32();
+//}
 
 /* Id */
 // Write unique id to the actor

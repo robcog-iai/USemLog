@@ -10,6 +10,7 @@
 #include "SLManager.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualVisualManager.h"
+#include "Individuals/SLIndividualUtils.h"
 
 // Utils
 #include "Utils/SLTagIO.h"
@@ -38,8 +39,9 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 }
 
 
+/* Managers */
 // Get the semantic individual manager from the world, add new if none are available
-ASLIndividualManager* FSLEdUtils::GetExistingOrCreateNewIndividualManager(UWorld* World, bool bCreateNew)
+ASLIndividualManager* FSLEdUtils::GetOrCreateNewIndividualManager(UWorld* World, bool bCreateNew)
 {
 	int32 ActNum = 0;
 	ASLIndividualManager* Manager = nullptr;
@@ -69,7 +71,7 @@ ASLIndividualManager* FSLEdUtils::GetExistingOrCreateNewIndividualManager(UWorld
 }
 
 // Get the vis info manager form the world, add new one if none are available
-ASLIndividualVisualManager* FSLEdUtils::GetVisualInfoManager(UWorld* World, bool bCreateNew)
+ASLIndividualVisualManager* FSLEdUtils::GetOrCreateNewVisualInfoManager(UWorld* World, bool bCreateNew)
 {
 	int32 ActNum = 0;
 	ASLIndividualVisualManager* Manager = nullptr;
@@ -96,6 +98,19 @@ ASLIndividualVisualManager* FSLEdUtils::GetVisualInfoManager(UWorld* World, bool
 		World->MarkPackageDirty();
 	}
 	return Manager;
+}
+
+/* Individuals */
+// Add new semantic data components to all the actors
+int32 FSLEdUtils::CreateIndividualComponents(UWorld* World)
+{
+	return FSLIndividualUtils::CreateIndividualComponents(World);
+}
+
+// Add new semantic data components to the selected actors
+int32 FSLEdUtils::CreateIndividualComponents(const TArray<AActor*>& Actors)
+{
+	return FSLIndividualUtils::CreateIndividualComponents(Actors);
 }
 
 
@@ -187,6 +202,7 @@ bool FSLEdUtils::AddSemanticMonitorComponents(const TArray<AActor*>& Actors, boo
 // Enable overlaps on actors
 bool FSLEdUtils::EnableOverlaps(UWorld* World)
 {
+	// TODO called on individual init
 	bool bMarkDirty = false;
 	for (TActorIterator<AStaticMeshActor> ActItr(World); ActItr; ++ActItr)
 	{

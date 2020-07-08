@@ -22,7 +22,7 @@ void USLRigidIndividual::BeginDestroy()
 void USLRigidIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
-	Init();
+	//Init();
 }
 
 // Set pointer to the semantic owner

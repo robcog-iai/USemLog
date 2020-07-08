@@ -50,8 +50,8 @@ public:
 
 	/* Functionalities */
 	// Toggle perceivable individuals mask materials
-	int32 ToggleMaskMaterialsVisibility(bool bPrioritizeChildren = false);
-	int32 ToggleMaskMaterialsVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren = false);
+	int32 ToggleVisualMaskVisibility(bool bPrioritizeChildren = false);
+	int32 ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren = false);
 
 	// Write new unique identifiers 
 	int32 WriteUniqueIds(bool bOverwrite = false);
@@ -71,11 +71,13 @@ public:
 	int32 RemoveVisualMasks();
 	int32 RemoveVisualMasks(const TArray<AActor*>& Actors);
 
-	// Export/imort data to/from tags
-	int32 ExportToTag(bool bOverwrite = false);
-	int32 ExportToTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	int32 ImportFromTag(bool bOverwrite = false);
-	int32 ImportFromTag(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	// Export/import/clear data
+	int32 ExportValues(bool bOverwrite = false);
+	int32 ExportValues(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	int32 ImportValues(bool bOverwrite = false);
+	int32 ImportValues(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	int32 ClearExportedValues(const TArray<AActor*>& Actors);
+	int32 ClearExportedValues();
 
 private:
 	// Triggered by external destruction of individual component

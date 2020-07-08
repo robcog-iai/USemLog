@@ -20,6 +20,7 @@
 // SL
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualVisualManager.h"
+#include "Individuals/SLIndividualUtils.h"
 
 // UUtils
 #include "SLEdUtils.h"
@@ -30,10 +31,13 @@
 FSLEdModeToolkit::FSLEdModeToolkit()
 {
 	IndividualManager = nullptr;
-	VisualInfoManager = nullptr;
+	IndividualInfoManager = nullptr;
 	/* Checkbox states */
-	bOverwrite = false;
-	bOnlySelected = false;
+	bOverwriteFlag = false;
+	bOnlySelectedFlag = false;
+	bProritizeChildrenFlag = false;	
+	bResetFlag = false;
+	bTryImportFlag = true;
 }
 
 // Create the widget, bind the button callbacks
@@ -46,9 +50,11 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			SNew(SVerticalBox)
 
 			////
-			+ CreateOverwriteSlot()
-			+ CreateOnlySelectedSlot()
-			+ CreateIncludeChildrenSlot()
+			+ CreateOverwriteFlagSlot()
+			+ CreateOnlySelectedFlagSlot()
+			+ CreateIncludeChildrenFlagSlot()
+			+ CreateResetFlagSlot()
+			+ CreateTryImportFlagSlot()
 
 			////
 			+ CreateSemMapSlot()
@@ -58,8 +64,9 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateSemDataManagersSlot()
 
 			////
-			+ CreateSemDataCompTxtSlot()
-			+ CreateSemDataCompSlot()
+			+ CreateIndividualsTxtSlot()
+			+ CreateIndividualsSlot()
+			+ CreateIndividualsFuncSlot()
 
 			////
 			+ CreateSemDataVisInfoTxtSlot()
@@ -123,7 +130,7 @@ class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 /* Vertical slot entries */
 
 /* Checkboxes */
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -144,12 +151,12 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteSlot()
 				SNew(SCheckBox)
 				.ToolTipText(LOCTEXT("CheckBoxOverwrite", "Overwrites any existing data, use with caution"))
 				.IsChecked(ECheckBoxState::Unchecked)
-				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwrite)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteFlag)
 			]
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -170,12 +177,12 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedSlot()
 				SNew(SCheckBox)
 				.ToolTipText(LOCTEXT("CheckBoxOnlySelected", "Consider only selected actors"))
 				.IsChecked(ECheckBoxState::Unchecked)
-				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOnlySelected)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOnlySelectedFlag)
 			]
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -188,18 +195,71 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("IncludeChildrenextLabel", "Include Children:  "))
+				.Text(LOCTEXT("IncludeChildrenTextLabel", "Prioritize Children Flag:  "))
 			]
 
 			+ SHorizontalBox::Slot()
 			[
 				SNew(SCheckBox)
-				.ToolTipText(LOCTEXT("CheckBoxIncludeChildren", "Consider children data (e.g. bones/links..)"))
+				.ToolTipText(LOCTEXT("CheckBoxIncludeChildren", "Prioritize children data (e.g. bones/links..)"))
 				.IsChecked(ECheckBoxState::Unchecked)
-				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnIncludeChildren)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedPrioritizeChildrenFlag)
 			]
 		];
 }
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateResetFlagSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("ResetFlagTextLabel", "Reset Flag:  "))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("CheckboxResetFlag", "Apply reset flag to functions"))
+				.IsChecked(ECheckBoxState::Unchecked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedResetFlag)
+			]
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateTryImportFlagSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("TryImportTextLabel", "Try Import Flag:  "))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("CheckboxTryImport", "If available data will be imported first.."))
+				.IsChecked(ECheckBoxState::Checked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedTryImportFlag)
+			]
+		];
+}
+
 
 /* Semantic map */
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemMapSlot()
@@ -240,7 +300,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataManagersTxtSlot()
 		.HAlign(HAlign_Center)
 		[
 			SNew(STextBlock)
-			.Text(LOCTEXT("SemDataManagersTxt", "Managers:"))
+			.Text(LOCTEXT("IndividualManagersTxt", "Managers:"))
 		];
 }
 
@@ -258,9 +318,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataManagersSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataManagersInit", "Init"))
+				.Text(LOCTEXT("IndividualManagersInit", "Init"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataManagersInitTip", "Loads (or creates) managers from (or to) the world, and initializes them.."))
+				.ToolTipText(LOCTEXT("IndividualManagersInitTip", "Loads (or creates) managers from (or to) the world, and initializes them.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnInitSemDataManagers)
 			]
 
@@ -269,17 +329,17 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataManagersSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataManagersReload", "Reload"))
+				.Text(LOCTEXT("IndividualManagersReload", "Reload"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataManagersReloadTip", "Reloads the components from the world (clean + init).."))
+				.ToolTipText(LOCTEXT("IndividualManagersReloadTip", "Reloads the components from the world (clean + init).."))
 				.OnClicked(this, &FSLEdModeToolkit::OnReloadSemDataManagers)
 			]
 		];
 }
 
 
-/* Semantic data components */
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompTxtSlot()
+/* Individual components */
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -287,11 +347,11 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompTxtSlot()
 		.HAlign(HAlign_Center)
 		[
 			SNew(STextBlock)
-			.Text(LOCTEXT("SemDataCompTxt", "Components:"))
+			.Text(LOCTEXT("IndividualsTxt", "Individuals:"))
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -305,10 +365,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataCompCreate", "Create"))
+				.Text(LOCTEXT("IndividualsCreate", "Create"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataCompCreateTip", "Create semantic data components.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnCreateSemDataComp)
+				.ToolTipText(LOCTEXT("IndividualsCreateTip", "Create individuals.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnCreateIndividuals)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -316,10 +376,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataCompReload", "Reset"))
+				.Text(LOCTEXT("IndividualsRemove", "Remove"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataCompReloadTip", "Force init + load.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnResetSemDataComp)
+				.ToolTipText(LOCTEXT("IndividualsRmTip", "Remove individuals.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnRemoveIndividuals)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -327,10 +387,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataCompRm", "Remove"))
+				.Text(LOCTEXT("IndividualsInit", "Init"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataCompRmTip", "Remove semantic data components (make sure no related editor windows are open).."))
-				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataComp)
+				.ToolTipText(LOCTEXT("IndividualsInitTip", "Call Init(bReset) on individuals.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnInitIndividuals)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -338,11 +398,36 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataCompSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataCompToggleMask", "Toggle Masks"))
+				.Text(LOCTEXT("IndividualsLoad", "Load"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataCompToggleMaskTip", "Toggle between the visual mask and the original colors.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnToggleMaskSemDataComp)
+				.ToolTipText(LOCTEXT("IndividualsLoadTip", "Call Load(bReset, bTryImport) on individuals.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnInitIndividuals)
 			]
+
+
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsFuncSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("IndividualsToggleVisualMaskVisiblitiy", "Toggle Masks"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("IndividualsToggleMaskTip", "Toggle between the visual mask and the original colors.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnToggleIndividualVisualMaskVisiblity)
+			]
+
 		];
 }
 
@@ -377,7 +462,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 				.Text(LOCTEXT("SemDataVisInfoCreate", "Create"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataVisInfoCreateTip", "Create visual info components.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnCreateSemDataVisInfo)
+				.OnClicked(this, &FSLEdModeToolkit::OnCreateIndividualsInfo)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -388,7 +473,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 				.Text(LOCTEXT("SemDataVisInfoRefresh", "Reset"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataVisInfoRefreshTip", "Force init + load .."))
-				.OnClicked(this, &FSLEdModeToolkit::OnResetSemDataVisInfo)
+				.OnClicked(this, &FSLEdModeToolkit::OnResetIndividualsInfo)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -399,7 +484,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 				.Text(LOCTEXT("SemDataVisInfoRm", "Remove"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataVisInfoRmTip", "Remove visual info components (make sure no related editor windows are open).."))
-				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataVisInfo)
+				.OnClicked(this, &FSLEdModeToolkit::OnRemoveIndividualsInfo)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -410,7 +495,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 				.Text(LOCTEXT("SemDataVisInfoToggle", "Toggle Visibility"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataVisInfoToggleTip", "Toggle visual info visibility.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnToggleSemDataVisInfo)
+				.OnClicked(this, &FSLEdModeToolkit::OnToggleIndividualsInfoVisiblity)
 			]
 		];
 }
@@ -432,7 +517,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoFuncSlot()
 				.Text(LOCTEXT("SemDataVisInfoUpdate", "Update"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataVisInfoUpdateTip", "Point text towards camera.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnUpdateTransformSemDataVisInfo)
+				.OnClicked(this, &FSLEdModeToolkit::OnUpdateIndividualsInfoOrientation)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -443,7 +528,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoFuncSlot()
 				.Text(LOCTEXT("SemDataVisInfoLIveUpdate", "ToggleDynamicUpdate"))
 				.IsEnabled(true)
 				.ToolTipText(LOCTEXT("SemDataVisInfoLIveUpdateTip", "Toggle live update.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnLiveUpdateSemDataVisInfo)
+				.OnClicked(this, &FSLEdModeToolkit::OnToggleIndividualsInfoLiveOrientationUpdate)
 			]
 
 		];
@@ -623,9 +708,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagDataSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataCompSave", "Export"))
+				.Text(LOCTEXT("IndividualsSave", "Export"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataCompSaveTip", "Save data to tag.."))
+				.ToolTipText(LOCTEXT("IndividualsSaveTip", "Save data to tag.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnExportData)
 			]
 
@@ -634,9 +719,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTagDataSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataCompLoad", "Import"))
+				.Text(LOCTEXT("IndividualsLoad", "Import"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataCompLoadTip", "Load data from tag.."))
+				.ToolTipText(LOCTEXT("IndividualsLoadTip", "Load data from tag.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnImportData)
 			]
 
@@ -759,19 +844,29 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenericButtonSlot()
 
 
 /* Checkbox callbacks */
-void FSLEdModeToolkit::OnCheckedOverwrite(ECheckBoxState NewCheckedState)
+void FSLEdModeToolkit::OnCheckedOverwriteFlag(ECheckBoxState NewCheckedState)
 {
-	bOverwrite = (NewCheckedState == ECheckBoxState::Checked);
+	bOverwriteFlag = (NewCheckedState == ECheckBoxState::Checked);
 }
 
-void FSLEdModeToolkit::OnCheckedOnlySelected(ECheckBoxState NewCheckedState)
+void FSLEdModeToolkit::OnCheckedOnlySelectedFlag(ECheckBoxState NewCheckedState)
 {
-	bOnlySelected = (NewCheckedState == ECheckBoxState::Checked);
+	bOnlySelectedFlag = (NewCheckedState == ECheckBoxState::Checked);
 }
 
-void FSLEdModeToolkit::OnIncludeChildren(ECheckBoxState NewCheckedState)
+void FSLEdModeToolkit::OnCheckedPrioritizeChildrenFlag(ECheckBoxState NewCheckedState)
 {
-	bIncludeChildren = (NewCheckedState == ECheckBoxState::Checked);
+	bProritizeChildrenFlag = (NewCheckedState == ECheckBoxState::Checked);
+}
+
+void FSLEdModeToolkit::OnCheckedResetFlag(ECheckBoxState NewCheckedState)
+{
+	bResetFlag = (NewCheckedState == ECheckBoxState::Checked);
+}
+
+void FSLEdModeToolkit::OnCheckedTryImportFlag(ECheckBoxState NewCheckedState)
+{
+	bTryImportFlag = (NewCheckedState == ECheckBoxState::Checked);
 }
 
 
@@ -779,7 +874,7 @@ void FSLEdModeToolkit::OnIncludeChildren(ECheckBoxState NewCheckedState)
 ////
 FReply FSLEdModeToolkit::OnWriteSemMap()
 {
-	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwrite);
+	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
 	return FReply::Handled();
 }
 
@@ -789,33 +884,25 @@ FReply FSLEdModeToolkit::OnInitSemDataManagers()
 	FScopedTransaction Transaction(LOCTEXT("SemDataManagerInit", "Init semantic data managers"));
 
 	int32 NumIndividualComponents = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager() || SetIndividualManager())
 	{
 		NumIndividualComponents = IndividualManager->Init();
-	}
-	else
-	{
-		IndividualManager = FSLEdUtils::GetExistingOrCreateNewIndividualManager(GEditor->GetEditorWorldContext().World());
-		if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
-		{
-			NumIndividualComponents = IndividualManager->Init();
-		}
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Loaded %ld individual components.."),
 		*FString(__FUNCTION__), __LINE__, NumIndividualComponents);
 
 
-	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel())
+	if (HasValidIndividualInfoManager())
 	{
-		VisualInfoManager->Init();
+		IndividualInfoManager->Init();
 	}
 	else
 	{
-		VisualInfoManager = FSLEdUtils::GetVisualInfoManager(GEditor->GetEditorWorldContext().World());
-		if (VisualInfoManager && VisualInfoManager->IsValidLowLevel())
+		IndividualInfoManager = FSLEdUtils::GetOrCreateNewVisualInfoManager(GEditor->GetEditorWorldContext().World());
+		if (HasValidIndividualInfoManager())
 		{
-			VisualInfoManager->Init();
+			IndividualInfoManager->Init();
 		}
 	}
 
@@ -827,7 +914,7 @@ FReply FSLEdModeToolkit::OnReloadSemDataManagers()
 	FScopedTransaction Transaction(LOCTEXT("SemDataManagerReload", "Reload semantic data managers"));
 	const bool bReset = true;
 
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
 		IndividualManager->Reload();
 	}
@@ -837,9 +924,9 @@ FReply FSLEdModeToolkit::OnReloadSemDataManagers()
 			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel())
+	if (HasValidIndividualInfoManager())
 	{
-		VisualInfoManager->Init(bReset);
+		IndividualInfoManager->Init(bReset);
 	}
 	else
 	{
@@ -850,27 +937,41 @@ FReply FSLEdModeToolkit::OnReloadSemDataManagers()
 }
 
 //// Individual Components
-FReply FSLEdModeToolkit::OnCreateSemDataComp()
+FReply FSLEdModeToolkit::OnCreateIndividuals()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompCreateST", "Create semantic data components"));
+	FScopedTransaction Transaction(LOCTEXT("IndividualsCreateST", "Create individual components"));
 	int32 NumComp = 0;
 
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (bOnlySelectedFlag)
 	{
-		if (bOnlySelected)
-		{
-			NumComp = IndividualManager->AddIndividualComponents(GetSelectedActors());
-		}
-		else
-		{
-			NumComp = IndividualManager->AddIndividualComponents();
-		}
+		NumComp = FSLIndividualUtils::CreateIndividualComponents(GetSelectedActors());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
+		NumComp = FSLIndividualUtils::CreateIndividualComponents(GEditor->GetEditorWorldContext().World());
 	}
+
+	if (HasValidIndividualManager())
+	{
+		// TODO reload individuals
+	}
+
+	//if (HasValidIndividualManager())
+	//{
+	//	if (bOnlySelectedFlag)
+	//	{
+	//		NumComp = IndividualManager->AddIndividualComponents(GetSelectedActors());
+	//	}
+	//	else
+	//	{
+	//		NumComp = IndividualManager->AddIndividualComponents();
+	//	}
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+	//		*FString(__FUNCTION__), __LINE__);
+	//}
 
 	if (NumComp)
 	{
@@ -883,48 +984,16 @@ FReply FSLEdModeToolkit::OnCreateSemDataComp()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnResetSemDataComp()
+FReply FSLEdModeToolkit::OnRemoveIndividuals()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Reload semantic data components"));
-	int32 NumComp = 0;
-
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
-	{
-		if (bOnlySelected)
-		{
-			NumComp = IndividualManager->ResetIndividualComponents(GetSelectedActors());
-		}
-		else
-		{
-			NumComp = IndividualManager->ResetIndividualComponents();
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
-	}
-
-	if (NumComp)
-	{
-		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Refreshed %ld individual components.."),
-			*FString(__FUNCTION__), __LINE__, NumComp);
-	}
-
-	return FReply::Handled();
-}
-
-FReply FSLEdModeToolkit::OnRmSemDataComp()
-{
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompRmST", "Remove semantic data components"));
+	FScopedTransaction Transaction(LOCTEXT("IndividualsRmST", "Remove semantic data components"));
 
 	DeselectComponentSelection();
 
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
 			NumComp = IndividualManager->DestroyIndividualComponents(GetSelectedActors());
 		}
@@ -950,20 +1019,67 @@ FReply FSLEdModeToolkit::OnRmSemDataComp()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
+FReply FSLEdModeToolkit::OnInitIndividuals()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompToggleMaskST", "Toggle semantic components visual maks visiblity"));
-	
+	FScopedTransaction Transaction(LOCTEXT("IndividualsLoadST", "Reload semantic data components"));
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = IndividualManager->ToggleMaskMaterialsVisibility(GetSelectedActors(), bIncludeChildren);
+			NumComp = IndividualManager->ResetIndividualComponents(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = IndividualManager->ToggleMaskMaterialsVisibility(bIncludeChildren);
+			NumComp = IndividualManager->ResetIndividualComponents();
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
+	}
+
+	if (NumComp)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Init(bReset=%d) on %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp, bResetFlag);
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnLoadIndividuals()
+{
+	FScopedTransaction Transaction(LOCTEXT("IndividualsLoadST", "Reload semantic data components"));
+	int32 NumComp = 0;
+
+	if (NumComp)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bReset=%d, bTryImport=%d) on  %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, NumComp, bResetFlag, bTryImportFlag);
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnToggleIndividualVisualMaskVisiblity()
+{
+	FScopedTransaction Transaction(LOCTEXT("IndividualsToggleMaskST", "Toggle individuals visual maks visiblity"));
+	
+	int32 NumComp = 0;
+	if (HasValidIndividualManager())
+	{
+		if (bOnlySelectedFlag)
+		{
+			NumComp = IndividualManager->ToggleVisualMaskVisibility(GetSelectedActors(), bProritizeChildrenFlag);
+		}
+		else
+		{
+			NumComp = IndividualManager->ToggleVisualMaskVisibility(bProritizeChildrenFlag);
 		}
 	}
 	else
@@ -983,21 +1099,21 @@ FReply FSLEdModeToolkit::OnToggleMaskSemDataComp()
 }
 
 
-//// Visual Info Components
-FReply FSLEdModeToolkit::OnCreateSemDataVisInfo()
+//// Individual Info Components
+FReply FSLEdModeToolkit::OnCreateIndividualsInfo()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoCreateST", "Create visual info components"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoCreateST", "Create individuals info.."));
 	int32 NumComp = 0;
 
-	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+	if (HasValidIndividualInfoManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = VisualInfoManager->AddVisualInfoComponents(GetSelectedActors());
+			NumComp = IndividualInfoManager->AddIndividualInfoComponents(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = VisualInfoManager->AddVisualInfoComponents();
+			NumComp = IndividualInfoManager->AddIndividualInfoComponents();
 		}
 	}
 	else
@@ -1017,20 +1133,20 @@ FReply FSLEdModeToolkit::OnCreateSemDataVisInfo()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnResetSemDataVisInfo()
+FReply FSLEdModeToolkit::OnResetIndividualsInfo()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRefreshST", "Reset visual info components"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRefreshST", "Reset individuals info components.."));
 	int32 NumComp = 0;
 
-	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+	if (HasValidIndividualInfoManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = VisualInfoManager->ResetVisualInfoComponents(GetSelectedActors());
+			NumComp = IndividualInfoManager->ResetIndividualInfoComponents(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = VisualInfoManager->ResetVisualInfoComponents();
+			NumComp = IndividualInfoManager->ResetIndividualInfoComponents();
 		}
 	}
 	else
@@ -1049,23 +1165,23 @@ FReply FSLEdModeToolkit::OnResetSemDataVisInfo()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnRmSemDataVisInfo()
+FReply FSLEdModeToolkit::OnRemoveIndividualsInfo()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRmST", "Remove visual info components"));
+	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRmST", "Remove individual info components"));
 	
 	DeselectComponentSelection();
 
 	int32 NumComp = 0;
 
-	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+	if (HasValidIndividualInfoManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = VisualInfoManager->DestroyVisualInfoComponents(GetSelectedActors());
+			NumComp = IndividualInfoManager->DestroyIndividualInfoComponents(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = VisualInfoManager->DestroyVisualInfoComponents();
+			NumComp = IndividualInfoManager->DestroyIndividualInfoComponents();
 		}
 	}
 	else
@@ -1085,20 +1201,20 @@ FReply FSLEdModeToolkit::OnRmSemDataVisInfo()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnToggleSemDataVisInfo()
+FReply FSLEdModeToolkit::OnToggleIndividualsInfoVisiblity()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoToggleST", "Toggle visual info components visibility"));
 	int32 NumComp = 0;
 
-	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+	if (HasValidIndividualInfoManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility(GetSelectedActors());
+			NumComp = IndividualInfoManager->ToggleInfoVisibility(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = VisualInfoManager->ToggleVisualInfoComponentsVisibility();
+			NumComp = IndividualInfoManager->ToggleInfoVisibility();
 		}
 	}
 	else
@@ -1117,20 +1233,20 @@ FReply FSLEdModeToolkit::OnToggleSemDataVisInfo()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnUpdateTransformSemDataVisInfo()
+FReply FSLEdModeToolkit::OnUpdateIndividualsInfoOrientation()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoUpdateST", "Update visual info orientation"));
 	int32 NumComp = 0;
 
-	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+	if (HasValidIndividualInfoManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = VisualInfoManager->PointToCamera(GetSelectedActors());
+			NumComp = IndividualInfoManager->LookAtCamera(GetSelectedActors());
 		}
 		else
 		{
-			NumComp = VisualInfoManager->PointToCamera();
+			NumComp = IndividualInfoManager->LookAtCamera();
 		}
 	}
 	else
@@ -1149,13 +1265,13 @@ FReply FSLEdModeToolkit::OnUpdateTransformSemDataVisInfo()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnLiveUpdateSemDataVisInfo()
+FReply FSLEdModeToolkit::OnToggleIndividualsInfoLiveOrientationUpdate()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoLiveUpdateST", "Toggle live visual info orientation"));
 
-	if (VisualInfoManager && VisualInfoManager->IsValidLowLevel() && !VisualInfoManager->IsPendingKill())
+	if (HasValidIndividualInfoManager())
 	{
-		VisualInfoManager->ToggleTickUpdate();
+		IndividualInfoManager->ToggleTickUpdate();
 	}
 	else
 	{
@@ -1190,15 +1306,15 @@ FReply FSLEdModeToolkit::OnWriteSemDataIds()
 {
 	FScopedTransaction Transaction(LOCTEXT("GenSemIdsST", "Generate new semantic Ids"));	
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = IndividualManager->WriteUniqueIds(GetSelectedActors(), bOverwrite);
+			NumComp = IndividualManager->WriteUniqueIds(GetSelectedActors(), bOverwriteFlag);
 		}
 		else
 		{
-			NumComp = IndividualManager->WriteUniqueIds(bOverwrite);
+			NumComp = IndividualManager->WriteUniqueIds(bOverwriteFlag);
 		}
 	}
 	else
@@ -1225,9 +1341,9 @@ FReply FSLEdModeToolkit::OnRmSemDataIds()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmSemIdsST", "Remove all semantic Ids"));
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
 			NumComp = IndividualManager->RemoveUniqueIds(GetSelectedActors());
 		}
@@ -1256,15 +1372,15 @@ FReply FSLEdModeToolkit::OnWriteClassNames()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteClassNamesST", "Write class names"));
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = IndividualManager->WriteClassNames(GetSelectedActors(), bOverwrite);
+			NumComp = IndividualManager->WriteClassNames(GetSelectedActors(), bOverwriteFlag);
 		}
 		else
 		{
-			NumComp = IndividualManager->WriteClassNames(bOverwrite);
+			NumComp = IndividualManager->WriteClassNames(bOverwriteFlag);
 		}
 	}
 	else
@@ -1290,9 +1406,9 @@ FReply FSLEdModeToolkit::OnRmClassNames()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmClassNamesST", "Remove all class names"));
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
 			NumComp = IndividualManager->RemoveClassNames(GetSelectedActors());
 		}
@@ -1321,15 +1437,15 @@ FReply FSLEdModeToolkit::OnWriteVisualMasks()
 {
 	FScopedTransaction Transaction(LOCTEXT("WriteVisualMasksST", "Write visual masks"));	
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = IndividualManager->WriteVisualMasks(GetSelectedActors(), bOverwrite);
+			NumComp = IndividualManager->WriteVisualMasks(GetSelectedActors(), bOverwriteFlag);
 		}
 		else
 		{
-			NumComp = IndividualManager->WriteVisualMasks(bOverwrite);
+			NumComp = IndividualManager->WriteVisualMasks(bOverwriteFlag);
 		}
 	}
 	else
@@ -1351,9 +1467,9 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmVisualMasksST", "Remove all visual masks names"));
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
 			NumComp = IndividualManager->RemoveVisualMasks(GetSelectedActors());
 		}
@@ -1382,17 +1498,17 @@ FReply FSLEdModeToolkit::OnRmVisualMasks()
 ////
 FReply FSLEdModeToolkit::OnExportData()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompSaveST", "Export semantic data to tag"));
+	FScopedTransaction Transaction(LOCTEXT("IndividualsSaveST", "Export semantic data to tag"));
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = IndividualManager->ExportToTag(GetSelectedActors());
+			NumComp = IndividualManager->ExportValues(GetSelectedActors(), bOverwriteFlag);
 		}
 		else
 		{
-			NumComp = IndividualManager->ExportToTag();
+			NumComp = IndividualManager->ExportValues(bOverwriteFlag);
 		}
 	}
 	else
@@ -1412,17 +1528,17 @@ FReply FSLEdModeToolkit::OnExportData()
 
 FReply FSLEdModeToolkit::OnImportData()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataCompLoadST", "Import data from tag"));
+	FScopedTransaction Transaction(LOCTEXT("IndividualsLoadST", "Import data from tag"));
 	int32 NumComp = 0;
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
+	if (HasValidIndividualManager())
 	{
-		if (bOnlySelected)
+		if (bOnlySelectedFlag)
 		{
-			NumComp = IndividualManager->ImportFromTag(GetSelectedActors());
+			NumComp = IndividualManager->ImportValues(GetSelectedActors(), bOverwriteFlag);
 		}
 		else
 		{
-			NumComp = IndividualManager->ImportFromTag();
+			NumComp = IndividualManager->ImportValues(bOverwriteFlag);
 		}
 	}
 	else
@@ -1444,20 +1560,45 @@ FReply FSLEdModeToolkit::OnImportData()
 FReply FSLEdModeToolkit::OnClearData()
 {
 	FScopedTransaction Transaction(LOCTEXT("RmTagData", "Remove all SemLog tags"));
-	bool bMarkDirty = false;
+	//bool bMarkDirty = false;
 
-	if (bOnlySelected)
+	//if (bOnlySelected)
+	//{
+	//	bMarkDirty = FSLEdUtils::RemoveTagType(GetSelectedActors(), "SemLog");
+	//}
+	//else
+	//{
+	//	bMarkDirty = FSLEdUtils::RemoveTagType(GEditor->GetEditorWorldContext().World(), "SemLog");
+	//}
+
+	//if (bMarkDirty)
+	//{
+	//	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	//}
+
+	int32 NumComp = 0;
+	if (HasValidIndividualManager())
 	{
-		bMarkDirty = FSLEdUtils::RemoveTagType(GetSelectedActors(), "SemLog");
+		if (bOnlySelectedFlag)
+		{
+			NumComp = IndividualManager->ClearExportedValues(GetSelectedActors());
+		}
+		else
+		{
+			NumComp = IndividualManager->ClearExportedValues();
+		}
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::RemoveTagType(GEditor->GetEditorWorldContext().World(), "SemLog");
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
-	if (bMarkDirty)
+	if (NumComp)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Exported %ld individual components to tag.."),
+			*FString(__FUNCTION__), __LINE__, NumComp);
 	}
 
 	return FReply::Handled();
@@ -1470,13 +1611,13 @@ FReply FSLEdModeToolkit::OnAddSemMon()
 	FScopedTransaction Transaction(LOCTEXT("AddSemMonitorsST", "Add semantic monitor components"));
 	bool bMarkDirty = false;
 
-	if (bOnlySelected)
+	if (bOnlySelectedFlag)
 	{
-		bMarkDirty = FSLEdUtils::AddSemanticMonitorComponents(GetSelectedActors(), bOverwrite);
+		bMarkDirty = FSLEdUtils::AddSemanticMonitorComponents(GetSelectedActors(), bOverwriteFlag);
 	}
 	else
 	{
-		bMarkDirty = FSLEdUtils::AddSemanticMonitorComponents(GEditor->GetEditorWorldContext().World(), bOverwrite);
+		bMarkDirty = FSLEdUtils::AddSemanticMonitorComponents(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
 	}
 
 	if (bMarkDirty)
@@ -1492,7 +1633,7 @@ FReply FSLEdModeToolkit::OnEnableOverlaps()
 	FScopedTransaction Transaction(LOCTEXT("EnableOverlapsST", "Enable overlaps"));
 	bool bMarkDirty = false;
 
-	if (bOnlySelected)
+	if (bOnlySelectedFlag)
 	{
 		bMarkDirty = FSLEdUtils::EnableOverlaps(GetSelectedActors());
 	}
@@ -1514,7 +1655,7 @@ FReply FSLEdModeToolkit::OnShowSemData()
 	FScopedTransaction Transaction(LOCTEXT("ShowSemDataST", "Show semantic data"));
 	bool bMarkDirty = false;
 
-	if (bOnlySelected)
+	if (bOnlySelectedFlag)
 	{
 		//FSLEdUtils::ShowSemanticData(GetSelectedActors());
 	}
@@ -1600,6 +1741,34 @@ FReply FSLEdModeToolkit::OnGenericButton()
 
 	//UE_LOG(LogTemp, Error, TEXT("%s::%d *** -END- GenericButton ***"), *FString(__FUNCTION__), __LINE__);
 	return FReply::Handled();
+}
+
+
+/* Managers */
+// Check if the individual manager is set
+bool FSLEdModeToolkit::HasValidIndividualManager() const
+{
+	return IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill();
+}
+
+// Set the individual manager
+bool FSLEdModeToolkit::SetIndividualManager()
+{
+	IndividualManager = FSLEdUtils::GetOrCreateNewIndividualManager(GEditor->GetEditorWorldContext().World());
+	return HasValidIndividualManager();
+}
+
+// Check if the individual info manager is set
+bool FSLEdModeToolkit::HasValidIndividualInfoManager() const
+{
+	return IndividualInfoManager && IndividualInfoManager->IsValidLowLevel() && !IndividualInfoManager->IsPendingKill();;
+}
+
+// Set the individual info manager
+bool FSLEdModeToolkit::SetdIndividualInfoManager()
+{
+	IndividualInfoManager = FSLEdUtils::GetOrCreateNewVisualInfoManager(GEditor->GetEditorWorldContext().World());
+	return HasValidIndividualInfoManager();
 }
 
 

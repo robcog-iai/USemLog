@@ -20,7 +20,7 @@ void USLSkyIndividual::BeginDestroy()
 void USLSkyIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
-	Init();
+	//Init();
 }
 
 // Set pointer to the semantic owner

@@ -25,7 +25,7 @@ void USLBoneIndividual::BeginDestroy()
 void USLBoneIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
-	Init();
+	//Init();
 }
 
 // Set the parameters required when initalizing the individual
@@ -98,187 +98,187 @@ bool USLBoneIndividual::Load(bool bReset, bool bTryImport)
 	return IsLoaded();
 }
 
-// Export bone values
-bool USLBoneIndividual::ExportValues(bool bOverwrite)
-{
-	if (!IsInit())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot export values.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
-
-	bool bNewValue = false;
-	FName BoneName = SkeletalMeshComponent->GetBoneName(BoneIndex);
-	if (FSLBoneData* BoneData = SkelDataComp->SemanticBonesData.Find(BoneName))
-	{
-		/* Id */
-		if (IsIdValueSet())
-		{
-			if (BoneData->Id.IsEmpty() || bOverwrite)
-			{
-				BoneData->Id = Id;
-				bNewValue = true;
-			}
-		}
-
-		/* Class */
-		if (IsClassValueSet())
-		{
-			if (BoneData->Class.IsEmpty() || bOverwrite)
-			{
-				BoneData->Class = Class;
-				bNewValue = true;
-			}
-		}
-
-		/* OId */
-		if (IsOIdValueSet())
-		{
-			if (BoneData->OId.IsEmpty() || bOverwrite)
-			{
-				BoneData->OId = OId;
-				bNewValue = true;
-			}
-		}
-
-		/* VisualMask */
-		if (IsVisualMaskValueSet())
-		{
-			if (BoneData->VisualMask.IsEmpty() || bOverwrite)
-			{
-				BoneData->VisualMask = VisualMask;
-				bNewValue = true;
-			}
-		}
-
-		/* CalibratedVisualMask */
-		if (IsCalibratedVisualMasValueSet())
-		{
-			if (BoneData->CalibratedVisualMask.IsEmpty() || bOverwrite)
-			{
-				BoneData->CalibratedVisualMask = CalibratedVisualMask;
-				bNewValue = true;
-			}
-		}
-
-		/* MaterialIndex */
-		if (HasValidMaterialIndex())
-		{
-			if (BoneData->MaterialIndex == INDEX_NONE || bOverwrite)
-			{
-				BoneData->MaterialIndex = MaterialIndex;
-				bNewValue = true;
-			}
-		}
-
-		/* BoneIndex */
-		if (HasValidBoneIndex())
-		{
-			if (BoneData->BoneIndex == INDEX_NONE || bOverwrite)
-			{
-				BoneData->BoneIndex = BoneIndex;
-				bNewValue = true;
-			}
-		}
-	}
-	return bNewValue;
-}
-
-// Import bone values
-bool USLBoneIndividual::ImportValues(bool bOverwrite)
-{
-	// TODO use tags (e.g. SemLogBone+BoneIndex:Id;Class;Oid;)
-	if (!IsInit())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot import values.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
-
-	bool bNewValue = false;
-	FName BoneName = SkeletalMeshComponent->GetBoneName(BoneIndex);
-	if (FSLBoneData* BoneData = SkelDataComp->SemanticBonesData.Find(BoneName))
-	{
-		/* Id */
-		if (!IsIdValueSet() || bOverwrite)
-		{
-			const FString PrevVal = Id;
-			SetIdValue(BoneData->Id);
-			if (!Id.Equals(PrevVal))
-			{
-				bNewValue = true;
-			}
-		}
-
-		/* Class */
-		if (!IsClassValueSet() || bOverwrite)
-		{
-			const FString PrevVal = Class;
-			SetClassValue(BoneData->Class);
-			if (!Class.Equals(PrevVal))
-			{
-				bNewValue = true;
-			}
-		}
-
-		/* OId */
-		if (!IsOIdValueSet() || bOverwrite)
-		{
-			const FString PrevVal = OId;
-			SetOIdValue(BoneData->OId);
-			if (!OId.Equals(PrevVal))
-			{
-				bNewValue = true;
-			}
-		}
-
-		/* VisualMask */
-		if (!IsVisualMaskValueSet() || bOverwrite)
-		{
-			const FString PrevVal = VisualMask;
-			SetVisualMaskValue(BoneData->VisualMask);
-			if (!VisualMask.Equals(PrevVal))
-			{
-				bNewValue = true;
-			}
-		}
-
-		/* CalibratedVisualMask */
-		if (!IsCalibratedVisualMasValueSet() || bOverwrite)
-		{
-			const FString PrevVal = CalibratedVisualMask;
-			SetCalibratedVisualMaskValue(BoneData->CalibratedVisualMask);
-			if (!CalibratedVisualMask.Equals(PrevVal))
-			{
-				bNewValue = true;
-			}
-		}
-
-		/* MaterialIndex */
-		if (!HasValidMaterialIndex() || bOverwrite)
-		{
-			const int32 PrevVal = MaterialIndex;
-			MaterialIndex = BoneData->MaterialIndex;
-			if (MaterialIndex != PrevVal)
-			{
-				bNewValue = true;
-			}
-		}
-
-		/* BoneIndex */
-		if (!HasValidBoneIndex() || bOverwrite)
-		{
-			const int32 PrevVal = BoneIndex;
-			BoneIndex = BoneData->BoneIndex;
-			if (BoneIndex != PrevVal)
-			{
-				bNewValue = true;
-			}
-		}
-	}
-	return bNewValue;
-}
+//// Export bone values
+//bool USLBoneIndividual::ExportValues(bool bOverwrite)
+//{
+//	if (!IsInit())
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot export values.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName());
+//		return false;
+//	}
+//
+//	bool bNewValue = false;
+//	FName BoneName = SkeletalMeshComponent->GetBoneName(BoneIndex);
+//	if (FSLBoneData* BoneData = SkelDataComp->SemanticBonesData.Find(BoneName))
+//	{
+//		/* Id */
+//		if (IsIdValueSet())
+//		{
+//			if (BoneData->Id.IsEmpty() || bOverwrite)
+//			{
+//				BoneData->Id = Id;
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* Class */
+//		if (IsClassValueSet())
+//		{
+//			if (BoneData->Class.IsEmpty() || bOverwrite)
+//			{
+//				BoneData->Class = Class;
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* OId */
+//		if (IsOIdValueSet())
+//		{
+//			if (BoneData->OId.IsEmpty() || bOverwrite)
+//			{
+//				BoneData->OId = OId;
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* VisualMask */
+//		if (IsVisualMaskValueSet())
+//		{
+//			if (BoneData->VisualMask.IsEmpty() || bOverwrite)
+//			{
+//				BoneData->VisualMask = VisualMask;
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* CalibratedVisualMask */
+//		if (IsCalibratedVisualMasValueSet())
+//		{
+//			if (BoneData->CalibratedVisualMask.IsEmpty() || bOverwrite)
+//			{
+//				BoneData->CalibratedVisualMask = CalibratedVisualMask;
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* MaterialIndex */
+//		if (HasValidMaterialIndex())
+//		{
+//			if (BoneData->MaterialIndex == INDEX_NONE || bOverwrite)
+//			{
+//				BoneData->MaterialIndex = MaterialIndex;
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* BoneIndex */
+//		if (HasValidBoneIndex())
+//		{
+//			if (BoneData->BoneIndex == INDEX_NONE || bOverwrite)
+//			{
+//				BoneData->BoneIndex = BoneIndex;
+//				bNewValue = true;
+//			}
+//		}
+//	}
+//	return bNewValue;
+//}
+//
+//// Import bone values
+//bool USLBoneIndividual::ImportValues(bool bOverwrite)
+//{
+//	// TODO use tags (e.g. SemLogBone+BoneIndex:Id;Class;Oid;)
+//	if (!IsInit())
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot import values.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName());
+//		return false;
+//	}
+//
+//	bool bNewValue = false;
+//	FName BoneName = SkeletalMeshComponent->GetBoneName(BoneIndex);
+//	if (FSLBoneData* BoneData = SkelDataComp->SemanticBonesData.Find(BoneName))
+//	{
+//		/* Id */
+//		if (!IsIdValueSet() || bOverwrite)
+//		{
+//			const FString PrevVal = Id;
+//			SetIdValue(BoneData->Id);
+//			if (!Id.Equals(PrevVal))
+//			{
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* Class */
+//		if (!IsClassValueSet() || bOverwrite)
+//		{
+//			const FString PrevVal = Class;
+//			SetClassValue(BoneData->Class);
+//			if (!Class.Equals(PrevVal))
+//			{
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* OId */
+//		if (!IsOIdValueSet() || bOverwrite)
+//		{
+//			const FString PrevVal = OId;
+//			SetOIdValue(BoneData->OId);
+//			if (!OId.Equals(PrevVal))
+//			{
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* VisualMask */
+//		if (!IsVisualMaskValueSet() || bOverwrite)
+//		{
+//			const FString PrevVal = VisualMask;
+//			SetVisualMaskValue(BoneData->VisualMask);
+//			if (!VisualMask.Equals(PrevVal))
+//			{
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* CalibratedVisualMask */
+//		if (!IsCalibratedVisualMasValueSet() || bOverwrite)
+//		{
+//			const FString PrevVal = CalibratedVisualMask;
+//			SetCalibratedVisualMaskValue(BoneData->CalibratedVisualMask);
+//			if (!CalibratedVisualMask.Equals(PrevVal))
+//			{
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* MaterialIndex */
+//		if (!HasValidMaterialIndex() || bOverwrite)
+//		{
+//			const int32 PrevVal = MaterialIndex;
+//			MaterialIndex = BoneData->MaterialIndex;
+//			if (MaterialIndex != PrevVal)
+//			{
+//				bNewValue = true;
+//			}
+//		}
+//
+//		/* BoneIndex */
+//		if (!HasValidBoneIndex() || bOverwrite)
+//		{
+//			const int32 PrevVal = BoneIndex;
+//			BoneIndex = BoneData->BoneIndex;
+//			if (BoneIndex != PrevVal)
+//			{
+//				bNewValue = true;
+//			}
+//		}
+//	}
+//	return bNewValue;
+//}
 
 // Apply visual mask material
 bool USLBoneIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/)

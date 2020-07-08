@@ -133,7 +133,7 @@ int32 ASLIndividualVisualManager::Init(bool bReset)
 }
 
 // Add new visual info components to all actors
-int32 ASLIndividualVisualManager::AddVisualInfoComponents()
+int32 ASLIndividualVisualManager::AddIndividualInfoComponents()
 {
 	if (!bIsInit)
 	{
@@ -163,7 +163,7 @@ int32 ASLIndividualVisualManager::AddVisualInfoComponents()
 }
 
 // Add new visual info components to selection actors
-int32 ASLIndividualVisualManager::AddVisualInfoComponents(const TArray<AActor*>& Actors)
+int32 ASLIndividualVisualManager::AddIndividualInfoComponents(const TArray<AActor*>& Actors)
 {
 	if (!bIsInit)
 	{
@@ -186,7 +186,7 @@ int32 ASLIndividualVisualManager::AddVisualInfoComponents(const TArray<AActor*>&
 }
 
 // Remove all info components from world and clear manager's cache
-int32 ASLIndividualVisualManager::DestroyVisualInfoComponents()
+int32 ASLIndividualVisualManager::DestroyIndividualInfoComponents()
 {
 	if (!bIsInit)
 	{
@@ -209,7 +209,7 @@ int32 ASLIndividualVisualManager::DestroyVisualInfoComponents()
 }
 
 // Remove selected info components from world and clear manager's cache
-int32 ASLIndividualVisualManager::DestroyVisualInfoComponents(const TArray<AActor*>& Actors)
+int32 ASLIndividualVisualManager::DestroyIndividualInfoComponents(const TArray<AActor*>& Actors)
 {
 	if (!bIsInit)
 	{
@@ -232,7 +232,7 @@ int32 ASLIndividualVisualManager::DestroyVisualInfoComponents(const TArray<AActo
 }
 
 // Refresh all components
-int32 ASLIndividualVisualManager::ResetVisualInfoComponents()
+int32 ASLIndividualVisualManager::ResetIndividualInfoComponents()
 {
 	if (!bIsInit)
 	{
@@ -259,7 +259,7 @@ int32 ASLIndividualVisualManager::ResetVisualInfoComponents()
 }
 
 // Refresh only selected actors components
-int32 ASLIndividualVisualManager::ResetVisualInfoComponents(const TArray<AActor*>& Actors)
+int32 ASLIndividualVisualManager::ResetIndividualInfoComponents(const TArray<AActor*>& Actors)
 {
 	if (!bIsInit)
 	{
@@ -290,7 +290,7 @@ int32 ASLIndividualVisualManager::ResetVisualInfoComponents(const TArray<AActor*
 
 /* Functionalities */
 // Toggle visiblity for all components
-int32 ASLIndividualVisualManager::ToggleVisualInfoComponentsVisibility()
+int32 ASLIndividualVisualManager::ToggleInfoVisibility()
 {
 	if (!bIsInit)
 	{
@@ -306,7 +306,7 @@ int32 ASLIndividualVisualManager::ToggleVisualInfoComponentsVisibility()
 }
 
 // Toggle visiblity for selected components
-int32 ASLIndividualVisualManager::ToggleVisualInfoComponentsVisibility(const TArray<AActor*>& Actors)
+int32 ASLIndividualVisualManager::ToggleInfoVisibility(const TArray<AActor*>& Actors)
 {
 	if (!bIsInit)
 	{
@@ -327,7 +327,7 @@ int32 ASLIndividualVisualManager::ToggleVisualInfoComponentsVisibility(const TAr
 }
 
 // Point text towards camera
-int32 ASLIndividualVisualManager::PointToCamera()
+int32 ASLIndividualVisualManager::LookAtCamera()
 {
 	if (!bIsInit)
 	{
@@ -347,7 +347,7 @@ int32 ASLIndividualVisualManager::PointToCamera()
 }
 
 // Point selection text towards camera
-int32 ASLIndividualVisualManager::PointToCamera(const TArray<AActor*>& Actors)
+int32 ASLIndividualVisualManager::LookAtCamera(const TArray<AActor*>& Actors)
 {
 	if (!bIsInit)
 	{

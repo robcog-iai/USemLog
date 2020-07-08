@@ -79,12 +79,12 @@ bool USLBaseIndividual::Load(bool bReset, bool bTryImport)
 // Save data to owners tag
 bool USLBaseIndividual::ExportValues(bool bOverwrite)
 {
-	if (!IsInit())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot export values.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
+	//if (!IsInit())
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot export values.."),
+	//		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	//	return false;
+	//}
 
 	bool bNewValue = false;
 	if (IsIdValueSet() && FSLTagIO::AddKVPair(ParentActor, ImportTagType, "Id", Id, bOverwrite))
@@ -105,12 +105,12 @@ bool USLBaseIndividual::ExportValues(bool bOverwrite)
 // Load data from owners tag
 bool USLBaseIndividual::ImportValues(bool bOverwrite)
 {
-	if (!IsInit())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot import values.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
+	//if (!IsInit())
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot import values.."),
+	//		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	//	return false;
+	//}
 
 	bool bNewValue = false;
 	if (ImportIdValue(bOverwrite))
@@ -131,17 +131,17 @@ bool USLBaseIndividual::ImportValues(bool bOverwrite)
 // Clear exported values
 bool USLBaseIndividual::ClearExportedValues()
 {
-	if (!IsInit())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot remove any exported values values.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
+	//if (!IsInit())
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot remove any exported values values.."),
+	//		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	//	return false;
+	//}
 
-	int32 Pos = INDEX_NONE;
-	if (FSLTagIO::HasType(ParentActor, ImportTagType, &Pos))
+	int32 TagIndex = INDEX_NONE;
+	if (FSLTagIO::HasType(ParentActor, ImportTagType, &TagIndex))
 	{
-		ParentActor->Tags.RemoveAt(Pos);
+		ParentActor->Tags.RemoveAt(TagIndex);
 		return true;
 	}	
 	return false;

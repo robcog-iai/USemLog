@@ -28,7 +28,7 @@ void USLConstraintIndividual::BeginDestroy()
 void USLConstraintIndividual::PostInitProperties()
 {
 	Super::PostInitProperties();
-	Init();
+	//Init();
 }
 
 // Set pointer to the semantic owner
