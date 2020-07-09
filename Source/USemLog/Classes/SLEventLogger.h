@@ -6,6 +6,7 @@
 #include "USemLog.h"
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
+#include "rosprolog_msgs/Query.h"
 #if SL_WITH_ROSBRIDGE
 #include "ROSBridgeHandler.h"
 #include "std_msgs/String.h"

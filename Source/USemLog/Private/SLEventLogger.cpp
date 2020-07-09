@@ -304,8 +304,8 @@ void USLEventLogger::LogThroughROS(TSharedPtr<ISLEvent> Event) {
 	FString Msg = Event->ToROSMsg();
 
 #if SL_WITH_ROSBRIDGE
-	TSharedPtr<FROSBridgeSrv::SrvRequest> Request;// = MakeShareable<FROSBridgeSrv::SrvRequest>(new iai_avatar_msgs::Command::Response(Owner->bSuccess, Owner->Message));
-	TSharedPtr<FROSBridgeSrv::SrvResponse> Response;// = MakeShareable<FROSBridgeSrv::SrvResponse>(new iai_avatar_msgs::Command::Response(Owner->bSuccess, Owner->Message));
+	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Query::Response(0, Msg, "1"));
+	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::Query::Response());
 	ROSHandler->CallService(ROSClient, Request, Response);
 #endif // SL_WITH_ROSBRIDGE
 }
