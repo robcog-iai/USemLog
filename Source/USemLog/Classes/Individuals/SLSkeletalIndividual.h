@@ -53,6 +53,12 @@ public:
     // Clear exported values
     virtual bool ClearExportedValues() override;
 
+    // Return a const version of the bone individuals
+    const TArray<USLBoneIndividual*>& GetBoneIndividuals() const { return BoneIndividuals; };
+
+    // Return a const version of the virtual bones
+    const TArray<USLVirtualBoneIndividual*>& GetVirtualBoneIndividuals() const { return VirtualBoneIndividuals; };
+
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("SkeletalIndividual"); };
 
@@ -66,7 +72,7 @@ public:
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
-    virtual FString GetClassName() const override;
+    virtual FString CalcDefaultClassValue() const override;
 
     // Clear all values of the individual
     virtual void InitReset() override;
@@ -112,9 +118,9 @@ private:
     void ResetBoneIndividuals();
 
 protected:
-    //// Semantically annotated bones
-    //UPROPERTY(VisibleAnywhere, Category = "SL")
-    //TArray<USLBoneIndividual*> BoneIndividuals;
+    // Semantically annotated bones
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    TArray<USLBoneIndividual*> BoneIndividuals;
 
     // Bones without visual
     UPROPERTY(VisibleAnywhere, Category = "SL")

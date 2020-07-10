@@ -112,7 +112,7 @@ bool USLVirtualBoneIndividual::CacheCurrentBoneTransform()
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLVirtualBoneIndividual::GetClassName() const
+FString USLVirtualBoneIndividual::CalcDefaultClassValue() const
 {
 	return GetTypeName();
 }

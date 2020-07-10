@@ -293,7 +293,7 @@ bool USLIndividualTextInfoComponent::SetOwnerIndividualObj()
 
 	if (HasOwnerIndividualComponent() || SetOwnerIndividualComponent())
 	{
-		if (USLBaseIndividual* SLI = OwnerIndividualComponent->GetCastedIndividualObject<USLBaseIndividual>())
+		if (USLBaseIndividual* SLI = OwnerIndividualComponent->GetIndividualObject())
 		{
 			OwnerIndividualObj = SLI;
 			return true;

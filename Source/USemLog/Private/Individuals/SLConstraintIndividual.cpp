@@ -76,7 +76,7 @@ bool USLConstraintIndividual::Load(bool bReset, bool bTryImport)
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLConstraintIndividual::GetClassName() const
+FString USLConstraintIndividual::CalcDefaultClassValue() const
 {
 	if (IsInit())
 	{

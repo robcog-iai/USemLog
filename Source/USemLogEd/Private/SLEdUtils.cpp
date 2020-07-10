@@ -40,35 +40,35 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 
 
 /* Managers */
-// Get the semantic individual manager from the world, add new if none are available
-ASLIndividualManager* FSLEdUtils::GetOrCreateNewIndividualManager(UWorld* World, bool bCreateNew)
-{
-	int32 ActNum = 0;
-	ASLIndividualManager* Manager = nullptr;
-	for (TActorIterator<ASLIndividualManager> ActItr(World); ActItr; ++ActItr)
-	{
-		Manager = *ActItr;
-		ActNum++;
-	}
-	if (ActNum > 1)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d There are %ld individual managers in the world, the should only be one.."),
-			*FString(__FUNCTION__), __LINE__, ActNum);
-	}
-	else if(ActNum == 0 && bCreateNew)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d There are no individual managers in the world, spawning one.."),
-			*FString(__FUNCTION__), __LINE__);
-		FActorSpawnParameters Params;
-		//Params.Name = FName(TEXT("SL_IndividualManager"));
-		Manager = World->SpawnActor<ASLIndividualManager>(Params);
-#if WITH_EDITOR
-		Manager->SetActorLabel(TEXT("SL_IndividualManager"));
-#endif // WITH_EDITOR
-		World->MarkPackageDirty();
-	}
-	return Manager;
-}
+//// Get the semantic individual manager from the world, add new if none are available
+//ASLIndividualManager* FSLEdUtils::GetOrCreateNewIndividualManager(UWorld* World, bool bCreateNew)
+//{
+//	int32 ActNum = 0;
+//	ASLIndividualManager* Manager = nullptr;
+//	for (TActorIterator<ASLIndividualManager> ActItr(World); ActItr; ++ActItr)
+//	{
+//		Manager = *ActItr;
+//		ActNum++;
+//	}
+//	if (ActNum > 1)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d There are %ld individual managers in the world, the should only be one.."),
+//			*FString(__FUNCTION__), __LINE__, ActNum);
+//	}
+//	else if(ActNum == 0 && bCreateNew)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d There are no individual managers in the world, spawning one.."),
+//			*FString(__FUNCTION__), __LINE__);
+//		FActorSpawnParameters Params;
+//		//Params.Name = FName(TEXT("SL_IndividualManager"));
+//		Manager = World->SpawnActor<ASLIndividualManager>(Params);
+//#if WITH_EDITOR
+//		Manager->SetActorLabel(TEXT("SL_IndividualManager"));
+//#endif // WITH_EDITOR
+//		World->MarkPackageDirty();
+//	}
+//	return Manager;
+//}
 
 // Get the vis info manager form the world, add new one if none are available
 ASLIndividualVisualManager* FSLEdUtils::GetOrCreateNewVisualInfoManager(UWorld* World, bool bCreateNew)
@@ -99,20 +99,6 @@ ASLIndividualVisualManager* FSLEdUtils::GetOrCreateNewVisualInfoManager(UWorld* 
 	}
 	return Manager;
 }
-
-/* Individuals */
-// Add new semantic data components to all the actors
-int32 FSLEdUtils::CreateIndividualComponents(UWorld* World)
-{
-	return FSLIndividualUtils::CreateIndividualComponents(World);
-}
-
-// Add new semantic data components to the selected actors
-int32 FSLEdUtils::CreateIndividualComponents(const TArray<AActor*>& Actors)
-{
-	return FSLIndividualUtils::CreateIndividualComponents(Actors);
-}
-
 
 // Remove all tag keys
 bool FSLEdUtils::RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey)

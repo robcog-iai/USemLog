@@ -9,6 +9,7 @@
 class USLIndividualComponent;
 class USLBaseIndividual;
 class USLSkeletalDataAsset;
+class ASLIndividualManager;
 
 // Individual types flags
 enum class ESLIndividualFlags : uint32
@@ -81,7 +82,7 @@ public:
 	static FString GetIndividualClassName(USLIndividualComponent* IndividualComponent, bool bDefaultToLabelName = false);
 
 	// Check if actor supports individual components
-	static bool CanHaveIndividualComponent(AActor* Actor);
+
 
 	// Create default individual object depending on the owner type (returns nullptr if failed)
 	static USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
@@ -96,56 +97,120 @@ public:
 	static USLSkeletalDataAsset* FindSkeletalDataAsset(AActor* Owner);
 
 	
-	///* Individuals CRUD */
-	//static int32 CreateIndividualComponents(UWorld* World);
-	//static int32 CreateIndividualComponents(const TArray<AActor*>& Actors);
 
 
+	/* Individuals */
+	static ASLIndividualManager* GetOrCreateNewIndividualManager(UWorld* World, bool bCreateNew = true);
+	static int32 CreateIndividualComponents(UWorld* World);
+	static int32 CreateIndividualComponents(const TArray<AActor*>& Actors);
+	static int32 DestroyIndividualComponents(UWorld* World);
+	static int32 DestroyIndividualComponents(const TArray<AActor*>& Actors);
+	static int32 InitIndividualComponents(UWorld* World, bool bReset);
+	static int32 InitIndividualComponents(const TArray<AActor*>& Actors, bool bReset);
+	static int32 LoadIndividualComponents(UWorld* World, bool bReset, bool bTryImport);
+	static int32 LoadIndividualComponents(const TArray<AActor*>& Actors, bool bReset, bool bTryImport);
 
+	/* Individuals functionalities */
+	static int32 ToggleVisualMaskVisibility(UWorld* World, bool bPrioritizeChildren);
+	static int32 ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren);
+	
+	/* Values */
+	/* Ids */
+	static int32 WriteIds(UWorld* World, bool bOverwrite);
+	static int32 WriteIds(const TArray<AActor*>& Actors, bool bOverwrite);
+	static int32 ClearIds(UWorld* World);
+	static int32 ClearIds(const TArray<AActor*>& Actors);
 
-
-	/* Id */
-	// Write unique id to the actor
-	static bool WriteId(USLIndividualComponent* IndividualComponent, bool bOverwrite);
-
-	// Clear unique id of the actor
-	static bool ClearId(USLIndividualComponent* IndividualComponent);
-
-
-	/* Class */
-	// Write class name to the actor
-	static bool WriteClass(USLIndividualComponent* IndividualComponent, bool bOverwrite);
-
-	// Clear class name of the actor
-	static bool ClearClass(USLIndividualComponent* IndividualComponent);
+	/* Classes */
+	static int32 WriteClasses(UWorld* World, bool bOverwrite);
+	static int32 WriteClasses(const TArray<AActor*>& Actors, bool bOverwrite);
+	static int32 ClearClasses(UWorld* World);
+	static int32 ClearClasses(const TArray<AActor*>& Actors);
 
 
 	/* Visual mask */
-	// Write unique visual masks for all visual individuals in the world
-	static int32 WriteVisualMasks(const TSet<USLIndividualComponent*>& IndividualComponents, bool bOverwrite);
+	static int32 WriteUniqueVisualMasks(UWorld* World, bool bOverwrite);
+	static int32 WriteUniqueVisualMasks(const TArray<AActor*>& Actors, bool bOverwrite);
+	static int32 ClearVisualMasks(UWorld* World);
+	static int32 ClearVisualMasks(const TArray<AActor*>& Actors);
 
-	// Write unique visual masks for visual individuals from the actos in the array
-	static int32 WriteVisualMasks(const TSet<USLIndividualComponent*>& IndividualComponentsSelection,
-		const TSet<USLIndividualComponent*>& RegisteredIndividualComponents,
-		bool bOverwrite);
 
-	// Clear visual mask of the actor
-	static bool ClearVisualMask(USLIndividualComponent* IndividualComponent);
+	///* Id */
+	//// Write unique id to the actor
+	//static bool WriteId(USLIndividualComponent* IndividualComponent, bool bOverwrite);
+
+	//// Clear unique id of the actor
+	//static bool ClearId(USLIndividualComponent* IndividualComponent);
+
+
+	///* Class */
+	//// Write class name to the actor
+	//static bool WriteClass(USLIndividualComponent* IndividualComponent, bool bOverwrite);
+
+	//// Clear class name of the actor
+	//static bool ClearClass(USLIndividualComponent* IndividualComponent);
+
+
+	///* Visual mask */
+	//// Write unique visual masks for all visual individuals in the world
+	//static int32 WriteVisualMasks(const TSet<USLIndividualComponent*>& IndividualComponents, bool bOverwrite);
+
+	//// Write unique visual masks for visual individuals from the actos in the array
+	//static int32 WriteVisualMasks(const TSet<USLIndividualComponent*>& IndividualComponentsSelection,
+	//	const TSet<USLIndividualComponent*>& RegisteredIndividualComponents,
+	//	bool bOverwrite);
+
+	//// Clear visual mask of the actor
+	//static bool ClearVisualMask(USLIndividualComponent* IndividualComponent);
 
 private:
-	//// Get casted individual from actor (nullptr if failed)
-	//template <typename ClassType>
-	//static ClassType* GetCastedIndividualObject(AActor* Actor);
+	/* Individuals Private */
+	static USLIndividualComponent* AddNewIndividualComponent(AActor* Actor, bool bTryInitAndLoad = false);
+	static bool CanHaveIndividualComponent(AActor* Actor);
+	static bool HasIndividualComponent(AActor* Actor);
+	static bool DestroyIndividualComponent(AActor* Actor);
+	static bool InitIndividualComponent(AActor* Actor, bool bReset);
+	static bool LoadIndividualComponent(AActor* Actor, bool bReset, bool bTryImport);
 
-	/* Visual mask generation */
-	// Add visual mask
-	static bool AddVisualMask(class USLPerceivableIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite);
+	/* Individuals functionalities Private */
+	static bool ToggleVisualMaskVisibility(AActor* Actor, bool bPrioritizeChildren);
 
-	// Get all used up visual masks in the world
-	static TArray<FColor> GetConsumedVisualMaskColors(const TSet<USLIndividualComponent*>& IndividualComponents);
+	/* Individuals values Private */
+	/* Ids */
+	static bool WriteId(AActor* Actor, bool bOverwrite);
+	static bool ClearId(AActor* Actor);
 
-	// Create a new unique color by randomization
-	static FColor CreateNewUniqueColorRand(TArray<FColor>& ConsumedColors, int32 NumTrials, int32 MinManhattanDist);
+	/* Class */
+	static bool WriteClass(AActor* Actor, bool bOverwrite);
+	static bool ClearClass(AActor* Actor);
+
+	/* Visual Mask */
+	static bool WriteUniqueVisualMask(AActor* Actor, TArray<FColor>& ConsumedColors, bool bOverwrite);
+	static bool ClearVisualMask(AActor* Actor);
+	
+	/* Visual Mask  Helpers */
+	// Get an array of all used visual mask colors in the world
+	static TArray<FColor> GetAllConsumedVisualMaskColorsInWorld(UWorld* World);
+
+	// Generate random colors until a unique one if found (return black if failed)
+	static FColor GenerateRandomUniqueColor(TArray<FColor>& ConsumedColors, int32 NumTrials, int32 MinManhattanDist);
+	
+
+
+
+	////// Get casted individual from actor (nullptr if failed)
+	////template <typename ClassType>
+	////static ClassType* GetCastedIndividualObject(AActor* Actor);
+
+	///* Visual mask generation */
+	//// Add visual mask
+	//static bool AddVisualMask(class USLPerceivableIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite);
+
+	//// Get all used up visual masks in the world
+	//static TArray<FColor> GetConsumedVisualMaskColors(const TSet<USLIndividualComponent*>& IndividualComponents);
+
+	//// Create a new unique color by randomization
+	//static FColor CreateNewUniqueColorRand(TArray<FColor>& ConsumedColors, int32 NumTrials, int32 MinManhattanDist);
 
 	/* Color helpers */
 	// Get the manhattan distance between the colors
@@ -155,7 +220,7 @@ private:
 	}
 
 	// Check if the two colors are equal with a tolerance
-	FORCEINLINE static bool AreColorsEqual(const FColor& C1, const FColor& C2, uint8 Tolerance = 0)
+	FORCEINLINE static bool AreColorsAlmostEqual(const FColor& C1, const FColor& C2, uint8 Tolerance = 0)
 	{
 		if (Tolerance < 1) { return C1 == C2; }
 		return GetColorManhattanDistance(C1, C2) <= Tolerance;
@@ -166,6 +231,8 @@ private:
 	{
 		return FColor((uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f));
 	}
+
+
 };
 
 

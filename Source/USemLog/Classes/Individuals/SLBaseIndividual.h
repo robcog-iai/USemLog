@@ -5,17 +5,17 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#if SL_WITH_LIBMONGO_C
-THIRD_PARTY_INCLUDES_START
-	#if PLATFORM_WINDOWS
-	#include "Windows/AllowWindowsPlatformTypes.h"
-	#include <mongoc/mongoc.h>
-	#include "Windows/HideWindowsPlatformTypes.h"
-	#else
-	#include <mongoc/mongoc.h>
-	#endif // #if PLATFORM_WINDOWS
-THIRD_PARTY_INCLUDES_END
-#endif //SL_WITH_LIBMONGO_C
+//#if SL_WITH_LIBMONGO_C
+//THIRD_PARTY_INCLUDES_START
+//	#if PLATFORM_WINDOWS
+//	#include "Windows/AllowWindowsPlatformTypes.h"
+//	#include <mongoc/mongoc.h>
+//	#include "Windows/HideWindowsPlatformTypes.h"
+//	#else
+//	#include <mongoc/mongoc.h>
+//	#endif // #if PLATFORM_WINDOWS
+//THIRD_PARTY_INCLUDES_END
+//#endif //SL_WITH_LIBMONGO_C
 #include "SLBaseIndividual.generated.h"
 
 // Notify every time the init status changes
@@ -87,6 +87,7 @@ public:
 	/* Id */
 	// Set the id value, if empty, reset the individual as not loaded
 	void SetIdValue(const FString& NewVal);
+	void GenerateNewIdValue();
 	void ClearIdValue() { SetIdValue(""); };
 	FString GetIdValue() const { return Id; };
 	bool IsIdValueSet() const { return !Id.IsEmpty(); };
@@ -94,23 +95,25 @@ public:
 	/* Class */
 	// Set the class value, if empty, reset the individual as not loaded
 	void SetClassValue(const FString& NewClass);
+	void SetDefaultClassValue();
 	void ClearClassValue() { SetClassValue(""); };
 	FString GetClassValue() const { return Class; };
 	bool IsClassValueSet() const { return !Class.IsEmpty(); };
 
 	/*OId*/
-	// BSON Id of the individual, used for db optimized queries
-	void SetOIdValue(const FString& NewVal);
-	void ClearOIdValue() { SetOIdValue(""); };
-	FString GetOIdValue() const { return OId; };
-	bool IsOIdValueSet() const { return !OId.IsEmpty(); };
-#if SL_WITH_LIBMONGO_C
-	bson_oid_t GetOId() const { return oid; };
-#endif // SL_WITH_LIBMONGO_C
+	// TODO sync with Id
+//	// BSON Id of the individual, used for db optimized queries
+//	void SetOIdValue(const FString& NewVal);
+//	void ClearOIdValue() { SetOIdValue(""); };
+//	FString GetOIdValue() const { return OId; };
+//	bool IsOIdValueSet() const { return !OId.IsEmpty(); };
+//#if SL_WITH_LIBMONGO_C
+//	bson_oid_t GetOId() const { return oid; };
+//#endif // SL_WITH_LIBMONGO_C
 
 protected:
 	// Generate class name, virtual since each invidiual type will have different name
-	virtual FString GetClassName() const;
+	virtual FString CalcDefaultClassValue() const;
 
 	// Clear all references of the individual
 	virtual void InitReset();
@@ -149,10 +152,10 @@ private:
 	// Import values expernally
 	bool ImportIdValue(bool bOverwrite = false);
 	bool ImportClassValue(bool bOverwrite = false);
-	bool ImportOIdValue(bool bOverwrite = false);
+	//bool ImportOIdValue(bool bOverwrite = false);
 
-	// Load the oid value from the persitent OId string (generate a new one if none is available)
-	bool LoadOId(bool bGenerateNew = false);
+	//// Load the oid value from the persitent OId string (generate a new one if none is available)
+	//bool LoadOId(bool bGenerateNew = false);
 
 public:
 	// Public delegates
@@ -194,10 +197,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	USLBaseIndividual* AttachedToIndividual;
 
-#if SL_WITH_LIBMONGO_C
-	// Native, non-persistent bson oid of the individual
-	bson_oid_t oid;
-#endif
+//#if SL_WITH_LIBMONGO_C
+//	// Native, non-persistent bson oid of the individual
+//	bson_oid_t oid;
+//#endif
 
 	// SemLog tag key
 	UPROPERTY(VisibleAnywhere, Category = "SL")

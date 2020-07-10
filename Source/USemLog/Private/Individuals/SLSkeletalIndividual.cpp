@@ -129,7 +129,6 @@ bool USLSkeletalIndividual::ClearExportedValues()
 	return false;
 }
 
-
 // Apply visual mask material
 bool USLSkeletalIndividual::ApplyMaskMaterials(bool bPrioritizeChildren)
 {
@@ -191,7 +190,7 @@ bool USLSkeletalIndividual::ApplyOriginalMaterials()
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLSkeletalIndividual::GetClassName() const
+FString USLSkeletalIndividual::CalcDefaultClassValue() const
 {
 	if (IsInit())
 	{

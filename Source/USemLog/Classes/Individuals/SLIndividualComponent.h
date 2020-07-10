@@ -61,26 +61,34 @@ public:
 	template <typename ClassType>
 	ClassType* GetCastedIndividualObject() const 
 	{
-		if (IndividualObj && IndividualObj->IsValidLowLevel() && !IndividualObj->IsPendingKill())
-		{
-			return Cast<ClassType>(IndividualObj);
-		}
-		return nullptr;
+		return HasValidIndividual() ? Cast<ClassType>(IndividualObj) : nullptr;
 	};
-
 
 	/* Functionalities */
 	// Save data to owners tag
-	bool ExportValues(bool bOverwrite = false);
+	bool ExportValues(bool bOverwrite);
 
 	// Load data from owners tag
-	bool ImportValues(bool bOverwrite = false);
+	bool ImportValues(bool bOverwrite);
 
 	// Clear exported values
 	bool ClearExportedValues();
 
 	// Toggle between original and mask material is possible
-	bool ToggleVisualMaskVisibility(bool bPrioritizeChildren = false);
+	bool ToggleVisualMaskVisibility(bool bPrioritizeChildren);
+
+	/* Values */
+	/* Id */
+	bool WriteId(bool bOverwrite);
+	bool ClearId();
+
+	/* Class */
+	bool WriteClass(bool bOverwrite);
+	bool ClearClass();
+
+	/* Visual Mask */
+	bool WriteVisualMaskClass(const FString& Value, bool bOverwrite, const TArray<FString>& ChildrenValues = TArray<FString>());
+	bool ClearVisualMask();
 
 protected:
 	// Set the init flag, broadcast on new value

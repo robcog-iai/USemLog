@@ -118,7 +118,7 @@ bool USLSkyIndividual::LoadImpl(bool bTryImport)
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLSkyIndividual::GetClassName() const
+FString USLSkyIndividual::CalcDefaultClassValue() const
 {
 	if (IsInit())
 	{

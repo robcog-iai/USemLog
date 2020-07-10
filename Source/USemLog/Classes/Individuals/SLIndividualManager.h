@@ -36,40 +36,40 @@ public:
 	// Re-load and re-register individual components
 	int32 Reload() { return Init(true); };
 
-	// Add new semantic data components to the actors
-	int32 AddIndividualComponents();
-	int32 AddIndividualComponents(const TArray<AActor*>& Actors);
+	//// Add new semantic data components to the actors
+	//int32 AddIndividualComponents();
+	//int32 AddIndividualComponents(const TArray<AActor*>& Actors);
 
-	// Remove all semantic data components
-	int32 DestroyIndividualComponents();
-	int32 DestroyIndividualComponents(const TArray<AActor*>& Actors);
+	//// Remove all semantic data components
+	//int32 DestroyIndividualComponents();
+	//int32 DestroyIndividualComponents(const TArray<AActor*>& Actors);
 
-	// Reload components data
-	int32 ResetIndividualComponents();
-	int32 ResetIndividualComponents(const TArray<AActor*>& Actors);
+	//// Reload components data
+	//int32 ResetIndividualComponents();
+	//int32 ResetIndividualComponents(const TArray<AActor*>& Actors);
 
 	/* Functionalities */
 	// Toggle perceivable individuals mask materials
-	int32 ToggleVisualMaskVisibility(bool bPrioritizeChildren = false);
-	int32 ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren = false);
+	//int32 ToggleVisualMaskVisibility(bool bPrioritizeChildren = false);
+	//int32 ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren = false);
 
-	// Write new unique identifiers 
-	int32 WriteUniqueIds(bool bOverwrite = false);
-	int32 WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	int32 RemoveUniqueIds();
-	int32 RemoveUniqueIds(const TArray<AActor*>& Actors);
+	//// Write new unique identifiers 
+	//int32 WriteUniqueIds(bool bOverwrite = false);
+	//int32 WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	//int32 RemoveUniqueIds();
+	//int32 RemoveUniqueIds(const TArray<AActor*>& Actors);
 
-	// Write class names
-	int32 WriteClassNames(bool bOverwrite = false);
-	int32 WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	int32 RemoveClassNames();
-	int32 RemoveClassNames(const TArray<AActor*>& Actors);
+	//// Write class names
+	//int32 WriteClassNames(bool bOverwrite = false);
+	//int32 WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	//int32 RemoveClassNames();
+	//int32 RemoveClassNames(const TArray<AActor*>& Actors);
 
-	// Write visual masks
-	int32 WriteVisualMasks(bool bOverwrite = false);
-	int32 WriteVisualMasks(const TArray<AActor*>& Actors, bool bOverwrite = false);
-	int32 RemoveVisualMasks();
-	int32 RemoveVisualMasks(const TArray<AActor*>& Actors);
+	//// Write visual masks
+	//int32 WriteVisualMasks(bool bOverwrite = false);
+	//int32 WriteVisualMasks(const TArray<AActor*>& Actors, bool bOverwrite = false);
+	//int32 RemoveVisualMasks();
+	//int32 RemoveVisualMasks(const TArray<AActor*>& Actors);
 
 	// Export/import/clear data
 	int32 ExportValues(bool bOverwrite = false);
@@ -94,11 +94,11 @@ private:
 	// Check if actor already has an individual component
 	bool HasIndividualComponent(AActor* Actor) const;
 
-	// Create and add new individual component
-	USLIndividualComponent* AddNewIndividualComponent(AActor* Actor);
+	//// Create and add new individual component
+	//USLIndividualComponent* AddNewIndividualComponent(AActor* Actor);
 
-	// Remove individual component from owner
-	void DestroyIndividualComponent(USLIndividualComponent* Component);
+	//// Remove individual component from owner
+	//void DestroyIndividualComponent(USLIndividualComponent* Component);
 
 	// Cache component, bind delegates
 	bool RegisterIndividualComponent(USLIndividualComponent* Component);

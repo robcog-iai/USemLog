@@ -112,7 +112,7 @@ bool USLRigidIndividual::ApplyOriginalMaterials()
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLRigidIndividual::GetClassName() const
+FString USLRigidIndividual::CalcDefaultClassValue() const
 {
 	if(IsInit())
 	{

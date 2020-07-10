@@ -374,7 +374,7 @@ bool USLBoneIndividual::LoadImpl(bool bTryImport)
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLBoneIndividual::GetClassName() const
+FString USLBoneIndividual::CalcDefaultClassValue() const
 {
 	if (IsInit())
 	{

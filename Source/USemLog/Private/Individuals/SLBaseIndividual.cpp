@@ -95,10 +95,10 @@ bool USLBaseIndividual::ExportValues(bool bOverwrite)
 	{
 		bNewValue = true;
 	}
-	if (IsOIdValueSet() && FSLTagIO::AddKVPair(ParentActor, ImportTagType, "OId", OId, bOverwrite))
-	{
-		bNewValue = true;
-	}
+	//if (IsOIdValueSet() && FSLTagIO::AddKVPair(ParentActor, ImportTagType, "OId", OId, bOverwrite))
+	//{
+	//	bNewValue = true;
+	//}
 	return bNewValue;
 }
 
@@ -121,10 +121,10 @@ bool USLBaseIndividual::ImportValues(bool bOverwrite)
 	{
 		bNewValue = true;
 	}
-	if (ImportOIdValue(bOverwrite))
-	{
-		bNewValue = true;
-	}
+	//if (ImportOIdValue(bOverwrite))
+	//{
+	//	bNewValue = true;
+	//}
 	return bNewValue;
 }
 
@@ -161,11 +161,12 @@ FString USLBaseIndividual::GenerateNewId() const
 }
 
 // Generate class name, virtual since each invidiual type will have different name
-FString USLBaseIndividual::GetClassName() const
+FString USLBaseIndividual::CalcDefaultClassValue() const
 {
 	return GetTypeName();
 }
 
+/* Id */
 // Set the id value, if it is empty reset the individual as not loaded
 void USLBaseIndividual::SetIdValue(const FString& NewVal)
 {
@@ -182,6 +183,12 @@ void USLBaseIndividual::SetIdValue(const FString& NewVal)
 			Load(false, false);
 		}
 	}
+}
+
+// Generate a new unique id value
+void USLBaseIndividual::GenerateNewIdValue()
+{
+	SetIdValue(FSLUuid::NewGuidInBase64Url());
 }
 
 // Set the class value, if empty, reset the individual as not loaded
@@ -202,14 +209,20 @@ void USLBaseIndividual::SetClassValue(const FString& NewVal)
 	}
 }
 
-// Set the bson id value from string, does not check for validity
-void USLBaseIndividual::SetOIdValue(const FString& NewVal)
+// Set the default class name to the individual
+void USLBaseIndividual::SetDefaultClassValue()
 {
-	if (!OId.Equals(NewVal))
-	{
-		OId = NewVal;
-	}
+	SetClassValue(CalcDefaultClassValue());
 }
+
+//// Set the bson id value from string, does not check for validity
+//void USLBaseIndividual::SetOIdValue(const FString& NewVal)
+//{
+//	if (!OId.Equals(NewVal))
+//	{
+//		OId = NewVal;
+//	}
+//}
 
 // Clear all values of the individual
 void USLBaseIndividual::InitReset()
@@ -356,12 +369,12 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 		{
 			if (!ImportIdValue())
 			{
-				SetIdValue(GenerateNewId());
+				GenerateNewIdValue();
 			}
 		}
 		else
 		{
-			SetIdValue(FSLUuid::NewGuidInBase64Url());
+			GenerateNewIdValue();			
 		}
 	}
 
@@ -371,12 +384,12 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 		{
 			if (!ImportClassValue())
 			{
-				SetClassValue(GetClassName());
+				SetDefaultClassValue();
 			}
 		}
 		else
 		{
-			SetClassValue(GetClassName());
+			SetDefaultClassValue();
 		}
 	}
 
@@ -418,54 +431,54 @@ bool USLBaseIndividual::ImportClassValue(bool bOverwrite)
 	return bNewValue;
 }
 
-// Import the oid value
-bool USLBaseIndividual::ImportOIdValue(bool bOverwrite)
-{
-	bool bNewValue = false;
-	if (!IsOIdValueSet() || bOverwrite)
-	{
-		const FString PrevVal = OId;
-		SetIdValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "OId"));
-		bNewValue = !OId.Equals(PrevVal);
-	}
-	return bNewValue;
-}
-
-// Load the oid value from the persitent OId string (generate a new one if none is available)
-bool USLBaseIndividual::LoadOId(bool bGenerateNew)
-{
-#if SL_WITH_LIBMONGO_C
-	if (IsOIdValueSet())
-	{		
-		const char* oid_str = TCHAR_TO_ANSI(*OId);//TCHAR_TO_UTF8
-		if (bson_oid_is_valid(oid_str, sizeof oid_str))
-		{
-			bson_oid_init_from_string(&oid, oid_str);
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's oid (%s) succefully loaded.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName(), ANSI_TO_TCHAR(oid_str));
-			return true;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's new oid string value (%s) not valid.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName(), ANSI_TO_TCHAR(oid_str));
-			return false;
-		}
-	}
-	else if (bGenerateNew)
-	{
-		bson_oid_init(&oid, NULL);
-		char oid_str[25];
-		bson_oid_to_string(&oid, oid_str);
-		SetOIdValue( UTF8_TO_TCHAR(oid_str));
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's oid (%s) was succefully generated.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName(), *OId);
-		return true;
-	}
-	return false;
-	UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no oid.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
-#elif
-	return false;
-#endif
-}
+//// Import the oid value
+//bool USLBaseIndividual::ImportOIdValue(bool bOverwrite)
+//{
+//	bool bNewValue = false;
+//	if (!IsOIdValueSet() || bOverwrite)
+//	{
+//		const FString PrevVal = OId;
+//		SetIdValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "OId"));
+//		bNewValue = !OId.Equals(PrevVal);
+//	}
+//	return bNewValue;
+//}
+//
+//// Load the oid value from the persitent OId string (generate a new one if none is available)
+//bool USLBaseIndividual::LoadOId(bool bGenerateNew)
+//{
+//#if SL_WITH_LIBMONGO_C
+//	if (IsOIdValueSet())
+//	{		
+//		const char* oid_str = TCHAR_TO_ANSI(*OId);//TCHAR_TO_UTF8
+//		if (bson_oid_is_valid(oid_str, sizeof oid_str))
+//		{
+//			bson_oid_init_from_string(&oid, oid_str);
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's oid (%s) succefully loaded.."),
+//				*FString(__FUNCTION__), __LINE__, *GetFullName(), ANSI_TO_TCHAR(oid_str));
+//			return true;
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's new oid string value (%s) not valid.."),
+//				*FString(__FUNCTION__), __LINE__, *GetFullName(), ANSI_TO_TCHAR(oid_str));
+//			return false;
+//		}
+//	}
+//	else if (bGenerateNew)
+//	{
+//		bson_oid_init(&oid, NULL);
+//		char oid_str[25];
+//		bson_oid_to_string(&oid, oid_str);
+//		SetOIdValue( UTF8_TO_TCHAR(oid_str));
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's oid (%s) was succefully generated.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *OId);
+//		return true;
+//	}
+//	return false;
+//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no oid.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
+//#elif
+//	return false;
+//#endif
+//}
 

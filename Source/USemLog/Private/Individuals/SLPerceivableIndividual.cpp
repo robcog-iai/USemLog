@@ -190,12 +190,12 @@ bool USLPerceivableIndividual::LoadImpl(bool bTryImport)
 		{
 			if (!ImportVisualMaskValue())
 			{
-				SetVisualMaskValue(GenerateNewVisualMask());
+				SetVisualMaskValue(GenerateNewRandomVisualMask());
 			}
 		}
 		else
 		{
-			SetVisualMaskValue(GenerateNewVisualMask());
+			SetVisualMaskValue(GenerateNewRandomVisualMask());
 		}
 	}
 
@@ -206,13 +206,13 @@ bool USLPerceivableIndividual::LoadImpl(bool bTryImport)
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLPerceivableIndividual::GetClassName() const
+FString USLPerceivableIndividual::CalcDefaultClassValue() const
 {
 	return GetTypeName();
 }
 
 // Randomly generates a new visual mask, does not guarantee uniqueness
-FString USLPerceivableIndividual::GenerateNewVisualMask() const
+FString USLPerceivableIndividual::GenerateNewRandomVisualMask() const
 {
 	return FColor((uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f)).ToHex();
 }

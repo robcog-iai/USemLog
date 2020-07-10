@@ -2,8 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLIndividualComponent.h"
-#include "Individuals/SLSkeletalIndividual.h"
 #include "Individuals/SLPerceivableIndividual.h"
+#include "Individuals/SLSkeletalIndividual.h"
+#include "Individuals/SLBoneIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Skeletal/SLSkeletalDataAsset.h"
 
@@ -151,12 +152,140 @@ bool USLIndividualComponent::ClearExportedValues()
 // Toggle between original and mask material is possible
 bool USLIndividualComponent::ToggleVisualMaskVisibility(bool bPrioritizeChildren)
 {
-	if (USLPerceivableIndividual* SI = GetCastedIndividualObject<USLPerceivableIndividual>())
+	if (HasValidIndividual())
 	{
-		return SI->ToggleMaterials(bPrioritizeChildren);
+		if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
+		{
+			return VI->ToggleMaterials(bPrioritizeChildren);
+		}
+	}
+
+	return false;
+}
+
+/* Values */
+// Write new id value
+bool USLIndividualComponent::WriteId(bool bOverwrite)
+{
+	if (HasValidIndividual())
+	{
+		if (!IndividualObj->IsIdValueSet() || bOverwrite)
+		{
+			IndividualObj->GenerateNewIdValue();
+			return true;
+		}
 	}
 	return false;
 }
+
+// Clear id value
+bool USLIndividualComponent::ClearId()
+{
+	if (HasValidIndividual())
+	{
+		if (IndividualObj->IsIdValueSet())
+		{
+			IndividualObj->ClearIdValue();
+			return true;
+		}
+	}
+	return false;
+}
+
+// Write default class value
+bool USLIndividualComponent::WriteClass(bool bOverwrite)
+{
+	if (HasValidIndividual())
+	{
+		if (!IndividualObj->IsClassValueSet() || bOverwrite)
+		{
+			IndividualObj->SetDefaultClassValue();
+			return true;
+		}
+	}
+	return false;
+}
+
+// Clear class value
+bool USLIndividualComponent::ClearClass()
+{
+	if (HasValidIndividual())
+	{
+		if (IndividualObj->IsClassValueSet())
+		{
+			IndividualObj->ClearClassValue();
+			return true;
+		}
+	}
+	return false;
+}
+
+// Write visual mask value (if perceivable)
+bool USLIndividualComponent::WriteVisualMaskClass(const FString& Value, bool bOverwrite, const TArray<FString>& ChildrenValues)
+{
+	if (HasValidIndividual())
+	{
+		if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
+		{
+			if (!VI->IsVisualMaskValueSet() || bOverwrite)
+			{
+				VI->SetVisualMaskValue(Value);
+			}
+
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(VI))
+			{
+				if (ChildrenValues.Num() == SkI->GetBoneIndividuals().Num())
+				{
+					int32 Index = 0;
+					for (const auto& BI : SkI->GetBoneIndividuals())
+					{
+						BI->SetVisualMaskValue(ChildrenValues[Index]);
+						Index++;
+					}
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s's bones num differ of the values num, cannot set mask values.."),
+						*FString(__FUNCTION__), __LINE__, *GetFullName());
+				}
+
+			}
+			
+			// TODO check robot type
+			return true;
+		}
+	}
+	return false;
+}
+
+// Clear visual masks
+bool USLIndividualComponent::ClearVisualMask()
+{
+	if (HasValidIndividual())
+	{
+		bool RetVal = false;
+		if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
+		{
+			if (VI->IsVisualMaskValueSet())
+			{
+				VI->ClearVisualMaskValue();
+				RetVal = true;
+			}
+
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(VI))
+			{
+				for (const auto& BI : SkI->GetBoneIndividuals())
+				{
+					BI->ClearVisualMaskValue();
+					RetVal = true;
+				}
+			}
+			return RetVal;
+		}
+	}
+	return false;
+}
+
 
 // Set the init flag, broadcast on new value
 void USLIndividualComponent::SetIsInit(bool bNewValue, bool bBroadcast)

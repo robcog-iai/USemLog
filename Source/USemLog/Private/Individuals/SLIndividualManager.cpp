@@ -87,454 +87,454 @@ int32 ASLIndividualManager::Init(bool bReset)
 	return NumComp;
 }
 
-// Add new semantic data components to the actors in the world
-int32 ASLIndividualManager::AddIndividualComponents()
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
+//// Add new semantic data components to the actors in the world
+//int32 ASLIndividualManager::AddIndividualComponents()
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	if (GetWorld())
+//	{
+//		for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
+//		{
+//			if (USLIndividualComponent* IC = AddNewIndividualComponent(*ActItr))
+//			{
+//				if (RegisterIndividualComponent(IC))
+//				{
+//					Num++;
+//				}
+//			}
+//		}
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access the world.."), *FString(__FUNCTION__), __LINE__);
+//	}
+//	return Num;
+//}
+//
+//// Add new semantic data components to the selected actors
+//int32 ASLIndividualManager::AddIndividualComponents(const TArray<AActor*>& Actors)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (USLIndividualComponent* IC = AddNewIndividualComponent(Act))
+//		{
+//			if (RegisterIndividualComponent(IC))
+//			{
+//				Num++;
+//			}
+//		}
+//	}
+//	return Num;
+//}
 
-	int32 Num = 0;
-	if (GetWorld())
-	{
-		for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
-		{
-			if (USLIndividualComponent* IC = AddNewIndividualComponent(*ActItr))
-			{
-				if (RegisterIndividualComponent(IC))
-				{
-					Num++;
-				}
-			}
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access the world.."), *FString(__FUNCTION__), __LINE__);
-	}
-	return Num;
-}
+//// Remove all semantic data components from the world
+//int32 ASLIndividualManager::DestroyIndividualComponents()
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = RegisteredIndividualComponents.Num();
+//	for (const auto& IC : RegisteredIndividualComponents)
+//	{
+//		DestroyIndividualComponent(IC);
+//	}
+//
+//	// Clear cached individuals
+//	ClearCache();
+//
+//	return Num;
+//}
+//
+//// Remove selected semantic data components
+//int32 ASLIndividualManager::DestroyIndividualComponents(const TArray<AActor*>& Actors)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
+//		{
+//			UnregisterIndividualComponent(*FoundIC);
+//			DestroyIndividualComponent(*FoundIC);
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
 
-// Add new semantic data components to the selected actors
-int32 ASLIndividualManager::AddIndividualComponents(const TArray<AActor*>& Actors)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (USLIndividualComponent* IC = AddNewIndividualComponent(Act))
-		{
-			if (RegisterIndividualComponent(IC))
-			{
-				Num++;
-			}
-		}
-	}
-	return Num;
-}
-
-// Remove all semantic data components from the world
-int32 ASLIndividualManager::DestroyIndividualComponents()
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = RegisteredIndividualComponents.Num();
-	for (const auto& IC : RegisteredIndividualComponents)
-	{
-		DestroyIndividualComponent(IC);
-	}
-
-	// Clear cached individuals
-	ClearCache();
-
-	return Num;
-}
-
-// Remove selected semantic data components
-int32 ASLIndividualManager::DestroyIndividualComponents(const TArray<AActor*>& Actors)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
-		{
-			UnregisterIndividualComponent(*FoundIC);
-			DestroyIndividualComponent(*FoundIC);
-			Num++;
-		}
-	}
-	return Num;
-}
-
-// Reload components data
-int32 ASLIndividualManager::ResetIndividualComponents()
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& IC : RegisteredIndividualComponents)
-	{
-		bool bReset = true;
-		bool bTryImport = true;
-		if (IC->Init(bReset) && IC->Load(bReset, bTryImport))
-		{
-			Num++;
-		}
-		else
-		{
-			//UnregisterIndividualComponent(IC);
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not fully reset individual component %s .."),
-				*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
-		}
-	}
-	return Num;
-}
-
-// Call init and load with reset flag true
-int32 ASLIndividualManager::ResetIndividualComponents(const TArray<AActor*>& Actors)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
-		{
-			bool bReset = true;
-			bool bTryImport = true;
-			if ((*FoundIC)->Init(bReset) && (*FoundIC)->Load(bReset, bTryImport))
-			{
-				Num++;
-			}
-			else
-			{
-				//UnregisterIndividualComponent(*FoundIC);
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not fully reset individual component %s .."),
-					*FString(__FUNCTION__), __LINE__, *(*FoundIC)->GetOwner()->GetName());
-			}
-		}
-	}
-	return Num;
-}
+//// Reload components data
+//int32 ASLIndividualManager::ResetIndividualComponents()
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& IC : RegisteredIndividualComponents)
+//	{
+//		bool bReset = true;
+//		bool bTryImport = true;
+//		if (IC->Init(bReset) && IC->Load(bReset, bTryImport))
+//		{
+//			Num++;
+//		}
+//		else
+//		{
+//			//UnregisterIndividualComponent(IC);
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not fully reset individual component %s .."),
+//				*FString(__FUNCTION__), __LINE__, *IC->GetOwner()->GetName());
+//		}
+//	}
+//	return Num;
+//}
+//
+//// Call init and load with reset flag true
+//int32 ASLIndividualManager::ResetIndividualComponents(const TArray<AActor*>& Actors)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
+//		{
+//			bool bReset = true;
+//			bool bTryImport = true;
+//			if ((*FoundIC)->Init(bReset) && (*FoundIC)->Load(bReset, bTryImport))
+//			{
+//				Num++;
+//			}
+//			else
+//			{
+//				//UnregisterIndividualComponent(*FoundIC);
+//				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not fully reset individual component %s .."),
+//					*FString(__FUNCTION__), __LINE__, *(*FoundIC)->GetOwner()->GetName());
+//			}
+//		}
+//	}
+//	return Num;
+//}
 
 /* Functionalities */
-// Toggle perceivable individuals mask materials
-int32 ASLIndividualManager::ToggleVisualMaskVisibility(bool bPrioritizeChildren)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
+//// Toggle perceivable individuals mask materials
+//int32 ASLIndividualManager::ToggleVisualMaskVisibility(bool bPrioritizeChildren)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& IC : RegisteredIndividualComponents)
+//	{
+//		if (IC->ToggleVisualMaskVisibility(bPrioritizeChildren))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//// Toggle selected perceivable individuals mask materials
+//int32 ASLIndividualManager::ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
+//		{
+//			if ((*FoundIC)->ToggleVisualMaskVisibility(bPrioritizeChildren))
+//			{
+//				Num++;
+//			}
+//		}
+//	}
+//	return Num;
+//}
 
-	int32 Num = 0;
-	for (const auto& IC : RegisteredIndividualComponents)
-	{
-		if (IC->ToggleVisualMaskVisibility(bPrioritizeChildren))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
+///* Id */
+//// Write new unique identifiers 
+//int32 ASLIndividualManager::WriteUniqueIds(bool bOverwrite)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& IC : RegisteredIndividualComponents)
+//	{
+//		if (FSLIndividualUtils::WriteId(IC, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//// Write new unique identifiers to selection
+//int32 ASLIndividualManager::WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+//		{
+//			if (FSLIndividualUtils::WriteId(*FoundIC, bOverwrite))
+//			{
+//				Num++;
+//			}
+//		}
+//	}
+//	return Num;
+//}
+//
+//int32 ASLIndividualManager::RemoveUniqueIds()
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& IC : RegisteredIndividualComponents)
+//	{
+//		if (FSLIndividualUtils::ClearId(IC))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//// Remove selection id values
+//int32 ASLIndividualManager::RemoveUniqueIds(const TArray<AActor*>& Actors)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+//		{
+//			if (FSLIndividualUtils::ClearId(*FoundIC))
+//			{
+//				Num++;
+//			}
+//		}
+//	}
+//	return Num;
+//}
+//
+///* Class */
+//// Write class names
+//int32 ASLIndividualManager::WriteClassNames(bool bOverwrite)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& IC : RegisteredIndividualComponents)
+//	{
+//		if (FSLIndividualUtils::WriteClass(IC, bOverwrite))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//// Write class names to selection
+//int32 ASLIndividualManager::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+//		{
+//			if (FSLIndividualUtils::WriteClass(*FoundIC, bOverwrite))
+//			{
+//				Num++;
+//			}
+//		}
+//	}
+//	return Num;
+//}
+//
+//// Remove all class names
+//int32 ASLIndividualManager::RemoveClassNames()
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& IC : RegisteredIndividualComponents)
+//	{
+//		if (FSLIndividualUtils::ClearClass(IC))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//// Remove selection class names
+//int32 ASLIndividualManager::RemoveClassNames(const TArray<AActor*>& Actors)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+//		{
+//			if (FSLIndividualUtils::ClearClass(*FoundIC))
+//			{
+//				Num++;
+//			}
+//		}
+//	}
+//	return Num;
+//}
 
-// Toggle selected perceivable individuals mask materials
-int32 ASLIndividualManager::ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (auto** FoundIC = IndividualComponentOwners.Find(Act))
-		{
-			if ((*FoundIC)->ToggleVisualMaskVisibility(bPrioritizeChildren))
-			{
-				Num++;
-			}
-		}
-	}
-	return Num;
-}
-
-/* Id */
-// Write new unique identifiers 
-int32 ASLIndividualManager::WriteUniqueIds(bool bOverwrite)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& IC : RegisteredIndividualComponents)
-	{
-		if (FSLIndividualUtils::WriteId(IC, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-// Write new unique identifiers to selection
-int32 ASLIndividualManager::WriteUniqueIds(const TArray<AActor*>& Actors, bool bOverwrite)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
-		{
-			if (FSLIndividualUtils::WriteId(*FoundIC, bOverwrite))
-			{
-				Num++;
-			}
-		}
-	}
-	return Num;
-}
-
-int32 ASLIndividualManager::RemoveUniqueIds()
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& IC : RegisteredIndividualComponents)
-	{
-		if (FSLIndividualUtils::ClearId(IC))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-// Remove selection id values
-int32 ASLIndividualManager::RemoveUniqueIds(const TArray<AActor*>& Actors)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
-		{
-			if (FSLIndividualUtils::ClearId(*FoundIC))
-			{
-				Num++;
-			}
-		}
-	}
-	return Num;
-}
-
-/* Class */
-// Write class names
-int32 ASLIndividualManager::WriteClassNames(bool bOverwrite)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& IC : RegisteredIndividualComponents)
-	{
-		if (FSLIndividualUtils::WriteClass(IC, bOverwrite))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-// Write class names to selection
-int32 ASLIndividualManager::WriteClassNames(const TArray<AActor*>& Actors, bool bOverwrite)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
-		{
-			if (FSLIndividualUtils::WriteClass(*FoundIC, bOverwrite))
-			{
-				Num++;
-			}
-		}
-	}
-	return Num;
-}
-
-// Remove all class names
-int32 ASLIndividualManager::RemoveClassNames()
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& IC : RegisteredIndividualComponents)
-	{
-		if (FSLIndividualUtils::ClearClass(IC))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-// Remove selection class names
-int32 ASLIndividualManager::RemoveClassNames(const TArray<AActor*>& Actors)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
-		{
-			if (FSLIndividualUtils::ClearClass(*FoundIC))
-			{
-				Num++;
-			}
-		}
-	}
-	return Num;
-}
-
-/* Visual mask */
-// Write visual masks
-int32 ASLIndividualManager::WriteVisualMasks(bool bOverwrite)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-	return FSLIndividualUtils::WriteVisualMasks(RegisteredIndividualComponents, bOverwrite);
-}
-
-// Write visual masks to selection
-int32 ASLIndividualManager::WriteVisualMasks(const TArray<AActor*>& Actors, bool bOverwrite)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	// Get the selection actors individual components
-	TSet<USLIndividualComponent*> IndividualComponentsSelection;
-	for (const auto& Act : Actors)
-	{
-		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
-		{
-			IndividualComponentsSelection.Add(*FoundIC);
-		}
-	}
-
-	return FSLIndividualUtils::WriteVisualMasks(IndividualComponentsSelection, RegisteredIndividualComponents, bOverwrite);
-}
-
-// Remove all visual masks
-int32 ASLIndividualManager::RemoveVisualMasks()
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& IC : RegisteredIndividualComponents)
-	{
-		if (FSLIndividualUtils::ClearVisualMask(IC))
-		{
-			Num++;
-		}
-	}
-	return Num;
-}
-
-// Remove selection visual masks
-int32 ASLIndividualManager::RemoveVisualMasks(const TArray<AActor*>& Actors)
-{
-	if (!bIsInit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
-		return INDEX_NONE;
-	}
-
-	int32 Num = 0;
-	for (const auto& Act : Actors)
-	{
-		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
-		{
-			if (FSLIndividualUtils::ClearVisualMask(*FoundIC))
-			{
-				Num++;
-			}
-		}
-	}
-	return Num;
-}
+///* Visual mask */
+//// Write visual masks
+//int32 ASLIndividualManager::WriteVisualMasks(bool bOverwrite)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//	return FSLIndividualUtils::WriteVisualMasks(RegisteredIndividualComponents, bOverwrite);
+//}
+//
+//// Write visual masks to selection
+//int32 ASLIndividualManager::WriteVisualMasks(const TArray<AActor*>& Actors, bool bOverwrite)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	// Get the selection actors individual components
+//	TSet<USLIndividualComponent*> IndividualComponentsSelection;
+//	for (const auto& Act : Actors)
+//	{
+//		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+//		{
+//			IndividualComponentsSelection.Add(*FoundIC);
+//		}
+//	}
+//
+//	return FSLIndividualUtils::WriteVisualMasks(IndividualComponentsSelection, RegisteredIndividualComponents, bOverwrite);
+//}
+//
+//// Remove all visual masks
+//int32 ASLIndividualManager::RemoveVisualMasks()
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& IC : RegisteredIndividualComponents)
+//	{
+//		if (FSLIndividualUtils::ClearVisualMask(IC))
+//		{
+//			Num++;
+//		}
+//	}
+//	return Num;
+//}
+//
+//// Remove selection visual masks
+//int32 ASLIndividualManager::RemoveVisualMasks(const TArray<AActor*>& Actors)
+//{
+//	if (!bIsInit)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Init manager first.."), *FString(__FUNCTION__), __LINE__);
+//		return INDEX_NONE;
+//	}
+//
+//	int32 Num = 0;
+//	for (const auto& Act : Actors)
+//	{
+//		if (USLIndividualComponent** FoundIC = IndividualComponentOwners.Find(Act))
+//		{
+//			if (FSLIndividualUtils::ClearVisualMask(*FoundIC))
+//			{
+//				Num++;
+//			}
+//		}
+//	}
+//	return Num;
+//}
 
 // Export data to tags
 int32 ASLIndividualManager::ExportValues(bool bOverwrite)
@@ -706,73 +706,73 @@ bool ASLIndividualManager::HasIndividualComponent(AActor* Actor) const
 	return Actor->GetComponentByClass(USLIndividualComponent::StaticClass()) != nullptr;
 }
 
-// Create and add new individual component
-USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* Actor)
-{
-	// Check if the actor type is supported and there is no other existing component
-	if (FSLIndividualUtils::CanHaveIndividualComponent(Actor) && !HasIndividualComponent(Actor))
-	{
-		Actor->Modify();
-
-		// Create an appropriate name for the new component (avoid duplicates)
-		FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(
-			USLIndividualComponent::StaticClass(), Actor);
-
-		// Get the set of owned components that exists prior to instancing the new component.
-		TInlineComponentArray<UActorComponent*> PreInstanceComponents;
-		Actor->GetComponents(PreInstanceComponents);
-
-		// Create a new component
-		USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(Actor, NewComponentName, RF_Transactional);
-
-		// Make visible in the components list in the editor
-		Actor->AddInstanceComponent(NewComp);
-		//Actor->AddOwnedComponent(NewComp);
-
-		//NewComp->OnComponentCreated();
-		NewComp->RegisterComponent();
-
-		// Register any new components that may have been created during construction of the instanced component, but were not explicitly registered.
-		TInlineComponentArray<UActorComponent*> PostInstanceComponents;
-		Actor->GetComponents(PostInstanceComponents);
-		for (UActorComponent* ActorComponent : PostInstanceComponents)
-		{
-			if (!ActorComponent->IsRegistered() && ActorComponent->bAutoRegister && !ActorComponent->IsPendingKill() && !PreInstanceComponents.Contains(ActorComponent))
-			{
-				ActorComponent->RegisterComponent();
-			}
-		}
-
-		Actor->RerunConstructionScripts();
-
-		/* Try init */
-		if (NewComp->IsInit() || NewComp->Init())
-		{
-			if (!NewComp->IsLoaded() && !NewComp->Load(true, true))
-			{
-				//UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
-				//	*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be init.. the manager will not register it.."),
-				*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
-			return nullptr;
-		}
-		return NewComp;
-	}
-	return nullptr;
-}
-
-// Remove individual component from owner
-void ASLIndividualManager::DestroyIndividualComponent(USLIndividualComponent* Component)
-{
-	AActor* CompOwner = Component->GetOwner();
-	CompOwner->Modify();
-	CompOwner->RemoveInstanceComponent(Component);
-	Component->ConditionalBeginDestroy();
-}
+//// Create and add new individual component
+//USLIndividualComponent* ASLIndividualManager::AddNewIndividualComponent(AActor* Actor)
+//{
+//	// Check if the actor type is supported and there is no other existing component
+//	//if (FSLIndividualUtils::CanHaveIndividualComponent(Actor) && !HasIndividualComponent(Actor))
+//	//{
+//	//	Actor->Modify();
+//
+//	//	// Create an appropriate name for the new component (avoid duplicates)
+//	//	FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(
+//	//		USLIndividualComponent::StaticClass(), Actor);
+//
+//	//	// Get the set of owned components that exists prior to instancing the new component.
+//	//	TInlineComponentArray<UActorComponent*> PreInstanceComponents;
+//	//	Actor->GetComponents(PreInstanceComponents);
+//
+//	//	// Create a new component
+//	//	USLIndividualComponent* NewComp = NewObject<USLIndividualComponent>(Actor, NewComponentName, RF_Transactional);
+//
+//	//	// Make visible in the components list in the editor
+//	//	Actor->AddInstanceComponent(NewComp);
+//	//	//Actor->AddOwnedComponent(NewComp);
+//
+//	//	//NewComp->OnComponentCreated();
+//	//	NewComp->RegisterComponent();
+//
+//	//	// Register any new components that may have been created during construction of the instanced component, but were not explicitly registered.
+//	//	TInlineComponentArray<UActorComponent*> PostInstanceComponents;
+//	//	Actor->GetComponents(PostInstanceComponents);
+//	//	for (UActorComponent* ActorComponent : PostInstanceComponents)
+//	//	{
+//	//		if (!ActorComponent->IsRegistered() && ActorComponent->bAutoRegister && !ActorComponent->IsPendingKill() && !PreInstanceComponents.Contains(ActorComponent))
+//	//		{
+//	//			ActorComponent->RegisterComponent();
+//	//		}
+//	//	}
+//
+//	//	Actor->RerunConstructionScripts();
+//
+//	//	/* Try init */
+//	//	if (NewComp->IsInit() || NewComp->Init())
+//	//	{
+//	//		if (!NewComp->IsLoaded() && !NewComp->Load(true, true))
+//	//		{
+//	//			//UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be loaded.."),
+//	//			//	*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
+//	//		}
+//	//	}
+//	//	else
+//	//	{
+//	//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual component %s could not be init.. the manager will not register it.."),
+//	//			*FString(__FUNCTION__), __LINE__, *NewComp->GetOwner()->GetName());
+//	//		return nullptr;
+//	//	}
+//	//	return NewComp;
+//	//}
+//	return nullptr;
+//}
+//
+//// Remove individual component from owner
+//void ASLIndividualManager::DestroyIndividualComponent(USLIndividualComponent* Component)
+//{
+//	AActor* CompOwner = Component->GetOwner();
+//	CompOwner->Modify();
+//	CompOwner->RemoveInstanceComponent(Component);
+//	Component->ConditionalBeginDestroy();
+//}
 
 // Cache component, bind delegates
 bool ASLIndividualManager::RegisterIndividualComponent(USLIndividualComponent* Component)

@@ -58,7 +58,7 @@ public:
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
-    virtual FString GetClassName() const override;
+    virtual FString CalcDefaultClassValue() const override;
 
     // Clear all values of the individual
     virtual void InitReset() override;
