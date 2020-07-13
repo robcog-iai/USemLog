@@ -23,13 +23,6 @@ void USLVirtualBoneIndividual::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-// Create and set the dynamic material, the owners visual component
-void USLVirtualBoneIndividual::PostInitProperties()
-{
-	Super::PostInitProperties();
-	//Init();
-}
-
 // Set the parameters required when initalizing the individual
 bool USLVirtualBoneIndividual::PreInit(int32 NewBoneIndex, bool bReset)
 {
@@ -44,7 +37,7 @@ bool USLVirtualBoneIndividual::PreInit(int32 NewBoneIndex, bool bReset)
 	}
 
 	BoneIndex = NewBoneIndex;
-	ImportTagType += "Bone" + FString::FromInt(BoneIndex);
+	TagType += "Bone" + FString::FromInt(BoneIndex);
 	bIsPreInit = true;
 	return true;	
 }
@@ -121,7 +114,7 @@ FString USLVirtualBoneIndividual::CalcDefaultClassValue() const
 void USLVirtualBoneIndividual::InitReset()
 {
 	SetIsInit(false);
-	ClearDelegateBounds();
+	ClearDelegates();
 	Super::InitReset();
 }
 
@@ -164,8 +157,9 @@ bool USLVirtualBoneIndividual::SetParentActor()
 }
 
 // Clear any bound delegates (called when init is reset)
-void USLVirtualBoneIndividual::ClearDelegateBounds()
+void USLVirtualBoneIndividual::ClearDelegates()
 {
+	Super::ClearDelegates();
 }
 
 // Private init implementation

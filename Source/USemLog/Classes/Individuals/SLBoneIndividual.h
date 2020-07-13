@@ -26,11 +26,8 @@ public:
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
-    // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-    virtual void PostInitProperties() override;
-
     // Set the parameters required when initalizing the individual
-    bool PreInit(int32 NewBoneIndex, bool bReset = false);
+    bool PreInit(int32 NewBoneIndex, int32 NewMaterialIndex, bool bReset = false);
 
     // Check if the individual is pre initalized
     bool IsPreInit() const { return bIsPreInit; };
@@ -40,13 +37,6 @@ public:
 
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset = false, bool bTryImport = false);
-
-    //// Save values externally
-    //virtual bool ExportValues(bool bOverwrite = false);
-
-    //// Load values externally
-    //virtual bool ImportValues(bool bOverwrite = false);
-
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("BoneIndividual"); };
@@ -76,19 +66,14 @@ protected:
     virtual void LoadReset() override;
 
     // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegateBounds() override;
+    virtual void ClearDelegates() override;
 
     // Set pointer to parent actor
     virtual bool SetParentActor() override;
 
-    // Check if skeleltal bone description component is available
-    bool HasValidSkeletalDataComponent() const;
-
-    // Check if the material index is valid
-    bool HasValidMaterialIndex() const;
-
     // Check if the bone index is valid
     bool HasValidBoneIndex() const;
+
 
 private:
     // Set dependencies
@@ -102,6 +87,12 @@ private:
 
     // Set sekeletal mesh
     bool SetSkeletalMesh();
+
+    // Check if the material index is valid
+    bool HasValidMaterialIndex() const;
+
+    // Set the material index (the material slot name is the same with the class name)
+    bool SetMaterialIndex();
 
 protected:
     // Pre init
@@ -120,21 +111,6 @@ protected:
     UPROPERTY()
     USkeletalMeshComponent* SkeletalMeshComponent;
 
-    // Parent skeletal mesh data
-    UPROPERTY()
-    USLSkeletalDataComponent* SkelDataComp;
-
     // Cached transform
     FTransform CachedTransform;
-
-
-    //// FName of the bone
-    //UPROPERTY()
-    //FName BoneName;
-
-    //// Cached transform of the bone
-    //FVector CachedLocation;
-
-    //// Cached transform of the bone
-    //FVector CachedQuat;
 };

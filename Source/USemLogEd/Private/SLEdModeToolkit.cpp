@@ -248,6 +248,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTryImportFlagSlot()
 		];
 }
 
+
 // Individual Managers
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersTxtSlot()
 {
@@ -277,7 +278,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersSlot()
 				SNew(SButton)
 				.Text(LOCTEXT("InitIndividualManagers", "Init"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("InitIndividualManagersTip", "Sets and intializes the individual managers.."))
+				.ToolTipText(LOCTEXT("InitIndividualManagersTip", "Init managers.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnInitIndividualManagers)
 			]
 
@@ -286,10 +287,21 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("IndividualManagersReload", "Reload"))
+				.Text(LOCTEXT("LoadIndividualManagers", "Load"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("IndividualManagersReloadTip", "Reloads the components from the world (clean + init).."))
-				.OnClicked(this, &FSLEdModeToolkit::OnReloadSemDataManagers)
+				.ToolTipText(LOCTEXT("LoadIndividualManagersTip", "Load managers.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnLoadIndividualManagers)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("ConnectIndividualManagers", "Connect"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("ConnectIndividualManagersTip", "Connect managers.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnConnectIndividualManagers)
 			]
 		];
 }
@@ -361,7 +373,16 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsSlot()
 				.OnClicked(this, &FSLEdModeToolkit::OnLoadIndividuals)
 			]
 
-
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("IndividualsConnect", "Connect"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("IndividualsConnectTip", "Connect delegates between objects, components, managers, etc.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnConnectIndividuals)
+			]
 		];
 }
 
@@ -381,7 +402,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsFuncSlot()
 				SNew(SButton)
 				.Text(LOCTEXT("IndividualsToggleVisualMaskVisiblitiy", "Toggle Masks"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("IndividualsToggleMaskTip", "Toggle between the visual mask and the original colors.."))
+				.ToolTipText(LOCTEXT("IndividualsToggleMaskTip", "Toggle between the visual mask and the original material visualization.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnToggleIndividualVisualMaskVisiblity)
 			]
 
@@ -398,7 +419,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesTxtSlot()
 		.HAlign(HAlign_Center)
 		[
 			SNew(STextBlock)
-			.Text(LOCTEXT("SemDataTxt", "Semantic Data:"))
+			.Text(LOCTEXT("IndividualValuesTxt", "Individual values:"))
 		];
 }
 
@@ -418,8 +439,8 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesAllSlot()
 				SNew(SButton)
 				.Text(LOCTEXT("WriteAll", "Write All"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("WriteAllTip", "Generates all data"))
-				.OnClicked(this, &FSLEdModeToolkit::OnWriteSemDataAll)
+				.ToolTipText(LOCTEXT("WriteAllTip", "Write all individual values.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnWriteAllIndvidualValues)
 			]
 
 		+ SHorizontalBox::Slot()
@@ -427,10 +448,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesAllSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("RmAll", "Remove All"))
+				.Text(LOCTEXT("ClearAll", "Clear All"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("RmAllTip", "Removes all generated data"))
-				.OnClicked(this, &FSLEdModeToolkit::OnRmSemDataAll)
+				.ToolTipText(LOCTEXT("ClearAllTip", "Clear all individual values.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnClearAllIndividualValues)
 			]
 		];
 }
@@ -526,9 +547,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesVisualMaskSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("RmVisualMasks", "Remove Visual Masks"))
+				.Text(LOCTEXT("ClearVisualMasks", "Clear Visual Masks"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("RmVisualMasksTip", "Removes all visual masks"))
+				.ToolTipText(LOCTEXT("ClearVisualMasksTip", "Removes all visual masks"))
 				.OnClicked(this, &FSLEdModeToolkit::OnClearIndividualVisualMasks)
 			]
 		];
@@ -544,7 +565,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateImportExportTxtSlot()
 		.HAlign(HAlign_Center)
 		[
 			SNew(STextBlock)
-			.Text(LOCTEXT("TagTxt", "Tags:"))
+			.Text(LOCTEXT("ImportExportTxt", "Import/export individual values:"))
 		];
 }
 
@@ -562,9 +583,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateImportExportSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("IndividualsSave", "Export"))
+				.Text(LOCTEXT("ExportValues", "Export"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("IndividualsSaveTip", "Save data to tag.."))
+				.ToolTipText(LOCTEXT("ExportValuesTip", "Export individual values.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnExportValues)
 			]
 
@@ -573,9 +594,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateImportExportSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("IndividualsLoad", "Import"))
+				.Text(LOCTEXT("ImportValues", "Import"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("IndividualsLoadTip", "Load data from tag.."))
+				.ToolTipText(LOCTEXT("ImportValuesTip", "Import individual values.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnImportValues)
 			]
 
@@ -584,9 +605,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateImportExportSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("RemoveTagData", "Clear"))
+				.Text(LOCTEXT("ClearExportedValues", "Clear"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("RemoveTagDataTip", "Removes data stored in tags.."))
+				.ToolTipText(LOCTEXT("ClearExportedValuesTip", "Clear exported individual values.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnClearExportedValues)
 			]
 		];
@@ -863,16 +884,25 @@ void FSLEdModeToolkit::OnCheckedTryImportFlag(ECheckBoxState NewCheckedState)
 // Individual Managers
 FReply FSLEdModeToolkit::OnInitIndividualManagers()
 {
-	FScopedTransaction Transaction(LOCTEXT("InitIndividualManagersST", "Set and init the individual managers.."));
+	FScopedTransaction Transaction(LOCTEXT("InitIndividualManagersST", "Init individual managers.."));
 
-	int32 Num = 0;
 	if (HasValidIndividualManager() || SetIndividualManager())
 	{
-		Num = IndividualManager->Init();
+		if (IndividualManager->Init(bResetFlag))
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Init(bResetFlag=%d) on the individual manager.."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Init(bResetFlag=%d) failed on the individual manager .."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
 	}
-
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Loaded %ld individual components.."),
-		*FString(__FUNCTION__), __LINE__, Num);
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to init.."), *FString(__FUNCTION__), __LINE__);
+	}
 
 
 	if (HasValidIndividualInfoManager())
@@ -891,19 +921,60 @@ FReply FSLEdModeToolkit::OnInitIndividualManagers()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnReloadSemDataManagers()
+FReply FSLEdModeToolkit::OnLoadIndividualManagers()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataManagerReload", "Reload semantic data managers"));
-	const bool bReset = true;
+	FScopedTransaction Transaction(LOCTEXT("LoadIndividualManagersST", "Load semantic data managers"));
 
-	if (HasValidIndividualManager())
+	if (HasValidIndividualManager() || SetIndividualManager())
 	{
-		IndividualManager->Reload();
+		if (IndividualManager->Load(bResetFlag))
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bResetFlag=%d) on the individual manager.."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Load(bResetFlag=%d) failed on the individual manager .."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to load.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	const bool bReset = true;
+	if (HasValidIndividualInfoManager())
+	{
+		IndividualInfoManager->Init(bReset);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual visual manager not set, init first.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnConnectIndividualManagers()
+{
+	FScopedTransaction Transaction(LOCTEXT("ConnectIndividualManagersST", "Connect semantic data managers"));
+	const bool bReset = true;
+
+	if (HasValidIndividualManager() || SetIndividualManager())
+	{
+		if (IndividualManager->Connect())
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager connected.."), *FString(__FUNCTION__), __LINE__);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect individual manager .."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to connect.."), *FString(__FUNCTION__), __LINE__);
 	}
 
 	if (HasValidIndividualInfoManager())
@@ -1001,14 +1072,6 @@ FReply FSLEdModeToolkit::OnInitIndividuals()
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Init(bReset=%d) on %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, bResetFlag, Num);
-
-		if (HasValidIndividualManager())
-		{
-			// TODO refresh if anything is needed individuals
-			//IndividualInfoManager->Refresh();
-			/*UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager refreshed.."),
-				*FString(__FUNCTION__), __LINE__);*/
-		}
 	}
 	return FReply::Handled();
 }
@@ -1031,14 +1094,27 @@ FReply FSLEdModeToolkit::OnLoadIndividuals()
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bReset=%d, bTryImport) on %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, bResetFlag, bTryImportFlag, Num);
+	}
+	return FReply::Handled();
+}
 
-		if (HasValidIndividualManager())
-		{
-			// TODO refresh if anything is needed individuals
-			//IndividualInfoManager->Refresh();
-			/*UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager refreshed.."),
-				*FString(__FUNCTION__), __LINE__);*/
-		}
+FReply FSLEdModeToolkit::OnConnectIndividuals()
+{
+	FScopedTransaction Transaction(LOCTEXT("ConnectIndividualComponentsST", "Connect individual components.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
+	{
+		Num = FSLIndividualUtils::ConnectIndividualComponents(GetSelectedActors());
+	}
+	else
+	{
+		Num = FSLIndividualUtils::ConnectIndividualComponents(GEditor->GetEditorWorldContext().World());
+	}
+
+	if (Num)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully connected %ld individual components.."),
+			*FString(__FUNCTION__), __LINE__, Num);
 	}
 	return FReply::Handled();
 }
@@ -1067,18 +1143,18 @@ FReply FSLEdModeToolkit::OnToggleIndividualVisualMaskVisiblity()
 
 
 // Individual Values
-FReply FSLEdModeToolkit::OnWriteSemDataAll()
+FReply FSLEdModeToolkit::OnWriteAllIndvidualValues()
 {
-	FScopedTransaction Transaction(LOCTEXT("WriteAllSemDataST", "Write all semantic data"));
+	FScopedTransaction Transaction(LOCTEXT("WriteAllIndividualValuesST", "Writing all individual values.."));
 	OnWriteIndividualIds();
 	OnWriteIndividualClasses();
 	OnWriteIndividualVisualMasks();
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnRmSemDataAll()
+FReply FSLEdModeToolkit::OnClearAllIndividualValues()
 {
-	FScopedTransaction Transaction(LOCTEXT("RmAllSemDataST", "Remove all semantic data"));
+	FScopedTransaction Transaction(LOCTEXT("ClearAllIndividualValuesST", "Clearing all individual values.."));
 	OnClearIndividualIds();
 	OnClearIndividualClasses();
 	OnClearIndividualVisualMasks();
@@ -1103,14 +1179,6 @@ FReply FSLEdModeToolkit::OnWriteIndividualIds()
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Wrote (bOverwrite=%d) %ld new individual ids.."),
 			*FString(__FUNCTION__), __LINE__, bOverwriteFlag, Num);
-
-		if (HasValidIndividualManager())
-		{
-			// TODO reload individuals
-			//IndividualInfoManager->Refresh();
-			/*UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager refreshed.."),
-				*FString(__FUNCTION__), __LINE__);*/
-		}
 	}
 	return FReply::Handled();
 }
@@ -1133,14 +1201,6 @@ FReply FSLEdModeToolkit::OnClearIndividualIds()
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Cleared %ld individual ids.."),
 			*FString(__FUNCTION__), __LINE__, bOverwriteFlag, Num);
-
-		if (HasValidIndividualManager())
-		{
-			// TODO reload individuals
-			//IndividualInfoManager->Refresh();
-			/*UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager refreshed.."),
-				*FString(__FUNCTION__), __LINE__);*/
-		}
 	}
 	return FReply::Handled();
 }
@@ -1193,14 +1253,6 @@ FReply FSLEdModeToolkit::OnClearIndividualClasses()
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Cleared %ld individual classes.."),
 			*FString(__FUNCTION__), __LINE__, bOverwriteFlag, Num);
-
-		if (HasValidIndividualManager())
-		{
-			// TODO reload individuals
-			//IndividualInfoManager->Refresh();
-			/*UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager refreshed.."),
-				*FString(__FUNCTION__), __LINE__);*/
-		}
 	}
 	return FReply::Handled();
 }
@@ -1223,14 +1275,6 @@ FReply FSLEdModeToolkit::OnWriteIndividualVisualMasks()
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Wrote (bOverwrite=%d) %ld new (parent) individual unique visual masks.."),
 			*FString(__FUNCTION__), __LINE__, bOverwriteFlag, Num);
-
-		if (HasValidIndividualManager())
-		{
-			// TODO reload individuals
-			//IndividualInfoManager->Refresh();
-			/*UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager refreshed.."),
-				*FString(__FUNCTION__), __LINE__);*/
-		}
 	}
 	return FReply::Handled();
 }
@@ -1253,14 +1297,6 @@ FReply FSLEdModeToolkit::OnClearIndividualVisualMasks()
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Cleared %ld individual's (parent) visual masks.."),
 			*FString(__FUNCTION__), __LINE__, bOverwriteFlag, Num);
-
-		if (HasValidIndividualManager())
-		{
-			// TODO reload individuals
-			//IndividualInfoManager->Refresh();
-			/*UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager refreshed.."),
-				*FString(__FUNCTION__), __LINE__);*/
-		}
 	}
 	return FReply::Handled();
 }
@@ -1269,109 +1305,67 @@ FReply FSLEdModeToolkit::OnClearIndividualVisualMasks()
 // Import / Export
 FReply FSLEdModeToolkit::OnExportValues()
 {
-	FScopedTransaction Transaction(LOCTEXT("IndividualsSaveST", "Export semantic data to tag"));
-	int32 NumComp = 0;
-	if (HasValidIndividualManager())
+	FScopedTransaction Transaction(LOCTEXT("ExportValuesST", "Exporting individual values.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
 	{
-		if (bOnlySelectedFlag)
-		{
-			NumComp = IndividualManager->ExportValues(GetSelectedActors(), bOverwriteFlag);
-		}
-		else
-		{
-			NumComp = IndividualManager->ExportValues(bOverwriteFlag);
-		}
+		Num = FSLIndividualUtils::ExportValues(GetSelectedActors(), bOverwriteFlag);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
+		Num = FSLIndividualUtils::ExportValues(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
 	}
 
-	if (NumComp)
+	if (Num)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Exported %ld individual components to tag.."),
-			*FString(__FUNCTION__), __LINE__, NumComp);
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Exported (bOverwrite=%d) %ld individual values.."),
+			*FString(__FUNCTION__), __LINE__, bOverwriteFlag, Num);
 	}
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnImportValues()
 {
-	FScopedTransaction Transaction(LOCTEXT("IndividualsLoadST", "Import data from tag"));
-	int32 NumComp = 0;
-	if (HasValidIndividualManager())
+	FScopedTransaction Transaction(LOCTEXT("ImportValuesST", "Importing individual values.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
 	{
-		if (bOnlySelectedFlag)
-		{
-			NumComp = IndividualManager->ImportValues(GetSelectedActors(), bOverwriteFlag);
-		}
-		else
-		{
-			NumComp = IndividualManager->ImportValues(bOverwriteFlag);
-		}
+		Num = FSLIndividualUtils::ImportValues(GetSelectedActors(), bOverwriteFlag);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
+		Num = FSLIndividualUtils::ImportValues(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
 	}
 
-	if (NumComp)
+	if (Num)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Exported %ld individual components to tag.."),
-			*FString(__FUNCTION__), __LINE__, NumComp);
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Imported (bOverwrite=%d) %ld individual values.."),
+			*FString(__FUNCTION__), __LINE__, bOverwriteFlag, Num);
 	}
-
 	return FReply::Handled();
 }
 
 FReply FSLEdModeToolkit::OnClearExportedValues()
 {
-	FScopedTransaction Transaction(LOCTEXT("RmTagData", "Remove all SemLog tags"));
-	//bool bMarkDirty = false;
-
-	//if (bOnlySelected)
-	//{
-	//	bMarkDirty = FSLEdUtils::RemoveTagType(GetSelectedActors(), "SemLog");
-	//}
-	//else
-	//{
-	//	bMarkDirty = FSLEdUtils::RemoveTagType(GEditor->GetEditorWorldContext().World(), "SemLog");
-	//}
-
-	//if (bMarkDirty)
-	//{
-	//	GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-	//}
-
-	int32 NumComp = 0;
-	if (HasValidIndividualManager())
+	FScopedTransaction Transaction(LOCTEXT("ClearExportedValuesST", "Clearing exported individual values.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
 	{
-		if (bOnlySelectedFlag)
-		{
-			NumComp = IndividualManager->ClearExportedValues(GetSelectedActors());
-		}
-		else
-		{
-			NumComp = IndividualManager->ClearExportedValues();
-		}
+		Num = FSLIndividualUtils::ClearExportedValues(GetSelectedActors());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
+		Num = FSLIndividualUtils::ClearExportedValues(GEditor->GetEditorWorldContext().World());
 	}
 
-	if (NumComp)
+	if (Num)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Exported %ld individual components to tag.."),
-			*FString(__FUNCTION__), __LINE__, NumComp);
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Cleared %ld individual exported values.."),
+			*FString(__FUNCTION__), __LINE__, Num);
 	}
-
 	return FReply::Handled();
 }
 

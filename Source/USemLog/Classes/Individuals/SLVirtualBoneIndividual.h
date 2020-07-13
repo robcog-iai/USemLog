@@ -22,9 +22,6 @@ public:
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
-
-    // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-    virtual void PostInitProperties() override;
     
     // Set the parameters required when initalizing the individual
     bool PreInit(int32 NewBoneIndex, bool bReset = false);
@@ -61,7 +58,7 @@ protected:
     virtual bool SetParentActor() override;
 
     // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegateBounds() override;
+    virtual void ClearDelegates() override;
 
 private:
     // Set dependencies

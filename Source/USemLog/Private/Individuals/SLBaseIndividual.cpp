@@ -18,20 +18,15 @@ USLBaseIndividual::USLBaseIndividual()
 	AttachedToIndividual = nullptr;
 	bIsInit = false;
 	bIsLoaded = false;
-	ImportTagType = "SemLog";
+	TagType = "SemLog";
 }
 
 // Called before destroying the object.
 void USLBaseIndividual::BeginDestroy()
 {
 	SetIsInit(false);
+	ClearDelegates();
 	Super::BeginDestroy();
-}
-
-// Set the semantic owner actor
-void USLBaseIndividual::PostInitProperties()
-{
-	Super::PostInitProperties();
 }
 
 // Set pointer to the semantic owner
@@ -87,11 +82,11 @@ bool USLBaseIndividual::ExportValues(bool bOverwrite)
 	//}
 
 	bool bNewValue = false;
-	if (IsIdValueSet() && FSLTagIO::AddKVPair(ParentActor, ImportTagType, "Id", Id, bOverwrite))
+	if (IsIdValueSet() && FSLTagIO::AddKVPair(ParentActor, TagType, "Id", Id, bOverwrite))
 	{
 		bNewValue = true;
 	}
-	if (IsClassValueSet() && FSLTagIO::AddKVPair(ParentActor, ImportTagType, "Class", Class, bOverwrite))
+	if (IsClassValueSet() && FSLTagIO::AddKVPair(ParentActor, TagType, "Class", Class, bOverwrite))
 	{
 		bNewValue = true;
 	}
@@ -139,7 +134,7 @@ bool USLBaseIndividual::ClearExportedValues()
 	//}
 
 	int32 TagIndex = INDEX_NONE;
-	if (FSLTagIO::HasType(ParentActor, ImportTagType, &TagIndex))
+	if (FSLTagIO::HasType(ParentActor, TagType, &TagIndex))
 	{
 		ParentActor->Tags.RemoveAt(TagIndex);
 		return true;
@@ -232,7 +227,7 @@ void USLBaseIndividual::InitReset()
 	AttachedToActor = nullptr;
 	AttachedToIndividual = nullptr;
 	SetIsInit(false);
-	ClearDelegateBounds();
+	ClearDelegates();
 }
 
 // Clear all data of the individual
@@ -244,12 +239,14 @@ void USLBaseIndividual::LoadReset()
 }
 
 // Clear any bound delegates (called when init is reset)
-void USLBaseIndividual::ClearDelegateBounds()
+void USLBaseIndividual::ClearDelegates()
 {
 	OnInitChanged.Clear();
 	OnLoadedChanged.Clear();
 	OnNewIdValue.Clear();
 	OnNewClassValue.Clear();
+	OnDelegatesCleared.Broadcast(this);
+	OnDelegatesCleared.Clear();
 }
 
 // Set the init flag, broadcast on new value
@@ -412,7 +409,7 @@ bool USLBaseIndividual::ImportIdValue(bool bOverwrite)
 	if (!IsIdValueSet() || bOverwrite)
 	{
 		const FString PrevVal = Id;
-		SetIdValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "Id"));
+		SetIdValue(FSLTagIO::GetValue(ParentActor, TagType, "Id"));
 		bNewValue = !Id.Equals(PrevVal);
 	}
 	return bNewValue;
@@ -425,7 +422,7 @@ bool USLBaseIndividual::ImportClassValue(bool bOverwrite)
 	if (!IsClassValueSet() || bOverwrite)
 	{
 		const FString PrevVal = Class;
-		SetClassValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "Class"));
+		SetClassValue(FSLTagIO::GetValue(ParentActor, TagType, "Class"));
 		bNewValue = !Class.Equals(PrevVal);
 	}
 	return bNewValue;

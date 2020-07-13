@@ -18,13 +18,6 @@ void USLRigidIndividual::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-// Create and set the dynamic material, the owners visual component
-void USLRigidIndividual::PostInitProperties()
-{
-	Super::PostInitProperties();
-	//Init();
-}
-
 // Set pointer to the semantic owner
 bool USLRigidIndividual::Init(bool bReset)
 {
@@ -148,7 +141,7 @@ void USLRigidIndividual::InitReset()
 	Super::InitReset();
 	StaticMeshComponent = nullptr;
 	SetIsInit(false);
-	ClearDelegateBounds();
+	ClearDelegates();
 }
 
 // Clear all data of the individual

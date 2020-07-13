@@ -8,8 +8,6 @@
 #include "Individuals/SLIndividualUtils.h"
 #include "Skeletal/SLSkeletalDataAsset.h"
 
-
-
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
 {
@@ -17,9 +15,8 @@ USLIndividualComponent::USLIndividualComponent()
 
 	bIsInit = false;
 	bIsLoaded = false;
+	bIsConnected = false;
 	IndividualObj = nullptr;
-
-	bDelegatesBound = false;
 }
 
 // Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
@@ -27,11 +24,10 @@ void USLIndividualComponent::OnRegister()
 {
 	Super::OnRegister();
 
-	// Re-bind delegates if the init state 
-	if (IsInit() && !bDelegatesBound)
-	{
-		BindDelegates();
-	}
+	//if (!IsConnected())
+	//{
+	//	Connect();
+	//}
 }
 
 // Called when a component is created(not loaded).This can happen in the editor or during gameplay
@@ -44,17 +40,12 @@ void USLIndividualComponent::OnComponentCreated()
 	{
 		if (AC != this)
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has a semantic data component (%s), self-destruction commenced.."),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has an individual component (%s), self-destruction commenced.."),
 				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
 			//DestroyComponent();
 			ConditionalBeginDestroy();
 			return;
 		}
-	}
-
-	if (!HasValidIndividual())
-	{
-		CreateIndividual();
 	}
 }
 
@@ -63,7 +54,6 @@ void USLIndividualComponent::BeginDestroy()
 {
 	SetIsInit(false);
 	SetIsLoaded(false);
-
 	OnDestroyed.Broadcast(this);
 
 	if (HasValidIndividual())
@@ -71,16 +61,16 @@ void USLIndividualComponent::BeginDestroy()
 		IndividualObj->ConditionalBeginDestroy();
 	}
 
+	ClearDelegates();
 	Super::BeginDestroy();
 }
 
-
-// Set owner and individual
+// Create and init individual
 bool USLIndividualComponent::Init(bool bReset)
 {
 	if (bReset)
 	{
-		SetIsInit(false, false);
+		InitReset();
 	}
 
 	if (IsInit())
@@ -88,7 +78,7 @@ bool USLIndividualComponent::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(InitImpl(bReset));
+	SetIsInit(InitImpl());
 	return IsInit();
 }
 
@@ -97,7 +87,7 @@ bool USLIndividualComponent::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
-		SetIsLoaded(false, false);
+		LoadReset();
 	}
 
 	if (IsLoaded())
@@ -113,8 +103,19 @@ bool USLIndividualComponent::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(LoadImpl(bReset, bTryImport));
+	SetIsLoaded(LoadImpl(bTryImport));
 	return IsLoaded();
+}
+
+// Listen to the individual object delegates
+bool USLIndividualComponent::Connect()
+{
+	if (IsConnected())
+	{
+		return true;
+	}
+	SetIsConnected(BindDelegates());
+	return IsConnected();
 }
 
 
@@ -286,6 +287,39 @@ bool USLIndividualComponent::ClearVisualMask()
 	return false;
 }
 
+// Clear all values of the individual
+void USLIndividualComponent::InitReset()
+{
+	LoadReset();
+	SetIsInit(false);
+	if (HasValidIndividual())
+	{
+		IndividualObj->Init(true);
+	}
+	ClearDelegates();
+}
+
+// Clear all data of the individual
+void USLIndividualComponent::LoadReset()
+{
+	SetIsLoaded(false);
+	if (HasValidIndividual())
+	{
+		IndividualObj->Load(true);
+	}
+}
+
+// Clear any bound delegates (called when init is reset)
+void USLIndividualComponent::ClearDelegates()
+{
+	OnDestroyed.Clear();
+	OnInitChanged.Clear();
+	OnLoadedChanged.Clear();
+	OnConnectedChanged.Clear();
+	OnValueChanged.Clear();
+	OnDelegatesCleared.Broadcast(this);
+	OnDelegatesCleared.Clear();
+}
 
 // Set the init flag, broadcast on new value
 void USLIndividualComponent::SetIsInit(bool bNewValue, bool bBroadcast)
@@ -318,63 +352,126 @@ void USLIndividualComponent::SetIsLoaded(bool bNewValue, bool bBroadcast)
 	}
 }
 
+// Set the connected flag, broadcast on new value
+void USLIndividualComponent::SetIsConnected(bool bNewValue, bool bBroadcast)
+{
+	if (bIsConnected != bNewValue)
+	{
+		bIsConnected = bNewValue;
+		if (bBroadcast)
+		{
+			OnConnectedChanged.Broadcast(this, bNewValue);
+		}
+	}
+}
+
 // Create individual if not created and forward init call
-bool USLIndividualComponent::InitImpl(bool bReset)
+bool USLIndividualComponent::InitImpl()
 {
 	if (HasValidIndividual() || CreateIndividual())
 	{
-		return IndividualObj->Init(bReset);
+		Connect();
+		return IndividualObj->Init();
 	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d %s Could not create individual.."),
-		*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+	UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not create an individual, this should not happen.."),
+		*FString(__FUNCTION__), __LINE__, *GetFullName());
 	return false;
 }
 
 // Forward the laod call to the individual object
-bool USLIndividualComponent::LoadImpl(bool bReset, bool bTryImport)
+bool USLIndividualComponent::LoadImpl(bool bTryImport)
 {
 	if (HasValidIndividual())
 	{
-		return IndividualObj->Load(bReset, bTryImport);
+		return IndividualObj->Load(bTryImport);
 	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d %s This should not happen, and idividual should be created here.."),
-		*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+	UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no valid individual, this should not happen.."),
+		*FString(__FUNCTION__), __LINE__, *GetFullName());
 	return false;
 }
 
 // Sync states with the individual
 bool USLIndividualComponent::BindDelegates()
 {
-	if (HasValidIndividual())
+	if (!HasValidIndividual())
 	{
-		// Bind init change delegate
-		if (!IndividualObj->OnInitChanged.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualInitChange))
-		{
-			IndividualObj->OnInitChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualInitChange);
-		}
-		else
-		{
-			//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on init delegate is already bound, this should not happen.."),
-			//	*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-		}
-
-		// Bind load change delegate
-		if (!IndividualObj->OnLoadedChanged.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualLoadedChange))
-		{
-			IndividualObj->OnLoadedChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualLoadedChange);
-		}
-		else
-		{
-			//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on loaded delegate is already bound, this should not happen.."),
-			//	*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-		}
-		bDelegatesBound = true;
-		return true;
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual object is not valid, cannot bind delegates.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
 	}
-	bDelegatesBound = false;
-	return false;
-}
 
+	// Bind init change delegate
+	if (!IndividualObj->OnInitChanged.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualInitChange))
+	{
+		IndividualObj->OnInitChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualInitChange);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on init delegate is already bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+
+	// Bind load change delegate
+	if (!IndividualObj->OnLoadedChanged.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualLoadedChange))
+	{
+		IndividualObj->OnLoadedChanged.AddDynamic(this, &USLIndividualComponent::OnIndividualLoadedChange);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on loaded delegate is already bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+
+	// Bind delegeates cleared 
+	if (!IndividualObj->OnDelegatesCleared.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualDelegatesCleared))
+	{
+		IndividualObj->OnDelegatesCleared.AddDynamic(this, &USLIndividualComponent::OnIndividualDelegatesCleared);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component on delegates cleared delegate is already bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+
+	/* Values delegates */
+	// Id
+	if (!IndividualObj->OnNewIdValue.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualNewId))
+	{
+		IndividualObj->OnNewIdValue.AddDynamic(this, &USLIndividualComponent::OnIndividualNewId);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component new id delegate is already bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+
+	// Class
+	if (!IndividualObj->OnNewClassValue.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualNewClass))
+	{
+		IndividualObj->OnNewClassValue.AddDynamic(this, &USLIndividualComponent::OnIndividualNewClass);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component new class delegate is already bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+
+	// Visual mask
+	if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
+	{
+		if (!VI->OnNewVisualMaskValue.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualNewVisualMask))
+		{
+			VI->OnNewVisualMaskValue.AddDynamic(this, &USLIndividualComponent::OnIndividualNewVisualMask);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component new visual mask delegate is already bound, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
+	}
+
+	return true;
+}
 
 /* Private */
 // Create the semantic individual
@@ -405,9 +502,6 @@ bool USLIndividualComponent::CreateIndividual()
 					*FString(__FUNCTION__), __LINE__);
 			}
 		}
-
-		// Listen to updates to the individual
-		BindDelegates();
 		return true;
 	}
 	else
@@ -430,5 +524,29 @@ void USLIndividualComponent::OnIndividualInitChange(USLBaseIndividual* Individua
 void USLIndividualComponent::OnIndividualLoadedChange(USLBaseIndividual* Individual, bool bNewValue)
 {
 	SetIsLoaded(bNewValue);
+}
+
+// Triggered on individual id change
+void USLIndividualComponent::OnIndividualNewId(USLBaseIndividual* Individual, const FString& NewId)
+{
+	OnValueChanged.Broadcast(this, "Id", NewId);
+}
+
+// Triggered on individual class change
+void  USLIndividualComponent::OnIndividualNewClass(USLBaseIndividual* Individual, const FString& NewClass)
+{
+	OnValueChanged.Broadcast(this, "Class", NewClass);
+}
+
+// Triggered on individual visual mask change
+void  USLIndividualComponent::OnIndividualNewVisualMask(USLBaseIndividual* Individual, const FString& NewVisualMask)
+{
+	OnValueChanged.Broadcast(this, "VisualMask", NewVisualMask);
+}
+
+// Triggered with the delegates are cleared on the individual object (required reconnection afterwards)
+void USLIndividualComponent::OnIndividualDelegatesCleared(USLBaseIndividual* Individual)
+{
+	SetIsConnected(false);
 }
 

@@ -87,7 +87,7 @@ FString USLVirtualViewIndividual::CalcDefaultClassValue() const
 void USLVirtualViewIndividual::InitReset()
 {
 	SetIsInit(false);
-	ClearDelegateBounds();
+	ClearDelegates();
 	Super::InitReset();
 }
 
@@ -98,8 +98,9 @@ void USLVirtualViewIndividual::LoadReset()
 }
 
 // Clear any bound delegates (called when init is reset)
-void USLVirtualViewIndividual::ClearDelegateBounds()
+void USLVirtualViewIndividual::ClearDelegates()
 {
+	Super::ClearDelegates();
 }
 
 // Private init implementation

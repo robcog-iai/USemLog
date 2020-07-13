@@ -67,7 +67,7 @@ protected:
     virtual void LoadReset() override;
 
     // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegateBounds() override;
+    virtual void ClearDelegates() override;
 
 private:
     // Set dependencies

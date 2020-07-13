@@ -30,6 +30,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewIdSignature, USLBas
 // Notify every time the class changes
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewClassSignature, USLBaseIndividual*, Individual, const FString&, NewClass);
 
+// Notify listeners that the delegates have been cleared
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLIndividualDelegatesClearedSignature, USLBaseIndividual*, Individual);
+
 /**
  * 
  */
@@ -44,9 +47,6 @@ public:
 
 	// Called before destroying the object.
 	virtual void BeginDestroy() override;
-
-	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-	virtual void PostInitProperties() override;
 
 	// Init asset references (bReset forces re-initialization)
 	virtual bool Init(bool bReset = false);
@@ -122,7 +122,7 @@ protected:
 	virtual void LoadReset();
 
 	// Clear any bound delegates (called when init is reset)
-	virtual void ClearDelegateBounds();
+	virtual void ClearDelegates();
 
 	// Mark individual as init, broadcast change
 	void SetIsInit(bool bNewValue, bool bBroadcast = true);
@@ -163,6 +163,7 @@ public:
 	FSLIndividualInitChangeSignature OnLoadedChanged;
 	FSLIndividualNewIdSignature OnNewIdValue;
 	FSLIndividualNewClassSignature OnNewClassValue;
+	FSLIndividualDelegatesClearedSignature OnDelegatesCleared;
 
 protected:
 	// Pointer to the actor described by the semantic description class
@@ -204,7 +205,7 @@ protected:
 
 	// SemLog tag key
 	UPROPERTY(VisibleAnywhere, Category = "SL")
-	FString ImportTagType;
+	FString TagType;
 
 	///* Constants */
 	//// Tag type for exporting/importing data from tags

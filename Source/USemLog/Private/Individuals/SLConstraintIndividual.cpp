@@ -114,7 +114,7 @@ void USLConstraintIndividual::InitReset()
 	ConstraintIndividual1 = nullptr;
 	ConstraintIndividual2 = nullptr;
 	SetIsInit(false);
-	ClearDelegateBounds();
+	ClearDelegates();
 	Super::InitReset();
 }
 
@@ -125,8 +125,9 @@ void USLConstraintIndividual::LoadReset()
 }
 
 // Clear any bound delegates (called when init is reset)
-void USLConstraintIndividual::ClearDelegateBounds()
+void USLConstraintIndividual::ClearDelegates()
 {
+	Super::ClearDelegates();
 }
 
 // Private init implementation

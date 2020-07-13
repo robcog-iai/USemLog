@@ -86,18 +86,22 @@ private:
 
 	// Individual Managers
 	FReply OnInitIndividualManagers();
-	FReply OnReloadSemDataManagers();//todo
+	FReply OnLoadIndividualManagers();
+	FReply OnConnectIndividualManagers();
 
 	// Individual Components
 	FReply OnCreateIndividuals();
 	FReply OnDestroyIndividuals();
 	FReply OnInitIndividuals();
 	FReply OnLoadIndividuals();
+	FReply OnConnectIndividuals();
+
+	// Individual Components Funcs
 	FReply OnToggleIndividualVisualMaskVisiblity();
 
 	// Individual Values
-	FReply OnWriteSemDataAll();
-	FReply OnRmSemDataAll();
+	FReply OnWriteAllIndvidualValues();
+	FReply OnClearAllIndividualValues();
 	FReply OnWriteIndividualIds();
 	FReply OnClearIndividualIds();
 	FReply OnWriteIndividualClasses();

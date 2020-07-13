@@ -18,6 +18,14 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLComponentInitChangeSignature, US
 // Notify every time the loaded status changes
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLComponentLoadedChangeSignature, USLIndividualComponent*, Component, bool, bNewLoadedVal);
 
+// Notify every time the connected status changes
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLComponentConnectedChangeSignature, USLIndividualComponent*, Component, bool, bNewConnectedVal);
+
+// Notify when the individual object changes any value
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FSLComponentValueChangeSignature, USLIndividualComponent*, Component, const FString&, Key, const FString&, Value);
+
+// Notify listeners that the delegates have been cleared
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLComponentDelegatesClearedSignature, USLIndividualComponent*, Component);
 
 /**
 * Component storing the semantic individual information of its owner
@@ -53,6 +61,12 @@ public:
 
 	// Check if component is loaded
 	bool IsLoaded() const { return bIsLoaded; };
+
+	// Listen to the individual object delegates
+	bool Connect();
+
+	// True if the component is listening to the individual object delegates (transient)
+	bool IsConnected() const { return bIsConnected; };
 
 	// Get the semantic individual object
 	USLBaseIndividual* GetIndividualObject() const { return HasValidIndividual() ? IndividualObj : nullptr; };
@@ -91,18 +105,30 @@ public:
 	bool ClearVisualMask();
 
 protected:
+	// Clear all references of the individual
+	void InitReset();
+
+	// Clear all data of the individual
+	void LoadReset();
+
+	// Clear any bound delegates (called when init is reset)
+	void ClearDelegates();
+
 	// Set the init flag, broadcast on new value
 	void SetIsInit(bool bNewValue, bool bBroadcast = true);
 
 	// Set the loaded flag, broadcast on new value
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
 
+	// Set the connected flag, broadcast on new value
+	void SetIsConnected(bool bNewValue, bool bBroadcast = true);
+
 private:
 	// Create individual if not created and forward init call
-	bool InitImpl(bool bReset = false);
+	bool InitImpl();
 
 	// Forward load call on individual
-	bool LoadImpl(bool bReset = false, bool bTryImport = false);
+	bool LoadImpl(bool bTryImport = false);
 
 	// Sync states with the individual
 	bool BindDelegates();
@@ -113,13 +139,29 @@ private:
 	// Create the individual object
 	bool CreateIndividual();
 
-	// Called on individual init flag change
+	// Triggered on individual init flag change
 	UFUNCTION()
 	void OnIndividualInitChange(USLBaseIndividual* Individual, bool bNewValue);
 
-	// Called on individual loaded flag change
+	// Triggered on individual loaded flag change
 	UFUNCTION()
 	void OnIndividualLoadedChange(USLBaseIndividual* Individual, bool bNewValue);
+
+	// Triggered on individual id change
+	UFUNCTION()
+	void OnIndividualNewId(USLBaseIndividual* Individual, const FString& NewId);
+
+	// Triggered on individual class change
+	UFUNCTION()
+	void OnIndividualNewClass(USLBaseIndividual* Individual, const FString& NewClass);
+
+	// Triggered on individual visual mask change
+	UFUNCTION()
+	void OnIndividualNewVisualMask(USLBaseIndividual* Individual, const FString& NewVisualMask);
+
+	// Triggered when individual delegates are cleared (including this one)
+	UFUNCTION()
+	void OnIndividualDelegatesCleared(USLBaseIndividual* Individual);
 
 public:
 	// Called when the component is destroyed
@@ -130,6 +172,15 @@ public:
 
 	// Called when the init status changes
 	FSLComponentInitChangeSignature OnLoadedChanged;
+
+	// Called when the connected status changes
+	FSLComponentConnectedChangeSignature OnConnectedChanged;
+
+	// Called when any value change from the individual object
+	FSLComponentValueChangeSignature OnValueChanged;
+
+	// Called when the delegates are cleared
+	FSLComponentDelegatesClearedSignature OnDelegatesCleared;
 
 private:
 	// Semantic data
@@ -144,8 +195,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsLoaded : 1;
 
-	// True if the delegates have been bound (not persistent)
-	bool bDelegatesBound;
+	// True if the component is listening to the individual object delegates
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	uint8 bIsConnected : 1;
 
 public:
 	// Semantic data

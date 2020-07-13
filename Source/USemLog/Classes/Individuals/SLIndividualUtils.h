@@ -11,60 +11,60 @@ class USLBaseIndividual;
 class USLSkeletalDataAsset;
 class ASLIndividualManager;
 
-// Individual types flags
-enum class ESLIndividualFlags : uint32
-{
-	SLI_None				= 0x00000000u,	///< No flags
-
-	SLI_Base				= 0x00000001u,	///< Has Id and Class
-
-	SLI_Perceivable			= 0x00000002u,	///< Has VisualMask
-	SLI_Static				= 0x00000004u,	///< Has VisualMask
-	SLI_Skeletal			= 0x00000010u,	///< Has VisualMask
-	SLI_Robot				= 0x00000020u,	///< Has VisualMask
-
-	SLI_Constraint			= 0x00000040u,	///< TODO
-
-	SLI_Light				= 0x00000080u,	///< TODO
-};
-
-ENUM_CLASS_FLAGS(ESLIndividualFlags);
-
-/* Individual flag helper class */
-struct FSLIndiviualType
-{
-	// Individual type flag
-	// TODO check if to use uint32
-	ESLIndividualFlags Flag; 
-
-	// Default ctor
-	FSLIndiviualType() : Flag(ESLIndividualFlags::SLI_None) {};
-
-	// Init ctor
-	FSLIndiviualType(ESLIndividualFlags NewFlag) : Flag(NewFlag) {};
-
-	
-	bool IsBase(ESLIndividualFlags InFlag) const
-	{
-		return (InFlag & ESLIndividualFlags::SLI_Base) != ESLIndividualFlags::SLI_None;
-	};
-
-	bool IsPerceivable(ESLIndividualFlags InFlag) const
-	{
-		return (InFlag & ESLIndividualFlags::SLI_Perceivable) != ESLIndividualFlags::SLI_None;
-	};
-
-	FString ToString() const
-	{
-		switch (Flag)
-		{
-		case ESLIndividualFlags::SLI_None:			return FString("UnknownIndividual");		break;
-		case ESLIndividualFlags::SLI_Base:			return FString("BaseIndividual");			break;
-		case ESLIndividualFlags::SLI_Perceivable:	return FString("PerceivableIndividual");	break;
-		default:									return FString("DEFAULT");
-		}
-	};
-};
+//// Individual types flags
+//enum class ESLIndividualFlags : uint32
+//{
+//	SLI_None				= 0x00000000u,	///< No flags
+//
+//	SLI_Base				= 0x00000001u,	///< Has Id and Class
+//
+//	SLI_Perceivable			= 0x00000002u,	///< Has VisualMask
+//	SLI_Static				= 0x00000004u,	///< Has VisualMask
+//	SLI_Skeletal			= 0x00000010u,	///< Has VisualMask
+//	SLI_Robot				= 0x00000020u,	///< Has VisualMask
+//
+//	SLI_Constraint			= 0x00000040u,	///< TODO
+//
+//	SLI_Light				= 0x00000080u,	///< TODO
+//};
+//
+//ENUM_CLASS_FLAGS(ESLIndividualFlags);
+//
+///* Individual flag helper class */
+//struct FSLIndiviualType
+//{
+//	// Individual type flag
+//	// TODO check if to use uint32
+//	ESLIndividualFlags Flag; 
+//
+//	// Default ctor
+//	FSLIndiviualType() : Flag(ESLIndividualFlags::SLI_None) {};
+//
+//	// Init ctor
+//	FSLIndiviualType(ESLIndividualFlags NewFlag) : Flag(NewFlag) {};
+//
+//	
+//	bool IsBase(ESLIndividualFlags InFlag) const
+//	{
+//		return (InFlag & ESLIndividualFlags::SLI_Base) != ESLIndividualFlags::SLI_None;
+//	};
+//
+//	bool IsPerceivable(ESLIndividualFlags InFlag) const
+//	{
+//		return (InFlag & ESLIndividualFlags::SLI_Perceivable) != ESLIndividualFlags::SLI_None;
+//	};
+//
+//	FString ToString() const
+//	{
+//		switch (Flag)
+//		{
+//		case ESLIndividualFlags::SLI_None:			return FString("UnknownIndividual");		break;
+//		case ESLIndividualFlags::SLI_Base:			return FString("BaseIndividual");			break;
+//		case ESLIndividualFlags::SLI_Perceivable:	return FString("PerceivableIndividual");	break;
+//		default:									return FString("DEFAULT");
+//		}
+//	};
+//};
 
 /**
  * Static helpers functions the semantic individual annotation
@@ -72,33 +72,6 @@ struct FSLIndiviualType
 class USEMLOG_API FSLIndividualUtils
 {
 public:
-	// Get the individual component from the actor (nullptr if it does not exist)
-	static USLIndividualComponent* GetIndividualComponent(AActor* Owner);
-
-	// Get the individual object from the actor (nullptr if it does not exist)
-	static USLBaseIndividual* GetIndividualObject(AActor* Owner);
-
-	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-	static FString GetIndividualClassName(USLIndividualComponent* IndividualComponent, bool bDefaultToLabelName = false);
-
-	// Check if actor supports individual components
-
-
-	// Create default individual object depending on the owner type (returns nullptr if failed)
-	static USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
-
-	// Convert individual to the given type
-	static bool ConvertIndividualObject(class USLBaseIndividual*& OutIndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass);
-
-	// Generate a new bson oid as string, empty string if fails
-	static FString NewOIdAsString();
-
-	// Find the skeletal data asset for the individual
-	static USLSkeletalDataAsset* FindSkeletalDataAsset(AActor* Owner);
-
-	
-
-
 	/* Individuals */
 	static ASLIndividualManager* GetOrCreateNewIndividualManager(UWorld* World, bool bCreateNew = true);
 	static int32 CreateIndividualComponents(UWorld* World);
@@ -109,6 +82,8 @@ public:
 	static int32 InitIndividualComponents(const TArray<AActor*>& Actors, bool bReset);
 	static int32 LoadIndividualComponents(UWorld* World, bool bReset, bool bTryImport);
 	static int32 LoadIndividualComponents(const TArray<AActor*>& Actors, bool bReset, bool bTryImport);
+	static int32 ConnectIndividualComponents(UWorld* World);
+	static int32 ConnectIndividualComponents(const TArray<AActor*>& Actors);
 
 	/* Individuals functionalities */
 	static int32 ToggleVisualMaskVisibility(UWorld* World, bool bPrioritizeChildren);
@@ -134,34 +109,13 @@ public:
 	static int32 ClearVisualMasks(UWorld* World);
 	static int32 ClearVisualMasks(const TArray<AActor*>& Actors);
 
-
-	///* Id */
-	//// Write unique id to the actor
-	//static bool WriteId(USLIndividualComponent* IndividualComponent, bool bOverwrite);
-
-	//// Clear unique id of the actor
-	//static bool ClearId(USLIndividualComponent* IndividualComponent);
-
-
-	///* Class */
-	//// Write class name to the actor
-	//static bool WriteClass(USLIndividualComponent* IndividualComponent, bool bOverwrite);
-
-	//// Clear class name of the actor
-	//static bool ClearClass(USLIndividualComponent* IndividualComponent);
-
-
-	///* Visual mask */
-	//// Write unique visual masks for all visual individuals in the world
-	//static int32 WriteVisualMasks(const TSet<USLIndividualComponent*>& IndividualComponents, bool bOverwrite);
-
-	//// Write unique visual masks for visual individuals from the actos in the array
-	//static int32 WriteVisualMasks(const TSet<USLIndividualComponent*>& IndividualComponentsSelection,
-	//	const TSet<USLIndividualComponent*>& RegisteredIndividualComponents,
-	//	bool bOverwrite);
-
-	//// Clear visual mask of the actor
-	//static bool ClearVisualMask(USLIndividualComponent* IndividualComponent);
+	/* Export/import values */
+	static int32 ExportValues(UWorld* World, bool bOverwrite);
+	static int32 ExportValues(const TArray<AActor*>& Actors, bool bOverwrite);
+	static int32 ImportValues(UWorld* World, bool bOverwrite);
+	static int32 ImportValues(const TArray<AActor*>& Actors, bool bOverwrite);
+	static int32 ClearExportedValues(UWorld* World);
+	static int32 ClearExportedValues(const TArray<AActor*>& Actors);
 
 private:
 	/* Individuals Private */
@@ -171,6 +125,7 @@ private:
 	static bool DestroyIndividualComponent(AActor* Actor);
 	static bool InitIndividualComponent(AActor* Actor, bool bReset);
 	static bool LoadIndividualComponent(AActor* Actor, bool bReset, bool bTryImport);
+	static bool ConnectIndividualComponent(AActor* Actor);
 
 	/* Individuals functionalities Private */
 	static bool ToggleVisualMaskVisibility(AActor* Actor, bool bPrioritizeChildren);
@@ -189,28 +144,8 @@ private:
 	static bool ClearVisualMask(AActor* Actor);
 	
 	/* Visual Mask  Helpers */
-	// Get an array of all used visual mask colors in the world
 	static TArray<FColor> GetAllConsumedVisualMaskColorsInWorld(UWorld* World);
-
-	// Generate random colors until a unique one if found (return black if failed)
 	static FColor GenerateRandomUniqueColor(TArray<FColor>& ConsumedColors, int32 NumTrials, int32 MinManhattanDist);
-	
-
-
-
-	////// Get casted individual from actor (nullptr if failed)
-	////template <typename ClassType>
-	////static ClassType* GetCastedIndividualObject(AActor* Actor);
-
-	///* Visual mask generation */
-	//// Add visual mask
-	//static bool AddVisualMask(class USLPerceivableIndividual* Individual, TArray<FColor>& ConsumedColors, bool bOverwrite);
-
-	//// Get all used up visual masks in the world
-	//static TArray<FColor> GetConsumedVisualMaskColors(const TSet<USLIndividualComponent*>& IndividualComponents);
-
-	//// Create a new unique color by randomization
-	//static FColor CreateNewUniqueColorRand(TArray<FColor>& ConsumedColors, int32 NumTrials, int32 MinManhattanDist);
 
 	/* Color helpers */
 	// Get the manhattan distance between the colors
@@ -231,20 +166,37 @@ private:
 	{
 		return FColor((uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f));
 	}
+	
+
+	/* Import/export values*/
+	static bool ExportValues(AActor* Actor, bool bOverwrite);
+	static bool ImportValues(AActor* Actor, bool bOverwrite);
+	static bool ClearExportedValues(AActor* Actor);
+
+public:
+	/* LEGACY */
+	// TODO remove
+	// Get the individual component from the actor (nullptr if it does not exist)
+	static USLIndividualComponent* GetIndividualComponent(AActor* Owner);
+
+	// Get the individual object from the actor (nullptr if it does not exist)
+	static USLBaseIndividual* GetIndividualObject(AActor* Owner);
+
+	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
+	static FString GetIndividualClassName(USLIndividualComponent* IndividualComponent, bool bDefaultToLabelName = false);
+
+	// Check if actor supports individual components
 
 
+	// Create default individual object depending on the owner type (returns nullptr if failed)
+	static USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
+
+	// Convert individual to the given type
+	static bool ConvertIndividualObject(class USLBaseIndividual*& OutIndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass);
+
+	// Generate a new bson oid as string, empty string if fails
+	static FString NewOIdAsString();
+
+	// Find the skeletal data asset for the individual
+	static USLSkeletalDataAsset* FindSkeletalDataAsset(AActor* Owner);
 };
-
-
-/* Inline functions */
-
-//// Return casted semantic individual object of actor (nullptr if failed)
-//template<typename ClassType>
-//inline ClassType* FSLIndividualUtils::GetCastedIndividualObject(AActor* Actor)
-//{
-//	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
-//	{
-//		return CastChecked<USLIndividualComponent>(AC)->GetCastedIndividualObject<ClassType>();
-//	}
-//	return nullptr;
-//}

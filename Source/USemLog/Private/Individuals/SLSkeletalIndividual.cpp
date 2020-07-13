@@ -26,13 +26,6 @@ void USLSkeletalIndividual::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-// Create and set the dynamic material, the owners visual component
-void USLSkeletalIndividual::PostInitProperties()
-{
-	Super::PostInitProperties();
-	//Init();
-}
-
 // Set pointer to the semantic owner
 bool USLSkeletalIndividual::Init(bool bReset)
 {
@@ -81,9 +74,13 @@ bool USLSkeletalIndividual::Load(bool bReset, bool bTryImport)
 bool USLSkeletalIndividual::ExportValues(bool bOverwrite)
 {
 	bool RetVal = Super::ExportValues();
-	//for (const auto& BI : BoneIndividuals)
-	//{
-	//}
+	for (const auto& BI : BoneIndividuals)
+	{
+		if (BI->ExportValues(bOverwrite))
+		{
+			RetVal = true;
+		}
+	}
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
 		if (VBI->ExportValues(bOverwrite))
@@ -98,10 +95,14 @@ bool USLSkeletalIndividual::ExportValues(bool bOverwrite)
 // Load values externally
 bool USLSkeletalIndividual::ImportValues(bool bOverwrite)
 {
-	bool RetVal = Super::ExportValues();
-	//for (const auto& BI : BoneIndividuals)
-	//{
-	//}
+	bool RetVal = Super::ImportValues();
+	for (const auto& BI : BoneIndividuals)
+	{
+		if (BI->ImportValues(bOverwrite))
+		{
+			RetVal = true;
+		}
+	}
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
 		if (VBI->ImportValues(bOverwrite))
@@ -116,9 +117,13 @@ bool USLSkeletalIndividual::ImportValues(bool bOverwrite)
 bool USLSkeletalIndividual::ClearExportedValues()
 {
 	bool RetVal = Super::ClearExportedValues();
-	//for (const auto& BI : BoneIndividuals)
-	//{
-	//}
+	for (const auto& BI : BoneIndividuals)
+	{
+		if (BI->ClearExportedValues())
+		{
+			RetVal = true;
+		}
+	}
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
 		if (VBI->ClearExportedValues())
@@ -141,10 +146,10 @@ bool USLSkeletalIndividual::ApplyMaskMaterials(bool bPrioritizeChildren)
 	{
 		if (bPrioritizeChildren)
 		{
-			//for (const auto& BI : BoneIndividuals)
-			//{
-			//	BI->ApplyMaskMaterials();
-			//}
+			for (const auto& BI : BoneIndividuals)
+			{
+				BI->ApplyMaskMaterials();
+			}
 		}
 		else
 		{
@@ -179,10 +184,10 @@ bool USLSkeletalIndividual::ApplyOriginalMaterials()
 		bIsMaskMaterialOn = false;
 
 		// Bones share the same original materials with the skeletal parent
-		//for (const auto& BI : BoneIndividuals)
-		//{
-		//	BI->ApplyOriginalMaterials();
-		//}
+		for (const auto& BI : BoneIndividuals)
+		{
+			BI->ApplyOriginalMaterials();
+		}
 
 		return true;
 	}
@@ -223,7 +228,7 @@ void USLSkeletalIndividual::InitReset()
 	DestroyBoneIndividuals();
 	SkeletalMeshComponent = nullptr;
 	SetIsInit(false);
-	ClearDelegateBounds();
+	ClearDelegates();
 }
 
 // Clear all data of the individual
@@ -308,11 +313,6 @@ bool USLSkeletalIndividual::SetSkeletalDataAsset()
 	// Outer should be the individual component
 	if (USLIndividualComponent* IC = Cast<USLIndividualComponent>(GetOuter()))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Optinal DA Pairs:"), *FString(__FUNCTION__), __LINE__);
-		for (const auto& Pair : IC->OptionalDataAssets)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%s"),*Pair.Key, *Pair.Value->GetFullName() );
-		}
 		if (UDataAsset** DA = IC->OptionalDataAssets.Find(USLIndividualComponent::SkelDataAssetKey))
 		{
 			if (USLSkeletalDataAsset* SkDA = Cast<USLSkeletalDataAsset>(*DA))
@@ -345,22 +345,22 @@ bool USLSkeletalIndividual::HasValidBones() const
 	}
 
 	// The total number of bone individuals should coincide with the total skeletal bones
-	if (/*BoneIndividuals.Num() + */VirtualBoneIndividuals.Num() != SkeletalMeshComponent->GetNumBones())
+	if (BoneIndividuals.Num() + VirtualBoneIndividuals.Num() != SkeletalMeshComponent->GetNumBones())
 	{
 		return false;
 	}
 
 	// Make sure all individuals are valid
 	bool bAllBonesAreValid = true;
-	//for (const auto& BI : BoneIndividuals)
-	//{
-	//	if (!BI->IsValidLowLevel() || BI->IsPendingKill() || !BI->IsPreInit())
-	//	{
-	//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s invalid bone found.."),
-	//			*FString(__FUNCTION__), __LINE__, *GetFullName());
-	//		bAllBonesAreValid = false;
-	//	}
-	//}
+	for (const auto& BI : BoneIndividuals)
+	{
+		if (!BI->IsValidLowLevel() || BI->IsPendingKill() || !BI->IsPreInit())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s invalid bone found.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+			bAllBonesAreValid = false;
+		}
+	}
 	for (const auto VBI : VirtualBoneIndividuals)
 	{
 		if (!VBI->IsValidLowLevel() || VBI->IsPendingKill() || !VBI->IsPreInit())
@@ -379,20 +379,31 @@ bool USLSkeletalIndividual::CreateBoneIndividuals()
 	// Destroy any previous individuals
 	DestroyBoneIndividuals();
 
+	if (!HasValidSkeletalMesh())
+	{
+		return false;
+	}
+
 	for (const auto& BoneData : SkeletalDataAsset->BoneIndexClass)
 	{
-		//if (!BoneData.Value.IsEmpty())
-		//{
-		//	USLBoneIndividual* BI = NewObject<USLBoneIndividual>(this);
-		//	BI->PreInit(BoneData.Key);
-		//	BoneIndividuals.Add(BI);
-		//}
-		//else
-		//{
+		if (!BoneData.Value.IsEmpty())
+		{
+			USLBoneIndividual* BI = NewObject<USLBoneIndividual>(this);
+			int32 MatIdx = SkeletalMeshComponent->GetMaterialIndex(FName(*BoneData.Value));
+			if (MatIdx == INDEX_NONE)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s bone will be invalid, no material slot found with the name: %s .."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName(), *BoneData.Value);
+			}
+			BI->PreInit(BoneData.Key, MatIdx);
+			BoneIndividuals.Add(BI);
+		}
+		else
+		{
 			USLVirtualBoneIndividual* VBI = NewObject<USLVirtualBoneIndividual>(this);
 			VBI->PreInit(BoneData.Key);
 			VirtualBoneIndividuals.Add(VBI);
-		//}
+		}
 	}
 
 	return HasValidBones();
@@ -402,15 +413,15 @@ bool USLSkeletalIndividual::CreateBoneIndividuals()
 bool USLSkeletalIndividual::InitBoneIndividuals()
 {
 	bool bAllBonesAreInit = true;
-	//for (const auto& BI : BoneIndividuals)
-	//{
-	//	if (!BI->IsInit() && !BI->Init())
-	//	{
-	//		bAllBonesAreInit = false;
-	//		UE_LOG(LogTemp, Error, TEXT("%s::%d bone %s could not be init.."),
-	//			*FString(__FUNCTION__), __LINE__, *BI->GetFullName());
-	//	}
-	//}
+	for (const auto& BI : BoneIndividuals)
+	{
+		if (!BI->IsInit() && !BI->Init())
+		{
+			bAllBonesAreInit = false;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d bone %s could not be init.."),
+				*FString(__FUNCTION__), __LINE__, *BI->GetFullName());
+		}
+	}
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
 		if (!VBI->IsInit() && !VBI->Init())
@@ -427,15 +438,15 @@ bool USLSkeletalIndividual::InitBoneIndividuals()
 bool USLSkeletalIndividual::LoadBoneIndividuals()
 {
 	bool bAllBonesAreLoaded = true;
-	//for (const auto& BI : BoneIndividuals)
-	//{
-	//	if (!BI->IsLoaded() && !BI->Load())
-	//	{
-	//		bAllBonesAreLoaded = false;
-	//		UE_LOG(LogTemp, Error, TEXT("%s::%d bone %s could not be loaded.."),
-	//			*FString(__FUNCTION__), __LINE__, *BI->GetFullName());
-	//	}
-	//}
+	for (const auto& BI : BoneIndividuals)
+	{
+		if (!BI->IsLoaded() && !BI->Load())
+		{
+			bAllBonesAreLoaded = false;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d bone %s could not be loaded.."),
+				*FString(__FUNCTION__), __LINE__, *BI->GetFullName());
+		}
+	}
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
 		if (!VBI->IsLoaded() && !VBI->Load())
@@ -451,11 +462,11 @@ bool USLSkeletalIndividual::LoadBoneIndividuals()
 // Destroy bone individuals
 void USLSkeletalIndividual::DestroyBoneIndividuals()
 {
-	//for (const auto& BI : BoneIndividuals)
-	//{
-	//	BI->ConditionalBeginDestroy();
-	//}
-	//BoneIndividuals.Empty();
+	for (const auto& BI : BoneIndividuals)
+	{
+		BI->ConditionalBeginDestroy();
+	}
+	BoneIndividuals.Empty();
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
 		VBI->ConditionalBeginDestroy();
@@ -466,10 +477,10 @@ void USLSkeletalIndividual::DestroyBoneIndividuals()
 // Reset bone individuals
 void USLSkeletalIndividual::ResetBoneIndividuals()
 {
-	//for (const auto& BI : BoneIndividuals)
-	//{
-	//	BI->Load(true);
-	//}
+	for (const auto& BI : BoneIndividuals)
+	{
+		BI->Load(true);
+	}
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
 		VBI->Load(true);

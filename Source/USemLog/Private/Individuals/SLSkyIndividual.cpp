@@ -140,7 +140,7 @@ void USLSkyIndividual::InitReset()
 	LoadReset();
 	Super::InitReset();
 	SetIsInit(false);
-	ClearDelegateBounds();
+	ClearDelegates();
 }
 
 // Clear all data of the individual

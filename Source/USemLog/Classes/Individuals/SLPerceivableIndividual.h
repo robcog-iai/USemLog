@@ -13,7 +13,7 @@ class UMaterialInstanceDynamic;
 class UMaterialInterface;
 
 // Notify every time the visual mask changes
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewVisualMaskSignature, USLPerceivableIndividual*, PerceivableIndividual, FString, NewVisualMask);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewVisualMaskSignature, USLBaseIndividual*, PerceivableIndividual, const FString&, NewVisualMask);
 
 /**
  * 
@@ -82,7 +82,7 @@ protected:
     virtual void LoadReset() override;
 
     // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegateBounds() override;
+    virtual void ClearDelegates() override;
 
 private:
     // Set references

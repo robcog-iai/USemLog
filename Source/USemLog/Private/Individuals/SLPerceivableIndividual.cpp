@@ -76,11 +76,11 @@ bool USLPerceivableIndividual::ExportValues(bool bOverwrite)
 	bMarkDirty = Super::ExportValues(bOverwrite) || bMarkDirty;
 	if (!VisualMask.IsEmpty())
 	{
-		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, ImportTagType, "VisualMask", VisualMask, bOverwrite) || bMarkDirty;
+		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagType, "VisualMask", VisualMask, bOverwrite) || bMarkDirty;
 	}
 	if (!CalibratedVisualMask.IsEmpty())
 	{
-		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, ImportTagType, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite) || bMarkDirty;
+		bMarkDirty = FSLTagIO::AddKVPair(ParentActor, TagType, "CalibratedVisualMask", CalibratedVisualMask, bOverwrite) || bMarkDirty;
 	}
 	return bMarkDirty;
 }
@@ -224,7 +224,7 @@ void USLPerceivableIndividual::InitReset()
 	ApplyOriginalMaterials();
 	OriginalMaterials.Empty();
 	SetIsInit(false);
-	ClearDelegateBounds();
+	ClearDelegates();
 	Super::InitReset();
 }
 
@@ -236,9 +236,10 @@ void USLPerceivableIndividual::LoadReset()
 }
 
 // Clear any bound delegates (called when init is reset)
-void USLPerceivableIndividual::ClearDelegateBounds()
+void USLPerceivableIndividual::ClearDelegates()
 {
 	OnNewVisualMaskValue.Clear();
+	Super::ClearDelegates();
 }
 
 // Import visual mask from tag, true if new value is written
@@ -248,7 +249,7 @@ bool USLPerceivableIndividual::ImportVisualMaskValue(bool bOverwrite)
 	if (!IsVisualMaskValueSet() || bOverwrite)
 	{
 		const FString PrevVal = VisualMask;
-		SetVisualMaskValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "VisualMask"));
+		SetVisualMaskValue(FSLTagIO::GetValue(ParentActor, TagType, "VisualMask"));
 		bNewValue = !VisualMask.Equals(PrevVal);
 		//if (!HasVisualMask())
 		//{
@@ -266,7 +267,7 @@ bool USLPerceivableIndividual::ImportCalibratedVisualMaskValue(bool bOverwrite)
 	if (!IsCalibratedVisualMasValueSet() || bOverwrite)
 	{
 		const FString PrevVal = CalibratedVisualMask;
-		SetCalibratedVisualMaskValue(FSLTagIO::GetValue(ParentActor, ImportTagType, "CalibratedVisualMask"));
+		SetCalibratedVisualMaskValue(FSLTagIO::GetValue(ParentActor, TagType, "CalibratedVisualMask"));
 		bNewValue = !CalibratedVisualMask.Equals(PrevVal);
 		//if (!IsCalibratedVisualMasValueSet())
 		//{

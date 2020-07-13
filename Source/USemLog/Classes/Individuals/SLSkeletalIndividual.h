@@ -35,9 +35,6 @@ public:
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
-    // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
-    virtual void PostInitProperties() override;
-
     // Init asset references 
     virtual bool Init(bool bReset = false);
 
