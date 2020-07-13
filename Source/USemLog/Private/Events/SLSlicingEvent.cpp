@@ -69,7 +69,7 @@ void FSLSlicingEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 }
 
 // Send event through ROS
-FString FSLSlicingEvent::ToROSMsg() const
+FString FSLSlicingEvent::ToROSQuery() const
 {
 	return ToString();
 }

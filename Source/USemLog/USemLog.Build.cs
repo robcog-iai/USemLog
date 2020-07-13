@@ -67,8 +67,8 @@ public class USemLog : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				//"Json",
-				//"JsonUtilities",
+				"Json",
+				"JsonUtilities",
 				"Landscape", "AIModule", // whitelisted actors when setting the world to visual only
 				"UTags",
 				"UIds",

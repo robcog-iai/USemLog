@@ -286,28 +286,13 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 
 		if (bLogThroughROS) {
 #if SL_WITH_ROSBRIDGE
-			ROSHandler = MakeShareable<FROSBridgeHandler>(new FROSBridgeHandler(WriterParams.ServerIp, WriterParams.ServerPort));
-			if (ROSHandler.IsValid()) {
-				ROSHandler->Connect();
-			} else {
-				UE_LOG(LogTemp, Error, TEXT("No FROSBridgeHandler created for Event Logger."));
-			}
+			Log2ROSProlog = NewObject<USLROSPrologLogger>(this);
+			Log2ROSProlog->Connect(WriterParams.ServerIp, WriterParams.ServerPort);
 #endif // SL_WITH_ROSBRIDGE
 		}
 		// Mark as initialized
 		bIsInit = true;
 	}
-}
-
-void USLEventLogger::LogThroughROS(TSharedPtr<ISLEvent> Event) {
-
-	FString Msg = Event->ToROSMsg();
-
-#if SL_WITH_ROSBRIDGE
-	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Query::Response(0, Msg, "1"));
-	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::Query::Response());
-	ROSHandler->CallService(ROSClient, Request, Response);
-#endif // SL_WITH_ROSBRIDGE
 }
 
 // Check if the component is valid in the world and has a semantically annotated owner
@@ -444,10 +429,7 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 
 #if SL_WITH_ROSBRIDGE
 		// Finish ROS Connection
-		if (ROSHandler.IsValid())
-		{
-			ROSHandler->Disconnect();
-		}
+		Log2ROSProlog->Disconnect();
 #endif // SL_WITH_ROSBRIDGE
 
 		bIsStarted = false;
@@ -464,7 +446,7 @@ void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 	FinishedEvents.Add(Event);
 
 	if (bLogThroughROS) {
-		LogThroughROS(Event);
+		Log2ROSProlog->AddEvent(Event);
 	}
 }
 

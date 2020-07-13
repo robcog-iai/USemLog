@@ -6,11 +6,8 @@
 #include "USemLog.h"
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
-#include "rosprolog_msgs/Query.h"
 #if SL_WITH_ROSBRIDGE
-#include "ROSBridgeHandler.h"
-#include "std_msgs/String.h"
-#include "SLROSServiceClient.h"
+#include "SLROSPrologLogger.h"
 #endif // SL_WITH_ROSBRIDGE
 
 #include "SLEventLogger.generated.h"
@@ -97,9 +94,6 @@ private:
 	// Write events to file
 	bool WriteToFile();
 
-	// Log events to KnowRob
-	void LogThroughROS(TSharedPtr<ISLEvent> Event);
-
 	// Create events doc template
 	TSharedPtr<FSLOwlExperiment> CreateEventsDocTemplate(
 		ESLOwlExperimentTemplate TemplateType, const FString& InDocId);
@@ -155,9 +149,7 @@ private:
 
 	// ROS Logging
 #if SL_WITH_ROSBRIDGE
-	TSharedPtr<FROSBridgeHandler> ROSHandler;
-	TSharedPtr<SLROSServiceClient> ROSClient;
-
+	USLROSPrologLogger* Log2ROSProlog;
 #endif // SL_WITH_ROSBRIDGE
 
 };

@@ -41,7 +41,7 @@ public:
 	virtual void AddToOwlDoc(FSLOwlDoc* OutDoc) = 0;
 
 	// Convert event to ROS Message
-	virtual FString ToROSMsg() const = 0;
+	virtual FString ToROSQuery() const = 0;
 
 	// Get event context data (unique name that can repeat of the event type, e.g. Contact_BetweenTheseTwo)
 	virtual FString Context() const = 0;
