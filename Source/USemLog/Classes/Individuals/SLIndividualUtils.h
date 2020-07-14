@@ -117,6 +117,28 @@ public:
 	static int32 ClearExportedValues(UWorld* World);
 	static int32 ClearExportedValues(const TArray<AActor*>& Actors);
 
+	/* Misc */
+	// Get the individual component from the actor (nullptr if it does not exist)
+	static USLIndividualComponent* GetIndividualComponent(AActor* Owner);
+
+	// Get the individual object from the actor (nullptr if it does not exist)
+	static USLBaseIndividual* GetIndividualObject(AActor* Owner);
+
+	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
+	static FString GetIndividualClassName(USLIndividualComponent* SiblingIndividualComponent, bool bDefaultToLabelName = false);
+
+	// Create default individual object depending on the owner type (returns nullptr if failed)
+	static USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
+
+	// Convert individual to the given type
+	static bool ConvertIndividualObject(class USLBaseIndividual*& OutIndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass);
+
+	// Generate a new bson oid as string, empty string if fails
+	static FString NewOIdAsString();
+
+	// Find the skeletal data asset for the individual
+	static USLSkeletalDataAsset* FindSkeletalDataAsset(AActor* Owner);
+
 private:
 	/* Individuals Private */
 	static USLIndividualComponent* AddNewIndividualComponent(AActor* Actor, bool bTryInitAndLoad = false);
@@ -173,30 +195,4 @@ private:
 	static bool ImportValues(AActor* Actor, bool bOverwrite);
 	static bool ClearExportedValues(AActor* Actor);
 
-public:
-	/* LEGACY */
-	// TODO remove
-	// Get the individual component from the actor (nullptr if it does not exist)
-	static USLIndividualComponent* GetIndividualComponent(AActor* Owner);
-
-	// Get the individual object from the actor (nullptr if it does not exist)
-	static USLBaseIndividual* GetIndividualObject(AActor* Owner);
-
-	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-	static FString GetIndividualClassName(USLIndividualComponent* IndividualComponent, bool bDefaultToLabelName = false);
-
-	// Check if actor supports individual components
-
-
-	// Create default individual object depending on the owner type (returns nullptr if failed)
-	static USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
-
-	// Convert individual to the given type
-	static bool ConvertIndividualObject(class USLBaseIndividual*& OutIndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass);
-
-	// Generate a new bson oid as string, empty string if fails
-	static FString NewOIdAsString();
-
-	// Find the skeletal data asset for the individual
-	static USLSkeletalDataAsset* FindSkeletalDataAsset(AActor* Owner);
 };

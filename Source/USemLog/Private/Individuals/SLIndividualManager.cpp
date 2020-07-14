@@ -89,7 +89,7 @@ void ASLIndividualManager::InitReset()
 {
 	LoadReset();
 	UnbindDelegates();
-	ClearCachedIndividuals();
+	ClearCachedIndividualComponents();
 	SetIsInit(false);
 }
 
@@ -147,9 +147,9 @@ void ASLIndividualManager::SetIsConnected(bool bNewValue, bool bBroadcast)
 // Cache individual component references
 bool ASLIndividualManager::InitImpl()
 {	
-	if (HasCachedIndividuals())
+	if (HasCachedIndividualComponents())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d The manager already has cached individual, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d The manager already has cached individuals, this should not happen.."), *FString(__FUNCTION__), __LINE__);
 		return false;
 	}
 	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
@@ -175,7 +175,7 @@ bool ASLIndividualManager::LoadImpl()
 // Bind to the cached individual component delegates
 bool ASLIndividualManager::BindDelegates()
 {
-	if (!HasCachedIndividuals())
+	if (!HasCachedIndividualComponents())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d No cached individuals, cannot bind any delegates"), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -199,7 +199,7 @@ bool ASLIndividualManager::BindDelegates()
 // Remove bounds from the cached individuals
 bool ASLIndividualManager::UnbindDelegates()
 {
-	if (!HasCachedIndividuals())
+	if (!HasCachedIndividualComponents())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d No cached individuals, cannot un-bind any delegates"), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -221,13 +221,13 @@ bool ASLIndividualManager::UnbindDelegates()
 }
 
 // Check if there are any cached elemets
-bool ASLIndividualManager::HasCachedIndividuals() const
+bool ASLIndividualManager::HasCachedIndividualComponents() const
 {
 	return IndividualComponents.Num() > 0;
 }
 
 // Remove any chached individuals, clear any bound delegates
-void ASLIndividualManager::ClearCachedIndividuals()
+void ASLIndividualManager::ClearCachedIndividualComponents()
 {
 	IndividualComponents.Empty();
 }

@@ -404,6 +404,9 @@ bool USLSkeletalIndividual::CreateBoneIndividuals()
 			VBI->PreInit(BoneData.Key);
 			VirtualBoneIndividuals.Add(VBI);
 		}
+
+		// TODO
+		//SkeletalMeshComponent->Constraints
 	}
 
 	return HasValidBones();

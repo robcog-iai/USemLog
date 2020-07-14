@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLIndividualComponent.h"
+#include "Individuals/SLBaseIndividual.h"
 #include "Individuals/SLPerceivableIndividual.h"
 #include "Individuals/SLSkeletalIndividual.h"
 #include "Individuals/SLBoneIndividual.h"
@@ -287,6 +288,7 @@ bool USLIndividualComponent::ClearVisualMask()
 	return false;
 }
 
+
 // Clear all values of the individual
 void USLIndividualComponent::InitReset()
 {
@@ -471,6 +473,12 @@ bool USLIndividualComponent::BindDelegates()
 	}
 
 	return true;
+}
+
+// Check if individual object is valid
+bool USLIndividualComponent::HasValidIndividual() const
+{
+	return IndividualObj && IndividualObj->IsValidLowLevel() && !IndividualObj->IsPendingKill();
 }
 
 /* Private */

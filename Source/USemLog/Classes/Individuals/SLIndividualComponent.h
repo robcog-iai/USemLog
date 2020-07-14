@@ -5,9 +5,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Individuals/SLBaseIndividual.h"
-#include "Engine/DataAsset.h"
 #include "SLIndividualComponent.generated.h"
+
+// Forward declarations
+class USLBaseIndividual;
+class UDataAsset;
 
 // Delegate notification when the component is being destroyed
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLComponentDestroyedSignature, USLIndividualComponent*, DestroyedComponent);
@@ -30,7 +32,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLComponentDelegatesClearedSignatur
 /**
 * Component storing the semantic individual information of its owner
 */
-UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Individual Component")
+UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Individual")
 class USEMLOG_API USLIndividualComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -53,7 +55,7 @@ public:
 	// Call init on the individual
 	bool Init(bool bReset = false);
 
-	// Check if component and  is initialized
+	// Check if component is initialized
 	bool IsInit() const { return bIsInit; };
 
 	// Load individual
@@ -133,8 +135,8 @@ private:
 	// Sync states with the individual
 	bool BindDelegates();
 
-	// Check if individual was created
-	FORCEINLINE bool HasValidIndividual() const { return IndividualObj && IndividualObj->IsValidLowLevel() && !IndividualObj->IsPendingKill(); };
+	// Check if individual object is valid
+	bool HasValidIndividual() const;
 
 	// Create the individual object
 	bool CreateIndividual();

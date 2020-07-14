@@ -11,6 +11,7 @@
 // Forward declarations
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
+class UMaterial;
 
 // Notify every time the visual mask changes
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewVisualMaskSignature, USLBaseIndividual*, PerceivableIndividual, const FString&, NewVisualMask);
@@ -120,7 +121,7 @@ protected:
 
     // Material template used for creating dynamic materials
     UPROPERTY()
-    class UMaterial* VisualMaskMaterial;
+    UMaterial* VisualMaskMaterial;
 
     // Dynamic material used for setting various mask colors
     UPROPERTY()

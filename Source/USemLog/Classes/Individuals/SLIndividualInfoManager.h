@@ -5,25 +5,40 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "SLIndividualManager.generated.h"
+#include "SLIndividualInfoManager.generated.h"
 
 // Forward declaration
-class USLIndividualComponent;
+class USLIndividualInfoComponent;
 
+/**
+* Manages all individual visual info
+*/
 UCLASS()
-class USEMLOG_API ASLIndividualManager : public AActor
+class USEMLOG_API ASLIndividualInfoManager : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASLIndividualManager();
+	ASLIndividualInfoManager();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
+protected:
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
+
+public:	
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// If true, actor is ticked even if TickType == LEVELTICK_ViewportsOnly
+	virtual bool ShouldTickIfViewportsOnly() const override;
+
 	// Set references
 	bool Init(bool bReset = false);
 
@@ -41,6 +56,9 @@ public:
 
 	// True if the manager is listening to the component delegates (transient)
 	bool IsConnected() const { return bIsConnected; };
+
+	// Enable/disable tick update
+	void ToggleTickUpdate();
 
 protected:
 	// Clear all cached references
@@ -62,7 +80,7 @@ private:
 	// Cache references
 	bool InitImpl();
 
-	// Load any values
+	// Load values
 	bool LoadImpl();
 
 	// Bind to the cached individual component delegates
@@ -72,15 +90,15 @@ private:
 	bool UnbindDelegates();
 
 	// Check if there are any cached elements
-	bool HasCachedIndividualComponents() const;
+	bool HasCachedIndividualInfoComponents() const;
 
-	// Remove any chached individuals
-	void ClearCachedIndividualComponents();
+	// Remove any chached components
+	void ClearCachedIndividualInfoComponents();
 
-	// Triggered by external destruction of individual component
+	/* Delegate functions */
+	// Remove destroyed individuals from cache
 	UFUNCTION()
-	void OnIndividualComponentDestroyed(USLIndividualComponent* DestroyedComponent);
-
+	void OnIndividualInfoComponentDestroyed(USLIndividualInfoComponent* DestroyedComponent);
 
 private:
 	// True if the manager is init
@@ -97,6 +115,9 @@ private:
 
 	// The individual components in the world
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	TSet<USLIndividualComponent*> IndividualComponents;
-};
+	TSet<USLIndividualInfoComponent*> IndividualInfoComponents;
 
+	/* Buttons */
+	UPROPERTY(EditAnywhere, Category = "Sematic Logger|Editor")
+	bool bToggleTickUpdate;
+};

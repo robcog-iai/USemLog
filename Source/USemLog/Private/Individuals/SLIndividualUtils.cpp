@@ -504,6 +504,255 @@ int32 FSLIndividualUtils::ClearExportedValues(const TArray<AActor*>& Actors)
 }
 
 
+/* Misc */
+// Get the individual component from the actor (nullptr if it does not exist)
+USLIndividualComponent* FSLIndividualUtils::GetIndividualComponent(AActor* Owner)
+{
+	if (UActorComponent* AC = Owner->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	{
+		return CastChecked<USLIndividualComponent>(AC);
+	}
+	return nullptr;
+}
+
+// Get the individual object from the actor (nullptr if it does not exist)
+USLBaseIndividual* FSLIndividualUtils::GetIndividualObject(AActor* Owner)
+{
+	if (USLIndividualComponent* IC = GetIndividualComponent(Owner))
+	{
+		return IC->GetIndividualObject();
+	}
+	return nullptr;
+}
+
+// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
+FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* SiblingIndividualComponent, bool bDefaultToLabelName)
+{
+	AActor* CompOwner = SiblingIndividualComponent->GetOwner();
+	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(CompOwner))
+	{
+		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
+		{
+			FString ClassName = SMC->GetStaticMesh()->GetFullName();
+			int32 FindCharPos;
+			ClassName.FindLastChar('.', FindCharPos);
+			ClassName.RemoveAt(0, FindCharPos + 1);
+			if (!ClassName.RemoveFromStart(TEXT("SM_")))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s StaticMesh has no SM_ prefix in its name.."),
+					*FString(__func__), __LINE__, *CompOwner->GetName());
+			}
+			return ClassName;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SMC.."),
+				*FString(__func__), __LINE__, *CompOwner->GetName());
+			return FString();
+		}
+	}
+	else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(CompOwner))
+	{
+		if (USkeletalMeshComponent* SkMC = SkMA->GetSkeletalMeshComponent())
+		{
+			FString ClassName = SkMC->SkeletalMesh->GetFullName();
+			int32 FindCharPos;
+			ClassName.FindLastChar('.', FindCharPos);
+			ClassName.RemoveAt(0, FindCharPos + 1);
+			ClassName.RemoveFromStart(TEXT("SK_"));
+			return ClassName;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SkMC.."),
+				*FString(__func__), __LINE__, *CompOwner->GetName());
+			return FString();
+		}
+	}
+	else if (ASLVirtualCameraView* VCA = Cast<ASLVirtualCameraView>(CompOwner))
+	{
+		static const FString TagType = "SemLog";
+		static const FString TagKey = "Class";
+		FString ClassName = "View";
+
+		// Check attachment actor
+		if (AActor* AttAct = CompOwner->GetAttachParentActor())
+		{
+			if (CompOwner->GetAttachParentSocketName() != NAME_None)
+			{
+				return CompOwner->GetAttachParentSocketName().ToString() + ClassName;
+			}
+			else
+			{
+				FString AttParentClass = FSLTagIO::GetValue(AttAct, TagType, TagKey);
+				if (!AttParentClass.IsEmpty())
+				{
+					return AttParentClass + ClassName;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached parent %s has no semantic class (yet?).."),
+						*FString(__func__), __LINE__, *AttAct->GetName());
+					return ClassName;
+				}
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not attached to any actor.."),
+				*FString(__func__), __LINE__, *CompOwner->GetName());
+			return ClassName;
+		}
+	}
+	else if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(CompOwner))
+	{
+		FString ClassName = "Joint";
+
+		if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
+		{
+			if (PCC->ConstraintInstance.GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
+				PCC->ConstraintInstance.GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
+				PCC->ConstraintInstance.GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
+			{
+				return "Linear" + ClassName;
+			}
+			else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
+				PCC->ConstraintInstance.GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
+				PCC->ConstraintInstance.GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
+			{
+				return "Revolute" + ClassName;
+			}
+			else
+			{
+				return "Fixed" + ClassName;
+			}
+		}
+		return ClassName;
+	}
+	else if (AAtmosphericFog* AAF = Cast<AAtmosphericFog>(CompOwner))
+	{
+		return "AtmosphericFog";
+	}
+	else if (CompOwner->GetName().Contains("SkySphere"))
+	{
+		return "SkySphere";
+	}
+	else if (bDefaultToLabelName)
+	{
+		return CompOwner->GetActorLabel();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not get the semantic class name for %s .."),
+			*FString(__func__), __LINE__, *CompOwner->GetName());
+		return FString();
+	}
+}
+
+// Create default individual object depending on the owner type (returns nullptr if failed)
+USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner)
+{
+	// Set semantic individual type depending on owner
+	if (Owner->IsA(AStaticMeshActor::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLRigidIndividual::StaticClass());
+	}
+	else if (Owner->IsA(APhysicsConstraintActor::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLConstraintIndividual::StaticClass());
+	}
+	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLVirtualViewIndividual::StaticClass());
+	}
+	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLSkeletalIndividual::StaticClass());
+	}
+	else if (Owner->IsA(AAtmosphericFog::StaticClass()) || Owner->GetName().Contains("SkySphere"))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLSkyIndividual::StaticClass());
+	}
+	else
+	{
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for creating a semantic individual %s-%s.."),
+		//	*FString(__FUNCTION__), __LINE__, *Owner->GetClass()->GetName(), *Owner->GetName());
+	}
+	return nullptr;
+}
+
+// Convert individual to the given type
+bool FSLIndividualUtils::ConvertIndividualObject(USLBaseIndividual*& IndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass)
+{
+	//if (ConvertToClass && IndividualObject && !IndividualObject->IsPendingKill())
+	//{
+	//	if (IndividualObject->GetClass() != ConvertToClass)
+	//	{
+	//		// TODO cache common individual data to copy to the newly created individual
+	//		UObject* Outer = IndividualObject->GetOuter();
+	//		IndividualObject->ConditionalBeginDestroy();
+	//		IndividualObject = NewObject<USLBaseIndividual>(Outer, ConvertToClass);
+	//		return true;
+	//	}
+	//	else
+	//	{
+	//		//UE_LOG(LogTemp, Error, TEXT("%s::%d Same class type (%s-%s), no conversion is required.."),
+	//		//	*FString(__FUNCTION__), __LINE__, *IndividualObject->GetClass()->GetName(), *ConvertToClass->GetName());
+	//	}
+	//}
+	return false;
+}
+
+// Generate a new bson oid as string, empty string if fails
+FString FSLIndividualUtils::NewOIdAsString()
+{
+#if SL_WITH_LIBMONGO_C
+	bson_oid_t new_oid;
+	bson_oid_init(&new_oid, NULL);
+	char oid_str[25];
+	bson_oid_to_string(&new_oid, oid_str);
+	return FString(UTF8_TO_TCHAR(oid_str));
+#elif
+	return FString();
+#endif // #if PLATFORM_WINDOWS
+	return FString();
+}
+
+// Find the skeletal data asset for the individual
+USLSkeletalDataAsset* FSLIndividualUtils::FindSkeletalDataAsset(AActor* Owner)
+{
+	if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(Owner))
+	{
+		if (USkeletalMeshComponent* SkMC = SkMA->GetSkeletalMeshComponent())
+		{
+			// Get skeletal mesh name (SK_ABC)
+			FString SkelAssetName = SkMC->SkeletalMesh->GetFullName();
+			int32 FindCharPos;
+			SkelAssetName.FindLastChar('.', FindCharPos);
+			SkelAssetName.RemoveAt(0, FindCharPos + 1);
+
+			// Find data asset (SLSK_ABC)
+			FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+			TArray<FAssetData> AssetData;
+			FARFilter Filter;
+			Filter.PackagePaths.Add("/USemLog/Skeletal");
+			Filter.ClassNames.Add(USLSkeletalDataAsset::StaticClass()->GetFName());
+			AssetRegistryModule.Get().GetAssets(Filter, AssetData);
+
+			// Search for the results
+			for (const auto& AD : AssetData)
+			{
+				if (AD.AssetName.ToString().Contains(SkelAssetName))
+				{
+					return Cast<USLSkeletalDataAsset>(AD.GetAsset());
+				}
+			}
+		}
+	}
+	return nullptr;
+}
+
+
 /* Private */
 /* Individuals */
 // Create and add new individual component
@@ -863,256 +1112,5 @@ bool FSLIndividualUtils::ClearExportedValues(AActor* Actor)
 		return IC->ClearExportedValues();
 	}
 	return false;
-}
-
-
-
-/* Legacy */
-// TODO remove
-// Get the individual component from the actor (nullptr if it does not exist)
-USLIndividualComponent* FSLIndividualUtils::GetIndividualComponent(AActor* Owner)
-{
-	if (UActorComponent* AC = Owner->GetComponentByClass(USLIndividualComponent::StaticClass()))
-	{
-		return CastChecked<USLIndividualComponent>(AC);
-	}
-	return nullptr;
-}
-
-// Get the individual object from the actor (nullptr if it does not exist)
-USLBaseIndividual* FSLIndividualUtils::GetIndividualObject(AActor* Owner)
-{
-	if (USLIndividualComponent* IC = GetIndividualComponent(Owner))
-	{
-		return IC->GetIndividualObject();
-	}
-	return nullptr;
-}
-
-// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* IndividualComponent, bool bDefaultToLabelName)
-{
-	AActor* CompOwner = IndividualComponent->GetOwner();
-	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(CompOwner))
-	{
-		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
-		{
-			FString ClassName = SMC->GetStaticMesh()->GetFullName();
-			int32 FindCharPos;
-			ClassName.FindLastChar('.', FindCharPos);
-			ClassName.RemoveAt(0, FindCharPos + 1);
-			if (!ClassName.RemoveFromStart(TEXT("SM_")))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s StaticMesh has no SM_ prefix in its name.."),
-					*FString(__func__), __LINE__, *CompOwner->GetName());
-			}
-			return ClassName;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SMC.."),
-				*FString(__func__), __LINE__, *CompOwner->GetName());
-			return FString();
-		}
-	}
-	else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(CompOwner))
-	{
-		if (USkeletalMeshComponent* SkMC = SkMA->GetSkeletalMeshComponent())
-		{
-			FString ClassName = SkMC->SkeletalMesh->GetFullName();
-			int32 FindCharPos;
-			ClassName.FindLastChar('.', FindCharPos);
-			ClassName.RemoveAt(0, FindCharPos + 1);
-			ClassName.RemoveFromStart(TEXT("SK_"));
-			return ClassName;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SkMC.."),
-				*FString(__func__), __LINE__, *CompOwner->GetName());
-			return FString();
-		}
-	}
-	else if (ASLVirtualCameraView* VCA = Cast<ASLVirtualCameraView>(CompOwner))
-	{
-		static const FString TagType = "SemLog";
-		static const FString TagKey = "Class";
-		FString ClassName = "View";
-
-		// Check attachment actor
-		if (AActor* AttAct = CompOwner->GetAttachParentActor())
-		{
-			if (CompOwner->GetAttachParentSocketName() != NAME_None)
-			{
-				return CompOwner->GetAttachParentSocketName().ToString() + ClassName;
-			}
-			else
-			{
-				FString AttParentClass = FSLTagIO::GetValue(AttAct, TagType, TagKey);
-				if (!AttParentClass.IsEmpty())
-				{
-					return AttParentClass + ClassName;
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached parent %s has no semantic class (yet?).."),
-						*FString(__func__), __LINE__, *AttAct->GetName());
-					return ClassName;
-				}
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not attached to any actor.."),
-				*FString(__func__), __LINE__, *CompOwner->GetName());
-			return ClassName;
-		}
-	}
-	else if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(CompOwner))
-	{
-		FString ClassName = "Joint";
-
-		if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
-		{
-			if (PCC->ConstraintInstance.GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
-			{
-				return "Linear" + ClassName;
-			}
-			else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
-				PCC->ConstraintInstance.GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
-				PCC->ConstraintInstance.GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
-			{
-				return "Revolute" + ClassName;
-			}
-			else
-			{
-				return "Fixed" + ClassName;
-			}
-		}
-		return ClassName;
-	}
-	else if (AAtmosphericFog* AAF = Cast<AAtmosphericFog>(CompOwner))
-	{
-		return "AtmosphericFog";
-	}
-	else if (CompOwner->GetName().Contains("SkySphere"))
-	{
-		return "SkySphere";
-	}
-	else if (bDefaultToLabelName)
-	{
-		return CompOwner->GetActorLabel();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not get the semantic class name for %s .."),
-			*FString(__func__), __LINE__, *CompOwner->GetName());
-		return FString();
-	}
-}
-
-// Create default individual object depending on the owner type (returns nullptr if failed)
-USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner)
-{
-	// Set semantic individual type depending on owner
-	if (Owner->IsA(AStaticMeshActor::StaticClass()))
-	{
-		return NewObject<USLBaseIndividual>(Outer, USLRigidIndividual::StaticClass());
-	}
-	else if (Owner->IsA(APhysicsConstraintActor::StaticClass()))
-	{
-		return NewObject<USLBaseIndividual>(Outer, USLConstraintIndividual::StaticClass());
-	}
-	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
-	{
-		return NewObject<USLBaseIndividual>(Outer, USLVirtualViewIndividual::StaticClass());
-	}
-	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
-	{
-		return NewObject<USLBaseIndividual>(Outer, USLSkeletalIndividual::StaticClass());
-	}
-	else if (Owner->IsA(AAtmosphericFog::StaticClass()) || Owner->GetName().Contains("SkySphere"))
-	{
-		return NewObject<USLBaseIndividual>(Outer, USLSkyIndividual::StaticClass());
-	}
-	else
-	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d unsuported actor type for creating a semantic individual %s-%s.."),
-		//	*FString(__FUNCTION__), __LINE__, *Owner->GetClass()->GetName(), *Owner->GetName());
-	}
-	return nullptr;
-}
-
-// Convert individual to the given type
-bool FSLIndividualUtils::ConvertIndividualObject(USLBaseIndividual*& IndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass)
-{
-	//if (ConvertToClass && IndividualObject && !IndividualObject->IsPendingKill())
-	//{
-	//	if (IndividualObject->GetClass() != ConvertToClass)
-	//	{
-	//		// TODO cache common individual data to copy to the newly created individual
-	//		UObject* Outer = IndividualObject->GetOuter();
-	//		IndividualObject->ConditionalBeginDestroy();
-	//		IndividualObject = NewObject<USLBaseIndividual>(Outer, ConvertToClass);
-	//		return true;
-	//	}
-	//	else
-	//	{
-	//		//UE_LOG(LogTemp, Error, TEXT("%s::%d Same class type (%s-%s), no conversion is required.."),
-	//		//	*FString(__FUNCTION__), __LINE__, *IndividualObject->GetClass()->GetName(), *ConvertToClass->GetName());
-	//	}
-	//}
-	return false;
-}
-
-// Generate a new bson oid as string, empty string if fails
-FString FSLIndividualUtils::NewOIdAsString()
-{
-#if SL_WITH_LIBMONGO_C
-	bson_oid_t new_oid;
-	bson_oid_init(&new_oid, NULL);
-	char oid_str[25];
-	bson_oid_to_string(&new_oid, oid_str);
-	return FString(UTF8_TO_TCHAR(oid_str));
-#elif
-	return FString();
-#endif // #if PLATFORM_WINDOWS
-	return FString();
-}
-
-// Find the skeletal data asset for the individual
-USLSkeletalDataAsset* FSLIndividualUtils::FindSkeletalDataAsset(AActor* Owner)
-{
-	if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(Owner))
-	{
-		if (USkeletalMeshComponent* SkMC = SkMA->GetSkeletalMeshComponent())
-		{
-			// Get skeletal mesh name (SK_ABC)
-			FString SkelAssetName = SkMC->SkeletalMesh->GetFullName();
-			int32 FindCharPos;
-			SkelAssetName.FindLastChar('.', FindCharPos);
-			SkelAssetName.RemoveAt(0, FindCharPos + 1);
-
-			// Find data asset (SLSK_ABC)
-			FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
-			TArray<FAssetData> AssetData;
-			FARFilter Filter;
-			Filter.PackagePaths.Add("/USemLog/Skeletal");
-			Filter.ClassNames.Add(USLSkeletalDataAsset::StaticClass()->GetFName());
-			AssetRegistryModule.Get().GetAssets(Filter, AssetData);
-
-			// Search for the results
-			for (const auto& AD : AssetData)
-			{
-				if (AD.AssetName.ToString().Contains(SkelAssetName))
-				{
-					return Cast<USLSkeletalDataAsset>(AD.GetAsset());
-				}
-			}
-		}
-	}
-	return nullptr;
 }
 

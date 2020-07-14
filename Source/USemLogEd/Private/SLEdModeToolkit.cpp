@@ -19,8 +19,9 @@
 
 // SL
 #include "Individuals/SLIndividualManager.h"
-#include "Individuals/SLIndividualVisualManager.h"
+#include "Individuals/SLIndividualInfoManager.h"
 #include "Individuals/SLIndividualUtils.h"
+#include "Individuals/SLIndividualInfoUtils.h"
 
 // UUtils
 #include "SLEdUtils.h"
@@ -35,7 +36,7 @@ FSLEdModeToolkit::FSLEdModeToolkit()
 	/* Checkbox states */
 	bOverwriteFlag = false;
 	bOnlySelectedFlag = false;
-	bProritizeChildrenFlag = false;	
+	bProritizeChildrenFlag = true;	
 	bResetFlag = false;
 	bTryImportFlag = true;
 }
@@ -52,7 +53,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			// Flag checkboxes
 			+ CreateOverwriteFlagSlot()
 			+ CreateOnlySelectedFlagSlot()
-			+ CreateIncludeChildrenFlagSlot()
+			+ CreatePrioritizeChildrenFlagSlot()
 			+ CreateResetFlagSlot()
 			+ CreateTryImportFlagSlot()
 
@@ -77,9 +78,9 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateImportExportSlot()
 
 			// Individual Visual Info
-			+ CreateSemDataVisInfoTxtSlot()
-			+ CreateSemDataVisInfoSlot()
-			+ CreateSemDataVisInfoFuncSlot()
+			+ CreateIndividualsInfoTxtSlot()
+			+ CreateIndividualsInfoSlot()
+			+ CreateIndividualsInfoFuncSlot()
 
 			// Semantic Map
 			+ CreateSemMapSlot()
@@ -116,7 +117,7 @@ class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 /** End IToolkit interface */
 
 
-/* **Start** Vertical Slot Entries */
+/* -Start- Vertical Slot Entries */
 // Checkboxes
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteFlagSlot()
 {
@@ -170,7 +171,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedFlagSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenFlagSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreatePrioritizeChildrenFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -183,14 +184,14 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenFlagSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("IncludeChildrenTextLabel", "Prioritize Children Flag:  "))
+				.Text(LOCTEXT("PrioritizeChildrenTextLabel", "Prioritize Children Flag:  "))
 			]
 
 			+ SHorizontalBox::Slot()
 			[
 				SNew(SCheckBox)
-				.ToolTipText(LOCTEXT("CheckBoxIncludeChildren", "Prioritize children data (e.g. bones/links..)"))
-				.IsChecked(ECheckBoxState::Unchecked)
+				.ToolTipText(LOCTEXT("CheckBoxPrioritizeChildren", "Prioritize children data (e.g. bones/links..)"))
+				.IsChecked(ECheckBoxState::Checked)
 				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedPrioritizeChildrenFlag)
 			]
 		];
@@ -356,9 +357,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("IndividualsInit", "Init"))
+				.Text(LOCTEXT("InitIndividuals", "Init"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("IndividualsInitTip", "Call Init(bReset) on individuals.."))
+				.ToolTipText(LOCTEXT("InitIndividualsTip", "Call Init(bReset) on individuals.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnInitIndividuals)
 			]
 
@@ -367,9 +368,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("IndividualsLoad", "Load"))
+				.Text(LOCTEXT("LoadIndividuals", "Load"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("IndividualsLoadTip", "Call Load(bReset, bTryImport) on individuals.."))
+				.ToolTipText(LOCTEXT("LoadIndividualsTip", "Call Load(bReset, bTryImport) on individuals.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnLoadIndividuals)
 			]
 
@@ -378,9 +379,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("IndividualsConnect", "Connect"))
+				.Text(LOCTEXT("ConnectIndividuals", "Connect"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("IndividualsConnectTip", "Connect delegates between objects, components, managers, etc.."))
+				.ToolTipText(LOCTEXT("ConnectIndividualsTip", "Connect delegates between objects, components, managers, etc.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnConnectIndividuals)
 			]
 		];
@@ -615,7 +616,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateImportExportSlot()
 
 
 // Individual Visual Info
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoTxtSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -623,11 +624,11 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoTxtSlot()
 		.HAlign(HAlign_Center)
 		[
 			SNew(STextBlock)
-			.Text(LOCTEXT("SemDataVisInfoTxt", "Visual Components:"))
+			.Text(LOCTEXT("IndividualsInfoTxt", "Individuals info components:"))
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -641,9 +642,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataVisInfoCreate", "Create"))
+				.Text(LOCTEXT("CreateIndividualsInfo", "Create"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataVisInfoCreateTip", "Create visual info components.."))
+				.ToolTipText(LOCTEXT("CreateIndividualsInfoTip", "Create individuals info components.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnCreateIndividualsInfo)
 			]
 
@@ -652,10 +653,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataVisInfoRefresh", "Reset"))
+				.Text(LOCTEXT("DestroyIndividualsInfo", "Destroy"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataVisInfoRefreshTip", "Force init + load .."))
-				.OnClicked(this, &FSLEdModeToolkit::OnResetIndividualsInfo)
+				.ToolTipText(LOCTEXT("DestroyIndividualsInfo", "Destroy individual info components"))
+				.OnClicked(this, &FSLEdModeToolkit::OnDestroyIndividualsInfo)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -663,12 +664,48 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataVisInfoRm", "Remove"))
+				.Text(LOCTEXT("InitIndividualsInfo", "Init"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataVisInfoRmTip", "Remove visual info components (make sure no related editor windows are open).."))
-				.OnClicked(this, &FSLEdModeToolkit::OnRemoveIndividualsInfo)
+				.ToolTipText(LOCTEXT("InitIndividualsInfoTio", "Call Init(bReset) on the individuals info components.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnInitIndividualsInfo)
 			]
 
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("LoadIndividualsInfo", "Load"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("LoadIndividualsInfoTio", "Call Load(bReset) on the individuals info components.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnLoadIndividualsInfo)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("LoadIndividualsInfo", "Load"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("LoadIndividualsInfoTio", "Call Load(bReset) on the individuals info components.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnLoadIndividualsInfo)
+			]
+
+
+
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoFuncSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+			
 			+ SHorizontalBox::Slot()
 			.Padding(2)
 			.AutoWidth()
@@ -679,17 +716,6 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoSlot()
 				.ToolTipText(LOCTEXT("SemDataVisInfoToggleTip", "Toggle visual info visibility.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnToggleIndividualsInfoVisiblity)
 			]
-		];
-}
-
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemDataVisInfoFuncSlot()
-{
-	return SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(5)
-		.HAlign(HAlign_Center)
-		[
-			SNew(SHorizontalBox)
 
 			+ SHorizontalBox::Slot()
 			.Padding(2)
@@ -849,11 +875,11 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenericButtonSlot()
 			.OnClicked(this, &FSLEdModeToolkit::OnGenericButton)
 		];
 }
-/* **End** Vertical Slot Entries */
+/* -End- Vertical Slot Entries */
 
 
 
-/* **Start** Callbacks */
+/* -Start- Callbacks */
 // Flag checkboxes
 void FSLEdModeToolkit::OnCheckedOverwriteFlag(ECheckBoxState NewCheckedState)
 {
@@ -905,17 +931,22 @@ FReply FSLEdModeToolkit::OnInitIndividualManagers()
 	}
 
 
-	if (HasValidIndividualInfoManager())
+	if (HasValidIndividualInfoManager() || SetIndividualInfoManager())
 	{
-		IndividualInfoManager->Init();
+		if (IndividualManager->Init(bResetFlag))
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Init(bResetFlag=%d) on the individual info manager.."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Init(bResetFlag=%d) failed on the individual info manager .."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
 	}
 	else
 	{
-		IndividualInfoManager = FSLEdUtils::GetOrCreateNewVisualInfoManager(GEditor->GetEditorWorldContext().World());
-		if (HasValidIndividualInfoManager())
-		{
-			IndividualInfoManager->Init();
-		}
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual info manager found to init.."), *FString(__FUNCTION__), __LINE__);
 	}
 
 	return FReply::Handled();
@@ -943,14 +974,22 @@ FReply FSLEdModeToolkit::OnLoadIndividualManagers()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to load.."), *FString(__FUNCTION__), __LINE__);
 	}
 
-	const bool bReset = true;
-	if (HasValidIndividualInfoManager())
+	if (HasValidIndividualInfoManager() || SetIndividualInfoManager())
 	{
-		IndividualInfoManager->Init(bReset);
+		if (IndividualInfoManager->Load(bResetFlag))
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bResetFlag=%d) on the individual info manager.."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Load(bResetFlag=%d) failed on the individual info manager .."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual visual manager not set, init first.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual info manager found to load.."), *FString(__FUNCTION__), __LINE__);
 	}
 
 	return FReply::Handled();
@@ -977,13 +1016,22 @@ FReply FSLEdModeToolkit::OnConnectIndividualManagers()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to connect.."), *FString(__FUNCTION__), __LINE__);
 	}
 
-	if (HasValidIndividualInfoManager())
+	if (HasValidIndividualInfoManager() || SetIndividualInfoManager())
 	{
-		IndividualInfoManager->Init(bReset);
+		if (IndividualInfoManager->Connect())
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual info manager connected.."),
+				*FString(__FUNCTION__), __LINE__);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect the individual info manager .."),
+				*FString(__FUNCTION__), __LINE__);
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual visual manager not set, init first.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual info manager found to connect.."), *FString(__FUNCTION__), __LINE__);
 	}
 
 	return FReply::Handled();
@@ -1011,12 +1059,10 @@ FReply FSLEdModeToolkit::OnCreateIndividuals()
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Created %ld new individual components.."),
 			*FString(__FUNCTION__), __LINE__, Num);
 
-		if (HasValidIndividualManager())
+		if (HasValidIndividualManager() && IndividualManager->Load(true))
 		{
-			// TODO reload individuals
-			//IndividualInfoManager->Refresh();
-			/*UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager refreshed.."),
-				*FString(__FUNCTION__), __LINE__);*/
+			IndividualManager->Connect();
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager successfully reloaded.."), *FString(__FUNCTION__), __LINE__);
 		}
 	}
 	return FReply::Handled();
@@ -1043,12 +1089,10 @@ FReply FSLEdModeToolkit::OnDestroyIndividuals()
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Destroyed %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, Num);
 
-		if (HasValidIndividualManager())
+		if (HasValidIndividualManager() && IndividualManager->Load(true))
 		{
-			// TODO reload individuals
-			//IndividualInfoManager->Refresh();
-			/*UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager refreshed.."),
-				*FString(__FUNCTION__), __LINE__);*/
+			IndividualManager->Connect();
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager successfully reloaded.."), *FString(__FUNCTION__), __LINE__);
 		}
 	}
 	return FReply::Handled();
@@ -1119,6 +1163,7 @@ FReply FSLEdModeToolkit::OnConnectIndividuals()
 	return FReply::Handled();
 }
 
+// Individual Components Funcs
 FReply FSLEdModeToolkit::OnToggleIndividualVisualMaskVisiblity()
 {
 	FScopedTransaction Transaction(LOCTEXT("ToggleMaskIndividualComponentsST", "Toggle individuals visual maks visiblity.."));
@@ -1373,105 +1418,130 @@ FReply FSLEdModeToolkit::OnClearExportedValues()
 // Individual Visual Info
 FReply FSLEdModeToolkit::OnCreateIndividualsInfo()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoCreateST", "Create individuals info.."));
-	int32 NumComp = 0;
-
-	if (HasValidIndividualInfoManager())
+	FScopedTransaction Transaction(LOCTEXT("CreateIndividualsInfoST", "Create individual info components.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
 	{
-		if (bOnlySelectedFlag)
-		{
-			NumComp = IndividualInfoManager->AddIndividualInfoComponents(GetSelectedActors());
-		}
-		else
-		{
-			NumComp = IndividualInfoManager->AddIndividualInfoComponents();
-		}
+		Num = FSLIndividualInfoUtils::CreateIndividualInfoComponents(GetSelectedActors());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual info manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
+		Num = FSLIndividualInfoUtils::CreateIndividualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
 
-	if (NumComp)
+	if (Num)
 	{
 		GUnrealEd->UpdateFloatingPropertyWindows();
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Created %ld new visual info components.."),
-			*FString(__FUNCTION__), __LINE__, NumComp);
-	}
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Created %ld new individual info components.."),
+			*FString(__FUNCTION__), __LINE__, Num);
 
+		if (HasValidIndividualInfoManager() && IndividualInfoManager->Load(true))
+		{
+			IndividualInfoManager->Connect();
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual info manager successfully reloaded.."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnResetIndividualsInfo()
+FReply FSLEdModeToolkit::OnDestroyIndividualsInfo()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRefreshST", "Reset individuals info components.."));
-	int32 NumComp = 0;
-
-	if (HasValidIndividualInfoManager())
+	FScopedTransaction Transaction(LOCTEXT("DestroyIndividualsInfoST", "Destroy individual info components.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
 	{
-		if (bOnlySelectedFlag)
-		{
-			NumComp = IndividualInfoManager->ResetIndividualInfoComponents(GetSelectedActors());
-		}
-		else
-		{
-			NumComp = IndividualInfoManager->ResetIndividualInfoComponents();
-		}
+		Num = FSLIndividualInfoUtils::DestroyIndividualInfoComponents(GetSelectedActors());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual info manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
+		Num = FSLIndividualInfoUtils::DestroyIndividualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
 
-	if (NumComp)
-	{
-		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Refreshed %ld new visual info components.."),
-			*FString(__FUNCTION__), __LINE__, NumComp);
-	}
-
-	return FReply::Handled();
-}
-
-FReply FSLEdModeToolkit::OnRemoveIndividualsInfo()
-{
-	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoRmST", "Remove individual info components"));
-	
-	DeselectComponentSelection();
-
-	int32 NumComp = 0;
-
-	if (HasValidIndividualInfoManager())
-	{
-		if (bOnlySelectedFlag)
-		{
-			NumComp = IndividualInfoManager->DestroyIndividualInfoComponents(GetSelectedActors());
-		}
-		else
-		{
-			NumComp = IndividualInfoManager->DestroyIndividualInfoComponents();
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual info manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
-	}
-
-	if (NumComp)
+	if (Num)
 	{
 		GUnrealEd->UpdateFloatingPropertyWindows();
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Refreshed %ld new visual info components.."),
-			*FString(__FUNCTION__), __LINE__, NumComp);
-	}
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Destroyed %ld individual info components.."),
+			*FString(__FUNCTION__), __LINE__, Num);
 
+		if (HasValidIndividualInfoManager() && IndividualInfoManager->Load(true))
+		{
+			IndividualInfoManager->Connect();
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual info manager successfully reloaded.."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
 	return FReply::Handled();
 }
 
+FReply FSLEdModeToolkit::OnInitIndividualsInfo()
+{
+	FScopedTransaction Transaction(LOCTEXT("InitIndividualsInfoST", "Init individual info components.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
+	{
+		Num = FSLIndividualInfoUtils::InitIndividualInfoComponents(GetSelectedActors(), bResetFlag);
+	}
+	else
+	{
+		Num = FSLIndividualInfoUtils::InitIndividualInfoComponents(GEditor->GetEditorWorldContext().World(), bResetFlag);
+	}
+
+	if (Num)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Init(bReset=%d) on %ld individual info components.."),
+			*FString(__FUNCTION__), __LINE__, bResetFlag, Num);
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnLoadIndividualsInfo()
+{
+	FScopedTransaction Transaction(LOCTEXT("LoadIndividualsInfoST", "Load individual info components.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
+	{
+		Num = FSLIndividualInfoUtils::LoadIndividualInfoComponents(GetSelectedActors(), bResetFlag);
+	}
+	else
+	{
+		Num = FSLIndividualInfoUtils::LoadIndividualInfoComponents(GEditor->GetEditorWorldContext().World(), bResetFlag);
+	}
+
+	if (Num)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bReset=%d) on %ld individual info components.."),
+			*FString(__FUNCTION__), __LINE__, bResetFlag, Num);
+	}
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnConnectIndividualsInfo()
+{
+	FScopedTransaction Transaction(LOCTEXT("ConnectIndividualsInfoST", "Connect individual info components.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
+	{
+		Num = FSLIndividualInfoUtils::ConnectIndividualInfoComponents(GetSelectedActors());
+	}
+	else
+	{
+		Num = FSLIndividualInfoUtils::ConnectIndividualInfoComponents(GEditor->GetEditorWorldContext().World());
+	}
+
+	if (Num)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Connect() on %ld individual info components.."),
+			*FString(__FUNCTION__), __LINE__, bResetFlag, Num);
+	}
+	return FReply::Handled();
+}
+
+
+// Individual Visual Info Funcs
 FReply FSLEdModeToolkit::OnToggleIndividualsInfoVisiblity()
 {
 	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoToggleST", "Toggle visual info components visibility"));
@@ -1479,14 +1549,14 @@ FReply FSLEdModeToolkit::OnToggleIndividualsInfoVisiblity()
 
 	if (HasValidIndividualInfoManager())
 	{
-		if (bOnlySelectedFlag)
-		{
-			NumComp = IndividualInfoManager->ToggleInfoVisibility(GetSelectedActors());
-		}
-		else
-		{
-			NumComp = IndividualInfoManager->ToggleInfoVisibility();
-		}
+		//if (bOnlySelectedFlag)
+		//{
+		//	NumComp = IndividualInfoManager->ToggleInfoVisibility(GetSelectedActors());
+		//}
+		//else
+		//{
+		//	NumComp = IndividualInfoManager->ToggleInfoVisibility();
+		//}
 	}
 	else
 	{
@@ -1511,14 +1581,14 @@ FReply FSLEdModeToolkit::OnUpdateIndividualsInfoOrientation()
 
 	if (HasValidIndividualInfoManager())
 	{
-		if (bOnlySelectedFlag)
-		{
-			NumComp = IndividualInfoManager->LookAtCamera(GetSelectedActors());
-		}
-		else
-		{
-			NumComp = IndividualInfoManager->LookAtCamera();
-		}
+		//if (bOnlySelectedFlag)
+		//{
+		//	NumComp = IndividualInfoManager->LookAtCamera(GetSelectedActors());
+		//}
+		//else
+		//{
+		//	NumComp = IndividualInfoManager->LookAtCamera();
+		//}
 	}
 	else
 	{
@@ -1555,14 +1625,12 @@ FReply FSLEdModeToolkit::OnToggleIndividualsInfoLiveOrientationUpdate()
 
 
 
-
+// Semantic map
 FReply FSLEdModeToolkit::OnWriteSemMap()
 {
 	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
 	return FReply::Handled();
 }
-
-//// Individual Components Functionalities
 
 
 ////
@@ -1726,9 +1794,9 @@ bool FSLEdModeToolkit::HasValidIndividualInfoManager() const
 }
 
 // Set the individual info manager
-bool FSLEdModeToolkit::SetdIndividualInfoManager()
+bool FSLEdModeToolkit::SetIndividualInfoManager()
 {
-	IndividualInfoManager = FSLEdUtils::GetOrCreateNewVisualInfoManager(GEditor->GetEditorWorldContext().World());
+	IndividualInfoManager = FSLIndividualInfoUtils::GetOrCreateNewIndividualInfoManager(GEditor->GetEditorWorldContext().World());
 	return HasValidIndividualInfoManager();
 }
 

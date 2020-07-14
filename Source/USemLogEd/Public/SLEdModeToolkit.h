@@ -31,7 +31,7 @@ private:
 	// Flag checkboxes
 	SVerticalBox::FSlot& CreateOverwriteFlagSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedFlagSlot();
-	SVerticalBox::FSlot& CreateIncludeChildrenFlagSlot();
+	SVerticalBox::FSlot& CreatePrioritizeChildrenFlagSlot();
 	SVerticalBox::FSlot& CreateResetFlagSlot();
 	SVerticalBox::FSlot& CreateTryImportFlagSlot();
 
@@ -56,9 +56,9 @@ private:
 	SVerticalBox::FSlot& CreateImportExportSlot();
 
 	// Individual Visual Info
-	SVerticalBox::FSlot& CreateSemDataVisInfoTxtSlot();
-	SVerticalBox::FSlot& CreateSemDataVisInfoSlot();
-	SVerticalBox::FSlot& CreateSemDataVisInfoFuncSlot();
+	SVerticalBox::FSlot& CreateIndividualsInfoTxtSlot();
+	SVerticalBox::FSlot& CreateIndividualsInfoSlot();
+	SVerticalBox::FSlot& CreateIndividualsInfoFuncSlot();
 
 	// Semantic Map
 	SVerticalBox::FSlot& CreateSemMapSlot();
@@ -114,17 +114,18 @@ private:
 	FReply OnImportValues();
 	FReply OnClearExportedValues();
 
-	// Individual Visual Info
+	// Individual Info 
 	FReply OnCreateIndividualsInfo();
-	FReply OnResetIndividualsInfo();
-	FReply OnRemoveIndividualsInfo();
+	FReply OnDestroyIndividualsInfo();
+	FReply OnInitIndividualsInfo();
+	FReply OnLoadIndividualsInfo();
+	FReply OnConnectIndividualsInfo();
+
+	// Individual Info Funcs
 	FReply OnToggleIndividualsInfoVisiblity();
 	FReply OnUpdateIndividualsInfoOrientation();
 	FReply OnToggleIndividualsInfoLiveOrientationUpdate();
-
-
-
-	
+		
 
 	// Semantic map
 	FReply OnWriteSemMap();
@@ -145,7 +146,7 @@ private:
 	bool HasValidIndividualManager() const;
 	bool SetIndividualManager();
 	bool HasValidIndividualInfoManager() const;
-	bool SetdIndividualInfoManager();
+	bool SetIndividualInfoManager();
 
 	// Returns all the selected actors in the editor
 	TArray<AActor*> GetSelectedActors() const;
@@ -165,7 +166,7 @@ private:
 	class ASLIndividualManager* IndividualManager;
 
 	// Provides visual functionalities over the individuals in the world
-	class ASLIndividualVisualManager* IndividualInfoManager;
+	class ASLIndividualInfoManager* IndividualInfoManager;
 
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;

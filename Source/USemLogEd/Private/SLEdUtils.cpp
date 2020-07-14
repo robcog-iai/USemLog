@@ -9,7 +9,7 @@
 #include "Editor/SLSemanticMapWriter.h"
 #include "SLManager.h"
 #include "Individuals/SLIndividualManager.h"
-#include "Individuals/SLIndividualVisualManager.h"
+#include "Individuals/SLIndividualInfoManager.h"
 #include "Individuals/SLIndividualUtils.h"
 
 // Utils
@@ -70,35 +70,35 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 //	return Manager;
 //}
 
-// Get the vis info manager form the world, add new one if none are available
-ASLIndividualVisualManager* FSLEdUtils::GetOrCreateNewVisualInfoManager(UWorld* World, bool bCreateNew)
-{
-	int32 ActNum = 0;
-	ASLIndividualVisualManager* Manager = nullptr;
-	for (TActorIterator<ASLIndividualVisualManager> ActItr(World); ActItr; ++ActItr)
-	{
-		Manager = *ActItr;
-		ActNum++;
-	}
-	if (ActNum > 1)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d There are %ld individual visual info managers in the world, the should only be one.."),
-			*FString(__FUNCTION__), __LINE__, ActNum);
-	}
-	else if (ActNum == 0 && bCreateNew)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d There are no individual visual info managers in the world, spawning one.."),
-			*FString(__FUNCTION__), __LINE__);
-		FActorSpawnParameters Params;
-		//Params.Name = FName(TEXT("SL_IndividualVisualInfoManager"));
-		Manager = World->SpawnActor<ASLIndividualVisualManager>(Params);		
-#if WITH_EDITOR
-		Manager->SetActorLabel(TEXT("SL_IndividualVisualInfoManager"));
-#endif // WITH_EDITOR
-		World->MarkPackageDirty();
-	}
-	return Manager;
-}
+//// Get the vis info manager form the world, add new one if none are available
+//ASLIndividualInfoManager* FSLEdUtils::GetOrCreateNewVisualInfoManager(UWorld* World, bool bCreateNew)
+//{
+//	int32 ActNum = 0;
+//	ASLIndividualInfoManager* Manager = nullptr;
+//	for (TActorIterator<ASLIndividualInfoManager> ActItr(World); ActItr; ++ActItr)
+//	{
+//		Manager = *ActItr;
+//		ActNum++;
+//	}
+//	if (ActNum > 1)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d There are %ld individual visual info managers in the world, the should only be one.."),
+//			*FString(__FUNCTION__), __LINE__, ActNum);
+//	}
+//	else if (ActNum == 0 && bCreateNew)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d There are no individual visual info managers in the world, spawning one.."),
+//			*FString(__FUNCTION__), __LINE__);
+//		FActorSpawnParameters Params;
+//		//Params.Name = FName(TEXT("SL_IndividualVisualInfoManager"));
+//		Manager = World->SpawnActor<ASLIndividualInfoManager>(Params);		
+//#if WITH_EDITOR
+//		Manager->SetActorLabel(TEXT("SL_IndividualVisualInfoManager"));
+//#endif // WITH_EDITOR
+//		World->MarkPackageDirty();
+//	}
+//	return Manager;
+//}
 
 // Remove all tag keys
 bool FSLEdUtils::RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey)

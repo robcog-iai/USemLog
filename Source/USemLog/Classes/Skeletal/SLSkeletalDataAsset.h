@@ -58,7 +58,7 @@ public:
 private:
 	// Generate the bones mesh from this skeletal mesh
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	USkeletalMesh* SkeletalMesh;
+	class USkeletalMesh* SkeletalMesh;
 
 	// Refresh the data
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

@@ -18,8 +18,8 @@ public:
 	//// Get the semantic individual manager from the world, add new if none are available
 	//static class ASLIndividualManager* GetOrCreateNewIndividualManager(UWorld* World, bool bCreateNew = true);
 
-	// Get the vis info manager form the world, add new one if none are available
-	static class ASLIndividualVisualManager* GetOrCreateNewVisualInfoManager(UWorld* World, bool bCreateNew = true);
+	//// Get the vis info manager form the world, add new one if none are available
+	//static class ASLIndividualInfoManager* GetOrCreateNewVisualInfoManager(UWorld* World, bool bCreateNew = true);
 
 
 	// Remove all tag keys
