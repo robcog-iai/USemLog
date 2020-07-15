@@ -93,7 +93,7 @@ bool USLBoneIndividual::Load(bool bReset, bool bTryImport)
 }
 
 // Apply visual mask material
-bool USLBoneIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/)
+bool USLBoneIndividual::ApplyMaskMaterials(bool bIncludeChildren /*= false*/)
 {
 	if (!IsInit())
 	{

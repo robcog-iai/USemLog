@@ -51,17 +51,15 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			SNew(SVerticalBox)
 
 			// Flag checkboxes
-			+ CreateOverwriteFlagSlot()
-			+ CreateOnlySelectedFlagSlot()
-			+ CreatePrioritizeChildrenFlagSlot()
-			+ CreateResetFlagSlot()
-			+ CreateTryImportFlagSlot()
-
-			// Individual Managers
-			+ CreateIndividualsManagersTxtSlot()
-			+ CreateIndividualsManagersSlot()
+			+ CreateCompactCheckBoxSlot()
+			//+ CreateOverwriteFlagSlot()
+			//+ CreateOnlySelectedFlagSlot()
+			//+ CreateIncludeChildrenFlagSlot()
+			//+ CreateResetFlagSlot()
+			//+ CreateTryImportFlagSlot()
 
 			// Individual Components
+			+ CreateSeparatorHackSlot()
 			+ CreateIndividualsTxtSlot()
 			+ CreateIndividualsSlot()
 			+ CreateIndividualsFuncSlot()
@@ -78,14 +76,22 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateImportExportSlot()
 
 			// Individual Visual Info
+			+ CreateSeparatorHackSlot()
 			+ CreateIndividualsInfoTxtSlot()
 			+ CreateIndividualsInfoSlot()
 			+ CreateIndividualsInfoFuncSlot()
 
+			// Individual Managers
+			+ CreateSeparatorHackSlot()
+			+ CreateIndividualsManagersTxtSlot()
+			+ CreateIndividualsManagersSlot()
+
 			// Semantic Map
+			+ CreateSeparatorHackSlot()
 			+ CreateSemMapSlot()
 
 			// Misc
+			+ CreateSeparatorHackSlot()
 			+ CreateUtilsTxtSlot()
 			+ CreateAddSemMonitorsSlot()
 			+ CreateEnableOverlapsSlot()
@@ -116,8 +122,98 @@ class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 }
 /** End IToolkit interface */
 
-
 /* -Start- Vertical Slot Entries */
+// Separator hack slot
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateSeparatorHackSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("SeparatorHack", "------------------------------------------"))
+			]
+		];
+}
+
+// Create the checkbox slots as a bundle
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("OverwriteCB", " Overwrite: "))
+			]
+				+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("OverwriteCBTip", "Overwrites any existing data, use with caution"))
+				.IsChecked(ECheckBoxState::Unchecked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteFlag)
+			]
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("OnlySelectedCB", " Selected: "))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("OnlySelectedCBTip", "Consider only selected actors.."))
+				.IsChecked(ECheckBoxState::Unchecked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOnlySelectedFlag)
+			]
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("ChildrenCB", " Children: "))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("IncludeChildrenCB", "Include children data (e.g. bones/links..)"))
+				.IsChecked(ECheckBoxState::Checked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedIncludeChildrenFlag)
+			]
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("ResetCB", " Reset: "))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("ResetCBTip", "Apply reset flag to any related functions."))
+				.IsChecked(ECheckBoxState::Unchecked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedResetFlag)
+			]
+		];
+}
+
+
 // Checkboxes
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteFlagSlot()
 {
@@ -132,13 +228,12 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteFlagSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("OverwriteTextLabel", "Global Overwrite Flag: "))
+				.Text(LOCTEXT("OverwriteCB", "Overwrite:"))
 			]
-
 				+ SHorizontalBox::Slot()
 			[
 				SNew(SCheckBox)
-				.ToolTipText(LOCTEXT("CheckBoxOverwrite", "Overwrites any existing data, use with caution"))
+				.ToolTipText(LOCTEXT("OverwriteCBTip", "Overwrites any existing data, use with caution.."))
 				.IsChecked(ECheckBoxState::Unchecked)
 				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOverwriteFlag)
 			]
@@ -158,20 +253,20 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedFlagSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("OnlySelectedTextLabel", "Only Selection Flag:  "))
+				.Text(LOCTEXT("OnlySelectedCB", "Selection:"))
 			]
 
 			+ SHorizontalBox::Slot()
 			[
 				SNew(SCheckBox)
-				.ToolTipText(LOCTEXT("CheckBoxOnlySelected", "Consider only selected actors"))
+				.ToolTipText(LOCTEXT("OnlySelectedCBTip", "Consider only selected actors"))
 				.IsChecked(ECheckBoxState::Unchecked)
 				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedOnlySelectedFlag)
 			]
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreatePrioritizeChildrenFlagSlot()
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -184,15 +279,15 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreatePrioritizeChildrenFlagSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("PrioritizeChildrenTextLabel", "Prioritize Children Flag:  "))
+				.Text(LOCTEXT("IncludeChildrenCB", "Children:"))
 			]
 
 			+ SHorizontalBox::Slot()
 			[
 				SNew(SCheckBox)
-				.ToolTipText(LOCTEXT("CheckBoxPrioritizeChildren", "Prioritize children data (e.g. bones/links..)"))
+				.ToolTipText(LOCTEXT("IncludeChildrenCBTip", "Include children data (e.g. bones/links..)"))
 				.IsChecked(ECheckBoxState::Checked)
-				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedPrioritizeChildrenFlag)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedIncludeChildrenFlag)
 			]
 		];
 }
@@ -210,13 +305,13 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateResetFlagSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("ResetFlagTextLabel", "Reset Flag:  "))
+				.Text(LOCTEXT("ResetCB", "Reset:"))
 			]
 
 			+ SHorizontalBox::Slot()
 			[
 				SNew(SCheckBox)
-				.ToolTipText(LOCTEXT("CheckboxResetFlag", "Apply reset flag to functions"))
+				.ToolTipText(LOCTEXT("ResetCBTip", "Apply reset flag to any related functions."))
 				.IsChecked(ECheckBoxState::Unchecked)
 				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedResetFlag)
 			]
@@ -245,64 +340,6 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTryImportFlagSlot()
 				.ToolTipText(LOCTEXT("CheckboxTryImport", "If available data will be imported first.."))
 				.IsChecked(ECheckBoxState::Checked)
 				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedTryImportFlag)
-			]
-		];
-}
-
-
-// Individual Managers
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersTxtSlot()
-{
-	return SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(10)
-		.HAlign(HAlign_Center)
-		[
-			SNew(STextBlock)
-			.Text(LOCTEXT("IndividualManagersTxt", "Managers:"))
-		];
-}
-
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersSlot()
-{
-	return SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(5)
-		.HAlign(HAlign_Center)
-		[
-			SNew(SHorizontalBox)
-
-			+ SHorizontalBox::Slot()
-			.Padding(2)
-			.AutoWidth()
-			[
-				SNew(SButton)
-				.Text(LOCTEXT("InitIndividualManagers", "Init"))
-				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("InitIndividualManagersTip", "Init managers.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnInitIndividualManagers)
-			]
-
-			+ SHorizontalBox::Slot()
-			.Padding(2)
-			.AutoWidth()
-			[
-				SNew(SButton)
-				.Text(LOCTEXT("LoadIndividualManagers", "Load"))
-				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("LoadIndividualManagersTip", "Load managers.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnLoadIndividualManagers)
-			]
-
-			+ SHorizontalBox::Slot()
-			.Padding(2)
-			.AutoWidth()
-			[
-				SNew(SButton)
-				.Text(LOCTEXT("ConnectIndividualManagers", "Connect"))
-				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("ConnectIndividualManagersTip", "Connect managers.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnConnectIndividualManagers)
 			]
 		];
 }
@@ -666,7 +703,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoSlot()
 				SNew(SButton)
 				.Text(LOCTEXT("InitIndividualsInfo", "Init"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("InitIndividualsInfoTio", "Call Init(bReset) on the individuals info components.."))
+				.ToolTipText(LOCTEXT("InitIndividualsInfoTip", "Call Init(bReset) on the individuals info components.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnInitIndividualsInfo)
 			]
 
@@ -677,7 +714,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoSlot()
 				SNew(SButton)
 				.Text(LOCTEXT("LoadIndividualsInfo", "Load"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("LoadIndividualsInfoTio", "Call Load(bReset) on the individuals info components.."))
+				.ToolTipText(LOCTEXT("LoadIndividualsInfoTip", "Call Load(bReset) on the individuals info components.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnLoadIndividualsInfo)
 			]
 
@@ -686,10 +723,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("LoadIndividualsInfo", "Load"))
+				.Text(LOCTEXT("ConnectIndividualsInfo", "Connect"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("LoadIndividualsInfoTio", "Call Load(bReset) on the individuals info components.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnLoadIndividualsInfo)
+				.ToolTipText(LOCTEXT("ConnectIndividualsInfoTip", "Call Load(bReset) on the individuals info components.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnConnectIndividualsInfo)
 			]
 
 
@@ -741,6 +778,66 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoFuncSlot()
 
 		];
 }
+
+
+
+// Individual Managers
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersTxtSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(10)
+		.HAlign(HAlign_Center)
+		[
+			SNew(STextBlock)
+			.Text(LOCTEXT("IndividualManagersTxt", "Managers:"))
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(5)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("InitIndividualManagers", "Init"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("InitIndividualManagersTip", "Init managers.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnInitIndividualManagers)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("LoadIndividualManagers", "Load"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("LoadIndividualManagersTip", "Load managers.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnLoadIndividualManagers)
+			]
+
+			+ SHorizontalBox::Slot()
+			.Padding(2)
+			.AutoWidth()
+			[
+				SNew(SButton)
+				.Text(LOCTEXT("ConnectIndividualManagers", "Connect"))
+				.IsEnabled(true)
+				.ToolTipText(LOCTEXT("ConnectIndividualManagersTip", "Connect managers.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnConnectIndividualManagers)
+			]
+		];
+}
+
 
 // Semantic Map
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemMapSlot()
@@ -891,7 +988,7 @@ void FSLEdModeToolkit::OnCheckedOnlySelectedFlag(ECheckBoxState NewCheckedState)
 	bOnlySelectedFlag = (NewCheckedState == ECheckBoxState::Checked);
 }
 
-void FSLEdModeToolkit::OnCheckedPrioritizeChildrenFlag(ECheckBoxState NewCheckedState)
+void FSLEdModeToolkit::OnCheckedIncludeChildrenFlag(ECheckBoxState NewCheckedState)
 {
 	bProritizeChildrenFlag = (NewCheckedState == ECheckBoxState::Checked);
 }
@@ -904,137 +1001,6 @@ void FSLEdModeToolkit::OnCheckedResetFlag(ECheckBoxState NewCheckedState)
 void FSLEdModeToolkit::OnCheckedTryImportFlag(ECheckBoxState NewCheckedState)
 {
 	bTryImportFlag = (NewCheckedState == ECheckBoxState::Checked);
-}
-
-
-// Individual Managers
-FReply FSLEdModeToolkit::OnInitIndividualManagers()
-{
-	FScopedTransaction Transaction(LOCTEXT("InitIndividualManagersST", "Init individual managers.."));
-
-	if (HasValidIndividualManager() || SetIndividualManager())
-	{
-		if (IndividualManager->Init(bResetFlag))
-		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Init(bResetFlag=%d) on the individual manager.."),
-				*FString(__FUNCTION__), __LINE__, bResetFlag);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Init(bResetFlag=%d) failed on the individual manager .."),
-				*FString(__FUNCTION__), __LINE__, bResetFlag);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to init.."), *FString(__FUNCTION__), __LINE__);
-	}
-
-
-	if (HasValidIndividualInfoManager() || SetIndividualInfoManager())
-	{
-		if (IndividualManager->Init(bResetFlag))
-		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Init(bResetFlag=%d) on the individual info manager.."),
-				*FString(__FUNCTION__), __LINE__, bResetFlag);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Init(bResetFlag=%d) failed on the individual info manager .."),
-				*FString(__FUNCTION__), __LINE__, bResetFlag);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual info manager found to init.."), *FString(__FUNCTION__), __LINE__);
-	}
-
-	return FReply::Handled();
-}
-
-FReply FSLEdModeToolkit::OnLoadIndividualManagers()
-{
-	FScopedTransaction Transaction(LOCTEXT("LoadIndividualManagersST", "Load semantic data managers"));
-
-	if (HasValidIndividualManager() || SetIndividualManager())
-	{
-		if (IndividualManager->Load(bResetFlag))
-		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bResetFlag=%d) on the individual manager.."),
-				*FString(__FUNCTION__), __LINE__, bResetFlag);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Load(bResetFlag=%d) failed on the individual manager .."),
-				*FString(__FUNCTION__), __LINE__, bResetFlag);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to load.."), *FString(__FUNCTION__), __LINE__);
-	}
-
-	if (HasValidIndividualInfoManager() || SetIndividualInfoManager())
-	{
-		if (IndividualInfoManager->Load(bResetFlag))
-		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bResetFlag=%d) on the individual info manager.."),
-				*FString(__FUNCTION__), __LINE__, bResetFlag);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Load(bResetFlag=%d) failed on the individual info manager .."),
-				*FString(__FUNCTION__), __LINE__, bResetFlag);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual info manager found to load.."), *FString(__FUNCTION__), __LINE__);
-	}
-
-	return FReply::Handled();
-}
-
-FReply FSLEdModeToolkit::OnConnectIndividualManagers()
-{
-	FScopedTransaction Transaction(LOCTEXT("ConnectIndividualManagersST", "Connect semantic data managers"));
-	const bool bReset = true;
-
-	if (HasValidIndividualManager() || SetIndividualManager())
-	{
-		if (IndividualManager->Connect())
-		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager connected.."), *FString(__FUNCTION__), __LINE__);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect individual manager .."), *FString(__FUNCTION__), __LINE__);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to connect.."), *FString(__FUNCTION__), __LINE__);
-	}
-
-	if (HasValidIndividualInfoManager() || SetIndividualInfoManager())
-	{
-		if (IndividualInfoManager->Connect())
-		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual info manager connected.."),
-				*FString(__FUNCTION__), __LINE__);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect the individual info manager .."),
-				*FString(__FUNCTION__), __LINE__);
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual info manager found to connect.."), *FString(__FUNCTION__), __LINE__);
-	}
-
-	return FReply::Handled();
 }
 
 
@@ -1136,7 +1102,7 @@ FReply FSLEdModeToolkit::OnLoadIndividuals()
 	if (Num)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bReset=%d, bTryImport) on %ld individual components.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bReset=%d, bTryImport=%d) on %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, bResetFlag, bTryImportFlag, Num);
 	}
 	return FReply::Handled();
@@ -1620,6 +1586,137 @@ FReply FSLEdModeToolkit::OnToggleIndividualsInfoLiveOrientationUpdate()
 			*FString(__FUNCTION__), __LINE__);
 	}
 	
+	return FReply::Handled();
+}
+
+
+// Individual Managers
+FReply FSLEdModeToolkit::OnInitIndividualManagers()
+{
+	FScopedTransaction Transaction(LOCTEXT("InitIndividualManagersST", "Init individual managers.."));
+
+	if (HasValidIndividualManager() || SetIndividualManager())
+	{
+		if (IndividualManager->Init(bResetFlag))
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Init(bResetFlag=%d) on the individual manager.."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Init(bResetFlag=%d) failed on the individual manager .."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to init.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+
+	if (HasValidIndividualInfoManager() || SetIndividualInfoManager())
+	{
+		if (IndividualManager->Init(bResetFlag))
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Init(bResetFlag=%d) on the individual info manager.."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Init(bResetFlag=%d) failed on the individual info manager .."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual info manager found to init.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnLoadIndividualManagers()
+{
+	FScopedTransaction Transaction(LOCTEXT("LoadIndividualManagersST", "Load semantic data managers"));
+
+	if (HasValidIndividualManager() || SetIndividualManager())
+	{
+		if (IndividualManager->Load(bResetFlag))
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bResetFlag=%d) on the individual manager.."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Load(bResetFlag=%d) failed on the individual manager .."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to load.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	if (HasValidIndividualInfoManager() || SetIndividualInfoManager())
+	{
+		if (IndividualInfoManager->Load(bResetFlag))
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Load(bResetFlag=%d) on the individual info manager.."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Load(bResetFlag=%d) failed on the individual info manager .."),
+				*FString(__FUNCTION__), __LINE__, bResetFlag);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual info manager found to load.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	return FReply::Handled();
+}
+
+FReply FSLEdModeToolkit::OnConnectIndividualManagers()
+{
+	FScopedTransaction Transaction(LOCTEXT("ConnectIndividualManagersST", "Connect semantic data managers"));
+	const bool bReset = true;
+
+	if (HasValidIndividualManager() || SetIndividualManager())
+	{
+		if (IndividualManager->Connect())
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual manager connected.."), *FString(__FUNCTION__), __LINE__);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect individual manager .."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual manager found to connect.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	if (HasValidIndividualInfoManager() || SetIndividualInfoManager())
+	{
+		if (IndividualInfoManager->Connect())
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual info manager connected.."),
+				*FString(__FUNCTION__), __LINE__);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect the individual info manager .."),
+				*FString(__FUNCTION__), __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No individual info manager found to connect.."), *FString(__FUNCTION__), __LINE__);
+	}
+
 	return FReply::Handled();
 }
 

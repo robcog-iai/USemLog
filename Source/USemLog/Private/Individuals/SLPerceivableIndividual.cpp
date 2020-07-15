@@ -108,7 +108,7 @@ bool USLPerceivableIndividual::ImportValues(bool bOverwrite)
 }
 
 // Toggle between the visual mask and the origina materials
-bool USLPerceivableIndividual::ToggleMaterials(bool bPrioritizeChildren /*= false*/)
+bool USLPerceivableIndividual::ToggleMaterials(bool bIncludeChildren /*= false*/)
 {
 	if (bIsMaskMaterialOn)
 	{
@@ -116,7 +116,7 @@ bool USLPerceivableIndividual::ToggleMaterials(bool bPrioritizeChildren /*= fals
 	}
 	else
 	{
-		return ApplyMaskMaterials(bPrioritizeChildren);
+		return ApplyMaskMaterials(bIncludeChildren);
 	}
 }
 

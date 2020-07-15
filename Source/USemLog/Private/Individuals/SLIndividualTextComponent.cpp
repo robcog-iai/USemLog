@@ -13,23 +13,8 @@ USLIndividualTextComponent::USLIndividualTextComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
 	TextMaterial = Cast<UMaterial>(StaticLoadObject( UMaterial::StaticClass(), NULL, TextMaterialPath, NULL, LOAD_None, NULL));
-
-	TextLineScreenSize = 5.f;
-	//ScaleText1 = 1.f;
-	//ScaleText2 = 0.8f;
-	//ScaleText3 = 0.8f;
-
-	//static USLIndividualVisualAssets* AssetsContainer = Cast<USLIndividualVisualAssets>(StaticLoadObject(
-	//	USLIndividualVisualAssets::StaticClass(), NULL, AssetContainerPath,
-	//	NULL, LOAD_None, NULL));
-
-	//Text1 = CreateTextComponentSubobject("FirstText", AssetsContainer);
-	//Text2 = CreateTextComponentSubobject("SecondText", AssetsContainer);
-	//Text2->SetTextRenderColor(FColor::Red);
-	//Text3 = CreateTextComponentSubobject("ThirdText", AssetsContainer);
-	//Text3->SetTextRenderColor(FColor::White);
+	TextLineWorldSize = 5.f;
 }
 
 // Called before destroying the object.
@@ -43,7 +28,7 @@ void USLIndividualTextComponent::BeginDestroy()
 }
 
 // Add text (return false if key already exists)
-void USLIndividualTextComponent::AddNewTextLine(const FString& Key, const FString& Text, FColor Color)
+void USLIndividualTextComponent::AddTextLine(const FString& Key, const FString& Text, FColor Color)
 {
 	if (UTextRenderComponent** FoundLine = TextLines.Find(Key))
 	{
@@ -54,7 +39,7 @@ void USLIndividualTextComponent::AddNewTextLine(const FString& Key, const FStrin
 	{
 		NewLine->SetText(FText::FromString(Text));
 		NewLine->SetTextRenderColor(Color);
-		AddOrderedTextLine(Key, NewLine);
+		SetTextLineOrder(Key, NewLine);
 	}
 }
 
@@ -68,7 +53,7 @@ void USLIndividualTextComponent::SetTextLineValue(const FString& Key, const FStr
 	else if (UTextRenderComponent* NewLine = CreateNewTextLine("TextLine_" + Key))
 	{
 		NewLine->SetText(FText::FromString(Text));
-		AddOrderedTextLine(Key, NewLine);
+		SetTextLineOrder(Key, NewLine);
 	}
 }
 
@@ -82,7 +67,7 @@ void USLIndividualTextComponent::SetTextLineColor(const FString& Key, FColor Col
 	else if (UTextRenderComponent* NewLine = CreateNewTextLine("TextLine_" + Key))
 	{
 		NewLine->SetTextRenderColor(Color);
-		AddOrderedTextLine(Key, NewLine);
+		SetTextLineOrder(Key, NewLine);
 	}
 }
 
@@ -93,12 +78,12 @@ bool USLIndividualTextComponent::RemoveTextLine(const FString& Key)
 	if (TextLines.RemoveAndCopyValue(Key, RemovedCopy))
 	{
 		int32 RemovedLineOrderCopy;
-		if (TextLineOrder.RemoveAndCopyValue(RemovedCopy, RemovedLineOrderCopy))
+		if (TextLinesOrder.RemoveAndCopyValue(RemovedCopy, RemovedLineOrderCopy))
 		{
 			// If the removed line was not the last, move all lower lines one step higher
-			if (RemovedLineOrderCopy <= TextLineOrder.Num())
+			if (RemovedLineOrderCopy <= TextLinesOrder.Num())
 			{
-				for(auto& OrderPair : TextLineOrder)
+				for(auto& OrderPair : TextLinesOrder)
 				{
 					OrderPair.Value--;
 					MoveTextLineOneStepHigher(OrderPair.Key);
@@ -112,80 +97,27 @@ bool USLIndividualTextComponent::RemoveTextLine(const FString& Key)
 	return false;
 }
 
-// Recalculate the size of the text
-void USLIndividualTextComponent::ResizeText()
-{
-	//if (GetOwner())
-	//{
-	//	FVector BoundsOrigin;
-	//	FVector BoxExtent;
-	//	GetOwner()->GetActorBounds(false, BoundsOrigin, BoxExtent);
-	//	TextScreenSize = FMath::Clamp(BoxExtent.Size() / 30.f, MinClampTextSize, MaxClampTextSize);
-	//}
-
-	//const float FirstSize = TextScreenSize * ScaleText1;
-	//const float SecondSize = TextScreenSize * ScaleText2;
-	//const float ThirdSize = TextScreenSize * ScaleText3;
-
-	//const float FirstRelLoc = (FirstSize + SecondSize + ThirdSize);
-	//const float SecondRelLoc = (SecondSize + ThirdSize);
-	//const float ThirdRelLoc = ThirdSize;
-
-	//if (Text1 && Text1->IsValidLowLevel() && !Text1->IsPendingKill())
-	//{
-	//	Text1->SetWorldSize(FirstSize);
-	//	Text1->SetRelativeLocation(FVector(0.f, 0.f, FirstRelLoc));
-	//}
-
-	//if (Text2 && Text2->IsValidLowLevel() && !Text2->IsPendingKill())
-	//{
-	//	Text2->SetWorldSize(SecondSize);
-	//	Text2->SetRelativeLocation(FVector(0.f, 0.f, SecondRelLoc));
-	//}
-
-	//if (Text3 && Text3->IsValidLowLevel() && !Text3->IsPendingKill())
-	//{
-	//	Text3->SetWorldSize(ThirdSize);
-	//	Text3->SetRelativeLocation(FVector(0.f, 0.f, ThirdRelLoc));
-	//}
-}
-
-// Point text towards the camera
-bool USLIndividualTextComponent::PointToCamera()
-{
-	// True if we are in the editor (this is still true when using Play In Editor). You may want to use GWorld->HasBegunPlay in that case)	
-	if (GIsEditor)
-	{
-		// TODO check if standalone e.g. 
-		//if (GIsPlayInEditorWorld) 
-
-#if WITH_EDITOR
-		for (FLevelEditorViewportClient* LevelVC : GEditor->GetLevelViewportClients())
-		{
-			if (LevelVC && LevelVC->IsPerspective())
-			{
-				SetWorldRotation(LevelVC->GetViewRotation() + FRotator(180.f, 0.f, 180.f));
-				break;
-			}
-		}
-#endif //WITH_EDITOR
-	}
-	else if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
-	{
-		//PC->PlayerCameraManager; // This will not call or yield anything
-	}
-
-	return false;
-}
-
 // Create a new text render component
 UTextRenderComponent* USLIndividualTextComponent::CreateNewTextLine(const FString& Name)
 {
 	UTextRenderComponent* TRC = NewObject<UTextRenderComponent>(this);
+	TRC->RegisterComponent();
+	TRC->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 	TRC->PrimaryComponentTick.bCanEverTick = false;
+	TRC->SetMobility(EComponentMobility::Movable);
+	TRC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	TRC->bSelectable = false;
+	TRC->SetGenerateOverlapEvents(false);
+	TRC->SetCanEverAffectNavigation(false);
+	TRC->bCastDynamicShadow = false;
+	TRC->bCastStaticShadow = false;
+	TRC->bAffectDistanceFieldLighting = false;
+	TRC->bAffectDynamicIndirectLighting = false;
 	TRC->SetHorizontalAlignment(EHTA_Center);
-	TRC->SetVerticalAlignment(EVRTA_TextBottom);	
-	TRC->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
+	TRC->SetVerticalAlignment(EVRTA_TextBottom);
+
+	TRC->SetWorldSize(TextLineWorldSize);
+	TRC->SetVisibility(true);
 	if (TextMaterial)
 	{
 		TRC->SetTextMaterial(TextMaterial);
@@ -196,14 +128,15 @@ UTextRenderComponent* USLIndividualTextComponent::CreateNewTextLine(const FStrin
 // Move line one step higher
 void USLIndividualTextComponent::MoveTextLineOneStepHigher(UTextRenderComponent* TRC)
 {
-	TRC->AddLocalOffset(FVector(0.f, 0.f, TextLineScreenSize));
+	TRC->AddLocalOffset(FVector(0.f, 0.f, TextLineWorldSize));
 }
 
 // Add text line to the map and update its line order
-void USLIndividualTextComponent::AddOrderedTextLine(const FString& Key, UTextRenderComponent* TRC)
+void USLIndividualTextComponent::SetTextLineOrder(const FString& Key, UTextRenderComponent* TRC)
 {
-	TRC->SetRelativeLocation(FVector(0.f, 0.f, TextLineScreenSize * TextLineOrder.Num()));
+	float ZOffset = TextLineWorldSize * TextLinesOrder.Num();
+	TRC->SetRelativeLocation(FVector(0.f, 0.f, - ZOffset));
 	TextLines.Emplace(Key, TRC);
-	int32 OrderValue = TextLineOrder.Num() + 1;
-	TextLineOrder.Emplace(TRC, OrderValue);
+	int32 OrderValue = TextLinesOrder.Num() + 1;
+	TextLinesOrder.Emplace(TRC, OrderValue);
 }

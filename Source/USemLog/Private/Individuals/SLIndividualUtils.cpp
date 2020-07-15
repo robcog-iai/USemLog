@@ -202,12 +202,12 @@ int32 FSLIndividualUtils::ConnectIndividualComponents(const TArray<AActor*>& Act
 
 /* Functionalities */
 // Call toggle mask visiblitiy on all individual components int the world
-int32 FSLIndividualUtils::ToggleVisualMaskVisibility(UWorld* World, bool bPrioritizeChildren)
+int32 FSLIndividualUtils::ToggleVisualMaskVisibility(UWorld* World, bool bIncludeChildren)
 {
 	int32 Num = 0;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		if (ToggleVisualMaskVisibility(*ActItr, bPrioritizeChildren))
+		if (ToggleVisualMaskVisibility(*ActItr, bIncludeChildren))
 		{
 			Num++;
 		}
@@ -216,12 +216,12 @@ int32 FSLIndividualUtils::ToggleVisualMaskVisibility(UWorld* World, bool bPriori
 }
 
 // Call toggle mask visiblitiy on selected individual components
-int32 FSLIndividualUtils::ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren)
+int32 FSLIndividualUtils::ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bIncludeChildren)
 {
 	int32 Num = 0;
 	for (const auto& Act : Actors)
 	{
-		if (ToggleVisualMaskVisibility(Act, bPrioritizeChildren))
+		if (ToggleVisualMaskVisibility(Act, bIncludeChildren))
 		{
 			Num++;
 		}
@@ -880,12 +880,12 @@ bool FSLIndividualUtils::ConnectIndividualComponent(AActor* Actor)
 }
 
 /* Individuals functionalities Private */
-bool FSLIndividualUtils::ToggleVisualMaskVisibility(AActor* Actor, bool bPrioritizeChildren)
+bool FSLIndividualUtils::ToggleVisualMaskVisibility(AActor* Actor, bool bIncludeChildren)
 {
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
 		USLIndividualComponent* IC = CastChecked<USLIndividualComponent>(AC);
-		return IC->ToggleVisualMaskVisibility(bPrioritizeChildren);
+		return IC->ToggleVisualMaskVisibility(bIncludeChildren);
 	}
 	return false;
 }

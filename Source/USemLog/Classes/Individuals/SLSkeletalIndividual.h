@@ -60,7 +60,7 @@ public:
 
     /* Begin Perceivable individual interface */
     // Apply visual mask material
-    virtual bool ApplyMaskMaterials(bool bPrioritizeChildren = false) override;
+    virtual bool ApplyMaskMaterials(bool bIncludeChildren = false) override;
 
     // Apply original materials
     virtual bool ApplyOriginalMaterials() override;

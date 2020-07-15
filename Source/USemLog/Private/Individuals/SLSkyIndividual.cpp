@@ -70,7 +70,7 @@ bool USLSkyIndividual::Load(bool bReset, bool bTryImport)
 
 
 // Apply visual mask material
-bool USLSkyIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/)
+bool USLSkyIndividual::ApplyMaskMaterials(bool bIncludeChildren /*= false*/)
 {
 	if (!IsInit())
 	{

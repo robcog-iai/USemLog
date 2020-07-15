@@ -48,14 +48,14 @@ public:
     
     /* Begin Perceivable individual interface */
     // Apply visual mask material
-    virtual bool ApplyMaskMaterials(bool bPrioritizeChildren = false) { return false; };
+    virtual bool ApplyMaskMaterials(bool bIncludeChildren = false) { return false; };
 
     // Apply original materials
     virtual bool ApplyOriginalMaterials() { return false; };
     /* End Perceivable individual interface */
 
     // Toggle between the visual mask and the origina materials
-    bool ToggleMaterials(bool bPrioritizeChildren = false);
+    bool ToggleMaterials(bool bIncludeChildren = false);
 
     /* Visual mask */
     void SetVisualMaskValue(const FString& NewValue, bool bApplyNewMaterial = true, bool bClearCalibratedVisualMask = true);

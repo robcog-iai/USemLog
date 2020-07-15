@@ -67,6 +67,9 @@ public:
 	// Toggle text visiblity
 	void ToggleTextVisibility();
 
+	// Rotate component towards the screen
+	bool OrientateTowardViewer();
+
 protected:
 	// Clear all references of the individual
 	void InitReset();
@@ -101,6 +104,12 @@ private:
 
 	// Set the sibling component
 	bool SetSiblingIndividualComponent();
+
+	// Check if the component is in the view frustrum
+	bool IsInFrustrum() const;
+
+	// Scale the text relative to the distance towards it
+	void SetTextScale();
 
 	/* Delegate functions */
 	// Called when siblings init value has changed

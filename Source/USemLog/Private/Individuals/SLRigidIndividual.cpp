@@ -63,7 +63,7 @@ bool USLRigidIndividual::Load(bool bReset, bool bTryImport)
 }
 
 // Apply visual mask material
-bool USLRigidIndividual::ApplyMaskMaterials(bool bPrioritizeChildren /*= false*/)
+bool USLRigidIndividual::ApplyMaskMaterials(bool bIncludeChildren /*= false*/)
 {
 	if (!IsInit())
 	{

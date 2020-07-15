@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/KismetMathLibrary.h" // FindLookAtRotation
+#include "Engine/LocalPlayer.h" // Frustrum check
 #if WITH_EDITOR
 #include "LevelEditorViewport.h"
 #include "Editor.h"
@@ -18,7 +19,9 @@ USLIndividualInfoComponent::USLIndividualInfoComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
+	PrimaryComponentTick.TickInterval = 0.1f;
 
 	bIsInit = false;
 	bIsLoaded = false;
@@ -69,6 +72,20 @@ void USLIndividualInfoComponent::BeginPlay()
 void USLIndividualInfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (IsInFrustrum())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's Tick at %.4fs, In FRUSTRUM "),
+			*FString(__FUNCTION__), __LINE__, *GetFullGroupName(true), FPlatformTime::Seconds());
+		OrientateTowardViewer();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's Tick at %.4fs, NOT In FRUSTRUM "),
+			*FString(__FUNCTION__), __LINE__, *GetFullGroupName(true), FPlatformTime::Seconds());
+		OrientateTowardViewer();
+	}
+
 	//if (GetOwner()->WasRecentlyRendered())
 	//{
 	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s WasRecentlyRendered"), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
@@ -148,6 +165,39 @@ bool USLIndividualInfoComponent::Connect()
 void USLIndividualInfoComponent::ToggleTextVisibility()
 {
 	TextComponent->SetVisibility(!TextComponent->IsVisible(), true);
+}
+
+// Rotate component towards the screen
+bool USLIndividualInfoComponent::OrientateTowardViewer()
+{
+	// True if we are in the editor (this is still true when using Play In Editor). You may want to use GWorld->HasBegunPlay in that case)	
+	if (GIsEditor)
+	{
+		// TODO check if standalone e.g. 
+		//if (GIsPlayInEditorWorld) 
+
+#if WITH_EDITOR
+		for (FLevelEditorViewportClient* LevelVC : GEditor->GetLevelViewportClients())
+		{
+			if (LevelVC && LevelVC->IsPerspective())
+			{
+				SetWorldRotation(LevelVC->GetViewRotation() + FRotator(180.f, 0.f, 180.f));
+				break;
+			}
+		}
+#endif //WITH_EDITOR
+	}
+	else if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		//PC->PlayerCameraManager; // This will not call or yield anything
+	}
+
+	return false;
+
+	//// Orientate it toward the viewer
+	//const FVector DirectionToward = (OrientateToward - GetActorLocation()).GetSafeNormal();
+	//const FQuat TowardRotation = DirectionToward.ToOrientationQuat();
+	//TextComponent->SetWorldRotation((TowardRotation * FVector::ForwardVector).ToOrientationQuat());
 }
 
 // Clear all references of the individual
@@ -236,6 +286,14 @@ bool USLIndividualInfoComponent::LoadImpl()
 {
 	if (HasValidSiblingIndividualComponent())
 	{
+		TextComponent->AddTextLine("IndividualComp", "IndividualComp:[Init=false;Loaded=false;Connected=false;]", FColor::Red);
+		TextComponent->AddTextLine("InfoComp", "InfoComp:[Init=false;Loaded=false;Connected=false;]", FColor::Blue);
+		TextComponent->AddTextLine("Test1");
+		TextComponent->AddTextLine("Test2","Test2");
+		TextComponent->AddTextLine("Test3", "Test3");
+		TextComponent->RemoveTextLine("Text2");
+		TextComponent->AddTextLine("Test4", "Test4");
+		TextComponent->SetTextLineValue("Test4", "Test4Edited");
 		return true;
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component sibling is not valid, this should not happen.."),
@@ -332,6 +390,40 @@ bool USLIndividualInfoComponent::SetSiblingIndividualComponent()
 		return true;
 	}
 	return false;
+}
+
+// Check if the component is in the view frustrum
+bool USLIndividualInfoComponent::IsInFrustrum() const
+{
+	ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	if (LocalPlayer != nullptr && LocalPlayer->ViewportClient != nullptr && LocalPlayer->ViewportClient->Viewport)
+	{
+		FSceneViewFamilyContext ViewFamily(FSceneViewFamily::ConstructionValues(
+			LocalPlayer->ViewportClient->Viewport,
+			GetWorld()->Scene,
+			LocalPlayer->ViewportClient->EngineShowFlags)
+			.SetRealtimeUpdate(true));
+
+		FVector ViewLocation;
+		FRotator ViewRotation;
+		FSceneView* SceneView = LocalPlayer->CalcSceneView(&ViewFamily, ViewLocation, ViewRotation, LocalPlayer->ViewportClient->Viewport);
+		if (SceneView != nullptr)
+		{
+			return SceneView->ViewFrustum.IntersectSphere(
+				GetOwner()->GetActorLocation(), GetOwner()->GetSimpleCollisionRadius());
+		}
+	}
+	return false;
+}
+
+// Scale the text relative to the distance towards it
+void USLIndividualInfoComponent::SetTextScale()
+{
+	//MiddleLocation.Z += Scale * 5.0f;
+	//UserScaleIndicatorText->SetWorldTransform(FTransform((VRMode->GetHeadTransform().GetLocation() - MiddleLocation).ToOrientationRotator(),
+	//	MiddleLocation,
+	//	VRMode->GetRoomSpaceHeadTransform().GetScale3D() * Scale
+	//));
 }
 
 

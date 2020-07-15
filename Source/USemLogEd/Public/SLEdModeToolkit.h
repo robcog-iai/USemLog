@@ -28,16 +28,16 @@ public:
 
 private:
 	/* **Start** Vertical Slot Entries */
+	// Separator hack slot
+	SVerticalBox::FSlot& CreateSeparatorHackSlot();
+
 	// Flag checkboxes
+	SVerticalBox::FSlot& CreateCompactCheckBoxSlot();
 	SVerticalBox::FSlot& CreateOverwriteFlagSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedFlagSlot();
-	SVerticalBox::FSlot& CreatePrioritizeChildrenFlagSlot();
+	SVerticalBox::FSlot& CreateIncludeChildrenFlagSlot();
 	SVerticalBox::FSlot& CreateResetFlagSlot();
 	SVerticalBox::FSlot& CreateTryImportFlagSlot();
-
-	// Individual Managers
-	SVerticalBox::FSlot& CreateIndividualsManagersTxtSlot();
-	SVerticalBox::FSlot& CreateIndividualsManagersSlot();
 
 	// Individual Components
 	SVerticalBox::FSlot& CreateIndividualsTxtSlot();
@@ -60,6 +60,10 @@ private:
 	SVerticalBox::FSlot& CreateIndividualsInfoSlot();
 	SVerticalBox::FSlot& CreateIndividualsInfoFuncSlot();
 
+	// Individual Managers
+	SVerticalBox::FSlot& CreateIndividualsManagersTxtSlot();
+	SVerticalBox::FSlot& CreateIndividualsManagersSlot();
+
 	// Semantic Map
 	SVerticalBox::FSlot& CreateSemMapSlot();
 
@@ -80,14 +84,10 @@ private:
 	// Flag checkboxes
 	void OnCheckedOverwriteFlag(ECheckBoxState NewCheckedState);
 	void OnCheckedOnlySelectedFlag(ECheckBoxState NewCheckedState);
-	void OnCheckedPrioritizeChildrenFlag(ECheckBoxState NewCheckedState);
+	void OnCheckedIncludeChildrenFlag(ECheckBoxState NewCheckedState);
 	void OnCheckedResetFlag(ECheckBoxState NewCheckedState);
 	void OnCheckedTryImportFlag(ECheckBoxState NewCheckedState);
 
-	// Individual Managers
-	FReply OnInitIndividualManagers();
-	FReply OnLoadIndividualManagers();
-	FReply OnConnectIndividualManagers();
 
 	// Individual Components
 	FReply OnCreateIndividuals();
@@ -126,6 +126,10 @@ private:
 	FReply OnUpdateIndividualsInfoOrientation();
 	FReply OnToggleIndividualsInfoLiveOrientationUpdate();
 		
+	// Individual Managers
+	FReply OnInitIndividualManagers();
+	FReply OnLoadIndividualManagers();
+	FReply OnConnectIndividualManagers();
 
 	// Semantic map
 	FReply OnWriteSemMap();

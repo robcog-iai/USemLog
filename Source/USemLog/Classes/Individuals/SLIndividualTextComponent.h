@@ -25,7 +25,7 @@ protected:
 
 public:
 	// Add text (if key already exists, it applies the changes)
-	void AddNewTextLine(const FString& Key, const FString& Text="", FColor Color = FColor::White);
+	void AddTextLine(const FString& Key, const FString& Text="", FColor Color = FColor::White);
 
 	// Set text value (adds a new line if it does not exist)
 	void SetTextLineValue(const FString& Key, const FString& Text);
@@ -36,13 +36,6 @@ public:
 	// Remove text line (returns false if not found)
 	bool RemoveTextLine(const FString& Key);
 
-
-	// Recalculate the size of the text
-	void ResizeText();
-
-	// Point text towards the camera
-	bool PointToCamera();
-
 private:
 	// Create a new text render component
 	UTextRenderComponent* CreateNewTextLine(const FString& Name);
@@ -51,7 +44,7 @@ private:
 	void MoveTextLineOneStepHigher(UTextRenderComponent* TRC);
 
 	// Add text line to the map and update its line order
-	void AddOrderedTextLine(const FString& Key, UTextRenderComponent* TRC);
+	void SetTextLineOrder(const FString& Key, UTextRenderComponent* TRC);
 
 private:
 	// Material template used for creating dynamic materials
@@ -64,10 +57,10 @@ private:
 
 	// The text line numbering (first=1 is top, each line goes lower)
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	TMap<UTextRenderComponent*, int32> TextLineOrder;
+	TMap<UTextRenderComponent*, int32> TextLinesOrder;
 
 	// Text size template value 
-	float TextLineScreenSize;
+	float TextLineWorldSize;
 	
 	/* Constants */
 	// Clamp the template text size between these values

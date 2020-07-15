@@ -135,7 +135,7 @@ bool USLSkeletalIndividual::ClearExportedValues()
 }
 
 // Apply visual mask material
-bool USLSkeletalIndividual::ApplyMaskMaterials(bool bPrioritizeChildren)
+bool USLSkeletalIndividual::ApplyMaskMaterials(bool bIncludeChildren)
 {
 	if (!IsInit())
 	{
@@ -144,7 +144,7 @@ bool USLSkeletalIndividual::ApplyMaskMaterials(bool bPrioritizeChildren)
 
 	if (!bIsMaskMaterialOn)
 	{
-		if (bPrioritizeChildren)
+		if (bIncludeChildren)
 		{
 			for (const auto& BI : BoneIndividuals)
 			{

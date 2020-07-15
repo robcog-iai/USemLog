@@ -86,8 +86,8 @@ public:
 	static int32 ConnectIndividualComponents(const TArray<AActor*>& Actors);
 
 	/* Individuals functionalities */
-	static int32 ToggleVisualMaskVisibility(UWorld* World, bool bPrioritizeChildren);
-	static int32 ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bPrioritizeChildren);
+	static int32 ToggleVisualMaskVisibility(UWorld* World, bool bIncludeChildren);
+	static int32 ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bIncludeChildren);
 	
 	/* Values */
 	/* Ids */
@@ -150,7 +150,7 @@ private:
 	static bool ConnectIndividualComponent(AActor* Actor);
 
 	/* Individuals functionalities Private */
-	static bool ToggleVisualMaskVisibility(AActor* Actor, bool bPrioritizeChildren);
+	static bool ToggleVisualMaskVisibility(AActor* Actor, bool bIncludeChildren);
 
 	/* Individuals values Private */
 	/* Ids */

@@ -152,13 +152,13 @@ bool USLIndividualComponent::ClearExportedValues()
 }
 
 // Toggle between original and mask material is possible
-bool USLIndividualComponent::ToggleVisualMaskVisibility(bool bPrioritizeChildren)
+bool USLIndividualComponent::ToggleVisualMaskVisibility(bool bIncludeChildren)
 {
 	if (HasValidIndividual())
 	{
 		if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
 		{
-			return VI->ToggleMaterials(bPrioritizeChildren);
+			return VI->ToggleMaterials(bIncludeChildren);
 		}
 	}
 

@@ -91,7 +91,7 @@ public:
 	bool ClearExportedValues();
 
 	// Toggle between original and mask material is possible
-	bool ToggleVisualMaskVisibility(bool bPrioritizeChildren);
+	bool ToggleVisualMaskVisibility(bool bIncludeChildren);
 
 	/* Values */
 	/* Id */
