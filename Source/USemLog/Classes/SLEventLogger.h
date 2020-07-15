@@ -6,10 +6,7 @@
 #include "USemLog.h"
 #include "SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
-#if SL_WITH_ROSBRIDGE
 #include "SLROSPrologLogger.h"
-#endif // SL_WITH_ROSBRIDGE
-
 #include "SLEventLogger.generated.h"
 
 // Forward declaration
@@ -148,8 +145,7 @@ private:
 	TArray<class USLContainerListener*> ContainerListeners;
 
 	// ROS Logging
-#if SL_WITH_ROSBRIDGE
+	UPROPERTY()
 	USLROSPrologLogger* Log2ROSProlog;
-#endif // SL_WITH_ROSBRIDGE
 
 };

@@ -5,8 +5,10 @@
 #include "Tickable.h"
 #include "CoreMinimal.h"
 #include "std_msgs/String.h"
+#if SL_WITH_ROSBRIDGE
 #include "ROSBridgeHandler.h"
 #include "SLROSServiceClient.h"
+#endif // SL_WITH_ROSBRIDGE
 #include "rosprolog_msgs/Query.h"
 #include "UObject/NoExportTypes.h"
 #include "Events/ISLEventHandler.h"
@@ -31,7 +33,7 @@ public:
 	~USLROSPrologLogger();
 
 	void Disconnect();
-	void Connect(FString Host, uint32 port);
+	void Init(FString Host, uint32 port);
 
 	void AddEvent(TSharedPtr<ISLEvent> Event);
 
@@ -55,10 +57,11 @@ private:
 	// True if the object can be ticked (used by FTickableGameObject)
 	bool bIsTickable;
 
+#if SL_WITH_ROSBRIDGE
 	// ROS Connection handlers
 	TSharedPtr<FROSBridgeHandler> ROSHandler;
 	TSharedPtr<SLROSServiceClient> ROSClient;
-
+#endif // SL_WITH_ROSBRIDGE
 	// Query Queue
 	TMap<FString, FString> QueriesBuffer;
 };

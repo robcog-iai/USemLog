@@ -61,7 +61,7 @@ namespace rosprolog_msgs
 			{
 				TSharedPtr<FJsonObject> Object = MakeShareable<FJsonObject>(new FJsonObject());
 				Object->SetNumberField(TEXT("mode"), mode);
-				Object->SetStringField(TEXT("command"), query);
+				Object->SetStringField(TEXT("query"), query);
 				Object->SetStringField(TEXT("id"), id);
 				return Object;
 			}

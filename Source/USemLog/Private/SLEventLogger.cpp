@@ -285,10 +285,8 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		}
 
 		if (bLogThroughROS) {
-#if SL_WITH_ROSBRIDGE
 			Log2ROSProlog = NewObject<USLROSPrologLogger>(this);
-			Log2ROSProlog->Connect(WriterParams.ServerIp, WriterParams.ServerPort);
-#endif // SL_WITH_ROSBRIDGE
+			Log2ROSProlog->Init(WriterParams.ServerIp, WriterParams.ServerPort);
 		}
 		// Mark as initialized
 		bIsInit = true;
