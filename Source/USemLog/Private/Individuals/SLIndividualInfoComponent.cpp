@@ -8,6 +8,8 @@
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/KismetMathLibrary.h" // FindLookAtRotation
 #include "Engine/LocalPlayer.h" // Frustrum check
+#include "TimerManager.h"
+
 #if WITH_EDITOR
 #include "LevelEditorViewport.h"
 #include "Editor.h"
@@ -22,6 +24,7 @@ USLIndividualInfoComponent::USLIndividualInfoComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 	PrimaryComponentTick.TickInterval = 0.1f;
+	bTickInEditor = true;
 
 	bIsInit = false;
 	bIsLoaded = false;
@@ -32,21 +35,57 @@ USLIndividualInfoComponent::USLIndividualInfoComponent()
 	TextComponent->SetupAttachment(this);
 }
 
+// Called after the C++ constructor and after the properties have been initialized, including those loaded from config. IsTemplate() could be true
+void USLIndividualInfoComponent::PostInitProperties()
+{
+	Super::PostInitProperties();
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+}
+
+// Do any object-specific cleanup required immediately after loading an object.
+void USLIndividualInfoComponent::PostLoad()
+{
+	Super::PostLoad();
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+	
+	// Make sure the individual sibling is connected before
+	FTimerHandle DelayTimerHandle;
+	FTimerDelegate DelayTimerDelegate;
+	DelayTimerDelegate.BindLambda([this] 
+		{
+			if (!IsConnected())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+				Connect();
+				SetOwnStateValuesText();
+				SetSiblingIndividualStateValuesText();
+			}
+		});
+	if (GetWorld())
+	{		
+		GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate, 0.5f, false);
+	}
+}
+
 // Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
 void USLIndividualInfoComponent::OnRegister()
 {
 	Super::OnRegister();
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+}
 
-	//if (!IsConnected())
-	//{
-	//	Connect();
-	//}
+// Initializes the component.
+void USLIndividualInfoComponent::InitializeComponent()
+{
+	Super::InitializeComponent();
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
 }
 
 // Called when a component is created(not loaded).This can happen in the editor or during gameplay
 void USLIndividualInfoComponent::OnComponentCreated()
 {
 	Super::OnComponentCreated();
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
 
 	// Check if actor already has a semantic data component
 	for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualInfoComponent::StaticClass()))
@@ -66,25 +105,33 @@ void USLIndividualInfoComponent::OnComponentCreated()
 void USLIndividualInfoComponent::BeginPlay()
 {
 	Super::BeginPlay();	
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
 }
 
 // Called every frame
 void USLIndividualInfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	OrientateTowardsViewer();
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+	//FVector ViewLocation;
+	//IsInViewFrustrum(ViewLocation);
+	//OrientateTowardsLocation(ViewLocation);
+	//SetTextScale(ViewLocation);
 
-	if (IsInFrustrum())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's Tick at %.4fs, In FRUSTRUM "),
-			*FString(__FUNCTION__), __LINE__, *GetFullGroupName(true), FPlatformTime::Seconds());
-		OrientateTowardViewer();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's Tick at %.4fs, NOT In FRUSTRUM "),
-			*FString(__FUNCTION__), __LINE__, *GetFullGroupName(true), FPlatformTime::Seconds());
-		OrientateTowardViewer();
-	}
+	//if (IsInViewFrustrum(ViewLocation))
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's Tick at %.4fs, In FRUSTRUM "),
+	//		*FString(__FUNCTION__), __LINE__, *GetFullGroupName(false), FPlatformTime::Seconds());
+	//	OrientateTowardsLocation(ViewLocation);
+	//	SetTextScale(ViewLocation);
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s's Tick at %.4fs, NOT In FRUSTRUM "),
+	//		*FString(__FUNCTION__), __LINE__, *GetFullGroupName(true), FPlatformTime::Seconds());
+	//	//OrientateTowardViewer();
+	//}
 
 	//if (GetOwner()->WasRecentlyRendered())
 	//{
@@ -161,6 +208,12 @@ bool USLIndividualInfoComponent::Connect()
 	return IsConnected();
 }
 
+// Enable/disable tick
+void USLIndividualInfoComponent::ToggleTick()
+{
+	SetComponentTickEnabled(!IsComponentTickEnabled());
+}
+
 // Show / hide text data
 void USLIndividualInfoComponent::ToggleTextVisibility()
 {
@@ -168,7 +221,7 @@ void USLIndividualInfoComponent::ToggleTextVisibility()
 }
 
 // Rotate component towards the screen
-bool USLIndividualInfoComponent::OrientateTowardViewer()
+bool USLIndividualInfoComponent::OrientateTowardsViewer()
 {
 	// True if we are in the editor (this is still true when using Play In Editor). You may want to use GWorld->HasBegunPlay in that case)	
 	if (GIsEditor)
@@ -193,11 +246,14 @@ bool USLIndividualInfoComponent::OrientateTowardViewer()
 	}
 
 	return false;
+}
 
-	//// Orientate it toward the viewer
-	//const FVector DirectionToward = (OrientateToward - GetActorLocation()).GetSafeNormal();
-	//const FQuat TowardRotation = DirectionToward.ToOrientationQuat();
-	//TextComponent->SetWorldRotation((TowardRotation * FVector::ForwardVector).ToOrientationQuat());
+// Rotate component towards the given location
+void USLIndividualInfoComponent::OrientateTowardsLocation(const FVector& Location)
+{
+	const FVector TowardsDirection = (Location - GetComponentLocation()).GetSafeNormal();
+	const FQuat TowardsRotation = TowardsDirection.ToOrientationQuat();
+	SetWorldRotation((TowardsRotation * FVector::ForwardVector).ToOrientationQuat());
 }
 
 // Clear all references of the individual
@@ -205,6 +261,7 @@ void USLIndividualInfoComponent::InitReset()
 {
 	LoadReset();
 	SetIsInit(false);
+	TextComponent->ClearAllTextLines();
 	SiblingIndividualComponent = nullptr;
 	ClearDelegates();
 }
@@ -212,7 +269,10 @@ void USLIndividualInfoComponent::InitReset()
 // Clear all data of the individual
 void USLIndividualInfoComponent::LoadReset()
 {
-	//TextComponent->ClearAllValues();
+	TArray<FString> IgnoreKeys;
+	IgnoreKeys.Add(FString(SelfTextLineKey));
+	IgnoreKeys.Add(FString(SiblingIndividualTextLineKey));
+	TextComponent->ClearTextLineValues(IgnoreKeys);
 	SetIsLoaded(false);
 }
 
@@ -239,6 +299,7 @@ void USLIndividualInfoComponent::SetIsInit(bool bNewValue, bool bBroadcast)
 		{
 			// OnInitChanged.Broadcast(this, bNewValue);
 		}
+		SetOwnStateValuesText();
 	}
 }
 
@@ -252,6 +313,7 @@ void USLIndividualInfoComponent::SetIsLoaded(bool bNewValue, bool bBroadcast)
 		{
 			// OnLoadedChanged.Broadcast(this, bNewValue);
 		}
+		SetOwnStateValuesText();
 	}
 }
 
@@ -265,6 +327,7 @@ void USLIndividualInfoComponent::SetIsConnected(bool bNewValue, bool bBroadcast)
 		{
 			// OnConnectedChanged.Broadcast(this, bNewValue);
 		}
+		SetOwnStateValuesText();
 	}
 }
 
@@ -273,6 +336,14 @@ bool USLIndividualInfoComponent::InitImpl()
 {
 	if (HasValidSiblingIndividualComponent() || SetSiblingIndividualComponent())
 	{
+		TextComponent->AddTextLine(SelfTextLineKey);
+		TextComponent->AddTextLine(SiblingIndividualTextLineKey);
+
+		// Set the current text of the sibling
+		SetOwnStateValuesText();
+		SetSiblingIndividualStateValuesText();
+
+		// Listen to the siblings changes
 		Connect();
 		return true;
 	}
@@ -286,18 +357,10 @@ bool USLIndividualInfoComponent::LoadImpl()
 {
 	if (HasValidSiblingIndividualComponent())
 	{
-		TextComponent->AddTextLine("IndividualComp", "IndividualComp:[Init=false;Loaded=false;Connected=false;]", FColor::Red);
-		TextComponent->AddTextLine("InfoComp", "InfoComp:[Init=false;Loaded=false;Connected=false;]", FColor::Blue);
-		TextComponent->AddTextLine("Test1");
-		TextComponent->AddTextLine("Test2","Test2");
-		TextComponent->AddTextLine("Test3", "Test3");
-		TextComponent->RemoveTextLine("Text2");
-		TextComponent->AddTextLine("Test4", "Test4");
-		TextComponent->SetTextLineValue("Test4", "Test4Edited");
+		// Force publishing sibling individual values
+		SiblingIndividualComponent->TriggerValuesBroadcast();
 		return true;
 	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component sibling is not valid, this should not happen.."),
-		*FString(__FUNCTION__), __LINE__, *GetFullName());
 	return false;
 }
 
@@ -393,7 +456,7 @@ bool USLIndividualInfoComponent::SetSiblingIndividualComponent()
 }
 
 // Check if the component is in the view frustrum
-bool USLIndividualInfoComponent::IsInFrustrum() const
+bool USLIndividualInfoComponent::IsInViewFrustrum(FVector& OutViewLocation) const
 {
 	ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	if (LocalPlayer != nullptr && LocalPlayer->ViewportClient != nullptr && LocalPlayer->ViewportClient->Viewport)
@@ -407,6 +470,7 @@ bool USLIndividualInfoComponent::IsInFrustrum() const
 		FVector ViewLocation;
 		FRotator ViewRotation;
 		FSceneView* SceneView = LocalPlayer->CalcSceneView(&ViewFamily, ViewLocation, ViewRotation, LocalPlayer->ViewportClient->Viewport);
+		OutViewLocation = ViewLocation;
 		if (SceneView != nullptr)
 		{
 			return SceneView->ViewFrustum.IntersectSphere(
@@ -417,8 +481,15 @@ bool USLIndividualInfoComponent::IsInFrustrum() const
 }
 
 // Scale the text relative to the distance towards it
-void USLIndividualInfoComponent::SetTextScale()
+void USLIndividualInfoComponent::SetTextScale(const FVector& Location)
 {
+	float Distance = FVector::Distance(Location, GetComponentLocation());
+	float DistanceSq = FVector::DistSquared(Location, GetComponentLocation());
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Distance=%f; DistanceSq=%f;"),
+		*FString(__FUNCTION__), __LINE__, Distance, DistanceSq);
+	
+	/*float Scale = FMath::Clamp(Distance, )
+	TextComponent->SetWorldScale3D()*/
 	//MiddleLocation.Z += Scale * 5.0f;
 	//UserScaleIndicatorText->SetWorldTransform(FTransform((VRMode->GetHeadTransform().GetLocation() - MiddleLocation).ToOrientationRotator(),
 	//	MiddleLocation,
@@ -426,41 +497,92 @@ void USLIndividualInfoComponent::SetTextScale()
 	//));
 }
 
+// Set its own states as text values
+void USLIndividualInfoComponent::SetOwnStateValuesText()
+{	
+	const FString TextValue = FString::Printf(TEXT("%s : I:%s; L:%s; C:%s;"),
+		ANSI_TO_TCHAR(SelfTextLineKey), IsInit() ? "T" : "F", IsLoaded() ? "T" : "F", IsConnected() ? "T" : "F");
+	TextComponent->SetTextLineValue(SelfTextLineKey, TextValue);
+	if (IsConnected())
+	{
+		if (IsLoaded())
+		{
+			TextComponent->SetTextLineColor(SelfTextLineKey, FColor::Green);
+		}
+		else if (IsInit())
+		{
+			TextComponent->SetTextLineColor(SelfTextLineKey, FColor::Yellow);
+		}
+		else
+		{
+			TextComponent->SetTextLineColor(SelfTextLineKey, FColor::Red);
+		}
+	}
+	else
+	{
+		TextComponent->SetTextLineColor(SelfTextLineKey, FColor::Silver);
+	}
+}
+
+// Set its individuals state values
+void USLIndividualInfoComponent::SetSiblingIndividualStateValuesText()
+{		
+	if (HasValidSiblingIndividualComponent())
+	{
+		const FString TextValue = FString::Printf(TEXT("%s : I:%s; L:%s; C:%s;"),
+			*FString(SiblingIndividualTextLineKey), IsInit() ? "T" : "F", IsLoaded() ? "T" : "F", IsConnected() ? "T" : "F");
+		TextComponent->SetTextLineValue(SiblingIndividualTextLineKey, TextValue);
+		if (SiblingIndividualComponent->IsConnected())
+		{
+			if (SiblingIndividualComponent->IsLoaded())
+			{
+				TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::Green);
+			}
+			else if (SiblingIndividualComponent->IsInit())
+			{
+				TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::Yellow);
+			}
+			else
+			{
+				TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::Red);
+			}
+		}
+		else
+		{
+			TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::Silver);
+		}
+	}
+	else
+	{
+		TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::White);
+		TextComponent->SetTextLineValue(SiblingIndividualTextLineKey, FString::Printf(TEXT("%s : null"), SiblingIndividualTextLineKey));
+	}
+}
+
 
 /* Delegate functions */
 // Called when owners init value has changed
 void USLIndividualInfoComponent::OnSiblingIndividualComponentInitChanged(USLIndividualComponent* IC, bool bNewVal)
 {
-	//if (bNewVal != IsInit())
-	//{
-	//	SetIsInit(bNewVal);
-	//	SetTextColors();
-	//	if (!bNewVal)
-	//	{
-	//		UE_LOG(LogTemp, Log, TEXT("%s::%d %s's individual component is not init anymore, vis info will need to be re initialized.."),
-	//			*FString(__FUNCTION__), __LINE__, *Component->GetOwner()->GetName());
-	//	}
-	//}	
+	SetSiblingIndividualStateValuesText();
 }
 
 // Called when owners load value has changed
 void USLIndividualInfoComponent::OnSiblingIndividualComponentLoadedChanged(USLIndividualComponent* IC, bool bNewVal)
 {
-	//if (bNewVal != IsLoaded())
-	//{
-	//	SetIsLoaded(bNewVal);
-	//	SetTextColors();
-	//}
+	SetSiblingIndividualStateValuesText();
 }
 
 // Called when the siblings connected value has changed
 void USLIndividualInfoComponent::OnSiblingIndividualComponentConnectedChanged(USLIndividualComponent* IC, bool bNewVal)
 {
+	SetSiblingIndividualStateValuesText();
 }
 
 // Called when the siblings values have changed
 void USLIndividualInfoComponent::OnSiblingIndividualComponentValueChanged(USLIndividualComponent* IC, const FString& NewKey, const FString& NewValue)
 {
+	TextComponent->SetTextLineValueAndColor(NewKey, NewValue, FColor::Silver);
 }
 
 // Called when owner is being destroyed

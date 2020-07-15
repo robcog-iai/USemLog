@@ -20,15 +20,14 @@ USLIndividualComponent::USLIndividualComponent()
 	IndividualObj = nullptr;
 }
 
-// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
-void USLIndividualComponent::OnRegister()
+// Do any object-specific cleanup required immediately after loading an object.
+void USLIndividualComponent::PostLoad()
 {
-	Super::OnRegister();
-
-	//if (!IsConnected())
-	//{
-	//	Connect();
-	//}
+	Super::PostLoad();
+	if (!IsConnected())
+	{
+		Connect();
+	}
 }
 
 // Called when a component is created(not loaded).This can happen in the editor or during gameplay
@@ -162,6 +161,33 @@ bool USLIndividualComponent::ToggleVisualMaskVisibility(bool bIncludeChildren)
 		}
 	}
 
+	return false;
+}
+
+// Re-broadcast all available values
+bool USLIndividualComponent::TriggerValuesBroadcast()
+{
+	if (HasValidIndividual())
+	{
+		if (IndividualObj->IsIdValueSet())
+		{
+			OnValueChanged.Broadcast(this, "Id", IndividualObj->GetIdValue());
+		}
+
+		if (IndividualObj->IsClassValueSet())
+		{
+			OnValueChanged.Broadcast(this, "Class", IndividualObj->GetClassValue());
+		}
+
+		if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
+		{
+			if (VI->IsVisualMaskValueSet())
+			{
+				OnValueChanged.Broadcast(this, "VisualMask", VI->GetVisualMaskValue());
+			}
+		}
+		return true;
+	}
 	return false;
 }
 

@@ -180,6 +180,34 @@ int32 FSLIndividualInfoUtils::ConnectIndividualInfoComponents(const TArray<AActo
 	return Num;
 }
 
+// Toggle the visibility of all individual info components
+int32 FSLIndividualInfoUtils::ToggleIndividualInfoComponentsVisibilty(UWorld* World)
+{
+	int32 Num = 0;
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		if (ToggleIndividualInfoComponentVisibilty(*ActItr))
+		{
+			Num++;
+		}
+	}
+	return Num;
+}
+
+// Toggle the visibility of selected individual info components
+int32 FSLIndividualInfoUtils::ToggleIndividualInfoComponentsVisibilty(const TArray<AActor*>& Actors)
+{
+	int32 Num = 0;
+	for (const auto& Act : Actors)
+	{
+		if (ToggleIndividualInfoComponentVisibilty(Act))
+		{
+			Num++;
+		}
+	}
+	return Num;
+}
+
 
 /* Private */
 /* Individuals */
@@ -208,6 +236,17 @@ USLIndividualInfoComponent* FSLIndividualInfoUtils::AddNewIndividualInfoComponen
 
 		//NewComp->OnComponentCreated();
 		NewComp->RegisterComponent();
+
+		// Attach componentt
+		USceneComponent* RootComp = Actor->GetRootComponent();
+		if (RootComp)
+		{
+			NewComp->AttachToComponent(RootComp, FAttachmentTransformRules::KeepRelativeTransform);
+		}
+		else
+		{
+			Actor->SetRootComponent(NewComp);
+		}
 
 		// Register any new components that may have been created during construction of the instanced component, but were not explicitly registered.
 		TInlineComponentArray<UActorComponent*> PostInstanceComponents;
@@ -298,6 +337,19 @@ bool FSLIndividualInfoUtils::ConnectIndividualInfoComponent(AActor* Actor)
 	{
 		USLIndividualInfoComponent* IC = CastChecked<USLIndividualInfoComponent>(AC);
 		return IC->Connect();
+	}
+	return false;
+}
+
+// Toggle the visibility of all individual info components
+bool FSLIndividualInfoUtils::ToggleIndividualInfoComponentVisibilty(AActor* Actor)
+{
+	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualInfoComponent::StaticClass()))
+	{
+		USLIndividualInfoComponent* IC = CastChecked<USLIndividualInfoComponent>(AC);
+		IC->SetVisibility(!IC->IsVisible(), true);
+		IC->SetComponentTickEnabled(IC->IsVisible());
+		return true;
 	}
 	return false;
 }

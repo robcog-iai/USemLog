@@ -42,8 +42,8 @@ public:
 	USLIndividualComponent();
 
 protected:
-	// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
-	virtual void OnRegister() override;
+	// Do any object-specific cleanup required immediately after loading an object. (called only once when loading the map)
+	virtual void PostLoad() override;
 
 	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
 	virtual void OnComponentCreated() override;
@@ -92,6 +92,9 @@ public:
 
 	// Toggle between original and mask material is possible
 	bool ToggleVisualMaskVisibility(bool bIncludeChildren);
+
+	// Re-broadcast all available values
+	bool TriggerValuesBroadcast();
 
 	/* Values */
 	/* Id */

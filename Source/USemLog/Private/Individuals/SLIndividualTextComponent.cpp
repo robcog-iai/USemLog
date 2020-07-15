@@ -14,16 +14,13 @@ USLIndividualTextComponent::USLIndividualTextComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	TextMaterial = Cast<UMaterial>(StaticLoadObject( UMaterial::StaticClass(), NULL, TextMaterialPath, NULL, LOAD_None, NULL));
-	TextLineWorldSize = 5.f;
+	TextLineWorldSize = 2.5f;
 }
 
 // Called before destroying the object.
 void USLIndividualTextComponent::BeginDestroy()
 {
-	for (const auto& Pair : TextLines)
-	{
-		Pair.Value->ConditionalBeginDestroy();
-	}
+	ClearAllTextLines();
 	Super::BeginDestroy();
 }
 
@@ -71,6 +68,22 @@ void USLIndividualTextComponent::SetTextLineColor(const FString& Key, FColor Col
 	}
 }
 
+// Set text line value and color
+void USLIndividualTextComponent::SetTextLineValueAndColor(const FString& Key, const FString& Text, FColor Color)
+{
+	if (UTextRenderComponent** FoundLine = TextLines.Find(Key))
+	{
+		(*FoundLine)->SetText(FText::FromString(Text));
+		(*FoundLine)->SetTextRenderColor(Color);
+	}
+	else if (UTextRenderComponent* NewLine = CreateNewTextLine("TextLine_" + Key))
+	{
+		NewLine->SetText(FText::FromString(Text));
+		NewLine->SetTextRenderColor(Color);
+		SetTextLineOrder(Key, NewLine);
+	}
+}
+
 // Remove text line (returns false if not found)
 bool USLIndividualTextComponent::RemoveTextLine(const FString& Key)
 {
@@ -95,6 +108,35 @@ bool USLIndividualTextComponent::RemoveTextLine(const FString& Key)
 			*FString(__FUNCTION__), __LINE__, *GetFullName(), *RemovedCopy->GetName());
 	}
 	return false;
+}
+
+// Clear all text lines
+void USLIndividualTextComponent::ClearAllTextLines()
+{
+	for (const auto& Pair : TextLines)
+	{
+		Pair.Value->ConditionalBeginDestroy();
+	}
+	TextLines.Empty();
+	TextLinesOrder.Empty();
+}
+
+// Remove all lines that are not in the ignore key array
+void USLIndividualTextComponent::ClearTextLineValues(TArray<FString>& IgnoreKeys)
+{
+	TArray<FString> KeysToRemove;
+	for (const auto& KeyVal : TextLines)
+	{
+		if (!IgnoreKeys.Contains(KeyVal.Key))
+		{
+			KeysToRemove.Add(KeyVal.Key);
+		}
+	}
+
+	for (const auto& Key : KeysToRemove)
+	{
+		RemoveTextLine(Key);
+	}
 }
 
 // Create a new text render component

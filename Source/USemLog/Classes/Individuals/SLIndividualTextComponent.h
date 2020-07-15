@@ -33,8 +33,17 @@ public:
 	// Set text render color value (adds a new line if it does not exist)
 	void SetTextLineColor(const FString& Key, FColor Color);
 
+	// Set text line value and color
+	void SetTextLineValueAndColor(const FString& Key, const FString& Text, FColor Color);
+
 	// Remove text line (returns false if not found)
 	bool RemoveTextLine(const FString& Key);
+
+	// Clear all text lines
+	void ClearAllTextLines();
+
+	// Remove all lines that are not in the ignore key array
+	void ClearTextLineValues(TArray<FString>& IgnoreKeys);
 
 private:
 	// Create a new text render component

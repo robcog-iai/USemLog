@@ -30,8 +30,17 @@ public:
 	USLIndividualInfoComponent();
 
 protected:
-	// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called
+	// Called after the C++ constructor and after the properties have been initialized, including those loaded from config. (IsTemplate() could be true)
+	virtual void PostInitProperties() override;
+
+	// Do any object-specific cleanup required immediately after loading an object. (called only once when loading the map)
+	virtual void PostLoad() override;
+
+	// Called after Scene is set, but before CreateRenderState_Concurrent or OnCreatePhysicsState are called (also called after changes done in the editor)
 	virtual void OnRegister() override;
+
+	// Initializes the component.
+	virtual void InitializeComponent() override;
 
 	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
 	virtual void OnComponentCreated() override;
@@ -64,11 +73,15 @@ public:
 	// True if the component is listening to the individual object delegates (transient)
 	bool IsConnected() const { return bIsConnected; };
 
+	// Enable/disable tick
+	void ToggleTick();
+
 	// Toggle text visiblity
 	void ToggleTextVisibility();
 
 	// Rotate component towards the screen
-	bool OrientateTowardViewer();
+	bool OrientateTowardsViewer();
+	void OrientateTowardsLocation(const FVector& Location);
 
 protected:
 	// Clear all references of the individual
@@ -106,10 +119,17 @@ private:
 	bool SetSiblingIndividualComponent();
 
 	// Check if the component is in the view frustrum
-	bool IsInFrustrum() const;
+	bool IsInViewFrustrum(FVector& OutViewLocation) const;
 
-	// Scale the text relative to the distance towards it
-	void SetTextScale();
+	// Scale the text relative to the distance towards the location
+	void SetTextScale(const FVector& Location);
+
+	/* Text values */
+	// Set its own states as text values
+	void SetOwnStateValuesText();
+
+	// Set sibling individual state values
+	void SetSiblingIndividualStateValuesText();
 
 	/* Delegate functions */
 	// Called when siblings init value has changed
@@ -164,4 +184,8 @@ private:
 	// Shows values as rendered text lines
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	USLIndividualTextComponent* TextComponent;
+
+	/* Constants */	
+	static constexpr char SelfTextLineKey[] = "self";
+	static constexpr char SiblingIndividualTextLineKey[] = "indiv";
 };

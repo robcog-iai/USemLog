@@ -28,6 +28,9 @@ public:
 	static int32 ConnectIndividualInfoComponents(UWorld* World);
 	static int32 ConnectIndividualInfoComponents(const TArray<AActor*>& Actors);
 
+	/* Functionalities */
+	static int32 ToggleIndividualInfoComponentsVisibilty(UWorld* World);
+	static int32 ToggleIndividualInfoComponentsVisibilty(const TArray<AActor*>& Actors);
 private:
 	/* Individuals Info Private */
 	static USLIndividualInfoComponent* AddNewIndividualInfoComponent(AActor* Actor, bool bTryInitAndLoad = false);
@@ -37,4 +40,7 @@ private:
 	static bool InitIndividualInfoComponent(AActor* Actor, bool bReset);
 	static bool LoadIndividualInfoComponent(AActor* Actor, bool bReset);
 	static bool ConnectIndividualInfoComponent(AActor* Actor);
+
+	/* Functionalities Private */
+	static bool ToggleIndividualInfoComponentVisibilty(AActor* Actor);
 };

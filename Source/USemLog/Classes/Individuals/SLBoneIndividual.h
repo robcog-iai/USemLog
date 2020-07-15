@@ -19,6 +19,11 @@ UCLASS(ClassGroup = SL)
 class USEMLOG_API USLBoneIndividual : public USLPerceivableIndividual
 {
     GENERATED_BODY()
+
+    // TODO see if this makes sense for setting the class, ids etc.
+    //// Only the owning skeletal individual should be able to change values
+    //friend class USLSkeletalIndividal;
+
 public:
     // Ctor
     USLBoneIndividual();

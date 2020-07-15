@@ -748,9 +748,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoFuncSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("SemDataVisInfoToggle", "Toggle Visibility"))
+				.Text(LOCTEXT("ToggleIndividualsInfo", "Toggle Visibility"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("SemDataVisInfoToggleTip", "Toggle visual info visibility.."))
+				.ToolTipText(LOCTEXT("SemDataVisInfoToggleTip", "Toggle individuals info visibility.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnToggleIndividualsInfoVisiblity)
 			]
 
@@ -1411,6 +1411,7 @@ FReply FSLEdModeToolkit::OnCreateIndividualsInfo()
 	return FReply::Handled();
 }
 
+
 FReply FSLEdModeToolkit::OnDestroyIndividualsInfo()
 {
 	FScopedTransaction Transaction(LOCTEXT("DestroyIndividualsInfoST", "Destroy individual info components.."));
@@ -1501,7 +1502,7 @@ FReply FSLEdModeToolkit::OnConnectIndividualsInfo()
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully called Connect() on %ld individual info components.."),
-			*FString(__FUNCTION__), __LINE__, bResetFlag, Num);
+			*FString(__FUNCTION__), __LINE__, Num);
 	}
 	return FReply::Handled();
 }
@@ -1510,33 +1511,23 @@ FReply FSLEdModeToolkit::OnConnectIndividualsInfo()
 // Individual Visual Info Funcs
 FReply FSLEdModeToolkit::OnToggleIndividualsInfoVisiblity()
 {
-	FScopedTransaction Transaction(LOCTEXT("SemDataVisInfoToggleST", "Toggle visual info components visibility"));
-	int32 NumComp = 0;
-
-	if (HasValidIndividualInfoManager())
+	FScopedTransaction Transaction(LOCTEXT("ToggleIndividualsInfoVisibilityTS", "Toggle individuals info visibility.."));
+	int32 Num = 0;
+	if (bOnlySelectedFlag)
 	{
-		//if (bOnlySelectedFlag)
-		//{
-		//	NumComp = IndividualInfoManager->ToggleInfoVisibility(GetSelectedActors());
-		//}
-		//else
-		//{
-		//	NumComp = IndividualInfoManager->ToggleInfoVisibility();
-		//}
+		Num = FSLIndividualInfoUtils::ToggleIndividualInfoComponentsVisibilty(GetSelectedActors());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual info manager not set, init first.."),
-			*FString(__FUNCTION__), __LINE__);
+		Num = FSLIndividualInfoUtils::ToggleIndividualInfoComponentsVisibilty(GEditor->GetEditorWorldContext().World());
 	}
 
-	if (NumComp)
+	if (Num)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Toggled %ld new visual info components.."),
-			*FString(__FUNCTION__), __LINE__, NumComp);
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Succesfully changed the visibility of %ld individual info components.."),
+			*FString(__FUNCTION__), __LINE__, Num);
 	}
-
 	return FReply::Handled();
 }
 

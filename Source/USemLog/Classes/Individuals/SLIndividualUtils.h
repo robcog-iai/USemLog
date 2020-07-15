@@ -85,7 +85,7 @@ public:
 	static int32 ConnectIndividualComponents(UWorld* World);
 	static int32 ConnectIndividualComponents(const TArray<AActor*>& Actors);
 
-	/* Individuals functionalities */
+	/* Functionalities */
 	static int32 ToggleVisualMaskVisibility(UWorld* World, bool bIncludeChildren);
 	static int32 ToggleVisualMaskVisibility(const TArray<AActor*>& Actors, bool bIncludeChildren);
 	
