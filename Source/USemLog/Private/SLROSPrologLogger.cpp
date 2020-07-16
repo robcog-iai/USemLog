@@ -20,13 +20,15 @@ void USLROSPrologLogger::Tick(float DeltaTime)
 		for (auto It = QueriesBuffer.CreateConstIterator(); It; ++It) {
 			SendPrologQuery(It.Key());
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Jo JO JKO"));
+	}
+	while (NextSolutionCommandsBuffer.Num() > 0) {
+		SendNextSolutionCommand(NextSolutionCommandsBuffer.Pop());
+	}
+	while (FinishCommandsBuffer.Num() > 0) {
+		SendFinishCommand(FinishCommandsBuffer.Pop());
 	}
 
-	if (ROSHandler.IsValid())
-	{
-		ROSHandler->Process();
-	}
+
 #endif // SL_WITH_ROSBRIDGE
 
 }
@@ -48,7 +50,10 @@ void USLROSPrologLogger::Init(FString Host, uint32 port) {
 #if SL_WITH_ROSBRIDGE
 	// Start ROS Connection
 	ROSHandler = MakeShareable<FROSBridgeHandler>(new FROSBridgeHandler(Host, port));
-	ROSClient = MakeShareable<SLROSServiceClient>(new SLROSServiceClient("/rosprolog/query","/rosprolog/query"));
+	ROSPrologQueryClient = MakeShareable<SLROSServiceClient>(new SLROSServiceClient(this, "/rosprolog/query","query"));
+	ROSPrologNextSolutionClient = MakeShareable<SLROSServiceClient>(new SLROSServiceClient(this, "/rosprolog/next_solution", "next_solution"));
+	ROSPrologFinishClient = MakeShareable<SLROSServiceClient>(new SLROSServiceClient(this, "/rosprolog/finish", "finish"));
+
 	if (ROSHandler.IsValid()) {
 		//ROSHandler->
 		ROSHandler->Connect();
@@ -78,8 +83,73 @@ void USLROSPrologLogger::SendPrologQuery(FString Id) {
 #if SL_WITH_ROSBRIDGE
 	FString Query;
 	QueriesBuffer.RemoveAndCopyValue(Id, Query);
+	UE_LOG(LogTemp, Warning, TEXT("Sending Query : ID = %s; Query = %s;"), *Id, *Query);
 	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Query::Request(0, Query, Id));
 	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::Query::Response());
-	ROSHandler->CallService(ROSClient, Request, Response);
+	ROSHandler->CallService(ROSPrologQueryClient, Request, Response);
+	SentQueries.Add(Response, Id);
 #endif
 }
+
+void USLROSPrologLogger::SendNextSolutionCommand(FString Id) {
+#if SL_WITH_ROSBRIDGE
+	UE_LOG(LogTemp, Warning, TEXT("Sending Next Solution Command : ID = %s;"), *Id);
+	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::NextSolution::Request(Id));
+	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::NextSolution::Response());
+	ROSHandler->CallService(ROSPrologNextSolutionClient, Request, Response);
+	SentNextSolutionCommands.Add(Response, Id);
+#endif
+}
+
+void USLROSPrologLogger::SendFinishCommand(FString Id) {
+#if SL_WITH_ROSBRIDGE
+	UE_LOG(LogTemp, Warning, TEXT("Sending Finish Command: ID = %s;"), *Id);
+	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Finish::Request(Id));
+	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::Finish::Response());
+	ROSHandler->CallService(ROSPrologFinishClient, Request, Response);
+	SentFinishCommands.Add(Response, Id);
+#endif
+}
+
+#if SL_WITH_ROSBRIDGE
+void  USLROSPrologLogger::ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse, FString Type) {
+	
+	FString Id;
+	
+	if (Type.Equals("query")) {
+		TSharedPtr<rosprolog_msgs::Query::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::Query::Response>(InResponse);
+		if (SentQueries.RemoveAndCopyValue(InResponse, Id)) {
+			SendNextSolutionCommand(Id);
+			UE_LOG(LogTemp, Warning, TEXT("Response for query: ID = %s; OK = %s; Message = \"%s\""), \
+				*Id, Msg->GetSuccess()?"true":"false", *Msg->GetMessage());
+		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("No previous query found for this response: OK = %s; Message = \"%s\""), \
+				*Id, Msg->GetSuccess() ? "true" : "false", *Msg->GetMessage());
+		}
+	}
+
+	if (Type.Equals("next_solution")) {
+		TSharedPtr<rosprolog_msgs::NextSolution::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::NextSolution::Response>(InResponse);
+		if (SentNextSolutionCommands.RemoveAndCopyValue(InResponse, Id)) {
+			SendFinishCommand(Id);
+			UE_LOG(LogTemp, Warning, TEXT("Response for next solution command: ID = %s; Status = %d; Solution = \"%s\""), \
+				*Id, Msg->GetStatus(), *Msg->GetSolution());
+		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("No previous next_solution command found for this response: Status = %d; Solution = \"%s\""), \
+				*Id, Msg->GetStatus(), *Msg->GetSolution());
+		}
+	}
+
+	if (Type.Equals("finish")) {
+		TSharedPtr<rosprolog_msgs::Finish::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::Finish::Response>(InResponse);
+		if (SentFinishCommands.RemoveAndCopyValue(InResponse, Id)) {
+			UE_LOG(LogTemp, Warning, TEXT("Response for finish command received. Id = %s"), *Id);
+		}
+		else {
+			UE_LOG(LogTemp, Warning, TEXT("Response for finish command received. No previous finish command found."));
+		}
+	}
+}
+#endif // SL_WITH_ROSBRIDGE

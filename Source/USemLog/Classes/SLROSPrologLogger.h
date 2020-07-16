@@ -10,6 +10,8 @@
 #include "SLROSServiceClient.h"
 #endif // SL_WITH_ROSBRIDGE
 #include "rosprolog_msgs/Query.h"
+#include "rosprolog_msgs/NextSolution.h"
+#include "rosprolog_msgs/Finish.h"
 #include "UObject/NoExportTypes.h"
 #include "Events/ISLEventHandler.h"
 #include "SLROSPrologLogger.generated.h"
@@ -39,6 +41,14 @@ public:
 
 	void SendPrologQuery(FString Id);
 
+	void SendNextSolutionCommand(FString Id);
+
+	void SendFinishCommand(FString Id);
+
+#if SL_WITH_ROSBRIDGE
+	void ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse, FString Type);
+#endif // SL_WITH_ROSBRIDGE
+
 protected:
 
 	/** Begin FTickableGameObject interface */
@@ -58,10 +68,22 @@ private:
 	bool bIsTickable;
 
 #if SL_WITH_ROSBRIDGE
+
 	// ROS Connection handlers
 	TSharedPtr<FROSBridgeHandler> ROSHandler;
-	TSharedPtr<SLROSServiceClient> ROSClient;
+	TSharedPtr<SLROSServiceClient> ROSPrologQueryClient;
+	TSharedPtr<SLROSServiceClient> ROSPrologNextSolutionClient;
+	TSharedPtr<SLROSServiceClient> ROSPrologFinishClient;
+
+	TMap<TSharedPtr<FROSBridgeSrv::SrvResponse>, FString> SentQueries;
+	TMap<TSharedPtr<FROSBridgeSrv::SrvResponse>, FString> SentNextSolutionCommands;
+	TMap<TSharedPtr<FROSBridgeSrv::SrvResponse>, FString> SentFinishCommands;
+
 #endif // SL_WITH_ROSBRIDGE
+
 	// Query Queue
 	TMap<FString, FString> QueriesBuffer;
+	TArray<FString> NextSolutionCommandsBuffer;
+	TArray<FString> FinishCommandsBuffer;
+
 };

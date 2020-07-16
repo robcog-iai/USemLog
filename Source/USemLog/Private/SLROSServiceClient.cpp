@@ -2,9 +2,17 @@
 
 
 #include "SLROSServiceClient.h"
+#include "SLROSPrologLogger.h"
 
 SLROSServiceClient::SLROSServiceClient()
 {
+}
+
+SLROSServiceClient::SLROSServiceClient(UObject *InOwner, FString InName, FString InType)
+{
+	Owner = InOwner;
+	Name = InName;
+	Type = InType;
 }
 
 SLROSServiceClient::~SLROSServiceClient()
@@ -13,5 +21,6 @@ SLROSServiceClient::~SLROSServiceClient()
 
 void SLROSServiceClient::Callback(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Response Received:\n %s"), *InResponse->ToString());
+	USLROSPrologLogger *Logger = Cast<USLROSPrologLogger>(Owner);
+	Logger->ProcessResponse(InResponse, Type);
 }

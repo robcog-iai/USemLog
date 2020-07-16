@@ -11,6 +11,7 @@
 class USEMLOG_API SLROSServiceClient : public FROSBridgeSrvClient
 {
 public:
+
 	SLROSServiceClient();
 	~SLROSServiceClient();
 
@@ -19,8 +20,12 @@ public:
 		Name = InName;
 		Type = InType;
 	}
-
+	
+	SLROSServiceClient(UObject *InOwner, FString InName, FString InType);
+	
 	void Callback(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse) override;
+
+	UObject *Owner;
 
 };
 
