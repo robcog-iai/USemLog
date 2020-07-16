@@ -119,25 +119,25 @@ void  USLROSPrologLogger::ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse>
 	if (Type.Equals("query")) {
 		TSharedPtr<rosprolog_msgs::Query::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::Query::Response>(InResponse);
 		if (SentQueries.RemoveAndCopyValue(InResponse, Id)) {
+			UE_LOG(LogTemp, Warning, TEXT("Response for Query: ID = %s; OK = %s; Message = \"%s\""), \
+				*Id, Msg->GetSuccess()? TEXT("true") : TEXT("false"), *Msg->GetMessage());
 			SendNextSolutionCommand(Id);
-			UE_LOG(LogTemp, Warning, TEXT("Response for query: ID = %s; OK = %s; Message = \"%s\""), \
-				*Id, Msg->GetSuccess()?"true":"false", *Msg->GetMessage());
 		}
 		else {
-			UE_LOG(LogTemp, Warning, TEXT("No previous query found for this response: OK = %s; Message = \"%s\""), \
-				*Id, Msg->GetSuccess() ? "true" : "false", *Msg->GetMessage());
+			UE_LOG(LogTemp, Warning, TEXT("No previous Query found for this response: OK = %s; Message = \"%s\""), \
+				*Id, Msg->GetSuccess() ? TEXT("true") : TEXT("false"), *Msg->GetMessage());
 		}
 	}
 
 	if (Type.Equals("next_solution")) {
 		TSharedPtr<rosprolog_msgs::NextSolution::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::NextSolution::Response>(InResponse);
 		if (SentNextSolutionCommands.RemoveAndCopyValue(InResponse, Id)) {
-			SendFinishCommand(Id);
-			UE_LOG(LogTemp, Warning, TEXT("Response for next solution command: ID = %s; Status = %d; Solution = \"%s\""), \
+			UE_LOG(LogTemp, Warning, TEXT("Response for Next_Solution Command: Id = %s; Status = %d; Solution = \"%s\""), \
 				*Id, Msg->GetStatus(), *Msg->GetSolution());
+			SendFinishCommand(Id);
 		}
 		else {
-			UE_LOG(LogTemp, Warning, TEXT("No previous next_solution command found for this response: Status = %d; Solution = \"%s\""), \
+			UE_LOG(LogTemp, Warning, TEXT("No previous Next_Solution Command found for this response: Status = %d; Solution = \"%s\""), \
 				*Id, Msg->GetStatus(), *Msg->GetSolution());
 		}
 	}
@@ -145,10 +145,10 @@ void  USLROSPrologLogger::ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse>
 	if (Type.Equals("finish")) {
 		TSharedPtr<rosprolog_msgs::Finish::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::Finish::Response>(InResponse);
 		if (SentFinishCommands.RemoveAndCopyValue(InResponse, Id)) {
-			UE_LOG(LogTemp, Warning, TEXT("Response for finish command received. Id = %s"), *Id);
+			UE_LOG(LogTemp, Warning, TEXT("Response for Finish Command received. Id = %s"), *Id);
 		}
 		else {
-			UE_LOG(LogTemp, Warning, TEXT("Response for finish command received. No previous finish command found."));
+			UE_LOG(LogTemp, Warning, TEXT("Response for Finish Command received. No previous finish command found."));
 		}
 	}
 }
