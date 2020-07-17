@@ -3,7 +3,7 @@
 
 #include "Individuals/SLIndividualInfoComponent.h"
 #include "Individuals/SLIndividualComponent.h"
-#include "Individuals/SLIndividualTextComponent.h"
+#include "Individuals/SLIndividualInfoTextComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/KismetMathLibrary.h" // FindLookAtRotation
@@ -31,7 +31,7 @@ USLIndividualInfoComponent::USLIndividualInfoComponent()
 	bIsConnected = false;
 	SiblingIndividualComponent = nullptr;
 
-	TextComponent = CreateDefaultSubobject<USLIndividualTextComponent>("SLIndividualText");
+	TextComponent = CreateDefaultSubobject<USLIndividualInfoTextComponent>("SLIndividualText");
 	TextComponent->SetupAttachment(this);
 }
 
@@ -39,14 +39,14 @@ USLIndividualInfoComponent::USLIndividualInfoComponent()
 void USLIndividualInfoComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
 }
 
 // Do any object-specific cleanup required immediately after loading an object.
 void USLIndividualInfoComponent::PostLoad()
 {
 	Super::PostLoad();
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+	/*UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());*/
 	
 	// Make sure the individual sibling is connected before
 	FTimerHandle DelayTimerHandle;
@@ -55,7 +55,7 @@ void USLIndividualInfoComponent::PostLoad()
 		{
 			if (!IsConnected())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+				//UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
 				Connect();
 				SetOwnStateValuesText();
 				SetSiblingIndividualStateValuesText();
@@ -71,21 +71,21 @@ void USLIndividualInfoComponent::PostLoad()
 void USLIndividualInfoComponent::OnRegister()
 {
 	Super::OnRegister();
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
 }
 
 // Initializes the component.
 void USLIndividualInfoComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
 }
 
 // Called when a component is created(not loaded).This can happen in the editor or during gameplay
 void USLIndividualInfoComponent::OnComponentCreated()
 {
 	Super::OnComponentCreated();
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
+	/*UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());*/
 
 	// Check if actor already has a semantic data component
 	for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualInfoComponent::StaticClass()))
@@ -149,8 +149,6 @@ void USLIndividualInfoComponent::BeginDestroy()
 	SetIsInit(false);
 	SetIsLoaded(false);
 	OnDestroyed.Broadcast(this);
-
-	//if (TextComponent && TextComponent->IsValidLowLevel() && !TextComponent->IsPendingKill())
 	TextComponent->ConditionalBeginDestroy();
 	Super::BeginDestroy();
 }
@@ -261,7 +259,7 @@ void USLIndividualInfoComponent::InitReset()
 {
 	LoadReset();
 	SetIsInit(false);
-	TextComponent->ClearAllTextLines();
+	TextComponent->RemoveAllTextRows();
 	SiblingIndividualComponent = nullptr;
 	ClearDelegates();
 }
@@ -269,10 +267,10 @@ void USLIndividualInfoComponent::InitReset()
 // Clear all data of the individual
 void USLIndividualInfoComponent::LoadReset()
 {
-	TArray<FString> IgnoreKeys;
-	IgnoreKeys.Add(FString(SelfTextLineKey));
-	IgnoreKeys.Add(FString(SiblingIndividualTextLineKey));
-	TextComponent->ClearTextLineValues(IgnoreKeys);
+	TSet<FString> IgnoreKeys;
+	IgnoreKeys.Add(FString(SelfTextRowKey));
+	IgnoreKeys.Add(FString(SiblingIndividualTextRowKey));
+	TextComponent->RemoveAllTextRowsBut(IgnoreKeys);
 	SetIsLoaded(false);
 }
 
@@ -336,8 +334,8 @@ bool USLIndividualInfoComponent::InitImpl()
 {
 	if (HasValidSiblingIndividualComponent() || SetSiblingIndividualComponent())
 	{
-		TextComponent->AddTextLine(SelfTextLineKey);
-		TextComponent->AddTextLine(SiblingIndividualTextLineKey);
+		TextComponent->AddTextRow(SelfTextRowKey);
+		TextComponent->AddTextRow(SiblingIndividualTextRowKey);
 
 		// Set the current text of the sibling
 		SetOwnStateValuesText();
@@ -358,7 +356,7 @@ bool USLIndividualInfoComponent::LoadImpl()
 	if (HasValidSiblingIndividualComponent())
 	{
 		// Force publishing sibling individual values
-		SiblingIndividualComponent->TriggerValuesBroadcast();
+		SiblingIndividualComponent->TriggerIndividualValuesBroadcast();
 		return true;
 	}
 	return false;
@@ -501,26 +499,29 @@ void USLIndividualInfoComponent::SetTextScale(const FVector& Location)
 void USLIndividualInfoComponent::SetOwnStateValuesText()
 {	
 	const FString TextValue = FString::Printf(TEXT("%s : I:%s; L:%s; C:%s;"),
-		ANSI_TO_TCHAR(SelfTextLineKey), IsInit() ? "T" : "F", IsLoaded() ? "T" : "F", IsConnected() ? "T" : "F");
-	TextComponent->SetTextLineValue(SelfTextLineKey, TextValue);
+		ANSI_TO_TCHAR(SelfTextRowKey), 
+		IsInit() ? "T" : "F", 
+		IsLoaded() ? "T" : "F", 
+		IsConnected() ? "T" : "F");
+	TextComponent->SetTextRowValue(SelfTextRowKey, TextValue);
 	if (IsConnected())
 	{
 		if (IsLoaded())
 		{
-			TextComponent->SetTextLineColor(SelfTextLineKey, FColor::Green);
+			TextComponent->SetTextRowColor(SelfTextRowKey, FColor::Green);
 		}
 		else if (IsInit())
 		{
-			TextComponent->SetTextLineColor(SelfTextLineKey, FColor::Yellow);
+			TextComponent->SetTextRowColor(SelfTextRowKey, FColor::Yellow);
 		}
 		else
 		{
-			TextComponent->SetTextLineColor(SelfTextLineKey, FColor::Red);
+			TextComponent->SetTextRowColor(SelfTextRowKey, FColor::Red);
 		}
 	}
 	else
 	{
-		TextComponent->SetTextLineColor(SelfTextLineKey, FColor::Silver);
+		TextComponent->SetTextRowColor(SelfTextRowKey, FColor::Silver);
 	}
 }
 
@@ -530,32 +531,35 @@ void USLIndividualInfoComponent::SetSiblingIndividualStateValuesText()
 	if (HasValidSiblingIndividualComponent())
 	{
 		const FString TextValue = FString::Printf(TEXT("%s : I:%s; L:%s; C:%s;"),
-			*FString(SiblingIndividualTextLineKey), IsInit() ? "T" : "F", IsLoaded() ? "T" : "F", IsConnected() ? "T" : "F");
-		TextComponent->SetTextLineValue(SiblingIndividualTextLineKey, TextValue);
+			*FString(SiblingIndividualTextRowKey), 
+			SiblingIndividualComponent->IsInit() ? "T" : "F", 
+			SiblingIndividualComponent->IsLoaded() ? "T" : "F", 
+			SiblingIndividualComponent->IsConnected() ? "T" : "F");
+		TextComponent->SetTextRowValue(SiblingIndividualTextRowKey, TextValue);
 		if (SiblingIndividualComponent->IsConnected())
 		{
 			if (SiblingIndividualComponent->IsLoaded())
 			{
-				TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::Green);
+				TextComponent->SetTextRowColor(SiblingIndividualTextRowKey, FColor::Green);
 			}
 			else if (SiblingIndividualComponent->IsInit())
 			{
-				TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::Yellow);
+				TextComponent->SetTextRowColor(SiblingIndividualTextRowKey, FColor::Yellow);
 			}
 			else
 			{
-				TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::Red);
+				TextComponent->SetTextRowColor(SiblingIndividualTextRowKey, FColor::Red);
 			}
 		}
 		else
 		{
-			TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::Silver);
+			TextComponent->SetTextRowColor(SiblingIndividualTextRowKey, FColor::Silver);
 		}
 	}
 	else
 	{
-		TextComponent->SetTextLineColor(SiblingIndividualTextLineKey, FColor::White);
-		TextComponent->SetTextLineValue(SiblingIndividualTextLineKey, FString::Printf(TEXT("%s : null"), SiblingIndividualTextLineKey));
+		TextComponent->SetTextRowValueAndColor(SiblingIndividualTextRowKey,
+			FString::Printf(TEXT("%s : null"), SiblingIndividualTextRowKey), FColor::White);
 	}
 }
 
@@ -580,9 +584,16 @@ void USLIndividualInfoComponent::OnSiblingIndividualComponentConnectedChanged(US
 }
 
 // Called when the siblings values have changed
-void USLIndividualInfoComponent::OnSiblingIndividualComponentValueChanged(USLIndividualComponent* IC, const FString& NewKey, const FString& NewValue)
+void USLIndividualInfoComponent::OnSiblingIndividualComponentValueChanged(USLIndividualComponent* IC, const FString& Key, const FString& NewValue)
 {
-	TextComponent->SetTextLineValueAndColor(NewKey, NewValue, FColor::Silver);
+	if (Key.IsEmpty())
+	{
+		TextComponent->RemoveTextRow(Key);
+	}
+	else
+	{
+		TextComponent->SetTextRowValueAndColor(Key, NewValue, FColor::Silver);
+	}
 }
 
 // Called when owner is being destroyed

@@ -24,11 +24,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualInitChangeSignature, U
 // Notify every time the loaded status changes
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualLoadedChangeSignature, USLBaseIndividual*, Individual, bool, bNewLoadedVal);
 
-// Notify every time the id changes
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewIdSignature, USLBaseIndividual*, Individual, const FString&, NewId);
-
-// Notify every time the class changes
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewClassSignature, USLBaseIndividual*, Individual, const FString&, NewClass);
+// Notify every time an individual value changes
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FSLIndividualNewValueSignature, USLBaseIndividual*, Individual, const FString&, Key, const FString&, Value);
 
 // Notify listeners that the delegates have been cleared
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLIndividualDelegatesClearedSignature, USLBaseIndividual*, Individual);
@@ -59,6 +56,9 @@ public:
 
 	// Data loaded
 	bool IsLoaded() const { return bIsLoaded; };
+
+	// Trigger values as new value broadcast
+	virtual void TriggerValuesBroadcast();
 
 	// Save values externally
 	virtual bool ExportValues(bool bOverwrite = false);
@@ -161,8 +161,7 @@ public:
 	// Public delegates
 	FSLIndividualInitChangeSignature OnInitChanged;
 	FSLIndividualInitChangeSignature OnLoadedChanged;
-	FSLIndividualNewIdSignature OnNewIdValue;
-	FSLIndividualNewClassSignature OnNewClassValue;
+	FSLIndividualNewValueSignature OnNewValue;
 	FSLIndividualDelegatesClearedSignature OnDelegatesCleared;
 
 protected:
@@ -203,11 +202,7 @@ protected:
 //	bson_oid_t oid;
 //#endif
 
-	// SemLog tag key
+	// SemLog tag key (children will overwrite this)
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	FString TagType;
-
-	///* Constants */
-	//// Tag type for exporting/importing data from tags
-	//static constexpr char TagTypeConst[] = "SemLog";
 };

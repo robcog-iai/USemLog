@@ -9,7 +9,7 @@
 
 // Forward declarations
 class USLIndividualComponent;
-class USLIndividualTextComponent;
+class USLIndividualInfoTextComponent;
 
 // Delegate notification when the component is being destroyed
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLIndividualInfoComponentDestroyedSignature, USLIndividualInfoComponent*, DestroyedComponent);
@@ -146,7 +146,7 @@ private:
 
 	// Called when the siblings values have changed
 	UFUNCTION()
-	void OnSiblingIndividualComponentValueChanged(USLIndividualComponent* IC, const FString& NewKey, const FString& NewValue);
+	void OnSiblingIndividualComponentValueChanged(USLIndividualComponent* IC, const FString& Key, const FString& NewValue);
 
 	// Called when sibling is being destroyed
 	UFUNCTION()
@@ -183,9 +183,13 @@ protected:
 private:
 	// Shows values as rendered text lines
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	USLIndividualTextComponent* TextComponent;
+	USLIndividualInfoTextComponent* TextComponent;
 
 	/* Constants */	
-	static constexpr char SelfTextLineKey[] = "self";
-	static constexpr char SiblingIndividualTextLineKey[] = "indiv";
+	// Text scale clamps
+	constexpr static float TextScaleMin = 0.25f;
+	constexpr static float TextScaleMax = 2.f;
+
+	static constexpr char SelfTextRowKey[] = "self";
+	static constexpr char SiblingIndividualTextRowKey[] = "indiv";
 };

@@ -71,15 +71,28 @@ bool USLBaseIndividual::Load(bool bReset, bool bTryImport)
 	return IsLoaded();
 }
 
+// Trigger values as new value broadcast
+void USLBaseIndividual::TriggerValuesBroadcast()
+{
+	if (IsIdValueSet())
+	{
+		OnNewValue.Broadcast(this, "Id", Id);
+	}
+
+	if (IsClassValueSet())
+	{
+		OnNewValue.Broadcast(this, "Class", Class);
+	}
+}
+
 // Save data to owners tag
 bool USLBaseIndividual::ExportValues(bool bOverwrite)
 {
-	//if (!IsInit())
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot export values.."),
-	//		*FString(__FUNCTION__), __LINE__, *GetFullName());
-	//	return false;
-	//}
+	if (!HasValidParentActor())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No valid parent actor found, could not export values"), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
 
 	bool bNewValue = false;
 	if (IsIdValueSet() && FSLTagIO::AddKVPair(ParentActor, TagType, "Id", Id, bOverwrite))
@@ -100,12 +113,11 @@ bool USLBaseIndividual::ExportValues(bool bOverwrite)
 // Load data from owners tag
 bool USLBaseIndividual::ImportValues(bool bOverwrite)
 {
-	//if (!IsInit())
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot import values.."),
-	//		*FString(__FUNCTION__), __LINE__, *GetFullName());
-	//	return false;
-	//}
+	if (!HasValidParentActor())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No valid parent actor found, could not import values"), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
 
 	bool bNewValue = false;
 	if (ImportIdValue(bOverwrite))
@@ -126,12 +138,11 @@ bool USLBaseIndividual::ImportValues(bool bOverwrite)
 // Clear exported values
 bool USLBaseIndividual::ClearExportedValues()
 {
-	//if (!IsInit())
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init, cannot remove any exported values values.."),
-	//		*FString(__FUNCTION__), __LINE__, *GetFullName());
-	//	return false;
-	//}
+	if (!HasValidParentActor())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No valid parent actor found, could not clear exported values"), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
 
 	int32 TagIndex = INDEX_NONE;
 	if (FSLTagIO::HasType(ParentActor, TagType, &TagIndex))
@@ -168,7 +179,7 @@ void USLBaseIndividual::SetIdValue(const FString& NewVal)
 	if (!Id.Equals(NewVal))
 	{
 		Id = NewVal;
-		OnNewIdValue.Broadcast(this, Id);
+		OnNewValue.Broadcast(this, "Id", Id);
 		if (!IsIdValueSet() && IsLoaded())
 		{
 			SetIsLoaded(false);
@@ -192,7 +203,7 @@ void USLBaseIndividual::SetClassValue(const FString& NewVal)
 	if (!Class.Equals(NewVal))
 	{
 		Class = NewVal;
-		OnNewClassValue.Broadcast(this, Class);
+		OnNewValue.Broadcast(this, "Class", Class);
 		if (!IsClassValueSet() && IsLoaded())
 		{
 			SetIsLoaded(false);
@@ -243,8 +254,7 @@ void USLBaseIndividual::ClearDelegates()
 {
 	OnInitChanged.Clear();
 	OnLoadedChanged.Clear();
-	OnNewIdValue.Clear();
-	OnNewClassValue.Clear();
+	OnNewValue.Clear();
 	OnDelegatesCleared.Broadcast(this);
 	OnDelegatesCleared.Clear();
 }
@@ -289,6 +299,7 @@ bool USLBaseIndividual::HasValidParentActor() const
 // Set pointer to parent actor
 bool USLBaseIndividual::SetParentActor()
 {
+	// First outer is the component, second the actor
 	if (UActorComponent* AC = Cast<UActorComponent>(GetOuter()))
 	{
 		if (AActor* CompOwner = Cast<AActor>(AC->GetOuter()))
@@ -307,15 +318,6 @@ bool USLBaseIndividual::SetParentActor()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's outer should be an actor component.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
-	//// First outer is the component, second the actor
-	//if (AActor* CompOwner = Cast<AActor>(GetOuter()->GetOuter()))
-	//{
-	//	// Set the parent actor
-	//	ParentActor = CompOwner;
-	//	return true;
-	//}
-	//UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s, could not acess parent actor.."),
-	//	*FString(__FUNCTION__), __LINE__, *GetFullName());
 	return false;
 }
 

@@ -165,27 +165,11 @@ bool USLIndividualComponent::ToggleVisualMaskVisibility(bool bIncludeChildren)
 }
 
 // Re-broadcast all available values
-bool USLIndividualComponent::TriggerValuesBroadcast()
+bool USLIndividualComponent::TriggerIndividualValuesBroadcast()
 {
 	if (HasValidIndividual())
 	{
-		if (IndividualObj->IsIdValueSet())
-		{
-			OnValueChanged.Broadcast(this, "Id", IndividualObj->GetIdValue());
-		}
-
-		if (IndividualObj->IsClassValueSet())
-		{
-			OnValueChanged.Broadcast(this, "Class", IndividualObj->GetClassValue());
-		}
-
-		if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
-		{
-			if (VI->IsVisualMaskValueSet())
-			{
-				OnValueChanged.Broadcast(this, "VisualMask", VI->GetVisualMaskValue());
-			}
-		}
+		IndividualObj->TriggerValuesBroadcast();
 		return true;
 	}
 	return false;
@@ -462,42 +446,15 @@ bool USLIndividualComponent::BindDelegates()
 	}
 
 	/* Values delegates */
-	// Id
-	if (!IndividualObj->OnNewIdValue.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualNewId))
+	if (!IndividualObj->OnNewValue.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualNewValue))
 	{
-		IndividualObj->OnNewIdValue.AddDynamic(this, &USLIndividualComponent::OnIndividualNewId);
+		IndividualObj->OnNewValue.AddDynamic(this, &USLIndividualComponent::OnIndividualNewValue);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component new id delegate is already bound, this should not happen.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component new value delegate is already bound, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
-
-	// Class
-	if (!IndividualObj->OnNewClassValue.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualNewClass))
-	{
-		IndividualObj->OnNewClassValue.AddDynamic(this, &USLIndividualComponent::OnIndividualNewClass);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component new class delegate is already bound, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-	}
-
-	// Visual mask
-	if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
-	{
-		if (!VI->OnNewVisualMaskValue.IsAlreadyBound(this, &USLIndividualComponent::OnIndividualNewVisualMask))
-		{
-			VI->OnNewVisualMaskValue.AddDynamic(this, &USLIndividualComponent::OnIndividualNewVisualMask);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component new visual mask delegate is already bound, this should not happen.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-		}
-	}
-
 	return true;
 }
 
@@ -560,22 +517,11 @@ void USLIndividualComponent::OnIndividualLoadedChange(USLBaseIndividual* Individ
 	SetIsLoaded(bNewValue);
 }
 
-// Triggered on individual id change
-void USLIndividualComponent::OnIndividualNewId(USLBaseIndividual* Individual, const FString& NewId)
+// Triggered when an individual value is changed
+void USLIndividualComponent::OnIndividualNewValue(USLBaseIndividual* Individual, const FString& Key, const FString& NewValue)
 {
-	OnValueChanged.Broadcast(this, "Id", NewId);
-}
-
-// Triggered on individual class change
-void  USLIndividualComponent::OnIndividualNewClass(USLBaseIndividual* Individual, const FString& NewClass)
-{
-	OnValueChanged.Broadcast(this, "Class", NewClass);
-}
-
-// Triggered on individual visual mask change
-void  USLIndividualComponent::OnIndividualNewVisualMask(USLBaseIndividual* Individual, const FString& NewVisualMask)
-{
-	OnValueChanged.Broadcast(this, "VisualMask", NewVisualMask);
+	// Forward the data to any listeners
+	OnValueChanged.Broadcast(this, Key, NewValue);
 }
 
 // Triggered with the delegates are cleared on the individual object (required reconnection afterwards)

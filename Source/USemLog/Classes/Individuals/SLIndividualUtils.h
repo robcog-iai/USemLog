@@ -124,9 +124,6 @@ public:
 	// Get the individual object from the actor (nullptr if it does not exist)
 	static USLBaseIndividual* GetIndividualObject(AActor* Owner);
 
-	// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-	static FString GetIndividualClassName(USLIndividualComponent* SiblingIndividualComponent, bool bDefaultToLabelName = false);
-
 	// Create default individual object depending on the owner type (returns nullptr if failed)
 	static USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
 
@@ -194,5 +191,11 @@ private:
 	static bool ExportValues(AActor* Actor, bool bOverwrite);
 	static bool ImportValues(AActor* Actor, bool bOverwrite);
 	static bool ClearExportedValues(AActor* Actor);
+
+
+	/* Legacy */
+	//// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
+	//static FString GetIndividualClassName(USLIndividualComponent* SiblingIndividualComponent, bool bDefaultToLabelName = false);
+
 
 };

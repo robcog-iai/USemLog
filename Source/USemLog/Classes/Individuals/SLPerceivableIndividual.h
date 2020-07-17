@@ -13,9 +13,6 @@ class UMaterialInstanceDynamic;
 class UMaterialInterface;
 class UMaterial;
 
-// Notify every time the visual mask changes
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLIndividualNewVisualMaskSignature, USLBaseIndividual*, PerceivableIndividual, const FString&, NewVisualMask);
-
 /**
  * 
  */
@@ -36,6 +33,9 @@ public:
 
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset = false, bool bTryImport = false);
+
+    // Trigger values as new value broadcast
+    virtual void TriggerValuesBroadcast() override;
 
     // Save data to owners tag
     virtual bool ExportValues(bool bOverwrite = false) override;
@@ -64,7 +64,7 @@ public:
     bool IsVisualMaskValueSet() const { return !VisualMask.IsEmpty(); };
 
     /* Calibrated visual mask */
-    void SetCalibratedVisualMaskValue(const FString& NewValue) { CalibratedVisualMask = NewValue; };
+    void SetCalibratedVisualMaskValue(const FString& NewValue);
     void ClearCalibratedVisualMaskValue() { SetCalibratedVisualMaskValue(""); };
     FString GetCalibratedVisualMaskValue() const { return CalibratedVisualMask; };
     bool IsCalibratedVisualMasValueSet() const { return !CalibratedVisualMask.IsEmpty(); };
@@ -82,9 +82,6 @@ protected:
     // Clear all data of the individual
     virtual void LoadReset() override;
 
-    // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegates() override;
-
 private:
     // Set references
     bool InitImpl();
@@ -101,10 +98,6 @@ private:
 
     // Check if the dynmic material is valid
     bool HasValidDynamicMaterial() const;
-
-public:
-    // Called when the init status changes
-    FSLIndividualNewVisualMaskSignature OnNewVisualMaskValue;
 
 protected:
     // Mask color as hex

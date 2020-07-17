@@ -94,7 +94,7 @@ public:
 	bool ToggleVisualMaskVisibility(bool bIncludeChildren);
 
 	// Re-broadcast all available values
-	bool TriggerValuesBroadcast();
+	bool TriggerIndividualValuesBroadcast();
 
 	/* Values */
 	/* Id */
@@ -152,17 +152,21 @@ private:
 	UFUNCTION()
 	void OnIndividualLoadedChange(USLBaseIndividual* Individual, bool bNewValue);
 
-	// Triggered on individual id change
-	UFUNCTION()
-	void OnIndividualNewId(USLBaseIndividual* Individual, const FString& NewId);
+	//// Triggered on individual id change
+	//UFUNCTION()
+	//void OnIndividualNewId(USLBaseIndividual* Individual, const FString& NewId);
 
-	// Triggered on individual class change
-	UFUNCTION()
-	void OnIndividualNewClass(USLBaseIndividual* Individual, const FString& NewClass);
+	//// Triggered on individual class change
+	//UFUNCTION()
+	//void OnIndividualNewClass(USLBaseIndividual* Individual, const FString& NewClass);
 
-	// Triggered on individual visual mask change
+	//// Triggered on individual visual mask change
+	//UFUNCTION()
+	//void OnIndividualNewVisualMask(USLBaseIndividual* Individual, const FString& NewVisualMask);
+
+	// Triggered when an individual value is changed
 	UFUNCTION()
-	void OnIndividualNewVisualMask(USLBaseIndividual* Individual, const FString& NewVisualMask);
+	void OnIndividualNewValue(USLBaseIndividual* Individual, const FString& Key, const FString& NewValue);
 
 	// Triggered when individual delegates are cleared (including this one)
 	UFUNCTION()

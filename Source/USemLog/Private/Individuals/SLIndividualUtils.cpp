@@ -6,6 +6,7 @@
 #include "Individuals/SLConstraintIndividual.h"
 #include "Individuals/SLRigidIndividual.h"
 #include "Individuals/SLSkyIndividual.h"
+#include "Individuals/SLLightIndividual.h"
 #include "Individuals/SLSkeletalIndividual.h"
 #include "Individuals/SLBoneIndividual.h"
 #include "Individuals/SLVirtualViewIndividual.h"
@@ -26,6 +27,7 @@
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 #include "Atmosphere/AtmosphericFog.h"
+#include "Engine/Light.h"
 
 #include "Vision/SLVirtualCameraView.h"
 
@@ -525,130 +527,6 @@ USLBaseIndividual* FSLIndividualUtils::GetIndividualObject(AActor* Owner)
 	return nullptr;
 }
 
-// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
-FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* SiblingIndividualComponent, bool bDefaultToLabelName)
-{
-	AActor* CompOwner = SiblingIndividualComponent->GetOwner();
-	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(CompOwner))
-	{
-		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
-		{
-			FString ClassName = SMC->GetStaticMesh()->GetFullName();
-			int32 FindCharPos;
-			ClassName.FindLastChar('.', FindCharPos);
-			ClassName.RemoveAt(0, FindCharPos + 1);
-			if (!ClassName.RemoveFromStart(TEXT("SM_")))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s StaticMesh has no SM_ prefix in its name.."),
-					*FString(__func__), __LINE__, *CompOwner->GetName());
-			}
-			return ClassName;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SMC.."),
-				*FString(__func__), __LINE__, *CompOwner->GetName());
-			return FString();
-		}
-	}
-	else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(CompOwner))
-	{
-		if (USkeletalMeshComponent* SkMC = SkMA->GetSkeletalMeshComponent())
-		{
-			FString ClassName = SkMC->SkeletalMesh->GetFullName();
-			int32 FindCharPos;
-			ClassName.FindLastChar('.', FindCharPos);
-			ClassName.RemoveAt(0, FindCharPos + 1);
-			ClassName.RemoveFromStart(TEXT("SK_"));
-			return ClassName;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SkMC.."),
-				*FString(__func__), __LINE__, *CompOwner->GetName());
-			return FString();
-		}
-	}
-	else if (ASLVirtualCameraView* VCA = Cast<ASLVirtualCameraView>(CompOwner))
-	{
-		static const FString TagType = "SemLog";
-		static const FString TagKey = "Class";
-		FString ClassName = "View";
-
-		// Check attachment actor
-		if (AActor* AttAct = CompOwner->GetAttachParentActor())
-		{
-			if (CompOwner->GetAttachParentSocketName() != NAME_None)
-			{
-				return CompOwner->GetAttachParentSocketName().ToString() + ClassName;
-			}
-			else
-			{
-				FString AttParentClass = FSLTagIO::GetValue(AttAct, TagType, TagKey);
-				if (!AttParentClass.IsEmpty())
-				{
-					return AttParentClass + ClassName;
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached parent %s has no semantic class (yet?).."),
-						*FString(__func__), __LINE__, *AttAct->GetName());
-					return ClassName;
-				}
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not attached to any actor.."),
-				*FString(__func__), __LINE__, *CompOwner->GetName());
-			return ClassName;
-		}
-	}
-	else if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(CompOwner))
-	{
-		FString ClassName = "Joint";
-
-		if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
-		{
-			if (PCC->ConstraintInstance.GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
-				PCC->ConstraintInstance.GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
-			{
-				return "Linear" + ClassName;
-			}
-			else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
-				PCC->ConstraintInstance.GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
-				PCC->ConstraintInstance.GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
-			{
-				return "Revolute" + ClassName;
-			}
-			else
-			{
-				return "Fixed" + ClassName;
-			}
-		}
-		return ClassName;
-	}
-	else if (AAtmosphericFog* AAF = Cast<AAtmosphericFog>(CompOwner))
-	{
-		return "AtmosphericFog";
-	}
-	else if (CompOwner->GetName().Contains("SkySphere"))
-	{
-		return "SkySphere";
-	}
-	else if (bDefaultToLabelName)
-	{
-		return CompOwner->GetActorLabel();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not get the semantic class name for %s .."),
-			*FString(__func__), __LINE__, *CompOwner->GetName());
-		return FString();
-	}
-}
-
 // Create default individual object depending on the owner type (returns nullptr if failed)
 USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AActor* Owner)
 {
@@ -668,6 +546,10 @@ USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AA
 	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
 	{
 		return NewObject<USLBaseIndividual>(Outer, USLSkeletalIndividual::StaticClass());
+	}
+	else if (Owner->IsA(ALight::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLLightIndividual::StaticClass());
 	}
 	else if (Owner->IsA(AAtmosphericFog::StaticClass()) || Owner->GetName().Contains("SkySphere"))
 	{
@@ -823,6 +705,7 @@ bool FSLIndividualUtils::CanHaveIndividualComponent(AActor* Actor)
 		|| Actor->IsA(ASkeletalMeshActor::StaticClass())
 		|| Actor->IsA(APhysicsConstraintActor::StaticClass())
 		|| Actor->IsA(AAtmosphericFog::StaticClass())
+		|| Actor->IsA(ALight::StaticClass())
 		|| Actor->IsA(ASLVirtualCameraView::StaticClass())
 		|| Actor->GetName().Contains("SkySphere");
 }
@@ -1113,4 +996,131 @@ bool FSLIndividualUtils::ClearExportedValues(AActor* Actor)
 	}
 	return false;
 }
+
+
+/* Legacy */
+//// Get class name of actor (if not known use label name if bDefaultToLabelName is true)
+//FString FSLIndividualUtils::GetIndividualClassName(USLIndividualComponent* SiblingIndividualComponent, bool bDefaultToLabelName)
+//{
+//	AActor* CompOwner = SiblingIndividualComponent->GetOwner();
+//	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(CompOwner))
+//	{
+//		if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
+//		{
+//			FString ClassName = SMC->GetStaticMesh()->GetFullName();
+//			int32 FindCharPos;
+//			ClassName.FindLastChar('.', FindCharPos);
+//			ClassName.RemoveAt(0, FindCharPos + 1);
+//			if (!ClassName.RemoveFromStart(TEXT("SM_")))
+//			{
+//				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s StaticMesh has no SM_ prefix in its name.."),
+//					*FString(__func__), __LINE__, *CompOwner->GetName());
+//			}
+//			return ClassName;
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SMC.."),
+//				*FString(__func__), __LINE__, *CompOwner->GetName());
+//			return FString();
+//		}
+//	}
+//	else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(CompOwner))
+//	{
+//		if (USkeletalMeshComponent* SkMC = SkMA->GetSkeletalMeshComponent())
+//		{
+//			FString ClassName = SkMC->SkeletalMesh->GetFullName();
+//			int32 FindCharPos;
+//			ClassName.FindLastChar('.', FindCharPos);
+//			ClassName.RemoveAt(0, FindCharPos + 1);
+//			ClassName.RemoveFromStart(TEXT("SK_"));
+//			return ClassName;
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SkMC.."),
+//				*FString(__func__), __LINE__, *CompOwner->GetName());
+//			return FString();
+//		}
+//	}
+//	else if (ASLVirtualCameraView* VCA = Cast<ASLVirtualCameraView>(CompOwner))
+//	{
+//		static const FString TagType = "SemLog";
+//		static const FString TagKey = "Class";
+//		FString ClassName = "View";
+//
+//		// Check attachment actor
+//		if (AActor* AttAct = CompOwner->GetAttachParentActor())
+//		{
+//			if (CompOwner->GetAttachParentSocketName() != NAME_None)
+//			{
+//				return CompOwner->GetAttachParentSocketName().ToString() + ClassName;
+//			}
+//			else
+//			{
+//				FString AttParentClass = FSLTagIO::GetValue(AttAct, TagType, TagKey);
+//				if (!AttParentClass.IsEmpty())
+//				{
+//					return AttParentClass + ClassName;
+//				}
+//				else
+//				{
+//					UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached parent %s has no semantic class (yet?).."),
+//						*FString(__func__), __LINE__, *AttAct->GetName());
+//					return ClassName;
+//				}
+//			}
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not attached to any actor.."),
+//				*FString(__func__), __LINE__, *CompOwner->GetName());
+//			return ClassName;
+//		}
+//	}
+//	else if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(CompOwner))
+//	{
+//		FString ClassName = "Joint";
+//
+//		if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
+//		{
+//			if (PCC->ConstraintInstance.GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
+//				PCC->ConstraintInstance.GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
+//				PCC->ConstraintInstance.GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
+//			{
+//				return "Linear" + ClassName;
+//			}
+//			else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
+//				PCC->ConstraintInstance.GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
+//				PCC->ConstraintInstance.GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
+//			{
+//				return "Revolute" + ClassName;
+//			}
+//			else
+//			{
+//				return "Fixed" + ClassName;
+//			}
+//		}
+//		return ClassName;
+//	}
+//	else if (AAtmosphericFog* AAF = Cast<AAtmosphericFog>(CompOwner))
+//	{
+//		return "AtmosphericFog";
+//	}
+//	else if (CompOwner->GetName().Contains("SkySphere"))
+//	{
+//		return "SkySphere";
+//	}
+//	else if (bDefaultToLabelName)
+//	{
+//		return CompOwner->GetActorLabel();
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not get the semantic class name for %s .."),
+//			*FString(__func__), __LINE__, *CompOwner->GetName());
+//		return FString();
+//	}
+//}
+//
 
