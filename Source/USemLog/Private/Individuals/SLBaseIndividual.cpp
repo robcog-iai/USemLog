@@ -74,15 +74,8 @@ bool USLBaseIndividual::Load(bool bReset, bool bTryImport)
 // Trigger values as new value broadcast
 void USLBaseIndividual::TriggerValuesBroadcast()
 {
-	if (IsIdValueSet())
-	{
-		OnNewValue.Broadcast(this, "Id", Id);
-	}
-
-	if (IsClassValueSet())
-	{
-		OnNewValue.Broadcast(this, "Class", Class);
-	}
+	OnNewValue.Broadcast(this, "Id", Id);
+	OnNewValue.Broadcast(this, "Class", Class);
 }
 
 // Save data to owners tag
@@ -230,35 +223,6 @@ void USLBaseIndividual::SetDefaultClassValue()
 //	}
 //}
 
-// Clear all values of the individual
-void USLBaseIndividual::InitReset()
-{
-	LoadReset();
-	ParentActor = nullptr;
-	AttachedToActor = nullptr;
-	AttachedToIndividual = nullptr;
-	SetIsInit(false);
-	ClearDelegates();
-}
-
-// Clear all data of the individual
-void USLBaseIndividual::LoadReset()
-{
-	SetIsLoaded(false);
-	ClearIdValue();
-	ClearClassValue();
-}
-
-// Clear any bound delegates (called when init is reset)
-void USLBaseIndividual::ClearDelegates()
-{
-	OnInitChanged.Clear();
-	OnLoadedChanged.Clear();
-	OnNewValue.Clear();
-	OnDelegatesCleared.Broadcast(this);
-	OnDelegatesCleared.Clear();
-}
-
 // Set the init flag, broadcast on new value
 void USLBaseIndividual::SetIsInit(bool bNewValue, bool bBroadcast)
 {
@@ -371,10 +335,10 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 				GenerateNewIdValue();
 			}
 		}
-		else
-		{
-			GenerateNewIdValue();			
-		}
+		//else
+		//{
+		//	GenerateNewIdValue();			
+		//}
 	}
 
 	if (!IsClassValueSet())
@@ -386,10 +350,10 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 				SetDefaultClassValue();
 			}
 		}
-		else
-		{
-			SetDefaultClassValue();
-		}
+		//else
+		//{
+		//	SetDefaultClassValue();
+		//}
 	}
 
 	//// Does not influence the load status, oid only required at runtime
@@ -402,6 +366,35 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 	//}
 
 	return IsIdValueSet() && IsClassValueSet();
+}
+
+// Clear all values of the individual
+void USLBaseIndividual::InitReset()
+{
+	LoadReset();
+	ParentActor = nullptr;
+	AttachedToActor = nullptr;
+	AttachedToIndividual = nullptr;
+	SetIsInit(false);
+	ClearDelegates();
+}
+
+// Clear all data of the individual
+void USLBaseIndividual::LoadReset()
+{
+	SetIsLoaded(false);
+	ClearIdValue();
+	ClearClassValue();
+}
+
+// Clear any bound delegates (called when init is reset)
+void USLBaseIndividual::ClearDelegates()
+{
+	OnInitChanged.Clear();
+	OnLoadedChanged.Clear();
+	OnNewValue.Clear();
+	OnDelegatesCleared.Broadcast(this);
+	OnDelegatesCleared.Clear();
 }
 
 // Import id from tag, true if new value is written

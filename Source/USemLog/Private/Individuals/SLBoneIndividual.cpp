@@ -61,7 +61,7 @@ bool USLBoneIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init() && InitImpl());
+	SetIsInit(Super::Init(bReset) && InitImpl());
 	return IsInit();
 }
 
@@ -88,7 +88,7 @@ bool USLBoneIndividual::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
+	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
@@ -137,27 +137,6 @@ bool USLBoneIndividual::CacheCurrentBoneTransform()
 	return false;
 }
 
-// Private init implementation
-bool USLBoneIndividual::InitImpl()
-{
-	// Make sure the visual mesh is set
-	if (HasValidSkeletalMesh() || SetSkeletalMesh())
-	{
-		if (HasValidMaterialIndex() || SetMaterialIndex())
-		{
-			return true;
-		}
-		// TODO set parent and child bone individual
-	}
-	return false;
-}
-
-// Private load implementation
-bool USLBoneIndividual::LoadImpl(bool bTryImport)
-{
-	return true;
-}
-
 // Get class name, virtual since each invidiual type will have different name
 FString USLBoneIndividual::CalcDefaultClassValue() const
 {
@@ -178,27 +157,6 @@ FString USLBoneIndividual::CalcDefaultClassValue() const
 		}
 	}
 	return GetTypeName();
-}
-
-// Clear all values of the individual
-void USLBoneIndividual::InitReset()
-{
-	LoadReset();
-	Super::InitReset();
-	SetIsInit(false);
-	ClearDelegates();
-}
-
-// Clear all data of the individual
-void USLBoneIndividual::LoadReset()
-{
-	Super::LoadReset();
-}
-
-// Clear any bound delegates (called when init is reset)
-void USLBoneIndividual::ClearDelegates()
-{
-	Super::ClearDelegates();
 }
 
 // Set the skeletal actor as parent
@@ -231,6 +189,40 @@ bool USLBoneIndividual::SetParentActor()
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
 	return false;
+}
+
+// Private init implementation
+bool USLBoneIndividual::InitImpl()
+{
+	// Make sure the visual mesh is set
+	if (HasValidSkeletalMesh() || SetSkeletalMesh())
+	{
+		if (HasValidMaterialIndex() || SetMaterialIndex())
+		{
+			return true;
+		}
+		// TODO set parent and child bone individual
+	}
+	return false;
+}
+
+// Private load implementation
+bool USLBoneIndividual::LoadImpl(bool bTryImport)
+{
+	return true;
+}
+
+// Clear all values of the individual
+void USLBoneIndividual::InitReset()
+{
+	LoadReset();
+	SetIsInit(false);
+}
+
+// Clear all data of the individual
+void USLBoneIndividual::LoadReset()
+{
+	SetIsLoaded(false);
 }
 
 // Check if the bone index is valid
@@ -277,7 +269,6 @@ bool USLBoneIndividual::SetMaterialIndex()
 		*FString(__FUNCTION__), __LINE__, *GetFullName(), *GetClassValue());
 	return false;
 }
-
 
 // Check if the static mesh component is set
 bool USLBoneIndividual::HasValidSkeletalMesh() const

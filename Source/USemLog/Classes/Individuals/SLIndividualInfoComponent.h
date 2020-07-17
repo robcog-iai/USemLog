@@ -56,13 +56,13 @@ protected:
 
 public:
 	// Call init on the individual
-	bool Init(bool bReset = false);
+	bool Init(bool bReset);
 
 	// Check if component is initialized
 	bool IsInit() const { return bIsInit; };
 
 	// Load individual
-	bool Load(bool bReset = false);
+	bool Load(bool bReset);
 
 	// Check if component is loaded
 	bool IsLoaded() const { return bIsLoaded; };
@@ -84,17 +84,8 @@ public:
 	void OrientateTowardsLocation(const FVector& Location);
 
 protected:
-	// Clear all references of the individual
-	void InitReset();
-
-	// Clear all data of the individual
-	void LoadReset();
-
-	// Clear any bound delegates (called when init is reset)
-	void ClearDelegates();
-
 	// Set the init flag, return true if the state change
-	void SetIsInit(bool bNewValue, bool bBroadcast = true);
+	void SetIsInit(bool bNewValue, bool bBroadcast  = true);
 
 	// Set the loaded flag
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
@@ -108,6 +99,15 @@ private:
 
 	// Private load implementation
 	bool LoadImpl();
+
+	// Clear all references of the individual
+	void InitReset();
+
+	// Clear all data of the individual
+	void LoadReset();
+
+	// Clear any bound delegates (called when init is reset)
+	void ClearDelegates();
 
 	// Update info as soon as the individual changes their data
 	bool BindDelegates();
@@ -124,12 +124,15 @@ private:
 	// Scale the text relative to the distance towards the location
 	void SetTextScale(const FVector& Location);
 
-	/* Text values */
-	// Set its own states as text values
-	void SetOwnStateValuesText();
+	// Check that the text component is in a valid state
+	bool IsTextComponentValid() const;
 
-	// Set sibling individual state values
-	void SetSiblingIndividualStateValuesText();
+	/* Text values */
+	//// Set its own states as text values
+	//void SetOwnStateValuesText();
+
+	//// Set sibling individual state values
+	//void SetSiblingIndividualStateValuesText();
 
 	/* Delegate functions */
 	// Called when siblings init value has changed
@@ -154,7 +157,7 @@ private:
 
 	// Called when sibling delegates are cleared
 	UFUNCTION()
-	void OnSiblingIndividualComponentDelegatesClearedDestroyed(USLIndividualComponent* IC);
+	void OnSiblingIndividualComponentDelegatesCleared(USLIndividualComponent* IC);
 
 public:
 	// Called when the component is destroyed
@@ -182,14 +185,17 @@ protected:
 
 private:
 	// Shows values as rendered text lines
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
 	USLIndividualInfoTextComponent* TextComponent;
+
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
+	TMap<int32, USLIndividualInfoTextComponent*> ChildrenTextComponents;
 
 	/* Constants */	
 	// Text scale clamps
 	constexpr static float TextScaleMin = 0.25f;
 	constexpr static float TextScaleMax = 2.f;
 
-	static constexpr char SelfTextRowKey[] = "self";
-	static constexpr char SiblingIndividualTextRowKey[] = "indiv";
+	//static constexpr char SelfTextRowKey[] = "self";
+	//static constexpr char SiblingIndividualTextRowKey[] = "indiv";
 };

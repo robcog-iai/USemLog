@@ -36,19 +36,17 @@ protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() const override;
 
-    // Clear all values of the individual
-    virtual void InitReset() override;
-
-    // Clear all data of the individual
-    virtual void LoadReset() override;
-
-    // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegates() override;
 
 private:
     // Set dependencies
     bool InitImpl();
 
     // Set data
-    bool LoadImpl(bool bTryImport = true);
+    bool LoadImpl(bool bTryImport);
+
+    // Clear all values of the individual
+    void InitReset();
+
+    // Clear all data of the individual
+    void LoadReset();
 };

@@ -29,10 +29,10 @@ public:
     virtual void BeginDestroy() override;
 
     // Init asset references (bForced forces re-initialization)
-    virtual bool Init(bool bReset = false);
+    virtual bool Init(bool bReset);
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bReset = false, bool bTryImport = false);
+    virtual bool Load(bool bReset, bool bTryImport);
 
     // Trigger values as new value broadcast
     virtual void TriggerValuesBroadcast() override;
@@ -67,7 +67,7 @@ public:
     void SetCalibratedVisualMaskValue(const FString& NewValue);
     void ClearCalibratedVisualMaskValue() { SetCalibratedVisualMaskValue(""); };
     FString GetCalibratedVisualMaskValue() const { return CalibratedVisualMask; };
-    bool IsCalibratedVisualMasValueSet() const { return !CalibratedVisualMask.IsEmpty(); };
+    bool IsCalibratedVisualMaskValueSet() const { return !CalibratedVisualMask.IsEmpty(); };
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
@@ -76,18 +76,18 @@ protected:
     // Randomly generates a new visual mask, does not guarantee uniqueness
     FString GenerateNewRandomVisualMask() const;
 
-    // Clear all values of the individual
-    virtual void InitReset() override;
-
-    // Clear all data of the individual
-    virtual void LoadReset() override;
-
 private:
     // Set references
     bool InitImpl();
 
     // Set data
-    bool LoadImpl(bool bTryImport = true);
+    bool LoadImpl(bool bTryImport);
+
+    // Clear all values of the individual
+    void InitReset();
+
+    // Clear all data of the individual
+    void LoadReset();
 
     // Specific imports from tag, true if new value is written
     bool ImportVisualMaskValue(bool bOverwrite = false);

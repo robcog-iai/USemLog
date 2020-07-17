@@ -55,7 +55,7 @@ public:
 
 protected:
 	// Set the init flag, return true if the state change
-	void SetIsInit(bool bNewValue, bool bBroadcast = true);
+	void SetIsInit(bool bNewValue, bool bBroadcast  = true);
 
 	// Set the loaded flag
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);

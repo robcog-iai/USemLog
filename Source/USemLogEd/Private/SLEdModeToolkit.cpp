@@ -156,7 +156,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("OverwriteCB", " Overwrite: "))
+				.Text(LOCTEXT("OverwriteCB", "Overwrite:"))
 			]
 				+ SHorizontalBox::Slot()
 			[
@@ -170,7 +170,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("OnlySelectedCB", " Selected: "))
+				.Text(LOCTEXT("OnlySelectedCB", "|  Selected:"))
 			]
 
 			+ SHorizontalBox::Slot()
@@ -185,22 +185,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("ChildrenCB", " Children: "))
-			]
-
-			+ SHorizontalBox::Slot()
-			[
-				SNew(SCheckBox)
-				.ToolTipText(LOCTEXT("IncludeChildrenCB", "Include children data (e.g. bones/links..)"))
-				.IsChecked(ECheckBoxState::Checked)
-				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedIncludeChildrenFlag)
-			]
-
-			+ SHorizontalBox::Slot()
-			.AutoWidth()
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("ResetCB", " Reset: "))
+				.Text(LOCTEXT("ResetCB", "|  Reset:"))
 			]
 
 			+ SHorizontalBox::Slot()
@@ -209,6 +194,37 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 				.ToolTipText(LOCTEXT("ResetCBTip", "Apply reset flag to any related functions."))
 				.IsChecked(ECheckBoxState::Unchecked)
 				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedResetFlag)
+			]
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("TryImportCB", "|  Import:"))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("TryImportCBTip", "If available data will be imported or newly generated first.."))
+				.IsChecked(ECheckBoxState::Checked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedTryImportFlag)
+			]
+
+			
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("ChildrenCB", "|  Children:"))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("IncludeChildrenCB", "Include children data (e.g. bones/links..)"))
+				.IsChecked(ECheckBoxState::Checked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedIncludeChildrenFlag)
 			]
 		];
 }
@@ -266,32 +282,6 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedFlagSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenFlagSlot()
-{
-	return SVerticalBox::Slot()
-		.AutoHeight()
-		.Padding(2)
-		.HAlign(HAlign_Center)
-		[
-			SNew(SHorizontalBox)
-
-			+ SHorizontalBox::Slot()
-			.AutoWidth()
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("IncludeChildrenCB", "Children:"))
-			]
-
-			+ SHorizontalBox::Slot()
-			[
-				SNew(SCheckBox)
-				.ToolTipText(LOCTEXT("IncludeChildrenCBTip", "Include children data (e.g. bones/links..)"))
-				.IsChecked(ECheckBoxState::Checked)
-				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedIncludeChildrenFlag)
-			]
-		];
-}
-
 SVerticalBox::FSlot& FSLEdModeToolkit::CreateResetFlagSlot()
 {
 	return SVerticalBox::Slot()
@@ -340,6 +330,32 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTryImportFlagSlot()
 				.ToolTipText(LOCTEXT("CheckboxTryImport", "If available data will be imported first.."))
 				.IsChecked(ECheckBoxState::Checked)
 				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedTryImportFlag)
+			]
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenFlagSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("IncludeChildrenCB", "Children:"))
+			]
+
+			+ SHorizontalBox::Slot()
+			[
+				SNew(SCheckBox)
+				.ToolTipText(LOCTEXT("IncludeChildrenCBTip", "Include children data (e.g. bones/links..)"))
+				.IsChecked(ECheckBoxState::Checked)
+				.OnCheckStateChanged(this, &FSLEdModeToolkit::OnCheckedIncludeChildrenFlag)
 			]
 		];
 }
@@ -1410,7 +1426,6 @@ FReply FSLEdModeToolkit::OnCreateIndividualsInfo()
 	}
 	return FReply::Handled();
 }
-
 
 FReply FSLEdModeToolkit::OnDestroyIndividualsInfo()
 {

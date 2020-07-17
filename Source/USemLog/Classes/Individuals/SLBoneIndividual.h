@@ -38,10 +38,10 @@ public:
     bool IsPreInit() const { return bIsPreInit; };
 
     // Init asset references (bForced forces re-initialization)
-    virtual bool Init(bool bReset = false);
+    virtual bool Init(bool bReset);
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bReset = false, bool bTryImport = false);
+    virtual bool Load(bool bReset, bool bTryImport);
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("BoneIndividual"); };
@@ -64,28 +64,24 @@ protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() const override;
 
-    // Clear all values of the individual
-    virtual void InitReset() override;
-
-    // Clear all data of the individual
-    virtual void LoadReset() override;
-
-    // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegates() override;
-
     // Set pointer to parent actor
     virtual bool SetParentActor() override;
-
-    // Check if the bone index is valid
-    bool HasValidBoneIndex() const;
-
 
 private:
     // Set dependencies
     bool InitImpl();
 
     // Set data
-    bool LoadImpl(bool bTryImport = true);
+    bool LoadImpl(bool bTryImport);
+
+    // Clear all values of the individual
+    void InitReset();
+
+    // Clear all data of the individual
+    void LoadReset();
+
+    // Check if the bone index is valid
+    bool HasValidBoneIndex() const;
 
     // Check if the static mesh component is set
     bool HasValidSkeletalMesh() const;

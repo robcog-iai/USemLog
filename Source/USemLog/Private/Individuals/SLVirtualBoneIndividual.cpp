@@ -62,7 +62,7 @@ bool USLVirtualBoneIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init() && InitImpl());
+	SetIsInit(Super::Init(bReset) && InitImpl());
 	return IsInit();
 }
 
@@ -89,7 +89,7 @@ bool USLVirtualBoneIndividual::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
+	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
@@ -108,20 +108,6 @@ bool USLVirtualBoneIndividual::CacheCurrentBoneTransform()
 FString USLVirtualBoneIndividual::CalcDefaultClassValue() const
 {
 	return GetTypeName();
-}
-
-// Clear all values of the individual
-void USLVirtualBoneIndividual::InitReset()
-{
-	SetIsInit(false);
-	ClearDelegates();
-	Super::InitReset();
-}
-
-// Clear all data of the individual
-void USLVirtualBoneIndividual::LoadReset()
-{
-	Super::LoadReset();
 }
 
 // Set pointer to parent actor
@@ -156,12 +142,6 @@ bool USLVirtualBoneIndividual::SetParentActor()
 	return false;
 }
 
-// Clear any bound delegates (called when init is reset)
-void USLVirtualBoneIndividual::ClearDelegates()
-{
-	Super::ClearDelegates();
-}
-
 // Private init implementation
 bool USLVirtualBoneIndividual::InitImpl()
 {
@@ -178,6 +158,18 @@ bool USLVirtualBoneIndividual::InitImpl()
 bool USLVirtualBoneIndividual::LoadImpl(bool bTryImport)
 {
 	return true;
+}
+
+// Clear all values of the individual
+void USLVirtualBoneIndividual::InitReset()
+{
+	SetIsInit(false);
+}
+
+// Clear all data of the individual
+void USLVirtualBoneIndividual::LoadReset()
+{
+	SetIsLoaded(false);
 }
 
 // Check if the static mesh component is set

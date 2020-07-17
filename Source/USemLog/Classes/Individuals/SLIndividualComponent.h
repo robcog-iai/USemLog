@@ -120,7 +120,7 @@ protected:
 	void ClearDelegates();
 
 	// Set the init flag, broadcast on new value
-	void SetIsInit(bool bNewValue, bool bBroadcast = true);
+	void SetIsInit(bool bNewValue, bool bBroadcast  = true);
 
 	// Set the loaded flag, broadcast on new value
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
@@ -151,18 +151,6 @@ private:
 	// Triggered on individual loaded flag change
 	UFUNCTION()
 	void OnIndividualLoadedChange(USLBaseIndividual* Individual, bool bNewValue);
-
-	//// Triggered on individual id change
-	//UFUNCTION()
-	//void OnIndividualNewId(USLBaseIndividual* Individual, const FString& NewId);
-
-	//// Triggered on individual class change
-	//UFUNCTION()
-	//void OnIndividualNewClass(USLBaseIndividual* Individual, const FString& NewClass);
-
-	//// Triggered on individual visual mask change
-	//UFUNCTION()
-	//void OnIndividualNewVisualMask(USLBaseIndividual* Individual, const FString& NewVisualMask);
 
 	// Triggered when an individual value is changed
 	UFUNCTION()

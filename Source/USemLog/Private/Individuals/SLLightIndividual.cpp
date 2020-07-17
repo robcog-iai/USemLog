@@ -28,7 +28,7 @@ bool USLLightIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init() && InitImpl());
+	SetIsInit(Super::Init(bReset) && InitImpl());
 	return IsInit();
 }
 
@@ -55,7 +55,7 @@ bool USLLightIndividual::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
+	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
@@ -63,26 +63,6 @@ bool USLLightIndividual::Load(bool bReset, bool bTryImport)
 FString USLLightIndividual::CalcDefaultClassValue() const
 {
 	return GetTypeName();
-}
-
-// Clear all values of the individual
-void USLLightIndividual::InitReset()
-{
-	SetIsInit(false);
-	ClearDelegates();
-	Super::InitReset();
-}
-
-// Clear all data of the individual
-void USLLightIndividual::LoadReset()
-{
-	Super::LoadReset();
-}
-
-// Clear any bound delegates (called when init is reset)
-void USLLightIndividual::ClearDelegates()
-{
-	Super::ClearDelegates();
 }
 
 // Private init implementation
@@ -95,4 +75,16 @@ bool USLLightIndividual::InitImpl()
 bool USLLightIndividual::LoadImpl(bool bTryImport)
 {
 	return true;
+}
+
+// Clear all values of the individual
+void USLLightIndividual::InitReset()
+{
+	SetIsInit(false);
+}
+
+// Clear all data of the individual
+void USLLightIndividual::LoadReset()
+{
+	SetIsLoaded(false);
 }

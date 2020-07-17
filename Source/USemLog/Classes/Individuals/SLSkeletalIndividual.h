@@ -35,10 +35,10 @@ public:
     virtual void BeginDestroy() override;
 
     // Init asset references 
-    virtual bool Init(bool bReset = false);
+    virtual bool Init(bool bReset);
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bReset = false, bool bTryImport = false);
+    virtual bool Load(bool bReset, bool bTryImport);
 
     // Save values externally
     virtual bool ExportValues(bool bOverwrite = false) override;
@@ -70,18 +70,18 @@ protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() const override;
 
-    // Clear all values of the individual
-    virtual void InitReset() override;
-
-    // Clear all data of the individual
-    virtual void LoadReset() override;
-
 private:
     // Set dependencies
     bool InitImpl();
 
     // Set data
-    bool LoadImpl(bool bTryImport = true);
+    bool LoadImpl(bool bTryImport);
+
+    // Clear all values of the individual
+    void InitReset();
+
+    // Clear all data of the individual
+    void LoadReset();
 
     // Check if the static mesh component is set
     bool HasValidSkeletalMesh() const;

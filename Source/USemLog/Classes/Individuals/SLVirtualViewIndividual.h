@@ -24,10 +24,10 @@ public:
     virtual void BeginDestroy() override;
 
     // Init asset references (bForced forces re-initialization)
-    virtual bool Init(bool bReset = false);
+    virtual bool Init(bool bReset);
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bReset = false, bool bTryImport = false);
+    virtual bool Load(bool bReset, bool bTryImport);
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("VirtualViewIndividual"); };
@@ -36,19 +36,18 @@ protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() const override;
 
-    // Clear all values of the individual
-    virtual void InitReset() override;
 
-    // Clear all data of the individual
-    virtual void LoadReset() override;
-
-    // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegates() override;
 
 private:
     // Set dependencies
     bool InitImpl();
 
     // Set data
-    bool LoadImpl(bool bTryImport = true);
+    bool LoadImpl(bool bTryImport);
+
+    // Clear all values of the individual
+    void InitReset();
+
+    // Clear all data of the individual
+    void LoadReset();
 };

@@ -24,7 +24,7 @@ public:
     virtual void BeginDestroy() override;
     
     // Set the parameters required when initalizing the individual
-    bool PreInit(int32 NewBoneIndex, bool bReset = false);
+    bool PreInit(int32 NewBoneIndex, bool bReset);
 
     // Check if the individual is pre initalized
     bool IsPreInit() const { return bIsPreInit; };
@@ -48,17 +48,8 @@ protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() const override;
 
-    // Clear all values of the individual
-    virtual void InitReset() override;
-
-    // Clear all data of the individual
-    virtual void LoadReset() override;
-
     // Set pointer to parent actor
     virtual bool SetParentActor() override;
-
-    // Clear any bound delegates (called when init is reset)
-    virtual void ClearDelegates() override;
 
 private:
     // Set dependencies
@@ -66,6 +57,12 @@ private:
 
     // Set data
     bool LoadImpl(bool bTryImport = true);
+
+    // Clear all values of the individual
+    void InitReset();
+
+    // Clear all data of the individual
+    void LoadReset();
 
     // Check if the static mesh component is set
     bool HasValidSkeletalMesh() const;

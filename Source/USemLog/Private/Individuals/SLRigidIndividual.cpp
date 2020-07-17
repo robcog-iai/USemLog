@@ -31,7 +31,7 @@ bool USLRigidIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init() && InitImpl());
+	SetIsInit(Super::Init(bReset) && InitImpl());
 	return IsInit();
 }
 
@@ -58,7 +58,7 @@ bool USLRigidIndividual::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
+	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
@@ -134,22 +134,6 @@ FString USLRigidIndividual::CalcDefaultClassValue() const
 	return GetTypeName();
 }
 
-// Clear all values of the individual
-void USLRigidIndividual::InitReset()
-{
-	LoadReset();
-	Super::InitReset();
-	StaticMeshComponent = nullptr;
-	SetIsInit(false);
-	ClearDelegates();
-}
-
-// Clear all data of the individual
-void USLRigidIndividual::LoadReset()
-{
-	Super::LoadReset();
-}
-
 // Private init implementation
 bool USLRigidIndividual::InitImpl()
 {
@@ -166,6 +150,21 @@ bool USLRigidIndividual::LoadImpl(bool bTryImport)
 {
 	return true;
 }
+
+// Clear all values of the individual
+void USLRigidIndividual::InitReset()
+{
+	LoadReset();
+	StaticMeshComponent = nullptr;
+	SetIsInit(false);
+}
+
+// Clear all data of the individual
+void USLRigidIndividual::LoadReset()
+{
+	SetIsLoaded(false);
+}
+
 
 // Check if the static mesh component is set
 bool USLRigidIndividual::HasValidStaticMesh() const

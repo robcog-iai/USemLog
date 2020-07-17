@@ -36,7 +36,6 @@ void USLIndividualInfoTextComponent::AddTextRow(const FString& Key, const FStrin
 	{
 		FSLIndividualInfoTextRow NewRow;
 		NewRow.Text = TRC;
-		NewRow.Text = CreateNewTextRenderComponent("TextLine_" + Key);
 		NewRow.Text->SetText(FText::FromString(Text));
 		NewRow.Text->SetTextRenderColor(Color);
 		NewRow.RowNum = TextRows.Num() + 1;
@@ -50,6 +49,7 @@ void USLIndividualInfoTextComponent::AddTextRow(const FString& Key, const FStrin
 	}
 }
 
+// Set the row text value
 void USLIndividualInfoTextComponent::SetTextRowValue(const FString& Key, const FString& Text)
 {
 	if (FSLIndividualInfoTextRow* FoundRow = TextRows.Find(Key))
@@ -60,7 +60,6 @@ void USLIndividualInfoTextComponent::SetTextRowValue(const FString& Key, const F
 	{
 		FSLIndividualInfoTextRow NewRow;
 		NewRow.Text = TRC;
-		NewRow.Text = CreateNewTextRenderComponent("TextLine_" + Key);
 		NewRow.Text->SetText(FText::FromString(Text));
 		NewRow.RowNum = TextRows.Num() + 1;
 		NewRow.Text->SetRelativeLocation(FVector(0.f, 0.f, -(TextSize * NewRow.RowNum)));
@@ -73,6 +72,7 @@ void USLIndividualInfoTextComponent::SetTextRowValue(const FString& Key, const F
 	}
 }
 
+// Set the row color
 void USLIndividualInfoTextComponent::SetTextRowColor(const FString& Key, FColor Color)
 {
 	if (FSLIndividualInfoTextRow* FoundRow = TextRows.Find(Key))
@@ -83,7 +83,6 @@ void USLIndividualInfoTextComponent::SetTextRowColor(const FString& Key, FColor 
 	{
 		FSLIndividualInfoTextRow NewRow;
 		NewRow.Text = TRC;
-		NewRow.Text = CreateNewTextRenderComponent("TextLine_" + Key);
 		NewRow.Text->SetTextRenderColor(Color);
 		NewRow.RowNum = TextRows.Num() + 1;
 		NewRow.Text->SetRelativeLocation(FVector(0.f, 0.f, -(TextSize * NewRow.RowNum)));
@@ -96,44 +95,70 @@ void USLIndividualInfoTextComponent::SetTextRowColor(const FString& Key, FColor 
 	}
 }
 
+// Set the row text value and color
 void USLIndividualInfoTextComponent::SetTextRowValueAndColor(const FString& Key, const FString& Text, FColor Color)
 {
 	AddTextRow(Key, Text, Color);
 }
 
+// Remove text row from the component
 bool USLIndividualInfoTextComponent::RemoveTextRow(const FString& Key)
 {
-	FSLIndividualInfoTextRow RemovedRowCopy;
-	if (TextRows.RemoveAndCopyValue(Key, RemovedRowCopy))
+	if (FSLIndividualInfoTextRow* FoundRow = TextRows.Find(Key))
 	{
 		// Move below located rows one step higher
-		if (RemovedRowCopy.RowNum <= TextRows.Num())
+		if (FoundRow->RowNum <= TextRows.Num())
 		{
 			for (auto& KeyVal : TextRows)
 			{
-				if (KeyVal.Value.RowNum < RemovedRowCopy.RowNum)
+				if (KeyVal.Value.RowNum < FoundRow->RowNum)
 				{
 					MoveRowOneStepHigher(KeyVal.Value);
 				}
 			}
 		}
+		FoundRow->Text->ConditionalBeginDestroy();
+		TextRows.FindAndRemoveChecked(Key);
+		//TextRows.Remove(Key);
 		return true;
 	}
 	return false;
+
+	//FSLIndividualInfoTextRow RemovedRow;
+	//if (TextRows.RemoveAndCopyValue(Key, RemovedRow))
+	//{
+	//	// Move below located rows one step higher
+	//	if (RemovedRow.RowNum <= TextRows.Num())
+	//	{
+	//		for (auto& KeyVal : TextRows)
+	//		{
+	//			if (KeyVal.Value.RowNum < RemovedRow.RowNum)
+	//			{
+	//				MoveRowOneStepHigher(KeyVal.Value);
+	//			}
+	//		}
+	//	}
+	//	RemovedRow.Text->ConditionalBeginDestroy();
+	//	return true;
+	//}
+	//return false;
 }
 
+// Remove all text rows
 int32 USLIndividualInfoTextComponent::RemoveAllTextRows()
 {
 	int32 Num = 0;
 	for (auto& KeyVal : TextRows)
 	{
 		KeyVal.Value.Text->ConditionalBeginDestroy();
+		//KeyVal.Value.Text->DestroyComponent();
 		Num++;
 	}
 	TextRows.Empty();
 	return Num;
 }
 
+// Remove all text rows but the given ignore keys
 int32 USLIndividualInfoTextComponent::RemoveAllTextRowsBut(TSet<FString>& IgnoreKeys)
 {
 	int32 Num = 0;
@@ -186,24 +211,10 @@ UTextRenderComponent* USLIndividualInfoTextComponent::CreateNewTextRenderCompone
 	return TRC;
 }
 
-//// Move row one step higher
-//void USLIndividualInfoTextComponent::MoveTextLineOneStepHigher(UTextRenderComponent* TRC)
-//{
-//	TRC->AddLocalOffset(FVector(0.f, 0.f, TextSize));
-//}
-
+// Move row location one step higher
 void USLIndividualInfoTextComponent::MoveRowOneStepHigher(FSLIndividualInfoTextRow& TextRow)
 {
 	TextRow.RowNum--;
 	TextRow.Text->AddLocalOffset(FVector(0.f, 0.f, TextSize));
 }
 
-//// Add text line to the map and update its line order
-//void USLIndividualInfoTextComponent::SetTextLineOrder(const FString& Key, UTextRenderComponent* TRC)
-//{
-//	float ZOffset = TextSize * TextLinesOrder.Num();
-//	TRC->SetRelativeLocation(FVector(0.f, 0.f, - ZOffset));
-//	TextLines.Emplace(Key, TRC);
-//	int32 OrderValue = TextLinesOrder.Num() + 1;
-//	TextLinesOrder.Emplace(TRC, OrderValue);
-//}

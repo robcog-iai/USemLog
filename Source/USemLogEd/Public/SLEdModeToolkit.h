@@ -35,9 +35,9 @@ private:
 	SVerticalBox::FSlot& CreateCompactCheckBoxSlot();
 	SVerticalBox::FSlot& CreateOverwriteFlagSlot();
 	SVerticalBox::FSlot& CreateOnlySelectedFlagSlot();
-	SVerticalBox::FSlot& CreateIncludeChildrenFlagSlot();
 	SVerticalBox::FSlot& CreateResetFlagSlot();
 	SVerticalBox::FSlot& CreateTryImportFlagSlot();
+	SVerticalBox::FSlot& CreateIncludeChildrenFlagSlot();
 
 	// Individual Components
 	SVerticalBox::FSlot& CreateIndividualsTxtSlot();

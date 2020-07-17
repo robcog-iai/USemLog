@@ -38,7 +38,7 @@ bool USLPerceivableIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init() && InitImpl());
+	SetIsInit(Super::Init(bReset) && InitImpl());
 	return IsInit();
 }
 
@@ -65,7 +65,7 @@ bool USLPerceivableIndividual::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
+	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
@@ -74,16 +74,10 @@ void USLPerceivableIndividual::TriggerValuesBroadcast()
 {
 	Super::TriggerValuesBroadcast();
 
-	if (IsVisualMaskValueSet())
-	{
-		OnNewValue.Broadcast(this, "VisualMask", VisualMask);
-	}
-
-	if (IsCalibratedVisualMasValueSet())
-	{
-		OnNewValue.Broadcast(this, "CalibratedVisualMask", VisualMask);
-	}
+	OnNewValue.Broadcast(this, "VisualMask", VisualMask);
+	//OnNewValue.Broadcast(this, "CalibratedVisualMask", CalibratedVisualMask);
 }
+
 // Save data to owners tag
 bool USLPerceivableIndividual::ExportValues(bool bOverwrite)
 {
@@ -191,7 +185,7 @@ void USLPerceivableIndividual::SetCalibratedVisualMaskValue(const FString& NewVa
 	if (!CalibratedVisualMask.Equals(NewValue))
 	{
 		CalibratedVisualMask = NewValue;
-		OnNewValue.Broadcast(this, "CalibratedVisualMask", VisualMask);
+		//OnNewValue.Broadcast(this, "CalibratedVisualMask", VisualMask);
 	}
 }
 
@@ -231,10 +225,10 @@ bool USLPerceivableIndividual::LoadImpl(bool bTryImport)
 				SetVisualMaskValue(GenerateNewRandomVisualMask());
 			}
 		}
-		else
-		{
-			SetVisualMaskValue(GenerateNewRandomVisualMask());
-		}
+		//else
+		//{
+		//	SetVisualMaskValue(GenerateNewRandomVisualMask());
+		//}
 	}
 
 	// Will be set to black if the visual mask is empty
@@ -242,6 +236,23 @@ bool USLPerceivableIndividual::LoadImpl(bool bTryImport)
 
 	return IsVisualMaskValueSet();
 }
+
+// Clear all values of the individual
+void USLPerceivableIndividual::InitReset()
+{
+	LoadReset();
+	ApplyOriginalMaterials();
+	OriginalMaterials.Empty();
+	SetIsInit(false);
+}
+
+// Clear all data of the individual
+void USLPerceivableIndividual::LoadReset()
+{
+	ClearVisualMaskValue();
+	SetIsLoaded(false);
+}
+
 
 // Get class name, virtual since each invidiual type will have different name
 FString USLPerceivableIndividual::CalcDefaultClassValue() const
@@ -253,24 +264,6 @@ FString USLPerceivableIndividual::CalcDefaultClassValue() const
 FString USLPerceivableIndividual::GenerateNewRandomVisualMask() const
 {
 	return FColor((uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f)).ToHex();
-}
-
-// Clear all values of the individual
-void USLPerceivableIndividual::InitReset()
-{
-	LoadReset();
-	ApplyOriginalMaterials();
-	OriginalMaterials.Empty();
-	SetIsInit(false);
-	ClearDelegates();
-	Super::InitReset();
-}
-
-// Clear all data of the individual
-void USLPerceivableIndividual::LoadReset()
-{
-	ClearVisualMaskValue();
-	Super::LoadReset();
 }
 
 // Import visual mask from tag, true if new value is written
@@ -290,7 +283,7 @@ bool USLPerceivableIndividual::ImportVisualMaskValue(bool bOverwrite)
 bool USLPerceivableIndividual::ImportCalibratedVisualMaskValue(bool bOverwrite)
 {
 	bool bNewValue = false;
-	if (!IsCalibratedVisualMasValueSet() || bOverwrite)
+	if (!IsCalibratedVisualMaskValueSet() || bOverwrite)
 	{
 		const FString PrevVal = CalibratedVisualMask;
 		SetCalibratedVisualMaskValue(FSLTagIO::GetValue(ParentActor, TagType, "CalibratedVisualMask"));

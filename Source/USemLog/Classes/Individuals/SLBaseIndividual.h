@@ -46,10 +46,10 @@ public:
 	virtual void BeginDestroy() override;
 
 	// Init asset references (bReset forces re-initialization)
-	virtual bool Init(bool bReset = false);
+	virtual bool Init(bool bReset);
 
 	// Load semantic data (bReset forces re-loading)
-	virtual bool Load(bool bReset = false, bool bTryImport = false);
+	virtual bool Load(bool bReset, bool bTryImport);
 
 	// Depenencies set
 	bool IsInit() const { return bIsInit; };
@@ -115,17 +115,8 @@ protected:
 	// Generate class name, virtual since each invidiual type will have different name
 	virtual FString CalcDefaultClassValue() const;
 
-	// Clear all references of the individual
-	virtual void InitReset();
-
-	// Clear all data of the individual
-	virtual void LoadReset();
-
-	// Clear any bound delegates (called when init is reset)
-	virtual void ClearDelegates();
-
 	// Mark individual as init, broadcast change
-	void SetIsInit(bool bNewValue, bool bBroadcast = true);
+	void SetIsInit(bool bNewValue, bool bBroadcast  = true);
 
 	// Mark individual as loaded, broadcast change
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);
@@ -145,6 +136,15 @@ private:
 
 	// Set data
 	bool LoadImpl(bool bTryImport = true);
+
+	// Clear all references of the individual
+	void InitReset();
+
+	// Clear all data of the individual
+	void LoadReset();
+
+	// Clear any bound delegates (called when init is reset)
+	void ClearDelegates();
 
 	// Generate a new id
 	FString GenerateNewId() const;

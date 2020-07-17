@@ -658,7 +658,7 @@ USLIndividualComponent* FSLIndividualUtils::AddNewIndividualComponent(AActor* Ac
 
 		// Make visible in the components list in the editor
 		Actor->AddInstanceComponent(NewComp);
-		//Actor->AddOwnedComponent(NewComp);
+		Actor->AddOwnedComponent(NewComp);
 
 		//NewComp->OnComponentCreated();
 		NewComp->RegisterComponent();
@@ -722,6 +722,7 @@ bool FSLIndividualUtils::DestroyIndividualComponent(AActor* Actor)
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
 		Actor->Modify();
+		Actor->RemoveOwnedComponent(AC);
 		Actor->RemoveInstanceComponent(AC);
 		AC->ConditionalBeginDestroy();
 		return true;

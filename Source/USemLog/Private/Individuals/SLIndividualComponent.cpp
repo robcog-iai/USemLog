@@ -298,10 +298,10 @@ bool USLIndividualComponent::ClearVisualMask()
 	return false;
 }
 
-
 // Clear all values of the individual
 void USLIndividualComponent::InitReset()
 {
+	SetIsConnected(false);
 	LoadReset();
 	SetIsInit(false);
 	if (HasValidIndividual())
@@ -317,7 +317,7 @@ void USLIndividualComponent::LoadReset()
 	SetIsLoaded(false);
 	if (HasValidIndividual())
 	{
-		IndividualObj->Load(true);
+		IndividualObj->Load(true, false);
 	}
 }
 
@@ -383,7 +383,7 @@ bool USLIndividualComponent::InitImpl()
 	if (HasValidIndividual() || CreateIndividual())
 	{
 		Connect();
-		return IndividualObj->Init();
+		return IndividualObj->Init(false);
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not create an individual, this should not happen.."),
 		*FString(__FUNCTION__), __LINE__, *GetFullName());
@@ -395,7 +395,7 @@ bool USLIndividualComponent::LoadImpl(bool bTryImport)
 {
 	if (HasValidIndividual())
 	{
-		return IndividualObj->Load(bTryImport);
+		return IndividualObj->Load(false, bTryImport);
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no valid individual, this should not happen.."),
 		*FString(__FUNCTION__), __LINE__, *GetFullName());
@@ -508,13 +508,27 @@ bool USLIndividualComponent::CreateIndividual()
 // Triggered when the semantic individual init flag changes
 void USLIndividualComponent::OnIndividualInitChange(USLBaseIndividual* Individual, bool bNewValue)
 {
-	SetIsInit(bNewValue);
+	if (bNewValue)
+	{
+		Init();
+	}
+	else
+	{
+		SetIsInit(false);
+	}
 }
 
 // Triggered when the semantic individual loaded flag changes
 void USLIndividualComponent::OnIndividualLoadedChange(USLBaseIndividual* Individual, bool bNewValue)
 {
-	SetIsLoaded(bNewValue);
+	if (bNewValue)
+	{
+		Load();
+	}
+	else
+	{
+		SetIsLoaded(false);
+	}
 }
 
 // Triggered when an individual value is changed

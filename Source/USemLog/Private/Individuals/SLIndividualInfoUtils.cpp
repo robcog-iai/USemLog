@@ -232,7 +232,7 @@ USLIndividualInfoComponent* FSLIndividualInfoUtils::AddNewIndividualInfoComponen
 
 		// Make visible in the components list in the editor
 		Actor->AddInstanceComponent(NewComp);
-		//Actor->AddOwnedComponent(NewComp);
+		Actor->AddOwnedComponent(NewComp);
 
 		//NewComp->OnComponentCreated();
 		NewComp->RegisterComponent();
@@ -301,6 +301,7 @@ bool FSLIndividualInfoUtils::DestroyIndividualInfoComponent(AActor* Actor)
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualInfoComponent::StaticClass()))
 	{
 		Actor->Modify();
+		Actor->RemoveOwnedComponent(AC);
 		Actor->RemoveInstanceComponent(AC);
 		AC->ConditionalBeginDestroy();
 		return true;

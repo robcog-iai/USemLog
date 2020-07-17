@@ -29,7 +29,7 @@ bool USLVirtualViewIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init() && InitImpl());
+	SetIsInit(Super::Init(bReset) && InitImpl());
 	return IsInit();
 }
 
@@ -56,7 +56,7 @@ bool USLVirtualViewIndividual::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
+	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
@@ -76,26 +76,6 @@ FString USLVirtualViewIndividual::CalcDefaultClassValue() const
 	return GetTypeName();
 }
 
-// Clear all values of the individual
-void USLVirtualViewIndividual::InitReset()
-{
-	SetIsInit(false);
-	ClearDelegates();
-	Super::InitReset();
-}
-
-// Clear all data of the individual
-void USLVirtualViewIndividual::LoadReset()
-{
-	Super::LoadReset();
-}
-
-// Clear any bound delegates (called when init is reset)
-void USLVirtualViewIndividual::ClearDelegates()
-{
-	Super::ClearDelegates();
-}
-
 // Private init implementation
 bool USLVirtualViewIndividual::InitImpl()
 {
@@ -106,4 +86,16 @@ bool USLVirtualViewIndividual::InitImpl()
 bool USLVirtualViewIndividual::LoadImpl(bool bTryImport)
 {
 	return true;
+}
+
+// Clear all values of the individual
+void USLVirtualViewIndividual::InitReset()
+{
+	SetIsInit(false);
+}
+
+// Clear all data of the individual
+void USLVirtualViewIndividual::LoadReset()
+{
+	SetIsLoaded(false);
 }

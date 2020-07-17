@@ -36,7 +36,7 @@ bool USLSkyIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init() && InitImpl());
+	SetIsInit(Super::Init(bReset) && InitImpl());
 	return IsInit();
 }
 
@@ -63,7 +63,7 @@ bool USLSkyIndividual::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
+	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
@@ -105,18 +105,6 @@ bool USLSkyIndividual::ApplyOriginalMaterials()
 	return false;
 }
 
-// Private init implementation
-bool USLSkyIndividual::InitImpl()
-{
-	return true;
-}
-
-// Private load implementation
-bool USLSkyIndividual::LoadImpl(bool bTryImport)
-{
-	return true;
-}
-
 // Get class name, virtual since each invidiual type will have different name
 FString USLSkyIndividual::CalcDefaultClassValue() const
 {
@@ -134,17 +122,27 @@ FString USLSkyIndividual::CalcDefaultClassValue() const
 	return GetTypeName();
 }
 
+// Private init implementation
+bool USLSkyIndividual::InitImpl()
+{
+	return true;
+}
+
+// Private load implementation
+bool USLSkyIndividual::LoadImpl(bool bTryImport)
+{
+	return true;
+}
+
 // Clear all values of the individual
 void USLSkyIndividual::InitReset()
 {
 	LoadReset();
-	Super::InitReset();
 	SetIsInit(false);
-	ClearDelegates();
 }
 
 // Clear all data of the individual
 void USLSkyIndividual::LoadReset()
 {
-	Super::LoadReset();
+	SetIsLoaded(false);
 }

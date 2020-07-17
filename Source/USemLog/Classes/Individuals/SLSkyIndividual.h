@@ -27,10 +27,10 @@ public:
     virtual void PostInitProperties() override;
 
     // Init asset references (bForced forces re-initialization)
-    virtual bool Init(bool bReset = false);
+    virtual bool Init(bool bReset);
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bReset = false, bool bTryImport = false);
+    virtual bool Load(bool bReset, bool bTryImport);
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("SkyIndividual"); };
@@ -47,14 +47,16 @@ protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() const override;
 
+private:
+    // Init any references
+    bool InitImpl();
+
+    // Load/set values
+    bool LoadImpl(bool bTryImport);
+
     // Clear all values of the individual
-    virtual void InitReset() override;
+    void InitReset();
 
     // Clear all data of the individual
-    virtual void LoadReset() override;
-
-private:
-    // States implementations, set references and data
-    bool InitImpl();
-    bool LoadImpl(bool bTryImport = true);
+    void LoadReset();
 };

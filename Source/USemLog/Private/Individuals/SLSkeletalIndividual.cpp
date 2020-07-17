@@ -39,7 +39,7 @@ bool USLSkeletalIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init() && InitImpl());
+	SetIsInit(Super::Init(bReset) && InitImpl());
 	return IsInit();
 }
 
@@ -66,7 +66,7 @@ bool USLSkeletalIndividual::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
+	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
@@ -90,7 +90,6 @@ bool USLSkeletalIndividual::ExportValues(bool bOverwrite)
 	}
 	return RetVal;
 }
-
 
 // Load values externally
 bool USLSkeletalIndividual::ImportValues(bool bOverwrite)
@@ -220,24 +219,6 @@ FString USLSkeletalIndividual::CalcDefaultClassValue() const
 	return GetTypeName();
 }
 
-// Clear all values of the individual
-void USLSkeletalIndividual::InitReset()
-{
-	LoadReset();
-	Super::InitReset();
-	DestroyBoneIndividuals();
-	SkeletalMeshComponent = nullptr;
-	SetIsInit(false);
-	ClearDelegates();
-}
-
-// Clear all data of the individual
-void USLSkeletalIndividual::LoadReset()
-{
-	Super::LoadReset();
-	ResetBoneIndividuals();
-}
-
 // Private init implementation
 bool USLSkeletalIndividual::InitImpl()
 {
@@ -267,6 +248,22 @@ bool USLSkeletalIndividual::LoadImpl(bool bTryImport)
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s's bones should be valid here, this should not happen.."),
 		*FString(__FUNCTION__), __LINE__, *GetFullName());
 	return false;
+}
+
+// Clear all values of the individual
+void USLSkeletalIndividual::InitReset()
+{
+	LoadReset();
+	DestroyBoneIndividuals();
+	SkeletalMeshComponent = nullptr;
+	SetIsInit(false);
+}
+
+// Clear all data of the individual
+void USLSkeletalIndividual::LoadReset()
+{
+	ResetBoneIndividuals();
+	SetIsLoaded(false);
 }
 
 // Check if the static mesh component is set
@@ -401,7 +398,7 @@ bool USLSkeletalIndividual::CreateBoneIndividuals()
 		else
 		{
 			USLVirtualBoneIndividual* VBI = NewObject<USLVirtualBoneIndividual>(this);
-			VBI->PreInit(BoneData.Key);
+			VBI->PreInit(BoneData.Key, false);
 			VirtualBoneIndividuals.Add(VBI);
 		}
 
@@ -418,7 +415,7 @@ bool USLSkeletalIndividual::InitBoneIndividuals()
 	bool bAllBonesAreInit = true;
 	for (const auto& BI : BoneIndividuals)
 	{
-		if (!BI->IsInit() && !BI->Init())
+		if (!BI->IsInit() && !BI->Init(false))
 		{
 			bAllBonesAreInit = false;
 			UE_LOG(LogTemp, Error, TEXT("%s::%d bone %s could not be init.."),
@@ -427,7 +424,7 @@ bool USLSkeletalIndividual::InitBoneIndividuals()
 	}
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
-		if (!VBI->IsInit() && !VBI->Init())
+		if (!VBI->IsInit() && !VBI->Init(false))
 		{
 			bAllBonesAreInit = false;
 			UE_LOG(LogTemp, Error, TEXT("%s::%d virtual bone %s could not be init.."),
@@ -443,7 +440,7 @@ bool USLSkeletalIndividual::LoadBoneIndividuals()
 	bool bAllBonesAreLoaded = true;
 	for (const auto& BI : BoneIndividuals)
 	{
-		if (!BI->IsLoaded() && !BI->Load())
+		if (!BI->IsLoaded() && !BI->Load(false, false))
 		{
 			bAllBonesAreLoaded = false;
 			UE_LOG(LogTemp, Error, TEXT("%s::%d bone %s could not be loaded.."),
@@ -482,10 +479,10 @@ void USLSkeletalIndividual::ResetBoneIndividuals()
 {
 	for (const auto& BI : BoneIndividuals)
 	{
-		BI->Load(true);
+		BI->Load(true, false);
 	}
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
-		VBI->Load(true);
+		VBI->Load(true, false);
 	}
 }

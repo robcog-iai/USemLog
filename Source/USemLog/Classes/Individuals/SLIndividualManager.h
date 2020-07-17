@@ -50,7 +50,7 @@ protected:
 	void LoadReset();
 
 	// Set the init flag, broadcast on new value
-	void SetIsInit(bool bNewValue, bool bBroadcast = true);
+	void SetIsInit(bool bNewValue, bool bBroadcast  = true);
 
 	// Set the loaded flag, broadcast on new value
 	void SetIsLoaded(bool bNewValue, bool bBroadcast = true);

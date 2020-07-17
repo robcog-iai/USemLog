@@ -20,11 +20,11 @@ struct FSLIndividualInfoTextRow
 	GENERATED_BODY()
 
 	// The text render component
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
 	UTextRenderComponent* Text;
 
 	// The row number (1 represnts the first row)
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
 	int32 RowNum = 0;
 };
 
@@ -73,7 +73,7 @@ private:
 
 private:
 	// Map of the row key to the text row structure
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
 	TMap<FString, FSLIndividualInfoTextRow> TextRows;
 
 	// Material template used for creating dynamic materials

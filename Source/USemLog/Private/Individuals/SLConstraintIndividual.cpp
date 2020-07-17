@@ -44,7 +44,7 @@ bool USLConstraintIndividual::Init(bool bReset)
 		return true;
 	}
 
-	SetIsInit(Super::Init() && InitImpl());
+	SetIsInit(Super::Init(bReset) && InitImpl());
 	return IsInit();
 }
 
@@ -71,7 +71,7 @@ bool USLConstraintIndividual::Load(bool bReset, bool bTryImport)
 		}
 	}
 
-	SetIsLoaded(Super::Load() && LoadImpl(bTryImport));
+	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
 }
 
@@ -104,30 +104,6 @@ FString USLConstraintIndividual::CalcDefaultClassValue() const
 		}
 	}
 	return GetTypeName();
-}
-
-// Clear all values of the individual
-void USLConstraintIndividual::InitReset()
-{
-	ConstraintActor1 = nullptr;
-	ConstraintActor2 = nullptr;
-	ConstraintIndividual1 = nullptr;
-	ConstraintIndividual2 = nullptr;
-	SetIsInit(false);
-	ClearDelegates();
-	Super::InitReset();
-}
-
-// Clear all data of the individual
-void USLConstraintIndividual::LoadReset()
-{
-	Super::LoadReset();
-}
-
-// Clear any bound delegates (called when init is reset)
-void USLConstraintIndividual::ClearDelegates()
-{
-	Super::ClearDelegates();
 }
 
 // Private init implementation
@@ -207,3 +183,18 @@ bool USLConstraintIndividual::LoadImpl(bool bTryImport)
 	return true;
 }
 
+// Clear all values of the individual
+void USLConstraintIndividual::InitReset()
+{
+	ConstraintActor1 = nullptr;
+	ConstraintActor2 = nullptr;
+	ConstraintIndividual1 = nullptr;
+	ConstraintIndividual2 = nullptr;
+	SetIsInit(false);
+}
+
+// Clear all data of the individual
+void USLConstraintIndividual::LoadReset()
+{
+	SetIsLoaded(false);
+}
