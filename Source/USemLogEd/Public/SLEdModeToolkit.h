@@ -91,7 +91,7 @@ private:
 
 	// Individual Components
 	FReply OnCreateIndividuals();
-	FReply OnDestroyIndividuals();
+	FReply OnClearIndividuals();
 	FReply OnInitIndividuals();
 	FReply OnLoadIndividuals();
 	FReply OnConnectIndividuals();
@@ -116,7 +116,7 @@ private:
 
 	// Individual Info 
 	FReply OnCreateIndividualsInfo();
-	FReply OnDestroyIndividualsInfo();
+	FReply OnClearIndividualsInfo();
 	FReply OnInitIndividualsInfo();
 	FReply OnLoadIndividualsInfo();
 	FReply OnConnectIndividualsInfo();

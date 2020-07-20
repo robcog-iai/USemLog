@@ -20,12 +20,12 @@ USLIndividualInfoTextComponent::USLIndividualInfoTextComponent()
 // Called before destroying the object.
 void USLIndividualInfoTextComponent::BeginDestroy()
 {
-	RemoveAllTextRows();
+	ClearAllRows();
 	Super::BeginDestroy();
 }
 
 // Add text row (if key already exists, set values)
-void USLIndividualInfoTextComponent::AddTextRow(const FString& Key, const FString& Text, FColor Color)
+void USLIndividualInfoTextComponent::AddRow(const FString& Key, const FString& Text, FColor Color)
 {
 	if (FSLIndividualInfoTextRow* FoundRow = TextRows.Find(Key))
 	{
@@ -50,7 +50,7 @@ void USLIndividualInfoTextComponent::AddTextRow(const FString& Key, const FStrin
 }
 
 // Set the row text value
-void USLIndividualInfoTextComponent::SetTextRowValue(const FString& Key, const FString& Text)
+void USLIndividualInfoTextComponent::SetRowValue(const FString& Key, const FString& Text)
 {
 	if (FSLIndividualInfoTextRow* FoundRow = TextRows.Find(Key))
 	{
@@ -73,7 +73,7 @@ void USLIndividualInfoTextComponent::SetTextRowValue(const FString& Key, const F
 }
 
 // Set the row color
-void USLIndividualInfoTextComponent::SetTextRowColor(const FString& Key, FColor Color)
+void USLIndividualInfoTextComponent::SetRowColor(const FString& Key, FColor Color)
 {
 	if (FSLIndividualInfoTextRow* FoundRow = TextRows.Find(Key))
 	{
@@ -96,13 +96,13 @@ void USLIndividualInfoTextComponent::SetTextRowColor(const FString& Key, FColor 
 }
 
 // Set the row text value and color
-void USLIndividualInfoTextComponent::SetTextRowValueAndColor(const FString& Key, const FString& Text, FColor Color)
+void USLIndividualInfoTextComponent::SetRowValueAndColor(const FString& Key, const FString& Text, FColor Color)
 {
-	AddTextRow(Key, Text, Color);
+	AddRow(Key, Text, Color);
 }
 
 // Remove text row from the component
-bool USLIndividualInfoTextComponent::RemoveTextRow(const FString& Key)
+bool USLIndividualInfoTextComponent::ClearRow(const FString& Key)
 {
 	if (FSLIndividualInfoTextRow* FoundRow = TextRows.Find(Key))
 	{
@@ -145,7 +145,7 @@ bool USLIndividualInfoTextComponent::RemoveTextRow(const FString& Key)
 }
 
 // Remove all text rows
-int32 USLIndividualInfoTextComponent::RemoveAllTextRows()
+int32 USLIndividualInfoTextComponent::ClearAllRows()
 {
 	int32 Num = 0;
 	for (auto& KeyVal : TextRows)
@@ -159,7 +159,7 @@ int32 USLIndividualInfoTextComponent::RemoveAllTextRows()
 }
 
 // Remove all text rows but the given ignore keys
-int32 USLIndividualInfoTextComponent::RemoveAllTextRowsBut(TSet<FString>& IgnoreKeys)
+int32 USLIndividualInfoTextComponent::ClearAllRowsBut(TSet<FString>& IgnoreKeys)
 {
 	int32 Num = 0;
 
@@ -175,7 +175,7 @@ int32 USLIndividualInfoTextComponent::RemoveAllTextRowsBut(TSet<FString>& Ignore
 
 	for (const auto& Key : KeysToRemove)
 	{
-		if (RemoveTextRow(Key))
+		if (ClearRow(Key))
 		{
 			Num++;
 		}

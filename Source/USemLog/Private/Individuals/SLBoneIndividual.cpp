@@ -44,13 +44,6 @@ bool USLBoneIndividual::PreInit(int32 NewBoneIndex, int32 NewMaterialIndex, bool
 // Set pointer to the semantic owner
 bool USLBoneIndividual::Init(bool bReset)
 {
-	if (!IsPreInit())
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot init individual %s, pre init need to be called right after creation.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
-
 	if (bReset)
 	{
 		InitReset();
@@ -137,6 +130,16 @@ bool USLBoneIndividual::CacheCurrentBoneTransform()
 	return false;
 }
 
+// Get the attachment location name (bone/socket)
+FName USLBoneIndividual::GetAttachmentLocationName()
+{
+	if (HasValidSkeletalMesh() && HasValidBoneIndex())
+	{
+		return SkeletalMeshComponent->GetBoneName(BoneIndex);
+	}
+	return NAME_None;
+}
+
 // Get class name, virtual since each invidiual type will have different name
 FString USLBoneIndividual::CalcDefaultClassValue() const
 {
@@ -194,10 +197,17 @@ bool USLBoneIndividual::SetParentActor()
 // Private init implementation
 bool USLBoneIndividual::InitImpl()
 {
+	if (!IsPreInit())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot init individual %s, pre init need to be called right after creation.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
+	}
+
 	// Make sure the visual mesh is set
 	if (HasValidSkeletalMesh() || SetSkeletalMesh())
 	{
-		if (HasValidMaterialIndex() || SetMaterialIndex())
+		if (HasValidMaterialIndex()/* || SetMaterialIndex()*/)
 		{
 			return true;
 		}
@@ -239,35 +249,6 @@ bool USLBoneIndividual::HasValidMaterialIndex() const
 	return HasValidSkeletalMesh()
 		&& MaterialIndex != INDEX_NONE
 		&& MaterialIndex < SkeletalMeshComponent->GetNumMaterials();
-}
-
-// Set the material index (the material slot name is the same with the class name)
-bool USLBoneIndividual::SetMaterialIndex()
-{
-	if (!IsClassValueSet())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s: cannot set the material index without the bone class name.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
-
-	if (!HasValidSkeletalMesh())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s: cannot set the material index without a valid skeletal mesh.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
-		
-	int32 MatIdx = SkeletalMeshComponent->GetMaterialIndex(FName(*GetClassValue()));
-	if(MatIdx != INDEX_NONE)
-	{
-		MaterialIndex = MatIdx;
-		return true;
-	}
-
-	UE_LOG(LogTemp, Error, TEXT("%s::%d %s: could not find the material slot with the name %s in the skeletal mesh.."),
-		*FString(__FUNCTION__), __LINE__, *GetFullName(), *GetClassValue());
-	return false;
 }
 
 // Check if the static mesh component is set

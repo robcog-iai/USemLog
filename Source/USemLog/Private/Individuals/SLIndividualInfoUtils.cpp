@@ -68,13 +68,13 @@ int32 FSLIndividualInfoUtils::CreateIndividualInfoComponents(const TArray<AActor
 	return Num;
 }
 
-// Destroy individual components of all actors in the world
-int32 FSLIndividualInfoUtils::DestroyIndividualInfoComponents(UWorld* World)
+// Clear individual components of all actors in the world
+int32 FSLIndividualInfoUtils::ClearIndividualInfoComponents(UWorld* World)
 {
 	int32 Num = 0;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		if (DestroyIndividualInfoComponent(*ActItr))
+		if (ClearIndividualInfoComponent(*ActItr))
 		{
 			Num++;
 		}
@@ -82,13 +82,13 @@ int32 FSLIndividualInfoUtils::DestroyIndividualInfoComponents(UWorld* World)
 	return Num;
 }
 
-// Destroy individual components of the selected actors
-int32 FSLIndividualInfoUtils::DestroyIndividualInfoComponents(const TArray<AActor*>& Actors)
+// Clear individual components of the selected actors
+int32 FSLIndividualInfoUtils::ClearIndividualInfoComponents(const TArray<AActor*>& Actors)
 {
 	int32 Num = 0;
 	for (const auto& Act : Actors)
 	{
-		if (DestroyIndividualInfoComponent(Act))
+		if (ClearIndividualInfoComponent(Act))
 		{
 			Num++;
 		}
@@ -295,8 +295,8 @@ bool FSLIndividualInfoUtils::HasIndividualInfoComponent(AActor* Actor)
 	return Actor->GetComponentByClass(USLIndividualInfoComponent::StaticClass()) != nullptr;
 }
 
-// Destroy individual info component of the actor
-bool FSLIndividualInfoUtils::DestroyIndividualInfoComponent(AActor* Actor)
+// Clear individual info component of the actor
+bool FSLIndividualInfoUtils::ClearIndividualInfoComponent(AActor* Actor)
 {
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualInfoComponent::StaticClass()))
 	{
@@ -348,6 +348,7 @@ bool FSLIndividualInfoUtils::ToggleIndividualInfoComponentVisibilty(AActor* Acto
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualInfoComponent::StaticClass()))
 	{
 		USLIndividualInfoComponent* IC = CastChecked<USLIndividualInfoComponent>(AC);
+		IC->SetTextVisibility(!IC->IsVisible()); // Set explicitly since the component is registered to the actor
 		IC->SetVisibility(!IC->IsVisible(), true);
 		IC->SetComponentTickEnabled(IC->IsVisible());
 		return true;

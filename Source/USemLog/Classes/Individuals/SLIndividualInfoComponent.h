@@ -10,6 +10,7 @@
 // Forward declarations
 class USLIndividualComponent;
 class USLIndividualInfoTextComponent;
+class USLBaseIndividual;
 
 // Delegate notification when the component is being destroyed
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLIndividualInfoComponentDestroyedSignature, USLIndividualInfoComponent*, DestroyedComponent);
@@ -77,7 +78,8 @@ public:
 	void ToggleTick();
 
 	// Toggle text visiblity
-	void ToggleTextVisibility();
+	void SetTextVisibility(bool bNewVisiblitity);
+	//void ToggleTextVisibility();
 
 	// Rotate component towards the screen
 	bool OrientateTowardsViewer();
@@ -112,11 +114,35 @@ private:
 	// Update info as soon as the individual changes their data
 	bool BindDelegates();
 
-	// Check if sibling individual component is set
-	bool HasValidSiblingIndividualComponent() const;
+	// Check if individual component is set
+	bool HasValidIndividualComponent() const;
 
-	// Set the sibling component
-	bool SetSiblingIndividualComponent();
+	// Set the individual component 
+	bool SetIndividualComponent();
+
+	// Set individual text component
+	bool SetTextComponent();
+
+	// Clear individual text component
+	void ClearTextComponent();
+
+	// Check if the individual text component is valid
+	bool HasValidTextComponent();
+
+	// Set text components for the children
+	bool SetChildrenTextComponents();
+
+	// Destroy any children text components
+	void ClearChildrenTextComponents();
+
+	// Remove all rows from the children text
+	void ClearChildrenTextComponentsData();
+
+	// Check if the info component has children text components
+	bool HasChildrenTextComponents() const { return ChildrenTextComponents.Num() > 0; };
+
+	// Check if the children are in sync with the individual components
+	bool HasChildrenInSync() const;
 
 	// Check if the component is in the view frustrum
 	bool IsInViewFrustrum(FVector& OutViewLocation) const;
@@ -124,40 +150,45 @@ private:
 	// Scale the text relative to the distance towards the location
 	void SetTextScale(const FVector& Location);
 
-	// Check that the text component is in a valid state
-	bool IsTextComponentValid() const;
-
 	/* Text values */
-	//// Set its own states as text values
-	//void SetOwnStateValuesText();
+	// Set its own states as text values
+	void SetOwnTextInfo();
 
-	//// Set sibling individual state values
-	//void SetSiblingIndividualStateValuesText();
+	// Set individual component state as text values
+	void SetIndividualComponentTextInfo();
 
 	/* Delegate functions */
-	// Called when siblings init value has changed
+	// Called when individual component init value has changed
 	UFUNCTION()
-	void OnSiblingIndividualComponentInitChanged(USLIndividualComponent* IC, bool bNewVal);
+	void OnIndividualComponentInitChanged(USLIndividualComponent* IC, bool bNewVal);
 
-	// Called when the siblings load value has changed
+	// Called when the individual component load value has changed
 	UFUNCTION()
-	void OnSiblingIndividualComponentLoadedChanged(USLIndividualComponent* IC, bool bNewVal);
+	void OnIndividualComponentLoadedChanged(USLIndividualComponent* IC, bool bNewVal);
 
-	// Called when the siblings connected value has changed
+	// Called when the individual component connected value has changed
 	UFUNCTION()
-	void OnSiblingIndividualComponentConnectedChanged(USLIndividualComponent* IC, bool bNewVal);
+	void OnIndividualComponentConnectedChanged(USLIndividualComponent* IC, bool bNewVal);
 
-	// Called when the siblings values have changed
+	// Called when the individual component values have changed
 	UFUNCTION()
-	void OnSiblingIndividualComponentValueChanged(USLIndividualComponent* IC, const FString& Key, const FString& NewValue);
+	void OnIndividualComponentValueChanged(USLIndividualComponent* IC, const FString& Key, const FString& NewValue);
 
-	// Called when sibling is being destroyed
+	// Called when the indiviual component child values have changed
 	UFUNCTION()
-	void OnSiblingIndividualComponentDestroyed(USLIndividualComponent* IC);
+	void OnIndividualComponentChildValueChanged(USLIndividualComponent* IC, USLBaseIndividual* ChildIndividual, const FString& Key, const FString& NewValue);
 
-	// Called when sibling delegates are cleared
+	// Called when the children number has changed
 	UFUNCTION()
-	void OnSiblingIndividualComponentDelegatesCleared(USLIndividualComponent* IC);
+	void OnIndividualComponentChildrenNumChanged(USLIndividualComponent* IC, int32 NumChildren, int32 NumAttachableChildren);
+
+	// Called when individual component is being destroyed
+	UFUNCTION()
+	void OnIndividualComponentDestroyed(USLIndividualComponent* IC);
+
+	// Called when individual component delegates are cleared
+	UFUNCTION()
+	void OnIndividualComponentDelegatesCleared(USLIndividualComponent* IC);
 
 public:
 	// Called when the component is destroyed
@@ -167,35 +198,35 @@ public:
 	FSLIndividualInfoComponentDelegatesClearedSignature OnDelegatesCleared;
 
 protected:
-	// Pointer to the individual component of the same owner
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	USLIndividualComponent* SiblingIndividualComponent;
-
 	// True if the manager is init
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger|Individual Info")
 	uint8 bIsInit : 1;
 
 	// True if the manager is loaded
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger|Individual Info")
 	uint8 bIsLoaded : 1;
 
 	// True if listening to the individual components delegates
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger|Individual Info")
 	uint8 bIsConnected : 1;
+
+	// Pointer to the individual component of the same owner
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger|Individual Component"*/)
+	USLIndividualComponent* IndividualComponent;
 
 private:
 	// Shows values as rendered text lines
-	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
+	UPROPERTY(/*VisibleAnywhere, Category = "SL|Individual Info"*/)
 	USLIndividualInfoTextComponent* TextComponent;
 
-	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger"*/)
-	TMap<int32, USLIndividualInfoTextComponent*> ChildrenTextComponents;
+	UPROPERTY(/*VisibleAnywhere, Category = "SL|Individual Info"*/)
+	TMap<USLBaseIndividual*, USLIndividualInfoTextComponent*> ChildrenTextComponents;
 
 	/* Constants */	
 	// Text scale clamps
 	constexpr static float TextScaleMin = 0.25f;
 	constexpr static float TextScaleMax = 2.f;
 
-	//static constexpr char SelfTextRowKey[] = "self";
-	//static constexpr char SiblingIndividualTextRowKey[] = "indiv";
+	static constexpr char OwnTextInfoKey[] = "iic";
+	static constexpr char ICTextInfoKey[] = "ic";
 };

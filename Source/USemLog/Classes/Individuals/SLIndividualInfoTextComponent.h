@@ -44,25 +44,25 @@ protected:
 
 public:
 	// Add text row (if key already exists, set values)
-	void AddTextRow(const FString& Key, const FString& Text = "", FColor Color = FColor::White);
+	void AddRow(const FString& Key, const FString& Text = "", FColor Color = FColor::White);
 
 	// Set text row value (adds a new row if it does not exist)
-	void SetTextRowValue(const FString& Key, const FString& Text);
+	void SetRowValue(const FString& Key, const FString& Text);
 
 	// Set text render color value (adds a new row if it does not exist)
-	void SetTextRowColor(const FString& Key, FColor Color);
+	void SetRowColor(const FString& Key, FColor Color);
 
 	// Set text line value and color
-	void SetTextRowValueAndColor(const FString& Key, const FString& Text, FColor Color);
+	void SetRowValueAndColor(const FString& Key, const FString& Text, FColor Color);
 
 	// Remove text row (returns false if not found)
-	bool RemoveTextRow(const FString& Key);
+	bool ClearRow(const FString& Key);
 
 	// Clear all text rows
-	int32 RemoveAllTextRows();
+	int32 ClearAllRows();
 
 	// Remove all lines that are not in the ignore key array
-	int32 RemoveAllTextRowsBut(TSet<FString>& IgnoreKeys);
+	int32 ClearAllRowsBut(TSet<FString>& IgnoreKeys);
 
 private:
 	// Create a new text render component

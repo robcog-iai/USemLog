@@ -31,10 +31,10 @@ public:
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
-    // Set the parameters required when initalizing the individual
+    // Set the parameters required when initalizing the individual (should be called right after construction by the skeletal individual)
     bool PreInit(int32 NewBoneIndex, int32 NewMaterialIndex, bool bReset = false);
 
-    // Check if the individual is pre initalized
+    // Check if the individual is pre initalized 
     bool IsPreInit() const { return bIsPreInit; };
 
     // Init asset references (bForced forces re-initialization)
@@ -58,7 +58,10 @@ public:
     bool CacheCurrentBoneTransform();
 
     // Get the cached bone transform
-    FTransform GetCachedTranform() const { return CachedTransform; };
+    FTransform GetCachedTransform() const { return CachedTransform; };
+
+    // Get the attachment location name (bone/socket)
+    FName GetAttachmentLocationName();
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
@@ -91,9 +94,6 @@ private:
 
     // Check if the material index is valid
     bool HasValidMaterialIndex() const;
-
-    // Set the material index (the material slot name is the same with the class name)
-    bool SetMaterialIndex();
 
 protected:
     // Pre init

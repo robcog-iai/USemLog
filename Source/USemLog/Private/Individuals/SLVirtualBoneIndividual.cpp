@@ -104,6 +104,16 @@ bool USLVirtualBoneIndividual::CacheCurrentBoneTransform()
 	return false;
 }
 
+// Get the attachment location name (bone/socket)
+FName USLVirtualBoneIndividual::GetAttachmentLocationName()
+{
+	if (HasValidSkeletalMesh() && HasValidBoneIndex())
+	{
+		return SkeletalMeshComponent->GetBoneName(BoneIndex);
+	}
+	return NAME_None;
+}
+
 // Get class name, virtual since each invidiual type will have different name
 FString USLVirtualBoneIndividual::CalcDefaultClassValue() const
 {
@@ -171,6 +181,15 @@ void USLVirtualBoneIndividual::LoadReset()
 {
 	SetIsLoaded(false);
 }
+
+// Check if the bone index is valid
+bool USLVirtualBoneIndividual::HasValidBoneIndex() const
+{
+	return HasValidSkeletalMesh()
+		&& BoneIndex != INDEX_NONE
+		&& BoneIndex < SkeletalMeshComponent->GetNumBones();
+}
+
 
 // Check if the static mesh component is set
 bool USLVirtualBoneIndividual::HasValidSkeletalMesh() const

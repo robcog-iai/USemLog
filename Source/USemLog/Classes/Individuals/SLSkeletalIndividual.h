@@ -31,6 +31,9 @@ public:
     // Ctor
     USLSkeletalIndividual();
 
+    //// Do any object-specific cleanup required immediately after loading an object. (called only once when loading the map)
+    //virtual void PostLoad() override;
+
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
@@ -40,6 +43,15 @@ public:
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset, bool bTryImport);
 
+    //// Listen to the children individual object delegates
+    //bool Connect();
+
+    //// True if the component is listening to the individual object delegates (transient)
+    //bool IsConnected() const { return bIsConnected; };
+
+    // Trigger values as new value broadcast
+    virtual void TriggerValuesBroadcast() override;
+
     // Save values externally
     virtual bool ExportValues(bool bOverwrite = false) override;
 
@@ -48,6 +60,12 @@ public:
 
     // Clear exported values
     virtual bool ClearExportedValues() override;
+
+    // Get all children of the individual
+    const TArray<USLBaseIndividual*>  GetChildrenIndividuals() const;
+
+    // Check if child can be attached, if so return its location bone/socket name)
+    bool IsChildAttachable(USLBaseIndividual* Child, FName& OutName);
 
     // Return a const version of the bone individuals
     const TArray<USLBoneIndividual*>& GetBoneIndividuals() const { return BoneIndividuals; };
@@ -69,6 +87,9 @@ public:
 protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() const override;
+
+    //// Set the connected flag, broadcast on new value
+    //void SetIsConnected(bool bNewValue, bool bBroadcast = true);
 
 private:
     // Set dependencies
@@ -96,31 +117,57 @@ private:
     bool SetSkeletalDataAsset();
 
     // Check if all the bones are valid
-    bool HasValidBones() const;
+    bool HasValidChildrenIndividuals() const;
 
     // Create the bones individuals
-    bool CreateBoneIndividuals();
+    bool CreateChildrenIndividuals();
 
     // Call init on all bones, true if all succesfully init
-    bool InitBoneIndividuals();
+    bool InitChildrenIndividuals();
 
     // Call load on all bones, true if all succesfully loaded
-    bool LoadBoneIndividuals();
+    bool LoadChildrenIndividuals();
 
     // Destroy bone individuals
-    void DestroyBoneIndividuals();
+    void DestroyChildrenIndividuals();
 
     // Reset bone individuals
-    void ResetBoneIndividuals();
+    void ClearChildrenIndividualsValue();
+
+    //// Bind to children delegates
+    //bool BindChildrenDelegates();
+
+    //// Listen to children changes
+    //void BindChildIndividualDelegates(USLBaseIndividual* ChildIndividual);
+
+    //// Triggered on child individual init flag change
+    //UFUNCTION()
+    //void OnChildInitChange(USLBaseIndividual* Individual, bool bNewValue);
+
+    //// Triggered on child individual loaded flag change
+    //UFUNCTION()
+    //void OnChildLoadedChange(USLBaseIndividual* Individual, bool bNewValue);
+
+    //// Triggered when a child individual value is changed
+    //UFUNCTION()
+    //void OnChildNewValue(USLBaseIndividual* Individual, const FString& Key, const FString& NewValue);
+
+    //// Triggered when a child individual delegates are cleared (triuggered when InitReset is called)
+    //UFUNCTION()
+    //void OnChildDelegatesCleared(USLBaseIndividual* Individual);
 
 protected:
-    // Semantically annotated bones
+    // Visible bones
     UPROPERTY(VisibleAnywhere, Category = "SL")
     TArray<USLBoneIndividual*> BoneIndividuals;
 
-    // Bones without visual
+    // Bones without material
     UPROPERTY(VisibleAnywhere, Category = "SL")
     TArray<USLVirtualBoneIndividual*> VirtualBoneIndividuals;
+
+    //// True if the component is listening to the child individual object delegates
+    //UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+    //uint8 bIsConnected : 1;
 
 private:
     // The visual component of the owner

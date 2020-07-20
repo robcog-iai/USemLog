@@ -118,7 +118,6 @@ bool USLIndividualComponent::Connect()
 	return IsConnected();
 }
 
-
 /* Functionalities */
 // Save data to owners tag
 bool USLIndividualComponent::ExportValues(bool bOverwrite)
@@ -170,6 +169,7 @@ bool USLIndividualComponent::TriggerIndividualValuesBroadcast()
 	if (HasValidIndividual())
 	{
 		IndividualObj->TriggerValuesBroadcast();
+		OnChildrenNumChanged.Broadcast(this, IndividualChildren.Num(), AttachableIndividualChildren.Num());
 		return true;
 	}
 	return false;
@@ -184,6 +184,15 @@ bool USLIndividualComponent::WriteId(bool bOverwrite)
 		if (!IndividualObj->IsIdValueSet() || bOverwrite)
 		{
 			IndividualObj->GenerateNewIdValue();
+
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(IndividualObj))
+			{
+				for (const auto& Child : GetIndividualChildren())
+				{
+					Child->GenerateNewIdValue();
+				}
+			}
+
 			return true;
 		}
 	}
@@ -198,6 +207,14 @@ bool USLIndividualComponent::ClearId()
 		if (IndividualObj->IsIdValueSet())
 		{
 			IndividualObj->ClearIdValue();
+
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(IndividualObj))
+			{
+				for (const auto& Child : GetIndividualChildren())
+				{
+					Child->ClearIdValue();
+				}
+			}
 			return true;
 		}
 	}
@@ -212,6 +229,16 @@ bool USLIndividualComponent::WriteClass(bool bOverwrite)
 		if (!IndividualObj->IsClassValueSet() || bOverwrite)
 		{
 			IndividualObj->SetDefaultClassValue();
+			
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(IndividualObj))
+			{
+				for (const auto& Child : GetIndividualChildren())
+				{
+					// TODO Class should not be changed
+					//Child->SetDefaultClassValue();
+				}
+			}
+
 			return true;
 		}
 	}
@@ -226,6 +253,16 @@ bool USLIndividualComponent::ClearClass()
 		if (IndividualObj->IsClassValueSet())
 		{
 			IndividualObj->ClearClassValue();
+
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(IndividualObj))
+			{
+				for (const auto& Child : GetIndividualChildren())
+				{
+					// TODO Class should not be changed
+					//Child->ClearClassValue();
+				}
+			}
+
 			return true;
 		}
 	}
@@ -233,7 +270,7 @@ bool USLIndividualComponent::ClearClass()
 }
 
 // Write visual mask value (if perceivable)
-bool USLIndividualComponent::WriteVisualMaskClass(const FString& Value, bool bOverwrite, const TArray<FString>& ChildrenValues)
+bool USLIndividualComponent::WriteVisualMask(const FString& Value, bool bOverwrite, const TArray<FString>& ChildrenValues)
 {
 	if (HasValidIndividual())
 	{
@@ -260,7 +297,6 @@ bool USLIndividualComponent::WriteVisualMaskClass(const FString& Value, bool bOv
 					UE_LOG(LogTemp, Error, TEXT("%s::%d %s's bones num differ of the values num, cannot set mask values.."),
 						*FString(__FUNCTION__), __LINE__, *GetFullName());
 				}
-
 			}
 			
 			// TODO check robot type
@@ -308,6 +344,7 @@ void USLIndividualComponent::InitReset()
 	{
 		IndividualObj->Init(true);
 	}
+	ClearIndividualChildren();
 	ClearDelegates();
 }
 
@@ -329,6 +366,7 @@ void USLIndividualComponent::ClearDelegates()
 	OnLoadedChanged.Clear();
 	OnConnectedChanged.Clear();
 	OnValueChanged.Clear();
+	OnChildValueChanged.Clear();
 	OnDelegatesCleared.Broadcast(this);
 	OnDelegatesCleared.Clear();
 }
@@ -377,16 +415,78 @@ void USLIndividualComponent::SetIsConnected(bool bNewValue, bool bBroadcast)
 	}
 }
 
+// Set any individual children if available
+void USLIndividualComponent::SetIndividualChildren()
+{
+	if (!HasValidIndividual())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no valid individual, cannot load any children.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+
+	if (HasIndividualChildren())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has children, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		ClearIndividualChildren();
+	}
+
+	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(IndividualObj))
+	{
+		IndividualChildren = SkI->GetChildrenIndividuals();
+
+		// Check is child is attachable
+		for (const auto& Child : IndividualChildren)
+		{
+			FName AttachmentLocationName = NAME_None;
+			if (SkI->IsChildAttachable(Child, AttachmentLocationName))
+			{
+				if (AttachmentLocationName != NAME_None)
+				{
+					AttachableIndividualChildren.Add(Child, AttachmentLocationName);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s's child individual %s is attachable with the location name NONE, this should not happen.."),
+						*FString(__FUNCTION__), __LINE__, *GetFullName(), *Child->GetFullName());
+				}
+			}
+		}
+	}
+	// TODO robot data
+	//else if()
+
+	BindChildrenDelegates();
+	OnChildrenNumChanged.Broadcast(this, IndividualChildren.Num(), AttachableIndividualChildren.Num());
+}
+
+// Clear any cached individual children
+void USLIndividualComponent::ClearIndividualChildren()
+{
+	UnBindChildrenDelegates();
+	IndividualChildren.Empty();
+	AttachableIndividualChildren.Empty();
+	OnChildrenNumChanged.Broadcast(this, IndividualChildren.Num(), AttachableIndividualChildren.Num());
+}
+
 // Create individual if not created and forward init call
 bool USLIndividualComponent::InitImpl()
 {
 	if (HasValidIndividual() || CreateIndividual())
 	{
 		Connect();
-		return IndividualObj->Init(false);
+		if(IndividualObj->Init(false))
+		{
+			// Children are only available after init
+			SetIndividualChildren();
+			return true;
+		}
 	}
+	else
+	{
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not create an individual, this should not happen.."),
 		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
 	return false;
 }
 
@@ -454,6 +554,38 @@ bool USLIndividualComponent::BindDelegates()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component new value delegate is already bound, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+	return true;
+}
+
+// Sync states with the individuals children
+bool USLIndividualComponent::BindChildrenDelegates()
+{
+	// TODO bind for all the information (init, load, connect)
+	for (const auto& IndividualChild : IndividualChildren)
+	{
+		if (!IndividualChild->OnNewValue.IsAlreadyBound(this, &USLIndividualComponent::OnChildIndividualNewValue))
+		{
+			IndividualChild->OnNewValue.AddDynamic(this, &USLIndividualComponent::OnChildIndividualNewValue);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s value delegate is already bound, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName(), *IndividualChild->GetFullName());
+		}
+	}
+	return true;
+}
+
+// Clear children delegates
+bool USLIndividualComponent::UnBindChildrenDelegates()
+{
+	for (const auto& IndividualChild : IndividualChildren)
+	{
+		if (IndividualChild->OnNewValue.IsAlreadyBound(this, &USLIndividualComponent::OnChildIndividualNewValue))
+		{
+			IndividualChild->OnNewValue.RemoveDynamic(this, &USLIndividualComponent::OnChildIndividualNewValue);
+		}
 	}
 	return true;
 }
@@ -536,6 +668,12 @@ void USLIndividualComponent::OnIndividualNewValue(USLBaseIndividual* Individual,
 {
 	// Forward the data to any listeners
 	OnValueChanged.Broadcast(this, Key, NewValue);
+}
+
+// Triggered when a child individual value is changed
+void USLIndividualComponent::OnChildIndividualNewValue(USLBaseIndividual* Individual, const FString& Key, const FString& NewValue)
+{
+	OnChildValueChanged.Broadcast(this, Individual, Key, NewValue);
 }
 
 // Triggered with the delegates are cleared on the individual object (required reconnection afterwards)

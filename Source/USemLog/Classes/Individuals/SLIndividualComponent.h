@@ -26,6 +26,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSLComponentConnectedChangeSignatur
 // Notify when the individual object changes any value
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FSLComponentValueChangeSignature, USLIndividualComponent*, Component, const FString&, Key, const FString&, Value);
 
+// Notify when and individual child changes any value
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FSLComponentChildValueChangeSignature, USLIndividualComponent*, Component, USLBaseIndividual*, Child, const FString&, Key, const FString&, Value);
+
+// Notify listeners that the individual has children
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FSLComponentChildrenNumChangeSignature, USLIndividualComponent*, Component, int32, NumChildren, int32, NumAttachableChildren);
+
 // Notify listeners that the delegates have been cleared
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLComponentDelegatesClearedSignature, USLIndividualComponent*, Component);
 
@@ -73,12 +79,21 @@ public:
 	// Get the semantic individual object
 	USLBaseIndividual* GetIndividualObject() const { return HasValidIndividual() ? IndividualObj : nullptr; };
 
+	// Return const version of the children array
+	const TArray<USLBaseIndividual*>& GetIndividualChildren() const { return IndividualChildren; };
+
+	// Return const version of the attachable children map (individual to bone/socket name)
+	const TMap<USLBaseIndividual*, FName>& GetAttachableIndividualChildren() const { return AttachableIndividualChildren; };
+
 	// Get the semantic individual using a cast class (nullptr if cast is unsuccessfull)
 	template <typename ClassType>
 	ClassType* GetCastedIndividualObject() const 
 	{
 		return HasValidIndividual() ? Cast<ClassType>(IndividualObj) : nullptr;
 	};
+
+	// Check if the component has individual children
+	bool HasIndividualChildren() const { return IndividualChildren.Num() > 0; };
 
 	/* Functionalities */
 	// Save data to owners tag
@@ -106,7 +121,7 @@ public:
 	bool ClearClass();
 
 	/* Visual Mask */
-	bool WriteVisualMaskClass(const FString& Value, bool bOverwrite, const TArray<FString>& ChildrenValues = TArray<FString>());
+	bool WriteVisualMask(const FString& Value, bool bOverwrite, const TArray<FString>& ChildrenValues = TArray<FString>());
 	bool ClearVisualMask();
 
 protected:
@@ -128,6 +143,12 @@ protected:
 	// Set the connected flag, broadcast on new value
 	void SetIsConnected(bool bNewValue, bool bBroadcast = true);
 
+	// Set any individual children if available
+	void SetIndividualChildren();
+
+	// Clear any cached individual children
+	void ClearIndividualChildren();
+
 private:
 	// Create individual if not created and forward init call
 	bool InitImpl();
@@ -137,6 +158,12 @@ private:
 
 	// Sync states with the individual
 	bool BindDelegates();
+
+	// Sync states with the individuals children
+	bool BindChildrenDelegates();
+
+	// Clear children delegates
+	bool UnBindChildrenDelegates();
 
 	// Check if individual object is valid
 	bool HasValidIndividual() const;
@@ -155,6 +182,10 @@ private:
 	// Triggered when an individual value is changed
 	UFUNCTION()
 	void OnIndividualNewValue(USLBaseIndividual* Individual, const FString& Key, const FString& NewValue);
+
+	// Triggered when a child individual value is changed
+	UFUNCTION()
+	void OnChildIndividualNewValue(USLBaseIndividual* Individual, const FString& Key, const FString& NewValue);
 
 	// Triggered when individual delegates are cleared (including this one)
 	UFUNCTION()
@@ -176,14 +207,16 @@ public:
 	// Called when any value change from the individual object
 	FSLComponentValueChangeSignature OnValueChanged;
 
+	// Called when any child value change from the individual object
+	FSLComponentChildValueChangeSignature OnChildValueChanged;
+
+	// Called when the children are set
+	FSLComponentChildrenNumChangeSignature OnChildrenNumChanged;
+
 	// Called when the delegates are cleared
 	FSLComponentDelegatesClearedSignature OnDelegatesCleared;
 
 private:
-	// Semantic data
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	USLBaseIndividual* IndividualObj;
-
 	// True if the individual is succesfully created and initialized
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsInit : 1;
@@ -195,6 +228,18 @@ private:
 	// True if the component is listening to the individual object delegates
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsConnected : 1;
+
+	// Semantic data
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	USLBaseIndividual* IndividualObj;
+
+	// Individuals children
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	TArray<USLBaseIndividual*> IndividualChildren;
+
+	// Individuals attachable children
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	TMap<USLBaseIndividual*, FName> AttachableIndividualChildren;
 
 public:
 	// Semantic data

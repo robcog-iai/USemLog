@@ -90,13 +90,13 @@ int32 FSLIndividualUtils::CreateIndividualComponents(const TArray<AActor*>& Acto
 	return Num;
 }
 
-// Destroy individual components of all actors in the world
-int32 FSLIndividualUtils::DestroyIndividualComponents(UWorld* World)
+// Clear individual components of all actors in the world
+int32 FSLIndividualUtils::ClearIndividualComponents(UWorld* World)
 {
 	int32 Num = 0;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
-		if (DestroyIndividualComponent(*ActItr))
+		if (ClearIndividualComponent(*ActItr))
 		{
 			Num++;
 		}
@@ -104,13 +104,13 @@ int32 FSLIndividualUtils::DestroyIndividualComponents(UWorld* World)
 	return Num;
 }
 
-// Destroy individual components of the selected actors
-int32 FSLIndividualUtils::DestroyIndividualComponents(const TArray<AActor*>& Actors)
+// Clear individual components of the selected actors
+int32 FSLIndividualUtils::ClearIndividualComponents(const TArray<AActor*>& Actors)
 {
 	int32 Num = 0;
 	for (const auto& Act : Actors)
 	{
-		if (DestroyIndividualComponent(Act))
+		if (ClearIndividualComponent(Act))
 		{
 			Num++;
 		}
@@ -572,7 +572,7 @@ bool FSLIndividualUtils::ConvertIndividualObject(USLBaseIndividual*& IndividualO
 	//	{
 	//		// TODO cache common individual data to copy to the newly created individual
 	//		UObject* Outer = IndividualObject->GetOuter();
-	//		IndividualObject->ConditionalBeginDestroy();
+	//		IndividualObject->ConditionalBeginClear();
 	//		IndividualObject = NewObject<USLBaseIndividual>(Outer, ConvertToClass);
 	//		return true;
 	//	}
@@ -716,8 +716,8 @@ bool FSLIndividualUtils::HasIndividualComponent(AActor* Actor)
 	return Actor->GetComponentByClass(USLIndividualComponent::StaticClass()) != nullptr;
 }
 
-// Destroy individual component of the actor
-bool FSLIndividualUtils::DestroyIndividualComponent(AActor* Actor)
+// Clear individual component of the actor
+bool FSLIndividualUtils::ClearIndividualComponent(AActor* Actor)
 {
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{

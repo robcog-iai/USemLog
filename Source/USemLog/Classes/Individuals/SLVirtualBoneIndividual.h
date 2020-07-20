@@ -30,10 +30,10 @@ public:
     bool IsPreInit() const { return bIsPreInit; };
 
     // Init asset references (bForced forces re-initialization)
-    virtual bool Init(bool bReset = false);
+    virtual bool Init(bool bReset);
 
     // Load semantic data (bForced forces re-loading)
-    virtual bool Load(bool bReset = false, bool bTryImport = false);
+    virtual bool Load(bool bReset, bool bTryImport);
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("VirtualBoneIndividual"); };
@@ -42,7 +42,10 @@ public:
     bool CacheCurrentBoneTransform();
 
     // Get the cached bone transform
-    FTransform GetCachedTranform() const { return CachedTransform; };
+    FTransform GetCachedTransform() const { return CachedTransform; };
+
+    // Get the attachment location name (bone/socket)
+    FName GetAttachmentLocationName();
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
@@ -63,6 +66,9 @@ private:
 
     // Clear all data of the individual
     void LoadReset();
+
+    // Check if the bone index is valid
+    bool HasValidBoneIndex() const;
 
     // Check if the static mesh component is set
     bool HasValidSkeletalMesh() const;

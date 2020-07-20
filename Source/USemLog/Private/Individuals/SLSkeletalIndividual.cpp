@@ -15,9 +15,20 @@
 // Ctor
 USLSkeletalIndividual::USLSkeletalIndividual()
 {
+	//bIsConnected = false;
 	SkeletalMeshComponent = nullptr;
 	SkeletalDataAsset = nullptr;
 }
+
+//// Do any object-specific cleanup required immediately after loading an object.
+//void USLSkeletalIndividual::PostLoad()
+//{
+//	Super::PostLoad();
+//	if (!IsConnected())
+//	{
+//		Connect();
+//	}
+//}
 
 // Called before destroying the object.
 void USLSkeletalIndividual::BeginDestroy()
@@ -68,6 +79,32 @@ bool USLSkeletalIndividual::Load(bool bReset, bool bTryImport)
 
 	SetIsLoaded(Super::Load(bReset, bTryImport) && LoadImpl(bTryImport));
 	return IsLoaded();
+}
+
+//// Listen to the children individual object delegates
+//bool USLSkeletalIndividual::Connect()
+//{
+//	if (IsConnected())
+//	{
+//		return true;
+//	}
+//	SetIsConnected(BindChildrenDelegates());
+//	return IsConnected();
+//}
+
+// Trigger values as new value broadcast
+void USLSkeletalIndividual::TriggerValuesBroadcast()
+{
+	Super::TriggerValuesBroadcast();
+
+	for (const auto& BI : BoneIndividuals)
+	{
+		BI->TriggerValuesBroadcast();
+	}
+	for (const auto& VBI : VirtualBoneIndividuals)
+	{
+		VBI->TriggerValuesBroadcast();
+	}
 }
 
 // Save values externally
@@ -128,6 +165,43 @@ bool USLSkeletalIndividual::ClearExportedValues()
 		if (VBI->ClearExportedValues())
 		{
 			RetVal = true;
+		}
+	}
+	return false;
+}
+
+// Get all children of the individual
+const TArray<USLBaseIndividual*> USLSkeletalIndividual::GetChildrenIndividuals() const
+{
+	TArray<USLBaseIndividual*> Children;
+	for (const auto& BI : BoneIndividuals)
+	{
+		Children.Add(BI);
+	}	
+	for (const auto& VBI : VirtualBoneIndividuals)
+	{
+		Children.Add(VBI);
+	}
+	return Children;
+}
+
+// Check if child can be attached, if so return its location bone/socket name)
+bool USLSkeletalIndividual::IsChildAttachable(USLBaseIndividual* Child, FName& OutName)
+{
+	if (USLBoneIndividual* AsBI = Cast<USLBoneIndividual>(Child))
+	{
+		if (BoneIndividuals.Contains(AsBI))
+		{
+			OutName = AsBI->GetAttachmentLocationName();
+			return true;
+		}
+	}
+	else if (USLVirtualBoneIndividual* AsVBI = Cast<USLVirtualBoneIndividual>(Child))
+	{
+		if (VirtualBoneIndividuals.Contains(AsVBI))
+		{
+			OutName = AsVBI->GetAttachmentLocationName();
+			return true;
 		}
 	}
 	return false;
@@ -219,6 +293,19 @@ FString USLSkeletalIndividual::CalcDefaultClassValue() const
 	return GetTypeName();
 }
 
+//// Set the connected flag, broadcast on new value
+//void USLSkeletalIndividual::SetIsConnected(bool bNewValue, bool bBroadcast)
+//{
+//	if (bIsConnected != bNewValue)
+//	{
+//		bIsConnected = bNewValue;
+//		if (bBroadcast)
+//		{
+//			//OnConnectedChanged.Broadcast(this, bNewValue);
+//		}
+//	}
+//}
+
 // Private init implementation
 bool USLSkeletalIndividual::InitImpl()
 {
@@ -229,9 +316,10 @@ bool USLSkeletalIndividual::InitImpl()
 		if (HasValidSkeletalDataAsset() || SetSkeletalDataAsset())
 		{
 			// Make sure the bone individuals are created
-			if (HasValidBones() || CreateBoneIndividuals())
+			if (HasValidChildrenIndividuals() || CreateChildrenIndividuals())
 			{
-				return InitBoneIndividuals();
+				//Connect();
+				return InitChildrenIndividuals();
 			}
 		}
 	}
@@ -241,9 +329,9 @@ bool USLSkeletalIndividual::InitImpl()
 // Private load implementation
 bool USLSkeletalIndividual::LoadImpl(bool bTryImport)
 {
-	if (HasValidBones())
+	if (HasValidChildrenIndividuals())
 	{
-		return LoadBoneIndividuals();
+		return LoadChildrenIndividuals();
 	}
 	UE_LOG(LogTemp, Error, TEXT("%s::%d %s's bones should be valid here, this should not happen.."),
 		*FString(__FUNCTION__), __LINE__, *GetFullName());
@@ -254,7 +342,7 @@ bool USLSkeletalIndividual::LoadImpl(bool bTryImport)
 void USLSkeletalIndividual::InitReset()
 {
 	LoadReset();
-	DestroyBoneIndividuals();
+	DestroyChildrenIndividuals();
 	SkeletalMeshComponent = nullptr;
 	SetIsInit(false);
 }
@@ -262,7 +350,7 @@ void USLSkeletalIndividual::InitReset()
 // Clear all data of the individual
 void USLSkeletalIndividual::LoadReset()
 {
-	ResetBoneIndividuals();
+	ClearChildrenIndividualsValue();
 	SetIsLoaded(false);
 }
 
@@ -333,7 +421,7 @@ bool USLSkeletalIndividual::SetSkeletalDataAsset()
 }
 
 // Check if all the bones are valid
-bool USLSkeletalIndividual::HasValidBones() const
+bool USLSkeletalIndividual::HasValidChildrenIndividuals() const
 {
 	// Bones are not valid without a skeletal mesh set
 	if (!HasValidSkeletalMesh())
@@ -371,13 +459,15 @@ bool USLSkeletalIndividual::HasValidBones() const
 }
 
 // Create new bone objects
-bool USLSkeletalIndividual::CreateBoneIndividuals()
+bool USLSkeletalIndividual::CreateChildrenIndividuals()
 {
 	// Destroy any previous individuals
-	DestroyBoneIndividuals();
+	DestroyChildrenIndividuals();
 
 	if (!HasValidSkeletalMesh())
 	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's skeletal mesh is not set, cannot create bone individuals.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return false;
 	}
 
@@ -389,7 +479,7 @@ bool USLSkeletalIndividual::CreateBoneIndividuals()
 			int32 MatIdx = SkeletalMeshComponent->GetMaterialIndex(FName(*BoneData.Value));
 			if (MatIdx == INDEX_NONE)
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s bone will be invalid, no material slot found with the name: %s .."),
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's a bone will be invalid, no material slot found with the name: %s .."),
 					*FString(__FUNCTION__), __LINE__, *GetFullName(), *BoneData.Value);
 			}
 			BI->PreInit(BoneData.Key, MatIdx);
@@ -406,11 +496,19 @@ bool USLSkeletalIndividual::CreateBoneIndividuals()
 		//SkeletalMeshComponent->Constraints
 	}
 
-	return HasValidBones();
+
+	// TODO skeletal joints
+	UPhysicsAsset* PA = SkeletalMeshComponent->GetPhysicsAsset();
+	for (const auto& CS : PA->ConstraintSetup)
+	{
+
+	}
+
+	return HasValidChildrenIndividuals();
 }
 
 // Call init on all bones, true if all succesfully init
-bool USLSkeletalIndividual::InitBoneIndividuals()
+bool USLSkeletalIndividual::InitChildrenIndividuals()
 {
 	bool bAllBonesAreInit = true;
 	for (const auto& BI : BoneIndividuals)
@@ -435,12 +533,12 @@ bool USLSkeletalIndividual::InitBoneIndividuals()
 }
 
 // Call load on all bones, true if all succesfully loaded
-bool USLSkeletalIndividual::LoadBoneIndividuals()
+bool USLSkeletalIndividual::LoadChildrenIndividuals()
 {
 	bool bAllBonesAreLoaded = true;
 	for (const auto& BI : BoneIndividuals)
 	{
-		if (!BI->IsLoaded() && !BI->Load(false, false))
+		if (!BI->IsLoaded() && !BI->Load(false, true))
 		{
 			bAllBonesAreLoaded = false;
 			UE_LOG(LogTemp, Error, TEXT("%s::%d bone %s could not be loaded.."),
@@ -449,7 +547,7 @@ bool USLSkeletalIndividual::LoadBoneIndividuals()
 	}
 	for (const auto& VBI : VirtualBoneIndividuals)
 	{
-		if (!VBI->IsLoaded() && !VBI->Load())
+		if (!VBI->IsLoaded() && !VBI->Load(false, true))
 		{
 			bAllBonesAreLoaded = false;
 			UE_LOG(LogTemp, Error, TEXT("%s::%d virtual bone %s could not be loaded.."),
@@ -460,7 +558,7 @@ bool USLSkeletalIndividual::LoadBoneIndividuals()
 }
 
 // Destroy bone individuals
-void USLSkeletalIndividual::DestroyBoneIndividuals()
+void USLSkeletalIndividual::DestroyChildrenIndividuals()
 {
 	for (const auto& BI : BoneIndividuals)
 	{
@@ -475,7 +573,7 @@ void USLSkeletalIndividual::DestroyBoneIndividuals()
 }
 
 // Reset bone individuals
-void USLSkeletalIndividual::ResetBoneIndividuals()
+void USLSkeletalIndividual::ClearChildrenIndividualsValue()
 {
 	for (const auto& BI : BoneIndividuals)
 	{
@@ -486,3 +584,117 @@ void USLSkeletalIndividual::ResetBoneIndividuals()
 		VBI->Load(true, false);
 	}
 }
+
+//// Bind to children delegates
+//bool USLSkeletalIndividual::BindChildrenDelegates()
+//{
+//	if (!HasValidChildrenIndividuals())
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no valid children, cannot bind to their delegates.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName());
+//		return false;
+//	}
+//
+//	for (const auto& BI : BoneIndividuals)
+//	{
+//		BindChildIndividualDelegates(BI);
+//	}
+//	for (const auto& VBI : VirtualBoneIndividuals)
+//	{
+//		BindChildIndividualDelegates(VBI);
+//	}
+//
+//	return true;
+//}
+//
+//// Listen to children changes
+//void USLSkeletalIndividual::BindChildIndividualDelegates(USLBaseIndividual* ChildIndividual)
+//{
+//	// Bind init change delegate
+//	if (!ChildIndividual->OnInitChanged.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildInitChange))
+//	{
+//		ChildIndividual->OnInitChanged.AddDynamic(this, &USLSkeletalIndividual::OnChildInitChange);
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s on init delegate is already bound, this should not happen.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildIndividual->GetFullName());
+//	}
+//
+//	// Bind load change delegate
+//	if (!ChildIndividual->OnLoadedChanged.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildLoadedChange))
+//	{
+//		ChildIndividual->OnLoadedChanged.AddDynamic(this, &USLSkeletalIndividual::OnChildLoadedChange);
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s on loaded delegate is already bound, this should not happen.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildIndividual->GetFullName());
+//	}
+//
+//	// Bind delegeates cleared 
+//	if (!ChildIndividual->OnDelegatesCleared.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildDelegatesCleared))
+//	{
+//		ChildIndividual->OnDelegatesCleared.AddDynamic(this, &USLSkeletalIndividual::OnChildDelegatesCleared);
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s on delegates cleared delegate is already bound, this should not happen.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildIndividual->GetFullName());
+//	}
+//
+//	/* Values delegates */
+//	if (!ChildIndividual->OnNewValue.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildNewValue))
+//	{
+//		ChildIndividual->OnNewValue.AddDynamic(this, &USLSkeletalIndividual::OnChildNewValue);
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s on delegates cleared delegate is already bound, this should not happen.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildIndividual->GetFullName());
+//	}
+//}
+//
+//// Triggered on child individual init flag change
+//void USLSkeletalIndividual::OnChildInitChange(USLBaseIndividual* Individual, bool bNewValue)
+//{
+//	if (IsInit() && !bNewValue)
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's child %s is not init anymore, this should not happen while the parent is still init.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *Individual->GetFullName());
+//		// Child is not init anymore, parent should not be either
+//		SetIsInit(false);
+//	}
+//}
+//
+//// Triggered on child individual loaded flag change
+//void USLSkeletalIndividual::OnChildLoadedChange(USLBaseIndividual* Individual, bool bNewValue)
+//{
+//	if (IsLoaded() && !bNewValue)
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's child %s is not loaded anymore, this should not happen while the parent is still loaded.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *Individual->GetFullName());
+//		// Child is not loaded anymore, parent should not be either
+//		SetIsLoaded(false);
+//	}
+//}
+//
+//// Triggered when a child individual value is changed
+//void USLSkeletalIndividual::OnChildNewValue(USLBaseIndividual* Individual, const FString& Key, const FString& NewValue)
+//{
+//	// TODO
+//	//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s has a new value [%s:%s].."),
+//	//	*FString(__FUNCTION__), __LINE__, *GetFullName(), *Individual->GetFullName(), *Key, *NewValue);
+//}
+//
+//// Triggered when a child individual delegates are cleared (triuggered when InitReset is called)
+//void USLSkeletalIndividual::OnChildDelegatesCleared(USLBaseIndividual* Individual)
+//{
+//	if (IsInit())
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's child %s's delegates are cleared, this should not happen while the parent is init.."),
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *Individual->GetFullName());
+//		// Child is not init anymore, parent should not be either
+//		SetIsInit(false);
+//	}
+//}

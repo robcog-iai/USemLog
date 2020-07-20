@@ -76,8 +76,8 @@ public:
 	static ASLIndividualManager* GetOrCreateNewIndividualManager(UWorld* World, bool bCreateNew = true);
 	static int32 CreateIndividualComponents(UWorld* World);
 	static int32 CreateIndividualComponents(const TArray<AActor*>& Actors);
-	static int32 DestroyIndividualComponents(UWorld* World);
-	static int32 DestroyIndividualComponents(const TArray<AActor*>& Actors);
+	static int32 ClearIndividualComponents(UWorld* World);
+	static int32 ClearIndividualComponents(const TArray<AActor*>& Actors);
 	static int32 InitIndividualComponents(UWorld* World, bool bReset);
 	static int32 InitIndividualComponents(const TArray<AActor*>& Actors, bool bReset);
 	static int32 LoadIndividualComponents(UWorld* World, bool bReset, bool bTryImport);
@@ -141,7 +141,7 @@ private:
 	static USLIndividualComponent* AddNewIndividualComponent(AActor* Actor, bool bTryInitAndLoad = false);
 	static bool CanHaveIndividualComponent(AActor* Actor);
 	static bool HasIndividualComponent(AActor* Actor);
-	static bool DestroyIndividualComponent(AActor* Actor);
+	static bool ClearIndividualComponent(AActor* Actor);
 	static bool InitIndividualComponent(AActor* Actor, bool bReset);
 	static bool LoadIndividualComponent(AActor* Actor, bool bReset, bool bTryImport);
 	static bool ConnectIndividualComponent(AActor* Actor);

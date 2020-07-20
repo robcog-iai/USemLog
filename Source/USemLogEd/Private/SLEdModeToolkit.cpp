@@ -170,7 +170,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("OnlySelectedCB", "|  Selected:"))
+				.Text(LOCTEXT("OnlySelectedCB", " ||  Selected:"))
 			]
 
 			+ SHorizontalBox::Slot()
@@ -185,7 +185,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("ResetCB", "|  Reset:"))
+				.Text(LOCTEXT("ResetCB", " ||  Reset:"))
 			]
 
 			+ SHorizontalBox::Slot()
@@ -200,7 +200,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("TryImportCB", "|  Import:"))
+				.Text(LOCTEXT("TryImportCB", " ||  Import:"))
 			]
 
 			+ SHorizontalBox::Slot()
@@ -216,7 +216,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 			.AutoWidth()
 			[
 				SNew(STextBlock)
-				.Text(LOCTEXT("ChildrenCB", "|  Children:"))
+				.Text(LOCTEXT("ChildrenCB", " ||  Children:"))
 			]
 
 			+ SHorizontalBox::Slot()
@@ -399,10 +399,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("DestroyIndividuals", "Destroy"))
+				.Text(LOCTEXT("ClearIndividuals", "Clear"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("DestroyIndividualsTip", "Destroy individuals.."))
-				.OnClicked(this, &FSLEdModeToolkit::OnDestroyIndividuals)
+				.ToolTipText(LOCTEXT("ClearIndividualsTip", "Clear individuals.."))
+				.OnClicked(this, &FSLEdModeToolkit::OnClearIndividuals)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -706,10 +706,10 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoSlot()
 			.AutoWidth()
 			[
 				SNew(SButton)
-				.Text(LOCTEXT("DestroyIndividualsInfo", "Destroy"))
+				.Text(LOCTEXT("ClearIndividualsInfo", "Clear"))
 				.IsEnabled(true)
-				.ToolTipText(LOCTEXT("DestroyIndividualsInfo", "Destroy individual info components"))
-				.OnClicked(this, &FSLEdModeToolkit::OnDestroyIndividualsInfo)
+				.ToolTipText(LOCTEXT("ClearIndividualsInfo", "Clear individual info components"))
+				.OnClicked(this, &FSLEdModeToolkit::OnClearIndividualsInfo)
 			]
 
 			+ SHorizontalBox::Slot()
@@ -1050,25 +1050,25 @@ FReply FSLEdModeToolkit::OnCreateIndividuals()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnDestroyIndividuals()
+FReply FSLEdModeToolkit::OnClearIndividuals()
 {
-	FScopedTransaction Transaction(LOCTEXT("DestroyIndividualComponentsST", "Destroy individual components"));
+	FScopedTransaction Transaction(LOCTEXT("ClearIndividualComponentsST", "Clear individual components"));
 	DeselectComponentSelection();
 	int32 Num = 0;
 	if (bOnlySelectedFlag)
 	{
-		Num = FSLIndividualUtils::DestroyIndividualComponents(GetSelectedActors());
+		Num = FSLIndividualUtils::ClearIndividualComponents(GetSelectedActors());
 	}
 	else
 	{
-		Num = FSLIndividualUtils::DestroyIndividualComponents(GEditor->GetEditorWorldContext().World());
+		Num = FSLIndividualUtils::ClearIndividualComponents(GEditor->GetEditorWorldContext().World());
 	}
 
 	if (Num)
 	{
 		GUnrealEd->UpdateFloatingPropertyWindows();
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Destroyed %ld individual components.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Cleared %ld individual components.."),
 			*FString(__FUNCTION__), __LINE__, Num);
 
 		if (HasValidIndividualManager() && IndividualManager->Load(true))
@@ -1427,24 +1427,24 @@ FReply FSLEdModeToolkit::OnCreateIndividualsInfo()
 	return FReply::Handled();
 }
 
-FReply FSLEdModeToolkit::OnDestroyIndividualsInfo()
+FReply FSLEdModeToolkit::OnClearIndividualsInfo()
 {
-	FScopedTransaction Transaction(LOCTEXT("DestroyIndividualsInfoST", "Destroy individual info components.."));
+	FScopedTransaction Transaction(LOCTEXT("ClearIndividualsInfoST", "Clear individual info components.."));
 	int32 Num = 0;
 	if (bOnlySelectedFlag)
 	{
-		Num = FSLIndividualInfoUtils::DestroyIndividualInfoComponents(GetSelectedActors());
+		Num = FSLIndividualInfoUtils::ClearIndividualInfoComponents(GetSelectedActors());
 	}
 	else
 	{
-		Num = FSLIndividualInfoUtils::DestroyIndividualInfoComponents(GEditor->GetEditorWorldContext().World());
+		Num = FSLIndividualInfoUtils::ClearIndividualInfoComponents(GEditor->GetEditorWorldContext().World());
 	}
 
 	if (Num)
 	{
 		GUnrealEd->UpdateFloatingPropertyWindows();
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Destroyed %ld individual info components.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Cleared %ld individual info components.."),
 			*FString(__FUNCTION__), __LINE__, Num);
 
 		if (HasValidIndividualInfoManager() && IndividualInfoManager->Load(true))

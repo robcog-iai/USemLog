@@ -2,8 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLIndividualInfoComponent.h"
-#include "Individuals/SLIndividualComponent.h"
 #include "Individuals/SLIndividualInfoTextComponent.h"
+#include "Individuals/SLIndividualComponent.h"
+#include "Individuals/SLBaseIndividual.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/KismetMathLibrary.h" // FindLookAtRotation
@@ -29,10 +30,8 @@ USLIndividualInfoComponent::USLIndividualInfoComponent()
 	bIsInit = false;
 	bIsLoaded = false;
 	bIsConnected = false;
-	SiblingIndividualComponent = nullptr;
-
-	TextComponent = CreateDefaultSubobject<USLIndividualInfoTextComponent>("SLIndividualText");
-	TextComponent->SetupAttachment(this);
+	IndividualComponent = nullptr;
+	TextComponent = nullptr;
 }
 
 // Called after the C++ constructor and after the properties have been initialized, including those loaded from config. IsTemplate() could be true
@@ -46,7 +45,6 @@ void USLIndividualInfoComponent::PostInitProperties()
 void USLIndividualInfoComponent::PostLoad()
 {
 	Super::PostLoad();
-	/*UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());*/
 	
 	// Make sure the individual sibling is connected before
 	FTimerHandle DelayTimerHandle;
@@ -55,10 +53,9 @@ void USLIndividualInfoComponent::PostLoad()
 		{
 			if (!IsConnected())
 			{
-				//UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());
 				Connect();
-				//SetOwnStateValuesText();
-				//SetSiblingIndividualStateValuesText();
+				//SetOwnTextInfo();
+				//SetIndividualComponentTextInfo();
 			}
 		});
 	if (GetWorld())
@@ -149,10 +146,11 @@ void USLIndividualInfoComponent::BeginDestroy()
 	//SetIsInit(false); 
 	//SetIsLoaded(false);
 	OnDestroyed.Broadcast(this);
-	if(IsTextComponentValid())
+	if(HasValidTextComponent())
 	{
-		TextComponent->ConditionalBeginDestroy();
+		ClearTextComponent();
 	}
+	ClearChildrenTextComponents();
 	Super::BeginDestroy();
 }
 
@@ -215,14 +213,31 @@ void USLIndividualInfoComponent::ToggleTick()
 	SetComponentTickEnabled(!IsComponentTickEnabled());
 }
 
-// Show / hide text data
-void USLIndividualInfoComponent::ToggleTextVisibility()
+// Set text info visiblity
+void USLIndividualInfoComponent::SetTextVisibility(bool bNewVisiblitity)
 {
-	if (IsTextComponentValid())
+	if (HasValidTextComponent())
 	{
-		TextComponent->SetVisibility(!TextComponent->IsVisible(), true);
+		TextComponent->SetVisibility(bNewVisiblitity, true);
+	}
+	for (const auto& ChildKV : ChildrenTextComponents)
+	{
+		ChildKV.Value->SetVisibility(bNewVisiblitity, true);
 	}
 }
+
+//// Show / hide text data
+//void USLIndividualInfoComponent::ToggleTextVisibility()
+//{
+//	if (HasValidTextComponent())
+//	{
+//		TextComponent->SetVisibility(!TextComponent->IsVisible(), true);
+//	}
+//	for (const auto& ChildKV : ChildrenTextComponents)
+//	{
+//		ChildKV.Value->SetVisibility(!ChildKV.Value->IsVisible(), true);
+//	}
+//}
 
 // Rotate component towards the screen
 bool USLIndividualInfoComponent::OrientateTowardsViewer()
@@ -238,7 +253,15 @@ bool USLIndividualInfoComponent::OrientateTowardsViewer()
 		{
 			if (LevelVC && LevelVC->IsPerspective())
 			{
-				SetWorldRotation(LevelVC->GetViewRotation() + FRotator(180.f, 0.f, 180.f));
+				const FRotator ToViewerRotator = LevelVC->GetViewRotation() + FRotator(180.f, 0.f, 180.f);
+				if (HasValidTextComponent())
+				{
+					TextComponent->SetWorldRotation(ToViewerRotator);
+				}
+				for (const auto& ChildKV : ChildrenTextComponents)
+				{
+					ChildKV.Value->SetWorldRotation(ToViewerRotator);
+				}
 				break;
 			}
 		}
@@ -283,7 +306,7 @@ void USLIndividualInfoComponent::SetIsInit(bool bNewValue, bool bBroadcast)
 		{
 			// OnInitChanged.Broadcast(this, bNewValue);
 		}
-		//SetOwnStateValuesText();
+		//SetOwnTextInfo();
 	}
 }
 
@@ -297,7 +320,7 @@ void USLIndividualInfoComponent::SetIsLoaded(bool bNewValue, bool bBroadcast)
 		{
 			// OnLoadedChanged.Broadcast(this, bNewValue);
 		}
-		//SetOwnStateValuesText();
+		//SetOwnTextInfo();
 	}
 }
 
@@ -311,39 +334,56 @@ void USLIndividualInfoComponent::SetIsConnected(bool bNewValue, bool bBroadcast)
 		{
 			// OnConnectedChanged.Broadcast(this, bNewValue);
 		}
-		//SetOwnStateValuesText();
+		//SetOwnTextInfo();
 	}
 }
 
 // Private init implementation
 bool USLIndividualInfoComponent::InitImpl()
 {
-	if (HasValidSiblingIndividualComponent() || SetSiblingIndividualComponent())
+	if (HasValidIndividualComponent() || SetIndividualComponent())
 	{
-		// Set the current text of the sibling
-		//SetOwnStateValuesText();
-		//SetSiblingIndividualStateValuesText();
+		if (HasValidTextComponent() || SetTextComponent())
+		{
+			//SetOwnTextInfo();
+			//SetIndividualComponentTextInfo();
 
-		// Listen to the siblings changes
-		Connect();
-		return true;
+			// Set children if any
+			SetChildrenTextComponents();
+
+			// Listen to the individual component changes
+			Connect();
+			return true;
+		}
 	}
-	UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not acces the individual component sibling, this should not happen.."),
-		*FString(__FUNCTION__), __LINE__, *GetFullName());
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not acces the individual component sibling, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
 	return false;
 }
 
 // Private load implementation
 bool USLIndividualInfoComponent::LoadImpl()
 {
-	if (!HasValidSiblingIndividualComponent())
+	if (!HasValidIndividualComponent())
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d %s's individual sibling is not set.. this should not happen.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s's individual component is not set.. this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
 
-	// Force publishing sibling individual values
-	return SiblingIndividualComponent->TriggerIndividualValuesBroadcast();
+	if (!HasValidTextComponent())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s's text component is not set.. this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+	
+	//SetOwnTextInfo();
+	//SetIndividualComponentTextInfo();
+
+	// Force publishing individual component values
+	return IndividualComponent->TriggerIndividualValuesBroadcast();
 }
 
 // Clear all references of the individual
@@ -352,11 +392,8 @@ void USLIndividualInfoComponent::InitReset()
 	SetIsConnected(false);
 	LoadReset();
 	SetIsInit(false);
-	if (IsTextComponentValid())
-	{
-		TextComponent->RemoveAllTextRows();
-	}
-	SiblingIndividualComponent = nullptr;
+	ClearChildrenTextComponents();
+	IndividualComponent = nullptr;
 	ClearDelegates();
 }
 
@@ -365,8 +402,13 @@ void USLIndividualInfoComponent::LoadReset()
 {
 	//TSet<FString> IgnoreKeys;
 	//IgnoreKeys.Add(FString(SelfTextRowKey));
-	//IgnoreKeys.Add(FString(SiblingIndividualTextRowKey));
+	//IgnoreKeys.Add(FString(ICTextRowKey));
 	//TextComponent->RemoveAllTextRowsBut(IgnoreKeys);
+	if (HasValidTextComponent())
+	{
+		TextComponent->ClearAllRows();
+	}
+	ClearChildrenTextComponentsData();
 	SetIsLoaded(false);
 }
 
@@ -374,19 +416,19 @@ void USLIndividualInfoComponent::LoadReset()
 bool USLIndividualInfoComponent::BindDelegates()
 {
 	bool bRetVal = true;
-	if (!HasValidSiblingIndividualComponent())
+	if (!HasValidIndividualComponent())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component sibling is not valid, cannot bind delegates.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not valid, cannot bind delegates.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return false;
 	}
 
 	/* Init */
-	if (!SiblingIndividualComponent->OnInitChanged.IsAlreadyBound(
-		this, &USLIndividualInfoComponent::OnSiblingIndividualComponentInitChanged))
+	if (!IndividualComponent->OnInitChanged.IsAlreadyBound(
+		this, &USLIndividualInfoComponent::OnIndividualComponentInitChanged))
 	{
-		SiblingIndividualComponent->OnInitChanged.AddDynamic(
-			this, &USLIndividualInfoComponent::OnSiblingIndividualComponentInitChanged);			
+		IndividualComponent->OnInitChanged.AddDynamic(
+			this, &USLIndividualInfoComponent::OnIndividualComponentInitChanged);			
 	}
 	else
 	{
@@ -395,11 +437,11 @@ bool USLIndividualInfoComponent::BindDelegates()
 	}
 
 	/* Load */
-	if (!SiblingIndividualComponent->OnLoadedChanged.IsAlreadyBound(
-		this, &USLIndividualInfoComponent::OnSiblingIndividualComponentLoadedChanged))
+	if (!IndividualComponent->OnLoadedChanged.IsAlreadyBound(
+		this, &USLIndividualInfoComponent::OnIndividualComponentLoadedChanged))
 	{
-		SiblingIndividualComponent->OnLoadedChanged.AddDynamic(
-			this, &USLIndividualInfoComponent::OnSiblingIndividualComponentLoadedChanged);
+		IndividualComponent->OnLoadedChanged.AddDynamic(
+			this, &USLIndividualInfoComponent::OnIndividualComponentLoadedChanged);
 	}
 	else
 	{
@@ -408,11 +450,11 @@ bool USLIndividualInfoComponent::BindDelegates()
 	}
 
 	/* Value Changed */
-	if (!SiblingIndividualComponent->OnValueChanged.IsAlreadyBound(
-		this, &USLIndividualInfoComponent::OnSiblingIndividualComponentValueChanged))
+	if (!IndividualComponent->OnValueChanged.IsAlreadyBound(
+		this, &USLIndividualInfoComponent::OnIndividualComponentValueChanged))
 	{
-		SiblingIndividualComponent->OnValueChanged.AddDynamic(
-			this, &USLIndividualInfoComponent::OnSiblingIndividualComponentValueChanged);
+		IndividualComponent->OnValueChanged.AddDynamic(
+			this, &USLIndividualInfoComponent::OnIndividualComponentValueChanged);
 	}
 	else
 	{
@@ -420,12 +462,38 @@ bool USLIndividualInfoComponent::BindDelegates()
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
 
-	/* Destroyed */
-	if (!SiblingIndividualComponent->OnDestroyed.IsAlreadyBound(
-		this, &USLIndividualInfoComponent::OnSiblingIndividualComponentDestroyed))
+	/* Child Value Changed */
+	if (!IndividualComponent->OnChildValueChanged.IsAlreadyBound(
+		this, &USLIndividualInfoComponent::OnIndividualComponentChildValueChanged))
 	{
-		SiblingIndividualComponent->OnDestroyed.AddDynamic(
-			this, &USLIndividualInfoComponent::OnSiblingIndividualComponentDestroyed);
+		IndividualComponent->OnChildValueChanged.AddDynamic(
+			this, &USLIndividualInfoComponent::OnIndividualComponentChildValueChanged);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d info component %s's on child value changed delegate is already bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+
+	/* Child Num has changed*/
+	if (!IndividualComponent->OnChildrenNumChanged.IsAlreadyBound(
+		this, &USLIndividualInfoComponent::OnIndividualComponentChildrenNumChanged))
+	{
+		IndividualComponent->OnChildrenNumChanged.AddDynamic(
+			this, &USLIndividualInfoComponent::OnIndividualComponentChildrenNumChanged);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d info component %s's on children num changed delegate is already bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+
+	/* Destroyed */
+	if (!IndividualComponent->OnDestroyed.IsAlreadyBound(
+		this, &USLIndividualInfoComponent::OnIndividualComponentDestroyed))
+	{
+		IndividualComponent->OnDestroyed.AddDynamic(
+			this, &USLIndividualInfoComponent::OnIndividualComponentDestroyed);
 	}
 	else
 	{
@@ -434,11 +502,11 @@ bool USLIndividualInfoComponent::BindDelegates()
 	}
 
 	/* Delegates cleared */
-	if (!SiblingIndividualComponent->OnDelegatesCleared.IsAlreadyBound(
-		this, &USLIndividualInfoComponent::OnSiblingIndividualComponentDelegatesCleared))
+	if (!IndividualComponent->OnDelegatesCleared.IsAlreadyBound(
+		this, &USLIndividualInfoComponent::OnIndividualComponentDelegatesCleared))
 	{
-		SiblingIndividualComponent->OnDelegatesCleared.AddDynamic(
-			this, &USLIndividualInfoComponent::OnSiblingIndividualComponentDelegatesCleared);
+		IndividualComponent->OnDelegatesCleared.AddDynamic(
+			this, &USLIndividualInfoComponent::OnIndividualComponentDelegatesCleared);
 	}
 	else
 	{
@@ -448,28 +516,137 @@ bool USLIndividualInfoComponent::BindDelegates()
 	return true;
 }
 
-// Check if sibling individual component is set
-bool USLIndividualInfoComponent::HasValidSiblingIndividualComponent() const
+// Check if individual component is set
+bool USLIndividualInfoComponent::HasValidIndividualComponent() const
 {
-	return SiblingIndividualComponent && SiblingIndividualComponent->IsValidLowLevel() && !SiblingIndividualComponent->IsPendingKill();
+	return IndividualComponent && IndividualComponent->IsValidLowLevel() && !IndividualComponent->IsPendingKill();
 }
 
-// Set the sibling individual component
-bool USLIndividualInfoComponent::SetSiblingIndividualComponent()
+// Set the individual component
+bool USLIndividualInfoComponent::SetIndividualComponent()
 {
-	if (HasValidSiblingIndividualComponent())
+	if (HasValidIndividualComponent())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Semantic individual component owner already exists, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual component is already set, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return true;
 	}
 
 	// Check if the owner has an individual component
 	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
-		SiblingIndividualComponent = CastChecked<USLIndividualComponent>(AC);
+		IndividualComponent = CastChecked<USLIndividualComponent>(AC);
 		return true;
 	}
+	return false;
+}
+
+// Set individual text component
+bool USLIndividualInfoComponent::SetTextComponent()
+{
+	if (HasValidTextComponent())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's already has an individual text component.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return true;
+	}
+
+	if (!HasValidIndividualComponent())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's has no valid individual component, cannot create a text component.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
+	}
+
+	TextComponent = NewObject<USLIndividualInfoTextComponent>(this);
+	TextComponent->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+	return true;
+}
+
+// Destroy the individual text component
+void USLIndividualInfoComponent::ClearTextComponent()
+{
+	if (HasValidTextComponent())
+	{
+		TextComponent->ConditionalBeginDestroy();
+	}
+	TextComponent = nullptr;
+}
+
+// Check if the individual text component is valid
+bool USLIndividualInfoComponent::HasValidTextComponent()
+{
+	return TextComponent && TextComponent->IsValidLowLevel() && !TextComponent->IsPendingKill();
+}
+
+// Set text components for the children
+bool USLIndividualInfoComponent::SetChildrenTextComponents()
+{
+	if (!HasValidIndividualComponent())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's has no valid individual component, cannot check for children.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+
+		if(HasChildrenTextComponents())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's should not have children without the individual set, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+			ClearChildrenTextComponents();
+		}
+		return false;
+	}
+
+	if (HasChildrenTextComponents())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's children text components are already set, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return true;
+	}
+
+	for (const auto KeyVal : IndividualComponent->GetAttachableIndividualChildren())
+	{
+		USLIndividualInfoTextComponent* IITC = NewObject<USLIndividualInfoTextComponent>(this);		
+		IITC->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform, KeyVal.Value);
+		ChildrenTextComponents.Add(KeyVal.Key, IITC);
+	}
+	return true;
+}
+
+// Destroy the children text components
+void USLIndividualInfoComponent::ClearChildrenTextComponents()
+{
+	for (const auto& KeyVal : ChildrenTextComponents)
+	{
+		KeyVal.Value->ConditionalBeginDestroy();
+	}
+	ChildrenTextComponents.Empty();
+}
+
+// Remove all rows from the children text
+void USLIndividualInfoComponent::ClearChildrenTextComponentsData()
+{
+	for (const auto& KeyVal : ChildrenTextComponents)
+	{
+		KeyVal.Value->ClearAllRows();
+	}
+}
+
+// Check if the children are in sync with the individual components
+bool USLIndividualInfoComponent::HasChildrenInSync() const
+{
+	if (HasValidIndividualComponent())
+	{
+		return IndividualComponent->GetAttachableIndividualChildren().Num() == ChildrenTextComponents.Num();
+	}
+	else
+	{
+		if (HasChildrenTextComponents())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no valid individual component and has children, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());			
+		}
+	}
+	// no individual component, cannot say if in sync
 	return false;
 }
 
@@ -515,123 +692,164 @@ void USLIndividualInfoComponent::SetTextScale(const FVector& Location)
 	//));
 }
 
-// Check that the text component is in a valid state
-bool USLIndividualInfoComponent::IsTextComponentValid() const
-{
-	return TextComponent&& TextComponent->IsValidLowLevel() && !TextComponent->IsPendingKill();
+// Set its own states as text values
+void USLIndividualInfoComponent::SetOwnTextInfo()
+{	
+	if (!HasValidTextComponent())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's has no valid individual text component.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return;
+	}
+
+	const FString TextValue = FString::Printf(TEXT("%s : I:%s; L:%s; C:%s; ChNum:%ld;"),
+		ANSI_TO_TCHAR(OwnTextInfoKey), 
+		IsInit() ? "T" : "F", 
+		IsLoaded() ? "T" : "F", 
+		IsConnected() ? "T" : "F",
+		ChildrenTextComponents.Num());
+	TextComponent->SetRowValue(OwnTextInfoKey, TextValue);
+	if (IsConnected())
+	{
+		if (IsLoaded())
+		{
+			TextComponent->SetRowColor(OwnTextInfoKey, FColor::Green);
+		}
+		else if (IsInit())
+		{
+			TextComponent->SetRowColor(OwnTextInfoKey, FColor::Yellow);
+		}
+		else
+		{
+			TextComponent->SetRowColor(OwnTextInfoKey, FColor::Red);
+		}
+	}
+	else
+	{
+		TextComponent->SetRowColor(OwnTextInfoKey, FColor::Silver);
+	}
 }
 
-//// Set its own states as text values
-//void USLIndividualInfoComponent::SetOwnStateValuesText()
-//{	
-//	const FString TextValue = FString::Printf(TEXT("%s : I:%s; L:%s; C:%s;"),
-//		ANSI_TO_TCHAR(SelfTextRowKey), 
-//		IsInit() ? "T" : "F", 
-//		IsLoaded() ? "T" : "F", 
-//		IsConnected() ? "T" : "F");
-//	TextComponent->SetTextRowValue(SelfTextRowKey, TextValue);
-//	if (IsConnected())
-//	{
-//		if (IsLoaded())
-//		{
-//			TextComponent->SetTextRowColor(SelfTextRowKey, FColor::Green);
-//		}
-//		else if (IsInit())
-//		{
-//			TextComponent->SetTextRowColor(SelfTextRowKey, FColor::Yellow);
-//		}
-//		else
-//		{
-//			TextComponent->SetTextRowColor(SelfTextRowKey, FColor::Red);
-//		}
-//	}
-//	else
-//	{
-//		TextComponent->SetTextRowColor(SelfTextRowKey, FColor::Silver);
-//	}
-//}
-//
-//// Set its individuals state values
-//void USLIndividualInfoComponent::SetSiblingIndividualStateValuesText()
-//{		
-//	if (HasValidSiblingIndividualComponent())
-//	{
-//		const FString TextValue = FString::Printf(TEXT("%s : I:%s; L:%s; C:%s;"),
-//			*FString(SiblingIndividualTextRowKey), 
-//			SiblingIndividualComponent->IsInit() ? "T" : "F", 
-//			SiblingIndividualComponent->IsLoaded() ? "T" : "F", 
-//			SiblingIndividualComponent->IsConnected() ? "T" : "F");
-//		TextComponent->SetTextRowValue(SiblingIndividualTextRowKey, TextValue);
-//		if (SiblingIndividualComponent->IsConnected())
-//		{
-//			if (SiblingIndividualComponent->IsLoaded())
-//			{
-//				TextComponent->SetTextRowColor(SiblingIndividualTextRowKey, FColor::Green);
-//			}
-//			else if (SiblingIndividualComponent->IsInit())
-//			{
-//				TextComponent->SetTextRowColor(SiblingIndividualTextRowKey, FColor::Yellow);
-//			}
-//			else
-//			{
-//				TextComponent->SetTextRowColor(SiblingIndividualTextRowKey, FColor::Red);
-//			}
-//		}
-//		else
-//		{
-//			TextComponent->SetTextRowColor(SiblingIndividualTextRowKey, FColor::Silver);
-//		}
-//	}
-//	else
-//	{
-//		TextComponent->SetTextRowValueAndColor(SiblingIndividualTextRowKey,
-//			FString::Printf(TEXT("%s : null"), SiblingIndividualTextRowKey), FColor::White);
-//	}
-//}
+// Set its individuals state values
+void USLIndividualInfoComponent::SetIndividualComponentTextInfo()
+{		
+	if (!HasValidTextComponent())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's has no valid individual text component.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return;
+	}
+
+	if (HasValidIndividualComponent())
+	{
+		const FString TextValue = FString::Printf(TEXT("%s : I:%s; L:%s; C:%s; ChNum:%ld;"),
+			*FString(ICTextInfoKey), 
+			IndividualComponent->IsInit() ? "T" : "F", 
+			IndividualComponent->IsLoaded() ? "T" : "F", 
+			IndividualComponent->IsConnected() ? "T" : "F",
+			IndividualComponent->GetIndividualChildren().Num());
+		TextComponent->SetRowValue(ICTextInfoKey, TextValue);
+		if (IndividualComponent->IsConnected())
+		{
+			if (IndividualComponent->IsLoaded())
+			{
+				TextComponent->SetRowColor(ICTextInfoKey, FColor::Green);
+			}
+			else if (IndividualComponent->IsInit())
+			{
+				TextComponent->SetRowColor(ICTextInfoKey, FColor::Yellow);
+			}
+			else
+			{
+				TextComponent->SetRowColor(ICTextInfoKey, FColor::Red);
+			}
+		}
+		else
+		{
+			TextComponent->SetRowColor(ICTextInfoKey, FColor::Silver);
+		}
+	}
+	else
+	{
+		TextComponent->SetRowValueAndColor(ICTextInfoKey,
+			FString::Printf(TEXT("%s : null"), ICTextInfoKey), FColor::White);
+	}
+}
 
 
 /* Delegate functions */
 // Called when owners init value has changed
-void USLIndividualInfoComponent::OnSiblingIndividualComponentInitChanged(USLIndividualComponent* IC, bool bNewVal)
+void USLIndividualInfoComponent::OnIndividualComponentInitChanged(USLIndividualComponent* IC, bool bNewVal)
 {
-	//SetSiblingIndividualStateValuesText();
+	//SetIndividualComponentTextInfo();
 }
 
 // Called when owners load value has changed
-void USLIndividualInfoComponent::OnSiblingIndividualComponentLoadedChanged(USLIndividualComponent* IC, bool bNewVal)
+void USLIndividualInfoComponent::OnIndividualComponentLoadedChanged(USLIndividualComponent* IC, bool bNewVal)
 {
-	//SetSiblingIndividualStateValuesText();
+	//SetOwnTextInfo();
 }
 
-// Called when the siblings connected value has changed
-void USLIndividualInfoComponent::OnSiblingIndividualComponentConnectedChanged(USLIndividualComponent* IC, bool bNewVal)
+// Called when the individual component connected value has changed
+void USLIndividualInfoComponent::OnIndividualComponentConnectedChanged(USLIndividualComponent* IC, bool bNewVal)
 {
-	//SetSiblingIndividualStateValuesText();
+	//SetIndividualComponentTextInfo();
 }
 
-// Called when the siblings values have changed
-void USLIndividualInfoComponent::OnSiblingIndividualComponentValueChanged(USLIndividualComponent* IC, const FString& Key, const FString& NewValue)
+// Called when the individual component values have changed
+void USLIndividualInfoComponent::OnIndividualComponentValueChanged(USLIndividualComponent* IC, const FString& Key, const FString& NewValue)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d NewKV:[%s:%s] "), *FString(__FUNCTION__), __LINE__, *Key, *NewValue);
+	if (!HasValidTextComponent())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's has no valid individual text component.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return;
+	}
 	if (NewValue.IsEmpty())
 	{
-		TextComponent->SetTextRowValueAndColor(Key, "null", FColor::Silver);
+		TextComponent->SetRowValueAndColor(Key, "null", FColor::Silver);
 	}
 	else
 	{
-		TextComponent->SetTextRowValueAndColor(Key, NewValue, FColor::Silver);
+		TextComponent->SetRowValueAndColor(Key, NewValue, FColor::Silver);
+	}
+}
+
+// Called when the indiviual component child values have changed
+void USLIndividualInfoComponent::OnIndividualComponentChildValueChanged(USLIndividualComponent* IC, USLBaseIndividual* ChildIndividual, const FString& Key, const FString& NewValue)
+{
+	if (USLIndividualInfoTextComponent** IITC = ChildrenTextComponents.Find(ChildIndividual))
+	{		
+		if (NewValue.IsEmpty())
+		{
+			(*IITC)->SetRowValueAndColor(Key, "null", FColor::Silver);
+		}
+		else
+		{
+			(*IITC)->SetRowValueAndColor(Key, NewValue, FColor::Silver);
+		}
+	}
+}
+
+// Called when the children number has changed
+void USLIndividualInfoComponent::OnIndividualComponentChildrenNumChanged(USLIndividualComponent* IC, int32 NumChildren, int32 NumAttachableChildren)
+{
+	if (NumAttachableChildren != ChildrenTextComponents.Num())
+	{
+		ClearChildrenTextComponents();
+		SetChildrenTextComponents();
 	}
 }
 
 // Called when owner is being destroyed
-void USLIndividualInfoComponent::OnSiblingIndividualComponentDestroyed(USLIndividualComponent* IC)
+void USLIndividualInfoComponent::OnIndividualComponentDestroyed(USLIndividualComponent* IC)
 {
 	// Trigger self destruct
 	ConditionalBeginDestroy();
 }
 
-// Called when sibling delegates are cleared
-void USLIndividualInfoComponent::OnSiblingIndividualComponentDelegatesCleared(USLIndividualComponent* IC)
+// Called when individual component delegates are cleared
+void USLIndividualInfoComponent::OnIndividualComponentDelegatesCleared(USLIndividualComponent* IC)
 {
 	SetIsConnected(false);
 }
