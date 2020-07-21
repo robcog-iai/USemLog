@@ -45,12 +45,6 @@ public:
     // Get the constraint actor2 (can be considered as 'parent' if using skeletal mesh rules)
     AActor* GetConstraintActor2() const { return ConstraintActor2; };
 
-    // Get constraint individual1 ('child') same as )
-    USLBaseIndividual* GetConstraintIndividual1() const { return GetChildIndividual(); };
-
-    // Get constraint individual2 ('parent')
-    USLBaseIndividual* GetConstraintIndividual2() const { return GetParentIndividual(); };
-
 protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() override;
@@ -59,10 +53,10 @@ protected:
     virtual bool SetConstraintInstance() override;
 
     // Set the child individual object
-    virtual bool SetChildIndividual() override;
+    virtual bool SetConstraint1Individual() override;
 
     // Set the parent individual object
-    virtual bool SetParentIndividual() override;
+    virtual bool SetConstraint2Individual() override;
 
     // Check if the constraint component is valid
     bool HasValidConstraintComponent() const;
@@ -81,9 +75,6 @@ protected:
 
     // Set constraint actor2 (parent)
     bool SetConstraintActor2();
-
-    // Check if the constraint actors are set and valid
-    bool HasValidConstraintActors() const { return HasValidConstraintActor1() && HasValidConstraintActor2(); };
 
 private:
     // Set dependencies

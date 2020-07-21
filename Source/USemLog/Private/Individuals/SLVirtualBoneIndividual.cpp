@@ -3,11 +3,11 @@
 
 #include "Individuals/SLVirtualBoneIndividual.h"
 #include "Individuals/SLSkeletalIndividual.h"
+#include "Animation/SkeletalMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
 
 // Utils
 #include "Individuals/SLIndividualUtils.h"
-#include "Utils/SLTagIO.h"
 
 // Ctor
 USLVirtualBoneIndividual::USLVirtualBoneIndividual()
@@ -100,7 +100,7 @@ bool USLVirtualBoneIndividual::CacheCurrentBoneTransform()
 // Get the attachment location name (bone/socket)
 FName USLVirtualBoneIndividual::GetAttachmentLocationName()
 {
-	if (HasValidSkeletalMesh() && HasValidBoneIndex())
+	if (HasValidSkeletalMeshComponent() && HasValidBoneIndex())
 	{
 		return SkeletalMeshComponent->GetBoneName(BoneIndex);
 	}
@@ -116,14 +116,22 @@ FString USLVirtualBoneIndividual::CalcDefaultClassValue()
 // Set pointer to parent actor
 bool USLVirtualBoneIndividual::SetParentActor()
 {
-	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+	if (USLSkeletalIndividual* Individual = Cast<USLSkeletalIndividual>(GetOuter()))
 	{
-		if (UActorComponent* AC = Cast<UActorComponent>(SkI->GetOuter()))
+		if (UActorComponent* AC = Cast<UActorComponent>(Individual->GetOuter()))
 		{
 			if (AActor* CompOwner = Cast<AActor>(AC->GetOuter()))
 			{
-				ParentActor = CompOwner;
-				return true;
+				if (CompOwner->IsA(ASkeletalMeshActor::StaticClass()))
+				{
+					ParentActor = CompOwner;
+					return true;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor should be a skeletal mesh actor.."),
+						*FString(__FUNCTION__), __LINE__, *GetFullName());
+				}
 			}
 			else
 			{
@@ -139,7 +147,7 @@ bool USLVirtualBoneIndividual::SetParentActor()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's outer should be a skeletal individual.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's outer should be a skeletal individual object.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
 	return false;
@@ -156,7 +164,7 @@ bool USLVirtualBoneIndividual::InitImpl()
 	}
 
 	// Make sure the visual mesh is set
-	if (HasValidSkeletalMesh() || SetSkeletalMesh())
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
 		// TODO set parent and child bone individual
 		return true;
@@ -185,29 +193,46 @@ void USLVirtualBoneIndividual::LoadReset()
 // Check if the bone index is valid
 bool USLVirtualBoneIndividual::HasValidBoneIndex() const
 {
-	return HasValidSkeletalMesh()
+	return HasValidSkeletalMeshComponent()
 		&& BoneIndex != INDEX_NONE
 		&& BoneIndex < SkeletalMeshComponent->GetNumBones();
 }
 
 
 // Check if the static mesh component is set
-bool USLVirtualBoneIndividual::HasValidSkeletalMesh() const
+bool USLVirtualBoneIndividual::HasValidSkeletalMeshComponent() const
 {
 	return SkeletalMeshComponent && SkeletalMeshComponent->IsValidLowLevel() && !SkeletalMeshComponent->IsPendingKill();
 }
 
 // Set sekeletal mesh
-bool USLVirtualBoneIndividual::SetSkeletalMesh()
+bool USLVirtualBoneIndividual::SetSkeletalMeshComponent()
 {
-	// Outer should be the skeletal individual
-	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+	if (HasValidParentActor() || SetParentActor())
 	{
-		if (SkI->HasValidSkeletalMeshComponent())
+		if (ASkeletalMeshActor* SMA = Cast<ASkeletalMeshActor>(ParentActor))
 		{
-			SkeletalMeshComponent = SkI->SkeletalMeshComponent;
-			return true;
+			if (USkeletalMeshComponent* SMC = SMA->GetSkeletalMeshComponent())
+			{
+				SkeletalMeshComponent = SMC;
+				return HasValidSkeletalMeshComponent();
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor has no SkeletalMeshComponent, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName());
+			}
 		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor should be a skeletal mesh actor.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s ParentActor is not set, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
 	return false;
 }

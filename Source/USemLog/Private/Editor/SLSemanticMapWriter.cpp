@@ -218,7 +218,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 					CachedBoneIds.Add(BoneName, BoneId);
 				}
 
-								
+
 				// Create bone individuals
 				for (auto& BoneName : BoneNames)
 				{

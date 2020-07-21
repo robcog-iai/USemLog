@@ -35,11 +35,11 @@ public:
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("BaseConstraintIndividual"); };
 
-    // Get the child individual (Constraint1)
-    USLBaseIndividual* GetChildIndividual() const { return ChildIndividual; };
+    // Get constraint1 ('child' bone in a PhysicsAsset) 
+    USLBaseIndividual* GetConstraint1Individual() const { return ConstraintIndividual1; };
 
-    // Get the parent individual (Constraint2)
-    USLBaseIndividual* GetParentIndividual() const { return ParentIndividual; };
+    // Get constraint2 ('parent' bone in a PhysicsAsset) 
+    USLBaseIndividual* GetConstraint2Individual() const { return ConstraintIndividual2; };
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
@@ -51,17 +51,17 @@ protected:
     // Set constraint instance
     virtual bool SetConstraintInstance() { return false; }
 
-    // Check if the individuals are valid
-    bool HasValidChildIndividual() const;
+    // Check if the constraint1 individual is valid ('child' bone in a PhysicsAsset) 
+    bool HasValidConstraint1Individual() const;
 
-    // Set the child individual object
-    virtual bool SetChildIndividual() { return false; };
+    // Set the constraint1 individual ('child' bone in a PhysicsAsset) 
+    virtual bool SetConstraint1Individual() { return false; };
 
-    // Check if the parent individual is valid
-    bool HasValidParentIndividual() const;
+    // Check if the constraint2 individual is valid ('parent' bone in a PhysicsAsset)
+    bool HasValidConstraint2Individual() const;
 
-    // Set the parent individual object
-    virtual bool SetParentIndividual() { return false; };
+    // Set the constraint2 individual ('parent' bone in a PhysicsAsset) 
+    virtual bool SetConstraint2Individual() { return false; };
 
 private:
     // Set dependencies
@@ -79,11 +79,11 @@ private:
 protected:
     // Constraint1 - 'child' bone in a PhysicsAsset
     UPROPERTY(VisibleAnywhere, Category = "SL")
-    USLBaseIndividual* ChildIndividual;
+    USLBaseIndividual* ConstraintIndividual1;
 
     // Constraint2 - 'parent' bone in a PhysicsAsset
     UPROPERTY(VisibleAnywhere, Category = "SL")
-    USLBaseIndividual* ParentIndividual;
+    USLBaseIndividual* ConstraintIndividual2;
 
     // Physics representation of the constraint
     // only UObjects support UPROPERTY, the constraint instance is thus not persistent, it should be set every time on PostLoad()

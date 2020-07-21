@@ -11,8 +11,8 @@
 USLBaseConstraintIndividual::USLBaseConstraintIndividual()
 {
 	ConstraintInstance = nullptr;
-	ChildIndividual = nullptr;
-	ParentIndividual = nullptr;
+	ConstraintIndividual1 = nullptr;
+	ConstraintIndividual2 = nullptr;
 }
 
 // Called before destroying the object.
@@ -76,16 +76,16 @@ bool USLBaseConstraintIndividual::HasValidConstraintInstance() const
 	return ConstraintInstance != nullptr;
 }
 
-// Check if the child individual is valid 
-bool USLBaseConstraintIndividual::HasValidChildIndividual() const
+// Check if the constraint1 individual is valid ('child' bone in a PhysicsAsset) 
+bool USLBaseConstraintIndividual::HasValidConstraint1Individual() const
 {
-	return ChildIndividual && ChildIndividual->IsValidLowLevel() && !ChildIndividual->IsPendingKill();
+	return ConstraintIndividual1 && ConstraintIndividual1->IsValidLowLevel() && !ConstraintIndividual1->IsPendingKill();
 }
 
-// Check if the parent individual is valid
-bool USLBaseConstraintIndividual::HasValidParentIndividual() const
+// Check if the constraint1 individual is valid ('parent' bone in a PhysicsAsset)
+bool USLBaseConstraintIndividual::HasValidConstraint2Individual() const
 {
-	return ParentIndividual && ParentIndividual->IsValidLowLevel() && !ParentIndividual->IsPendingKill();
+	return ConstraintIndividual2 && ConstraintIndividual2->IsValidLowLevel() && !ConstraintIndividual2->IsPendingKill();
 }
 
 // Private init implementation
@@ -105,8 +105,8 @@ bool USLBaseConstraintIndividual::LoadImpl(bool bTryImport)
 void USLBaseConstraintIndividual::InitReset()
 {
 	ConstraintInstance = nullptr;
-	ChildIndividual = nullptr;
-	ParentIndividual = nullptr;
+	ConstraintIndividual1 = nullptr;
+	ConstraintIndividual2 = nullptr;
 	SetIsInit(false);
 }
 

@@ -131,11 +131,11 @@ bool USLRigidConstraintIndividual::SetConstraintInstance()
 }
 
 // Set the child individual object
-bool USLRigidConstraintIndividual::SetChildIndividual()
+bool USLRigidConstraintIndividual::SetConstraint1Individual()
 {
-	if (HasValidChildIndividual())
+	if (HasValidConstraint1Individual())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child individual is already valid.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint1 individual is already valid.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return true;
 	}
@@ -144,8 +144,8 @@ bool USLRigidConstraintIndividual::SetChildIndividual()
 	{
 		if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(ConstraintActor1))
 		{
-			ChildIndividual = BI;
-			return HasValidChildIndividual();
+			ConstraintIndividual1 = BI;
+			return HasValidConstraint1Individual();
 		}
 		else
 		{
@@ -163,11 +163,11 @@ bool USLRigidConstraintIndividual::SetChildIndividual()
 }
 
 // Set the parent individual object
-bool USLRigidConstraintIndividual::SetParentIndividual()
+bool USLRigidConstraintIndividual::SetConstraint2Individual()
 {	
-	if (HasValidParentIndividual())
+	if (HasValidConstraint2Individual())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's parent individual is already valid.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint2 individual is already valid.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return true;
 	}
@@ -176,8 +176,8 @@ bool USLRigidConstraintIndividual::SetParentIndividual()
 	{
 		if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(ConstraintActor2))
 		{
-			ParentIndividual = BI;
-			return HasValidParentIndividual();
+			ConstraintIndividual2 = BI;
+			return HasValidConstraint1Individual();
 		}
 		else
 		{
@@ -323,7 +323,7 @@ bool USLRigidConstraintIndividual::InitImpl()
 			bool bMembersSet = true;
 			if (HasValidConstraintActor1() || SetConstraintActor1())
 			{
-				if (!(HasValidChildIndividual() || SetChildIndividual()))
+				if (!(HasValidConstraint1Individual() || SetConstraint1Individual()))
 				{
 					bMembersSet = false;
 				}
@@ -335,7 +335,7 @@ bool USLRigidConstraintIndividual::InitImpl()
 
 			if (HasValidConstraintActor2() || SetConstraintActor2())
 			{
-				if (!(HasValidParentIndividual() || SetParentIndividual()))
+				if (!(HasValidConstraint1Individual() || SetConstraint1Individual()))
 				{
 					bMembersSet = false;
 				}

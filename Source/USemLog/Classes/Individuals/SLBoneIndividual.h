@@ -32,7 +32,7 @@ public:
     virtual void BeginDestroy() override;
 
     // Set the parameters required when initalizing the individual (should be called right after construction by the skeletal individual)
-    bool PreInit(int32 NewBoneIndex, int32 NewMaterialIndex, bool bReset = false);
+    bool PreInit(int32 NewBoneIndex, int32 NewMaterialIndex, bool bReset);
 
     // Check if the individual is pre initalized 
     bool IsPreInit() const { return bIsPreInit; };
@@ -42,6 +42,9 @@ public:
 
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset, bool bTryImport);
+
+    // Get the bone index
+    int32 GetBoneIndex() const { return BoneIndex; };
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("BoneIndividual"); };
@@ -86,14 +89,29 @@ private:
     // Check if the bone index is valid
     bool HasValidBoneIndex() const;
 
-    // Check if the static mesh component is set
-    bool HasValidSkeletalMesh() const;
-
-    // Set sekeletal mesh
-    bool SetSkeletalMesh();
-
     // Check if the material index is valid
     bool HasValidMaterialIndex() const;
+
+    // Check if the static mesh component is set
+    bool HasValidSkeletalMeshComponent() const;
+
+    // Set sekeletal mesh
+    bool SetSkeletalMeshComponent();
+
+    // Check if a parent individual is set
+    bool HasValidParentIndividual() const;
+
+    // Set parent individual (if any) it might be root bone
+    bool SetParentIndividual();
+
+    // Check if any children individuals are set
+    bool HasValidChildrenIndividuals() const;
+
+    // Set child individual (if any) it might be a leaf bone
+    bool SetChildrenIndividuals();
+
+    // Clear children individual
+    void ClearChildrenIndividuals();
 
 protected:
     // Pre init
@@ -107,6 +125,14 @@ protected:
     // Bone index
     UPROPERTY(VisibleAnywhere, Category = "SL")
     int32 BoneIndex;
+
+    // Parent individual (can be nullptr if the bone individual is the root)
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    USLBaseIndividual* ParentIndividual;
+
+    // Children individual (can be empty if the bone individual is a leaf)
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    TArray<USLBaseIndividual*> ChildrenIndividuals;
 
     // Parent skeletal mesh
     UPROPERTY()

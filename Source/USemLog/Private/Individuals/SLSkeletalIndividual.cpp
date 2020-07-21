@@ -187,6 +187,22 @@ bool USLSkeletalIndividual::IsChildAttachable(USLBaseIndividual* Child, FName& O
 	return false;
 }
 
+// Search and return the bone (virtual or non-virtual) with the given index as a base individual (nullptr if not found)
+USLBaseIndividual* USLSkeletalIndividual::GetBoneIndividual(int32 Index) const
+{
+	if (auto FoundBI = BoneIndividuals.FindByPredicate(
+		[Index](const USLBoneIndividual* InItem) { return InItem->GetBoneIndex() == Index; }))
+	{
+		return *FoundBI;
+	}
+	else if (auto FoundVBI = VirtualBoneIndividuals.FindByPredicate(
+		[Index](const USLVirtualBoneIndividual* InItem) { return InItem->GetBoneIndex() == Index; }))
+	{
+		return *FoundVBI;
+	}
+	return nullptr;
+}
+
 // Apply visual mask material
 bool USLSkeletalIndividual::ApplyMaskMaterials(bool bIncludeChildren)
 {
@@ -335,27 +351,48 @@ bool USLSkeletalIndividual::HasValidSkeletalMeshComponent() const
 // Set sekeletal mesh
 bool USLSkeletalIndividual::SetSkeletalMeshComponent()
 {
-	if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(ParentActor))
+	if (HasValidParentActor() || SetParentActor())
 	{
-		if (USkeletalMeshComponent* SMC = SkMA->GetSkeletalMeshComponent())
+		if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(ParentActor))
 		{
-			SkeletalMeshComponent = SMC;
-			OriginalMaterials = SMC->GetMaterials();
-			return true;
+			if (USkeletalMeshComponent* SMC = SkMA->GetSkeletalMeshComponent())
+			{
+				SkeletalMeshComponent = SMC;
+				OriginalMaterials = SMC->GetMaterials();
+
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's Constraints:"), *FString(__FUNCTION__), __LINE__, *GetFullName());
+				for (const auto CI : SkeletalMeshComponent->Constraints)
+				{					
+					UE_LOG(LogTemp, Warning, TEXT("\t\t\t JointName=%s; ConstraintIndex=%ld;"),
+						*CI->JointName.ToString(), CI->ConstraintIndex);
+				}
+
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's Bodies:"), *FString(__FUNCTION__), __LINE__, *GetFullName());
+				for (const auto BI : SkeletalMeshComponent->Bodies)
+				{					
+					UE_LOG(LogTemp, Warning, TEXT("\t\t\t GetBodyDebugName=%s; InstanceBodyIndex=%ld; InstanceBodyIndex=%ld;"),
+						*BI->GetBodyDebugName(), BI->InstanceBodyIndex, BI->InstanceBoneIndex);
+				}
+				return true;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor has no SkeletalMeshComponent, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName());
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no SkeletalMeshComponent, this should not happen.."),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s ParentActor is not a SkeletalMeshActor, this should not happen.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
-			return false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s ParentActor is not a SkeletalMeshActor, this should not happen.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s ParentActor is not set, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
 	}
+	return false;
 }
 
 // Check if skeleltal bone description asset is available
@@ -401,13 +438,22 @@ bool USLSkeletalIndividual::HasValidChildrenIndividuals() const
 		return false;
 	}
 
-	// Check if the bone numbers are in sync with the skeletal mesh bones
-	if (BoneIndividuals.Num() + VirtualBoneIndividuals.Num() != SkeletalMeshComponent->GetNumBones())
+	// Check if the number of bones and constraints are in sync with the skeletal mesh
+	if ((BoneIndividuals.Num() + VirtualBoneIndividuals.Num()) != SkeletalMeshComponent->GetNumBones())
 	{
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d %s's number of bones (BonesNum=%ld + VirtualBonesNum=%ld) is out of sync with the skeletal mesh component BonesNum=%ld.."),
+		//	*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneIndividuals.Num(), VirtualBoneIndividuals.Num(), SkeletalMeshComponent->GetNumBones());
 		return false;
 	}
 
-	// Make sure all children are valid
+	if (BoneConstraintIndividuals.Num() != SkeletalMeshComponent->Constraints.Num())
+	{
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d %s's number of constraints bone %ld is out of sync with the skeletal mesh component constraints %ld.."),
+		//	*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneConstraintIndividuals.Num(), SkeletalMeshComponent->Constraints.Num());
+		return false;
+	}
+
+	// Make sure all children are valid and pre initalized
 	bool bAllChildrenAreValid = true;
 	for (const auto& BI : BoneIndividuals)
 	{
@@ -427,7 +473,7 @@ bool USLSkeletalIndividual::HasValidChildrenIndividuals() const
 			bAllChildrenAreValid = false;
 		}
 	}
-	for (const auto BCI : BoneConstraintIndividuals)
+	for (const auto& BCI : BoneConstraintIndividuals)
 	{
 		if (!BCI->IsValidLowLevel() || BCI->IsPendingKill() || !BCI->IsPreInit())
 		{
@@ -444,12 +490,18 @@ bool USLSkeletalIndividual::CreateChildrenIndividuals()
 {
 	if (HasValidChildrenIndividuals())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s already has children individuals, this should not happen.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s already has valid children individuals, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
 
-	// Destroy any previous individuals
-	DestroyChildrenIndividuals();
+	// Destroy any previously created individuals
+	if (GetChildrenIndividuals().Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has children individuals, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		DestroyChildrenIndividuals();
+	}
+
 
 	if (!HasValidSkeletalMeshComponent())
 	{
@@ -458,48 +510,39 @@ bool USLSkeletalIndividual::CreateChildrenIndividuals()
 		return false;
 	}
 
-	// Set the skeletal bone constraints 
-	if (UPhysicsAsset* PA = SkeletalMeshComponent->GetPhysicsAsset())
-	{
-		for (const auto& PCT : PA->ConstraintSetup)
-		{
-			const FConstraintInstance& CI = PCT->DefaultInstance;
-			
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's skeletal mesh has no physics asset, no constraint individuals will be created.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-	}
-	
-
-
 	// Set the bone children using data from the skeletal data asset
-	for (const auto& BoneData : SkeletalDataAsset->BoneIndexClass)
+	for (const auto& BoneDataKV : SkeletalDataAsset->BoneIndexClass)
 	{
-		if (!BoneData.Value.IsEmpty())
+		const FString BoneClassName = BoneDataKV.Value;
+		int32 BoneIndex = BoneDataKV.Key;
+
+		if (!BoneClassName.IsEmpty())
 		{
 			USLBoneIndividual* BI = NewObject<USLBoneIndividual>(this);
-			int32 MatIdx = SkeletalMeshComponent->GetMaterialIndex(FName(*BoneData.Value));
+			int32 MatIdx = SkeletalMeshComponent->GetMaterialIndex(FName(*BoneClassName));
 			if (MatIdx == INDEX_NONE)
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's a bone will be invalid, no material slot found with the name: %s .."),
-					*FString(__FUNCTION__), __LINE__, *GetFullName(), *BoneData.Value);
+					*FString(__FUNCTION__), __LINE__, *GetFullName(), *BoneDataKV.Value);
 			}
-			BI->PreInit(BoneData.Key, MatIdx);
+			BI->PreInit(BoneIndex, MatIdx, false);
 			BoneIndividuals.Add(BI);
 		}
 		else
 		{
 			USLVirtualBoneIndividual* VBI = NewObject<USLVirtualBoneIndividual>(this);
-			VBI->PreInit(BoneData.Key, false);
+			VBI->PreInit(BoneIndex, false);
 			VirtualBoneIndividuals.Add(VBI);
 		}
 	}
 
-
-
+	// Set the skeletal bone constraints
+	for (const auto& CI : SkeletalMeshComponent->Constraints)
+	{
+		USLBoneConstraintIndividual* BCI = NewObject<USLBoneConstraintIndividual>(this);
+		BCI->PreInit(CI->ConstraintIndex, false);
+		BoneConstraintIndividuals.Add(BCI);
+	}
 
 	return HasValidChildrenIndividuals();
 }
@@ -507,26 +550,17 @@ bool USLSkeletalIndividual::CreateChildrenIndividuals()
 // Call init on all bones, true if all succesfully init
 bool USLSkeletalIndividual::InitChildrenIndividuals()
 {
-	bool bAllBonesAreInit = true;
-	for (const auto& BI : BoneIndividuals)
+	bool bAllChildrenAreInit = true;
+	for (const auto& CI : GetChildrenIndividuals())
 	{
-		if (!BI->IsInit() && !BI->Init(false))
+		if (!CI->IsInit() && !CI->Init(false))
 		{
-			bAllBonesAreInit = false;
-			UE_LOG(LogTemp, Error, TEXT("%s::%d bone %s could not be init.."),
-				*FString(__FUNCTION__), __LINE__, *BI->GetFullName());
+			bAllChildrenAreInit = false;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's child %s could not be init.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName(), *CI->GetFullName());
 		}
 	}
-	for (const auto& VBI : VirtualBoneIndividuals)
-	{
-		if (!VBI->IsInit() && !VBI->Init(false))
-		{
-			bAllBonesAreInit = false;
-			UE_LOG(LogTemp, Error, TEXT("%s::%d virtual bone %s could not be init.."),
-				*FString(__FUNCTION__), __LINE__, *VBI->GetFullName());
-		}
-	}
-	return bAllBonesAreInit;
+	return bAllChildrenAreInit;
 }
 
 // Call load on all bones, true if all succesfully loaded
@@ -589,50 +623,50 @@ void USLSkeletalIndividual::LoadResetChildrenIndividuals()
 //}
 //
 //// Listen to children changes
-//void USLSkeletalIndividual::BindChildIndividualDelegates(USLBaseIndividual* ChildIndividual)
+//void USLSkeletalIndividual::BindChildIndividualDelegates(USLBaseIndividual* ChildrenIndividuals)
 //{
 //	// Bind init change delegate
-//	if (!ChildIndividual->OnInitChanged.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildInitChange))
+//	if (!ChildrenIndividuals->OnInitChanged.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildInitChange))
 //	{
-//		ChildIndividual->OnInitChanged.AddDynamic(this, &USLSkeletalIndividual::OnChildInitChange);
+//		ChildrenIndividuals->OnInitChanged.AddDynamic(this, &USLSkeletalIndividual::OnChildInitChange);
 //	}
 //	else
 //	{
 //		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s on init delegate is already bound, this should not happen.."),
-//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildIndividual->GetFullName());
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildrenIndividuals->GetFullName());
 //	}
 //
 //	// Bind load change delegate
-//	if (!ChildIndividual->OnLoadedChanged.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildLoadedChange))
+//	if (!ChildrenIndividuals->OnLoadedChanged.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildLoadedChange))
 //	{
-//		ChildIndividual->OnLoadedChanged.AddDynamic(this, &USLSkeletalIndividual::OnChildLoadedChange);
+//		ChildrenIndividuals->OnLoadedChanged.AddDynamic(this, &USLSkeletalIndividual::OnChildLoadedChange);
 //	}
 //	else
 //	{
 //		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s on loaded delegate is already bound, this should not happen.."),
-//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildIndividual->GetFullName());
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildrenIndividuals->GetFullName());
 //	}
 //
 //	// Bind delegeates cleared 
-//	if (!ChildIndividual->OnDelegatesCleared.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildDelegatesCleared))
+//	if (!ChildrenIndividuals->OnDelegatesCleared.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildDelegatesCleared))
 //	{
-//		ChildIndividual->OnDelegatesCleared.AddDynamic(this, &USLSkeletalIndividual::OnChildDelegatesCleared);
+//		ChildrenIndividuals->OnDelegatesCleared.AddDynamic(this, &USLSkeletalIndividual::OnChildDelegatesCleared);
 //	}
 //	else
 //	{
 //		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s on delegates cleared delegate is already bound, this should not happen.."),
-//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildIndividual->GetFullName());
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildrenIndividuals->GetFullName());
 //	}
 //
 //	/* Values delegates */
-//	if (!ChildIndividual->OnNewValue.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildNewValue))
+//	if (!ChildrenIndividuals->OnNewValue.IsAlreadyBound(this, &USLSkeletalIndividual::OnChildNewValue))
 //	{
-//		ChildIndividual->OnNewValue.AddDynamic(this, &USLSkeletalIndividual::OnChildNewValue);
+//		ChildrenIndividuals->OnNewValue.AddDynamic(this, &USLSkeletalIndividual::OnChildNewValue);
 //	}
 //	else
 //	{
 //		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's child %s on delegates cleared delegate is already bound, this should not happen.."),
-//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildIndividual->GetFullName());
+//			*FString(__FUNCTION__), __LINE__, *GetFullName(), *ChildrenIndividuals->GetFullName());
 //	}
 //}
 //

@@ -20,6 +20,9 @@ public:
     // Ctor
     USLBoneConstraintIndividual();
 
+    // Do any object-specific cleanup required immediately after loading an object. (called only once when loading the map)
+    virtual void PostLoad() override;
+
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
@@ -35,12 +38,36 @@ public:
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset, bool bTryImport);
 
+    // Get the constraint index
+    int32 GetConstraintIndex() const { return ConstraintIndex; };
+
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("BoneConstraintIndividual"); };
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() override;
+
+    // Set pointer to parent actor
+    virtual bool SetParentActor() override;
+
+    // Set the constraint instance
+    virtual bool SetConstraintInstance() override;
+
+    // Set the child individual object
+    virtual bool SetConstraint1Individual() override;
+
+    // Set the parent individual object
+    virtual bool SetConstraint2Individual() override;
+
+    // Check if the constraint index is valid
+    bool HasValidConstraintIndex() const;
+
+    // Check if the static mesh component is set
+    bool HasValidSkeletalMeshComponent() const;
+
+    // Set the skeletal mesh component
+    bool SetSkeletalMeshComponent();
 
 private:
     // Set dependencies
@@ -63,4 +90,11 @@ protected:
     // Position of this constraint within the array in the SkeletalMeshComponent
     UPROPERTY(VisibleAnywhere, Category = "SL")
     int32 ConstraintIndex;
+
+    // Parent skeletal mesh
+    UPROPERTY()
+    USkeletalMeshComponent* SkeletalMeshComponent;
+
+    // Cached transform
+    FTransform CachedTransform;
 };

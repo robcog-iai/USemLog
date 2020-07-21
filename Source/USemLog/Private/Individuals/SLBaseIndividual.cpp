@@ -316,7 +316,7 @@ bool USLBaseIndividual::InitImpl()
 {
 	if (HasValidParentActor() || SetParentActor())
 	{
-		SetAttachedToParent();
+		//SetAttachedToParent();
 		return true;
 	}
 	return false;
@@ -325,6 +325,9 @@ bool USLBaseIndividual::InitImpl()
 // Set data
 bool USLBaseIndividual::LoadImpl(bool bTryImport)
 {
+	// Explicitly check later to avoid having the attached to parent being init after itself
+	SetAttachedToParent();
+
 	bool bRetValue = true;
 	if (!IsIdValueSet())		
 	{

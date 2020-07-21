@@ -3,15 +3,20 @@
 
 #include "Individuals/SLBoneIndividual.h"
 #include "Individuals/SLSkeletalIndividual.h"
+#include "Individuals/SLVirtualBoneIndividual.h"
 #include "Skeletal/SLSkeletalDataComponent.h"
+
+#include "Animation/SkeletalMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 // Ctor
 USLBoneIndividual::USLBoneIndividual()
 {
+	bIsPreInit = false;
 	MaterialIndex = INDEX_NONE;
 	BoneIndex = INDEX_NONE;
-	bIsPreInit = false;
+	ParentIndividual = nullptr;
 }
 
 // Called before destroying the object.
@@ -134,9 +139,12 @@ bool USLBoneIndividual::CacheCurrentBoneTransform()
 // Get the attachment location name (bone/socket)
 FName USLBoneIndividual::GetAttachmentLocationName()
 {
-	if (HasValidSkeletalMesh() && HasValidBoneIndex())
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
-		return SkeletalMeshComponent->GetBoneName(BoneIndex);
+		if (HasValidBoneIndex())
+		{
+			return SkeletalMeshComponent->GetBoneName(BoneIndex);
+		}
 	}
 	return NAME_None;
 }
@@ -144,18 +152,15 @@ FName USLBoneIndividual::GetAttachmentLocationName()
 // Get class name, virtual since each invidiual type will have different name
 FString USLBoneIndividual::CalcDefaultClassValue()
 {
-	if (IsInit())
+	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
 	{
-		if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+		if (SkI->HasValidSkeletalDataAsset() || SkI->SetSkeletalDataAsset())
 		{
-			if (SkI->HasValidSkeletalDataAsset())
+			if (FString* BoneClassValue = SkI->SkeletalDataAsset->BoneIndexClass.Find(BoneIndex))
 			{
-				if (FString* BoneClassValue = SkI->SkeletalDataAsset->BoneIndexClass.Find(BoneIndex))
+				if (!BoneClassValue->IsEmpty())
 				{
-					if (!BoneClassValue->IsEmpty())
-					{
-						return *BoneClassValue;
-					}
+					return *BoneClassValue;
 				}
 			}
 		}
@@ -166,14 +171,22 @@ FString USLBoneIndividual::CalcDefaultClassValue()
 // Set the skeletal actor as parent
 bool USLBoneIndividual::SetParentActor()
 {
-	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+	if (USLSkeletalIndividual* Individual = Cast<USLSkeletalIndividual>(GetOuter()))
 	{
-		if (UActorComponent* AC = Cast<UActorComponent>(SkI->GetOuter()))
+		if (UActorComponent* AC = Cast<UActorComponent>(Individual->GetOuter()))
 		{
 			if (AActor* CompOwner = Cast<AActor>(AC->GetOuter()))
 			{
-				ParentActor = CompOwner;
-				return true;
+				if (CompOwner->IsA(ASkeletalMeshActor::StaticClass()))
+				{
+					ParentActor = CompOwner;
+					return true;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor should be a skeletal mesh actor.."),
+						*FString(__FUNCTION__), __LINE__, *GetFullName());
+				}
 			}
 			else
 			{
@@ -189,7 +202,7 @@ bool USLBoneIndividual::SetParentActor()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's outer should be a skeletal individual.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's outer should be a skeletal individual object.."),
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
 	return false;
@@ -206,13 +219,14 @@ bool USLBoneIndividual::InitImpl()
 	}
 
 	// Make sure the visual mesh is set
-	if (HasValidSkeletalMesh() || SetSkeletalMesh())
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
 		if (HasValidMaterialIndex())
 		{
+			SetParentIndividual();
+			SetChildrenIndividuals();
 			return true;
 		}
-		// TODO set parent and child bone individual
 	}
 	return false;
 }
@@ -227,6 +241,8 @@ bool USLBoneIndividual::LoadImpl(bool bTryImport)
 void USLBoneIndividual::InitReset()
 {
 	LoadReset();
+	ParentIndividual = nullptr;
+	ClearChildrenIndividuals();
 	SetIsInit(false);
 }
 
@@ -239,7 +255,7 @@ void USLBoneIndividual::LoadReset()
 // Check if the bone index is valid
 bool USLBoneIndividual::HasValidBoneIndex() const
 {
-	return HasValidSkeletalMesh()
+	return HasValidSkeletalMeshComponent()
 		&& BoneIndex != INDEX_NONE
 		&& BoneIndex < SkeletalMeshComponent->GetNumBones();
 }
@@ -247,28 +263,138 @@ bool USLBoneIndividual::HasValidBoneIndex() const
 // Check if the material index is valid
 bool USLBoneIndividual::HasValidMaterialIndex() const
 {
-	return HasValidSkeletalMesh()
+	return HasValidSkeletalMeshComponent()
 		&& MaterialIndex != INDEX_NONE
 		&& MaterialIndex < SkeletalMeshComponent->GetNumMaterials();
 }
 
 // Check if the static mesh component is set
-bool USLBoneIndividual::HasValidSkeletalMesh() const
+bool USLBoneIndividual::HasValidSkeletalMeshComponent() const
 {
 	return SkeletalMeshComponent && SkeletalMeshComponent->IsValidLowLevel() && !SkeletalMeshComponent->IsPendingKill();
 }
 
 // Set sekeletal mesh
-bool USLBoneIndividual::SetSkeletalMesh()
+bool USLBoneIndividual::SetSkeletalMeshComponent()
 {
-	// Outer should be the skeletal individual
-	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+	if (HasValidParentActor() || SetParentActor())
 	{
-		if (SkI->HasValidSkeletalMeshComponent())
+		if (ASkeletalMeshActor* SMA = Cast<ASkeletalMeshActor>(ParentActor))
 		{
-			SkeletalMeshComponent = SkI->SkeletalMeshComponent;
-			return true;
+			if(USkeletalMeshComponent* SMC = SMA->GetSkeletalMeshComponent())
+			{
+				SkeletalMeshComponent = SMC;
+				return HasValidSkeletalMeshComponent();
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor has no SkeletalMeshComponent, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor should be a skeletal mesh actor.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s ParentActor is not set, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+	return false;
+}
+
+// Check if a parent individual is set
+bool USLBoneIndividual::HasValidParentIndividual() const
+{
+	return ParentIndividual && ParentIndividual->IsValidLowLevel() && !ParentIndividual->IsPendingKill();
+}
+
+// Set parent individual (if any) it might be root bone
+bool USLBoneIndividual::SetParentIndividual()
+{
+	if (HasValidParentIndividual())
+	{
+		return true;
+	}
+
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
+	{
+		if (HasValidBoneIndex())
+		{
+			int32 ParentIndex = SkeletalMeshComponent->SkeletalMesh->RefSkeleton.GetParentIndex(BoneIndex);		
+			if (ParentIndex != INDEX_NONE)
+			{
+				if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+				{
+					if (USLBaseIndividual* BI = SkI->GetBoneIndividual(ParentIndex))
+					{
+						ParentIndividual = BI;
+						return HasValidParentIndividual();
+					}
+				}
+			}
 		}
 	}
 	return false;
 }
+
+// Check if a child individual is set
+bool USLBoneIndividual::HasValidChildrenIndividuals() const
+{
+	if (ChildrenIndividuals.Num() == 0)
+	{
+		return false;
+	}
+
+	for (const auto& CI : ChildrenIndividuals)
+	{
+		if (!CI || !CI->IsValidLowLevel() || CI->IsPendingKill())
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+// Set child individual (if any) it might be a leaf bone
+bool USLBoneIndividual::SetChildrenIndividuals()
+{
+	if (HasValidChildrenIndividuals())
+	{
+		return true;
+	}
+	// Clear any dangling children
+	ClearChildrenIndividuals();
+
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
+	{
+		if (HasValidBoneIndex())
+		{
+			TArray<int32> ChildrenIndexes;
+			//SkeletalMeshComponent->SkeletalMesh->RefSkeleton.GetDirectChildBones(BoneIndex, ChildrenIndexes);
+			SkeletalMeshComponent->SkeletalMesh->Skeleton->GetChildBones(BoneIndex, ChildrenIndexes);
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+			{
+				for (auto ChildIndex : ChildrenIndexes)
+				{
+					if (USLBaseIndividual* BI = SkI->GetBoneIndividual(ChildIndex))
+					{
+						ChildrenIndividuals.Add(BI);
+					}
+				}
+				return HasValidChildrenIndividuals();
+			}
+		}
+	}
+	return false;
+}
+
+// Clear children individual
+void USLBoneIndividual::ClearChildrenIndividuals()
+{
+	ChildrenIndividuals.Empty();
+}
+

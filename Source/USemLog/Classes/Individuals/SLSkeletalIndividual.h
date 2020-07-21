@@ -77,6 +77,9 @@ public:
     // Return a const version of the bone constraints array
     const TArray<USLBoneConstraintIndividual*>& GetBoneConstraintIndividuals() const { return BoneConstraintIndividuals; };
 
+    // Search and return the bone (virtual or non-virtual) with the given index as a base individual (nullptr if not found)
+    USLBaseIndividual* GetBoneIndividual(int32 Index) const;
+
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("SkeletalIndividual"); };
 
@@ -142,7 +145,7 @@ private:
     //bool BindChildrenDelegates();
 
     //// Listen to children changes
-    //void BindChildIndividualDelegates(USLBaseIndividual* ChildIndividual);
+    //void BindChildIndividualDelegates(USLBaseIndividual* ChildrenIndividuals);
 
     //// Triggered on child individual init flag change
     //UFUNCTION()

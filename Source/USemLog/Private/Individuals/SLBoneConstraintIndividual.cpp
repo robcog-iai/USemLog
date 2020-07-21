@@ -2,6 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLBoneConstraintIndividual.h"
+#include "Individuals/SLSkeletalIndividual.h"
+#include "Animation/SkeletalMeshActor.h"
+#include "Components/SkeletalMeshComponent.h"
 
 // Utils 
 #include "Individuals/SLIndividualUtils.h"
@@ -10,6 +13,25 @@
 USLBoneConstraintIndividual::USLBoneConstraintIndividual()
 {
 	bIsPreInit = false;
+	ConstraintIndex = INDEX_NONE;
+}
+
+// Do any object-specific cleanup required immediately after loading an object.
+void USLBoneConstraintIndividual::PostLoad()
+{
+	Super::PostLoad();
+	if (!HasValidConstraintInstance())
+	{
+		if (!SetConstraintInstance())
+		{
+			if (IsInit())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint instance could not be re-set at load time.."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName());
+			}
+			SetIsInit(false);
+		}
+	}
 }
 
 // Called before destroying the object.
@@ -84,32 +106,249 @@ bool USLBoneConstraintIndividual::Load(bool bReset, bool bTryImport)
 // Get class name, virtual since each invidiual type will have different name
 FString USLBoneConstraintIndividual::CalcDefaultClassValue()
 {
-	// if (IsInit())
-	// {
-		// if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(ParentActor))
-		// {
-			// if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
-			// {
-				// if (PCC->ConstraintInstance.GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
-					// PCC->ConstraintInstance.GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
-					// PCC->ConstraintInstance.GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
-				// {
-					// return "LinearJoint";
-				// }
-				// else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
-					// PCC->ConstraintInstance.GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
-					// PCC->ConstraintInstance.GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
-				// {
-					// return "RevoluteJoint";
-				// }
-				// else
-				// {
-					// return "FixedJoint";
-				// }
-			// }
-		// }
-	// }
+	if (HasValidConstraintInstance() || SetConstraintInstance())
+	{
+		if (ConstraintInstance->GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
+			ConstraintInstance->GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
+			ConstraintInstance->GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
+		{
+			return "BoneLinearJoint";
+		}
+		else if (ConstraintInstance->GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
+			ConstraintInstance->GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
+			ConstraintInstance->GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
+		{
+			return "BoneRevoluteJoint";
+		}
+		else
+		{
+			return "BoneFixedJoint";
+		}
+	}
 	return GetTypeName();
+}
+
+// Set the skeletal actor as parent
+bool USLBoneConstraintIndividual::SetParentActor()
+{
+	if (USLSkeletalIndividual* Individual = Cast<USLSkeletalIndividual>(GetOuter()))
+	{
+		if (UActorComponent* AC = Cast<UActorComponent>(Individual->GetOuter()))
+		{
+			if (AActor* CompOwner = Cast<AActor>(AC->GetOuter()))
+			{
+				if (CompOwner->IsA(ASkeletalMeshActor::StaticClass()))
+				{
+					ParentActor = CompOwner;
+					return true;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor should be a skeletal mesh actor.."),
+						*FString(__FUNCTION__), __LINE__, *GetFullName());
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's third outer should be the parent actor.."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's second outer should be an actor component.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's outer should be a skeletal individual object.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+	return false;
+}
+
+// Set the constraint instance
+bool USLBoneConstraintIndividual::SetConstraintInstance()
+{
+	if (HasValidConstraintInstance())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint instance is already valid.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return true;
+	}
+
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
+	{
+		if (HasValidConstraintIndex())
+		{
+			ConstraintInstance = SkeletalMeshComponent->Constraints[ConstraintIndex];
+			return HasValidConstraintInstance();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint index is not valid.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
+	}
+	return false;
+}
+
+// Set the child individual object
+bool USLBoneConstraintIndividual::SetConstraint1Individual()
+{
+	if (HasValidConstraint1Individual())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint1 (child) individual is already valid.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return true;
+	}
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
+	{
+		const FName ConstraintBoneName = ConstraintInstance->ConstraintBone1;
+		int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(ConstraintBoneName);
+		if (BoneIndex != INDEX_NONE)
+		{
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+			{
+				if (USLBaseIndividual* BI = SkI->GetBoneIndividual(BoneIndex))
+				{
+					ConstraintIndividual1 = BI;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
+						*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneIndex);
+				}
+
+
+				//if (auto FoundBI = SkI->GetBoneIndividuals().FindByPredicate(
+				//	[BoneIndex](const USLBoneIndividual* InItem) { return InItem->GetBoneIndex() == BoneIndex; }))
+				//{
+				//	ConstraintIndividual1 = *FoundBI;
+				//	return HasValidConstraint1Individual();
+				//}
+				//else if (auto FoundVBI = SkI->GetVirtualBoneIndividuals().FindByPredicate(
+				//	[BoneIndex](const USLVirtualBoneIndividual* InItem) { return InItem->GetBoneIndex() == BoneIndex; }))
+				//{
+				//	ConstraintIndividual1 = *FoundVBI;
+				//	return HasValidConstraint1Individual();
+				//}
+				//else
+				//{
+				//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
+				//		*FString(__FUNCTION__), __LINE__, *GetFullName(),  BoneIndex);
+				//}
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not access child bone (ConstraintBone1=%s; BoneIndex=%ld;).."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName(), *ConstraintBoneName.ToString(), BoneIndex);
+		}
+	}
+	return false;
+}
+
+// Set the parent individual object
+bool USLBoneConstraintIndividual::SetConstraint2Individual()
+{
+	if (HasValidConstraint2Individual())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint2 (parent) individual is already valid.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return true;
+	}
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
+	{
+		const FName ConstraintBoneName = ConstraintInstance->ConstraintBone2;
+		int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(ConstraintBoneName);
+		if (BoneIndex != INDEX_NONE)
+		{
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+			{
+				if (USLBaseIndividual* BI = SkI->GetBoneIndividual(BoneIndex))
+				{
+					ConstraintIndividual2 = BI;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
+						*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneIndex);
+				}
+
+				//if (auto FoundIndividual = SkI->GetBoneIndividuals().FindByPredicate(
+				//	[BoneIndex](const USLBoneIndividual* InItem) { return InItem->GetBoneIndex() == BoneIndex; }))
+				//{
+				//	ConstraintIndividual2 = *FoundIndividual;
+				//	return HasValidConstraint2Individual();
+				//}
+				//else if (auto FoundIndividual = SkI->GetVirtualBoneIndividuals().FindByPredicate(
+				//	[BoneIndex](const USLVirtualBoneIndividual* InItem) { return InItem->GetBoneIndex() == BoneIndex; }))
+				//{
+				//	ConstraintIndividual2 = *FoundIndividual;
+				//	return HasValidConstraint2Individual();
+				//}
+				//else
+				//{
+				//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with ConstraintIndex=%ld .."),
+				//		*FString(__FUNCTION__), __LINE__, *GetFullName(), *ConstraintBoneName.ToString(), BoneIndex);
+				//}
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not access child bone (ConstraintBone2=%s; BoneIndex=%ld;).."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName(), *ConstraintBoneName.ToString(), BoneIndex);
+		}
+	}
+	return false;
+}
+
+// Check if the constraint index is valid
+bool USLBoneConstraintIndividual::HasValidConstraintIndex() const
+{
+	return HasValidSkeletalMeshComponent()
+		&& ConstraintIndex != INDEX_NONE
+		&& ConstraintIndex < SkeletalMeshComponent->Constraints.Num();
+}
+
+// Check if the static mesh component is set
+bool USLBoneConstraintIndividual::HasValidSkeletalMeshComponent() const
+{
+	return SkeletalMeshComponent && SkeletalMeshComponent->IsValidLowLevel() && !SkeletalMeshComponent->IsPendingKill();
+}
+
+// Set the skeletal mesh component
+bool USLBoneConstraintIndividual::SetSkeletalMeshComponent()
+{
+	if (HasValidParentActor() || SetParentActor())
+	{
+		if (ASkeletalMeshActor* SMA = Cast<ASkeletalMeshActor>(ParentActor))
+		{
+			if (USkeletalMeshComponent* SMC = SMA->GetSkeletalMeshComponent())
+			{
+				SkeletalMeshComponent = SMC;
+				return HasValidSkeletalMeshComponent();
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor has no SkeletalMeshComponent, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's ParentActor should be a skeletal mesh actor.."),
+				*FString(__FUNCTION__), __LINE__, *GetFullName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s ParentActor is not set, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+	}
+	return false;
 }
 
 // Private init implementation
@@ -122,69 +361,24 @@ bool USLBoneConstraintIndividual::InitImpl()
 		return false;
 	}
 
-	// if (HasValidConstaintEntities())
-	// {
-		// return true;
-	// }
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
+	{
+		if (HasValidConstraintInstance() || SetConstraintInstance())
+		{
+			bool bMembersSet = true;
+			if (!(HasValidConstraint1Individual() || SetConstraint1Individual()))
+			{
+				bMembersSet = false;
+			}			
 
-	// if (APhysicsConstraintActor* PCA = Cast<APhysicsConstraintActor>(ParentActor))
-	// {
-		// if (UPhysicsConstraintComponent* PCC = PCA->GetConstraintComp())
-		// {
-			// /* Actor and individual 1 */
-			// if (PCC->ConstraintActor1)
-			// {
-				// ConstraintActor1 = PCC->ConstraintActor1;
-				// if (USLBaseIndividual* BI1 = FSLIndividualUtils::GetIndividualObject(ConstraintActor1))
-				// {
-					// ConstraintIndividual1 = BI1;
-				// }
-				// else
-				// {
-					// UE_LOG(LogTemp, Error, TEXT("%s::%d %s constraint components ConstraintActor1 does not have an individual, init failed.."),
-						// *FString(__FUNCTION__), __LINE__, *GetFullName());
-					// return false;
-				// }
-			// }
-			// else
-			// {
-				// UE_LOG(LogTemp, Error, TEXT("%s::%d %s constraint components ConstraintActor1 not set, init failed.."),
-					// *FString(__FUNCTION__), __LINE__, *GetFullName());
-				// return false;
-			// }
-
-			// /* Actor and individual 2 */
-			// if (PCC->ConstraintActor2)
-			// {
-				// ConstraintActor2 = PCC->ConstraintActor2;
-				// if (USLBaseIndividual* BI2 = FSLIndividualUtils::GetIndividualObject(ConstraintActor2))
-				// {
-					// ConstraintIndividual2 = BI2;
-				// }
-				// else
-				// {
-					// UE_LOG(LogTemp, Error, TEXT("%s::%d %s constraint components ConstraintActor2 does not have an individual, init failed.."),
-						// *FString(__FUNCTION__), __LINE__, *GetFullName());
-					// return false;
-				// }
-			// }
-			// else
-			// {
-				// UE_LOG(LogTemp, Error, TEXT("%s::%d %s constraint components ConstraintActor2 not set, init failed.."),
-					// *FString(__FUNCTION__), __LINE__, *GetFullName());
-				// return false;
-			// }
-		// }
-	// }
-	// else
-	// {
-		// UE_LOG(LogTemp, Error, TEXT("%s::%d %s parent actor is not a physics constraint actor, this should not happen, init failed.."),
-			// *FString(__FUNCTION__), __LINE__, *GetFullName());
-		// return false;
-	// }
-
-	// return HasValidConstaintEntities();
-	return true;
+			if (!(HasValidConstraint2Individual() || SetConstraint2Individual()))
+			{
+				bMembersSet = false;
+			}			
+			return bMembersSet;
+		}
+	}
+	return false;
 }
 
 // Private load implementation

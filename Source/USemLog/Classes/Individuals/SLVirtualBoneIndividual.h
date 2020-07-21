@@ -35,6 +35,9 @@ public:
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset, bool bTryImport);
 
+    // Get the bone index
+    int32 GetBoneIndex() const { return BoneIndex; };
+
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("VirtualBoneIndividual"); };
 
@@ -71,10 +74,10 @@ private:
     bool HasValidBoneIndex() const;
 
     // Check if the static mesh component is set
-    bool HasValidSkeletalMesh() const;
+    bool HasValidSkeletalMeshComponent() const;
 
     // Set sekeletal mesh
-    bool SetSkeletalMesh();
+    bool SetSkeletalMeshComponent();
 
 protected:    
     // Pre init

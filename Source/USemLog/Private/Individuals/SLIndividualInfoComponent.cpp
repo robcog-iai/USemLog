@@ -816,9 +816,9 @@ void USLIndividualInfoComponent::OnIndividualComponentValueChanged(USLIndividual
 }
 
 // Called when the indiviual component child values have changed
-void USLIndividualInfoComponent::OnIndividualComponentChildValueChanged(USLIndividualComponent* IC, USLBaseIndividual* ChildIndividual, const FString& Key, const FString& NewValue)
+void USLIndividualInfoComponent::OnIndividualComponentChildValueChanged(USLIndividualComponent* IC, USLBaseIndividual* ConstraintIndividual1, const FString& Key, const FString& NewValue)
 {
-	if (USLIndividualInfoTextComponent** IITC = ChildrenTextComponents.Find(ChildIndividual))
+	if (USLIndividualInfoTextComponent** IITC = ChildrenTextComponents.Find(ConstraintIndividual1))
 	{		
 		if (NewValue.IsEmpty())
 		{

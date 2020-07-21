@@ -176,7 +176,7 @@ private:
 
 	// Called when the indiviual component child values have changed
 	UFUNCTION()
-	void OnIndividualComponentChildValueChanged(USLIndividualComponent* IC, USLBaseIndividual* ChildIndividual, const FString& Key, const FString& NewValue);
+	void OnIndividualComponentChildValueChanged(USLIndividualComponent* IC, USLBaseIndividual* ConstraintIndividual1, const FString& Key, const FString& NewValue);
 
 	// Called when the children number has changed
 	UFUNCTION()
