@@ -57,8 +57,6 @@ bool USLSkyIndividual::Load(bool bReset, bool bTryImport)
 	{
 		if (!Init(bReset))
 		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot load component individual %s, init fails.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			return false;
 		}
 	}
@@ -106,7 +104,7 @@ bool USLSkyIndividual::ApplyOriginalMaterials()
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLSkyIndividual::CalcDefaultClassValue() const
+FString USLSkyIndividual::CalcDefaultClassValue()
 {
 	if (IsInit())
 	{

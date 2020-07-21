@@ -113,7 +113,7 @@ public:
 
 protected:
 	// Generate class name, virtual since each invidiual type will have different name
-	virtual FString CalcDefaultClassValue() const;
+	virtual FString CalcDefaultClassValue();
 
 	// Mark individual as init, broadcast change
 	void SetIsInit(bool bNewValue, bool bBroadcast  = true);

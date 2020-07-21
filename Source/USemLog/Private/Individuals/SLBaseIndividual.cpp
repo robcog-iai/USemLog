@@ -160,7 +160,7 @@ FString USLBaseIndividual::GenerateNewId() const
 }
 
 // Generate class name, virtual since each invidiual type will have different name
-FString USLBaseIndividual::CalcDefaultClassValue() const
+FString USLBaseIndividual::CalcDefaultClassValue()
 {
 	return GetTypeName();
 }

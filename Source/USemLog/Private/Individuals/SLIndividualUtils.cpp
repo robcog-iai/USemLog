@@ -3,7 +3,7 @@
 
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/SLBaseIndividual.h"
-#include "Individuals/SLConstraintIndividual.h"
+#include "Individuals/SLRigidConstraintIndividual.h"
 #include "Individuals/SLRigidIndividual.h"
 #include "Individuals/SLSkyIndividual.h"
 #include "Individuals/SLLightIndividual.h"
@@ -122,9 +122,22 @@ int32 FSLIndividualUtils::ClearIndividualComponents(const TArray<AActor*>& Actor
 int32 FSLIndividualUtils::InitIndividualComponents(UWorld* World, bool bReset)
 {
 	int32 Num = 0;
+	// Some actors depend on others to be init before (e.g attachment)
+	TArray<AActor*> DelayedActors;
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
 		if (InitIndividualComponent(*ActItr, bReset))
+		{
+			Num++;
+		}
+		else
+		{
+			DelayedActors.Add(*ActItr);
+		}
+	}
+	for (const auto& DelayedActor : DelayedActors)
+	{
+		if (InitIndividualComponent(DelayedActor, bReset))
 		{
 			Num++;
 		}
@@ -136,9 +149,22 @@ int32 FSLIndividualUtils::InitIndividualComponents(UWorld* World, bool bReset)
 int32 FSLIndividualUtils::InitIndividualComponents(const TArray<AActor*>& Actors, bool bReset)
 {
 	int32 Num = 0;
+	// Some actors depend on others to be init before (e.g attachment)
+	TArray<AActor*> DelayedActors;
 	for (const auto& Act : Actors)
 	{
 		if (InitIndividualComponent(Act, bReset))
+		{
+			Num++;
+		}
+		else
+		{
+			DelayedActors.Add(Act);
+		}
+	}
+	for (const auto& DelayedActor : DelayedActors)
+	{
+		if (InitIndividualComponent(DelayedActor, bReset))
 		{
 			Num++;
 		}
@@ -537,7 +563,7 @@ USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AA
 	}
 	else if (Owner->IsA(APhysicsConstraintActor::StaticClass()))
 	{
-		return NewObject<USLBaseIndividual>(Outer, USLConstraintIndividual::StaticClass());
+		return NewObject<USLBaseIndividual>(Outer, USLRigidConstraintIndividual::StaticClass());
 	}
 	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
 	{

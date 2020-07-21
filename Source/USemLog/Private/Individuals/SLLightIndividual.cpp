@@ -60,7 +60,7 @@ bool USLLightIndividual::Load(bool bReset, bool bTryImport)
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLLightIndividual::CalcDefaultClassValue() const
+FString USLLightIndividual::CalcDefaultClassValue()
 {
 	return GetTypeName();
 }

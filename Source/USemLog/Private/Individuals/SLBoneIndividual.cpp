@@ -110,6 +110,7 @@ bool USLBoneIndividual::ApplyOriginalMaterials()
 		return false;
 	}
 
+	// Bones share the same original materials with the skeletal parent, this will only set the flag value
 	if (bIsMaskMaterialOn)
 	{
 		// Applied in parent
@@ -141,7 +142,7 @@ FName USLBoneIndividual::GetAttachmentLocationName()
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLBoneIndividual::CalcDefaultClassValue() const
+FString USLBoneIndividual::CalcDefaultClassValue()
 {
 	if (IsInit())
 	{
@@ -207,7 +208,7 @@ bool USLBoneIndividual::InitImpl()
 	// Make sure the visual mesh is set
 	if (HasValidSkeletalMesh() || SetSkeletalMesh())
 	{
-		if (HasValidMaterialIndex()/* || SetMaterialIndex()*/)
+		if (HasValidMaterialIndex())
 		{
 			return true;
 		}
@@ -263,7 +264,7 @@ bool USLBoneIndividual::SetSkeletalMesh()
 	// Outer should be the skeletal individual
 	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
 	{
-		if (SkI->HasValidSkeletalMesh())
+		if (SkI->HasValidSkeletalMeshComponent())
 		{
 			SkeletalMeshComponent = SkI->SkeletalMeshComponent;
 			return true;

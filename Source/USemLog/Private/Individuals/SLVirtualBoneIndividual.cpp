@@ -45,13 +45,6 @@ bool USLVirtualBoneIndividual::PreInit(int32 NewBoneIndex, bool bReset)
 // Set pointer to the semantic owner
 bool USLVirtualBoneIndividual::Init(bool bReset)
 {
-	if (!IsPreInit())
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot init individual %s, pre init need to be called right after creation.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return false;
-	}
-
 	if (bReset)
 	{
 		InitReset();
@@ -115,7 +108,7 @@ FName USLVirtualBoneIndividual::GetAttachmentLocationName()
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLVirtualBoneIndividual::CalcDefaultClassValue() const
+FString USLVirtualBoneIndividual::CalcDefaultClassValue()
 {
 	return GetTypeName();
 }
@@ -155,6 +148,13 @@ bool USLVirtualBoneIndividual::SetParentActor()
 // Private init implementation
 bool USLVirtualBoneIndividual::InitImpl()
 {
+	if (!IsPreInit())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot init individual %s, pre init need to be called right after creation.."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
+	}
+
 	// Make sure the visual mesh is set
 	if (HasValidSkeletalMesh() || SetSkeletalMesh())
 	{
@@ -203,7 +203,7 @@ bool USLVirtualBoneIndividual::SetSkeletalMesh()
 	// Outer should be the skeletal individual
 	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
 	{
-		if (SkI->HasValidSkeletalMesh())
+		if (SkI->HasValidSkeletalMeshComponent())
 		{
 			SkeletalMeshComponent = SkI->SkeletalMeshComponent;
 			return true;

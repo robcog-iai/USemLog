@@ -65,7 +65,7 @@ public:
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
-    virtual FString CalcDefaultClassValue() const override;
+    virtual FString CalcDefaultClassValue() override;
 
     // Set pointer to parent actor
     virtual bool SetParentActor() override;

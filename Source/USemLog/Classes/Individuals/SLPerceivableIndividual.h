@@ -71,7 +71,7 @@ public:
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
-    virtual FString CalcDefaultClassValue() const override;
+    virtual FString CalcDefaultClassValue() override;
 
     // Randomly generates a new visual mask, does not guarantee uniqueness
     FString GenerateNewRandomVisualMask() const;

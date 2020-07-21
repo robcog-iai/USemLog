@@ -52,8 +52,6 @@ bool USLRigidIndividual::Load(bool bReset, bool bTryImport)
 	{
 		if (!Init(bReset))
 		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot load component individual %s, init fails.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			return false;
 		}
 	}
@@ -105,7 +103,7 @@ bool USLRigidIndividual::ApplyOriginalMaterials()
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLRigidIndividual::CalcDefaultClassValue() const
+FString USLRigidIndividual::CalcDefaultClassValue()
 {
 	if(IsInit())
 	{

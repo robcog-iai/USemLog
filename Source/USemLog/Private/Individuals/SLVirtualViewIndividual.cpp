@@ -61,7 +61,7 @@ bool USLVirtualViewIndividual::Load(bool bReset, bool bTryImport)
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLVirtualViewIndividual::CalcDefaultClassValue() const
+FString USLVirtualViewIndividual::CalcDefaultClassValue()
 {
 	if (IsInit())
 	{

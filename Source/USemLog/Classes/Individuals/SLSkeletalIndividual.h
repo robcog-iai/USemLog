@@ -11,6 +11,7 @@
 // Forward declaration
 class USLBoneIndividual;
 class USLVirtualBoneIndividual;
+class USLBoneConstraintIndividual;
 class USkeletalMeshComponent;
 class USLSkeletalDataAsset;
 class USLSkeletalDataComponent;
@@ -61,7 +62,7 @@ public:
     // Clear exported values
     virtual bool ClearExportedValues() override;
 
-    // Get all children of the individual
+    // Get all children of the individual in a newly created array
     const TArray<USLBaseIndividual*>  GetChildrenIndividuals() const;
 
     // Check if child can be attached, if so return its location bone/socket name)
@@ -72,6 +73,9 @@ public:
 
     // Return a const version of the virtual bones
     const TArray<USLVirtualBoneIndividual*>& GetVirtualBoneIndividuals() const { return VirtualBoneIndividuals; };
+
+    // Return a const version of the bone constraints array
+    const TArray<USLBoneConstraintIndividual*>& GetBoneConstraintIndividuals() const { return BoneConstraintIndividuals; };
 
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("SkeletalIndividual"); };
@@ -86,7 +90,7 @@ public:
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
-    virtual FString CalcDefaultClassValue() const override;
+    virtual FString CalcDefaultClassValue() override;
 
     //// Set the connected flag, broadcast on new value
     //void SetIsConnected(bool bNewValue, bool bBroadcast = true);
@@ -105,10 +109,10 @@ private:
     void LoadReset();
 
     // Check if the static mesh component is set
-    bool HasValidSkeletalMesh() const;
+    bool HasValidSkeletalMeshComponent() const;
 
     // Set sekeletal mesh
-    bool SetSkeletalMesh();
+    bool SetSkeletalMeshComponent();
 
     // Check if skeleltal bone description asset is set
     bool HasValidSkeletalDataAsset() const;
@@ -131,8 +135,8 @@ private:
     // Destroy bone individuals
     void DestroyChildrenIndividuals();
 
-    // Reset bone individuals
-    void ClearChildrenIndividualsValue();
+    // Reset child individuals
+    void LoadResetChildrenIndividuals();
 
     //// Bind to children delegates
     //bool BindChildrenDelegates();
@@ -164,6 +168,10 @@ protected:
     // Bones without material
     UPROPERTY(VisibleAnywhere, Category = "SL")
     TArray<USLVirtualBoneIndividual*> VirtualBoneIndividuals;
+	
+	// Skeletal constraints
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    TArray<USLBoneConstraintIndividual*> BoneConstraintIndividuals;
 
     //// True if the component is listening to the child individual object delegates
     //UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
