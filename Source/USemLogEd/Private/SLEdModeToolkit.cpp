@@ -13,8 +13,6 @@
 #include "ScopedTransaction.h"
 #include "UnrealEdGlobals.h" // for GUnrealEd
 #include "Editor/UnrealEdEngine.h"
-
-
 #include "EngineUtils.h"
 
 // SL
@@ -22,6 +20,7 @@
 #include "Individuals/SLIndividualInfoManager.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/SLIndividualInfoUtils.h"
+#include "Owl/SLOwlSemMapDocUtils.h"
 
 // UUtils
 #include "SLEdUtils.h"
@@ -744,9 +743,6 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoSlot()
 				.ToolTipText(LOCTEXT("ConnectIndividualsInfoTip", "Call Load(bReset) on the individuals info components.."))
 				.OnClicked(this, &FSLEdModeToolkit::OnConnectIndividualsInfo)
 			]
-
-
-
 		];
 }
 
@@ -870,15 +866,15 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemMapSlot()
 		.AutoWidth()
 		[
 			SNew(STextBlock)
-			.Text(LOCTEXT("SemMapTxt", "Semantic Map:  "))
+			.Text(LOCTEXT("SemMapTxt", "Semantic Map: "))
 		]
 
 	+ SHorizontalBox::Slot()
 		[
 			SNew(SButton)
-			.Text(LOCTEXT("SemMapGen", "Generate"))
+			.Text(LOCTEXT("SemMapWrite", "Write"))
 		.IsEnabled(true)
-		.ToolTipText(LOCTEXT("SemMapGenTip", "Exports the generated semantic map to an owl file"))
+		.ToolTipText(LOCTEXT("SemMapWriteTip", "Exports the generated semantic map to an owl file"))
 		.OnClicked(this, &FSLEdModeToolkit::OnWriteSemMap)
 		]
 		];
@@ -1732,6 +1728,7 @@ FReply FSLEdModeToolkit::OnConnectIndividualManagers()
 FReply FSLEdModeToolkit::OnWriteSemMap()
 {
 	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
+	FSLOwlSemMapDocUtils::CreateAndPrintDoc(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
 	return FReply::Handled();
 }
 

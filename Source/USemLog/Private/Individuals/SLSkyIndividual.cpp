@@ -7,6 +7,7 @@
 // Ctor
 USLSkyIndividual::USLSkyIndividual()
 {
+	bIsMovable = false;
 }
 
 // Called before destroying the object.

@@ -18,6 +18,7 @@ USLBaseIndividual::USLBaseIndividual()
 	AttachedToIndividual = nullptr;
 	bIsInit = false;
 	bIsLoaded = false;
+	bIsMovable = true;
 	TagType = "SemLog";
 }
 
@@ -144,6 +145,52 @@ bool USLBaseIndividual::ClearExportedValues()
 		return true;
 	}	
 	return false;
+}
+
+// Cache the current transform of the individual (returns true on a new value)
+bool USLBaseIndividual::CalcAndCacheTransform(float Tolerance, FTransform* OutTransform)
+{
+	if (IsInit())
+	{
+		const FTransform CurrTrans = ParentActor->GetTransform();
+		if(!CachedTransform.Equals(CurrTrans, Tolerance))
+		{
+			CachedTransform = CurrTrans;
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return true;
+		}
+		else
+		{
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return false;
+		}
+	}
+	else
+	{
+		if (!CachedTransform.Equals(FTransform::Identity, Tolerance))
+		{
+			CachedTransform = FTransform::Identity;
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return true;
+		}
+		else
+		{
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return false;
+		}
+	}	
 }
 
 // True if individual is part of another individual
@@ -327,6 +374,7 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 {
 	// Explicitly check later to avoid having the attached to parent being init after itself
 	SetAttachedToParent();
+	CalcAndCacheTransform();
 
 	bool bRetValue = true;
 	if (!IsIdValueSet())		
@@ -338,10 +386,6 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 				GenerateNewIdValue();
 			}
 		}
-		//else
-		//{
-		//	GenerateNewIdValue();			
-		//}
 	}
 
 	if (!IsClassValueSet())
@@ -353,10 +397,6 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 				SetDefaultClassValue();
 			}
 		}
-		//else
-		//{
-		//	SetDefaultClassValue();
-		//}
 	}
 
 	//// Does not influence the load status, oid only required at runtime

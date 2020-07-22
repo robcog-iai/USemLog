@@ -12,8 +12,9 @@
 // Ctor
 USLVirtualBoneIndividual::USLVirtualBoneIndividual()
 {
-	BoneIndex = INDEX_NONE;
 	bIsPreInit = false;
+	BoneIndex = INDEX_NONE;
+	ParentIndividual = nullptr;
 }
 
 // Called before destroying the object.
@@ -86,23 +87,61 @@ bool USLVirtualBoneIndividual::Load(bool bReset, bool bTryImport)
 	return IsLoaded();
 }
 
-// Calculate the current bone transform
-bool USLVirtualBoneIndividual::CacheCurrentBoneTransform()
+// Cache the current transform of the individual (returns true on a new value)
+bool USLVirtualBoneIndividual::CalcAndCacheTransform(float Tolerance, FTransform* OutTransform)
 {
 	if (IsInit())
 	{
-		CachedTransform = SkeletalMeshComponent->GetBoneTransform(BoneIndex);
-		return true;
+		const FTransform CurrTrans = SkeletalMeshComponent->GetBoneTransform(BoneIndex);
+		if (!CachedTransform.Equals(CurrTrans, Tolerance))
+		{
+			CachedTransform = CurrTrans;
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return true;
+		}
+		else
+		{
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return false;
+		}
 	}
-	return false;
+	else
+	{
+		if (!CachedTransform.Equals(FTransform::Identity, Tolerance))
+		{
+			CachedTransform = FTransform::Identity;
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return true;
+		}
+		else
+		{
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return false;
+		}
+	}
 }
 
 // Get the attachment location name (bone/socket)
 FName USLVirtualBoneIndividual::GetAttachmentLocationName()
 {
-	if (HasValidSkeletalMeshComponent() && HasValidBoneIndex())
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
-		return SkeletalMeshComponent->GetBoneName(BoneIndex);
+		if (HasValidBoneIndex())
+		{
+			return SkeletalMeshComponent->GetBoneName(BoneIndex);
+		}
 	}
 	return NAME_None;
 }
@@ -166,7 +205,8 @@ bool USLVirtualBoneIndividual::InitImpl()
 	// Make sure the visual mesh is set
 	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
-		// TODO set parent and child bone individual
+		SetParentIndividual();
+		SetChildrenIndividuals();
 		return true;
 	}
 	return false;
@@ -181,6 +221,9 @@ bool USLVirtualBoneIndividual::LoadImpl(bool bTryImport)
 // Clear all values of the individual
 void USLVirtualBoneIndividual::InitReset()
 {
+	LoadReset();
+	ParentIndividual = nullptr;
+	ClearChildrenIndividuals();
 	SetIsInit(false);
 }
 
@@ -237,3 +280,94 @@ bool USLVirtualBoneIndividual::SetSkeletalMeshComponent()
 	return false;
 }
 
+// Check if a parent individual is set
+bool USLVirtualBoneIndividual::HasValidParentIndividual() const
+{
+	return ParentIndividual && ParentIndividual->IsValidLowLevel() && !ParentIndividual->IsPendingKill();
+}
+
+// Set parent individual (if any) it might be root bone
+bool USLVirtualBoneIndividual::SetParentIndividual()
+{
+	if (HasValidParentIndividual())
+	{
+		return true;
+	}
+
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
+	{
+		if (HasValidBoneIndex())
+		{
+			int32 ParentIndex = SkeletalMeshComponent->SkeletalMesh->RefSkeleton.GetParentIndex(BoneIndex);
+			if (ParentIndex != INDEX_NONE)
+			{
+				if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+				{
+					if (USLBaseIndividual* BI = SkI->GetBoneIndividual(ParentIndex))
+					{
+						ParentIndividual = BI;
+						return HasValidParentIndividual();
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+// Check if a child individual is set
+bool USLVirtualBoneIndividual::HasValidChildrenIndividuals() const
+{
+	if (ChildrenIndividuals.Num() == 0)
+	{
+		return false;
+	}
+
+	for (const auto& CI : ChildrenIndividuals)
+	{
+		if (!CI || !CI->IsValidLowLevel() || CI->IsPendingKill())
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+// Set child individual (if any) it might be a leaf bone
+bool USLVirtualBoneIndividual::SetChildrenIndividuals()
+{
+	if (HasValidChildrenIndividuals())
+	{
+		return true;
+	}
+	// Clear any dangling children
+	ClearChildrenIndividuals();
+
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
+	{
+		if (HasValidBoneIndex())
+		{
+			TArray<int32> ChildrenIndexes;
+			//SkeletalMeshComponent->SkeletalMesh->RefSkeleton.GetDirectChildBones(BoneIndex, ChildrenIndexes);
+			SkeletalMeshComponent->SkeletalMesh->Skeleton->GetChildBones(BoneIndex, ChildrenIndexes);
+			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+			{
+				for (auto ChildIndex : ChildrenIndexes)
+				{
+					if (USLBaseIndividual* BI = SkI->GetBoneIndividual(ChildIndex))
+					{
+						ChildrenIndividuals.Add(BI);
+					}
+				}
+				return HasValidChildrenIndividuals();
+			}
+		}
+	}
+	return false;
+}
+
+// Clear children individual
+void USLVirtualBoneIndividual::ClearChildrenIndividuals()
+{
+	ChildrenIndividuals.Empty();
+}

@@ -217,7 +217,7 @@ public:
 	}
 
 	// Clear all data
-	void Emtpy()
+	void Clear()
 	{
 		Name.Empty();
 		EntityPairs.Empty();

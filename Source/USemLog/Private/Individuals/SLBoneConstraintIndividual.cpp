@@ -103,6 +103,51 @@ bool USLBoneConstraintIndividual::Load(bool bReset, bool bTryImport)
 	return IsLoaded();
 }
 
+// Cache the current transform of the individual (returns true on a new value)
+bool USLBoneConstraintIndividual::CalcAndCacheTransform(float Tolerance, FTransform* OutTransform)
+{
+	if (IsInit())
+	{
+		if (HasValidConstraint1Individual())
+		{
+			bool bRetVal = ConstraintIndividual1->CalcAndCacheTransform(Tolerance, &CachedTransform);
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return bRetVal;
+		}
+		else if (HasValidConstraint2Individual())
+		{
+			bool bRetVal = ConstraintIndividual2->CalcAndCacheTransform(Tolerance, &CachedTransform);
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return bRetVal;
+		}
+	}
+
+	if (!CachedTransform.Equals(FTransform::Identity, Tolerance))
+	{
+		CachedTransform = FTransform::Identity;
+		if (OutTransform != nullptr)
+		{
+			*OutTransform = CachedTransform;
+		}
+		return true;
+	}
+	else
+	{
+		if (OutTransform != nullptr)
+		{
+			*OutTransform = CachedTransform;
+		}
+		return false;
+	}
+}
+
+
 // Get class name, virtual since each invidiual type will have different name
 FString USLBoneConstraintIndividual::CalcDefaultClassValue()
 {
@@ -182,7 +227,7 @@ bool USLBoneConstraintIndividual::SetConstraintInstance()
 	{
 		if (HasValidConstraintIndex())
 		{
-			ConstraintInstance = SkeletalMeshComponent->Constraints[ConstraintIndex];
+			ConstraintInstance = SkeletalMeshComponent->Constraints[ConstraintIndex];			
 			return HasValidConstraintInstance();
 		}
 		else
@@ -220,25 +265,6 @@ bool USLBoneConstraintIndividual::SetConstraint1Individual()
 					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
 						*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneIndex);
 				}
-
-
-				//if (auto FoundBI = SkI->GetBoneIndividuals().FindByPredicate(
-				//	[BoneIndex](const USLBoneIndividual* InItem) { return InItem->GetBoneIndex() == BoneIndex; }))
-				//{
-				//	ConstraintIndividual1 = *FoundBI;
-				//	return HasValidConstraint1Individual();
-				//}
-				//else if (auto FoundVBI = SkI->GetVirtualBoneIndividuals().FindByPredicate(
-				//	[BoneIndex](const USLVirtualBoneIndividual* InItem) { return InItem->GetBoneIndex() == BoneIndex; }))
-				//{
-				//	ConstraintIndividual1 = *FoundVBI;
-				//	return HasValidConstraint1Individual();
-				//}
-				//else
-				//{
-				//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
-				//		*FString(__FUNCTION__), __LINE__, *GetFullName(),  BoneIndex);
-				//}
 			}
 		}
 		else
@@ -276,24 +302,6 @@ bool USLBoneConstraintIndividual::SetConstraint2Individual()
 					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
 						*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneIndex);
 				}
-
-				//if (auto FoundIndividual = SkI->GetBoneIndividuals().FindByPredicate(
-				//	[BoneIndex](const USLBoneIndividual* InItem) { return InItem->GetBoneIndex() == BoneIndex; }))
-				//{
-				//	ConstraintIndividual2 = *FoundIndividual;
-				//	return HasValidConstraint2Individual();
-				//}
-				//else if (auto FoundIndividual = SkI->GetVirtualBoneIndividuals().FindByPredicate(
-				//	[BoneIndex](const USLVirtualBoneIndividual* InItem) { return InItem->GetBoneIndex() == BoneIndex; }))
-				//{
-				//	ConstraintIndividual2 = *FoundIndividual;
-				//	return HasValidConstraint2Individual();
-				//}
-				//else
-				//{
-				//	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with ConstraintIndex=%ld .."),
-				//		*FString(__FUNCTION__), __LINE__, *GetFullName(), *ConstraintBoneName.ToString(), BoneIndex);
-				//}
 			}
 		}
 		else
@@ -390,6 +398,7 @@ bool USLBoneConstraintIndividual::LoadImpl(bool bTryImport)
 // Clear all values of the individual
 void USLBoneConstraintIndividual::InitReset()
 {
+	LoadReset();
 	SetIsInit(false);
 }
 

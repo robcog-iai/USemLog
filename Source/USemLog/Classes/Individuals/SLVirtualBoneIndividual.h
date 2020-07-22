@@ -41,11 +41,8 @@ public:
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("VirtualBoneIndividual"); };
 
-    // Calculate the current bone transform
-    bool CacheCurrentBoneTransform();
-
-    // Get the cached bone transform
-    FTransform GetCachedTransform() const { return CachedTransform; };
+    // Calculate and cache the individuals transform (returns true on a new value)
+    virtual bool CalcAndCacheTransform(float Tolerance = 0.25f, FTransform* OutTransform = nullptr) override;
 
     // Get the attachment location name (bone/socket)
     FName GetAttachmentLocationName();
@@ -79,6 +76,21 @@ private:
     // Set sekeletal mesh
     bool SetSkeletalMeshComponent();
 
+    // Check if a parent individual is set
+    bool HasValidParentIndividual() const;
+
+    // Set parent individual (if any) it might be root bone
+    bool SetParentIndividual();
+
+    // Check if any children individuals are set
+    bool HasValidChildrenIndividuals() const;
+
+    // Set child individual (if any) it might be a leaf bone
+    bool SetChildrenIndividuals();
+
+    // Clear children individual
+    void ClearChildrenIndividuals();
+
 protected:    
     // Pre init
     UPROPERTY(VisibleAnywhere, Category = "SL")
@@ -87,6 +99,14 @@ protected:
     // Bone index
     UPROPERTY(VisibleAnywhere, Category = "SL")
     int32 BoneIndex;
+
+    // Parent individual (can be nullptr if the bone individual is the root)
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    USLBaseIndividual* ParentIndividual;
+
+    // Children individual (can be empty if the bone individual is a leaf)
+    UPROPERTY(VisibleAnywhere, Category = "SL")
+    TArray<USLBaseIndividual*> ChildrenIndividuals;
 
     // Parent skeletal mesh
     UPROPERTY()

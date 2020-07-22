@@ -119,6 +119,12 @@ public:
 		Attributes.Append(InAttributes);
 	}
 
+	// Set the comment
+	void SetComment(const FString& InComment)
+	{
+		Comment = InComment;
+	}
+
 	// True if all data is empty
 	bool IsEmpty() const
 	{
@@ -130,7 +136,7 @@ public:
 	}
 
 	// Clear all data
-	void Emtpy()
+	void Clear()
 	{
 		Name.Empty();
 		Value.Empty();
@@ -138,12 +144,12 @@ public:
 		ChildNodes.Empty();
 		Comment.Empty();
 	}
-
+	
 	// Destructor
 	~FSLOwlNode() {}
 
 	// Return node as string
-	FString ToString(FString& Indent)
+	FString ToString(FString& Indent) const
 	{
 		FString NodeStr;
 		// Add comment

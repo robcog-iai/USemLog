@@ -69,6 +69,12 @@ public:
 	// Clear exported values
 	virtual bool ClearExportedValues();
 
+	// Calculate and cache the individuals transform (returns true on a new value)
+	virtual bool CalcAndCacheTransform(float Tolerance = 0.25f, FTransform* OutTransform = nullptr);
+
+	// Get the cached transform of the individual
+	FTransform GetCachedTransform() const { return CachedTransform; };
+
 	// Get actor represented by the individual
 	AActor* GetParentActor() const { return ParentActor; };
 
@@ -83,6 +89,9 @@ public:
 
 	// Get the type name as string
 	virtual FString GetTypeName() const { return FString("BaseIndividual"); };
+
+	// Check if the individual is movable
+	bool IsMovable() const { return bIsMovable; };
 
 	/* Id */
 	// Set the id value, if empty, reset the individual as not loaded
@@ -188,6 +197,14 @@ protected:
 	// True if individual is loaded
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	uint8 bIsLoaded : 1;
+
+	// By default every individual is movable, it might be that they are not though (e.g. sky)
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	uint8 bIsMovable : 1;
+
+	// Cached transform of the individual
+	UPROPERTY(VisibleAnywhere, Category = "SL")
+	FTransform CachedTransform;
 
 	// Actor attached to
 	UPROPERTY(VisibleAnywhere, Category = "SL")

@@ -125,15 +125,50 @@ bool USLBoneIndividual::ApplyOriginalMaterials()
 	return false;
 }
 
-// Calculate current bone transform
-bool USLBoneIndividual::CacheCurrentBoneTransform()
+// Cache the current transform of the individual (returns true on a new value)
+bool USLBoneIndividual::CalcAndCacheTransform(float Tolerance, FTransform* OutTransform)
 {
 	if (IsInit())
 	{
-		CachedTransform = SkeletalMeshComponent->GetBoneTransform(BoneIndex);
-		return true;
+		const FTransform CurrTrans = SkeletalMeshComponent->GetBoneTransform(BoneIndex);
+		if (!CachedTransform.Equals(CurrTrans, Tolerance))
+		{
+			CachedTransform = CurrTrans;
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return true;
+		}
+		else
+		{
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return false;
+		}
 	}
-	return false;
+	else
+	{
+		if (!CachedTransform.Equals(FTransform::Identity, Tolerance))
+		{
+			CachedTransform = FTransform::Identity;
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return true;
+		}
+		else
+		{
+			if (OutTransform != nullptr)
+			{
+				*OutTransform = CachedTransform;
+			}
+			return false;
+		}
+	}
 }
 
 // Get the attachment location name (bone/socket)

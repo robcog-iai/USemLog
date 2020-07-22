@@ -57,11 +57,8 @@ public:
     virtual bool ApplyOriginalMaterials() override;
     /* End Perceivable individual interface */
 
-    // Calculate the current bone transform
-    bool CacheCurrentBoneTransform();
-
-    // Get the cached bone transform
-    FTransform GetCachedTransform() const { return CachedTransform; };
+    // Calculate and cache the individuals transform (returns true on a new value)
+    virtual bool CalcAndCacheTransform(float Tolerance = 0.25f, FTransform* OutTransform = nullptr) override;
 
     // Get the attachment location name (bone/socket)
     FName GetAttachmentLocationName();
