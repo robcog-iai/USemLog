@@ -21,6 +21,8 @@
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/SLIndividualInfoUtils.h"
 #include "Owl/SLOwlSemMapDocUtils.h"
+#include "Owl/SLOwlOntologyDocUtils.h"
+
 
 // UUtils
 #include "SLEdUtils.h"
@@ -1729,6 +1731,13 @@ FReply FSLEdModeToolkit::OnWriteSemMap()
 {
 	FSLEdUtils::WriteSemanticMap(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
 	FSLOwlSemMapDocUtils::CreateAndPrintDoc(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
+	return FReply::Handled();
+}
+
+// Semantic map
+FReply FSLEdModeToolkit::OnWriteOntology()
+{
+	FSLOwlOntologyDocUtils::CreateAndPrintDoc(GEditor->GetEditorWorldContext().World(), bOverwriteFlag);
 	return FReply::Handled();
 }
 
