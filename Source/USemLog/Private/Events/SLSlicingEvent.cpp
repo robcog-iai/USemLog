@@ -71,7 +71,14 @@ void FSLSlicingEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 // Send event through ROS
 FString FSLSlicingEvent::ToROSQuery() const
 {
-	return ToString();
+	FString Query = "tell([";
+	Query.Append("is_episode(Episode),");
+	Query.Append("is_action(Action),");
+	Query.Append("has_type(Task, ease_act:\'PhysicalTask\'),");
+	Query.Append("executes_task(Action, Task),");
+	Query.Append("is_setting_for(Episode, Action)");
+	Query.Append("]).");
+	return Query;
 }
 
 // Get event context data as string (ToString equivalent)

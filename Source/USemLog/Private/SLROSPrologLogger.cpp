@@ -10,29 +10,6 @@ USLROSPrologLogger::USLROSPrologLogger() {
 USLROSPrologLogger::~USLROSPrologLogger(){
 }
 
-/** Begin FTickableGameObject interface */
-// Called after ticking all actors, DeltaTime is the time passed since the last call.
-void USLROSPrologLogger::Tick(float DeltaTime)
-{
-#if SL_WITH_ROSBRIDGE
-	// Call update on tick
-	if (QueriesBuffer.Num() > 0) {
-		for (auto It = QueriesBuffer.CreateConstIterator(); It; ++It) {
-			SendPrologQuery(It.Key());
-		}
-	}
-	while (NextSolutionCommandsBuffer.Num() > 0) {
-		SendNextSolutionCommand(NextSolutionCommandsBuffer.Pop());
-	}
-	while (FinishCommandsBuffer.Num() > 0) {
-		SendFinishCommand(FinishCommandsBuffer.Pop());
-	}
-
-
-#endif // SL_WITH_ROSBRIDGE
-
-}
-
 // Return if object is ready to be ticked
 bool USLROSPrologLogger::IsTickable() const
 {
@@ -46,11 +23,32 @@ TStatId USLROSPrologLogger::GetStatId() const
 }
 /** End FTickableGameObject interface */
 
-void USLROSPrologLogger::Init(FString Host, uint32 port) {
+
+/** Begin FTickableGameObject interface */
+// Called after ticking all actors, DeltaTime is the time passed since the last call.
+void USLROSPrologLogger::Tick(float DeltaTime) {
 #if SL_WITH_ROSBRIDGE
+	// Call update on tick
+	if (QueriesBuffer.Num() > 0) {
+		for (auto It = QueriesBuffer.CreateConstIterator(); It; ++It) {
+			SendPrologQuery(It.Key());
+		}
+	}
+	while (NextSolutionCommandsBuffer.Num() > 0) {
+		SendNextSolutionCommand(NextSolutionCommandsBuffer.Pop());
+	}
+	while (FinishCommandsBuffer.Num() > 0) {
+		SendFinishCommand(FinishCommandsBuffer.Pop());
+	}
+#endif
+}
+
+#if SL_WITH_ROSBRIDGE
+void USLROSPrologLogger::Init(FString Host, uint32 port) {
+
 	// Start ROS Connection
 	ROSHandler = MakeShareable<FROSBridgeHandler>(new FROSBridgeHandler(Host, port));
-	ROSPrologQueryClient = MakeShareable<SLROSServiceClient>(new SLROSServiceClient(this, "/rosprolog/query","query"));
+	ROSPrologQueryClient = MakeShareable<SLROSServiceClient>(new SLROSServiceClient(this, "/rosprolog/query", "query"));
 	ROSPrologNextSolutionClient = MakeShareable<SLROSServiceClient>(new SLROSServiceClient(this, "/rosprolog/next_solution", "next_solution"));
 	ROSPrologFinishClient = MakeShareable<SLROSServiceClient>(new SLROSServiceClient(this, "/rosprolog/finish", "finish"));
 
@@ -62,17 +60,15 @@ void USLROSPrologLogger::Init(FString Host, uint32 port) {
 	else {
 		UE_LOG(LogTemp, Error, TEXT("No FROSBridgeHandler created for Event Logger."));
 	}
-#endif 
 }
 
 void USLROSPrologLogger::Disconnect() {
-#if SL_WITH_ROSBRIDGE
+
 	// Finish ROS Connection
 	if (ROSHandler.IsValid())
 	{
 		ROSHandler->Disconnect();
 	}
-#endif
 }
   
 void USLROSPrologLogger::AddEvent(TSharedPtr<ISLEvent> Event) {
@@ -80,7 +76,7 @@ void USLROSPrologLogger::AddEvent(TSharedPtr<ISLEvent> Event) {
 }
 
 void USLROSPrologLogger::SendPrologQuery(FString Id) {
-#if SL_WITH_ROSBRIDGE
+
 	FString Query;
 	QueriesBuffer.RemoveAndCopyValue(Id, Query);
 	UE_LOG(LogTemp, Warning, TEXT("Sending Query : ID = %s; Query = %s;"), *Id, *Query);
@@ -88,30 +84,26 @@ void USLROSPrologLogger::SendPrologQuery(FString Id) {
 	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::Query::Response());
 	ROSHandler->CallService(ROSPrologQueryClient, Request, Response);
 	SentQueries.Add(Response, Id);
-#endif
 }
 
 void USLROSPrologLogger::SendNextSolutionCommand(FString Id) {
-#if SL_WITH_ROSBRIDGE
+
 	UE_LOG(LogTemp, Warning, TEXT("Sending Next Solution Command : ID = %s;"), *Id);
 	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::NextSolution::Request(Id));
 	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::NextSolution::Response());
 	ROSHandler->CallService(ROSPrologNextSolutionClient, Request, Response);
 	SentNextSolutionCommands.Add(Response, Id);
-#endif
 }
 
 void USLROSPrologLogger::SendFinishCommand(FString Id) {
-#if SL_WITH_ROSBRIDGE
+
 	UE_LOG(LogTemp, Warning, TEXT("Sending Finish Command: ID = %s;"), *Id);
 	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Finish::Request(Id));
 	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::Finish::Response());
 	ROSHandler->CallService(ROSPrologFinishClient, Request, Response);
 	SentFinishCommands.Add(Response, Id);
-#endif
 }
 
-#if SL_WITH_ROSBRIDGE
 void  USLROSPrologLogger::ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse, FString Type) {
 	
 	FString Id;

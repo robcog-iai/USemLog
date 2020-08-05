@@ -8,6 +8,11 @@ SLROSServiceClient::SLROSServiceClient()
 {
 }
 
+SLROSServiceClient::~SLROSServiceClient()
+{
+}
+
+#if SL_WITH_ROSBRIDGE
 SLROSServiceClient::SLROSServiceClient(UObject *InOwner, FString InName, FString InType)
 {
 	Owner = InOwner;
@@ -15,12 +20,9 @@ SLROSServiceClient::SLROSServiceClient(UObject *InOwner, FString InName, FString
 	Type = InType;
 }
 
-SLROSServiceClient::~SLROSServiceClient()
-{
-}
-
 void SLROSServiceClient::Callback(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse)
 {
 	USLROSPrologLogger *Logger = Cast<USLROSPrologLogger>(Owner);
 	Logger->ProcessResponse(InResponse, Type);
 }
+#endif

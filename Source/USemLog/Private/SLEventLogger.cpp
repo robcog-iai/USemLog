@@ -284,10 +284,13 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 #endif // SL_WITH_SLICING
 		}
 
+#if SL_WITH_ROSBRIDGE
 		if (bLogThroughROS) {
 			Log2ROSProlog = NewObject<USLROSPrologLogger>(this);
 			Log2ROSProlog->Init(WriterParams.ServerIp, WriterParams.ServerPort);
 		}
+#endif // SL_WITH_ROSBRIDGE
+
 		// Mark as initialized
 		bIsInit = true;
 	}
@@ -443,9 +446,11 @@ void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 	//UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), *FString(__func__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
 
+#if SL_WITH_ROSBRIDGE
 	if (bLogThroughROS) {
 		Log2ROSProlog->AddEvent(Event);
 	}
+#endif // SL_WITH_ROSBRIDGE
 }
 
 // Write to file
