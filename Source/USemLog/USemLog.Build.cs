@@ -6,7 +6,7 @@ using UnrealBuildTool;
 public class USemLog : ModuleRules
 {
 	// Set the given preprocessor as a public definition with  0 or 1 (check as private and public module)
-	private void SetDependencyPrepreocessorDefinition(string ModuleName, string PreprocessorDefinition)
+	private void SetDependencyPreprocessorDefinition(string ModuleName, string PreprocessorDefinition)
 	{
 		string Result = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals(ModuleName));
 		if (string.IsNullOrEmpty(Result))
@@ -54,7 +54,7 @@ public class USemLog : ModuleRules
 				"Core",
 				"USemLogOwl",
 				"MongoC",					// SL_WITH_LIBMONGO_C
-				"UROSBridge",               // SL_WITH_ROSBRIDGE
+				//"UROSBridge",               // SL_WITH_ROSBRIDGE
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -103,12 +103,12 @@ public class USemLog : ModuleRules
 			);
 
 		// Check included dependencies and set preprocessor flags accordingly
-		SetDependencyPrepreocessorDefinition("UConversions", "SL_WITH_ROS_CONVERSIONS");
-		SetDependencyPrepreocessorDefinition("UMCGrasp", "SL_WITH_MC_GRASP");
-		SetDependencyPrepreocessorDefinition("MongoC", "SL_WITH_LIBMONGO_C");
-		SetDependencyPrepreocessorDefinition("MongoCxx", "SL_WITH_LIBMONGO_CXX");
-		SetDependencyPrepreocessorDefinition("SRanipal", "SL_WITH_EYE_TRACKING");
-		SetDependencyPrepreocessorDefinition("SlicingLogic", "SL_WITH_SLICING");
+		SetDependencyPreprocessorDefinition("UConversions", "SL_WITH_ROS_CONVERSIONS");
+		SetDependencyPreprocessorDefinition("UMCGrasp", "SL_WITH_MC_GRASP");
+		SetDependencyPreprocessorDefinition("MongoC", "SL_WITH_LIBMONGO_C");
+		SetDependencyPreprocessorDefinition("MongoCxx", "SL_WITH_LIBMONGO_CXX");
+		SetDependencyPreprocessorDefinition("SRanipal", "SL_WITH_EYE_TRACKING");
+		SetDependencyPreprocessorDefinition("SlicingLogic", "SL_WITH_SLICING");
 		SetDependencyPreprocessorDefinition("UROSBridge", "SL_WITH_ROSBRIDGE");
 		
 		string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));

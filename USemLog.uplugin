@@ -42,27 +42,27 @@
         },
         {
             "Name": "UMongoC",
-            "Enabled": false
+            "Enabled": true
         },
         {
             "Name": "SRanipal",
-            "Enabled": false
+            "Enabled": true
         },
         {
             "Name": "UMongoQA",
-            "Enabled": false
+            "Enabled": true
         },
         {
             "Name": "UViz",
-            "Enabled": false
+            "Enabled": true
         },
         {
             "Name": "USlicing",
-            "Enabled": true
+            "Enabled": false
         },
         {
             "Name": "UROSBridge",
-            "Enabled": true
+            "Enabled": false
         }
     ]
 }
