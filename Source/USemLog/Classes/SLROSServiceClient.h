@@ -8,7 +8,7 @@
 
 class USEMLOG_API SLROSServiceClient : public FROSBridgeSrvClient
 #else
-//#include "Json.h"
+
 class SLROSServiceClient
 #endif
 {
