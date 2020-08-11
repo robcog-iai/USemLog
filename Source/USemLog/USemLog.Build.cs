@@ -54,7 +54,7 @@ public class USemLog : ModuleRules
 				"Core",
 				"USemLogOwl",
 				"MongoC",					// SL_WITH_LIBMONGO_C
-				//"UROSBridge",               // SL_WITH_ROSBRIDGE
+				"UROSBridge",               // SL_WITH_ROSBRIDGE
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -74,7 +74,7 @@ public class USemLog : ModuleRules
 				"UIds",
 				"UConversions",			// SL_WITH_ROS_CONVERSIONS
 				"UMCGrasp",				// SL_WITH_MC_GRASP
-				//"SlicingLogic",		    // SL_WITH_SLICING				
+				"SlicingLogic",		    // SL_WITH_SLICING				
 				//"MongoCxx",			    // SL_WITH_LIBMONGO_CXX
 				//"MongoC",					// SL_WITH_LIBMONGO_C	// !!! Needs to be in the PublicDependencyModuleNames
 				"SRanipal",			    // SL_WITH_EYE_TRACKING
