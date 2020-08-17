@@ -31,10 +31,8 @@ TStatId USLROSPrologLogger::GetStatId() const
 void USLROSPrologLogger::Tick(float DeltaTime) {
 #if SL_WITH_ROSBRIDGE
 	// Call update on tick
-	if (QueriesBuffer.Num() > 0) {
-		for (auto It = QueriesBuffer.CreateConstIterator(); It; ++It) {
-			SendPrologQuery(It.Key());
-		}
+	while (QueriesBuffer.Num() > 0) {
+		SendPrologQuery(QueriesBuffer.Pop());
 	}
 	while (NextSolutionCommandsBuffer.Num() > 0) {
 		SendNextSolutionCommand(NextSolutionCommandsBuffer.Pop());
@@ -75,7 +73,7 @@ void USLROSPrologLogger::Disconnect() {
 
 void USLROSPrologLogger::AddQuery(FString Id, QueryHandle_t QueryHandle) {
 	Queries.Add(Id, QueryHandle);
-	QueriesBuffer.Add(Id, QueryHandle.Query);
+	QueriesBuffer.Push(Id);
 }
 
 void USLROSPrologLogger::AddEventQuery(TSharedPtr<ISLEvent> Event) {
@@ -102,7 +100,6 @@ void USLROSPrologLogger::SendPrologQuery(FString Id) {
 
 	FString Query;
 	QueryHandle_t *QueryHandle = Queries.Find(Id);
-	QueriesBuffer.RemoveAndCopyValue(Id, Query);
 	UE_LOG(LogTemp, Warning, TEXT("Sending Query : ID = %s; Query = %s;"), *Id, *QueryHandle->Query);
 	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Query::Request(0, QueryHandle->Query, Id));
 	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::Query::Response());

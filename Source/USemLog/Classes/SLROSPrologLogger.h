@@ -98,7 +98,7 @@ private:
 
 	// Query Queue
 	TMap<FString, QueryHandle_t> Queries;
-	TMap<FString, FString> QueriesBuffer;
+	TArray<FString> QueriesBuffer;
 	TArray<FString> NextSolutionCommandsBuffer;
 	TArray<FString> FinishCommandsBuffer;
 
