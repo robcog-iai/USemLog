@@ -72,9 +72,18 @@ void USLROSPrologLogger::Disconnect() {
 		ROSHandler->Disconnect();
 	}
 }
-  
-void USLROSPrologLogger::AddEvent(TSharedPtr<ISLEvent> Event) {
-	QueriesBuffer.Add(Event->Id, Event->ToROSQuery());
+
+void USLROSPrologLogger::AddQuery(FString Id, QueryHandle_t QueryHandle) {
+	Queries.Add(Id, QueryHandle);
+	QueriesBuffer.Add(Id, QueryHandle.Query);
+}
+
+void USLROSPrologLogger::AddEventQuery(TSharedPtr<ISLEvent> Event) {
+	QueryHandle_t QueryHandle;
+	QueryHandle.Query = Event->ToROSQuery();
+	QueryHandle.bExhaustSolutions = false;
+	QueryHandle.SolutionCallBack.Unbind();
+	AddQuery(Event->Id, QueryHandle);
 }
 
 void USLROSPrologLogger::AddObjectQuery(FSLEntity *Entity) {
@@ -82,16 +91,20 @@ void USLROSPrologLogger::AddObjectQuery(FSLEntity *Entity) {
 	// Creates query ID
 	FString IdValue = FIds::NewGuidInBase64();
 
-	FString query = "tell(is_object(Obj)).";
-	QueriesBuffer.Add(IdValue, query);
+	QueryHandle_t QueryHandle;
+	QueryHandle.Query = "tell(is_object(Obj)).";
+	QueryHandle.bExhaustSolutions = false;
+	QueryHandle.SolutionCallBack.Unbind();
+	AddQuery(IdValue, QueryHandle);
 }
 
 void USLROSPrologLogger::SendPrologQuery(FString Id) {
 
 	FString Query;
+	QueryHandle_t *QueryHandle = Queries.Find(Id);
 	QueriesBuffer.RemoveAndCopyValue(Id, Query);
-	UE_LOG(LogTemp, Warning, TEXT("Sending Query : ID = %s; Query = %s;"), *Id, *Query);
-	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Query::Request(0, Query, Id));
+	UE_LOG(LogTemp, Warning, TEXT("Sending Query : ID = %s; Query = %s;"), *Id, *QueryHandle->Query);
+	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Query::Request(0, QueryHandle->Query, Id));
 	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::Query::Response());
 	ROSHandler->CallService(ROSPrologQueryClient, Request, Response);
 	SentQueries.Add(Response, Id);
@@ -108,6 +121,7 @@ void USLROSPrologLogger::SendNextSolutionCommand(FString Id) {
 
 void USLROSPrologLogger::SendFinishCommand(FString Id) {
 
+	Queries.Remove(Id);
 	UE_LOG(LogTemp, Warning, TEXT("Sending Finish Command: ID = %s;"), *Id);
 	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Finish::Request(Id));
 	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::Finish::Response());
@@ -121,27 +135,53 @@ void  USLROSPrologLogger::ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse>
 	
 	if (Type.Equals("query")) {
 		TSharedPtr<rosprolog_msgs::Query::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::Query::Response>(InResponse);
+		bool bSuccess = Msg->GetSuccess();
 		if (SentQueries.RemoveAndCopyValue(InResponse, Id)) {
 			UE_LOG(LogTemp, Warning, TEXT("Response for Query: ID = %s; OK = %s; Message = \"%s\""), \
-				*Id, Msg->GetSuccess()? TEXT("true") : TEXT("false"), *Msg->GetMessage());
-			SendNextSolutionCommand(Id);
+				*Id, bSuccess ? TEXT("true") : TEXT("false"), *Msg->GetMessage());
 		}
 		else {
 			UE_LOG(LogTemp, Warning, TEXT("No previous Query found for this response: OK = %s; Message = \"%s\""), \
-				*Id, Msg->GetSuccess() ? TEXT("true") : TEXT("false"), *Msg->GetMessage());
+				*Id, bSuccess ? TEXT("true") : TEXT("false"), *Msg->GetMessage());
+		}
+		if (bSuccess) {
+			SendNextSolutionCommand(Id);
 		}
 	}
 
 	if (Type.Equals("next_solution")) {
+		
 		TSharedPtr<rosprolog_msgs::NextSolution::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::NextSolution::Response>(InResponse);
+		int status = Msg->GetStatus();
+
 		if (SentNextSolutionCommands.RemoveAndCopyValue(InResponse, Id)) {
 			UE_LOG(LogTemp, Warning, TEXT("Response for Next_Solution Command: Id = %s; Status = %d; Solution = \"%s\""), \
-				*Id, Msg->GetStatus(), *Msg->GetSolution());
-			SendFinishCommand(Id);
+				*Id, status, *Msg->GetSolution());
 		}
 		else {
 			UE_LOG(LogTemp, Warning, TEXT("No previous Next_Solution Command found for this response: Status = %d; Solution = \"%s\""), \
-				*Id, Msg->GetStatus(), *Msg->GetSolution());
+				*Id, status, *Msg->GetSolution());
+		}
+	
+		// Handling Solutions
+		QueryHandle_t *QueryHandle = Queries.Find(Id);
+		QueryHandle->SolutionsCount++;
+
+		if (QueryHandle) {
+
+			// Callback if Bound
+			QueryHandle->SolutionCallBack.ExecuteIfBound(status, Msg->GetSolution());
+
+			// Gettig next solution or finishing
+			if (!QueryHandle->bExhaustSolutions || !status || QueryHandle->SolutionsCount >= QueryHandle->SolutionsLimit) {
+				SendFinishCommand(Id);
+			}
+			else {
+				SendNextSolutionCommand(Id);
+			}
+		}
+		else {
+			SendFinishCommand(Id);
 		}
 	}
 

@@ -16,10 +16,20 @@
 #include "Events/ISLEventHandler.h"
 #include "SLROSPrologLogger.generated.h"
 
+DECLARE_DELEGATE_TwoParams(FSolutionCallBackDelegate, int, FString);
+
+struct QueryHandle_t
+{
+public:
+	FString Query;
+	bool bExhaustSolutions = false;
+	int SolutionsCount = 0;
+	int SolutionsLimit = 20;
+	FSolutionCallBackDelegate SolutionCallBack = NULL;
+};
+
 /**
- * Raw (event) data logger,
- * it synchronizes(ticks) the async worker on saving the world state at given timepoints.
- * Inherit from FTickableGameObject to have it's own tick
+ * Prolog data logger
  */
 UCLASS()
 class USEMLOG_API USLROSPrologLogger : public UObject, public FTickableGameObject
@@ -39,7 +49,9 @@ public:
 	void Disconnect();
 	void Init(FString Host, uint32 port);
 
-	void AddEvent(TSharedPtr<ISLEvent> Event);
+	void AddQuery(FString Id, QueryHandle_t QueryHandle);
+
+	void AddEventQuery(TSharedPtr<ISLEvent> Event);
 
 	void AddObjectQuery(FSLEntity *Entity);
 
@@ -85,6 +97,7 @@ private:
 #endif // SL_WITH_ROSBRIDGE
 
 	// Query Queue
+	TMap<FString, QueryHandle_t> Queries;
 	TMap<FString, FString> QueriesBuffer;
 	TArray<FString> NextSolutionCommandsBuffer;
 	TArray<FString> FinishCommandsBuffer;

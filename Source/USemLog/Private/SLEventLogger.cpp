@@ -449,7 +449,7 @@ void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 
 #if SL_WITH_ROSBRIDGE
 	if (bLogThroughROS) {
-		ROSPrologClient->AddEvent(Event);
+		ROSPrologClient->AddEventQuery(Event);
 	}
 #endif // SL_WITH_ROSBRIDGE
 }
