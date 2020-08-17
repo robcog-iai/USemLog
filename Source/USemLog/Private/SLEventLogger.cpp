@@ -286,8 +286,9 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 
 #if SL_WITH_ROSBRIDGE
 		if (bLogThroughROS) {
-			Log2ROSProlog = NewObject<USLROSPrologLogger>(this);
-			Log2ROSProlog->Init(WriterParams.ServerIp, WriterParams.ServerPort);
+			ROSPrologClient = NewObject<USLROSPrologLogger>(this);
+			ROSPrologClient->Init(WriterParams.ServerIp, WriterParams.ServerPort);
+			FSLEntitiesManager::GetInstance()->setPrologClient(ROSPrologClient);
 		}
 #endif // SL_WITH_ROSBRIDGE
 
@@ -430,7 +431,7 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 
 #if SL_WITH_ROSBRIDGE
 		// Finish ROS Connection
-		Log2ROSProlog->Disconnect();
+		ROSPrologClient->Disconnect();
 #endif // SL_WITH_ROSBRIDGE
 
 		bIsStarted = false;
@@ -448,7 +449,7 @@ void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 
 #if SL_WITH_ROSBRIDGE
 	if (bLogThroughROS) {
-		Log2ROSProlog->AddEvent(Event);
+		ROSPrologClient->AddEvent(Event);
 	}
 #endif // SL_WITH_ROSBRIDGE
 }

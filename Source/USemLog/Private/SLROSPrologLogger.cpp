@@ -2,6 +2,8 @@
 
 
 #include "SLROSPrologLogger.h"
+// UUtils
+#include "Ids.h"
 
 USLROSPrologLogger::USLROSPrologLogger() {
 	bIsTickable = true;
@@ -73,6 +75,15 @@ void USLROSPrologLogger::Disconnect() {
   
 void USLROSPrologLogger::AddEvent(TSharedPtr<ISLEvent> Event) {
 	QueriesBuffer.Add(Event->Id, Event->ToROSQuery());
+}
+
+void USLROSPrologLogger::AddObjectQuery(FSLEntity *Entity) {
+	
+	// Creates query ID
+	FString IdValue = FIds::NewGuidInBase64();
+
+	FString query = "tell(is_object(Obj)).";
+	QueriesBuffer.Add(IdValue, query);
 }
 
 void USLROSPrologLogger::SendPrologQuery(FString Id) {

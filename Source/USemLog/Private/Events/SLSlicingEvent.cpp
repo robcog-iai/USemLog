@@ -76,7 +76,7 @@ FString FSLSlicingEvent::ToROSQuery() const
 	FString Query = FString::Printf(TEXT("Action = \'http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Action_%s\',"), *Id);
 	Query.Append("tell([");
 	Query.Append("is_action(Action),");
-	Query.Append(FString::Printf(TEXT("has_type(Task, ease_act:\'PhysicalTask\'),"));
+	Query.Append(FString::Printf(TEXT("has_type(Task, ease_act:\'PhysicalTask\'),")));
 	Query.Append("executes_task(Action, Task),");
 	Query.Append(FString::Printf(TEXT("holds(Action, ease:'hasEventBegin', %f),"), Start));
 	Query.Append(FString::Printf(TEXT("holds(Action, ease:'hasEventEnd', %f),"), End));
@@ -89,34 +89,34 @@ FString FSLSlicingEvent::ToROSQuery() const
 	Query.Append("]),");
 
 	// Tool
-	if (DeviceUsed) {
+	if (DeviceUsed.IsSet()) {
 		Query.Append(FString::Printf(TEXT("ObjUsed = \'http://www.ease-crc.org/ont/EASE-OBJ.owl#Knife_%s\',"), *DeviceUsed.Id));
 		Query.Append("tell([");
-		Query.Append(FString::Printf(TEXT("has_type(ObjUsed, ease_obj:\'knife\'),"));
-		Query.Append(FString::Printf(TEXT("has_type(ToolRole, ease_obj:\'Tool\'),"));
-		Query.Append("has_role(ObjUsed, ToolRole)");
+		Query.Append(FString::Printf(TEXT("has_type(ObjUsed, ease_obj:\'knife\'),")));
+		Query.Append(FString::Printf(TEXT("has_type(ToolRole, ease_obj:\'Tool\'),")));
+		Query.Append("has_role(ObjUsed, ToolRole),");
 		Query.Append("has_participant(Action, ObjUsed)");
 		Query.Append("]),");
 	}
 
 	// Food
-	if (ObjectActedOn) {
+	if (ObjectActedOn.IsSet()) {
 		Query.Append(FString::Printf(TEXT("AlteredObj = \'http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#PhysicalObject_%s\',"), *ObjectActedOn.Id));
 		Query.Append("tell([");
-		Query.Append("is_physical_object(AlteredObj),"));
-		Query.Append(FString::Printf(TEXT("has_type(AlteredRole, ease_obj:\'AlteredObject\'),"));
-		Query.Append("has_role(AlteredObj, AlteredRole)");
+		Query.Append("is_physical_object(AlteredObj),");
+		Query.Append(FString::Printf(TEXT("has_type(AlteredRole, ease_obj:\'AlteredObject\'),")));
+		Query.Append("has_role(AlteredObj, AlteredRole),");
 		Query.Append("has_participant(Action, AlteredObj)");
 		Query.Append("]),");
 	}
 
 	// New piece
-	if (OutputsCreated) {
+	if (OutputsCreated.IsSet()) {
 		Query.Append(FString::Printf(TEXT("CreatedObj = \'http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#PhysicalObject_%s\',"), *OutputsCreated.Id));
 		Query.Append("tell([");
 		Query.Append("is_physical_object(CreatedObj),");
-		Query.Append(FString::Printf(TEXT("has_type(CreatedRole, ease_obj:\'CreatedObject\'),"));
-		Query.Append("has_role(CreatedObj, CreatedRole)");
+		Query.Append(FString::Printf(TEXT("has_type(CreatedRole, ease_obj:\'CreatedObject\'),")));
+		Query.Append("has_role(CreatedObj, CreatedRole),");
 		Query.Append("has_participant(Action, CreatedObj)");
 		Query.Append("]),");
 	}
@@ -124,7 +124,7 @@ FString FSLSlicingEvent::ToROSQuery() const
 	// Episode
 	Query.Append("tell([");
 	Query.Append("is_episode(Episode),");
-	Query.Append("is_setting_for(Episode, Action),");
+	Query.Append("is_setting_for(Episode, Action)");
 	Query.Append("]).");
 	return Query;
 }

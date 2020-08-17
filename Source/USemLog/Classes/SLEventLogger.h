@@ -5,8 +5,8 @@
 
 #include "USemLog.h"
 #include "SLOwlExperiment.h"
-#include "Events/ISLEventHandler.h"
 #include "SLROSPrologLogger.h"
+#include "Events/ISLEventHandler.h"
 #include "SLEventLogger.generated.h"
 
 // Forward declaration
@@ -146,6 +146,6 @@ private:
 
 	// ROS Logging
 	UPROPERTY()
-	USLROSPrologLogger* Log2ROSProlog;
+	USLROSPrologLogger* ROSPrologClient;
 
 };

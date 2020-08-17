@@ -191,7 +191,13 @@ bool FSLEntitiesManager::AddObject(UObject* Object)
 	FString Class = FTags::GetValue(Object, "SemLog", "Class");
 	if (!Id.IsEmpty() && !Class.IsEmpty())
 	{
+
 		ObjectsSemanticData.Emplace(Object, FSLEntity(Object, Id, Class));
+
+		// Add with ROSProlog
+		if (ROSPrologClient) {
+			ROSPrologClient->AddObjectQuery(ObjectsSemanticData.Find(Object));
+		}
 		return true;
 	}
 	else
@@ -326,4 +332,8 @@ bool FSLEntitiesManager::EmptyOrDuplicatesInTheCameraViews()
 	}
 
 	return false;
+}
+
+void FSLEntitiesManager::setPrologClient(USLROSPrologLogger* InROSProlog) {
+	ROSPrologClient = InROSProlog;
 }

@@ -4,6 +4,7 @@
 
 #include "Tickable.h"
 #include "CoreMinimal.h"
+#include "SLStructs.h"
 #if SL_WITH_ROSBRIDGE
 #include "ROSBridgeHandler.h"
 #include "rosprolog_msgs/Query.h"
@@ -39,6 +40,8 @@ public:
 	void Init(FString Host, uint32 port);
 
 	void AddEvent(TSharedPtr<ISLEvent> Event);
+
+	void AddObjectQuery(FSLEntity *Entity);
 
 	void SendPrologQuery(FString Id);
 
