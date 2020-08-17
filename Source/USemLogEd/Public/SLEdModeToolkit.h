@@ -133,6 +133,8 @@ private:
 
 	// Semantic map
 	FReply OnWriteSemMap();
+	FReply OnWriteOntology();
+
 
 	FReply OnAddSemMon();	
 	FReply OnEnableOverlaps();
