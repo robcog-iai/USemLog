@@ -1,3 +1,6 @@
+// Copyright 2020, Institute for Artificial Intelligence - University of Bremen
+// Author: Jose Rojas
+
 #pragma once
 
 #include "ROSBridgeSrv.h"

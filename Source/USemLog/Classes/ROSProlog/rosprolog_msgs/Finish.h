@@ -1,18 +1,21 @@
+// Copyright 2020, Institute for Artificial Intelligence - University of Bremen
+// Author: Jose Rojas
+
 #pragma once
 
 #include "ROSBridgeSrv.h"
 
 namespace rosprolog_msgs
 {
-	class NextSolution : public FROSBridgeSrv
+	class Finish : public FROSBridgeSrv
 	{
 
 	public:
-		NextSolution()
+		Finish()
 		{
-			SrvType = TEXT("rosprolog/next_solution");
+			SrvType = TEXT("rosprolog/finish");
 		}
-		
+
 		class Request : public SrvRequest
 		{
 		private:
@@ -42,7 +45,7 @@ namespace rosprolog_msgs
 
 			virtual FString ToString() const override
 			{
-				return	TEXT("NextSolution::Request { id = ") + id + TEXT("} ");
+				return	TEXT("Finish::Request { id = ") + id + TEXT("} ");
 			}
 
 			virtual TSharedPtr<FJsonObject> ToJsonObject() const
@@ -57,35 +60,14 @@ namespace rosprolog_msgs
 		{
 		private:
 			// Add your dfferent Response parameters here
-			uint8 status;
-			FString solution;
 
 		public:
 			Response() {}
 
-			Response(uint8 InStatus) : status(InStatus) {}
 
-			Response(uint8 InStatus, FString InSolution) {
-				status = InStatus;
-				solution = InSolution;
-			}
+			virtual void FromJson(TSharedPtr<FJsonObject> JsonObject) override {}
 
-			void SetStatus(uint8 S) { status = S;}
-
-			bool GetStatus() { return status;}
-
-			void SetSolution(FString S) { solution = S;}
-
-			FString GetSolution() {	return solution;}
-
-			virtual void FromJson(TSharedPtr<FJsonObject> JsonObject) override
-			{
-				status = JsonObject->GetIntegerField("status");
-				solution = JsonObject->GetStringField("solution");
-			}
-
-			static Response GetFromJson(TSharedPtr<FJsonObject> JsonObject)
-			{
+			static Response GetFromJson(TSharedPtr<FJsonObject> JsonObject) {
 				Response rep;
 				rep.FromJson(JsonObject);
 				return rep;
@@ -93,19 +75,14 @@ namespace rosprolog_msgs
 
 			virtual FString ToString() const override
 			{
-				return TEXT("Command::Response { status = ") + FString::FromInt(status) + TEXT(", solution = ") + solution + TEXT(" } ");
+				return TEXT("Finish::Response {} ");
 			}
 
 			virtual TSharedPtr<FJsonObject> ToJsonObject() const
 			{
 				TSharedPtr<FJsonObject> Object = MakeShareable<FJsonObject>(new FJsonObject());
-				Object->SetBoolField("status", status);
-				Object->SetStringField("solution", solution);
 				return Object;
 			}
 		};
 	};
 } // namespace rosprolog_msgs 
-
-
-

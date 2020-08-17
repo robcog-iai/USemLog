@@ -334,6 +334,6 @@ bool FSLEntitiesManager::EmptyOrDuplicatesInTheCameraViews()
 	return false;
 }
 
-void FSLEntitiesManager::setPrologClient(USLROSPrologLogger* InROSProlog) {
+void FSLEntitiesManager::setPrologClient(USLPrologClient* InROSProlog) {
 	ROSPrologClient = InROSProlog;
 }

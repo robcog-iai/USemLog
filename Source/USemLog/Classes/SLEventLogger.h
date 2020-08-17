@@ -5,7 +5,7 @@
 
 #include "USemLog.h"
 #include "SLOwlExperiment.h"
-#include "SLROSPrologLogger.h"
+#include "ROSProlog/SLPrologClient.h"
 #include "Events/ISLEventHandler.h"
 #include "SLEventLogger.generated.h"
 
@@ -146,6 +146,6 @@ private:
 
 	// ROS Logging
 	UPROPERTY()
-	USLROSPrologLogger* ROSPrologClient;
+	USLPrologClient* ROSPrologClient;
 
 };

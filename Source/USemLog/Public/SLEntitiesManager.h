@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 #include "SLStructs.h"
 #include "SLSkeletalDataComponent.h"
-#include "SLROSPrologLogger.h"
+#include "ROSProlog/SLPrologClient.h"
 #include "SLVisionCamera.h"
 
 class AStaticMeshActor;
@@ -216,7 +216,7 @@ public:
 	};
 	
 	// Set a reference to ROSProlog logger to update semantic map
-	void setPrologClient(USLROSPrologLogger* InROSProlog);
+	void setPrologClient(USLPrologClient* InROSProlog);
 
 private:
 	// Instance of the singleton
@@ -252,5 +252,5 @@ private:
 	TArray<AActor*> UntaggedActors;
 
 	// Channel to add objects into knowrob via prolog
-	USLROSPrologLogger* ROSPrologClient = NULL;
+	USLPrologClient* ROSPrologClient = NULL;
 };

@@ -1,18 +1,21 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2020, Institute for Artificial Intelligence - University of Bremen
+// Author: Jose Rojas
 
+#include "ROSProlog/SLROSServiceClient.h"
+#include "ROSProlog/SLPrologClient.h"
 
-#include "SLROSServiceClient.h"
-#include "SLROSPrologLogger.h"
-
+// Constructor
 SLROSServiceClient::SLROSServiceClient()
 {
 }
 
+// Destructor
 SLROSServiceClient::~SLROSServiceClient()
 {
 }
 
 #if SL_WITH_ROSBRIDGE
+// Init constructor
 SLROSServiceClient::SLROSServiceClient(UObject *InOwner, FString InName, FString InType)
 {
 	Owner = InOwner;
@@ -20,9 +23,10 @@ SLROSServiceClient::SLROSServiceClient(UObject *InOwner, FString InName, FString
 	Type = InType;
 }
 
+// Callback to ProcessResponse in owner
 void SLROSServiceClient::Callback(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse)
 {
-	USLROSPrologLogger *Logger = Cast<USLROSPrologLogger>(Owner);
+	USLPrologClient *Logger = Cast<USLPrologClient>(Owner);
 	Logger->ProcessResponse(InResponse, Type);
 }
 #endif

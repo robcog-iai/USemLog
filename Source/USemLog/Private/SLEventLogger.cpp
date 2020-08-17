@@ -286,7 +286,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 
 #if SL_WITH_ROSBRIDGE
 		if (bLogThroughROS) {
-			ROSPrologClient = NewObject<USLROSPrologLogger>(this);
+			ROSPrologClient = NewObject<USLPrologClient>(this);
 			ROSPrologClient->Init(WriterParams.ServerIp, WriterParams.ServerPort);
 			FSLEntitiesManager::GetInstance()->setPrologClient(ROSPrologClient);
 		}

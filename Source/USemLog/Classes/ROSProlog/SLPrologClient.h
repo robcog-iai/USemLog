@@ -1,4 +1,5 @@
-// Copyright 2019, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2020, Institute for Artificial Intelligence - University of Bremen
+// Author: Jose Rojas
 
 #pragma once
 
@@ -10,58 +11,58 @@
 #include "rosprolog_msgs/Query.h"
 #include "rosprolog_msgs/NextSolution.h"
 #include "rosprolog_msgs/Finish.h"
-#include "SLROSServiceClient.h"
+#include "ROSProlog/SLROSServiceClient.h"
 #endif // SL_WITH_ROSBRIDGE
+#include "ROSProlog/SLQueryHandler.h"
 #include "UObject/NoExportTypes.h"
 #include "Events/ISLEventHandler.h"
-#include "SLROSPrologLogger.generated.h"
-
-DECLARE_DELEGATE_TwoParams(FSolutionCallBackDelegate, int, FString);
-
-struct QueryHandle_t
-{
-public:
-	FString Query;
-	bool bExhaustSolutions = false;
-	int SolutionsCount = 0;
-	int SolutionsLimit = 20;
-	FSolutionCallBackDelegate SolutionCallBack = NULL;
-};
+#include "SLPrologClient.generated.h"
 
 /**
- * Prolog data logger
+ * ROS Prolog Client to log and query into Knowrob
  */
 UCLASS()
-class USEMLOG_API USLROSPrologLogger : public UObject, public FTickableGameObject
+class USEMLOG_API USLPrologClient : public UObject, public FTickableGameObject
 {
 	GENERATED_BODY()
 
 public:
 
 	// Constructor
-	USLROSPrologLogger();
+	USLPrologClient();
 
 	// Destructor
-	~USLROSPrologLogger();
+	~USLPrologClient();
 
 #if SL_WITH_ROSBRIDGE
 
+	// Disconnect from ROSBridge
 	void Disconnect();
+
+	// Init socket connection
 	void Init(FString Host, uint32 port);
 
-	void AddQuery(FString Id, QueryHandle_t QueryHandle);
+	// Add query to buffer
+	void AddQuery(FString Id, FSLQueryHandler *QueryHandle);
 
+	// Add event query
 	void AddEventQuery(TSharedPtr<ISLEvent> Event);
 
+	// Add an add object query
 	void AddObjectQuery(FSLEntity *Entity);
 
+	// Send query <Id>
 	void SendPrologQuery(FString Id);
 
+	// Request next solution to query <Id>
 	void SendNextSolutionCommand(FString Id);
 
+	// Finsh query <Id>
 	void SendFinishCommand(FString Id);
 
+	// Process response pipeline
 	void ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse, FString Type);
+
 #endif // SL_WITH_ROSBRIDGE
 
 protected:
@@ -84,20 +85,25 @@ private:
 
 #if SL_WITH_ROSBRIDGE
 
-	// ROS Connection handlers
+	// ROS Connection handler
 	TSharedPtr<FROSBridgeHandler> ROSHandler;
+
+	// Service clients for every command
 	TSharedPtr<SLROSServiceClient> ROSPrologQueryClient;
 	TSharedPtr<SLROSServiceClient> ROSPrologNextSolutionClient;
 	TSharedPtr<SLROSServiceClient> ROSPrologFinishClient;
 
+	// Keeping record of sent commands and their Ids
 	TMap<TSharedPtr<FROSBridgeSrv::SrvResponse>, FString> SentQueries;
 	TMap<TSharedPtr<FROSBridgeSrv::SrvResponse>, FString> SentNextSolutionCommands;
 	TMap<TSharedPtr<FROSBridgeSrv::SrvResponse>, FString> SentFinishCommands;
 
 #endif // SL_WITH_ROSBRIDGE
 
-	// Query Queue
-	TMap<FString, QueryHandle_t> Queries;
+	// Record of active queries
+	TMap<FString, FSLQueryHandler*> Queries;
+
+	// Buffers for every command
 	TArray<FString> QueriesBuffer;
 	TArray<FString> NextSolutionCommandsBuffer;
 	TArray<FString> FinishCommandsBuffer;
