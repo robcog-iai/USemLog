@@ -3,7 +3,7 @@
 
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/SLBaseIndividual.h"
-#include "Individuals/SLPerceivableIndividual.h"
+#include "Individuals/SLVisibleIndividual.h"
 #include "Individuals/SLSkeletalIndividual.h"
 #include "Individuals/SLBoneIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
@@ -154,7 +154,7 @@ bool USLIndividualComponent::ToggleVisualMaskVisibility(bool bIncludeChildren)
 {
 	if (HasValidIndividual())
 	{
-		if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
+		if (USLVisibleIndividual* VI = Cast<USLVisibleIndividual>(IndividualObj))
 		{
 			return VI->ToggleMaterials(bIncludeChildren);
 		}
@@ -274,7 +274,7 @@ bool USLIndividualComponent::WriteVisualMask(const FString& Value, bool bOverwri
 {
 	if (HasValidIndividual())
 	{
-		if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
+		if (USLVisibleIndividual* VI = Cast<USLVisibleIndividual>(IndividualObj))
 		{
 			if (!VI->IsVisualMaskValueSet() || bOverwrite)
 			{
@@ -312,7 +312,7 @@ bool USLIndividualComponent::ClearVisualMask()
 	if (HasValidIndividual())
 	{
 		bool RetVal = false;
-		if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IndividualObj))
+		if (USLVisibleIndividual* VI = Cast<USLVisibleIndividual>(IndividualObj))
 		{
 			if (VI->IsVisualMaskValueSet())
 			{

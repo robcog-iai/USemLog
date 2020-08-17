@@ -1,14 +1,14 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Individuals/SLPerceivableIndividual.h"
+#include "Individuals/SLVisibleIndividual.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
 // Utils
 #include "Utils/SLTagIO.h"
 
 // Ctor
-USLPerceivableIndividual::USLPerceivableIndividual()
+USLVisibleIndividual::USLVisibleIndividual()
 {
 	VisualMaskMaterial = Cast<UMaterial>(StaticLoadObject(
 		UMaterial::StaticClass(), NULL, TEXT("Material'/USemLog/Individuals/M_VisualIndividualMask.M_VisualIndividualMask'"),
@@ -18,7 +18,7 @@ USLPerceivableIndividual::USLPerceivableIndividual()
 }
 
 // Called before destroying the object.
-void USLPerceivableIndividual::BeginDestroy()
+void USLVisibleIndividual::BeginDestroy()
 {
 	ApplyOriginalMaterials();
 	SetIsInit(false);
@@ -26,7 +26,7 @@ void USLPerceivableIndividual::BeginDestroy()
 }
 
 // Set pointer to the semantic owner
-bool USLPerceivableIndividual::Init(bool bReset)
+bool USLVisibleIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
@@ -43,7 +43,7 @@ bool USLPerceivableIndividual::Init(bool bReset)
 }
 
 // Load semantic data
-bool USLPerceivableIndividual::Load(bool bReset, bool bTryImport)
+bool USLVisibleIndividual::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
@@ -68,7 +68,7 @@ bool USLPerceivableIndividual::Load(bool bReset, bool bTryImport)
 }
 
 // Trigger values as new value broadcast
-void USLPerceivableIndividual::TriggerValuesBroadcast()
+void USLVisibleIndividual::TriggerValuesBroadcast()
 {
 	Super::TriggerValuesBroadcast();
 
@@ -77,7 +77,7 @@ void USLPerceivableIndividual::TriggerValuesBroadcast()
 }
 
 // Save data to owners tag
-bool USLPerceivableIndividual::ExportValues(bool bOverwrite)
+bool USLVisibleIndividual::ExportValues(bool bOverwrite)
 {
 	if (!HasValidParentActor())
 	{
@@ -99,7 +99,7 @@ bool USLPerceivableIndividual::ExportValues(bool bOverwrite)
 }
 
 // Load data from owners tag
-bool USLPerceivableIndividual::ImportValues(bool bOverwrite)
+bool USLVisibleIndividual::ImportValues(bool bOverwrite)
 {
 	if (!HasValidParentActor())
 	{
@@ -127,7 +127,7 @@ bool USLPerceivableIndividual::ImportValues(bool bOverwrite)
 }
 
 // Toggle between the visual mask and the origina materials
-bool USLPerceivableIndividual::ToggleMaterials(bool bIncludeChildren /*= false*/)
+bool USLVisibleIndividual::ToggleMaterials(bool bIncludeChildren /*= false*/)
 {
 	if (bIsMaskMaterialOn)
 	{
@@ -140,7 +140,7 @@ bool USLPerceivableIndividual::ToggleMaterials(bool bIncludeChildren /*= false*/
 }
 
 // Set  visual mask
-void USLPerceivableIndividual::SetVisualMaskValue(const FString& NewValue, bool bApplyNewMaterial, bool bClearCalibratedVisualMask)
+void USLVisibleIndividual::SetVisualMaskValue(const FString& NewValue, bool bApplyNewMaterial, bool bClearCalibratedVisualMask)
 {
 	// Clear the calibrated color in case of a new visual mask value
 	if (!VisualMask.Equals(NewValue))
@@ -177,7 +177,7 @@ void USLPerceivableIndividual::SetVisualMaskValue(const FString& NewValue, bool 
 }
 
 // Set the calibrated visual mask value
-void USLPerceivableIndividual::SetCalibratedVisualMaskValue(const FString& NewValue)
+void USLVisibleIndividual::SetCalibratedVisualMaskValue(const FString& NewValue)
 {
 	// Clear the calibrated color in case of a new visual mask value
 	if (!CalibratedVisualMask.Equals(NewValue))
@@ -188,7 +188,7 @@ void USLPerceivableIndividual::SetCalibratedVisualMaskValue(const FString& NewVa
 }
 
 // Private init implementation
-bool USLPerceivableIndividual::InitImpl()
+bool USLVisibleIndividual::InitImpl()
 {
 	if (!HasValidDynamicMaterial())
 	{
@@ -212,7 +212,7 @@ bool USLPerceivableIndividual::InitImpl()
 }
 
 // Private load implementation
-bool USLPerceivableIndividual::LoadImpl(bool bTryImport)
+bool USLVisibleIndividual::LoadImpl(bool bTryImport)
 {
 	if (!IsVisualMaskValueSet())
 	{
@@ -236,7 +236,7 @@ bool USLPerceivableIndividual::LoadImpl(bool bTryImport)
 }
 
 // Clear all values of the individual
-void USLPerceivableIndividual::InitReset()
+void USLVisibleIndividual::InitReset()
 {
 	LoadReset();
 	ApplyOriginalMaterials();
@@ -245,7 +245,7 @@ void USLPerceivableIndividual::InitReset()
 }
 
 // Clear all data of the individual
-void USLPerceivableIndividual::LoadReset()
+void USLVisibleIndividual::LoadReset()
 {
 	ClearVisualMaskValue();
 	SetIsLoaded(false);
@@ -253,19 +253,19 @@ void USLPerceivableIndividual::LoadReset()
 
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLPerceivableIndividual::CalcDefaultClassValue()
+FString USLVisibleIndividual::CalcDefaultClassValue()
 {
 	return GetTypeName();
 }
 
 // Randomly generates a new visual mask, does not guarantee uniqueness
-FString USLPerceivableIndividual::GenerateNewRandomVisualMask() const
+FString USLVisibleIndividual::GenerateNewRandomVisualMask() const
 {
 	return FColor((uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f), (uint8)(FMath::FRand() * 255.f)).ToHex();
 }
 
 // Import visual mask from tag, true if new value is written
-bool USLPerceivableIndividual::ImportVisualMaskValue(bool bOverwrite)
+bool USLVisibleIndividual::ImportVisualMaskValue(bool bOverwrite)
 {
 	bool bNewValue = false;
 	if (!IsVisualMaskValueSet() || bOverwrite)
@@ -278,7 +278,7 @@ bool USLPerceivableIndividual::ImportVisualMaskValue(bool bOverwrite)
 }
 
 // Import calibrated visual mask from tag, true if new value is written
-bool USLPerceivableIndividual::ImportCalibratedVisualMaskValue(bool bOverwrite)
+bool USLVisibleIndividual::ImportCalibratedVisualMaskValue(bool bOverwrite)
 {
 	bool bNewValue = false;
 	if (!IsCalibratedVisualMaskValueSet() || bOverwrite)
@@ -291,7 +291,7 @@ bool USLPerceivableIndividual::ImportCalibratedVisualMaskValue(bool bOverwrite)
 }
 
 // Apply color to the dynamic material
-bool USLPerceivableIndividual::ApplyVisualMaskColorToDynamicMaterial()
+bool USLVisibleIndividual::ApplyVisualMaskColorToDynamicMaterial()
 {	
 	if (VisualMaskDynamicMaterial)
 	{
@@ -302,7 +302,7 @@ bool USLPerceivableIndividual::ApplyVisualMaskColorToDynamicMaterial()
 }
 
 // Check if the dynmic material is valid
-bool USLPerceivableIndividual::HasValidDynamicMaterial() const
+bool USLVisibleIndividual::HasValidDynamicMaterial() const
 {
 	return VisualMaskDynamicMaterial && VisualMaskDynamicMaterial->IsValidLowLevel() && !VisualMaskDynamicMaterial->IsPendingKill();
 }

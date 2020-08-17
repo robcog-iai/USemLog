@@ -6,7 +6,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Individuals/SLBaseIndividual.h"
-#include "SLPerceivableIndividual.generated.h"
+#include "SLVisibleIndividual.generated.h"
 
 // Forward declarations
 class UMaterialInstanceDynamic;
@@ -17,13 +17,13 @@ class UMaterial;
  * 
  */
 UCLASS(ClassGroup = SL, abstract)
-class USEMLOG_API USLPerceivableIndividual : public USLBaseIndividual
+class USEMLOG_API USLVisibleIndividual : public USLBaseIndividual
 {
 	GENERATED_BODY()
 
 public:
     // Ctor
-    USLPerceivableIndividual();
+    USLVisibleIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
@@ -44,15 +44,15 @@ public:
     virtual bool ImportValues(bool bOverwrite = false) override;
 
     // Get the type name as string
-    virtual FString GetTypeName() const override { return FString("PerceivableIndividual"); };
+    virtual FString GetTypeName() const override { return FString("VisibleIndividual"); };
     
-    /* Begin Perceivable individual interface */
+    /* Begin Visible individual interface */
     // Apply visual mask material
     virtual bool ApplyMaskMaterials(bool bIncludeChildren = false) { return false; };
 
     // Apply original materials
     virtual bool ApplyOriginalMaterials() { return false; };
-    /* End Perceivable individual interface */
+    /* End Visible individual interface */
 
     // Toggle between the visual mask and the origina materials
     bool ToggleMaterials(bool bIncludeChildren = false);

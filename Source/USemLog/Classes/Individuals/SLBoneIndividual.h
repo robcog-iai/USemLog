@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/SLPerceivableIndividual.h"
+#include "Individuals/SLVisibleIndividual.h"
 #include "SLBoneIndividual.generated.h"
 
 // Forward declaration
@@ -16,7 +16,7 @@ class USLSkeletalDataComponent;
  *
  */
 UCLASS(ClassGroup = SL)
-class USEMLOG_API USLBoneIndividual : public USLPerceivableIndividual
+class USEMLOG_API USLBoneIndividual : public USLVisibleIndividual
 {
     GENERATED_BODY()
 
@@ -49,13 +49,13 @@ public:
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("BoneIndividual"); };
 
-    /* Begin Perceivable individual interface */
+    /* Begin Visible individual interface */
     // Apply visual mask material
     virtual bool ApplyMaskMaterials(bool bIncludeChildren = false) override;
 
     // Apply original materials
     virtual bool ApplyOriginalMaterials() override;
-    /* End Perceivable individual interface */
+    /* End Visible individual interface */
 
     // Calculate and cache the individuals transform (returns true on a new value)
     virtual bool CalcAndCacheTransform(float Tolerance = 0.25f, FTransform* OutTransform = nullptr) override;

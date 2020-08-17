@@ -18,7 +18,7 @@ class ASLIndividualManager;
 //
 //	SLI_Base				= 0x00000001u,	///< Has Id and Class
 //
-//	SLI_Perceivable			= 0x00000002u,	///< Has VisualMask
+//	SLI_Visible			= 0x00000002u,	///< Has VisualMask
 //	SLI_Static				= 0x00000004u,	///< Has VisualMask
 //	SLI_Skeletal			= 0x00000010u,	///< Has VisualMask
 //	SLI_Robot				= 0x00000020u,	///< Has VisualMask
@@ -49,9 +49,9 @@ class ASLIndividualManager;
 //		return (InFlag & ESLIndividualFlags::SLI_Base) != ESLIndividualFlags::SLI_None;
 //	};
 //
-//	bool IsPerceivable(ESLIndividualFlags InFlag) const
+//	bool IsVisible(ESLIndividualFlags InFlag) const
 //	{
-//		return (InFlag & ESLIndividualFlags::SLI_Perceivable) != ESLIndividualFlags::SLI_None;
+//		return (InFlag & ESLIndividualFlags::SLI_Visible) != ESLIndividualFlags::SLI_None;
 //	};
 //
 //	FString ToString() const
@@ -60,7 +60,7 @@ class ASLIndividualManager;
 //		{
 //		case ESLIndividualFlags::SLI_None:			return FString("UnknownIndividual");		break;
 //		case ESLIndividualFlags::SLI_Base:			return FString("BaseIndividual");			break;
-//		case ESLIndividualFlags::SLI_Perceivable:	return FString("PerceivableIndividual");	break;
+//		case ESLIndividualFlags::SLI_Visible:	return FString("VisibleIndividual");	break;
 //		default:									return FString("DEFAULT");
 //		}
 //	};

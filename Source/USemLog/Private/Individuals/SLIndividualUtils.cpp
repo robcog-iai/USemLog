@@ -858,7 +858,7 @@ bool FSLIndividualUtils::WriteUniqueVisualMask(AActor* Actor, TArray<FColor>& Co
 	if (UActorComponent* AC = Actor->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
 		USLIndividualComponent* IC = CastChecked<USLIndividualComponent>(AC);
-		if (USLPerceivableIndividual* VI = IC->GetCastedIndividualObject<USLPerceivableIndividual>())
+		if (USLVisibleIndividual* VI = IC->GetCastedIndividualObject<USLVisibleIndividual>())
 		{
 			bool bRetVal = false;
 			if (!VI->IsVisualMaskValueSet() || bOverwrite)
@@ -925,7 +925,7 @@ TArray<FColor> FSLIndividualUtils::GetAllConsumedVisualMaskColorsInWorld(UWorld*
 		if (UActorComponent* AC = ActItr->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
 			USLIndividualComponent* IC = CastChecked<USLIndividualComponent>(AC);
-			if (USLPerceivableIndividual* VI = Cast<USLPerceivableIndividual>(IC->GetIndividualObject()))
+			if (USLVisibleIndividual* VI = Cast<USLVisibleIndividual>(IC->GetIndividualObject()))
 			{
 				if (VI->IsVisualMaskValueSet())
 				{

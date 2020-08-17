@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/SLPerceivableIndividual.h"
+#include "Individuals/SLVisibleIndividual.h"
 #include "SLSkeletalIndividual.generated.h"
 
 // Forward declaration
@@ -20,7 +20,7 @@ class USLSkeletalDataComponent;
  *
  */
 UCLASS(ClassGroup = SL)
-class USEMLOG_API USLSkeletalIndividual : public USLPerceivableIndividual
+class USEMLOG_API USLSkeletalIndividual : public USLVisibleIndividual
 {
     GENERATED_BODY()
 
@@ -83,13 +83,13 @@ public:
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("SkeletalIndividual"); };
 
-    /* Begin Perceivable individual interface */
+    /* Begin Visible individual interface */
     // Apply visual mask material
     virtual bool ApplyMaskMaterials(bool bIncludeChildren = false) override;
 
     // Apply original materials
     virtual bool ApplyOriginalMaterials() override;
-    /* End Perceivable individual interface */
+    /* End Visible individual interface */
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
