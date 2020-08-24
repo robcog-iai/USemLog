@@ -79,6 +79,7 @@ public class USemLog : ModuleRules
 				"SRanipal",			    // SL_WITH_EYE_TRACKING
 				//"Boost",				    // SL_WITH_BOOST
 				//"UViz", "UMongoQA",	    // SL_WITH_DATA_VIS
+				"Profiler", // Viz/SLVizWorldManager - FBinaryFindIndex
 				// ... add private dependencies that you statically link with here ...
 			}
 			);
