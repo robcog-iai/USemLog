@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/SLVisibleIndividual.h"
+#include "Individuals/Type/SLVisibleIndividual.h"
 #include "SLSkeletalIndividual.generated.h"
 
 // Forward declaration

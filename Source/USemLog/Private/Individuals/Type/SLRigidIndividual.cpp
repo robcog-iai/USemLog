@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Individuals/SLRigidIndividual.h"
+#include "Individuals/Type/SLRigidIndividual.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
 

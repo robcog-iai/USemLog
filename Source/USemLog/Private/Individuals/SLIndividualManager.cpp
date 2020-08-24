@@ -4,6 +4,7 @@
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/SLIndividualUtils.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 
 #include "EngineUtils.h"
 #include "Kismet2/ComponentEditorUtils.h"
@@ -84,6 +85,36 @@ bool ASLIndividualManager::Connect()
 	return IsConnected();
 }
 
+// Get the individual from the unique id
+USLBaseIndividual* ASLIndividualManager::GetIndividual(const FString& Id)
+{
+	if (auto Ind = IdToIndividuals.Find(Id))
+	{
+		return *Ind;
+	}
+	return nullptr;
+}
+
+// Get the individual component from the unique id
+USLIndividualComponent* ASLIndividualManager::GetIndividualComponent(const FString& Id)
+{
+	if (auto Ind = IdToIndividualComponents.Find(Id))
+	{
+		return *Ind;
+	}
+	return nullptr;
+}
+
+// Get the individual component owner from the unique id
+AActor* ASLIndividualManager::GetIndividualActor(const FString& Id)
+{
+	if (auto Ind = IdToIndividualComponents.Find(Id))
+	{
+		return (*Ind)->GetOwner();
+	}
+	return nullptr;
+}
+
 // Clear all cached references
 void ASLIndividualManager::InitReset()
 {
@@ -160,6 +191,22 @@ bool ASLIndividualManager::InitImpl()
 			if (IC->IsValidLowLevel() && !IC->IsPendingKill())
 			{
 				IndividualComponents.Add(IC);
+
+				// Add to quick access maps
+				if (auto Individual = IC->GetIndividualObject())
+				{
+					const FString Id = Individual->GetIdValue();
+					IdToIndividuals.Add(Id, Individual);
+					IdToIndividualComponents.Add(Id, IC);
+				}
+
+				// Add children to quick access maps
+				for (const auto& Child : IC->GetIndividualChildren())
+				{
+					const FString Id = Child->GetIdValue();
+					IdToIndividuals.Add(Id, Child);
+					IdToIndividualComponents.Add(Id, IC);
+				}
 			}
 		}
 	}
@@ -230,10 +277,28 @@ bool ASLIndividualManager::HasCachedIndividualComponents() const
 void ASLIndividualManager::ClearCachedIndividualComponents()
 {
 	IndividualComponents.Empty();
+	IdToIndividuals.Empty();
+	IdToIndividualComponents.Empty();
 }
 
 // Remove destroyed individuals from array
 void ASLIndividualManager::OnIndividualComponentDestroyed(USLIndividualComponent* DestroyedComponent)
 {
 	IndividualComponents.Remove(DestroyedComponent);
+	
+	// Remove from quick access maps
+	if (auto Individual = DestroyedComponent->GetIndividualObject())
+	{
+		const FString Id = Individual->GetIdValue();
+		IdToIndividuals.Remove(Id);
+		IdToIndividualComponents.Remove(Id);
+	}
+
+	// Remove children from quick access maps
+	for (const auto& Child : DestroyedComponent->GetIndividualChildren())
+	{
+		const FString ChildId = Child->GetIdValue();
+		IdToIndividuals.Remove(ChildId);
+		IdToIndividualComponents.Remove(ChildId);
+	}
 }

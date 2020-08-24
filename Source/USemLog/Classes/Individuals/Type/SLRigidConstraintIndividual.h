@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/SLBaseConstraintIndividual.h"
+#include "Individuals/Type/SLBaseConstraintIndividual.h"
 #include "SLRigidConstraintIndividual.generated.h"
 
 // Forward declarations

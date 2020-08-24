@@ -2,15 +2,15 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLIndividualUtils.h"
-#include "Individuals/SLBaseIndividual.h"
-#include "Individuals/SLRigidConstraintIndividual.h"
-#include "Individuals/SLRigidIndividual.h"
-#include "Individuals/SLSkyIndividual.h"
-#include "Individuals/SLLightIndividual.h"
-#include "Individuals/SLSkeletalIndividual.h"
-#include "Individuals/SLBoneIndividual.h"
-#include "Individuals/SLVirtualViewIndividual.h"
 #include "Individuals/SLIndividualComponent.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/Type/SLRigidConstraintIndividual.h"
+#include "Individuals/Type/SLRigidIndividual.h"
+#include "Individuals/Type/SLSkyIndividual.h"
+#include "Individuals/Type/SLLightIndividual.h"
+#include "Individuals/Type/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLBoneIndividual.h"
+#include "Individuals/Type/SLVirtualViewIndividual.h"
 
 #include "Skeletal/SLSkeletalDataAsset.h"
 #include "AssetRegistryModule.h" // FindSkeletalDataAsset

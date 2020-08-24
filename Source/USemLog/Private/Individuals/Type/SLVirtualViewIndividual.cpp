@@ -1,22 +1,23 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Individuals/SLLightIndividual.h"
+#include "Individuals/Type/SLVirtualViewIndividual.h"
+
 
 // Ctor
-USLLightIndividual::USLLightIndividual()
+USLVirtualViewIndividual::USLVirtualViewIndividual()
 {
 }
 
 // Called before destroying the object.
-void USLLightIndividual::BeginDestroy()
+void USLVirtualViewIndividual::BeginDestroy()
 {
 	SetIsInit(false);
 	Super::BeginDestroy();
 }
 
 // Set pointer to the semantic owner
-bool USLLightIndividual::Init(bool bReset)
+bool USLVirtualViewIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
@@ -33,7 +34,7 @@ bool USLLightIndividual::Init(bool bReset)
 }
 
 // Load semantic data
-bool USLLightIndividual::Load(bool bReset, bool bTryImport)
+bool USLVirtualViewIndividual::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
@@ -60,31 +61,41 @@ bool USLLightIndividual::Load(bool bReset, bool bTryImport)
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLLightIndividual::CalcDefaultClassValue()
+FString USLVirtualViewIndividual::CalcDefaultClassValue()
 {
+	if (IsInit())
+	{
+		if (IsAttachedToAnotherIndividual())
+		{
+			if (AttachedToIndividual->IsClassValueSet())
+			{
+				return AttachedToIndividual->GetClassValue() + "VirtualView";
+			}
+		}
+	}
 	return GetTypeName();
 }
 
 // Private init implementation
-bool USLLightIndividual::InitImpl()
+bool USLVirtualViewIndividual::InitImpl()
 {
 	return true;
 }
 
 // Private load implementation
-bool USLLightIndividual::LoadImpl(bool bTryImport)
+bool USLVirtualViewIndividual::LoadImpl(bool bTryImport)
 {
 	return true;
 }
 
 // Clear all values of the individual
-void USLLightIndividual::InitReset()
+void USLVirtualViewIndividual::InitReset()
 {
 	SetIsInit(false);
 }
 
 // Clear all data of the individual
-void USLLightIndividual::LoadReset()
+void USLVirtualViewIndividual::LoadReset()
 {
 	SetIsLoaded(false);
 }

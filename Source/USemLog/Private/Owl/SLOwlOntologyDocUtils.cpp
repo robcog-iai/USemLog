@@ -2,8 +2,8 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Owl/SLOwlOntologyDocUtils.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
-#include "Individuals/SLBaseIndividual.h"
 #include "SLManager.h"
 
 #include "EngineUtils.h"

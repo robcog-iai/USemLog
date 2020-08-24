@@ -1,8 +1,8 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Individuals/SLBoneConstraintIndividual.h"
-#include "Individuals/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLBoneConstraintIndividual.h"
+#include "Individuals/Type/SLSkeletalIndividual.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
 

@@ -5,26 +5,26 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/SLVisibleIndividual.h"
-#include "SLRigidIndividual.generated.h"
-
-// Forward declarations
-class UStaticMeshComponent;
+#include "Individuals/Type/SLVisibleIndividual.h"
+#include "SLSkyIndividual.generated.h"
 
 /**
  * 
  */
 UCLASS(ClassGroup = SL)
-class USEMLOG_API USLRigidIndividual : public USLVisibleIndividual
+class USEMLOG_API USLSkyIndividual : public USLVisibleIndividual
 {
 	GENERATED_BODY()
 
 public:
     // Ctor
-    USLRigidIndividual();
+    USLSkyIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
+
+    // Called after the C++ constructor and after the properties have been initialized, including those loaded from config.
+    virtual void PostInitProperties() override;
 
     // Init asset references (bForced forces re-initialization)
     virtual bool Init(bool bReset);
@@ -33,7 +33,7 @@ public:
     virtual bool Load(bool bReset, bool bTryImport);
 
     // Get the type name as string
-    virtual FString GetTypeName() const override { return FString("RigidIndividual"); };
+    virtual FString GetTypeName() const override { return FString("SkyIndividual"); };
 
     /* Begin Visible individual interface */
     // Apply visual mask material
@@ -48,10 +48,10 @@ protected:
     virtual FString CalcDefaultClassValue() override;
 
 private:
-    // Set dependencies
+    // Init any references
     bool InitImpl();
 
-    // Set data
+    // Load/set values
     bool LoadImpl(bool bTryImport);
 
     // Clear all values of the individual
@@ -59,15 +59,4 @@ private:
 
     // Clear all data of the individual
     void LoadReset();
-
-    // Check if the static mesh component is set
-    bool HasValidStaticMesh() const;
-
-    // Set the static mesh component
-    bool SetStaticMesh();
-
-private:
-    // The visual component of the owner
-    UPROPERTY()
-    UStaticMeshComponent* StaticMeshComponent;
 };

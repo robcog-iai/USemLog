@@ -4,7 +4,7 @@
 #include "Individuals/SLIndividualInfoComponent.h"
 #include "Individuals/SLIndividualInfoTextComponent.h"
 #include "Individuals/SLIndividualComponent.h"
-#include "Individuals/SLBaseIndividual.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 #include "GameFramework/PlayerController.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/KismetMathLibrary.h" // FindLookAtRotation

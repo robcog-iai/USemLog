@@ -9,6 +9,7 @@
 
 // Forward declaration
 class USLIndividualComponent;
+class USLBaseIndividual;
 
 UCLASS()
 class USEMLOG_API ASLIndividualManager : public AActor
@@ -41,6 +42,15 @@ public:
 
 	// True if the manager is listening to the component delegates (transient)
 	bool IsConnected() const { return bIsConnected; };
+
+	// Get the individual object from the unique id
+	USLBaseIndividual* GetIndividual(const FString& Id);
+
+	// Get the individual component from the unique id
+	USLIndividualComponent* GetIndividualComponent(const FString& Id);
+
+	// Get the individual component owner from the unique id
+	AActor* GetIndividualActor(const FString& Id);
 
 protected:
 	// Clear all cached references
@@ -98,5 +108,9 @@ private:
 	// The individual components in the world
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TSet<USLIndividualComponent*> IndividualComponents;
+
+	// Quick access maps
+	TMap<FString, USLBaseIndividual*> IdToIndividuals;
+	TMap<FString, USLIndividualComponent*> IdToIndividualComponents;
 };
 

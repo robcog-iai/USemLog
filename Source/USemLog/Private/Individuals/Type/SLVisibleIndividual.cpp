@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Individuals/SLVisibleIndividual.h"
+#include "Individuals/Type/SLVisibleIndividual.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
 // Utils

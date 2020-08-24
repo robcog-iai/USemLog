@@ -2,10 +2,10 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Individuals/SLIndividualComponent.h"
-#include "Individuals/SLBaseIndividual.h"
-#include "Individuals/SLVisibleIndividual.h"
-#include "Individuals/SLSkeletalIndividual.h"
-#include "Individuals/SLBoneIndividual.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/Type/SLVisibleIndividual.h"
+#include "Individuals/Type/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLBoneIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Skeletal/SLSkeletalDataAsset.h"
 

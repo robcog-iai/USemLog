@@ -1,10 +1,10 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Individuals/SLSkeletalIndividual.h"
-#include "Individuals/SLBoneIndividual.h"
-#include "Individuals/SLVirtualBoneIndividual.h"
-#include "Individuals/SLBoneConstraintIndividual.h"
+#include "Individuals/Type/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLBoneIndividual.h"
+#include "Individuals/Type/SLVirtualBoneIndividual.h"
+#include "Individuals/Type/SLBoneConstraintIndividual.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Skeletal/SLSkeletalDataAsset.h"
 

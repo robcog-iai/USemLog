@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/SLBaseIndividual.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 #include "SLVirtualViewIndividual.generated.h"
 
 /**

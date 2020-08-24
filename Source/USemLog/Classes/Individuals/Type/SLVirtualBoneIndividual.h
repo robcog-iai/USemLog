@@ -5,36 +5,28 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/SLVisibleIndividual.h"
-#include "SLBoneIndividual.generated.h"
-
-// Forward declaration
-class USkeletalMeshComponent;
-class USLSkeletalDataComponent;
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "SLVirtualBoneIndividual.generated.h"
 
 /**
- *
+ * 
  */
 UCLASS(ClassGroup = SL)
-class USEMLOG_API USLBoneIndividual : public USLVisibleIndividual
+class USEMLOG_API USLVirtualBoneIndividual : public USLBaseIndividual
 {
-    GENERATED_BODY()
-
-    // TODO see if this makes sense for setting the class, ids etc.
-    //// Only the owning skeletal individual should be able to change values
-    //friend class USLSkeletalIndividal;
+	GENERATED_BODY()
 
 public:
     // Ctor
-    USLBoneIndividual();
+    USLVirtualBoneIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
+    
+    // Set the parameters required when initalizing the individual
+    bool PreInit(int32 NewBoneIndex, bool bReset);
 
-    // Set the parameters required when initalizing the individual (should be called right after construction by the skeletal individual)
-    bool PreInit(int32 NewBoneIndex, int32 NewMaterialIndex, bool bReset);
-
-    // Check if the individual is pre initalized 
+    // Check if the individual is pre initalized
     bool IsPreInit() const { return bIsPreInit; };
 
     // Init asset references (bForced forces re-initialization)
@@ -47,15 +39,7 @@ public:
     int32 GetBoneIndex() const { return BoneIndex; };
 
     // Get the type name as string
-    virtual FString GetTypeName() const override { return FString("BoneIndividual"); };
-
-    /* Begin Visible individual interface */
-    // Apply visual mask material
-    virtual bool ApplyMaskMaterials(bool bIncludeChildren = false) override;
-
-    // Apply original materials
-    virtual bool ApplyOriginalMaterials() override;
-    /* End Visible individual interface */
+    virtual FString GetTypeName() const override { return FString("VirtualBoneIndividual"); };
 
     // Calculate and cache the individuals transform (returns true on a new value)
     virtual bool CalcAndCacheTransform(float Tolerance = 0.25f, FTransform* OutTransform = nullptr) override;
@@ -75,7 +59,7 @@ private:
     bool InitImpl();
 
     // Set data
-    bool LoadImpl(bool bTryImport);
+    bool LoadImpl(bool bTryImport = true);
 
     // Clear all values of the individual
     void InitReset();
@@ -85,9 +69,6 @@ private:
 
     // Check if the bone index is valid
     bool HasValidBoneIndex() const;
-
-    // Check if the material index is valid
-    bool HasValidMaterialIndex() const;
 
     // Check if the static mesh component is set
     bool HasValidSkeletalMeshComponent() const;
@@ -110,14 +91,10 @@ private:
     // Clear children individual
     void ClearChildrenIndividuals();
 
-protected:
+protected:    
     // Pre init
     UPROPERTY(VisibleAnywhere, Category = "SL")
     bool bIsPreInit;
-
-    // Mask material index
-    UPROPERTY(VisibleAnywhere, Category = "SL")
-    int32 MaterialIndex;
 
     // Bone index
     UPROPERTY(VisibleAnywhere, Category = "SL")

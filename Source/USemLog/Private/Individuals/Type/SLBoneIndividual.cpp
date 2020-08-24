@@ -1,31 +1,33 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Individuals/SLVirtualBoneIndividual.h"
-#include "Individuals/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLBoneIndividual.h"
+#include "Individuals/Type/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLVirtualBoneIndividual.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
+
 #include "Animation/SkeletalMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
-
-// Utils
-#include "Individuals/SLIndividualUtils.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 // Ctor
-USLVirtualBoneIndividual::USLVirtualBoneIndividual()
+USLBoneIndividual::USLBoneIndividual()
 {
 	bIsPreInit = false;
+	MaterialIndex = INDEX_NONE;
 	BoneIndex = INDEX_NONE;
 	ParentIndividual = nullptr;
 }
 
 // Called before destroying the object.
-void USLVirtualBoneIndividual::BeginDestroy()
+void USLBoneIndividual::BeginDestroy()
 {
 	SetIsInit(false);
 	Super::BeginDestroy();
 }
 
 // Set the parameters required when initalizing the individual
-bool USLVirtualBoneIndividual::PreInit(int32 NewBoneIndex, bool bReset)
+bool USLBoneIndividual::PreInit(int32 NewBoneIndex, int32 NewMaterialIndex, bool bReset)
 {
 	if (bReset)
 	{
@@ -38,13 +40,14 @@ bool USLVirtualBoneIndividual::PreInit(int32 NewBoneIndex, bool bReset)
 	}
 
 	BoneIndex = NewBoneIndex;
+	MaterialIndex = NewMaterialIndex;
 	TagType += "Bone" + FString::FromInt(BoneIndex);
 	bIsPreInit = true;
-	return true;	
+	return true;
 }
 
 // Set pointer to the semantic owner
-bool USLVirtualBoneIndividual::Init(bool bReset)
+bool USLBoneIndividual::Init(bool bReset)
 {
 	if (bReset)
 	{
@@ -61,7 +64,7 @@ bool USLVirtualBoneIndividual::Init(bool bReset)
 }
 
 // Load semantic data
-bool USLVirtualBoneIndividual::Load(bool bReset, bool bTryImport)
+bool USLBoneIndividual::Load(bool bReset, bool bTryImport)
 {
 	if (bReset)
 	{
@@ -77,7 +80,7 @@ bool USLVirtualBoneIndividual::Load(bool bReset, bool bTryImport)
 	{
 		if (!Init(bReset))
 		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot load individual %s, init fails.."),
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Cannot load  individual %s, init fails.."),
 				*FString(__FUNCTION__), __LINE__, *GetFullName());
 			return false;
 		}
@@ -87,8 +90,43 @@ bool USLVirtualBoneIndividual::Load(bool bReset, bool bTryImport)
 	return IsLoaded();
 }
 
+// Apply visual mask material
+bool USLBoneIndividual::ApplyMaskMaterials(bool bIncludeChildren /*= false*/)
+{
+	if (!IsInit())
+	{
+		return false;
+	}
+
+	if (!bIsMaskMaterialOn)
+	{
+		SkeletalMeshComponent->SetMaterial(MaterialIndex, VisualMaskDynamicMaterial);
+		bIsMaskMaterialOn = true;
+		return true;
+	}
+	return false;
+}
+
+// Apply original materials
+bool USLBoneIndividual::ApplyOriginalMaterials()
+{
+	if (!IsInit())
+	{
+		return false;
+	}
+
+	// Bones share the same original materials with the skeletal parent, this will only set the flag value
+	if (bIsMaskMaterialOn)
+	{
+		// Applied in parent
+		bIsMaskMaterialOn = false;
+		return true;
+	}
+	return false;
+}
+
 // Cache the current transform of the individual (returns true on a new value)
-bool USLVirtualBoneIndividual::CalcAndCacheTransform(float Tolerance, FTransform* OutTransform)
+bool USLBoneIndividual::CalcAndCacheTransform(float Tolerance, FTransform* OutTransform)
 {
 	if (IsInit())
 	{
@@ -134,7 +172,7 @@ bool USLVirtualBoneIndividual::CalcAndCacheTransform(float Tolerance, FTransform
 }
 
 // Get the attachment location name (bone/socket)
-FName USLVirtualBoneIndividual::GetAttachmentLocationName()
+FName USLBoneIndividual::GetAttachmentLocationName()
 {
 	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
@@ -147,13 +185,26 @@ FName USLVirtualBoneIndividual::GetAttachmentLocationName()
 }
 
 // Get class name, virtual since each invidiual type will have different name
-FString USLVirtualBoneIndividual::CalcDefaultClassValue()
+FString USLBoneIndividual::CalcDefaultClassValue()
 {
+	if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+	{
+		if (SkI->HasValidSkeletalDataAsset() || SkI->SetSkeletalDataAsset())
+		{
+			if (FString* BoneClassValue = SkI->SkeletalDataAsset->BoneIndexClass.Find(BoneIndex))
+			{
+				if (!BoneClassValue->IsEmpty())
+				{
+					return *BoneClassValue;
+				}
+			}
+		}
+	}
 	return GetTypeName();
 }
 
-// Set pointer to parent actor
-bool USLVirtualBoneIndividual::SetParentActor()
+// Set the skeletal actor as parent
+bool USLBoneIndividual::SetParentActor()
 {
 	if (USLSkeletalIndividual* Individual = Cast<USLSkeletalIndividual>(GetOuter()))
 	{
@@ -193,7 +244,7 @@ bool USLVirtualBoneIndividual::SetParentActor()
 }
 
 // Private init implementation
-bool USLVirtualBoneIndividual::InitImpl()
+bool USLBoneIndividual::InitImpl()
 {
 	if (!IsPreInit())
 	{
@@ -205,21 +256,24 @@ bool USLVirtualBoneIndividual::InitImpl()
 	// Make sure the visual mesh is set
 	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
-		SetParentIndividual();
-		SetChildrenIndividuals();
-		return true;
+		if (HasValidMaterialIndex())
+		{
+			SetParentIndividual();
+			SetChildrenIndividuals();
+			return true;
+		}
 	}
 	return false;
 }
 
 // Private load implementation
-bool USLVirtualBoneIndividual::LoadImpl(bool bTryImport)
+bool USLBoneIndividual::LoadImpl(bool bTryImport)
 {
 	return true;
 }
 
 // Clear all values of the individual
-void USLVirtualBoneIndividual::InitReset()
+void USLBoneIndividual::InitReset()
 {
 	LoadReset();
 	ParentIndividual = nullptr;
@@ -228,34 +282,41 @@ void USLVirtualBoneIndividual::InitReset()
 }
 
 // Clear all data of the individual
-void USLVirtualBoneIndividual::LoadReset()
+void USLBoneIndividual::LoadReset()
 {
 	SetIsLoaded(false);
 }
 
 // Check if the bone index is valid
-bool USLVirtualBoneIndividual::HasValidBoneIndex() const
+bool USLBoneIndividual::HasValidBoneIndex() const
 {
 	return HasValidSkeletalMeshComponent()
 		&& BoneIndex != INDEX_NONE
 		&& BoneIndex < SkeletalMeshComponent->GetNumBones();
 }
 
+// Check if the material index is valid
+bool USLBoneIndividual::HasValidMaterialIndex() const
+{
+	return HasValidSkeletalMeshComponent()
+		&& MaterialIndex != INDEX_NONE
+		&& MaterialIndex < SkeletalMeshComponent->GetNumMaterials();
+}
 
 // Check if the static mesh component is set
-bool USLVirtualBoneIndividual::HasValidSkeletalMeshComponent() const
+bool USLBoneIndividual::HasValidSkeletalMeshComponent() const
 {
 	return SkeletalMeshComponent && SkeletalMeshComponent->IsValidLowLevel() && !SkeletalMeshComponent->IsPendingKill();
 }
 
 // Set sekeletal mesh
-bool USLVirtualBoneIndividual::SetSkeletalMeshComponent()
+bool USLBoneIndividual::SetSkeletalMeshComponent()
 {
 	if (HasValidParentActor() || SetParentActor())
 	{
 		if (ASkeletalMeshActor* SMA = Cast<ASkeletalMeshActor>(ParentActor))
 		{
-			if (USkeletalMeshComponent* SMC = SMA->GetSkeletalMeshComponent())
+			if(USkeletalMeshComponent* SMC = SMA->GetSkeletalMeshComponent())
 			{
 				SkeletalMeshComponent = SMC;
 				return HasValidSkeletalMeshComponent();
@@ -281,13 +342,13 @@ bool USLVirtualBoneIndividual::SetSkeletalMeshComponent()
 }
 
 // Check if a parent individual is set
-bool USLVirtualBoneIndividual::HasValidParentIndividual() const
+bool USLBoneIndividual::HasValidParentIndividual() const
 {
 	return ParentIndividual && ParentIndividual->IsValidLowLevel() && !ParentIndividual->IsPendingKill();
 }
 
 // Set parent individual (if any) it might be root bone
-bool USLVirtualBoneIndividual::SetParentIndividual()
+bool USLBoneIndividual::SetParentIndividual()
 {
 	if (HasValidParentIndividual())
 	{
@@ -298,7 +359,7 @@ bool USLVirtualBoneIndividual::SetParentIndividual()
 	{
 		if (HasValidBoneIndex())
 		{
-			int32 ParentIndex = SkeletalMeshComponent->SkeletalMesh->RefSkeleton.GetParentIndex(BoneIndex);
+			int32 ParentIndex = SkeletalMeshComponent->SkeletalMesh->RefSkeleton.GetParentIndex(BoneIndex);		
 			if (ParentIndex != INDEX_NONE)
 			{
 				if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
@@ -316,7 +377,7 @@ bool USLVirtualBoneIndividual::SetParentIndividual()
 }
 
 // Check if a child individual is set
-bool USLVirtualBoneIndividual::HasValidChildrenIndividuals() const
+bool USLBoneIndividual::HasValidChildrenIndividuals() const
 {
 	if (ChildrenIndividuals.Num() == 0)
 	{
@@ -334,7 +395,7 @@ bool USLVirtualBoneIndividual::HasValidChildrenIndividuals() const
 }
 
 // Set child individual (if any) it might be a leaf bone
-bool USLVirtualBoneIndividual::SetChildrenIndividuals()
+bool USLBoneIndividual::SetChildrenIndividuals()
 {
 	if (HasValidChildrenIndividuals())
 	{
@@ -367,7 +428,8 @@ bool USLVirtualBoneIndividual::SetChildrenIndividuals()
 }
 
 // Clear children individual
-void USLVirtualBoneIndividual::ClearChildrenIndividuals()
+void USLBoneIndividual::ClearChildrenIndividuals()
 {
 	ChildrenIndividuals.Empty();
 }
+
