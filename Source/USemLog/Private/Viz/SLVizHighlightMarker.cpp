@@ -271,8 +271,8 @@ void USLVizHighlightMarker::DestroyComponent(bool bPromoteChildren/*= false*/)
 // Load highlight material assets
 void USLVizHighlightMarker::LoadAssets()
 {
-	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialHighlightAdditiveAsset(TEXT("Material'/UViz/M_HighlightDynamicColorAdditive.M_HighlightDynamicColorAdditive'"));
+	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialHighlightAdditiveAsset(TEXT("Material'/USemLog/Viz/M_HighlightDynamicColorAdditive.M_HighlightDynamicColorAdditive'"));
 	MaterialHighlightAdditive = MaterialHighlightAdditiveAsset.Object;
-	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialHighlightTranslucentAsset(TEXT("Material'/UViz/M_HighlightDynamicColorTranslucent.M_HighlightDynamicColorTranslucent'"));
+	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialHighlightTranslucentAsset(TEXT("Material'/USemLog/Viz/M_HighlightDynamicColorTranslucent.M_HighlightDynamicColorTranslucent'"));
 	MaterialHighlightTranslucent = MaterialHighlightTranslucentAsset.Object;
 }

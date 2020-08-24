@@ -488,23 +488,23 @@ UPoseableMeshComponent* USLVizMarker::CreateNewSkeletalInstance()
 void USLVizMarker::LoadAssets()
 {
 	/* Meshes */
-	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshBoxAsset(TEXT("StaticMesh'/UViz/SM_Box1m.SM_Box1m'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshBoxAsset(TEXT("StaticMesh'/USemLog/Viz/SM_Box1m.SM_Box1m'"));
 	MeshBox = MeshBoxAsset.Object;
-	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshSphereAsset(TEXT("StaticMesh'/UViz/SM_Sphere1m.SM_Sphere1m'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshSphereAsset(TEXT("StaticMesh'/USemLog/Viz/SM_Sphere1m.SM_Sphere1m'"));
 	MeshSphere = MeshSphereAsset.Object;
-	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshCylinderAsset(TEXT("StaticMesh'/UViz/SM_Cylinder1m.SM_Cylinder1m'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshCylinderAsset(TEXT("StaticMesh'/USemLog/Viz/SM_Cylinder1m.SM_Cylinder1m'"));
 	MeshCylinder = MeshCylinderAsset.Object;
-	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshArrowAsset(TEXT("StaticMesh'/UViz/SM_Arrow1m.SM_Arrow1m'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshArrowAsset(TEXT("StaticMesh'/USemLog/Viz/SM_Arrow1m.SM_Arrow1m'"));
 	MeshArrow = MeshArrowAsset.Object;
-	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshAxisAsset(TEXT("StaticMesh'/UViz/SM_Axis1m.SM_Axis1m'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh>MeshAxisAsset(TEXT("StaticMesh'/USemLog/Viz/SM_Axis1m.SM_Axis1m'"));
 	MeshAxis = MeshAxisAsset.Object;
 
 	/* Materials */
-	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialLitAsset(TEXT("Material'/UViz/M_MarkerDynamicColorLit.M_MarkerDynamicColorLit'"));
+	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialLitAsset(TEXT("Material'/USemLog/Viz/M_MarkerDynamicColorLit.M_MarkerDynamicColorLit'"));
 	MaterialLit = MaterialLitAsset.Object;
-	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialUnlitAsset(TEXT("Material'/UViz/M_MarkerDynamicColorUnlit.M_MarkerDynamicColorUnlit'"));
+	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialUnlitAsset(TEXT("Material'/USemLog/Viz/M_MarkerDynamicColorUnlit.M_MarkerDynamicColorUnlit'"));
 	MaterialUnlit = MaterialUnlitAsset.Object;
-	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialInvisibleAsset(TEXT("Material'/UViz/M_MarkerInvisible.M_MarkerInvisible'"));
+	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialInvisibleAsset(TEXT("Material'/USemLog/Viz/M_MarkerInvisible.M_MarkerInvisible'"));
 	MaterialInvisible = MaterialInvisibleAsset.Object;
 }
 
