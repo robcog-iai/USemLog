@@ -24,7 +24,7 @@ public:
 
 	// Virtual Callback Function
 	virtual void SolutionCallback(int status, FString Msg) {
-		UE_LOG(LogTemp, Warning, TEXT("TEST CALL BACK Connecting ROSPRolog Client to %s"),*Msg);
+		UE_LOG(LogTemp, Warning, TEXT("Query: [%s] \n Status = %d, Msg = %s"), *Query, status, *Msg);
 	};
 
 public:

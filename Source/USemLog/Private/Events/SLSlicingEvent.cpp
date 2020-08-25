@@ -73,50 +73,50 @@ FString FSLSlicingEvent::ToROSQuery() const
 {
 	// has_region, has_role, has_participant, has_time_interval, 
 	// Action
-	FString Query = FString::Printf(TEXT("Action = \'http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#Action_%s\',"), *Id);
+	FString Query = FString::Printf(TEXT("Action = \'http://www.ease-crc.org/ont/SOMA.owl#Slicing_%s\',"), *Id);
 	Query.Append("tell([");
 	Query.Append("is_action(Action),");
-	Query.Append(FString::Printf(TEXT("has_type(Task, ease_act:\'PhysicalTask\'),")));
+	Query.Append(FString::Printf(TEXT("has_type(Task, soma:\'Slicing\'),")));
 	Query.Append("executes_task(Action, Task),");
-	Query.Append(FString::Printf(TEXT("holds(Action, ease:'hasEventBegin', %f),"), Start));
-	Query.Append(FString::Printf(TEXT("holds(Action, ease:'hasEventEnd', %f),"), End));
+	Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasEventBegin', %f),"), Start));
+	Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasEventEnd', %f),"), End));
 	if (bTaskSuccessful) {
-		Query.Append(FString::Printf(TEXT("holds(Action, ease_act:'hasExecutionState', ease_act:'ExecutionState_Succeded')")));
+		Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasExecutionState', soma:'ExecutionState_Succeded')")));
 	}
 	else {
-		Query.Append(FString::Printf(TEXT("holds(Action, ease_act:'hasExecutionState', ease_act:'ExecutionState_Failed')")));
+		Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasExecutionState', soma:'ExecutionState_Failed')")));
 	}
 	Query.Append("]),");
 
 	// Tool
 	if (DeviceUsed.IsSet()) {
-		Query.Append(FString::Printf(TEXT("ObjUsed = \'http://www.ease-crc.org/ont/EASE-OBJ.owl#Knife_%s\',"), *DeviceUsed.Id));
+		Query.Append(FString::Printf(TEXT("ObjUsed = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *DeviceUsed.Class, *DeviceUsed.Id));
 		Query.Append("tell([");
-		Query.Append(FString::Printf(TEXT("has_type(ObjUsed, ease_obj:\'knife\'),")));
-		Query.Append(FString::Printf(TEXT("has_type(ToolRole, ease_obj:\'Tool\'),")));
-		Query.Append("has_role(ObjUsed, ToolRole),");
+		Query.Append(FString::Printf(TEXT("has_type(ObjUsed, soma:\'knife\'),")));
+		Query.Append(FString::Printf(TEXT("has_type(ToolRole, soma:\'Tool\'),")));
+		Query.Append(FString::Printf(TEXT("has_role(ObjUsed, ToolRole) during [%f,%f],"), Start, End));
 		Query.Append("has_participant(Action, ObjUsed)");
 		Query.Append("]),");
 	}
 
 	// Food
 	if (ObjectActedOn.IsSet()) {
-		Query.Append(FString::Printf(TEXT("AlteredObj = \'http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#PhysicalObject_%s\',"), *ObjectActedOn.Id));
+		Query.Append(FString::Printf(TEXT("AlteredObj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *ObjectActedOn.Class, *ObjectActedOn.Id));
 		Query.Append("tell([");
 		Query.Append("is_physical_object(AlteredObj),");
-		Query.Append(FString::Printf(TEXT("has_type(AlteredRole, ease_obj:\'AlteredObject\'),")));
-		Query.Append("has_role(AlteredObj, AlteredRole),");
+		Query.Append(FString::Printf(TEXT("has_type(AlteredRole, soma:\'AlteredObject\'),")));
+		Query.Append(FString::Printf(TEXT("has_role(AlteredObj, AlteredRole) during [%f,%f],"), Start, End));
 		Query.Append("has_participant(Action, AlteredObj)");
 		Query.Append("]),");
 	}
 
 	// New piece
 	if (OutputsCreated.IsSet()) {
-		Query.Append(FString::Printf(TEXT("CreatedObj = \'http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#PhysicalObject_%s\',"), *OutputsCreated.Id));
+		Query.Append(FString::Printf(TEXT("CreatedObj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *OutputsCreated.Class, *OutputsCreated.Id));
 		Query.Append("tell([");
 		Query.Append("is_physical_object(CreatedObj),");
-		Query.Append(FString::Printf(TEXT("has_type(CreatedRole, ease_obj:\'CreatedObject\'),")));
-		Query.Append("has_role(CreatedObj, CreatedRole),");
+		Query.Append(FString::Printf(TEXT("has_type(CreatedRole, soma:\'CreatedObject\'),")));
+		Query.Append(FString::Printf(TEXT("has_role(CreatedObj, CreatedRole) during [%f,%f],"), Start, End));
 		Query.Append("has_participant(Action, CreatedObj)");
 		Query.Append("]),");
 	}
