@@ -39,18 +39,18 @@ void USLWorldLogger::Init(ESLWorldWriterType WriterType, const FSLWorldWriterPar
 			return;
 		}
 		
-		// Create async worker to do the writing on a separate thread
-		AsyncWorker = new FAsyncTask<FSLWorldAsyncWorker>();
+		//// Create async worker to do the writing on a separate thread
+		//AsyncWorker = new FAsyncTask<FSLWorldAsyncWorker>();
 
-		// Init async worker (create the writer and set logging parameters)
-		if (AsyncWorker)
-		{
-			AsyncWorker->GetTask().Init(GetWorld(), WriterType, InWriterParams);
-			if(AsyncWorker->GetTask().IsInit())
-			{
-				bIsInit = true;
-			}
-		}
+		//// Init async worker (create the writer and set logging parameters)
+		//if (AsyncWorker)
+		//{
+		//	AsyncWorker->GetTask().Init(GetWorld(), WriterType, InWriterParams);
+		//	if(AsyncWorker->GetTask().IsInit())
+		//	{
+		//		bIsInit = true;
+		//	}
+		//}
 	}
 }
 
@@ -60,7 +60,7 @@ void USLWorldLogger::Start(const float UpdateRate)
 	if (!bIsStarted && bIsInit)
 	{
 		// Prepare worker for starting
-		AsyncWorker->GetTask().Start();
+		//AsyncWorker->GetTask().Start();
 		
 		// Call before binding the recurrent Update function
 		// this ensures the initial world state is logged (static and movable semantic items)
@@ -95,18 +95,18 @@ void USLWorldLogger::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
-		if (AsyncWorker)
-		{
-			// Wait for worker to complete 
-			AsyncWorker->EnsureCompletion();
-			
-			// Finish up (e.g. write mongo indexes)
-			AsyncWorker->GetTask().Finish(bForced);
+		//if (AsyncWorker)
+		//{
+		//	// Wait for worker to complete 
+		//	AsyncWorker->EnsureCompletion();
+		//	
+		//	// Finish up (e.g. write mongo indexes)
+		//	AsyncWorker->GetTask().Finish(bForced);
 
-			// Deleting worker
-			delete AsyncWorker;
-			AsyncWorker = nullptr;
-		}
+		//	// Deleting worker
+		//	delete AsyncWorker;
+		//	AsyncWorker = nullptr;
+		//}
 		
 		// Stop update timer;
 		if (TimerHandle.IsValid())
@@ -151,14 +151,14 @@ TStatId USLWorldLogger::GetStatId() const
 // Log initial state of the world (static and dynamic entities)
 void USLWorldLogger::InitialUpdate()
 {
-	// Start async worker
-	AsyncWorker->StartBackgroundTask();
-	
-	// Wait for worker to complete (we only use the blocking wait for the initial state log)
-	AsyncWorker->EnsureCompletion();
+	//// Start async worker
+	//AsyncWorker->StartBackgroundTask();
+	//
+	//// Wait for worker to complete (we only use the blocking wait for the initial state log)
+	//AsyncWorker->EnsureCompletion();
 
-	// Static and movable entities have been logged, now remove static objects
-	AsyncWorker->GetTask().RemoveStaticItems();
+	//// Static and movable entities have been logged, now remove static objects
+	//AsyncWorker->GetTask().RemoveStaticItems();
 }
 
 // Log current state of the world (dynamic objects that moved more than the distance threshold)
@@ -168,15 +168,15 @@ void USLWorldLogger::Update()
 	// Create a Thread-safe Shared Pointer to the gaze data
 	//TSharedPtr<FMyObjectType, ESPMode::ThreadSafe> NewThreadsafePointer = MakeShared<FMyObjectType, ESPMode::ThreadSafe>(MyArgs);
 
-	// Start task if worker is done with its previous work
-	if (AsyncWorker->IsDone())
-	{
-		AsyncWorker->StartBackgroundTask();
-	}
-	else
-	{
-		UE_LOG(LogSL, Error, TEXT("%s::%d [%f] Previous task not finished, SKIPPING new task.."), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-	}
+	//// Start task if worker is done with its previous work
+	//if (AsyncWorker->IsDone())
+	//{
+	//	AsyncWorker->StartBackgroundTask();
+	//}
+	//else
+	//{
+	//	UE_LOG(LogSL, Error, TEXT("%s::%d [%f] Previous task not finished, SKIPPING new task.."), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+	//}
 }
 
 // Delay function to set tick to true (avoid logging first frame twice)
