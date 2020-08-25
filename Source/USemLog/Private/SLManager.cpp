@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLManager.h"
+#include "EngineUtils.h"
 #include "SLEntitiesManager.h"
 #include "Ids.h"
 
@@ -96,8 +97,12 @@ ASLManager::ASLManager()
 	
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
-	SpriteScale = 0.45;
+	SpriteScale = 0.65;
 #endif // WITH_EDITORONLY_DATA
+
+
+	/****/
+	ActualWorldStateLogger = nullptr;
 }
 
 // Sets default values
@@ -165,6 +170,50 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		Finish(GetWorld()->GetTimeSeconds());
 	}
+}
+
+// Gets called both in the editor and during gameplay. This is not called for newly spawned actors. 
+void ASLManager::PostLoad()
+{
+	Super::PostLoad();
+	// Setup references
+	
+	//if (!ActualWorldStateLogger
+	//	|| !ActualWorldStateLogger->IsValidLowLevel()
+	//	|| ActualWorldStateLogger->IsPendingKillOrUnreachable()
+	//	|| !ActualWorldStateLogger->CheckStillInWorld())
+	//{
+	//	// Search in the world
+	//	for (TActorIterator<ASLWorldStateLogger> Iter(GetWorld()); Iter; ++Iter)
+	//	{
+	//		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+	//		{
+	//			ActualWorldStateLogger = *Iter;
+	//			UE_LOG(LogTemp, Warning, TEXT("%s::%d Reference to the world state logger (%s) set.."),
+	//				*FString(__FUNCTION__), __LINE__, *ActualWorldStateLogger->GetName());
+	//			return;
+	//		}
+	//		else
+	//		{
+	//			UE_LOG(LogTemp, Error, TEXT("%s::%d Reference (%s) invalid.."),
+	//				*FString(__FUNCTION__), __LINE__, *Iter->GetName());
+	//		}
+	//	}
+
+	//	// Not found in the world, spawn new
+	//	FActorSpawnParameters SpawnParams;
+	//	SpawnParams.Name = TEXT("SL_WorldStateLogger");
+	//	ActualWorldStateLogger = GetWorld()->SpawnActor<ASLWorldStateLogger>(SpawnParams);
+	//	//ActualWorldStateLogger->SetActorLabel(TEXT("SL_WorldStateLogger"));
+
+	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger not found in the world, spawned new one (%s).."),
+	//		*FString(__FUNCTION__), __LINE__, *ActualWorldStateLogger->GetName());
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d ActualWorldStateLogger (%s) is set.."),
+	//		*FString(__FUNCTION__), __LINE__, *ActualWorldStateLogger->GetName());
+	//}
 }
 
 // Init loggers

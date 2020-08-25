@@ -4,6 +4,7 @@
 
 #include "USemLog.h"
 #include "GameFramework/Info.h"
+#include "SLWorldStateLogger.h"
 #include "SLWorldLogger.h"
 #include "SLEventLogger.h"
 #include "SLMetadataLogger.h"
@@ -36,6 +37,9 @@ protected:
 
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// Gets called both in the editor and during gameplay. This is not called for newly spawned actors. 
+	virtual void PostLoad() override;
 
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
@@ -384,4 +388,13 @@ private:
 	UPROPERTY()
 	USLDataVisualizer* DataVisualizer;
 	/* End data visualizer properties */
+
+
+
+	/***/
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger|Loggers")
+	ASLWorldStateLogger* ActualWorldStateLogger;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Loggers")
+	FSLWorldStateLoggerParams ActualWorldStateLoggerParams;
 };
