@@ -1,0 +1,67 @@
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "SLLoggerStructs.generated.h"
+
+/* Save location info */
+USTRUCT()
+struct FSLLoggerLocationParams
+{
+	GENERATED_BODY();
+
+	// Set to true in order to edit the episode id
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bUseCustomTaskId = false;
+
+	// Unique id of the task
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomTaskId"))
+	FString TaskId = TEXT("DefaultTaskId");
+
+	// Set to true in order to edit the episode id
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bUseCustomEpisodeId = false;
+
+	// Unique id of the episode
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomEpisodeId"))
+	FString EpisodeId = TEXT("DefaultEpisodeId");
+
+	// Overwrite any exiting data
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bOverwrite = false;
+};
+
+/* Logger start options */
+UENUM()
+enum class ESLLoggerStartTime : uint8
+{
+	AtBeginPlay         UMETA(DisplayName = "AtBeginPlay"),
+	AtNextTick			UMETA(DisplayName = "AtNextTick"),
+	AfterDelay			UMETA(DisplayName = "AfterDelay"),
+	FromUserInput       UMETA(DisplayName = "FromUserInput"),
+};
+
+/* Start logger info */
+USTRUCT()
+struct FSLLoggerStartParams
+{
+	GENERATED_BODY();
+
+	// Reset start time to 0 when starting to log
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bResetStartTime = false;
+
+	// Logger start time
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLLoggerStartTime StartTime = ESLLoggerStartTime::AtBeginPlay;
+
+	// Start after a given delay (if ESLLoggerStartTime::AfterDelay is selected)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger"/*, meta = (editcondition = todo 4.22+)*/)
+	float StartDelay = 0.5f;
+
+	// Action name for starting from user input (if ESLLoggerStartTime::FromUserInput is selected)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger"/*, meta = (editcondition = todo 4.22+)*/)
+	FName UserInputActionName = TEXT("SLTrigger");
+};

@@ -1,11 +1,10 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-
 #include "SLWorldStateLogger.h"
 #include "EngineUtils.h"
+#include "TimerManager.h"
 #include "Utils/SLUuid.h"
-
 
 // Sets default values
 ASLWorldStateLogger::ASLWorldStateLogger()
@@ -14,7 +13,11 @@ ASLWorldStateLogger::ASLWorldStateLogger()
 	PrimaryActorTick.bCanEverTick = false;
 
 	// Default values
+	bIsInit = false;
+	bIsStarted = false;
+	bIsFinished = false;
 
+	bUseIndependently = false;
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -22,40 +25,61 @@ ASLWorldStateLogger::ASLWorldStateLogger()
 #endif // WITH_EDITORONLY_DATA
 }
 
-//// Called when an actor is done spawning into the world (from UWorld::SpawnActor), both in the editor and during gameplay
-//void ASLWorldStateLogger::PostActorCreated()
-//{
-//	Super::PostActorCreated();
-//
-//	for (TActorIterator<ASLWorldStateLogger> Iter(GetWorld()); Iter; ++Iter)
-//	{
-//		// Take into account only valid actors, ignore self
-//		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable() && (*Iter) != this)
-//		{
-//			UE_LOG(LogTemp, Error, TEXT("%s::%d There is already a world state logger in the world.."),
-//				*FString(__FUNCTION__), __LINE__);
-//			SetActorLabel(GetActorLabel() + "_DUPLICATE");
-//
-//			// Defer the actor destruction for next tick
-//			//CurrWorld->GetTimerManager().SetTimerForNextTick([&](){ConditionalBeginDestroy();});
-//
-//			break;
-//		}
-//	}	
-//}
-
-// Gets called both in the editor and during gameplay. This is not called for newly spawned actors. 
-void ASLWorldStateLogger::PostLoad()
+// Force call on finish
+ASLWorldStateLogger::~ASLWorldStateLogger()
 {
-	Super::PostLoad();
+	if (bUseIndependently)
+	{
+		if (!IsTemplate() && !bIsFinished)
+		{
+			FinishImpl(true);
+		}
+	}
 }
 
+// Allow actors to initialize themselves on the C++ side
+void ASLWorldStateLogger::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	if (bUseIndependently)
+	{
+		InitImpl();
+	}
+}
 
 // Called when the game starts or when spawned
 void ASLWorldStateLogger::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	if (bUseIndependently)
+	{
+		if (StartParameters.StartTime == ESLLoggerStartTime::AtBeginPlay)
+		{
+			StartImpl();
+		}
+		else if (StartParameters.StartTime == ESLLoggerStartTime::AtNextTick)
+		{
+			FTimerDelegate TimerDelegateNextTick;
+			TimerDelegateNextTick.BindLambda([this] {StartImpl(); });
+			GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);
+		}
+		else if (StartParameters.StartTime == ESLLoggerStartTime::AfterDelay)
+		{
+			FTimerHandle TimerHandle;
+			FTimerDelegate TimerDelegateDelay;
+			TimerDelegateDelay.BindLambda([this] {StartImpl(); });
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, StartParameters.StartDelay, false);
+		}
+		else if (StartParameters.StartTime == ESLLoggerStartTime::FromUserInput)
+		{
+			SetupInputBindings();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger (%s) StartImpl() will not be called.."),
+				*FString(__func__), __LINE__, *GetName());
+		}
+	}
 }
 
 // Called every frame
@@ -64,82 +88,161 @@ void ASLWorldStateLogger::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-// External init (overwrite parameters)
-void ASLWorldStateLogger::Init(const FSLWorldStateLoggerParams& InParams)
+// Called when actor removed from game or game ended
+void ASLWorldStateLogger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Params = InParams;
-	Init();
+	Super::EndPlay(EndPlayReason);
+	if (bUseIndependently && !bIsFinished)
+	{
+		FinishImpl();
+	}
 }
 
-// Internal init
-void ASLWorldStateLogger::Init()
+// Init logger (called when the logger is synced externally)
+void ASLWorldStateLogger::Init(const FSLWorldStateLoggerParams& InLoggerParameters, const FSLLoggerLocationParams& InLocationParameters)
 {
-	if (bIsInit)
+	if (bUseIndependently)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already initialized.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is set to work independetly, external calls will have no effect.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
-	if (Params.bStartIndependently)
-	{
-		if (!Params.bUseCustomTaskId)
-		{
-			Params.TaskId = FSLUuid::NewGuidInBase64Url();
-		}
+	LoggerParameters = InLoggerParameters;
+	LocationParameters = InLocationParameters;
+	InitImpl();
+}
 
-		if (!Params.bUseCustomEpisodeId)
-		{
-			Params.EpisodeId = FSLUuid::NewGuidInBase64Url();
-		}
+// Start logger (called when the logger is synced externally)
+void ASLWorldStateLogger::Start()
+{
+	if (bUseIndependently)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is set to work independetly, external calls will have no effect.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
 	}
+	StartImpl();
+}
+
+// Finish logger (called when the logger is synced externally) (bForced is true if called from destructor)
+void ASLWorldStateLogger::Finish(bool bForced)
+{
+	if (bUseIndependently)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is set to work independetly, external calls will have no effect.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	FinishImpl();
+}
+
+// Init logger (called when the logger is used independently)
+void ASLWorldStateLogger::InitImpl()
+{
+	if (bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is already initialized.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	if (!LocationParameters.bUseCustomTaskId)
+	{
+		LocationParameters.TaskId = FSLUuid::NewGuidInBase64Url();
+	}
+
+	if (!LocationParameters.bUseCustomEpisodeId)
+	{
+		LocationParameters.EpisodeId = FSLUuid::NewGuidInBase64Url();
+	}
+
 
 	// Get access to the individual manager (spawn one if not available)
 
 	// Connect to db
 
 	bIsInit = true;
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully initialized at %.2f.."),
+		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
 }
 
-// Start logging
-void ASLWorldStateLogger::Start()
+// Start logger (called when the logger is used independently)
+void ASLWorldStateLogger::StartImpl()
 {
 	if (bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already started.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is already started.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, cannot start.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is not initialized, cannot start.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
-	if (Params.bResetStartTime)
+	if (StartParameters.bResetStartTime)
 	{
 		GetWorld()->TimeSeconds = 0.f;
 	}
 
 	bIsStarted = true;
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully started at %.2f.."),
+		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
 }
 
-// Finish logging
-void ASLWorldStateLogger::Finish()
+// Finish logger (called when the logger is used independently) (bForced is true if called from destructor)
+void ASLWorldStateLogger::FinishImpl(bool bForced)
 {
 	if (bIsFinished)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already finished.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is already finished.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	if (!bIsInit || !bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized or started, cannot finish.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is not initialized or started, cannot finish.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	bIsStarted = false;
 	bIsInit = false;
 	bIsFinished = true;
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully finished at %.2f.."),
+		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
+}
+
+// Bind user inputs
+void ASLWorldStateLogger::SetupInputBindings()
+{
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		if (UInputComponent* IC = PC->InputComponent)
+		{
+			IC->BindAction(StartParameters.UserInputActionName, IE_Pressed, this, &ASLWorldStateLogger::UserInputToggleCallback);
+		}
+	}
+}
+
+// Start input binding
+void ASLWorldStateLogger::UserInputToggleCallback()
+{
+	if (bIsInit && !bIsStarted)
+	{
+		ASLWorldStateLogger::StartImpl();
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("[%.2f] World state logger (%s) started.."), GetWorld()->GetTimeSeconds(), *GetName()));
+	}
+	else if (bIsStarted && !bIsFinished)
+	{
+		ASLWorldStateLogger::FinishImpl();
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("[%.2f] World state logger (%s) finished.."), GetWorld()->GetTimeSeconds(), *GetName()));
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] World state logger (%s) Something went wrong, try again.."), GetWorld()->GetTimeSeconds(), *GetName()));
+	}
 }
 

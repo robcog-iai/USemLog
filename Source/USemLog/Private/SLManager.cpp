@@ -24,7 +24,7 @@ ASLManager::ASLManager()
 	TaskDescription = TEXT("Write task description here");
 	bResetStartTime = false;
 	bStartAtBeginPlay = true;
-	bStartAtFirstTick = false;
+	bStartAtNextTick = false;
 	bStartWithDelay = false;
 	StartDelay = 0.5f;
 	bStartFromUserInput = false;
@@ -132,7 +132,7 @@ void ASLManager::BeginPlay()
 	{
 		Start();
 	}
-	else if (bStartAtFirstTick)
+	else if (bStartAtNextTick)
 	{
 		FTimerDelegate TimerDelegateNextTick;
 		TimerDelegateNextTick.BindLambda([this]
@@ -397,19 +397,19 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	/* Start Properties*/
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtBeginPlay))
 	{
-		if (bStartAtBeginPlay) {bStartAtFirstTick = false; bStartWithDelay = false; bStartFromUserInput = false;}
+		if (bStartAtBeginPlay) {bStartAtNextTick = false; bStartWithDelay = false; bStartFromUserInput = false;}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtFirstTick))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtNextTick))
 	{
-		if (bStartAtFirstTick) {bStartAtBeginPlay = false; bStartWithDelay = false; bStartFromUserInput = false;}
+		if (bStartAtNextTick) {bStartAtBeginPlay = false; bStartWithDelay = false; bStartFromUserInput = false;}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartWithDelay))
 	{
-		if (bStartWithDelay) {bStartAtBeginPlay = false; bStartAtFirstTick = false; bStartFromUserInput = false;}
+		if (bStartWithDelay) {bStartAtBeginPlay = false; bStartAtNextTick = false; bStartFromUserInput = false;}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartFromUserInput))
 	{
-		if (bStartFromUserInput) {bStartAtBeginPlay = false;  bStartWithDelay = false; bStartAtFirstTick = false;}
+		if (bStartFromUserInput) {bStartAtBeginPlay = false;  bStartWithDelay = false; bStartAtNextTick = false;}
 	}
 
 	/* Metadata Properties */

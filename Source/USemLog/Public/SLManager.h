@@ -120,7 +120,7 @@ private:
 
 	// Start after begin play, in the first tick 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bStartAtFirstTick;
+	bool bStartAtNextTick;
 
 	// Start after a given delay
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
