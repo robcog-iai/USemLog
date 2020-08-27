@@ -419,16 +419,16 @@ AStaticMeshActor* ASLVizManager::GetStaticMeshActor(const FString& Id)
 // Load marker meshes and materials
 bool ASLVizManager::LoadMarkerAssets()
 {
-	MeshBox = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/UViz/SM_Box1m.SM_Box1m'"));
-	MeshSphere = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/UViz/SM_Sphere1m.SM_Sphere1m'"));
-	MeshCylinder = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/UViz/SM_Cylinder1m.SM_Cylinder1m'"));
-	MeshArrow = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/UViz/SM_Arrow1m.SM_Arrow1m'"));
-	MeshAxis = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/UViz/SM_Axis1m.SM_Axis1m'"));
+	MeshBox = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/USemLog/Viz/SM_Box1m.SM_Box1m'"));
+	MeshSphere = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/USemLog/Viz/SM_Sphere1m.SM_Sphere1m'"));
+	MeshCylinder = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/USemLog/Viz/SM_Cylinder1m.SM_Cylinder1m'"));
+	MeshArrow = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/USemLog/Viz/SM_Arrow1m.SM_Arrow1m'"));
+	MeshAxis = LoadObject<UStaticMesh>(this, TEXT("StaticMesh'/USemLog/Viz/SM_Axis1m.SM_Axis1m'"));
 
-	MaterialLit = LoadObject<UMaterial>(this, TEXT("Material'/UViz/M_MarkerDynamicColorLit.M_MarkerDynamicColorLit'"));
-	MaterialUnlit = LoadObject<UMaterial>(this, TEXT("Material'/UViz/M_MarkerDynamicColorUnlit.M_MarkerDynamicColorUnlit'"));
-	MaterialHighlightAdditive = LoadObject<UMaterial>(this, TEXT("Material'/UViz/M_HighlightDynamicColorAdditive.M_HighlightDynamicColorAdditive'"));
-	MaterialHighlightTranslucent = LoadObject<UMaterial>(this, TEXT("Material'/UViz/M_HighlightDynamicColorTranslucent.M_HighlightDynamicColorTranslucent'"));
+	MaterialLit = LoadObject<UMaterial>(this, TEXT("Material'/USemLog/Viz/M_MarkerDynamicColorLit.M_MarkerDynamicColorLit'"));
+	MaterialUnlit = LoadObject<UMaterial>(this, TEXT("Material'/USemLog/Viz/M_MarkerDynamicColorUnlit.M_MarkerDynamicColorUnlit'"));
+	MaterialHighlightAdditive = LoadObject<UMaterial>(this, TEXT("Material'/USemLog/Viz/M_HighlightDynamicColorAdditive.M_HighlightDynamicColorAdditive'"));
+	MaterialHighlightTranslucent = LoadObject<UMaterial>(this, TEXT("Material'/USemLog/Viz/M_HighlightDynamicColorTranslucent.M_HighlightDynamicColorTranslucent'"));
 
 	if (!MeshBox)
 	{
