@@ -33,6 +33,21 @@ struct FSLLoggerLocationParams
 	bool bOverwrite = false;
 };
 
+/* DB Server location info */
+USTRUCT()
+struct FSLLoggerDBServerParams
+{
+	GENERATED_BODY();
+
+	// Database Server Ip
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString Ip = TEXT("127.0.0.1");
+
+	// Database server port num
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (ClampMin = 0, ClampMax = 65535))
+	uint16 Port = 27017;
+};
+
 /* Logger start options */
 UENUM()
 enum class ESLLoggerStartTime : uint8
@@ -64,4 +79,23 @@ struct FSLLoggerStartParams
 	// Action name for starting from user input (if ESLLoggerStartTime::FromUserInput is selected)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger"/*, meta = (editcondition = todo 4.22+)*/)
 	FName UserInputActionName = TEXT("SLTrigger");
+};
+
+/* Holds the data needed to setup the world state logger */
+USTRUCT()
+struct FSLWorldStateLoggerParams
+{
+	GENERATED_BODY();
+
+	// Update rate of the logger
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float UpdateRate = 0.f;
+
+	// Min linear distance to log an individual (cm)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float MinLinearDistance = 0.5f;
+
+	// Min angular distance in order to log an individual (rad)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float MinAngularDistance = 0.1;
 };

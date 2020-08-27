@@ -6,34 +6,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
 #include "Runtime/SLLoggerStructs.h"
+#include "Runtime/SLWorldStateDBHandler.h"
 #include "SLWorldStateLogger.generated.h"
 
-/* Holds the data needed to setup the world state logger */
-USTRUCT()
-struct FSLWorldStateLoggerParams
-{
-	GENERATED_BODY();
-
-	// Update rate of the logger
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float UpdateRate = 0.f;
-
-	// Min squared linear distance to log an individual
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float MinLinearDistanceSquared = 0.25f;
-
-	// Min angular distance in order to log an individual
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float MinAngularDistance = 0.1; // rad
-
-	// Database Server Ip
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString ServerIp = TEXT("127.0.0.1");
-
-	// Database server port num
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (ClampMin = 0, ClampMax = 65535))
-	uint16 ServerPort = 27017;
-};
+// Forward declarations
+class ASLIndividualManager;
 
 /**
  * Subsymbolic data logger
@@ -65,7 +42,9 @@ protected:
 
 public:
 	// Init logger (called when the logger is synced externally)
-	void Init(const FSLWorldStateLoggerParams& InLoggerParameters, const FSLLoggerLocationParams& InLocationParams);
+	void Init(const FSLWorldStateLoggerParams& InLoggerParameters,
+		const FSLLoggerLocationParams& InLocationParameters,
+		const FSLLoggerDBServerParams& InDBServerParameters);
 
 	// Start logger (called when the logger is synced externally)
 	void Start();
@@ -99,6 +78,26 @@ protected:
 	void UserInputToggleCallback();
 
 private:
+	// Get the reference or spawn a new initialized individual manager
+	bool SetIndividualManager();
+
+	// First update call (log all individuals)
+	void FirstUpdate();
+
+	// Log individuals which changed state
+	void Update();
+
+protected:
+	// True when ready to log
+	bool bIsInit;
+
+	// True when active
+	bool bIsStarted;
+
+	// True when done logging
+	bool bIsFinished;
+
+private:
 	// If true the logger will start on its own (instead of being started by the manager)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bUseIndependently;
@@ -111,16 +110,17 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseIndependently"))
 	FSLLoggerLocationParams LocationParameters;
 
+	// Location parameters
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseIndependently"))
+	FSLLoggerDBServerParams DBServerParameters;
+
 	// Logger start parameters
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseIndependently"))
 	FSLLoggerStartParams StartParameters;
 
-	// True when ready to log
-	bool bIsInit;
+	// Access to all individuals in the world
+	ASLIndividualManager* IndividualManager;
 
-	// True when active
-	bool bIsStarted;
-
-	// True when done logging
-	bool bIsFinished;
+	// Database handler
+	FSLWorldStateDBHandler DBHandler;
 };

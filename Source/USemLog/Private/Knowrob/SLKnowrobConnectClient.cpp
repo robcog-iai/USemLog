@@ -72,14 +72,14 @@ bool ASLKnowrobConnectClient::SetIndividualManager()
 	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKill())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual manager is already set.."), *FString(__FUNCTION__), __LINE__);
-		IndividualManager->Init();
+		IndividualManager->Init(false);
 		bIndividualManagerSet = true;
 		return true;
 	}
 	for (TActorIterator<ASLIndividualManager> Iter(GetWorld()); Iter; ++Iter)
 	{
 		IndividualManager = *Iter;
-		IndividualManager->Init();
+		IndividualManager->Init(false);
 		bIndividualManagerSet = true;
 		return true;
 	}

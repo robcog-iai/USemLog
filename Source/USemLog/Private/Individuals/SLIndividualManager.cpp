@@ -120,7 +120,7 @@ void ASLIndividualManager::InitReset()
 {
 	LoadReset();
 	UnbindDelegates();
-	ClearCachedIndividualComponents();
+	ClearCache();
 	SetIsInit(false);
 }
 
@@ -178,7 +178,7 @@ void ASLIndividualManager::SetIsConnected(bool bNewValue, bool bBroadcast)
 // Cache individual component references
 bool ASLIndividualManager::InitImpl()
 {	
-	if (HasCachedIndividualComponents())
+	if (HasCache())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d The manager already has cached individuals, this should not happen.."), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -186,43 +186,48 @@ bool ASLIndividualManager::InitImpl()
 	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 	{
 		if (UActorComponent* AC = ActItr->GetComponentByClass(USLIndividualComponent::StaticClass()))
-		{
+		{			
 			USLIndividualComponent* IC = CastChecked<USLIndividualComponent>(AC);
 			if (IC->IsValidLowLevel() && !IC->IsPendingKill())
 			{
-				IndividualComponents.Add(IC);
-
-				// Add to quick access maps
-				if (auto Individual = IC->GetIndividualObject())
-				{
-					const FString Id = Individual->GetIdValue();
-					IdToIndividuals.Add(Id, Individual);
-					IdToIndividualComponents.Add(Id, IC);
-				}
-
-				// Add children to quick access maps
-				for (const auto& Child : IC->GetIndividualChildren())
-				{
-					const FString Id = Child->GetIdValue();
-					IdToIndividuals.Add(Id, Child);
-					IdToIndividualComponents.Add(Id, IC);
-				}
+				AddToCache(IC);
 			}
 		}
 	}
-	return true;
+	return HasCache();
 }
 
 //
 bool ASLIndividualManager::LoadImpl()
 {
-	return true;
+	// Make sure all individuals and their components are loaded
+	bool bAllLoaded = true;
+
+	for (const auto& IC : IndividualComponents)
+	{
+		if (!IC->IsLoaded())
+		{
+			bAllLoaded = false;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not loaded.."), *FString(__FUNCTION__), __LINE__, *IC->GetFullName());
+		}
+	}
+
+	for (const auto& IO : Individuals)
+	{
+		if (!IO->IsLoaded())
+		{
+			bAllLoaded = false;
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not loaded.."), *FString(__FUNCTION__), __LINE__, *IO->GetFullName());
+		}
+	}
+
+	return bAllLoaded;
 }
 
 // Bind to the cached individual component delegates
 bool ASLIndividualManager::BindDelegates()
 {
-	if (!HasCachedIndividualComponents())
+	if (!HasCache())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d No cached individuals, cannot bind any delegates"), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -246,7 +251,7 @@ bool ASLIndividualManager::BindDelegates()
 // Remove bounds from the cached individuals
 bool ASLIndividualManager::UnbindDelegates()
 {
-	if (!HasCachedIndividualComponents())
+	if (!HasCache())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d No cached individuals, cannot un-bind any delegates"), *FString(__FUNCTION__), __LINE__);
 		return false;
@@ -267,18 +272,54 @@ bool ASLIndividualManager::UnbindDelegates()
 	return true;
 }
 
-// Check if there are any cached elemets
-bool ASLIndividualManager::HasCachedIndividualComponents() const
+// Check if there are any cached individuals
+bool ASLIndividualManager::HasCache() const
 {
-	return IndividualComponents.Num() > 0;
+	return IndividualComponents.Num() > 0
+		|| Individuals.Num() > 0
+		|| IdToIndividualComponents.Num() > 0
+		|| IdToIndividuals.Num() > 0;
 }
 
 // Remove any chached individuals, clear any bound delegates
-void ASLIndividualManager::ClearCachedIndividualComponents()
+void ASLIndividualManager::ClearCache()
 {
 	IndividualComponents.Empty();
+	Individuals.Empty();
 	IdToIndividuals.Empty();
 	IdToIndividualComponents.Empty();
+	if (HasCache())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Somethig went wrong on clearing the cache.."), *FString(__FUNCTION__), __LINE__);
+	}
+}
+
+// Add individual info to cache
+void ASLIndividualManager::AddToCache(USLIndividualComponent* IC)
+{
+	IndividualComponents.Add(IC);
+
+	// Add to quick access maps
+	if (auto Individual = IC->GetIndividualObject())
+	{
+		Individuals.Add(Individual);
+		const FString Id = Individual->GetIdValue();
+		IdToIndividuals.Add(Id, Individual);
+		IdToIndividualComponents.Add(Id, IC);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no valid individual object.."), *FString(__FUNCTION__), __LINE__, *IC->GetFullName());
+	}
+
+	// Add children to quick access maps
+	for (const auto& Child : IC->GetIndividualChildren())
+	{
+		Individuals.Add(Child);
+		const FString Id = Child->GetIdValue();
+		IdToIndividuals.Add(Id, Child);
+		IdToIndividualComponents.Add(Id, IC);
+	}
 }
 
 // Remove destroyed individuals from array

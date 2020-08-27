@@ -74,5 +74,5 @@ private:
 	FTimerHandle TimerHandle;
 
 	// Async worker to log the raw data on a separate thread
-	//FAsyncTask<FSLWorldAsyncWorker>* AsyncWorker;
+	FAsyncTask<FSLWorldAsyncWorker>* AsyncWorker;
 };

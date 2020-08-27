@@ -2,15 +2,18 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLWorldStateLogger.h"
+#include "Individuals/SLIndividualManager.h"
+#include "Utils/SLUuid.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
-#include "Utils/SLUuid.h"
+
 
 // Sets default values
 ASLWorldStateLogger::ASLWorldStateLogger()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	// Default values
 	bIsInit = false;
@@ -86,6 +89,7 @@ void ASLWorldStateLogger::BeginPlay()
 void ASLWorldStateLogger::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	Update();
 }
 
 // Called when actor removed from game or game ended
@@ -99,7 +103,9 @@ void ASLWorldStateLogger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Init logger (called when the logger is synced externally)
-void ASLWorldStateLogger::Init(const FSLWorldStateLoggerParams& InLoggerParameters, const FSLLoggerLocationParams& InLocationParameters)
+void ASLWorldStateLogger::Init(const FSLWorldStateLoggerParams& InLoggerParameters,
+	const FSLLoggerLocationParams& InLocationParameters,
+	const FSLLoggerDBServerParams& InDBServerParameters)
 {
 	if (bUseIndependently)
 	{
@@ -110,6 +116,7 @@ void ASLWorldStateLogger::Init(const FSLWorldStateLoggerParams& InLoggerParamete
 
 	LoggerParameters = InLoggerParameters;
 	LocationParameters = InLocationParameters;
+	DBServerParameters = InDBServerParameters;
 	InitImpl();
 }
 
@@ -156,10 +163,18 @@ void ASLWorldStateLogger::InitImpl()
 		LocationParameters.EpisodeId = FSLUuid::NewGuidInBase64Url();
 	}
 
+	if (!SetIndividualManager())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s) could not set the individuals manager.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
 
-	// Get access to the individual manager (spawn one if not available)
-
-	// Connect to db
+	if (!DBHandler.Init(IndividualManager, LoggerParameters, LocationParameters, DBServerParameters))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s) could not init the db handler.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
 
 	bIsInit = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully initialized at %.2f.."),
@@ -186,6 +201,25 @@ void ASLWorldStateLogger::StartImpl()
 		GetWorld()->TimeSeconds = 0.f;
 	}
 
+	// Run first update
+	FirstUpdate();
+
+	// Set update rate
+	if (LoggerParameters.UpdateRate > 0.f)
+	{
+		SetActorTickInterval(LoggerParameters.UpdateRate);
+	}
+
+	// Delay tick activation with one update rate value
+	FTimerHandle DelayTH;
+	const float TickDelayValue = LoggerParameters.UpdateRate > 0.f ? LoggerParameters.UpdateRate : 0.08f;
+	GetWorld()->GetTimerManager().SetTimer(DelayTH, [this]() {SetActorTickEnabled(true);}, TickDelayValue, false);
+
+	/** !! Replaced with delay timer ^^ since it was trigerring in the same tick. !! **/
+	/*FTimerDelegate TimerDelegateNextTick;
+	TimerDelegateNextTick.BindLambda([this]{SetActorTickEnabled(true);});
+	GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);*/
+
 	bIsStarted = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully started at %.2f.."),
 		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
@@ -201,12 +235,17 @@ void ASLWorldStateLogger::FinishImpl(bool bForced)
 		return;
 	}
 
-	if (!bIsInit || !bIsStarted)
+	if (!bIsInit && !bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is not initialized or started, cannot finish.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is not initialized nor started, cannot finish.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
+
+	DBHandler.Finish();
+
+	//  Disable tick
+	SetActorTickEnabled(false);
 
 	bIsStarted = false;
 	bIsInit = false;
@@ -242,7 +281,62 @@ void ASLWorldStateLogger::UserInputToggleCallback()
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] World state logger (%s) Something went wrong, try again.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] World state logger (%s) logger finished, or not initalized.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
+}
+
+// Get the reference or spawn a new individual manager
+bool ASLWorldStateLogger::SetIndividualManager()
+{
+	for (TActorIterator<ASLIndividualManager>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			IndividualManager = *Iter;
+			if (IndividualManager->Load(false))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s)'s individual manager (%s) is set and loaded.."),
+					*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
+				return true;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s)'s individual manager (%s) could not be loaded.."),
+					*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
+				return false;
+			}
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_IndividualManager");
+	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
+	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
+
+	if (IndividualManager->Load(false))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) created and loaded a new individual manager (%s).."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s) created BUT could NOT load the new individual manager (%s).."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
+		return false;
+	}	
+}
+
+// First update call (log all individuals)
+void ASLWorldStateLogger::FirstUpdate()
+{
+	DBHandler.FirstWrite(GetWorld()->GetTimeSeconds());	
+}
+
+// Log individuals which changed state
+void ASLWorldStateLogger::Update()
+{
+	DBHandler.Write(GetWorld()->GetTimeSeconds());
 }
 
