@@ -10,6 +10,8 @@
 // Forward declaration
 class USLIndividualComponent;
 class USLBaseIndividual;
+class USLSkeletalIndividual;
+class USLRobotIndividual;
 
 UCLASS(ClassGroup = (SL), DisplayName = "SL Individual Manager")
 class USEMLOG_API ASLIndividualManager : public AActor
@@ -23,6 +25,11 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
 
 public:
 	// Set the individual references
@@ -78,7 +85,7 @@ private:
 	// Cache references
 	bool InitImpl();
 
-	// Load any values
+	// True if all cached individuals are loaded
 	bool LoadImpl();
 
 	// Bind to the cached individual component delegates
@@ -95,6 +102,9 @@ private:
 
 	// Add individual info to cache
 	void AddToCache(USLIndividualComponent* IC);
+
+	// Remove from cache
+	bool RemoveFromCache(USLIndividualComponent* IC);
 
 	// Triggered by external destruction of individual component
 	UFUNCTION()
@@ -117,18 +127,49 @@ private:
 	// The individual components in the world
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TArray<USLIndividualComponent*> IndividualComponents;
-	//TSet<USLIndividualComponent*> IndividualComponents;
 
 	// All individuals
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TArray<USLBaseIndividual*> Individuals;
-	//TSet<USLBaseIndividual*> IndividualComponents;
+
+	/* World state logger convenient containers */
+	// Individuals without children, and ones that cannot be children
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	TArray<USLBaseIndividual*> ChildlessRootIndividuals;
+
+	// Skeletal individuals
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	TArray<USLSkeletalIndividual*> SkeletalIndividuals;
+
+	// Robot individuals
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	TArray<USLRobotIndividual*> RobotIndividuals;
 
 	/* Id based quick access mappings */
+	// Id to individual object
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TMap<FString, USLBaseIndividual*> IdToIndividuals;
 
+	// Id to 
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TMap<FString, USLIndividualComponent*> IdToIndividualComponents;
+
+
+	/* Editor button hacks */
+	// Triggers a call to init
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bInitButtonHack;
+
+	// Triggers a call to load
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bLoadButtonHack;
+
+	// Triggered call reset argument
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	bool bResetFlagButtonHack;
+
+	// Triggers a reset call
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	bool bResetButtonHack;
 };
 

@@ -50,20 +50,17 @@ public:
     //// True if the component is listening to the individual object delegates (transient)
     //bool IsConnected() const { return bIsConnected; };
 
-    // Trigger values as new value broadcast
-    virtual void TriggerValuesBroadcast() override;
+    //// Save values externally
+    //virtual bool ExportValues(bool bOverwrite = false) override;
 
-    // Save values externally
-    virtual bool ExportValues(bool bOverwrite = false) override;
+    //// Load values externally
+    //virtual bool ImportValues(bool bOverwrite = false) override;
 
-    // Load values externally
-    virtual bool ImportValues(bool bOverwrite = false) override;
-
-    // Clear exported values
-    virtual bool ClearExportedValues() override;
+    //// Clear exported values
+    //virtual bool ClearExportedValues() override;
 
     // Get all children of the individual in a newly created array
-    const TArray<USLBaseIndividual*>  GetChildrenIndividuals() const;
+    virtual const TArray<USLBaseIndividual*> GetChildrenIndividuals() const override;
 
     // Check if child can be attached, if so return its location bone/socket name)
     bool IsChildAttachable(USLBaseIndividual* Child, FName& OutName);

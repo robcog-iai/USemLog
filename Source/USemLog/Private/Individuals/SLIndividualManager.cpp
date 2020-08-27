@@ -5,6 +5,8 @@
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/Type/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLRobotIndividual.h"
 
 #include "EngineUtils.h"
 #include "Kismet2/ComponentEditorUtils.h"
@@ -24,6 +26,12 @@ ASLIndividualManager::ASLIndividualManager()
 	bIsInit = false;
 	bIsLoaded = false;
 	bIsConnected = false;
+
+	/* Editor button hacks */
+	bInitButtonHack = false;
+	bLoadButtonHack = false;
+	bResetFlagButtonHack = false;
+	bResetButtonHack = false;
 }
 
 // Called when the game starts or when spawned
@@ -31,6 +39,35 @@ void ASLIndividualManager::BeginPlay()
 {
 	Super::BeginPlay();	
 }
+
+#if WITH_EDITOR
+// Called when a property is changed in the editor
+void ASLIndividualManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property name
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+		PropertyChangedEvent.Property->GetFName() : NAME_None;
+
+	/* Button hacks */
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bInitButtonHack))
+	{
+		bInitButtonHack = false;
+		Init(bResetButtonHack);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bLoadButtonHack))
+	{
+		bLoadButtonHack = false;
+		Load(bResetButtonHack);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bResetButtonHack))
+	{
+		bResetButtonHack = false;
+		InitReset();
+	}
+}
+#endif // WITH_EDITOR
 
 // Set references
 bool ASLIndividualManager::Init(bool bReset)
@@ -286,6 +323,13 @@ void ASLIndividualManager::ClearCache()
 {
 	IndividualComponents.Empty();
 	Individuals.Empty();
+
+	/* World state logger convenience containers */
+	ChildlessRootIndividuals.Empty();
+	SkeletalIndividuals.Empty();
+	RobotIndividuals.Empty();
+
+	/* Quick acess id based mapping*/
 	IdToIndividuals.Empty();
 	IdToIndividualComponents.Empty();
 	if (HasCache())
@@ -299,22 +343,46 @@ void ASLIndividualManager::AddToCache(USLIndividualComponent* IC)
 {
 	IndividualComponents.Add(IC);
 
-	// Add to quick access maps
+	// Add individuals
 	if (auto Individual = IC->GetIndividualObject())
 	{
+		if (!Individual->Init(false))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not init.."), *FString(__FUNCTION__), __LINE__, *Individual->GetFullName());
+		}
 		Individuals.Add(Individual);
 		const FString Id = Individual->GetIdValue();
 		IdToIndividuals.Add(Id, Individual);
 		IdToIndividualComponents.Add(Id, IC);
+
+		/* World state logger */
+		if (auto AsSkelIndividual = Cast<USLSkeletalIndividual>(Individual))
+		{
+			SkeletalIndividuals.Add(AsSkelIndividual);
+		}
+		else if (auto AsRobotIndividual = Cast<USLRobotIndividual>(Individual))
+		{
+			RobotIndividuals.Add(AsRobotIndividual);
+		}
+		else
+		{
+			ChildlessRootIndividuals.Add(Individual);
+		}
+
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no valid individual object.."), *FString(__FUNCTION__), __LINE__, *IC->GetFullName());
 	}
 
-	// Add children to quick access maps
+	// Add children individuals
 	for (const auto& Child : IC->GetIndividualChildren())
 	{
+		if (!Child->Init(false))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not init.."), *FString(__FUNCTION__), __LINE__, *Child->GetFullName());
+		}
+
 		Individuals.Add(Child);
 		const FString Id = Child->GetIdValue();
 		IdToIndividuals.Add(Id, Child);
@@ -322,24 +390,53 @@ void ASLIndividualManager::AddToCache(USLIndividualComponent* IC)
 	}
 }
 
-// Remove destroyed individuals from array
-void ASLIndividualManager::OnIndividualComponentDestroyed(USLIndividualComponent* DestroyedComponent)
+// Remove from cache
+bool ASLIndividualManager::RemoveFromCache(USLIndividualComponent* IC)
 {
-	IndividualComponents.Remove(DestroyedComponent);
-	
-	// Remove from quick access maps
-	if (auto Individual = DestroyedComponent->GetIndividualObject())
+	bool bRemoved = false;
+
+	if (IndividualComponents.Remove(IC) != INDEX_NONE)
 	{
+		bRemoved = true;
+	}
+
+	// Remove from quick access maps
+	if (auto Individual = IC->GetIndividualObject())
+	{
+		Individuals.Remove(Individual);
 		const FString Id = Individual->GetIdValue();
 		IdToIndividuals.Remove(Id);
 		IdToIndividualComponents.Remove(Id);
+
+		/* World state logger */
+		if (auto AsSkelIndividual = Cast<USLSkeletalIndividual>(Individual))
+		{
+			SkeletalIndividuals.Remove(AsSkelIndividual);
+		}
+		else if (auto AsRobotIndividual = Cast<USLRobotIndividual>(Individual))
+		{
+			RobotIndividuals.Remove(AsRobotIndividual);
+		}
+		else
+		{
+			ChildlessRootIndividuals.Remove(Individual);
+		}
 	}
 
 	// Remove children from quick access maps
-	for (const auto& Child : DestroyedComponent->GetIndividualChildren())
+	for (const auto& Child : IC->GetIndividualChildren())
 	{
+		Individuals.Remove(Child);
 		const FString ChildId = Child->GetIdValue();
 		IdToIndividuals.Remove(ChildId);
 		IdToIndividualComponents.Remove(ChildId);
 	}
+
+	return bRemoved;
+}
+
+// Remove destroyed individuals from array
+void ASLIndividualManager::OnIndividualComponentDestroyed(USLIndividualComponent* DestroyedComponent)
+{
+	RemoveFromCache(DestroyedComponent);
 }

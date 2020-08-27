@@ -10,6 +10,7 @@
 #include "Individuals/Type/SLLightIndividual.h"
 #include "Individuals/Type/SLSkeletalIndividual.h"
 #include "Individuals/Type/SLBoneIndividual.h"
+#include "Individuals/Type/SLRobotIndividual.h"
 #include "Individuals/Type/SLVirtualViewIndividual.h"
 
 #include "Skeletal/SLSkeletalDataAsset.h"
@@ -28,6 +29,7 @@
 
 #include "Atmosphere/AtmosphericFog.h"
 #include "Engine/Light.h"
+#include "Engine/SkyLight.h"
 
 #include "Vision/SLVirtualCameraView.h"
 
@@ -573,7 +575,11 @@ USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AA
 	{
 		return NewObject<USLBaseIndividual>(Outer, USLSkeletalIndividual::StaticClass());
 	}
-	else if (Owner->IsA(ALight::StaticClass()))
+	else if (false/*Owner->IsA(ARobot TODO ::StaticClass())*/)
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLRobotIndividual::StaticClass());
+	}
+	else if (Owner->IsA(ALight::StaticClass()) || Owner->IsA(ASkyLight::StaticClass()))
 	{
 		return NewObject<USLBaseIndividual>(Outer, USLLightIndividual::StaticClass());
 	}
@@ -729,9 +735,11 @@ bool FSLIndividualUtils::CanHaveIndividualComponent(AActor* Actor)
 {
 	return Actor->IsA(AStaticMeshActor::StaticClass())
 		|| Actor->IsA(ASkeletalMeshActor::StaticClass())
+		/*|| Actor->IsA(ARobotActor::StaticClass())*/
 		|| Actor->IsA(APhysicsConstraintActor::StaticClass())
 		|| Actor->IsA(AAtmosphericFog::StaticClass())
 		|| Actor->IsA(ALight::StaticClass())
+		|| Actor->IsA(ASkyLight::StaticClass())
 		|| Actor->IsA(ASLVirtualCameraView::StaticClass())
 		|| Actor->GetName().Contains("SkySphere");
 }

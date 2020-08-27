@@ -94,57 +94,47 @@ bool USLSkeletalIndividual::Load(bool bReset, bool bTryImport)
 //	return IsConnected();
 //}
 
-// Trigger values as new value broadcast
-void USLSkeletalIndividual::TriggerValuesBroadcast()
-{
-	Super::TriggerValuesBroadcast();
-	for (const auto& CI : GetChildrenIndividuals())
-	{
-		CI->TriggerValuesBroadcast();
-	}
-}
+//// Save values externally
+//bool USLSkeletalIndividual::ExportValues(bool bOverwrite)
+//{
+//	bool RetVal = Super::ExportValues();
+//	for (const auto& CI : GetChildrenIndividuals())
+//	{
+//		if (CI->ExportValues(bOverwrite))
+//		{
+//			RetVal = true;
+//		}
+//	}
+//	return RetVal;
+//}
+//
+//// Load values externally
+//bool USLSkeletalIndividual::ImportValues(bool bOverwrite)
+//{
+//	bool RetVal = Super::ImportValues();
+//	for (const auto& CI : GetChildrenIndividuals())
+//	{
+//		if (CI->ImportValues(bOverwrite))
+//		{
+//			RetVal = true;
+//		}
+//	}
+//	return RetVal;
+//}
 
-// Save values externally
-bool USLSkeletalIndividual::ExportValues(bool bOverwrite)
-{
-	bool RetVal = Super::ExportValues();
-	for (const auto& CI : GetChildrenIndividuals())
-	{
-		if (CI->ExportValues(bOverwrite))
-		{
-			RetVal = true;
-		}
-	}
-	return RetVal;
-}
-
-// Load values externally
-bool USLSkeletalIndividual::ImportValues(bool bOverwrite)
-{
-	bool RetVal = Super::ImportValues();
-	for (const auto& CI : GetChildrenIndividuals())
-	{
-		if (CI->ImportValues(bOverwrite))
-		{
-			RetVal = true;
-		}
-	}
-	return RetVal;
-}
-
-// Clear exported values
-bool USLSkeletalIndividual::ClearExportedValues()
-{
-	bool RetVal = Super::ClearExportedValues();
-	for (const auto& CI : GetChildrenIndividuals())
-	{
-		if (CI->ClearExportedValues())
-		{
-			RetVal = true;
-		}
-	}
-	return false;
-}
+//// Clear exported values
+//bool USLSkeletalIndividual::ClearExportedValues()
+//{
+//	bool RetVal = Super::ClearExportedValues();
+//	for (const auto& CI : GetChildrenIndividuals())
+//	{
+//		if (CI->ClearExportedValues())
+//		{
+//			RetVal = true;
+//		}
+//	}
+//	return false;
+//}
 
 // Get all children of the individual in a newly created array
 const TArray<USLBaseIndividual*> USLSkeletalIndividual::GetChildrenIndividuals() const

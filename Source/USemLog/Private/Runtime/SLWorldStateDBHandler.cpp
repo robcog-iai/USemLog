@@ -11,6 +11,8 @@
 
 
 /* DB Write Async Task */
+
+// Init task
 #if SL_WITH_LIBMONGO_C
 bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* IndividualManager, float MinLinearDistance, float MinAngularDistance)
 {
@@ -55,7 +57,7 @@ void FSLWorldStateDBWriterAsyncTask::DoWork()
 }
 
 
-/* DB handler */
+/* DB Handler */
 // Ctor
 FSLWorldStateDBHandler::FSLWorldStateDBHandler()
 {

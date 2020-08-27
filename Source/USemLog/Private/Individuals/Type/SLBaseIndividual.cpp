@@ -77,6 +77,10 @@ void USLBaseIndividual::TriggerValuesBroadcast()
 {
 	OnNewValue.Broadcast(this, "Id", Id);
 	OnNewValue.Broadcast(this, "Class", Class);
+	for (const auto& CI : GetChildrenIndividuals())
+	{
+		CI->TriggerValuesBroadcast();
+	}
 }
 
 // Save data to owners tag
@@ -101,6 +105,13 @@ bool USLBaseIndividual::ExportValues(bool bOverwrite)
 	//{
 	//	bNewValue = true;
 	//}
+	for (const auto& CI : GetChildrenIndividuals())
+	{
+		if (CI->ExportValues(bOverwrite))
+		{
+			bNewValue = true;
+		}
+	}
 	return bNewValue;
 }
 
@@ -126,6 +137,13 @@ bool USLBaseIndividual::ImportValues(bool bOverwrite)
 	//{
 	//	bNewValue = true;
 	//}
+	for (const auto& CI : GetChildrenIndividuals())
+	{
+		if (CI->ImportValues(bOverwrite))
+		{
+			bNewValue = true;
+		}
+	}
 	return bNewValue;
 }
 
@@ -138,13 +156,22 @@ bool USLBaseIndividual::ClearExportedValues()
 		return false;
 	}
 
+	bool bNewValue = false;
 	int32 TagIndex = INDEX_NONE;
 	if (FSLTagIO::HasType(ParentActor, TagType, &TagIndex))
 	{
 		ParentActor->Tags.RemoveAt(TagIndex);
-		return true;
-	}	
-	return false;
+		bNewValue = true;
+	}
+
+	for (const auto& CI : GetChildrenIndividuals())
+	{
+		if (CI->ClearExportedValues())
+		{
+			bNewValue = true;
+		}
+	}
+	return bNewValue;
 }
 
 // Cache the current transform of the individual (returns true on a new value)
@@ -198,6 +225,12 @@ bool USLBaseIndividual::IsAttachedToAnotherIndividual() const
 {
 	return AttachedToActor && AttachedToActor->IsValidLowLevel() && !AttachedToActor->IsPendingKill()
 		&& AttachedToIndividual && AttachedToIndividual->IsValidLowLevel() && !AttachedToIndividual->IsPendingKill();
+}
+
+// Get all children of the individual in a newly created array
+const TArray<USLBaseIndividual*> USLBaseIndividual::GetChildrenIndividuals() const
+{
+	return TArray<USLBaseIndividual*>();
 }
 
 // Generate a new id for the individual
@@ -363,6 +396,10 @@ bool USLBaseIndividual::InitImpl()
 {
 	if (HasValidParentActor() || SetParentActor())
 	{
+		if (!ParentActor->IsRootComponentMovable())
+		{
+			bIsMovable = false;
+		}
 		//SetAttachedToParent();
 		return true;
 	}

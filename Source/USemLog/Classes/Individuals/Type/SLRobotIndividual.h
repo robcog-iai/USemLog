@@ -5,37 +5,48 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Individuals/Type/SLBaseIndividual.h"
-#include "SLLightIndividual.generated.h"
+#include "Individuals/Type/SLVisibleIndividual.h"
+#include "SLRobotIndividual.generated.h"
+
 
 /**
- * 
+ *
  */
 UCLASS(ClassGroup = SL)
-class USEMLOG_API USLLightIndividual : public USLBaseIndividual
+class USEMLOG_API USLRobotIndividual : public USLVisibleIndividual
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
     // Ctor
-    USLLightIndividual();
+    USLRobotIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
-    // Init asset references (bForced forces re-initialization)
+    // Init asset references 
     virtual bool Init(bool bReset);
 
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset, bool bTryImport);
 
+    // Get all children of the individual in a newly created array
+    const TArray<USLBaseIndividual*> GetChildrenIndividuals() const override;
+
     // Get the type name as string
-    virtual FString GetTypeName() const override { return FString("LightIndividual"); };
+    virtual FString GetTypeName() const override { return FString("RobotIndividual"); };
+
+    /* Begin Visible individual interface */
+    // Apply visual mask material
+    virtual bool ApplyMaskMaterials(bool bIncludeChildren = false) override;
+
+    // Apply original materials
+    virtual bool ApplyOriginalMaterials() override;
+    /* End Visible individual interface */
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() override;
-
 
 private:
     // Set dependencies
@@ -49,4 +60,5 @@ private:
 
     // Clear all data of the individual
     void LoadReset();
+
 };

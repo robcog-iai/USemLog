@@ -85,7 +85,10 @@ public:
 	class AActor* GetAttachedToActor() const { return AttachedToActor; };
 
 	// Return the individual this individual is part of
-	class USLBaseIndividual* GetAttachedToIndividual() const { return AttachedToIndividual; };
+	USLBaseIndividual* GetAttachedToIndividual() const { return AttachedToIndividual; };
+
+	// Get all children of the individual in a newly created array
+	virtual const TArray<USLBaseIndividual*> GetChildrenIndividuals() const;
 
 	// Get the type name as string
 	virtual FString GetTypeName() const { return FString("BaseIndividual"); };
