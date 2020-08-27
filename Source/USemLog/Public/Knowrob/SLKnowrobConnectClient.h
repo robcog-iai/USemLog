@@ -5,15 +5,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "SLKnowrobConnectHandler.h"
-#include "knowrob_ameva.pb.h"
 #include "SLKnowrobConnectClient.generated.h"
 
 // Forward declarations
 class ASLIndividualManager;
 class ASLMongoManager;
 class ASLVizManager;
-enum class ESLVizMeshType : uint8;
+
 /**
 *
 **/
@@ -21,7 +19,7 @@ UCLASS()
 class USEMLOG_API ASLKnowrobConnectClient : public AActor
 {
 	GENERATED_BODY()
-
+	
 public:	
 	// Sets default values for this actor's properties
 	ASLKnowrobConnectClient();
@@ -53,20 +51,6 @@ private:
 	// Set the visualization manager
 	bool SetVizManager();
 
-	// Initialize the Mongodb
-	bool InitMongo();
-
-	// Parse the proto sequence and trigger function
-	void ProcessProtobuf(std::string ProtoStr);
-
-	void ViewEntityPoseAt(const FString& Id, float Timestamp, ESLVizMeshType Type, FVector Scale, FLinearColor Color, bool bUnlit = false);
-
-	void ViewEntityTraj(const FString& Id, float start, float end, ESLVizMeshType Type, FVector Scale, FLinearColor Color, bool bUnlit = false);
-
-	ESLVizMeshType GetVizMeshType(knowrob_ameva::MarkerType Marker);
-
-	FLinearColor GetMarkerColor(FString Color);
-
 private:
 	// True if the manager is init
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
@@ -92,7 +76,4 @@ private:
 
 	// Used to visualize the world using various markers
 	ASLVizManager* VizManager;
-
-	// Used to handle websocket connect to knowrob 
-	TSharedPtr<FSLKnowrobConnectHandler> Handler;
 };
