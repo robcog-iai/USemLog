@@ -54,6 +54,8 @@ public class USemLog : ModuleRules
 				"Core",
 				"USemLogOwl",
 				"MongoC",					// SL_WITH_LIBMONGO_C
+                "WebSockets",
+                "UProtobuf"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

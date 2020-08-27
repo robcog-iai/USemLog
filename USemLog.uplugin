@@ -55,6 +55,10 @@
     {
       "Name": "UViz",
       "Enabled": true
+    },
+    {
+      "Name": "UProtobuf",
+      "Enabled": true
     }
   ]
 }
