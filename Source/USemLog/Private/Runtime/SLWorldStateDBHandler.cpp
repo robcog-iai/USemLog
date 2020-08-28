@@ -3,6 +3,7 @@
 
 #include "Runtime/SLWorldStateDBHandler.h"
 #include "Individuals/SLIndividualManager.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 
 // UUtils
 #if SL_WITH_ROS_CONVERSIONS
@@ -11,50 +12,232 @@
 
 
 /* DB Write Async Task */
-
 // Init task
 #if SL_WITH_LIBMONGO_C
-bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* IndividualManager, float MinLinearDistance, float MinAngularDistance)
+bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float MinLinearDistance, float MinAngularDistance)
 {
-	if (!IndividualManager->IsLoaded())
+	if (!Manager->IsLoaded())
 	{
 		return false;
 	}
 
+	IndividualManager = Manager;
 	mongo_collection = in_collection;
-	MinLinDistSqr = MinLinearDistance * MinLinearDistance;
+	MinLinDist = MinLinearDistance;
 	MinAngDist = MinAngularDistance;
+		
+	WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::FirstWrite;
 
 	return true;
 }
-#endif //SL_WITH_LIBMONGO_C	
 
 // Do the db writing here
 void FSLWorldStateDBWriterAsyncTask::DoWork()
 {
 	const double StartTime = FPlatformTime::Seconds();
 
+	int32 NumEntries = (this->*WriteFunctionPtr)();
+
+	double Duration = FPlatformTime::Seconds() - StartTime;
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t Async work (written %ld entries) duration:\t%f (s)"),
+		*FString(__FUNCTION__), __LINE__, NumEntries, Duration);
+}
+
+// First write where all the individuals are written irregardresly of their previous position
+int32 FSLWorldStateDBWriterAsyncTask::FirstWrite()
+{
+	// Count the number of entries written to the document (if 0, abort writing)
+	int32 Num = 0;
+
 #if SL_WITH_LIBMONGO_C
 	bson_t* ws_doc;
-	bson_error_t error;
-
 	ws_doc = bson_new();
-	BSON_APPEND_DOUBLE(ws_doc, "timestamp", Timestamp);
 
-	if (!mongoc_collection_insert_one(mongo_collection, ws_doc, NULL, NULL, &error))
+	AddTimestamp(ws_doc);
+	Num += AddAllIndividuals(ws_doc);
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d NumEntries=%ld"), *FString(__FUNCTION__), __LINE__, Num);
+	// Write only if there are any entries in the document
+	if (Num > 0)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-		bson_destroy(ws_doc);
+		WriteDoc(ws_doc);
 	}
 
 	// Clean up
 	bson_destroy(ws_doc);
 #endif //SL_WITH_LIBMONGO_C	
 
-	double Duration = FPlatformTime::Seconds() - StartTime;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t Async work duration:\t%f (s)"), *FString(__FUNCTION__), __LINE__, Duration);
+	// Switch to normal write
+	WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::Write;
+
+	return Num;
 }
+
+int32 FSLWorldStateDBWriterAsyncTask::Write()
+{
+	// Count the number of entries written to the document (if 0, abort writing)
+	int32 Num = 0;
+
+#if SL_WITH_LIBMONGO_C
+	bson_t* ws_doc;
+	ws_doc = bson_new();
+
+	AddTimestamp(ws_doc);
+	Num += AddAllIndividualsThatMoved(ws_doc);
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d NumEntries=%ld"), *FString(__FUNCTION__), __LINE__, Num);
+	// Write only if there are any entries in the document
+	if (Num > 0)
+	{
+		WriteDoc(ws_doc);
+	}
+
+	// Clean up
+	bson_destroy(ws_doc);
+#endif //SL_WITH_LIBMONGO_C	
+
+	// Switch to normal write
+	WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::Write;
+
+	return Num;
+}
+
+// Add timestamp to the bson doc
+void FSLWorldStateDBWriterAsyncTask::AddTimestamp(bson_t* doc)
+{
+	BSON_APPEND_DOUBLE(doc, "timestamp", Timestamp);
+}
+
+// Add all individuals (return the number of individuals added)
+int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividuals(bson_t* doc)
+{
+	int32 Num = 0;
+	bson_t individuals_arr;
+	uint32_t arr_idx = 0;
+
+	BSON_APPEND_ARRAY_BEGIN(doc, "individuals", &individuals_arr);
+	for (const auto& Individual : IndividualManager->GetIndividuals())
+	{
+		Individual->UpdateCachedPose(0.0);
+		
+#if SL_WITH_ROS_CONVERSIONS
+		FTransform Pose = FConversions::UToROS(Individual->GetCachedPose());
+#else
+		FTransform Pose = Individual->GetCachedPose();
+#endif // SL_WITH_ROS_CONVERSIONS
+
+		bson_t individual_obj;
+		char idx_str[16];
+		const char* idx_key;
+
+		bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&individuals_arr, idx_key, &individual_obj);
+			// Id
+			BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*Individual->GetIdValue()));			
+			// Pose
+			{
+				bson_t child_obj_loc;
+				bson_t child_obj_rot;
+
+				BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "loc", &child_obj_loc);
+				BSON_APPEND_DOUBLE(&child_obj_loc, "x", Pose.GetLocation().X);
+				BSON_APPEND_DOUBLE(&child_obj_loc, "y", Pose.GetLocation().Y);
+				BSON_APPEND_DOUBLE(&child_obj_loc, "z", Pose.GetLocation().Z);
+				bson_append_document_end(&individual_obj, &child_obj_loc);
+
+				BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "quat", &child_obj_rot);
+				BSON_APPEND_DOUBLE(&child_obj_rot, "x", Pose.GetRotation().X);
+				BSON_APPEND_DOUBLE(&child_obj_rot, "y", Pose.GetRotation().Y);
+				BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
+				BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
+				bson_append_document_end(&individual_obj, &child_obj_rot);
+			}
+		bson_append_document_end(&individuals_arr, &individual_obj);
+		arr_idx++;
+		Num++;
+	}
+	bson_append_array_end(doc, &individuals_arr);
+	return Num;
+}
+
+// Add only the individuals that moved (return the number of individuals added)
+int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividualsThatMoved(bson_t* doc)
+{
+	int32 Num = 0;
+
+	bson_t individuals_arr;
+	uint32_t arr_idx = 0;
+
+	BSON_APPEND_ARRAY_BEGIN(doc, "individuals", &individuals_arr);
+	for (const auto& Individual : IndividualManager->GetIndividuals())
+	{
+		if (Individual->UpdateCachedPose(MinLinDist))
+		{		
+#if SL_WITH_ROS_CONVERSIONS
+			FTransform Pose = FConversions::UToROS(Individual->GetCachedPose());
+#else
+			FTransform Pose = Individual->GetCachedPose();
+#endif // SL_WITH_ROS_CONVERSIONS
+
+			bson_t individual_obj;
+			char idx_str[16];
+			const char* idx_key;
+
+			bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
+			BSON_APPEND_DOCUMENT_BEGIN(&individuals_arr, idx_key, &individual_obj);
+				// Id
+				BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*Individual->GetIdValue()));
+				// Pose
+				{
+					bson_t child_obj_loc;
+					bson_t child_obj_rot;
+
+					BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "loc", &child_obj_loc);
+					BSON_APPEND_DOUBLE(&child_obj_loc, "x", Pose.GetLocation().X);
+					BSON_APPEND_DOUBLE(&child_obj_loc, "y", Pose.GetLocation().Y);
+					BSON_APPEND_DOUBLE(&child_obj_loc, "z", Pose.GetLocation().Z);
+					bson_append_document_end(&individual_obj, &child_obj_loc);
+
+					BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "quat", &child_obj_rot);
+					BSON_APPEND_DOUBLE(&child_obj_rot, "x", Pose.GetRotation().X);
+					BSON_APPEND_DOUBLE(&child_obj_rot, "y", Pose.GetRotation().Y);
+					BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
+					BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
+					bson_append_document_end(&individual_obj, &child_obj_rot);
+				}
+			bson_append_document_end(&individuals_arr, &individual_obj);
+			arr_idx++;
+			Num++;
+		}
+	}
+	bson_append_array_end(doc, &individuals_arr);
+	return Num;
+}
+
+// Add skeletal individuals (return the number of individuals added)
+int32 FSLWorldStateDBWriterAsyncTask::AddSkeletalIndividals(bson_t* doc)
+{
+	return 0;
+}
+
+// Add robot individuals (return the number of individuals added)
+int32 FSLWorldStateDBWriterAsyncTask::AddRobotIndividuals(bson_t* doc)
+{
+	return 0;
+}
+
+// Write the bson doc to the collection
+bool FSLWorldStateDBWriterAsyncTask::WriteDoc(bson_t* doc)
+{
+	bson_error_t error;
+	if (!mongoc_collection_insert_one(mongo_collection, doc, NULL, NULL, &error))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+		return false;
+	}
+	return true;
+}
+#endif //SL_WITH_LIBMONGO_C	
+
 
 
 /* DB Handler */
@@ -307,30 +490,35 @@ bool FSLWorldStateDBHandler::CreateIndexes() const
 	BSON_APPEND_INT32(&idx_ts, "timestamp", 1);
 	char* idx_ts_chr = mongoc_collection_keys_to_index_string(&idx_ts);
 
-	bson_t idx_entities_id;
-	bson_init(&idx_entities_id);
-	BSON_APPEND_INT32(&idx_entities_id, "entities.id", 1);
-	char* idx_entities_id_chr = mongoc_collection_keys_to_index_string(&idx_entities_id);
+	bson_t idx_individuals_id;
+	bson_init(&idx_individuals_id);
+	BSON_APPEND_INT32(&idx_individuals_id, "individuals.id", 1);
+	char* idx_individuals_id_chr = mongoc_collection_keys_to_index_string(&idx_individuals_id);
 
-	bson_t idx_skel_entities_id;
-	bson_init(&idx_skel_entities_id);
-	BSON_APPEND_INT32(&idx_skel_entities_id, "skel_entities.id", 1);
-	char* idx_skel_entities_id_chr = mongoc_collection_keys_to_index_string(&idx_skel_entities_id);
+	//bson_t idx_entities_id;
+	//bson_init(&idx_entities_id);
+	//BSON_APPEND_INT32(&idx_entities_id, "entities.id", 1);
+	//char* idx_entities_id_chr = mongoc_collection_keys_to_index_string(&idx_entities_id);
 
-	bson_t idx_skel_entities_bones_name;
-	bson_init(&idx_skel_entities_bones_name);
-	BSON_APPEND_INT32(&idx_skel_entities_bones_name, "skel_entities.bones.name", 1);
-	char* idx_skel_entities_bones_name_chr = mongoc_collection_keys_to_index_string(&idx_skel_entities_bones_name);
+	//bson_t idx_skel_entities_id;
+	//bson_init(&idx_skel_entities_id);
+	//BSON_APPEND_INT32(&idx_skel_entities_id, "skel_entities.id", 1);
+	//char* idx_skel_entities_id_chr = mongoc_collection_keys_to_index_string(&idx_skel_entities_id);
 
-	bson_t idx_skel_entities_bones_id;
-	bson_init(&idx_skel_entities_bones_id);
-	BSON_APPEND_INT32(&idx_skel_entities_bones_id, "skel_entities.bones.id", 1);
-	char* skel_entities_bones_id_chr = mongoc_collection_keys_to_index_string(&idx_skel_entities_bones_id);
+	//bson_t idx_skel_entities_bones_name;
+	//bson_init(&idx_skel_entities_bones_name);
+	//BSON_APPEND_INT32(&idx_skel_entities_bones_name, "skel_entities.bones.name", 1);
+	//char* idx_skel_entities_bones_name_chr = mongoc_collection_keys_to_index_string(&idx_skel_entities_bones_name);
 
-	bson_t idx_gaze_entity_id;
-	bson_init(&idx_gaze_entity_id);
-	BSON_APPEND_INT32(&idx_gaze_entity_id, "gaze.entity_id", 1);
-	char* idx_gaze_entity_id_chr = mongoc_collection_keys_to_index_string(&idx_gaze_entity_id);
+	//bson_t idx_skel_entities_bones_id;
+	//bson_init(&idx_skel_entities_bones_id);
+	//BSON_APPEND_INT32(&idx_skel_entities_bones_id, "skel_entities.bones.id", 1);
+	//char* skel_entities_bones_id_chr = mongoc_collection_keys_to_index_string(&idx_skel_entities_bones_id);
+
+	//bson_t idx_gaze_entity_id;
+	//bson_init(&idx_gaze_entity_id);
+	//BSON_APPEND_INT32(&idx_gaze_entity_id, "gaze.entity_id", 1);
+	//char* idx_gaze_entity_id_chr = mongoc_collection_keys_to_index_string(&idx_gaze_entity_id);
 
 
 	index_command = BCON_NEW("createIndexes",
@@ -347,59 +535,67 @@ bool FSLWorldStateDBHandler::CreateIndexes() const
 				"}",
 				"{",
 					"key",
-					BCON_DOCUMENT(&idx_entities_id),
+					BCON_DOCUMENT(&idx_individuals_id),
 					"name",
-					BCON_UTF8(idx_entities_id_chr),
+					BCON_UTF8(idx_individuals_id_chr),
 					//"unique",
 					//BCON_BOOL(false),
 				"}",
-				"{",
-					"key",
-					BCON_DOCUMENT(&idx_skel_entities_id),
-					"name",
-					BCON_UTF8(idx_skel_entities_id_chr),
-					//"unique",
-					//BCON_BOOL(false),
-				"}",
-				"{",
-					"key",
-					BCON_DOCUMENT(&idx_skel_entities_bones_name),
-					"name",
-					BCON_UTF8(idx_skel_entities_bones_name_chr),
-					//"unique",
-					//BCON_BOOL(false),
-				"}",
-				"{",
-					"key",
-					BCON_DOCUMENT(&idx_skel_entities_bones_id),
-					"name",
-					BCON_UTF8(skel_entities_bones_id_chr),
-					//"unique",
-					//BCON_BOOL(false),
-				"}",
-				"{",
-					"key",
-					BCON_DOCUMENT(&idx_gaze_entity_id),
-					"name",
-					BCON_UTF8(idx_gaze_entity_id_chr),
-					//"unique",
-					//BCON_BOOL(false),
-				"}",
+				//"{",
+				//	"key",
+				//	BCON_DOCUMENT(&idx_entities_id),
+				//	"name",
+				//	BCON_UTF8(idx_entities_id_chr),
+				//	//"unique",
+				//	//BCON_BOOL(false),
+				//"}",
+				//"{",
+				//	"key",
+				//	BCON_DOCUMENT(&idx_skel_entities_id),
+				//	"name",
+				//	BCON_UTF8(idx_skel_entities_id_chr),
+				//	//"unique",
+				//	//BCON_BOOL(false),
+				//"}",
+				//"{",
+				//	"key",
+				//	BCON_DOCUMENT(&idx_skel_entities_bones_name),
+				//	"name",
+				//	BCON_UTF8(idx_skel_entities_bones_name_chr),
+				//	//"unique",
+				//	//BCON_BOOL(false),
+				//"}",
+				//"{",
+				//	"key",
+				//	BCON_DOCUMENT(&idx_skel_entities_bones_id),
+				//	"name",
+				//	BCON_UTF8(skel_entities_bones_id_chr),
+				//	//"unique",
+				//	//BCON_BOOL(false),
+				//"}",
+				//"{",
+				//	"key",
+				//	BCON_DOCUMENT(&idx_gaze_entity_id),
+				//	"name",
+				//	BCON_UTF8(idx_gaze_entity_id_chr),
+				//	//"unique",
+				//	//BCON_BOOL(false),
+				//"}",
 			"]");
 
+	bool bRetVal = true;
 	if (!mongoc_collection_write_command_with_opts(collection, index_command, NULL/*opts*/, NULL/*reply*/, &error))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Create indexes err.: %s"),
 			*FString(__func__), __LINE__, *FString(error.message));
-		bson_destroy(index_command);
-		bson_free(idx_ts_chr);
-		return false;
+		bRetVal = false;
 	}
 
 	// Clean up
 	bson_destroy(index_command);
 	bson_free(idx_ts_chr);
-	return true;
+	bson_free(idx_individuals_id_chr);
+	return bRetVal;
 #else
 	return false;
 #endif //SL_WITH_LIBMONGO_C

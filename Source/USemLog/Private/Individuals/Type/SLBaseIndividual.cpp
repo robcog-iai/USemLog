@@ -175,45 +175,45 @@ bool USLBaseIndividual::ClearExportedValues()
 }
 
 // Cache the current transform of the individual (returns true on a new value)
-bool USLBaseIndividual::CalcAndCacheTransform(float Tolerance, FTransform* OutTransform)
+bool USLBaseIndividual::UpdateCachedPose(float Tolerance, FTransform* OutPose)
 {
 	if (IsInit())
 	{
-		const FTransform CurrTrans = ParentActor->GetTransform();
-		if(!CachedTransform.Equals(CurrTrans, Tolerance))
+		const FTransform CurrPose = ParentActor->GetTransform();
+		if(!CachedPose.Equals(CurrPose, Tolerance))
 		{
-			CachedTransform = CurrTrans;
-			if (OutTransform != nullptr)
+			CachedPose = CurrPose;
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return true;
 		}
 		else
 		{
-			if (OutTransform != nullptr)
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return false;
 		}
 	}
 	else
 	{
-		if (!CachedTransform.Equals(FTransform::Identity, Tolerance))
+		if (!CachedPose.Equals(FTransform::Identity, Tolerance))
 		{
-			CachedTransform = FTransform::Identity;
-			if (OutTransform != nullptr)
+			CachedPose = FTransform::Identity;
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return true;
 		}
 		else
 		{
-			if (OutTransform != nullptr)
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return false;
 		}
@@ -411,7 +411,7 @@ bool USLBaseIndividual::LoadImpl(bool bTryImport)
 {
 	// Explicitly check later to avoid having the attached to parent being init after itself
 	SetAttachedToParent();
-	CalcAndCacheTransform();
+	UpdateCachedPose();
 
 	bool bRetValue = true;
 	if (!IsIdValueSet())		

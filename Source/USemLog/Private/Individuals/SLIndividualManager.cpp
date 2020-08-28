@@ -27,11 +27,18 @@ ASLIndividualManager::ASLIndividualManager()
 	bIsLoaded = false;
 	bIsConnected = false;
 
+	bThreadSafeToRead = true;
+
 	/* Editor button hacks */
 	bInitButtonHack = false;
 	bLoadButtonHack = false;
 	bResetFlagButtonHack = false;
 	bResetButtonHack = false;
+
+#if WITH_EDITORONLY_DATA
+	// Make manager sprite smaller (used to easily find the actor in the world)
+	SpriteScale = 0.35;
+#endif // WITH_EDITORONLY_DATA
 }
 
 // Called when the game starts or when spawned
@@ -312,19 +319,19 @@ bool ASLIndividualManager::UnbindDelegates()
 // Check if there are any cached individuals
 bool ASLIndividualManager::HasCache() const
 {
-	return IndividualComponents.Num() > 0
-		|| Individuals.Num() > 0
-		|| IdToIndividualComponents.Num() > 0
-		|| IdToIndividuals.Num() > 0;
+	return IndividualComponents.Num() > 0 || Individuals.Num() > 0;
 }
 
 // Remove any chached individuals, clear any bound delegates
 void ASLIndividualManager::ClearCache()
 {
+	bThreadSafeToRead = false;
+
 	IndividualComponents.Empty();
 	Individuals.Empty();
 
 	/* World state logger convenience containers */
+	MovableIndividuals.Empty();
 	ChildlessRootIndividuals.Empty();
 	SkeletalIndividuals.Empty();
 	RobotIndividuals.Empty();
@@ -336,11 +343,15 @@ void ASLIndividualManager::ClearCache()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Somethig went wrong on clearing the cache.."), *FString(__FUNCTION__), __LINE__);
 	}
+
+	bThreadSafeToRead = true;
 }
 
 // Add individual info to cache
 void ASLIndividualManager::AddToCache(USLIndividualComponent* IC)
 {
+	bThreadSafeToRead = false;
+
 	IndividualComponents.Add(IC);
 
 	// Add individuals
@@ -351,11 +362,18 @@ void ASLIndividualManager::AddToCache(USLIndividualComponent* IC)
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not init.."), *FString(__FUNCTION__), __LINE__, *Individual->GetFullName());
 		}
 		Individuals.Add(Individual);
+
+		/* Id based quick acess */
 		const FString Id = Individual->GetIdValue();
 		IdToIndividuals.Add(Id, Individual);
 		IdToIndividualComponents.Add(Id, IC);
 
 		/* World state logger */
+		if (Individual->IsMovable())
+		{
+			MovableIndividuals.Add(Individual);
+		}
+
 		if (auto AsSkelIndividual = Cast<USLSkeletalIndividual>(Individual))
 		{
 			SkeletalIndividuals.Add(AsSkelIndividual);
@@ -384,31 +402,46 @@ void ASLIndividualManager::AddToCache(USLIndividualComponent* IC)
 		}
 
 		Individuals.Add(Child);
+
+		/* World state logger */
+		if (Child->IsMovable())
+		{
+			MovableIndividuals.Add(Child);
+		}
+
+		/* Id based quick access */
 		const FString Id = Child->GetIdValue();
 		IdToIndividuals.Add(Id, Child);
 		IdToIndividualComponents.Add(Id, IC);
 	}
+
+	bThreadSafeToRead = true;
 }
 
 // Remove from cache
 bool ASLIndividualManager::RemoveFromCache(USLIndividualComponent* IC)
 {
-	bool bRemoved = false;
+	bThreadSafeToRead = false;
+
+	bool bAnyRemoved = false;
 
 	if (IndividualComponents.Remove(IC) != INDEX_NONE)
 	{
-		bRemoved = true;
+		bAnyRemoved = true;
 	}
 
 	// Remove from quick access maps
 	if (auto Individual = IC->GetIndividualObject())
 	{
 		Individuals.Remove(Individual);
+
+		/* Id based quick acess */
 		const FString Id = Individual->GetIdValue();
 		IdToIndividuals.Remove(Id);
 		IdToIndividualComponents.Remove(Id);
 
 		/* World state logger */
+		MovableIndividuals.Remove(Individual);
 		if (auto AsSkelIndividual = Cast<USLSkeletalIndividual>(Individual))
 		{
 			SkeletalIndividuals.Remove(AsSkelIndividual);
@@ -427,12 +460,19 @@ bool ASLIndividualManager::RemoveFromCache(USLIndividualComponent* IC)
 	for (const auto& Child : IC->GetIndividualChildren())
 	{
 		Individuals.Remove(Child);
+
+		/* World state logger */
+		MovableIndividuals.Remove(Child);
+
+		/* Id based quick acess */
 		const FString ChildId = Child->GetIdValue();
 		IdToIndividuals.Remove(ChildId);
 		IdToIndividualComponents.Remove(ChildId);
 	}
 
-	return bRemoved;
+	bThreadSafeToRead = true;
+
+	return bAnyRemoved;
 }
 
 // Remove destroyed individuals from array

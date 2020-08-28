@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Info.h"
 #include "SLIndividualInfoManager.generated.h"
 
 // Forward declaration
@@ -14,7 +14,7 @@ class USLIndividualInfoComponent;
 * Manages all individual visual info
 */
 UCLASS()
-class USEMLOG_API ASLIndividualInfoManager : public AActor
+class USEMLOG_API ASLIndividualInfoManager : public AInfo
 {
 	GENERATED_BODY()
 	

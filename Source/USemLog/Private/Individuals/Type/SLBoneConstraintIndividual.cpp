@@ -104,44 +104,44 @@ bool USLBoneConstraintIndividual::Load(bool bReset, bool bTryImport)
 }
 
 // Cache the current transform of the individual (returns true on a new value)
-bool USLBoneConstraintIndividual::CalcAndCacheTransform(float Tolerance, FTransform* OutTransform)
+bool USLBoneConstraintIndividual::UpdateCachedPose(float Tolerance, FTransform* OutPose)
 {
 	if (IsInit())
 	{
 		if (HasValidConstraint1Individual())
 		{
-			bool bRetVal = ConstraintIndividual1->CalcAndCacheTransform(Tolerance, &CachedTransform);
-			if (OutTransform != nullptr)
+			bool bRetVal = ConstraintIndividual1->UpdateCachedPose(Tolerance, &CachedPose);
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return bRetVal;
 		}
 		else if (HasValidConstraint2Individual())
 		{
-			bool bRetVal = ConstraintIndividual2->CalcAndCacheTransform(Tolerance, &CachedTransform);
-			if (OutTransform != nullptr)
+			bool bRetVal = ConstraintIndividual2->UpdateCachedPose(Tolerance, &CachedPose);
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return bRetVal;
 		}
 	}
 
-	if (!CachedTransform.Equals(FTransform::Identity, Tolerance))
+	if (!CachedPose.Equals(FTransform::Identity, Tolerance))
 	{
-		CachedTransform = FTransform::Identity;
-		if (OutTransform != nullptr)
+		CachedPose = FTransform::Identity;
+		if (OutPose != nullptr)
 		{
-			*OutTransform = CachedTransform;
+			*OutPose = CachedPose;
 		}
 		return true;
 	}
 	else
 	{
-		if (OutTransform != nullptr)
+		if (OutPose != nullptr)
 		{
-			*OutTransform = CachedTransform;
+			*OutPose = CachedPose;
 		}
 		return false;
 	}

@@ -126,45 +126,45 @@ bool USLBoneIndividual::ApplyOriginalMaterials()
 }
 
 // Cache the current transform of the individual (returns true on a new value)
-bool USLBoneIndividual::CalcAndCacheTransform(float Tolerance, FTransform* OutTransform)
+bool USLBoneIndividual::UpdateCachedPose(float Tolerance, FTransform* OutPose)
 {
 	if (IsInit())
 	{
 		const FTransform CurrTrans = SkeletalMeshComponent->GetBoneTransform(BoneIndex);
-		if (!CachedTransform.Equals(CurrTrans, Tolerance))
+		if (!CachedPose.Equals(CurrTrans, Tolerance))
 		{
-			CachedTransform = CurrTrans;
-			if (OutTransform != nullptr)
+			CachedPose = CurrTrans;
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return true;
 		}
 		else
 		{
-			if (OutTransform != nullptr)
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return false;
 		}
 	}
 	else
 	{
-		if (!CachedTransform.Equals(FTransform::Identity, Tolerance))
+		if (!CachedPose.Equals(FTransform::Identity, Tolerance))
 		{
-			CachedTransform = FTransform::Identity;
-			if (OutTransform != nullptr)
+			CachedPose = FTransform::Identity;
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return true;
 		}
 		else
 		{
-			if (OutTransform != nullptr)
+			if (OutPose != nullptr)
 			{
-				*OutTransform = CachedTransform;
+				*OutPose = CachedPose;
 			}
 			return false;
 		}

@@ -27,6 +27,11 @@ ASLIndividualInfoManager::ASLIndividualInfoManager()
 
 	/* Buttons hack */
 	bToggleTickUpdate = false;
+
+#if WITH_EDITORONLY_DATA
+	// Make manager sprite smaller (used to easily find the actor in the world)
+	SpriteScale = 0.35;
+#endif // WITH_EDITORONLY_DATA
 }
 
 // Called when the game starts or when spawned

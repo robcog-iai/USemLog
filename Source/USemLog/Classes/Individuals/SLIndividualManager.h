@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Info.h"
 #include "SLIndividualManager.generated.h"
 
 // Forward declaration
@@ -14,7 +14,7 @@ class USLSkeletalIndividual;
 class USLRobotIndividual;
 
 UCLASS(ClassGroup = (SL), DisplayName = "SL Individual Manager")
-class USEMLOG_API ASLIndividualManager : public AActor
+class USEMLOG_API ASLIndividualManager : public AInfo
 {
 	GENERATED_BODY()
 	
@@ -49,6 +49,9 @@ public:
 
 	// True if the manager is listening to the component delegates (transient)
 	bool IsConnected() const { return bIsConnected; };
+
+	// True if the containers are currently not modified and it is safe to read from other threads
+	bool ThreadSafeToRead() const { return bThreadSafeToRead; };
 
 	// Get all the individual components
 	const TArray<USLIndividualComponent*>& GetIndividualComponents() const { return IndividualComponents; };
@@ -124,6 +127,11 @@ private:
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsConnected : 1;
 
+	// Set to to false if the cache is being modified to avoid iterating the containers from other threads
+	FThreadSafeBool bThreadSafeToRead;
+
+
+	/** Containers - start - **/
 	// The individual components in the world
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TArray<USLIndividualComponent*> IndividualComponents;
@@ -133,6 +141,10 @@ private:
 	TArray<USLBaseIndividual*> Individuals;
 
 	/* World state logger convenient containers */
+	// Individuals with movable mobility
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	TArray<USLBaseIndividual*> MovableIndividuals;
+
 	// Individuals without children, and ones that cannot be children
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TArray<USLBaseIndividual*> ChildlessRootIndividuals;
@@ -145,6 +157,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TArray<USLRobotIndividual*> RobotIndividuals;
 
+
 	/* Id based quick access mappings */
 	// Id to individual object
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
@@ -153,7 +166,7 @@ private:
 	// Id to 
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TMap<FString, USLIndividualComponent*> IdToIndividualComponents;
-
+	/** Containers - end - **/
 
 	/* Editor button hacks */
 	// Triggers a call to init

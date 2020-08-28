@@ -10,13 +10,13 @@
 #if SL_WITH_LIBMONGO_C
 class ASLVisionPoseableMeshActor;
 THIRD_PARTY_INCLUDES_START
-	#if PLATFORM_WINDOWS
+#if PLATFORM_WINDOWS
 	#include "Windows/AllowWindowsPlatformTypes.h"
 	#include <mongoc/mongoc.h>
 	#include "Windows/HideWindowsPlatformTypes.h"
-	#else
+#else
 	#include <mongoc/mongoc.h>
-	#endif // #if PLATFORM_WINDOWS
+#endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_C
 
@@ -35,6 +35,12 @@ public:
 	bool Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float MinLinearDistance, float MinAngularDistance);
 #endif //SL_WITH_LIBMONGO_C	
 
+	// Do the db writing here
+	void DoWork();
+
+	// Needed internally
+	FORCEINLINE TStatId GetStatId() const { RETURN_QUICK_DECLARE_CYCLE_STAT(FAnalyzeMaterialTreeAsyncTask, STATGROUP_ThreadPoolAsyncTasks); }
+
 	// Set the simulation time
 	void SetTimestamp(float InTs) { Timestamp = InTs; };
 
@@ -42,21 +48,48 @@ public:
 	// Remove individual (in case an object has been destroyed in the world)
 	bool RemoveIndividual() {};
 
-	// Do the db writing here
-	void DoWork();
+private:
+	// First write where all the individuals are written irregardresly of their previous position
+	int32 FirstWrite();
 
-	// Needed internally
-	FORCEINLINE TStatId GetStatId() const
-	{
-		RETURN_QUICK_DECLARE_CYCLE_STAT(FAnalyzeMaterialTreeAsyncTask, STATGROUP_ThreadPoolAsyncTasks);
-	}
+	// Normal write, where all the individuals are written if the tolerance theshold is passed
+	int32 Write();
+
+
+#if SL_WITH_LIBMONGO_C
+	// Add timestamp to the bson doc
+	void AddTimestamp(bson_t* doc);
+
+	// Add all individuals (return the number of individuals added)
+	int32 AddAllIndividuals(bson_t* doc);
+
+	// Add only the individuals that moved (return the number of individuals added)
+	int32 AddAllIndividualsThatMoved(bson_t* doc);
+
+	// Add skeletal individuals (return the number of individuals added)
+	int32 AddSkeletalIndividals(bson_t* doc);
+
+	// Add robot individuals (return the number of individuals added)
+	int32 AddRobotIndividuals(bson_t* doc);
+
+	// Write the bson doc to the collection
+	bool WriteDoc(bson_t* doc);
+#endif //SL_WITH_LIBMONGO_C
+
 
 private:
+	// Do work function pointers
+	typedef int32 (FSLWorldStateDBWriterAsyncTask::*WriteTypeFunctionPtr)();
+	WriteTypeFunctionPtr WriteFunctionPtr;
+
+	// Access to the individual manager
+	ASLIndividualManager* IndividualManager;
+
 	// The timestamp to write to the collection
 	float Timestamp;
 
-	// Min squared linear distance between the previous and the current state of the individuals
-	float MinLinDistSqr;
+	// Min linear distance between the previous and the current state of the individuals
+	float MinLinDist;
 
 	// Min angular distance in order to log an individual
 	float MinAngDist;

@@ -70,10 +70,10 @@ public:
 	virtual bool ClearExportedValues();
 
 	// Calculate and cache the individuals transform (returns true on a new value)
-	virtual bool CalcAndCacheTransform(float Tolerance = 0.25f, FTransform* OutTransform = nullptr);
+	virtual bool UpdateCachedPose(float Tolerance = 0.25f, FTransform* OutPose = nullptr);
 
 	// Get the cached transform of the individual
-	FTransform GetCachedTransform() const { return CachedTransform; };
+	FTransform GetCachedPose() const { return CachedPose; };
 
 	// Get actor represented by the individual
 	AActor* GetParentActor() const { return ParentActor; };
@@ -207,7 +207,7 @@ protected:
 
 	// Cached transform of the individual
 	UPROPERTY(VisibleAnywhere, Category = "SL")
-	FTransform CachedTransform;
+	FTransform CachedPose;
 
 	// Actor attached to
 	UPROPERTY(VisibleAnywhere, Category = "SL")

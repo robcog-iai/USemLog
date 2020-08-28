@@ -58,7 +58,7 @@ public:
     /* End Visible individual interface */
 
     // Calculate and cache the individuals transform (returns true on a new value)
-    virtual bool CalcAndCacheTransform(float Tolerance = 0.25f, FTransform* OutTransform = nullptr) override;
+    virtual bool UpdateCachedPose(float Tolerance = 0.25f, FTransform* OutPose = nullptr);
 
     // Get the attachment location name (bone/socket)
     FName GetAttachmentLocationName();
@@ -136,5 +136,5 @@ protected:
     USkeletalMeshComponent* SkeletalMeshComponent;
 
     // Cached transform
-    FTransform CachedTransform;
+    FTransform CachedPose;
 };
