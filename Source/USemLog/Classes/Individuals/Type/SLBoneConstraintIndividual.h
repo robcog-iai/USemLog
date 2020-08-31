@@ -97,7 +97,4 @@ protected:
     // Parent skeletal mesh
     UPROPERTY()
     USkeletalMeshComponent* SkeletalMeshComponent;
-
-    // Cached transform
-    FTransform CachedPose;
 };

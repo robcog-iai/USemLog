@@ -42,7 +42,7 @@ void ASLGazeOriginActor::BeginPlay()
 void ASLGazeOriginActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Log, TEXT("%s::%d %s's Loc=%s; "), *FString(__FUNCTION__), __LINE__, *GetActorLocation().ToString());
+	UE_LOG(LogTemp, Log, TEXT("%s::%d %s's Loc=%s; "), *FString(__FUNCTION__), __LINE__, *GetName(), *GetActorLocation().ToString());
 	//Update();
 }
 
