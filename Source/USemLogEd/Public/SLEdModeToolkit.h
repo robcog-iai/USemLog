@@ -27,37 +27,45 @@ public:
 	virtual TSharedPtr<class SWidget> GetInlineContent() const override { return ToolkitWidget; }
 
 private:
-	/* Vertical slot entries */
-	// Create checkbox entry slot to set overwrite flag
-	SVerticalBox::FSlot& CreateOverwriteSlot();
-	SVerticalBox::FSlot& CreateOnlySelectedSlot();
+	/* **Start** Vertical Slot Entries */
+	// Separator hack slot
+	SVerticalBox::FSlot& CreateSeparatorHackSlot();
 
-	// Semantic map
-	SVerticalBox::FSlot& CreateSemMapSlot();
+	// Flag checkboxes
+	SVerticalBox::FSlot& CreateCompactCheckBoxSlot();
+	SVerticalBox::FSlot& CreateOverwriteFlagSlot();
+	SVerticalBox::FSlot& CreateOnlySelectedFlagSlot();
+	SVerticalBox::FSlot& CreateResetFlagSlot();
+	SVerticalBox::FSlot& CreateTryImportFlagSlot();
+	SVerticalBox::FSlot& CreateIncludeChildrenFlagSlot();
 
-	// Semantic data managers
-	SVerticalBox::FSlot& CreateSemDataManagersTxtSlot();
-	SVerticalBox::FSlot& CreateSemDataManagersSlot();
+	// Individual Components
+	SVerticalBox::FSlot& CreateIndividualsTxtSlot();
+	SVerticalBox::FSlot& CreateIndividualsSlot();
+	SVerticalBox::FSlot& CreateIndividualsFuncSlot();
 
-	// Semantic data components
-	SVerticalBox::FSlot& CreateSemDataCompTxtSlot();
-	SVerticalBox::FSlot& CreateSemDataCompSlot();
-
-	// Semantic data visual info
-	SVerticalBox::FSlot& CreateSemDataVisInfoTxtSlot();
-	SVerticalBox::FSlot& CreateSemDataVisInfoSlot();
-	SVerticalBox::FSlot& CreateSemDataVisInfoFuncSlot();
-
-	// Semantic data
-	SVerticalBox::FSlot& CreateSemDataTxtSlot();
-	SVerticalBox::FSlot& CreateSemDataAllSlot();
-	SVerticalBox::FSlot& CreateSemDataIdSlot();
-	SVerticalBox::FSlot& CreateSemDataClassSlot();
-	SVerticalBox::FSlot& CreateSemDataMaskSlot();
+	// Individual Values
+	SVerticalBox::FSlot& CreateIndividualValuesTxtSlot();
+	SVerticalBox::FSlot& CreateIndividualValuesAllSlot();
+	SVerticalBox::FSlot& CreateIndivualValuesIdSlot();
+	SVerticalBox::FSlot& CreateIndividualValuesClassSlot();
+	SVerticalBox::FSlot& CreateIndividualValuesVisualMaskSlot();
 	
-	// Tag import export 
-	SVerticalBox::FSlot& CreateTagTxtSlot();
-	SVerticalBox::FSlot& CreateTagDataSlot();
+	// Import / Export
+	SVerticalBox::FSlot& CreateImportExportTxtSlot();
+	SVerticalBox::FSlot& CreateImportExportSlot();
+
+	// Individual Visual Info
+	SVerticalBox::FSlot& CreateIndividualsInfoTxtSlot();
+	SVerticalBox::FSlot& CreateIndividualsInfoSlot();
+	SVerticalBox::FSlot& CreateIndividualsInfoFuncSlot();
+
+	// Individual Managers
+	SVerticalBox::FSlot& CreateIndividualsManagersTxtSlot();
+	SVerticalBox::FSlot& CreateIndividualsManagersSlot();
+
+	// Semantic Map
+	SVerticalBox::FSlot& CreateSemMapSlot();
 
 	// Misc
 	SVerticalBox::FSlot& CreateUtilsTxtSlot();
@@ -69,49 +77,64 @@ private:
 
 	// Info
 	SVerticalBox::FSlot& CreateGenericButtonSlot();
+	/* **End** Vertical Slot Entries */
 
 
-	/* Checkbox callbacks */
-	void OnCheckedOverwrite(ECheckBoxState NewCheckedState);
-	void OnCheckedOnlySelected(ECheckBoxState NewCheckedState);
+	/* **Start** Callbacks */
+	// Flag checkboxes
+	void OnCheckedOverwriteFlag(ECheckBoxState NewCheckedState);
+	void OnCheckedOnlySelectedFlag(ECheckBoxState NewCheckedState);
+	void OnCheckedIncludeChildrenFlag(ECheckBoxState NewCheckedState);
+	void OnCheckedResetFlag(ECheckBoxState NewCheckedState);
+	void OnCheckedTryImportFlag(ECheckBoxState NewCheckedState);
 
-	/* Button callbacks */
-	
+
+	// Individual Components
+	FReply OnCreateIndividuals();
+	FReply OnClearIndividuals();
+	FReply OnInitIndividuals();
+	FReply OnLoadIndividuals();
+	FReply OnConnectIndividuals();
+
+	// Individual Components Funcs
+	FReply OnToggleIndividualVisualMaskVisiblity();
+
+	// Individual Values
+	FReply OnWriteAllIndvidualValues();
+	FReply OnClearAllIndividualValues();
+	FReply OnWriteIndividualIds();
+	FReply OnClearIndividualIds();
+	FReply OnWriteIndividualClasses();
+	FReply OnClearIndividualClasses();
+	FReply OnWriteIndividualVisualMasks();
+	FReply OnClearIndividualVisualMasks();
+
+	// Import / Export
+	FReply OnExportValues();
+	FReply OnImportValues();
+	FReply OnClearExportedValues();
+
+	// Individual Info 
+	FReply OnCreateIndividualsInfo();
+	FReply OnClearIndividualsInfo();
+	FReply OnInitIndividualsInfo();
+	FReply OnLoadIndividualsInfo();
+	FReply OnConnectIndividualsInfo();
+
+	// Individual Info Funcs
+	FReply OnToggleIndividualsInfoVisiblity();
+	FReply OnUpdateIndividualsInfoOrientation();
+	FReply OnToggleIndividualsInfoLiveOrientationUpdate();
+		
+	// Individual Managers
+	FReply OnInitIndividualManagers();
+	FReply OnLoadIndividualManagers();
+	FReply OnConnectIndividualManagers();
+
 	// Semantic map
 	FReply OnWriteSemMap();
+	FReply OnWriteOntology();
 
-	// Semantic data managers
-	FReply OnInitSemDataManagers();
-	FReply OnReloadSemDataManagers();
-
-	// Semantic data components
-	FReply OnCreateSemDataComp();
-	FReply OnReloadSemDataComp();
-	FReply OnRmSemDataComp();
-	FReply OnToggleMaskSemDataComp();
-
-	// Semantic data visual info
-	FReply OnCreateSemDataVisInfo();
-	FReply OnRefreshSemDataVisInfo();
-	FReply OnRmSemDataVisInfo();
-	FReply OnToggleSemDataVisInfo();
-	FReply OnUpdateTransformSemDataVisInfo();
-	FReply OnLiveUpdateSemDataVisInfo();
-
-	// Semantic data
-	FReply OnWriteSemDataAll();
-	FReply OnRmSemDataAll();
-	FReply OnWriteSemDataIds();
-	FReply OnRmSemDataIds();
-	FReply OnWriteClassNames();
-	FReply OnRmClassNames();
-
-	FReply OnWriteVisualMasks();
-	FReply OnRmVisualMasks();
-	
-	FReply OnExportToTag();
-	FReply OnImportFromTag();
-	FReply OnClearTagData();
 
 	FReply OnAddSemMon();	
 	FReply OnEnableOverlaps();
@@ -121,8 +144,16 @@ private:
 	FReply OnTriggerGC();
 
 	FReply OnGenericButton();
+	/* **End** Callbacks */
 
-	/* Helper */
+
+	/* Helpers */
+	// Managers
+	bool HasValidIndividualManager() const;
+	bool SetIndividualManager();
+	bool HasValidIndividualInfoManager() const;
+	bool SetIndividualInfoManager();
+
 	// Returns all the selected actors in the editor
 	TArray<AActor*> GetSelectedActors() const;
 
@@ -141,7 +172,7 @@ private:
 	class ASLIndividualManager* IndividualManager;
 
 	// Provides visual functionalities over the individuals in the world
-	class ASLIndividualVisualInfoManager* VisualInfoManager;
+	class ASLIndividualInfoManager* IndividualInfoManager;
 
 	// Widget pointer
 	TSharedPtr<SWidget> ToolkitWidget;
@@ -149,7 +180,10 @@ private:
 	/** SCS editor, refresh view if an actor is selected when adding/removing components */
 	TSharedPtr<class SSCSEditor> SCSEditor;
 
-	bool bOverwrite;
-	bool bOnlySelected;
-	bool bUseTags;
+	// Flags
+	bool bOverwriteFlag;
+	bool bOnlySelectedFlag;
+	bool bProritizeChildrenFlag;
+	bool bResetFlag;
+	bool bTryImportFlag;
 };

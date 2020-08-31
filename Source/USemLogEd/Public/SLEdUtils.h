@@ -14,11 +14,13 @@ public:
 	// Write the semantic map
 	static void WriteSemanticMap(UWorld* World, bool bOverwrite = false);
 
-	// Get the semantic individual manager from the world, add new if none are available
-	static class ASLIndividualManager* GetExistingOrCreateNewIndividualManager(UWorld* World, bool bCreateNew = true);
+	/* Managers */
+	//// Get the semantic individual manager from the world, add new if none are available
+	//static class ASLIndividualManager* GetOrCreateNewIndividualManager(UWorld* World, bool bCreateNew = true);
 
-	// Get the vis info manager form the world, add new one if none are available
-	static class ASLIndividualVisualInfoManager* GetVisualInfoManager(UWorld* World, bool bCreateNew = true);
+	//// Get the vis info manager form the world, add new one if none are available
+	//static class ASLIndividualInfoManager* GetOrCreateNewVisualInfoManager(UWorld* World, bool bCreateNew = true);
+
 
 	// Remove all tag keys
 	static bool RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);

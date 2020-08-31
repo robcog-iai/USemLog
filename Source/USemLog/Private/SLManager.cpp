@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLManager.h"
+#include "EngineUtils.h"
 #include "SLEntitiesManager.h"
 #include "Ids.h"
 
@@ -23,7 +24,7 @@ ASLManager::ASLManager()
 	TaskDescription = TEXT("Write task description here");
 	bResetStartTime = false;
 	bStartAtBeginPlay = true;
-	bStartAtFirstTick = false;
+	bStartAtNextTick = false;
 	bStartWithDelay = false;
 	StartDelay = 0.5f;
 	bStartFromUserInput = false;
@@ -94,10 +95,14 @@ ASLManager::ASLManager()
 	// Data visualzer default values
 	bVisualizeData = false;
 	
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
-	SpriteScale = 0.5;
-#endif // WITH_EDITOR
+	SpriteScale = 0.65;
+#endif // WITH_EDITORONLY_DATA
+
+
+	/****/
+	ActualWorldStateLogger = nullptr;
 }
 
 // Sets default values
@@ -127,7 +132,7 @@ void ASLManager::BeginPlay()
 	{
 		Start();
 	}
-	else if (bStartAtFirstTick)
+	else if (bStartAtNextTick)
 	{
 		FTimerDelegate TimerDelegateNextTick;
 		TimerDelegateNextTick.BindLambda([this]
@@ -165,6 +170,50 @@ void ASLManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		Finish(GetWorld()->GetTimeSeconds());
 	}
+}
+
+// Gets called both in the editor and during gameplay. This is not called for newly spawned actors. 
+void ASLManager::PostLoad()
+{
+	Super::PostLoad();
+	// Setup references
+	
+	//if (!ActualWorldStateLogger
+	//	|| !ActualWorldStateLogger->IsValidLowLevel()
+	//	|| ActualWorldStateLogger->IsPendingKillOrUnreachable()
+	//	|| !ActualWorldStateLogger->CheckStillInWorld())
+	//{
+	//	// Search in the world
+	//	for (TActorIterator<ASLWorldStateLogger> Iter(GetWorld()); Iter; ++Iter)
+	//	{
+	//		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+	//		{
+	//			ActualWorldStateLogger = *Iter;
+	//			UE_LOG(LogTemp, Warning, TEXT("%s::%d Reference to the world state logger (%s) set.."),
+	//				*FString(__FUNCTION__), __LINE__, *ActualWorldStateLogger->GetName());
+	//			return;
+	//		}
+	//		else
+	//		{
+	//			UE_LOG(LogTemp, Error, TEXT("%s::%d Reference (%s) invalid.."),
+	//				*FString(__FUNCTION__), __LINE__, *Iter->GetName());
+	//		}
+	//	}
+
+	//	// Not found in the world, spawn new
+	//	FActorSpawnParameters SpawnParams;
+	//	SpawnParams.Name = TEXT("SL_WorldStateLogger");
+	//	ActualWorldStateLogger = GetWorld()->SpawnActor<ASLWorldStateLogger>(SpawnParams);
+	//	//ActualWorldStateLogger->SetActorLabel(TEXT("SL_WorldStateLogger"));
+
+	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger not found in the world, spawned new one (%s).."),
+	//		*FString(__FUNCTION__), __LINE__, *ActualWorldStateLogger->GetName());
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d ActualWorldStateLogger (%s) is set.."),
+	//		*FString(__FUNCTION__), __LINE__, *ActualWorldStateLogger->GetName());
+	//}
 }
 
 // Init loggers
@@ -348,19 +397,19 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	/* Start Properties*/
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtBeginPlay))
 	{
-		if (bStartAtBeginPlay) {bStartAtFirstTick = false; bStartWithDelay = false; bStartFromUserInput = false;}
+		if (bStartAtBeginPlay) {bStartAtNextTick = false; bStartWithDelay = false; bStartFromUserInput = false;}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtFirstTick))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartAtNextTick))
 	{
-		if (bStartAtFirstTick) {bStartAtBeginPlay = false; bStartWithDelay = false; bStartFromUserInput = false;}
+		if (bStartAtNextTick) {bStartAtBeginPlay = false; bStartWithDelay = false; bStartFromUserInput = false;}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartWithDelay))
 	{
-		if (bStartWithDelay) {bStartAtBeginPlay = false; bStartAtFirstTick = false; bStartFromUserInput = false;}
+		if (bStartWithDelay) {bStartAtBeginPlay = false; bStartAtNextTick = false; bStartFromUserInput = false;}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bStartFromUserInput))
 	{
-		if (bStartFromUserInput) {bStartAtBeginPlay = false;  bStartWithDelay = false; bStartAtFirstTick = false;}
+		if (bStartFromUserInput) {bStartAtBeginPlay = false;  bStartWithDelay = false; bStartAtNextTick = false;}
 	}
 
 	/* Metadata Properties */

@@ -665,7 +665,7 @@ bool USLVisionLogger::CreateMaskClones()
 					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
 						FLinearColor::FromSRGBColor(FColor::FromHex(Pair.Value.VisualMask)));
 
-					PMAClone->SetCustomMaterial(Pair.Value.MaskMaterialIndex, DynamicMaskMaterial);
+					PMAClone->SetCustomMaterial(Pair.Value.MaterialIndex, DynamicMaskMaterial);
 				}
 			}
 

@@ -2,13 +2,14 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Editor/SLEditorToolkit.h"
-#include "SLVisionCamera.h"
+#include "SLVirtualCameraView.h"
 #include "SLSkeletalDataComponent.h"
 
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 // UUtils
 #include "Ids.h"
@@ -85,7 +86,7 @@ void FSLEditorToolkit::WriteClassProperties(UWorld* World, bool bOverwrite)
 	}
 
 	/* Vision cameras */
-	for (TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
+	for (TActorIterator<ASLVirtualCameraView> ActItr(World); ActItr; ++ActItr)
 	{
 		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, GenerateVisionCameraClassName(*ActItr), bOverwrite);
 	}
@@ -180,7 +181,7 @@ void FSLEditorToolkit::WriteUniqueIdProperties(UWorld* World, bool bOverwrite)
 	}
 
 	/* Vision cameras */
-	for (TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
+	for (TActorIterator<ASLVirtualCameraView> ActItr(World); ActItr; ++ActItr)
 	{
 		WritePairToEditorCounterpart(*ActItr, TagType, TagKey, FIds::NewGuidInBase64(), bOverwrite);
 	}
@@ -245,7 +246,7 @@ void FSLEditorToolkit::CheckForVisionCameraClassNameDuplicates(UWorld* World)
 	const FString TagKey = "Class";
 	
 	TSet<FString> UsedClassNames;
-	for(TActorIterator<ASLVisionCamera> ActItr(World); ActItr; ++ActItr)
+	for(TActorIterator<ASLVirtualCameraView> ActItr(World); ActItr; ++ActItr)
 	{
 		FString ClassName = "";
 #if WITH_EDITOR
@@ -545,9 +546,9 @@ FString FSLEditorToolkit::GenerateConstraintClassName(APhysicsConstraintActor* A
 		{
 			return "Linear"+DefaultValue;
 		}
-		else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != ELinearConstraintMotion::LCM_Locked ||
-			PCC->ConstraintInstance.GetAngularSwing2Motion() != ELinearConstraintMotion::LCM_Locked ||
-			PCC->ConstraintInstance.GetAngularTwistMotion() != ELinearConstraintMotion::LCM_Locked)
+		else if (PCC->ConstraintInstance.GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
+			PCC->ConstraintInstance.GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
+			PCC->ConstraintInstance.GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
 		{
 			return "Revolute" + DefaultValue;
 		}
@@ -560,7 +561,7 @@ FString FSLEditorToolkit::GenerateConstraintClassName(APhysicsConstraintActor* A
 }
 
 // Generate class name for the vision camera
-FString FSLEditorToolkit::GenerateVisionCameraClassName(ASLVisionCamera* Actor, bool bDefaultToLabel)
+FString FSLEditorToolkit::GenerateVisionCameraClassName(ASLVirtualCameraView* Actor, bool bDefaultToLabel)
 {
 	const FString DefaultValue = "VisionCamera";
 	const FString TagType = "SemLog";

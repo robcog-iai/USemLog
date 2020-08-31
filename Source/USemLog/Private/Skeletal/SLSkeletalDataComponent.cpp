@@ -93,9 +93,9 @@ void USLSkeletalDataComponent::LoadFromDataAsset()
 					// Create new data
 					FSLBoneData BoneData;
 					BoneData.Class = BoneClass;
-					BoneData.MaskMaterialIndex = SkMC->GetMaterialIndex(FName(*BoneClass));
+					BoneData.MaterialIndex = SkMC->GetMaterialIndex(FName(*BoneClass));
 
-					if (BoneData.MaskMaterialIndex == INDEX_NONE)
+					if (BoneData.MaterialIndex == INDEX_NONE)
 					{
 						UE_LOG(LogTemp, Error, TEXT("%s::%d Class %s is not part of a material slot.."),
 							*FString(__func__), __LINE__, *BoneClass);
@@ -142,9 +142,9 @@ void USLSkeletalDataComponent::RefreshComponents()
 		for (auto& BoneDataPair : SemanticBonesData)
 		{
 			// Update the bone index
-			BoneDataPair.Value.MaskMaterialIndex = SkMC->GetMaterialIndex(FName(*BoneDataPair.Value.Class));
+			BoneDataPair.Value.MaterialIndex = SkMC->GetMaterialIndex(FName(*BoneDataPair.Value.Class));
 
-			if (BoneDataPair.Value.MaskMaterialIndex == INDEX_NONE)
+			if (BoneDataPair.Value.MaterialIndex == INDEX_NONE)
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Class %s is not part of a material slot.."),
 					*FString(__func__), __LINE__, *BoneDataPair.Value.Class);
@@ -252,7 +252,7 @@ void USLSkeletalDataComponent::CreateBoneClassToMaterialIndexMapping()
 {
 	for (const auto& BoneData : SemanticBonesData)
 	{
-		BoneClassToMaterialIndex.Emplace(BoneData.Value.Class, BoneData.Value.MaskMaterialIndex);
+		BoneClassToMaterialIndex.Emplace(BoneData.Value.Class, BoneData.Value.MaterialIndex);
 	}
 }
 

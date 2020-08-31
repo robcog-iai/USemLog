@@ -3,7 +3,7 @@
 
 #include "Monitors/SLContactBox.h"
 #include "SLEntitiesManager.h"
-
+#include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 
 // UUTils

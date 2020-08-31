@@ -42,10 +42,6 @@ public:
 	// Id of the document
 	FString Id;
 
-protected:
-	// Current state of the indentation for writing to string
-	FString Indent;
-
 public:
 	// Default constructor
 	FSLOwlDoc() {}
@@ -108,7 +104,7 @@ public:
 	}
 	
 	// Create ontology imports node
-	void AddOntologyNode()
+	void CreateOntologyNode()
 	{
 		const FSLOwlPrefixName RdfAbout("rdf", "about");
 		const FSLOwlPrefixName OwlOntology("owl", "Ontology");
@@ -117,7 +113,7 @@ public:
 		OntologyImports.Name = OwlOntology;
 		OntologyImports.AddAttribute(FSLOwlAttribute(RdfAbout,
 			FSLOwlAttributeValue("http://knowrob.org/kb/" + OntologyName + ".owl")));
-		OntologyImports.Comment = TEXT("Ontologies");
+		OntologyImports.Comment = TEXT("Ontologies:");
 	}
 
 	// Add ontology import child node
@@ -158,15 +154,21 @@ public:
 		DatatypeDefinitions.Add(InNode);
 	}
 
-	// Add class definition
+	// Add class definition from namespace and value
 	void AddClassDefinition(const FString& InNs, const FString& InName)
+	{
+		AddClassDefinition(FSLOwlAttributeValue(InNs, InName));
+	}
+
+	// Add class definition from attribute valu
+	void AddClassDefinition(const FSLOwlAttributeValue& AV)
 	{
 		const FSLOwlPrefixName RdfAbout("rdf", "about");
 		const FSLOwlPrefixName OwlClass("owl", "Class");
-		AddClassDefinition(FSLOwlNode(OwlClass, FSLOwlAttribute(RdfAbout, FSLOwlAttributeValue(InNs, InName))));
+		AddClassDefinition(FSLOwlNode(OwlClass, FSLOwlAttribute(RdfAbout, AV)));
 	}
 
-	// Add class definition
+	// Add class definition node
 	void AddClassDefinition(const FSLOwlNode& InNode)
 	{
 		ClassDefinitions.Add(InNode);
@@ -185,8 +187,9 @@ public:
 	}
 
 	// Return document as string
-	FString ToString()
+	FString ToString() const
 	{
+		FString Indent = "";
 		FString DocStr = TEXT("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n");
 		DocStr += EntityDefinitions.ToString();
 		FSLOwlNode Root(FSLOwlPrefixName("rdf", "RDF"), Namespaces);

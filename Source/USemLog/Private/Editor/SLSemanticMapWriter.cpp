@@ -192,7 +192,8 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 			{
 				if (UStaticMesh* SM = SMC->GetStaticMesh())
 				{
-					ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
+					//ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
+					ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
 				}
 			}
 		}
@@ -218,7 +219,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 					CachedBoneIds.Add(BoneName, BoneId);
 				}
 
-								
+
 				// Create bone individuals
 				for (auto& BoneName : BoneNames)
 				{
@@ -306,7 +307,8 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		{
 			if (UStaticMesh* SM = CompAsSMC->GetStaticMesh())
 			{
-				ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
+				//ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
+				ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
 			}
 		}
 

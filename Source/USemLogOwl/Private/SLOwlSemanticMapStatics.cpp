@@ -32,7 +32,7 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add imports
-	SemMap->AddOntologyNode();
+	SemMap->CreateOntologyNode();
 	SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob.owl");
 
 	// Add property definitions
@@ -41,7 +41,7 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddPropertyDefinition("knowrob", "pathToCadModel");
 
 	// Add datatype definitions
-	SemMap->AddDatatypeDefinition(FOwlCommentNode("Property Definitions"));
+	SemMap->AddDatatypeDefinition(FOwlCommentNode("Datatype Definitions"));
 	SemMap->AddDatatypeDefinition("knowrob", "quaternion");
 	SemMap->AddDatatypeDefinition("knowrob", "translation");
 	

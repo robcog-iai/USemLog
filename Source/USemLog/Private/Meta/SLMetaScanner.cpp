@@ -14,6 +14,7 @@
 #include "Engine/GameViewportClient.h"
 #include "FileHelper.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/LightComponent.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/Light.h"

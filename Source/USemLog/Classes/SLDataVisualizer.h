@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "DataVis/SLDataVisQueries.h"
+#include "Demo/SLDataVisQueries.h"
 
 #if SL_WITH_DATA_VIS
 #include "MongoQA.h"

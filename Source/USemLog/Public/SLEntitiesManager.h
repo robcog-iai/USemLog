@@ -1,4 +1,4 @@
-// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
+/ Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
@@ -7,7 +7,7 @@
 #include "SLStructs.h"
 #include "SLSkeletalDataComponent.h"
 #include "ROSProlog/SLPrologClient.h"
-#include "SLVisionCamera.h"
+#include "SLVirtualCameraView.h"
 
 class AStaticMeshActor;
 class ASkeletalMeshActor;
@@ -91,10 +91,10 @@ public:
 
 	
 	// Get the map of objects to the semantic items
-	TMap<ASLVisionCamera*, FSLEntity>& GetCameraViewsSemanticData() { return CameraViewSemanticData; }
+	TMap<ASLVirtualCameraView*, FSLEntity>& GetCameraViewsSemanticData() { return CameraViewSemanticData; }
 
 	// Get the array of semantically annotated objects (returns the number of keys)
-	int32 GetCameraViewsObjects(TArray<ASLVisionCamera*>& OutArray) const { return CameraViewSemanticData.GetKeys(OutArray); }
+	int32 GetCameraViewsObjects(TArray<ASLVirtualCameraView*>& OutArray) const { return CameraViewSemanticData.GetKeys(OutArray); }
 
 	// Get the map of objects to the semantic items
 	void GetCameraViewsDataArray(TArray<FSLEntity>& OutArray) const { CameraViewSemanticData.GenerateValueArray(OutArray); }
@@ -125,7 +125,7 @@ public:
 	}
 
 	// Get virtual camera actor
-	FORCEINLINE ASLVisionCamera* GetVisionCameraActor(const FString& Id) const
+	FORCEINLINE ASLVirtualCameraView* GetVisionCameraActor(const FString& Id) const
 	{
 		if (auto* Value = IdToVisionCamera.Find(Id))
 		{
@@ -135,7 +135,7 @@ public:
 	};
 
 	// Get all the semantically annotated static mesh actors
-	void GetVisionCameraActors(TArray<ASLVisionCamera*>& OutArray) const
+	void GetVisionCameraActors(TArray<ASLVirtualCameraView*>& OutArray) const
 	{
 		return IdToVisionCamera.GenerateValueArray(OutArray);
 	}
@@ -234,7 +234,7 @@ private:
 	TMap<UObject*, USLSkeletalDataComponent*> ObjectsSemanticSkelData;
 
 	// Map of Camera View Actors pointer to object structure
-	TMap<ASLVisionCamera*, FSLEntity> CameraViewSemanticData;
+	TMap<ASLVirtualCameraView*, FSLEntity> CameraViewSemanticData;
 
 	// Id to static mesh actor
 	TMap<FString, AStaticMeshActor*> IdToStaticMeshActor;
@@ -243,7 +243,7 @@ private:
 	TMap<FString, ASkeletalMeshActor*> IdToSkeletalMeshActor;
 
 	// Id to virtual camera actor
-	TMap<FString, ASLVisionCamera*> IdToVisionCamera;
+	TMap<FString, ASLVirtualCameraView*> IdToVisionCamera;
 
 	// Id to AActor
 	TMap<FString, AActor*> IdToActor;

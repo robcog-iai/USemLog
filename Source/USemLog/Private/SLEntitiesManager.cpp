@@ -4,7 +4,7 @@
 #include "SLEntitiesManager.h"
 #include "Tags.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "SLVisionCamera.h"
+#include "SLVirtualCameraView.h"
 
 TSharedPtr<FSLEntitiesManager> FSLEntitiesManager::StaticInstance;
 
@@ -50,7 +50,7 @@ void FSLEntitiesManager::Init(UWorld* World)
 				IdToActor.Emplace(ActId, *ActorItr);
 				
 				// Create a separate list with the camera views
-				if (ASLVisionCamera* VCA = Cast<ASLVisionCamera>(*ActorItr))
+				if (ASLVirtualCameraView* VCA = Cast<ASLVirtualCameraView>(*ActorItr))
 				{
 					CameraViewSemanticData.Emplace(VCA, FSLEntity(*ActorItr, ActId, ActClass));
 					IdToVisionCamera.Emplace(ActId, VCA);

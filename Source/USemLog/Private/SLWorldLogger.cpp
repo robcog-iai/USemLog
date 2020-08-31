@@ -175,7 +175,7 @@ void USLWorldLogger::Update()
 	}
 	else
 	{
-		UE_LOG(LogSL, Error, TEXT("%s::%d [%f] Previous task not finished, SKIPPING new task.."), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] Previous task not finished, SKIPPING new task.."), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 	}
 }
 

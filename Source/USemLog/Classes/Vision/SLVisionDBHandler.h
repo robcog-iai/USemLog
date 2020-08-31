@@ -10,13 +10,13 @@
 #if SL_WITH_LIBMONGO_C
 class ASLVisionPoseableMeshActor;
 THIRD_PARTY_INCLUDES_START
-#if PLATFORM_WINDOWS
-#include "Windows/AllowWindowsPlatformTypes.h"
-#include <mongoc/mongoc.h>
-#include "Windows/HideWindowsPlatformTypes.h"
-#else
-#include <mongoc/mongoc.h>
-#endif // #if PLATFORM_WINDOWS
+	#if PLATFORM_WINDOWS
+	#include "Windows/AllowWindowsPlatformTypes.h"
+	#include <mongoc/mongoc.h>
+	#include "Windows/HideWindowsPlatformTypes.h"
+	#else
+	#include <mongoc/mongoc.h>
+	#endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_C
 
@@ -58,7 +58,7 @@ private:
 	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
 	bool GetEntitiesData(bson_iter_t* doc,
 		TMap<AStaticMeshActor*, FTransform>& OutEntityPoses,
-		TMap<ASLVisionCamera*, FTransform>& OutVirtualCameraPoses) const;
+		TMap<ASLVirtualCameraView*, FTransform>& OutVirtualCameraPoses) const;
 
 	// Helper function to get the entities data out of the bson iterator, returns false if there are no entities
 	bool GetSkeletalEntitiesData(bson_iter_t* doc,

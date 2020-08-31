@@ -2,12 +2,12 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Skeletal/SLSkeletalDataAsset.h"
+#include "Components/SkeletalMeshComponent.h"
 
 // Ctor
 USLSkeletalDataAsset::USLSkeletalDataAsset()
 {
 	bReloadData = false;
-	bClearEmptyEntries = false;
 	bClearAllData = false;
 }
 
@@ -30,20 +30,10 @@ void USLSkeletalDataAsset::PostEditChangeProperty(struct FPropertyChangedEvent& 
 		USLSkeletalDataAsset::LoadData();
 		bReloadData = false;
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataAsset, bClearEmptyEntries))
-	{
-		for (auto MapItr(BoneClasses.CreateIterator()); MapItr; ++MapItr)
-		{
-			if (MapItr->Value.IsEmpty())
-			{
-				MapItr.RemoveCurrent();
-			}
-		}
-		bClearEmptyEntries = false;
-	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLSkeletalDataAsset, bClearAllData))
 	{
 		BoneClasses.Empty();
+		BoneIndexClass.Empty();
 		bClearAllData = false;
 	}
 }
@@ -57,6 +47,7 @@ void USLSkeletalDataAsset::LoadData()
 		// Empty previous map
 		TMap<FName, FString> TempBoneClass = BoneClasses;
 		BoneClasses.Empty();
+		BoneIndexClass.Empty();
 
 		// Create a temporary USkeletalMeshComponent to be able to read the bone names
 		USkeletalMeshComponent* SkelMeshComp = NewObject<USkeletalMeshComponent>(this);
@@ -65,15 +56,21 @@ void USLSkeletalDataAsset::LoadData()
 		SkelMeshComp->GetBoneNames(BoneNames);
 		for (const auto& Name : BoneNames)
 		{
-			if (TempBoneClass.Contains(Name))
+			int32 CurrBoneIndex = SkelMeshComp->GetBoneIndex(Name);
+			if (CurrBoneIndex != INDEX_NONE)
 			{
-				BoneClasses.Add(Name, TempBoneClass[Name]);
-			}
-			else
-			{
-				BoneClasses.Add(Name, "");
+				if (TempBoneClass.Contains(Name))
+				{
+					BoneClasses.Add(Name, TempBoneClass[Name]);
+					BoneIndexClass.Add(CurrBoneIndex, TempBoneClass[Name]);
+				}
+				else
+				{
+					BoneClasses.Add(Name, "");
+					BoneIndexClass.Add(CurrBoneIndex, "");
+				}				
 			}
 		}
-		SkelMeshComp->DestroyComponent();
+		SkelMeshComp->DestroyComponent();		
 	}
 }
