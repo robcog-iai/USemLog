@@ -54,6 +54,11 @@ protected:
 	// Called when a component is created (not loaded) (after post init).This can happen in the editor or during gameplay
 	virtual void OnComponentCreated() override;
 
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
+
 	// Called before destroying the object.
 	virtual void BeginDestroy() override;
 
@@ -110,6 +115,9 @@ public:
 
 	// Re-broadcast all available values
 	bool TriggerIndividualValuesBroadcast();
+
+	// Update individuals and their children cached poses
+	bool UpdateCachedPoses();
 
 	/* Values */
 	/* Id */
@@ -240,6 +248,12 @@ private:
 	// Individuals attachable children
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TMap<USLBaseIndividual*, FName> AttachableIndividualChildren;
+
+
+	/* Editor button hacks */
+	// Triggers a call to the indivduals and its children update cached pose
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bUpdateIndivdualsCachedPoseButtonHack;
 
 public:
 	// Semantic data

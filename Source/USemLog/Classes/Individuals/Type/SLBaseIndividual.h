@@ -96,6 +96,11 @@ public:
 	// Check if the individual is movable
 	bool IsMovable() const { return bIsMovable; };
 
+	/* SemLog World state logger workaround helper */
+	// Marks if an individual has moved since last check
+	void SetHasMovedFlag(bool Val) { bHasMovedFlag = Val; };
+	bool GetHasMovedFlag(bool Val) const { return  bHasMovedFlag; };
+
 	/* Id */
 	// Set the id value, if empty, reset the individual as not loaded
 	void SetIdValue(const FString& NewVal);
@@ -225,4 +230,9 @@ protected:
 	// SemLog tag key (children will overwrite this)
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	FString TagType;
+
+
+	/* SemLog World state logger workaround helper */
+	// Marks if an individual has moved since last check
+	bool bHasMovedFlag;
 };

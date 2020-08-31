@@ -259,6 +259,7 @@ bool USLBoneConstraintIndividual::SetConstraint1Individual()
 				if (USLBaseIndividual* BI = SkI->GetBoneIndividual(BoneIndex))
 				{
 					ConstraintIndividual1 = BI;
+					return true;
 				}
 				else
 				{
@@ -296,6 +297,7 @@ bool USLBoneConstraintIndividual::SetConstraint2Individual()
 				if (USLBaseIndividual* BI = SkI->GetBoneIndividual(BoneIndex))
 				{
 					ConstraintIndividual2 = BI;
+					return true;
 				}
 				else
 				{
@@ -382,7 +384,7 @@ bool USLBoneConstraintIndividual::InitImpl()
 			if (!(HasValidConstraint2Individual() || SetConstraint2Individual()))
 			{
 				bMembersSet = false;
-			}			
+			}
 			return bMembersSet;
 		}
 	}

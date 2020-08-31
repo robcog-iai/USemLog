@@ -18,6 +18,8 @@ USLIndividualComponent::USLIndividualComponent()
 	bIsLoaded = false;
 	bIsConnected = false;
 	IndividualObj = nullptr;
+
+	bUpdateIndivdualsCachedPoseButtonHack = false;
 }
 
 // Do any object-specific cleanup required immediately after loading an object.
@@ -48,6 +50,26 @@ void USLIndividualComponent::OnComponentCreated()
 		}
 	}
 }
+
+#if WITH_EDITOR
+// Called when a property is changed in the editor
+void USLIndividualComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property name
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+		PropertyChangedEvent.Property->GetFName() : NAME_None;
+
+	/* Button hacks */
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLIndividualComponent, bUpdateIndivdualsCachedPoseButtonHack))
+	{
+		bUpdateIndivdualsCachedPoseButtonHack = false;
+		UpdateCachedPoses();
+	}
+
+}
+#endif // WITH_EDITOR
 
 // Called before destroying the object.
 void USLIndividualComponent::BeginDestroy()
@@ -173,6 +195,24 @@ bool USLIndividualComponent::TriggerIndividualValuesBroadcast()
 		return true;
 	}
 	return false;
+}
+
+// Update individuals and their children cached poses
+bool USLIndividualComponent::UpdateCachedPoses()
+{
+	if (!HasValidIndividual())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Component %s has no valid individual"), *FString(__FUNCTION__), __LINE__, *GetFullName());
+		return false;
+	}
+
+	IndividualObj->UpdateCachedPose();
+
+	for (const auto& Child : IndividualChildren)
+	{
+		Child->UpdateCachedPose();
+	}
+	return true;
 }
 
 /* Values */

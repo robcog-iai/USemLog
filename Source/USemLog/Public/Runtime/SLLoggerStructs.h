@@ -91,11 +91,19 @@ struct FSLWorldStateLoggerParams
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float UpdateRate = 0.f;
 
-	// Min linear distance to log an individual (cm)
+	// Min difference between poses (FTransform) in order for the individual to be logged
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float MinLinearDistance = 0.5f;
+	float PoseTolerance = 0.5f;
 
-	// Min angular distance in order to log an individual (rad)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float MinAngularDistance = 0.1;
+	//// Min linear distance to log an individual (cm)
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	//float MinLinearDistance = 0.5f;
+
+	//// Min angular distance in order to log an individual (rad)
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	//float MinAngularDistance = 0.1;
+
+	//// If available, log gaze data
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	//bool bLogGazeData = true;
 };

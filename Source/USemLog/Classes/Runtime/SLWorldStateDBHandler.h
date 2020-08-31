@@ -32,7 +32,7 @@ class FSLWorldStateDBWriterAsyncTask : public FNonAbandonableTask
 public:
 #if SL_WITH_LIBMONGO_C
 	// Set the individuals
-	bool Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float MinLinearDistance, float MinAngularDistance);
+	bool Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float PoseTolerance);
 #endif //SL_WITH_LIBMONGO_C	
 
 	// Do the db writing here
@@ -72,6 +72,9 @@ private:
 	// Add robot individuals (return the number of individuals added)
 	int32 AddRobotIndividuals(bson_t* doc);
 
+	// Add pose document
+	void AddPose(FTransform Pose, bson_t* doc);
+
 	// Write the bson doc to the collection
 	bool WriteDoc(bson_t* doc);
 #endif //SL_WITH_LIBMONGO_C
@@ -88,11 +91,14 @@ private:
 	// The timestamp to write to the collection
 	float Timestamp;
 
-	// Min linear distance between the previous and the current state of the individuals
-	float MinLinDist;
+	//// Min linear distance between the previous and the current state of the individuals
+	//float MinLinDist;
 
-	// Min angular distance in order to log an individual
-	float MinAngDist;
+	//// Min angular distance in order to log an individual
+	//float MinAngDist;
+
+	// Pose diff tolerance
+	float MinPoseDiff;
 
 	// Individuals with their previous transform
 	TArray<TPair<USLBaseIndividual*, FTransform>> IndividualsData;

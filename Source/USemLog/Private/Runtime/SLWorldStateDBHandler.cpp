@@ -14,7 +14,7 @@
 /* DB Write Async Task */
 // Init task
 #if SL_WITH_LIBMONGO_C
-bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float MinLinearDistance, float MinAngularDistance)
+bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float PoseTolerance)
 {
 	if (!Manager->IsLoaded())
 	{
@@ -23,8 +23,7 @@ bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, AS
 
 	IndividualManager = Manager;
 	mongo_collection = in_collection;
-	MinLinDist = MinLinearDistance;
-	MinAngDist = MinAngularDistance;
+	MinPoseDiff = PoseTolerance;
 		
 	WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::FirstWrite;
 
@@ -72,6 +71,7 @@ int32 FSLWorldStateDBWriterAsyncTask::FirstWrite()
 	return Num;
 }
 
+// Write only the indviduals that changed pose
 int32 FSLWorldStateDBWriterAsyncTask::Write()
 {
 	// Count the number of entries written to the document (if 0, abort writing)
@@ -117,12 +117,15 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividuals(bson_t* doc)
 	for (const auto& Individual : IndividualManager->GetIndividuals())
 	{
 		Individual->UpdateCachedPose(0.0);
+		// TODO workaround
+		Individual->SetHasMovedFlag(true);
 		
-#if SL_WITH_ROS_CONVERSIONS
-		FTransform Pose = FConversions::UToROS(Individual->GetCachedPose());
-#else
-		FTransform Pose = Individual->GetCachedPose();
-#endif // SL_WITH_ROS_CONVERSIONS
+		
+//#if SL_WITH_ROS_CONVERSIONS
+//		FTransform Pose = FConversions::UToROS(Individual->GetCachedPose());
+//#else
+//		FTransform Pose = Individual->GetCachedPose();
+//#endif // SL_WITH_ROS_CONVERSIONS
 
 		bson_t individual_obj;
 		char idx_str[16];
@@ -133,23 +136,24 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividuals(bson_t* doc)
 			// Id
 			BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*Individual->GetIdValue()));			
 			// Pose
-			{
-				bson_t child_obj_loc;
-				bson_t child_obj_rot;
+			AddPose(Individual->GetCachedPose(), &individual_obj);
+			//{
+			//	bson_t child_obj_loc;
+			//	bson_t child_obj_rot;
 
-				BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "loc", &child_obj_loc);
-				BSON_APPEND_DOUBLE(&child_obj_loc, "x", Pose.GetLocation().X);
-				BSON_APPEND_DOUBLE(&child_obj_loc, "y", Pose.GetLocation().Y);
-				BSON_APPEND_DOUBLE(&child_obj_loc, "z", Pose.GetLocation().Z);
-				bson_append_document_end(&individual_obj, &child_obj_loc);
+			//	BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "loc", &child_obj_loc);
+			//	BSON_APPEND_DOUBLE(&child_obj_loc, "x", Pose.GetLocation().X);
+			//	BSON_APPEND_DOUBLE(&child_obj_loc, "y", Pose.GetLocation().Y);
+			//	BSON_APPEND_DOUBLE(&child_obj_loc, "z", Pose.GetLocation().Z);
+			//	bson_append_document_end(&individual_obj, &child_obj_loc);
 
-				BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "quat", &child_obj_rot);
-				BSON_APPEND_DOUBLE(&child_obj_rot, "x", Pose.GetRotation().X);
-				BSON_APPEND_DOUBLE(&child_obj_rot, "y", Pose.GetRotation().Y);
-				BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
-				BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
-				bson_append_document_end(&individual_obj, &child_obj_rot);
-			}
+			//	BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "quat", &child_obj_rot);
+			//	BSON_APPEND_DOUBLE(&child_obj_rot, "x", Pose.GetRotation().X);
+			//	BSON_APPEND_DOUBLE(&child_obj_rot, "y", Pose.GetRotation().Y);
+			//	BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
+			//	BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
+			//	bson_append_document_end(&individual_obj, &child_obj_rot);
+			//}
 		bson_append_document_end(&individuals_arr, &individual_obj);
 		arr_idx++;
 		Num++;
@@ -169,13 +173,10 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividualsThatMoved(bson_t* doc)
 	BSON_APPEND_ARRAY_BEGIN(doc, "individuals", &individuals_arr);
 	for (const auto& Individual : IndividualManager->GetIndividuals())
 	{
-		if (Individual->UpdateCachedPose(MinLinDist))
-		{		
-#if SL_WITH_ROS_CONVERSIONS
-			FTransform Pose = FConversions::UToROS(Individual->GetCachedPose());
-#else
-			FTransform Pose = Individual->GetCachedPose();
-#endif // SL_WITH_ROS_CONVERSIONS
+		if (Individual->UpdateCachedPose(MinPoseDiff))
+		{
+			// TODO workaround
+			Individual->SetHasMovedFlag(true);
 
 			bson_t individual_obj;
 			char idx_str[16];
@@ -186,23 +187,7 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividualsThatMoved(bson_t* doc)
 				// Id
 				BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*Individual->GetIdValue()));
 				// Pose
-				{
-					bson_t child_obj_loc;
-					bson_t child_obj_rot;
-
-					BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "loc", &child_obj_loc);
-					BSON_APPEND_DOUBLE(&child_obj_loc, "x", Pose.GetLocation().X);
-					BSON_APPEND_DOUBLE(&child_obj_loc, "y", Pose.GetLocation().Y);
-					BSON_APPEND_DOUBLE(&child_obj_loc, "z", Pose.GetLocation().Z);
-					bson_append_document_end(&individual_obj, &child_obj_loc);
-
-					BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "quat", &child_obj_rot);
-					BSON_APPEND_DOUBLE(&child_obj_rot, "x", Pose.GetRotation().X);
-					BSON_APPEND_DOUBLE(&child_obj_rot, "y", Pose.GetRotation().Y);
-					BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
-					BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
-					bson_append_document_end(&individual_obj, &child_obj_rot);
-				}
+				AddPose(Individual->GetCachedPose(), &individual_obj);
 			bson_append_document_end(&individuals_arr, &individual_obj);
 			arr_idx++;
 			Num++;
@@ -222,6 +207,30 @@ int32 FSLWorldStateDBWriterAsyncTask::AddSkeletalIndividals(bson_t* doc)
 int32 FSLWorldStateDBWriterAsyncTask::AddRobotIndividuals(bson_t* doc)
 {
 	return 0;
+}
+
+// Add pose document
+void FSLWorldStateDBWriterAsyncTask::AddPose(FTransform Pose, bson_t* doc)
+{
+#if SL_WITH_ROS_CONVERSIONS
+	FConversions::UToROS(Pose);
+#endif // SL_WITH_ROS_CONVERSIONS
+
+	bson_t child_obj_loc;
+	bson_t child_obj_rot;
+
+	BSON_APPEND_DOCUMENT_BEGIN(doc, "loc", &child_obj_loc);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "x", Pose.GetLocation().X);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "y", Pose.GetLocation().Y);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "z", Pose.GetLocation().Z);
+	bson_append_document_end(doc, &child_obj_loc);
+
+	BSON_APPEND_DOCUMENT_BEGIN(doc, "quat", &child_obj_rot);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "x", Pose.GetRotation().X);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "y", Pose.GetRotation().Y);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
+	bson_append_document_end(doc, &child_obj_rot);
 }
 
 // Write the bson doc to the collection
@@ -283,7 +292,7 @@ bool FSLWorldStateDBHandler::Init(ASLIndividualManager* IndividualManager,
 	}
 
 #if SL_WITH_LIBMONGO_C
-	if (!DBWriterTask->GetTask().Init(collection, IndividualManager, InLoggerParameters.MinLinearDistance, InLoggerParameters.MinAngularDistance))
+	if (!DBWriterTask->GetTask().Init(collection, IndividualManager, InLoggerParameters.PoseTolerance))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d World state async writer could not be initialized.."), *FString(__FUNCTION__), __LINE__);
 		return false;

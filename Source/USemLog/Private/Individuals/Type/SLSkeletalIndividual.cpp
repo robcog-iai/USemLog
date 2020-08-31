@@ -543,7 +543,7 @@ bool USLSkeletalIndividual::InitChildrenIndividuals()
 	bool bAllChildrenAreInit = true;
 	for (const auto& CI : GetChildrenIndividuals())
 	{
-		if (!CI->IsInit() && !CI->Init(false))
+		if (!(CI->IsInit() || CI->Init(false)))
 		{
 			bAllChildrenAreInit = false;
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's child %s could not be init.."),
@@ -559,7 +559,7 @@ bool USLSkeletalIndividual::LoadChildrenIndividuals()
 	bool bAllChildrenAreLoaded = true;
 	for (const auto& CI : GetChildrenIndividuals())
 	{
-		if (!CI->IsLoaded() && !CI->Load(false, true))
+		if (!(CI->IsLoaded() || CI->Load(false, true)))
 		{
 			bAllChildrenAreLoaded = false;
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's child %s could not be loaded.."),

@@ -3,15 +3,7 @@
 
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/SLIndividualComponent.h"
-#include "Individuals/Type/SLBaseIndividual.h"
-#include "Individuals/Type/SLRigidConstraintIndividual.h"
-#include "Individuals/Type/SLRigidIndividual.h"
-#include "Individuals/Type/SLSkyIndividual.h"
-#include "Individuals/Type/SLLightIndividual.h"
-#include "Individuals/Type/SLSkeletalIndividual.h"
-#include "Individuals/Type/SLBoneIndividual.h"
-#include "Individuals/Type/SLRobotIndividual.h"
-#include "Individuals/Type/SLVirtualViewIndividual.h"
+#include "Individuals/Type/SLIndividualTypes.h"
 
 #include "Skeletal/SLSkeletalDataAsset.h"
 #include "AssetRegistryModule.h" // FindSkeletalDataAsset
@@ -32,6 +24,9 @@
 #include "Engine/SkyLight.h"
 
 #include "Vision/SLVirtualCameraView.h"
+
+#include "Gaze/SLGazeTargetActor.h"
+#include "Gaze/SLGazeOriginActor.h"
 
 /* Individuals */
 // Get the semantic individual manager from the world or create a new one if none are available
@@ -567,10 +562,6 @@ USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AA
 	{
 		return NewObject<USLBaseIndividual>(Outer, USLRigidConstraintIndividual::StaticClass());
 	}
-	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
-	{
-		return NewObject<USLBaseIndividual>(Outer, USLVirtualViewIndividual::StaticClass());
-	}
 	else if (Owner->IsA(ASkeletalMeshActor::StaticClass()))
 	{
 		return NewObject<USLBaseIndividual>(Outer, USLSkeletalIndividual::StaticClass());
@@ -586,6 +577,18 @@ USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AA
 	else if (Owner->IsA(AAtmosphericFog::StaticClass()) || Owner->GetName().Contains("SkySphere"))
 	{
 		return NewObject<USLBaseIndividual>(Outer, USLSkyIndividual::StaticClass());
+	}
+	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLVirtualViewIndividual::StaticClass());
+	}
+	else if (Owner->IsA(ASLGazeOriginActor::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLVirtualGazeOriginIndividual::StaticClass());
+	}
+	else if (Owner->IsA(ASLGazeTargetActor::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLVirtualGazeTargetIndividual::StaticClass());
 	}
 	else
 	{
