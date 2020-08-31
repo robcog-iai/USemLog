@@ -193,11 +193,12 @@ bool FSLEntitiesManager::AddObject(UObject* Object)
 	{
 
 		ObjectsSemanticData.Emplace(Object, FSLEntity(Object, Id, Class));
-
+#if SL_WITH_ROSBRIDGE
 		// Add with ROSProlog
 		if (ROSPrologClient) {
 			ROSPrologClient->AddObjectQuery(ObjectsSemanticData.Find(Object));
 		}
+#endif // SL_WITH_ROSBRIDGE
 		return true;
 	}
 	else
