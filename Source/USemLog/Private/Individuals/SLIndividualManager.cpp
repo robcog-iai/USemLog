@@ -29,12 +29,6 @@ ASLIndividualManager::ASLIndividualManager()
 
 	bThreadSafeToRead = true;
 
-	/* Editor button hacks */
-	bInitButtonHack = false;
-	bLoadButtonHack = false;
-	bResetFlagButtonHack = false;
-	bResetButtonHack = false;
-
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.35;

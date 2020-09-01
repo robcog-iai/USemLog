@@ -240,6 +240,7 @@ void ASLWorldStateLogger::FinishImpl(bool bForced)
 		return;
 	}
 
+	// Index and disconnect from database
 	DBHandler.Finish();
 
 	//  Disable tick

@@ -99,7 +99,7 @@ public:
 	/* SemLog World state logger workaround helper */
 	// Marks if an individual has moved since last check
 	void SetHasMovedFlag(bool Val) { bHasMovedFlag = Val; };
-	bool GetHasMovedFlag(bool Val) const { return  bHasMovedFlag; };
+	bool IsHasMovedFlagSet() const { return  bHasMovedFlag; };
 
 	/* Id */
 	// Set the id value, if empty, reset the individual as not loaded

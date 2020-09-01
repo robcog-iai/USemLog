@@ -110,7 +110,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseIndependently"))
 	FSLLoggerLocationParams LocationParameters;
 
-	// Location parameters
+	// Database parameters
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseIndependently"))
 	FSLLoggerDBServerParams DBServerParameters;
 
