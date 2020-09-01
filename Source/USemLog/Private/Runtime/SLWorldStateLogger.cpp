@@ -31,12 +31,9 @@ ASLWorldStateLogger::ASLWorldStateLogger()
 // Force call on finish
 ASLWorldStateLogger::~ASLWorldStateLogger()
 {
-	if (bUseIndependently)
+	if (!IsTemplate() && !bIsFinished && (bIsStarted || bIsInit))
 	{
-		if (!IsTemplate() && !bIsFinished)
-		{
-			FinishImpl(true);
-		}
+		FinishImpl(true);
 	}
 }
 

@@ -350,19 +350,20 @@ bool USLSkeletalIndividual::SetSkeletalMeshComponent()
 				SkeletalMeshComponent = SMC;
 				OriginalMaterials = SMC->GetMaterials();
 
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's Constraints:"), *FString(__FUNCTION__), __LINE__, *GetFullName());
-				for (const auto CI : SkeletalMeshComponent->Constraints)
-				{					
-					UE_LOG(LogTemp, Warning, TEXT("\t\t\t JointName=%s; ConstraintIndex=%ld;"),
-						*CI->JointName.ToString(), CI->ConstraintIndex);
-				}
+				//// DEBUG LOGs
+				//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's Constraints:"), *FString(__FUNCTION__), __LINE__, *GetFullName());
+				//for (const auto CI : SkeletalMeshComponent->Constraints)
+				//{					
+				//	UE_LOG(LogTemp, Warning, TEXT("\t\t\t JointName=%s; ConstraintIndex=%ld;"),
+				//		*CI->JointName.ToString(), CI->ConstraintIndex);
+				//}
 
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's Bodies:"), *FString(__FUNCTION__), __LINE__, *GetFullName());
-				for (const auto BI : SkeletalMeshComponent->Bodies)
-				{					
-					UE_LOG(LogTemp, Warning, TEXT("\t\t\t GetBodyDebugName=%s; InstanceBodyIndex=%ld; InstanceBodyIndex=%ld;"),
-						*BI->GetBodyDebugName(), BI->InstanceBodyIndex, BI->InstanceBoneIndex);
-				}
+				//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's Bodies:"), *FString(__FUNCTION__), __LINE__, *GetFullName());
+				//for (const auto BI : SkeletalMeshComponent->Bodies)
+				//{					
+				//	UE_LOG(LogTemp, Warning, TEXT("\t\t\t GetBodyDebugName=%s; InstanceBodyIndex=%ld; InstanceBodyIndex=%ld;"),
+				//		*BI->GetBodyDebugName(), BI->InstanceBodyIndex, BI->InstanceBoneIndex);
+				//}
 				return true;
 			}
 			else
