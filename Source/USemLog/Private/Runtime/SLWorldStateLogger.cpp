@@ -31,12 +31,9 @@ ASLWorldStateLogger::ASLWorldStateLogger()
 // Force call on finish
 ASLWorldStateLogger::~ASLWorldStateLogger()
 {
-	if (bUseIndependently)
+	if (!IsTemplate() && !bIsFinished && (bIsStarted || bIsInit))
 	{
-		if (!IsTemplate() && !bIsFinished)
-		{
-			FinishImpl(true);
-		}
+		FinishImpl(true);
 	}
 }
 
@@ -169,6 +166,7 @@ void ASLWorldStateLogger::InitImpl()
 		return;
 	}
 
+
 	if (!DBHandler.Init(IndividualManager, LoggerParameters, LocationParameters, DBServerParameters))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s) could not init the db handler.."),
@@ -213,7 +211,7 @@ void ASLWorldStateLogger::StartImpl()
 	// Delay tick activation with one update rate value
 	FTimerHandle DelayTH;
 	const float TickDelayValue = LoggerParameters.UpdateRate > 0.f ? LoggerParameters.UpdateRate : 0.08f;
-	GetWorld()->GetTimerManager().SetTimer(DelayTH, [this]() {SetActorTickEnabled(true);}, TickDelayValue, false);
+	GetWorld()->GetTimerManager().SetTimer(DelayTH, [this]() { SetActorTickEnabled(true); }, TickDelayValue, false);
 
 	/** !! Replaced with delay timer ^^ since it was trigerring in the same tick. !! **/
 	/*FTimerDelegate TimerDelegateNextTick;
@@ -242,6 +240,7 @@ void ASLWorldStateLogger::FinishImpl(bool bForced)
 		return;
 	}
 
+	// Index and disconnect from database
 	DBHandler.Finish();
 
 	//  Disable tick

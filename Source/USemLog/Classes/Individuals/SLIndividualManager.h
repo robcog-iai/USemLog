@@ -59,6 +59,12 @@ public:
 	// Get all the individuals
 	const TArray<USLBaseIndividual*>& GetIndividuals() const { return Individuals; };
 
+	// Get skeletal individuals
+	const TArray<USLSkeletalIndividual*>& GetSkeletalIndividuals() const { return SkeletalIndividuals; };
+
+	// Get robot individuals
+	const TArray<USLRobotIndividual*>& GetRobotIndividuals() const { return RobotIndividuals; };
+
 	// Get the individual object from the unique id
 	USLBaseIndividual* GetIndividual(const FString& Id);
 
@@ -140,6 +146,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TArray<USLBaseIndividual*> Individuals;
 
+
 	/* World state logger convenient containers */
 	// Individuals with movable mobility
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
@@ -168,21 +175,22 @@ private:
 	TMap<FString, USLIndividualComponent*> IdToIndividualComponents;
 	/** Containers - end - **/
 
+
 	/* Editor button hacks */
 	// Triggers a call to init
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bInitButtonHack;
+	bool bInitButtonHack = false;
 
 	// Triggers a call to load
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bLoadButtonHack;
+	bool bLoadButtonHack = false;
 
 	// Triggered call reset argument
 	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
-	bool bResetFlagButtonHack;
+	bool bResetFlagButtonHack = false;
 
 	// Triggers a reset call
 	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
-	bool bResetButtonHack;
+	bool bResetButtonHack = false;
 };
 

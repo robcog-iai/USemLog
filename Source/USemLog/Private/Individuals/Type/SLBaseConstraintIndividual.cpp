@@ -10,7 +10,6 @@
 // Ctor
 USLBaseConstraintIndividual::USLBaseConstraintIndividual()
 {
-	ConstraintInstance = nullptr;
 	ConstraintIndividual1 = nullptr;
 	ConstraintIndividual2 = nullptr;
 }
@@ -70,12 +69,6 @@ FString USLBaseConstraintIndividual::CalcDefaultClassValue()
 	return GetTypeName();
 }
 
-// Check if the constraint instance is valid
-bool USLBaseConstraintIndividual::HasValidConstraintInstance() const
-{
-	return ConstraintInstance != nullptr;
-}
-
 // Check if the constraint1 individual is valid ('child' bone in a PhysicsAsset) 
 bool USLBaseConstraintIndividual::HasValidConstraint1Individual() const
 {
@@ -104,7 +97,6 @@ bool USLBaseConstraintIndividual::LoadImpl(bool bTryImport)
 // Clear all values of the individual
 void USLBaseConstraintIndividual::InitReset()
 {
-	ConstraintInstance = nullptr;
 	ConstraintIndividual1 = nullptr;
 	ConstraintIndividual2 = nullptr;
 	SetIsInit(false);

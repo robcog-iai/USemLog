@@ -16,24 +16,6 @@ USLBoneConstraintIndividual::USLBoneConstraintIndividual()
 	ConstraintIndex = INDEX_NONE;
 }
 
-// Do any object-specific cleanup required immediately after loading an object.
-void USLBoneConstraintIndividual::PostLoad()
-{
-	Super::PostLoad();
-	if (!HasValidConstraintInstance())
-	{
-		if (!SetConstraintInstance())
-		{
-			if (IsInit())
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint instance could not be re-set at load time.."),
-					*FString(__FUNCTION__), __LINE__, *GetFullName());
-			}
-			SetIsInit(false);
-		}
-	}
-}
-
 // Called before destroying the object.
 void USLBoneConstraintIndividual::BeginDestroy()
 {
@@ -151,24 +133,27 @@ bool USLBoneConstraintIndividual::UpdateCachedPose(float Tolerance, FTransform* 
 // Get class name, virtual since each invidiual type will have different name
 FString USLBoneConstraintIndividual::CalcDefaultClassValue()
 {
-	if (HasValidConstraintInstance() || SetConstraintInstance())
+	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
-		if (ConstraintInstance->GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
-			ConstraintInstance->GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
-			ConstraintInstance->GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
+		if(FConstraintInstance * CI = GetConstraintInstance())
 		{
-			return "BoneLinearJoint";
-		}
-		else if (ConstraintInstance->GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
-			ConstraintInstance->GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
-			ConstraintInstance->GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
-		{
-			return "BoneRevoluteJoint";
-		}
-		else
-		{
-			return "BoneFixedJoint";
-		}
+			if (CI->GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
+				CI->GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
+				CI->GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
+			{
+				return "BoneLinearJoint";
+			}
+			else if (CI->GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
+				CI->GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
+				CI->GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
+			{
+				return "BoneRevoluteJoint";
+			}
+			else
+			{
+				return "BoneFixedJoint";
+			}
+		}		
 	}
 	return GetTypeName();
 }
@@ -213,32 +198,6 @@ bool USLBoneConstraintIndividual::SetParentActor()
 	return false;
 }
 
-// Set the constraint instance
-bool USLBoneConstraintIndividual::SetConstraintInstance()
-{
-	if (HasValidConstraintInstance())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint instance is already valid.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return true;
-	}
-
-	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
-	{
-		if (HasValidConstraintIndex())
-		{
-			ConstraintInstance = SkeletalMeshComponent->Constraints[ConstraintIndex];			
-			return HasValidConstraintInstance();
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint index is not valid.."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName());
-		}
-	}
-	return false;
-}
-
 // Set the child individual object
 bool USLBoneConstraintIndividual::SetConstraint1Individual()
 {
@@ -250,27 +209,31 @@ bool USLBoneConstraintIndividual::SetConstraint1Individual()
 	}
 	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
-		const FName ConstraintBoneName = ConstraintInstance->ConstraintBone1;
-		int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(ConstraintBoneName);
-		if (BoneIndex != INDEX_NONE)
+		if (FConstraintInstance* CI = GetConstraintInstance())
 		{
-			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+			const FName ConstraintBoneName = CI->ConstraintBone1;
+			int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(ConstraintBoneName);
+			if (BoneIndex != INDEX_NONE)
 			{
-				if (USLBaseIndividual* BI = SkI->GetBoneIndividual(BoneIndex))
+				if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
 				{
-					ConstraintIndividual1 = BI;
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
-						*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneIndex);
+					if (USLBaseIndividual* BI = SkI->GetBoneIndividual(BoneIndex))
+					{
+						ConstraintIndividual1 = BI;
+						return true;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
+							*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneIndex);
+					}
 				}
 			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not access child bone (ConstraintBone1=%s; BoneIndex=%ld;).."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName(), *ConstraintBoneName.ToString(), BoneIndex);
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not access child bone (ConstraintBone1=%s; BoneIndex=%ld;).."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName(), *ConstraintBoneName.ToString(), BoneIndex);
+			}
 		}
 	}
 	return false;
@@ -287,35 +250,63 @@ bool USLBoneConstraintIndividual::SetConstraint2Individual()
 	}
 	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
-		const FName ConstraintBoneName = ConstraintInstance->ConstraintBone2;
-		int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(ConstraintBoneName);
-		if (BoneIndex != INDEX_NONE)
+		if (FConstraintInstance* CI = GetConstraintInstance())
 		{
-			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
+			const FName ConstraintBoneName = CI->ConstraintBone2;
+			int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(ConstraintBoneName);
+			if (BoneIndex != INDEX_NONE)
 			{
-				if (USLBaseIndividual* BI = SkI->GetBoneIndividual(BoneIndex))
+				if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
 				{
-					ConstraintIndividual2 = BI;
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
-						*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneIndex);
+					if (USLBaseIndividual* BI = SkI->GetBoneIndividual(BoneIndex))
+					{
+						ConstraintIndividual2 = BI;
+						return true;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not find any sibling bone with BoneIndex=%ld .."),
+							*FString(__FUNCTION__), __LINE__, *GetFullName(), BoneIndex);
+					}
 				}
 			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not access child bone (ConstraintBone2=%s; BoneIndex=%ld;).."),
-				*FString(__FUNCTION__), __LINE__, *GetFullName(), *ConstraintBoneName.ToString(), BoneIndex);
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's could not access child bone (ConstraintBone2=%s; BoneIndex=%ld;).."),
+					*FString(__FUNCTION__), __LINE__, *GetFullName(), *ConstraintBoneName.ToString(), BoneIndex);
+			}
 		}
 	}
 	return false;
 }
 
+// Get the constraint instance of the individual
+FConstraintInstance* USLBoneConstraintIndividual::GetConstraintInstance() const
+{
+	if (SkeletalMeshComponent->Constraints.IsValidIndex(ConstraintIndex))
+	{
+		return SkeletalMeshComponent->Constraints[ConstraintIndex];
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Cannot access %s's constraint instance[Index=%ld/Total=%ld].."),
+			*FString(__FUNCTION__), __LINE__, *GetFullName(), ConstraintIndex, SkeletalMeshComponent->Constraints.Num());
+	}
+	return nullptr;
+}
+
 // Check if the constraint index is valid
 bool USLBoneConstraintIndividual::HasValidConstraintIndex() const
 {
+	if (HasValidSkeletalMeshComponent())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d HasValidSkeletalMeshComponent gud=%ld , Constraints.Num()=%ld"),
+			*FString(__FUNCTION__), __LINE__, ConstraintIndex, SkeletalMeshComponent->Constraints.Num());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d HasValidSkeletalMeshComponent NOTgud=%ld "), *FString(__FUNCTION__), __LINE__, ConstraintIndex);
+	}
 	return HasValidSkeletalMeshComponent()
 		&& ConstraintIndex != INDEX_NONE
 		&& ConstraintIndex < SkeletalMeshComponent->Constraints.Num();
@@ -371,20 +362,17 @@ bool USLBoneConstraintIndividual::InitImpl()
 
 	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
-		if (HasValidConstraintInstance() || SetConstraintInstance())
+		bool bMembersSet = true;
+		if (!(HasValidConstraint1Individual() || SetConstraint1Individual()))
 		{
-			bool bMembersSet = true;
-			if (!(HasValidConstraint1Individual() || SetConstraint1Individual()))
-			{
-				bMembersSet = false;
-			}			
+			bMembersSet = false;
+		}			
 
-			if (!(HasValidConstraint2Individual() || SetConstraint2Individual()))
-			{
-				bMembersSet = false;
-			}			
-			return bMembersSet;
+		if (!(HasValidConstraint2Individual() || SetConstraint2Individual()))
+		{
+			bMembersSet = false;
 		}
+		return bMembersSet;
 	}
 	return false;
 }

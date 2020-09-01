@@ -6,19 +6,19 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Individuals/Type/SLBaseIndividual.h"
-#include "SLVirtualViewIndividual.generated.h"
+#include "SLVirtualGazeTargetIndividual.generated.h"
 
 /**
  * 
  */
 UCLASS(ClassGroup = SL)
-class USEMLOG_API USLVirtualViewIndividual : public USLBaseIndividual
+class USEMLOG_API USLVirtualGazeTargetIndividual : public USLBaseIndividual
 {
 	GENERATED_BODY()
 
 public:
     // Ctor
-    USLVirtualViewIndividual();
+    USLVirtualGazeTargetIndividual();
 
     // Called before destroying the object.
     virtual void BeginDestroy() override;
@@ -30,7 +30,7 @@ public:
     virtual bool Load(bool bReset, bool bTryImport);
 
     // Get the type name as string
-    virtual FString GetTypeName() const override { return FString("VirtualViewIndividual"); };
+    virtual FString GetTypeName() const override { return FString("VirtualGazeTargetIndividual"); };
 
 protected:
     // Get class name, virtual since each invidiual type will have different name

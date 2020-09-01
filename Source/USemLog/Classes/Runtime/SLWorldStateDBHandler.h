@@ -23,6 +23,9 @@ THIRD_PARTY_INCLUDES_END
 // Forward declarations
 class ASLIndividualManager;
 class USLBaseIndiviual;
+class USLBoneIndividual;
+class USLVirtualBoneIndividual;
+class USLBoneConstraintIndividual;
 
 /**
  * Async task to write to the database
@@ -32,7 +35,7 @@ class FSLWorldStateDBWriterAsyncTask : public FNonAbandonableTask
 public:
 #if SL_WITH_LIBMONGO_C
 	// Set the individuals
-	bool Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float MinLinearDistance, float MinAngularDistance);
+	bool Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float PoseTolerance);
 #endif //SL_WITH_LIBMONGO_C	
 
 	// Do the db writing here
@@ -43,10 +46,6 @@ public:
 
 	// Set the simulation time
 	void SetTimestamp(float InTs) { Timestamp = InTs; };
-
-	// TODO
-	// Remove individual (in case an object has been destroyed in the world)
-	bool RemoveIndividual() {};
 
 private:
 	// First write where all the individuals are written irregardresly of their previous position
@@ -69,16 +68,28 @@ private:
 	// Add skeletal individuals (return the number of individuals added)
 	int32 AddSkeletalIndividals(bson_t* doc);
 
+	// Add skeletal bones to the document
+	void AddSkeletalBoneIndividuals(const TArray<USLBoneIndividual*>& BoneIndividuals,
+		const TArray<USLVirtualBoneIndividual*>& VirtualBoneIndividuals,
+		bson_t* doc);
+
+	// Add skeletal bone constraints to the document
+	void AddSkeletalConstraintIndividuals(const TArray<USLBoneConstraintIndividual*>& ConstraintIndividuals,
+		bson_t* doc);
+
 	// Add robot individuals (return the number of individuals added)
 	int32 AddRobotIndividuals(bson_t* doc);
 
+	// Add pose document
+	void AddPose(FTransform Pose, bson_t* doc);
+
 	// Write the bson doc to the collection
-	bool WriteDoc(bson_t* doc);
+	bool UploadDoc(bson_t* doc);
 #endif //SL_WITH_LIBMONGO_C
 
 
 private:
-	// Do work function pointers
+	// DoWork function pointers
 	typedef int32 (FSLWorldStateDBWriterAsyncTask::*WriteTypeFunctionPtr)();
 	WriteTypeFunctionPtr WriteFunctionPtr;
 
@@ -88,14 +99,8 @@ private:
 	// The timestamp to write to the collection
 	float Timestamp;
 
-	// Min linear distance between the previous and the current state of the individuals
-	float MinLinDist;
-
-	// Min angular distance in order to log an individual
-	float MinAngDist;
-
-	// Individuals with their previous transform
-	TArray<TPair<USLBaseIndividual*, FTransform>> IndividualsData;
+	// Pose diff tolerance
+	float MinPoseDiff;
 
 #if SL_WITH_LIBMONGO_C
 	// Database collection

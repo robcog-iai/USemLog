@@ -24,9 +24,6 @@ public:
     // Ctor
     USLRigidConstraintIndividual();
 
-    // Do any object-specific cleanup required immediately after loading an object. (called only once when loading the map)
-    virtual void PostLoad() override;
-
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
@@ -49,14 +46,14 @@ protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() override;
 
-    // Set the constraint instance
-    virtual bool SetConstraintInstance() override;
-
     // Set the child individual object
     virtual bool SetConstraint1Individual() override;
 
     // Set the parent individual object
     virtual bool SetConstraint2Individual() override;
+
+    // Get the constraint instance of the individual
+    virtual FConstraintInstance* GetConstraintInstance() const override;
 
     // Check if the constraint component is valid
     bool HasValidConstraintComponent() const;

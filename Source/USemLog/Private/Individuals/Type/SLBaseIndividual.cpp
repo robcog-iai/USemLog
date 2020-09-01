@@ -20,6 +20,9 @@ USLBaseIndividual::USLBaseIndividual()
 	bIsLoaded = false;
 	bIsMovable = true;
 	TagType = "SemLog";
+
+	/* SemLog World state logger workaround helper */
+	bHasMovedFlag = false;
 }
 
 // Called before destroying the object.

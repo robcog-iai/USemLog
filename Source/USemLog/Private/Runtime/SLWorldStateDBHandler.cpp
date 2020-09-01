@@ -3,7 +3,10 @@
 
 #include "Runtime/SLWorldStateDBHandler.h"
 #include "Individuals/SLIndividualManager.h"
+
 #include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/Type/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLRobotIndividual.h"
 
 // UUtils
 #if SL_WITH_ROS_CONVERSIONS
@@ -14,7 +17,7 @@
 /* DB Write Async Task */
 // Init task
 #if SL_WITH_LIBMONGO_C
-bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float MinLinearDistance, float MinAngularDistance)
+bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float PoseTolerance)
 {
 	if (!Manager->IsLoaded())
 	{
@@ -23,9 +26,9 @@ bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, AS
 
 	IndividualManager = Manager;
 	mongo_collection = in_collection;
-	MinLinDist = MinLinearDistance;
-	MinAngDist = MinAngularDistance;
-		
+	MinPoseDiff = PoseTolerance;
+	
+	// Set the write function pointer (first write is without optimization, write all individuals)
 	WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::FirstWrite;
 
 	return true;
@@ -36,6 +39,7 @@ void FSLWorldStateDBWriterAsyncTask::DoWork()
 {
 	const double StartTime = FPlatformTime::Seconds();
 
+	// Call the write function pointer
 	int32 NumEntries = (this->*WriteFunctionPtr)();
 
 	double Duration = FPlatformTime::Seconds() - StartTime;
@@ -46,7 +50,7 @@ void FSLWorldStateDBWriterAsyncTask::DoWork()
 // First write where all the individuals are written irregardresly of their previous position
 int32 FSLWorldStateDBWriterAsyncTask::FirstWrite()
 {
-	// Count the number of entries written to the document (if 0, abort writing)
+	// Count the number of entries written to the document (if 0, skip upload)
 	int32 Num = 0;
 
 #if SL_WITH_LIBMONGO_C
@@ -54,27 +58,31 @@ int32 FSLWorldStateDBWriterAsyncTask::FirstWrite()
 	ws_doc = bson_new();
 
 	AddTimestamp(ws_doc);
+
 	Num += AddAllIndividuals(ws_doc);
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d NumEntries=%ld"), *FString(__FUNCTION__), __LINE__, Num);
+	//Num += AddSkeletalIndividals(ws_doc);
+	//Num += AddRobotIndividuals(ws_doc);
+
 	// Write only if there are any entries in the document
 	if (Num > 0)
 	{
-		WriteDoc(ws_doc);
+		UploadDoc(ws_doc);
 	}
 
 	// Clean up
 	bson_destroy(ws_doc);
 #endif //SL_WITH_LIBMONGO_C	
 
-	// Switch to normal write
+	// Change the write function pointer to write only individuals that are moving
 	WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::Write;
 
 	return Num;
 }
 
+// Write only the indviduals that changed pose
 int32 FSLWorldStateDBWriterAsyncTask::Write()
 {
-	// Count the number of entries written to the document (if 0, abort writing)
+	// Count the number of entries written to the document (if 0, skip upload)
 	int32 Num = 0;
 
 #if SL_WITH_LIBMONGO_C
@@ -82,20 +90,20 @@ int32 FSLWorldStateDBWriterAsyncTask::Write()
 	ws_doc = bson_new();
 
 	AddTimestamp(ws_doc);
+
 	Num += AddAllIndividualsThatMoved(ws_doc);
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d NumEntries=%ld"), *FString(__FUNCTION__), __LINE__, Num);
+	//Num += AddSkeletalIndividals(ws_doc);
+	//Num += AddRobotIndividuals(ws_doc);
+
 	// Write only if there are any entries in the document
 	if (Num > 0)
 	{
-		WriteDoc(ws_doc);
+		UploadDoc(ws_doc);
 	}
 
 	// Clean up
 	bson_destroy(ws_doc);
-#endif //SL_WITH_LIBMONGO_C	
-
-	// Switch to normal write
-	WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::Write;
+#endif //SL_WITH_LIBMONGO_C
 
 	return Num;
 }
@@ -110,51 +118,33 @@ void FSLWorldStateDBWriterAsyncTask::AddTimestamp(bson_t* doc)
 int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividuals(bson_t* doc)
 {
 	int32 Num = 0;
-	bson_t individuals_arr;
+	bson_t arr_obj;
 	uint32_t arr_idx = 0;
 
-	BSON_APPEND_ARRAY_BEGIN(doc, "individuals", &individuals_arr);
+	BSON_APPEND_ARRAY_BEGIN(doc, "individuals", &arr_obj);
 	for (const auto& Individual : IndividualManager->GetIndividuals())
 	{
 		Individual->UpdateCachedPose(0.0);
-		
-#if SL_WITH_ROS_CONVERSIONS
-		FTransform Pose = FConversions::UToROS(Individual->GetCachedPose());
-#else
-		FTransform Pose = Individual->GetCachedPose();
-#endif // SL_WITH_ROS_CONVERSIONS
+
+		// TODO workaround
+		Individual->SetHasMovedFlag(true);
 
 		bson_t individual_obj;
 		char idx_str[16];
 		const char* idx_key;
 
 		bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
-		BSON_APPEND_DOCUMENT_BEGIN(&individuals_arr, idx_key, &individual_obj);
+		BSON_APPEND_DOCUMENT_BEGIN(&arr_obj, idx_key, &individual_obj);
 			// Id
 			BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*Individual->GetIdValue()));			
 			// Pose
-			{
-				bson_t child_obj_loc;
-				bson_t child_obj_rot;
+			AddPose(Individual->GetCachedPose(), &individual_obj);
+		bson_append_document_end(&arr_obj, &individual_obj);
 
-				BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "loc", &child_obj_loc);
-				BSON_APPEND_DOUBLE(&child_obj_loc, "x", Pose.GetLocation().X);
-				BSON_APPEND_DOUBLE(&child_obj_loc, "y", Pose.GetLocation().Y);
-				BSON_APPEND_DOUBLE(&child_obj_loc, "z", Pose.GetLocation().Z);
-				bson_append_document_end(&individual_obj, &child_obj_loc);
-
-				BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "quat", &child_obj_rot);
-				BSON_APPEND_DOUBLE(&child_obj_rot, "x", Pose.GetRotation().X);
-				BSON_APPEND_DOUBLE(&child_obj_rot, "y", Pose.GetRotation().Y);
-				BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
-				BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
-				bson_append_document_end(&individual_obj, &child_obj_rot);
-			}
-		bson_append_document_end(&individuals_arr, &individual_obj);
 		arr_idx++;
 		Num++;
 	}
-	bson_append_array_end(doc, &individuals_arr);
+	bson_append_array_end(doc, &arr_obj);
 	return Num;
 }
 
@@ -169,13 +159,10 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividualsThatMoved(bson_t* doc)
 	BSON_APPEND_ARRAY_BEGIN(doc, "individuals", &individuals_arr);
 	for (const auto& Individual : IndividualManager->GetIndividuals())
 	{
-		if (Individual->UpdateCachedPose(MinLinDist))
-		{		
-#if SL_WITH_ROS_CONVERSIONS
-			FTransform Pose = FConversions::UToROS(Individual->GetCachedPose());
-#else
-			FTransform Pose = Individual->GetCachedPose();
-#endif // SL_WITH_ROS_CONVERSIONS
+		if (Individual->UpdateCachedPose(MinPoseDiff))
+		{
+			// TODO workaround
+			Individual->SetHasMovedFlag(true);
 
 			bson_t individual_obj;
 			char idx_str[16];
@@ -186,24 +173,9 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividualsThatMoved(bson_t* doc)
 				// Id
 				BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*Individual->GetIdValue()));
 				// Pose
-				{
-					bson_t child_obj_loc;
-					bson_t child_obj_rot;
-
-					BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "loc", &child_obj_loc);
-					BSON_APPEND_DOUBLE(&child_obj_loc, "x", Pose.GetLocation().X);
-					BSON_APPEND_DOUBLE(&child_obj_loc, "y", Pose.GetLocation().Y);
-					BSON_APPEND_DOUBLE(&child_obj_loc, "z", Pose.GetLocation().Z);
-					bson_append_document_end(&individual_obj, &child_obj_loc);
-
-					BSON_APPEND_DOCUMENT_BEGIN(&individual_obj, "quat", &child_obj_rot);
-					BSON_APPEND_DOUBLE(&child_obj_rot, "x", Pose.GetRotation().X);
-					BSON_APPEND_DOUBLE(&child_obj_rot, "y", Pose.GetRotation().Y);
-					BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
-					BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
-					bson_append_document_end(&individual_obj, &child_obj_rot);
-				}
+				AddPose(Individual->GetCachedPose(), &individual_obj);
 			bson_append_document_end(&individuals_arr, &individual_obj);
+
 			arr_idx++;
 			Num++;
 		}
@@ -215,17 +187,123 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividualsThatMoved(bson_t* doc)
 // Add skeletal individuals (return the number of individuals added)
 int32 FSLWorldStateDBWriterAsyncTask::AddSkeletalIndividals(bson_t* doc)
 {
-	return 0;
+	int32 Num = 0;
+	bson_t arr_obj;
+	uint32_t arr_idx = 0;
+
+	BSON_APPEND_ARRAY_BEGIN(doc, "skel_individuals", &arr_obj);
+	for (const auto& SkelIndividual : IndividualManager->GetSkeletalIndividuals())
+	{
+		// Check if it was marked as "moved" by the previous iterator function
+		if (SkelIndividual->IsHasMovedFlagSet())
+		{			
+			SkelIndividual->SetHasMovedFlag(false);
+
+			bson_t individual_obj;
+			char idx_str[16];
+			const char* idx_key;
+
+			bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
+			BSON_APPEND_DOCUMENT_BEGIN(&arr_obj, idx_key, &individual_obj);
+
+				// Id
+				BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*SkelIndividual->GetIdValue()));
+				// Pose
+				AddPose(SkelIndividual->GetCachedPose(), &individual_obj);
+				// Bones
+				AddSkeletalBoneIndividuals(SkelIndividual->GetBoneIndividuals(), SkelIndividual->GetVirtualBoneIndividuals(), &individual_obj);
+				// Constraints
+				AddSkeletalConstraintIndividuals(SkelIndividual->GetBoneConstraintIndividuals(), &individual_obj);
+
+			bson_append_document_end(&arr_obj, &individual_obj);
+
+			arr_idx++;
+			Num++;
+		}
+	}
+	bson_append_array_end(doc, &arr_obj);
+	return Num;
+}
+
+// Add skeletal bones to the document
+void FSLWorldStateDBWriterAsyncTask::AddSkeletalBoneIndividuals(const TArray<USLBoneIndividual*>& BoneIndividuals,
+	const TArray<USLVirtualBoneIndividual*>& VirtualBoneIndividuals,
+	bson_t* doc)
+{
+}
+
+// Add skeletal bone constraints to the document
+void FSLWorldStateDBWriterAsyncTask::AddSkeletalConstraintIndividuals(const TArray<USLBoneConstraintIndividual*>& ConstraintIndividuals,
+	bson_t* doc)
+{
 }
 
 // Add robot individuals (return the number of individuals added)
 int32 FSLWorldStateDBWriterAsyncTask::AddRobotIndividuals(bson_t* doc)
 {
-	return 0;
+	int32 Num = 0;
+	bson_t arr_obj;
+	uint32_t arr_idx = 0;
+
+	BSON_APPEND_ARRAY_BEGIN(doc, "robot_individuals", &arr_obj);
+	for (const auto& RoboIndividual : IndividualManager->GetRobotIndividuals())
+	{
+		// Check if it was marked as "moved" by the previous iterator function
+		if (RoboIndividual->IsHasMovedFlagSet())
+		{
+			RoboIndividual->SetHasMovedFlag(false);
+
+			bson_t individual_obj;
+			char idx_str[16];
+			const char* idx_key;
+
+			bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
+			BSON_APPEND_DOCUMENT_BEGIN(&arr_obj, idx_key, &individual_obj);
+				// Id
+				BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*RoboIndividual->GetIdValue()));
+				// Pose
+				AddPose(RoboIndividual->GetCachedPose(), &individual_obj);
+
+				// Links				
+
+				// Joints
+
+			bson_append_document_end(&arr_obj, &individual_obj);
+
+			arr_idx++;
+			Num++;
+		}
+	}
+	bson_append_array_end(doc, &arr_obj);
+	return Num;
+}
+
+// Add pose document
+void FSLWorldStateDBWriterAsyncTask::AddPose(FTransform Pose, bson_t* doc)
+{
+#if SL_WITH_ROS_CONVERSIONS
+	FConversions::UToROS(Pose);
+#endif // SL_WITH_ROS_CONVERSIONS
+
+	bson_t child_obj_loc;
+	bson_t child_obj_rot;
+
+	BSON_APPEND_DOCUMENT_BEGIN(doc, "loc", &child_obj_loc);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "x", Pose.GetLocation().X);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "y", Pose.GetLocation().Y);
+	BSON_APPEND_DOUBLE(&child_obj_loc, "z", Pose.GetLocation().Z);
+	bson_append_document_end(doc, &child_obj_loc);
+
+	BSON_APPEND_DOCUMENT_BEGIN(doc, "quat", &child_obj_rot);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "x", Pose.GetRotation().X);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "y", Pose.GetRotation().Y);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
+	BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
+	bson_append_document_end(doc, &child_obj_rot);
 }
 
 // Write the bson doc to the collection
-bool FSLWorldStateDBWriterAsyncTask::WriteDoc(bson_t* doc)
+bool FSLWorldStateDBWriterAsyncTask::UploadDoc(bson_t* doc)
 {
 	bson_error_t error;
 	if (!mongoc_collection_insert_one(mongo_collection, doc, NULL, NULL, &error))
@@ -283,7 +361,7 @@ bool FSLWorldStateDBHandler::Init(ASLIndividualManager* IndividualManager,
 	}
 
 #if SL_WITH_LIBMONGO_C
-	if (!DBWriterTask->GetTask().Init(collection, IndividualManager, InLoggerParameters.MinLinearDistance, InLoggerParameters.MinAngularDistance))
+	if (!DBWriterTask->GetTask().Init(collection, IndividualManager, InLoggerParameters.PoseTolerance))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d World state async writer could not be initialized.."), *FString(__FUNCTION__), __LINE__);
 		return false;
