@@ -54,6 +54,8 @@ public class USemLog : ModuleRules
 				"Core",
 				"USemLogOwl",
 				"MongoC",					// SL_WITH_LIBMONGO_C
+                "WebSockets",
+                "UProtobuf"                 // SL_WITH_PROTOBUF
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -109,8 +111,9 @@ public class USemLog : ModuleRules
 		SetDependencyPrepreocessorDefinition("MongoCxx", "SL_WITH_LIBMONGO_CXX");
 		SetDependencyPrepreocessorDefinition("SRanipal", "SL_WITH_EYE_TRACKING");
 		SetDependencyPrepreocessorDefinition("SlicingLogic", "SL_WITH_SLICING");
-		
-		string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));
+        SetDependencyPrepreocessorDefinition("UProtobuf", "SL_WITH_PROTOBUF");
+
+        string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));
 		string JsonUtil = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("JsonUtilities"));
 		if (string.IsNullOrEmpty(Json) || string.IsNullOrEmpty(JsonUtil))
 		{
