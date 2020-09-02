@@ -53,9 +53,8 @@ public class USemLog : ModuleRules
 			{
 				"Core",
 				"USemLogOwl",
-				"MongoC",					// SL_WITH_LIBMONGO_C
-                "WebSockets",
-                "UProtobuf"                 // SL_WITH_PROTOBUF
+				"MongoC",						// SL_WITH_LIBMONGO_C
+                "WebSockets", "UProtobuf" 		// SL_WITH_PROTOBUF
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -70,18 +69,18 @@ public class USemLog : ModuleRules
 				"SlateCore",
 				//"Json",
 				//"JsonUtilities",
-				"Landscape", "AIModule", // whitelisted actors when setting the world to visual only
+				"Landscape", "AIModule",	// whitelisted actors when setting the world to visual only
 				"UTags",
 				"UIds",
-				"UConversions",			// SL_WITH_ROS_CONVERSIONS
-				"UMCGrasp",				// SL_WITH_MC_GRASP
+				"UConversions",				// SL_WITH_ROS_CONVERSIONS
+				"UMCGrasp",					// SL_WITH_MC_GRASP
 				//"SlicingLogic",		    // SL_WITH_SLICING				
 				//"MongoCxx",			    // SL_WITH_LIBMONGO_CXX
 				//"MongoC",					// SL_WITH_LIBMONGO_C	// !!! Needs to be in the PublicDependencyModuleNames
-				"SRanipal",			    // SL_WITH_EYE_TRACKING
+				"SRanipal",					// SL_WITH_EYE_TRACKING
 				//"Boost",				    // SL_WITH_BOOST
 				//"UViz", "UMongoQA",	    // SL_WITH_DATA_VIS
-				"Profiler", // Viz/SLVizWorldManager - FBinaryFindIndex
+				"Profiler",					// Viz/SLVizWorldManager - FBinaryFindIndex
 				// ... add private dependencies that you statically link with here ...
 			}
 			);

@@ -89,13 +89,13 @@ private:
 
 protected:
 	// True when ready to log
-	bool bIsInit;
+	uint8 bIsInit : 1;
 
 	// True when active
-	bool bIsStarted;
+	uint8 bIsStarted : 1;
 
 	// True when done logging
-	bool bIsFinished;
+	uint8 bIsFinished : 1;
 
 private:
 	// If true the logger will start on its own (instead of being started by the manager)

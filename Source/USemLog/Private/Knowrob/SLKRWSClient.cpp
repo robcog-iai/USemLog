@@ -1,184 +1,126 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
+// Author: Andrei Haidu (http://haidu.eu)
 
-
-#include "SLKRWSClient.h"
+#include "Knowrob/SLKRWSClient.h"
 #include "WebSocketsModule.h"
-#include "HAL/RunnableThread.h"
 
-int32 FSLKRWSClient::ThreadInstanceIdx = 0;
-
-bool FSLKRWSClient::FPLBridgeHandlerRunnable::Init()
+// Ctor
+FSLKRWSClient::FSLKRWSClient()
 {
-	TArray<FString> Protocols;
-	Protocols.Add(Handler->Protocol);
-	Handler->Client = FWebSocketsModule::Get().CreateWebSocket(TEXT("ws://") + Handler->Host + TEXT(":") + FString::FromInt(Handler->Port), Protocols);
-	Handler->Client->OnConnected().AddRaw(this->Handler, &FSLKRWSClient::HandleWebSocketConnected);
-	Handler->Client->OnConnectionError().AddRaw(this->Handler, &FSLKRWSClient::HandleWebSocketConnectionError);
-	Handler->Client->OnClosed().AddRaw(this->Handler, &FSLKRWSClient::HandleWebSocketConnectionClosed);
-	Handler->Client->OnRawMessage().AddRaw(this->Handler, &FSLKRWSClient::HandleWebSocketData);
-	Handler->Client->Connect();
-
-	return true;
 }
 
-uint32 FSLKRWSClient::FPLBridgeHandlerRunnable::Run()
+// Dtor
+FSLKRWSClient::~FSLKRWSClient()
 {
-	//Initial wait before starting
-	FPlatformProcess::Sleep(0.01);
+	Disconnect();
+}
 
-	// Counter for re-trying an initially unsuccessful connection
-	uint32 ConnectionTrialCounter = 0;
+// Initiate a client connection to the server and bind event handlers
+void FSLKRWSClient::Connect(const FString& InHost, int32 InPort, const FString& InProtocol)
+{
+	TArray<FString> Protocols{ InProtocol };
+	const FString Url = TEXT("ws://") + InHost + TEXT(":") + FString::FromInt(InPort);
 
-	while (StopCounter.GetValue() == 0)
+	// Clear any previous connection
+	if (WebSocket.IsValid())
 	{
-		if (!Handler->Client->IsConnected())
-		{
-			if (++ConnectionTrialCounter > 100)
-			{
-				Stop();
-
-				UE_LOG(LogTemp, Error, TEXT("[%s] Could not connect to the server (IP %s, port %d)!"),
-					*FString(__FUNCTION__),
-					*(Handler->GetHost()),
-					Handler->GetPort());
-
-				continue;
-			}
-		}
-		else
-		{
-			// runing and connected
-		}
-
-		// Sleep the main loop
-		FPlatformProcess::Sleep(Handler->GetClientInterval());
+		Disconnect();
+		WebSocket = FWebSocketsModule::Get().CreateWebSocket(Url, Protocols);
 	}
-	return 0;
+	else
+	{
+		WebSocket = FWebSocketsModule::Get().CreateWebSocket(Url, Protocols);
+	}
+
+	// Bind WS delegates
+	WebSocket->OnConnected().AddRaw(this, &FSLKRWSClient::HandleWebSocketConnected);
+	WebSocket->OnConnectionError().AddRaw(this, &FSLKRWSClient::HandleWebSocketConnectionError);
+	WebSocket->OnClosed().AddRaw(this, &FSLKRWSClient::HandleWebSocketConnectionClosed);
+	WebSocket->OnRawMessage().AddRaw(this, &FSLKRWSClient::HandleWebSocketData);
+	
+	// Initialize connection
+	WebSocket->Connect();
 }
 
-void FSLKRWSClient::FPLBridgeHandlerRunnable::Stop()
+// Disconnect from the server.
+void FSLKRWSClient::Disconnect()
 {
-	StopCounter.Increment();
+	if (WebSocket.IsValid())
+	{
+		// Close connection
+		WebSocket->Close();
+		
+		// Unbind delgates
+		WebSocket->OnConnected().RemoveAll(this);
+		WebSocket->OnConnectionError().RemoveAll(this);
+		WebSocket->OnClosed().RemoveAll(this);
+		WebSocket->OnRawMessage().RemoveAll(this);
+
+		// Reset shared pointer
+		WebSocket.Reset();
+	}
+
+	// Clear any remaining messages
+	ReceiveBuffer.Empty();
+	MessageQueue.Empty();
 }
 
-// Exits the runnable object
-void FSLKRWSClient::FPLBridgeHandlerRunnable::Exit()
-{
-	UE_LOG(LogTemp, Warning, TEXT("thread exit"));
-}
-
-
+// Called on connection
 void FSLKRWSClient::HandleWebSocketConnected()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Connected"));
-	SetClientConnected(true);
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f KR websocket client is connected.. "),
+		*FString(__FUNCTION__), __LINE__, FPlatformTime::Seconds());
+
+	// Trigger delegate
+	OnConnection.ExecuteIfBound(true);
 }
 
+// Called on connection error
+void FSLKRWSClient::HandleWebSocketConnectionError(const FString& Error)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f KR websocket client connection error: %s"),
+		*FString(__FUNCTION__), __LINE__, FPlatformTime::Seconds(), *Error);
+
+	// Trigger delegate
+	OnConnection.ExecuteIfBound(false);
+}
+
+// Called on connection closed
+void FSLKRWSClient::HandleWebSocketConnectionClosed(int32 Status, const FString& Reason, bool bWasClean)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f KR websocket client connection closed: Status=%d; Reason=%s; bWasClean=%d;"),
+		*FString(__FUNCTION__), __LINE__, FPlatformTime::Seconds(), Status, *Reason, bWasClean);
+
+	// Trigger delegate
+	OnConnection.ExecuteIfBound(false);
+}
+
+// Called on new data (can be partial)
 void FSLKRWSClient::HandleWebSocketData(const void* Data, SIZE_T Length, SIZE_T BytesRemaining)
 {
 	if (BytesRemaining == 0 && ReceiveBuffer.Num() == 0)
 	{
 		// Skip the temporary buffer when the entire frame arrives in a single message. (common case)
-		HandleIncomingMessage((const uint8*)Data, Length);
+		HandleWebSocketFullData((const uint8*)Data, Length);
 	}
 	else
 	{
 		ReceiveBuffer.Append((const uint8*)Data, Length);
 		if (BytesRemaining == 0)
 		{
-			HandleIncomingMessage(ReceiveBuffer.GetData(), ReceiveBuffer.Num());
+			HandleWebSocketFullData(ReceiveBuffer.GetData(), ReceiveBuffer.Num());
 			ReceiveBuffer.Empty();
 		}
 	}
 }
 
-void FSLKRWSClient::HandleIncomingMessage(const uint8* Data, SIZE_T Length)
+// Called when the full data has been received
+void FSLKRWSClient::HandleWebSocketFullData(const uint8* Data, SIZE_T Length)
 {
-	std::string ProtoStr(Data, Data + Length);
-	QueueTask.Enqueue(ProtoStr);
-	UE_LOG(LogTemp, Warning, TEXT("receive the protobuf"));
-	//SendMsg(TEXT("Message recieved!"));
-}
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f KR websocket client new message enqueued.."),
+		*FString(__FUNCTION__), __LINE__, FPlatformTime::Seconds());
+	MessageQueue.Enqueue(std::string(Data, Data + Length));
 
-void FSLKRWSClient::Connect()
-{
-	Runnable = new FPLBridgeHandlerRunnable(this);
-	Thread = FRunnableThread::Create(Runnable, *FString::Printf(TEXT("PLBridgeHandlerRunnable_%d"), ThreadInstanceIdx++), 0, TPri_Normal);
-
-}
-
-// Stop runnable / thread / client
-void FSLKRWSClient::ThreadCleanup()
-{
-	// Kill the thread and the Runnable
-	if (Runnable)
-	{
-		Runnable->Stop();
-	}
-
-	if (Thread)
-	{
-		Thread->WaitForCompletion();
-		Thread->Kill(true);
-		//Thread->Kill(false);
-		delete Thread;
-		Thread = NULL;
-	}
-
-	if (Runnable)
-	{
-		Runnable->Exit();
-		delete Runnable;
-		Runnable = NULL;
-	}
-
-	if (Client.IsValid())
-	{
-		Client->Close();
-		Client = NULL;
-	}
-}
-
-void FSLKRWSClient::Disconnect()
-{
-	if (Client->IsConnected())
-		ThreadCleanup();
-}
-
-void FSLKRWSClient::SendMsg(const FString& StrToSend)
-{
-	FTCHARToUTF8 UTStr(*StrToSend);
-	TArray<uint8> BinaryMsg;
-	AppendArray(BinaryMsg, (uint8*)UTStr.Get(), UTStr.Length(), true);
-	BinaryMsg.Add('\0');
-	Client->Send(BinaryMsg.GetData(), BinaryMsg.Num(), false);
-}
-
-void FSLKRWSClient::AppendArray(TArray<uint8>& Out, uint8* In, SIZE_T Length, bool bShouldEscape)
-{
-	if (bShouldEscape)
-	{
-		for (SIZE_T I = 0; I < Length; I++)
-		{
-			if (In[I] == ':' || In[I] == '\\' || In[I] == '\n' || In[I] == '\r')
-			{
-				Out.Add('\\');
-			}
-			Out.Add(In[I]);
-		}
-	}
-	else
-	{
-		Out.Append(In, Length);
-	}
-}
-
-void FSLKRWSClient::HandleWebSocketConnectionError(const FString& Error)
-{
-	UE_LOG(LogTemp, Error, TEXT("[%s] Error in Websocket."), *FString(__FUNCTION__));
-}
-
-void FSLKRWSClient::HandleWebSocketConnectionClosed(int32 Status, const FString& Reason, bool bWasClean)
-{
-	UE_LOG(LogTemp, Error, TEXT("Websocket close"));
+	// Trigger delegate
+	OnNewProcessedMsg.ExecuteIfBound();
 }

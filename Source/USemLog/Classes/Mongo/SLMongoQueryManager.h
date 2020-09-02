@@ -11,7 +11,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(ClassGroup = (SL), DisplayName = "SL Mongo Query Manager")
 class ASLMongoQueryManager : public AInfo
 {
 	GENERATED_BODY()
@@ -60,13 +60,13 @@ public:
 
 protected:
 	// True when successfully connected to the server
-	bool bConnected;
+	bool bConnected : 1;
 
 	// Task set to query from
-	bool bTaskSet;
+	bool bTaskSet : 1;
 
 	// Episode set to query from
-	bool bEpisodeSet;
+	bool bEpisodeSet : 1;
 
 private:
 	// Current active task

@@ -4,6 +4,7 @@
 #include "SLEntitiesManager.h"
 #include "Tags.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "Engine/StaticMeshActor.h"
 #include "SLVirtualCameraView.h"
 
 TSharedPtr<FSLEntitiesManager> FSLEntitiesManager::StaticInstance;
@@ -140,7 +141,7 @@ void FSLEntitiesManager::SetReplicates(bool bReplicate, float Priority, float Mi
 		//}
 
 		// Only replicate items with visuals
-		if (AActor* ObjAsSMA = Cast<AStaticMeshActor>(Pair.Key))
+		if (AStaticMeshActor* ObjAsSMA = Cast<AStaticMeshActor>(Pair.Key))
 		{
 			if (ObjAsSMA->IsRootComponentMovable())
 			{

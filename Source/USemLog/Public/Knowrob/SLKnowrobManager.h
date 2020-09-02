@@ -4,22 +4,28 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "SLKRWSClient.h"
-//#include "SLKREventDelegator.h"
+#include "GameFramework/Info.h"
+#include "Knowrob/SLKRWSClient.h"
 #include "SLKnowrobManager.generated.h"
+
+// Forward declarations
+class ASLMongoQueryManager;
+class ASLIndividualManager;
 
 /**
 *
 **/
 UCLASS()
-class USEMLOG_API ASLKnowrobManager : public AActor
+class USEMLOG_API ASLKnowrobManager : public AInfo
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this actor's properties
 	ASLKnowrobManager();
+
+	// Dtor
+	~ASLKnowrobManager();
 
 protected:
 	// Called when the game starts or when spawned
@@ -34,44 +40,88 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// If true, actor is ticked even if TickType == LEVELTICK_ViewportsOnly
-	virtual bool ShouldTickIfViewportsOnly() const override;
-
-	// Set any references
+	// Set up any required references and connect to server
 	void Init();
 
-	// Clear any references
-	void Reset();
+	// Start processing any incomming messages
+	void Start();
 
-	// Checks if the manager is initalized
+	// Stop processing the messages, and disconnect from server
+	void Finish(bool bForced = false);
+
+	// Get init state
 	bool IsInit() const { return bIsInit; };
 
+	// Get started state
+	bool IsStarted() const { return bIsStarted; };
+
+	// Get finished state
+	bool IsFinished() const { return bIsFinished; };
+
+protected:
+	/* Knowrob websocket client delegate triggers */
+	// Called when a new message is received from knowrob
+	void OnKRMsg();
+
+	// Called when connected or disconnecetd with knowrob
+	void OnKRConnection(bool bConnectionValue);
+
 private:
-	//// True if the manager is init
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	// Get the mongo query manager from the world (or spawn a new one)
+	bool SetMongoQueryManager();
+
+	// Get the individual manager from the world (or spawn a new one)
+	bool SetIndividualManager();
+
+protected:
+	// True when all references are set and it is connected to the server
 	uint8 bIsInit : 1;
 
-	// Used to handle websocket connect to knowrob 
-	TSharedPtr<FSLKRWSClient> Handler;
-	
-	// Delegate the knowrob event
-	// TSharedPtr<FSLKREventDelegator> Delegator;
+	// True when active
+	uint8 bIsStarted : 1;
 
-public:
+	// True when done logging
+	uint8 bIsFinished : 1;
+
+private:
 	// Knowrob server ip addres
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString ServerIP = TEXT("35.246.255.195");
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
+	FString KRServerIP = TEXT("127.0.0.1");
 
 	// Knowrob server port
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	int32 Port = 8080;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
+	int32 KRServerPort = 8080;
 	
 	// Websocket protocal
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString WSProtocol = TEXT("prolog_websocket");
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
+	FString KRWSProtocol = TEXT("prolog_websocket");
+
+
+	// Knowrob server ip addres
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
+	FString MongoServerIP = TEXT("127.0.0.1");
+
+	// Knowrob server port
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
+	int32 MongoServerPort = 27017;
+
+
+	// Websocket connection to knowrob
+	TSharedPtr<FSLKRWSClient> KRWSClient;
+
+	// Keeps access to all the individuals in the world
+	ASLIndividualManager* IndividualManager;
+
+	// Manages the mongo connection
+	ASLMongoQueryManager* MongoQueryManager;
+	
 
 	/* Editor button hacks */
 	// Triggers a call to init or reset
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bConnectHack;
+	bool bInitAndStartButtonHack = false;
+
+	// Triggers a call to init or reset
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bFinishButtonHack = false;
 };
