@@ -122,5 +122,5 @@ private:
 	ASLIndividualManager* IndividualManager;
 
 	// Database handler
-	FSLWorldStateDBHandler DBHandler;
+	TSharedPtr<FSLWorldStateDBHandler> DBHandler;
 };

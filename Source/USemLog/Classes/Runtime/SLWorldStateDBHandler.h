@@ -141,6 +141,13 @@ private:
 	bool Connect(const FString& DBName, const FString& CollName, const FString& ServerIp,
 		uint16 ServerPort, bool bOverwrite);
 
+	// Write metadata
+	bool WriteMetadata(ASLIndividualManager* IndividualManager, const FString& MetaCollName, bool bOverwrite);
+
+#if SL_WITH_LIBMONGO_C
+	int32 AddIndividualsMetadata(ASLIndividualManager* IndividualManager, bson_t* doc);
+#endif //SL_WITH_LIBMONGO_C	
+
 	// Disconnect and clean db connection
 	void Disconnect() const;
 
@@ -149,10 +156,10 @@ private:
 
 private:
 	// True if connected to the db
-	bool bIsConnected;
+	bool bIsInit;
 
 	// Pointers are reset
-	bool bIsCleared;
+	bool bIsFinished;
 
 	// Call time of the previous writing task
 	double PrevWriteCallTime;

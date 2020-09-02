@@ -95,15 +95,11 @@ struct FSLWorldStateLoggerParams
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float PoseTolerance = 0.5f;
 
-	//// Min linear distance to log an individual (cm)
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	//float MinLinearDistance = 0.5f;
+	// Include individuals metadata 
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bIncludeMetadata = true;
 
-	//// Min angular distance in order to log an individual (rad)
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	//float MinAngularDistance = 0.1;
-
-	//// If available, log gaze data
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	//bool bLogGazeData = true;
+	// Remove and overwrite any previously included metadata
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bIncludeMetadata"))
+	bool bOverwriteMetadata = false;
 };

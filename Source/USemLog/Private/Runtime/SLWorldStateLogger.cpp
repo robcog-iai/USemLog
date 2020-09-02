@@ -162,12 +162,17 @@ void ASLWorldStateLogger::InitImpl()
 
 	if (!SetIndividualManager())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s) could not set the individuals manager.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s) could not set the individuals manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
+	if (!DBHandler.IsValid())
+	{
+		DBHandler = MakeShareable<FSLWorldStateDBHandler>(new FSLWorldStateDBHandler());
+	}
 
-	if (!DBHandler.Init(IndividualManager, LoggerParameters, LocationParameters, DBServerParameters))
+	if (!DBHandler->Init(IndividualManager, LoggerParameters, LocationParameters, DBServerParameters))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s) could not init the db handler.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
@@ -241,7 +246,8 @@ void ASLWorldStateLogger::FinishImpl(bool bForced)
 	}
 
 	// Index and disconnect from database
-	DBHandler.Finish();
+	DBHandler->Finish();
+	DBHandler.Reset();
 
 	//  Disable tick
 	SetActorTickEnabled(false);
@@ -330,12 +336,11 @@ bool ASLWorldStateLogger::SetIndividualManager()
 // First update call (log all individuals)
 void ASLWorldStateLogger::FirstUpdate()
 {
-	DBHandler.FirstWrite(GetWorld()->GetTimeSeconds());	
+	DBHandler->FirstWrite(GetWorld()->GetTimeSeconds());	
 }
 
 // Log individuals which changed state
 void ASLWorldStateLogger::Update()
 {
-	DBHandler.Write(GetWorld()->GetTimeSeconds());
+	DBHandler->Write(GetWorld()->GetTimeSeconds());
 }
-

@@ -170,7 +170,7 @@ void FSLMetaDBHandler::Disconnect() const
 	//	bson_destroy(scan_entry_doc);
 	//}
 	mongoc_cleanup();
-#endif //SL_WITH_LIBMONGO_C
+#endif //SL_WITH_LIBMONGO_C
 }
 
 // Create indexes on the inserted data

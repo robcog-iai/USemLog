@@ -19,11 +19,6 @@
 #if SL_WITH_LIBMONGO_C
 bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float PoseTolerance)
 {
-	if (!Manager->IsLoaded())
-	{
-		return false;
-	}
-
 	IndividualManager = Manager;
 	mongo_collection = in_collection;
 	MinPoseDiff = PoseTolerance;
@@ -302,7 +297,7 @@ void FSLWorldStateDBWriterAsyncTask::AddPose(FTransform Pose, bson_t* doc)
 	bson_append_document_end(doc, &child_obj_rot);
 }
 
-// Write the bson doc to the collection
+// Write the bson doc to the meta_coll
 bool FSLWorldStateDBWriterAsyncTask::UploadDoc(bson_t* doc)
 {
 	bson_error_t error;
@@ -322,15 +317,18 @@ bool FSLWorldStateDBWriterAsyncTask::UploadDoc(bson_t* doc)
 // Ctor
 FSLWorldStateDBHandler::FSLWorldStateDBHandler()
 {
-	bIsCleared = true;
-	bIsConnected = false;
+	bIsFinished = false;
+	bIsInit = false;
 	DBWriterTask = nullptr;
 }
 
 // Dtor
 FSLWorldStateDBHandler::~FSLWorldStateDBHandler()
 {
-	Finish();
+	if (!bIsFinished)
+	{
+		Finish();
+	}
 }
 
 // Connect to the db and set up the async writer
@@ -339,8 +337,7 @@ bool FSLWorldStateDBHandler::Init(ASLIndividualManager* IndividualManager,
 	const FSLLoggerLocationParams& InLocationParameters,
 	const FSLLoggerDBServerParams& InDBServerParameters)
 {
-	bIsCleared = false;
-
+	// Connect to the database
 	if (!Connect(InLocationParameters.TaskId, InLocationParameters.EpisodeId, 
 		InDBServerParameters.Ip, InDBServerParameters.Port,
 		InLocationParameters.bOverwrite))
@@ -349,21 +346,30 @@ bool FSLWorldStateDBHandler::Init(ASLIndividualManager* IndividualManager,
 		return false;
 	}
 
-	bIsConnected = true;
+	// Write metadata if needed
+	if (InLoggerParameters.bIncludeMetadata)
+	{
+		WriteMetadata(IndividualManager, InLocationParameters.TaskId + ".meta", InLoggerParameters.bOverwriteMetadata);
+	}
 
+	// Create the async worker
 	if (DBWriterTask == nullptr)
 	{
 		DBWriterTask = new FAsyncTask<FSLWorldStateDBWriterAsyncTask>();
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state async writer should be nullptr here.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state async writer should be nullptr here.."),
+			*FString(__FUNCTION__), __LINE__);
 	}
 
 #if SL_WITH_LIBMONGO_C
+	// Set worker parameters
 	if (!DBWriterTask->GetTask().Init(collection, IndividualManager, InLoggerParameters.PoseTolerance))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d World state async writer could not be initialized.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d World state async writer could not be initialized.."),
+			*FString(__FUNCTION__), __LINE__);
+		Disconnect();
 		return false;
 	}
 #else
@@ -372,6 +378,7 @@ bool FSLWorldStateDBHandler::Init(ASLIndividualManager* IndividualManager,
 	return false;
 #endif //SL_WITH_LIBMONGO_C
 
+	bIsInit = true;
 	return true;
 }
 
@@ -408,14 +415,15 @@ bool FSLWorldStateDBHandler::Write(float Timestamp)
 // Disconnect from db, clear task
 void FSLWorldStateDBHandler::Finish()
 {
-	if (bIsCleared)
+	if (bIsFinished)
 	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d World state db handler is already finished.."), *FString(__FUNCTION__), __LINE__);
 		return;
 	}
 
 	CreateIndexes();
 	Disconnect();
-	bIsConnected = false;
+
 
 	if (DBWriterTask != nullptr)
 	{
@@ -440,7 +448,8 @@ void FSLWorldStateDBHandler::Finish()
 		}
 	}
 
-	bIsCleared = true;
+	bIsInit = false;
+	bIsFinished = true;
 }
 
 // Connect to the db
@@ -474,10 +483,10 @@ bool FSLWorldStateDBHandler::Connect(const FString& DBName, const FString& CollN
 	// Register the application name so we can track it in the profile logs on the server
 	mongoc_client_set_appname(client, TCHAR_TO_UTF8(*("SL_WorldStateWriter_" + CollName)));
 
-	// Get a handle on the database "db_name" and collection "coll_name"
+	// Get a handle on the database "db_name" and meta_coll "coll_name"
 	database = mongoc_client_get_database(client, TCHAR_TO_UTF8(*DBName));
 
-	// Check if the collection already exists
+	// Check if the meta_coll already exists
 	if (mongoc_database_has_collection(database, TCHAR_TO_UTF8(*CollName), &error))
 	{
 		if (bOverwrite)
@@ -525,6 +534,120 @@ bool FSLWorldStateDBHandler::Connect(const FString& DBName, const FString& CollN
 	return false;
 #endif //SL_WITH_LIBMONGO_C
 }
+
+// Write metadata (collname + .meta)
+bool FSLWorldStateDBHandler::WriteMetadata(ASLIndividualManager* IndividualManager, const FString& MetaCollName, bool bOverwrite)
+{
+#if SL_WITH_LIBMONGO_C
+	bson_error_t error;
+	mongoc_collection_t* meta_coll;
+	meta_coll = mongoc_database_get_collection(database, TCHAR_TO_UTF8(*MetaCollName));
+	bson_t* query;
+
+	// Query for any previous individuals metadata
+	query = bson_new();
+	BSON_APPEND_UTF8(query, "type_id", "individuals");
+
+	// Check if there is any previous metadata logged
+	int64_t count = mongoc_collection_count_documents(meta_coll, query, NULL, NULL, NULL, &error);
+	if (count < 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	else if (count > 0)
+	{
+		// Remove any previously written document with the type_id:individuals
+		if (bOverwrite)
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individuals metadata is already logged, removing previous data.."),
+				*FString(__FUNCTION__), __LINE__);
+			if (!mongoc_collection_delete_many(meta_coll, query, NULL, NULL, &error))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+					*FString(__func__), __LINE__, *FString(error.message));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individuals metadata is already logged, skipping.."),
+				*FString(__FUNCTION__), __LINE__);
+			return true;
+		}
+	}
+
+
+	// No previous metadata found, writing new one
+	bson_t* meta_doc;
+	meta_doc = bson_new();
+
+	// Add type
+	BSON_APPEND_UTF8(meta_doc, "type_id", "individuals");
+
+	// Add individuals data
+	int32 Num = AddIndividualsMetadata(IndividualManager, meta_doc);
+
+	bool RetVal = true;
+	if(Num > 0)
+	{
+		
+		if (!mongoc_collection_insert_one(meta_coll, meta_doc, NULL, NULL, &error))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: %s"),
+				*FString(__func__), __LINE__, *FString(error.message));
+			RetVal = false;
+		}
+	}
+	else
+	{
+		RetVal = false;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Wrote %d number of individuals to the meta collection %s.."),
+		*FString(__FUNCTION__), __LINE__, Num, *MetaCollName);
+
+	// Clean up
+	bson_destroy(meta_doc);
+	mongoc_collection_destroy(meta_coll);
+#else
+	UE_LOG(LogTemp, Error, TEXT("%s::%d SL_WITH_LIBMONGO_C flag is 0, aborting.."),
+		*FString(__func__), __LINE__);
+	return false;
+#endif //SL_WITH_LIBMONGO_C
+	return RetVal;
+}
+
+#if SL_WITH_LIBMONGO_C
+int32 FSLWorldStateDBHandler::AddIndividualsMetadata(ASLIndividualManager* IndividualManager, bson_t* doc)
+{
+	int32 Num = 0;
+	bson_t arr_obj;
+	uint32_t arr_idx = 0;
+
+	BSON_APPEND_ARRAY_BEGIN(doc, "individuals", &arr_obj);
+	for (const auto& Individual : IndividualManager->GetIndividuals())
+	{
+		bson_t individual_obj;
+		char idx_str[16];
+		const char* idx_key;
+
+		bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&arr_obj, idx_key, &individual_obj);
+
+			// Id
+			BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*Individual->GetIdValue()));
+			// Class
+			BSON_APPEND_UTF8(&individual_obj, "class", TCHAR_TO_UTF8(*Individual->GetClassValue()));
+		
+		bson_append_document_end(&arr_obj, &individual_obj);
+
+		arr_idx++;
+		Num++;
+	}
+	bson_append_array_end(doc, &arr_obj);
+	return Num;
+}
+#endif //SL_WITH_LIBMONGO_C	
 	
 void FSLWorldStateDBHandler::Disconnect() const
 {
@@ -547,13 +670,13 @@ void FSLWorldStateDBHandler::Disconnect() const
 		mongoc_collection_destroy(collection);
 	}
 	mongoc_cleanup();
-#endif //SL_WITH_LIBMONGO_C
+#endif //SL_WITH_LIBMONGO_C
 }
 
 // Create indexes on the inserted data
 bool FSLWorldStateDBHandler::CreateIndexes() const
 {
-	if (!bIsConnected)
+	if (!bIsInit)
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Not connected to the db, could not create indexes.."), *FString(__FUNCTION__), __LINE__);
 		return false;
