@@ -93,7 +93,7 @@ void ASLKnowrobManager::Init()
 	if (!SetMongoQueryManager())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the mongo query manager.."),
-			*FString(__FUNCTION__), __LINE__);
+			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
@@ -101,7 +101,7 @@ void ASLKnowrobManager::Init()
 	if (!MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not connect to mongo db.. (%s::%d)"),
-			*FString(__FUNCTION__), __LINE__, *MongoServerIP, MongoServerPort);
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MongoServerIP, MongoServerPort);
 		return;
 	}
 
@@ -109,12 +109,13 @@ void ASLKnowrobManager::Init()
 	if (!SetIndividualManager())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the individual manager.."),
-			*FString(__FUNCTION__), __LINE__);
+			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 
 	bIsInit = true;
+	bIsFinished = false;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully initialized.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
 }
@@ -192,12 +193,12 @@ void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
 	if (bConnectionValue)
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) succesfully connected to knowrob.."),
-			*FString(__FUNCTION__), __LINE__);
+			*FString(__FUNCTION__), __LINE__, *GetName());
 	}
 	else
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) disconnected from knowrob.."),
-			*FString(__FUNCTION__), __LINE__);
+			*FString(__FUNCTION__), __LINE__, *GetName());
 	}
 }
 
