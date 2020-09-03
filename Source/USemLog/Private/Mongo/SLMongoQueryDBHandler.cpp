@@ -323,7 +323,7 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 		return Trajectory;
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("%s::%d !!! Query: %s:[%f-%f]:%f"),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d !!! Query: %s:[%f-%f]:%f"),
 		*FString(__FUNCTION__), __LINE__, *Id, StartTs, EndTs, DeltaT);
 
 	#if SL_WITH_LIBMONGO_C
@@ -340,8 +340,8 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 			"{",
 				"timestamp", 
 				"{", 
-					"$lte", BCON_DOUBLE(StartTs),
-					"$gte", BCON_DOUBLE(EndTs),
+					"$gte", BCON_DOUBLE(StartTs),
+					"$lte", BCON_DOUBLE(EndTs),
 				"}",
 			"}",
 		"}",
