@@ -2,13 +2,16 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizWorldManager.h"
-
-#include "UObject/ConstructorHelpers.h"
+#include "Engine/StaticMeshActor.h"
+#include "Animation/SkeletalMeshActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/PoseableMeshComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "UObject/ConstructorHelpers.h"
 #include "EngineUtils.h"
 #include "ProfilerCommon.h" // FBinaryFindIndex
-#include "GameFramework/PlayerController.h"
+
 
 // Sets default values
 ASLVizWorldManager::ASLVizWorldManager()
@@ -20,6 +23,11 @@ ASLVizWorldManager::ASLVizWorldManager()
 	ReplayLastFrameIdx = INDEX_NONE;
 	ReplayStepSize = 1;
 	bReplayLoop = false;
+
+#if WITH_EDITORONLY_DATA
+	// Make manager sprite smaller (used to easily find the actor in the world)
+	SpriteScale = 0.35;
+#endif // WITH_EDITORONLY_DATA
 }
 
 // Set world to visual only, create poseable skeletal mesh components

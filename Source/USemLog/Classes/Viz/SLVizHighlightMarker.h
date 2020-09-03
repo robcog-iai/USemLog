@@ -8,6 +8,9 @@
 #include "Components/PoseableMeshComponent.h"
 #include "SLVizHighlightMarker.generated.h"
 
+// Forward declarations
+class USLVizAssets;
+
 /*
 * Highlight material types
 */
@@ -57,6 +60,9 @@ protected:
 	// Load highligh material assets
 	void LoadAssets();
 
+	// Load assets container
+	bool LoadAssetsContainer();
+
 private:
 	// Used as a clone if a static mesh component will be highlighted
 	UStaticMeshComponent* HighlightSMC;
@@ -67,4 +73,10 @@ private:
 	/* Highligh dynamic materials */
 	UMaterial* MaterialHighlightAdditive;
 	UMaterial* MaterialHighlightTranslucent;
+
+	// Assets container
+	USLVizAssets* VizAssetsContainer;
+
+	/* Constaints */
+	constexpr static TCHAR* AssetsContainerPath = TEXT("SLVizAssets'/USemLog/Viz/SL_VizAssetsContainer.SL_VizAssetsContainer'");
 };

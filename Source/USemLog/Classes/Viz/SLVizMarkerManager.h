@@ -4,17 +4,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "Components/InstancedStaticMeshComponent.h"
-#include "SLVizMarker.h"
-#include "SLVizHighlightMarker.h"
+#include "GameFramework/Info.h"
+#include "Viz/SLVizMarker.h"
 #include "SLVizMarkerManager.generated.h"
+
+// Forward declarations
+class USLVizHighlightMarker;
 
 /*
 * Spawns and keeps track of markers
 */
 UCLASS()
-class USEMLOG_API ASLVizMarkerManager : public AActor
+class USEMLOG_API ASLVizMarkerManager : public AInfo
 {
 	GENERATED_BODY()
 
@@ -128,7 +129,6 @@ public:
 	USLVizHighlightMarker* CreateHighlightMarker(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes,
 		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
 
-
 protected:
 	// Create and register the marker
 	USLVizMarker* CreateNewMarker();
@@ -138,8 +138,10 @@ protected:
 
 protected:
 	// Collection of the markers
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TSet<USLVizMarker*> Markers;
 
 	// Collection of the highlight markers
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	TSet<USLVizHighlightMarker*> HighlightMarkers;
 };

@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizHighlightMarker.h"
+#include "Viz/SLVizAssets.h"
 #include "Viz/SLVizMarkerManager.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -13,6 +14,7 @@ USLVizHighlightMarker::USLVizHighlightMarker()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	LoadAssets();
+	LoadAssetsContainer();
 }
 
 // Highlight the given static mesh by creating a clone
@@ -275,4 +277,38 @@ void USLVizHighlightMarker::LoadAssets()
 	MaterialHighlightAdditive = MaterialHighlightAdditiveAsset.Object;
 	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialHighlightTranslucentAsset(TEXT("Material'/USemLog/Viz/M_HighlightDynamicColorTranslucent.M_HighlightDynamicColorTranslucent'"));
 	MaterialHighlightTranslucent = MaterialHighlightTranslucentAsset.Object;
+}
+
+
+// Load assets container
+bool USLVizHighlightMarker::LoadAssetsContainer()
+{
+	static ConstructorHelpers::FObjectFinder<USLVizAssets>VizAssetsContainerAsset(AssetsContainerPath);
+	if (VizAssetsContainerAsset.Succeeded())
+	{
+		VizAssetsContainer = VizAssetsContainerAsset.Object;
+
+		// Check if all assets in the container are set
+		bool RetVal = true;
+
+		/* Materials */
+		if (VizAssetsContainer->MaterialHighlightAdditive == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MaterialHighlightAdditive is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+		if (VizAssetsContainer->MaterialHighlightTranslucent == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MaterialHighlightTranslucent is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+
+		return RetVal;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find the assets container at Path=%s.."),
+			*FString(__FUNCTION__), __LINE__, AssetsContainerPath);
+		return false;
+	}
 }
