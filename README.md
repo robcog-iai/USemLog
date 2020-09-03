@@ -1,6 +1,6 @@
 ![](Documentation/Img/SemLog.jpg)
 
-![](Documentation/Img/PaP_SemLog.png)
+![](Documentation/Img/PaP_SemLog.jpg)
 
 # USemLog
 
