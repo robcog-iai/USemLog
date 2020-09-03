@@ -288,22 +288,22 @@ FTransform FSLMongoQueryDBHandler::GetIndividualPoseAt(const FString& Id, float 
 
 	cursor = mongoc_collection_aggregate(
 		collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
-
 	double QueryDuration = FPlatformTime::Seconds() - ExecBegin;
 
-	if (mongoc_cursor_next(cursor, &doc))
+	// Read cursor if no errors occured
+	if (!mongoc_cursor_error(cursor, &error))
 	{
-		Pose = GetPose(doc);
+		if (mongoc_cursor_next(cursor, &doc))
+		{
+			Pose = GetPose(doc);
+		}
 	}
-	double CursorReadDuration = FPlatformTime::Seconds() - ExecBegin - QueryDuration;
-
-	// Check if any error occured
-	if (mongoc_cursor_error(cursor, &error))
+	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
 			*FString(__func__), __LINE__, *FString(error.message));
-		return Pose;
 	}
+	double CursorReadDuration = FPlatformTime::Seconds() - ExecBegin - QueryDuration;
 
 	mongoc_cursor_destroy(cursor);
 	bson_destroy(pipeline);
@@ -342,9 +342,9 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 				"}",
 			"}",
 		"}",
-			"{",
-				"$unwind", BCON_UTF8("$individuals"),
-			"}",
+		"{",
+			"$unwind", BCON_UTF8("$individuals"),
+		"}",
 		"{",
 			"$match",
 			"{",
@@ -373,36 +373,36 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 		collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
 	double QueryDuration = FPlatformTime::Seconds() - ExecBegin;
 
-	if (DeltaT > 0.f)
+	// Read cursor if no errors occured
+	if (!mongoc_cursor_error(cursor, &error))
 	{
-		double PrevTs = -BIG_NUMBER;
-		while (mongoc_cursor_next(cursor, &doc))
+		if (DeltaT > 0.f)
 		{
-			double CurrTs = GetTs(doc);
-			if (CurrTs - PrevTs > DeltaT)
+			double PrevTs = -BIG_NUMBER;
+			while (mongoc_cursor_next(cursor, &doc))
+			{
+				double CurrTs = GetTs(doc);
+				if (CurrTs - PrevTs > DeltaT)
+				{
+					Trajectory.Add(GetPose(doc));
+					PrevTs = CurrTs;
+				}
+			}
+		}
+		else
+		{
+			while (mongoc_cursor_next(cursor, &doc))
 			{
 				Trajectory.Add(GetPose(doc));
-				PrevTs = CurrTs;
 			}
 		}
 	}
 	else
 	{
-		while (mongoc_cursor_next(cursor, &doc))
-		{
-			Trajectory.Add(GetPose(doc));
-		}
-	}
-
-	double CursorReadDuration = FPlatformTime::Seconds() - ExecBegin - QueryDuration;
-
-	// Check if any error occured
-	if (mongoc_cursor_error(cursor, &error)) 
-	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
 			*FString(__func__), __LINE__, *FString(error.message));
-		return Trajectory;
 	}
+	double CursorReadDuration = FPlatformTime::Seconds() - ExecBegin - QueryDuration;
 
 	mongoc_cursor_destroy(cursor);
 	bson_destroy(pipeline);
