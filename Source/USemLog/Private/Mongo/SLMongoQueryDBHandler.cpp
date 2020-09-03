@@ -323,6 +323,9 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 		return Trajectory;
 	}
 
+	UE_LOG(LogTemp, Error, TEXT("%s::%d !!! Query: %s:[%f-%f]:%f"),
+		*FString(__FUNCTION__), __LINE__, *Id, StartTs, EndTs, DeltaT);
+
 	#if SL_WITH_LIBMONGO_C
 	double ExecBegin = FPlatformTime::Seconds();
 

@@ -552,7 +552,7 @@ bool USLBaseIndividual::ImportClassValue(bool bOverwrite)
 //	}
 //	return false;
 //	UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no oid.."), *FString(__FUNCTION__), __LINE__, *GetFullName());
-//#elif
+//#else
 //	return false;
 //#endif
 //}
