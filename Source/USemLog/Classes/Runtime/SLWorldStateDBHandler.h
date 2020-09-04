@@ -22,6 +22,9 @@ THIRD_PARTY_INCLUDES_END
 // Forward declarations
 class ASLIndividualManager;
 class USLBaseIndiviual;
+class USLBoneIndividual;
+class USLVirtualBoneIndividual;
+class USLBoneConstraintIndividual;
 
 /**
  * Async task to write to the database
@@ -42,10 +45,6 @@ public:
 
 	// Set the simulation time
 	void SetTimestamp(float InTs) { Timestamp = InTs; };
-
-	// TODO
-	// Remove individual (in case an object has been destroyed in the world)
-	bool RemoveIndividual() {};
 
 private:
 	// First write where all the individuals are written irregardresly of their previous position
@@ -68,6 +67,15 @@ private:
 	// Add skeletal individuals (return the number of individuals added)
 	int32 AddSkeletalIndividals(bson_t* doc);
 
+	// Add skeletal bones to the document
+	void AddSkeletalBoneIndividuals(const TArray<USLBoneIndividual*>& BoneIndividuals,
+		const TArray<USLVirtualBoneIndividual*>& VirtualBoneIndividuals,
+		bson_t* doc);
+
+	// Add skeletal bone constraints to the document
+	void AddSkeletalConstraintIndividuals(const TArray<USLBoneConstraintIndividual*>& ConstraintIndividuals,
+		bson_t* doc);
+
 	// Add robot individuals (return the number of individuals added)
 	int32 AddRobotIndividuals(bson_t* doc);
 
@@ -75,12 +83,12 @@ private:
 	void AddPose(FTransform Pose, bson_t* doc);
 
 	// Write the bson doc to the collection
-	bool WriteDoc(bson_t* doc);
+	bool UploadDoc(bson_t* doc);
 #endif //SL_WITH_LIBMONGO_C
 
 
 private:
-	// Do work function pointers
+	// DoWork function pointers
 	typedef int32 (FSLWorldStateDBWriterAsyncTask::*WriteTypeFunctionPtr)();
 	WriteTypeFunctionPtr WriteFunctionPtr;
 
@@ -90,17 +98,8 @@ private:
 	// The timestamp to write to the collection
 	float Timestamp;
 
-	//// Min linear distance between the previous and the current state of the individuals
-	//float MinLinDist;
-
-	//// Min angular distance in order to log an individual
-	//float MinAngDist;
-
 	// Pose diff tolerance
 	float MinPoseDiff;
-
-	// Individuals with their previous transform
-	TArray<TPair<USLBaseIndividual*, FTransform>> IndividualsData;
 
 #if SL_WITH_LIBMONGO_C
 	// Database collection
@@ -141,6 +140,13 @@ private:
 	bool Connect(const FString& DBName, const FString& CollName, const FString& ServerIp,
 		uint16 ServerPort, bool bOverwrite);
 
+	// Write metadata
+	bool WriteMetadata(ASLIndividualManager* IndividualManager, const FString& MetaCollName, bool bOverwrite);
+
+#if SL_WITH_LIBMONGO_C
+	int32 AddIndividualsMetadata(ASLIndividualManager* IndividualManager, bson_t* doc);
+#endif //SL_WITH_LIBMONGO_C	
+
 	// Disconnect and clean db connection
 	void Disconnect() const;
 
@@ -149,10 +155,10 @@ private:
 
 private:
 	// True if connected to the db
-	bool bIsConnected;
+	bool bIsInit;
 
 	// Pointers are reset
-	bool bIsCleared;
+	bool bIsFinished;
 
 	// Call time of the previous writing task
 	double PrevWriteCallTime;

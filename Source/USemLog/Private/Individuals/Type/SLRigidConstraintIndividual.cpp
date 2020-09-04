@@ -15,24 +15,6 @@ USLRigidConstraintIndividual::USLRigidConstraintIndividual()
 	ConstraintActor2 = nullptr;
 }
 
-// Do any object-specific cleanup required immediately after loading an object.
-void USLRigidConstraintIndividual::PostLoad()
-{
-	Super::PostLoad();
-	if (!HasValidConstraintInstance())
-	{
-		if (!SetConstraintInstance())
-		{
-			if (IsInit())
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint instance could not be re-set at load time.."),
-					*FString(__FUNCTION__), __LINE__, *GetFullName());
-			}
-			SetIsInit(false);
-		}
-	}
-}
-
 // Called before destroying the object.
 void USLRigidConstraintIndividual::BeginDestroy()
 {
@@ -85,17 +67,19 @@ bool USLRigidConstraintIndividual::Load(bool bReset, bool bTryImport)
 // Get class name, virtual since each invidiual type will have different name
 FString USLRigidConstraintIndividual::CalcDefaultClassValue()
 {
-	if (HasValidConstraintInstance() || SetConstraintInstance())
+	if (HasValidConstraintComponent() || SetConstraintComponent())
 	{
-			if (ConstraintInstance->GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
-				ConstraintInstance->GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
-				ConstraintInstance->GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
+		if (FConstraintInstance* CI = GetConstraintInstance())
+		{
+			if (CI->GetLinearXMotion() != ELinearConstraintMotion::LCM_Locked ||
+				CI->GetLinearYMotion() != ELinearConstraintMotion::LCM_Locked ||
+				CI->GetLinearZMotion() != ELinearConstraintMotion::LCM_Locked)
 			{
 				return "LinearJoint";
 			}
-			else if (ConstraintInstance->GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
-				ConstraintInstance->GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
-				ConstraintInstance->GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
+			else if (CI->GetAngularSwing1Motion() != EAngularConstraintMotion::ACM_Locked ||
+				CI->GetAngularSwing2Motion() != EAngularConstraintMotion::ACM_Locked ||
+				CI->GetAngularTwistMotion() != EAngularConstraintMotion::ACM_Locked)
 			{
 				return "RevoluteJoint";
 			}
@@ -103,32 +87,11 @@ FString USLRigidConstraintIndividual::CalcDefaultClassValue()
 			{
 				return "FixedJoint";
 			}
+		}
 	}
 	return GetTypeName();
 }
 
-// Set the constraint instance
-bool USLRigidConstraintIndividual::SetConstraintInstance()
-{
-	if (HasValidConstraintInstance())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's constraint instance is already valid.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-		return true;
-	}
-
-	if (HasValidConstraintComponent() || SetConstraintComponent())
-	{
-		ConstraintInstance = &ConstraintComponent->ConstraintInstance;
-		return HasValidConstraintInstance();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's constraint instance cannot be set without a valid constraint component.."),
-			*FString(__FUNCTION__), __LINE__, *GetFullName());
-	}
-	return false;
-}
 
 // Set the child individual object
 bool USLRigidConstraintIndividual::SetConstraint1Individual()
@@ -192,6 +155,12 @@ bool USLRigidConstraintIndividual::SetConstraint2Individual()
 			*FString(__FUNCTION__), __LINE__, *GetFullName());
 	}
 	return false;
+}
+
+// Get the constraint instance of the individual
+FConstraintInstance* USLRigidConstraintIndividual::GetConstraintInstance() const
+{
+	return &ConstraintComponent->ConstraintInstance;
 }
 
 // Check if the constraint component is valid
@@ -318,34 +287,31 @@ bool USLRigidConstraintIndividual::InitImpl()
 {
 	if (HasValidConstraintComponent() || SetConstraintComponent())
 	{
-		if (HasValidConstraintInstance() || SetConstraintInstance())
+		bool bMembersSet = true;
+		if (HasValidConstraintActor1() || SetConstraintActor1())
 		{
-			bool bMembersSet = true;
-			if (HasValidConstraintActor1() || SetConstraintActor1())
-			{
-				if (!(HasValidConstraint1Individual() || SetConstraint1Individual()))
-				{
-					bMembersSet = false;
-				}
-			}
-			else
+			if (!(HasValidConstraint1Individual() || SetConstraint1Individual()))
 			{
 				bMembersSet = false;
 			}
-
-			if (HasValidConstraintActor2() || SetConstraintActor2())
-			{
-				if (!(HasValidConstraint1Individual() || SetConstraint1Individual()))
-				{
-					bMembersSet = false;
-				}
-			}
-			else
-			{
-				bMembersSet = false;
-			}
-			return bMembersSet;
 		}
+		else
+		{
+			bMembersSet = false;
+		}
+
+		if (HasValidConstraintActor2() || SetConstraintActor2())
+		{
+			if (!(HasValidConstraint1Individual() || SetConstraint1Individual()))
+			{
+				bMembersSet = false;
+			}
+		}
+		else
+		{
+			bMembersSet = false;
+		}
+		return bMembersSet;
 	}
 	return false;
 }

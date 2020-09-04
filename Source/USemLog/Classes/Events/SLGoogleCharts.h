@@ -1,8 +1,11 @@
-#pragma once
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
+
+#include "CoreMinimal.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 
 /**
 * Structure holding the parameters of creating the google charts

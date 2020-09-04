@@ -20,9 +20,6 @@ public:
     // Ctor
     USLBoneConstraintIndividual();
 
-    // Do any object-specific cleanup required immediately after loading an object. (called only once when loading the map)
-    virtual void PostLoad() override;
-
     // Called before destroying the object.
     virtual void BeginDestroy() override;
 
@@ -53,15 +50,15 @@ protected:
 
     // Set pointer to parent actor
     virtual bool SetParentActor() override;
-
-    // Set the constraint instance
-    virtual bool SetConstraintInstance() override;
-
+    
     // Set the child individual object
     virtual bool SetConstraint1Individual() override;
 
     // Set the parent individual object
     virtual bool SetConstraint2Individual() override;
+
+    // Get the constraint instance of the individual
+    virtual FConstraintInstance* GetConstraintInstance() const override;
 
     // Check if the constraint index is valid
     bool HasValidConstraintIndex() const;
@@ -71,6 +68,7 @@ protected:
 
     // Set the skeletal mesh component
     bool SetSkeletalMeshComponent();
+
 
 private:
     // Set dependencies

@@ -4,12 +4,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "Engine/StaticMeshActor.h"
-#include "Animation/SkeletalMeshActor.h"
-#include "Components/PoseableMeshComponent.h"
+#include "GameFramework/Info.h"
 #include "TimerManager.h"
 #include "SLVizWorldManager.generated.h"
+
+// Forward declaration
+class AStaticMeshActor;
+class ASkeletalMeshActor;
+class UPoseableMeshComponent;
 
 /*
 * Structure holding the world state at a given timestamp
@@ -46,8 +48,8 @@ struct FSLVizWorldStateFrame
 /**
  * Class to load and skim through episodes
  */
-UCLASS()
-class USEMLOG_API ASLVizWorldManager : public AActor
+UCLASS(ClassGroup = (SL), DisplayName = "SL Viz World Manager")
+class USEMLOG_API ASLVizWorldManager : public AInfo
 {
 	GENERATED_BODY()
 	

@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizMarker.h"
+#include "Viz/SLVizAssets.h"
 #include "Viz/SLVizMarkerManager.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -12,7 +13,7 @@ USLVizMarker::USLVizMarker()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	LoadAssets();
-
+	LoadAssetsContainer();
 	SkeletalMesh = nullptr;
 	CurrentVisualType = ESLVizVisualType::NONE;
 }
@@ -418,8 +419,9 @@ void USLVizMarker::Add(const TArray<TPair<FTransform, TMap<FString, FTransform>>
 }
 
 // Clear marker by notifing the parent manager
-bool USLVizMarker::DestroyThroughManager()
+bool USLVizMarker::Clear()
 {
+	// TODO use delegates for the notifying the manager instead
 	if (ASLVizMarkerManager* Manager = Cast<ASLVizMarkerManager>(GetOwner()))
 	{
 		Manager->ClearMarker(this);
@@ -435,6 +437,7 @@ bool USLVizMarker::DestroyThroughManager()
 // Destroy dynamically created components first
 void USLVizMarker::DestroyComponent(bool bPromoteChildren/*= false*/)
 {
+	// TODO add delegate for the notifying the manager
 	for (auto& Instance : SkeletalInstances)
 	{
 		Instance->DestroyComponent();
@@ -506,6 +509,69 @@ void USLVizMarker::LoadAssets()
 	MaterialUnlit = MaterialUnlitAsset.Object;
 	static ConstructorHelpers::FObjectFinder<UMaterial>MaterialInvisibleAsset(TEXT("Material'/USemLog/Viz/M_MarkerInvisible.M_MarkerInvisible'"));
 	MaterialInvisible = MaterialInvisibleAsset.Object;
+}
+
+// Load assets container
+bool USLVizMarker::LoadAssetsContainer()
+{
+	static ConstructorHelpers::FObjectFinder<USLVizAssets>VizAssetsContainerAsset(AssetsContainerPath);
+	if (VizAssetsContainerAsset.Succeeded())
+	{
+		VizAssetsContainer = VizAssetsContainerAsset.Object;
+
+		// Check if all assets in the container are set
+		bool RetVal = true;
+
+		/* Meshes */
+		if (VizAssetsContainer->MeshBox == nullptr) {
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MeshBox is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+		if (VizAssetsContainer->MeshSphere == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MeshSphere is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+		if (VizAssetsContainer->MeshCylinder == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MeshCylinder is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+		if (VizAssetsContainer->MeshArrow == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MeshArrow is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+		if (VizAssetsContainer->MeshAxis == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MeshAxis is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+
+		/* Materials */
+		if (VizAssetsContainer->MaterialLit == nullptr) {
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MaterialLit is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+		if (VizAssetsContainer->MaterialUnlit == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MaterialUnlit is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+		if (VizAssetsContainer->MaterialInvisible == nullptr)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Assets container MaterialInvisible is NULL.."), *FString(__FUNCTION__), __LINE__);
+			RetVal = false;
+		}
+
+		return RetVal;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find the assets container at Path=%s.."),
+			*FString(__FUNCTION__), __LINE__, AssetsContainerPath);
+		return false;
+	}
 }
 
 // Get the marker static mesh from its type

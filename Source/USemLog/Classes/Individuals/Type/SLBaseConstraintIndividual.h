@@ -17,7 +17,7 @@ struct FConstraintInstance;
 UCLASS(ClassGroup = SL)
 class USEMLOG_API USLBaseConstraintIndividual : public USLBaseIndividual
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
     // Ctor
@@ -45,12 +45,6 @@ protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() override;
 
-    // Check if the constraint instance is valid
-    bool HasValidConstraintInstance() const;
-
-    // Set constraint instance
-    virtual bool SetConstraintInstance() { return false; }
-
     // Check if the constraint1 individual is valid ('child' bone in a PhysicsAsset) 
     bool HasValidConstraint1Individual() const;
 
@@ -62,6 +56,9 @@ protected:
 
     // Set the constraint2 individual ('parent' bone in a PhysicsAsset) 
     virtual bool SetConstraint2Individual() { return false; };
+
+    // Get the constraint instance of the individual
+    virtual FConstraintInstance* GetConstraintInstance() const { return nullptr; }
 
 private:
     // Set dependencies
@@ -85,10 +82,6 @@ protected:
     UPROPERTY(VisibleAnywhere, Category = "SL")
     USLBaseIndividual* ConstraintIndividual2;
 
-    // Physics representation of the constraint
-    // only UObjects support UPROPERTY, the constraint instance is thus not persistent, it should be set every time on PostLoad()
-    FConstraintInstance* ConstraintInstance;
-
-    /*UPROPERTY(EditAnywhere, Category = "SL")
-    FConstraintInstance ConstraintInstance;*/
+    //// Pointer to the constraint instance
+    //FConstraintInstance* ConstraintInstance;
 };

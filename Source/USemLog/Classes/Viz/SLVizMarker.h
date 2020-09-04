@@ -8,6 +8,9 @@
 #include "Components/PoseableMeshComponent.h"
 #include "SLVizMarker.generated.h"
 
+// Forward declarations
+class USLVizAssets;
+
 /*
 * Active visual type
 */
@@ -92,14 +95,14 @@ public:
 	// Add skeletal poses
 	void Add(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses);
 
-	// Clear marker by notifing the parent manager
-	bool DestroyThroughManager();
+	// Clear/remove marker through the manager
+	bool Clear();
 
 	//~ Begin ActorComponent Interface
 	virtual void DestroyComponent(bool bPromoteChildren = false) override;
 	//~ End ActorComponent Interface
-
 protected:
+
 	// Clear any previously set related data (mesh / materials)
 	void Reset();
 
@@ -108,6 +111,9 @@ protected:
 
 	// Load marker mesh and material assets
 	void LoadAssets();
+
+	// Load assets container
+	bool LoadAssetsContainer();
 
 	// Get the marker static mesh from its type
 	UStaticMesh* GetPrimitiveMarkerMesh(ESLVizMarkerType Type) const;
@@ -131,7 +137,7 @@ protected:
 	// Instances of the skeletal marker
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SkeletalMarker, meta = (AllowPrivateAccess = "true"))
 	TArray<UPoseableMeshComponent*> SkeletalInstances;
-	
+
 	/* Marker visual static meshes */
 	UStaticMesh* MeshBox;	
 	UStaticMesh* MeshSphere;
@@ -143,4 +149,10 @@ protected:
 	UMaterial* MaterialLit;
 	UMaterial* MaterialUnlit;
 	UMaterial* MaterialInvisible;
+
+	// Assets container
+	USLVizAssets* VizAssetsContainer;
+
+	/* Constaints */
+	constexpr static TCHAR* AssetsContainerPath = TEXT("SLVizAssets'/USemLog/Viz/SL_VizAssetsContainer.SL_VizAssetsContainer'");
 };

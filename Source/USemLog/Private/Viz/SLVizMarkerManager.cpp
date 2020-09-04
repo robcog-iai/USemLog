@@ -2,14 +2,21 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizMarkerManager.h"
+
+#include "Viz/SLVizHighlightMarker.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
 // Sets default values for this component's properties
 ASLVizMarkerManager::ASLVizMarkerManager()
 {
-	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("VizRoot"));
 	PrimaryActorTick.bCanEverTick = false;
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("VizRoot"));
+
+#if WITH_EDITORONLY_DATA
+	// Make manager sprite smaller (used to easily find the actor in the world)
+	SpriteScale = 0.35;
+#endif // WITH_EDITORONLY_DATA
 }
 
 // Clear marker
