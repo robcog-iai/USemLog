@@ -6,7 +6,6 @@
 #include "CoreMinimal.h"
 #include "Runtime/SLLoggerStructs.h"
 #include "Async/AsyncWork.h"
-
 #if SL_WITH_LIBMONGO_C
 class ASLVisionPoseableMeshActor;
 THIRD_PARTY_INCLUDES_START

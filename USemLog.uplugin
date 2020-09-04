@@ -21,7 +21,16 @@
       "LoadingPhase": "Default"
     },
     {
+      "Name": "USemLogSkel",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
       "Name": "USemLogEd",
+      "Type": "Editor"
+    },
+    {
+      "Name": "USemLogVision",
       "Type": "Developer",
       "LoadingPhase": "Default"
     },
@@ -31,38 +40,23 @@
       "LoadingPhase": "Default"
     }
   ],
-    "Plugins": [
-        {
-            "Name": "UUtils",
-            "Enabled": true
-        },
-        {
-            "Name": "UPhysicsBasedMC",
-            "Enabled": true
-        },
-        {
-            "Name": "UMongoC",
-            "Enabled": true
-        },
-        {
-            "Name": "SRanipal",
-            "Enabled": true
-        },
-        {
-            "Name": "UMongoQA",
-            "Enabled": true
-        },
-        {
-            "Name": "UViz",
-            "Enabled": true
-        },
-        {
-            "Name": "USlicing",
-            "Enabled": false
-        },
-        {
-            "Name": "UROSBridge",
-            "Enabled": false
-        }
-    ]
+  "Plugins": [
+    {
+      "Name": "UUtils",
+      "Enabled": true
+    },
+    {
+      "Name": "UPhysicsBasedMC",
+      "Enabled": true
+    },
+    {
+      "Name": "libmongo",
+      "Enabled": true
+    },
+    {
+      "Name": "UROSBridge",
+      "Enabled": false
+    }
+  ]
 }
+

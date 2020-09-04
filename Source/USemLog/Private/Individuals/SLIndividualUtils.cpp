@@ -629,7 +629,7 @@ FString FSLIndividualUtils::NewOIdAsString()
 	char oid_str[25];
 	bson_oid_to_string(&new_oid, oid_str);
 	return FString(UTF8_TO_TCHAR(oid_str));
-#elif
+#else
 	return FString();
 #endif // #if PLATFORM_WINDOWS
 	return FString();

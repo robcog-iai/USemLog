@@ -104,7 +104,7 @@ void ASLGazeTargetActor::Init()
 				*FString(__FUNCTION__), __LINE__, *GetName(), *GazeProxy->GetName());
 		}
 	}
-#elif
+#else
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d SL_WITH_EYE_TRACKING flag is set to 0, eye tracking is disabled.."), *FString(__FUNCTION__), __LINE__);
 #endif // SL_WITH_EYE_TRACKING
 }
