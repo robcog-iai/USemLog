@@ -11,6 +11,7 @@
 // Forward declarations
 class ASLMongoQueryManager;
 class ASLIndividualManager;
+class ASLVizManager;
 
 /**
 *
@@ -73,6 +74,9 @@ private:
 	// Get the individual manager from the world (or spawn a new one)
 	bool SetIndividualManager();
 
+	// Get the viz manager from the world (or spawn a new one)
+	bool SetVizManager();
+
 protected:
 	// True when all references are set and it is connected to the server
 	uint8 bIsInit : 1;
@@ -105,7 +109,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
 	int32 MongoServerPort = 27017;
 
-
 	// Websocket connection to knowrob
 	TSharedPtr<FSLKRWSClient> KRWSClient;
 
@@ -114,7 +117,9 @@ private:
 
 	// Manages the mongo connection
 	ASLMongoQueryManager* MongoQueryManager;
-	
+
+	// Manages the visualization
+	ASLVizManager* VizManager;	
 
 	/* Editor button hacks */
 	// Triggers a call to init or reset

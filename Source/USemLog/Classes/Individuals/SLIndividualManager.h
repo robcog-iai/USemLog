@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
+#include "HAL/ThreadSafeBool.h"
 #include "SLIndividualManager.generated.h"
 
 // Forward declaration
@@ -122,56 +123,52 @@ private:
 
 private:
 	// True if the manager is init
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsInit : 1;
 
 	// True if the manager is loaded
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	uint8 bIsLoaded : 1;
 
 	// True if listening to the individual components delegates
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsConnected : 1;
 
 	// Set to to false if the cache is being modified to avoid iterating the containers from other threads
 	FThreadSafeBool bThreadSafeToRead;
 
-
 	/** Containers - start - **/
 	// The individual components in the world
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TArray<USLIndividualComponent*> IndividualComponents;
 
 	// All individuals
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TArray<USLBaseIndividual*> Individuals;
 
 
 	/* World state logger convenient containers */
 	// Individuals with movable mobility
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TArray<USLBaseIndividual*> MovableIndividuals;
 
 	// Individuals without children, and ones that cannot be children
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TArray<USLBaseIndividual*> ChildlessRootIndividuals;
 
 	// Skeletal individuals
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TArray<USLSkeletalIndividual*> SkeletalIndividuals;
 
 	// Robot individuals
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TArray<USLRobotIndividual*> RobotIndividuals;
 
 
 	/* Id based quick access mappings */
 	// Id to individual object
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TMap<FString, USLBaseIndividual*> IdToIndividuals;
 
 	// Id to 
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TMap<FString, USLIndividualComponent*> IdToIndividualComponents;
 	/** Containers - end - **/
 

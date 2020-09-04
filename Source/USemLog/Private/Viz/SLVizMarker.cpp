@@ -438,9 +438,12 @@ bool USLVizMarker::Clear()
 void USLVizMarker::DestroyComponent(bool bPromoteChildren/*= false*/)
 {
 	// TODO add delegate for the notifying the manager
-	for (auto& Instance : SkeletalInstances)
+	for (const auto& SkInst : SkeletalInstances)
 	{
-		Instance->DestroyComponent();
+		if (SkInst->IsValidLowLevel())
+		{
+			SkInst->DestroyComponent();
+		}
 	}
 	Super::DestroyComponent(bPromoteChildren);
 }

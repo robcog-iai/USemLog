@@ -14,7 +14,7 @@ class USLVizHighlightMarker;
 /*
 * Spawns and keeps track of markers
 */
-UCLASS()
+UCLASS(ClassGroup = (SL), DisplayName = "SL Viz Marker Manager")
 class USEMLOG_API ASLVizMarkerManager : public AInfo
 {
 	GENERATED_BODY()
@@ -23,11 +23,13 @@ public:
 	// Sets default values for this component's properties
 	ASLVizMarkerManager();
 
+protected:
+	// Called when actor removed from game or game ended
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+public:
 	// Clear marker
 	void ClearMarker(USLVizMarker* Marker);
-
-	// Clear hihlight marker
-	void ClearMarker(USLVizHighlightMarker* HighlightMarker);
 	
 	// Clear all markers
 	void ClearAllMarkers();
@@ -111,37 +113,12 @@ public:
 		USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes,
 		bool bUseOriginalMaterials = true, const FLinearColor& Color = FLinearColor::Green, bool bUnlit = false);
 
-
-	/* Highlight markers */
-	// Create a highlight marker for the given static mesh component
-	USLVizHighlightMarker* CreateHighlightMarker(UStaticMeshComponent* SMC,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
-
-	// Create a highlight marker for the given skeletal mesh component
-	USLVizHighlightMarker* CreateHighlightMarker(USkeletalMeshComponent* SkMC,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
-
-	// Create a highlight marker for the given bone (material index) skeletal mesh component
-	USLVizHighlightMarker* CreateHighlightMarker(USkeletalMeshComponent* SkMC, int32 MaterialIndex,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
-
-	// Create a highlight marker for the given bones (material indexes) skeletal mesh component
-	USLVizHighlightMarker* CreateHighlightMarker(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
-
 protected:
 	// Create and register the marker
 	USLVizMarker* CreateNewMarker();
 
-	// Create and register the highlight marker
-	USLVizHighlightMarker* CreateNewHighlightMarker();
-
 protected:
 	// Collection of the markers
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	TSet<USLVizMarker*> Markers;
-
-	// Collection of the highlight markers
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TSet<USLVizHighlightMarker*> HighlightMarkers;
 };

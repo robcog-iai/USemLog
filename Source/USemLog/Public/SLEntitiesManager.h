@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "SLStructs.h"
-#include "SLSkeletalDataComponent.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
 #include "SLVirtualCameraView.h"
 
 class AStaticMeshActor;

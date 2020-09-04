@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizMarkerManager.h"
-
 #include "Viz/SLVizHighlightMarker.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -11,12 +10,19 @@
 ASLVizMarkerManager::ASLVizMarkerManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("VizRoot"));
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SL_VizMarkerManagerRoot"));
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.35;
 #endif // WITH_EDITORONLY_DATA
+}
+
+// Called when actor removed from game or game ended
+void ASLVizMarkerManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	ClearAllMarkers();
 }
 
 // Clear marker
@@ -26,27 +32,17 @@ void ASLVizMarkerManager::ClearMarker(USLVizMarker* Marker)
 	Markers.Remove(Marker);	
 }
 
-// Clear hihlight marker
-void ASLVizMarkerManager::ClearMarker(USLVizHighlightMarker* HighlightMarker)
-{
-	HighlightMarker->DestroyComponent();
-	HighlightMarkers.Remove(HighlightMarker);
-}
-
 // Clear all markers
 void ASLVizMarkerManager::ClearAllMarkers()
 {
-	for (auto& M : Markers)
+	for (const auto& M : Markers)
 	{
-		M->DestroyComponent();
+		if (M->IsValidLowLevel())
+		{
+			M->DestroyComponent();
+		}
 	}
 	Markers.Empty();
-
-	for (auto& HM : HighlightMarkers)
-	{
-		HM->DestroyComponent();
-	}
-	HighlightMarkers.Empty();
 }
 
 
@@ -265,41 +261,6 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, T
 	return Marker;
 }
 
-
-/* Highlight markers */
-// Create a highlight marker for the given static mesh component
-USLVizHighlightMarker* ASLVizMarkerManager::CreateHighlightMarker(UStaticMeshComponent* SMC, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
-{
-	USLVizHighlightMarker* HighlightMarker = CreateNewHighlightMarker();
-	HighlightMarker->Init(SMC, Color, Type);
-	return HighlightMarker;
-}
-
-// Create a highlight marker for the given skeletal mesh component
-USLVizHighlightMarker* ASLVizMarkerManager::CreateHighlightMarker(USkeletalMeshComponent* SkMC, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
-{
-	USLVizHighlightMarker* HighlightMarker = CreateNewHighlightMarker();
-	HighlightMarker->Init(SkMC, Color, Type);
-	return HighlightMarker;
-}
-
-// Create a highlight marker for the given bone (material index) skeletal mesh component
-USLVizHighlightMarker* ASLVizMarkerManager::CreateHighlightMarker(USkeletalMeshComponent* SkMC, int32 MaterialIndex, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
-{
-	USLVizHighlightMarker* HighlightMarker = CreateNewHighlightMarker();
-	HighlightMarker->Init(SkMC, MaterialIndex, Color, Type);
-	return HighlightMarker;
-}
-
-// Create a highlight marker for the given bones (material indexes) skeletal mesh component
-USLVizHighlightMarker * ASLVizMarkerManager::CreateHighlightMarker(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
-{
-	USLVizHighlightMarker* HighlightMarker = CreateNewHighlightMarker();
-	HighlightMarker->Init(SkMC, MaterialIndexes, Color, Type);
-	return HighlightMarker;
-}
-
-
 // Create and register the marker
 USLVizMarker* ASLVizMarkerManager::CreateNewMarker()
 {
@@ -310,16 +271,4 @@ USLVizMarker* ASLVizMarkerManager::CreateNewMarker()
 	Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
 	Markers.Emplace(Marker);
 	return Marker;
-}
-
-// Create and register the highlight marker
-USLVizHighlightMarker* ASLVizMarkerManager::CreateNewHighlightMarker()
-{
-	USLVizHighlightMarker* HighlightMarker = NewObject<USLVizHighlightMarker>(this);
-	HighlightMarker->RegisterComponent();
-	AddInstanceComponent(HighlightMarker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-	HighlightMarker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	HighlightMarkers.Emplace(HighlightMarker);
-	return HighlightMarker;
 }

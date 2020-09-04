@@ -88,6 +88,9 @@ public:
     virtual bool ApplyOriginalMaterials() override;
     /* End Visible individual interface */
 
+    // Return the skeletal mesh compoennt
+    USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; };
+
 protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() override;

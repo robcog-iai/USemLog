@@ -10,7 +10,7 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "SLSkeletalDataComponent.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
 
 // UUtils
 #include "Tags.h"

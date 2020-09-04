@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLWorldStateLogger.h"
+#include "Runtime/SLWorldStateLogger.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Utils/SLUuid.h"
 #include "EngineUtils.h"

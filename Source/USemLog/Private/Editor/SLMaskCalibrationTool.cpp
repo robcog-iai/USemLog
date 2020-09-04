@@ -16,7 +16,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/GameViewportClient.h"
 
-#include "SLSkeletalDataComponent.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
 
 // UUtils
 #include "Tags.h"

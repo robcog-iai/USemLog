@@ -3,7 +3,7 @@
 
 #include "Editor/SLEditorToolkit.h"
 #include "SLVirtualCameraView.h"
-#include "SLSkeletalDataComponent.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
 
 #include "EngineUtils.h"
 #include "Engine/StaticMeshActor.h"

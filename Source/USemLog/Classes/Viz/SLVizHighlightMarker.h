@@ -17,6 +17,7 @@ class USLVizAssets;
 UENUM()
 enum class ESLVizHighlightMarkerType : uint8
 {
+	NONE				UMETA(DisplayName = "NONE"),
 	Additive			UMETA(DisplayName = "Additive"),
 	Translucent			UMETA(DisplayName = "Translucent"),
 };
@@ -57,22 +58,28 @@ public:
 	//~ End ActorComponent Interface
 
 protected:
-	// Load highligh material assets
-	void LoadAssets();
-
 	// Load assets container
 	bool LoadAssetsContainer();
 
+	// Set dynamic material
+	void SetDynamicMaterial(const FLinearColor& Color, ESLVizHighlightMarkerType Type);
+
 private:
 	// Used as a clone if a static mesh component will be highlighted
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	UStaticMeshComponent* HighlightSMC;
 
 	// Used as a clone if a skeletal mesh component will be highlighted
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
 	UPoseableMeshComponent* HighlightSkMC;
 
-	/* Highligh dynamic materials */
-	UMaterial* MaterialHighlightAdditive;
-	UMaterial* MaterialHighlightTranslucent;
+	// Dynamic material
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UMaterialInstanceDynamic* DynamicMaterial;
+
+	// Current material type
+	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	ESLVizHighlightMarkerType MaterialType;
 
 	// Assets container
 	USLVizAssets* VizAssetsContainer;
