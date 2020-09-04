@@ -21,16 +21,7 @@
       "LoadingPhase": "Default"
     },
     {
-      "Name": "USemLogSkel",
-      "Type": "Runtime",
-      "LoadingPhase": "Default"
-    },
-    {
       "Name": "USemLogEd",
-      "Type": "Editor"
-    },
-    {
-      "Name": "USemLogVision",
       "Type": "Developer",
       "LoadingPhase": "Default"
     },
@@ -50,12 +41,8 @@
       "Enabled": true
     },
     {
-      "Name": "libmongo",
+      "Name": "UMongoC",
       "Enabled": true
-    },
-    {
-      "Name": "UROSBridge",
-      "Enabled": false
     },
     {
       "Name": "SRanipal",
@@ -72,7 +59,10 @@
     {
       "Name": "UProtobuf",
       "Enabled": true
+    },
+    {
+      "Name": "UROSBridge",
+      "Enabled": false
     }
   ]
 }
-
