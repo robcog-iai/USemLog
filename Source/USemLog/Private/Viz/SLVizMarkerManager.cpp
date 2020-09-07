@@ -10,7 +10,6 @@
 ASLVizMarkerManager::ASLVizMarkerManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SL_VizMarkerManagerRoot"));
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -27,9 +26,24 @@ void ASLVizMarkerManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 // Clear marker
 void ASLVizMarkerManager::ClearMarker(USLVizMarker* Marker)
-{	
-	Marker->DestroyComponent();
-	Markers.Remove(Marker);	
+{
+	if (Marker->IsValidLowLevel() && !Marker->IsPendingKillOrUnreachable())
+	{
+		//Marker->ConditionalBeginDestroy();
+		Marker->DestroyComponent();
+		if (Markers.Remove(Marker) == 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Requested marker is not in the set.."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Requested marker is not valid.."), *FString(__FUNCTION__), __LINE__);
+		if (Markers.Remove(Marker) == 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Removed an invalid marker from the set.."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
 }
 
 // Clear all markers
@@ -37,9 +51,13 @@ void ASLVizMarkerManager::ClearAllMarkers()
 {
 	for (const auto& M : Markers)
 	{
-		if (M->IsValidLowLevel())
+		if (M->IsValidLowLevel() && !M->IsPendingKillOrUnreachable())
 		{
 			M->DestroyComponent();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Requested marker is not valid.."), *FString(__FUNCTION__), __LINE__);
 		}
 	}
 	Markers.Empty();
@@ -94,15 +112,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const FVector& Location, UStatic
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SMC);
-	}
-	else
-	{
-		Marker->Init(SMC, Color, bUnlit);
-	}	
-	Marker->Add(Location);
+	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
 	return Marker;
 }
 
@@ -111,14 +121,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const FTransform& Pose, UStaticM
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SMC);
-	}
-	else
-	{
-		Marker->Init(SMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
 	Marker->Add(Pose);
 	return Marker;
 }
@@ -128,14 +131,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FVector>& Locations
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SMC);
-	}
-	else
-	{
-		Marker->Init(SMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
 	Marker->Add(Locations);
 	return Marker;
 }
@@ -145,14 +141,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FTransform>& Poses,
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SMC);
-	}
-	else
-	{
-		Marker->Init(SMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
 	Marker->Add(Poses);
 	return Marker;
 }
@@ -164,14 +153,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, 
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC);
-	}
-	else
-	{
-		Marker->Init(SkMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC) : Marker->Init(SkMC, Color, bUnlit);
 	Marker->Add(SkeletalPose);
 	return Marker;
 }
@@ -181,14 +163,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, T
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC);
-	}
-	else
-	{
-		Marker->Init(SkMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC) : Marker->Init(SkMC, Color, bUnlit);
 	Marker->Add(SkeletalPoses);
 	return Marker;
 }
@@ -198,14 +173,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, 
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC, MaterialIndex);
-	}
-	else
-	{
-		Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndex) : Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
 	Marker->Add(SkeletalPose);
 	return Marker;
 }
@@ -215,14 +183,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, T
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC, MaterialIndex);
-	}
-	else
-	{
-		Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndex) : Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
 	Marker->Add(SkeletalPoses);
 	return Marker;
 }
@@ -232,14 +193,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, 
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC, MaterialIndexes);
-	}
-	else
-	{
-		Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndexes) : Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
 	Marker->Add(SkeletalPose);
 	return Marker;
 }
@@ -249,14 +203,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, T
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC, MaterialIndexes);
-	}
-	else
-	{
-		Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndexes) : Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
 	Marker->Add(SkeletalPoses);
 	return Marker;
 }
@@ -267,8 +214,6 @@ USLVizMarker* ASLVizMarkerManager::CreateNewMarker()
 	USLVizMarker* Marker = NewObject<USLVizMarker>(this);
 	Marker->RegisterComponent();
 	AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-	Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	Markers.Emplace(Marker);
+	Markers.Add(Marker);
 	return Marker;
 }

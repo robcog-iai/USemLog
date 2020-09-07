@@ -119,6 +119,6 @@ protected:
 
 protected:
 	// Collection of the markers
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TSet<USLVizMarker*> Markers;
 };

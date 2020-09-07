@@ -17,35 +17,18 @@ USLVizHighlightMarker::USLVizHighlightMarker()
 	HighlightSMC = nullptr;
 	HighlightSkelMC = nullptr;
 	DynamicMaterial = nullptr;
-	MaterialType = ESLVizHighlightMarkerType::NONE;
+	MaterialType = ESLVizHighlightMarkerMaterialType::NONE;
 }
 
 // Highlight the given static mesh by creating a clone
-void USLVizHighlightMarker::Init(UStaticMeshComponent* SMC, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
+void USLVizHighlightMarker::Set(UStaticMeshComponent* SMC, const FSLVizHighlightMarkerVisualParams& VisualParams)
 {
 	// (If previously set) destroy skeletal component
 	ClearSkeletalMeshComponent();
 
-	// Check if a new static mesh component needs to be created
-	if (!HighlightSMC || !HighlightSMC->IsValidLowLevel() || HighlightSMC->IsPendingKillOrUnreachable())
+	if (SetStaticMeshComponent(SMC))
 	{
-		HighlightSMC = NewObject<UStaticMeshComponent>(this);
-		HighlightSMC->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		HighlightSMC->RegisterComponent();
-	}
-	else
-	{
-		HighlightSMC->EmptyOverrideMaterials();
-	}
-
-	// Set the static mesh visual
-	if (HighlightSMC->SetStaticMesh(SMC->GetStaticMesh()))
-	{
-		//SetWorldTransform(SMC->GetComponentTransform());
-		HighlightSMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		HighlightSMC->bSelectable = false;
-
-		SetDynamicMaterial(Color, Type);
+		SetDynamicMaterial(VisualParams);
 		for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
 		{
 			HighlightSMC->SetMaterial(MatIdx, DynamicMaterial);
@@ -56,56 +39,43 @@ void USLVizHighlightMarker::Init(UStaticMeshComponent* SMC, const FLinearColor& 
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not set the static mesh.."), *FString(__FUNCTION__), __LINE__);
 	}
 
+	// Make sure highlight marker moves with its representation
 	AttachToComponent(SMC, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 
 // Highlight the given skeletal mesh by creating a clone
-void USLVizHighlightMarker::Init(USkeletalMeshComponent* SkMC, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
+void USLVizHighlightMarker::Set(USkeletalMeshComponent* SkMC, const FSLVizHighlightMarkerVisualParams& VisualParams)
 {
 	// (If previously set) destroy static mesh component
 	ClearStaticMeshComponent();
 
-	// Check if a new skeletal mesh component needs to be created
-	if (!HighlightSkelMC || !HighlightSkelMC->IsValidLowLevel() || HighlightSkelMC->IsPendingKillOrUnreachable())
+	// Clear materials, or create new component
+	if (SetSkeletalMeshComponent(SkMC))
 	{
-		HighlightSkelMC = NewObject<UPoseableMeshComponent>(this);
-		HighlightSkelMC->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		HighlightSkelMC->RegisterComponent();
-	}
-	else
-	{
-		HighlightSkelMC->EmptyOverrideMaterials();
-	}
+		TArray<FName> BoneNames;
+		SkMC->GetBoneNames(BoneNames);
+		for (const auto Name : BoneNames)
+		{
+			HighlightSkelMC->SetBoneTransformByName(Name, SkMC->GetBoneTransform(SkMC->GetBoneIndex(Name)), EBoneSpaces::WorldSpace);
+		}
 
-	// Set the skeletal mesh visual
-	HighlightSkelMC->SetSkeletalMesh(SkMC->SkeletalMesh);
-	HighlightSkelMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HighlightSkelMC->bSelectable = false;
-	//SetWorldTransform(SkMC->GetComponentTransform());
+		SetDynamicMaterial(VisualParams);
+		for (int32 MatIdx = 0; MatIdx < SkMC->GetNumMaterials(); ++MatIdx)
+		{
+			HighlightSkelMC->SetMaterial(MatIdx, DynamicMaterial);
+		}
 
-	//HighlightSkelMC->BoneSpaceTransforms = SkMC->BoneSpaceTransforms;
-	//HighlightSkelMC->MarkRefreshTransformDirty();
-
-	TArray<FName> BoneNames;
-	SkMC->GetBoneNames(BoneNames);
-	for (const auto Name : BoneNames)
-	{
-		HighlightSkelMC->SetBoneTransformByName(Name, SkMC->GetBoneTransform(SkMC->GetBoneIndex(Name)), EBoneSpaces::WorldSpace);
+		// All material slots used
+		SkeletalMaterialIndexes.Empty();
 	}
 
-	SetDynamicMaterial(Color, Type);
-	for (int32 MatIdx = 0; MatIdx < SkMC->GetNumMaterials(); ++MatIdx)
-	{
-		HighlightSkelMC->SetMaterial(MatIdx, DynamicMaterial);
-	}
-
-
+	// Make sure highlight marker moves with its representation
 	// TODO this will not work if the skeletal component is animated
 	AttachToComponent(SkMC, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 
 // Highlight the given bone (material index) skeletal mesh by creating a clone
-void USLVizHighlightMarker::Init(USkeletalMeshComponent* SkMC, int32 MaterialIndex, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
+void USLVizHighlightMarker::Set(USkeletalMeshComponent* SkMC, int32 MaterialIndex, const FSLVizHighlightMarkerVisualParams& VisualParams)
 {
 	// (If previously set) destroy static mesh component
 	ClearStaticMeshComponent();
@@ -116,98 +86,131 @@ void USLVizHighlightMarker::Init(USkeletalMeshComponent* SkMC, int32 MaterialInd
 		return;
 	}
 
-	if (!HighlightSkelMC)
+	// Clear materials, or create new component
+	if (SetSkeletalMeshComponent(SkMC))
 	{
-		HighlightSkelMC = NewObject<UPoseableMeshComponent>(this);
-		HighlightSkelMC->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		HighlightSkelMC->RegisterComponent();
-	}
-	else
-	{
-		HighlightSkelMC->EmptyOverrideMaterials();
-	}
+		//HighlightSkelMC->BoneSpaceTransforms = SkMC->BoneSpaceTransforms;
+		//HighlightSkelMC->MarkRefreshTransformDirty();
 
-	HighlightSkelMC->SetSkeletalMesh(SkMC->SkeletalMesh);
-	HighlightSkelMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	HighlightSkelMC->bSelectable = false;
-	//SetWorldTransform(SkMC->GetComponentTransform());
+		//for (int32 BoneIdx = 0; BoneIdx < SkMC->GetNumBones(); ++BoneIdx)
+		//{
+		//	HighlightSkelMC->BoneSpaceTransforms[BoneIdx] = SkMC->BoneSpaceTransforms[BoneIdx];
+		//}
 
-	//HighlightSkelMC->BoneSpaceTransforms = SkMC->BoneSpaceTransforms;
-	//HighlightSkelMC->MarkRefreshTransformDirty();
+		TArray<FName> BoneNames;
+		SkMC->GetBoneNames(BoneNames);
+		for (const auto Name : BoneNames)
+		{
+			HighlightSkelMC->SetBoneTransformByName(Name, SkMC->GetBoneTransform(SkMC->GetBoneIndex(Name)), EBoneSpaces::WorldSpace);
+		}
 
-	//for (int32 BoneIdx = 0; BoneIdx < SkMC->GetNumBones(); ++BoneIdx)
-	//{
-	//	HighlightSkelMC->BoneSpaceTransforms[BoneIdx] = SkMC->BoneSpaceTransforms[BoneIdx];
-	//}
+		SetDynamicMaterial(VisualParams);
+		HighlightSkelMC->SetMaterial(MaterialIndex, DynamicMaterial);
 
-	TArray<FName> BoneNames;
-	SkMC->GetBoneNames(BoneNames);
-	for (const auto Name : BoneNames)
-	{
-		HighlightSkelMC->SetBoneTransformByName(Name, SkMC->GetBoneTransform(SkMC->GetBoneIndex(Name)), EBoneSpaces::WorldSpace);
+		// One material slot used
+		SkeletalMaterialIndexes.Empty();
+		SkeletalMaterialIndexes.Add(MaterialIndex);
 	}
 
-	SetDynamicMaterial(Color, Type);
-	HighlightSkelMC->SetMaterial(MaterialIndex, DynamicMaterial);
-
+	// Make sure highlight marker moves with its representation
 	// TODO this will not work if the skeletal component is animated
 	AttachToComponent(SkMC, FAttachmentTransformRules::SnapToTargetIncludingScale);
 }
 
 // Highlight the given bones (material indexes) skeletal mesh by creating a clone
-void USLVizHighlightMarker::Init(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
+void USLVizHighlightMarker::Set(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes, const FSLVizHighlightMarkerVisualParams& VisualParams)
 {
-	if (!HighlightSkelMC)
+	// (If previously set) destroy static mesh component
+	ClearStaticMeshComponent();
+
+	// Clear materials, or create new component
+	if (SetSkeletalMeshComponent(SkMC))
 	{
-		HighlightSkelMC = NewObject<UPoseableMeshComponent>(this);
-		HighlightSkelMC->RegisterComponent();
-		HighlightSkelMC->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		//HighlightSkelMC->BoneSpaceTransforms = SkMC->BoneSpaceTransforms;
+		//HighlightSkelMC->MarkRefreshTransformDirty();
+
+		//for (int32 BoneIdx = 0; BoneIdx < SkMC->GetNumBones(); ++BoneIdx)
+		//{
+		//	HighlightSkelMC->BoneSpaceTransforms[BoneIdx] = SkMC->BoneSpaceTransforms[BoneIdx];
+		//}
+
+		TArray<FName> BoneNames;
+		SkMC->GetBoneNames(BoneNames);
+		for (const auto Name : BoneNames)
+		{
+			HighlightSkelMC->SetBoneTransformByName(Name, SkMC->GetBoneTransform(SkMC->GetBoneIndex(Name)), EBoneSpaces::WorldSpace);
+		}
+
+		SetDynamicMaterial(VisualParams);
+		for (int32 MatIdx : MaterialIndexes)
+		{
+			if (MatIdx >= SkMC->GetNumMaterials())
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid MaterialIndex=%d .."), *FString(__FUNCTION__), __LINE__, MatIdx);
+				continue;
+			}
+			HighlightSkelMC->SetMaterial(MatIdx, DynamicMaterial);
+		}
+		// Mulitple material slot used
+		SkeletalMaterialIndexes.Empty();
+		SkeletalMaterialIndexes = MaterialIndexes;
+	}
+
+	// Make sure highlight marker moves with its representation
+	// TODO this will not work if the skeletal component is animated
+	AttachToComponent(SkMC, FAttachmentTransformRules::SnapToTargetIncludingScale);
+}
+
+// Set the visual parameters
+bool USLVizHighlightMarker::UpdateVisualParameters(const FSLVizHighlightMarkerVisualParams& VisualParams)
+{
+	// Check visual mesh type
+	if (HighlightSMC && HighlightSMC->IsValidLowLevel() && !HighlightSMC->IsPendingKillOrUnreachable())
+	{
+		SetDynamicMaterial(VisualParams);
+		for (int32 MatIdx = 0; MatIdx < HighlightSMC->GetNumMaterials(); ++MatIdx)
+		{
+			HighlightSMC->SetMaterial(MatIdx, DynamicMaterial);
+		}
+		return true;
+	}
+	else if (HighlightSkelMC && HighlightSkelMC->IsValidLowLevel() && !HighlightSkelMC->IsPendingKillOrUnreachable())
+	{
+		if (SkeletalMaterialIndexes.Num() == 0)
+		{
+			SetDynamicMaterial(VisualParams);
+			for (int32 MatIdx = 0; MatIdx < HighlightSkelMC->GetNumMaterials(); ++MatIdx)
+			{
+				HighlightSkelMC->SetMaterial(MatIdx, DynamicMaterial);
+			}
+			return true;
+		}
+		else if (SkeletalMaterialIndexes.Num() == 1)
+		{
+			SetDynamicMaterial(VisualParams);
+			HighlightSkelMC->SetMaterial(SkeletalMaterialIndexes[0], DynamicMaterial);
+			return true;
+		}
+		else
+		{
+			SetDynamicMaterial(VisualParams);
+			for (int32 MatIdx : SkeletalMaterialIndexes)
+			{
+				if (MatIdx >= HighlightSkelMC->GetNumMaterials())
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid MaterialIndex=%d .."), *FString(__FUNCTION__), __LINE__, MatIdx);
+					continue;
+				}
+				HighlightSkelMC->SetMaterial(MatIdx, DynamicMaterial);
+			}
+			return true;
+		}
 	}
 	else
 	{
-		HighlightSkelMC->EmptyOverrideMaterials();
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Highlight marker does not have a valid visual mesh set.."), *FString(__FUNCTION__), __LINE__);
 	}
-
-	if (HighlightSMC)
-	{
-		if (HighlightSMC->IsValidLowLevel())
-		{
-			//HighlightSMC->DestroyComponent();
-			HighlightSMC->ConditionalBeginDestroy();
-		}
-	}
-
-	HighlightSkelMC->SetSkeletalMesh(SkMC->SkeletalMesh);
-	SetWorldTransform(SkMC->GetComponentTransform());
-
-	//HighlightSkelMC->BoneSpaceTransforms = SkMC->BoneSpaceTransforms;
-	//HighlightSkelMC->MarkRefreshTransformDirty();
-
-	//for (int32 BoneIdx = 0; BoneIdx < SkMC->GetNumBones(); ++BoneIdx)
-	//{
-	//	HighlightSkelMC->BoneSpaceTransforms[BoneIdx] = SkMC->BoneSpaceTransforms[BoneIdx];
-	//}
-
-	TArray<FName> BoneNames;
-	SkMC->GetBoneNames(BoneNames);
-	for (const auto Name : BoneNames)
-	{
-		HighlightSkelMC->SetBoneTransformByName(Name, SkMC->GetBoneTransform(SkMC->GetBoneIndex(Name)), EBoneSpaces::WorldSpace);
-	}
-
-	SetDynamicMaterial(Color, Type);
-	for (int32 MatIdx : MaterialIndexes)
-	{
-		if (MatIdx >= SkMC->GetNumMaterials())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid MaterialIndex=%d .."), *FString(__FUNCTION__), __LINE__, MatIdx);
-			continue;
-		}
-		HighlightSkelMC->SetMaterial(MatIdx, DynamicMaterial);
-	}
-
-	// TODO this will not work if the skeletal component is animated
-	AttachToComponent(SkMC, FAttachmentTransformRules::SnapToTargetIncludingScale);
+	return false;
 }
 
 // Clear marker by notifing parent manager
@@ -268,52 +271,29 @@ bool USLVizHighlightMarker::LoadAssetsContainer()
 	}
 }
 
-// Set dynamic material
-void USLVizHighlightMarker::SetDynamicMaterial(const FLinearColor& Color, ESLVizHighlightMarkerType NewType)
+// Set the static mesh component
+bool USLVizHighlightMarker::SetStaticMeshComponent(UStaticMeshComponent* SMC)
 {
-	const bool bIsMaterialValid = DynamicMaterial && DynamicMaterial->IsValidLowLevel() && !DynamicMaterial->IsPendingKillOrUnreachable();
-	if (bIsMaterialValid)
+	// Clear materials, or create new component
+	if (HighlightSMC && HighlightSMC->IsValidLowLevel() && !HighlightSMC->IsPendingKillOrUnreachable())
 	{
-		const bool bIsValidMaterialOfTheSameType = NewType != MaterialType;
-		if (!bIsValidMaterialOfTheSameType)
-		{
-			// Destroy previous material and create a new one
-			DynamicMaterial->ConditionalBeginDestroy();
-			if (NewType == ESLVizHighlightMarkerType::Additive)
-			{
-				DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightAdditive, NULL);				
-			}
-			else if (NewType == ESLVizHighlightMarkerType::Translucent)
-			{
-				DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightTranslucent, NULL);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Unknown material type, using default as translucent.. "), *FString(__FUNCTION__), __LINE__);
-				DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightAdditive, NULL);
-			}
-		}
+		HighlightSMC->EmptyOverrideMaterials();
 	}
 	else
 	{
-		// Create dynamic material
-		if (NewType == ESLVizHighlightMarkerType::Additive)
-		{
-			DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightAdditive, NULL);			
-		}
-		else if (NewType == ESLVizHighlightMarkerType::Translucent)
-		{
-			DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightTranslucent, NULL);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Unknown material type, using default as translucent.. "), *FString(__FUNCTION__), __LINE__);
-			DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightAdditive, NULL);
-		}
+		HighlightSMC = NewObject<UStaticMeshComponent>(this);
+		HighlightSMC->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		HighlightSMC->RegisterComponent();
 	}
 
-	DynamicMaterial->SetVectorParameterValue(FName("Color"), Color);
-	MaterialType = NewType;
+	// Set the mesh visual
+	if (HighlightSMC->SetStaticMesh(SMC->GetStaticMesh()))
+	{
+		HighlightSMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		HighlightSMC->bSelectable = false;
+		return true;
+	}
+	return false;
 }
 
 // Clear the static mesh component
@@ -327,6 +307,29 @@ void USLVizHighlightMarker::ClearStaticMeshComponent()
 	HighlightSMC = nullptr;
 }
 
+// Set the skeletal mesh component
+bool USLVizHighlightMarker::SetSkeletalMeshComponent(USkeletalMeshComponent* SkMC)
+{
+	// Clear materials, or create new component
+	if (HighlightSkelMC && HighlightSkelMC->IsValidLowLevel() && !HighlightSkelMC->IsPendingKillOrUnreachable())
+	{
+		HighlightSkelMC->EmptyOverrideMaterials();
+	}
+	else
+	{
+		HighlightSkelMC = NewObject<UPoseableMeshComponent>(this);
+		HighlightSkelMC->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		HighlightSkelMC->RegisterComponent();
+	}
+
+	// Set the mesh visual
+	HighlightSkelMC->SetSkeletalMesh(SkMC->SkeletalMesh);
+	HighlightSkelMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	HighlightSkelMC->bSelectable = false;
+
+	return HighlightSkelMC && HighlightSkelMC->IsValidLowLevel() && !HighlightSkelMC->IsPendingKillOrUnreachable();
+}
+
 // Clear the skeletal mesh component
 void USLVizHighlightMarker::ClearSkeletalMeshComponent()
 {
@@ -336,6 +339,55 @@ void USLVizHighlightMarker::ClearSkeletalMeshComponent()
 		HighlightSkelMC->DestroyComponent();
 	}
 	HighlightSkelMC = nullptr;
+	SkeletalMaterialIndexes.Empty();
+}
+
+// Set the dynamic material
+void USLVizHighlightMarker::SetDynamicMaterial(const FSLVizHighlightMarkerVisualParams& VisualParams)
+{
+	const bool bIsMaterialValid = DynamicMaterial && DynamicMaterial->IsValidLowLevel() && !DynamicMaterial->IsPendingKillOrUnreachable();
+	if (bIsMaterialValid)
+	{
+		const bool bIsValidMaterialOfTheSameType = VisualParams.MaterialType != MaterialType;
+		if (!bIsValidMaterialOfTheSameType)
+		{
+			// Destroy previous material and create a new one
+			DynamicMaterial->ConditionalBeginDestroy();
+			if (VisualParams.MaterialType == ESLVizHighlightMarkerMaterialType::Additive)
+			{
+				DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightAdditive, NULL);
+			}
+			else if (VisualParams.MaterialType == ESLVizHighlightMarkerMaterialType::Translucent)
+			{
+				DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightTranslucent, NULL);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Unknown material type, using default as translucent.. "), *FString(__FUNCTION__), __LINE__);
+				DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightAdditive, NULL);
+			}
+		}
+	}
+	else
+	{
+		// Create dynamic material
+		if (VisualParams.MaterialType == ESLVizHighlightMarkerMaterialType::Additive)
+		{
+			DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightAdditive, NULL);
+		}
+		else if (VisualParams.MaterialType == ESLVizHighlightMarkerMaterialType::Translucent)
+		{
+			DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightTranslucent, NULL);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Unknown material type, using default as translucent.. "), *FString(__FUNCTION__), __LINE__);
+			DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightAdditive, NULL);
+		}
+	}
+
+	DynamicMaterial->SetVectorParameterValue(FName("Color"), VisualParams.Color);
+	MaterialType = VisualParams.MaterialType;
 }
 
 // Clear the dynamic material

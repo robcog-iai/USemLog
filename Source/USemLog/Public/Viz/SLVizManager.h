@@ -5,14 +5,34 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
+#include "Viz/SLVizHighlightMarker.h"
 #include "SLVizManager.generated.h"
 
 // Forward declarations
+class USLVizMarker;
 class ASLVizMarkerManager;
+class USLVizHighlightMarker;
 class ASLVizHighlightMarkerManager;
 class ASLVizWorldManager;
 class ASLIndividualManager;
 class USLVizHighlightMarker;
+
+/**
+ * Highlight individuals test hack struct
+ */
+USTRUCT()
+struct FSLVizHighlightIndividualCmdHack
+{
+	GENERATED_BODY();
+
+	// Individual id to query
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	FString IndividualId = TEXT("DefaultIndividualId");
+
+	// Highlight visual
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FSLVizHighlightMarkerVisualParams VisualParams;
+};
 
 /*
 * 
@@ -25,9 +45,6 @@ class USEMLOG_API ASLVizManager : public AInfo
 public:
 	// Sets default values for this actor's properties
 	ASLVizManager();
-
-	//// Dtor
-	//~ASLVizManager();
 
 protected:
 	// Called when the game starts or when spawned
@@ -51,14 +68,30 @@ public:
 	// Clear any created markers / viz components
 	void Reset();
 
+
+	/* Markers */
+	// Create marker with the given id
+	bool CreateMarker(const FString& Id);
+
+	// Remove marker with the given id
+	bool RemoveMarker(const FString& Id);
+
+	// Remove all markers
+	void RemoveAllMarkers(const FString& Id);
+
+
+	/* Highlights */
 	// Highlight the individual (returns false if the individual is not found or is not of visual type)
-	bool HighlightIndividual(const FString& Id);
+	bool HighlightIndividual(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
+
+	// Change the visual values of the highligted individual
+	bool UpdateIndividualHighlight(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams);
 
 	// Remove highlight from individual (returns false if the individual not found or it is not highlighted)
 	bool RemoveIndividualHighlight(const FString& Id);
 
 	// Remove all individual highlights
-	bool RemoveAllIndividualHighlights();
+	void RemoveAllIndividualHighlights();
 
 private:
 	// Get the vizualization marker manager from the world (or spawn a new one)
@@ -77,6 +110,10 @@ private:
 	// True if the manager is initialized
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	bool bIsInit;
+
+	// Keep track of the markers
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	TMap<FString, USLVizMarker*> Markers;
 
 	// Keep track of the highlighted individuals
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
@@ -105,13 +142,17 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bInitButtonHack = false;
 
-	// Individual id to query
+	// Highlight commands array
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	FString IndividualIdValueHack = TEXT("DefaultIndividualId");
+	TArray<FSLVizHighlightIndividualCmdHack> HighlightValuesHack;
 	
 	// Highlight individual button hack
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bHighlightButtonHack = false;
+
+	// Update higlight visual values
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bUpdateHighlightButtonHack = false;
 
 	// Remove highlight individual button hack
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")

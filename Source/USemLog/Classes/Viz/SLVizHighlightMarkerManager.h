@@ -24,38 +24,36 @@ protected:
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-//#if WITH_EDITOR
-//	/** Returns true if this actor can EVER be selected in a level in the editor.  Can be overridden by specific actors to make them unselectable. */
-//	virtual bool IsSelectable() const { return false; }
-//#endif // WITH_EDITOR
-
 public:
 	// Clear hihlight marker
-	void ClearMarker(USLVizHighlightMarker* HighlightMarker);
+	bool ClearMarker(USLVizHighlightMarker* HighlightMarker);
 	
 	// Clear all markers
 	void ClearAllMarkers();
 
 	/* Highlight markers */
 	// Create a highlight marker for the given static mesh component
-	USLVizHighlightMarker* CreateHighlightMarker(UStaticMeshComponent* SMC,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
+	USLVizHighlightMarker* CreateHighlightMarker(UStaticMeshComponent* SMC,	
+		const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
 
 	// Create a highlight marker for the given skeletal mesh component
 	USLVizHighlightMarker* CreateHighlightMarker(USkeletalMeshComponent* SkMC,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
+		const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
 
 	// Create a highlight marker for the given bone (material index) skeletal mesh component
 	USLVizHighlightMarker* CreateHighlightMarker(USkeletalMeshComponent* SkMC, int32 MaterialIndex,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
+		const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
 
 	// Create a highlight marker for the given bones (material indexes) skeletal mesh component
 	USLVizHighlightMarker* CreateHighlightMarker(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
+		const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
+
+	// Change the visual parameters of the highlight marker
+	bool SetVisualParameters(USLVizHighlightMarker* HighlightMarker, const FSLVizHighlightMarkerVisualParams& VisualParams);
 
 protected:
 	// Create and register the highlight marker
-	USLVizHighlightMarker* CreateNewHighlightMarker();
+	USLVizHighlightMarker* CreateHighlightMarkerObject();
 
 protected:
 	// Collection of the highlight markers

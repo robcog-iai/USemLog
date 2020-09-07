@@ -26,12 +26,6 @@ ASLVizManager::ASLVizManager()
 #endif // WITH_EDITORONLY_DATA
 }
 
-//// Dtor
-//ASLVizManager::~ASLVizManager()
-//{
-//	Reset();
-//}
-
 // Called when the game starts or when spawned
 void ASLVizManager::BeginPlay()
 {
@@ -58,12 +52,33 @@ void ASLVizManager::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bHighlightButtonHack))
 	{
 		bHighlightButtonHack = false;
-		HighlightIndividual(IndividualIdValueHack);
+		for (const auto& HighlightCmd : HighlightValuesHack)
+		{
+			HighlightIndividual(HighlightCmd.IndividualId, HighlightCmd.VisualParams);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bUpdateHighlightButtonHack))
+	{
+		bUpdateHighlightButtonHack = false;
+		for (const auto& HighlightCmd : HighlightValuesHack)
+		{
+			UpdateIndividualHighlight(HighlightCmd.IndividualId, HighlightCmd.VisualParams);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, HighlightValuesHack))
+	{
+		for (const auto& HighlightCmd : HighlightValuesHack)
+		{
+			UpdateIndividualHighlight(HighlightCmd.IndividualId, HighlightCmd.VisualParams);
+		}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bRemoveHighlightButtonHack))
 	{
 		bRemoveHighlightButtonHack = false;
-		RemoveIndividualHighlight(IndividualIdValueHack);
+		for (const auto& HighlightCmd : HighlightValuesHack)
+		{
+			RemoveIndividualHighlight(HighlightCmd.IndividualId);
+		}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bRemoveAllHighlightsButtonHack))
 	{
@@ -145,8 +160,80 @@ void ASLVizManager::Reset()
 	bIsInit = false;
 }
 
+
+/* Markers */
+// Create marker with the given id
+bool ASLVizManager::CreateMarker(const FString& Id)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp,Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Id.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) id is emtpy.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (auto Marker = Markers.Find(Id))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		return false;
+	}
+
+	
+
+	return false;
+}
+
+// Remove marker with the given id
+bool ASLVizManager::RemoveMarker(const FString& Id)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	USLVizMarker* Marker = nullptr;
+	if (Markers.RemoveAndCopyValue(Id, Marker))
+	{
+		VizMarkerManager->ClearMarker(Marker);
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual (Id=%s) as marker.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		return false;
+	}
+
+	return false;
+}
+
+// Remove all markers
+void ASLVizManager::RemoveAllMarkers(const FString& Id)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	for (const auto& Pair : Markers)
+	{
+		VizMarkerManager->ClearMarker(Pair.Value);
+	}
+	Markers.Empty();
+}
+
+
+/* Highlights */
 // Highlight the individual (returns false if the individual is not found or is not of visual type)
-bool ASLVizManager::HighlightIndividual(const FString& Id)
+bool ASLVizManager::HighlightIndividual(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams)
 {
 	if (!bIsInit)
 	{
@@ -168,21 +255,20 @@ bool ASLVizManager::HighlightIndividual(const FString& Id)
 			if (auto RI = Cast<USLRigidIndividual>(VI))
 			{	
 				HighlightedIndividuals.Add(Id,
-					VizHighlightMarkerManager->CreateHighlightMarker(RI->GetStaticMeshComponent()));
+					VizHighlightMarkerManager->CreateHighlightMarker(RI->GetStaticMeshComponent(), VisualParams));
 				return true;
 			}
 			else if (auto SkI = Cast<USLSkeletalIndividual>(VI))
 			{
 				HighlightedIndividuals.Add(Id,
-					VizHighlightMarkerManager->CreateHighlightMarker(SkI->GetSkeletalMeshComponent()));
+					VizHighlightMarkerManager->CreateHighlightMarker(SkI->GetSkeletalMeshComponent(), VisualParams));
 				return true;
 			}
 			else if (auto BI = Cast<USLBoneIndividual>(VI))
 			{
 				HighlightedIndividuals.Add(Id,
 					VizHighlightMarkerManager->CreateHighlightMarker(
-						BI->GetSkeletalMeshComponent(),
-						BI->GetMaterialIndex()));
+						BI->GetSkeletalMeshComponent(), BI->GetMaterialIndex(),	VisualParams));
 				return true;
 			}
 			else
@@ -205,6 +291,25 @@ bool ASLVizManager::HighlightIndividual(const FString& Id)
 			*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 		return false;
 	}
+	return false;
+}
+
+// Change the visual values of the highligted individual
+bool ASLVizManager::UpdateIndividualHighlight(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (auto HM = HighlightedIndividuals.Find(Id))
+	{
+		return (*HM)->UpdateVisualParameters(VisualParams);		
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual (Id=%s) as highlighted.."),
+		*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 	return false;
 }
 
@@ -232,23 +337,19 @@ bool ASLVizManager::RemoveIndividualHighlight(const FString& Id)
 }
 
 // Remove all individual highlights
-bool ASLVizManager::RemoveAllIndividualHighlights()
+void ASLVizManager::RemoveAllIndividualHighlights()
 {
-	if (VizHighlightMarkerManager->IsValidLowLevel() && !VizMarkerManager->IsPendingKillOrUnreachable())
+	if (!bIsInit)
 	{
-		for (const auto& Pair : HighlightedIndividuals)
-		{
-			VizHighlightMarkerManager->ClearMarker(Pair.Value);
-		}
-		HighlightedIndividuals.Empty();
-		return true;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
 	}
-	else
+
+	for (const auto& Pair : HighlightedIndividuals)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d ASLVizManager (%s)'s VizHighlightMarkerManager is not valid.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
+		VizHighlightMarkerManager->ClearMarker(Pair.Value);
 	}
-	return false;
+	HighlightedIndividuals.Empty();
 }
 
 // Get the vizualization marker manager from the world (or spawn a new one)
