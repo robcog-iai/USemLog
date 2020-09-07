@@ -89,12 +89,15 @@ private:
 
 protected:
 	// True when ready to log
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsInit : 1;
 
 	// True when active
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsStarted : 1;
 
 	// True when done logging
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsFinished : 1;
 
 private:
@@ -119,6 +122,7 @@ private:
 	FSLLoggerStartParams StartParameters;
 
 	// Access to all individuals in the world
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLIndividualManager* IndividualManager;
 
 	// Database handler

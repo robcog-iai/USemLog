@@ -9,7 +9,7 @@
 ASLVizHighlightMarkerManager::ASLVizHighlightMarkerManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SL_HighlightMarkerManagerRoot"));
+	//RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SL_HighlightMarkerManagerRoot"));
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -27,12 +27,24 @@ void ASLVizHighlightMarkerManager::EndPlay(const EEndPlayReason::Type EndPlayRea
 // Clear hihlight marker
 void ASLVizHighlightMarkerManager::ClearMarker(USLVizHighlightMarker* HighlightMarker)
 {
-	if (HighlightMarker->IsValidLowLevel())
+	if (HighlightMarker->IsValidLowLevel() && !HighlightMarker->IsPendingKillOrUnreachable())
 	{
-		//HighlightMarker->DestroyComponent();
-		HighlightMarker->ConditionalBeginDestroy();
+		//RemoveOwnedComponent(HighlightMarker);
+		//HighlightMarker->ConditionalBeginDestroy();
+		HighlightMarker->DestroyComponent();
+		if (HighlightMarkers.Remove(HighlightMarker) == 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Requested marker is not in the set.."), *FString(__FUNCTION__), __LINE__);
+		}
 	}
-	HighlightMarkers.Remove(HighlightMarker);
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Requested marker is not valid.."), *FString(__FUNCTION__), __LINE__);
+		if (HighlightMarkers.Remove(HighlightMarker) == 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Removed an invalid marker from the set.."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
 }
 
 // Clear all markers
@@ -40,10 +52,15 @@ void ASLVizHighlightMarkerManager::ClearAllMarkers()
 {
 	for (const auto& HM : HighlightMarkers)
 	{
-		if (HM->IsValidLowLevel())
+		if (HM->IsValidLowLevel() && !HM->IsPendingKillOrUnreachable())
 		{
-			//HM->DestroyComponent();
-			HM->ConditionalBeginDestroy();
+			//RemoveOwnedComponent(HM);
+			//HM->ConditionalBeginDestroy();
+			HM->DestroyComponent();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Requested marker is not valid.."), *FString(__FUNCTION__), __LINE__);
 		}
 	}
 	HighlightMarkers.Empty();
@@ -89,8 +106,8 @@ USLVizHighlightMarker* ASLVizHighlightMarkerManager::CreateNewHighlightMarker()
 	USLVizHighlightMarker* HighlightMarker = NewObject<USLVizHighlightMarker>(this);
 	HighlightMarker->RegisterComponent();
 	AddInstanceComponent(HighlightMarker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-	HighlightMarker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	HighlightMarkers.Emplace(HighlightMarker);
+	//AddOwnedComponent(HighlightMarker);
+	//HighlightMarker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+	HighlightMarkers.Add(HighlightMarker);
 	return HighlightMarker;
 }

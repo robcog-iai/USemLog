@@ -62,23 +62,34 @@ protected:
 	bool LoadAssetsContainer();
 
 	// Set dynamic material
-	void SetDynamicMaterial(const FLinearColor& Color, ESLVizHighlightMarkerType Type);
+	void SetDynamicMaterial(const FLinearColor& Color, ESLVizHighlightMarkerType NewType);
+
+
+private:
+	// Clear the static mesh component
+	void ClearStaticMeshComponent();
+
+	// Clear the skeletal mesh component
+	void ClearSkeletalMeshComponent();
+
+	// Clear the dynamic material
+	void ClearDynamicMaterial();
 
 private:
 	// Used as a clone if a static mesh component will be highlighted
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	UStaticMeshComponent* HighlightSMC;
 
 	// Used as a clone if a skeletal mesh component will be highlighted
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	UPoseableMeshComponent* HighlightSkMC;
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	UPoseableMeshComponent* HighlightSkelMC;
 
 	// Dynamic material
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	UMaterialInstanceDynamic* DynamicMaterial;
 
 	// Current material type
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ESLVizHighlightMarkerType MaterialType;
 
 	// Assets container

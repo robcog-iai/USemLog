@@ -79,12 +79,15 @@ private:
 
 protected:
 	// True when all references are set and it is connected to the server
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsInit : 1;
 
 	// True when active
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsStarted : 1;
 
 	// True when done logging
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsFinished : 1;
 
 private:
@@ -113,13 +116,17 @@ private:
 	TSharedPtr<FSLKRWSClient> KRWSClient;
 
 	// Keeps access to all the individuals in the world
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLIndividualManager* IndividualManager;
 
 	// Manages the mongo connection
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLMongoQueryManager* MongoQueryManager;
 
 	// Manages the visualization
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizManager* VizManager;	
+
 
 	/* Editor button hacks */
 	// Triggers a call to init or reset

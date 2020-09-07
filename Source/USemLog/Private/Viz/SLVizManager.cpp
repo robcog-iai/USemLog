@@ -26,11 +26,11 @@ ASLVizManager::ASLVizManager()
 #endif // WITH_EDITORONLY_DATA
 }
 
-// Dtor
-ASLVizManager::~ASLVizManager()
-{
-	Reset();
-}
+//// Dtor
+//ASLVizManager::~ASLVizManager()
+//{
+//	Reset();
+//}
 
 // Called when the game starts or when spawned
 void ASLVizManager::BeginPlay()
@@ -139,6 +139,10 @@ bool ASLVizManager::Init()
 void ASLVizManager::Reset()
 {
 	RemoveAllIndividualHighlights();
+	IndividualManager = nullptr;
+	VizMarkerManager = nullptr;
+	VizWorldManager = nullptr;
+	bIsInit = false;
 }
 
 // Highlight the individual (returns false if the individual is not found or is not of visual type)
@@ -230,23 +234,27 @@ bool ASLVizManager::RemoveIndividualHighlight(const FString& Id)
 // Remove all individual highlights
 bool ASLVizManager::RemoveAllIndividualHighlights()
 {
-	if (!VizHighlightMarkerManager->IsValidLowLevel())
+	if (VizHighlightMarkerManager->IsValidLowLevel() && !VizMarkerManager->IsPendingKillOrUnreachable())
 	{
-		return false;
+		for (const auto& Pair : HighlightedIndividuals)
+		{
+			VizHighlightMarkerManager->ClearMarker(Pair.Value);
+		}
+		HighlightedIndividuals.Empty();
+		return true;
 	}
-		
-	for (const auto& Pair : HighlightedIndividuals)
+	else
 	{
-		VizHighlightMarkerManager->ClearMarker(Pair.Value);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d ASLVizManager (%s)'s VizHighlightMarkerManager is not valid.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
 	}
-	HighlightedIndividuals.Empty();
 	return false;
 }
 
 // Get the vizualization marker manager from the world (or spawn a new one)
 bool ASLVizManager::SetVizMarkerManager()
 {
-	if (VizMarkerManager->IsValidLowLevel() && !VizMarkerManager->IsPendingKillOrUnreachable())
+	if (VizMarkerManager && VizMarkerManager->IsValidLowLevel() && !VizMarkerManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}
@@ -271,7 +279,7 @@ bool ASLVizManager::SetVizMarkerManager()
 // Get the vizualization highlight marker manager from the world (or spawn a new one)
 bool ASLVizManager::SetVizHighlightMarkerManager()
 {
-	if (VizHighlightMarkerManager->IsValidLowLevel() && !VizHighlightMarkerManager->IsPendingKillOrUnreachable())
+	if (VizHighlightMarkerManager && VizHighlightMarkerManager->IsValidLowLevel() && !VizHighlightMarkerManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}
@@ -296,7 +304,7 @@ bool ASLVizManager::SetVizHighlightMarkerManager()
 // Get the vizualization world manager from the world (or spawn a new one)
 bool ASLVizManager::SetVizWorldManager()
 {
-	if (VizWorldManager->IsValidLowLevel() && !VizWorldManager->IsPendingKillOrUnreachable())
+	if (VizWorldManager && VizWorldManager->IsValidLowLevel() && !VizWorldManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}
@@ -321,7 +329,7 @@ bool ASLVizManager::SetVizWorldManager()
 // Get the individual manager from the world (or spawn a new one)
 bool ASLVizManager::SetIndividualManager()
 {
-	if (IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}

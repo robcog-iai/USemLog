@@ -123,12 +123,15 @@ private:
 
 private:
 	// True if the manager is init
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsInit : 1;
 
 	// True if the manager is loaded
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsLoaded : 1;
 
 	// True if listening to the individual components delegates
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsConnected : 1;
 
 	// Set to to false if the cache is being modified to avoid iterating the containers from other threads

@@ -24,6 +24,11 @@ protected:
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+//#if WITH_EDITOR
+//	/** Returns true if this actor can EVER be selected in a level in the editor.  Can be overridden by specific actors to make them unselectable. */
+//	virtual bool IsSelectable() const { return false; }
+//#endif // WITH_EDITOR
+
 public:
 	// Clear hihlight marker
 	void ClearMarker(USLVizHighlightMarker* HighlightMarker);
@@ -54,6 +59,6 @@ protected:
 
 protected:
 	// Collection of the highlight markers
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TSet<USLVizHighlightMarker*> HighlightMarkers;
 };

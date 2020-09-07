@@ -26,8 +26,8 @@ public:
 	// Sets default values for this actor's properties
 	ASLVizManager();
 
-	// Dtor
-	~ASLVizManager();
+	//// Dtor
+	//~ASLVizManager();
 
 protected:
 	// Called when the game starts or when spawned
@@ -75,26 +75,27 @@ private:
 	
 private:
 	// True if the manager is initialized
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	bool bIsInit;
 
 	// Keep track of the highlighted individuals
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TMap<FString, USLVizHighlightMarker*> HighlightedIndividuals;
 
 	// Keeps track of all the drawn markers in the world
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizMarkerManager* VizMarkerManager;
 
 	// Keeps track of all the highlight markers in the world
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizHighlightMarkerManager* VizHighlightMarkerManager;
 
 	// Keeps track of the episode replay visualization
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizWorldManager* VizWorldManager;
 
 	// Keeps access to all the individuals in the world
-	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLIndividualManager* IndividualManager;
 
 

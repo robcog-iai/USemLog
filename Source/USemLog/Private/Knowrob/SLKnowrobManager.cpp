@@ -208,6 +208,11 @@ void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
 // Get the mongo query manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetMongoQueryManager()
 {
+	if (MongoQueryManager->IsValidLowLevel() && !MongoQueryManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
 	for (TActorIterator<ASLMongoQueryManager>Iter(GetWorld()); Iter; ++Iter)
 	{
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
@@ -228,6 +233,11 @@ bool ASLKnowrobManager::SetMongoQueryManager()
 // Get the individual manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetIndividualManager()
 {
+	if (IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
 	for (TActorIterator<ASLIndividualManager>Iter(GetWorld()); Iter; ++Iter)
 	{
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
@@ -248,6 +258,11 @@ bool ASLKnowrobManager::SetIndividualManager()
 // Get the viz manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetVizManager()
 {
+	if (VizManager->IsValidLowLevel() && !VizManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
 	for (TActorIterator<ASLVizManager>Iter(GetWorld()); Iter; ++Iter)
 	{
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
