@@ -63,6 +63,30 @@ void ASLVizMarkerManager::ClearAllMarkers()
 	Markers.Empty();
 }
 
+// Create marker at the given pose
+USLVizMarker* ASLVizMarkerManager::CreateMarker(const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams)
+{
+	return nullptr;
+}
+
+// Create marker at the given poses
+USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams)
+{
+	return nullptr;
+}
+
+// Create marker at the given skeletal poses
+USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, FTransform>>& SkeletalPose, const FSLVizMarkerVisualParams& VisualParams)
+{
+	return nullptr;
+}
+
+// Create marker at the given skeletal poses
+USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses, const FSLVizMarkerVisualParams& VisualParams)
+{
+	return nullptr;
+}
+
 
 /* Primitive static mesh visual markers */
 // Create marker at location

@@ -54,7 +54,6 @@ private:
 	// Normal write, where all the individuals are written if the tolerance theshold is passed
 	int32 Write();
 
-
 #if SL_WITH_LIBMONGO_C
 	// Add timestamp to the bson doc
 	void AddTimestamp(bson_t* doc);

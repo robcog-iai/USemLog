@@ -65,13 +65,6 @@ void ASLVizManager::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 			UpdateIndividualHighlight(HighlightCmd.IndividualId, HighlightCmd.VisualParams);
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, HighlightValuesHack))
-	{
-		for (const auto& HighlightCmd : HighlightValuesHack)
-		{
-			UpdateIndividualHighlight(HighlightCmd.IndividualId, HighlightCmd.VisualParams);
-		}
-	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bRemoveHighlightButtonHack))
 	{
 		bRemoveHighlightButtonHack = false;
@@ -184,7 +177,30 @@ bool ASLVizManager::CreateMarker(const FString& Id)
 		return false;
 	}
 
+	//VizMarkerManager->
+
 	
+
+	return false;
+}
+
+// Update the visual values of the marker
+bool ASLVizManager::UpdateMarker(const FString& Id)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (auto Marker = Markers.Find(Id))
+	{
+		return true;// (*Marker)->UpdateVisualParameters(VisualParams);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual (Id=%s) as highlighted.."),
+		*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+	return false;
 
 	return false;
 }
@@ -215,7 +231,7 @@ bool ASLVizManager::RemoveMarker(const FString& Id)
 }
 
 // Remove all markers
-void ASLVizManager::RemoveAllMarkers(const FString& Id)
+void ASLVizManager::RemoveAllMarkers()
 {
 	if (!bIsInit)
 	{

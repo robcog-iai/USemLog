@@ -73,11 +73,14 @@ public:
 	// Create marker with the given id
 	bool CreateMarker(const FString& Id);
 
+	// Update the visual values of the marker
+	bool UpdateMarker(const FString& Id);
+
 	// Remove marker with the given id
 	bool RemoveMarker(const FString& Id);
 
 	// Remove all markers
-	void RemoveAllMarkers(const FString& Id);
+	void RemoveAllMarkers();
 
 
 	/* Highlights */

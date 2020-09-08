@@ -8,9 +8,6 @@
 #include "Viz/SLVizMarker.h"
 #include "SLVizMarkerManager.generated.h"
 
-// Forward declarations
-class USLVizHighlightMarker;
-
 /*
 * Spawns and keeps track of markers
 */
@@ -33,6 +30,20 @@ public:
 	
 	// Clear all markers
 	void ClearAllMarkers();
+
+	// Create marker at the given pose
+	USLVizMarker* CreateMarker(const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
+
+	// Create marker at the given poses
+	USLVizMarker* CreateMarker(const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
+
+	// Create marker at the given skeletal pose
+	USLVizMarker* CreateMarker(TPair<FTransform, TMap<FString, FTransform>>& SkeletalPose, const FSLVizMarkerVisualParams& VisualParams);
+
+	// Create marker at the given skeletal poses
+	USLVizMarker* CreateMarker(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses, const FSLVizMarkerVisualParams& VisualParams);
+
+
 
 	/* Primitive static mesh visual markers */
 	// Create marker at location

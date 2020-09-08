@@ -17,7 +17,7 @@ class USLVizAssets;
 UENUM()
 enum class ESLVizVisualType : uint8
 {
-	NONE			UMETA(DisplayName = "Box"),
+	NONE			UMETA(DisplayName = "NONE"),
 	Static			UMETA(DisplayName = "Static"),
 	Skeletal		UMETA(DisplayName = "Skeletal")
 };
@@ -33,6 +33,49 @@ enum class ESLVizMarkerType : uint8
 	Cylinder		UMETA(DisplayName = "Cylinder"),
 	Arrow			UMETA(DisplayName = "Arrow"),
 	Axis			UMETA(DisplayName = "Axis"),
+	Clone			UMETA(DisplayName = "Clone")
+};
+
+
+/**
+ * Marker parameters
+ */
+USTRUCT()
+struct FSLVizMarkerVisualParams
+{
+	GENERATED_BODY();
+
+	// Color
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FLinearColor Color = FLinearColor::Green;
+
+	// Material lit property
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bUnlit = false;
+
+	// Visual scale
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FVector Scale = FVector(0.1f);
+
+	// Visual marker type
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLVizMarkerType Type = ESLVizMarkerType::Box;
+
+	// Clone maker static mesh visual
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UStaticMeshComponent* SMC = nullptr;
+
+	// Clone maker skeletal mesh visual
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	USkeletalMeshComponent* SkelMC = nullptr;
+
+	// Use the original color of the cloned mesh
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bUseCloneOriginalMaterial = false;
+
+	// The material instances to apply the materials to (use all slots if emtpy)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	TArray<int32> MaterialIndexes;
 };
 
 /**
@@ -47,9 +90,13 @@ public:
 	// Constructor
 	USLVizMarker();
 
+	// Set the visual representation
+	void SetVisual(const FSLVizMarkerVisualParams& VisualParams);
+
+
 	// Set the visuals of the marker
 	void Init(ESLVizMarkerType Type = ESLVizMarkerType::Box,
-		const FVector& InScale = FVector(0.1),
+		const FVector& InScale = FVector(0.1f),
 		const FLinearColor& Color = FLinearColor::Green,
 		bool bUnlit = false);
 
@@ -101,8 +148,8 @@ public:
 	//~ Begin ActorComponent Interface
 	virtual void DestroyComponent(bool bPromoteChildren = false) override;
 	//~ End ActorComponent Interface
-protected:
 
+protected:
 	// Clear any previously set related data (mesh / materials)
 	void Reset();
 
@@ -123,20 +170,25 @@ protected:
 	FVector Scale;
 
 	// Enum showing the current active visual type
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ESLVizVisualType CurrentVisualType;
 
-	/* Skeletal components */
+	/* Skeletal marker components helpers */
 	// Skeletal mesh marker to render
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SkeletalMarker, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	class USkeletalMesh* SkeletalMesh;
 
 	// Skeletal materials
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SkeletalMarker, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TMap<int32, class UMaterialInterface*> SkeletalMaterials;
 
 	// Instances of the skeletal marker
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = SkeletalMarker, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TArray<UPoseableMeshComponent*> SkeletalInstances;
+
+	// Dynamic material
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	UMaterialInstanceDynamic* DynamicMaterial;
 
 	/* Marker visual static meshes */
 	UStaticMesh* MeshBox;	

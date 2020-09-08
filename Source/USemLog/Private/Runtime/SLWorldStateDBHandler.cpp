@@ -13,7 +13,6 @@
 #include "Conversions.h"
 #endif // SL_WITH_ROS_CONVERSIONS
 
-
 /* DB Write Async Task */
 // Init task
 #if SL_WITH_LIBMONGO_C
@@ -28,6 +27,7 @@ bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, AS
 
 	return true;
 }
+#endif //SL_WITH_LIBMONGO_C	
 
 // Do the db writing here
 void FSLWorldStateDBWriterAsyncTask::DoWork()
@@ -103,6 +103,7 @@ int32 FSLWorldStateDBWriterAsyncTask::Write()
 	return Num;
 }
 
+#if SL_WITH_LIBMONGO_C
 // Add timestamp to the bson doc
 void FSLWorldStateDBWriterAsyncTask::AddTimestamp(bson_t* doc)
 {
@@ -609,12 +610,12 @@ bool FSLWorldStateDBHandler::WriteMetadata(ASLIndividualManager* IndividualManag
 	// Clean up
 	bson_destroy(meta_doc);
 	mongoc_collection_destroy(meta_coll);
+	return RetVal;
 #else
 	UE_LOG(LogTemp, Error, TEXT("%s::%d SL_WITH_LIBMONGO_C flag is 0, aborting.."),
 		*FString(__func__), __LINE__);
 	return false;
 #endif //SL_WITH_LIBMONGO_C
-	return RetVal;
 }
 
 #if SL_WITH_LIBMONGO_C
