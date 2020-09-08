@@ -107,7 +107,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	UPoseableMeshComponent* HighlightSkelMC;
 
-	// Skeletal material slots used (Empty == all slots used)
+	// Used when updating the visual parameters
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TArray<int32> SkeletalMaterialIndexes;
 

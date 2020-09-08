@@ -105,7 +105,11 @@ void USLVizHighlightMarker::Set(USkeletalMeshComponent* SkMC, int32 MaterialInde
 		}
 
 		SetDynamicMaterial(VisualParams);
-		HighlightSkelMC->SetMaterial(MaterialIndex, DynamicMaterial);
+		for (int32 MatIdx = 0; MatIdx < SkMC->GetNumMaterials(); ++MatIdx)
+		{
+			MatIdx == MaterialIndex ? HighlightSkelMC->SetMaterial(MatIdx, DynamicMaterial) :
+				HighlightSkelMC->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible);
+		}
 
 		// One material slot used
 		SkeletalMaterialIndexes.Empty();
@@ -142,15 +146,12 @@ void USLVizHighlightMarker::Set(USkeletalMeshComponent* SkMC, TArray<int32>& Mat
 		}
 
 		SetDynamicMaterial(VisualParams);
-		for (int32 MatIdx : MaterialIndexes)
+		for (int32 MatIdx = 0; MatIdx < SkMC->GetNumMaterials(); ++MatIdx)
 		{
-			if (MatIdx >= SkMC->GetNumMaterials())
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid MaterialIndex=%d .."), *FString(__FUNCTION__), __LINE__, MatIdx);
-				continue;
-			}
-			HighlightSkelMC->SetMaterial(MatIdx, DynamicMaterial);
+			MaterialIndexes.Contains(MatIdx) ? HighlightSkelMC->SetMaterial(MatIdx, DynamicMaterial)
+				: HighlightSkelMC->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible);
 		}
+
 		// Mulitple material slot used
 		SkeletalMaterialIndexes.Empty();
 		SkeletalMaterialIndexes = MaterialIndexes;
