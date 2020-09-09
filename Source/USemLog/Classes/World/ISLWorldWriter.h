@@ -4,7 +4,7 @@
 #pragma once
 
 #include "SLStructs.h"
-#include "SLSkeletalDataComponent.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
 #include "SLGazeDataHandler.h"
 
 /**

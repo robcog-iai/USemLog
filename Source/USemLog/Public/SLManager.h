@@ -4,7 +4,7 @@
 
 #include "USemLog.h"
 #include "GameFramework/Info.h"
-#include "SLWorldStateLogger.h"
+#include "Runtime/SLWorldStateLogger.h"
 #include "SLWorldLogger.h"
 #include "SLEventLogger.h"
 #include "SLMetadataLogger.h"

@@ -15,7 +15,7 @@
 #include "FileHelper.h"
 
 #include "Vision/SLVisionStructs.h"
-#include "SLSkeletalDataComponent.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
 #include "SLVisionLogger.h"
 
 

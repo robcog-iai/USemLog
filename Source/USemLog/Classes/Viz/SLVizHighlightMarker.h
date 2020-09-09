@@ -11,14 +11,32 @@
 // Forward declarations
 class USLVizAssets;
 
-/*
-* Highlight material types
-*/
+/**
+ * Highlight material types
+ */
 UENUM()
-enum class ESLVizHighlightMarkerType : uint8
+enum class ESLVizHighlightMarkerMaterialType : uint8
 {
+	NONE				UMETA(DisplayName = "NONE"),
 	Additive			UMETA(DisplayName = "Additive"),
 	Translucent			UMETA(DisplayName = "Translucent"),
+};
+
+/**
+ * Highlight marker parameters
+ */
+USTRUCT()
+struct FSLVizHighlightMarkerVisualParams
+{
+	GENERATED_BODY();
+
+	// Highlight color
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FLinearColor Color = FLinearColor::Green;
+
+	// Material type
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLVizHighlightMarkerMaterialType MaterialType = ESLVizHighlightMarkerMaterialType::Additive;
 };
 
 /**
@@ -34,20 +52,21 @@ public:
 	USLVizHighlightMarker();
 
 	// Highlight the given static mesh by creating a clone
-	void Init(UStaticMeshComponent* SMC,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
+	void Set(UStaticMeshComponent* SMC, const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
 
 	// Highlight the given skeletal mesh by creating a clone
-	void Init(USkeletalMeshComponent* SkMC,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
+	void Set(USkeletalMeshComponent* SkMC, const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
 
 	// Highlight the given bone (material index) by creating a clone
-	void Init(USkeletalMeshComponent* SkMC, int32 MaterialIndex,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
+	void Set(USkeletalMeshComponent* SkMC, int32 MaterialIndex,
+		const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
 
 	// Highlight the given bones (material indexes) by creating a clone
-	void Init(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizHighlightMarkerType Type = ESLVizHighlightMarkerType::Additive);
+	void Set(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes,
+		const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
+
+	// Set the visual parameters
+	bool UpdateVisualParameters(const FSLVizHighlightMarkerVisualParams& VisualParams);
 
 	// Call this if you want to notify the owner (manager) of the destruction
 	bool DestroyThroughManager();
@@ -57,22 +76,48 @@ public:
 	//~ End ActorComponent Interface
 
 protected:
-	// Load highligh material assets
-	void LoadAssets();
-
 	// Load assets container
 	bool LoadAssetsContainer();
 
 private:
+	// Set the static mesh component
+	bool SetStaticMeshComponent(UStaticMeshComponent* SMC);
+
+	// Clear the static mesh component
+	void ClearStaticMeshComponent();
+
+	// Set the skeletal mesh component
+	bool SetSkeletalMeshComponent(USkeletalMeshComponent* SkMC);
+
+	// Clear the skeletal mesh component
+	void ClearSkeletalMeshComponent();
+
+	// Set the dynamic material
+	void SetDynamicMaterial(const FSLVizHighlightMarkerVisualParams& VisualParams);
+
+	// Clear the dynamic material
+	void ClearDynamicMaterial();
+
+private:
 	// Used as a clone if a static mesh component will be highlighted
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	UStaticMeshComponent* HighlightSMC;
 
 	// Used as a clone if a skeletal mesh component will be highlighted
-	UPoseableMeshComponent* HighlightSkMC;
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	UPoseableMeshComponent* HighlightSkelMC;
 
-	/* Highligh dynamic materials */
-	UMaterial* MaterialHighlightAdditive;
-	UMaterial* MaterialHighlightTranslucent;
+	// Used when updating the visual parameters
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	TArray<int32> SkeletalMaterialIndexes;
+
+	// Dynamic material
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	UMaterialInstanceDynamic* DynamicMaterial;
+
+	// Current material type
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ESLVizHighlightMarkerMaterialType MaterialType;
 
 	// Assets container
 	USLVizAssets* VizAssetsContainer;

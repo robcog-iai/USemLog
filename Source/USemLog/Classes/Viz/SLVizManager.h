@@ -1,56 +1,44 @@
-// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
+// Copyright 2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "Engine/StaticMeshActor.h"
-#include "Animation/SkeletalMeshActor.h"
-#include "Components/InstancedStaticMeshComponent.h"
+#include "GameFramework/Info.h"
+#include "Viz/SLVizHighlightMarker.h"
 #include "SLVizManager.generated.h"
 
-/*
-* Trajectory marker primitive types
-*/
-UENUM()
-enum class ESLVizMeshType : uint8
-{
-	Box				UMETA(DisplayName = "Box"),
-	Sphere			UMETA(DisplayName = "Sphere"),
-	Cylinder		UMETA(DisplayName = "Cylinder"),
-	Arrow			UMETA(DisplayName = "Arrow"),
-	Axis			UMETA(DisplayName = "Axis"),
-};
+// Forward declarations
+class USLVizMarker;
+class ASLVizMarkerManager;
+class USLVizHighlightMarker;
+class ASLVizHighlightMarkerManager;
+class ASLVizWorldManager;
+class ASLIndividualManager;
+class USLVizHighlightMarker;
 
-
-/*
-* Highlight material types
-*/
-UENUM()
-enum class ESLVizHighlightType : uint8
-{
-	Additive			UMETA(DisplayName = "Additive"),
-	Translucent			UMETA(DisplayName = "Translucent"),
-};
-
+/**
+ * Highlight individuals test hack struct
+ */
 USTRUCT()
-struct FSLVizMaterialList
+struct FSLVizHighlightIndividualCmdHack
 {
-	GENERATED_USTRUCT_BODY()
-	FSLVizMaterialList() {}
+	GENERATED_BODY();
 
-	UPROPERTY()
-	TArray<UMaterialInterface*> Materials;
+	// Individual id to query
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	FString IndividualId = TEXT("DefaultIndividualId");
+
+	// Highlight visual
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FSLVizHighlightMarkerVisualParams VisualParams;
 };
 
-
-
 /*
-* Class for visualizing various markers (mesh, skeletal mesh, basic primitives), as points or trajectories
+* 
 */
-UCLASS()
-class USEMLOG_API ASLVizManager : public AActor
+UCLASS(ClassGroup = (SL), DisplayName = "SL Viz Manager")
+class USEMLOG_API ASLVizManager : public AInfo
 {
 	GENERATED_BODY()
 	
@@ -62,154 +50,122 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
+
+	// Called when actor removed from game or game ended
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 public:
-	// Init the mappings between the unique ids and the entities
-	void Init();
+	// Load required managers
+	bool Init();
 
-	// Clears all markers, reset key counter
-	void Clear();
+	// Check if the manager is initialized
+	bool IsInit() const { return bIsInit; };
 
-	
+	// Clear any created markers / viz components
+	void Reset();
+
+
 	/* Markers */
-	// Create a single pose marker with default orientation
-	int32 CreateMarker(const FVector& Location, ESLVizMeshType Type, FVector Scale, FLinearColor Color, bool bUnlit = false);
-	
-	// Create a single pose marker
-	int32 CreateMarker(const FTransform& Pose, ESLVizMeshType Type, FVector Scale, FLinearColor Color, bool bUnlit = false);
+	// Create marker with the given id
+	bool CreateMarker(const FString& Id);
 
-	// Create a trajectory marker with default orientation
-	int32 CreateMarker(const TArray<FVector>& Locations, ESLVizMeshType Type, FVector Scale, FLinearColor Color, bool bUnlit = false);
-	
-	// Create a trajectory marker
-	int32 CreateMarker(const TArray<FTransform>& Poses, ESLVizMeshType Type, FVector Scale, FLinearColor Color, bool bUnlit = false);
+	// Update the visual values of the marker
+	bool UpdateMarker(const FString& Id);
 
-	// Append a pose to the marker
-	bool AppendMarker(int32 Key, const FTransform& Pose, FVector Scale);
-
-	// Append an array to the marker
-	bool AppendMarker(int32 Key, const TArray<FTransform>& Poses, FVector Scale);
-	
-	// Remove marker
-	// todo
-	bool RemoveMarker(int32 Key);
+	// Remove marker with the given id
+	bool RemoveMarker(const FString& Id);
 
 	// Remove all markers
-	// todo
-	void ClearMarkers();
+	void RemoveAllMarkers();
 
-	// see virtual bool UpdateInstanceTransform
-	// UpdateMarkerInstance(int32 Key, int32 InstanceIndex, const FTransform& Pose, FVectorScale)
-	// NumMarkerInstance()
-	
-	
-	/* Clones */
-	// Create clone copy of the given entity id
-	int32 CreateEntityClone(const FString& Id, const FTransform& Transform);
 
-	// Get the entity clone
-	AStaticMeshActor* GetEntityClone(int32 Key);
+	/* Highlights */
+	// Highlight the individual (returns false if the individual is not found or is not of visual type)
+	bool HighlightIndividual(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
 
-	// Remove the entity clone marker
-	bool RemoveEntityClone(int32 Key);
+	// Change the visual values of the highligted individual
+	bool UpdateIndividualHighlight(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams);
 
-	// Remove all entity clones
-	void ClearEntityClones();
+	// Remove highlight from individual (returns false if the individual not found or it is not highlighted)
+	bool RemoveIndividualHighlight(const FString& Id);
 
-	// Create a skeletal clone
-	int32 CreateSkeletalClone(const FString& Id, const FTransform& Transform);
+	// Remove all individual highlights
+	void RemoveAllIndividualHighlights();
 
-	// Get access to the skeletal clone
-	ASkeletalMeshActor* GetSkeletalClone(int32 Key);
-
-	// Remove skeletal clone
-	bool RemoveSkeletalClone(int32 Key);
-
-	// Remove all skeletal clones
-	void ClearSkeletalClones();
-	
-	// Remove all clones
-	void ClearClones();
-
-	/*Highlight*/
-	// Highlight entity
-	void Highlight(const FString& Id, FLinearColor Color, ESLVizHighlightType HighlightType);
-
-	// Remove highlight of entity
-	void RemoveHighlight(const FString& Id);
-
-	// Remove all highlight of entity
-	void ClearHighlights();
-
-	/*Get Actor in the world*/
-	// Get Skeletal Mesh Actor
-	ASkeletalMeshActor* GetSkeletalMeshActor(const FString& Id);
-
-	// Get Static Mesh Actor
-	AStaticMeshActor* GetStaticMeshActor(const FString& Id);
-	
 private:
-	// Load marker meshes and materials
-	bool LoadMarkerAssets();
-	
-	// Load the mappings of the unique ids to the entities
-	void LoadEntityMappings();
+	// Get the vizualization marker manager from the world (or spawn a new one)
+	bool SetVizMarkerManager();
 
-	// Get mesh instance from enum type
-	UStaticMesh* GetMeshFromType(ESLVizMeshType Type) const;
+	// Get the vizualization highlight marker manager from the world (or spawn a new one)
+	bool SetVizHighlightMarkerManager();
+
+	// Get the vizualization world manager from the world (or spawn a new one)
+	bool SetVizWorldManager();
+
+	// Get the individual manager from the world (or spawn a new one)
+	bool SetIndividualManager();
 	
 private:
 	// True if the manager is initialized
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	bool bIsInit;
 
-	// Key used for accessing the viz marker
-	int32 VizKey;
+	// Keep track of the markers
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	TMap<FString, USLVizMarker*> Markers;
 
+	// Keep track of the highlighted individuals
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	TMap<FString, USLVizHighlightMarker*> HighlightedIndividuals;
+
+	// Keeps track of all the drawn markers in the world
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLVizMarkerManager* VizMarkerManager;
+
+	// Keeps track of all the highlight markers in the world
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLVizHighlightMarkerManager* VizHighlightMarkerManager;
+
+	// Keeps track of the episode replay visualization
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLVizWorldManager* VizWorldManager;
+
+	// Keeps access to all the individuals in the world
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLIndividualManager* IndividualManager;
+
+
+
+	/* Editor button hacks */
+	// Triggers a call to init
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bInitButtonHack = false;
+
+	// Highlight commands array
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	TArray<FSLVizHighlightIndividualCmdHack> HighlightValuesHack;
 	
-	/* Markers */
-	// Map of the existing pose and trajectory markers
-	UPROPERTY()
-	TMap<int32, UInstancedStaticMeshComponent*> Markers;
+	// Highlight individual button hack
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bHighlightButtonHack = false;
 
-	// Pointers to the mesh type assets
-	UPROPERTY()
-	UStaticMesh* MeshBox;
-	UPROPERTY()
-	UStaticMesh* MeshSphere;
-	UPROPERTY()
-	UStaticMesh* MeshCylinder;
-	UPROPERTY()
-	UStaticMesh* MeshArrow;
-	UPROPERTY()
-	UStaticMesh* MeshAxis;
+	// Update higlight visual values
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bUpdateHighlightButtonHack = false;
 
-	// Pointer to the dynamic material
-	UPROPERTY()
-	UMaterial* MaterialLit;
-	UPROPERTY()
-	UMaterial* MaterialUnlit;
-	UPROPERTY()
-	UMaterial* MaterialHighlightAdditive;
-	UPROPERTY()
-	UMaterial* MaterialHighlightTranslucent;
-	
-	/* Clones */
-	// Mapping between the unique keys and the cloned static mesh entities
-	UPROPERTY()
-	TMap<int32, AStaticMeshActor*> EntityClones;
+	// Remove highlight individual button hack
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bRemoveHighlightButtonHack = false;
 
-	// Mapping between the unique keys and the cloned skeletal mesh entities
-	UPROPERTY()
-	TMap<int32, ASkeletalMeshActor*> SkeletalClones;
+	// Remove all individual highlights
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bRemoveAllHighlightsButtonHack = false;
 
-	// Id to static mesh actor
-	UPROPERTY()
-	TMap<FString, AStaticMeshActor*> IdToSMA;
-
-	// Id to skeletal mesh actor
-	UPROPERTY()
-	TMap<FString, ASkeletalMeshActor*> IdToSkMA;
-
-	// Id to the original material of the mesh
-	UPROPERTY()
-	TMap<FString, FSLVizMaterialList> IdToOriginalMaterials;
+	// Clear any created markers
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bResetButtonHack = false;
 };

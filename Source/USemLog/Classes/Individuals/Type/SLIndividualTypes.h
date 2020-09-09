@@ -8,6 +8,9 @@
 ----------------------------------------------------------------------------*/
 
 #include "Individuals/Type/SLBaseIndividual.h"
+
+#include "Individuals/Type/SLVisibleIndividual.h"
+
 #include "Individuals/Type/SLRigidConstraintIndividual.h"
 #include "Individuals/Type/SLRigidIndividual.h"
 #include "Individuals/Type/SLSkyIndividual.h"

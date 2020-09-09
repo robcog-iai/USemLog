@@ -4,6 +4,7 @@
 #include "Knowrob/SLKnowrobManager.h"
 #include "Knowrob/SLKRWSClient.h"
 #include "Mongo/SLMongoQueryManager.h"
+#include "Viz/SLVizManager.h"
 #include "Individuals/SLIndividualManager.h"
 #include <string>
 #include "EngineUtils.h"
@@ -89,15 +90,13 @@ void ASLKnowrobManager::Init()
 	}
 	KRWSClient->Connect(KRServerIP, KRServerPort, KRWSProtocol);
 
-	// Set the mongo query manager
+	// Get and connect the mongo query manager
 	if (!SetMongoQueryManager())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the mongo query manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-
-	// Connect to the mongo database
 	if (!MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not connect to mongo db.. (%s::%d)"),
@@ -105,17 +104,21 @@ void ASLKnowrobManager::Init()
 		return;
 	}
 
-	// Get the individual manager reference
+	// Get and load the individual manager 
 	if (!SetIndividualManager())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the individual manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-
+	if (!IndividualManager->Load(false))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d  Knowrob manager (%s) could NOT load the individual manager (%s).."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
+		return;
+	}
 
 	bIsInit = true;
-	bIsFinished = false;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully initialized.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
 }
@@ -205,6 +208,11 @@ void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
 // Get the mongo query manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetMongoQueryManager()
 {
+	if (MongoQueryManager->IsValidLowLevel() && !MongoQueryManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
 	for (TActorIterator<ASLMongoQueryManager>Iter(GetWorld()); Iter; ++Iter)
 	{
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
@@ -225,23 +233,17 @@ bool ASLKnowrobManager::SetMongoQueryManager()
 // Get the individual manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetIndividualManager()
 {
+	if (IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
 	for (TActorIterator<ASLIndividualManager>Iter(GetWorld()); Iter; ++Iter)
 	{
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
 		{
 			IndividualManager = *Iter;
-			if (IndividualManager->Load(false))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s)'s individual manager (%s) is set and loaded.."),
-					*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
-				return true;
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s)'s individual manager (%s) could not be loaded.."),
-					*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
-				return false;
-			}
+			return true;
 		}
 	}
 
@@ -250,17 +252,30 @@ bool ASLKnowrobManager::SetIndividualManager()
 	SpawnParams.Name = TEXT("SL_IndividualManager");
 	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
 	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
+	return true;
+}
 
-	if (IndividualManager->Load(false))
+// Get the viz manager from the world (or spawn a new one)
+bool ASLKnowrobManager::SetVizManager()
+{
+	if (VizManager->IsValidLowLevel() && !VizManager->IsPendingKillOrUnreachable())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) created and loaded a new individual manager (%s).."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
 		return true;
 	}
-	else
+
+	for (TActorIterator<ASLVizManager>Iter(GetWorld()); Iter; ++Iter)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s) created BUT could NOT load the new individual manager (%s).."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
-		return false;
-	}	
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			VizManager = *Iter;
+			return true;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_VizManager");
+	VizManager = GetWorld()->SpawnActor<ASLVizManager>(SpawnParams);
+	VizManager->SetActorLabel(TEXT("SL_VizManager"));
+	return true;
 }

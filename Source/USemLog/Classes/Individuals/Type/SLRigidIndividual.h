@@ -43,6 +43,9 @@ public:
     virtual bool ApplyOriginalMaterials() override;
     /* End Visible individual interface */
 
+    // Get access to the static mesh component
+    UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; };
+
 protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() override;

@@ -12,10 +12,133 @@
 USLVizMarker::USLVizMarker()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	bSelectable = false;
 	LoadAssets();
 	LoadAssetsContainer();
 	SkeletalMesh = nullptr;
 	CurrentVisualType = ESLVizVisualType::NONE;
+}
+
+// Create visual at pose
+void USLVizMarker::SetVisual(const FSLVizMarkerVisualParams& VisualParams)
+{
+	// Clear any previously set visuals (mesh/materials)
+	Reset();
+
+	// Check visual type
+	if (VisualParams.Type != ESLVizMarkerType::Clone)
+	{
+		Scale = VisualParams.Scale;
+
+		SetStaticMesh(GetPrimitiveMarkerMesh(VisualParams.Type));
+		SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		UMaterialInstanceDynamic* DynMat = VisualParams.bUnlit ? UMaterialInstanceDynamic::Create(MaterialUnlit, NULL) : UMaterialInstanceDynamic::Create(MaterialLit, NULL);
+		DynMat->SetVectorParameterValue(FName("Color"), VisualParams.Color);
+		SetMaterial(0, DynMat);
+		CurrentVisualType = ESLVizVisualType::Static;
+	}
+	else
+	{
+		if (VisualParams.SMC)
+		{
+			Scale = FVector::OneVector;
+
+			SetStaticMesh(VisualParams.SMC->GetStaticMesh());
+			SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+			if (!VisualParams.bUseCloneOriginalMaterial)
+			{
+				UMaterialInstanceDynamic* DynMat = VisualParams.bUnlit ? UMaterialInstanceDynamic::Create(MaterialUnlit, NULL) : UMaterialInstanceDynamic::Create(MaterialLit, NULL);
+				DynMat->SetVectorParameterValue(FName("Color"), VisualParams.Color);
+				SetMaterial(0, DynMat);
+			}
+
+			CurrentVisualType = ESLVizVisualType::Static;
+		}
+		else if (VisualParams.SkelMC)
+		{
+			//SkeletalMesh = DuplicateObject<USkeletalMesh>(SkMC->SkeletalMesh, this);
+			SkeletalMesh = VisualParams.SkelMC->SkeletalMesh;
+
+			if (VisualParams.MaterialIndexes.Num() == 0)
+			{
+				if (VisualParams.bUseCloneOriginalMaterial)
+				{
+					for (int32 MatIdx = 0; MatIdx < VisualParams.SkelMC->GetNumMaterials(); ++MatIdx)
+					{
+						SkeletalMaterials.Emplace(MatIdx, VisualParams.SkelMC->GetMaterial(MatIdx));
+					}
+				}
+				else
+				{
+					UMaterialInstanceDynamic* DynMat = VisualParams.bUnlit ? UMaterialInstanceDynamic::Create(MaterialUnlit, NULL) : UMaterialInstanceDynamic::Create(MaterialLit, NULL);
+					DynMat->SetVectorParameterValue(FName("Color"), VisualParams.Color);
+					for (int32 MatIdx = 0; MatIdx < VisualParams.SkelMC->GetNumMaterials(); ++MatIdx)
+					{
+						SkeletalMaterials.Emplace(MatIdx, DynMat);
+					}
+				}
+			}
+			else if (VisualParams.MaterialIndexes.Num() == 1)
+			{
+				if (VisualParams.MaterialIndexes[0] >= VisualParams.SkelMC->GetNumMaterials())
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Invalid MaterialIndex=%d .."), *FString(__FUNCTION__), __LINE__, VisualParams.MaterialIndexes[0]);
+					return;
+				}
+
+				if (VisualParams.bUseCloneOriginalMaterial)
+				{
+					for (int32 MatIdx = 0; MatIdx < VisualParams.SkelMC->GetNumMaterials(); ++MatIdx)
+					{
+						MatIdx != VisualParams.MaterialIndexes[0] ? SkeletalMaterials.Emplace(MatIdx, MaterialInvisible) 
+							: SkeletalMaterials.Emplace(MatIdx, VisualParams.SkelMC->GetMaterial(MatIdx));
+					}
+				}
+				else
+				{
+					UMaterialInstanceDynamic* DynMat = VisualParams.bUnlit ? UMaterialInstanceDynamic::Create(MaterialUnlit, NULL) : UMaterialInstanceDynamic::Create(MaterialLit, NULL);
+					DynMat->SetVectorParameterValue(FName("Color"), VisualParams.Color);
+
+					for (int32 MatIdx = 0; MatIdx < VisualParams.SkelMC->GetNumMaterials(); ++MatIdx)
+					{
+						MatIdx != VisualParams.MaterialIndexes[0] ? SkeletalMaterials.Emplace(MatIdx, MaterialInvisible)
+							: SkeletalMaterials.Emplace(MatIdx, DynMat);
+					}
+				}
+			}
+			else
+			{
+				if (VisualParams.bUseCloneOriginalMaterial)
+				{
+					for (int32 MatIdx = 0; MatIdx < VisualParams.SkelMC->GetNumMaterials(); ++MatIdx)
+					{
+						!VisualParams.MaterialIndexes.Contains(MatIdx) ? SkeletalMaterials.Emplace(MatIdx, MaterialInvisible)
+							: SkeletalMaterials.Emplace(MatIdx, VisualParams.SkelMC->GetMaterial(MatIdx));
+					}
+				}
+				else
+				{
+					UMaterialInstanceDynamic* DynMat = VisualParams.bUnlit ? UMaterialInstanceDynamic::Create(MaterialUnlit, NULL) : UMaterialInstanceDynamic::Create(MaterialLit, NULL);
+					DynMat->SetVectorParameterValue(FName("Color"), VisualParams.Color);
+
+					for (int32 MatIdx = 0; MatIdx < VisualParams.SkelMC->GetNumMaterials(); ++MatIdx)
+					{
+						!VisualParams.MaterialIndexes.Contains(MatIdx) ? SkeletalMaterials.Emplace(MatIdx, MaterialInvisible)
+							: SkeletalMaterials.Emplace(MatIdx, DynMat);
+					}
+				}
+			}
+
+			CurrentVisualType = ESLVizVisualType::Skeletal;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Unsuported visual type.."), *FString(__FUNCTION__), __LINE__);
+			return;
+		}
+	}
 }
 
 // Create marker at location
@@ -23,7 +146,6 @@ void USLVizMarker::Init(ESLVizMarkerType Type, const FVector& InScale, const FLi
 {
 	// Clear any previously set visuals (mesh/materials)
 	Reset();
-	
 	Scale = InScale;
 	SetStaticMesh(GetPrimitiveMarkerMesh(Type));
 	SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -31,7 +153,6 @@ void USLVizMarker::Init(ESLVizMarkerType Type, const FVector& InScale, const FLi
 	UMaterialInstanceDynamic* DynMat = bUnlit ? UMaterialInstanceDynamic::Create(MaterialUnlit, NULL) : UMaterialInstanceDynamic::Create(MaterialLit, NULL);
 	DynMat->SetVectorParameterValue(FName("Color"), Color);
 	SetMaterial(0, DynMat);
-
 	CurrentVisualType = ESLVizVisualType::Static;
 }
 
@@ -276,9 +397,7 @@ void USLVizMarker::Add(const FVector& Location)
 {
 	if (CurrentVisualType == ESLVizVisualType::Static)
 	{
-		FTransform T(Location);
-		T.SetScale3D(Scale);
-		AddInstance(T);
+		AddInstance(FTransform(FQuat::Identity, Location, Scale));
 	}
 	else if (CurrentVisualType == ESLVizVisualType::Skeletal)
 	{
@@ -297,9 +416,7 @@ void USLVizMarker::Add(const FTransform& Pose)
 {
 	if (CurrentVisualType == ESLVizVisualType::Static)
 	{
-		FTransform T(Pose);
-		T.SetScale3D(Scale);
-		AddInstance(T);		
+		AddInstance(FTransform(Pose.GetRotation(), Pose.GetLocation(), Scale));
 	}
 	else if (CurrentVisualType == ESLVizVisualType::Skeletal)
 	{		
@@ -438,9 +555,12 @@ bool USLVizMarker::Clear()
 void USLVizMarker::DestroyComponent(bool bPromoteChildren/*= false*/)
 {
 	// TODO add delegate for the notifying the manager
-	for (auto& Instance : SkeletalInstances)
+	for (const auto& SkInst : SkeletalInstances)
 	{
-		Instance->DestroyComponent();
+		if (SkInst->IsValidLowLevel())
+		{
+			SkInst->DestroyComponent();
+		}
 	}
 	Super::DestroyComponent(bPromoteChildren);
 }
@@ -453,7 +573,6 @@ void USLVizMarker::Reset()
 	{
 		ClearInstances();
 		EmptyOverrideMaterials();
-		CurrentVisualType = ESLVizVisualType::NONE;
 	}
 	else if (CurrentVisualType == ESLVizVisualType::Skeletal)
 	{
@@ -463,12 +582,11 @@ void USLVizMarker::Reset()
 		}
 		SkeletalInstances.Empty();
 		SkeletalMesh->ConditionalBeginDestroy();
-
+		SkeletalMesh = nullptr;
 		//SkeletalMaterials.Empty();
-		CurrentVisualType = ESLVizVisualType::NONE;
 	}
+	CurrentVisualType = ESLVizVisualType::NONE;
 }
-
 
 // Create and register a new poseable mesh component
 UPoseableMeshComponent* USLVizMarker::CreateNewSkeletalInstance()

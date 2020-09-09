@@ -47,7 +47,7 @@ public class USemLog : ModuleRules
 			}
             );
 
-        PublicDependencyModuleNames.AddRange(
+	PublicDependencyModuleNames.AddRange(
             new string[]
             {
                 "Core",

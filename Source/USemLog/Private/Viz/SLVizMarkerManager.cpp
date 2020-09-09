@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizMarkerManager.h"
-
 #include "Viz/SLVizHighlightMarker.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -11,7 +10,6 @@
 ASLVizMarkerManager::ASLVizMarkerManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("VizRoot"));
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -19,34 +17,74 @@ ASLVizMarkerManager::ASLVizMarkerManager()
 #endif // WITH_EDITORONLY_DATA
 }
 
-// Clear marker
-void ASLVizMarkerManager::ClearMarker(USLVizMarker* Marker)
-{	
-	Marker->DestroyComponent();
-	Markers.Remove(Marker);	
+// Called when actor removed from game or game ended
+void ASLVizMarkerManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	ClearAllMarkers();
 }
 
-// Clear hihlight marker
-void ASLVizMarkerManager::ClearMarker(USLVizHighlightMarker* HighlightMarker)
+// Clear marker
+void ASLVizMarkerManager::ClearMarker(USLVizMarker* Marker)
 {
-	HighlightMarker->DestroyComponent();
-	HighlightMarkers.Remove(HighlightMarker);
+	if (Marker->IsValidLowLevel() && !Marker->IsPendingKillOrUnreachable())
+	{
+		//Marker->ConditionalBeginDestroy();
+		Marker->DestroyComponent();
+		if (Markers.Remove(Marker) == 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Requested marker is not in the set.."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Requested marker is not valid.."), *FString(__FUNCTION__), __LINE__);
+		if (Markers.Remove(Marker) == 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Removed an invalid marker from the set.."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
 }
 
 // Clear all markers
 void ASLVizMarkerManager::ClearAllMarkers()
 {
-	for (auto& M : Markers)
+	for (const auto& M : Markers)
 	{
-		M->DestroyComponent();
+		if (M->IsValidLowLevel() && !M->IsPendingKillOrUnreachable())
+		{
+			M->DestroyComponent();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Requested marker is not valid.."), *FString(__FUNCTION__), __LINE__);
+		}
 	}
 	Markers.Empty();
+}
 
-	for (auto& HM : HighlightMarkers)
-	{
-		HM->DestroyComponent();
-	}
-	HighlightMarkers.Empty();
+// Create marker at the given pose
+USLVizMarker* ASLVizMarkerManager::CreateMarker(const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams)
+{
+	return nullptr;
+}
+
+// Create marker at the given poses
+USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams)
+{
+	return nullptr;
+}
+
+// Create marker at the given skeletal poses
+USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, FTransform>>& SkeletalPose, const FSLVizMarkerVisualParams& VisualParams)
+{
+	return nullptr;
+}
+
+// Create marker at the given skeletal poses
+USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses, const FSLVizMarkerVisualParams& VisualParams)
+{
+	return nullptr;
 }
 
 
@@ -98,15 +136,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const FVector& Location, UStatic
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SMC);
-	}
-	else
-	{
-		Marker->Init(SMC, Color, bUnlit);
-	}	
-	Marker->Add(Location);
+	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
 	return Marker;
 }
 
@@ -115,14 +145,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const FTransform& Pose, UStaticM
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SMC);
-	}
-	else
-	{
-		Marker->Init(SMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
 	Marker->Add(Pose);
 	return Marker;
 }
@@ -132,14 +155,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FVector>& Locations
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SMC);
-	}
-	else
-	{
-		Marker->Init(SMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
 	Marker->Add(Locations);
 	return Marker;
 }
@@ -149,14 +165,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FTransform>& Poses,
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SMC);
-	}
-	else
-	{
-		Marker->Init(SMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
 	Marker->Add(Poses);
 	return Marker;
 }
@@ -168,14 +177,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, 
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC);
-	}
-	else
-	{
-		Marker->Init(SkMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC) : Marker->Init(SkMC, Color, bUnlit);
 	Marker->Add(SkeletalPose);
 	return Marker;
 }
@@ -185,14 +187,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, T
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC);
-	}
-	else
-	{
-		Marker->Init(SkMC, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC) : Marker->Init(SkMC, Color, bUnlit);
 	Marker->Add(SkeletalPoses);
 	return Marker;
 }
@@ -202,14 +197,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, 
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC, MaterialIndex);
-	}
-	else
-	{
-		Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndex) : Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
 	Marker->Add(SkeletalPose);
 	return Marker;
 }
@@ -219,14 +207,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, T
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC, MaterialIndex);
-	}
-	else
-	{
-		Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndex) : Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
 	Marker->Add(SkeletalPoses);
 	return Marker;
 }
@@ -236,14 +217,7 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, 
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC, MaterialIndexes);
-	}
-	else
-	{
-		Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndexes) : Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
 	Marker->Add(SkeletalPose);
 	return Marker;
 }
@@ -253,52 +227,10 @@ USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, T
 	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
 {
 	USLVizMarker* Marker = CreateNewMarker();
-	if (bUseOriginalMaterials)
-	{
-		Marker->Init(SkMC, MaterialIndexes);
-	}
-	else
-	{
-		Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
-	}
+	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndexes) : Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
 	Marker->Add(SkeletalPoses);
 	return Marker;
 }
-
-
-/* Highlight markers */
-// Create a highlight marker for the given static mesh component
-USLVizHighlightMarker* ASLVizMarkerManager::CreateHighlightMarker(UStaticMeshComponent* SMC, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
-{
-	USLVizHighlightMarker* HighlightMarker = CreateNewHighlightMarker();
-	HighlightMarker->Init(SMC, Color, Type);
-	return HighlightMarker;
-}
-
-// Create a highlight marker for the given skeletal mesh component
-USLVizHighlightMarker* ASLVizMarkerManager::CreateHighlightMarker(USkeletalMeshComponent* SkMC, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
-{
-	USLVizHighlightMarker* HighlightMarker = CreateNewHighlightMarker();
-	HighlightMarker->Init(SkMC, Color, Type);
-	return HighlightMarker;
-}
-
-// Create a highlight marker for the given bone (material index) skeletal mesh component
-USLVizHighlightMarker* ASLVizMarkerManager::CreateHighlightMarker(USkeletalMeshComponent* SkMC, int32 MaterialIndex, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
-{
-	USLVizHighlightMarker* HighlightMarker = CreateNewHighlightMarker();
-	HighlightMarker->Init(SkMC, MaterialIndex, Color, Type);
-	return HighlightMarker;
-}
-
-// Create a highlight marker for the given bones (material indexes) skeletal mesh component
-USLVizHighlightMarker * ASLVizMarkerManager::CreateHighlightMarker(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes, const FLinearColor& Color, ESLVizHighlightMarkerType Type)
-{
-	USLVizHighlightMarker* HighlightMarker = CreateNewHighlightMarker();
-	HighlightMarker->Init(SkMC, MaterialIndexes, Color, Type);
-	return HighlightMarker;
-}
-
 
 // Create and register the marker
 USLVizMarker* ASLVizMarkerManager::CreateNewMarker()
@@ -306,20 +238,6 @@ USLVizMarker* ASLVizMarkerManager::CreateNewMarker()
 	USLVizMarker* Marker = NewObject<USLVizMarker>(this);
 	Marker->RegisterComponent();
 	AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-	Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	Markers.Emplace(Marker);
+	Markers.Add(Marker);
 	return Marker;
-}
-
-// Create and register the highlight marker
-USLVizHighlightMarker* ASLVizMarkerManager::CreateNewHighlightMarker()
-{
-	USLVizHighlightMarker* HighlightMarker = NewObject<USLVizHighlightMarker>(this);
-	HighlightMarker->RegisterComponent();
-	AddInstanceComponent(HighlightMarker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-	HighlightMarker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	HighlightMarkers.Emplace(HighlightMarker);
-	return HighlightMarker;
 }

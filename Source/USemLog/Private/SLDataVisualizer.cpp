@@ -875,7 +875,7 @@ void USLDataVisualizer::MarkerTests()
 		}
 	}
 
-	//uint32 MarkerId = MarkerManager->CreateMarkerArray(Locations);
+	//uint32 MarkerId = VizMarkerManager->CreateMarkerArray(Locations);
 	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Marker %ld created.."), *FString(__func__), __LINE__, MarkerId);
 #endif //SL_WITH_DATA_VIS
 }

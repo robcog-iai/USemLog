@@ -83,7 +83,6 @@ bool FSLMongoQueryDBHandler::Connect(const FString& ServerIp, uint16 ServerPort)
 	bConnected = true;
 	return true;
 #else
-	bConnectedToServer = false;
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Mongo module is missing.."), *FString(__func__), __LINE__);
 	return false;
 #endif // SL_WITH_LIBMONGO_C
@@ -414,6 +413,7 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 }
 
 /* Helpers */
+#if SL_WITH_LIBMONGO_C
 // Get the pose data from the document
 FTransform FSLMongoQueryDBHandler::GetPose(const bson_t* doc) const
 {
@@ -469,3 +469,4 @@ double FSLMongoQueryDBHandler::GetTs(const bson_t* doc) const
 	}
 	return -1.f;
 }
+#endif // SL_WITH_LIBMONGO_C

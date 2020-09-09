@@ -5,8 +5,8 @@
 
 #include "CoreMinimal.h"
 #include "SLStructs.h"
-#include "SLSkeletalDataComponent.h"
 #include "ROSProlog/SLPrologClient.h"
+#include "Skeletal/SLSkeletalDataComponent.h"
 #include "SLVirtualCameraView.h"
 
 class AStaticMeshActor;
@@ -254,3 +254,4 @@ private:
 	// Channel to add objects into knowrob via prolog
 	USLPrologClient* ROSPrologClient = NULL;
 };
+
