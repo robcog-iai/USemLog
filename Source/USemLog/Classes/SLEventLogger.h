@@ -5,6 +5,7 @@
 
 #include "USemLog.h"
 #include "SLOwlExperiment.h"
+#include "ROSProlog/SLPrologClient.h"
 #include "Events/ISLEventHandler.h"
 #include "SLEventLogger.generated.h"
 
@@ -22,32 +23,28 @@ struct FSLEventWriterParams
 	// Episode unique id
 	FString EpisodeId;
 
-	//// Task description
+	// Task description
 	//FString TaskDescription;
 
-	//// Server ip (optional)
-	//FString ServerIp;
+	// Server ip (optional)
+	FString ServerIp;
 
-	//// Server Port (optional)
-	//uint16 ServerPort;
+	// Server Port (optional)
+	uint16 ServerPort;
 
 	// Constructor
 	FSLEventWriterParams(
 		const FString& InTaskId,
-		const FString& InEpisodeId
-		/*,
-		const FString& InTaskDescription,
+		const FString& InEpisodeId,
+		//const FString& InTaskDescription,
 		const FString& InServerIp = "",
 		uint16 InServerPort = 0
-		*/
-		) :
+	) :
 		TaskId(InTaskId),
-		EpisodeId(InEpisodeId)
-		/*,
-		TaskDescription(InTaskDescription),
+		EpisodeId(InEpisodeId),
+		//TaskDescription(InTaskDescription),
 		ServerIp(InServerIp),
 		ServerPort(InServerPort)
-		*/
 	{};
 };
 
@@ -74,7 +71,8 @@ public:
 		bool bInLogGraspEvents,
 		bool bInPickAndPlaceEvents,
 		bool bInLogSlicingEvents,
-		bool bInWriteTimelines);
+		bool bInWriteTimelines,
+		bool bInLogThroughROS);
 	
 
 	// Start logger
@@ -119,6 +117,9 @@ private:
 	// Save events to timelines
 	bool bWriteTimelines;
 
+	// Send events through ROS
+	bool bLogThroughROS;
+
 	// Array of finished events
 	TArray<TSharedPtr<ISLEvent>> FinishedEvents;
 
@@ -142,4 +143,9 @@ private:
 
 	// Cache of the container manipulation listeners
 	TArray<class USLContainerListener*> ContainerListeners;
+
+	// ROS Logging
+	UPROPERTY()
+	USLPrologClient* ROSPrologClient;
+
 };

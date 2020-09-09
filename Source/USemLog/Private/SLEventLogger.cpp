@@ -63,7 +63,8 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 	bool bInLogGraspEvents,
 	bool bInPickAndPlaceEvents,
 	bool bInLogSlicingEvents,
-	bool bInWriteTimelines)
+	bool bInWriteTimelines,
+	bool bInLogThroughROS)
 {
 	if (!bIsInit)
 	{
@@ -71,6 +72,7 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 		EpisodeId = WriterParams.EpisodeId;
 		OwlDocTemplate = TemplateType;
 		bWriteTimelines = bInWriteTimelines;
+		bLogThroughROS = bInLogThroughROS;
 
 		// Init the semantic mappings (if not already init)
 		FSLEntitiesManager::GetInstance()->Init(GetWorld());
@@ -282,6 +284,14 @@ void USLEventLogger::Init(ESLOwlExperimentTemplate TemplateType,
 #endif // SL_WITH_SLICING
 		}
 
+#if SL_WITH_ROSBRIDGE
+		if (bLogThroughROS) {
+			ROSPrologClient = NewObject<USLPrologClient>(this);
+			ROSPrologClient->Init(WriterParams.ServerIp, WriterParams.ServerPort);
+			FSLEntitiesManager::GetInstance()->setPrologClient(ROSPrologClient);
+		}
+#endif // SL_WITH_ROSBRIDGE
+
 		// Mark as initialized
 		bIsInit = true;
 	}
@@ -419,6 +429,11 @@ void USLEventLogger::Finish(const float Time, bool bForced)
 		// Write events to file
 		WriteToFile();
 
+#if SL_WITH_ROSBRIDGE
+		// Finish ROS Connection
+		ROSPrologClient->Disconnect();
+#endif // SL_WITH_ROSBRIDGE
+
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
@@ -431,6 +446,12 @@ void USLEventLogger::OnSemanticEvent(TSharedPtr<ISLEvent> Event)
 	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("%s::%d %s"), *FString(__func__), __LINE__, *Event->ToString()));
 	//UE_LOG(LogTemp, Error, TEXT(">> %s::%d %s"), *FString(__func__), __LINE__, *Event->ToString());
 	FinishedEvents.Add(Event);
+
+#if SL_WITH_ROSBRIDGE
+	if (bLogThroughROS) {
+		ROSPrologClient->AddEventQuery(Event);
+	}
+#endif // SL_WITH_ROSBRIDGE
 }
 
 // Write to file

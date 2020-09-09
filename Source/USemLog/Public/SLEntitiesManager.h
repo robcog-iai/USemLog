@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "SLStructs.h"
+#include "ROSProlog/SLPrologClient.h"
 #include "Skeletal/SLSkeletalDataComponent.h"
 #include "SLVirtualCameraView.h"
 
@@ -214,6 +215,9 @@ public:
 		return nullptr;
 	};
 	
+	// Set a reference to ROSProlog logger to update semantic map
+	void setPrologClient(USLPrologClient* InROSProlog);
+
 private:
 	// Instance of the singleton
 	static TSharedPtr<FSLEntitiesManager> StaticInstance;
@@ -246,4 +250,8 @@ private:
 
 	// Un-tagged actors
 	TArray<AActor*> UntaggedActors;
+
+	// Channel to add objects into knowrob via prolog
+	USLPrologClient* ROSPrologClient = NULL;
 };
+

@@ -265,8 +265,8 @@ void ASLManager::Init()
 			if (bLogEventData)
 			{
 				EventDataLogger = NewObject<USLEventLogger>(this);
-				EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(TaskId, EpisodeId),
-					bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines);
+				EventDataLogger->Init(ExperimentTemplateType, FSLEventWriterParams(TaskId, EpisodeId, ServerIp, ServerPort),
+					bLogContactEvents, bLogSupportedByEvents, bLogGraspEvents, bLogPickAndPlaceEvents, bLogSlicingEvents, bWriteTimelines, !bTurnOffROSLogging);
 			}
 		}
 

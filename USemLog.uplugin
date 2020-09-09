@@ -59,6 +59,10 @@
     {
       "Name": "UProtobuf",
       "Enabled": true
+    },
+    {
+      "Name": "UROSBridge",
+      "Enabled": false
     }
   ]
 }

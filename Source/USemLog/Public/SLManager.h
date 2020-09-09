@@ -145,7 +145,7 @@ private:
 	// Mongodb server PORT
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (ClampMin = 0, ClampMax = 65535))
 	uint16 ServerPort;
-	
+
 	/******************************************************************************************************/
 	/* Begin task Metadata Logger properties */
 	/******************************************************************************************************/
@@ -254,6 +254,10 @@ private:
 	// Includes the related events in the episode (TODO)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
 	bool bWriteEpisodeMetadata;
+
+	// Logging through ROSBridge
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
+	bool bTurnOffROSLogging;
 
 	// Owl experiment template
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Event Data Logger", meta = (editcondition = "bLogEventData"))
