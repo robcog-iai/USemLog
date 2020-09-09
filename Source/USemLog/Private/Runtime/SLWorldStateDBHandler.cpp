@@ -29,6 +29,19 @@ bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, AS
 }
 #endif //SL_WITH_LIBMONGO_C	
 
+// Do the db writing here
+void FSLWorldStateDBWriterAsyncTask::DoWork()
+{
+	const double StartTime = FPlatformTime::Seconds();
+
+	// Call the write function pointer
+	int32 NumEntries = (this->*WriteFunctionPtr)();
+
+	double Duration = FPlatformTime::Seconds() - StartTime;
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t Async work (written %ld entries) duration:\t%f (s)"),
+		*FString(__FUNCTION__), __LINE__, NumEntries, Duration);
+}
+
 // First write where all the individuals are written irregardresly of their previous position
 int32 FSLWorldStateDBWriterAsyncTask::FirstWrite()
 {
@@ -299,17 +312,6 @@ bool FSLWorldStateDBWriterAsyncTask::UploadDoc(bson_t* doc)
 }
 #endif //SL_WITH_LIBMONGO_C	
 
-// Do the db writing here
-void FSLWorldStateDBWriterAsyncTask::DoWork()
-{
-	const double StartTime = FPlatformTime::Seconds();
-
-	int32 NumEntries = (this->*WriteFunctionPtr)();
-
-	double Duration = FPlatformTime::Seconds() - StartTime;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t Async work (written %ld entries) duration:\t%f (s)"),
-		*FString(__FUNCTION__), __LINE__, NumEntries, Duration);
-}
 
 
 /* DB Handler */
