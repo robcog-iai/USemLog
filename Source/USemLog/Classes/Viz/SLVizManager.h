@@ -5,7 +5,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "Viz/SLVizHighlightMarker.h"
+#include "Viz/Marker/SLVizHighlightMarker.h"
+#include "Viz/Marker/SLVizMarker.h"
+#include "Viz/Marker/SLVizPrimitiveMarker.h"
 #include "SLVizManager.generated.h"
 
 // Forward declarations
@@ -13,9 +15,38 @@ class USLVizMarker;
 class ASLVizMarkerManager;
 class USLVizHighlightMarker;
 class ASLVizHighlightMarkerManager;
+class ASLVizHighlightManager;
 class ASLVizWorldManager;
 class ASLIndividualManager;
 class USLVizHighlightMarker;
+
+
+
+/**
+ * Marker test hack struct
+ */
+USTRUCT()
+struct FSLVizMarkerCmdHack
+{
+	GENERATED_BODY();
+
+	// Marker poses
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	TArray<FTransform> Poses;
+
+	// Marker id 
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString MarkerId = TEXT("DefaultMarkerId");
+
+	// Marker visual
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FSLVizMarkerVisualParams VisualParams;
+
+	// Individual id if it should be clonned
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString CloneIndividualId = TEXT("CloneIndividualId");
+};
+
 
 /**
  * Highlight individuals test hack struct
@@ -26,12 +57,40 @@ struct FSLVizHighlightIndividualCmdHack
 	GENERATED_BODY();
 
 	// Individual id to query
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString IndividualId = TEXT("DefaultIndividualId");
 
 	// Highlight visual
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FSLVizHighlightMarkerVisualParams VisualParams;
+};
+
+
+/**
+ * Marker test hack struct
+ */
+USTRUCT()
+struct FSLVizPrimitiveMarkerParams
+{
+	GENERATED_BODY();
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	TArray<FTransform> Poses;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString MarkerId = TEXT("DefaultMarkerId");
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLVizPrimitiveMarkerType PrimitiveType = ESLVizPrimitiveMarkerType::Box;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float Size = .1f;
+		
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FLinearColor Color = FLinearColor::Green;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLVizMarkerMaterialType MaterialType = ESLVizMarkerMaterialType::Unlit;
 };
 
 /*
@@ -70,11 +129,20 @@ public:
 
 
 	/* Markers */
+	// Create a primitive marker
+	bool CreatePrimitiveMarker(const FSLVizPrimitiveMarkerParams& Params);
+
+
 	// Create marker with the given id
-	bool CreateMarker(const FString& Id);
+	bool CreateMarker(const FString& MarkerId, const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
+	bool CreateMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
+
+
+	
 
 	// Update the visual values of the marker
-	bool UpdateMarker(const FString& Id);
+	bool UpdateMarkerVisual(const FString& MarkerId, const FSLVizMarkerVisualParams& VisualParams);
+
 
 	// Remove marker with the given id
 	bool RemoveMarker(const FString& Id);
@@ -103,6 +171,9 @@ private:
 	// Get the vizualization highlight marker manager from the world (or spawn a new one)
 	bool SetVizHighlightMarkerManager();
 
+	// Get the vizualization highlight manager from the world (or spawn a new one)
+	bool SetVizHighlightManager();
+
 	// Get the vizualization world manager from the world (or spawn a new one)
 	bool SetVizWorldManager();
 
@@ -118,6 +189,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TMap<FString, USLVizMarker*> Markers;
 
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	TMap<FString, USLVizBaseMarker*> NewMarkers;
+
 	// Keep track of the highlighted individuals
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TMap<FString, USLVizHighlightMarker*> HighlightedIndividuals;
@@ -129,6 +203,10 @@ private:
 	// Keeps track of all the highlight markers in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizHighlightMarkerManager* VizHighlightMarkerManager;
+
+	// Keeps track of all the highlighted meshes in the world
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLVizHighlightManager* VizHighlightManager;
 
 	// Keeps track of the episode replay visualization
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
@@ -143,29 +221,37 @@ private:
 	/* Editor button hacks */
 	// Triggers a call to init
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bInitButtonHack = false;
+	bool bExecuteInitButtonHack = false;
 
-	// Highlight commands array
+	//// Marker cmd hack
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//TArray<FSLVizMarkerCmdHack> MarkerValuesHack;
+
+	//// Highlight commands array
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//TArray<FSLVizHighlightIndividualCmdHack> HighlightValuesHack;
+
+	// Primitive marker tests
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	TArray<FSLVizHighlightIndividualCmdHack> HighlightValuesHack;
+	TArray<FSLVizPrimitiveMarkerParams> PrimitiveMarkerTestHack;
 	
-	// Highlight individual button hack
+	// Execute marker commands
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bHighlightButtonHack = false;
+	bool bExecuteButtonHack = false;
 
-	// Update higlight visual values
+	// Update markers
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bUpdateHighlightButtonHack = false;
+	bool bExecuteUpdateButtonHack = false;
 
 	// Remove highlight individual button hack
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bRemoveHighlightButtonHack = false;
+	bool bExecuteRemoveButtonHack = false;
 
 	// Remove all individual highlights
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bRemoveAllHighlightsButtonHack = false;
+	bool bExecuteRemoveAllButtonHack = false;
 
 	// Clear any created markers
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bResetButtonHack = false;
+	bool bExecuteResetButtonHack = false;
 };

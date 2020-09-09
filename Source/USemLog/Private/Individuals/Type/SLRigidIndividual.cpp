@@ -4,6 +4,7 @@
 #include "Individuals/Type/SLRigidIndividual.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 // Ctor
 USLRigidIndividual::USLRigidIndividual()

@@ -4,6 +4,7 @@
 #include "Viz/SLVizManager.h"
 #include "Viz/SLVizMarkerManager.h"
 #include "Viz/SLVizHighlightMarkerManager.h"
+#include "Viz/SLVizHighlightManager.h"
 #include "Viz/SLVizWorldManager.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/Type/SLIndividualTypes.h"
@@ -44,43 +45,36 @@ void ASLVizManager::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	/* Button hacks */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bInitButtonHack))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteInitButtonHack))
 	{
-		bInitButtonHack = false;
+		bExecuteInitButtonHack = false;
 		Init();
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bHighlightButtonHack))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteButtonHack))
 	{
-		bHighlightButtonHack = false;
-		for (const auto& HighlightCmd : HighlightValuesHack)
+		bExecuteButtonHack = false;
+		for (const auto& PM : PrimitiveMarkerTestHack)
 		{
-			HighlightIndividual(HighlightCmd.IndividualId, HighlightCmd.VisualParams);
+			CreatePrimitiveMarker(PM);
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bUpdateHighlightButtonHack))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteUpdateButtonHack))
 	{
-		bUpdateHighlightButtonHack = false;
-		for (const auto& HighlightCmd : HighlightValuesHack)
-		{
-			UpdateIndividualHighlight(HighlightCmd.IndividualId, HighlightCmd.VisualParams);
-		}
+		bExecuteUpdateButtonHack = false;
+
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bRemoveHighlightButtonHack))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteRemoveButtonHack))
 	{
-		bRemoveHighlightButtonHack = false;
-		for (const auto& HighlightCmd : HighlightValuesHack)
-		{
-			RemoveIndividualHighlight(HighlightCmd.IndividualId);
-		}
+		bExecuteRemoveButtonHack = false;
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bRemoveAllHighlightsButtonHack))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteRemoveAllButtonHack))
 	{
-		bRemoveAllHighlightsButtonHack = false;
-		RemoveAllIndividualHighlights();
+		bExecuteRemoveAllButtonHack = false;
+
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bResetButtonHack))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteResetButtonHack))
 	{
-		bResetButtonHack = false;
+		bExecuteResetButtonHack = false;
 		Reset();
 	}
 }
@@ -153,10 +147,41 @@ void ASLVizManager::Reset()
 	bIsInit = false;
 }
 
+// Create a primitive marker
+bool ASLVizManager::CreatePrimitiveMarker(const FSLVizPrimitiveMarkerParams& Params)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Params.MarkerId.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) id is emtpy.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (NewMarkers.Contains(Params.MarkerId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *Params.MarkerId);
+		return false;
+	}
+
+	if (auto Marker = VizMarkerManager->CreatePrimitiveMarker(Params.Poses, Params.PrimitiveType, Params.Size, Params.Color, Params.MaterialType))
+	{
+		NewMarkers.Add(Params.MarkerId, Marker);
+		return true;
+	}
+
+	return false;
+}
+
 
 /* Markers */
-// Create marker with the given id
-bool ASLVizManager::CreateMarker(const FString& Id)
+// Create marker with the given id at the given pose
+bool ASLVizManager::CreateMarker(const FString& MarkerId, const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams)
 {
 	if (!bIsInit)
 	{
@@ -164,28 +189,36 @@ bool ASLVizManager::CreateMarker(const FString& Id)
 		return false;
 	}
 
-	if (Id.IsEmpty())
+	if (MarkerId.IsEmpty())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) id is emtpy.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
-	if (auto Marker = Markers.Find(Id))
+	if (Markers.Contains(MarkerId))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
 
-	//VizMarkerManager->
-
-	
+	if (auto Marker = VizMarkerManager->CreateMarker(Pose, VisualParams))
+	{
+		Markers.Add(MarkerId, Marker);
+		return true;
+	}
 
 	return false;
 }
 
+// Create marker with the given id at the given poses
+bool ASLVizManager::CreateMarker(const FString& Id, const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams)
+{
+	return false;
+}
+
 // Update the visual values of the marker
-bool ASLVizManager::UpdateMarker(const FString& Id)
+bool ASLVizManager::UpdateMarkerVisual(const FString& Id, const FSLVizMarkerVisualParams& VisualParams)
 {
 	if (!bIsInit)
 	{
@@ -195,7 +228,8 @@ bool ASLVizManager::UpdateMarker(const FString& Id)
 
 	if (auto Marker = Markers.Find(Id))
 	{
-		return true;// (*Marker)->UpdateVisualParameters(VisualParams);
+		(*Marker)->SetVisual(VisualParams);
+		return true;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual (Id=%s) as highlighted.."),
@@ -244,6 +278,12 @@ void ASLVizManager::RemoveAllMarkers()
 		VizMarkerManager->ClearMarker(Pair.Value);
 	}
 	Markers.Empty();
+
+	for (const auto& IdMarkerPair : NewMarkers)
+	{
+		VizMarkerManager->ClearNewMarker(IdMarkerPair.Value);
+	}
+	NewMarkers.Empty();
 }
 
 
@@ -415,6 +455,31 @@ bool ASLVizManager::SetVizHighlightMarkerManager()
 	SpawnParams.Name = TEXT("SL_VizHighlightMarkerManager");
 	VizHighlightMarkerManager = GetWorld()->SpawnActor<ASLVizHighlightMarkerManager>(SpawnParams);
 	VizHighlightMarkerManager->SetActorLabel(TEXT("SL_VizHighlightMarkerManager"));
+	return true;
+}
+
+// Get the vizualization highlight manager from the world (or spawn a new one)
+bool ASLVizManager::SetVizHighlightManager()
+{
+	if (VizHighlightManager && VizHighlightManager->IsValidLowLevel() && !VizHighlightManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
+	for (TActorIterator<ASLVizHighlightManager>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			VizHighlightManager = *Iter;
+			return true;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_VizHighlightManager");
+	VizHighlightManager = GetWorld()->SpawnActor<ASLVizHighlightManager>(SpawnParams);
+	VizHighlightManager->SetActorLabel(TEXT("SL_VizHighlightManager"));
 	return true;
 }
 

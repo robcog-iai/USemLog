@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizMarkerManager.h"
-#include "Viz/SLVizHighlightMarker.h"
+#include "Viz/Marker/SLVizBaseMarker.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
@@ -46,6 +46,19 @@ void ASLVizMarkerManager::ClearMarker(USLVizMarker* Marker)
 	}
 }
 
+// Clear marker
+void ASLVizMarkerManager::ClearNewMarker(USLVizBaseMarker* Marker)
+{
+	// Destroy only if managed by this manager
+	if (NewMarkers.Remove(Marker) > 0)
+	{
+		if (Marker && Marker->IsValidLowLevel() && !Marker->IsPendingKillOrUnreachable())
+		{
+			Marker->DestroyComponent();
+		}
+	}
+}
+
 // Clear all markers
 void ASLVizMarkerManager::ClearAllMarkers()
 {
@@ -61,173 +74,81 @@ void ASLVizMarkerManager::ClearAllMarkers()
 		}
 	}
 	Markers.Empty();
+
+	for (auto Marker : NewMarkers)
+	{
+		if (Marker && Marker->IsValidLowLevel() && !Marker->IsPendingKillOrUnreachable())
+		{
+			Marker->DestroyComponent();
+		}
+	}
+	NewMarkers.Empty();
+}
+
+// Create a primitive marker with one instance
+USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const FTransform& Pose, 
+	ESLVizPrimitiveMarkerType PrimitiveType, 
+	float Size, 
+	const FLinearColor& InColor, 
+	ESLVizMarkerMaterialType MaterialType)
+{
+	USLVizPrimitiveMarker* Marker = NewObject<USLVizPrimitiveMarker>(this);
+	Marker->RegisterComponent();
+	AddInstanceComponent(Marker); // Makes it appear in the editor
+	Marker->SetVisual(PrimitiveType, Size, InColor, MaterialType);
+	Marker->AddInstance(Pose);
+	NewMarkers.Add(Marker);
+	return Marker;
+}
+
+// Create a primitive marker with multiple instances
+USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const TArray<FTransform>& Poses,
+	ESLVizPrimitiveMarkerType PrimitiveType,
+	float Size,
+	const FLinearColor& InColor,
+	ESLVizMarkerMaterialType MaterialType)
+{
+	USLVizPrimitiveMarker* Marker = NewObject<USLVizPrimitiveMarker>(this);
+	Marker->RegisterComponent();
+	AddInstanceComponent(Marker); // Makes it appear in the editor
+	Marker->SetVisual(PrimitiveType, Size, InColor, MaterialType);
+	Marker->AddInstances(Poses);
+	NewMarkers.Add(Marker);
+	return Marker;
 }
 
 // Create marker at the given pose
 USLVizMarker* ASLVizMarkerManager::CreateMarker(const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams)
 {
-	return nullptr;
+	USLVizMarker* Marker = CreateNewMarker();
+	Marker->SetVisual(VisualParams);
+	Marker->Add(Pose);
+	return Marker;
 }
 
 // Create marker at the given poses
 USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams)
 {
-	return nullptr;
+	USLVizMarker* Marker = CreateNewMarker();
+	Marker->SetVisual(VisualParams);
+	Marker->Add(Poses);
+	return Marker;
 }
 
 // Create marker at the given skeletal poses
 USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, FTransform>>& SkeletalPose, const FSLVizMarkerVisualParams& VisualParams)
 {
-	return nullptr;
+	USLVizMarker* Marker = CreateNewMarker();
+	Marker->SetVisual(VisualParams);
+	Marker->Add(SkeletalPose);
+	return Marker;
 }
 
 // Create marker at the given skeletal poses
 USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses, const FSLVizMarkerVisualParams& VisualParams)
 {
-	return nullptr;
-}
-
-
-/* Primitive static mesh visual markers */
-// Create marker at location
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const FVector& Location,
-	ESLVizMarkerType Type, const FVector& Scale, const FLinearColor& Color, bool bUnlit)
-{
 	USLVizMarker* Marker = CreateNewMarker();
-	Marker->Init(Type, Scale, Color, bUnlit);
-	Marker->Add(Location);
-	return Marker;
-}
-
-// Create marker with orientation
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const FTransform& Pose,
-	ESLVizMarkerType Type, const FVector& Scale, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	Marker->Init(Type, Scale, Color, bUnlit);
-	Marker->Add(Pose);	
-	return Marker;
-}
-
-// Create a marker array at the given locations
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FVector>& Locations,
-	ESLVizMarkerType Type, const FVector& Scale, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	Marker->Init(Type, Scale, Color, bUnlit);
-	Marker->Add(Locations);
-	return Marker;
-}
-
-// Create a marker array with orientations
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FTransform>& Poses,
-	ESLVizMarkerType Type, const FVector& Scale, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	Marker->Init(Type, Scale, Color, bUnlit);
-	Marker->Add(Poses);
-	return Marker;
-}
-
-
-/* Static mesh visual markers */
-// Create marker at location
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const FVector& Location, UStaticMeshComponent* SMC,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
-	return Marker;
-}
-
-// Create marker with orientation
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const FTransform& Pose, UStaticMeshComponent* SMC,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
-	Marker->Add(Pose);
-	return Marker;
-}
-
-// Create a marker array at the given locations
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FVector>& Locations, UStaticMeshComponent* SMC,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
-	Marker->Add(Locations);
-	return Marker;
-}
-
-// Create a marker array with orientations
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<FTransform>& Poses, UStaticMeshComponent* SMC,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SMC) : Marker->Init(SMC, Color, bUnlit);
-	Marker->Add(Poses);
-	return Marker;
-}
-
-
-/* Skeletal mesh visual markers */
-// Create skeletal marker 
-USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, FTransform>>& SkeletalPose, USkeletalMeshComponent* SkMC,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SkMC) : Marker->Init(SkMC, Color, bUnlit);
-	Marker->Add(SkeletalPose);
-	return Marker;
-}
-
-// Create skeletal marker array at the given poses
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses, USkeletalMeshComponent* SkMC,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SkMC) : Marker->Init(SkMC, Color, bUnlit);
-	Marker->Add(SkeletalPoses);
-	return Marker;
-}
-
-// Create skeletal marker array for the given bone (material index) at the given pose
-USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, FTransform>>& SkeletalPose, USkeletalMeshComponent* SkMC, int32 MaterialIndex,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndex) : Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
-	Marker->Add(SkeletalPose);
-	return Marker;
-}
-
-// Create skeletal marker array for the given bone (material index) at the given poses
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses, USkeletalMeshComponent* SkMC, int32 MaterialIndex,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndex) : Marker->Init(SkMC, MaterialIndex, Color, bUnlit);
-	Marker->Add(SkeletalPoses);
-	return Marker;
-}
-
-// Create skeletal marker array for the given bones (material indexes) at the given pose
-USLVizMarker* ASLVizMarkerManager::CreateMarker(TPair<FTransform, TMap<FString, FTransform>>& SkeletalPose, USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndexes) : Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
-	Marker->Add(SkeletalPose);
-	return Marker;
-}
-
-// Create skeletal marker array for the given bones (material indexes) at the given poses
-USLVizMarker* ASLVizMarkerManager::CreateMarker(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses, USkeletalMeshComponent* SkMC, TArray<int32>& MaterialIndexes,
-	bool bUseOriginalMaterials, const FLinearColor& Color, bool bUnlit)
-{
-	USLVizMarker* Marker = CreateNewMarker();
-	bUseOriginalMaterials ? Marker->Init(SkMC, MaterialIndexes) : Marker->Init(SkMC, MaterialIndexes, Color, bUnlit);
+	Marker->SetVisual(VisualParams);
 	Marker->Add(SkeletalPoses);
 	return Marker;
 }
