@@ -8,10 +8,8 @@
 #include "SLVizStaticMeshMarker.generated.h"
 
 // Forward declarations
-class UStaticMeshComponent;
 class UInstancedStaticMeshComponent;
 class UStaticMesh;
-
 
 /**
  * Class capable of visualizing multiple types of markers as instanced static meshes
@@ -26,22 +24,27 @@ public:
 	USLVizStaticMeshMarker();
 
 	// Set the visual properties of the instanced mesh
-	void SetVisual(UStaticMeshComponent* SMC,
+	void SetVisual(UStaticMesh* SM,
 		const FLinearColor& InColor = FLinearColor::Green,
 		ESLVizMarkerMaterialType InMaterialType = ESLVizMarkerMaterialType::Unlit);
 
 	// Update the visual mesh type
-	void UpdateStaticMesh(UStaticMeshComponent* SMC);
+	void UpdateStaticMesh(UStaticMesh* SM);
 
 	// Add instances at pose
-	void AddInstance(const FTransform& Pose);
+	virtual void AddInstance(const FTransform& Pose);
 
 	// Add instances with the poses
-	void AddInstances(const TArray<FTransform>& Poses);
+	virtual void AddInstances(const TArray<FTransform>& Poses);
 
 	/* Begin VizMarker interface */
 	// Reset visuals and poses
 	virtual void Reset() override;
+
+	//~ Begin ActorComponent Interface
+	// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
+	virtual void DestroyComponent(bool bPromoteChildren = false) override;
+	//~ End ActorComponent Interface
 
 protected:
 	// Reset visual related data
@@ -53,5 +56,6 @@ protected:
 
 protected:
 	// A component that efficiently renders multiple instances of the same StaticMesh.
-	UInstancedStaticMeshComponent* ISMComponent;
+	UPROPERTY()
+	UInstancedStaticMeshComponent* ISMC;
 };

@@ -8,11 +8,11 @@
 #include "SLVizSkeletalMeshMarker.generated.h"
 
 // Forward declarations
-class USkeletalMeshComponent;
+class USkeletalMesh;
 class UPoseableMeshComponent;
 
 /**
- * Class capable of visualizing multiple types of markers as instanced static meshes
+ * Class capable of visualizing skeletal meshes as arrays of poseable meshes
  */
 UCLASS()
 class USEMLOG_API USLVizSkeletalMeshMarker : public USLVizBaseMarker
@@ -24,17 +24,17 @@ public:
 	USLVizSkeletalMeshMarker();
 
 	// Set the visual properties of the skeletal mesh
-	void SetVisual(USkeletalMeshComponent* SkelMC,
+	void SetVisual(USkeletalMesh* SkelMesh,
 		const FLinearColor& InColor = FLinearColor::Green,
 		ESLVizMarkerMaterialType InMaterialType = ESLVizMarkerMaterialType::Unlit);
 
 	// Set the visual properties of the skeletal mesh, visualize only selected material index
-	void SetVisual(USkeletalMeshComponent* SkelMC, int32 MaterialIndex,
+	void SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex,
 		const FLinearColor& InColor = FLinearColor::Green,
 		ESLVizMarkerMaterialType InMaterialType = ESLVizMarkerMaterialType::Unlit);
 
 	// Visualize only selected material indexes
-	void SetVisual(USkeletalMeshComponent* SkelMC, TArray<int32>& MaterialIndexes,
+	void SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes,
 		const FLinearColor& InColor = FLinearColor::Green,
 		ESLVizMarkerMaterialType InMaterialType = ESLVizMarkerMaterialType::Unlit);
 
@@ -43,6 +43,11 @@ public:
 
 	// Add instances with the poses
 	void AddInstances(const TArray<FTransform>& Poses, const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>());
+
+	//~ Begin ActorComponent Interface
+	// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
+	virtual void DestroyComponent(bool bPromoteChildren = false) override;
+	//~ End ActorComponent Interface
 
 	/* Begin VizMarker interface */
 	// Reset visuals and poses
@@ -57,15 +62,18 @@ protected:
 	/* End VizMarker interface */
 
 private:
+	//   Set visual without the materials (avoid boilerplate code)
+	void SetVisualWithoutTheMaterialSlots(USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType);
+
 	// Create poseable mesh component instance attached and registered to this marker
 	UPoseableMeshComponent* CreateNewPoseableMeshInstance();
 
 protected:
 	// Poseable mesh reference
-	//UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	UPoseableMeshComponent* PMCReference;
+	UPROPERTY()
+	UPoseableMeshComponent* PMCRef;
 
 	// Skeletal instances
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	UPROPERTY()
 	TArray<UPoseableMeshComponent*> PMCInstances;
 };

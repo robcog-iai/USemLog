@@ -535,22 +535,6 @@ void USLVizMarker::Add(const TArray<TPair<FTransform, TMap<FString, FTransform>>
 	}
 }
 
-// Clear marker by notifing the parent manager
-bool USLVizMarker::Clear()
-{
-	// TODO use delegates for the notifying the manager instead
-	if (ASLVizMarkerManager* Manager = Cast<ASLVizMarkerManager>(GetOwner()))
-	{
-		Manager->ClearMarker(this);
-		return true;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access manager.."), *FString(__FUNCTION__), __LINE__);
-		return false;
-	}
-}
-
 // Destroy dynamically created components first
 void USLVizMarker::DestroyComponent(bool bPromoteChildren/*= false*/)
 {

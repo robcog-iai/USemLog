@@ -111,8 +111,9 @@ public class USemLog : ModuleRules
 		SetDependencyPrepreocessorDefinition("SRanipal", "SL_WITH_EYE_TRACKING");
 		SetDependencyPrepreocessorDefinition("SlicingLogic", "SL_WITH_SLICING");
         SetDependencyPrepreocessorDefinition("UProtobuf", "SL_WITH_PROTOBUF");
+		SetDependencyPrepreocessorDefinition("UROSBridge", "SL_WITH_ROSBRIDGE");
 
-        string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));
+		string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));
 		string JsonUtil = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("JsonUtilities"));
 		if (string.IsNullOrEmpty(Json) || string.IsNullOrEmpty(JsonUtil))
 		{

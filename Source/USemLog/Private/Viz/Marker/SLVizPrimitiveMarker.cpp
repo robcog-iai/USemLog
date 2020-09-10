@@ -12,95 +12,68 @@ USLVizPrimitiveMarker::USLVizPrimitiveMarker()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	
-	ISMComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("SLViz_ISM_Primitive"));
-	ISMComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	VisualScale = FVector(.1f);
+	MarkerScale = FVector(.1f);
 	PrimitiveType = ESLVizPrimitiveMarkerType::NONE;
 }
 
 // Set the visual properties of the instanced mesh
 void USLVizPrimitiveMarker::SetVisual(ESLVizPrimitiveMarkerType InType, float Size, const FLinearColor& InColor,  ESLVizMarkerMaterialType InMaterialType)
 {
-	// Clear any previous data
-	Reset();
-
-	// Set the visual mesh
-	ISMComponent->SetStaticMesh(GetPrimitiveStaticMesh(InType));
-
-	// Set the dynamic material
-	SetDynamicMaterial(InMaterialType);
-	SetDynamicMaterialColor(InColor);
-
-	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < ISMComponent->GetNumMaterials(); ++MatIdx)
-	{
-		ISMComponent->SetMaterial(MatIdx, DynamicMaterial);
-	}
+	// Set scale
+	MarkerScale = FVector(Size);
+	// Inheritance hides functions with the same name (even for if with different parameters)
+	USLVizStaticMeshMarker::SetVisual(GetPrimitiveStaticMesh(InType), InColor, InMaterialType);
 }
 
 // Update the priomitive static mesh
 void USLVizPrimitiveMarker::UpdatePrimitiveType(ESLVizPrimitiveMarkerType InType)
 {
-	ISMComponent->SetStaticMesh(GetPrimitiveStaticMesh(InType));
-
-	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < ISMComponent->GetNumMaterials(); ++MatIdx)
-	{
-		ISMComponent->SetMaterial(MatIdx, DynamicMaterial);
-	}
+	UpdateStaticMesh(GetPrimitiveStaticMesh(InType));
 }
 
 // Update the visual scale property
 void USLVizPrimitiveMarker::UpdateSize(float Size)
 {
-	VisualScale = FVector(Size);
+	if (!ISMC && !ISMC->IsValidLowLevel() && ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
 
-	ISMComponent->SetWorldScale3D(VisualScale);
-	// or ?
-	//for (const auto IB : ISMComponent->InstanceBodies)
-	//{
-	//	IB->Scale3D = VisualScale;
-	//}
+	MarkerScale = FVector(Size);
+	for (const auto IB : ISMC->InstanceBodies)
+	{
+		IB->Scale3D = MarkerScale;
+	}
 }
 
 // Add instances at pose
 void USLVizPrimitiveMarker::AddInstance(const FTransform& Pose)
 {
-	ISMComponent->AddInstance(FTransform(Pose.GetRotation(), Pose.GetLocation(), VisualScale));
+	if (!ISMC && !ISMC->IsValidLowLevel() && ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	ISMC->AddInstance(FTransform(Pose.GetRotation(), Pose.GetLocation(), MarkerScale));
 }
 
 // Add instances with the poses
 void USLVizPrimitiveMarker::AddInstances(const TArray<FTransform>& Poses)
 {
+	if (!ISMC && !ISMC->IsValidLowLevel() && ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
 	for (auto P : Poses)
 	{
-		P.SetScale3D(VisualScale);
-		ISMComponent->AddInstance(P);
+		P.SetScale3D(MarkerScale);
+		ISMC->AddInstance(P);
 	}
 }
-
-/* Begin VizMarker interface */
-// Reset visuals and poses
-void USLVizPrimitiveMarker::Reset()
-{
-	ResetVisuals();
-	ResetPoses();
-}
-
-// Reset visual related data
-void USLVizPrimitiveMarker::ResetVisuals()
-{
-	ISMComponent->EmptyOverrideMaterials();
-}
-
-// Reset instances (poses of the visuals)
-void USLVizPrimitiveMarker::ResetPoses()
-{
-	ISMComponent->ClearInstances();
-}
-/* End VizMarker interface */
-
 
 // Get the static mesh of the primitive type
 UStaticMesh* USLVizPrimitiveMarker::GetPrimitiveStaticMesh(ESLVizPrimitiveMarkerType InType) const

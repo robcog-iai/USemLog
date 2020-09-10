@@ -5,48 +5,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "Viz/Marker/SLVizHighlightMarker.h"
-#include "Viz/Marker/SLVizMarker.h"
 #include "Viz/Marker/SLVizPrimitiveMarker.h"
 #include "SLVizManager.generated.h"
 
 // Forward declarations
-class USLVizMarker;
 class ASLVizMarkerManager;
-class USLVizHighlightMarker;
-class ASLVizHighlightMarkerManager;
 class ASLVizHighlightManager;
 class ASLVizWorldManager;
 class ASLIndividualManager;
-class USLVizHighlightMarker;
-
-
-
-/**
- * Marker test hack struct
- */
-USTRUCT()
-struct FSLVizMarkerCmdHack
-{
-	GENERATED_BODY();
-
-	// Marker poses
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TArray<FTransform> Poses;
-
-	// Marker id 
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString MarkerId = TEXT("DefaultMarkerId");
-
-	// Marker visual
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FSLVizMarkerVisualParams VisualParams;
-
-	// Individual id if it should be clonned
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString CloneIndividualId = TEXT("CloneIndividualId");
-};
-
 
 /**
  * Highlight individuals test hack struct
@@ -59,10 +25,6 @@ struct FSLVizHighlightIndividualCmdHack
 	// Individual id to query
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString IndividualId = TEXT("DefaultIndividualId");
-
-	// Highlight visual
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FSLVizHighlightMarkerVisualParams VisualParams;
 };
 
 
@@ -132,16 +94,13 @@ public:
 	// Create a primitive marker
 	bool CreatePrimitiveMarker(const FSLVizPrimitiveMarkerParams& Params);
 
+	//// Create marker with the given id
+	//bool CreateMarker(const FString& MarkerId, const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
+	//bool CreateMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
+	//
+	//// Update the visual values of the marker
+	//bool UpdateMarkerVisual(const FString& MarkerId, const FSLVizMarkerVisualParams& VisualParams);
 
-	// Create marker with the given id
-	bool CreateMarker(const FString& MarkerId, const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
-	bool CreateMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
-
-
-	
-
-	// Update the visual values of the marker
-	bool UpdateMarkerVisual(const FString& MarkerId, const FSLVizMarkerVisualParams& VisualParams);
 
 
 	// Remove marker with the given id
@@ -151,15 +110,15 @@ public:
 	void RemoveAllMarkers();
 
 
-	/* Highlights */
-	// Highlight the individual (returns false if the individual is not found or is not of visual type)
-	bool HighlightIndividual(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
+	///* Highlights */
+	//// Highlight the individual (returns false if the individual is not found or is not of visual type)
+	//bool HighlightIndividual(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
 
-	// Change the visual values of the highligted individual
-	bool UpdateIndividualHighlight(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams);
+	//// Change the visual values of the highligted individual
+	//bool UpdateIndividualHighlight(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams);
 
-	// Remove highlight from individual (returns false if the individual not found or it is not highlighted)
-	bool RemoveIndividualHighlight(const FString& Id);
+	//// Remove highlight from individual (returns false if the individual not found or it is not highlighted)
+	//bool RemoveIndividualHighlight(const FString& Id);
 
 	// Remove all individual highlights
 	void RemoveAllIndividualHighlights();
@@ -167,9 +126,6 @@ public:
 private:
 	// Get the vizualization marker manager from the world (or spawn a new one)
 	bool SetVizMarkerManager();
-
-	// Get the vizualization highlight marker manager from the world (or spawn a new one)
-	bool SetVizHighlightMarkerManager();
 
 	// Get the vizualization highlight manager from the world (or spawn a new one)
 	bool SetVizHighlightManager();
@@ -185,24 +141,16 @@ private:
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	bool bIsInit;
 
-	// Keep track of the markers
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	TMap<FString, USLVizMarker*> Markers;
+	TMap<FString, USLVizBaseMarker*> Markers;
 
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	TMap<FString, USLVizBaseMarker*> NewMarkers;
-
-	// Keep track of the highlighted individuals
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	TMap<FString, USLVizHighlightMarker*> HighlightedIndividuals;
+	//// Keep track of the highlighted individuals
+	//UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	//TMap<FString, USLVizHighlightMarker*> HighlightedIndividuals;
 
 	// Keeps track of all the drawn markers in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizMarkerManager* VizMarkerManager;
-
-	// Keeps track of all the highlight markers in the world
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	ASLVizHighlightMarkerManager* VizHighlightMarkerManager;
 
 	// Keeps track of all the highlighted meshes in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")

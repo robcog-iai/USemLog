@@ -11,75 +11,50 @@
 USLVizSkeletalMeshMarker::USLVizSkeletalMeshMarker()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	PMCReference = CreateDefaultSubobject<UPoseableMeshComponent>(TEXT("SLViz_SkelMarker_Reference"));
-	PMCReference->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	PMCReference->bPerBoneMotionBlur = false;
-	PMCReference->bHasMotionBlurVelocityMeshes = false;
-	PMCReference->SetVisibility(false);
+	PMCRef = nullptr;
 }
 
 // Set the visual properties of the skeletal mesh
-void USLVizSkeletalMeshMarker::SetVisual(USkeletalMeshComponent* SkelMC,
+void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh,
 	const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
 {
-	// Clear any previous data
-	Reset();
-
-	// Set the reference visual
-	PMCReference->SetSkeletalMesh(SkelMC->SkeletalMesh);
-
-	// Set the dynamic material
-	SetDynamicMaterial(InMaterialType);
-	SetDynamicMaterialColor(InColor);
+	// Create the poseable mesh reference and the dynamic material
+	SetVisualWithoutTheMaterialSlots(SkelMesh, InColor, InMaterialType);
 
 	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < PMCReference->GetNumMaterials(); ++MatIdx)
+	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
 	{
-		PMCReference->SetMaterial(MatIdx, DynamicMaterial);
+		PMCRef->SetMaterial(MatIdx, DynamicMaterial);
 	}
 }
 
 // Set the visual properties of the skeletal mesh, visualize only selected material index
-void USLVizSkeletalMeshMarker::SetVisual(USkeletalMeshComponent* SkelMC, int32 MaterialIndex,
+void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex,
 	const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
 {
-	// Clear any previous data
-	Reset();
-
-	// Set the reference visual
-	PMCReference->SetSkeletalMesh(SkelMC->SkeletalMesh);
-
-	// Set the dynamic material
-	SetDynamicMaterial(InMaterialType);
-	SetDynamicMaterialColor(InColor);
+	// Create the poseable mesh reference and the dynamic material
+	SetVisualWithoutTheMaterialSlots(SkelMesh, InColor, InMaterialType);
 
 	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < SkelMC->GetNumMaterials(); ++MatIdx)
+	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
 	{
-		MatIdx != MaterialIndex ? PMCReference->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible)
-			: PMCReference->SetMaterial(MatIdx, DynamicMaterial);
+		MatIdx != MaterialIndex ? PMCRef->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible)
+			: PMCRef->SetMaterial(MatIdx, DynamicMaterial);
 	}
 }
 
 // Visualize only selected material indexes
-void USLVizSkeletalMeshMarker::SetVisual(USkeletalMeshComponent* SkelMC, TArray<int32>& MaterialIndexes,
+void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes,
 	const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
 {
-	// Clear any previous data
-	Reset();
-
-	// Set the reference visual
-	PMCReference->SetSkeletalMesh(SkelMC->SkeletalMesh);
-
-	// Set the dynamic material
-	SetDynamicMaterial(InMaterialType);
-	SetDynamicMaterialColor(InColor);
+	// Create the poseable mesh reference and the dynamic material
+	SetVisualWithoutTheMaterialSlots(SkelMesh, InColor, InMaterialType);
 
 	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < SkelMC->GetNumMaterials(); ++MatIdx)
+	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
 	{
-		 !MaterialIndexes.Contains(MatIdx) ? PMCReference->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible)
-			: PMCReference->SetMaterial(MatIdx, DynamicMaterial);
+		 !MaterialIndexes.Contains(MatIdx) ? PMCRef->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible)
+			: PMCRef->SetMaterial(MatIdx, DynamicMaterial);
 	}
 }
 
@@ -124,6 +99,25 @@ void USLVizSkeletalMeshMarker::AddInstances(const TArray<FTransform>& Poses, con
 	}
 }
 
+// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
+void USLVizSkeletalMeshMarker::DestroyComponent(bool bPromoteChildren)
+{
+	for (const auto& PMCInst : PMCInstances)
+	{
+		if (PMCInst && PMCInst->IsValidLowLevel() && PMCInst->IsPendingKillOrUnreachable())
+		{
+			PMCInst->DestroyComponent();
+		}
+	}
+
+	if (PMCRef && PMCRef->IsValidLowLevel() && PMCRef->IsPendingKillOrUnreachable())
+	{
+		PMCRef->DestroyComponent();
+	}
+
+	Super::DestroyComponent(bPromoteChildren);
+}
+
 /* Begin VizMarker interface */
 // Reset visuals and poses
 void USLVizSkeletalMeshMarker::Reset()
@@ -135,7 +129,13 @@ void USLVizSkeletalMeshMarker::Reset()
 // Reset visual related data
 void USLVizSkeletalMeshMarker::ResetVisuals()
 {
-	PMCReference->EmptyOverrideMaterials();
+	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	PMCRef->EmptyOverrideMaterials();
 }
 
 // Reset instances (poses of the visuals)
@@ -151,11 +151,37 @@ void USLVizSkeletalMeshMarker::ResetPoses()
 	PMCInstances.Empty();
 }
 
+//   Set visual without the materials (avoid boilerplate code)
+void USLVizSkeletalMeshMarker::SetVisualWithoutTheMaterialSlots(USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
+{
+	// Clear any previous data
+	Reset();
+	
+	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
+	{
+		PMCRef = NewObject<UPoseableMeshComponent>(this);
+		PMCRef->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		PMCRef->bPerBoneMotionBlur = false;
+		PMCRef->bHasMotionBlurVelocityMeshes = false;
+		PMCRef->bSelectable = false;
+		PMCRef->SetVisibility(false);
+		//PMCRef->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
+		PMCRef->RegisterComponent();
+	}
+
+	// Set the reference visual
+	PMCRef->SetSkeletalMesh(SkelMesh);
+
+	// Set the dynamic material
+	SetDynamicMaterial(InMaterialType);
+	SetDynamicMaterialColor(InColor);
+}
+
 // Create poseable mesh component instance attached and registered to this marker
 UPoseableMeshComponent* USLVizSkeletalMeshMarker::CreateNewPoseableMeshInstance()
 {
-	UPoseableMeshComponent* NewPMC = DuplicateObject<UPoseableMeshComponent>(PMCReference, this);
-	NewPMC->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
+	UPoseableMeshComponent* NewPMC = DuplicateObject<UPoseableMeshComponent>(PMCRef, this);
+	//NewPMC->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
 	NewPMC->SetVisibility(true);
 	return NewPMC;
 }

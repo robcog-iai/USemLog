@@ -12,54 +12,80 @@ USLVizStaticMeshMarker::USLVizStaticMeshMarker()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	
-	ISMComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("SLViz_ISM_StaticMesh"));
-	ISMComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ISMC = nullptr;	
 }
 
 // Set the visual properties of the instanced mesh
-void USLVizStaticMeshMarker::SetVisual(UStaticMeshComponent* SMC, const FLinearColor& InColor,	ESLVizMarkerMaterialType InMaterialType)
+void USLVizStaticMeshMarker::SetVisual(UStaticMesh* SM, const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
 {
 	// Clear any previous data
 	Reset();
 
+	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
+	{
+		ISMC = NewObject<UInstancedStaticMeshComponent>(this);
+		ISMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ISMC->bSelectable = false;
+		//ISMC->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
+		ISMC->RegisterComponent();
+	}
+
 	// Set the visual mesh
-	ISMComponent->SetStaticMesh(SMC->GetStaticMesh());
+	ISMC->SetStaticMesh(SM);
 
 	// Set the dynamic material
 	SetDynamicMaterial(InMaterialType);
 	SetDynamicMaterialColor(InColor);
 
 	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < ISMComponent->GetNumMaterials(); ++MatIdx)
+	for (int32 MatIdx = 0; MatIdx < ISMC->GetNumMaterials(); ++MatIdx)
 	{
-		ISMComponent->SetMaterial(MatIdx, DynamicMaterial);
+		ISMC->SetMaterial(MatIdx, DynamicMaterial);
 	}
 }
 
 // Update the visual mesh type
-void USLVizStaticMeshMarker::UpdateStaticMesh(UStaticMeshComponent* SMC)
+void USLVizStaticMeshMarker::UpdateStaticMesh(UStaticMesh* SM)
 {
-	ISMComponent->SetStaticMesh(SMC->GetStaticMesh());
+	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	ISMC->SetStaticMesh(SM);
 
 	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < ISMComponent->GetNumMaterials(); ++MatIdx)
+	for (int32 MatIdx = 0; MatIdx < ISMC->GetNumMaterials(); ++MatIdx)
 	{
-		ISMComponent->SetMaterial(MatIdx, DynamicMaterial);
+		ISMC->SetMaterial(MatIdx, DynamicMaterial);
 	}
 }
 
 // Add instances at pose
 void USLVizStaticMeshMarker::AddInstance(const FTransform& Pose)
 {
-	ISMComponent->AddInstance(Pose);
+	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	ISMC->AddInstance(Pose);
 }
 
 // Add instances with the poses
 void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses)
 {
+	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
 	for (const auto& P : Poses)
 	{
-		ISMComponent->AddInstance(P);
+		ISMC->AddInstance(P);
 	}
 }
 
@@ -71,15 +97,37 @@ void USLVizStaticMeshMarker::Reset()
 	ResetPoses();
 }
 
+// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
+void USLVizStaticMeshMarker::DestroyComponent(bool bPromoteChildren)
+{
+	if (ISMC && ISMC->IsValidLowLevel() && !ISMC->IsPendingKillOrUnreachable())
+	{
+		ISMC->DestroyComponent();
+	}
+	Super::DestroyComponent(bPromoteChildren);
+}
+
 // Reset visual related data
 void USLVizStaticMeshMarker::ResetVisuals()
 {
-	ISMComponent->EmptyOverrideMaterials();
+	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	ISMC->EmptyOverrideMaterials();
 }
 
 // Reset instances (poses of the visuals)
 void USLVizStaticMeshMarker::ResetPoses()
 {
-	ISMComponent->ClearInstances();
+	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	ISMC->ClearInstances();
 }
 /* End VizMarker interface */

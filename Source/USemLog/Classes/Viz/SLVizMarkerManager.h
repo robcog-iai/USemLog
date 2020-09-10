@@ -4,21 +4,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Info.h"
-#include "Viz/Marker/SLVizMarker.h"
+#include "GameFramework/Actor.h"
 #include "Viz/Marker/SLVizPrimitiveMarker.h"
+#include "Viz/Marker/SLVizStaticMeshMarker.h"
+#include "Viz/Marker/SLVizSkeletalMeshMarker.h"
 #include "SLVizMarkerManager.generated.h"
 
-// Forward declarations
-class USLVizBaseMarker;
-class USLVizStaticMeshMarker;
-class USLVizSkeletalMeshMarker;
 
 /*
 * Spawns and keeps track of markers
+* (AActor since AInfo & components seems not to be rendered during runtime)
 */
 UCLASS(ClassGroup = (SL), DisplayName = "SL Viz Marker Manager")
-class USEMLOG_API ASLVizMarkerManager : public AInfo
+class USEMLOG_API ASLVizMarkerManager : public AActor
 {
 	GENERATED_BODY()
 
@@ -32,11 +30,22 @@ protected:
 
 public:
 	// Clear marker
-	void ClearMarker(USLVizMarker* Marker);
-	void ClearNewMarker(USLVizBaseMarker* Marker);
+	void ClearMarker(USLVizBaseMarker* Marker);
 	
 	// Clear all markers
 	void ClearAllMarkers();
+
+	// Create a static mesh visual marker at the given pose
+	USLVizStaticMeshMarker* CreateStaticMeshMarker(const FTransform& Pose,
+		UStaticMesh* SM,
+		const FLinearColor& InColor = FLinearColor::Green,
+		ESLVizMarkerMaterialType MaterialType = ESLVizMarkerMaterialType::Unlit);
+
+	// Create a static mesh visual marker at the given poses
+	USLVizStaticMeshMarker* CreateStaticMeshMarker(const TArray<FTransform>& Poses,
+		UStaticMesh* SM,
+		const FLinearColor& InColor = FLinearColor::Green,
+		ESLVizMarkerMaterialType MaterialType = ESLVizMarkerMaterialType::Unlit);
 
 	// Create a primitive marker at the given pose
 	USLVizPrimitiveMarker* CreatePrimitiveMarker(const FTransform& Pose,
@@ -52,29 +61,38 @@ public:
 		const FLinearColor& InColor = FLinearColor::Green,
 		ESLVizMarkerMaterialType MaterialType = ESLVizMarkerMaterialType::Unlit);
 
-	// Create marker at the given pose
-	USLVizMarker* CreateMarker(const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams);
+	// Create a skeletal mesh based marker at the given pose
+	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const FTransform& Pose,
+		USkeletalMesh* SkelMesh,
+		const TArray<int32>& MaterialIndexes = TArray<int32>(),
+		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>(),
+		const FLinearColor& InColor = FLinearColor::Green,
+		ESLVizMarkerMaterialType MaterialType = ESLVizMarkerMaterialType::Unlit);
 
-	// Create marker at the given poses
-	USLVizMarker* CreateMarker(const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams);
+	// Create a skeletal mesh based marker at the given pose
+	USLVizSkeletalMeshMarker* CreateSkeletaleMarker(const TArray<FTransform>& Poses,
+		USkeletalMesh* SkelMesh,
+		const TArray<int32>& MaterialIndexes = TArray<int32>(),
+		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>(),
+		const FLinearColor& InColor = FLinearColor::Green,
+		ESLVizMarkerMaterialType MaterialType = ESLVizMarkerMaterialType::Unlit);
 
-	// Create marker at the given skeletal pose
-	USLVizMarker* CreateMarker(TPair<FTransform, TMap<FString, FTransform>>& SkeletalPose, const FSLVizMarkerVisualParams& VisualParams);
-
-	// Create marker at the given skeletal poses
-	USLVizMarker* CreateMarker(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses, const FSLVizMarkerVisualParams& VisualParams);
-
-protected:
-	// Create and register the marker
-	USLVizMarker* CreateNewMarker();
+private:
+	// Create markers helper function
+	template <class T>
+	T* CreateAndAddNewMarker()
+	{
+		T* Marker = NewObject<T>(this);
+		Marker->RegisterComponent();
+		//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+		// Removed because they are causing the components to remain in the actors components when changing maps
+		//AddInstanceComponent(Marker); // Makes it appear in the editor
+		//AddOwnedComponent(Marker);
+		Markers.Add(Marker);
+	}
 
 protected:
 	// Collection of the markers
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	TSet<USLVizMarker*> Markers;
-
-
-	// Collection of the markers
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	TSet<USLVizBaseMarker*> NewMarkers;
+	TSet<USLVizBaseMarker*> Markers;
 };

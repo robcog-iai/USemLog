@@ -142,9 +142,6 @@ public:
 	// Add skeletal poses
 	void Add(const TArray<TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses);
 
-	// Clear/remove marker through the manager
-	bool Clear();
-
 	//~ Begin ActorComponent Interface
 	virtual void DestroyComponent(bool bPromoteChildren = false) override;
 	//~ End ActorComponent Interface

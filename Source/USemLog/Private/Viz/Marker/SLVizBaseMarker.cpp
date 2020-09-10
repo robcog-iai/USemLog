@@ -27,6 +27,16 @@ void USLVizBaseMarker::UpdateMaterialType(ESLVizMarkerMaterialType InType)
 	SetDynamicMaterial(InType);
 }
 
+// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
+void USLVizBaseMarker::DestroyComponent(bool bPromoteChildren)
+{
+	if (DynamicMaterial && DynamicMaterial->IsValidLowLevel() && !DynamicMaterial->IsPendingKillOrUnreachable())
+	{
+		DynamicMaterial->ConditionalBeginDestroy();
+	}
+	Super::DestroyComponent(bPromoteChildren);
+}
+
 // Create the dynamic material
 void USLVizBaseMarker::SetDynamicMaterial(ESLVizMarkerMaterialType InType)
 {

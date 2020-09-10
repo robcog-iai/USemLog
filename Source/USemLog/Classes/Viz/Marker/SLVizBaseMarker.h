@@ -22,6 +22,7 @@ enum class ESLVizMarkerMaterialType : uint8
 	Unlit				UMETA(DisplayName = "Unlit"),
 	Additive			UMETA(DisplayName = "Additive"),
 	Translucent			UMETA(DisplayName = "Translucent"),
+	Original			UMETA(DisplayName = "Original"),
 };
 
 /**
@@ -41,6 +42,11 @@ public:
 
 	// Update the material type
 	void UpdateMaterialType(ESLVizMarkerMaterialType InType);
+
+	//~ Begin ActorComponent Interface
+	// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
+	virtual void DestroyComponent(bool bPromoteChildren = false) override;
+	//~ End ActorComponent Interface
 
 	/* Begin VizMarker interface */
 	// Reset visuals and poses
@@ -66,7 +72,8 @@ private:
 
 protected:
 	// Used for applying custom materials (colors) to the marker
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	//UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	UPROPERTY()
 	UMaterialInstanceDynamic* DynamicMaterial;
 
 	// Dynamic material type
