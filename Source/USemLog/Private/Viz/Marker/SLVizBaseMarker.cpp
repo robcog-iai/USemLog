@@ -11,7 +11,7 @@ USLVizBaseMarker::USLVizBaseMarker()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	LoadAssetsContainer();
-	MaterialType = ESLVizMarkerMaterialType::NONE;
+	MaterialType = ESLVizMaterialType::NONE;
 	VisualColor == FLinearColor::Transparent; // (0,0,0,0)
 }
 
@@ -22,7 +22,7 @@ void USLVizBaseMarker::UpdateMaterialColor(const FLinearColor& InColor)
 }
 
 // Update the material type
-void USLVizBaseMarker::UpdateMaterialType(ESLVizMarkerMaterialType InType)
+void USLVizBaseMarker::UpdateMaterialType(ESLVizMaterialType InType)
 {
 	SetDynamicMaterial(InType);
 }
@@ -38,7 +38,7 @@ void USLVizBaseMarker::DestroyComponent(bool bPromoteChildren)
 }
 
 // Create the dynamic material
-void USLVizBaseMarker::SetDynamicMaterial(ESLVizMarkerMaterialType InType)
+void USLVizBaseMarker::SetDynamicMaterial(ESLVizMaterialType InType)
 {
 
 	if (DynamicMaterial && DynamicMaterial->IsValidLowLevel() && !DynamicMaterial->IsPendingKillOrUnreachable())
@@ -60,22 +60,22 @@ void USLVizBaseMarker::SetDynamicMaterial(ESLVizMarkerMaterialType InType)
 	// Create new material
 	switch (InType)
 	{
-	case(ESLVizMarkerMaterialType::Unlit):
+	case(ESLVizMaterialType::Unlit):
 		DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialUnlit, this);
 		break;
-	case(ESLVizMarkerMaterialType::Lit):
+	case(ESLVizMaterialType::Lit):
 		DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialLit, this);
 		break;
-	case(ESLVizMarkerMaterialType::Additive):
+	case(ESLVizMaterialType::Additive):
 		DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightAdditive, this);
 		break;
-	case(ESLVizMarkerMaterialType::Translucent):
+	case(ESLVizMaterialType::Translucent):
 		DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialHighlightTranslucent, this);
 		break;
 	default:
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Unknown material type, set as lit.."), *FString(__FUNCTION__), __LINE__);
 		DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialLit, this);
-		MaterialType = ESLVizMarkerMaterialType::Lit;
+		MaterialType = ESLVizMaterialType::Lit;
 	}
 
 

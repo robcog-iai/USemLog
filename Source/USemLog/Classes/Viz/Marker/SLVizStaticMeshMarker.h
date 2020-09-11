@@ -26,7 +26,7 @@ public:
 	// Set the visual properties of the instanced mesh
 	void SetVisual(UStaticMesh* SM,
 		const FLinearColor& InColor = FLinearColor::Green,
-		ESLVizMarkerMaterialType InMaterialType = ESLVizMarkerMaterialType::Unlit);
+		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
 
 	// Update the visual mesh type
 	void UpdateStaticMesh(UStaticMesh* SM);

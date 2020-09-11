@@ -5,26 +5,33 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "Viz/Marker/SLVizPrimitiveMarker.h"
+#include "Viz/SLVizStructs.h"
 #include "SLVizManager.generated.h"
 
 // Forward declarations
-class ASLVizMarkerManager;
 class ASLVizHighlightManager;
+class ASLVizMarkerManager;
 class ASLVizWorldManager;
 class ASLIndividualManager;
+class USLVizBaseMarker;
+class UMeshComponent;
 
 /**
  * Highlight individuals test hack struct
  */
 USTRUCT()
-struct FSLVizHighlightIndividualCmdHack
+struct FSLVizHighlightParams
 {
 	GENERATED_BODY();
 
-	// Individual id to query
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString IndividualId = TEXT("DefaultIndividualId");
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FLinearColor Color = FLinearColor::Green;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit;
 };
 
 
@@ -52,7 +59,7 @@ struct FSLVizPrimitiveMarkerParams
 	FLinearColor Color = FLinearColor::Green;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLVizMarkerMaterialType MaterialType = ESLVizMarkerMaterialType::Unlit;
+	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit;
 };
 
 /*
@@ -111,8 +118,8 @@ public:
 
 
 	///* Highlights */
-	//// Highlight the individual (returns false if the individual is not found or is not of visual type)
-	//bool HighlightIndividual(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams = FSLVizHighlightMarkerVisualParams());
+	// Highlight the individual (returns false if the individual is not found or is not of visual type)
+	bool HighlightIndividual(const FString& Id, const FSLVizHighlightParams& Params = FSLVizHighlightParams());
 
 	//// Change the visual values of the highligted individual
 	//bool UpdateIndividualHighlight(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams);
@@ -144,9 +151,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TMap<FString, USLVizBaseMarker*> Markers;
 
-	//// Keep track of the highlighted individuals
-	//UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	//TMap<FString, USLVizHighlightMarker*> HighlightedIndividuals;
+	// Keep track of the highlighted individuals
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	TMap<FString, UMeshComponent*> HighlightedIndividuals;
 
 	// Keeps track of all the drawn markers in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")

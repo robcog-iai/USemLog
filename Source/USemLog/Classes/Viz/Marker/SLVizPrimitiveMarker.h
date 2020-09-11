@@ -11,20 +11,6 @@
 class UInstancedStaticMeshComponent;
 class UStaticMesh;
 
-/*
-* Marker primitive types
-*/
-UENUM()
-enum class ESLVizPrimitiveMarkerType : uint8
-{
-	NONE			UMETA(DisplayName = "NONE"),
-	Box				UMETA(DisplayName = "Box"),
-	Sphere			UMETA(DisplayName = "Sphere"),
-	Cylinder		UMETA(DisplayName = "Cylinder"),
-	Arrow			UMETA(DisplayName = "Arrow"),
-	Axis			UMETA(DisplayName = "Axis")
-};
-
 /**
  * Class capable of visualizing multiple types of markers as instanced static meshes
  */
@@ -41,7 +27,7 @@ public:
 	void SetVisual(ESLVizPrimitiveMarkerType PrimitiveType = ESLVizPrimitiveMarkerType::Box,
 		float Size = .1f,
 		const FLinearColor& InColor = FLinearColor::Green,
-		ESLVizMarkerMaterialType MaterialType = ESLVizMarkerMaterialType::Unlit);
+		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Update the primitive type
 	void UpdatePrimitiveType(ESLVizPrimitiveMarkerType InType);

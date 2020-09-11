@@ -17,7 +17,7 @@ USLVizPrimitiveMarker::USLVizPrimitiveMarker()
 }
 
 // Set the visual properties of the instanced mesh
-void USLVizPrimitiveMarker::SetVisual(ESLVizPrimitiveMarkerType InType, float Size, const FLinearColor& InColor,  ESLVizMarkerMaterialType InMaterialType)
+void USLVizPrimitiveMarker::SetVisual(ESLVizPrimitiveMarkerType InType, float Size, const FLinearColor& InColor,  ESLVizMaterialType InMaterialType)
 {
 	// Set scale
 	MarkerScale = FVector(Size);

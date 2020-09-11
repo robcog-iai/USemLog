@@ -16,7 +16,7 @@ USLVizSkeletalMeshMarker::USLVizSkeletalMeshMarker()
 
 // Set the visual properties of the skeletal mesh
 void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh,
-	const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
+	const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
 {
 	// Create the poseable mesh reference and the dynamic material
 	SetVisualWithoutTheMaterialSlots(SkelMesh, InColor, InMaterialType);
@@ -30,7 +30,7 @@ void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh,
 
 // Set the visual properties of the skeletal mesh, visualize only selected material index
 void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex,
-	const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
+	const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
 {
 	// Create the poseable mesh reference and the dynamic material
 	SetVisualWithoutTheMaterialSlots(SkelMesh, InColor, InMaterialType);
@@ -45,7 +45,7 @@ void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, int32 Material
 
 // Visualize only selected material indexes
 void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes,
-	const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
+	const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
 {
 	// Create the poseable mesh reference and the dynamic material
 	SetVisualWithoutTheMaterialSlots(SkelMesh, InColor, InMaterialType);
@@ -152,7 +152,7 @@ void USLVizSkeletalMeshMarker::ResetPoses()
 }
 
 //   Set visual without the materials (avoid boilerplate code)
-void USLVizSkeletalMeshMarker::SetVisualWithoutTheMaterialSlots(USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
+void USLVizSkeletalMeshMarker::SetVisualWithoutTheMaterialSlots(USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
 {
 	// Clear any previous data
 	Reset();

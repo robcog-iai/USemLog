@@ -122,6 +122,6 @@ private:
 	// Assets container
 	USLVizAssets* VizAssetsContainer;
 
-	/* Constaints */
+	/* Constants */
 	constexpr static TCHAR* AssetsContainerPath = TEXT("SLVizAssets'/USemLog/Viz/SL_VizAssetsContainer.SL_VizAssetsContainer'");
 };

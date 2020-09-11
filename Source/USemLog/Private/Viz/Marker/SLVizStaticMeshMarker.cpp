@@ -16,7 +16,7 @@ USLVizStaticMeshMarker::USLVizStaticMeshMarker()
 }
 
 // Set the visual properties of the instanced mesh
-void USLVizStaticMeshMarker::SetVisual(UStaticMesh* SM, const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType)
+void USLVizStaticMeshMarker::SetVisual(UStaticMesh* SM, const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
 {
 	// Clear any previous data
 	Reset();

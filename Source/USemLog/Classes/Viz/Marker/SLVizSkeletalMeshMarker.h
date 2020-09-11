@@ -26,17 +26,17 @@ public:
 	// Set the visual properties of the skeletal mesh
 	void SetVisual(USkeletalMesh* SkelMesh,
 		const FLinearColor& InColor = FLinearColor::Green,
-		ESLVizMarkerMaterialType InMaterialType = ESLVizMarkerMaterialType::Unlit);
+		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
 
 	// Set the visual properties of the skeletal mesh, visualize only selected material index
 	void SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex,
 		const FLinearColor& InColor = FLinearColor::Green,
-		ESLVizMarkerMaterialType InMaterialType = ESLVizMarkerMaterialType::Unlit);
+		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
 
 	// Visualize only selected material indexes
 	void SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes,
 		const FLinearColor& InColor = FLinearColor::Green,
-		ESLVizMarkerMaterialType InMaterialType = ESLVizMarkerMaterialType::Unlit);
+		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
 
 	// Add instances at pose
 	void AddInstance(const FTransform& Pose, const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>());
@@ -63,7 +63,7 @@ protected:
 
 private:
 	//   Set visual without the materials (avoid boilerplate code)
-	void SetVisualWithoutTheMaterialSlots(USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMarkerMaterialType InMaterialType);
+	void SetVisualWithoutTheMaterialSlots(USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMaterialType InMaterialType);
 
 	// Create poseable mesh component instance attached and registered to this marker
 	UPoseableMeshComponent* CreateNewPoseableMeshInstance();

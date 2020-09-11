@@ -5,25 +5,12 @@
 
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
+#include "Viz/SLVizStructs.h"
 #include "SLVizBaseMarker.generated.h"
 
 // Forward declarations
 class USLVizAssets;
 class UMaterialInstanceDynamic;
-
-/**
- * Highlight material types
- */
-UENUM()
-enum class ESLVizMarkerMaterialType : uint8
-{
-	NONE				UMETA(DisplayName = "NONE"),
-	Lit					UMETA(DisplayName = "Lit"),
-	Unlit				UMETA(DisplayName = "Unlit"),
-	Additive			UMETA(DisplayName = "Additive"),
-	Translucent			UMETA(DisplayName = "Translucent"),
-	Original			UMETA(DisplayName = "Original"),
-};
 
 /**
  * Base class of the marker visualization, acts as an interface class
@@ -41,7 +28,7 @@ public:
 	void UpdateMaterialColor(const FLinearColor& InColor);
 
 	// Update the material type
-	void UpdateMaterialType(ESLVizMarkerMaterialType InType);
+	void UpdateMaterialType(ESLVizMaterialType InType);
 
 	//~ Begin ActorComponent Interface
 	// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
@@ -61,7 +48,7 @@ protected:
 	/* End VizMarker interface */
 
 	// Create the dynamic material
-	void SetDynamicMaterial(ESLVizMarkerMaterialType InType);
+	void SetDynamicMaterial(ESLVizMaterialType InType);
 
 	// Set the color of the dynamic material
 	void SetDynamicMaterialColor(const FLinearColor& InColor);
@@ -77,7 +64,7 @@ protected:
 	UMaterialInstanceDynamic* DynamicMaterial;
 
 	// Dynamic material type
-	ESLVizMarkerMaterialType MaterialType;
+	ESLVizMaterialType MaterialType;
 
 	// Dynamic material current color
 	FLinearColor VisualColor;
