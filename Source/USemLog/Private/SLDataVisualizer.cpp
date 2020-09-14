@@ -868,14 +868,14 @@ void USLDataVisualizer::MarkerTests()
 		{
 			FLinearColor Col2 = FLinearColor::Gray;
 			Col2.A = 0.3;
-			//UVizHighlightMarker* HM = VizMarkerManager->CreateHighlightMarker(SkMA->GetSkeletalMeshComponent(), 0, Col2, EVizHighlightMarkerType::Translucent);
+			//UVizHighlightMarker* HM = MarkerManager->CreateHighlightMarker(SkMA->GetSkeletalMeshComponent(), 0, Col2, EVizHighlightMarkerType::Translucent);
 
 			//HM->Init(SkMA->GetSkeletalMeshComponent(), 1, Col2);
 			RightHamd->Init(SkMA->GetSkeletalMeshComponent(), 0, Col2);
 		}
 	}
 
-	//uint32 MarkerId = VizMarkerManager->CreateMarkerArray(Locations);
+	//uint32 MarkerId = MarkerManager->CreateMarkerArray(Locations);
 	//UE_LOG(LogTemp, Warning, TEXT("%s::%d Marker %ld created.."), *FString(__func__), __LINE__, MarkerId);
 #endif //SL_WITH_DATA_VIS
 }

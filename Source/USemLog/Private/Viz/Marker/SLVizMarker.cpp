@@ -329,7 +329,7 @@ void USLVizMarker::Init(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialInd
 	//int32 MatIdx = 0;
 	//for (auto M : SkeletalMesh->Materials)
 	//{
-	//	if (!MaterialIndexes.Contains(MatIdx))
+	//	if (!MaterialSlots.Contains(MatIdx))
 	//	{
 	//		M = MaterialInvisible;
 	//	}
@@ -366,7 +366,7 @@ void USLVizMarker::Init(USkeletalMeshComponent* SkMC, TArray<int32>& MaterialInd
 	//int32 MatIdx = 0;
 	//for (auto M : SkeletalMesh->Materials)
 	//{
-	//	if (!MaterialIndexes.Contains(MatIdx))
+	//	if (!MaterialSlots.Contains(MatIdx))
 	//	{
 	//		M = MaterialInvisible;
 	//	}

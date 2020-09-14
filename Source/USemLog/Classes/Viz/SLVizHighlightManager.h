@@ -26,15 +26,19 @@ struct USEMLOG_API FSLVizHighlightData
 	UPROPERTY()
 	TArray<UMaterialInterface*> OriginalMaterials;
 
-	// The dynamic material used for the highlight
+	// Material slots to which to apply the visual parameters (if empty, apply to all slots)
 	UPROPERTY()
-	UMaterialInstanceDynamic* DynamicMaterial;
+	TArray<int32> MaterialSlots;
 
 	// Default ctor
 	FSLVizHighlightData() {};
 
 	// Init ctor
 	FSLVizHighlightData(const TArray<UMaterialInterface*>& InMaterials) : OriginalMaterials(InMaterials) {};
+
+	// Init ctor
+	FSLVizHighlightData(const TArray<UMaterialInterface*>& InMaterials, const TArray<int32>& InMaterialSlots) 
+		: OriginalMaterials(InMaterials), MaterialSlots(InMaterialSlots){};
 };
 
 
@@ -70,23 +74,15 @@ protected:
 	// Callback function registered with global world delegates to reset materials to their original values
 	void OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanupResources);
 
-	// Callback function that will fire every time a world is destroyed.
-	void OnPreWorldFinishDestroy(UWorld* World);
-
-	// PIE event
-	void OnPIETestEvent(bool bIsSimulating);
-
 	// Make sure the original materials are applied if the manager is destroyed or the level closed etc.
 	void RestoreOriginalMaterials();
 
 public:
 	// Highlight the given mesh component
-	void Highlight(UMeshComponent* MC,
-		const TArray<int32>& MaterialIndexes = TArray<int32>(),
-		const FSLVizVisualParams& VisualParams = FSLVizVisualParams());
+	void Highlight(UMeshComponent* MC, const FSLVizVisualParams& VisualParams = FSLVizVisualParams());
 
 	// Update the visual of the given mesh component
-	void UpdateVisual(const FSLVizVisualParams& VisualParams);
+	void UpdateHighlight(UMeshComponent* MC, const FSLVizVisualParams& VisualParams);
 
 	// Clear highlight of a static mesh
 	void ClearHighlight(UMeshComponent* MC);
@@ -107,8 +103,7 @@ private:
 
 protected:
 	// List of the highlighted static meshes with their original materials
-	UPROPERTY()
-	//TMap<UStaticMeshComponent*, TArray<UMaterialInterface*>> HighlightedStaticMeshes;
+	//UPROPERTY()
 	TMap<UMeshComponent*, FSLVizHighlightData> HighlightedStaticMeshes;
 
 private:

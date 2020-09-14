@@ -20,7 +20,7 @@ class UMeshComponent;
  * Highlight individuals test hack struct
  */
 USTRUCT()
-struct FSLVizHighlightParams
+struct FSLVizHighlightTestStruct
 {
 	GENERATED_BODY();
 
@@ -39,7 +39,7 @@ struct FSLVizHighlightParams
  * Marker test hack struct
  */
 USTRUCT()
-struct FSLVizPrimitiveMarkerParams
+struct FSLVizPrimitiveMarkerTestStruct
 {
 	GENERATED_BODY();
 
@@ -61,6 +61,7 @@ struct FSLVizPrimitiveMarkerParams
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit;
 };
+
 
 /*
 * 
@@ -96,19 +97,55 @@ public:
 	// Clear any created markers / viz components
 	void Reset();
 
+	/* Highlights */
+	// Highlight the individual (returns false if the individual is not found or is not of visual type)
+	bool HighlightIndividual(const FString& Id,
+		const FLinearColor& Color = FLinearColor::Green,
+		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+
+	// Change the visual values of the highligted individual
+	bool UpdateIndividualHighlight(const FString& Id,
+		const FLinearColor& Color,
+		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+
+	// Remove highlight from individual (returns false if the individual not found or it is not highlighted)
+	bool RemoveIndividualHighlight(const FString& Id);
+
+	// Remove all individual highlights
+	void RemoveAllIndividualHighlights();
+
+
 
 	/* Markers */
 	// Create a primitive marker
-	bool CreatePrimitiveMarker(const FSLVizPrimitiveMarkerParams& Params);
+	bool CreatePrimitiveMarker(const FString& MarkerId,
+		const TArray<FTransform>& Poses,
+		ESLVizPrimitiveMarkerType PrimitiveType,
+		float Size,
+		const FLinearColor& Color = FLinearColor::Green,
+		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
-	//// Create marker with the given id
-	//bool CreateMarker(const FString& MarkerId, const FTransform& Pose, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
-	//bool CreateMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FSLVizMarkerVisualParams& VisualParams = FSLVizMarkerVisualParams());
-	//
-	//// Update the visual values of the marker
-	//bool UpdateMarkerVisual(const FString& MarkerId, const FSLVizMarkerVisualParams& VisualParams);
+	// Create a marker by cloning the visual of the given individual
+	bool CreateStaticMeshCloneMarker(const FString& MarkerId,
+		const TArray<FTransform>& Poses,
+		const FString& IndividualId,
+		const FLinearColor& Color = FLinearColor::Green,
+		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
+	//// Create a marker by cloning the visual of the given individual
+	//bool CreateSkeletalMeshCloneMarker(const FString& MarkerId,
+	//	const TArray<FTransform>& Poses,
+	//	const TMap<int32, FTransform>& BonePoses,
+	//	const FString& IndividualId,
+	//	const FLinearColor& Color = FLinearColor::Green,
+	//	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
+	//// Create a marker by cloning the visual of the given individual
+	//bool CreateBoneMeshCloneMarker(const FString& MarkerId,
+	//	const TArray<FTransform>& Poses,
+	//	const FString& IndividualId,
+	//	const FLinearColor& Color = FLinearColor::Green,
+	//	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Remove marker with the given id
 	bool RemoveMarker(const FString& Id);
@@ -117,51 +154,43 @@ public:
 	void RemoveAllMarkers();
 
 
-	///* Highlights */
-	// Highlight the individual (returns false if the individual is not found or is not of visual type)
-	bool HighlightIndividual(const FString& Id, const FSLVizHighlightParams& Params = FSLVizHighlightParams());
-
-	//// Change the visual values of the highligted individual
-	//bool UpdateIndividualHighlight(const FString& Id, const FSLVizHighlightMarkerVisualParams& VisualParams);
-
-	//// Remove highlight from individual (returns false if the individual not found or it is not highlighted)
-	//bool RemoveIndividualHighlight(const FString& Id);
-
-	// Remove all individual highlights
-	void RemoveAllIndividualHighlights();
 
 private:
-	// Get the vizualization marker manager from the world (or spawn a new one)
-	bool SetVizMarkerManager();
+	/* Managers */
+	// Get the individual manager from the world (or spawn a new one)
+	bool SetIndividualManager();
 
 	// Get the vizualization highlight manager from the world (or spawn a new one)
 	bool SetVizHighlightManager();
 
+	// Get the vizualization marker manager from the world (or spawn a new one)
+	bool SetVizMarkerManager();
+
 	// Get the vizualization world manager from the world (or spawn a new one)
 	bool SetVizWorldManager();
-
-	// Get the individual manager from the world (or spawn a new one)
-	bool SetIndividualManager();
 	
 private:
 	// True if the manager is initialized
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	bool bIsInit;
 
+	// Keep track of the markers in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TMap<FString, USLVizBaseMarker*> Markers;
 
-	// Keep track of the highlighted individuals
+	// Keep track of the highlighted individuals in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	TMap<FString, UMeshComponent*> HighlightedIndividuals;
+	TMap<FString, FSLVizIndividualHighlightData> HighlightedIndividuals;
 
+
+	/* Managers */
 	// Keeps track of all the drawn markers in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	ASLVizMarkerManager* VizMarkerManager;
+	ASLVizMarkerManager* MarkerManager;
 
 	// Keeps track of all the highlighted meshes in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	ASLVizHighlightManager* VizHighlightManager;
+	ASLVizHighlightManager* HighlightManager;
 
 	// Keeps track of the episode replay visualization
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
@@ -173,23 +202,24 @@ private:
 
 
 
+
 	/* Editor button hacks */
 	// Triggers a call to init
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bExecuteInitButtonHack = false;
 
-	//// Marker cmd hack
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	//TArray<FSLVizMarkerCmdHack> MarkerValuesHack;
-
-	//// Highlight commands array
-	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	//TArray<FSLVizHighlightIndividualCmdHack> HighlightValuesHack;
+	// Highlight test
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	TArray<FSLVizHighlightTestStruct> HighlightTestValuesHack;
 
 	// Primitive marker tests
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	TArray<FSLVizPrimitiveMarkerParams> PrimitiveMarkerTestHack;
+	TArray<FSLVizPrimitiveMarkerTestStruct> PrimitiveMarkerTestHack;
 	
+	// Ids to remove can be highlights or markers
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	TArray<FString> RemoveTestHack;
+
 	// Execute marker commands
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bExecuteButtonHack = false;

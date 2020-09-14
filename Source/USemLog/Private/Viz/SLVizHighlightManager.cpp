@@ -7,7 +7,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 
 #if WITH_EDITOR
-#include "Editor.h" // for FEditorDelegates
+#include "Editor.h" // for Editor Delegates
 #endif
 
 // Sets default values for this component's properties
@@ -90,19 +90,6 @@ void ASLVizHighlightManager::OnWorldCleanup(UWorld* World, bool bSessionEnded, b
 	RestoreOriginalMaterials();
 }
 
-// Callback function that will fire every time a world is destroyed.
-void ASLVizHighlightManager::OnPreWorldFinishDestroy(UWorld* World)
-{
-	RestoreOriginalMaterials();
-}
-
-// PIE test event
-void ASLVizHighlightManager::OnPIETestEvent(bool bIsSimulating)
-{
-	UE_LOG(LogTemp, Log, TEXT("%s::%d "), *FString(__FUNCTION__), __LINE__);
-}
-
-
 // Make sure the original materials are applied if the manager is destroyed or the level closed etc.
 void ASLVizHighlightManager::RestoreOriginalMaterials()
 {
@@ -112,17 +99,17 @@ void ASLVizHighlightManager::RestoreOriginalMaterials()
 
 
 // Highlight a static mesh
-void ASLVizHighlightManager::Highlight(UMeshComponent* MC, const TArray<int32>& MaterialIndexes, const FSLVizVisualParams& VisualParams)
+void ASLVizHighlightManager::Highlight(UMeshComponent* MC, const FSLVizVisualParams& VisualParams)
 {
-	// Cache original materials
-	HighlightedStaticMeshes.Add(MC, MC->GetMaterials());
+	// Cache the original materials
+	HighlightedStaticMeshes.Add(MC, FSLVizHighlightData(MC->GetMaterials(), VisualParams.MaterialSlots));
 
 	UMaterialInstanceDynamic* DynMat = CreateTransientMID(VisualParams.MaterialType);
 	DynMat->SetVectorParameterValue(FName("Color"), VisualParams.Color);
 	
-	if (MaterialIndexes.Num() > 0)
+	if (VisualParams.MaterialSlots.Num() > 0)
 	{
-		for (int32 MatIdx : MaterialIndexes)
+		for (int32 MatIdx : VisualParams.MaterialSlots)
 		{
 			MC->SetMaterial(MatIdx, DynMat);
 		}
@@ -137,20 +124,50 @@ void ASLVizHighlightManager::Highlight(UMeshComponent* MC, const TArray<int32>& 
 }
 
 // Update the visual of the given mesh component
-void ASLVizHighlightManager::UpdateVisual(const FSLVizVisualParams& VisualParams)
+void ASLVizHighlightManager::UpdateHighlight(UMeshComponent* MC, const FSLVizVisualParams& VisualParams)
 {
+	if (auto HighlightData = HighlightedStaticMeshes.Find(MC))
+	{
+		UMaterialInstanceDynamic* DynMat = CreateTransientMID(VisualParams.MaterialType);
+		DynMat->SetVectorParameterValue(FName("Color"), VisualParams.Color);
+
+		if (HighlightData->MaterialSlots.Num() > 0)
+		{
+			for (int32 MatIdx : HighlightData->MaterialSlots)
+			{
+				MC->SetMaterial(MatIdx, DynMat);
+			}
+		}
+		else
+		{
+			for (int32 MatIdx = 0; MatIdx < MC->GetNumMaterials(); ++MatIdx)
+			{
+				MC->SetMaterial(MatIdx, DynMat);
+			}
+		}
+	}
 }
 
 // Clear highlight of a static mesh
 void ASLVizHighlightManager::ClearHighlight(UMeshComponent* MC)
 {
-	FSLVizHighlightData OriginalMaterials;
-	if (HighlightedStaticMeshes.RemoveAndCopyValue(MC, OriginalMaterials))
+	FSLVizHighlightData HighlightData;
+	if (HighlightedStaticMeshes.RemoveAndCopyValue(MC, HighlightData))
 	{
-		for (int32 MatIdx = 0; MatIdx < OriginalMaterials.OriginalMaterials.Num(); ++MatIdx)
+		if (HighlightData.MaterialSlots.Num() > 0)
 		{
-			MC->SetMaterial(MatIdx, OriginalMaterials.OriginalMaterials[MatIdx]);
-		}		
+			for (int32 MatIdx : HighlightData.MaterialSlots)
+			{
+				MC->SetMaterial(MatIdx, HighlightData.OriginalMaterials[MatIdx]);
+			}
+		}
+		else
+		{
+			for (int32 MatIdx = 0; MatIdx < HighlightData.OriginalMaterials.Num(); ++MatIdx)
+			{
+				MC->SetMaterial(MatIdx, HighlightData.OriginalMaterials[MatIdx]);
+			}
+		}
 	}
 }
 
@@ -175,9 +192,9 @@ void ASLVizHighlightManager::BindDelgates()
 		FWorldDelegates::OnWorldCleanup.AddUObject(this, &ASLVizHighlightManager::OnWorldCleanup);
 	}
 #if WITH_EDITOR
-	if (!FEditorDelegates::EndPIE.IsBoundToObject(this))
+	if (!GEditor->OnEditorClose().IsBoundToObject(this))
 	{
-		FEditorDelegates::EndPIE.AddUObject(this, &ASLVizHighlightManager::OnPIETestEvent);
+		GEditor->OnEditorClose().AddUObject(this, &ASLVizHighlightManager::RestoreOriginalMaterials);
 	}
 #endif
 }
@@ -187,9 +204,8 @@ void ASLVizHighlightManager::RemoveDelegates()
 {
 	FWorldDelegates::OnWorldCleanup.RemoveAll(this);
 #if WITH_EDITOR
-	FEditorDelegates::EndPIE.RemoveAll(this);
+	GEditor->OnEditorClose().RemoveAll(this);
 #endif
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s %p"), *FString(__FUNCTION__), __LINE__, *GetName(), this);
 }
 
 
