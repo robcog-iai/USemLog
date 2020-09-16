@@ -1,7 +1,7 @@
 // Copyright 2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Viz/SLVizWorldManager.h"
+#include "Viz/SLVizEpisodeReplayManager.h"
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Components/StaticMeshComponent.h"
@@ -12,12 +12,17 @@
 #include "EngineUtils.h"
 #include "ProfilerCommon.h" // FBinaryFindIndex
 
+#if WITH_EDITOR
+#include "UnrealEdGlobals.h"
+#include "Editor/UnrealEdEngine.h"
+#include "Editor/EditorEngine.h"
+#endif // WITH_EDITOR
 
 // Sets default values
-ASLVizWorldManager::ASLVizWorldManager()
+ASLVizEpisodeReplayManager::ASLVizEpisodeReplayManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	bIsReady = false;
+	bIsInit = false;
 	CurrFrameIdx = INDEX_NONE;
 	ReplayFirstFrameIdx = INDEX_NONE;
 	ReplayLastFrameIdx = INDEX_NONE;
@@ -30,58 +35,160 @@ ASLVizWorldManager::ASLVizWorldManager()
 #endif // WITH_EDITORONLY_DATA
 }
 
-// Set world to visual only, create poseable skeletal mesh components
-void ASLVizWorldManager::Setup()
+// Set the whole world as a visual, disable physics, collisions, attachments, unnecesary components
+void ASLVizEpisodeReplayManager::SetWorldAsVisualOnly()
 {
-	if (!bIsReady)
+	// Hide default pawn
+	if (GetWorld()->GetFirstPlayerController())
 	{
-		SetupWorldAsVisual();
-		bIsReady = true;
+		GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
 	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Default pawn/spectator remained visible.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	// Iterate all actors
+	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
+	{
+		// Make sure all actors have no physics, have no collisions and are movable
+		ActItr->DisableComponentsSimulatePhysics();
+		ActItr->SetActorEnableCollision(ECollisionEnabled::NoCollision);
+		if (ActItr->GetRootComponent())
+		{
+			ActItr->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+		}
+
+		// Clear any attachments between actors
+		TArray<AActor*> AttachedActors;
+		ActItr->GetAttachedActors(AttachedActors);
+		for (auto& AttAct : AttachedActors)
+		{
+			AttAct->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		}
+
+		// Create poseable meshes if actor is skeletal
+		if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(*ActItr))
+		{
+			SkeletalActorToPoseableMeshMap.Add(SkMA, CreateNewPoseableMeshComponent(SkMA));
+		}
+
+		// Remove components, or the actor itself if not required in the world
+		//ShouldActorBeRemoved(*ActItr);
+	}
+}
+
+// Called when the game starts or when spawned
+void ASLVizEpisodeReplayManager::BeginPlay()
+{
+	Super::BeginPlay();
+	Init();
+}
+
+#if WITH_EDITOR
+void ASLVizEpisodeReplayManager::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property name
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+		PropertyChangedEvent.Property->GetFName() : NAME_None;
+
+	/* Button hacks */
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizEpisodeReplayManager, bExecuteInitButtonHack))
+	{
+		bExecuteInitButtonHack = false;
+		Init();
+	}
+
+	TMap<float, FString> Map;
+
+	TArray<float> Arr;
+
+
+
+	
+}
+#endif // WITH_EDITOR
+
+// Called when actor removed from game or game ended
+void ASLVizEpisodeReplayManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+}
+
+// Set world to visual only, create poseable skeletal mesh components
+void ASLVizEpisodeReplayManager::Init()
+{
+	if (bIsInit)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Replay manager (%s) is already init.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+#if WITH_EDITOR
+	
+	// True if we are in the editor.
+	if (!GIsEditor)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Replay manager (%s) is not in the editor.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+	}
+
+	// GEditor->PlayWorld: A pointer to a UWorld that is the duplicated/saved-loaded to be played in with "Play From Here"
+	if (GEditor->PlayWorld || GIsPlayInEditorWorld)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Replay manager (%s): the editor is currently in a play mode.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+	}
+#endif // WITH_EDITOR
+	
+	SetWorldAsVisualOnly();
+	bIsInit = true;	
 }
 
 
 // Add a frame (make sure these are ordered)
-void ASLVizWorldManager::AddFrame(float Timestamp,
+void ASLVizEpisodeReplayManager::AddFrame(float Timestamp,
 	const TMap<AStaticMeshActor*, FTransform>& InEntityPoses,
 	const TMap<ASkeletalMeshActor*, TPair<FTransform, TMap<FString, FTransform>>>& InSkeletalPoses)
 {
-	if (bIsReady)
-	{
-		// Add time
-		Timestamps.Emplace(Timestamp);
+	//if (bIsInit)
+	//{
+	//	// Add time
+	//	Timestamps.Emplace(Timestamp);
 
-		// Re-map to poseable mesh components
-		TMap<UPoseableMeshComponent*, TPair<FTransform, TMap<FString, FTransform>>> PoseableSkeletalPoses;
-		for (const auto& SkP : InSkeletalPoses)
-		{
-			if (UPoseableMeshComponent** PMC = SkeletalActorToPoseableMeshMap.Find(SkP.Key))
-			{
-				PoseableSkeletalPoses.Emplace(*PMC, SkP.Value);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no poseable mesh component created.."), *FString(__FUNCTION__), __LINE__, *SkP.Key->GetName());
-			}
+	//	// Re-map to poseable mesh components
+	//	TMap<UPoseableMeshComponent*, TPair<FTransform, TMap<FString, FTransform>>> PoseableSkeletalPoses;
+	//	for (const auto& SkP : InSkeletalPoses)
+	//	{
+	//		if (UPoseableMeshComponent** PMC = SkeletalActorToPoseableMeshMap.Find(SkP.Key))
+	//		{
+	//			PoseableSkeletalPoses.Emplace(*PMC, SkP.Value);
+	//		}
+	//		else
+	//		{
+	//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no poseable mesh component created.."), *FString(__FUNCTION__), __LINE__, *SkP.Key->GetName());
+	//		}
 
-		}
+	//	}
 
-		// Create and add frame
-		FSLVizWorldStateFrame Frame;
-		Frame.EntityPoses = InEntityPoses;
-		Frame.SkeletalPoses = PoseableSkeletalPoses;
+	//	// Create and add frame
+	//	FSLVizEpisodeFrame Frame;
+	//	Frame.EntityPoses = InEntityPoses;
+	//	Frame.SkeletalPoses = PoseableSkeletalPoses;
 
-		Frames.Emplace(Frame);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Init before, poseable meshes needs to be created beforeheand.."), *FString(__FUNCTION__), __LINE__);
-	}
+	//	Frames.Emplace(Frame);
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Init before, poseable meshes needs to be created beforeheand.."), *FString(__FUNCTION__), __LINE__);
+	//}
 }
 
 
 // Clear all frames related data, keep mappings
-void ASLVizWorldManager::ClearFrames()
+void ASLVizEpisodeReplayManager::ClearFrames()
 {
 	GetWorld()->GetTimerManager().ClearTimer(ReplayTimerHandle);
 	Timestamps.Empty();
@@ -89,7 +196,7 @@ void ASLVizWorldManager::ClearFrames()
 }
 
 // Goto timestamp, if timestamp is too large it goes to the last frame, if too small goes to the first frame
-void ASLVizWorldManager::GoTo(float Timestamp)
+void ASLVizEpisodeReplayManager::GoTo(float Timestamp)
 {
 	CurrFrameIdx = FBinaryFindIndex::LessEqual(Timestamps, Timestamp);
 	if (Frames.IsValidIndex(CurrFrameIdx))
@@ -103,7 +210,7 @@ void ASLVizWorldManager::GoTo(float Timestamp)
 }
 
 // Goto the next nth frame
-void ASLVizWorldManager::Next(int32 StepSize, bool bLoop)
+void ASLVizEpisodeReplayManager::Next(int32 StepSize, bool bLoop)
 {	
 	if (Frames.Num() < 1)
 	{
@@ -142,7 +249,7 @@ void ASLVizWorldManager::Next(int32 StepSize, bool bLoop)
 }
 
 // Goto the previous nth frame
-void ASLVizWorldManager::Previous(int32 StepSize, bool bLoop)
+void ASLVizEpisodeReplayManager::Previous(int32 StepSize, bool bLoop)
 {
 	if (Frames.Num() < 1)
 	{
@@ -181,7 +288,7 @@ void ASLVizWorldManager::Previous(int32 StepSize, bool bLoop)
 }
 
 // Replay all the episode with the given update rate (by default the update rate is calculated as the average of the first X frames)
-void ASLVizWorldManager::Replay(int32 StepSize, float UpdateRate, bool bLoop)
+void ASLVizEpisodeReplayManager::Replay(int32 StepSize, float UpdateRate, bool bLoop)
 {
 	if (Frames.Num() < 2)
 	{
@@ -211,7 +318,7 @@ void ASLVizWorldManager::Replay(int32 StepSize, float UpdateRate, bool bLoop)
 		}
 
 		// Use delay since the first frame was already applied
-		GetWorld()->GetTimerManager().SetTimer(ReplayTimerHandle, this, &ASLVizWorldManager::TimerCallback, 0.01, true, 0.01);
+		GetWorld()->GetTimerManager().SetTimer(ReplayTimerHandle, this, &ASLVizEpisodeReplayManager::TimerCallback, 0.01, true, 0.01);
 	}
 	else
 	{
@@ -222,7 +329,7 @@ void ASLVizWorldManager::Replay(int32 StepSize, float UpdateRate, bool bLoop)
 }
 
 // Replay the episode between the timestamp with the given update rate (by default the update rate is calculated as the average of the first X frames)
-void ASLVizWorldManager::Replay(float StartTime, float EndTime, int32 StepSize, float UpdateRate, bool bLoop)
+void ASLVizEpisodeReplayManager::Replay(float StartTime, float EndTime, int32 StepSize, float UpdateRate, bool bLoop)
 {
 	if (Frames.Num() < 2)
 	{
@@ -252,7 +359,7 @@ void ASLVizWorldManager::Replay(float StartTime, float EndTime, int32 StepSize, 
 		}
 
 		// Use delay since the first frame was already applied
-		GetWorld()->GetTimerManager().SetTimer(ReplayTimerHandle, this, &ASLVizWorldManager::TimerCallback, UpdateRate, true, UpdateRate);
+		GetWorld()->GetTimerManager().SetTimer(ReplayTimerHandle, this, &ASLVizEpisodeReplayManager::TimerCallback, UpdateRate, true, UpdateRate);
 	}
 	else
 	{
@@ -263,7 +370,7 @@ void ASLVizWorldManager::Replay(float StartTime, float EndTime, int32 StepSize, 
 }
 
 // Pause / start replay
-void ASLVizWorldManager::ToggleReplay()
+void ASLVizEpisodeReplayManager::ToggleReplay()
 {
 	if (ReplayTimerHandle.IsValid())
 	{
@@ -283,7 +390,7 @@ void ASLVizWorldManager::ToggleReplay()
 }
 
 // Set replay to pause or play
-void ASLVizWorldManager::SetPauseReplay(bool bPause)
+void ASLVizEpisodeReplayManager::SetPauseReplay(bool bPause)
 {
 	if (ReplayTimerHandle.IsValid())
 	{
@@ -303,7 +410,7 @@ void ASLVizWorldManager::SetPauseReplay(bool bPause)
 }
 
 // Replay timer callback
-void ASLVizWorldManager::TimerCallback()
+void ASLVizEpisodeReplayManager::TimerCallback()
 {
 	if (CurrFrameIdx <= ReplayLastFrameIdx - ReplayStepSize)
 	{
@@ -330,51 +437,10 @@ void ASLVizWorldManager::TimerCallback()
 	}
 }
 
-// Set the whole world as a visual, disable physics, collisions, attachments, unnecesary components
-void ASLVizWorldManager::SetupWorldAsVisual()
-{
-	// Hide default pawn
-	if (GetWorld()->GetFirstPlayerController())
-	{
-		GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Default pawn/spectator remained visible.."), *FString(__FUNCTION__), __LINE__);
-	}
 
-	// Iterate all actors
-	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
-	{
-		// Make sure all actors have no physics, have no collisions and are movable
-		ActItr->DisableComponentsSimulatePhysics();
-		ActItr->SetActorEnableCollision(ECollisionEnabled::NoCollision);
-		if (ActItr->GetRootComponent())
-		{
-			ActItr->GetRootComponent()->SetMobility(EComponentMobility::Movable);
-		}
-
-		// Clear any attachments between actors
-		TArray<AActor*> AttachedActors;
-		ActItr->GetAttachedActors(AttachedActors);
-		for (auto& AttAct : AttachedActors)
-		{
-			AttAct->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		}
-
-		// Create poseable meshes if actor is skeletal
-		if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(*ActItr))
-		{
-			SkeletalActorToPoseableMeshMap.Add(SkMA, CreateNewPoseableMeshComponent(SkMA));
-		}
-
-		// Remove components, or the actor itself if not required in the world
-		//CleanActor(*ActItr);
-	}
-}
 
 // Check if actor or any of its components should be removed
-void ASLVizWorldManager::CleanActor(AActor* Actor) const
+void ASLVizEpisodeReplayManager::ShouldActorBeRemoved(AActor* Actor) const
 {
 	// !!  Done in SemLog !!
 
@@ -403,7 +469,7 @@ void ASLVizWorldManager::CleanActor(AActor* Actor) const
 	//	|| Actor->IsA(ACameraActor::StaticClass())
 	//	|| Actor->IsA(ADefaultPawn::StaticClass())
 	//	|| Actor->IsA(AVizMarkerManager::StaticClass())
-	//	|| Actor->IsA(ASLVizWorldManager::StaticClass())
+	//	|| Actor->IsA(ASLVizEpisodeReplayManager::StaticClass())
 	//	)
 	//{
 	//	//UE_LOG(LogTemp, Log, TEXT("%s::%d Actor %s is whitelisted, none of its components will be removed.."),
@@ -437,7 +503,7 @@ void ASLVizWorldManager::CleanActor(AActor* Actor) const
 }
 
 // Hide skeletal mesh components and create new visible poseable mesh components
-UPoseableMeshComponent* ASLVizWorldManager::CreateNewPoseableMeshComponent(ASkeletalMeshActor* SkeletalActor) const
+UPoseableMeshComponent* ASLVizEpisodeReplayManager::CreateNewPoseableMeshComponent(ASkeletalMeshActor* SkeletalActor) const
 {
 	UPoseableMeshComponent* PMC = NewObject<UPoseableMeshComponent>(SkeletalActor);
 	PMC->SetSkeletalMesh(SkeletalActor->GetSkeletalMeshComponent()->SkeletalMesh);
@@ -451,7 +517,7 @@ UPoseableMeshComponent* ASLVizWorldManager::CreateNewPoseableMeshComponent(ASkel
 }
 
 // Calculate an average update rate from the timestamps
-float ASLVizWorldManager::GetReplayUpdateRateFromTimestampsAverage(int32 Steps) const
+float ASLVizEpisodeReplayManager::GetReplayUpdateRateFromTimestampsAverage(int32 Steps) const
 {
 	// Make an average value using the frist X timestamps
 	int32 StartFrameIdx = Timestamps.Num() / 2;

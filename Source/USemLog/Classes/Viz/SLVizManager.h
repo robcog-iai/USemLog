@@ -11,7 +11,7 @@
 // Forward declarations
 class ASLVizHighlightManager;
 class ASLVizMarkerManager;
-class ASLVizWorldManager;
+class ASLVizEpisodeReplayManager;
 class ASLIndividualManager;
 class USLVizBaseMarker;
 class UMeshComponent;
@@ -114,9 +114,7 @@ public:
 	// Remove all individual highlights
 	void RemoveAllIndividualHighlights();
 
-
-
-	/* Markers */
+	/* Primitive markers */
 	// Create a primitive marker
 	bool CreatePrimitiveMarker(const FString& MarkerId,
 		const TArray<FTransform>& Poses,
@@ -125,35 +123,47 @@ public:
 		const FLinearColor& Color = FLinearColor::Green,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
+	/* Static mesh markers */
+	// Create a marker by cloning the visual of the given individual (use original materials)
+	bool CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
+		const FString& IndividualId);
+
 	// Create a marker by cloning the visual of the given individual
-	bool CreateStaticMeshCloneMarker(const FString& MarkerId,
+	bool CreateStaticMeshMarker(const FString& MarkerId,
 		const TArray<FTransform>& Poses,
 		const FString& IndividualId,
-		const FLinearColor& Color = FLinearColor::Green,
+		const FLinearColor& Color,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
-	//// Create a marker by cloning the visual of the given individual
-	//bool CreateSkeletalMeshCloneMarker(const FString& MarkerId,
-	//	const TArray<FTransform>& Poses,
-	//	const TMap<int32, FTransform>& BonePoses,
-	//	const FString& IndividualId,
-	//	const FLinearColor& Color = FLinearColor::Green,
-	//	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+	// Create a marker by cloning the visual of the given skeletal individual (use original materials)
+	bool CreateSkeletalMeshMarker(const FString& MarkerId,	const TArray<FTransform>& Poses,
+		const TMap<int32, FTransform>& BonePoses, const FString& IndividualId);
 
-	//// Create a marker by cloning the visual of the given individual
-	//bool CreateBoneMeshCloneMarker(const FString& MarkerId,
-	//	const TArray<FTransform>& Poses,
-	//	const FString& IndividualId,
-	//	const FLinearColor& Color = FLinearColor::Green,
-	//	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+	// Create a marker by cloning the visual of the given skeletal individual
+	bool CreateSkeletalMeshMarker(const FString& MarkerId,
+		const TArray<FTransform>& Poses,
+		const TMap<int32, FTransform>& BonePoses,
+		const FString& IndividualId,
+		const FLinearColor& Color,
+		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+
+	// Create a marker by cloning the visual of the given individual (use original materials)
+	bool CreateBoneMeshMarker(const FString& MarkerId,
+		const TArray<FTransform>& Poses,
+		const FString& IndividualId);
+
+	// Create a marker by cloning the visual of the given individual
+	bool CreateBoneMeshMarker(const FString& MarkerId,
+		const TArray<FTransform>& Poses,
+		const FString& IndividualId,
+		const FLinearColor& Color,
+		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Remove marker with the given id
 	bool RemoveMarker(const FString& Id);
 
 	// Remove all markers
 	void RemoveAllMarkers();
-
-
 
 private:
 	/* Managers */
@@ -167,7 +177,7 @@ private:
 	bool SetVizMarkerManager();
 
 	// Get the vizualization world manager from the world (or spawn a new one)
-	bool SetVizWorldManager();
+	bool SetEpisodeReplayManager();
 	
 private:
 	// True if the manager is initialized
@@ -194,7 +204,7 @@ private:
 
 	// Keeps track of the episode replay visualization
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	ASLVizWorldManager* VizWorldManager;
+	ASLVizEpisodeReplayManager* EpisodeReplayManager;
 
 	// Keeps access to all the individuals in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")

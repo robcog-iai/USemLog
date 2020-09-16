@@ -208,7 +208,7 @@ void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
 // Get the mongo query manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetMongoQueryManager()
 {
-	if (MongoQueryManager->IsValidLowLevel() && !MongoQueryManager->IsPendingKillOrUnreachable())
+	if (MongoQueryManager && MongoQueryManager->IsValidLowLevel() && !MongoQueryManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}
@@ -233,7 +233,7 @@ bool ASLKnowrobManager::SetMongoQueryManager()
 // Get the individual manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetIndividualManager()
 {
-	if (IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}
@@ -258,7 +258,7 @@ bool ASLKnowrobManager::SetIndividualManager()
 // Get the viz manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetVizManager()
 {
-	if (VizManager->IsValidLowLevel() && !VizManager->IsPendingKillOrUnreachable())
+	if (VizManager && VizManager->IsValidLowLevel() && !VizManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}

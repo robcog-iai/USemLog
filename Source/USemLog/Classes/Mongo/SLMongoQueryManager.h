@@ -58,6 +58,11 @@ public:
 	TArray<FTransform> GetIndividualTrajectory(const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT = -1.f);
 	TArray<FTransform> GetIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT = -1.f) const;
 
+	// Get the episode data
+	void GetEpisodeData(const FString& InTaskId, const FString& InEpisodeId, TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData);
+	void GetEpisodeData(const FString& InEpisodeId, TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData);
+	void GetEpisodeData(TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData) const;
+
 protected:
 	// True when successfully connected to the server
 	bool bConnected : 1;
@@ -135,5 +140,9 @@ private:
 	// Triggers a trajectory query call
 	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
 	bool bTrajectoryQueryButtonHack = false;
+
+	// Triggers an episode query call
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	bool bEpisodeDataButtonHack = false;
 
 };

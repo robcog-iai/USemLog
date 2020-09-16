@@ -52,11 +52,20 @@ public:
 	// Get the poses of the individual between the given timestamps
 	TArray<FTransform> GetIndividualTrajectory(const FString& Id, float StartTs, float EndTs, float DeltaT = -1.0f) const;
 
+	// Get the whole episode data
+	void GetEpisodeData(TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData) const;
+
+	// Get the episode data at the given timestamp (frame)
+	TMap<FString, FTransform> GetFrameData(float Ts);
+
 private:
 #if SL_WITH_LIBMONGO_C
 	/* Helpers */
-	// Get the pose data from the document
+	// Get the pose data from bson document
 	FTransform GetPose(const bson_t* doc) const;
+
+	// Get the pose data from bson iterator
+	FTransform GetPose(const bson_iter_t* iter) const;
 
 	// Get the timestamp value from document (used for trajectory delta time comparison)
 	double GetTs(const bson_t* doc) const;

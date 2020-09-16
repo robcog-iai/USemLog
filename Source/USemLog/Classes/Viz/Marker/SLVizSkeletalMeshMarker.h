@@ -23,19 +23,25 @@ public:
 	// Constructor
 	USLVizSkeletalMeshMarker();
 
+	// Set the visual properties of the skeletal mesh (use original materials)
+	void SetVisual(USkeletalMesh* SkelMesh);
+
 	// Set the visual properties of the skeletal mesh
-	void SetVisual(USkeletalMesh* SkelMesh,
-		const FLinearColor& InColor = FLinearColor::Green,
+	void SetVisual(USkeletalMesh* SkelMesh,	const FLinearColor& InColor,
 		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
+
+	// Set the visual properties of the skeletal mesh, visualize only selected material index (use original materials)
+	void SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex);
 
 	// Set the visual properties of the skeletal mesh, visualize only selected material index
-	void SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex,
-		const FLinearColor& InColor = FLinearColor::Green,
+	void SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex, const FLinearColor& InColor,
 		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
 
+	// Visualize only selected material indexes (use original materials)
+	void SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes);
+
 	// Visualize only selected material indexes
-	void SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes,
-		const FLinearColor& InColor = FLinearColor::Green,
+	void SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes, const FLinearColor& InColor,
 		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
 
 	// Add instances at pose
@@ -62,8 +68,8 @@ protected:
 	/* End VizMarker interface */
 
 private:
-	//   Set visual without the materials (avoid boilerplate code)
-	void SetVisualWithoutTheMaterialSlots(USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMaterialType InMaterialType);
+	// Set visual without the materials (avoid boilerplate code)
+	void SetPoseableMeshComponentVisual(USkeletalMesh* SkelMesh);
 
 	// Create poseable mesh component instance attached and registered to this marker
 	UPoseableMeshComponent* CreateNewPoseableMeshInstance();

@@ -6,28 +6,30 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
 #include "TimerManager.h"
-#include "SLVizWorldManager.generated.h"
+#include "Components/PoseableMeshComponent.h"
+#include "SLVizEpisodeReplayManager.generated.h"
 
 // Forward declaration
 class AStaticMeshActor;
 class ASkeletalMeshActor;
-class UPoseableMeshComponent;
 
 /*
 * Structure holding the world state at a given timestamp
 */
-struct FSLVizWorldStateFrame
+struct FSLVizEpisodeFrame
 {
-	// The pose of all the entities (id to pose)
-	TMap<AStaticMeshActor*, FTransform> EntityPoses;
+	// Static mesh poses
+	TMap<AStaticMeshActor*, FTransform> StaticMeshPoses;
 
-	// The poses of all the skeletal actors and their bones (the poseable mesh component
-	TMap<UPoseableMeshComponent*, TPair<FTransform, TMap<FString, FTransform>>> SkeletalPoses;
+	// The poses of all the skeletal actors and their bones (the poseable mesh component)
+	TMap<UPoseableMeshComponent*, TPair<FTransform, TMap<int32, FTransform>>> SkeletalPoses;
+
+	// TODO robot poses
 
 	// Apply poses of this frame
 	void ApplyPoses()
 	{
-		for (const auto& EP : EntityPoses)
+		for (const auto& EP : StaticMeshPoses)
 		{
 			EP.Key->SetActorTransform(EP.Value);
 		}
@@ -38,7 +40,8 @@ struct FSLVizWorldStateFrame
 
 			for (auto& BP : SkP.Value.Value)
 			{
-				SkP.Key->SetBoneTransformByName(*BP.Key, BP.Value, EBoneSpaces::WorldSpace);
+				// TODO fname to int32
+				//SkP.Key->SetBoneTransformByName(*BP.Key, BP.Value, EBoneSpaces::WorldSpace);
 			}
 		}
 	}
@@ -48,20 +51,35 @@ struct FSLVizWorldStateFrame
 /**
  * Class to load and skim through episodes
  */
-UCLASS(ClassGroup = (SL), DisplayName = "SL Viz World Manager")
-class USEMLOG_API ASLVizWorldManager : public AInfo
+UCLASS(ClassGroup = (SL), DisplayName = "SL Viz Episode Replay Manager")
+class USEMLOG_API ASLVizEpisodeReplayManager : public AInfo
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASLVizWorldManager();
+	ASLVizEpisodeReplayManager();
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
+
+	// Called when actor removed from game or game ended
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	// Set world to visual only, create poseable skeletal mesh components
-	void Setup();
+	void Init();
 
 	// True if initalized
-	bool IsReady() const { return bIsReady; };
+	bool IsInit() const { return bIsInit; };
+
+	// TODO
+	// Load all data at once
 
 	// Add a frame (make sure these are ordered)
 	void AddFrame(float Timestamp,
@@ -96,12 +114,12 @@ protected:
 	// Replay timer callback
 	void TimerCallback();
 
-private:
 	// Remove unnecesary non-visual components/actors from world
-	void SetupWorldAsVisual();
+	void SetWorldAsVisualOnly();
 
+private:
 	// Check if actor or any of its components should be removed
-	void CleanActor(AActor* Actor) const;
+	void ShouldActorBeRemoved(AActor* Actor) const;
 
 	// Hide skeletal mesh components and create new visible poseable mesh components
 	UPoseableMeshComponent* CreateNewPoseableMeshComponent(ASkeletalMeshActor* SkeletalActor) const;
@@ -111,10 +129,13 @@ private:
 
 protected:
 	// Init flag
-	bool bIsReady;
+	bool bIsInit;
+
+	// Episode frames as a sorted map
+	TSortedMap<float, FSLVizEpisodeFrame> EpisodeFrames;
 
 	// Episode to skim through, synched with the timestamp array
-	TArray<FSLVizWorldStateFrame> Frames;
+	TArray<FSLVizEpisodeFrame> Frames;
 
 	// Pre sorted array of the timestamp synched with the frames array
 	TArray<float> Timestamps;
@@ -140,6 +161,13 @@ protected:
 private:
 	// Map of the skeletal mesh actor to its poseable mesh component
 	TMap<ASkeletalMeshActor*, UPoseableMeshComponent*> SkeletalActorToPoseableMeshMap;
+
+
+
+	/* Editor button hacks */
+	// Triggers a call to init
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bExecuteInitButtonHack = false;
 
 };
 

@@ -4,9 +4,13 @@
 #include "Viz/SLVizManager.h"
 #include "Viz/SLVizMarkerManager.h"
 #include "Viz/SLVizHighlightManager.h"
-#include "Viz/SLVizWorldManager.h"
+#include "Viz/SLVizEpisodeReplayManager.h"
 #include "Individuals/SLIndividualManager.h"
-#include "Individuals/Type/SLIndividualTypes.h"
+#include "Individuals/Type/SLRigidIndividual.h"
+#include "Individuals/Type/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLBoneIndividual.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "EngineUtils.h"
 
 // Sets default values
@@ -19,7 +23,7 @@ ASLVizManager::ASLVizManager()
 	IndividualManager = nullptr;
 	HighlightManager = nullptr;
 	MarkerManager = nullptr;
-	VizWorldManager = nullptr;
+	EpisodeReplayManager = nullptr;
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -154,7 +158,7 @@ bool ASLVizManager::Init()
 		RetValue = false;
 	}
 
-	if (!SetVizWorldManager())
+	if (!SetEpisodeReplayManager())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not set the viz world manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
@@ -171,7 +175,7 @@ void ASLVizManager::Reset()
 	IndividualManager = nullptr;
 	HighlightManager = nullptr;
 	MarkerManager = nullptr;
-	VizWorldManager = nullptr;
+	EpisodeReplayManager = nullptr;
 	bIsInit = false;
 }
 
@@ -336,8 +340,45 @@ bool ASLVizManager::CreatePrimitiveMarker(const FString& MarkerId,
 	return false;
 }
 
+// Create a marker by cloning the visual of the given individual (use original materials)
+bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Markers.Contains(MarkerId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
+		return false;
+	}
+
+	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	{
+		if (auto RI = Cast<USLRigidIndividual>(Individual))
+		{
+			UStaticMesh* SM = RI->GetStaticMeshComponent()->GetStaticMesh();
+			if (auto Marker = MarkerManager->CreateStaticMeshMarker(Poses, SM))
+			{
+				Markers.Add(MarkerId, Marker);
+				return true;
+			};
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+			return false;
+		}
+	}
+	return false;
+}
+
 // Create a marker by cloning the visual of the given individual
-bool ASLVizManager::CreateStaticMeshCloneMarker(const FString& MarkerId,
+bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId,
 	const TArray<FTransform>& Poses,
 	const FString& IndividualId,
 	const FLinearColor& Color,
@@ -374,7 +415,176 @@ bool ASLVizManager::CreateStaticMeshCloneMarker(const FString& MarkerId,
 			return false;
 		}
 	}
+	return false;
+}
 
+// Create a marker by cloning the visual of the given skeletal individual (use original materials)
+bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const TMap<int32, FTransform>& BonePoses, const FString& IndividualId)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Markers.Contains(MarkerId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
+		return false;
+	}
+
+	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	{
+		if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
+		{
+			USkeletalMesh* SkelM = SkI->GetSkeletalMeshComponent()->SkeletalMesh;
+			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM))
+			{
+				Markers.Add(MarkerId, Marker);
+				return true;
+			};
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+			return false;
+		}
+	}
+	return false;
+}
+
+// Create a marker by cloning the visual of the given skeletal individual
+bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const TMap<int32, FTransform>& BonePoses, const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Markers.Contains(MarkerId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
+		return false;
+	}
+
+	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	{
+		if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
+		{
+			USkeletalMesh* SkelM = SkI->GetSkeletalMeshComponent()->SkeletalMesh;
+			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM, Color, MaterialType))
+			{
+				Markers.Add(MarkerId, Marker);
+				return true;
+			};
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+			return false;
+		}
+	}
+	return false;
+}
+
+// Create a marker by cloning the visual of the given individual (use original materials)
+bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Markers.Contains(MarkerId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
+		return false;
+	}
+
+	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	{
+		if (auto BI = Cast<USLBoneIndividual>(Individual))
+		{
+			USkeletalMesh* SkelM = BI->GetSkeletalMeshComponent()->SkeletalMesh;
+			int32 BoneIndex = BI->GetBoneIndex();
+			int32 MaterialIndex = BI->GetMaterialIndex();
+			TArray<TMap<int32, FTransform>> BonePosesArray;
+			for (const auto& T : Poses)
+			{
+				TMap< int32, FTransform> Map;
+				Map.Emplace(BoneIndex, T);
+				BonePosesArray.Emplace(Map);
+			}
+
+			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM,
+				TArray<int32>{MaterialIndex}, BonePosesArray))
+			{
+				Markers.Add(MarkerId, Marker);
+				return true;
+			};
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+			return false;
+		}
+	}
+	return false;
+}
+
+// Create a marker by cloning the visual of the given individual
+bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Markers.Contains(MarkerId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
+		return false;
+	}
+
+	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	{
+		if (auto BI = Cast<USLBoneIndividual>(Individual))
+		{
+			USkeletalMesh* SkelM = BI->GetSkeletalMeshComponent()->SkeletalMesh;
+			int32 BoneIndex = BI->GetBoneIndex();
+			int32 MaterialIndex = BI->GetMaterialIndex();
+			TArray<TMap<int32, FTransform>> BonePosesArray;
+			for (const auto& T : Poses)
+			{
+				TMap< int32, FTransform> Map;
+				Map.Emplace(BoneIndex, T);
+				BonePosesArray.Emplace(Map);
+			}
+			
+			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM, Color, MaterialType,
+				TArray<int32>{MaterialIndex}, BonePosesArray))
+			{
+				Markers.Add(MarkerId, Marker);
+				return true;
+			};
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+			return false;
+		}
+	}
 	return false;
 }
 
@@ -493,27 +703,27 @@ bool ASLVizManager::SetVizMarkerManager()
 	return true;
 }
 
-// Get the vizualization world manager from the world (or spawn a new one)
-bool ASLVizManager::SetVizWorldManager()
+// Get the vizualization episode replay manager from the world (or spawn a new one)
+bool ASLVizManager::SetEpisodeReplayManager()
 {
-	if (VizWorldManager && VizWorldManager->IsValidLowLevel() && !VizWorldManager->IsPendingKillOrUnreachable())
+	if (EpisodeReplayManager && EpisodeReplayManager->IsValidLowLevel() && !EpisodeReplayManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}
 
-	for (TActorIterator<ASLVizWorldManager>Iter(GetWorld()); Iter; ++Iter)
+	for (TActorIterator<ASLVizEpisodeReplayManager>Iter(GetWorld()); Iter; ++Iter)
 	{
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
 		{
-			VizWorldManager = *Iter;
+			EpisodeReplayManager = *Iter;
 			return true;
 		}
 	}
 
 	// Spawning a new manager
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = TEXT("SL_VizWorldManager");
-	VizWorldManager = GetWorld()->SpawnActor<ASLVizWorldManager>(SpawnParams);
-	VizWorldManager->SetActorLabel(TEXT("SL_VizWorldManager"));
+	SpawnParams.Name = TEXT("SL_EpisodeReplayManager");
+	EpisodeReplayManager = GetWorld()->SpawnActor<ASLVizEpisodeReplayManager>(SpawnParams);
+	EpisodeReplayManager->SetActorLabel(TEXT("SL_EpisodeReplayManager"));
 	return true;
 }

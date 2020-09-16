@@ -14,12 +14,11 @@ USLVizSkeletalMeshMarker::USLVizSkeletalMeshMarker()
 	PMCRef = nullptr;
 }
 
-// Set the visual properties of the skeletal mesh
-void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh,
-	const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
+// Set the visual properties of the skeletal mesh (use original materials)
+void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh)
 {
 	// Create the poseable mesh reference and the dynamic material
-	SetVisualWithoutTheMaterialSlots(SkelMesh, InColor, InMaterialType);
+	SetPoseableMeshComponentVisual(SkelMesh);
 
 	// Apply dynamic material value
 	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
@@ -28,12 +27,49 @@ void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh,
 	}
 }
 
+// Set the visual properties of the skeletal mesh
+void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
+{
+	// Create the poseable mesh reference and the dynamic material
+	SetPoseableMeshComponentVisual(SkelMesh);
+
+	// Set the dynamic material
+	SetDynamicMaterial(InMaterialType);
+	SetDynamicMaterialColor(InColor);
+
+	// Apply dynamic material value
+	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
+	{
+		PMCRef->SetMaterial(MatIdx, DynamicMaterial);
+	}
+}
+
+// Set the visual properties of the skeletal mesh, visualize only selected material index (use original materials)
+void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex)
+{
+	// Create the poseable mesh reference and the dynamic material
+	SetPoseableMeshComponentVisual(SkelMesh);
+
+	// Hide unwanted material slots
+	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
+	{
+		if (MatIdx != MaterialIndex)
+		{
+			PMCRef->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible);
+		}
+	}
+}
+
 // Set the visual properties of the skeletal mesh, visualize only selected material index
 void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex,
 	const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
 {
 	// Create the poseable mesh reference and the dynamic material
-	SetVisualWithoutTheMaterialSlots(SkelMesh, InColor, InMaterialType);
+	SetPoseableMeshComponentVisual(SkelMesh);
+
+	// Set the dynamic material
+	SetDynamicMaterial(InMaterialType);
+	SetDynamicMaterialColor(InColor);
 
 	// Apply dynamic material value
 	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
@@ -42,13 +78,32 @@ void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, int32 Material
 			: PMCRef->SetMaterial(MatIdx, DynamicMaterial);
 	}
 }
+// Visualize only selected material indexes (use original materials)
+void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes)
+{
+	// Create the poseable mesh reference and the dynamic material
+	SetPoseableMeshComponentVisual(SkelMesh);
+
+	// Hide unwanted material slots
+	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
+	{
+		if (!MaterialIndexes.Contains(MatIdx))
+		{
+			PMCRef->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible);
+		}
+	}
+}
 
 // Visualize only selected material indexes
 void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes,
 	const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
 {
 	// Create the poseable mesh reference and the dynamic material
-	SetVisualWithoutTheMaterialSlots(SkelMesh, InColor, InMaterialType);
+	SetPoseableMeshComponentVisual(SkelMesh);
+
+	// Set the dynamic material
+	SetDynamicMaterial(InMaterialType);
+	SetDynamicMaterialColor(InColor);
 
 	// Apply dynamic material value
 	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
@@ -152,7 +207,7 @@ void USLVizSkeletalMeshMarker::ResetPoses()
 }
 
 //   Set visual without the materials (avoid boilerplate code)
-void USLVizSkeletalMeshMarker::SetVisualWithoutTheMaterialSlots(USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
+void USLVizSkeletalMeshMarker::SetPoseableMeshComponentVisual(USkeletalMesh* SkelMesh)
 {
 	// Clear any previous data
 	Reset();
@@ -171,10 +226,6 @@ void USLVizSkeletalMeshMarker::SetVisualWithoutTheMaterialSlots(USkeletalMesh* S
 
 	// Set the reference visual
 	PMCRef->SetSkeletalMesh(SkelMesh);
-
-	// Set the dynamic material
-	SetDynamicMaterial(InMaterialType);
-	SetDynamicMaterialColor(InColor);
 }
 
 // Create poseable mesh component instance attached and registered to this marker

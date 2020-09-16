@@ -23,10 +23,11 @@ public:
 	// Constructor
 	USLVizStaticMeshMarker();
 
+	// Set the visual properties of the instanced mesh using the mesh original materials
+	void SetVisual(UStaticMesh* SM);
+
 	// Set the visual properties of the instanced mesh
-	void SetVisual(UStaticMesh* SM,
-		const FLinearColor& InColor = FLinearColor::Green,
-		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
+	void SetVisual(UStaticMesh* SM,	const FLinearColor& InColor, ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
 
 	// Update the visual mesh type
 	void UpdateStaticMesh(UStaticMesh* SM);

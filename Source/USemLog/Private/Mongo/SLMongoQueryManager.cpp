@@ -99,6 +99,20 @@ void ASLMongoQueryManager::PostEditChangeProperty(struct FPropertyChangedEvent& 
 			UE_LOG(LogTemp, Warning, TEXT("\t\t\t\t Loc=%s; \t Quat=%s;"), *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString());
 		}
 	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bEpisodeDataButtonHack))
+	{
+		bEpisodeDataButtonHack = false;
+		TArray<TPair<float, TMap<FString, FTransform>>> EpisodeData;
+		GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack,	EpisodeData);
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d EpisodeDataNum=%ld; (%s:%s)"),
+			*FString(__FUNCTION__), __LINE__, EpisodeData.Num(), *TaskIdValueHack, *EpisodeIdValueHack);
+
+		for (const auto& Frame : EpisodeData)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("\t\t\t Frame: Ts=%f; \t IndividualsNum=%d;"), Frame.Key, Frame.Value.Num());
+		}
+	}
 }
 #endif // WITH_EDITOR
 
@@ -260,4 +274,36 @@ TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& 
 TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT) const
 {
 	return DBHandler.GetIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
+}
+
+// Get the episode data with task and episode init
+void ASLMongoQueryManager::GetEpisodeData(const FString& InTaskId, const FString& InEpisodeId, TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData)
+{
+	if (SetTask(InTaskId))
+	{
+		return GetEpisodeData(InEpisodeId, OutEpisodeData);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set task: %s .."), *FString(__FUNCTION__), __LINE__, *InTaskId);
+	}
+}
+
+// Get the episode data with episode init
+void ASLMongoQueryManager::GetEpisodeData(const FString& InEpisodeId, TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData)
+{
+	if (SetEpisode(InEpisodeId))
+	{
+		return GetEpisodeData(OutEpisodeData);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set episode: %s .."), *FString(__FUNCTION__), __LINE__, *InEpisodeId);
+	}
+}
+
+// Get the episode data
+void ASLMongoQueryManager::GetEpisodeData(TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData) const
+{
+	return DBHandler.GetEpisodeData(OutEpisodeData);
 }

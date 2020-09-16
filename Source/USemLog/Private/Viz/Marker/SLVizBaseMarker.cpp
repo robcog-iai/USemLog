@@ -40,7 +40,6 @@ void USLVizBaseMarker::DestroyComponent(bool bPromoteChildren)
 // Create the dynamic material
 void USLVizBaseMarker::SetDynamicMaterial(ESLVizMaterialType InType)
 {
-
 	if (DynamicMaterial && DynamicMaterial->IsValidLowLevel() && !DynamicMaterial->IsPendingKillOrUnreachable())
 	{
 		if (InType == MaterialType)
@@ -77,8 +76,6 @@ void USLVizBaseMarker::SetDynamicMaterial(ESLVizMaterialType InType)
 		DynamicMaterial = UMaterialInstanceDynamic::Create(VizAssetsContainer->MaterialLit, this);
 		MaterialType = ESLVizMaterialType::Lit;
 	}
-
-
 }
 
 // Set the color of the dynamic material

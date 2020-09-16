@@ -35,18 +35,25 @@ public:
 	// Clear all markers
 	void ClearAllMarkers();
 
+	/* Static mesh markers */
+	// Create a static mesh visual marker at the given pose (use original material)
+	USLVizStaticMeshMarker* CreateStaticMeshMarker(const FTransform& Pose, UStaticMesh* SM);
+
 	// Create a static mesh visual marker at the given pose
 	USLVizStaticMeshMarker* CreateStaticMeshMarker(const FTransform& Pose,
-		UStaticMesh* SM,
-		const FLinearColor& InColor = FLinearColor::Green,
+		UStaticMesh* SM, const FLinearColor& InColor,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Create a static mesh visual marker at the given poses
 	USLVizStaticMeshMarker* CreateStaticMeshMarker(const TArray<FTransform>& Poses,
-		UStaticMesh* SM,
-		const FLinearColor& InColor = FLinearColor::Green,
+		UStaticMesh* SM, const FLinearColor& InColor,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
+	// Create a static mesh visual marker at the given poses (use original material)
+	USLVizStaticMeshMarker* CreateStaticMeshMarker(const TArray<FTransform>& Poses,	UStaticMesh* SM);
+
+
+	/* Primitive mesh markers */
 	// Create a primitive marker at the given pose
 	USLVizPrimitiveMarker* CreatePrimitiveMarker(const FTransform& Pose,
 		ESLVizPrimitiveMarkerType PrimitiveType = ESLVizPrimitiveMarkerType::Box,
@@ -61,21 +68,34 @@ public:
 		const FLinearColor& InColor = FLinearColor::Green,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
-	// Create a skeletal mesh based marker at the given pose
-	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const FTransform& Pose,
-		USkeletalMesh* SkelMesh,
+
+	/* Skeletal mesh markers */
+	// Create a skeletal mesh based marker at the given pose (use original material)
+	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const FTransform& Pose, USkeletalMesh* SkelMesh,
 		const TArray<int32>& MaterialIndexes = TArray<int32>(),
-		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>(),
-		const FLinearColor& InColor = FLinearColor::Green,
-		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>());
 
 	// Create a skeletal mesh based marker at the given pose
-	USLVizSkeletalMeshMarker* CreateSkeletaleMarker(const TArray<FTransform>& Poses,
+	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const FTransform& Pose,
+		USkeletalMesh* SkelMesh, 
+		const FLinearColor& InColor,
+		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit,
+		const TArray<int32>& MaterialIndexes = TArray<int32>(),
+		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>());
+
+	// Create a skeletal mesh based marker at the given poses (use original material)
+	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TArray<FTransform>& Poses,
 		USkeletalMesh* SkelMesh,
 		const TArray<int32>& MaterialIndexes = TArray<int32>(),
-		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>(),
-		const FLinearColor& InColor = FLinearColor::Green,
-		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>());
+
+	// Create a skeletal mesh based marker at the given poses
+	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TArray<FTransform>& Poses,
+		USkeletalMesh* SkelMesh,
+		const FLinearColor& InColor,
+		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit,
+		const TArray<int32>& MaterialIndexes = TArray<int32>(),
+		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>());
 
 private:
 	// Create markers helper function

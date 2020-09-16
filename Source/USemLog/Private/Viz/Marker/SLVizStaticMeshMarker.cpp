@@ -15,6 +15,25 @@ USLVizStaticMeshMarker::USLVizStaticMeshMarker()
 	ISMC = nullptr;	
 }
 
+// Set the visual properties of the instanced mesh using the mesh original materials
+void USLVizStaticMeshMarker::SetVisual(UStaticMesh* SM)
+{
+	// Clear any previous data
+	Reset();
+
+	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
+	{
+		ISMC = NewObject<UInstancedStaticMeshComponent>(this);
+		ISMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ISMC->bSelectable = false;
+		//ISMC->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
+		ISMC->RegisterComponent();
+	}
+
+	// Set the visual mesh
+	ISMC->SetStaticMesh(SM);
+}
+
 // Set the visual properties of the instanced mesh
 void USLVizStaticMeshMarker::SetVisual(UStaticMesh* SM, const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
 {
@@ -56,9 +75,12 @@ void USLVizStaticMeshMarker::UpdateStaticMesh(UStaticMesh* SM)
 	ISMC->SetStaticMesh(SM);
 
 	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < ISMC->GetNumMaterials(); ++MatIdx)
+	if (DynamicMaterial && DynamicMaterial->IsValidLowLevel() && !DynamicMaterial->IsPendingKillOrUnreachable())
 	{
-		ISMC->SetMaterial(MatIdx, DynamicMaterial);
+		for (int32 MatIdx = 0; MatIdx < ISMC->GetNumMaterials(); ++MatIdx)
+		{
+			ISMC->SetMaterial(MatIdx, DynamicMaterial);
+		}
 	}
 }
 
