@@ -5,48 +5,62 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "TimerManager.h"
-#include "Components/PoseableMeshComponent.h"
 #include "SLVizEpisodeReplayManager.generated.h"
 
 // Forward declaration
-class AStaticMeshActor;
-class ASkeletalMeshActor;
+class UPoseableMeshComponent;
 
 /*
-* Structure holding the world state at a given timestamp
+* Holds the poses of all the individuals in the world
 */
-struct FSLVizEpisodeFrame
+struct FSLVizEpisodeFrameData
 {
-	// Static mesh poses
-	TMap<AStaticMeshActor*, FTransform> StaticMeshPoses;
+	// Array of the actors and their poses
+	//TArray<TPair<AActor*, FTransform>> ActorPoses;
+	TMap<AActor*, FTransform> ActorPoses;
 
-	// The poses of all the skeletal actors and their bones (the poseable mesh component)
-	TMap<UPoseableMeshComponent*, TPair<FTransform, TMap<int32, FTransform>>> SkeletalPoses;
+	// Array of the skeletal components and their bone poses (the actor locations are included above)
+	//TArray<TPair<UPoseableMeshComponent*, TArray<TPair<int32, FTransform>>>> BonePoses;
+	TMap<UPoseableMeshComponent*, TMap<int32, FTransform>> BonePoses;
 
-	// TODO robot poses
+	// Default ctor
+	FSLVizEpisodeFrameData() {};
 
-	// Apply poses of this frame
-	void ApplyPoses()
+	// Reserve array size ctor
+	FSLVizEpisodeFrameData(int32 ActorArraySize, int32 SkelArraySize)
 	{
-		for (const auto& EP : StaticMeshPoses)
-		{
-			EP.Key->SetActorTransform(EP.Value);
-		}
-
-		for (auto& SkP : SkeletalPoses)
-		{
-			SkP.Key->GetOwner()->SetActorTransform(SkP.Value.Key);
-
-			for (auto& BP : SkP.Value.Value)
-			{
-				// TODO fname to int32
-				//SkP.Key->SetBoneTransformByName(*BP.Key, BP.Value, EBoneSpaces::WorldSpace);
-			}
-		}
-	}
+		ActorPoses.Reserve(ActorArraySize);
+		BonePoses.Reserve(SkelArraySize);
+	};
 };
 
+/*
+* Holds the frames from the recorded episode
+*/
+struct FSLVizEpisodeData
+{
+	// Array of the timestamps
+	TArray<float> Timestamps;
+
+	// Array of the frames
+	TArray<FSLVizEpisodeFrameData> Frames;
+
+	// Default ctor
+	FSLVizEpisodeData() {};
+
+	// Reserve array size ctor
+	FSLVizEpisodeData(int32 ArraySize)
+	{
+		Timestamps.Reserve(ArraySize);
+		Frames.Reserve(ArraySize);
+	};
+
+	// Check if there is data in the episode and it is in sync
+	bool IsValid() const { return Timestamps.Num() > 2 && Timestamps.Num() == Frames.Num(); };
+
+	// Clear all the data in the episode
+	void Clear() { Timestamps.Empty(); Frames.Empty(); };
+};
 
 /**
  * Class to load and skim through episodes
@@ -61,114 +75,107 @@ public:
 	ASLVizEpisodeReplayManager();
 
 protected:
-	// Called when the game starts or when spawned
+	// Called when the game starts or when spaewned
 	virtual void BeginPlay() override;
 
-#if WITH_EDITOR
-	// Called when a property is changed in the editor
-	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif // WITH_EDITOR
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
 
-	// Called when actor removed from game or game ended
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	// Set world to visual only, create poseable skeletal mesh components
-	void Init();
-
-	// True if initalized
-	bool IsInit() const { return bIsInit; };
-
-	// TODO
-	// Load all data at once
-
-	// Add a frame (make sure these are ordered)
-	void AddFrame(float Timestamp,
-		const TMap<AStaticMeshActor*, FTransform>& EntityPoses,
-		const TMap<ASkeletalMeshActor*, TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses);
-
-	// Clear all frames related data, keep mappings
-	void ClearFrames();
-
-	// Goto the frame nearest to the timestamp
-	void GoTo(float Timestamp);
-
-	// Goto the next nth frame
-	void Next(int32 StepSize = 1, bool bLoop = false);
-
-	// Goto the previous nth frame
-	void Previous(int32 StepSize = 1, bool bLoop = false);
-
-	// Replay all the episode with the given update rate (by default the update rate is calculated as the average of the first X frames)
-	void Replay(int32 StepSize = 1, float UpdateRate = -1.f, bool bLoop = true);
-
-	// Replay the episode between the timestamp with the given update rate (by default the update rate is calculated as the average of the first X frames)
-	void Replay(float StartTime, float EndTime, int32 StepSize = 1, float UpdateRate = -1.f, bool bLoop = true);
-
-	// Pause / start replay
-	void ToggleReplay();
-
-	// Set replay to pause or play
-	void SetPauseReplay(bool bPause);
-
-protected:
-	// Replay timer callback
-	void TimerCallback();
-
-	// Remove unnecesary non-visual components/actors from world
+public:
+	// Set world as visual only, remove unnecessary non-visual components/actors from world, create poseable skeletal mesh components etc.
 	void SetWorldAsVisualOnly();
 
+	// True if initalized
+	bool IsWorldSetASVisualOnly() const { return bWorldSetAsVisualOnly; };
+
+	// Load episode data
+	void LoadEpisode(const FSLVizEpisodeData& InEpisodeData);
+
+//
+//	// Add a frame (make sure these are ordered)
+//	void AddFrame(float Timestamp,
+//		const TMap<AStaticMeshActor*, FTransform>& EntityPoses,
+//		const TMap<ASkeletalMeshActor*, TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses);
+//
+//	// Clear all frames related data, keep mappings
+//	void ClearFrames();
+//
+//	// Goto the frame nearest to the timestamp
+//	void GoTo(float Timestamp);
+//
+//	// Goto the next nth frame
+//	void Next(int32 StepSize = 1, bool bLoop = false);
+//
+//	// Goto the previous nth frame
+//	void Previous(int32 StepSize = 1, bool bLoop = false);
+//
+//	// Replay all the episode with the given update rate (by default the update rate is calculated as the average of the first X frames)
+//	void Replay(int32 StepSize = 1, float UpdateRate = -1.f, bool bLoop = true);
+//
+//	// Replay the episode between the timestamp with the given update rate (by default the update rate is calculated as the average of the first X frames)
+//	void Replay(float StartTime, float EndTime, int32 StepSize = 1, float UpdateRate = -1.f, bool bLoop = true);
+//
+//	// Pause / start replay
+//	void ToggleReplay();
+//
+//	// Set replay to pause or play
+//	void SetPauseReplay(bool bPause);
+//	
+//
+//protected:
+//	// Replay timer callback
+//	void TimerCallback();
+
+
 private:
-	// Check if actor or any of its components should be removed
-	void ShouldActorBeRemoved(AActor* Actor) const;
+	// Make sure the mesh of the pawn or spectator is not visible in the world
+	void HidePawnOrSpecator();
 
-	// Hide skeletal mesh components and create new visible poseable mesh components
-	UPoseableMeshComponent* CreateNewPoseableMeshComponent(ASkeletalMeshActor* SkeletalActor) const;
+	// Set actors as visuals only (disable physics, set as movable, clear any attachments)
+	void SetActorsAsVisualsOnly();
 
-	// Calculate an average update rate from the timestamps
-	float GetReplayUpdateRateFromTimestampsAverage(int32 Steps = 10) const;
+	// Add a poseable mesh component clone to the skeletal actors
+	void AddPoseablMeshComponentsToSkeletalActors();
+	
+	// Remove any unnecessary actors or components
+	void RemoveUnnecessaryActorsOrComponents();
+
+	// Calculate the default update rate as an average of a given number of frames delta timestamps
+	void CalcDefaultUpdateRate(int32 MaxNumSteps);
 
 protected:
-	// Init flag
-	bool bIsInit;
+	// True if the world is set as visual only
+	uint8 bWorldSetAsVisualOnly : 1;
 
-	// Episode frames as a sorted map
-	TSortedMap<float, FSLVizEpisodeFrame> EpisodeFrames;
+	// True if there is an episode loaded
+	uint8 bEpisodeLoaded : 1;
 
-	// Episode to skim through, synched with the timestamp array
-	TArray<FSLVizEpisodeFrame> Frames;
+	// True if the replay should loop
+	uint8 bReplayShouldLoop : 1;
 
-	// Pre sorted array of the timestamp synched with the frames array
-	TArray<float> Timestamps;
+	// True if it currently in an active replay
+	uint8 bReplaying : 1;
+
+	// Episode data containing all the information at every timestamp (used for fast goto calls)
+	FSLVizEpisodeData EpisodeDataRaw;
+
+	// Episode data containing only individual changes (used for fast replays)
+	FSLVizEpisodeData EpisodeDataCompact;
 
 	// Current frame index
-	int32 CurrFrameIdx;
+	int32 ReplayActiveFrameIndex;
 
 	// Replay start frame
-	int32 ReplayFirstFrameIdx;
+	int32 ReplayFirstFrameIndex;
 
 	// Replay end frame
-	int32 ReplayLastFrameIdx;
+	int32 ReplayLastFrameIndex;
 
 	// Replay step size
 	int32 ReplayStepSize;
 
-	// True if the replay should loop
-	bool bReplayLoop;
-
-	// Timer handle for the replays
-	FTimerHandle ReplayTimerHandle;
-
-private:
-	// Map of the skeletal mesh actor to its poseable mesh component
-	TMap<ASkeletalMeshActor*, UPoseableMeshComponent*> SkeletalActorToPoseableMeshMap;
-
-
-
-	/* Editor button hacks */
-	// Triggers a call to init
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bExecuteInitButtonHack = false;
-
+	// Default replay update rate
+	float ReplayDefaultUpdateRate;
 };
 
 

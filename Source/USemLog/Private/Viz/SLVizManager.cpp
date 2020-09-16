@@ -2,16 +2,24 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizManager.h"
+
 #include "Viz/SLVizMarkerManager.h"
 #include "Viz/SLVizHighlightManager.h"
 #include "Viz/SLVizEpisodeReplayManager.h"
 #include "Individuals/SLIndividualManager.h"
+
 #include "Individuals/Type/SLRigidIndividual.h"
 #include "Individuals/Type/SLSkeletalIndividual.h"
 #include "Individuals/Type/SLBoneIndividual.h"
+#include "Individuals/Type/SLVirtualBoneIndividual.h"
+
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EngineUtils.h"
+
+#if WITH_EDITOR
+#include "Components/BillboardComponent.h"
+#endif // WITH_EDITOR
 
 // Sets default values
 ASLVizManager::ASLVizManager()
@@ -28,6 +36,8 @@ ASLVizManager::ASLVizManager()
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.35;
+	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLViz"));
+	GetSpriteComponent()->Sprite = SpriteTexture.Get();
 #endif // WITH_EDITORONLY_DATA
 }
 
@@ -110,6 +120,11 @@ void ASLVizManager::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 		bExecuteResetButtonHack = false;
 		Reset();
 	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteReplaySetupButtonHack))
+	{
+		bExecuteReplaySetupButtonHack = false;
+		SetupWorldForEpisodeReplay();
+	}	
 }
 
 // Called when actor removed from game or game ended
@@ -178,7 +193,6 @@ void ASLVizManager::Reset()
 	EpisodeReplayManager = nullptr;
 	bIsInit = false;
 }
-
 
 
 /* Highlights */
@@ -306,7 +320,6 @@ void ASLVizManager::RemoveAllIndividualHighlights()
 	}
 	HighlightedIndividuals.Empty();
 }
-
 
 
 /* Markers */
@@ -622,6 +635,138 @@ void ASLVizManager::RemoveAllMarkers()
 		MarkerManager->ClearMarker(IdMarkerPair.Value);
 	}
 	Markers.Empty();
+}
+
+
+/* Episode replay */
+// Setup the world for episode replay (remove physics, pause simulation, change skeletal meshes to poseable meshes)
+bool ASLVizManager::SetupWorldForEpisodeReplay()
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+#if WITH_EDITOR
+
+	/*
+	* World types info:
+	* 
+	* GIsEditor						-  True if we are in the editor. (True also when Play in Editor (PIE), or Simulating in Editor (SIE))
+	* 
+	* EWorldType::None				- An untyped world, in most cases this will be the vestigial worlds of streamed in sub-levels
+	* EWorldType::Game				- The game world
+	* EWorldType::Editor			- A world being edited in the editor
+	* EWorldType::PIE				- A Play In Editor world
+	* EWorldType::EditorPreview		- A preview world for an editor tool
+	* EWorldType::GamePreview		- A preview world for a game
+	* EWorldType::GameRPC			- A minimal RPC world for a game
+	* EWorldType::Inactive			- An editor world that was loaded but not currently being edited in the level editor
+	* 
+	* GEditor->PlayWorld				- A pointer to a UWorld that is the duplicated/saved-loaded to be played in with "Play From Here"
+	* GEditor->bIsSimulatingInEditor	- True if we're Simulating In Editor, as opposed to Playing In Editor.  In this mode, simulation takes place right the level editing environment
+	* GIsPlayInEditorWorld				- Whether GWorld points to the play in editor world
+	* GWorld->HasBegunPlay()			- True if gamplay has started
+	*/
+
+	// If we are running in the editor, make sure we are running a duplicated world (not the editor active one)
+	if (GIsEditor && !GEditor->PlayWorld)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d we are in editor world, this will not be set up for replay.."), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
+#endif // WITH_EDITOR
+
+	EpisodeReplayManager->SetWorldAsVisualOnly();
+	return EpisodeReplayManager->IsWorldSetASVisualOnly();
+}
+
+// Change the data into an episode format and load it to the episode replay manager
+void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	if (!EpisodeReplayManager->IsWorldSetASVisualOnly())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) cannot load episode data because the world is not set as visual only.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	if (InCompactEpisodeData.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) the episode data is empty.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	// Create and reserve episode data with the array size
+	FSLVizEpisodeData EpisodeData(InCompactEpisodeData.Num());
+
+	// Process first frame (contains all individuals -- the rest of the frames contain only individuals that have moved)
+	FSLVizEpisodeFrameData FrameData;
+	for (const auto& IndividualPosePair : InCompactEpisodeData[0].Value)
+	{
+		if (auto Individual = IndividualManager->GetIndividual(IndividualPosePair.Key))
+		{
+			if (auto RI = Cast<USLRigidIndividual>(Individual))
+			{
+				FrameData.ActorPoses.Emplace(RI->GetParentActor(), IndividualPosePair.Value);
+			}
+			else if (auto BI = Cast<USLBoneIndividual>(Individual))
+			{
+
+			}
+			else if (auto VBI = Cast<USLVirtualBoneIndividual>(Individual))
+			{
+
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual with id=%s, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualPosePair.Key);
+		}		
+	}
+	//EpisodeDataRaw.Timestamps[0] = InCompactEpisodeData[0].Key;
+	EpisodeData.Timestamps.Emplace(InCompactEpisodeData[0].Key);
+	//EpisodeDataRaw.Frames[0] = FrameData;
+	EpisodeData.Frames.Emplace(FrameData);
+	
+	// Process the following frames
+	for (int32 FrameIndex = 1; FrameIndex < InCompactEpisodeData.Num(); ++FrameIndex)
+	{
+		//FSLVizEpisodeFrameData CurrFrameData = FrameData;
+		for (const auto& IndividualPosePair : InCompactEpisodeData[FrameIndex].Value)
+		{
+			if (auto Individual = IndividualManager->GetIndividual(IndividualPosePair.Key))
+			{
+				if (auto RI = Cast<USLRigidIndividual>(Individual))
+				{
+					if (auto FoundActorPose = FrameData.ActorPoses.Find(RI->GetParentActor()))
+					{
+						(*FoundActorPose) = IndividualPosePair.Value;
+					}
+				}
+				else if (auto BI = Cast<USLBoneIndividual>(Individual))
+				{
+
+				}
+				else if (auto VBI = Cast<USLVirtualBoneIndividual>(Individual))
+				{
+
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual with id=%s, this should not happen.."),
+					*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualPosePair.Key);
+			}
+		}
+	}
 }
 
 

@@ -112,3 +112,4 @@ struct FSLVizIndividualHighlightData
 	FSLVizIndividualHighlightData(UMeshComponent* InMeshComponent, const TArray<int32>& InMaterialSlots)
 		: MeshComponent(InMeshComponent), MaterialSlots(InMaterialSlots) {};
 };
+

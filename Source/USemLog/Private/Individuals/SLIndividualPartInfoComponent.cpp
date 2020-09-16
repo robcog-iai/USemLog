@@ -201,7 +201,6 @@ USplineMeshComponent* USLIndividualPartInfoComponent::CreateSplineMeshComponent(
 	SplineMeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SplineMeshComp->SetSplineUpDir(FVector::UpVector, false);
 	SplineMeshComp->PrimaryComponentTick.bCanEverTick = false;
-	SplineMeshComp->PostPhysicsComponentTick.bCanEverTick = false;
 	SplineMeshComp->bCastDynamicShadow = false;
 	SplineMeshComp->CastShadow = false;
 		

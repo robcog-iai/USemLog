@@ -17,6 +17,10 @@
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "Vision/SLVirtualCameraView.h"
 
+#if WITH_EDITOR
+#include "Components/BillboardComponent.h"
+#endif // WITH_EDITOR
+
 // Sets default values
 ASLIndividualManager::ASLIndividualManager()
 {
@@ -32,6 +36,8 @@ ASLIndividualManager::ASLIndividualManager()
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.35;
+	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLIndividuals"));
+	GetSpriteComponent()->Sprite = SpriteTexture.Get();
 #endif // WITH_EDITORONLY_DATA
 }
 

@@ -49,14 +49,6 @@
       "Enabled": true
     },
     {
-      "Name": "UMongoQA",
-      "Enabled": true
-    },
-    {
-      "Name": "UViz",
-      "Enabled": true
-    },
-    {
       "Name": "UProtobuf",
       "Enabled": true
     },

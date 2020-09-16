@@ -97,6 +97,7 @@ public:
 	// Clear any created markers / viz components
 	void Reset();
 
+
 	/* Highlights */
 	// Highlight the individual (returns false if the individual is not found or is not of visual type)
 	bool HighlightIndividual(const FString& Id,
@@ -114,7 +115,8 @@ public:
 	// Remove all individual highlights
 	void RemoveAllIndividualHighlights();
 
-	/* Primitive markers */
+
+	/* Markers */
 	// Create a primitive marker
 	bool CreatePrimitiveMarker(const FString& MarkerId,
 		const TArray<FTransform>& Poses,
@@ -123,7 +125,6 @@ public:
 		const FLinearColor& Color = FLinearColor::Green,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
-	/* Static mesh markers */
 	// Create a marker by cloning the visual of the given individual (use original materials)
 	bool CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
 		const FString& IndividualId);
@@ -164,6 +165,26 @@ public:
 
 	// Remove all markers
 	void RemoveAllMarkers();
+
+
+	/* Episode */
+	// Setup the world for episode replay (remove physics, pause simulation, change skeletal meshes to poseable meshes)
+	bool SetupWorldForEpisodeReplay();
+
+	// Change the data into an episode format and load it to the episode replay manager
+	void LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData);
+
+	// Go to the frame at the given timestamp
+	bool GotoEpisodeFrame(float Ts);
+
+	// Replay the whole loaded episode
+	bool PlayEpisode(bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+
+	// Replay the whole loaded episode
+	bool PlayEpisodeFrames(float StartTime, float EndTime, bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+
+	// Pause the replay (if it is currently playing)
+	bool PauseReplay(bool bPause);
 
 private:
 	/* Managers */
@@ -218,18 +239,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bExecuteInitButtonHack = false;
 
-	// Highlight test
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	TArray<FSLVizHighlightTestStruct> HighlightTestValuesHack;
-
-	// Primitive marker tests
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	TArray<FSLVizPrimitiveMarkerTestStruct> PrimitiveMarkerTestHack;
-	
-	// Ids to remove can be highlights or markers
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	TArray<FString> RemoveTestHack;
-
 	// Execute marker commands
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bExecuteButtonHack = false;
@@ -249,4 +258,20 @@ private:
 	// Clear any created markers
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bExecuteResetButtonHack = false;
+
+	// Highlight test
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	TArray<FSLVizHighlightTestStruct> HighlightTestValuesHack;
+
+	// Primitive marker tests
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	TArray<FSLVizPrimitiveMarkerTestStruct> PrimitiveMarkerTestHack;
+
+	// Ids to remove can be highlights or markers
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	TArray<FString> RemoveTestHack;
+
+	// Setup world to be ready for episode replay
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bExecuteReplaySetupButtonHack = false;
 };

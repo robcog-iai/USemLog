@@ -266,7 +266,7 @@ ASLVisionPoseableMeshActor* USLVisionLogger::GetPoseableSkeletalMaskCloneFromId(
 void USLVisionLogger::RequestScreenshot()
 {
 	//// FrameNum_CameraName_ViewMode
-	//CurrImageFilename = FString::FromInt(EpisodeData.GetActiveFrameNum()) + "_" + 
+	//CurrImageFilename = FString::FromInt(EpisodeDataRaw.GetActiveFrameNum()) + "_" + 
 	//	VirtualCameras[CurrCameraIdx]->GetClassName() + "_" + CurrViewModePostfix;
 
 	// FrameNum_CameraNum_s-ms_Viewmode
