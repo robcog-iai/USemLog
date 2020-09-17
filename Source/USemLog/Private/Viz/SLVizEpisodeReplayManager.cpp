@@ -2,21 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizEpisodeReplayManager.h"
-#include "Engine/StaticMeshActor.h"
-#include "Animation/SkeletalMeshActor.h"
-#include "Components/StaticMeshComponent.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Components/PoseableMeshComponent.h"
-#include "GameFramework/PlayerController.h"
-#include "UObject/ConstructorHelpers.h"
-#include "EngineUtils.h"
-#include "ProfilerCommon.h" // FBinaryFindIndex
+#include "Viz/SLVizEpisodeReplayUtils.h"
 
-#if WITH_EDITOR
-#include "UnrealEdGlobals.h"
-#include "Editor/UnrealEdEngine.h"
-#include "Editor/EditorEngine.h"
-#endif // WITH_EDITOR
+#include "Components/PoseableMeshComponent.h"
 
 // Sets default values
 ASLVizEpisodeReplayManager::ASLVizEpisodeReplayManager()
@@ -27,11 +15,11 @@ ASLVizEpisodeReplayManager::ASLVizEpisodeReplayManager()
 
 	bWorldSetAsVisualOnly = false;
 	bEpisodeLoaded = false;
-	bReplayShouldLoop = false;
-	bReplaying = false;
+	bLoopReplay = false;
+	bInActiveReplay = false;
 
 	ReplayDefaultUpdateRate = 0.f;
-	ReplayActiveFrameIndex = INDEX_NONE;
+	ActiveFrameIndex = INDEX_NONE;
 	ReplayFirstFrameIndex = INDEX_NONE;
 	ReplayLastFrameIndex = INDEX_NONE;
 	ReplayStepSize = 1;
@@ -40,12 +28,6 @@ ASLVizEpisodeReplayManager::ASLVizEpisodeReplayManager()
 	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.35;
 #endif // WITH_EDITORONLY_DATA
-}
-
-// Called when the game starts or when spawned
-void ASLVizEpisodeReplayManager::BeginPlay()
-{
-	Super::BeginPlay();
 }
 
 // Called every frame
@@ -71,115 +53,102 @@ void ASLVizEpisodeReplayManager::SetWorldAsVisualOnly()
 		return;
 	}
 
-	// Make sure the mesh of the pawn or spectator is not visible in the world
-	HidePawnOrSpecator();
-
 	// Set actors as visuals only (disable physics, set as movable, clear any attachments)
-	SetActorsAsVisualsOnly();
+	FSLVizEpisodeReplayUtils::SetActorsAsVisualsOnly(GetWorld());
 
 	// Add a poseable mesh component clone to the skeletal actors
-	AddPoseablMeshComponentsToSkeletalActors();
-
-	// Remove any unnecessary actors or components
-	RemoveUnnecessaryActorsOrComponents();
+	FSLVizEpisodeReplayUtils::AddPoseablMeshComponentsToSkeletalActors(GetWorld());
 
 	// Mark world as visual only
 	bWorldSetAsVisualOnly = true;
 }
 
 // Load episode data
-void ASLVizEpisodeReplayManager::LoadEpisode(const FSLVizEpisodeData& InEpisodeData)
+void ASLVizEpisodeReplayManager::LoadEpisode(const FSLVizEpisodeData& InEpisodeDataFull, const FSLVizEpisodeData& InEpisodeDataCompact)
 {
 	// Check if the data is valid
-	if (!InEpisodeData.IsValid())
+	if (!InEpisodeDataFull.IsValid() || !InEpisodeDataCompact.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Episode data is not valid to load.."), *FString(__FUNCTION__), __LINE__);
 		return;
 	}
 
 	// Stop any active replay
-	if (bReplaying)
+	if (bInActiveReplay)
 	{
 		// TODO reset indexes
 		// Stop replay
 
-		ReplayActiveFrameIndex = INDEX_NONE;
+		ActiveFrameIndex = INDEX_NONE;
 		ReplayFirstFrameIndex = INDEX_NONE;
 		ReplayLastFrameIndex = INDEX_NONE;
 	}
 
 	// Clear any previous episode
-	EpisodeDataRaw.Clear();
+	EpisodeDataFull.Clear();
+	EpisodeDataCompact.Clear();
 
 	// Set the episode data
-	EpisodeDataRaw = InEpisodeData;
+	EpisodeDataFull = InEpisodeDataFull;
+	EpisodeDataCompact = InEpisodeDataCompact;
 
-	// Calculate a default update rate 
-	int32 MaxSteps = FMath::Min(256, EpisodeDataRaw.Timestamps.Num() / 2);
-	CalcDefaultUpdateRate(MaxSteps);
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d EpisodeFull:\tTsNum=%d;\tFramesNum=%d;\t\tEpisodeCompact:\tTsNum=%d;\tFramesNum=%d;"),
+		*FString(__FUNCTION__), __LINE__,
+		EpisodeDataFull.Timestamps.Num(), EpisodeDataFull.Frames.Num(),
+		EpisodeDataCompact.Timestamps.Num(), EpisodeDataCompact.Frames.Num());	
 
+	// Calculate a default update rate  
+	CalcDefaultUpdateRate(256);
+
+	// Mark the episode loaded flag to true
 	bEpisodeLoaded = true;
 }
 
+// Set visual world as in the given frame 
+void ASLVizEpisodeReplayManager::GotoFrame(int32 FrameIndex)
+{
+	if (!bWorldSetAsVisualOnly)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d World is not set as visual only.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
 
-//// Add a frame (make sure these are ordered)
-//void ASLVizEpisodeReplayManager::AddFrame(float Timestamp,
-//	const TMap<AStaticMeshActor*, FTransform>& InEntityPoses,
-//	const TMap<ASkeletalMeshActor*, TPair<FTransform, TMap<FString, FTransform>>>& InSkeletalPoses)
-//{
-//	//if (bIsInit)
-//	//{
-//	//	// Add time
-//	//	Timestamps.Emplace(Timestamp);
-//
-//	//	// Re-map to poseable mesh components
-//	//	TMap<UPoseableMeshComponent*, TPair<FTransform, TMap<FString, FTransform>>> PoseableSkeletalPoses;
-//	//	for (const auto& SkP : InSkeletalPoses)
-//	//	{
-//	//		if (UPoseableMeshComponent** PMC = SkeletalActorToPoseableMeshMap.Find(SkP.Key))
-//	//		{
-//	//			PoseableSkeletalPoses.Emplace(*PMC, SkP.Value);
-//	//		}
-//	//		else
-//	//		{
-//	//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no poseable mesh component created.."), *FString(__FUNCTION__), __LINE__, *SkP.Key->GetName());
-//	//		}
-//
-//	//	}
-//
-//	//	// Create and add frame
-//	//	FSLVizEpisodeFrame Frame;
-//	//	Frame.EntityPoses = InEntityPoses;
-//	//	Frame.SkeletalPoses = PoseableSkeletalPoses;
-//
-//	//	Frames.Emplace(Frame);
-//	//}
-//	//else
-//	//{
-//	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Init before, poseable meshes needs to be created beforeheand.."), *FString(__FUNCTION__), __LINE__);
-//	//}
-//}
-//
-//
-//// Clear all frames related data, keep mappings
-//void ASLVizEpisodeReplayManager::ClearFrames()
-//{
-//	GetWorld()->GetTimerManager().ClearTimer(ReplayTimerHandle);
-//	Timestamps.Empty();
-//	Frames.Empty();
-//}
+	if (!bEpisodeLoaded)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d No episode is loaded.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+		
+	if(!EpisodeDataFull.Frames.IsValidIndex(FrameIndex))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Frame index is not valid, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	ApplyPoses(EpisodeDataFull.Frames[FrameIndex]);
+
+	ActiveFrameIndex = FrameIndex;
+}
+
+// Set visual world as in the given timestamp (binary search for nearest index)
+void ASLVizEpisodeReplayManager::GotoFrame(float Timestamp)
+{
+	GotoFrame(FSLVizEpisodeReplayUtils::BinarySearchLessEqual(EpisodeDataFull.Timestamps, Timestamp));
+}
+
+
 //
 //// Goto timestamp, if timestamp is too large it goes to the last frame, if too small goes to the first frame
 //void ASLVizEpisodeReplayManager::GoTo(float Timestamp)
 //{
-//	ReplayActiveFrameIndex = FBinaryFindIndex::LessEqual(Timestamps, Timestamp);
-//	if (Frames.IsValidIndex(ReplayActiveFrameIndex))
+//	ActiveFrameIndex = FBinaryFindIndex::LessEqual(Timestamps, Timestamp);
+//	if (Frames.IsValidIndex(ActiveFrameIndex))
 //	{
-//		Frames[ReplayActiveFrameIndex].ApplyPoses();
+//		Frames[ActiveFrameIndex].ApplyPoses();
 //	}
 //	else
 //	{
-//		UE_LOG(LogTemp, Error, TEXT("%s::%d Found index [%ld] is not valid.."), *FString(__FUNCTION__), __LINE__, ReplayActiveFrameIndex);
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d Found index [%ld] is not valid.."), *FString(__FUNCTION__), __LINE__, ActiveFrameIndex);
 //	}
 //}
 //
@@ -198,27 +167,27 @@ void ASLVizEpisodeReplayManager::LoadEpisode(const FSLVizEpisodeData& InEpisodeD
 //		UE_LOG(LogTemp, Warning, TEXT("%s::%d Step size too large, decreased to Frames.Num() / 2 = %ld;"), *FString(__FUNCTION__), __LINE__, StepSize);
 //	}
 //
-//	if (ReplayActiveFrameIndex < Frames.Num() - StepSize)
+//	if (ActiveFrameIndex < Frames.Num() - StepSize)
 //	{
 //		// Goto next step
-//		ReplayActiveFrameIndex += StepSize;
-//		Frames[ReplayActiveFrameIndex].ApplyPoses();
+//		ActiveFrameIndex += StepSize;
+//		Frames[ActiveFrameIndex].ApplyPoses();
 //	}
 //	else if(bLoop)
 //	{
 //		// Goto first frame + the remaining steps
-//		ReplayActiveFrameIndex = Frames.Num() - 1 - ReplayActiveFrameIndex;
-//		Frames[ReplayActiveFrameIndex].ApplyPoses();
+//		ActiveFrameIndex = Frames.Num() - 1 - ActiveFrameIndex;
+//		Frames[ActiveFrameIndex].ApplyPoses();
 //	}
 //	else
 //	{
 //		// Apply last frame (even if it is not a full step)
-//		if (ReplayActiveFrameIndex != Frames.Num() - 1)
+//		if (ActiveFrameIndex != Frames.Num() - 1)
 //		{
-//			ReplayActiveFrameIndex = Frames.Num() - 1;
-//			Frames[ReplayActiveFrameIndex].ApplyPoses();
+//			ActiveFrameIndex = Frames.Num() - 1;
+//			Frames[ActiveFrameIndex].ApplyPoses();
 //		}
-//		UE_LOG(LogTemp, Log, TEXT("%s::%d Reached last frame [%ld].."), *FString(__FUNCTION__), __LINE__, ReplayActiveFrameIndex);
+//		UE_LOG(LogTemp, Log, TEXT("%s::%d Reached last frame [%ld].."), *FString(__FUNCTION__), __LINE__, ActiveFrameIndex);
 //	}
 //}
 //
@@ -237,27 +206,27 @@ void ASLVizEpisodeReplayManager::LoadEpisode(const FSLVizEpisodeData& InEpisodeD
 //		UE_LOG(LogTemp, Warning, TEXT("%s::%d Step size too large, decreased to Frames.Num() / 2 = %ld;"), *FString(__FUNCTION__), __LINE__, StepSize);
 //	}
 //
-//	if (ReplayActiveFrameIndex - StepSize >= 0)
+//	if (ActiveFrameIndex - StepSize >= 0)
 //	{
 //		// Goto previous step
-//		ReplayActiveFrameIndex -= StepSize;
-//		Frames[ReplayActiveFrameIndex].ApplyPoses();
+//		ActiveFrameIndex -= StepSize;
+//		Frames[ActiveFrameIndex].ApplyPoses();
 //	}
 //	else if (bLoop)
 //	{
 //		// Goto last frame - the remaining steps
-//		ReplayActiveFrameIndex = Frames.Num() - 1 - ReplayActiveFrameIndex;
-//		Frames[ReplayActiveFrameIndex].ApplyPoses();
+//		ActiveFrameIndex = Frames.Num() - 1 - ActiveFrameIndex;
+//		Frames[ActiveFrameIndex].ApplyPoses();
 //	}
 //	else
 //	{
 //		// Apply first frame (even if it is not a full step)
-//		if (ReplayActiveFrameIndex != 0)
+//		if (ActiveFrameIndex != 0)
 //		{
-//			ReplayActiveFrameIndex = 0;
-//			Frames[ReplayActiveFrameIndex].ApplyPoses();
+//			ActiveFrameIndex = 0;
+//			Frames[ActiveFrameIndex].ApplyPoses();
 //		}
-//		UE_LOG(LogTemp, Log, TEXT("%s::%d Reached first frame [%ld].."), *FString(__FUNCTION__), __LINE__, ReplayActiveFrameIndex);
+//		UE_LOG(LogTemp, Log, TEXT("%s::%d Reached first frame [%ld].."), *FString(__FUNCTION__), __LINE__, ActiveFrameIndex);
 //	}
 //}
 //
@@ -285,8 +254,8 @@ void ASLVizEpisodeReplayManager::LoadEpisode(const FSLVizEpisodeData& InEpisodeD
 //		ReplayLastFrameIndex = Frames.Num() - 1;
 //
 //		// Apply first frame
-//		ReplayActiveFrameIndex = ReplayFirstFrameIndex;
-//		Frames[ReplayActiveFrameIndex].ApplyPoses();
+//		ActiveFrameIndex = ReplayFirstFrameIndex;
+//		Frames[ActiveFrameIndex].ApplyPoses();
 //
 //		if (UpdateRate < 0.f)
 //		{
@@ -326,8 +295,8 @@ void ASLVizEpisodeReplayManager::LoadEpisode(const FSLVizEpisodeData& InEpisodeD
 //		ReplayLastFrameIndex = FBinaryFindIndex::LessEqual(Timestamps, EndTime);
 //
 //		// Apply first frame
-//		ReplayActiveFrameIndex = ReplayFirstFrameIndex;
-//		Frames[ReplayActiveFrameIndex].ApplyPoses();
+//		ActiveFrameIndex = ReplayFirstFrameIndex;
+//		Frames[ActiveFrameIndex].ApplyPoses();
 //
 //		if (UpdateRate < 0.f)
 //		{
@@ -388,170 +357,80 @@ void ASLVizEpisodeReplayManager::LoadEpisode(const FSLVizEpisodeData& InEpisodeD
 //// Replay timer callback
 //void ASLVizEpisodeReplayManager::TimerCallback()
 //{
-//	if (ReplayActiveFrameIndex <= ReplayLastFrameIndex - ReplayStepSize)
+//	if (ActiveFrameIndex <= ReplayLastFrameIndex - ReplayStepSize)
 //	{
 //		// Goto next step
-//		ReplayActiveFrameIndex += ReplayStepSize;
-//		Frames[ReplayActiveFrameIndex].ApplyPoses();
+//		ActiveFrameIndex += ReplayStepSize;
+//		Frames[ActiveFrameIndex].ApplyPoses();
 //	}
 //	else if (bLoopTheReplay)
 //	{
 //		// Goto first frame + the remaining steps
-//		ReplayActiveFrameIndex = ReplayLastFrameIndex - ReplayActiveFrameIndex;
-//		Frames[ReplayActiveFrameIndex].ApplyPoses();
+//		ActiveFrameIndex = ReplayLastFrameIndex - ActiveFrameIndex;
+//		Frames[ActiveFrameIndex].ApplyPoses();
 //	}
 //	else
 //	{
 //		// Apply last frame (even if it is not a full step)
-//		if (ReplayActiveFrameIndex != ReplayLastFrameIndex)
+//		if (ActiveFrameIndex != ReplayLastFrameIndex)
 //		{
-//			ReplayActiveFrameIndex = ReplayLastFrameIndex;
-//			Frames[ReplayActiveFrameIndex].ApplyPoses();
+//			ActiveFrameIndex = ReplayLastFrameIndex;
+//			Frames[ActiveFrameIndex].ApplyPoses();
 //		}
 //		GetWorld()->GetTimerManager().ClearTimer(ReplayTimerHandle);
-//		UE_LOG(LogTemp, Log, TEXT("%s::%d Reached last frame [%ld].."), *FString(__FUNCTION__), __LINE__, ReplayActiveFrameIndex);
+//		UE_LOG(LogTemp, Log, TEXT("%s::%d Reached last frame [%ld].."), *FString(__FUNCTION__), __LINE__, ActiveFrameIndex);
 //	}
 //}
 
-
-// Make sure the mesh of the pawn or spectator is not visible in the world
-void ASLVizEpisodeReplayManager::HidePawnOrSpecator()
-{
-	if (GetWorld()->GetFirstPlayerController() && GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator())
-	{
-		GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not access the pawn or specator to set as hidden.."),
-			*FString(__FUNCTION__), __LINE__);
-	}
-}
-
-// Set actors as visuals only (disable physics, set as movable, clear attachments)
-void ASLVizEpisodeReplayManager::SetActorsAsVisualsOnly()
-{
-	// Iterate all actors
-	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
-	{
-		// Make sure all actors have no physics, have no collisions and are movable
-		ActItr->DisableComponentsSimulatePhysics();
-		ActItr->SetActorEnableCollision(ECollisionEnabled::NoCollision);
-		if (ActItr->GetRootComponent())
-		{
-			ActItr->GetRootComponent()->SetMobility(EComponentMobility::Movable);
-		}
-
-		// Clear any attachments between actors
-		ActItr->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	}
-}
-
-// Add a poseable mesh component clone to the skeletal actors
-void ASLVizEpisodeReplayManager::AddPoseablMeshComponentsToSkeletalActors()
-{
-	for (TActorIterator<ASkeletalMeshActor> SkelActItr(GetWorld()); SkelActItr; ++SkelActItr)
-	{
-		UPoseableMeshComponent* PMC = NewObject<UPoseableMeshComponent>(*SkelActItr);
-		PMC->SetSkeletalMesh((*SkelActItr)->GetSkeletalMeshComponent()->SkeletalMesh);
-		PMC->AttachToComponent((*SkelActItr)->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-		PMC->RegisterComponent();
-		PMC->bHasMotionBlurVelocityMeshes = false;
-		PMC->bPerBoneMotionBlur = false;
-
-		(*SkelActItr)->AddInstanceComponent(PMC); // Makes it appear in the editor
-		(*SkelActItr)->AddOwnedComponent(PMC);
-		(*SkelActItr)->GetSkeletalMeshComponent()->SetHiddenInGame(true); // Hide original skeletal component
-	}
-}
-
-// Remove any unnecessary actors or components
-void ASLVizEpisodeReplayManager::RemoveUnnecessaryActorsOrComponents()
-{
-	// !!  Done in SemLog !!
-
-//// Blacklisted actors, remove them from the world
-//if (Actor->IsA(APlayerStartPIE::StaticClass())
-//	|| Actor->IsA(APlayerCameraManager::StaticClass())
-//	|| Actor->IsA(APlayerState::StaticClass())
-//	|| Actor->IsA(AGameStateBase::StaticClass())
-//	|| Actor->IsA(AGameModeBase::StaticClass())
-//	|| Actor->IsA(AGameSession::StaticClass())
-//	|| Actor->IsA(AGameNetworkManager::StaticClass())
-//	|| Actor->IsA(AHUD::StaticClass())
-//	|| Actor->IsA(AAIController::StaticClass())
-//	/*|| Actor->IsA(AParticleEventManager::StaticClass())*/
-//	)
-//{
-//	//UE_LOG(LogTemp, Log, TEXT("%s::%d Actor %s is being removed from world.."),
-//	//	*FString(__FUNCTION__), __LINE__,*Actor->GetName());
-//	Actor->ConditionalBeginDestroy();
-//	return;
-//}
-
-//// Whitelisted actors, Avoid removing landscape components, or the player controller
-//if (Actor->IsA(ALandscape::StaticClass())
-//	|| Actor->IsA(APlayerController::StaticClass())
-//	|| Actor->IsA(ACameraActor::StaticClass())
-//	|| Actor->IsA(ADefaultPawn::StaticClass())
-//	|| Actor->IsA(AVizMarkerManager::StaticClass())
-//	|| Actor->IsA(ASLVizEpisodeReplayManager::StaticClass())
-//	)
-//{
-//	//UE_LOG(LogTemp, Log, TEXT("%s::%d Actor %s is whitelisted, none of its components will be removed.."),
-//	//	*FString(__FUNCTION__), __LINE__,*Actor->GetName());
-//	return;
-//}
-
-//// Remove all unnecessary components from the actors (loggers, controllers etc.)
-//// Avoid "Error: Ensure condition failed: Lhs.Array.Num() == Lhs.InitialNu: Container has changed during ranged-for iteration!"
-//TArray<UActorComponent*> ComponentsToDestroy;
-//for (auto& C : Actor->GetComponents())
-//{
-//	// Whitelisted components
-//	if (C->IsA(UStaticMeshComponent::StaticClass())
-//		|| C->IsA(USkeletalMeshComponent::StaticClass())
-//		|| C->IsA(ULightComponentBase::StaticClass())
-//		/*|| C->IsA(UFloatingPawnMovement::StaticClass())*/)
-//	{
-//		//UE_LOG(LogTemp, Log, TEXT("%s::%d Component %s of actor %s is whitelisted, will not be removed.."),
-//		//	*FString(__FUNCTION__), __LINE__, *C->GetName(), *Actor->GetName());
-//		continue;
-//	}
-//	ComponentsToDestroy.Emplace(C);
-//}
-
-//// Destroy cached components
-//for (auto& C : ComponentsToDestroy)
-//{
-//	C->ConditionalBeginDestroy();
-//}
-}
 
 // Calculate an average update rate from the timestamps
 void ASLVizEpisodeReplayManager::CalcDefaultUpdateRate(int32 MaxNumSteps)
 {
-	if (!EpisodeDataRaw.IsValid())
+	if (!EpisodeDataFull.IsValid() || !EpisodeDataCompact.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Episode data is not valid, cannot aprox a default update rate"),
 			*FString(__FUNCTION__), __LINE__);
 		ReplayDefaultUpdateRate = 0.f;
 	}
 
+	const int32 NumFrames = EpisodeDataFull.Timestamps.Num();
+	if (MaxNumSteps > NumFrames / 2)
+	{
+		MaxNumSteps = NumFrames / 2;
+	}
+
 	// Make an average value using the MaxNumSteps entries from the first quarter
-	int32 StartFrameIdx = EpisodeDataRaw.Timestamps.Num() / 4;
+	int32 StartFrameIdx = NumFrames / 4;
 	int32 EndFrameIdx = StartFrameIdx + MaxNumSteps;
 	float UpdateRate = 0.f;
-	if (EndFrameIdx > EpisodeDataRaw.Timestamps.Num())
+	if (EndFrameIdx > NumFrames)
 	{
-		EndFrameIdx = EpisodeDataRaw.Timestamps.Num();
+		EndFrameIdx = NumFrames;
 	}
 
 	// Start from the first quarter, at the beginning one might have some outliers due to loading time spikes
 	for (int32 Idx = StartFrameIdx; Idx < EndFrameIdx - 1; ++Idx)
 	{
-		UpdateRate += (EpisodeDataRaw.Timestamps[Idx+1] - EpisodeDataRaw.Timestamps[Idx]);
+		UpdateRate += (EpisodeDataFull.Timestamps[Idx+1] - EpisodeDataFull.Timestamps[Idx]);
 	}
 
 	ReplayDefaultUpdateRate = UpdateRate / ((float)(MaxNumSteps - 1));
+}
+
+// Apply frame poses
+void ASLVizEpisodeReplayManager::ApplyPoses(const FSLVizEpisodeFrameData& Frame)
+{
+	for (const auto& ActorPosePair : Frame.ActorPoses)
+	{
+		ActorPosePair.Key->SetActorTransform(ActorPosePair.Value);
+	}
+
+	for (const auto& PMCBonePosesPair : Frame.BonePoses)
+	{
+		UPoseableMeshComponent* PMC = PMCBonePosesPair.Key;
+		for (const auto& BoneIndexPosePair : PMCBonePosesPair.Value)
+		{
+			PMC->SetBoneTransformByName(PMC->GetBoneName(BoneIndexPosePair.Key), BoneIndexPosePair.Value, EBoneSpaces::WorldSpace);
+		}
+	}
 }

@@ -10,7 +10,7 @@
 
 // Forward declaration
 class USkeletalMeshComponent;
-class USLSkeletalDataComponent;
+class UPoseableMeshComponent;
 
 /**
  *
@@ -68,6 +68,9 @@ public:
 
     // Get the skeletal mesh component the bone is used in
     USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; };
+
+    // Get the poseable mesh component (if available)
+    UPoseableMeshComponent* GetPoseableMeshComponent();
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
@@ -140,4 +143,7 @@ protected:
     // Parent skeletal mesh
     UPROPERTY()
     USkeletalMeshComponent* SkeletalMeshComponent;
+
+    // Parent poseable mesh component (not persistent)
+    UPoseableMeshComponent* PoseableMeshComponent;
 };

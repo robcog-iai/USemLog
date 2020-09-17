@@ -413,14 +413,14 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 }
 
 // Get the whole episode data
-void FSLMongoQueryDBHandler::GetEpisodeData(TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData) const
+TArray<TPair<float, TMap<FString, FTransform>>> FSLMongoQueryDBHandler::GetEpisodeData() const
 {
-	OutEpisodeData.Empty();
+	TArray<TPair<float, TMap<FString, FTransform>>> EpisodeData;
 	if (!IsReady())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d DB handler is not ready, make sure the server, database, and collection is set.."), *FString(__FUNCTION__), __LINE__);
-		return;
-	}
+		return EpisodeData;
+	}	
 
 #if SL_WITH_LIBMONGO_C
 	double ExecBegin = FPlatformTime::Seconds();
@@ -496,7 +496,7 @@ void FSLMongoQueryDBHandler::GetEpisodeData(TArray<TPair<float, TMap<FString, FT
 						CurrIndividualsData.Emplace(Id, GetPose(&individuals_iter));
 					}
 				}
-				OutEpisodeData.Emplace(CurrTs, CurrIndividualsData);
+				EpisodeData.Emplace(CurrTs, CurrIndividualsData);
 			}
 		}
 	}
@@ -509,9 +509,10 @@ void FSLMongoQueryDBHandler::GetEpisodeData(TArray<TPair<float, TMap<FString, FT
 
 	mongoc_cursor_destroy(cursor);
 	bson_destroy(pipeline);
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds..;"),
-		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin);
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor(num=%d)=[%f], total=[%f] seconds..;"),
+		*FString(__func__), __LINE__, QueryDuration, EpisodeData.Num(), CursorReadDuration, FPlatformTime::Seconds() - ExecBegin);
 #endif
+	return EpisodeData;
 }
 
 // Get the episode data at the given timestamp (frame)

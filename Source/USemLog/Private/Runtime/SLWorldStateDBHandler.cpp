@@ -37,9 +37,9 @@ void FSLWorldStateDBWriterAsyncTask::DoWork()
 	// Call the write function pointer
 	int32 NumEntries = (this->*WriteFunctionPtr)();
 
-	double Duration = FPlatformTime::Seconds() - StartTime;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t Async work (written %ld entries) duration:\t%f (s)"),
-		*FString(__FUNCTION__), __LINE__, NumEntries, Duration);
+	//double Duration = FPlatformTime::Seconds() - StartTime;
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t\t Async work (written %ld entries) duration:\t%f (s)"),
+	//	*FString(__FUNCTION__), __LINE__, NumEntries, Duration);
 }
 
 // First write where all the individuals are written irregardresly of their previous position
@@ -394,11 +394,11 @@ void FSLWorldStateDBHandler::FirstWrite(float Timestamp)
 // Delegate job to the async task (true if the previous job was done)
 bool FSLWorldStateDBHandler::Write(float Timestamp)
 {
-	double CurrentTime = FPlatformTime::Seconds();
-	const double DurationSincePrevCall = CurrentTime - PrevWriteCallTime;
-	PrevWriteCallTime = CurrentTime;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Duration since previous call:\t%f (s)"),
-		*FString(__func__), __LINE__, DurationSincePrevCall);
+	//double CurrentTime = FPlatformTime::Seconds();
+	//const double DurationSincePrevCall = CurrentTime - PrevWriteCallTime;
+	//PrevWriteCallTime = CurrentTime;
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t Duration since previous call:\t%f (s)"),
+	//	*FString(__func__), __LINE__, DurationSincePrevCall);
 
 	if (DBWriterTask->IsDone())
 	{

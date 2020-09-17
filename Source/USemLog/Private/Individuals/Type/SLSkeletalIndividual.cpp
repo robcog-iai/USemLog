@@ -12,6 +12,7 @@
 
 #include "Animation/SkeletalMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/PoseableMeshComponent.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsConstraintTemplate.h"
 #include "PhysicsEngine/ConstraintInstance.h"
@@ -22,6 +23,7 @@ USLSkeletalIndividual::USLSkeletalIndividual()
 	//bIsConnected = false;
 	SkeletalMeshComponent = nullptr;
 	SkeletalDataAsset = nullptr;
+	PoseableMeshComponent = nullptr;
 }
 
 //// Do any object-specific cleanup required immediately after loading an object.
@@ -251,6 +253,21 @@ bool USLSkeletalIndividual::ApplyOriginalMaterials()
 		return true;
 	}
 	return false;
+}
+
+// Get the poseable mesh component (if available)
+UPoseableMeshComponent* USLSkeletalIndividual::GetPoseableMeshComponent()
+{
+	if (PoseableMeshComponent)
+	{
+		return PoseableMeshComponent;
+	}
+	if (UActorComponent* AC = GetParentActor()->GetComponentByClass(UPoseableMeshComponent::StaticClass()))
+	{
+		PoseableMeshComponent = CastChecked<UPoseableMeshComponent>(AC);
+		return PoseableMeshComponent;
+	}
+	return nullptr;
 }
 
 // Get class name, virtual since each invidiual type will have different name

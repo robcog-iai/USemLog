@@ -8,6 +8,10 @@
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "SLVirtualBoneIndividual.generated.h"
 
+// Forward declaration
+class USkeletalMeshComponent;
+class UPoseableMeshComponent;
+
 /**
  * 
  */
@@ -35,9 +39,6 @@ public:
     // Load semantic data (bForced forces re-loading)
     virtual bool Load(bool bReset, bool bTryImport);
 
-    // Get the bone index
-    int32 GetBoneIndex() const { return BoneIndex; };
-
     // Get the type name as string
     virtual FString GetTypeName() const override { return FString("VirtualBoneIndividual"); };
 
@@ -46,6 +47,15 @@ public:
 
     // Get the attachment location name (bone/socket)
     FName GetAttachmentLocationName();
+
+    // Get the bone index
+    int32 GetBoneIndex() const { return BoneIndex; };
+
+    // Get the skeletal mesh component the bone is used in
+    USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; };
+
+    // Get the poseable mesh component (if available)
+    UPoseableMeshComponent* GetPoseableMeshComponent();
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
@@ -111,4 +121,7 @@ protected:
     // Parent skeletal mesh
     UPROPERTY()
     USkeletalMeshComponent* SkeletalMeshComponent;
+
+    // Parent poseable mesh component (not persistent)
+    UPoseableMeshComponent* PoseableMeshComponent;
 };

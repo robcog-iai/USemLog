@@ -13,6 +13,7 @@ class USLBoneIndividual;
 class USLVirtualBoneIndividual;
 class USLBoneConstraintIndividual;
 class USkeletalMeshComponent;
+class UPoseableMeshComponent;
 class USLSkeletalDataAsset;
 class USLSkeletalDataComponent;
 
@@ -90,6 +91,9 @@ public:
 
     // Return the skeletal mesh compoennt
     USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; };
+
+    // Get the poseable mesh component (if available)
+    UPoseableMeshComponent* GetPoseableMeshComponent();
 
 protected:
     // Get class name, virtual since each invidiual type will have different name
@@ -188,4 +192,7 @@ private:
     // Semantic data of the skeletal component
     UPROPERTY()
     USLSkeletalDataAsset* SkeletalDataAsset;
+
+    // Parent poseable mesh component (not persistent)
+    UPoseableMeshComponent* PoseableMeshComponent;
 };

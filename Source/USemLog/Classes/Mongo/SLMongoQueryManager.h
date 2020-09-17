@@ -20,10 +20,10 @@ public:
 	// Sets default values for this actor's properties
 	ASLMongoQueryManager();
 
-#if WITH_EDITOR
-	// Called when a property is changed in the editor
-	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif // WITH_EDITOR
+//#if WITH_EDITOR
+//	// Called when a property is changed in the editor
+//	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+//#endif // WITH_EDITOR
 
 public:
 	// Connect to the server
@@ -59,9 +59,9 @@ public:
 	TArray<FTransform> GetIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT = -1.f) const;
 
 	// Get the episode data
-	void GetEpisodeData(const FString& InTaskId, const FString& InEpisodeId, TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData);
-	void GetEpisodeData(const FString& InEpisodeId, TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData);
-	void GetEpisodeData(TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData) const;
+	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData(const FString& InTaskId, const FString& InEpisodeId);
+	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData(const FString& InEpisodeId);
+	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData() const;
 
 protected:
 	// True when successfully connected to the server
@@ -83,66 +83,64 @@ private:
 	// Database handler
 	FSLMongoQueryDBHandler DBHandler;
 
+	///* Editor button hacks */
+	//// Server ip to connect to
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//FString ServerIpValueHack = TEXT("127.0.0.1");
+	//
+	//// Server port to connect to
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//uint16 ServerPortValueHack = 27017;
 
-	/* Editor button hacks */
-	// Server ip to connect to
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	FString ServerIpValueHack = TEXT("127.0.0.1");
-	
-	// Server port to connect to
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	uint16 ServerPortValueHack = 27017;
+	//// Triggers a call to connect
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//bool bMongoConnectButtonHack = false;
 
-	// Triggers a call to connect
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bConnectButtonHack = false;
+	//// Triggers a call to discconnect
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//bool bMongoDisconnectButtonHack = false;
 
-	// Triggers a call to discconnect
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bDisconnectButtonHack = false;
+	//// Task to query from
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//FString TaskIdValueHack = TEXT("DefaultTaskId");
 
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	FString TaskIdValueHack = TEXT("DefaultTaskId");
+	//// Triggers a call to set task
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//bool bSetTaskButtonhack = false;
 
-	// Triggers a call to set task
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bSetTaskButtonhack = false;
+	//// Episode to query from
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//FString EpisodeIdValueHack = TEXT("DefaultEpisodeId");
 
-	// Episode to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	FString EpisodeIdValueHack = TEXT("DefaultEpisodeId");
+	//// Triggers a call to set episode
+	//UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	//bool bSetEpisodeButtonHack = false;
 
-	// Triggers a call to set episode
-	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
-	bool bSetEpisodeButtonHack = false;
+	//// Individual id to query
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//FString IndividualIdValueHack = TEXT("DefaultIndividualId");
 
-	// Individual id to query
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	FString IndividualIdValueHack = TEXT("DefaultIndividualId");
+	//// Time to query for (pose or trajectories)
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//float StartTimestampValueHack = 0.f;
 
-	// Time to query for (pose or trajectories)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	float StartTimestampValueHack = 0.f;
+	//// Triggers a pose query call
+	//UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	//bool bPoseQueryButtonHack = false;
 
-	// Triggers a pose query call
-	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
-	bool bPoseQueryButtonHack = false;
+	//// End time to query for (trajectories only)
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//float EndTimestampValueHack = 10.f;
 
-	// End time to query for (trajectories only)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	float EndTimestampValueHack = 10.f;
+	//// Trajectory delta time
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	//float DeltaTValueHack = -1.f;
 
-	// Trajectory delta time
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	float DeltaTValueHack = -1.f;
+	//// Triggers a trajectory query call
+	//UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	//bool bTrajectoryQueryButtonHack = false;
 
-	// Triggers a trajectory query call
-	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
-	bool bTrajectoryQueryButtonHack = false;
-
-	// Triggers an episode query call
-	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
-	bool bEpisodeDataButtonHack = false;
-
+	//// Triggers an episode query call
+	//UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	//bool bLoadEpisodeDataButtonHack = false;
 };

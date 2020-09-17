@@ -7,6 +7,9 @@
 #include "EngineUtils.h"
 #include "TimerManager.h"
 
+#if WITH_EDITOR
+#include "Components/BillboardComponent.h"
+#endif // WITH_EDITOR
 
 // Sets default values
 ASLWorldStateLogger::ASLWorldStateLogger()
@@ -25,6 +28,8 @@ ASLWorldStateLogger::ASLWorldStateLogger()
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.35;
+	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLWorldStateLogger"));
+	GetSpriteComponent()->Sprite = SpriteTexture.Get();
 #endif // WITH_EDITORONLY_DATA
 }
 
@@ -293,7 +298,7 @@ void ASLWorldStateLogger::UserInputToggleCallback()
 // Get the reference or spawn a new individual manager
 bool ASLWorldStateLogger::SetIndividualManager()
 {
-	if (IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}

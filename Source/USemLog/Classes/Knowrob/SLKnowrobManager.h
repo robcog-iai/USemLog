@@ -10,7 +10,6 @@
 
 // Forward declarations
 class ASLMongoQueryManager;
-class ASLIndividualManager;
 class ASLVizManager;
 
 /**
@@ -71,9 +70,6 @@ private:
 	// Get the mongo query manager from the world (or spawn a new one)
 	bool SetMongoQueryManager();
 
-	// Get the individual manager from the world (or spawn a new one)
-	bool SetIndividualManager();
-
 	// Get the viz manager from the world (or spawn a new one)
 	bool SetVizManager();
 
@@ -103,8 +99,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
 	FString KRWSProtocol = TEXT("prolog_websocket");
 
-
-	// Knowrob server ip addres
+	// Mongo server ip addres
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
 	FString MongoServerIP = TEXT("127.0.0.1");
 
@@ -115,10 +110,7 @@ private:
 	// Websocket connection to knowrob
 	TSharedPtr<FSLKRWSClient> KRWSClient;
 
-	// Keeps access to all the individuals in the world
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	ASLIndividualManager* IndividualManager;
-
+	/* Managers */
 	// Manages the mongo connection
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLMongoQueryManager* MongoQueryManager;
@@ -129,11 +121,78 @@ private:
 
 
 	/* Editor button hacks */
-	// Triggers a call to init or reset
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bInitAndStartButtonHack = false;
+	// Triggers a call to init
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Setup Buttons")
+	bool bInitButtonHack = false;
+
+	// Triggers a call to init
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Setup Buttons")
+	bool bStartButtonHack = false;
 
 	// Triggers a call to init or reset
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Setup Buttons")
 	bool bFinishButtonHack = false;
+
+
+	/* MONGO Editor button hacks */
+	// Triggers a call to set the world as visual only
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	bool bSetupWorldForEpisodeReplayButtonHack = false;
+
+	// Triggers an episode query call
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Viz Buttons")
+	bool bLoadEpisodeDataButtonHack = false;
+
+
+
+	/* MONGO Editor button hacks */
+	// Triggers a call to connect
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	bool bMongoConnectButtonHack = false;
+
+	// Triggers a call to discconnect
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	bool bMongoDisconnectButtonHack = false;
+
+	// Task to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	FString TaskIdValueHack = TEXT("DefaultTaskId");
+
+	// Triggers a call to set task
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	bool bSetTaskButtonhack = false;
+
+	// Episode to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	FString EpisodeIdValueHack = TEXT("DefaultEpisodeId");
+
+	// Triggers a call to set episode
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Mongo Buttons")
+	bool bSetEpisodeButtonHack = false;
+
+	// Individual id to query
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	FString IndividualIdValueHack = TEXT("DefaultIndividualId");
+
+	// Time to query for (pose or trajectories)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	float StartTimestampValueHack = 0.f;
+
+	// Triggers a pose query call
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Mongo Buttons")
+	bool bPoseQueryButtonHack = false;
+
+	// End time to query for (trajectories only)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	float EndTimestampValueHack = 10.f;
+
+	// Trajectory delta time
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	float DeltaTValueHack = -1.f;
+
+	// Triggers a trajectory query call
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Mongo Buttons")
+	bool bTrajectoryQueryButtonHack = false;
+
+
 };

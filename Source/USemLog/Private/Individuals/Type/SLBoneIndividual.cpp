@@ -3,12 +3,9 @@
 
 #include "Individuals/Type/SLBoneIndividual.h"
 #include "Individuals/Type/SLSkeletalIndividual.h"
-#include "Individuals/Type/SLVirtualBoneIndividual.h"
-#include "Skeletal/SLSkeletalDataComponent.h"
-
 #include "Animation/SkeletalMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Materials/MaterialInstanceDynamic.h"
+#include "Components/PoseableMeshComponent.h"
 
 // Ctor
 USLBoneIndividual::USLBoneIndividual()
@@ -17,6 +14,8 @@ USLBoneIndividual::USLBoneIndividual()
 	MaterialIndex = INDEX_NONE;
 	BoneIndex = INDEX_NONE;
 	ParentIndividual = nullptr;
+	SkeletalMeshComponent = nullptr;
+	PoseableMeshComponent = nullptr;
 }
 
 // Called before destroying the object.
@@ -182,6 +181,21 @@ FName USLBoneIndividual::GetAttachmentLocationName()
 		}
 	}
 	return NAME_None;
+}
+
+// Get the poseable mesh component (if available)
+UPoseableMeshComponent* USLBoneIndividual::GetPoseableMeshComponent()
+{
+	if (PoseableMeshComponent)
+	{
+		return PoseableMeshComponent;
+	}
+	if (UActorComponent* AC = GetParentActor()->GetComponentByClass(UPoseableMeshComponent::StaticClass()))
+	{
+		PoseableMeshComponent = CastChecked<UPoseableMeshComponent>(AC);
+		return PoseableMeshComponent;
+	}
+	return nullptr;
 }
 
 // Get class name, virtual since each invidiual type will have different name

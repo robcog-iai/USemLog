@@ -20,101 +20,101 @@ ASLMongoQueryManager::ASLMongoQueryManager()
 #endif // WITH_EDITORONLY_DATA
 }
 
-#if WITH_EDITOR
-// Called when a property is changed in the editor
-void ASLMongoQueryManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	// Get the changed property name
-	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
-		PropertyChangedEvent.Property->GetFName() : NAME_None;
-
-	/* Button hacks */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bConnectButtonHack))
-	{
-		bConnectButtonHack = false;
-		if (Connect(ServerIpValueHack, ServerPortValueHack))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Connected to %s:%ld"), *FString(__FUNCTION__), __LINE__, *ServerIpValueHack, ServerPortValueHack);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect to %s:%ld"), *FString(__FUNCTION__), __LINE__, *ServerIpValueHack, ServerPortValueHack);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bDisconnectButtonHack))
-	{
-		bDisconnectButtonHack = false;
-		Disconnect();
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Disconnected.."), *FString(__FUNCTION__), __LINE__);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bSetTaskButtonhack))
-	{
-		bSetTaskButtonhack = false;
-		if (SetTask(TaskIdValueHack))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bSetEpisodeButtonHack))
-	{
-		bSetEpisodeButtonHack = false;
-		if (SetEpisode(EpisodeIdValueHack))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bPoseQueryButtonHack))
-	{
-		bPoseQueryButtonHack = false;
-
-		FTransform Pose = GetIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack, 
-			IndividualIdValueHack, StartTimestampValueHack);
-
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] IndividualPose: Loc=%s; \t Quat=%s; \t (%s:%s:%s)"),
-			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString(),
-			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bTrajectoryQueryButtonHack))
-	{
-		bTrajectoryQueryButtonHack = false;
-		TArray<FTransform> Trajectory = GetIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
-			IndividualIdValueHack, StartTimestampValueHack, EndTimestampValueHack, DeltaTValueHack);
-
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f-%f] IndividualTrajectoryNum=%ld; (%s:%s:%s)"),
-			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, EndTimestampValueHack, Trajectory.Num(),
-			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
-
-		for (const auto& Pose : Trajectory)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("\t\t\t\t Loc=%s; \t Quat=%s;"), *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString());
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bEpisodeDataButtonHack))
-	{
-		bEpisodeDataButtonHack = false;
-		TArray<TPair<float, TMap<FString, FTransform>>> EpisodeData;
-		GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack,	EpisodeData);
-
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d EpisodeDataNum=%ld; (%s:%s)"),
-			*FString(__FUNCTION__), __LINE__, EpisodeData.Num(), *TaskIdValueHack, *EpisodeIdValueHack);
-
-		for (const auto& Frame : EpisodeData)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("\t\t\t Frame: Ts=%f; \t IndividualsNum=%d;"), Frame.Key, Frame.Value.Num());
-		}
-	}
-}
-#endif // WITH_EDITOR
+//#if WITH_EDITOR
+//// Called when a property is changed in the editor
+//void ASLMongoQueryManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+//{
+//	Super::PostEditChangeProperty(PropertyChangedEvent);
+//
+//	// Get the changed property name
+//	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+//		PropertyChangedEvent.Property->GetFName() : NAME_None;
+//
+//	/* Button hacks */
+//	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bConnectButtonHack))
+//	{
+//		bConnectButtonHack = false;
+//		if (Connect(ServerIpValueHack, ServerPortValueHack))
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d Connected to %s:%ld"), *FString(__FUNCTION__), __LINE__, *ServerIpValueHack, ServerPortValueHack);
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect to %s:%ld"), *FString(__FUNCTION__), __LINE__, *ServerIpValueHack, ServerPortValueHack);
+//		}
+//	}
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bDisconnectButtonHack))
+//	{
+//		bDisconnectButtonHack = false;
+//		Disconnect();
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Disconnected.."), *FString(__FUNCTION__), __LINE__);
+//	}
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bSetTaskButtonhack))
+//	{
+//		bSetTaskButtonhack = false;
+//		if (SetTask(TaskIdValueHack))
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
+//		}
+//	}
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bSetEpisodeButtonHack))
+//	{
+//		bSetEpisodeButtonHack = false;
+//		if (SetEpisode(EpisodeIdValueHack))
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
+//		}
+//	}
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bPoseQueryButtonHack))
+//	{
+//		bPoseQueryButtonHack = false;
+//
+//		FTransform Pose = GetIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack, 
+//			IndividualIdValueHack, StartTimestampValueHack);
+//
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] IndividualPose: Loc=%s; \t Quat=%s; \t (%s:%s:%s)"),
+//			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString(),
+//			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
+//	}
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bTrajectoryQueryButtonHack))
+//	{
+//		bTrajectoryQueryButtonHack = false;
+//		TArray<FTransform> Trajectory = GetIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
+//			IndividualIdValueHack, StartTimestampValueHack, EndTimestampValueHack, DeltaTValueHack);
+//
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f-%f] IndividualTrajectoryNum=%ld; (%s:%s:%s)"),
+//			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, EndTimestampValueHack, Trajectory.Num(),
+//			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
+//
+//		for (const auto& Pose : Trajectory)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("\t\t\t\t Loc=%s; \t Quat=%s;"), *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString());
+//		}
+//	}
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bLoadEpisodeDataButtonHack))
+//	{
+//		bLoadEpisodeDataButtonHack = false;
+//		TArray<TPair<float, TMap<FString, FTransform>>> EpisodeData;
+//		GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack,	EpisodeData);
+//
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d EpisodeDataNum=%ld; (%s:%s)"),
+//			*FString(__FUNCTION__), __LINE__, EpisodeData.Num(), *TaskIdValueHack, *EpisodeIdValueHack);
+//
+//		for (const auto& Frame : EpisodeData)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("\t\t\t Frame: Ts=%f; \t IndividualsNum=%d;"), Frame.Key, Frame.Value.Num());
+//		}
+//	}
+//}
+//#endif // WITH_EDITOR
 
 // Connect to the server
 bool ASLMongoQueryManager::Connect(const FString& ServerIp, uint16 ServerPort)
@@ -277,33 +277,35 @@ TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& 
 }
 
 // Get the episode data with task and episode init
-void ASLMongoQueryManager::GetEpisodeData(const FString& InTaskId, const FString& InEpisodeId, TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData)
+TArray<TPair<float, TMap<FString, FTransform>>> ASLMongoQueryManager::GetEpisodeData(const FString& InTaskId, const FString& InEpisodeId)
 {
 	if (SetTask(InTaskId))
 	{
-		return GetEpisodeData(InEpisodeId, OutEpisodeData);
+		return GetEpisodeData(InEpisodeId);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set task: %s .."), *FString(__FUNCTION__), __LINE__, *InTaskId);
+		return TArray<TPair<float, TMap<FString, FTransform>>>();
 	}
 }
 
 // Get the episode data with episode init
-void ASLMongoQueryManager::GetEpisodeData(const FString& InEpisodeId, TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData)
+TArray<TPair<float, TMap<FString, FTransform>>> ASLMongoQueryManager::GetEpisodeData(const FString& InEpisodeId)
 {
 	if (SetEpisode(InEpisodeId))
 	{
-		return GetEpisodeData(OutEpisodeData);
+		return GetEpisodeData();
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set episode: %s .."), *FString(__FUNCTION__), __LINE__, *InEpisodeId);
+		return TArray<TPair<float, TMap<FString, FTransform>>>();
 	}
 }
 
 // Get the episode data
-void ASLMongoQueryManager::GetEpisodeData(TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData) const
+TArray<TPair<float, TMap<FString, FTransform>>> ASLMongoQueryManager::GetEpisodeData() const
 {
-	return DBHandler.GetEpisodeData(OutEpisodeData);
+	return DBHandler.GetEpisodeData();
 }

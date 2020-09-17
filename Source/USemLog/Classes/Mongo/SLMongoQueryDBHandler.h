@@ -53,7 +53,7 @@ public:
 	TArray<FTransform> GetIndividualTrajectory(const FString& Id, float StartTs, float EndTs, float DeltaT = -1.0f) const;
 
 	// Get the whole episode data
-	void GetEpisodeData(TArray<TPair<float, TMap<FString, FTransform>>>& OutEpisodeData) const;
+	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData() const;
 
 	// Get the episode data at the given timestamp (frame)
 	TMap<FString, FTransform> GetFrameData(float Ts);

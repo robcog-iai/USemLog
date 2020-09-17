@@ -703,70 +703,118 @@ void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTra
 		return;
 	}
 
-	// Create and reserve episode data with the array size
-	FSLVizEpisodeData EpisodeData(InCompactEpisodeData.Num());
+	double ExecBegin = FPlatformTime::Seconds();
 
+	// Create and reserve episode data with the array size
+	FSLVizEpisodeData EpisodeDataFull(InCompactEpisodeData.Num());
+	FSLVizEpisodeData EpisodeDataCompact(InCompactEpisodeData.Num());
+
+	/* First frame */
 	// Process first frame (contains all individuals -- the rest of the frames contain only individuals that have moved)
-	FSLVizEpisodeFrameData FrameData;
+	FSLVizEpisodeFrameData FullFrameData;
+
+	// Iterate individuals with their poses
 	for (const auto& IndividualPosePair : InCompactEpisodeData[0].Value)
 	{
 		if (auto Individual = IndividualManager->GetIndividual(IndividualPosePair.Key))
 		{
+			const FTransform IndividualPose = IndividualPosePair.Value;
+			AActor* IndividualActor = Individual->GetParentActor();
+
 			if (auto RI = Cast<USLRigidIndividual>(Individual))
 			{
-				FrameData.ActorPoses.Emplace(RI->GetParentActor(), IndividualPosePair.Value);
+				FullFrameData.ActorPoses.Emplace(IndividualActor, IndividualPose);
 			}
 			else if (auto BI = Cast<USLBoneIndividual>(Individual))
 			{
-
+				FullFrameData.BonePoses.FindOrAdd(BI->GetPoseableMeshComponent()).Add(BI->GetBoneIndex(), IndividualPose);
 			}
 			else if (auto VBI = Cast<USLVirtualBoneIndividual>(Individual))
 			{
-
+				FullFrameData.BonePoses.FindOrAdd(VBI->GetPoseableMeshComponent()).Add(VBI->GetBoneIndex(), IndividualPose);
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual with id=%s, this should not happen.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual with id=%s, this should not happen, aborting.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualPosePair.Key);
+			return;
 		}		
 	}
-	//EpisodeDataRaw.Timestamps[0] = InCompactEpisodeData[0].Key;
-	EpisodeData.Timestamps.Emplace(InCompactEpisodeData[0].Key);
-	//EpisodeDataRaw.Frames[0] = FrameData;
-	EpisodeData.Frames.Emplace(FrameData);
+	// Add the timestamp
+	//EpisodeDataFull.Timestamps[0] = InCompactEpisodeData[0].Key;
+	EpisodeDataFull.Timestamps.Emplace(InCompactEpisodeData[0].Key);
+	EpisodeDataCompact.Timestamps.Emplace(InCompactEpisodeData[0].Key);
+
+	double FirstFrameDuration = FPlatformTime::Seconds() - ExecBegin;
+
+	// Add the individuals poses
+	//EpisodeDataFull.Frames[0] = FullFrameData;
+	EpisodeDataFull.Frames.Emplace(FullFrameData);
+	EpisodeDataCompact.Frames.Emplace(FullFrameData);
 	
+
+	/* Following frames */
 	// Process the following frames
 	for (int32 FrameIndex = 1; FrameIndex < InCompactEpisodeData.Num(); ++FrameIndex)
 	{
-		//FSLVizEpisodeFrameData CurrFrameData = FrameData;
+		// TODO will emplace make a copy, or one needs to make one here ?
+		//FSLVizEpisodeFrameData PrevFrameCopy = FullFrameData;
+		FSLVizEpisodeFrameData CompactFrameData;
+
+		// Iterate individuals with their poses
 		for (const auto& IndividualPosePair : InCompactEpisodeData[FrameIndex].Value)
 		{
 			if (auto Individual = IndividualManager->GetIndividual(IndividualPosePair.Key))
 			{
+				const FTransform IndividualPose = IndividualPosePair.Value;
+				AActor* IndividualActor = Individual->GetParentActor();
+
 				if (auto RI = Cast<USLRigidIndividual>(Individual))
 				{
-					if (auto FoundActorPose = FrameData.ActorPoses.Find(RI->GetParentActor()))
-					{
-						(*FoundActorPose) = IndividualPosePair.Value;
-					}
+					// Modify the value in the full/first frame
+					//if (auto FoundActorPose = FullFrameData.ActorPoses.Find(RI->GetParentActor())){(*FoundActorPose) = IndividualPose;}
+					FullFrameData.ActorPoses.FindChecked(RI->GetParentActor()) = IndividualPose;
+					// Add as new value to the compact frame
+					CompactFrameData.ActorPoses.Emplace(IndividualActor, IndividualPose);
 				}
 				else if (auto BI = Cast<USLBoneIndividual>(Individual))
 				{
-
+					FullFrameData.BonePoses.FindOrAdd(BI->GetPoseableMeshComponent()).Add(BI->GetBoneIndex(), IndividualPose);
+					CompactFrameData.BonePoses.FindOrAdd(BI->GetPoseableMeshComponent()).Add(BI->GetBoneIndex(), IndividualPose);
 				}
 				else if (auto VBI = Cast<USLVirtualBoneIndividual>(Individual))
 				{
-
+					FullFrameData.BonePoses.FindOrAdd(VBI->GetPoseableMeshComponent()).Add(VBI->GetBoneIndex(), IndividualPose);
+					CompactFrameData.BonePoses.FindOrAdd(VBI->GetPoseableMeshComponent()).Add(VBI->GetBoneIndex(), IndividualPose);
 				}
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual with id=%s, this should not happen.."),
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual with id=%s, this should not happen, aborting.."),
 					*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualPosePair.Key);
+				return;
 			}
 		}
+
+		// Add the timestamp
+		//EpisodeDataFull.Timestamps[FrameIndex] = InCompactEpisodeData[FrameIndex].Key;
+		EpisodeDataFull.Timestamps.Emplace(InCompactEpisodeData[FrameIndex].Key);
+		EpisodeDataCompact.Timestamps.Emplace(InCompactEpisodeData[FrameIndex].Key);
+
+		// Add the individuals poses
+		//EpisodeDataFull.Frames[FrameIndex] = FullFrameData;
+		EpisodeDataFull.Frames.Emplace(FullFrameData);
+		EpisodeDataCompact.Frames.Emplace(CompactFrameData);
 	}
+
+	double FollowingFramesDuration = FPlatformTime::Seconds() - ExecBegin - FirstFrameDuration;
+
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: first frame=[%f], following frames(num=%d)=[%f], total=[%f] seconds..;"),
+		*FString(__func__), __LINE__, FirstFrameDuration, EpisodeDataFull.Timestamps.Num(), 
+		FollowingFramesDuration, FPlatformTime::Seconds() - ExecBegin);
+
+	EpisodeReplayManager->LoadEpisode(EpisodeDataFull, EpisodeDataCompact);
 }
 
 

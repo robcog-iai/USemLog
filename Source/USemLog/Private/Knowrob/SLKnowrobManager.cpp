@@ -2,13 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Knowrob/SLKnowrobManager.h"
-#include "Knowrob/SLKRWSClient.h"
 #include "Mongo/SLMongoQueryManager.h"
 #include "Viz/SLVizManager.h"
-#include "Individuals/SLIndividualManager.h"
 #include "EngineUtils.h"
-
-#include <string>
 
 #if WITH_EDITOR
 #include "Components/BillboardComponent.h"
@@ -26,8 +22,8 @@ ASLKnowrobManager::ASLKnowrobManager()
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
-	SpriteScale = 0.35;
-	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLKr"));
+	SpriteScale = 0.5;
+	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLKnowrob"));
 	GetSpriteComponent()->Sprite = SpriteTexture.Get();
 #endif // WITH_EDITORONLY_DATA
 }
@@ -35,18 +31,18 @@ ASLKnowrobManager::ASLKnowrobManager()
 // Dtor
 ASLKnowrobManager::~ASLKnowrobManager()
 {
-	if (!IsTemplate() && !bIsFinished && (bIsStarted || bIsInit))
-	{
-		Finish(true);
-	}
+	//if (!IsTemplate() && !bIsFinished && (bIsStarted || bIsInit))
+	//{
+	//	Finish(true);
+	//}
 }
 
 // Called when the game starts or when spawned
 void ASLKnowrobManager::BeginPlay()
 {
 	Super::BeginPlay();	
-	Init();
-	Start();
+	//Init();
+	//Start();
 }
 
 #if WITH_EDITOR
@@ -60,10 +56,14 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	/* Button hacks */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bInitAndStartButtonHack))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bInitButtonHack))
 	{
-		bInitAndStartButtonHack = false;
+		bInitButtonHack = false;
 		Init();
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bStartButtonHack))
+	{
+		bStartButtonHack = false;
 		Start();
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bFinishButtonHack))
@@ -71,6 +71,98 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		bFinishButtonHack = false;
 		Finish();
 	}
+
+	/* VIZ button hacks */
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetupWorldForEpisodeReplayButtonHack))
+	{
+		bSetupWorldForEpisodeReplayButtonHack = false;
+		if (!bIsInit) { return; }
+		VizManager->SetupWorldForEpisodeReplay();
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bLoadEpisodeDataButtonHack))
+	{
+		bLoadEpisodeDataButtonHack = false;
+		if (!bIsInit) { return; }
+		VizManager->LoadEpisodeData(MongoQueryManager->GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack));
+	}
+
+	/* MONGO button hacks */
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMongoConnectButtonHack))
+	{
+		bMongoConnectButtonHack = false;
+		if (!bIsInit) { return; }
+		if (MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Connected to %s:%ld"), *FString(__FUNCTION__), __LINE__, *MongoServerIP, MongoServerPort);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect to %s:%ld"), *FString(__FUNCTION__), __LINE__, *MongoServerIP, MongoServerPort);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMongoDisconnectButtonHack))
+	{
+		bMongoDisconnectButtonHack = false;
+		if (!bIsInit) { return; }
+		MongoQueryManager->Disconnect();
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Disconnected.."), *FString(__FUNCTION__), __LINE__);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetTaskButtonhack))
+	{
+		bSetTaskButtonhack = false;
+		if (!bIsInit) { return; }
+		if (MongoQueryManager->SetTask(TaskIdValueHack))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetEpisodeButtonHack))
+	{
+		bSetEpisodeButtonHack = false;
+		if (!bIsInit) { return; }
+		if (MongoQueryManager->SetEpisode(EpisodeIdValueHack))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bPoseQueryButtonHack))
+	{
+		bPoseQueryButtonHack = false;
+		if (!bIsInit) { return; }
+
+		FTransform Pose = MongoQueryManager->GetIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack,
+			IndividualIdValueHack, StartTimestampValueHack);
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] IndividualPose: Loc=%s; \t Quat=%s; \t (%s:%s:%s)"),
+			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString(),
+			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bTrajectoryQueryButtonHack))
+	{
+		bTrajectoryQueryButtonHack = false;
+		if (!bIsInit) { return; }
+
+		TArray<FTransform> Trajectory = MongoQueryManager->GetIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
+			IndividualIdValueHack, StartTimestampValueHack, EndTimestampValueHack, DeltaTValueHack);
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f-%f] IndividualTrajectoryNum=%ld; (%s:%s:%s)"),
+			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, EndTimestampValueHack, Trajectory.Num(),
+			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
+
+		for (const auto& Pose : Trajectory)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("\t\t\t\t Loc=%s; \t Quat=%s;"), *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString());
+		}
+	}
+	
 }
 #endif // WITH_EDITOR
 
@@ -97,6 +189,19 @@ void ASLKnowrobManager::Init()
 	}
 	KRWSClient->Connect(KRServerIP, KRServerPort, KRWSProtocol);
 
+	if (!SetVizManager())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the viz manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	if (!VizManager->Init())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the viz manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
 	// Get and connect the mongo query manager
 	if (!SetMongoQueryManager())
 	{
@@ -108,20 +213,6 @@ void ASLKnowrobManager::Init()
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not connect to mongo db.. (%s::%d)"),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MongoServerIP, MongoServerPort);
-		return;
-	}
-
-	// Get and load the individual manager 
-	if (!SetIndividualManager())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the individual manager.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
-		return;
-	}
-	if (!IndividualManager->Load(false))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d  Knowrob manager (%s) could NOT load the individual manager (%s).."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
 		return;
 	}
 
@@ -237,30 +328,6 @@ bool ASLKnowrobManager::SetMongoQueryManager()
 	return true;
 }
 
-// Get the individual manager from the world (or spawn a new one)
-bool ASLKnowrobManager::SetIndividualManager()
-{
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
-	{
-		return true;
-	}
-
-	for (TActorIterator<ASLIndividualManager>Iter(GetWorld()); Iter; ++Iter)
-	{
-		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
-		{
-			IndividualManager = *Iter;
-			return true;
-		}
-	}
-
-	// Spawning a new manager
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = TEXT("SL_IndividualManager");
-	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
-	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
-	return true;
-}
 
 // Get the viz manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetVizManager()

@@ -16,22 +16,10 @@ class UPoseableMeshComponent;
 struct FSLVizEpisodeFrameData
 {
 	// Array of the actors and their poses
-	//TArray<TPair<AActor*, FTransform>> ActorPoses;
 	TMap<AActor*, FTransform> ActorPoses;
 
 	// Array of the skeletal components and their bone poses (the actor locations are included above)
-	//TArray<TPair<UPoseableMeshComponent*, TArray<TPair<int32, FTransform>>>> BonePoses;
 	TMap<UPoseableMeshComponent*, TMap<int32, FTransform>> BonePoses;
-
-	// Default ctor
-	FSLVizEpisodeFrameData() {};
-
-	// Reserve array size ctor
-	FSLVizEpisodeFrameData(int32 ActorArraySize, int32 SkelArraySize)
-	{
-		ActorPoses.Reserve(ActorArraySize);
-		BonePoses.Reserve(SkelArraySize);
-	};
 };
 
 /*
@@ -75,9 +63,6 @@ public:
 	ASLVizEpisodeReplayManager();
 
 protected:
-	// Called when the game starts or when spaewned
-	virtual void BeginPlay() override;
-
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -89,7 +74,13 @@ public:
 	bool IsWorldSetASVisualOnly() const { return bWorldSetAsVisualOnly; };
 
 	// Load episode data
-	void LoadEpisode(const FSLVizEpisodeData& InEpisodeData);
+	void LoadEpisode(const FSLVizEpisodeData& InEpisodeDataFull, const FSLVizEpisodeData& InEpisodeDataCompact);
+
+	// Set visual world as in the given frame 
+	void GotoFrame(int32 FrameIndex);
+
+	// Set visual world as in the given timestamp (binary search for nearest index)
+	void GotoFrame(float Timestamp);
 
 //
 //	// Add a frame (make sure these are ordered)
@@ -128,20 +119,11 @@ public:
 
 
 private:
-	// Make sure the mesh of the pawn or spectator is not visible in the world
-	void HidePawnOrSpecator();
-
-	// Set actors as visuals only (disable physics, set as movable, clear any attachments)
-	void SetActorsAsVisualsOnly();
-
-	// Add a poseable mesh component clone to the skeletal actors
-	void AddPoseablMeshComponentsToSkeletalActors();
-	
-	// Remove any unnecessary actors or components
-	void RemoveUnnecessaryActorsOrComponents();
-
 	// Calculate the default update rate as an average of a given number of frames delta timestamps
 	void CalcDefaultUpdateRate(int32 MaxNumSteps);
+
+	// Apply frame poses
+	void ApplyPoses(const FSLVizEpisodeFrameData& Frame);
 
 protected:
 	// True if the world is set as visual only
@@ -151,19 +133,19 @@ protected:
 	uint8 bEpisodeLoaded : 1;
 
 	// True if the replay should loop
-	uint8 bReplayShouldLoop : 1;
+	uint8 bLoopReplay : 1;
 
 	// True if it currently in an active replay
-	uint8 bReplaying : 1;
+	uint8 bInActiveReplay : 1;
 
 	// Episode data containing all the information at every timestamp (used for fast goto calls)
-	FSLVizEpisodeData EpisodeDataRaw;
+	FSLVizEpisodeData EpisodeDataFull;
 
 	// Episode data containing only individual changes (used for fast replays)
 	FSLVizEpisodeData EpisodeDataCompact;
 
 	// Current frame index
-	int32 ReplayActiveFrameIndex;
+	int32 ActiveFrameIndex;
 
 	// Replay start frame
 	int32 ReplayFirstFrameIndex;
