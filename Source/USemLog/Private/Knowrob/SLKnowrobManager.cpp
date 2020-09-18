@@ -83,8 +83,59 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 	{
 		bLoadEpisodeDataButtonHack = false;
 		if (!bIsInit) { return; }
+		if (!VizManager->IsWorldSetForEpisodeReplay())
+		{
+			VizManager->SetupWorldForEpisodeReplay();
+		}
 		VizManager->LoadEpisodeData(MongoQueryManager->GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack));
 	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bGotoButtonHack))
+	{
+		bGotoButtonHack = false;
+		if (!bIsInit) { return; }
+		if (!VizManager->IsWorldSetForEpisodeReplay())
+		{
+			VizManager->SetupWorldForEpisodeReplay();
+		}
+		if (!VizManager->IsEpisodeLoaded())
+		{
+			VizManager->LoadEpisodeData(MongoQueryManager->GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack));
+		}
+		VizManager->GotoEpisodeFrame(GotoValueHack);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bReplayButtonHack))
+	{
+		bReplayButtonHack = false;
+		if (!bIsInit) { return; }
+		if (!VizManager->IsWorldSetForEpisodeReplay())
+		{
+			VizManager->SetupWorldForEpisodeReplay();
+		}
+		if (!VizManager->IsEpisodeLoaded())
+		{
+			VizManager->LoadEpisodeData(MongoQueryManager->GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack));
+		}
+		if (ReplayBeginValueHack > 0 && ReplayEndValueHack > 0 && ReplayBeginValueHack < ReplayEndValueHack)
+		{
+			VizManager->PlayEpisodeTimeline(ReplayBeginValueHack, ReplayEndValueHack, bReplayLoopValueHack, ReplayUpdateRateValueHack);
+		}
+		else
+		{
+			VizManager->PlayEpisode(bReplayLoopValueHack, ReplayUpdateRateValueHack);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bReplayPauseButtonHack))
+	{
+		if (!bIsInit) { return; }
+		VizManager->PauseReplay(bReplayPauseButtonHack);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bReplayStopButtonHack))
+	{
+		bReplayStopButtonHack = false;
+		if (!bIsInit) { return; }
+		VizManager->StopReplay();
+	}
+
 
 	/* MONGO button hacks */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMongoConnectButtonHack))
@@ -324,7 +375,9 @@ bool ASLKnowrobManager::SetMongoQueryManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_MongoQueryManager");
 	MongoQueryManager = GetWorld()->SpawnActor<ASLMongoQueryManager>(SpawnParams);
+#if WITH_EDITOR
 	MongoQueryManager->SetActorLabel(TEXT("SL_MongoQueryManager"));
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -350,6 +403,8 @@ bool ASLKnowrobManager::SetVizManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_VizManager");
 	VizManager = GetWorld()->SpawnActor<ASLVizManager>(SpawnParams);
+#if WITH_EDITOR
 	VizManager->SetActorLabel(TEXT("SL_VizManager"));
+#endif // WITH_EDITOR
 	return true;
 }

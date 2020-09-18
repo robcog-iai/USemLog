@@ -8,7 +8,6 @@
 #include "Skeletal/SLSkeletalDataAsset.h"
 #include "AssetRegistryModule.h" // FindSkeletalDataAsset
 #include "EngineUtils.h"
-#include "Kismet2/ComponentEditorUtils.h" // GenerateValidVariableName
 
 #include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
@@ -27,6 +26,10 @@
 
 #include "Gaze/SLGazeTargetActor.h"
 #include "Gaze/SLGazeOriginActor.h"
+
+#if WITH_EDITOR
+#include "Kismet2/ComponentEditorUtils.h" // GenerateValidVariableName
+#endif // WITH_EDITOR
 
 /* Individuals */
 // Get the semantic individual manager from the world or create a new one if none are available
@@ -680,9 +683,12 @@ USLIndividualComponent* FSLIndividualUtils::AddNewIndividualComponent(AActor* Ac
 	{
 		Actor->Modify();
 
+		FName NewComponentName;
+#if WITH_EDITOR
 		// Create an appropriate name for the new component (avoid duplicates)
-		FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(
+		NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(
 			USLIndividualComponent::StaticClass(), Actor);
+#endif // WITH_EDITOR
 
 		// Get the set of owned components that exists prior to instancing the new component.
 		TInlineComponentArray<UActorComponent*> PreInstanceComponents;

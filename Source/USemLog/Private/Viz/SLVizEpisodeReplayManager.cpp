@@ -16,9 +16,9 @@ ASLVizEpisodeReplayManager::ASLVizEpisodeReplayManager()
 	bWorldSetAsVisualOnly = false;
 	bEpisodeLoaded = false;
 	bLoopReplay = false;
-	bInActiveReplay = false;
+	bReplayRunning = false;
 
-	ReplayDefaultUpdateRate = 0.f;
+	ReplayAproxRealtimeUpdateRateValue = 0.f;
 	ActiveFrameIndex = INDEX_NONE;
 	ReplayFirstFrameIndex = INDEX_NONE;
 	ReplayLastFrameIndex = INDEX_NONE;
@@ -35,12 +35,23 @@ void ASLVizEpisodeReplayManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//// Set update rate
-	//if (LoggerParameters.UpdateRate > 0.f)
-	//{
-	//	SetActorTickInterval(LoggerParameters.UpdateRate);
-	//}
-	//SetActorTickEnabled(true);
+	if (ActiveFrameIndex < ReplayLastFrameIndex)
+	{		
+		ApplyCompactFrameChanges(ActiveFrameIndex + 1);
+	}
+	else
+	{
+		if (bLoopReplay)
+		{
+			ActiveFrameIndex = ReplayFirstFrameIndex;
+			GotoFrame(ActiveFrameIndex);
+		}
+		else
+		{
+			SetActorTickEnabled(false);
+			bReplayRunning = false;
+		}
+	}
 }
 
 // Set the whole world as a visual, disable physics, collisions, attachments, unnecesary components
@@ -48,7 +59,7 @@ void ASLVizEpisodeReplayManager::SetWorldAsVisualOnly()
 {
 	if (bWorldSetAsVisualOnly)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d World has already been set as visual only.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World has already been set as visual only.."),
 			*FString(__FUNCTION__), __LINE__);
 		return;
 	}
@@ -74,84 +85,169 @@ void ASLVizEpisodeReplayManager::LoadEpisode(const FSLVizEpisodeData& InEpisodeD
 	}
 
 	// Stop any active replay
-	if (bInActiveReplay)
+	if (bReplayRunning)
 	{
-		// TODO reset indexes
 		// Stop replay
-
-		ActiveFrameIndex = INDEX_NONE;
-		ReplayFirstFrameIndex = INDEX_NONE;
-		ReplayLastFrameIndex = INDEX_NONE;
 	}
 
 	// Clear any previous episode
-	EpisodeDataFull.Clear();
-	EpisodeDataCompact.Clear();
+	ClearEpisode();
 
 	// Set the episode data
 	EpisodeDataFull = InEpisodeDataFull;
 	EpisodeDataCompact = InEpisodeDataCompact;
 
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d EpisodeFull:\tTsNum=%d;\tFramesNum=%d;\t\tEpisodeCompact:\tTsNum=%d;\tFramesNum=%d;"),
-		*FString(__FUNCTION__), __LINE__,
-		EpisodeDataFull.Timestamps.Num(), EpisodeDataFull.Frames.Num(),
-		EpisodeDataCompact.Timestamps.Num(), EpisodeDataCompact.Frames.Num());	
-
 	// Calculate a default update rate  
-	CalcDefaultUpdateRate(256);
+	CalcRealtimeAproxUpdateRateValue(256);
 
 	// Mark the episode loaded flag to true
 	bEpisodeLoaded = true;
+
+	// Goto first frame
+	GotoFrame(0);
+}
+
+// Remove episode data
+void ASLVizEpisodeReplayManager::ClearEpisode()
+{
+	EpisodeDataFull.Clear();
+	EpisodeDataCompact.Clear();
+	ActiveFrameIndex = INDEX_NONE;
+	ReplayFirstFrameIndex = INDEX_NONE;
+	ReplayLastFrameIndex = INDEX_NONE;
+	bEpisodeLoaded = false;
+	bReplayRunning = false;
+	SetActorTickEnabled(false);
 }
 
 // Set visual world as in the given frame 
-void ASLVizEpisodeReplayManager::GotoFrame(int32 FrameIndex)
+bool ASLVizEpisodeReplayManager::GotoFrame(int32 FrameIndex)
 {
 	if (!bWorldSetAsVisualOnly)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d World is not set as visual only.."), *FString(__FUNCTION__), __LINE__);
-		return;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World is not set as visual only.."), *FString(__FUNCTION__), __LINE__);
+		return false;
 	}
 
 	if (!bEpisodeLoaded)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d No episode is loaded.."), *FString(__FUNCTION__), __LINE__);
-		return;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d No episode is loaded.."), *FString(__FUNCTION__), __LINE__);
+		return false;
 	}
 		
 	if(!EpisodeDataFull.Frames.IsValidIndex(FrameIndex))
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Frame index is not valid, this should not happen.."), *FString(__FUNCTION__), __LINE__);
-		return;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Frame index is not valid, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+		return false;
 	}
 
 	ApplyPoses(EpisodeDataFull.Frames[FrameIndex]);
-
 	ActiveFrameIndex = FrameIndex;
+
+	//UE_LOG(LogTemp, Log, TEXT("%s::%d Applied poses from frame %d.."), *FString(__FUNCTION__), __LINE__, ActiveFrameIndex);
+	return true;
 }
 
 // Set visual world as in the given timestamp (binary search for nearest index)
-void ASLVizEpisodeReplayManager::GotoFrame(float Timestamp)
+bool ASLVizEpisodeReplayManager::GotoFrame(float Timestamp)
 {
-	GotoFrame(FSLVizEpisodeReplayUtils::BinarySearchLessEqual(EpisodeDataFull.Timestamps, Timestamp));
+	return GotoFrame(FSLVizEpisodeReplayUtils::BinarySearchLessEqual(EpisodeDataFull.Timestamps, Timestamp));
+}
+
+// Play whole episode
+bool ASLVizEpisodeReplayManager::Play(bool bLoop, float UpdateRate, int32 StepSize)
+{
+	if (!bWorldSetAsVisualOnly)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World is not set as visual only.."), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
+
+	if (!bEpisodeLoaded)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d No episode is loaded.."), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
+
+	// Set replay flags
+	bLoopReplay = bLoop;
+	ReplayFirstFrameIndex = 0;
+	ReplayLastFrameIndex = EpisodeDataFull.Timestamps.Num();
+
+	// Goto first frame
+	GotoFrame(ReplayFirstFrameIndex);
+
+	// Enable tick with the given update rate
+	UpdateRate > 0.f ? SetActorTickInterval(UpdateRate) : SetActorTickInterval(ReplayAproxRealtimeUpdateRateValue);
+	SetActorTickEnabled(true);
+
+	bReplayRunning = true;
+	return true;
+}
+
+// Play given frames
+bool ASLVizEpisodeReplayManager::PlayFrames(int32 FirstFrame, int32 LastFrame, bool bLoop, float UpdateRate, int32 StepSize)
+{
+	if (FirstFrame < 0 || LastFrame < 0 || FirstFrame > LastFrame || LastFrame > EpisodeDataFull.Timestamps.Num())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d FirstFrame=%d and LastFrame=%d are not valid.."), *FString(__FUNCTION__), __LINE__, FirstFrame, LastFrame);
+		return false;
+	}
+
+	// Set replay flags
+	bLoopReplay = bLoop;
+	ReplayFirstFrameIndex = FirstFrame;
+	ReplayLastFrameIndex = LastFrame;
+
+	// Goto first frame
+	GotoFrame(ReplayFirstFrameIndex);
+
+	// Enable tick with the given update rate
+	UpdateRate > 0.f ? SetActorTickInterval(UpdateRate) : SetActorTickInterval(ReplayAproxRealtimeUpdateRateValue);
+	SetActorTickEnabled(true);
+
+	bReplayRunning = true;
+	return true;
+}
+
+// Play the episode timeline
+bool ASLVizEpisodeReplayManager::PlayTimeline(float StartTime, float EndTime, bool bLoop, float UpdateRate, int32 StepSize)
+{
+	if (StartTime < 0 || EndTime < 0 || StartTime > EndTime)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d StartTime=%f and EndTime=%f are not valid.."), *FString(__FUNCTION__), __LINE__, StartTime, EndTime);
+		return false;
+	}
+	int32 StartFrameIndex = FSLVizEpisodeReplayUtils::BinarySearchLessEqual(EpisodeDataFull.Timestamps, StartTime);
+	int32 EndFrameIndex = FSLVizEpisodeReplayUtils::BinarySearchLessEqual(EpisodeDataFull.Timestamps, EndTime);
+	return PlayFrames(StartFrameIndex, EndFrameIndex, bLoop, UpdateRate, StepSize);
+}
+
+// Set replay to pause or play
+void ASLVizEpisodeReplayManager::SetPauseReplay(bool bPause)
+{
+	if (bReplayRunning == bPause)
+	{
+		SetActorTickEnabled(!bPause);
+		bReplayRunning = !bPause;
+	}
+}
+
+// Stop replay, goto first frame
+void ASLVizEpisodeReplayManager::StopReplay()
+{
+	if (bReplayRunning)
+	{
+		SetActorTickEnabled(false);
+		bReplayRunning = false;
+		GotoFrame(0);
+		ReplayFirstFrameIndex = INDEX_NONE;
+		ReplayLastFrameIndex = INDEX_NONE;
+	}
 }
 
 
-//
-//// Goto timestamp, if timestamp is too large it goes to the last frame, if too small goes to the first frame
-//void ASLVizEpisodeReplayManager::GoTo(float Timestamp)
-//{
-//	ActiveFrameIndex = FBinaryFindIndex::LessEqual(Timestamps, Timestamp);
-//	if (Frames.IsValidIndex(ActiveFrameIndex))
-//	{
-//		Frames[ActiveFrameIndex].ApplyPoses();
-//	}
-//	else
-//	{
-//		UE_LOG(LogTemp, Error, TEXT("%s::%d Found index [%ld] is not valid.."), *FString(__FUNCTION__), __LINE__, ActiveFrameIndex);
-//	}
-//}
-//
+
 //// Goto the next nth frame
 //void ASLVizEpisodeReplayManager::Next(int32 StepSize, bool bLoop)
 //{	
@@ -259,7 +355,7 @@ void ASLVizEpisodeReplayManager::GotoFrame(float Timestamp)
 //
 //		if (UpdateRate < 0.f)
 //		{
-//			UpdateRate = CalcDefaultUpdateRate(8);
+//			UpdateRate = CalcRealtimeAproxUpdateRateValue(8);
 //		}
 //
 //		// Use delay since the first frame was already applied
@@ -300,7 +396,7 @@ void ASLVizEpisodeReplayManager::GotoFrame(float Timestamp)
 //
 //		if (UpdateRate < 0.f)
 //		{
-//			UpdateRate = CalcDefaultUpdateRate(8);
+//			UpdateRate = CalcRealtimeAproxUpdateRateValue(8);
 //		}
 //
 //		// Use delay since the first frame was already applied
@@ -383,14 +479,26 @@ void ASLVizEpisodeReplayManager::GotoFrame(float Timestamp)
 //}
 
 
-// Calculate an average update rate from the timestamps
-void ASLVizEpisodeReplayManager::CalcDefaultUpdateRate(int32 MaxNumSteps)
+// Apply the compact episode data given frame changes
+void ASLVizEpisodeReplayManager::ApplyCompactFrameChanges(int32 FrameIndex)
+{
+	if (!EpisodeDataCompact.Frames.IsValidIndex(FrameIndex))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Frame index is not valid, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+	ApplyPoses(EpisodeDataCompact.Frames[FrameIndex]);
+	ActiveFrameIndex = FrameIndex;
+}
+
+// Calculate an approximation of the update rate value to coincide with realtime
+void ASLVizEpisodeReplayManager::CalcRealtimeAproxUpdateRateValue(int32 MaxNumSteps)
 {
 	if (!EpisodeDataFull.IsValid() || !EpisodeDataCompact.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Episode data is not valid, cannot aprox a default update rate"),
 			*FString(__FUNCTION__), __LINE__);
-		ReplayDefaultUpdateRate = 0.f;
+		ReplayAproxRealtimeUpdateRateValue = 0.f;
 	}
 
 	const int32 NumFrames = EpisodeDataFull.Timestamps.Num();
@@ -414,7 +522,10 @@ void ASLVizEpisodeReplayManager::CalcDefaultUpdateRate(int32 MaxNumSteps)
 		UpdateRate += (EpisodeDataFull.Timestamps[Idx+1] - EpisodeDataFull.Timestamps[Idx]);
 	}
 
-	ReplayDefaultUpdateRate = UpdateRate / ((float)(MaxNumSteps - 1));
+	ReplayAproxRealtimeUpdateRateValue = UpdateRate / ((float)(MaxNumSteps - 1));
+
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Default update rate set to %f seconds .."),
+		*FString(__FUNCTION__), __LINE__, ReplayAproxRealtimeUpdateRateValue);
 }
 
 // Apply frame poses

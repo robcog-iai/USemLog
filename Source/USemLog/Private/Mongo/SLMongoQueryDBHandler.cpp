@@ -515,6 +515,12 @@ TArray<TPair<float, TMap<FString, FTransform>>> FSLMongoQueryDBHandler::GetEpiso
 	return EpisodeData;
 }
 
+// Get the whole episode data in an async thread
+TArray<TPair<float, TMap<FString, FTransform>>> FSLMongoQueryDBHandler::GetEpisodeDataAsync() const
+{
+	return TArray<TPair<float, TMap<FString, FTransform>>>();
+}
+
 // Get the episode data at the given timestamp (frame)
 TMap<FString, FTransform> FSLMongoQueryDBHandler::GetFrameData(float Ts)
 {

@@ -171,8 +171,14 @@ public:
 	// Setup the world for episode replay (remove physics, pause simulation, change skeletal meshes to poseable meshes)
 	bool SetupWorldForEpisodeReplay();
 
+	// Check if world is set for episode replay
+	bool IsWorldSetForEpisodeReplay() const;
+
 	// Change the data into an episode format and load it to the episode replay manager
 	void LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData);
+
+	// Check if any episode is loaded (return the name of the episode)
+	bool IsEpisodeLoaded() const;
 
 	// Go to the frame at the given timestamp
 	bool GotoEpisodeFrame(float Ts);
@@ -181,10 +187,13 @@ public:
 	bool PlayEpisode(bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
 
 	// Replay the whole loaded episode
-	bool PlayEpisodeFrames(float StartTime, float EndTime, bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+	bool PlayEpisodeTimeline(float StartTime, float EndTime, bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
 
-	// Pause the replay (if it is currently playing)
-	bool PauseReplay(bool bPause);
+	// Pause/unpause the replay (if active)
+	void PauseReplay(bool bPause);
+
+	// Stop replay (if active, and goto frame 0)
+	void StopReplay();
 
 private:
 	/* Managers */

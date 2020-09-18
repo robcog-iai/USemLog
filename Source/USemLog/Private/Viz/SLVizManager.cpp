@@ -126,6 +126,7 @@ void ASLVizManager::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 		SetupWorldForEpisodeReplay();
 	}	
 }
+#endif // WITH_EDITOR
 
 // Called when actor removed from game or game ended
 void ASLVizManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -133,7 +134,7 @@ void ASLVizManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	Reset();
 }
-#endif // WITH_EDITOR
+
 
 // Load all the required managers
 bool ASLVizManager::Init()
@@ -682,6 +683,17 @@ bool ASLVizManager::SetupWorldForEpisodeReplay()
 	return EpisodeReplayManager->IsWorldSetASVisualOnly();
 }
 
+// Check if world is set for episode replay
+bool ASLVizManager::IsWorldSetForEpisodeReplay() const
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+	return EpisodeReplayManager->IsWorldSetASVisualOnly();
+}
+
 // Change the data into an episode format and load it to the episode replay manager
 void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData)
 {
@@ -817,6 +829,72 @@ void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTra
 	EpisodeReplayManager->LoadEpisode(EpisodeDataFull, EpisodeDataCompact);
 }
 
+// Check if any episode is loaded (return the name of the episode)
+bool ASLVizManager::IsEpisodeLoaded() const
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+	return EpisodeReplayManager->IsEpisodeLoaded();
+}
+
+// Go to the frame at the given timestamp
+bool ASLVizManager::GotoEpisodeFrame(float Ts)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+	return EpisodeReplayManager->GotoFrame(Ts);
+}
+
+// Replay the whole loaded episode
+bool ASLVizManager::PlayEpisode(bool bLoop, float UpdateRate, int32 StepSize)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+	return EpisodeReplayManager->Play(bLoop, UpdateRate, StepSize);
+}
+
+// Replay the selected timeline in the episode
+bool ASLVizManager::PlayEpisodeTimeline(float StartTime, float EndTime, bool bLoop, float UpdateRate, int32 StepSize)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+	return EpisodeReplayManager->PlayTimeline(StartTime, EndTime, bLoop, UpdateRate, StepSize);
+}
+
+// Pause/unpause the replay (if active)
+void ASLVizManager::PauseReplay(bool bPause)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	EpisodeReplayManager->SetPauseReplay(bPause);
+}
+
+// Stop replay (if active, and goto frame 0)
+void ASLVizManager::StopReplay()
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	return EpisodeReplayManager->StopReplay();
+}
+
 
 
 
@@ -842,7 +920,9 @@ bool ASLVizManager::SetIndividualManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_IndividualManager");
 	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
+#if WITH_EDITOR
 	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -867,7 +947,9 @@ bool ASLVizManager::SetVizHighlightManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_VizHighlightManager");
 	HighlightManager = GetWorld()->SpawnActor<ASLVizHighlightManager>(SpawnParams);
+#if WITH_EDITOR
 	HighlightManager->SetActorLabel(TEXT("SL_VizHighlightManager"));
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -892,7 +974,9 @@ bool ASLVizManager::SetVizMarkerManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_VizMarkerManager");
 	MarkerManager = GetWorld()->SpawnActor<ASLVizMarkerManager>(SpawnParams);
+#if WITH_EDITOR
 	MarkerManager->SetActorLabel(TEXT("SL_VizMarkerManager"));
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -917,6 +1001,8 @@ bool ASLVizManager::SetEpisodeReplayManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_EpisodeReplayManager");
 	EpisodeReplayManager = GetWorld()->SpawnActor<ASLVizEpisodeReplayManager>(SpawnParams);
+#if WITH_EDITOR
 	EpisodeReplayManager->SetActorLabel(TEXT("SL_EpisodeReplayManager"));
+#endif // WITH_EDITOR
 	return true;
 }

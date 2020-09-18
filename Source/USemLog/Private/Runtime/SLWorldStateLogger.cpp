@@ -327,7 +327,9 @@ bool ASLWorldStateLogger::SetIndividualManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_IndividualManager");
 	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
+#if WITH_EDITOR
 	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
+#endif // WITH_EDITOR
 
 	if (IndividualManager->Load(false))
 	{

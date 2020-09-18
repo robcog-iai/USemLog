@@ -134,15 +134,50 @@ private:
 	bool bFinishButtonHack = false;
 
 
-	/* MONGO Editor button hacks */
+	/* VIZ Editor button hacks */
 	// Triggers a call to set the world as visual only
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
 	bool bSetupWorldForEpisodeReplayButtonHack = false;
 
 	// Triggers an episode query call
-	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Viz Buttons")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
 	bool bLoadEpisodeDataButtonHack = false;
 
+	// Task to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	float GotoValueHack = 0.f;
+
+	// Triggers a goto call
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	bool bGotoButtonHack = false;
+
+	// Task to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	float ReplayBeginValueHack = -1.f;
+
+	// Task to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	float ReplayEndValueHack = -1.f;
+
+	// Task to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	bool bReplayLoopValueHack = true;
+
+	// Task to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	float ReplayUpdateRateValueHack = -1.f;
+
+	// Triggers a goto call
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	bool bReplayButtonHack = false;
+
+	// Triggers a pause call
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	bool bReplayPauseButtonHack = false;
+
+	// Triggers a stop call
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
+	bool bReplayStopButtonHack = false;
 
 
 	/* MONGO Editor button hacks */

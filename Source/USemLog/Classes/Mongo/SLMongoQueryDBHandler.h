@@ -55,6 +55,9 @@ public:
 	// Get the whole episode data
 	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData() const;
 
+	// Get the whole episode data in an async thread
+	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeDataAsync() const;
+
 	// Get the episode data at the given timestamp (frame)
 	TMap<FString, FTransform> GetFrameData(float Ts);
 

@@ -355,6 +355,7 @@ bool USLVirtualBoneIndividual::SetChildrenIndividuals()
 	{
 		return true;
 	}
+#if WITH_EDITOR
 	// Clear any dangling children
 	ClearChildrenIndividuals();
 
@@ -378,6 +379,7 @@ bool USLVirtualBoneIndividual::SetChildrenIndividuals()
 			}
 		}
 	}
+#endif // WITH_EDITOR
 	return false;
 }
 

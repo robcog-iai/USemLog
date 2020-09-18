@@ -76,24 +76,33 @@ public:
 	// Load episode data
 	void LoadEpisode(const FSLVizEpisodeData& InEpisodeDataFull, const FSLVizEpisodeData& InEpisodeDataCompact);
 
+	// Check if an episode is loaded
+	bool IsEpisodeLoaded() const { return bEpisodeLoaded; };
+
+	// Remove episode data
+	void ClearEpisode();
+
 	// Set visual world as in the given frame 
-	void GotoFrame(int32 FrameIndex);
+	bool GotoFrame(int32 FrameIndex);
 
 	// Set visual world as in the given timestamp (binary search for nearest index)
-	void GotoFrame(float Timestamp);
+	bool GotoFrame(float Timestamp);
 
-//
-//	// Add a frame (make sure these are ordered)
-//	void AddFrame(float Timestamp,
-//		const TMap<AStaticMeshActor*, FTransform>& EntityPoses,
-//		const TMap<ASkeletalMeshActor*, TPair<FTransform, TMap<FString, FTransform>>>& SkeletalPoses);
-//
-//	// Clear all frames related data, keep mappings
-//	void ClearFrames();
-//
-//	// Goto the frame nearest to the timestamp
-//	void GoTo(float Timestamp);
-//
+	// Play whole episode
+	bool Play(bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+
+	// Play given frames
+	bool PlayFrames(int32 FirstFrame, int32 LastFrame, bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+
+	// Play the episode timeline
+	bool PlayTimeline(float StartTime, float EndTime, bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+
+	// Set replay to pause or play
+	void SetPauseReplay(bool bPause);
+
+	// Stop replay, goto first frame
+	void StopReplay();
+
 //	// Goto the next nth frame
 //	void Next(int32 StepSize = 1, bool bLoop = false);
 //
@@ -109,18 +118,17 @@ public:
 //	// Pause / start replay
 //	void ToggleReplay();
 //
-//	// Set replay to pause or play
-//	void SetPauseReplay(bool bPause);
-//	
-//
 //protected:
 //	// Replay timer callback
 //	void TimerCallback();
 
 
 private:
-	// Calculate the default update rate as an average of a given number of frames delta timestamps
-	void CalcDefaultUpdateRate(int32 MaxNumSteps);
+	// Apply the compact episode data given frame changes
+	void ApplyCompactFrameChanges(int32 FrameIndex);
+
+	// Calculate an approximation of the update rate value to coincide with realtime
+	void CalcRealtimeAproxUpdateRateValue(int32 MaxNumSteps);
 
 	// Apply frame poses
 	void ApplyPoses(const FSLVizEpisodeFrameData& Frame);
@@ -136,7 +144,7 @@ protected:
 	uint8 bLoopReplay : 1;
 
 	// True if it currently in an active replay
-	uint8 bInActiveReplay : 1;
+	uint8 bReplayRunning : 1;
 
 	// Episode data containing all the information at every timestamp (used for fast goto calls)
 	FSLVizEpisodeData EpisodeDataFull;
@@ -157,7 +165,7 @@ protected:
 	int32 ReplayStepSize;
 
 	// Default replay update rate
-	float ReplayDefaultUpdateRate;
+	float ReplayAproxRealtimeUpdateRateValue;
 };
 
 

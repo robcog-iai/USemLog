@@ -10,6 +10,9 @@
 #include "Components/PoseableMeshComponent.h"
 #include "EngineUtils.h"
 
+// IsA's
+#include "GameFramework/MovementComponent.h"
+
 // Make sure the mesh of the pawn or spectator is not visible in the world
 void FSLVizEpisodeReplayUtils::HidePawnOrSpectator(UWorld* World)
 {
@@ -90,7 +93,10 @@ void FSLVizEpisodeReplayUtils::RemoveUnnecessaryComponents(AActor* Actor)
 	TArray<UActorComponent*> ComponentsToRemove;
 	for(const auto& C : Actor->GetComponents())
 	{
-		if (C == Actor->GetRootComponent() || C->IsA(USLIndividualComponent::StaticClass()))
+		if (C == Actor->GetRootComponent() 
+			|| C->IsA(USLIndividualComponent::StaticClass())
+			|| C->IsA(UMovementComponent::StaticClass())
+			)
 		{
 			// skip
 			continue;
