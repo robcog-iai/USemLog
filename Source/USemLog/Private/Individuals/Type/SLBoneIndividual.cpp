@@ -415,9 +415,9 @@ bool USLBoneIndividual::SetChildrenIndividuals()
 	{
 		return true;
 	}
+#if WITH_EDITOR
 	// Clear any dangling children
 	ClearChildrenIndividuals();
-
 	if (HasValidSkeletalMeshComponent() || SetSkeletalMeshComponent())
 	{
 		if (HasValidBoneIndex())
@@ -438,6 +438,7 @@ bool USLBoneIndividual::SetChildrenIndividuals()
 			}
 		}
 	}
+#endif // WITH_EDITOR
 	return false;
 }
 

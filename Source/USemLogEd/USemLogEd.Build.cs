@@ -29,8 +29,8 @@ public class USemLogEd : ModuleRules
 			{
 				"Core",
 				"USemLog",
-				"UTags",
-				"UIds",
+				//"UTags",
+				//"UIds",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

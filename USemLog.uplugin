@@ -33,28 +33,12 @@
   ],
   "Plugins": [
     {
-      "Name": "UUtils",
-      "Enabled": true
-    },
-    {
-      "Name": "UPhysicsBasedMC",
-      "Enabled": true
-    },
-    {
       "Name": "UMongoC",
-      "Enabled": true
-    },
-    {
-      "Name": "SRanipal",
       "Enabled": true
     },
     {
       "Name": "UProtobuf",
       "Enabled": true
-    },
-    {
-      "Name": "UROSBridge",
-      "Enabled": false
     }
   ]
 }

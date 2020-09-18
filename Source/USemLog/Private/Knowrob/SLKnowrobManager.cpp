@@ -324,7 +324,9 @@ bool ASLKnowrobManager::SetMongoQueryManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_MongoQueryManager");
 	MongoQueryManager = GetWorld()->SpawnActor<ASLMongoQueryManager>(SpawnParams);
+#if WITH_EDITOR
 	MongoQueryManager->SetActorLabel(TEXT("SL_MongoQueryManager"));
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -350,6 +352,8 @@ bool ASLKnowrobManager::SetVizManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_VizManager");
 	VizManager = GetWorld()->SpawnActor<ASLVizManager>(SpawnParams);
+#if WITH_EDITOR
 	VizManager->SetActorLabel(TEXT("SL_VizManager"));
+#endif // WITH_EDITOR
 	return true;
 }

@@ -8,7 +8,9 @@
 #include "Individuals/SLIndividualUtils.h"
 
 #include "EngineUtils.h"
+#if WITH_EDITOR
 #include "Kismet2/ComponentEditorUtils.h" // GenerateValidVariableName
+#endif // WITH_EDITOR
 
 // Get the semantic individual manager from the world or create a new one if none are available
 ASLIndividualInfoManager* FSLIndividualInfoUtils::GetOrCreateNewIndividualInfoManager(UWorld* World, bool bCreateNew)
@@ -219,9 +221,12 @@ USLIndividualInfoComponent* FSLIndividualInfoUtils::AddNewIndividualInfoComponen
 	{
 		Actor->Modify();
 
+		FName NewComponentName;
+#if WITH_EDITOR
 		// Create an appropriate name for the new component (avoid duplicates)
-		FName NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(
-			USLIndividualInfoComponent::StaticClass(), Actor);
+		NewComponentName = *FComponentEditorUtils::GenerateValidVariableName(
+			USLIndividualComponent::StaticClass(), Actor);
+#endif // WITH_EDITOR
 
 		// Get the set of owned components that exists prior to instancing the new component.
 		TInlineComponentArray<UActorComponent*> PreInstanceComponents;

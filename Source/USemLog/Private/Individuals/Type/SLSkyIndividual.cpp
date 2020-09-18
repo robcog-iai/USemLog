@@ -78,7 +78,9 @@ bool USLSkyIndividual::ApplyMaskMaterials(bool bIncludeChildren /*= false*/)
 
 	if (!bIsMaskMaterialOn)
 	{
+#if WITH_EDITOR		
 		ParentActor->SetIsTemporarilyHiddenInEditor(true);
+#endif // WITH_EDITOR
 		ParentActor->SetActorHiddenInGame(true);
 		bIsMaskMaterialOn = true;
 		return true;
@@ -96,7 +98,9 @@ bool USLSkyIndividual::ApplyOriginalMaterials()
 
 	if (bIsMaskMaterialOn)
 	{
+#if WITH_EDITOR		
 		ParentActor->SetIsTemporarilyHiddenInEditor(false);
+#endif // WITH_EDITOR
 		ParentActor->SetActorHiddenInGame(false);
 		bIsMaskMaterialOn = false;
 		return true;

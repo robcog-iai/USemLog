@@ -9,7 +9,6 @@
 #include "Individuals/Type/SLRobotIndividual.h"
 
 #include "EngineUtils.h"
-#include "Kismet2/ComponentEditorUtils.h"
 
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"

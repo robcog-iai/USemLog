@@ -126,6 +126,7 @@ void ASLVizManager::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 		SetupWorldForEpisodeReplay();
 	}	
 }
+#endif // WITH_EDITOR
 
 // Called when actor removed from game or game ended
 void ASLVizManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -133,7 +134,6 @@ void ASLVizManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	Reset();
 }
-#endif // WITH_EDITOR
 
 // Load all the required managers
 bool ASLVizManager::Init()
@@ -842,7 +842,9 @@ bool ASLVizManager::SetIndividualManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_IndividualManager");
 	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
+#if WITH_EDITOR
 	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -867,7 +869,9 @@ bool ASLVizManager::SetVizHighlightManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_VizHighlightManager");
 	HighlightManager = GetWorld()->SpawnActor<ASLVizHighlightManager>(SpawnParams);
+#if WITH_EDITOR
 	HighlightManager->SetActorLabel(TEXT("SL_VizHighlightManager"));
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -892,7 +896,9 @@ bool ASLVizManager::SetVizMarkerManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_VizMarkerManager");
 	MarkerManager = GetWorld()->SpawnActor<ASLVizMarkerManager>(SpawnParams);
+#if WITH_EDITOR
 	MarkerManager->SetActorLabel(TEXT("SL_VizMarkerManager"));
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -917,6 +923,8 @@ bool ASLVizManager::SetEpisodeReplayManager()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_EpisodeReplayManager");
 	EpisodeReplayManager = GetWorld()->SpawnActor<ASLVizEpisodeReplayManager>(SpawnParams);
+#if WITH_EDITOR
 	EpisodeReplayManager->SetActorLabel(TEXT("SL_EpisodeReplayManager"));
+#endif // WITH_EDITOR
 	return true;
 }

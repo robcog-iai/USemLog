@@ -3,7 +3,7 @@
 
 #include "Vision/SLVirtualCameraView.h"
 #include "Camera/CameraComponent.h"
-#include "Tags.h"
+//#include "Tags.h"
 
 // Ctor
 ASLVirtualCameraView::ASLVirtualCameraView()
@@ -15,10 +15,10 @@ ASLVirtualCameraView::ASLVirtualCameraView()
 	GetCameraComponent()->SetWorldScale3D(FVector(0.1));
 #endif // WITH_EDITORONLY_DATA
 
-#if WITH_EDITOR
-	// Mimics a button
-	bResetTransformButtton = false;
-#endif // WITH_EDITOR
+//#if WITH_EDITOR
+//	// Mimics a button
+//	bResetTransformButtton = false;
+//#endif // WITH_EDITOR
 }
 
 // Called when the game starts or when spawned
@@ -40,7 +40,7 @@ FString ASLVirtualCameraView::GetClassName()
 {
 	if(ClassName.IsEmpty())
 	{
-		ClassName =  FTags::GetValue(this, "SemLog", "Class");
+		//ClassName =  FTags::GetValue(this, "SemLog", "Class");
 	}
 	return ClassName;
 }
@@ -50,7 +50,7 @@ FString ASLVirtualCameraView::GetId()
 {
 	if (Id.IsEmpty())
 	{
-		Id = FTags::GetValue(this, "SemLog", "Id");
+		//Id = FTags::GetValue(this, "SemLog", "Id");
 	}
 	return Id;
 }
@@ -67,10 +67,10 @@ void ASLVirtualCameraView::PostEditChangeProperty(struct FPropertyChangedEvent& 
 	FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != NULL) ?
 		PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(ASLVirtualCameraView, bResetTransformButtton))
-	{
-		SetActorRelativeTransform(FTransform::Identity);
-		bResetTransformButtton = false;
-	}
+	//if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(ASLVirtualCameraView, bResetTransformButtton))
+	//{
+	//	SetActorRelativeTransform(FTransform::Identity);
+	//	bResetTransformButtton = false;
+	//}
 }
 #endif // WITH_EDITOR

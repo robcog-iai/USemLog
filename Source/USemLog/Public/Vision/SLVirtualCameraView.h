@@ -47,9 +47,9 @@ private:
 	// Semantic uinque id of the virtual vision camera
 	FString Id;
 
-#if WITH_EDITOR
-	// Mimics a button to set its relative tranform to 0
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bResetTransformButtton;
-#endif // WITH_EDITOR
+//#if WITH_EDITOR
+//	// Mimics a button to set its relative tranform to 0
+//	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+//	bool bResetTransformButtton;
+//#endif // WITH_EDITOR
 };
