@@ -6,6 +6,8 @@
 
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Individuals/Type/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLBoneIndividual.h"
+#include "Individuals/Type/SLVirtualBoneIndividual.h"
 #include "Individuals/Type/SLRobotIndividual.h"
 
 // UUtils
@@ -55,7 +57,7 @@ int32 FSLWorldStateDBWriterAsyncTask::FirstWrite()
 	AddTimestamp(ws_doc);
 
 	Num += AddAllIndividuals(ws_doc);
-	//Num += AddSkeletalIndividals(ws_doc);
+	Num += AddSkeletalIndividals(ws_doc);
 	//Num += AddRobotIndividuals(ws_doc);
 
 	// Write only if there are any entries in the document
@@ -86,8 +88,8 @@ int32 FSLWorldStateDBWriterAsyncTask::Write()
 
 	AddTimestamp(ws_doc);
 
-	Num += AddAllIndividualsThatMoved(ws_doc);
-	//Num += AddSkeletalIndividals(ws_doc);
+	Num += AddIndividualsThatMoved(ws_doc);
+	Num += AddSkeletalIndividals(ws_doc);
 	//Num += AddRobotIndividuals(ws_doc);
 
 	// Write only if there are any entries in the document
@@ -145,7 +147,7 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividuals(bson_t* doc)
 }
 
 // Add only the individuals that moved (return the number of individuals added)
-int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividualsThatMoved(bson_t* doc)
+int32 FSLWorldStateDBWriterAsyncTask::AddIndividualsThatMoved(bson_t* doc)
 {
 	int32 Num = 0;
 
@@ -201,16 +203,15 @@ int32 FSLWorldStateDBWriterAsyncTask::AddSkeletalIndividals(bson_t* doc)
 
 			bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
 			BSON_APPEND_DOCUMENT_BEGIN(&arr_obj, idx_key, &individual_obj);
-
 				// Id
 				BSON_APPEND_UTF8(&individual_obj, "id", TCHAR_TO_UTF8(*SkelIndividual->GetIdValue()));
 				// Pose
 				AddPose(SkelIndividual->GetCachedPose(), &individual_obj);
 				// Bones
-				AddSkeletalBoneIndividuals(SkelIndividual->GetBoneIndividuals(), SkelIndividual->GetVirtualBoneIndividuals(), &individual_obj);
+				AddSkeletalBoneIndividuals(SkelIndividual->GetBoneIndividuals(), SkelIndividual->GetVirtualBoneIndividuals(),
+					&individual_obj);
 				// Constraints
-				AddSkeletalConstraintIndividuals(SkelIndividual->GetBoneConstraintIndividuals(), &individual_obj);
-
+				//AddSkeletalConstraintIndividuals(SkelIndividual->GetBoneConstraintIndividuals(), &individual_obj);
 			bson_append_document_end(&arr_obj, &individual_obj);
 
 			arr_idx++;
@@ -222,10 +223,45 @@ int32 FSLWorldStateDBWriterAsyncTask::AddSkeletalIndividals(bson_t* doc)
 }
 
 // Add skeletal bones to the document
-void FSLWorldStateDBWriterAsyncTask::AddSkeletalBoneIndividuals(const TArray<USLBoneIndividual*>& BoneIndividuals,
+void FSLWorldStateDBWriterAsyncTask::AddSkeletalBoneIndividuals(
+	const TArray<USLBoneIndividual*>& BoneIndividuals,
 	const TArray<USLVirtualBoneIndividual*>& VirtualBoneIndividuals,
 	bson_t* doc)
 {
+	bson_t bones_arr;
+	bson_t arr_obj;
+	char idx_str[16];
+	const char* idx_key;
+	uint32_t arr_idx = 0;
+
+	BSON_APPEND_ARRAY_BEGIN(doc, "bones", &bones_arr);
+
+	for (const auto& BI : BoneIndividuals)
+	{
+		bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, idx_key, &arr_obj);
+			// Bone index
+			BSON_APPEND_INT32(&arr_obj, "idx", BI->GetBoneIndex());
+			// Bone world pose
+			AddPose(BI->GetCachedPose(), &arr_obj);
+		bson_append_document_end(&bones_arr, &arr_obj);
+		arr_idx++;
+	}
+
+	for (const auto& VBI : VirtualBoneIndividuals)
+	{
+		bson_uint32_to_string(arr_idx, &idx_key, idx_str, sizeof idx_str);
+		BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, idx_key, &arr_obj);
+			// Bone index
+			BSON_APPEND_INT32(&arr_obj, "idx", VBI->GetBoneIndex());
+			// Bone world pose
+			AddPose(VBI->GetCachedPose(), &arr_obj);
+		bson_append_document_end(&bones_arr, &arr_obj);
+		arr_idx++;
+	}
+
+
+	bson_append_array_end(doc, &bones_arr);
 }
 
 // Add skeletal bone constraints to the document

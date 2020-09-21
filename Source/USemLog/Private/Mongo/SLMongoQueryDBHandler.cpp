@@ -5,6 +5,7 @@
 
 #if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
+#include "..\..\Classes\Mongo\SLMongoQueryDBHandler.h"
 #endif // SL_WITH_ROS_CONVERSIONS
 
 // Ctor
@@ -253,7 +254,7 @@ FTransform FSLMongoQueryDBHandler::GetIndividualPoseAt(const FString& Id, float 
 			"$match",
 			"{",
 				"timestamp", "{", "$lte", BCON_DOUBLE(Ts), "}",
-				"individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),
+				"individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// yields faster results if we match against the id from the start
 			"}",
 		"}",
 		"{",
@@ -271,7 +272,7 @@ FTransform FSLMongoQueryDBHandler::GetIndividualPoseAt(const FString& Id, float 
 		"{",
 			"$match",
 			"{",
-				"individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),
+				"individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// match against the searched id in the unwinded array (has all individuals from the doc)
 			"}",
 		"}",
 		"{",
@@ -334,29 +335,27 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 		"{",
 			"$match",
 			"{",
-				"timestamp", 
-				"{", 
-					"$gte", BCON_DOUBLE(StartTs),
-					"$lte", BCON_DOUBLE(EndTs),
-				"}",
+				"timestamp", "{", "$gte", BCON_DOUBLE(StartTs),	"$lte", BCON_DOUBLE(EndTs),	"}",
+				"individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// yields faster results if we match against the id from the start
 			"}",
 		"}",
+		"{",
+			"$sort",
+				"{",
+					"timestamp", BCON_INT32(1),							// if sort if right after match it barely adds any time penalty
+				"}",
+			"}",
+		"}"
 		"{",
 			"$unwind", BCON_UTF8("$individuals"),
 		"}",
 		"{",
 			"$match",
 			"{",
-				"individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),
+				"individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// match against the searched id in the unwinded array (has all individuals from the doc)
 			"}",
 		"}",
-		//"{",
-		//	"$sort",
-		//		"{",
-		//			"timestamp", BCON_INT32(1),
-		//		"}",
-		//	"}",
-		//"}"
+
 		"{",
 			"$project",
 			"{",
@@ -408,8 +407,255 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds..;"),
 		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin);
 #endif
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Traj size=%ld;"), *FString(__FUNCTION__), __LINE__, Trajectory.Num());
+	//UE_LOG(LogTemp, Log, TEXT("%s::%d Traj size=%ld;"), *FString(__FUNCTION__), __LINE__, Trajectory.Num());
 	return Trajectory;
+}
+
+// Get skeletal individual pose
+TPair<FTransform, TMap<int32, FTransform>> FSLMongoQueryDBHandler::GetSkeletalIndividualPoseAt(const FString& Id, float Ts)
+{
+	TPair<FTransform, TMap<int32, FTransform>> SkeletalPosePair;
+	if (!IsReady())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d DB handler is not ready, make sure the server, database, and collection is set.."), *FString(__FUNCTION__), __LINE__);
+		return SkeletalPosePair;
+	}
+
+#if SL_WITH_LIBMONGO_C	
+	double ExecBegin = FPlatformTime::Seconds();
+
+	bson_error_t error;
+	const bson_t *doc;
+	mongoc_cursor_t *cursor;
+	bson_t *pipeline;
+
+	pipeline = BCON_NEW("pipeline", "[",
+		"{",
+			"$match",
+			"{",
+				"timestamp", "{", "$lte", BCON_DOUBLE(Ts), "}",
+				"skel_individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// yields faster results if we match against the id from the start
+			"}",
+		"}",
+		"{",
+			"$sort",
+			"{",
+				"timestamp", BCON_INT32(-1),
+			"}",
+		"}",
+		"{",
+			"$limit", BCON_INT32(1),
+		"}",
+		"{",
+			"$unwind", BCON_UTF8("$skel_individuals"),
+		"}",
+		"{",
+			"$match",
+			"{",
+				"skel_individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// match against the searched id in the unwinded array (has all individuals from the doc)
+			"}",
+		"}",
+		"{",
+			"$project",
+			"{",
+				"_id", BCON_INT32(0),
+				"timestamp", BCON_INT32(1),
+				"bones", BCON_UTF8("$skel_individuals.bones"),		// bones data (index, loc, quat)
+				"loc", BCON_UTF8("$skel_individuals.loc"),			// actor loc
+				"quat", BCON_UTF8("$skel_individuals.quat"),		// actor quat
+			"}",
+		"}",
+		"]");
+
+	cursor = mongoc_collection_aggregate(
+		collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+	double QueryDuration = FPlatformTime::Seconds() - ExecBegin;
+
+
+	// Read cursor if no errors occured
+	if (!mongoc_cursor_error(cursor, &error))
+	{
+		if (mongoc_cursor_next(cursor, &doc))
+		{
+			SkeletalPosePair.Key = GetPose(doc);
+
+			// Get bones data
+			bson_iter_t bones;
+			if (bson_iter_init(&bones, doc) && bson_iter_find(&bones, "bones"))
+			{
+				bson_iter_t bone;
+				if (bson_iter_recurse(&bones, &bone))
+				{
+					int32 BoneIndex;
+					bson_iter_t value;
+					while (bson_iter_next(&bone))
+					{
+						if (bson_iter_recurse(&bone, &value) && bson_iter_find(&value, "idx"))
+						{
+							BoneIndex = bson_iter_int32(&value);							
+						}
+						SkeletalPosePair.Value.Emplace(BoneIndex, GetPose(&bone));
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	double CursorReadDuration = FPlatformTime::Seconds() - ExecBegin - QueryDuration;
+
+	mongoc_cursor_destroy(cursor);
+	bson_destroy(pipeline);
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds..;"),
+		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin);
+#endif
+	return SkeletalPosePair;
+}
+
+// Get skeletal individual trajectory
+TArray<TPair<FTransform, TMap<int32, FTransform>>> FSLMongoQueryDBHandler::GetSkeletalIndividualTrajectory(const FString& Id, float StartTs, float EndTs, float DeltaT) const
+{
+	TArray<TPair<FTransform, TMap<int32, FTransform>>> SkeletalTrajectoryPair;
+	if (!IsReady())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d DB handler is not ready, make sure the server, database, and collection is set.."), *FString(__FUNCTION__), __LINE__);
+		return SkeletalTrajectoryPair;
+	}
+
+#if SL_WITH_LIBMONGO_C
+	double ExecBegin = FPlatformTime::Seconds();
+
+	bson_error_t error;
+	const bson_t *doc;
+	mongoc_cursor_t *cursor;
+	bson_t *pipeline;
+
+	pipeline = BCON_NEW("pipeline", "[",
+		"{",
+			"$match",
+			"{",
+				"timestamp", "{", "$gte", BCON_DOUBLE(StartTs),	"$lte", BCON_DOUBLE(EndTs),	"}",
+				"skel_individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// yields faster results if we match against the id from the start
+			"}",
+		"}",
+			"$sort",
+				"{",
+					"timestamp", BCON_INT32(1),								// if sort if right after match it barely adds any time penalty
+				"}",
+			"}",
+		"{",
+			"$unwind", BCON_UTF8("$skel_individuals"),
+		"}",
+		"{",
+			"$match",
+			"{",
+				"skel_individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// match against the searched id in the unwinded array (has all individuals from the doc)
+			"}",
+		"}",
+		"{",
+			"$project",
+			"{",
+				"_id", BCON_INT32(0),
+				"timestamp", BCON_INT32(1),
+				"bones", BCON_UTF8("$skel_individuals.bones"),		// bones data (index, loc, quat)
+				"loc", BCON_UTF8("$skel_individuals.loc"),			// actor loc
+				"quat", BCON_UTF8("$skel_individuals.quat"),		// actor quat
+			"}",
+		"}",
+		"]");
+
+	cursor = mongoc_collection_aggregate(
+		collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+	double QueryDuration = FPlatformTime::Seconds() - ExecBegin;
+
+	// Read cursor if no errors occured
+	if (!mongoc_cursor_error(cursor, &error))
+	{
+		if (DeltaT > 0.f)
+		{
+			double PrevTs = -BIG_NUMBER;
+			while (mongoc_cursor_next(cursor, &doc))
+			{
+				double CurrTs = GetTs(doc);
+				if (CurrTs - PrevTs > DeltaT)
+				{
+					TPair<FTransform, TMap<int32, FTransform>> SkeletalPosePair;
+					SkeletalPosePair.Key = GetPose(doc);
+
+					// Get bones data
+					bson_iter_t bones;
+					if (bson_iter_init(&bones, doc) && bson_iter_find(&bones, "bones"))
+					{
+						bson_iter_t bone;
+						if (bson_iter_recurse(&bones, &bone))
+						{
+							int32 BoneIndex;
+							bson_iter_t value;
+							while (bson_iter_next(&bone))
+							{
+								if (bson_iter_recurse(&bone, &value) && bson_iter_find(&value, "idx"))
+								{
+									BoneIndex = bson_iter_int32(&value);
+								}
+								SkeletalPosePair.Value.Emplace(BoneIndex, GetPose(&bone));
+							}
+						}
+					}
+
+					SkeletalTrajectoryPair.Add(SkeletalPosePair);
+
+					PrevTs = CurrTs;
+				}
+			}
+		}
+		else
+		{
+			while (mongoc_cursor_next(cursor, &doc))
+			{
+				TPair<FTransform, TMap<int32, FTransform>> SkeletalPosePair;
+				SkeletalPosePair.Key = GetPose(doc);
+
+				// Get bones data
+				bson_iter_t bones;
+				if (bson_iter_init(&bones, doc) && bson_iter_find(&bones, "bones"))
+				{
+					bson_iter_t bone;
+					if (bson_iter_recurse(&bones, &bone))
+					{
+						int32 BoneIndex;
+						bson_iter_t value;
+						while (bson_iter_next(&bone))
+						{
+							if (bson_iter_recurse(&bone, &value) && bson_iter_find(&value, "idx"))
+							{
+								BoneIndex = bson_iter_int32(&value);
+							}
+							SkeletalPosePair.Value.Emplace(BoneIndex, GetPose(&bone));
+						}
+					}
+				}
+
+				SkeletalTrajectoryPair.Add(SkeletalPosePair);
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+			*FString(__func__), __LINE__, *FString(error.message));
+	}
+	double CursorReadDuration = FPlatformTime::Seconds() - ExecBegin - QueryDuration;
+
+	mongoc_cursor_destroy(cursor);
+	bson_destroy(pipeline);
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds..;"),
+		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin);
+#endif
+	//UE_LOG(LogTemp, Log, TEXT("%s::%d Traj size=%ld;"), *FString(__FUNCTION__), __LINE__, SkeletalTrajectoryPair.Num());
+	return SkeletalTrajectoryPair;
 }
 
 // Get the whole episode data

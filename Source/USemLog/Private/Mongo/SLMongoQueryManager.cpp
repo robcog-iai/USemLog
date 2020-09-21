@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Mongo/SLMongoQueryManager.h"
+#include "..\..\Classes\Mongo\SLMongoQueryManager.h"
 
 // Ctor
 ASLMongoQueryManager::ASLMongoQueryManager()
@@ -270,10 +271,82 @@ TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& 
 	}
 }
 
-// Get the individual trajectory
+// Get the individual trajectory 
 TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT) const
 {
 	return DBHandler.GetIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
+}
+
+
+// Get skeletal individual pose with task and episode init
+TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& InTaskId, const FString& InEpisodeId, const FString& IndividualId, float Ts)
+{
+	if (SetTask(InTaskId))
+	{
+		return GetSkeletalIndividualPoseAt(InEpisodeId, IndividualId, Ts);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set task: %s .."), *FString(__FUNCTION__), __LINE__, *InTaskId);
+		return TPair<FTransform, TMap<int32, FTransform>>();
+	}
+}
+
+// Get skeletal individual pose with episode init
+TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& InEpisodeId, const FString& IndividualId, float Ts)
+{
+	if (SetEpisode(InEpisodeId))
+	{
+		return GetSkeletalIndividualPoseAt(InEpisodeId, IndividualId, Ts);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set episode: %s .."), *FString(__FUNCTION__), __LINE__, *InEpisodeId);
+		return TPair<FTransform, TMap<int32, FTransform>>();
+	}
+}
+
+// Get skeletal individual pose
+TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& IndividualId, float Ts) const
+{
+	//DBHandler.GetSkeletalIndividualPoseAt(IndividualId, Ts);
+	return TPair<FTransform, TMap<int32, FTransform>>();
+}
+
+// Get skeletal individual trajectory with task and episode init
+TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& InTaskId, const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT)
+{
+	if (SetTask(InTaskId))
+	{
+		return GetSkeletalIndividualTrajectory(InEpisodeId, IndividualId, StartTs, EndTs, DeltaT);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set task: %s .."), *FString(__FUNCTION__), __LINE__, *InTaskId);
+		return TArray<TPair<FTransform, TMap<int32, FTransform>>>();
+	}
+
+}
+
+// Get skeletal individual trajectoru with episode init
+TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT)
+{
+	if (SetEpisode(InEpisodeId))
+	{
+		return GetSkeletalIndividualTrajectory(InEpisodeId, IndividualId, StartTs, EndTs, DeltaT);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set episode: %s .."), *FString(__FUNCTION__), __LINE__, *InEpisodeId);		
+		return TArray<TPair<FTransform, TMap<int32, FTransform>>>();
+	}
+}
+
+// Get skeletal individual trajectory
+TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT) const
+{
+	//DBHandler.GetSkeletalIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
+	return TArray<TPair<FTransform, TMap<int32, FTransform>>>();
 }
 
 // Get the episode data with task and episode init

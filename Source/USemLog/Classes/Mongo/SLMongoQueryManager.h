@@ -58,6 +58,16 @@ public:
 	TArray<FTransform> GetIndividualTrajectory(const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT = -1.f);
 	TArray<FTransform> GetIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT = -1.f) const;
 
+	// Get skeletal individual pose
+	TPair<FTransform, TMap<int32, FTransform>> GetSkeletalIndividualPoseAt(const FString& InTaskId, const FString& InEpisodeId, const FString& IndividualId, float Ts);
+	TPair<FTransform, TMap<int32, FTransform>> GetSkeletalIndividualPoseAt(const FString& InEpisodeId, const FString& IndividualId, float Ts);
+	TPair<FTransform, TMap<int32, FTransform>> GetSkeletalIndividualPoseAt(const FString& IndividualId, float Ts) const;
+
+	// Get skeletal individual trajectory
+	TArray<TPair<FTransform, TMap<int32, FTransform>>>  GetSkeletalIndividualTrajectory(const FString& InTaskId, const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT = -1.f);
+	TArray<TPair<FTransform, TMap<int32, FTransform>>>  GetSkeletalIndividualTrajectory(const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT = -1.f);
+	TArray<TPair<FTransform, TMap<int32, FTransform>>>  GetSkeletalIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT = -1.f) const;
+
 	// Get the episode data
 	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData(const FString& InTaskId, const FString& InEpisodeId);
 	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData(const FString& InEpisodeId);

@@ -61,7 +61,7 @@ private:
 	int32 AddAllIndividuals(bson_t* doc);
 
 	// Add only the individuals that moved (return the number of individuals added)
-	int32 AddAllIndividualsThatMoved(bson_t* doc);
+	int32 AddIndividualsThatMoved(bson_t* doc);
 
 	// Add skeletal individuals (return the number of individuals added)
 	int32 AddSkeletalIndividals(bson_t* doc);

@@ -18,6 +18,7 @@
 #include "EngineUtils.h"
 
 #if WITH_EDITOR
+#include "Editor.h"	// GEditor
 #include "Components/BillboardComponent.h"
 #endif // WITH_EDITOR
 
@@ -433,7 +434,10 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId,
 }
 
 // Create a marker by cloning the visual of the given skeletal individual (use original materials)
-bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const TMap<int32, FTransform>& BonePoses, const FString& IndividualId)
+bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
+	const TArray<FTransform>& Poses,
+	const TArray<TMap<int32, FTransform>>& BonePosesArray,
+	const FString& IndividualId)
 {
 	if (!bIsInit)
 	{
@@ -470,7 +474,12 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArr
 }
 
 // Create a marker by cloning the visual of the given skeletal individual
-bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const TMap<int32, FTransform>& BonePoses, const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType)
+bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
+	const TArray<FTransform>& Poses,
+	const TArray<TMap<int32, FTransform>>& BonePosesArray,
+	const FString& IndividualId,
+	const FLinearColor& Color,
+	ESLVizMaterialType MaterialType)
 {
 	if (!bIsInit)
 	{
@@ -538,7 +547,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 			}
 
 			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM,
-				TArray<int32>{MaterialIndex}, BonePosesArray))
+				BonePosesArray, TArray<int32>{MaterialIndex}))
 			{
 				Markers.Add(MarkerId, Marker);
 				return true;
@@ -586,7 +595,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 			}
 			
 			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM, Color, MaterialType,
-				TArray<int32>{MaterialIndex}, BonePosesArray))
+				BonePosesArray, TArray<int32>{MaterialIndex}))
 			{
 				Markers.Add(MarkerId, Marker);
 				return true;

@@ -72,30 +72,30 @@ public:
 	/* Skeletal mesh markers */
 	// Create a skeletal mesh based marker at the given pose (use original material)
 	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const FTransform& Pose, USkeletalMesh* SkelMesh,
-		const TArray<int32>& MaterialIndexes = TArray<int32>(),
-		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>());
+		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>(),
+		const TArray<int32>& MaterialIndexes = TArray<int32>());
 
 	// Create a skeletal mesh based marker at the given pose
 	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const FTransform& Pose,
 		USkeletalMesh* SkelMesh, 
 		const FLinearColor& InColor,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit,
-		const TArray<int32>& MaterialIndexes = TArray<int32>(),
-		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>());
+		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>(),
+		const TArray<int32>& MaterialIndexes = TArray<int32>());
 
 	// Create a skeletal mesh based marker at the given poses (use original material)
 	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TArray<FTransform>& Poses,
 		USkeletalMesh* SkelMesh,
-		const TArray<int32>& MaterialIndexes = TArray<int32>(),
-		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>());
+		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>(),
+		const TArray<int32>& MaterialIndexes = TArray<int32>());
 
 	// Create a skeletal mesh based marker at the given poses
 	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TArray<FTransform>& Poses,
 		USkeletalMesh* SkelMesh,
 		const FLinearColor& InColor,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit,
-		const TArray<int32>& MaterialIndexes = TArray<int32>(),
-		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>());
+		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>(),
+		const TArray<int32>& MaterialIndexes = TArray<int32>());
 
 private:
 	// Create markers helper function

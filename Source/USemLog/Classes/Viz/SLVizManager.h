@@ -137,13 +137,15 @@ public:
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Create a marker by cloning the visual of the given skeletal individual (use original materials)
-	bool CreateSkeletalMeshMarker(const FString& MarkerId,	const TArray<FTransform>& Poses,
-		const TMap<int32, FTransform>& BonePoses, const FString& IndividualId);
+	bool CreateSkeletalMeshMarker(const FString& MarkerId,
+		const TArray<FTransform>& Poses,
+		const TArray<TMap<int32, FTransform>>& BonePoses,
+		const FString& IndividualId);
 
 	// Create a marker by cloning the visual of the given skeletal individual
 	bool CreateSkeletalMeshMarker(const FString& MarkerId,
 		const TArray<FTransform>& Poses,
-		const TMap<int32, FTransform>& BonePoses,
+		const TArray<TMap<int32, FTransform>>& BonePoses,
 		const FString& IndividualId,
 		const FLinearColor& Color,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);

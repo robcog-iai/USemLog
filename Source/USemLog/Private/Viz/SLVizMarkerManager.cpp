@@ -154,7 +154,10 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const TArray<F
 	return Marker;
 }
 // Create a skeletal mesh based marker at the given pose (use original material)
-USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const FTransform& Pose, USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes, const TMap<int32, FTransform>& BonePoses)
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const FTransform& Pose,
+	USkeletalMesh* SkelMesh,
+	const TMap<int32, FTransform>& BonePoses,
+	const TArray<int32>& MaterialIndexes)
 {
 	USLVizSkeletalMeshMarker* Marker = NewObject<USLVizSkeletalMeshMarker>(this);
 	Marker->RegisterComponent();
@@ -183,8 +186,8 @@ USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const FTrans
 	USkeletalMesh* SkelMesh,
 	const FLinearColor& InColor,
 	ESLVizMaterialType MaterialType,
-	const TArray<int32>& MaterialIndexes,
-	const TMap<int32, FTransform>& BonePoses)
+	const TMap<int32, FTransform>& BonePoses,
+	const TArray<int32>& MaterialIndexes)
 {
 	USLVizSkeletalMeshMarker* Marker = NewObject<USLVizSkeletalMeshMarker>(this);
 	Marker->RegisterComponent();
@@ -209,7 +212,10 @@ USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const FTrans
 }
 
 // Create a skeletal mesh based marker at the given poses (use original material)
-USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray<FTransform>& Poses, USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes, const TArray<TMap<int32, FTransform>>& BonePosesArray)
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray<FTransform>& Poses,
+	USkeletalMesh* SkelMesh,
+	const TArray<TMap<int32, FTransform>>& BonePosesArray,
+	const TArray<int32>& MaterialIndexes)
 {
 	USLVizSkeletalMeshMarker* Marker = NewObject<USLVizSkeletalMeshMarker>(this);
 	Marker->RegisterComponent();
@@ -238,8 +244,8 @@ USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray
 	USkeletalMesh* SkelMesh,
 	const FLinearColor& InColor,
 	ESLVizMaterialType MaterialType,
-	const TArray<int32>& MaterialIndexes,
-	const TArray<TMap<int32, FTransform>>& BonePosesArray)
+	const TArray<TMap<int32, FTransform>>& BonePosesArray,
+	const TArray<int32>& MaterialIndexes)
 {
 	USLVizSkeletalMeshMarker* Marker = NewObject<USLVizSkeletalMeshMarker>(this);
 	Marker->RegisterComponent();

@@ -8,13 +8,13 @@
 #if SL_WITH_LIBMONGO_C
 class ASLVisionPoseableMeshActor;
 THIRD_PARTY_INCLUDES_START
-	#if PLATFORM_WINDOWS
+#if PLATFORM_WINDOWS
 	#include "Windows/AllowWindowsPlatformTypes.h"
 	#include <mongoc/mongoc.h>
 	#include "Windows/HideWindowsPlatformTypes.h"
-	#else
+#else
 	#include <mongoc/mongoc.h>
-	#endif // #if PLATFORM_WINDOWS
+#endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_C
 
@@ -50,7 +50,13 @@ public:
 	FTransform GetIndividualPoseAt(const FString& Id, float Ts) const;
 
 	// Get the poses of the individual between the given timestamps
-	TArray<FTransform> GetIndividualTrajectory(const FString& Id, float StartTs, float EndTs, float DeltaT = -1.0f) const;
+	TArray<FTransform> GetIndividualTrajectory(const FString& Id, float StartTs, float EndTs, float DeltaT = -1.f) const;
+
+	// Get skeletal individual pose
+	TPair<FTransform, TMap<int32, FTransform>> GetSkeletalIndividualPoseAt(const FString& Id, float Ts);
+
+	// Get skeletal individual trajectory
+	TArray<TPair<FTransform, TMap<int32, FTransform>>> GetSkeletalIndividualTrajectory(const FString& Id, float StartTs, float EndTs, float DeltaT = -1.f) const;
 
 	// Get the whole episode data
 	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData() const;
