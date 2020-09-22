@@ -49,93 +49,12 @@ void ASLVizManager::BeginPlay()
 	Init();
 }
 
-#if WITH_EDITOR
-// Called when a property is changed in the editor
-void ASLVizManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	// Get the changed property name
-	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
-		PropertyChangedEvent.Property->GetFName() : NAME_None;
-
-	/* Button hacks */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteInitButtonHack))
-	{
-		bExecuteInitButtonHack = false;
-		Init();
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteButtonHack))
-	{
-		bExecuteButtonHack = false;
-
-		/* Highlight test */
-		for (const auto& HT : HighlightTestValuesHack)
-		{
-			HighlightIndividual(HT.IndividualId, HT.Color, HT.MaterialType);
-		}
-
-		///* Primitive marker test */
-		//for (const auto& PM : PrimitiveMarkerTestHack)
-		//{
-		//	CreatePrimitiveMarker(PM);
-		//}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteUpdateButtonHack))
-	{
-		bExecuteUpdateButtonHack = false;
-
-		/* Highlight test */
-		for (const auto& HT : HighlightTestValuesHack)
-		{
-			UpdateIndividualHighlight(HT.IndividualId, HT.Color, HT.MaterialType);
-		}
-
-		///* Primitive marker test */
-		//for (const auto& PM : PrimitiveMarkerTestHack)
-		//{
-		//	CreatePrimitiveMarker(PM);
-		//}
-
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteRemoveButtonHack))
-	{
-		bExecuteRemoveButtonHack = false;
-
-		/* Highlight test */
-		for (const auto& Id : RemoveTestHack)
-		{
-			RemoveIndividualHighlight(Id);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteRemoveAllButtonHack))
-	{
-		bExecuteRemoveAllButtonHack = false;
-
-		/* Highlight test */
-		RemoveAllIndividualHighlights();
-
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteResetButtonHack))
-	{
-		bExecuteResetButtonHack = false;
-		Reset();
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizManager, bExecuteReplaySetupButtonHack))
-	{
-		bExecuteReplaySetupButtonHack = false;
-		SetupWorldForEpisodeReplay();
-	}	
-}
-#endif // WITH_EDITOR
-
 // Called when actor removed from game or game ended
 void ASLVizManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	Reset();
 }
-
 
 // Load all the required managers
 bool ASLVizManager::Init()
@@ -226,8 +145,12 @@ bool ASLVizManager::HighlightIndividual(const FString& Id, const FLinearColor& C
 				return true;
 			}
 			else if (auto SkI = Cast<USLSkeletalIndividual>(VI))
-			{
+			{				
 				UMeshComponent* MC = SkI->GetSkeletalMeshComponent();
+				if (!MC->IsVisible()) // Visual world mode
+				{
+					MC = SkI->GetPoseableMeshComponent();
+				}
 				HighlightManager->Highlight(MC, FSLVizVisualParams(Color, MaterialType));
 				HighlightedIndividuals.Add(Id, FSLVizIndividualHighlightData(MC));
 				return true;
@@ -235,6 +158,10 @@ bool ASLVizManager::HighlightIndividual(const FString& Id, const FLinearColor& C
 			else if (auto BI = Cast<USLBoneIndividual>(VI))
 			{
 				UMeshComponent* MC = BI->GetSkeletalMeshComponent();
+				if (!MC->IsVisible()) // Visual world mode
+				{
+					MC = BI->GetPoseableMeshComponent();
+				}
 				int32 MaterialIndex = BI->GetMaterialIndex();
 				HighlightManager->Highlight(MC, FSLVizVisualParams(Color, MaterialType, MaterialIndex));
 				HighlightedIndividuals.Add(Id, FSLVizIndividualHighlightData(MC, MaterialIndex));
@@ -355,6 +282,31 @@ bool ASLVizManager::CreatePrimitiveMarker(const FString& MarkerId,
 	return false;
 }
 
+// Create a primitive marker timeline
+bool ASLVizManager::CreatePrimitiveMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, ESLVizPrimitiveMarkerType PrimitiveType, float Size, const FLinearColor& Color, ESLVizMaterialType MaterialType, float UpdateRate, bool bLoop, float StartDelay)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Markers.Contains(MarkerId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
+		return false;
+	}
+
+	if (auto Marker = MarkerManager->CreatePrimitiveMarkerTimeline(Poses, PrimitiveType, Size, Color, MaterialType, UpdateRate, bLoop, StartDelay))
+	{
+		Markers.Add(MarkerId, Marker);
+		return true;
+	}
+
+	return false;
+}
+
 // Create a marker by cloning the visual of the given individual (use original materials)
 bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId)
 {
@@ -396,8 +348,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId,
 	const TArray<FTransform>& Poses,
 	const FString& IndividualId,
-	const FLinearColor& Color,
-	ESLVizMaterialType MaterialType)
+	const FLinearColor& Color, ESLVizMaterialType MaterialType)
 {
 	if (!bIsInit)
 	{
@@ -418,6 +369,80 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId,
 		{
 			UStaticMesh* SM = RI->GetStaticMeshComponent()->GetStaticMesh();
 			if (auto Marker = MarkerManager->CreateStaticMeshMarker(Poses, SM, Color, MaterialType))
+			{
+				Markers.Add(MarkerId, Marker);
+				return true;
+			};
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+			return false;
+		}
+	}
+	return false;
+}
+
+// Create a timeline marker by cloning the visual of the given individual (use original materials)
+bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, float UpdateRate, bool bLoop, float StartDelay)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Markers.Contains(MarkerId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
+		return false;
+	}
+
+	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	{
+		if (auto RI = Cast<USLRigidIndividual>(Individual))
+		{
+			UStaticMesh* SM = RI->GetStaticMeshComponent()->GetStaticMesh();
+			if (auto Marker = MarkerManager->CreateStaticMeshMarkerTimeline(Poses, SM, UpdateRate, bLoop, StartDelay))
+			{
+				Markers.Add(MarkerId, Marker);
+				return true;
+			};
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+			return false;
+		}
+	}
+	return false;
+}
+
+// Create a timeline marker by cloning the visual of the given individual
+bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType, float UpdateRate, bool bLoop, float StartDelay)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (Markers.Contains(MarkerId))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
+		return false;
+	}
+
+	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	{
+		if (auto RI = Cast<USLRigidIndividual>(Individual))
+		{
+			UStaticMesh* SM = RI->GetStaticMeshComponent()->GetStaticMesh();
+			if (auto Marker = MarkerManager->CreateStaticMeshMarkerTimeline(Poses, SM, Color, MaterialType, UpdateRate, bLoop, StartDelay))
 			{
 				Markers.Add(MarkerId, Marker);
 				return true;

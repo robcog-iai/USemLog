@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "TimerManager.h"
 
 // Constructor
 USLVizStaticMeshMarker::USLVizStaticMeshMarker()
@@ -13,6 +14,8 @@ USLVizStaticMeshMarker::USLVizStaticMeshMarker()
 	PrimaryComponentTick.bCanEverTick = false;
 	
 	ISMC = nullptr;	
+	TimelineIndex = INDEX_NONE;
+	bLoopTimeline = false;
 }
 
 // Set the visual properties of the instanced mesh using the mesh original materials
@@ -93,7 +96,7 @@ void USLVizStaticMeshMarker::AddInstance(const FTransform& Pose)
 		return;
 	}
 
-	ISMC->AddInstance(Pose);
+	AddInstanceChecked(Pose);
 }
 
 // Add instances with the poses
@@ -107,8 +110,45 @@ void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses)
 
 	for (const auto& P : Poses)
 	{
-		ISMC->AddInstance(P);
+		AddInstanceChecked(P);
 	}
+}
+
+// Add instances with the poses using and update rate
+void USLVizStaticMeshMarker::AddTimeline(const TArray<FTransform>& Poses, float UpdateRate, bool bLoop, float StartDelay)
+{
+	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	// Check if there is already an active timeline
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimelineTimerHandle))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Timeline is already active.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	// Make sure there are enough poses in the timeline
+	if (Poses.Num() < 2)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d The timeline should have at least 2 poses.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	// Set the timeline pose data
+	TimelinePoses = Poses;
+
+	// Should the timeline animation be repeated
+	bLoopTimeline = bLoop;
+
+	// Set index position to first
+	TimelineIndex = 0;
+
+	// Bind and start timer callback
+	GetWorld()->GetTimerManager().SetTimer(TimelineTimerHandle, this, &USLVizStaticMeshMarker::TimelineUpdateCallback,
+		UpdateRate, true, StartDelay);
 }
 
 /* Begin VizMarker interface */
@@ -117,6 +157,7 @@ void USLVizStaticMeshMarker::Reset()
 {
 	ResetVisuals();
 	ResetPoses();
+	ResetTimeline();
 }
 
 // Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
@@ -152,4 +193,41 @@ void USLVizStaticMeshMarker::ResetPoses()
 
 	ISMC->ClearInstances();
 }
+
 /* End VizMarker interface */
+
+// Virtual add instance function
+void USLVizStaticMeshMarker::AddInstanceChecked(const FTransform& Pose)
+{
+	ISMC->AddInstance(Pose);
+}
+
+
+// Reset the timeline related members
+void USLVizStaticMeshMarker::ResetTimeline()
+{
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimelineTimerHandle))
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TimelineTimerHandle);
+	}
+	TimelineIndex = INDEX_NONE;
+	TimelinePoses.Empty();
+}
+
+// Used as an timer update callback when the instance should be added as a timeline
+void USLVizStaticMeshMarker::TimelineUpdateCallback()
+{
+	if (TimelinePoses.IsValidIndex(TimelineIndex))
+	{
+		AddInstanceChecked(TimelinePoses[TimelineIndex]);
+	}
+	else if(bLoopTimeline)
+	{
+		ISMC->ClearInstances();
+		TimelineIndex = 0;
+	}
+	else
+	{
+		ResetTimeline();
+	}
+}

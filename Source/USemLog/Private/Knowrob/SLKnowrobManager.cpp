@@ -41,7 +41,7 @@ ASLKnowrobManager::~ASLKnowrobManager()
 void ASLKnowrobManager::BeginPlay()
 {
 	Super::BeginPlay();	
-	//Init();
+	Init();
 	//Start();
 }
 
@@ -72,7 +72,56 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		Finish();
 	}
 
-	/* VIZ button hacks */
+	/* Episode data hacks */
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMongoConnectButtonHack))
+	{
+		bMongoConnectButtonHack = false;
+		if (!bIsInit) { return; }
+		if (MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Connected to %s:%ld"), *FString(__FUNCTION__), __LINE__, *MongoServerIP, MongoServerPort);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect to %s:%ld"), *FString(__FUNCTION__), __LINE__, *MongoServerIP, MongoServerPort);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMongoDisconnectButtonHack))
+	{
+		bMongoDisconnectButtonHack = false;
+		if (!bIsInit) { return; }
+		MongoQueryManager->Disconnect();
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Disconnected.."), *FString(__FUNCTION__), __LINE__);
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetTaskButtonhack))
+	{
+		bSetTaskButtonhack = false;
+		if (!bIsInit) { return; }
+		if (MongoQueryManager->SetTask(TaskIdValueHack))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetEpisodeButtonHack))
+	{
+		bSetEpisodeButtonHack = false;
+		if (!bIsInit) { return; }
+		if (MongoQueryManager->SetEpisode(EpisodeIdValueHack))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
+		}
+	}
+
+
+	/* VIZ episode replay */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetupWorldForEpisodeReplayButtonHack))
 	{
 		bSetupWorldForEpisodeReplayButtonHack = false;
@@ -136,54 +185,114 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		VizManager->StopReplay();
 	}
 
+	/*	VIZ highlights	*/
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bDrawSelectedHighlights))
+	{
+		bDrawSelectedHighlights = false;
+		if (!bIsInit) { return; }
+		for (const auto HC : HighlightValuesHack)
+		{
+			VizManager->HighlightIndividual(HC.IndividualId, HC.Color, HC.MaterialType);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bUpdateHighlights))
+	{
+		bUpdateHighlights = false;
+		if (!bIsInit) { return; }
+		for (const auto HC : HighlightValuesHack)
+		{
+			VizManager->UpdateIndividualHighlight(HC.IndividualId, HC.Color, HC.MaterialType);
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bRemoveAllHighlights))
+	{
+		bRemoveAllHighlights = false;
+		if (!bIsInit) { return; }
+		VizManager->RemoveAllIndividualHighlights();
+	}
 
-	/* MONGO button hacks */
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMongoConnectButtonHack))
+	/*	VIZ markers	*/
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bDrawMarkers))
 	{
-		bMongoConnectButtonHack = false;
+		bDrawMarkers = false;
 		if (!bIsInit) { return; }
-		if (MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
+		for (const auto M : MarkerValuesHack)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Connected to %s:%ld"), *FString(__FUNCTION__), __LINE__, *MongoServerIP, MongoServerPort);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect to %s:%ld"), *FString(__FUNCTION__), __LINE__, *MongoServerIP, MongoServerPort);
+			TArray<FTransform> Poses;
+			if (M.EndTime > 0)
+			{
+				Poses = MongoQueryManager->GetIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
+					M.IndividualId, M.StartTime, M.EndTime, M.DeltaT);
+			}
+			else
+			{
+				Poses.Add(MongoQueryManager->GetIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack, 
+					M.IndividualId, M.StartTime));
+			}
+			
+			if (Poses.Num() == 0)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Empty poses array.."), *FString(__FUNCTION__), __LINE__);
+				return;
+			}
+
+			if (M.bAsTimeline)
+			{
+				if (Poses.Num() < 2)
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Not enought poses for a timeline.."), *FString(__FUNCTION__), __LINE__);
+					return;
+				}
+
+				if (M.bUsePrimitiveMesh)
+				{
+					VizManager->CreatePrimitiveMarkerTimeline(M.MarkerId, Poses,
+						M.PrimitiveType, M.Size, M.Color, M.MaterialType, 
+						M.UpdateRate, M.bLoop, M.StartDelay);
+				}
+				else
+				{
+					if (M.bUseCustomColor)
+					{
+						VizManager->CreateStaticMeshMarkerTimeline(M.MarkerId, Poses, 
+							M.IndividualId, M.Color, M.MaterialType,
+							M.UpdateRate, M.bLoop, M.StartDelay);
+					}
+					else
+					{
+						VizManager->CreateStaticMeshMarkerTimeline(M.MarkerId, Poses, M.IndividualId,
+							M.UpdateRate, M.bLoop, M.StartDelay);
+					}
+				}
+			}
+			else
+			{
+				if (M.bUsePrimitiveMesh)
+				{
+					VizManager->CreatePrimitiveMarker(M.MarkerId, Poses, M.PrimitiveType, M.Size, M.Color, M.MaterialType);
+				}
+				else
+				{
+					if (M.bUseCustomColor)
+					{
+						VizManager->CreateStaticMeshMarker(M.MarkerId, Poses, M.IndividualId, M.Color, M.MaterialType);
+					}
+					else
+					{
+						VizManager->CreateStaticMeshMarker(M.MarkerId, Poses, M.IndividualId);
+					}
+				}
+			}
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMongoDisconnectButtonHack))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bRemoveAllMarkers))
 	{
-		bMongoDisconnectButtonHack = false;
+		bRemoveAllMarkers = false;
 		if (!bIsInit) { return; }
-		MongoQueryManager->Disconnect();
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Disconnected.."), *FString(__FUNCTION__), __LINE__);
+		VizManager->RemoveAllMarkers();
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetTaskButtonhack))
-	{
-		bSetTaskButtonhack = false;
-		if (!bIsInit) { return; }
-		if (MongoQueryManager->SetTask(TaskIdValueHack))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetEpisodeButtonHack))
-	{
-		bSetEpisodeButtonHack = false;
-		if (!bIsInit) { return; }
-		if (MongoQueryManager->SetEpisode(EpisodeIdValueHack))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
-		}
-	}
+
+	/* MONGO query button hacks */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bPoseQueryButtonHack))
 	{
 		bPoseQueryButtonHack = false;

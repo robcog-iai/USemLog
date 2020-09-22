@@ -335,17 +335,20 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 		"{",
 			"$match",
 			"{",
-				"timestamp", "{", "$gte", BCON_DOUBLE(StartTs),	"$lte", BCON_DOUBLE(EndTs),	"}",
+				"timestamp", 
+				"{", 
+					"$gte", BCON_DOUBLE(StartTs),
+					"$lte", BCON_DOUBLE(EndTs),
+				"}",
 				"individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// yields faster results if we match against the id from the start
 			"}",
 		"}",
 		"{",
 			"$sort",
-				"{",
-					"timestamp", BCON_INT32(1),							// if sort if right after match it barely adds any time penalty
-				"}",
+			"{",
+				"timestamp", BCON_INT32(1),								// if sort if right after match it barely adds any time penalty
 			"}",
-		"}"
+		"}",
 		"{",
 			"$unwind", BCON_UTF8("$individuals"),
 		"}",
@@ -355,7 +358,6 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 				"individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// match against the searched id in the unwinded array (has all individuals from the doc)
 			"}",
 		"}",
-
 		"{",
 			"$project",
 			"{",

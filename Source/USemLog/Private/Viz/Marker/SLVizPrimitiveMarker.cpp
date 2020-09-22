@@ -47,32 +47,38 @@ void USLVizPrimitiveMarker::UpdateSize(float Size)
 	}
 }
 
-// Add instances at pose
-void USLVizPrimitiveMarker::AddInstance(const FTransform& Pose)
-{
-	if (!ISMC && !ISMC->IsValidLowLevel() && ISMC->IsPendingKillOrUnreachable())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
-		return;
-	}
+//// Add instances at pose
+//void USLVizPrimitiveMarker::AddInstance(const FTransform& Pose)
+//{
+//	if (!ISMC && !ISMC->IsValidLowLevel() && ISMC->IsPendingKillOrUnreachable())
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+//		return;
+//	}
+//
+//	ISMC->AddInstance(FTransform(Pose.GetRotation(), Pose.GetLocation(), MarkerScale));
+//}
+//
+//// Add instances with the poses
+//void USLVizPrimitiveMarker::AddInstances(const TArray<FTransform>& Poses)
+//{
+//	if (!ISMC && !ISMC->IsValidLowLevel() && ISMC->IsPendingKillOrUnreachable())
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+//		return;
+//	}
+//
+//	for (auto P : Poses)
+//	{
+//		P.SetScale3D(MarkerScale);
+//		ISMC->AddInstance(P);
+//	}
+//}
 
+// Virtual add instance function
+void USLVizPrimitiveMarker::AddInstanceChecked(const FTransform& Pose)
+{
 	ISMC->AddInstance(FTransform(Pose.GetRotation(), Pose.GetLocation(), MarkerScale));
-}
-
-// Add instances with the poses
-void USLVizPrimitiveMarker::AddInstances(const TArray<FTransform>& Poses)
-{
-	if (!ISMC && !ISMC->IsValidLowLevel() && ISMC->IsPendingKillOrUnreachable())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
-		return;
-	}
-
-	for (auto P : Poses)
-	{
-		P.SetScale3D(MarkerScale);
-		ISMC->AddInstance(P);
-	}
 }
 
 // Get the static mesh of the primitive type

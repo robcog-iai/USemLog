@@ -35,22 +35,30 @@ public:
 	// Clear all markers
 	void ClearAllMarkers();
 
+
 	/* Static mesh markers */
 	// Create a static mesh visual marker at the given pose (use original material)
 	USLVizStaticMeshMarker* CreateStaticMeshMarker(const FTransform& Pose, UStaticMesh* SM);
 
 	// Create a static mesh visual marker at the given pose
-	USLVizStaticMeshMarker* CreateStaticMeshMarker(const FTransform& Pose,
-		UStaticMesh* SM, const FLinearColor& InColor,
-		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+	USLVizStaticMeshMarker* CreateStaticMeshMarker(const FTransform& Pose, UStaticMesh* SM,
+		const FLinearColor& InColor, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Create a static mesh visual marker at the given poses
-	USLVizStaticMeshMarker* CreateStaticMeshMarker(const TArray<FTransform>& Poses,
-		UStaticMesh* SM, const FLinearColor& InColor,
-		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+	USLVizStaticMeshMarker* CreateStaticMeshMarker(const TArray<FTransform>& Poses,	UStaticMesh* SM,
+		const FLinearColor& InColor, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Create a static mesh visual marker at the given poses (use original material)
 	USLVizStaticMeshMarker* CreateStaticMeshMarker(const TArray<FTransform>& Poses,	UStaticMesh* SM);
+
+	// Create a static mesh visual marker timeline at the given poses
+	USLVizStaticMeshMarker* CreateStaticMeshMarkerTimeline(const TArray<FTransform>& Poses, UStaticMesh* SM,
+		const FLinearColor& InColor, ESLVizMaterialType MaterialType, 
+		float UpdateRate, bool bLoop, float StartDelay = -1.f);
+
+	// Create a static mesh visual marker timeline at the given poses (use original material)
+	USLVizStaticMeshMarker* CreateStaticMeshMarkerTimeline(const TArray<FTransform>& Poses, UStaticMesh* SM,
+		float UpdateRate, bool bLoop, float StartDelay = -1.f);
 
 
 	/* Primitive mesh markers */
@@ -67,6 +75,11 @@ public:
 		float Size = .1f,
 		const FLinearColor& InColor = FLinearColor::Green,
 		ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+
+	// Create a primitive marker timeline at the given poses
+	USLVizPrimitiveMarker* CreatePrimitiveMarkerTimeline(const TArray<FTransform>& Poses,
+		ESLVizPrimitiveMarkerType PrimitiveType, float Size, const FLinearColor& InColor, ESLVizMaterialType MaterialType,
+		float UpdateRate, bool bLoop, float StartDelay = -1.f);
 
 
 	/* Skeletal mesh markers */

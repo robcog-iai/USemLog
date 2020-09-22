@@ -35,13 +35,16 @@ public:
 	// Update the visual scale property
 	void UpdateSize(float Size);
 
-	// Add instances at pose (override since the scale needs to be set)
-	virtual void AddInstance(const FTransform& Pose) override;
+	//// Add instances at pose (override since the scale needs to be set)
+	//virtual void AddInstance(const FTransform& Pose) override;
 
-	// Add instances with the poses (override since the scale needs to be set)
-	virtual void AddInstances(const TArray<FTransform>& Poses) override;
+	//// Add instances with the poses (override since the scale needs to be set)
+	//virtual void AddInstances(const TArray<FTransform>& Poses) override;
 
 protected:
+	// Virtual add instance function
+	virtual void AddInstanceChecked(const FTransform& Pose) override;
+
 	// Get the static mesh of the primitive type
 	UStaticMesh* GetPrimitiveStaticMesh(ESLVizPrimitiveMarkerType InType) const;
 
