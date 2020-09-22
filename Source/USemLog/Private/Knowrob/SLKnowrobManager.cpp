@@ -41,7 +41,14 @@ ASLKnowrobManager::~ASLKnowrobManager()
 void ASLKnowrobManager::BeginPlay()
 {
 	Super::BeginPlay();	
-	//Init();
+
+	FParse::Value(FCommandLine::Get(), TEXT("KRServerIP="), KRServerIP);
+	FParse::Value(FCommandLine::Get(), TEXT("KRServerPort="), KRServerPort);
+	FParse::Value(FCommandLine::Get(), TEXT("KRProtocol="), KRWSProtocol);
+	FParse::Value(FCommandLine::Get(), TEXT("MongoServerIP="), MongoServerIP);
+	FParse::Value(FCommandLine::Get(), TEXT("MongoServerPort="), MongoServerPort);
+
+	Init();
 	//Start();
 }
 
