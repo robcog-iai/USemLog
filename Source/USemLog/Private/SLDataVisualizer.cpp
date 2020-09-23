@@ -8,27 +8,34 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "EngineUtils.h"
 #include "SLEntitiesManager.h"
-
-#if SL_WITH_DATA_VIS
-// Clean world White-/black-listed components/actors
-#include "Skeletal/SLSkeletalDataComponent.h"
-#include "Landscape.h"
 #include "Camera/CameraActor.h"
-#include "Camera/PlayerCameraManager.h"
-#include "Engine/PlayerStartPIE.h"
-#include "Camera/PlayerCameraManager.h"
-#include "GameFramework/PlayerController.h"
-#include "GameFramework/PlayerState.h"
-#include "GameFramework/DefaultPawn.h"
-#include "GameFramework/GameModeBase.h"
-#include "GameFramework/GameStateBase.h"
-#include "GameFramework/GameSession.h"
-#include "GameFramework/GameNetworkManager.h"
-#include "GameFramework/HUD.h"
-#include "Particles/ParticleEventManager.h"
-#include "AIController.h"
-#include "Components/LightComponentBase.h"
-#endif //SL_WITH_DATA_VIS
+
+#include "GameFramework/MovementComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "LandscapeComponent.h"
+//#include "Components/LightComponentBase.h"
+//#include "Engine/SkyLight.h"
+//#include "Engine/Light.h"
+
+//#if SL_WITH_DATA_VIS
+//// Clean world White-/black-listed components/actors
+//#include "Skeletal/SLSkeletalDataComponent.h"
+//#include "Landscape.h"
+//#include "Camera/CameraActor.h"
+//#include "Camera/PlayerCameraManager.h"
+//#include "Engine/PlayerStartPIE.h"
+//#include "Camera/PlayerCameraManager.h"
+//#include "GameFramework/PlayerController.h"
+//#include "GameFramework/PlayerState.h"
+//#include "GameFramework/DefaultPawn.h"
+//#include "GameFramework/GameModeBase.h"
+//#include "GameFramework/GameStateBase.h"
+//#include "GameFramework/GameSession.h"
+//#include "GameFramework/GameNetworkManager.h"
+//#include "GameFramework/HUD.h"
+//#include "Particles/ParticleEventManager.h"
+//#include "AIController.h"
+//#endif //SL_WITH_DATA_VIS
 
 // Constructor
 USLDataVisualizer::USLDataVisualizer() : bIsInit(false), bIsStarted(false), bIsFinished(false)
@@ -94,16 +101,16 @@ void USLDataVisualizer::Init(const TArray<USLDataVisQueries*>& InQueries)
 }
 
 // Start logger
-void USLDataVisualizer::Start(const FName& UserInputActionName)
+void USLDataVisualizer::Start(const FName& UserInputActionName, ACameraActor* CameraViewTarget)
 {
 	if (!bIsStarted && bIsInit)
 	{
 #if SL_WITH_DATA_VIS
 		if (VizWorldManager)
-		{			
+		{
 			TArray<ASkeletalMeshActor*> SkeletalActors;
 			FSLEntitiesManager::GetInstance()->GetSkeletalMeshActors(SkeletalActors);
-			
+
 			// Set world to visual only + create poseable mesh components for the skeletal actors (hide original skeletal components)
 			VizWorldManager->Setup();
 		}
@@ -112,7 +119,15 @@ void USLDataVisualizer::Start(const FName& UserInputActionName)
 		if (SetupUserInput(UserInputActionName))
 		{
 			bIsStarted = true;
-		}		
+		}
+
+		if (CameraViewTarget)
+		{
+			if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+			{
+				PC->SetViewTarget(CameraViewTarget);
+			}
+		}
 	}
 }
 
@@ -216,67 +231,98 @@ bool USLDataVisualizer::SetNextActiveQueries()
 // Clean world from unnecesary actors/components
 void USLDataVisualizer::CleanWorld()
 {
-#if SL_WITH_DATA_VIS
 	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 	{
-		// Blacklisted actors, remove them from the world
-		if (/*ActItr->IsA(APlayerStartPIE::StaticClass())
-			||*/ ActItr->IsA(APlayerCameraManager::StaticClass())
-			|| ActItr->IsA(APlayerState::StaticClass())
-			|| ActItr->IsA(AGameStateBase::StaticClass())
-			|| ActItr->IsA(AGameModeBase::StaticClass())
-			|| ActItr->IsA(AGameSession::StaticClass())
-			|| ActItr->IsA(AGameNetworkManager::StaticClass())
-			|| ActItr->IsA(AHUD::StaticClass())
-			|| ActItr->IsA(AAIController::StaticClass())
-			)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d ActItr %s is being removed from world.."),
-				*FString(__FUNCTION__), __LINE__,*ActItr->GetName());
-			ActItr->ConditionalBeginDestroy();
-			continue;
-		}
+		AActor* Actor = *ActItr;
 
-		// Whitelisted ActItrs, Avoid removing landscape components, or the player controller
-		if (ActItr->IsA(ALandscape::StaticClass())
-			|| ActItr->IsA(APlayerController::StaticClass())
-			|| ActItr->IsA(ACameraActor::StaticClass())
-			|| ActItr->IsA(ADefaultPawn::StaticClass())
-			|| ActItr->IsA(AVizMarkerManager::StaticClass())
-			|| ActItr->IsA(AVizWorldManager::StaticClass())
-			)
+		// WARNING: anything that could cause the component to change ownership or be destroyed will invalidate this array, so use caution when iterating this set!
+		// Hence the actors will be cached and removed after the iteration
+		TArray<UActorComponent*> ComponentsToRemove;
+		for (const auto& C : Actor->GetComponents())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d ActItr %s is whitelisted, none of its components will be removed.."),
-				*FString(__FUNCTION__), __LINE__,*ActItr->GetName());
-			continue;
-		}
-
-		// Remove all unnecessary components from the ActItrs (loggers, controllers etc.)
-		// Avoid "Error: Ensure condition failed: Lhs.Array.Num() == Lhs.InitialNu: Container has changed during ranged-for iteration!"
-		TArray<UActorComponent*> ComponentsToDestroy;
-		for (auto& C : ActItr->GetComponents())
-		{
-			// Whitelisted components
-			if (C->IsA(UStaticMeshComponent::StaticClass())
-				|| C->IsA(USkeletalMeshComponent::StaticClass())
-				|| C->IsA(ULightComponentBase::StaticClass())
-				|| C->IsA(USLSkeletalDataComponent::StaticClass())
+			if (C == Actor->GetRootComponent()
+				|| C->IsA(UStaticMeshComponent::StaticClass()) // TODO PaPCereal map lights have problems without this
+				//|| C->IsA(ULightComponentBase::StaticClass())
+				|| C->IsA(UMovementComponent::StaticClass())
 				)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Component %s of ActItr %s is whitelisted, will not be removed.."),
-					*FString(__FUNCTION__), __LINE__, *C->GetName(), *ActItr->GetName());
+				// skip
 				continue;
 			}
-			ComponentsToDestroy.Emplace(C);
+			else
+			{
+				ComponentsToRemove.Add(C);
+			}
 		}
 
 		// Destroy cached components
-		for (auto& C : ComponentsToDestroy)
+		for (auto& C : ComponentsToRemove)
 		{
 			C->ConditionalBeginDestroy();
 		}
 	}
-#endif //SL_WITH_DATA_VIS
+
+//#if SL_WITH_DATA_VIS
+//	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
+//	{
+//		// Blacklisted actors, remove them from the world
+//		if (/*ActItr->IsA(APlayerStartPIE::StaticClass())
+//			||*/ ActItr->IsA(APlayerCameraManager::StaticClass())
+//			|| ActItr->IsA(APlayerState::StaticClass())
+//			|| ActItr->IsA(AGameStateBase::StaticClass())
+//			|| ActItr->IsA(AGameModeBase::StaticClass())
+//			|| ActItr->IsA(AGameSession::StaticClass())
+//			|| ActItr->IsA(AGameNetworkManager::StaticClass())
+//			|| ActItr->IsA(AHUD::StaticClass())
+//			|| ActItr->IsA(AAIController::StaticClass())
+//			)
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d ActItr %s is being removed from world.."),
+//				*FString(__FUNCTION__), __LINE__,*ActItr->GetName());
+//			ActItr->ConditionalBeginDestroy();
+//			continue;
+//		}
+//
+//		// Whitelisted ActItrs, Avoid removing landscape components, or the player controller
+//		if (ActItr->IsA(ALandscape::StaticClass())
+//			|| ActItr->IsA(APlayerController::StaticClass())
+//			|| ActItr->IsA(ACameraActor::StaticClass())
+//			|| ActItr->IsA(ADefaultPawn::StaticClass())
+//			|| ActItr->IsA(AVizMarkerManager::StaticClass())
+//			|| ActItr->IsA(AVizWorldManager::StaticClass())
+//			)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d ActItr %s is whitelisted, none of its components will be removed.."),
+//				*FString(__FUNCTION__), __LINE__,*ActItr->GetName());
+//			continue;
+//		}
+//
+//		// Remove all unnecessary components from the ActItrs (loggers, controllers etc.)
+//		// Avoid "Error: Ensure condition failed: Lhs.Array.Num() == Lhs.InitialNu: Container has changed during ranged-for iteration!"
+//		TArray<UActorComponent*> ComponentsToDestroy;
+//		for (auto& C : ActItr->GetComponents())
+//		{
+//			// Whitelisted components
+//			if (C->IsA(UStaticMeshComponent::StaticClass())
+//				|| C->IsA(USkeletalMeshComponent::StaticClass())
+//				|| C->IsA(ULightComponentBase::StaticClass())
+//				|| C->IsA(USLSkeletalDataComponent::StaticClass())
+//				)
+//			{
+//				UE_LOG(LogTemp, Warning, TEXT("%s::%d Component %s of ActItr %s is whitelisted, will not be removed.."),
+//					*FString(__FUNCTION__), __LINE__, *C->GetName(), *ActItr->GetName());
+//				continue;
+//			}
+//			ComponentsToDestroy.Emplace(C);
+//		}
+//
+//		// Destroy cached components
+//		for (auto& C : ComponentsToDestroy)
+//		{
+//			C->ConditionalBeginDestroy();
+//		}
+//	}
+//#endif //SL_WITH_DATA_VIS
 }
 
 // Spawn marker viz manager actor

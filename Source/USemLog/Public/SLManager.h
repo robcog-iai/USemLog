@@ -384,9 +384,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bVisualizeData;
 
-	// Add unique id property to tags
+	// Viz queries to execute
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Data Visualizer", meta = (editcondition = "bVisualizeData"))
 	TArray<class USLDataVisQueries*> VisQueriesArray;
+
+	// Camera to SetViewTarget to when starting the world (default pose if not set)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Data Visualizer", meta = (editcondition = "bVisualizeData"))
+	class ACameraActor* CameraViewTarget;
 
 	// Data visualizer, use UPROPERTY to avoid GC
 	UPROPERTY()

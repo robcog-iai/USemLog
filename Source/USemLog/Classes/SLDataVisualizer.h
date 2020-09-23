@@ -34,7 +34,7 @@ public:
 	void Init(const TArray<USLDataVisQueries*>& InQueries);
 
 	// Start logger
-	void Start(const FName& UserInputActionName);
+	void Start(const FName& UserInputActionName, ACameraActor* StartCameraPose = nullptr);
 
 	// Finish logger
 	void Finish(bool bForced = false);

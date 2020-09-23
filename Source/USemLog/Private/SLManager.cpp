@@ -312,7 +312,7 @@ void ASLManager::Start()
 		}
 		else if (bVisualizeData && DataVisualizer)
 		{
-			DataVisualizer->Start(UserInputActionName);
+			DataVisualizer->Start(UserInputActionName, CameraViewTarget);
 		}
 		else
 		{
