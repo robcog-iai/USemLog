@@ -45,8 +45,8 @@ protected:
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 
-	// Called by the editor to query whether a property of this object is allowed to be modified.
-	virtual bool CanEditChange(const UProperty* InProperty) const override;
+	//// Called by the editor to query whether a property of this object is allowed to be modified.
+	//virtual bool CanEditChange(const UProperty* InProperty) const override;
 #endif // WITH_EDITOR
 
 public:
@@ -95,7 +95,7 @@ private:
 	/* Semantic logger */
 	/******************************************************************************************************/
 	// Log directory (or the database name if saving to mongodb)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomTaskId"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString TaskId;
 
 	// Set to true in order to edit the episode id

@@ -506,31 +506,31 @@ void ASLManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyCh
 	}
 }
 
-// Called by the editor to query whether a property of this object is allowed to be modified.
-bool ASLManager::CanEditChange(const UProperty* InProperty) const
-{
-	// Get parent edit property
-	const bool ParentVal = Super::CanEditChange(InProperty);
-
-	// Get the property name
-	const FName PropertyName = InProperty->GetFName();
-
-	// HostIP and HostPort can only be edited if the world state writer is of type Mongo
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerIp))
-	{
-		return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerPort))
-	{
-		return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
-	{
-		return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
-	}
-
-	return ParentVal;
-}
+//// Called by the editor to query whether a property of this object is allowed to be modified.
+//bool ASLManager::CanEditChange(const UProperty* InProperty) const
+//{
+//	// Get parent edit property
+//	const bool ParentVal = Super::CanEditChange(InProperty);
+//
+//	// Get the property name
+//	const FName PropertyName = InProperty->GetFName();
+//
+//	// HostIP and HostPort can only be edited if the world state writer is of type Mongo
+//	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerIp))
+//	{
+//		return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
+//	}
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerPort))
+//	{
+//		return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
+//	}
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
+//	{
+//		return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
+//	}
+//
+//	return ParentVal;
+//}
 #endif // WITH_EDITOR
 
 // Bind user inputs

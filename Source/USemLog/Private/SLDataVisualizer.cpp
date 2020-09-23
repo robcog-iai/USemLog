@@ -84,9 +84,12 @@ void USLDataVisualizer::Init(const TArray<USLDataVisQueries*>& InQueries)
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Query handler not connect to server.."), *FString(__func__), __LINE__);
 			return;
 		}
+		bIsInit = true;	
+#else
+		UE_LOG(LogTemp, Error, TEXT("%s::%d SL_WITH_DATA_VIS is set to 0.."), *FString(__func__), __LINE__);
+		return;
 #endif //SL_WITH_DATA_VIS
 		
-		bIsInit = true;	
 	}
 }
 

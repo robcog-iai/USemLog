@@ -27,8 +27,8 @@ public class USemLog : ModuleRules
 			PublicDefinitions.Add(PreprocessorDefinition + "=1");
 		}
 	}
-	
-    public USemLog(ReadOnlyTargetRules Target) : base(Target)
+
+	public USemLog(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		//PrivatePCHHeaderFile = "Public/USemLog.h";
@@ -59,8 +59,8 @@ public class USemLog : ModuleRules
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
-			
-		
+
+
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
@@ -84,9 +84,9 @@ public class USemLog : ModuleRules
 				// ... add private dependencies that you statically link with here ...
 			}
 			);
-		
+
 		// Avoiding depending on the editor when packaging
-		if(Target.bBuildEditor)
+		if (Target.bBuildEditor)
 		{
 			PrivateDependencyModuleNames.AddRange(
 				new string[]
@@ -110,7 +110,7 @@ public class USemLog : ModuleRules
 		SetDependencyPrepreocessorDefinition("MongoCxx", "SL_WITH_LIBMONGO_CXX");
 		SetDependencyPrepreocessorDefinition("SRanipal", "SL_WITH_EYE_TRACKING");
 		SetDependencyPrepreocessorDefinition("SlicingLogic", "SL_WITH_SLICING");
-        SetDependencyPrepreocessorDefinition("UProtobuf", "SL_WITH_PROTOBUF");
+		SetDependencyPrepreocessorDefinition("UProtobuf", "SL_WITH_PROTOBUF");
 		SetDependencyPrepreocessorDefinition("UROSBridge", "SL_WITH_ROSBRIDGE");
 
 		string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));
@@ -123,9 +123,17 @@ public class USemLog : ModuleRules
 		{
 			PublicDefinitions.Add("SL_WITH_JSON=1");
 		}
-		
+
 		string UViz = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("UViz"));
+		if (string.IsNullOrEmpty(UViz))
+        {
+			UViz = PublicDependencyModuleNames.Find(DependencyName => DependencyName.Equals("UViz"));
+		}
 		string UMongoQA = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("UMongoQA"));
+		if(string.IsNullOrEmpty(UMongoQA))
+        {
+			UMongoQA = PublicDependencyModuleNames.Find(DependencyName => DependencyName.Equals("UMongoQA"));
+		}
 		if (string.IsNullOrEmpty(UViz) || string.IsNullOrEmpty(UMongoQA))
 		{
 			PublicDefinitions.Add("SL_WITH_DATA_VIS=0");
