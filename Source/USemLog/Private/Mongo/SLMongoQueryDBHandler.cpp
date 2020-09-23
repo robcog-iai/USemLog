@@ -406,10 +406,9 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 
 	mongoc_cursor_destroy(cursor);
 	bson_destroy(pipeline);
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds..;"),
-		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin);
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds, Num=[%d]..;"),
+		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin, Trajectory.Num());
 #endif
-	//UE_LOG(LogTemp, Log, TEXT("%s::%d Traj size=%ld;"), *FString(__FUNCTION__), __LINE__, Trajectory.Num());
 	return Trajectory;
 }
 

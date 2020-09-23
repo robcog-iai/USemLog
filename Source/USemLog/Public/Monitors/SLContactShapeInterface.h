@@ -195,8 +195,8 @@ protected:
 	TArray<FSLOverlapEndEvent> RecentlyEndedOverlapEvents;
 
 	/* Constants */
-	constexpr static const char* TagTypeName = "SemLogColl";
-	constexpr static float SBUpdateRate = 0.11f;
-	constexpr static float SBMaxVertSpeed = 0.5f;
-	constexpr static float MaxOverlapEventTimeGap = 0.12f;
+	static constexpr const char* TagTypeName = "SemLogColl";
+	static constexpr float SBUpdateRate = 0.11f;
+	static constexpr float SBMaxVertSpeed = 0.5f;
+	static constexpr float MaxOverlapEventTimeGap = 0.12f;
 };

@@ -54,7 +54,8 @@ public class USemLog : ModuleRules
 				"Core",
 				"USemLogOwl",
 				"MongoC",						// SL_WITH_LIBMONGO_C                
-				"UProtobuf" 					// SL_WITH_PROTOBUF
+				"UProtobuf", 					// SL_WITH_PROTOBUF
+				"UViz", "UMongoQA",				// SL_WITH_DATA_VIS
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -79,8 +80,7 @@ public class USemLog : ModuleRules
 				"SRanipal",					// SL_WITH_EYE_TRACKING
 				//"SlicingLogic",		    // SL_WITH_SLICING				
 				//"MongoCxx",			    // SL_WITH_LIBMONGO_CXX				
-				//"Boost",				    // SL_WITH_BOOST
-				//"UViz", "UMongoQA",	    // SL_WITH_DATA_VIS				
+				//"Boost",				    // SL_WITH_BOOST			
 				// ... add private dependencies that you statically link with here ...
 			}
 			);

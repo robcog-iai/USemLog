@@ -269,6 +269,6 @@ private:
 	
 
 	/* Constants */
-	constexpr static float MaxGraspEventTimeGap = 0.55f;
-	constexpr static float MaxContactEventTimeGap = 0.35f;
+	static constexpr float MaxGraspEventTimeGap = 0.55f;
+	static constexpr float MaxContactEventTimeGap = 0.35f;
 };

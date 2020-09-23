@@ -84,5 +84,5 @@ private:
 	float TextSize;
 	
 	/* Constants */
-	constexpr static TCHAR* TextMaterialPath = TEXT("Material'/USemLog/Individuals/M_InfoTextTranslucent.M_InfoTextTranslucent'");
+	static constexpr auto TextMaterialPath = TEXT("Material'/USemLog/Individuals/M_InfoTextTranslucent.M_InfoTextTranslucent'");
 };

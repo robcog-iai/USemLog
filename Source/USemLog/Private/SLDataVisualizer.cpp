@@ -27,6 +27,7 @@
 #include "GameFramework/HUD.h"
 #include "Particles/ParticleEventManager.h"
 #include "AIController.h"
+#include "Components/LightComponentBase.h"
 #endif //SL_WITH_DATA_VIS
 
 // Constructor
