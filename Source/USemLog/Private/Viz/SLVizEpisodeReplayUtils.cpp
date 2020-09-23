@@ -11,6 +11,7 @@
 #include "EngineUtils.h"
 
 // IsA's
+//#include "Components/LightComponentBase.h"
 #include "GameFramework/MovementComponent.h"
 
 // Make sure the mesh of the pawn or spectator is not visible in the world
@@ -95,6 +96,7 @@ void FSLVizEpisodeReplayUtils::RemoveUnnecessaryComponents(AActor* Actor)
 	{
 		if (C == Actor->GetRootComponent() 
 			|| C->IsA(USLIndividualComponent::StaticClass())
+			//|| C->IsA(ULightComponentBase::StaticClass())
 			|| C->IsA(UMovementComponent::StaticClass())
 			)
 		{
