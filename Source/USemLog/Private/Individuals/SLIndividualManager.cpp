@@ -221,11 +221,12 @@ void ASLIndividualManager::SetIsConnected(bool bNewValue, bool bBroadcast)
 // Cache individual component references
 bool ASLIndividualManager::InitImpl()
 {	
-	if (HasCache())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d The manager already has cached individuals, this should not happen.."), *FString(__FUNCTION__), __LINE__);
-		return false;
-	}
+	bool bAllInit = true;
+	//if (HasCache())
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d The manager already has cached individuals, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+	//	return false;
+	//}
 	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 	{
 		if (UActorComponent* AC = ActItr->GetComponentByClass(USLIndividualComponent::StaticClass()))
@@ -234,10 +235,16 @@ bool ASLIndividualManager::InitImpl()
 			if (IC->IsValidLowLevel() && !IC->IsPendingKill())
 			{
 				AddToCache(IC);
+				if (!IC->IsInit())
+				{
+					bAllInit = false;
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not init.."), *FString(__FUNCTION__), __LINE__, *IC->GetFullName());
+				}
 			}
 		}
 	}
-	return HasCache();
+	//return HasCache();
+	return bAllInit;
 }
 
 //

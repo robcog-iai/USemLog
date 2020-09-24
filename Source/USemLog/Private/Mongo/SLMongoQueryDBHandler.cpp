@@ -260,7 +260,7 @@ FTransform FSLMongoQueryDBHandler::GetIndividualPoseAt(const FString& Id, float 
 		"{",
 			"$sort",
 			"{",
-				"timestamp", BCON_INT32(-1),
+				"timestamp", BCON_INT32(-1),							// required to get the last pose (no time penalty if the collection is indexed)
 			"}",
 		"}",
 		"{",
@@ -346,7 +346,7 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 		"{",
 			"$sort",
 			"{",
-				"timestamp", BCON_INT32(1),								// if sort if right after match it barely adds any time penalty
+				"timestamp", BCON_INT32(1),								// no time penalty if the collection is indexed
 			"}",
 		"}",
 		"{",
