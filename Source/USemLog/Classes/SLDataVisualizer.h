@@ -94,6 +94,7 @@ private:
 	void WorldStateQuery(const FSLVisQuery& Query);
 	void AllWorldStatesQuery(const FSLVisQuery& Query);
 
+
 	/* Action cases */
 
 protected:

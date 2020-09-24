@@ -40,6 +40,7 @@ enum class ESLVisQueryType : uint8
 	GazeTraj			UMETA(DisplayName = GazeTraj),
 	WorldState			UMETA(DisplayName = WorldState),
 	AllWorldStates		UMETA(DisplayName = AllWorldStates),
+	ClearAllMarkers		UMETA(DisplayName = ClearAllMarkers),
 };
 
 /**

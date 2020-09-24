@@ -382,6 +382,13 @@ void USLDataVisualizer::ExecuteQuery(const FSLVisQuery& Query)
 			*FString(__FUNCTION__), __LINE__, QueryArrayIdx, ActiveQueryIdx, *Query.Description);
 	}
 
+	// Clear all previous markers
+	if(Query.QueryType == ESLVisQueryType::ClearAllMarkers)
+	{
+		VizMarkerManager->ClearAllMarkers();
+		return;
+	}
+
 	/* Connection */
 	const FString DBName = Query.TaskId;
 	if (!PrevDBName.Equals(DBName))
@@ -473,7 +480,6 @@ void USLDataVisualizer::ExecuteQuery(const FSLVisQuery& Query)
 		AllWorldStatesQuery(Query);
 		break;
 	}
-
 	default:
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Unknown query type.."), *FString(__FUNCTION__), __LINE__);
 	}
