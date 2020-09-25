@@ -371,8 +371,8 @@ void USLDataVisualizer::ExecuteQuery(const FSLVisQuery& Query)
 #if SL_WITH_DATA_VIS
 	if (Query.bSkip)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d ArrQ[%ld] - Q[%ld]: Description=%s; bSkip set to true, skipping this query.."),
-			*FString(__FUNCTION__), __LINE__, QueryArrayIdx, ActiveQueryIdx, *Query.Description);
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d ArrQ[%ld] - Q[%ld]: Description=%s; bSkip set to true, skipping this query.."),
+		//	*FString(__FUNCTION__), __LINE__, QueryArrayIdx, ActiveQueryIdx, *Query.Description);
 		Trigger();
 		return;
 	}
