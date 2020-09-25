@@ -703,7 +703,7 @@ void USLIndividualInfoComponent::SetOwnTextInfo()
 	}
 
 	const FString TextValue = FString::Printf(TEXT("%s : I:%s; L:%s; C:%s; ChNum:%ld;"),
-		ANSI_TO_TCHAR(OwnTextInfoKey), 
+		*OwnTextInfoKey, 
 		IsInit() ? "T" : "F", 
 		IsLoaded() ? "T" : "F", 
 		IsConnected() ? "T" : "F",
@@ -772,7 +772,7 @@ void USLIndividualInfoComponent::SetIndividualComponentTextInfo()
 	else
 	{
 		TextComponent->SetRowValueAndColor(ICTextInfoKey,
-			FString::Printf(TEXT("%s : null"), ICTextInfoKey), FColor::White);
+			FString::Printf(TEXT("%s : null"), *ICTextInfoKey), FColor::White);
 	}
 }
 

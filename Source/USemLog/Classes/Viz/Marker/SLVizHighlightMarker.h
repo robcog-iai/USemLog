@@ -123,5 +123,5 @@ private:
 	USLVizAssets* VizAssetsContainer;
 
 	/* Constants */
-	constexpr static TCHAR* AssetsContainerPath = TEXT("SLVizAssets'/USemLog/Viz/SL_VizAssetsContainer.SL_VizAssetsContainer'");
+	FString AssetsContainerPath = TEXT("SLVizAssets'/USemLog/Viz/SL_VizAssetsContainer.SL_VizAssetsContainer'");
 };

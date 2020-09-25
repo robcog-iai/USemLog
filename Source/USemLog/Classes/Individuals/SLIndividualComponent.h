@@ -262,5 +262,5 @@ public:
 
 	/* Constants */
 	// Skeletal data asset map key
-	static constexpr char SkelDataAssetKey[] = "SkeletalDataAsset";
+	static const FString SkelDataAssetKey;
 };

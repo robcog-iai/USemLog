@@ -13,7 +13,7 @@ USLIndividualInfoTextComponent::USLIndividualInfoTextComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-	TextMaterial = Cast<UMaterial>(StaticLoadObject( UMaterial::StaticClass(), NULL, TextMaterialPath, NULL, LOAD_None, NULL));
+	TextMaterial = Cast<UMaterial>(StaticLoadObject( UMaterial::StaticClass(), NULL, *TextMaterialPath, NULL, LOAD_None, NULL));
 	TextSize = 1.25f;
 }
 

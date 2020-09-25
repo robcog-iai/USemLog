@@ -12,7 +12,7 @@ USLVizBaseMarker::USLVizBaseMarker()
 	PrimaryComponentTick.bCanEverTick = false;
 	LoadAssetsContainer();
 	MaterialType = ESLVizMaterialType::NONE;
-	VisualColor == FLinearColor::Transparent; // (0,0,0,0)
+	VisualColor = FLinearColor::Transparent; // (0,0,0,0)
 }
 
 // Update the visual color property
@@ -94,7 +94,7 @@ void USLVizBaseMarker::SetDynamicMaterialColor(const FLinearColor& InColor)
 // Load assets container
 bool USLVizBaseMarker::LoadAssetsContainer()
 {
-	static ConstructorHelpers::FObjectFinder<USLVizAssets>VizAssetsContainerAsset(AssetsContainerPath);
+	static ConstructorHelpers::FObjectFinder<USLVizAssets>VizAssetsContainerAsset(*AssetsContainerPath);
 	if (VizAssetsContainerAsset.Succeeded())
 	{
 		VizAssetsContainer = VizAssetsContainerAsset.Object;
@@ -149,7 +149,7 @@ bool USLVizBaseMarker::LoadAssetsContainer()
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find the assets container at Path=%s.."),
-			*FString(__FUNCTION__), __LINE__, AssetsContainerPath);
+			*FString(__FUNCTION__), __LINE__, *AssetsContainerPath);
 		return false;
 	}
 }
