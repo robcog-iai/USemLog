@@ -147,6 +147,10 @@ struct FSLVisQuery
 	UPROPERTY(EditAnywhere)
 	bool bSkip = false;
 
+	// Trigger the execution of the following query automatically
+	UPROPERTY(EditAnywhere)
+	bool bTriggerNext = false;
+
 	// End time for trajectories/timelines
 	UPROPERTY(EditAnywhere)
 	FString Description;

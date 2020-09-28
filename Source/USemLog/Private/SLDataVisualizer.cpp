@@ -386,6 +386,10 @@ void USLDataVisualizer::ExecuteQuery(const FSLVisQuery& Query)
 	if(Query.QueryType == ESLVisQueryType::ClearAllMarkers)
 	{
 		VizMarkerManager->ClearAllMarkers();
+		if (Query.bTriggerNext)
+		{
+			Trigger();
+		}
 		return;
 	}
 
@@ -482,6 +486,11 @@ void USLDataVisualizer::ExecuteQuery(const FSLVisQuery& Query)
 	}
 	default:
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Unknown query type.."), *FString(__FUNCTION__), __LINE__);
+	}
+
+	if (Query.bTriggerNext)
+	{
+		Trigger();
 	}
 #endif // SL_WITH_DATA_VIS
 }
