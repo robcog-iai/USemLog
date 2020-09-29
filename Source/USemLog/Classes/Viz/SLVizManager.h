@@ -140,13 +140,13 @@ public:
 	bool IsEpisodeLoaded() const;
 
 	// Go to the frame at the given timestamp
-	bool GotoEpisodeFrame(float Ts);
+	bool GotoEpisodeFrame(float Ts, const FString& ViewTargetId = TEXT(""));
 
 	// Replay the whole loaded episode
-	bool PlayEpisode(bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+	bool PlayEpisode(FSLVizEpisodeReplayPlayParams PlayParams = FSLVizEpisodeReplayPlayParams());
 
 	// Replay the whole loaded episode
-	bool PlayEpisodeTimeline(float StartTime, float EndTime, bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+	bool PlayEpisodeTimeline(float StartTime, float EndTime, FSLVizEpisodeReplayPlayParams PlayParams = FSLVizEpisodeReplayPlayParams());
 
 	// Pause/unpause the replay (if active)
 	void PauseReplay(bool bPause);

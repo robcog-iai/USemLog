@@ -166,11 +166,19 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		}
 		if (ReplayBeginValueHack > 0 && ReplayEndValueHack > 0 && ReplayBeginValueHack < ReplayEndValueHack)
 		{
-			VizManager->PlayEpisodeTimeline(ReplayBeginValueHack, ReplayEndValueHack, bReplayLoopValueHack, ReplayUpdateRateValueHack);
+			FSLVizEpisodeReplayPlayParams PlayParams;
+			PlayParams.bLoop = bReplayLoopValueHack;
+			PlayParams.UpdateRate = ReplayUpdateRateValueHack;
+			PlayParams.ViewTargetId = ReplayTargetViewIdValueHack;
+			VizManager->PlayEpisodeTimeline(ReplayBeginValueHack, ReplayEndValueHack, PlayParams);
 		}
 		else
 		{
-			VizManager->PlayEpisode(bReplayLoopValueHack, ReplayUpdateRateValueHack);
+			FSLVizEpisodeReplayPlayParams PlayParams;
+			PlayParams.bLoop = bReplayLoopValueHack;
+			PlayParams.UpdateRate = ReplayUpdateRateValueHack;
+			PlayParams.ViewTargetId = ReplayTargetViewIdValueHack;
+			VizManager->PlayEpisode(PlayParams);
 		}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bReplayPauseButtonHack))

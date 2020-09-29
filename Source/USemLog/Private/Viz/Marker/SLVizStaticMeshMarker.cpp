@@ -11,11 +11,20 @@
 // Constructor
 USLVizStaticMeshMarker::USLVizStaticMeshMarker()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+	//PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
 	
 	ISMC = nullptr;	
 	TimelineIndex = INDEX_NONE;
 	bLoopTimeline = false;
+}
+
+// Called every frame, used for timeline visualizations, activated and deactivated on request
+void USLVizStaticMeshMarker::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	UE_LOG(LogTemp, Log, TEXT("%s::%d DeltaTime = %f"), *FString(__FUNCTION__), __LINE__, DeltaTime);
 }
 
 // Set the visual properties of the instanced mesh using the mesh original materials
@@ -114,6 +123,31 @@ void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses)
 	}
 }
 
+// Add instances with timeline update
+void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses, float Duration, bool bLoop, float UpdateRate)
+{
+	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	// Check if there is already an active timeline
+	if (IsComponentTickEnabled())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d A timeline is already active, reset first.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	if (UpdateRate > 0.f)
+	{
+		SetComponentTickInterval(UpdateRate);
+	}
+	SetComponentTickEnabled(true);
+
+	RegisterComponentTickFunctions(true); // TODO chek this
+}
+
 // Add instances with the poses using and update rate
 void USLVizStaticMeshMarker::AddTimeline(const TArray<FTransform>& Poses, float UpdateRate, bool bLoop, float StartDelay)
 {
@@ -146,9 +180,19 @@ void USLVizStaticMeshMarker::AddTimeline(const TArray<FTransform>& Poses, float 
 	// Set index position to first
 	TimelineIndex = 0;
 
+	if (UpdateRate <= 0.f)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d UpdateRate cannot be smaller than 0, default value used.."),
+			*FString(__FUNCTION__), __LINE__);
+		UpdateRate = 0.08333f; // ~120fps
+	}
+
 	// Bind and start timer callback
 	GetWorld()->GetTimerManager().SetTimer(TimelineTimerHandle, this, &USLVizStaticMeshMarker::TimelineUpdateCallback,
 		UpdateRate, true, StartDelay);
+
+	SetComponentTickEnabled(true);
+	SetComponentTickInterval(UpdateRate);
 }
 
 /* Begin VizMarker interface */
@@ -193,7 +237,6 @@ void USLVizStaticMeshMarker::ResetPoses()
 
 	ISMC->ClearInstances();
 }
-
 /* End VizMarker interface */
 
 // Virtual add instance function
@@ -220,11 +263,13 @@ void USLVizStaticMeshMarker::TimelineUpdateCallback()
 	if (TimelinePoses.IsValidIndex(TimelineIndex))
 	{
 		AddInstanceChecked(TimelinePoses[TimelineIndex]);
+		TimelineIndex++;
 	}
 	else if(bLoopTimeline)
 	{
 		ISMC->ClearInstances();
 		TimelineIndex = 0;
+		SetComponentTickEnabled(false);
 	}
 	else
 	{

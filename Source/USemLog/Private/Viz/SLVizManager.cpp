@@ -6,6 +6,7 @@
 #include "Viz/SLVizMarkerManager.h"
 #include "Viz/SLVizHighlightManager.h"
 #include "Viz/SLVizEpisodeReplayManager.h"
+#include "Viz/SLVizEpisodeReplayUtils.h"
 #include "Individuals/SLIndividualManager.h"
 
 #include "Individuals/Type/SLRigidIndividual.h"
@@ -146,22 +147,14 @@ bool ASLVizManager::HighlightIndividual(const FString& Id, const FLinearColor& C
 			}
 			else if (auto SkI = Cast<USLSkeletalIndividual>(VI))
 			{				
-				UMeshComponent* MC = SkI->GetSkeletalMeshComponent();
-				if (!MC->IsVisible()) // Visual world mode
-				{
-					MC = SkI->GetPoseableMeshComponent();
-				}
+				UMeshComponent* MC = SkI->GetVisibleMeshComponent();
 				HighlightManager->Highlight(MC, FSLVizVisualParams(Color, MaterialType));
 				HighlightedIndividuals.Add(Id, FSLVizIndividualHighlightData(MC));
 				return true;
 			}
 			else if (auto BI = Cast<USLBoneIndividual>(VI))
 			{
-				UMeshComponent* MC = BI->GetSkeletalMeshComponent();
-				if (!MC->IsVisible()) // Visual world mode
-				{
-					MC = BI->GetPoseableMeshComponent();
-				}
+				UMeshComponent* MC = BI->GetVisibleMeshComponent();
 				int32 MaterialIndex = BI->GetMaterialIndex();
 				HighlightManager->Highlight(MC, FSLVizVisualParams(Color, MaterialType, MaterialIndex));
 				HighlightedIndividuals.Add(Id, FSLVizIndividualHighlightData(MC, MaterialIndex));
@@ -253,8 +246,7 @@ void ASLVizManager::RemoveAllIndividualHighlights()
 
 /* Markers */
 // Create a primitive marker
-bool ASLVizManager::CreatePrimitiveMarker(const FString& MarkerId, 
-	const TArray<FTransform>& Poses, 
+bool ASLVizManager::CreatePrimitiveMarker(const FString& MarkerId, 	const TArray<FTransform>& Poses, 
 	ESLVizPrimitiveMarkerType PrimitiveType,
 	float Size, 
 	const FLinearColor& Color, 
@@ -345,9 +337,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 }
 
 // Create a marker by cloning the visual of the given individual
-bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId,
-	const TArray<FTransform>& Poses,
-	const FString& IndividualId,
+bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId,
 	const FLinearColor& Color, ESLVizMaterialType MaterialType)
 {
 	if (!bIsInit)
@@ -673,6 +663,7 @@ void ASLVizManager::RemoveAllMarkers()
 }
 
 
+
 /* Episode replay */
 // Setup the world for episode replay (remove physics, pause simulation, change skeletal meshes to poseable meshes)
 bool ASLVizManager::SetupWorldForEpisodeReplay()
@@ -749,118 +740,13 @@ void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTra
 		return;
 	}
 
-	double ExecBegin = FPlatformTime::Seconds();
-
 	// Create and reserve episode data with the array size
 	FSLVizEpisodeData EpisodeDataFull(InCompactEpisodeData.Num());
 	FSLVizEpisodeData EpisodeDataCompact(InCompactEpisodeData.Num());
-
-	/* First frame */
-	// Process first frame (contains all individuals -- the rest of the frames contain only individuals that have moved)
-	FSLVizEpisodeFrameData FullFrameData;
-
-	// Iterate individuals with their poses
-	for (const auto& IndividualPosePair : InCompactEpisodeData[0].Value)
+	if (FSLVizEpisodeReplayUtils::BuildEpisodeData(IndividualManager, InCompactEpisodeData, EpisodeDataFull, EpisodeDataCompact))
 	{
-		if (auto Individual = IndividualManager->GetIndividual(IndividualPosePair.Key))
-		{
-			const FTransform IndividualPose = IndividualPosePair.Value;
-			AActor* IndividualActor = Individual->GetParentActor();
-
-			if (auto RI = Cast<USLRigidIndividual>(Individual))
-			{
-				FullFrameData.ActorPoses.Emplace(IndividualActor, IndividualPose);
-			}
-			else if (auto BI = Cast<USLBoneIndividual>(Individual))
-			{
-				FullFrameData.BonePoses.FindOrAdd(BI->GetPoseableMeshComponent()).Add(BI->GetBoneIndex(), IndividualPose);
-			}
-			else if (auto VBI = Cast<USLVirtualBoneIndividual>(Individual))
-			{
-				FullFrameData.BonePoses.FindOrAdd(VBI->GetPoseableMeshComponent()).Add(VBI->GetBoneIndex(), IndividualPose);
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual with id=%s, this should not happen, aborting.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualPosePair.Key);
-			return;
-		}		
+		EpisodeReplayManager->LoadEpisode(EpisodeDataFull, EpisodeDataCompact);
 	}
-	// Add the timestamp
-	//EpisodeDataFull.Timestamps[0] = InCompactEpisodeData[0].Key;
-	EpisodeDataFull.Timestamps.Emplace(InCompactEpisodeData[0].Key);
-	EpisodeDataCompact.Timestamps.Emplace(InCompactEpisodeData[0].Key);
-
-	double FirstFrameDuration = FPlatformTime::Seconds() - ExecBegin;
-
-	// Add the individuals poses
-	//EpisodeDataFull.Frames[0] = FullFrameData;
-	EpisodeDataFull.Frames.Emplace(FullFrameData);
-	EpisodeDataCompact.Frames.Emplace(FullFrameData);
-	
-
-	/* Following frames */
-	// Process the following frames
-	for (int32 FrameIndex = 1; FrameIndex < InCompactEpisodeData.Num(); ++FrameIndex)
-	{
-		// TODO will emplace make a copy, or one needs to make one here ?
-		//FSLVizEpisodeFrameData PrevFrameCopy = FullFrameData;
-		FSLVizEpisodeFrameData CompactFrameData;
-
-		// Iterate individuals with their poses
-		for (const auto& IndividualPosePair : InCompactEpisodeData[FrameIndex].Value)
-		{
-			if (auto Individual = IndividualManager->GetIndividual(IndividualPosePair.Key))
-			{
-				const FTransform IndividualPose = IndividualPosePair.Value;
-				AActor* IndividualActor = Individual->GetParentActor();
-
-				if (auto RI = Cast<USLRigidIndividual>(Individual))
-				{
-					// Modify the value in the full/first frame
-					//if (auto FoundActorPose = FullFrameData.ActorPoses.Find(RI->GetParentActor())){(*FoundActorPose) = IndividualPose;}
-					FullFrameData.ActorPoses.FindChecked(RI->GetParentActor()) = IndividualPose;
-					// Add as new value to the compact frame
-					CompactFrameData.ActorPoses.Emplace(IndividualActor, IndividualPose);
-				}
-				else if (auto BI = Cast<USLBoneIndividual>(Individual))
-				{
-					FullFrameData.BonePoses.FindOrAdd(BI->GetPoseableMeshComponent()).Add(BI->GetBoneIndex(), IndividualPose);
-					CompactFrameData.BonePoses.FindOrAdd(BI->GetPoseableMeshComponent()).Add(BI->GetBoneIndex(), IndividualPose);
-				}
-				else if (auto VBI = Cast<USLVirtualBoneIndividual>(Individual))
-				{
-					FullFrameData.BonePoses.FindOrAdd(VBI->GetPoseableMeshComponent()).Add(VBI->GetBoneIndex(), IndividualPose);
-					CompactFrameData.BonePoses.FindOrAdd(VBI->GetPoseableMeshComponent()).Add(VBI->GetBoneIndex(), IndividualPose);
-				}
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual with id=%s, this should not happen, aborting.."),
-					*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualPosePair.Key);
-				return;
-			}
-		}
-
-		// Add the timestamp
-		//EpisodeDataFull.Timestamps[FrameIndex] = InCompactEpisodeData[FrameIndex].Key;
-		EpisodeDataFull.Timestamps.Emplace(InCompactEpisodeData[FrameIndex].Key);
-		EpisodeDataCompact.Timestamps.Emplace(InCompactEpisodeData[FrameIndex].Key);
-
-		// Add the individuals poses
-		//EpisodeDataFull.Frames[FrameIndex] = FullFrameData;
-		EpisodeDataFull.Frames.Emplace(FullFrameData);
-		EpisodeDataCompact.Frames.Emplace(CompactFrameData);
-	}
-
-	double FollowingFramesDuration = FPlatformTime::Seconds() - ExecBegin - FirstFrameDuration;
-
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: first frame=[%f], following frames(num=%d)=[%f], total=[%f] seconds..;"),
-		*FString(__func__), __LINE__, FirstFrameDuration, EpisodeDataFull.Timestamps.Num(), 
-		FollowingFramesDuration, FPlatformTime::Seconds() - ExecBegin);
-
-	EpisodeReplayManager->LoadEpisode(EpisodeDataFull, EpisodeDataCompact);
 }
 
 // Check if any episode is loaded (return the name of the episode)
@@ -875,36 +761,58 @@ bool ASLVizManager::IsEpisodeLoaded() const
 }
 
 // Go to the frame at the given timestamp
-bool ASLVizManager::GotoEpisodeFrame(float Ts)
+bool ASLVizManager::GotoEpisodeFrame(float Ts, const FString& ViewTargetId)
 {
 	if (!bIsInit)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
+	}
+
+	if (!ViewTargetId.IsEmpty())
+	{
+		AActor* TargetView = IndividualManager->GetIndividualActor(ViewTargetId);
+		return EpisodeReplayManager->GotoFrame(Ts, TargetView);
 	}
 	return EpisodeReplayManager->GotoFrame(Ts);
 }
 
 // Replay the whole loaded episode
-bool ASLVizManager::PlayEpisode(bool bLoop, float UpdateRate, int32 StepSize)
+bool ASLVizManager::PlayEpisode(FSLVizEpisodeReplayPlayParams PlayParams)
 {
 	if (!bIsInit)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
-	return EpisodeReplayManager->Play(bLoop, UpdateRate, StepSize);
+
+	EpisodeReplayManager->SetReplayParams(PlayParams.bLoop, PlayParams.UpdateRate, PlayParams.StepSize);
+
+	if (!PlayParams.ViewTargetId.IsEmpty())
+	{
+		AActor* TargetView = IndividualManager->GetIndividualActor(PlayParams.ViewTargetId);
+		return EpisodeReplayManager->PlayEpisode(TargetView);
+	}
+	return EpisodeReplayManager->PlayEpisode();
 }
 
 // Replay the selected timeline in the episode
-bool ASLVizManager::PlayEpisodeTimeline(float StartTime, float EndTime, bool bLoop, float UpdateRate, int32 StepSize)
+bool ASLVizManager::PlayEpisodeTimeline(float StartTime, float EndTime, FSLVizEpisodeReplayPlayParams PlayParams)
 {
 	if (!bIsInit)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
-	return EpisodeReplayManager->PlayTimeline(StartTime, EndTime, bLoop, UpdateRate, StepSize);
+
+	EpisodeReplayManager->SetReplayParams(PlayParams.bLoop, PlayParams.UpdateRate, PlayParams.StepSize);
+
+	if (!PlayParams.ViewTargetId.IsEmpty())
+	{
+		AActor* TargetView = IndividualManager->GetIndividualActor(PlayParams.ViewTargetId);
+		return EpisodeReplayManager->PlayTimeline(StartTime, EndTime, TargetView);
+	}
+	return EpisodeReplayManager->PlayTimeline(StartTime, EndTime);
 }
 
 // Pause/unpause the replay (if active)

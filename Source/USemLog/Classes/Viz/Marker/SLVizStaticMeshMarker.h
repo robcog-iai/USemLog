@@ -23,6 +23,9 @@ public:
 	// Constructor
 	USLVizStaticMeshMarker();
 
+	// Called every frame, used for timeline visualizations, activated and deactivated on request
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 	// Set the visual properties of the instanced mesh using the mesh original materials
 	void SetVisual(UStaticMesh* SM);
 
@@ -37,6 +40,9 @@ public:
 
 	// Add instances with the poses
 	void AddInstances(const TArray<FTransform>& Poses);
+
+	// Add instances with timeline update
+	void AddInstances(const TArray<FTransform>& Poses, float Duration, bool bLoop, float UpdateRate = -1.f);
 
 	// Add instances with the poses as a timeline
 	void AddTimeline(const TArray<FTransform>& Poses, float UpdateRate,  bool bLoop, float StartDelay = -1.f);

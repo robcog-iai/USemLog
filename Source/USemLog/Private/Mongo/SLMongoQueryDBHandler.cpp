@@ -282,6 +282,7 @@ FTransform FSLMongoQueryDBHandler::GetIndividualPoseAt(const FString& Id, float 
 				"timestamp", BCON_INT32(1),
 				"loc", BCON_UTF8("$individuals.loc"),
 				"quat", BCON_UTF8("$individuals.quat"),
+				"pose", BCON_UTF8("$individuals.pose"),
 			"}",
 		"}",
 		"]");
@@ -365,6 +366,7 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 				"timestamp", BCON_INT32(1),
 				"loc", BCON_UTF8("$individuals.loc"),
 				"quat", BCON_UTF8("$individuals.quat"),
+				"pose", BCON_UTF8("$individuals.pose"),
 			"}",
 		"}",
 		"]");
@@ -464,6 +466,7 @@ TPair<FTransform, TMap<int32, FTransform>> FSLMongoQueryDBHandler::GetSkeletalIn
 				"bones", BCON_UTF8("$skel_individuals.bones"),		// bones data (index, loc, quat)
 				"loc", BCON_UTF8("$skel_individuals.loc"),			// actor loc
 				"quat", BCON_UTF8("$skel_individuals.quat"),		// actor quat
+				"pose", BCON_UTF8("$skel_individuals.pose"),
 			"}",
 		"}",
 		"]");
@@ -564,6 +567,8 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> FSLMongoQueryDBHandler::GetSk
 				"bones", BCON_UTF8("$skel_individuals.bones"),		// bones data (index, loc, quat)
 				"loc", BCON_UTF8("$skel_individuals.loc"),			// actor loc
 				"quat", BCON_UTF8("$skel_individuals.quat"),		// actor quat
+				"pose", BCON_UTF8("$skel_individuals.pose"),
+
 			"}",
 		"}",
 		"]");
@@ -605,9 +610,7 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> FSLMongoQueryDBHandler::GetSk
 							}
 						}
 					}
-
 					SkeletalTrajectoryPair.Add(SkeletalPosePair);
-
 					PrevTs = CurrTs;
 				}
 			}
@@ -638,7 +641,6 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> FSLMongoQueryDBHandler::GetSk
 						}
 					}
 				}
-
 				SkeletalTrajectoryPair.Add(SkeletalPosePair);
 			}
 		}
@@ -734,7 +736,6 @@ TArray<TPair<float, TMap<FString, FTransform>>> FSLMongoQueryDBHandler::GetEpiso
 					while (bson_iter_next(&individuals_iter))
 					{
 						FString Id;
-
 						bson_iter_t individual_val_iter;
 						if (bson_iter_recurse(&individuals_iter, &individual_val_iter) && bson_iter_find(&individual_val_iter, "id"))
 						{
@@ -782,6 +783,9 @@ FTransform FSLMongoQueryDBHandler::GetPose(const bson_t* doc) const
 	FVector Loc;
 	FQuat Quat;
 
+	// TODO use pose[x y z qx qy qz qw]
+	//bson_iter_array
+
 	bson_iter_t iter;
 	bson_iter_t value;
 
@@ -826,6 +830,9 @@ FTransform FSLMongoQueryDBHandler::GetPose(const bson_iter_t* iter) const
 {
 	FVector Loc;
 	FQuat Quat;
+
+	// TODO use pose[x y z qx qy qz qw]
+	//bson_iter_array
 
 	bson_iter_t value;
 	bson_iter_t sub_value;

@@ -2,9 +2,12 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizEpisodeReplayUtils.h"
-#include "Individuals/SLIndividualComponent.h"
+#include "Viz/SLVizEpisodeReplayManager.h"
 
-#include "GameFramework/PlayerController.h"
+#include "Individuals/SLIndividualManager.h"
+#include "Individuals/SLIndividualComponent.h"
+#include "Individuals/Type/SLIndividualTypes.h"
+
 #include "Animation/SkeletalMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/PoseableMeshComponent.h"
@@ -12,21 +15,10 @@
 
 // IsA's
 //#include "Components/LightComponentBase.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/MovementComponent.h"
+//#include "Landscape.h"
 
-// Make sure the mesh of the pawn or spectator is not visible in the world
-void FSLVizEpisodeReplayUtils::HidePawnOrSpectator(UWorld* World)
-{
-	if (World->GetFirstPlayerController() && World->GetFirstPlayerController()->GetPawnOrSpectator())
-	{
-		World->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not access the pawn or specator to set as hidden.."),
-			*FString(__FUNCTION__), __LINE__);
-	}
-}
 
 // Set actors as visuals only (disable physics, set as movable, clear attachments)
 void FSLVizEpisodeReplayUtils::SetActorsAsVisualsOnly(UWorld* World)
@@ -45,7 +37,10 @@ void FSLVizEpisodeReplayUtils::SetActorsAsVisualsOnly(UWorld* World)
 		ActItr->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
 		// Check if there are any components that need to be removed
-		RemoveUnnecessaryComponents(*ActItr);
+		if (!IsSpecialCaseActor(*ActItr))
+		{
+			RemoveUnnecessaryComponents(*ActItr);
+		}
 	}
 }
 
@@ -67,6 +62,128 @@ void FSLVizEpisodeReplayUtils::AddPoseablMeshComponentsToSkeletalActors(UWorld* 
 	}
 }
 
+// Build the full replay episode data from the mongo compact form
+bool FSLVizEpisodeReplayUtils::BuildEpisodeData(ASLIndividualManager* IndividualManager, const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData,
+	FSLVizEpisodeData& OutFullEpisodeData, FSLVizEpisodeData& OutCompactEpisodeData)
+{
+	double ExecBegin = FPlatformTime::Seconds();
+	/* First frame */
+	// Process first frame (contains all individuals -- the rest of the frames contain only individuals that have moved)
+	FSLVizEpisodeFrameData FullFrameData;
+
+	// Iterate individuals with their poses
+	for (const auto& IndividualPosePair : InCompactEpisodeData[0].Value)
+	{
+		const FString IndividualId = IndividualPosePair.Key;
+		const FTransform IndividualPose = IndividualPosePair.Value;
+
+		if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+		{
+			if (Individual->IsA(USLRigidIndividual::StaticClass())
+			|| Individual->IsA(USLSkeletalIndividual::StaticClass())
+			|| Individual->IsA(USLVirtualViewIndividual::StaticClass()))
+			{
+				FullFrameData.ActorPoses.Emplace(Individual->GetParentActor(), IndividualPose);
+			}
+			else if (auto BI = Cast<USLBoneIndividual>(Individual))
+			{
+				FullFrameData.BonePoses.FindOrAdd(BI->GetPoseableMeshComponent()).Add(BI->GetBoneIndex(), IndividualPose);
+			}
+			else if (auto VBI = Cast<USLVirtualBoneIndividual>(Individual))
+			{
+				FullFrameData.BonePoses.FindOrAdd(VBI->GetPoseableMeshComponent()).Add(VBI->GetBoneIndex(), IndividualPose);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not find individual with id=%s, this should not happen, aborting.."),
+				*FString(__FUNCTION__), __LINE__, *IndividualPosePair.Key);
+			return false;
+		}
+	}
+	// Add the timestamp
+	//OutFullEpisodeData.Timestamps[0] = InCompactEpisodeData[0].Key;
+	OutFullEpisodeData.Timestamps.Emplace(InCompactEpisodeData[0].Key);
+	OutCompactEpisodeData.Timestamps.Emplace(InCompactEpisodeData[0].Key);
+
+	double FirstFrameDuration = FPlatformTime::Seconds() - ExecBegin;
+
+	// Add the individuals poses
+	//OutFullEpisodeData.Frames[0] = FullFrameData;
+	OutFullEpisodeData.Frames.Emplace(FullFrameData);
+	OutCompactEpisodeData.Frames.Emplace(FullFrameData);
+
+
+	/* Following frames */
+	// Process the following frames
+	for (int32 FrameIndex = 1; FrameIndex < InCompactEpisodeData.Num(); ++FrameIndex)
+	{
+		// TODO will emplace make a copy, or one needs to make one here ?
+		//FSLVizEpisodeFrameData PrevFrameCopy = FullFrameData;
+		FSLVizEpisodeFrameData CompactFrameData;
+
+		// Iterate individuals with their poses
+		for (const auto& IndividualPosePair : InCompactEpisodeData[FrameIndex].Value)
+		{
+			const FString IndividualId = IndividualPosePair.Key;
+			const FTransform IndividualPose = IndividualPosePair.Value;
+			if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+			{
+				if (auto RI = Cast<USLRigidIndividual>(Individual))
+				{
+					// Modify the value in the full/first frame
+					//if (auto FoundActorPose = FullFrameData.ActorPoses.Find(RI->GetParentActor())){(*FoundActorPose) = IndividualPose;}
+					FullFrameData.ActorPoses.FindChecked(Individual->GetParentActor()) = IndividualPose;
+					// Add as new value to the compact frame
+					CompactFrameData.ActorPoses.Emplace(Individual->GetParentActor(), IndividualPose);
+				}
+				else if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
+				{
+					// Modify the value in the full/first frame
+					//if (auto FoundActorPose = FullFrameData.ActorPoses.Find(RI->GetParentActor())){(*FoundActorPose) = IndividualPose;}
+					FullFrameData.ActorPoses.FindChecked(Individual->GetParentActor()) = IndividualPose;
+					// Add as new value to the compact frame
+					CompactFrameData.ActorPoses.Emplace(Individual->GetParentActor(), IndividualPose);
+				}
+				else if (auto BI = Cast<USLBoneIndividual>(Individual))
+				{
+					FullFrameData.BonePoses.FindOrAdd(BI->GetPoseableMeshComponent()).Add(BI->GetBoneIndex(), IndividualPose);
+					CompactFrameData.BonePoses.FindOrAdd(BI->GetPoseableMeshComponent()).Add(BI->GetBoneIndex(), IndividualPose);
+				}
+				else if (auto VBI = Cast<USLVirtualBoneIndividual>(Individual))
+				{
+					FullFrameData.BonePoses.FindOrAdd(VBI->GetPoseableMeshComponent()).Add(VBI->GetBoneIndex(), IndividualPose);
+					CompactFrameData.BonePoses.FindOrAdd(VBI->GetPoseableMeshComponent()).Add(VBI->GetBoneIndex(), IndividualPose);
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not find individual with id=%s, this should not happen, aborting.."),
+					*FString(__FUNCTION__), __LINE__, *IndividualId);
+				return false;
+			}
+		}
+
+		// Add the timestamp
+		//OutFullEpisodeData.Timestamps[FrameIndex] = InCompactEpisodeData[FrameIndex].Key;
+		OutFullEpisodeData.Timestamps.Emplace(InCompactEpisodeData[FrameIndex].Key);
+		OutCompactEpisodeData.Timestamps.Emplace(InCompactEpisodeData[FrameIndex].Key);
+
+		// Add the individuals poses
+		//OutFullEpisodeData.Frames[FrameIndex] = FullFrameData;
+		OutFullEpisodeData.Frames.Emplace(FullFrameData);
+		OutCompactEpisodeData.Frames.Emplace(CompactFrameData);
+	}
+
+	double FollowingFramesDuration = FPlatformTime::Seconds() - ExecBegin - FirstFrameDuration;
+
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: first frame=[%f], following frames(num=%d)=[%f], total=[%f] seconds..;"),
+		*FString(__func__), __LINE__, FirstFrameDuration, OutFullEpisodeData.Timestamps.Num(),
+		FollowingFramesDuration, FPlatformTime::Seconds() - ExecBegin);
+	return true;
+}
+
+
 // Executes a binary search for element Item in array Array using the <= operator (from ProfilerCommon::FBinaryFindIndex)
 int32 FSLVizEpisodeReplayUtils::BinarySearchLessEqual(const TArray<float>& Array, float Value)
 {
@@ -86,6 +203,24 @@ int32 FSLVizEpisodeReplayUtils::BinarySearchLessEqual(const TArray<float>& Array
 	return Offset;
 }
 
+
+// Check if actor requires any special attention when switching to visual only world (return true if the components should be left alone)
+bool FSLVizEpisodeReplayUtils::IsSpecialCaseActor(AActor* Actor)
+{
+	//if (Actor->IsA(ALandscape::StaticClass()))
+	//{
+	//	return true;
+	//}
+	//else if(Actor->IsA(APlayerController::StaticClass()))
+	//{
+	//	APlayerController* PC = CastChecked<APlayerController>(Actor);
+	//	PC->GetPawnOrSpectator()->SetActorHiddenInGame(true);
+	//	return false;
+	//}
+	return false;
+}
+
+/* Private helpers */
 // Remove actor components that are not required in the 'visual only' world (e.g. controllers)
 void FSLVizEpisodeReplayUtils::RemoveUnnecessaryComponents(AActor* Actor)
 {
@@ -115,6 +250,21 @@ void FSLVizEpisodeReplayUtils::RemoveUnnecessaryComponents(AActor* Actor)
 		C->ConditionalBeginDestroy();
 	}
 }
+
+
+//// Make sure the mesh of the pawn or spectator is not visible in the world
+//void FSLVizEpisodeReplayUtils::HidePawnOrSpectator(UWorld* World)
+//{
+//	if (World->GetFirstPlayerController() && World->GetFirstPlayerController()->GetPawnOrSpectator())
+//	{
+//		World->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not access the pawn or specator to set as hidden.."),
+//			*FString(__FUNCTION__), __LINE__);
+//	}
+//}
 
 //// Remove unnecessary components/actors from the world for setting it up as visual only
 //void FSLVizEpisodeReplayUtils::RemoveUnnecessaryActorsOrComponents(UWorld* World)
@@ -194,4 +344,4 @@ void FSLVizEpisodeReplayUtils::RemoveUnnecessaryComponents(AActor* Actor)
 ////{
 ////	C->ConditionalBeginDestroy();
 ////}
-//}
+//};

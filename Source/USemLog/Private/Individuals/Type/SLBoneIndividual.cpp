@@ -198,6 +198,16 @@ UPoseableMeshComponent* USLBoneIndividual::GetPoseableMeshComponent()
 	return nullptr;
 }
 
+// Return the curently active (visible) mesh compoent
+UMeshComponent* USLBoneIndividual::GetVisibleMeshComponent()
+{
+	if (SkeletalMeshComponent && SkeletalMeshComponent->IsVisible())
+	{
+		return SkeletalMeshComponent;
+	}
+	return GetPoseableMeshComponent();
+}
+
 // Get class name, virtual since each invidiual type will have different name
 FString USLBoneIndividual::CalcDefaultClassValue()
 {

@@ -9,6 +9,8 @@
 // Forward declarations
 class UWorld;
 class AActor;
+class ASLIndividualManager;
+struct FSLVizEpisodeData;
 
 /**
  * Viz visual parameters (color and material type)
@@ -16,19 +18,24 @@ class AActor;
 struct USEMLOG_API FSLVizEpisodeReplayUtils
 {
 public:
-	// Make sure the mesh of the pawn or spectator is not visible in the world
-	static void HidePawnOrSpectator(UWorld* World);
-
 	// Set actors as visuals only (disable physics, set as movable, clear any attachments)
 	static void SetActorsAsVisualsOnly(UWorld* World);
 
 	// Add a poseable mesh component clone to the skeletal actors
-	static void AddPoseablMeshComponentsToSkeletalActors(UWorld* World);
-	
+	static void AddPoseablMeshComponentsToSkeletalActors(UWorld* World);	
+
+	// Build the full replay episode data from the mongo compact form (returns true if no errors occured)
+	static bool BuildEpisodeData(ASLIndividualManager* IndividualManager, 
+		const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData,
+		FSLVizEpisodeData& OutFullEpisodeData, FSLVizEpisodeData& OutCompactEpisodeData);
+
 	// Executes a binary search for element Item in array Array using the <= operator (from ProfilerCommon::FBinaryFindIndex)
 	static int32 BinarySearchLessEqual(const TArray<float>& Array, float Value);
 
 private:
+	// Check if actor requires any special attention when switching to visual only world (return true if the components should be left alone)
+	static bool IsSpecialCaseActor(AActor* Actor);
+
 	// Remove actor components that are not required in the 'visual only' world (e.g. controllers)
 	static void RemoveUnnecessaryComponents(AActor* Actor);
 };

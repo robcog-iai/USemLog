@@ -89,11 +89,14 @@ public:
     virtual bool ApplyOriginalMaterials() override;
     /* End Visible individual interface */
 
-    // Return the skeletal mesh compoennt
+    // Return the skeletal mesh compoent
     USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; };
 
     // Get the poseable mesh component (if available)
     UPoseableMeshComponent* GetPoseableMeshComponent();
+
+    // Return the curently active (visible) mesh compoent
+    UMeshComponent* GetVisibleMeshComponent();
 
 protected:
     // Get class name, virtual since each invidiual type will have different name

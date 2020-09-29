@@ -193,8 +193,8 @@ int32 FSLWorldStateDBWriterAsyncTask::AddSkeletalIndividals(bson_t* doc)
 	for (const auto& SkelIndividual : IndividualManager->GetSkeletalIndividuals())
 	{
 		// Check if it was marked as "moved" by the previous iterator function
-		if (SkelIndividual->IsHasMovedFlagSet())
-		{			
+		if (SkelIndividual->HasMovedFlagSet())
+		{
 			SkelIndividual->SetHasMovedFlag(false);
 
 			bson_t individual_obj;
@@ -281,7 +281,7 @@ int32 FSLWorldStateDBWriterAsyncTask::AddRobotIndividuals(bson_t* doc)
 	for (const auto& RoboIndividual : IndividualManager->GetRobotIndividuals())
 	{
 		// Check if it was marked as "moved" by the previous iterator function
-		if (RoboIndividual->IsHasMovedFlagSet())
+		if (RoboIndividual->HasMovedFlagSet())
 		{
 			RoboIndividual->SetHasMovedFlag(false);
 
@@ -332,6 +332,36 @@ void FSLWorldStateDBWriterAsyncTask::AddPose(FTransform Pose, bson_t* doc)
 	BSON_APPEND_DOUBLE(&child_obj_rot, "z", Pose.GetRotation().Z);
 	BSON_APPEND_DOUBLE(&child_obj_rot, "w", Pose.GetRotation().W);
 	bson_append_document_end(doc, &child_obj_rot);
+
+	bson_t child_pose;
+	char buf[16];
+	const char* key;
+	size_t keylen;
+
+	// Write pose as array of [x y z qx qy qz qw]
+	BSON_APPEND_ARRAY_BEGIN(doc, "pose", &child_pose);
+		// x
+		keylen = bson_uint32_to_string(0, &key, buf, sizeof buf);
+		bson_append_double(&child_pose, key, (int)keylen, Pose.GetLocation().X);
+		// y
+		keylen = bson_uint32_to_string(1, &key, buf, sizeof buf);
+		bson_append_double(&child_pose, key, (int)keylen, Pose.GetLocation().Y);
+		// z
+		keylen = bson_uint32_to_string(2, &key, buf, sizeof buf);
+		bson_append_double(&child_pose, key, (int)keylen, Pose.GetLocation().Z);
+		// qx
+		keylen = bson_uint32_to_string(3, &key, buf, sizeof buf);
+		bson_append_double(&child_pose, key, (int)keylen, Pose.GetRotation().X);
+		// qy
+		keylen = bson_uint32_to_string(4, &key, buf, sizeof buf);
+		bson_append_double(&child_pose, key, (int)keylen, Pose.GetRotation().Y);
+		// qz
+		keylen = bson_uint32_to_string(5, &key, buf, sizeof buf);
+		bson_append_double(&child_pose, key, (int)keylen, Pose.GetRotation().Z);
+		// qw
+		keylen = bson_uint32_to_string(6, &key, buf, sizeof buf);
+		bson_append_double(&child_pose, key, (int)keylen, Pose.GetRotation().W);
+	bson_append_array_end(doc, &child_pose);
 }
 
 // Write the bson doc to the meta_coll
@@ -718,8 +748,8 @@ bool FSLWorldStateDBHandler::CreateIndexes() const
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Not connected to the db, could not create indexes.."), *FString(__FUNCTION__), __LINE__);
 		return false;
 	}
-#if SL_WITH_LIBMONGO_C
 
+#if SL_WITH_LIBMONGO_C
 	bson_t* index_command;
 	bson_error_t error;
 	
@@ -733,92 +763,30 @@ bool FSLWorldStateDBHandler::CreateIndexes() const
 	BSON_APPEND_INT32(&idx_individuals_id, "individuals.id", 1);
 	char* idx_individuals_id_chr = mongoc_collection_keys_to_index_string(&idx_individuals_id);
 
-	//bson_t idx_entities_id;
-	//bson_init(&idx_entities_id);
-	//BSON_APPEND_INT32(&idx_entities_id, "entities.id", 1);
-	//char* idx_entities_id_chr = mongoc_collection_keys_to_index_string(&idx_entities_id);
-
-	//bson_t idx_skel_entities_id;
-	//bson_init(&idx_skel_entities_id);
-	//BSON_APPEND_INT32(&idx_skel_entities_id, "skel_entities.id", 1);
-	//char* idx_skel_entities_id_chr = mongoc_collection_keys_to_index_string(&idx_skel_entities_id);
-
-	//bson_t idx_skel_entities_bones_name;
-	//bson_init(&idx_skel_entities_bones_name);
-	//BSON_APPEND_INT32(&idx_skel_entities_bones_name, "skel_entities.bones.name", 1);
-	//char* idx_skel_entities_bones_name_chr = mongoc_collection_keys_to_index_string(&idx_skel_entities_bones_name);
-
-	//bson_t idx_skel_entities_bones_id;
-	//bson_init(&idx_skel_entities_bones_id);
-	//BSON_APPEND_INT32(&idx_skel_entities_bones_id, "skel_entities.bones.id", 1);
-	//char* skel_entities_bones_id_chr = mongoc_collection_keys_to_index_string(&idx_skel_entities_bones_id);
-
-	//bson_t idx_gaze_entity_id;
-	//bson_init(&idx_gaze_entity_id);
-	//BSON_APPEND_INT32(&idx_gaze_entity_id, "gaze.entity_id", 1);
-	//char* idx_gaze_entity_id_chr = mongoc_collection_keys_to_index_string(&idx_gaze_entity_id);
-
+	bson_t idx_skel_individuals_id;
+	bson_init(&idx_skel_individuals_id);
+	BSON_APPEND_INT32(&idx_skel_individuals_id, "skel_individuals.id", 1);
+	char* idx_skel_individuals_id_chr = mongoc_collection_keys_to_index_string(&idx_skel_individuals_id);
 
 	index_command = BCON_NEW("createIndexes",
 			BCON_UTF8(mongoc_collection_get_name(collection)),
 			"indexes",
 			"[",
 				"{",
-					"key",
-					BCON_DOCUMENT(&idx_ts),
-					"name",
-					BCON_UTF8(idx_ts_chr),
-					"unique",
-					BCON_BOOL(true),
+					"key", BCON_DOCUMENT(&idx_ts),
+					"name", BCON_UTF8(idx_ts_chr),
+					"unique", BCON_BOOL(true),
 				"}",
 				"{",
-					"key",
-					BCON_DOCUMENT(&idx_individuals_id),
-					"name",
-					BCON_UTF8(idx_individuals_id_chr),
-					//"unique",
-					//BCON_BOOL(false),
+					"key", BCON_DOCUMENT(&idx_individuals_id),
+					"name",	BCON_UTF8(idx_individuals_id_chr),
+					//"unique", //BCON_BOOL(false),
 				"}",
-				//"{",
-				//	"key",
-				//	BCON_DOCUMENT(&idx_entities_id),
-				//	"name",
-				//	BCON_UTF8(idx_entities_id_chr),
-				//	//"unique",
-				//	//BCON_BOOL(false),
-				//"}",
-				//"{",
-				//	"key",
-				//	BCON_DOCUMENT(&idx_skel_entities_id),
-				//	"name",
-				//	BCON_UTF8(idx_skel_entities_id_chr),
-				//	//"unique",
-				//	//BCON_BOOL(false),
-				//"}",
-				//"{",
-				//	"key",
-				//	BCON_DOCUMENT(&idx_skel_entities_bones_name),
-				//	"name",
-				//	BCON_UTF8(idx_skel_entities_bones_name_chr),
-				//	//"unique",
-				//	//BCON_BOOL(false),
-				//"}",
-				//"{",
-				//	"key",
-				//	BCON_DOCUMENT(&idx_skel_entities_bones_id),
-				//	"name",
-				//	BCON_UTF8(skel_entities_bones_id_chr),
-				//	//"unique",
-				//	//BCON_BOOL(false),
-				//"}",
-				//"{",
-				//	"key",
-				//	BCON_DOCUMENT(&idx_gaze_entity_id),
-				//	"name",
-				//	BCON_UTF8(idx_gaze_entity_id_chr),
-				//	//"unique",
-				//	//BCON_BOOL(false),
-				//"}",
+				"{",
+					"key", BCON_DOCUMENT(&idx_skel_individuals_id),
+					"name", BCON_UTF8(idx_skel_individuals_id_chr),
+					//"unique", //BCON_BOOL(false),
+				"}",
 			"]");
 
 	bool bRetVal = true;
@@ -834,8 +802,8 @@ bool FSLWorldStateDBHandler::CreateIndexes() const
 	bson_free(idx_ts_chr);
 	bson_free(idx_individuals_id_chr);
 	return bRetVal;
-#else
-	return false;
 #endif //SL_WITH_LIBMONGO_C
+
+	return false;
 }
 

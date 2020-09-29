@@ -6,6 +6,9 @@
 #include "CoreMinimal.h"
 #include "SLVizStructs.generated.h"
 
+// Forward declarations
+class UMeshComponent;
+
 /**
  * Dynamic material types
  */
@@ -113,3 +116,38 @@ struct FSLVizIndividualHighlightData
 		: MeshComponent(InMeshComponent), MaterialSlots(InMaterialSlots) {};
 };
 
+
+/**
+ * A set of parameters to describe how to replay the episode data
+ */
+USTRUCT()
+struct FSLVizEpisodeReplayPlayParams
+{
+	GENERATED_BODY()
+
+	// Repeat replay after finishing
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bLoop = false;
+
+	// How quickly to move to the next frame (if negative, it will calculate an average update rate from the episode data)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float UpdateRate = -1.f;
+
+	// How many steps to update every frame
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	int32 StepSize = 1;
+
+	// Id of the view target
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString ViewTargetId = TEXT("");
+
+	// Default ctor
+	FSLVizEpisodeReplayPlayParams() {};
+
+	// Init ctor
+	FSLVizEpisodeReplayPlayParams(bool bLoopValue, float InUpdateRate, int32 InStepSize, const FString& InTargetViewId) :
+	bLoop(bLoopValue),
+	UpdateRate(InUpdateRate),
+	StepSize(InStepSize),
+	ViewTargetId() {}
+};

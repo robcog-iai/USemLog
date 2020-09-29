@@ -87,7 +87,7 @@ struct FSLVizMarkerHackStruct
 	bool bAsTimeline = false;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
-	float UpdateRate = -1.f;
+	float UpdateRate = 0.08f;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
 	bool bLoop = false;
@@ -279,6 +279,10 @@ private:
 	// Task to query from
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
 	float ReplayUpdateRateValueHack = -1.f;
+
+	// Task to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
+	FString ReplayTargetViewIdValueHack = TEXT("");
 
 	// Triggers a goto call
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")

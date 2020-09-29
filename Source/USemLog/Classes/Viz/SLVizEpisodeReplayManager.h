@@ -9,6 +9,7 @@
 
 // Forward declaration
 class UPoseableMeshComponent;
+class APlayerController;
 
 /*
 * Holds the poses of all the individuals in the world
@@ -50,6 +51,7 @@ struct FSLVizEpisodeData
 	void Clear() { Timestamps.Empty(); Frames.Empty(); };
 };
 
+
 /**
  * Class to load and skim through episodes
  */
@@ -83,19 +85,22 @@ public:
 	void ClearEpisode();
 
 	// Set visual world as in the given frame 
-	bool GotoFrame(int32 FrameIndex);
+	bool GotoFrame(int32 FrameIndex, AActor* ViewTarget = nullptr);
 
 	// Set visual world as in the given timestamp (binary search for nearest index)
-	bool GotoFrame(float Timestamp);
+	bool GotoFrame(float Timestamp, AActor* ViewTarget = nullptr);
 
 	// Play whole episode
-	bool Play(bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+	bool PlayEpisode(AActor* ViewTarget = nullptr);
 
 	// Play given frames
-	bool PlayFrames(int32 FirstFrame, int32 LastFrame, bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+	bool PlayFrames(int32 FirstFrame, int32 LastFrame, AActor* ViewTarget = nullptr);
 
 	// Play the episode timeline
-	bool PlayTimeline(float StartTime, float EndTime, bool bLoop = false, float UpdateRate = -1.f, int32 StepSize = 1);
+	bool PlayTimeline(float StartTime, float EndTime, AActor* ViewTarget = nullptr);
+
+	// Set replay parameters (loop replay, frame update rate, number of steps per frame)
+	void SetReplayParams(bool bLoop, float UpdateRate = -1.f, int32 StepSize = 1);
 
 	// Set replay to pause or play
 	void SetPauseReplay(bool bPause);
@@ -103,35 +108,15 @@ public:
 	// Stop replay, goto first frame
 	void StopReplay();
 
-//	// Goto the next nth frame
-//	void Next(int32 StepSize = 1, bool bLoop = false);
-//
-//	// Goto the previous nth frame
-//	void Previous(int32 StepSize = 1, bool bLoop = false);
-//
-//	// Replay all the episode with the given update rate (by default the update rate is calculated as the average of the first X frames)
-//	void Replay(int32 StepSize = 1, float UpdateRate = -1.f, bool bLoop = true);
-//
-//	// Replay the episode between the timestamp with the given update rate (by default the update rate is calculated as the average of the first X frames)
-//	void Replay(float StartTime, float EndTime, int32 StepSize = 1, float UpdateRate = -1.f, bool bLoop = true);
-//
-//	// Pause / start replay
-//	void ToggleReplay();
-//
-//protected:
-//	// Replay timer callback
-//	void TimerCallback();
-
-
 private:
 	// Apply the compact episode data given frame changes
 	void ApplyCompactFrameChanges(int32 FrameIndex);
 
-	// Calculate an approximation of the update rate value to coincide with realtime
-	void CalcRealtimeAproxUpdateRateValue(int32 MaxNumSteps);
-
 	// Apply frame poses
 	void ApplyPoses(const FSLVizEpisodeFrameData& Frame);
+
+	// Calculate an approximation of the update rate value to coincide with realtime
+	void CalcRealtimeAproxUpdateRateValue(int32 MaxNumSteps);
 
 protected:
 	// True if the world is set as visual only
@@ -151,6 +136,12 @@ protected:
 
 	// Episode data containing only individual changes (used for fast replays)
 	FSLVizEpisodeData EpisodeDataCompact;
+
+	// View target, camera will follow the given actor
+	AActor* ReplayViewTarget;
+
+	// Pointer to the first player controller
+	APlayerController* FPC;
 
 	// Current frame index
 	int32 ActiveFrameIndex;

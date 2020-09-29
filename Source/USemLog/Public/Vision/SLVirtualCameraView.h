@@ -10,7 +10,7 @@
 /**
  * Virtual camera logging the transformations of the cameras that need to re-render the scene
  */
-UCLASS(ClassGroup = (SL), DisplayName = "SL Vision Camera")
+UCLASS(ClassGroup = (SL), DisplayName = "SL Virtual Camera")
 class USEMLOG_API ASLVirtualCameraView : public ACameraActor
 {
 	GENERATED_BODY()

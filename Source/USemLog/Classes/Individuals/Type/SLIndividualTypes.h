@@ -17,6 +17,7 @@
 #include "Individuals/Type/SLLightIndividual.h"
 #include "Individuals/Type/SLSkeletalIndividual.h"
 #include "Individuals/Type/SLBoneIndividual.h"
+#include "Individuals/Type/SLVirtualBoneIndividual.h"
 
 #include "Individuals/Type/SLRobotIndividual.h"
 

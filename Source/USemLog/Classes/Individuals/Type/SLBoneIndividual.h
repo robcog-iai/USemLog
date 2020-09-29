@@ -72,6 +72,9 @@ public:
     // Get the poseable mesh component (if available)
     UPoseableMeshComponent* GetPoseableMeshComponent();
 
+    // Return the curently active (visible) mesh compoent
+    UMeshComponent* GetVisibleMeshComponent();
+
 protected:
     // Get class name, virtual since each invidiual type will have different name
     virtual FString CalcDefaultClassValue() override;
