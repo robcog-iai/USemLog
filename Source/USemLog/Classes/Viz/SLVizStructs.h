@@ -137,10 +137,6 @@ struct FSLVizEpisodeReplayPlayParams
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	int32 StepSize = 1;
 
-	// Id of the view target
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString ViewTargetId = TEXT("");
-
 	// Default ctor
 	FSLVizEpisodeReplayPlayParams() {};
 
@@ -148,6 +144,5 @@ struct FSLVizEpisodeReplayPlayParams
 	FSLVizEpisodeReplayPlayParams(bool bLoopValue, float InUpdateRate, int32 InStepSize, const FString& InTargetViewId) :
 	bLoop(bLoopValue),
 	UpdateRate(InUpdateRate),
-	StepSize(InStepSize),
-	ViewTargetId() {}
+	StepSize(InStepSize) {}
 };

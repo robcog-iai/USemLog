@@ -5,8 +5,9 @@
 
 #include "Viz/SLVizMarkerManager.h"
 #include "Viz/SLVizHighlightManager.h"
-#include "Viz/SLVizEpisodeReplayManager.h"
-#include "Viz/SLVizEpisodeReplayUtils.h"
+#include "Viz/SLVizEpisodeManager.h"
+#include "Viz/SLVizEpisodeUtils.h"
+#include "Viz/SLVizCameraDirector.h"
 #include "Individuals/SLIndividualManager.h"
 
 #include "Individuals/Type/SLRigidIndividual.h"
@@ -17,6 +18,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EngineUtils.h"
+
+#include "GameFramework/PlayerController.h"
 
 #if WITH_EDITOR
 #include "Editor.h"	// GEditor
@@ -33,7 +36,7 @@ ASLVizManager::ASLVizManager()
 	IndividualManager = nullptr;
 	HighlightManager = nullptr;
 	MarkerManager = nullptr;
-	EpisodeReplayManager = nullptr;
+	EpisodeManager = nullptr;
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -95,9 +98,16 @@ bool ASLVizManager::Init()
 		RetValue = false;
 	}
 
-	if (!SetEpisodeReplayManager())
+	if (!SetEpisodeManager())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not set the viz world manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		RetValue = false;
+	}
+
+	if (!SetCameraDirector())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not set the viz camera director.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		RetValue = false;
 	}
@@ -112,7 +122,7 @@ void ASLVizManager::Reset()
 	IndividualManager = nullptr;
 	HighlightManager = nullptr;
 	MarkerManager = nullptr;
-	EpisodeReplayManager = nullptr;
+	EpisodeManager = nullptr;
 	bIsInit = false;
 }
 
@@ -449,8 +459,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 }
 
 // Create a marker by cloning the visual of the given skeletal individual (use original materials)
-bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
-	const TArray<FTransform>& Poses,
+bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
 	const TArray<TMap<int32, FTransform>>& BonePosesArray,
 	const FString& IndividualId)
 {
@@ -489,12 +498,9 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 }
 
 // Create a marker by cloning the visual of the given skeletal individual
-bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
-	const TArray<FTransform>& Poses,
+bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
 	const TArray<TMap<int32, FTransform>>& BonePosesArray,
-	const FString& IndividualId,
-	const FLinearColor& Color,
-	ESLVizMaterialType MaterialType)
+	const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType)
 {
 	if (!bIsInit)
 	{
@@ -635,8 +641,12 @@ bool ASLVizManager::RemoveMarker(const FString& Id)
 		return false;
 	}
 
-
-
+	USLVizBaseMarker* RemovedMarker = nullptr;
+	if (Markers.RemoveAndCopyValue(Id, RemovedMarker))
+	{
+		MarkerManager->ClearMarker(RemovedMarker);
+		return true;
+	}
 	return false;
 }
 
@@ -648,12 +658,6 @@ void ASLVizManager::RemoveAllMarkers()
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-
-	for (const auto& Pair : Markers)
-	{
-		MarkerManager->ClearMarker(Pair.Value);
-	}
-	Markers.Empty();
 
 	for (const auto& IdMarkerPair : Markers)
 	{
@@ -704,8 +708,8 @@ bool ASLVizManager::SetupWorldForEpisodeReplay()
 	}
 #endif // WITH_EDITOR
 
-	EpisodeReplayManager->SetWorldAsVisualOnly();
-	return EpisodeReplayManager->IsWorldSetASVisualOnly();
+	EpisodeManager->SetWorldAsVisualOnly();
+	return EpisodeManager->IsWorldSetASVisualOnly();
 }
 
 // Check if world is set for episode replay
@@ -716,36 +720,34 @@ bool ASLVizManager::IsWorldSetForEpisodeReplay() const
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
-	return EpisodeReplayManager->IsWorldSetASVisualOnly();
+	return EpisodeManager->IsWorldSetASVisualOnly();
 }
 
 // Change the data into an episode format and load it to the episode replay manager
-void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData)
+void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData)
 {
 	if (!bIsInit)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-
-	if (!EpisodeReplayManager->IsWorldSetASVisualOnly())
+	if (!EpisodeManager->IsWorldSetASVisualOnly())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) cannot load episode data because the world is not set as visual only.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-
-	if (InCompactEpisodeData.Num() == 0)
+	if (InMongoEpisodeData.Num() == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) the episode data is empty.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	// Create and reserve episode data with the array size
-	FSLVizEpisodeData EpisodeDataFull(InCompactEpisodeData.Num());
-	FSLVizEpisodeData EpisodeDataCompact(InCompactEpisodeData.Num());
-	if (FSLVizEpisodeReplayUtils::BuildEpisodeData(IndividualManager, InCompactEpisodeData, EpisodeDataFull, EpisodeDataCompact))
+	FSLVizEpisodeData VizEpisodeData(InMongoEpisodeData.Num());
+	if (FSLVizEpisodeUtils::BuildEpisodeData(IndividualManager, InMongoEpisodeData, VizEpisodeData))
 	{
-		EpisodeReplayManager->LoadEpisode(EpisodeDataFull, EpisodeDataCompact);
+		//CachedEpisodeData.Emplace("TODO Id", VizEpisodeData);
+		EpisodeManager->LoadEpisode(VizEpisodeData);
 	}
 }
 
@@ -757,24 +759,18 @@ bool ASLVizManager::IsEpisodeLoaded() const
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
-	return EpisodeReplayManager->IsEpisodeLoaded();
+	return EpisodeManager->IsEpisodeLoaded();
 }
 
 // Go to the frame at the given timestamp
-bool ASLVizManager::GotoEpisodeFrame(float Ts, const FString& ViewTargetId)
+bool ASLVizManager::GotoEpisodeFrame(float Ts)
 {
 	if (!bIsInit)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
-
-	if (!ViewTargetId.IsEmpty())
-	{
-		AActor* TargetView = IndividualManager->GetIndividualActor(ViewTargetId);
-		return EpisodeReplayManager->GotoFrame(Ts, TargetView);
-	}
-	return EpisodeReplayManager->GotoFrame(Ts);
+	return EpisodeManager->GotoFrame(Ts);
 }
 
 // Replay the whole loaded episode
@@ -785,15 +781,8 @@ bool ASLVizManager::PlayEpisode(FSLVizEpisodeReplayPlayParams PlayParams)
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
-
-	EpisodeReplayManager->SetReplayParams(PlayParams.bLoop, PlayParams.UpdateRate, PlayParams.StepSize);
-
-	if (!PlayParams.ViewTargetId.IsEmpty())
-	{
-		AActor* TargetView = IndividualManager->GetIndividualActor(PlayParams.ViewTargetId);
-		return EpisodeReplayManager->PlayEpisode(TargetView);
-	}
-	return EpisodeReplayManager->PlayEpisode();
+	EpisodeManager->SetReplayParams(PlayParams.bLoop, PlayParams.UpdateRate, PlayParams.StepSize);
+	return EpisodeManager->PlayEpisode();
 }
 
 // Replay the selected timeline in the episode
@@ -804,15 +793,8 @@ bool ASLVizManager::PlayEpisodeTimeline(float StartTime, float EndTime, FSLVizEp
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
-
-	EpisodeReplayManager->SetReplayParams(PlayParams.bLoop, PlayParams.UpdateRate, PlayParams.StepSize);
-
-	if (!PlayParams.ViewTargetId.IsEmpty())
-	{
-		AActor* TargetView = IndividualManager->GetIndividualActor(PlayParams.ViewTargetId);
-		return EpisodeReplayManager->PlayTimeline(StartTime, EndTime, TargetView);
-	}
-	return EpisodeReplayManager->PlayTimeline(StartTime, EndTime);
+	EpisodeManager->SetReplayParams(PlayParams.bLoop, PlayParams.UpdateRate, PlayParams.StepSize);
+	return EpisodeManager->PlayTimeline(StartTime, EndTime);
 }
 
 // Pause/unpause the replay (if active)
@@ -823,7 +805,7 @@ void ASLVizManager::PauseReplay(bool bPause)
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	EpisodeReplayManager->SetPauseReplay(bPause);
+	EpisodeManager->SetPauseReplay(bPause);
 }
 
 // Stop replay (if active, and goto frame 0)
@@ -834,7 +816,33 @@ void ASLVizManager::StopReplay()
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	return EpisodeReplayManager->StopReplay();
+	EpisodeManager->StopReplay();
+}
+
+// Move the view to a given position
+void ASLVizManager::SetCameraView(const FTransform& Pose)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	CameraDirector->SetCameraView(Pose);	
+}
+
+// Move the camera view to the pose of the given individual
+void ASLVizManager::SetCameraView(const FString& Id)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	if (auto Individual = IndividualManager->GetIndividual(Id))
+	{
+		CameraDirector->SetCameraView(Individual->GetParentActor()->GetActorTransform());
+	}
 }
 
 
@@ -923,28 +931,55 @@ bool ASLVizManager::SetVizMarkerManager()
 }
 
 // Get the vizualization episode replay manager from the world (or spawn a new one)
-bool ASLVizManager::SetEpisodeReplayManager()
+bool ASLVizManager::SetEpisodeManager()
 {
-	if (EpisodeReplayManager && EpisodeReplayManager->IsValidLowLevel() && !EpisodeReplayManager->IsPendingKillOrUnreachable())
+	if (EpisodeManager && EpisodeManager->IsValidLowLevel() && !EpisodeManager->IsPendingKillOrUnreachable())
 	{
 		return true;
 	}
 
-	for (TActorIterator<ASLVizEpisodeReplayManager>Iter(GetWorld()); Iter; ++Iter)
+	for (TActorIterator<ASLVizEpisodeManager>Iter(GetWorld()); Iter; ++Iter)
 	{
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
 		{
-			EpisodeReplayManager = *Iter;
+			EpisodeManager = *Iter;
 			return true;
 		}
 	}
 
 	// Spawning a new manager
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = TEXT("SL_EpisodeReplayManager");
-	EpisodeReplayManager = GetWorld()->SpawnActor<ASLVizEpisodeReplayManager>(SpawnParams);
+	SpawnParams.Name = TEXT("SL_EpisodeManager");
+	EpisodeManager = GetWorld()->SpawnActor<ASLVizEpisodeManager>(SpawnParams);
 #if WITH_EDITOR
-	EpisodeReplayManager->SetActorLabel(TEXT("SL_EpisodeReplayManager"));
+	EpisodeManager->SetActorLabel(TEXT("SL_EpisodeManager"));
+#endif // WITH_EDITOR
+	return true;
+}
+
+// Get the vizualization camera director from the world (or spawn a new one)
+bool ASLVizManager::SetCameraDirector()
+{
+	if (CameraDirector && CameraDirector->IsValidLowLevel() && !CameraDirector->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
+	for (TActorIterator<ASLVizCameraDirector>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			CameraDirector = *Iter;
+			return true;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_VizCameraDirector");
+	CameraDirector = GetWorld()->SpawnActor<ASLVizCameraDirector>(SpawnParams);
+#if WITH_EDITOR
+	CameraDirector->SetActorLabel(TEXT("SL_VizCameraDirector"));
 #endif // WITH_EDITOR
 	return true;
 }

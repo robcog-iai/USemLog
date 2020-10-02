@@ -837,7 +837,7 @@ void USLDataVisualizer::AllWorldStatesQuery(const FSLVisQuery& Query)
 	if (VizWorldManager)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d AllWorldStates query, starting replay.."), *FString(__FUNCTION__), __LINE__);
-		//EpisodeReplayManager->Replay();
+		//EpisodeManager->Replay();
 	}
 #endif //SL_WITH_DATA_VIS
 }

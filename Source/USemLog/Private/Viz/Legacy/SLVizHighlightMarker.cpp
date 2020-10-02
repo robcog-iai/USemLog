@@ -1,8 +1,8 @@
 // Copyright 2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Viz/Marker/SLVizHighlightMarker.h"
-#include "Viz/SLVizHighlightMarkerManager.h"
+#include "Viz/Legacy/SLVizHighlightMarker.h"
+#include "Viz/Legacy/SLVizHighlightMarkerManager.h"
 #include "Viz/SLVizAssets.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Components/SkeletalMeshComponent.h"

@@ -1,7 +1,7 @@
 // Copyright 2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Viz/Marker/SLVizPrimitiveMarker.h"
+#include "Viz/Markers/SLVizPrimitiveMarker.h"
 #include "Viz/SLVizAssets.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -10,7 +10,8 @@
 // Constructor
 USLVizPrimitiveMarker::USLVizPrimitiveMarker()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
 	
 	MarkerScale = FVector(.1f);
 	PrimitiveType = ESLVizPrimitiveMarkerType::NONE;
@@ -47,38 +48,20 @@ void USLVizPrimitiveMarker::UpdateSize(float Size)
 	}
 }
 
-//// Add instances at pose
-//void USLVizPrimitiveMarker::AddInstance(const FTransform& Pose)
-//{
-//	if (!ISMC && !ISMC->IsValidLowLevel() && ISMC->IsPendingKillOrUnreachable())
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
-//		return;
-//	}
-//
-//	ISMC->AddInstance(FTransform(Pose.GetRotation(), Pose.GetLocation(), MarkerScale));
-//}
-//
-//// Add instances with the poses
-//void USLVizPrimitiveMarker::AddInstances(const TArray<FTransform>& Poses)
-//{
-//	if (!ISMC && !ISMC->IsValidLowLevel() && ISMC->IsPendingKillOrUnreachable())
-//	{
-//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
-//		return;
-//	}
-//
-//	for (auto P : Poses)
-//	{
-//		P.SetScale3D(MarkerScale);
-//		ISMC->AddInstance(P);
-//	}
-//}
-
 // Virtual add instance function
 void USLVizPrimitiveMarker::AddInstanceChecked(const FTransform& Pose)
 {
 	ISMC->AddInstance(FTransform(Pose.GetRotation(), Pose.GetLocation(), MarkerScale));
+}
+
+// Virtual add instances function
+void USLVizPrimitiveMarker::AddInstancesChecked(const TArray<FTransform>& Poses)
+{
+	for (auto P : Poses)
+	{
+		P.SetScale3D(MarkerScale);
+		ISMC->AddInstance(P);
+	}
 }
 
 // Get the static mesh of the primitive type

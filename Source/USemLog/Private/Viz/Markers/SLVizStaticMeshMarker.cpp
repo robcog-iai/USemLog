@@ -1,7 +1,7 @@
 // Copyright 2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Viz/Marker/SLVizStaticMeshMarker.h"
+#include "Viz/Markers/SLVizStaticMeshMarker.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -12,10 +12,9 @@
 USLVizStaticMeshMarker::USLVizStaticMeshMarker()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	//PrimaryComponentTick.bStartWithTickEnabled = false;
-	PrimaryComponentTick.bStartWithTickEnabled = true;
-	
-	ISMC = nullptr;	
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+
+	ISMC = nullptr;
 	TimelineIndex = INDEX_NONE;
 	bLoopTimeline = false;
 }
@@ -24,7 +23,38 @@ USLVizStaticMeshMarker::USLVizStaticMeshMarker()
 void USLVizStaticMeshMarker::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	UE_LOG(LogTemp, Log, TEXT("%s::%d DeltaTime = %f"), *FString(__FUNCTION__), __LINE__, DeltaTime);
+
+	int32 NumInstancesToDraw = (DeltaTime * TimelinePoses.Num()) / TimelineDuration;
+	if (TimelineIndex + NumInstancesToDraw < TimelinePoses.Num())
+	{
+		// It is safe to add all instances
+		while (NumInstancesToDraw > 0)
+		{
+			AddInstanceChecked(TimelinePoses[TimelineIndex]);
+			TimelineIndex++;
+			NumInstancesToDraw--;
+		}
+	}
+	else
+	{
+		// Reached end of the poses array, add remaining values
+		while (TimelinePoses.IsValidIndex(TimelineIndex))
+		{
+			AddInstanceChecked(TimelinePoses[TimelineIndex]);
+			TimelineIndex++;
+		}
+
+		// Check if the timeline should be repeated or stopped
+		if (bLoopTimeline)
+		{
+			ISMC->ClearInstances();
+			TimelineIndex = 0;
+		}
+		else
+		{
+			ClearTimelineData();
+		}
+	}
 }
 
 // Set the visual properties of the instanced mesh using the mesh original materials
@@ -104,7 +134,6 @@ void USLVizStaticMeshMarker::AddInstance(const FTransform& Pose)
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
 		return;
 	}
-
 	AddInstanceChecked(Pose);
 }
 
@@ -116,11 +145,7 @@ void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses)
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
 		return;
 	}
-
-	for (const auto& P : Poses)
-	{
-		AddInstanceChecked(P);
-	}
+	AddInstancesChecked(Poses);
 }
 
 // Add instances with timeline update
@@ -132,67 +157,30 @@ void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses, float
 		return;
 	}
 
-	// Check if there is already an active timeline
+	if (Duration <= 0.008f)
+	{
+		AddInstancesChecked(Poses);
+		return;
+	}
+
 	if (IsComponentTickEnabled())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d A timeline is already active, reset first.."), *FString(__FUNCTION__), __LINE__);
 		return;
 	}
 
+	// Set the timeline data
+	TimelinePoses = Poses;
+	TimelineDuration = Duration;
+	bLoopTimeline = bLoop;
+	TimelineIndex = 0;
+
+	// Start timeline
 	if (UpdateRate > 0.f)
 	{
 		SetComponentTickInterval(UpdateRate);
 	}
 	SetComponentTickEnabled(true);
-
-	RegisterComponentTickFunctions(true); // TODO chek this
-}
-
-// Add instances with the poses using and update rate
-void USLVizStaticMeshMarker::AddTimeline(const TArray<FTransform>& Poses, float UpdateRate, bool bLoop, float StartDelay)
-{
-	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
-		return;
-	}
-
-	// Check if there is already an active timeline
-	if (GetWorld()->GetTimerManager().IsTimerActive(TimelineTimerHandle))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Timeline is already active.."), *FString(__FUNCTION__), __LINE__);
-		return;
-	}
-
-	// Make sure there are enough poses in the timeline
-	if (Poses.Num() < 2)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d The timeline should have at least 2 poses.."), *FString(__FUNCTION__), __LINE__);
-		return;
-	}
-
-	// Set the timeline pose data
-	TimelinePoses = Poses;
-
-	// Should the timeline animation be repeated
-	bLoopTimeline = bLoop;
-
-	// Set index position to first
-	TimelineIndex = 0;
-
-	if (UpdateRate <= 0.f)
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d UpdateRate cannot be smaller than 0, default value used.."),
-			*FString(__FUNCTION__), __LINE__);
-		UpdateRate = 0.08333f; // ~120fps
-	}
-
-	// Bind and start timer callback
-	GetWorld()->GetTimerManager().SetTimer(TimelineTimerHandle, this, &USLVizStaticMeshMarker::TimelineUpdateCallback,
-		UpdateRate, true, StartDelay);
-
-	SetComponentTickEnabled(true);
-	SetComponentTickInterval(UpdateRate);
 }
 
 /* Begin VizMarker interface */
@@ -201,7 +189,7 @@ void USLVizStaticMeshMarker::Reset()
 {
 	ResetVisuals();
 	ResetPoses();
-	ResetTimeline();
+	ClearTimelineData();
 }
 
 // Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
@@ -245,34 +233,24 @@ void USLVizStaticMeshMarker::AddInstanceChecked(const FTransform& Pose)
 	ISMC->AddInstance(Pose);
 }
 
+// Virtual add instances function
+void USLVizStaticMeshMarker::AddInstancesChecked(const TArray<FTransform>& Poses)
+{
+	for (const auto& P : Poses)
+	{
+		ISMC->AddInstance(P);
+	}
+}
+
 
 // Reset the timeline related members
-void USLVizStaticMeshMarker::ResetTimeline()
+void USLVizStaticMeshMarker::ClearTimelineData()
 {
-	if (GetWorld()->GetTimerManager().IsTimerActive(TimelineTimerHandle))
+	if (IsComponentTickEnabled())
 	{
-		GetWorld()->GetTimerManager().ClearTimer(TimelineTimerHandle);
+		SetComponentTickEnabled(false);
+		SetComponentTickInterval(-1.f); // Tick every frame by default (If less than or equal to 0 then it will tick every frame)
 	}
 	TimelineIndex = INDEX_NONE;
 	TimelinePoses.Empty();
-}
-
-// Used as an timer update callback when the instance should be added as a timeline
-void USLVizStaticMeshMarker::TimelineUpdateCallback()
-{
-	if (TimelinePoses.IsValidIndex(TimelineIndex))
-	{
-		AddInstanceChecked(TimelinePoses[TimelineIndex]);
-		TimelineIndex++;
-	}
-	else if(bLoopTimeline)
-	{
-		ISMC->ClearInstances();
-		TimelineIndex = 0;
-		SetComponentTickEnabled(false);
-	}
-	else
-	{
-		ResetTimeline();
-	}
 }

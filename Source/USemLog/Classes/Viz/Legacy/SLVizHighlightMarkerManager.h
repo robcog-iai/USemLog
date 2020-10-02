@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "Viz/Marker/SLVizHighlightMarker.h"
+#include "Viz/Legacy/SLVizHighlightMarker.h"
 #include "SLVizHighlightMarkerManager.generated.h"
 
 /*

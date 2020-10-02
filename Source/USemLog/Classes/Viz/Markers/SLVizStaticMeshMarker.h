@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Viz/Marker/SLVizBaseMarker.h"
+#include "Viz/Markers/SLVizBaseMarker.h"
 #include "SLVizStaticMeshMarker.generated.h"
 
 // Forward declarations
@@ -44,9 +44,6 @@ public:
 	// Add instances with timeline update
 	void AddInstances(const TArray<FTransform>& Poses, float Duration, bool bLoop, float UpdateRate = -1.f);
 
-	// Add instances with the poses as a timeline
-	void AddTimeline(const TArray<FTransform>& Poses, float UpdateRate,  bool bLoop, float StartDelay = -1.f);
-
 	//~ Begin ActorComponent Interface
 	// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
 	virtual void DestroyComponent(bool bPromoteChildren = false) override;
@@ -67,19 +64,16 @@ protected:
 	// Virtual add instance function
 	virtual void AddInstanceChecked(const FTransform& Pose);
 
-	// Used as an timer update callback when the instance should be added as a timeline
-	void TimelineUpdateCallback();
+	// Virtual add instances function
+	virtual void AddInstancesChecked(const TArray<FTransform>& Poses);
 
 	// Clear the timeline and the related members
-	void ResetTimeline();
+	void ClearTimelineData();
 
 protected:
 	// A component that efficiently renders multiple instances of the same StaticMesh.
 	UPROPERTY()
 	UInstancedStaticMeshComponent* ISMC;
-
-	// Timer handle used for updating the timeline
-	FTimerHandle TimelineTimerHandle;
 
 	// Timeline poses
 	TArray<FTransform> TimelinePoses;
@@ -89,4 +83,7 @@ protected:
 
 	// Flag to loop the timeline
 	bool bLoopTimeline;
+
+	// Duration in which the timeline should be drawed
+	float TimelineDuration;
 };

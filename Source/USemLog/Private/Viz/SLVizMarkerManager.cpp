@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizMarkerManager.h"
-#include "Viz/Marker/SLVizBaseMarker.h"
+#include "Viz/Markers/SLVizBaseMarker.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
@@ -40,8 +40,8 @@ void ASLVizMarkerManager::ClearAllMarkers()
 {	
 	for (auto Marker : Markers)
 	{
-		/*RemoveOwnedComponent(Marker);
-		RemoveInstanceComponent(Marker);*/
+		//RemoveOwnedComponent(Marker);
+		//RemoveInstanceComponent(Marker);
 		if (Marker && Marker->IsValidLowLevel() && !Marker->IsPendingKillOrUnreachable())
 		{
 			Marker->DestroyComponent();
@@ -69,16 +69,17 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const FTrans
 // Create a static mesh visual marker at the given pose
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const FTransform& Pose, UStaticMesh* SM, const FLinearColor& InColor, ESLVizMaterialType MaterialType)
 {
-	USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
+	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
+	//USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
+	//Marker->RegisterComponent();
+	////Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+	//// Removed because they are causing the components to remain in the actors components when changing maps
+	////AddInstanceComponent(Marker); // Makes it appear in the editor
+	////AddOwnedComponent(Marker);
 
 	Marker->SetVisual(SM, InColor, MaterialType);
 	Marker->AddInstance(Pose);
-	Markers.Add(Marker);
+	//Markers.Add(Marker);
 	return Marker;
 }
 
@@ -118,7 +119,7 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const TArray
 // Create a static mesh visual marker timeline at the given poses
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarkerTimeline(const TArray<FTransform>& Poses, UStaticMesh* SM,
 	const FLinearColor& InColor, ESLVizMaterialType MaterialType,
-	float UpdateRate, bool bLoop, float StartDelay)
+	float Duration, bool bLoop, float UpdateRate)
 {
 	USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
 	Marker->RegisterComponent();
@@ -128,14 +129,14 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarkerTimeline(cons
 	//AddOwnedComponent(Marker);
 
 	Marker->SetVisual(SM, InColor, MaterialType);
-	Marker->AddTimeline(Poses, UpdateRate, bLoop, StartDelay);
+	Marker->AddInstances(Poses, Duration, bLoop, UpdateRate);
 	Markers.Add(Marker);
 	return Marker;
 }
 
 // Create a static mesh visual marker timeline at the given poses (use original material)
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarkerTimeline(const TArray<FTransform>& Poses, UStaticMesh* SM,
-	float UpdateRate, bool bLoop, float StartDelay)
+	float Duration, bool bLoop, float UpdateRate)
 {
 	USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
 	Marker->RegisterComponent();
@@ -145,7 +146,7 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarkerTimeline(cons
 	//AddOwnedComponent(Marker);
 
 	Marker->SetVisual(SM);
-	Marker->AddTimeline(Poses, UpdateRate, bLoop, StartDelay);
+	Marker->AddInstances(Poses, Duration, bLoop, UpdateRate);
 	Markers.Add(Marker);
 	return Marker;
 }
@@ -193,7 +194,7 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const TArray<F
 // Create a primitive marker timeline at the given poses
 USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarkerTimeline(const TArray<FTransform>& Poses, 
 	ESLVizPrimitiveMarkerType PrimitiveType, float Size, const FLinearColor& InColor, ESLVizMaterialType MaterialType,
-	float UpdateRate, bool bLoop, float StartDelay)
+	float Duration, bool bLoop, float UpdateRate)
 {
 	USLVizPrimitiveMarker* Marker = NewObject<USLVizPrimitiveMarker>(this);
 	Marker->RegisterComponent();
@@ -203,7 +204,7 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarkerTimeline(const 
 	//AddOwnedComponent(Marker);
 
 	Marker->SetVisual(PrimitiveType, Size, InColor, MaterialType);
-	Marker->AddTimeline(Poses, UpdateRate, bLoop, StartDelay);
+	Marker->AddInstances(Poses, Duration, bLoop, UpdateRate);
 	Markers.Add(Marker);
 	return Marker;
 }

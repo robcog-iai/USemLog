@@ -169,7 +169,6 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 			FSLVizEpisodeReplayPlayParams PlayParams;
 			PlayParams.bLoop = bReplayLoopValueHack;
 			PlayParams.UpdateRate = ReplayUpdateRateValueHack;
-			PlayParams.ViewTargetId = ReplayTargetViewIdValueHack;
 			VizManager->PlayEpisodeTimeline(ReplayBeginValueHack, ReplayEndValueHack, PlayParams);
 		}
 		else
@@ -177,7 +176,6 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 			FSLVizEpisodeReplayPlayParams PlayParams;
 			PlayParams.bLoop = bReplayLoopValueHack;
 			PlayParams.UpdateRate = ReplayUpdateRateValueHack;
-			PlayParams.ViewTargetId = ReplayTargetViewIdValueHack;
 			VizManager->PlayEpisode(PlayParams);
 		}
 	}
@@ -256,7 +254,7 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 				{
 					VizManager->CreatePrimitiveMarkerTimeline(M.MarkerId, Poses,
 						M.PrimitiveType, M.Size, M.Color, M.MaterialType, 
-						M.UpdateRate, M.bLoop, M.StartDelay);
+						M.Duration, M.bLoop, M.UpdateRate);
 				}
 				else
 				{
@@ -264,12 +262,12 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 					{
 						VizManager->CreateStaticMeshMarkerTimeline(M.MarkerId, Poses, 
 							M.IndividualId, M.Color, M.MaterialType,
-							M.UpdateRate, M.bLoop, M.StartDelay);
+							M.Duration, M.bLoop, M.UpdateRate);
 					}
 					else
 					{
 						VizManager->CreateStaticMeshMarkerTimeline(M.MarkerId, Poses, M.IndividualId,
-							M.UpdateRate, M.bLoop, M.StartDelay);
+							M.Duration, M.bLoop, M.UpdateRate);
 					}
 				}
 			}

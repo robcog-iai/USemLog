@@ -1,8 +1,8 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Viz/SLVizEpisodeReplayUtils.h"
-#include "Viz/SLVizEpisodeReplayManager.h"
+#include "Viz/SLVizEpisodeUtils.h"
+#include "Viz/SLVizEpisodeManager.h"
 
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualComponent.h"
@@ -21,7 +21,7 @@
 
 
 // Set actors as visuals only (disable physics, set as movable, clear attachments)
-void FSLVizEpisodeReplayUtils::SetActorsAsVisualsOnly(UWorld* World)
+void FSLVizEpisodeUtils::SetActorsAsVisualsOnly(UWorld* World)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
@@ -45,7 +45,7 @@ void FSLVizEpisodeReplayUtils::SetActorsAsVisualsOnly(UWorld* World)
 }
 
 // Add a poseable mesh component clone to the skeletal actors
-void FSLVizEpisodeReplayUtils::AddPoseablMeshComponentsToSkeletalActors(UWorld* World)
+void FSLVizEpisodeUtils::AddPoseablMeshComponentsToSkeletalActors(UWorld* World)
 {
 	for (TActorIterator<ASkeletalMeshActor> SkelActItr(World); SkelActItr; ++SkelActItr)
 	{
@@ -63,16 +63,17 @@ void FSLVizEpisodeReplayUtils::AddPoseablMeshComponentsToSkeletalActors(UWorld* 
 }
 
 // Build the full replay episode data from the mongo compact form
-bool FSLVizEpisodeReplayUtils::BuildEpisodeData(ASLIndividualManager* IndividualManager, const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData,
-	FSLVizEpisodeData& OutFullEpisodeData, FSLVizEpisodeData& OutCompactEpisodeData)
+bool FSLVizEpisodeUtils::BuildEpisodeData(ASLIndividualManager* IndividualManager, 
+	const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData,
+	FSLVizEpisodeData& OutVizEpisodeData)
 {
 	double ExecBegin = FPlatformTime::Seconds();
-	/* First frame */
+	/* First frame (FullFrame -  contains all the data) */
 	// Process first frame (contains all individuals -- the rest of the frames contain only individuals that have moved)
 	FSLVizEpisodeFrameData FullFrameData;
 
 	// Iterate individuals with their poses
-	for (const auto& IndividualPosePair : InCompactEpisodeData[0].Value)
+	for (const auto& IndividualPosePair : InMongoEpisodeData[0].Value)
 	{
 		const FString IndividualId = IndividualPosePair.Key;
 		const FTransform IndividualPose = IndividualPosePair.Value;
@@ -102,48 +103,47 @@ bool FSLVizEpisodeReplayUtils::BuildEpisodeData(ASLIndividualManager* Individual
 		}
 	}
 	// Add the timestamp
-	//OutFullEpisodeData.Timestamps[0] = InCompactEpisodeData[0].Key;
-	OutFullEpisodeData.Timestamps.Emplace(InCompactEpisodeData[0].Key);
-	OutCompactEpisodeData.Timestamps.Emplace(InCompactEpisodeData[0].Key);
+	//OutVizEpisodeData.Timestamps[0] = InMongoEpisodeData[0].Key;
+	OutVizEpisodeData.Timestamps.Emplace(InMongoEpisodeData[0].Key);
 
 	double FirstFrameDuration = FPlatformTime::Seconds() - ExecBegin;
 
 	// Add the individuals poses
-	//OutFullEpisodeData.Frames[0] = FullFrameData;
-	OutFullEpisodeData.Frames.Emplace(FullFrameData);
-	OutCompactEpisodeData.Frames.Emplace(FullFrameData);
+	//OutVizEpisodeData.Frames[0] = FullFrameData;
+	OutVizEpisodeData.FullFrames.Emplace(FullFrameData);
+	OutVizEpisodeData.CompactFrames.Emplace(FullFrameData);
 
 
-	/* Following frames */
-	// Process the following frames
-	for (int32 FrameIndex = 1; FrameIndex < InCompactEpisodeData.Num(); ++FrameIndex)
+	/* Process the following frames */
+	// Update full frame with the new transform values
+	// Create compact frame holding only the changes fromt he previous frame
+	for (int32 FrameIndex = 1; FrameIndex < InMongoEpisodeData.Num(); ++FrameIndex)
 	{
 		// TODO will emplace make a copy, or one needs to make one here ?
 		//FSLVizEpisodeFrameData PrevFrameCopy = FullFrameData;
 		FSLVizEpisodeFrameData CompactFrameData;
 
 		// Iterate individuals with their poses
-		for (const auto& IndividualPosePair : InCompactEpisodeData[FrameIndex].Value)
+		for (const auto& IndividualPosePair : InMongoEpisodeData[FrameIndex].Value)
 		{
 			const FString IndividualId = IndividualPosePair.Key;
 			const FTransform IndividualPose = IndividualPosePair.Value;
 			if (auto Individual = IndividualManager->GetIndividual(IndividualId))
 			{
-				if (auto RI = Cast<USLRigidIndividual>(Individual))
+				if (Individual->IsA(USLRigidIndividual::StaticClass())
+					|| Individual->IsA(USLSkeletalIndividual::StaticClass())
+					|| Individual->IsA(USLVirtualViewIndividual::StaticClass()))
 				{
-					// Modify the value in the full/first frame
+					// Update the full frame with the new value
 					//if (auto FoundActorPose = FullFrameData.ActorPoses.Find(RI->GetParentActor())){(*FoundActorPose) = IndividualPose;}
 					FullFrameData.ActorPoses.FindChecked(Individual->GetParentActor()) = IndividualPose;
-					// Add as new value to the compact frame
+					// Add as new data to the compact frame
 					CompactFrameData.ActorPoses.Emplace(Individual->GetParentActor(), IndividualPose);
-				}
-				else if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
-				{
-					// Modify the value in the full/first frame
-					//if (auto FoundActorPose = FullFrameData.ActorPoses.Find(RI->GetParentActor())){(*FoundActorPose) = IndividualPose;}
-					FullFrameData.ActorPoses.FindChecked(Individual->GetParentActor()) = IndividualPose;
-					// Add as new value to the compact frame
-					CompactFrameData.ActorPoses.Emplace(Individual->GetParentActor(), IndividualPose);
+
+					if (IndividualId.Equals("6HI1inL7OUKmqNXGXI81YA"))
+					{
+						UE_LOG(LogTemp, Log, TEXT("%s::%d Pose=%s;"), *FString(__FUNCTION__), __LINE__, *IndividualPose.ToString());
+					}
 				}
 				else if (auto BI = Cast<USLBoneIndividual>(Individual))
 				{
@@ -165,27 +165,25 @@ bool FSLVizEpisodeReplayUtils::BuildEpisodeData(ASLIndividualManager* Individual
 		}
 
 		// Add the timestamp
-		//OutFullEpisodeData.Timestamps[FrameIndex] = InCompactEpisodeData[FrameIndex].Key;
-		OutFullEpisodeData.Timestamps.Emplace(InCompactEpisodeData[FrameIndex].Key);
-		OutCompactEpisodeData.Timestamps.Emplace(InCompactEpisodeData[FrameIndex].Key);
+		//OutVizEpisodeData.Timestamps[FrameIndex] = InMongoEpisodeData[FrameIndex].Key;
+		OutVizEpisodeData.Timestamps.Emplace(InMongoEpisodeData[FrameIndex].Key);
 
 		// Add the individuals poses
 		//OutFullEpisodeData.Frames[FrameIndex] = FullFrameData;
-		OutFullEpisodeData.Frames.Emplace(FullFrameData);
-		OutCompactEpisodeData.Frames.Emplace(CompactFrameData);
+		OutVizEpisodeData.FullFrames.Emplace(FullFrameData);
+		OutVizEpisodeData.CompactFrames.Emplace(CompactFrameData);
 	}
 
 	double FollowingFramesDuration = FPlatformTime::Seconds() - ExecBegin - FirstFrameDuration;
-
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: first frame=[%f], following frames(num=%d)=[%f], total=[%f] seconds..;"),
-		*FString(__func__), __LINE__, FirstFrameDuration, OutFullEpisodeData.Timestamps.Num(),
+		*FString(__func__), __LINE__, FirstFrameDuration, OutVizEpisodeData.Timestamps.Num(),
 		FollowingFramesDuration, FPlatformTime::Seconds() - ExecBegin);
 	return true;
 }
 
 
 // Executes a binary search for element Item in array Array using the <= operator (from ProfilerCommon::FBinaryFindIndex)
-int32 FSLVizEpisodeReplayUtils::BinarySearchLessEqual(const TArray<float>& Array, float Value)
+int32 FSLVizEpisodeUtils::BinarySearchLessEqual(const TArray<float>& Array, float Value)
 {
 	int32 Length = Array.Num();
 	int32 Middle = Length;
@@ -205,7 +203,7 @@ int32 FSLVizEpisodeReplayUtils::BinarySearchLessEqual(const TArray<float>& Array
 
 
 // Check if actor requires any special attention when switching to visual only world (return true if the components should be left alone)
-bool FSLVizEpisodeReplayUtils::IsSpecialCaseActor(AActor* Actor)
+bool FSLVizEpisodeUtils::IsSpecialCaseActor(AActor* Actor)
 {
 	//if (Actor->IsA(ALandscape::StaticClass()))
 	//{
@@ -222,7 +220,7 @@ bool FSLVizEpisodeReplayUtils::IsSpecialCaseActor(AActor* Actor)
 
 /* Private helpers */
 // Remove actor components that are not required in the 'visual only' world (e.g. controllers)
-void FSLVizEpisodeReplayUtils::RemoveUnnecessaryComponents(AActor* Actor)
+void FSLVizEpisodeUtils::RemoveUnnecessaryComponents(AActor* Actor)
 {
 	// WARNING: anything that could cause the component to change ownership or be destroyed will invalidate this array, so use caution when iterating this set!
 	// Hence the actors will be cached and removed after the iteration
@@ -253,7 +251,7 @@ void FSLVizEpisodeReplayUtils::RemoveUnnecessaryComponents(AActor* Actor)
 
 
 //// Make sure the mesh of the pawn or spectator is not visible in the world
-//void FSLVizEpisodeReplayUtils::HidePawnOrSpectator(UWorld* World)
+//void FSLVizEpisodeUtils::HidePawnOrSpectator(UWorld* World)
 //{
 //	if (World->GetFirstPlayerController() && World->GetFirstPlayerController()->GetPawnOrSpectator())
 //	{
@@ -267,7 +265,7 @@ void FSLVizEpisodeReplayUtils::RemoveUnnecessaryComponents(AActor* Actor)
 //}
 
 //// Remove unnecessary components/actors from the world for setting it up as visual only
-//void FSLVizEpisodeReplayUtils::RemoveUnnecessaryActorsOrComponents(UWorld* World)
+//void FSLVizEpisodeUtils::RemoveUnnecessaryActorsOrComponents(UWorld* World)
 //{
 //
 //// Includes for removing/keeping 
@@ -313,7 +311,7 @@ void FSLVizEpisodeReplayUtils::RemoveUnnecessaryComponents(AActor* Actor)
 ////	|| Actor->IsA(ACameraActor::StaticClass())
 ////	|| Actor->IsA(ADefaultPawn::StaticClass())
 ////	|| Actor->IsA(AVizMarkerManager::StaticClass())
-////	|| Actor->IsA(ASLVizEpisodeReplayManager::StaticClass())
+////	|| Actor->IsA(ASLVizEpisodeManager::StaticClass())
 ////	)
 ////{
 ////	//UE_LOG(LogTemp, Log, TEXT("%s::%d Actor %s is whitelisted, none of its components will be removed.."),

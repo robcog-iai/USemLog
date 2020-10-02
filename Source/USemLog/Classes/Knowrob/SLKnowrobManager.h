@@ -87,13 +87,13 @@ struct FSLVizMarkerHackStruct
 	bool bAsTimeline = false;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
-	float UpdateRate = 0.08f;
+	float Duration = -1.f;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
 	bool bLoop = false;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
-	float StartDelay = -1.f;
+	float UpdateRate = -1.f;
 };
 
 

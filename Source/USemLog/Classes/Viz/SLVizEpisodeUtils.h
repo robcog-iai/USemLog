@@ -15,7 +15,7 @@ struct FSLVizEpisodeData;
 /**
  * Viz visual parameters (color and material type)
  */
-struct USEMLOG_API FSLVizEpisodeReplayUtils
+struct USEMLOG_API FSLVizEpisodeUtils
 {
 public:
 	// Set actors as visuals only (disable physics, set as movable, clear any attachments)
@@ -26,8 +26,8 @@ public:
 
 	// Build the full replay episode data from the mongo compact form (returns true if no errors occured)
 	static bool BuildEpisodeData(ASLIndividualManager* IndividualManager, 
-		const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData,
-		FSLVizEpisodeData& OutFullEpisodeData, FSLVizEpisodeData& OutCompactEpisodeData);
+		const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData,
+		FSLVizEpisodeData& OutVizEpisodeData);
 
 	// Executes a binary search for element Item in array Array using the <= operator (from ProfilerCommon::FBinaryFindIndex)
 	static int32 BinarySearchLessEqual(const TArray<float>& Array, float Value);

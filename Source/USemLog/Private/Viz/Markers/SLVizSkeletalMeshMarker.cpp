@@ -1,7 +1,7 @@
 // Copyright 2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Viz/Marker/SLVizSkeletalMeshMarker.h"
+#include "Viz/Markers/SLVizSkeletalMeshMarker.h"
 #include "Viz/SLVizAssets.h"
 #include "Components/PoseableMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"

@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "SLVizEpisodeReplayManager.generated.h"
+#include "SLVizEpisodeManager.generated.h"
 
 // Forward declaration
 class UPoseableMeshComponent;
@@ -31,8 +31,11 @@ struct FSLVizEpisodeData
 	// Array of the timestamps
 	TArray<float> Timestamps;
 
-	// Array of the frames
-	TArray<FSLVizEpisodeFrameData> Frames;
+	// Array of the compact frames (used for fast gotos)
+	TArray<FSLVizEpisodeFrameData> FullFrames;
+
+	// Array of the compact frames (used for fast replays)
+	TArray<FSLVizEpisodeFrameData> CompactFrames;
 
 	// Default ctor
 	FSLVizEpisodeData() {};
@@ -41,14 +44,23 @@ struct FSLVizEpisodeData
 	FSLVizEpisodeData(int32 ArraySize)
 	{
 		Timestamps.Reserve(ArraySize);
-		Frames.Reserve(ArraySize);
+		FullFrames.Reserve(ArraySize);
+		CompactFrames.Reserve(ArraySize);
 	};
 
 	// Check if there is data in the episode and it is in sync
-	bool IsValid() const { return Timestamps.Num() > 2 && Timestamps.Num() == Frames.Num(); };
+	bool IsValid() const 
+	{
+		return Timestamps.Num() > 2 && Timestamps.Num() == FullFrames.Num();
+	};
 
 	// Clear all the data in the episode
-	void Clear() { Timestamps.Empty(); Frames.Empty(); };
+	void Clear() 
+	{
+		Timestamps.Empty(); 
+		FullFrames.Empty();
+		CompactFrames.Empty();
+	};
 };
 
 
@@ -56,13 +68,13 @@ struct FSLVizEpisodeData
  * Class to load and skim through episodes
  */
 UCLASS(ClassGroup = (SL), DisplayName = "SL Viz Episode Replay Manager")
-class USEMLOG_API ASLVizEpisodeReplayManager : public AInfo
+class USEMLOG_API ASLVizEpisodeManager : public AInfo
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASLVizEpisodeReplayManager();
+	ASLVizEpisodeManager();
 
 protected:
 	// Called every frame
@@ -76,7 +88,7 @@ public:
 	bool IsWorldSetASVisualOnly() const { return bWorldSetAsVisualOnly; };
 
 	// Load episode data
-	void LoadEpisode(const FSLVizEpisodeData& InEpisodeDataFull, const FSLVizEpisodeData& InEpisodeDataCompact);
+	void LoadEpisode(const FSLVizEpisodeData& InEpisodeData);
 
 	// Check if an episode is loaded
 	bool IsEpisodeLoaded() const { return bEpisodeLoaded; };
@@ -85,19 +97,19 @@ public:
 	void ClearEpisode();
 
 	// Set visual world as in the given frame 
-	bool GotoFrame(int32 FrameIndex, AActor* ViewTarget = nullptr);
+	bool GotoFrame(int32 FrameIndex);
 
 	// Set visual world as in the given timestamp (binary search for nearest index)
-	bool GotoFrame(float Timestamp, AActor* ViewTarget = nullptr);
+	bool GotoFrame(float Timestamp);
 
 	// Play whole episode
-	bool PlayEpisode(AActor* ViewTarget = nullptr);
+	bool PlayEpisode();
 
 	// Play given frames
-	bool PlayFrames(int32 FirstFrame, int32 LastFrame, AActor* ViewTarget = nullptr);
+	bool PlayFrames(int32 FirstFrame, int32 LastFrame);
 
 	// Play the episode timeline
-	bool PlayTimeline(float StartTime, float EndTime, AActor* ViewTarget = nullptr);
+	bool PlayTimeline(float StartTime, float EndTime);
 
 	// Set replay parameters (loop replay, frame update rate, number of steps per frame)
 	void SetReplayParams(bool bLoop, float UpdateRate = -1.f, int32 StepSize = 1);
@@ -109,11 +121,14 @@ public:
 	void StopReplay();
 
 private:
-	// Apply the compact episode data given frame changes
-	void ApplyCompactFrameChanges(int32 FrameIndex);
-
 	// Apply frame poses
 	void ApplyPoses(const FSLVizEpisodeFrameData& Frame);
+
+	// Apply next frame changes (return false if there are no more frames)
+	bool ApplyNextFrameChanges();
+	
+	// Apply the compact episode data given frame changes
+	void ApplyFrameChanges(int32 FrameIndex);
 
 	// Calculate an approximation of the update rate value to coincide with realtime
 	void CalcRealtimeAproxUpdateRateValue(int32 MaxNumSteps);
@@ -131,17 +146,8 @@ protected:
 	// True if it currently in an active replay
 	uint8 bReplayRunning : 1;
 
-	// Episode data containing all the information at every timestamp (used for fast goto calls)
-	FSLVizEpisodeData EpisodeDataFull;
-
-	// Episode data containing only individual changes (used for fast replays)
-	FSLVizEpisodeData EpisodeDataCompact;
-
-	// View target, camera will follow the given actor
-	AActor* ReplayViewTarget;
-
-	// Pointer to the first player controller
-	APlayerController* FPC;
+	// Episode data
+	FSLVizEpisodeData EpisodeData;
 
 	// Current frame index
 	int32 ActiveFrameIndex;
@@ -156,7 +162,7 @@ protected:
 	int32 ReplayStepSize;
 
 	// Default replay update rate
-	float ReplayAproxRealtimeUpdateRateValue;
+	float EpisodeDefaultUpdateRate;
 };
 
 

@@ -1,7 +1,7 @@
 // Copyright 2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Viz/Marker/SLVizBaseMarker.h"
+#include "Viz/Markers/SLVizBaseMarker.h"
 #include "Viz/SLVizAssets.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"

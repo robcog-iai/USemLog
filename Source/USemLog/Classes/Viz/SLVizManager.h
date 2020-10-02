@@ -11,14 +11,14 @@
 // Forward declarations
 class ASLVizHighlightManager;
 class ASLVizMarkerManager;
-class ASLVizEpisodeReplayManager;
+class ASLVizEpisodeManager;
 class ASLIndividualManager;
+class ASLVizCameraDirector;
 class USLVizBaseMarker;
 class UMeshComponent;
 
-
 /*
-* 
+*
 */
 UCLASS(ClassGroup = (SL), DisplayName = "SL Viz Manager")
 class USEMLOG_API ASLVizManager : public AInfo
@@ -133,6 +133,12 @@ public:
 	// Check if world is set for episode replay
 	bool IsWorldSetForEpisodeReplay() const;
 
+	// Check if the episode is already cached
+	bool IsEpisodeCached(const FString& Id) const { return false; };
+
+	// Check if the episode is already cached
+	void LoadCachedEpisode(const FString& Id) const { };
+
 	// Change the data into an episode format and load it to the episode replay manager
 	void LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData);
 
@@ -140,7 +146,7 @@ public:
 	bool IsEpisodeLoaded() const;
 
 	// Go to the frame at the given timestamp
-	bool GotoEpisodeFrame(float Ts, const FString& ViewTargetId = TEXT(""));
+	bool GotoEpisodeFrame(float Ts);
 
 	// Replay the whole loaded episode
 	bool PlayEpisode(FSLVizEpisodeReplayPlayParams PlayParams = FSLVizEpisodeReplayPlayParams());
@@ -154,6 +160,20 @@ public:
 	// Stop replay (if active, and goto frame 0)
 	void StopReplay();
 
+	// TODO pre cache multiple episodes
+
+
+	/* View */
+	// Move the view to a given position
+	void SetCameraView(const FTransform& Pose);
+
+	// Move the camera view to the pose of the given individual
+	void SetCameraView(const FString& Id);
+
+	// Attach the view to an individual
+	void AttachCameraViewTo(const FString& Id);
+
+
 private:
 	/* Managers */
 	// Get the individual manager from the world (or spawn a new one)
@@ -166,7 +186,10 @@ private:
 	bool SetVizMarkerManager();
 
 	// Get the vizualization world manager from the world (or spawn a new one)
-	bool SetEpisodeReplayManager();
+	bool SetEpisodeManager();
+
+	// Get the vizualization camera director from the world (or spawn a new one)
+	bool SetCameraDirector();
 	
 private:
 	// True if the manager is initialized
@@ -183,6 +206,10 @@ private:
 
 
 	/* Managers */
+	// Keeps access to all the individuals in the world
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLIndividualManager* IndividualManager;
+
 	// Keeps track of all the drawn markers in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizMarkerManager* MarkerManager;
@@ -193,10 +220,15 @@ private:
 
 	// Keeps track of the episode replay visualization
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	ASLVizEpisodeReplayManager* EpisodeReplayManager;
+	ASLVizEpisodeManager* EpisodeManager;
 
 	// Keeps access to all the individuals in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	ASLIndividualManager* IndividualManager;
+	ASLVizCameraDirector* CameraDirector;
+
+
+	/* Cached data */
+	// Episode id to viz episode data
+	//TMap<FString, struct FSLVizEpisodeData> CachedEpisodeData;
 
 };

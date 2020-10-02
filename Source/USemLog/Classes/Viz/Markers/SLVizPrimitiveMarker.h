@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Viz/Marker/SLVizStaticMeshMarker.h"
+#include "Viz/Markers/SLVizStaticMeshMarker.h"
 #include "SLVizPrimitiveMarker.generated.h"
 
 // Forward declarations
@@ -44,6 +44,9 @@ public:
 protected:
 	// Virtual add instance function
 	virtual void AddInstanceChecked(const FTransform& Pose) override;
+
+	// Virtual add instances function
+	virtual void AddInstancesChecked(const TArray<FTransform>& Poses) override;
 
 	// Get the static mesh of the primitive type
 	UStaticMesh* GetPrimitiveStaticMesh(ESLVizPrimitiveMarkerType InType) const;

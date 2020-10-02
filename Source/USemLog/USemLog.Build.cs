@@ -69,7 +69,7 @@ public class USemLog : ModuleRules
 				"Slate",
 				"SlateCore",
 				"WebSockets",
-				//"Profiler",					// Viz/SLVizEpisodeReplayManager - FBinaryFindIndex
+				//"Profiler",					// Viz/SLVizEpisodeManager - FBinaryFindIndex
 				//"Json",
 				//"JsonUtilities",
 				//"Landscape", "AIModule",	// whitelisted actors when setting the world to visual only
