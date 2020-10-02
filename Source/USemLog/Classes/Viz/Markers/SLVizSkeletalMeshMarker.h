@@ -23,6 +23,9 @@ public:
 	// Constructor
 	USLVizSkeletalMeshMarker();
 
+	// Called every frame, used for timeline visualizations, activated and deactivated on request
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 	// Set the visual properties of the skeletal mesh (use original materials)
 	void SetVisual(USkeletalMesh* SkelMesh);
 
@@ -44,11 +47,20 @@ public:
 	void SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes, const FLinearColor& InColor,
 		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
 
-	// Add instances at pose
+	// Add instances at pose with bones as optional parameter
 	void AddInstance(const FTransform& Pose, const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>());
 
-	// Add instances with the poses
+	// Add instance with bone poses
+	void AddInstance(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose);
+
+	// Add instances with the poses with bones as optinal parameters
 	void AddInstances(const TArray<FTransform>& Poses, const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>());
+
+	// Add instances with bone poses
+	void AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses);
+
+	// Add instances with timeline update
+	void AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses, float Duration, bool bLoop, float UpdateRate = -1.f);
 
 	//~ Begin ActorComponent Interface
 	// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
@@ -67,6 +79,12 @@ protected:
 	virtual void ResetPoses() override;
 	/* End VizMarker interface */
 
+	// Set instances visibility to false
+	void HideInstances();
+
+	// Clear the timeline and the related members
+	void ClearTimelineData();
+
 private:
 	// Set visual without the materials (avoid boilerplate code)
 	void SetPoseableMeshComponentVisual(USkeletalMesh* SkelMesh);
@@ -76,10 +94,22 @@ private:
 
 protected:
 	// Poseable mesh reference
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	UPoseableMeshComponent* PMCRef;
 
 	// Skeletal instances
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	TArray<UPoseableMeshComponent*> PMCInstances;
+
+	// Timeline poses
+	TArray<TPair<FTransform, TMap<int32, FTransform>>> TimelinePoses;
+
+	// Timeline position in the array
+	int32 TimelineIndex;
+
+	// Flag to loop the timeline
+	bool bLoopTimeline;
+
+	// Duration in which the timeline should be drawed
+	float TimelineDuration;
 };

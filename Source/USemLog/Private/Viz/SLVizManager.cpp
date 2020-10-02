@@ -459,8 +459,8 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 }
 
 // Create a marker by cloning the visual of the given skeletal individual (use original materials)
-bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
-	const TArray<TMap<int32, FTransform>>& BonePosesArray,
+bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
+	const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 	const FString& IndividualId)
 {
 	if (!bIsInit)
@@ -481,7 +481,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArr
 		if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
 		{
 			USkeletalMesh* SkelM = SkI->GetSkeletalMeshComponent()->SkeletalMesh;
-			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM))
+			if (auto Marker = MarkerManager->CreateSkeletalMarker(SkeletalPoses, SkelM))
 			{
 				Markers.Add(MarkerId, Marker);
 				return true;
@@ -498,8 +498,8 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArr
 }
 
 // Create a marker by cloning the visual of the given skeletal individual
-bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
-	const TArray<TMap<int32, FTransform>>& BonePosesArray,
+bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
+	const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 	const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType)
 {
 	if (!bIsInit)
@@ -520,7 +520,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArr
 		if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
 		{
 			USkeletalMesh* SkelM = SkI->GetSkeletalMeshComponent()->SkeletalMesh;
-			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM, Color, MaterialType))
+			if (auto Marker = MarkerManager->CreateSkeletalMarker(SkeletalPoses, SkelM, Color, MaterialType))
 			{
 				Markers.Add(MarkerId, Marker);
 				return true;
@@ -533,6 +533,25 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId, const TArr
 			return false;
 		}
 	}
+	return false;
+}
+
+// Create a timeline by cloning the visual of the given skeletal individual (use original materials)
+bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
+	const FString& IndividualId, float UpdateRate, bool bLoop, float StartDelay)
+{
+	// TODO
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
+	return false;
+}
+
+// Create a timeline by cloning the visual of the given skeletal individual
+bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
+	const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType,
+	float UpdateRate, bool bLoop, float StartDelay)
+{
+	// TODO
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
 	return false;
 }
 
@@ -556,23 +575,25 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 	{
 		if (auto BI = Cast<USLBoneIndividual>(Individual))
 		{
-			USkeletalMesh* SkelM = BI->GetSkeletalMeshComponent()->SkeletalMesh;
-			int32 BoneIndex = BI->GetBoneIndex();
-			int32 MaterialIndex = BI->GetMaterialIndex();
-			TArray<TMap<int32, FTransform>> BonePosesArray;
-			for (const auto& T : Poses)
-			{
-				TMap< int32, FTransform> Map;
-				Map.Emplace(BoneIndex, T);
-				BonePosesArray.Emplace(Map);
-			}
+			// TODO
+			UE_LOG(LogTemp, Error, TEXT("%s::%d TODO "), *FString(__FUNCTION__), __LINE__);
+			//USkeletalMesh* SkelM = BI->GetSkeletalMeshComponent()->SkeletalMesh;
+			//int32 BoneIndex = BI->GetBoneIndex();
+			//int32 MaterialIndex = BI->GetMaterialIndex();
+			//TArray<TMap<int32, FTransform>> BonePosesArray;
+			//for (const auto& T : Poses)
+			//{
+			//	TMap< int32, FTransform> Map;
+			//	Map.Emplace(BoneIndex, T);
+			//	BonePosesArray.Emplace(Map);
+			//}
 
-			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM,
-				BonePosesArray, TArray<int32>{MaterialIndex}))
-			{
-				Markers.Add(MarkerId, Marker);
-				return true;
-			};
+			//if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM,
+			//	BonePosesArray, TArray<int32>{MaterialIndex}))
+			//{
+			//	Markers.Add(MarkerId, Marker);
+			//	return true;
+			//};
 		}
 		else
 		{
@@ -604,23 +625,26 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 	{
 		if (auto BI = Cast<USLBoneIndividual>(Individual))
 		{
-			USkeletalMesh* SkelM = BI->GetSkeletalMeshComponent()->SkeletalMesh;
-			int32 BoneIndex = BI->GetBoneIndex();
-			int32 MaterialIndex = BI->GetMaterialIndex();
-			TArray<TMap<int32, FTransform>> BonePosesArray;
-			for (const auto& T : Poses)
-			{
-				TMap< int32, FTransform> Map;
-				Map.Emplace(BoneIndex, T);
-				BonePosesArray.Emplace(Map);
-			}
-			
-			if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM, Color, MaterialType,
-				BonePosesArray, TArray<int32>{MaterialIndex}))
-			{
-				Markers.Add(MarkerId, Marker);
-				return true;
-			};
+			// TODO
+			UE_LOG(LogTemp, Error, TEXT("%s::%d TODO "), *FString(__FUNCTION__), __LINE__);
+
+			//USkeletalMesh* SkelM = BI->GetSkeletalMeshComponent()->SkeletalMesh;
+			//int32 BoneIndex = BI->GetBoneIndex();
+			//int32 MaterialIndex = BI->GetMaterialIndex();
+			//TArray<TMap<int32, FTransform>> BonePosesArray;
+			//for (const auto& T : Poses)
+			//{
+			//	TMap< int32, FTransform> Map;
+			//	Map.Emplace(BoneIndex, T);
+			//	BonePosesArray.Emplace(Map);
+			//}
+			//
+			//if (auto Marker = MarkerManager->CreateSkeletalMarker(Poses, SkelM, Color, MaterialType,
+			//	BonePosesArray, TArray<int32>{MaterialIndex}))
+			//{
+			//	Markers.Add(MarkerId, Marker);
+			//	return true;
+			//};
 		}
 		else
 		{
@@ -827,7 +851,7 @@ void ASLVizManager::SetCameraView(const FTransform& Pose)
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	CameraDirector->SetCameraView(Pose);	
+	CameraDirector->MoveCameraTo(Pose);
 }
 
 // Move the camera view to the pose of the given individual
@@ -841,8 +865,34 @@ void ASLVizManager::SetCameraView(const FString& Id)
 
 	if (auto Individual = IndividualManager->GetIndividual(Id))
 	{
-		CameraDirector->SetCameraView(Individual->GetParentActor()->GetActorTransform());
+		CameraDirector->MoveCameraTo(Individual->GetParentActor()->GetActorTransform());
 	}
+}
+
+// Attach the view to an individual
+void ASLVizManager::AttachCameraViewTo(const FString& Id)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	if (auto Individual = IndividualManager->GetIndividual(Id))
+	{
+		CameraDirector->AttachCameraTo(Individual->GetParentActor());
+	}
+}
+
+// Make sure the camera view is detached
+void ASLVizManager::DetachCameraView()
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	CameraDirector->DetachCamera();
 }
 
 

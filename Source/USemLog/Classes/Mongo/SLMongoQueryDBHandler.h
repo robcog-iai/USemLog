@@ -53,7 +53,7 @@ public:
 	TArray<FTransform> GetIndividualTrajectory(const FString& Id, float StartTs, float EndTs, float DeltaT = -1.f) const;
 
 	// Get skeletal individual pose
-	TPair<FTransform, TMap<int32, FTransform>> GetSkeletalIndividualPoseAt(const FString& Id, float Ts);
+	TPair<FTransform, TMap<int32, FTransform>> GetSkeletalIndividualPoseAt(const FString& Id, float Ts) const;
 
 	// Get skeletal individual trajectory
 	TArray<TPair<FTransform, TMap<int32, FTransform>>> GetSkeletalIndividualTrajectory(const FString& Id, float StartTs, float EndTs, float DeltaT = -1.f) const;

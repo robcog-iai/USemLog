@@ -415,7 +415,7 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 }
 
 // Get skeletal individual pose
-TPair<FTransform, TMap<int32, FTransform>> FSLMongoQueryDBHandler::GetSkeletalIndividualPoseAt(const FString& Id, float Ts)
+TPair<FTransform, TMap<int32, FTransform>> FSLMongoQueryDBHandler::GetSkeletalIndividualPoseAt(const FString& Id, float Ts) const
 {
 	TPair<FTransform, TMap<int32, FTransform>> SkeletalPosePair;
 	if (!IsReady())
@@ -541,15 +541,20 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> FSLMongoQueryDBHandler::GetSk
 		"{",
 			"$match",
 			"{",
-				"timestamp", "{", "$gte", BCON_DOUBLE(StartTs),	"$lte", BCON_DOUBLE(EndTs),	"}",
+				"timestamp", 
+				"{", 
+					"$gte", BCON_DOUBLE(StartTs),
+					"$lte", BCON_DOUBLE(EndTs),
+				"}",
 				"skel_individuals.id", BCON_UTF8(TCHAR_TO_ANSI(*Id)),		// yields faster results if we match against the id from the start
 			"}",
 		"}",
+		"{",
 			"$sort",
-				"{",
-					"timestamp", BCON_INT32(1),								// if sort if right after match it barely adds any time penalty
-				"}",
+			"{",
+				"timestamp", BCON_INT32(1),								// if sort if right after match it barely adds any time penalty
 			"}",
+		"}",
 		"{",
 			"$unwind", BCON_UTF8("$skel_individuals"),
 		"}",
@@ -654,10 +659,9 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> FSLMongoQueryDBHandler::GetSk
 
 	mongoc_cursor_destroy(cursor);
 	bson_destroy(pipeline);
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds..;"),
-		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin);
+	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds, Num=[%d]..;"),
+		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin, SkeletalTrajectoryPair.Num());
 #endif
-	//UE_LOG(LogTemp, Log, TEXT("%s::%d Traj size=%ld;"), *FString(__FUNCTION__), __LINE__, SkeletalTrajectoryPair.Num());
 	return SkeletalTrajectoryPair;
 }
 

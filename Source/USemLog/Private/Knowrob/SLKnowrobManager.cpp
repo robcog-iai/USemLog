@@ -225,18 +225,36 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		for (const auto M : MarkerValuesHack)
 		{
 			TArray<FTransform> Poses;
+			TArray<TPair<FTransform, TMap<int32, FTransform>>> SkeletalPoses;
+
 			if (M.EndTime > 0)
 			{
-				Poses = MongoQueryManager->GetIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
-					M.IndividualId, M.StartTime, M.EndTime, M.DeltaT);
+				if (!M.bIsSkeletal)
+				{
+					Poses = MongoQueryManager->GetIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
+						M.IndividualId, M.StartTime, M.EndTime, M.DeltaT);
+				}
+				else
+				{
+					SkeletalPoses = MongoQueryManager->GetSkeletalIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
+						M.IndividualId, M.StartTime, M.EndTime, M.DeltaT);
+				}
 			}
 			else
 			{
-				Poses.Add(MongoQueryManager->GetIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack, 
-					M.IndividualId, M.StartTime));
+				if (!M.bIsSkeletal)
+				{
+					Poses.Add(MongoQueryManager->GetIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack,
+						M.IndividualId, M.StartTime));
+				}
+				else
+				{
+					SkeletalPoses.Add(MongoQueryManager->GetSkeletalIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack,
+						M.IndividualId, M.StartTime));
+				}
 			}
 			
-			if (Poses.Num() == 0)
+			if (Poses.Num() == 0 && SkeletalPoses.Num() == 0)
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Empty poses array.."), *FString(__FUNCTION__), __LINE__);
 				return;
@@ -244,13 +262,27 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 
 			if (M.bAsTimeline)
 			{
-				if (Poses.Num() < 2)
+				if (Poses.Num() < 2 && SkeletalPoses.Num() < 2)
 				{
 					UE_LOG(LogTemp, Error, TEXT("%s::%d Not enought poses for a timeline.."), *FString(__FUNCTION__), __LINE__);
 					return;
 				}
 
-				if (M.bUsePrimitiveMesh)
+				if (M.bIsSkeletal)
+				{
+					if (M.bUseCustomColor)
+					{
+						VizManager->CreateSkeletalMeshMarkerTimeline(M.MarkerId, SkeletalPoses,
+							M.IndividualId, M.Color, M.MaterialType,
+							M.Duration, M.bLoop, M.UpdateRate);
+					}
+					else
+					{
+						VizManager->CreateSkeletalMeshMarkerTimeline(M.MarkerId, SkeletalPoses, M.IndividualId,
+							M.Duration, M.bLoop, M.UpdateRate);
+					}
+				}
+				else if (M.bUsePrimitiveMesh)
 				{
 					VizManager->CreatePrimitiveMarkerTimeline(M.MarkerId, Poses,
 						M.PrimitiveType, M.Size, M.Color, M.MaterialType, 
@@ -273,7 +305,19 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 			}
 			else
 			{
-				if (M.bUsePrimitiveMesh)
+				if (M.bIsSkeletal)
+				{
+					if (M.bUseCustomColor)
+					{
+						VizManager->CreateSkeletalMeshMarker(M.MarkerId, SkeletalPoses,
+							M.IndividualId, M.Color, M.MaterialType);
+					}
+					else
+					{
+						VizManager->CreateSkeletalMeshMarker(M.MarkerId, SkeletalPoses, M.IndividualId);
+					}
+				}
+				else if (M.bUsePrimitiveMesh)
 				{
 					VizManager->CreatePrimitiveMarker(M.MarkerId, Poses, M.PrimitiveType, M.Size, M.Color, M.MaterialType);
 				}

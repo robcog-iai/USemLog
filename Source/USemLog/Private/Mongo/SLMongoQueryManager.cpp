@@ -297,7 +297,7 @@ TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndi
 {
 	if (SetEpisode(InEpisodeId))
 	{
-		return GetSkeletalIndividualPoseAt(InEpisodeId, IndividualId, Ts);
+		return GetSkeletalIndividualPoseAt(IndividualId, Ts);
 	}
 	else
 	{
@@ -309,8 +309,7 @@ TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndi
 // Get skeletal individual pose
 TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& IndividualId, float Ts) const
 {
-	//DBHandler.GetSkeletalIndividualPoseAt(IndividualId, Ts);
-	return TPair<FTransform, TMap<int32, FTransform>>();
+	return DBHandler.GetSkeletalIndividualPoseAt(IndividualId, Ts);	
 }
 
 // Get skeletal individual trajectory with task and episode init
@@ -333,7 +332,7 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkel
 {
 	if (SetEpisode(InEpisodeId))
 	{
-		return GetSkeletalIndividualTrajectory(InEpisodeId, IndividualId, StartTs, EndTs, DeltaT);
+		return GetSkeletalIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
 	}
 	else
 	{
@@ -345,8 +344,7 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkel
 // Get skeletal individual trajectory
 TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT) const
 {
-	//DBHandler.GetSkeletalIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
-	return TArray<TPair<FTransform, TMap<int32, FTransform>>>();
+	return DBHandler.GetSkeletalIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
 }
 
 // Get the episode data with task and episode init

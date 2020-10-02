@@ -10,9 +10,65 @@
 // Constructor
 USLVizSkeletalMeshMarker::USLVizSkeletalMeshMarker()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+
 	PMCRef = nullptr;
 }
+
+// Called every frame, used for timeline visualizations, activated and deactivated on request
+void USLVizSkeletalMeshMarker::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	int32 NumInstancesToDraw = (DeltaTime * TimelinePoses.Num()) / TimelineDuration;
+	if (TimelineIndex + NumInstancesToDraw < TimelinePoses.Num())
+	{
+		// It is safe to add all instances
+		while (NumInstancesToDraw > 0)
+		{
+			if (!PMCInstances.IsValidIndex(TimelineIndex))
+			{
+				AddInstance(TimelinePoses[TimelineIndex]); // Create new instance
+			}
+			else
+			{
+				PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already there, set it to visible
+			}
+			TimelineIndex++;
+			NumInstancesToDraw--;
+		}
+	}
+	else
+	{
+		// Reached end of the poses array, add remaining values
+		while (TimelinePoses.IsValidIndex(TimelineIndex))
+		{
+			if (!PMCInstances.IsValidIndex(TimelineIndex))
+			{
+				AddInstance(TimelinePoses[TimelineIndex]); // Create new instance
+			}
+			else
+			{
+				PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already there, set it to visible
+			}
+			TimelineIndex++;
+		}
+
+		// Check if the timeline should be repeated or stopped
+		if (bLoopTimeline)
+		{
+			HideInstances(); // Hide all instances
+			TimelinePoses.Empty(); // Cached poses can be cleared since we are re-iterating the existing instances
+			TimelineIndex = 0;
+		}
+		else
+		{
+			ClearTimelineData();
+		}
+	}
+}
+
 
 // Set the visual properties of the skeletal mesh (use original materials)
 void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh)
@@ -116,6 +172,12 @@ void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, const TArray<i
 // Add instances at pose
 void USLVizSkeletalMeshMarker::AddInstance(const FTransform& Pose, const TMap<int32, FTransform>& BonePoses)
 {
+	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
 	UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
 	PMC->SetWorldTransform(Pose);
 
@@ -128,9 +190,36 @@ void USLVizSkeletalMeshMarker::AddInstance(const FTransform& Pose, const TMap<in
 	PMCInstances.Add(PMC);
 }
 
+// Add instance with bones
+void USLVizSkeletalMeshMarker::AddInstance(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose)
+{
+	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
+	PMC->SetWorldTransform(SkeletalPose.Key);
+
+	for (const auto& BonePosePair : SkeletalPose.Value)
+	{
+		const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
+		PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+	}
+
+	PMCInstances.Add(PMC);
+}
+
 // Add instances with the poses
 void USLVizSkeletalMeshMarker::AddInstances(const TArray<FTransform>& Poses, const TArray<TMap<int32, FTransform>>& BonePosesArray)
 {
+	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
 	// Make sure the size of the two arrays are the same
 	const bool bIncludeBones = Poses.Num() == BonePosesArray.Num();
 	
@@ -152,6 +241,65 @@ void USLVizSkeletalMeshMarker::AddInstances(const TArray<FTransform>& Poses, con
 
 		PMCInstances.Add(PMC);
 	}
+}
+
+// Add instances with bone poses
+void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses)
+{
+	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	for (const auto& SkelPosePair : SkeletalPoses)
+	{
+		UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
+		PMC->SetWorldTransform(SkelPosePair.Key);
+
+		for (const auto& BonePosePair : SkelPosePair.Value)
+		{
+			const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
+			PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+		}
+
+		PMCInstances.Add(PMC);
+	}
+}
+
+// Add instances with timeline update
+void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses, float Duration, bool bLoop, float UpdateRate)
+{
+	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	if (Duration <= 0.008f)
+	{
+		AddInstances(SkeletalPoses);
+		return;
+	}
+
+	if (IsComponentTickEnabled())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d A timeline is already active, reset first.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	// Set the timeline data
+	TimelinePoses = SkeletalPoses;
+	TimelineDuration = Duration;
+	bLoopTimeline = bLoop;
+	TimelineIndex = 0;
+
+	// Start timeline
+	if (UpdateRate > 0.f)
+	{
+		SetComponentTickInterval(UpdateRate);
+	}
+	SetComponentTickEnabled(true);
 }
 
 // Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
@@ -186,7 +334,7 @@ void USLVizSkeletalMeshMarker::ResetVisuals()
 {
 	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
 		return;
 	}
 
@@ -204,6 +352,27 @@ void USLVizSkeletalMeshMarker::ResetPoses()
 		}
 	}
 	PMCInstances.Empty();
+}
+
+// Set instances visibility to false
+void USLVizSkeletalMeshMarker::HideInstances()
+{
+	for (const auto& PMC : PMCInstances)
+	{
+		PMC->SetVisibility(false);
+	}
+}
+
+// Clear the timeline and the related members
+void USLVizSkeletalMeshMarker::ClearTimelineData()
+{
+	if (IsComponentTickEnabled())
+	{
+		SetComponentTickEnabled(false);
+		SetComponentTickInterval(-1.f); // Tick every frame by default (If less than or equal to 0 then it will tick every frame)
+	}
+	TimelineIndex = INDEX_NONE;
+	TimelinePoses.Empty();
 }
 
 //   Set visual without the materials (avoid boilerplate code)
@@ -231,6 +400,7 @@ void USLVizSkeletalMeshMarker::SetPoseableMeshComponentVisual(USkeletalMesh* Ske
 // Create poseable mesh component instance attached and registered to this marker
 UPoseableMeshComponent* USLVizSkeletalMeshMarker::CreateNewPoseableMeshInstance()
 {
+	// TODO double check that this works
 	UPoseableMeshComponent* NewPMC = DuplicateObject<UPoseableMeshComponent>(PMCRef, this);
 	//NewPMC->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
 	NewPMC->SetVisibility(true);

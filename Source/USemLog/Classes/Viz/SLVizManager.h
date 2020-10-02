@@ -100,15 +100,28 @@ public:
 
 	/* Skeletal mesh markers */
 	// Create a marker by cloning the visual of the given skeletal individual (use original materials)
-	bool CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const TArray<TMap<int32, FTransform>>& BonePoses, 
+	bool CreateSkeletalMeshMarker(const FString& MarkerId,
+		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		const FString& IndividualId);
 
 	// Create a marker by cloning the visual of the given skeletal individual
-	bool CreateSkeletalMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const TArray<TMap<int32, FTransform>>& BonePoses,
+	bool CreateSkeletalMeshMarker(const FString& MarkerId, 
+		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		const FString& IndividualId,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+
+	// Create a timeline by cloning the visual of the given skeletal individual (use original materials)
+	bool CreateSkeletalMeshMarkerTimeline(const FString& MarkerId,
+		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
+		const FString& IndividualId,
+		float UpdateRate, bool bLoop, float StartDelay = -1.f);
+
+	// Create a timeline by cloning the visual of the given skeletal individual
+	bool CreateSkeletalMeshMarkerTimeline(const FString& MarkerId,
+		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
+		const FString& IndividualId,
+		const FLinearColor& Color, ESLVizMaterialType MaterialType,
+		float UpdateRate, bool bLoop, float StartDelay = -1.f);
 
 	// Create a marker by cloning the visual of the given individual (use original materials)
 	bool CreateBoneMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
@@ -173,6 +186,8 @@ public:
 	// Attach the view to an individual
 	void AttachCameraViewTo(const FString& Id);
 
+	// Make sure the camera view is detached
+	void DetachCameraView();
 
 private:
 	/* Managers */

@@ -53,16 +53,9 @@ void ASLVizMarkerManager::ClearAllMarkers()
 // Create a static mesh visual marker at the given pose (use original material)
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const FTransform& Pose, UStaticMesh* SM)
 {
-	USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
 	Marker->SetVisual(SM);
 	Marker->AddInstance(Pose);
-	Markers.Add(Marker);
 	return Marker;
 }
 
@@ -70,16 +63,8 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const FTrans
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const FTransform& Pose, UStaticMesh* SM, const FLinearColor& InColor, ESLVizMaterialType MaterialType)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
-	//USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
-	//Marker->RegisterComponent();
-	////Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	//// Removed because they are causing the components to remain in the actors components when changing maps
-	////AddInstanceComponent(Marker); // Makes it appear in the editor
-	////AddOwnedComponent(Marker);
-
 	Marker->SetVisual(SM, InColor, MaterialType);
 	Marker->AddInstance(Pose);
-	//Markers.Add(Marker);
 	return Marker;
 }
 
@@ -87,32 +72,18 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const FTrans
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const TArray<FTransform>& Poses, UStaticMesh* SM,
 	const FLinearColor& InColor, ESLVizMaterialType MaterialType)
 {
-	USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
 	Marker->SetVisual(SM, InColor, MaterialType);
 	Marker->AddInstances(Poses);
-	Markers.Add(Marker);
 	return Marker;
 }
 
 // Create a static mesh visual marker at the given poses (use original material)
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const TArray<FTransform>& Poses, UStaticMesh* SM)
 {
-	USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
 	Marker->SetVisual(SM);
 	Marker->AddInstances(Poses);
-	Markers.Add(Marker);
 	return Marker;
 }
 
@@ -121,16 +92,9 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarkerTimeline(cons
 	const FLinearColor& InColor, ESLVizMaterialType MaterialType,
 	float Duration, bool bLoop, float UpdateRate)
 {
-	USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
 	Marker->SetVisual(SM, InColor, MaterialType);
 	Marker->AddInstances(Poses, Duration, bLoop, UpdateRate);
-	Markers.Add(Marker);
 	return Marker;
 }
 
@@ -138,16 +102,9 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarkerTimeline(cons
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarkerTimeline(const TArray<FTransform>& Poses, UStaticMesh* SM,
 	float Duration, bool bLoop, float UpdateRate)
 {
-	USLVizStaticMeshMarker* Marker = NewObject<USLVizStaticMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
 	Marker->SetVisual(SM);
 	Marker->AddInstances(Poses, Duration, bLoop, UpdateRate);
-	Markers.Add(Marker);
 	return Marker;
 }
 
@@ -158,16 +115,9 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const FTransfo
 	const FLinearColor& InColor, 
 	ESLVizMaterialType MaterialType)
 {
-	USLVizPrimitiveMarker* Marker = NewObject<USLVizPrimitiveMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizPrimitiveMarker>(this);
 	Marker->SetVisual(PrimitiveType, Size, InColor, MaterialType);
 	Marker->AddInstance(Pose);
-	Markers.Add(Marker);
 	return Marker;
 }
 
@@ -178,16 +128,9 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const TArray<F
 	const FLinearColor& InColor,
 	ESLVizMaterialType MaterialType)
 {
-	USLVizPrimitiveMarker* Marker = NewObject<USLVizPrimitiveMarker>(this);	
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizPrimitiveMarker>(this);
 	Marker->SetVisual(PrimitiveType, Size, InColor, MaterialType);
 	Marker->AddInstances(Poses);
-	Markers.Add(Marker);
 	return Marker;
 }
 
@@ -196,32 +139,18 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarkerTimeline(const 
 	ESLVizPrimitiveMarkerType PrimitiveType, float Size, const FLinearColor& InColor, ESLVizMaterialType MaterialType,
 	float Duration, bool bLoop, float UpdateRate)
 {
-	USLVizPrimitiveMarker* Marker = NewObject<USLVizPrimitiveMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizPrimitiveMarker>(this);
 	Marker->SetVisual(PrimitiveType, Size, InColor, MaterialType);
 	Marker->AddInstances(Poses, Duration, bLoop, UpdateRate);
-	Markers.Add(Marker);
 	return Marker;
 }
 
 // Create a skeletal mesh based marker at the given pose (use original material)
-USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const FTransform& Pose,
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose,
 	USkeletalMesh* SkelMesh,
-	const TMap<int32, FTransform>& BonePoses,
 	const TArray<int32>& MaterialIndexes)
 {
-	USLVizSkeletalMeshMarker* Marker = NewObject<USLVizSkeletalMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
 	switch (MaterialIndexes.Num())
 	{
 	case(0):
@@ -231,27 +160,17 @@ USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const FTrans
 	default:
 		Marker->SetVisual(SkelMesh, MaterialIndexes); break;
 	}
-
-	Marker->AddInstance(Pose, BonePoses);
-	Markers.Add(Marker);
+	Marker->AddInstance(SkeletalPose);
 	return Marker;
 }
 
 // Create a skeletal mesh based marker at the given pose
-USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const FTransform& Pose,
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose,
 	USkeletalMesh* SkelMesh,
-	const FLinearColor& InColor,
-	ESLVizMaterialType MaterialType,
-	const TMap<int32, FTransform>& BonePoses,
+	const FLinearColor& InColor, ESLVizMaterialType MaterialType,
 	const TArray<int32>& MaterialIndexes)
 {
-	USLVizSkeletalMeshMarker* Marker = NewObject<USLVizSkeletalMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
 	switch (MaterialIndexes.Num())
 	{
 	case(0):
@@ -261,25 +180,16 @@ USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const FTrans
 	default:
 		Marker->SetVisual(SkelMesh, MaterialIndexes, InColor, MaterialType); break;
 	}
-
-	Marker->AddInstance(Pose, BonePoses);
-	Markers.Add(Marker);
+	Marker->AddInstance(SkeletalPose);
 	return Marker;
 }
 
 // Create a skeletal mesh based marker at the given poses (use original material)
-USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray<FTransform>& Poses,
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 	USkeletalMesh* SkelMesh,
-	const TArray<TMap<int32, FTransform>>& BonePosesArray,
 	const TArray<int32>& MaterialIndexes)
 {
-	USLVizSkeletalMeshMarker* Marker = NewObject<USLVizSkeletalMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
 	switch (MaterialIndexes.Num())
 	{
 	case(0):
@@ -289,27 +199,18 @@ USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray
 	default:
 		Marker->SetVisual(SkelMesh, MaterialIndexes); break;
 	}
-
-	Marker->AddInstances(Poses, BonePosesArray);
-	Markers.Add(Marker);
+	Marker->AddInstances(SkeletalPoses);
 	return Marker;
 }
 
 // Create a skeletal mesh based marker at the given pose
-USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray<FTransform>& Poses,
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 	USkeletalMesh* SkelMesh,
 	const FLinearColor& InColor,
 	ESLVizMaterialType MaterialType,
-	const TArray<TMap<int32, FTransform>>& BonePosesArray,
 	const TArray<int32>& MaterialIndexes)
 {
-	USLVizSkeletalMeshMarker* Marker = NewObject<USLVizSkeletalMeshMarker>(this);
-	Marker->RegisterComponent();
-	//Marker->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-	// Removed because they are causing the components to remain in the actors components when changing maps
-	//AddInstanceComponent(Marker); // Makes it appear in the editor
-	//AddOwnedComponent(Marker);
-
+	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
 	switch (MaterialIndexes.Num())
 	{
 	case(0):
@@ -319,9 +220,7 @@ USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray
 	default:
 		Marker->SetVisual(SkelMesh, MaterialIndexes, InColor, MaterialType); break;
 	}
-
-	Marker->AddInstances(Poses, BonePosesArray);
-	Markers.Add(Marker);
+	Marker->AddInstances(SkeletalPoses);
 	return Marker;
 }
 

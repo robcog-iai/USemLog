@@ -81,28 +81,25 @@ public:
 
 	/* Skeletal mesh markers */
 	// Create a skeletal mesh based marker at the given pose (use original material)
-	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const FTransform& Pose, USkeletalMesh* SkelMesh,
-		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>(),
+	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose,
+		USkeletalMesh* SkelMesh,
 		const TArray<int32>& MaterialIndexes = TArray<int32>());
 
 	// Create a skeletal mesh based marker at the given pose
-	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const FTransform& Pose,
+	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose,
 		USkeletalMesh* SkelMesh, 
 		const FLinearColor& InColor, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit,
-		const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>(),
 		const TArray<int32>& MaterialIndexes = TArray<int32>());
 
 	// Create a skeletal mesh based marker at the given poses (use original material)
-	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TArray<FTransform>& Poses,
+	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		USkeletalMesh* SkelMesh,
-		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>(),
 		const TArray<int32>& MaterialIndexes = TArray<int32>());
 
 	// Create a skeletal mesh based marker at the given poses
-	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TArray<FTransform>& Poses,
+	USLVizSkeletalMeshMarker* CreateSkeletalMarker(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		USkeletalMesh* SkelMesh,
 		const FLinearColor& InColor, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit,
-		const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>(),
 		const TArray<int32>& MaterialIndexes = TArray<int32>());
 
 private:

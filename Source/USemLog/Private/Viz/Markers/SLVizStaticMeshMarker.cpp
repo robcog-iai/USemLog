@@ -242,7 +242,6 @@ void USLVizStaticMeshMarker::AddInstancesChecked(const TArray<FTransform>& Poses
 	}
 }
 
-
 // Reset the timeline related members
 void USLVizStaticMeshMarker::ClearTimelineData()
 {
