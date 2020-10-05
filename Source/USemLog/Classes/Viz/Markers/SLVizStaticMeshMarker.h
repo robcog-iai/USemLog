@@ -77,13 +77,4 @@ protected:
 
 	// Timeline poses
 	TArray<FTransform> TimelinePoses;
-
-	// Timeline position in the array
-	int32 TimelineIndex;
-
-	// Flag to loop the timeline
-	bool bLoopTimeline;
-
-	// Duration in which the timeline should be drawed
-	float TimelineDuration;
 };

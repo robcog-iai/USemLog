@@ -24,7 +24,13 @@ void USLVizStaticMeshMarker::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	int32 NumInstancesToDraw = (DeltaTime * TimelinePoses.Num()) / TimelineDuration;
+	TimelineDeltaTime += DeltaTime;
+	int32 NumInstancesToDraw = (TimelineDeltaTime * TimelinePoses.Num()) / TimelineDuration;
+	if (NumInstancesToDraw == 0)
+	{
+		return;
+	}	
+
 	if (TimelineIndex + NumInstancesToDraw < TimelinePoses.Num())
 	{
 		// It is safe to add all instances
@@ -55,6 +61,7 @@ void USLVizStaticMeshMarker::TickComponent(float DeltaTime, ELevelTick TickType,
 			ClearTimelineData();
 		}
 	}
+	TimelineDeltaTime = 0;
 }
 
 // Set the visual properties of the instanced mesh using the mesh original materials

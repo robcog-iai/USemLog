@@ -72,6 +72,18 @@ protected:
 	// Stores the predefined assets used by the markers (materials, meshes)
 	USLVizAssets* VizAssetsContainer;
 
+	// Timeline position in the array
+	int32 TimelineIndex;
+
+	// Flag to loop the timeline
+	bool bLoopTimeline;
+
+	// Duration in which the timeline should be drawed
+	float TimelineDuration;
+
+	// Accumulate delta time in case not enough has passed to draw an instance
+	float TimelineDeltaTime;
+
 	/* Constants */
 	static constexpr auto AssetsContainerPath = TEXT("SLVizAssets'/USemLog/Viz/SL_VizAssetsContainer.SL_VizAssetsContainer'");
 };

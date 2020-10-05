@@ -20,52 +20,17 @@ USLVizSkeletalMeshMarker::USLVizSkeletalMeshMarker()
 void USLVizSkeletalMeshMarker::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	int32 NumInstancesToDraw = (DeltaTime * TimelinePoses.Num()) / TimelineDuration;
-	if (TimelineIndex + NumInstancesToDraw < TimelinePoses.Num())
+	
+	// Update timeline, check if it is the initial iteration or loop
+	if (TimelinePoses.Num() > 0)
 	{
-		// It is safe to add all instances
-		while (NumInstancesToDraw > 0)
-		{
-			if (!PMCInstances.IsValidIndex(TimelineIndex))
-			{
-				AddInstance(TimelinePoses[TimelineIndex]); // Create new instance
-			}
-			else
-			{
-				PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already there, set it to visible
-			}
-			TimelineIndex++;
-			NumInstancesToDraw--;
-		}
+		// Timeline poses are not removed, it is still the initial iteration
+		UpdateInitialTimeline(DeltaTime);
 	}
 	else
 	{
-		// Reached end of the poses array, add remaining values
-		while (TimelinePoses.IsValidIndex(TimelineIndex))
-		{
-			if (!PMCInstances.IsValidIndex(TimelineIndex))
-			{
-				AddInstance(TimelinePoses[TimelineIndex]); // Create new instance
-			}
-			else
-			{
-				PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already there, set it to visible
-			}
-			TimelineIndex++;
-		}
-
-		// Check if the timeline should be repeated or stopped
-		if (bLoopTimeline)
-		{
-			HideInstances(); // Hide all instances
-			TimelinePoses.Empty(); // Cached poses can be cleared since we are re-iterating the existing instances
-			TimelineIndex = 0;
-		}
-		else
-		{
-			ClearTimelineData();
-		}
+		// Timeline instances are already created, iterate and change visibilities
+		UpdateLoopTimeline(DeltaTime);
 	}
 }
 
@@ -100,95 +65,26 @@ void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, const FLinearC
 	}
 }
 
-// Set the visual properties of the skeletal mesh, visualize only selected material index (use original materials)
-void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex)
-{
-	// Create the poseable mesh reference and the dynamic material
-	SetPoseableMeshComponentVisual(SkelMesh);
-
-	// Hide unwanted material slots
-	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
-	{
-		if (MatIdx != MaterialIndex)
-		{
-			PMCRef->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible);
-		}
-	}
-}
-
-// Set the visual properties of the skeletal mesh, visualize only selected material index
-void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex,
-	const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
-{
-	// Create the poseable mesh reference and the dynamic material
-	SetPoseableMeshComponentVisual(SkelMesh);
-
-	// Set the dynamic material
-	SetDynamicMaterial(InMaterialType);
-	SetDynamicMaterialColor(InColor);
-
-	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
-	{
-		MatIdx != MaterialIndex ? PMCRef->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible)
-			: PMCRef->SetMaterial(MatIdx, DynamicMaterial);
-	}
-}
-// Visualize only selected material indexes (use original materials)
-void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes)
-{
-	// Create the poseable mesh reference and the dynamic material
-	SetPoseableMeshComponentVisual(SkelMesh);
-
-	// Hide unwanted material slots
-	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
-	{
-		if (!MaterialIndexes.Contains(MatIdx))
-		{
-			PMCRef->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible);
-		}
-	}
-}
-
-// Visualize only selected material indexes
-void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes,
-	const FLinearColor& InColor, ESLVizMaterialType InMaterialType)
-{
-	// Create the poseable mesh reference and the dynamic material
-	SetPoseableMeshComponentVisual(SkelMesh);
-
-	// Set the dynamic material
-	SetDynamicMaterial(InMaterialType);
-	SetDynamicMaterialColor(InColor);
-
-	// Apply dynamic material value
-	for (int32 MatIdx = 0; MatIdx < PMCRef->GetNumMaterials(); ++MatIdx)
-	{
-		 !MaterialIndexes.Contains(MatIdx) ? PMCRef->SetMaterial(MatIdx, VizAssetsContainer->MaterialInvisible)
-			: PMCRef->SetMaterial(MatIdx, DynamicMaterial);
-	}
-}
-
-// Add instances at pose
-void USLVizSkeletalMeshMarker::AddInstance(const FTransform& Pose, const TMap<int32, FTransform>& BonePoses)
-{
-	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
-		return;
-	}
-
-	UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
-	PMC->SetWorldTransform(Pose);
-
-	for (const auto& BonePosePair : BonePoses)
-	{	
-		const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
-		PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
-	}
-
-	PMCInstances.Add(PMC);
-}
+//// Add instances at pose
+//void USLVizSkeletalMeshMarker::AddInstance(const FTransform& Pose, const TMap<int32, FTransform>& BonePoses)
+//{
+//	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+//		return;
+//	}
+//
+//	UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
+//	PMC->SetWorldTransform(Pose);
+//
+//	for (const auto& BonePosePair : BonePoses)
+//	{	
+//		const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
+//		PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+//	}
+//
+//	PMCInstances.Add(PMC);
+//}
 
 // Add instance with bones
 void USLVizSkeletalMeshMarker::AddInstance(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose)
@@ -211,37 +107,37 @@ void USLVizSkeletalMeshMarker::AddInstance(const TPair<FTransform, TMap<int32, F
 	PMCInstances.Add(PMC);
 }
 
-// Add instances with the poses
-void USLVizSkeletalMeshMarker::AddInstances(const TArray<FTransform>& Poses, const TArray<TMap<int32, FTransform>>& BonePosesArray)
-{
-	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
-		return;
-	}
-
-	// Make sure the size of the two arrays are the same
-	const bool bIncludeBones = Poses.Num() == BonePosesArray.Num();
-	
-	int32 PoseIdx = 0;
-	for (const auto& P : Poses)
-	{
-		UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
-		PMC->SetWorldTransform(P);
-
-		if (bIncludeBones)
-		{
-			for (const auto& BonePosePair : BonePosesArray[PoseIdx])
-			{
-				const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
-				PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
-			}
-			PoseIdx++;
-		}
-
-		PMCInstances.Add(PMC);
-	}
-}
+//// Add instances with the poses
+//void USLVizSkeletalMeshMarker::AddInstances(const TArray<FTransform>& Poses, const TArray<TMap<int32, FTransform>>& BonePosesArray)
+//{
+//	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Visual is not set.."), *FString(__FUNCTION__), __LINE__);
+//		return;
+//	}
+//
+//	// Make sure the size of the two arrays are the same
+//	const bool bIncludeBones = Poses.Num() == BonePosesArray.Num();
+//	
+//	int32 PoseIdx = 0;
+//	for (const auto& P : Poses)
+//	{
+//		UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
+//		PMC->SetWorldTransform(P);
+//
+//		if (bIncludeBones)
+//		{
+//			for (const auto& BonePosePair : BonePosesArray[PoseIdx])
+//			{
+//				const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
+//				PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+//			}
+//			PoseIdx++;
+//		}
+//
+//		PMCInstances.Add(PMC);
+//	}
+//}
 
 // Add instances with bone poses
 void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses)
@@ -354,6 +250,98 @@ void USLVizSkeletalMeshMarker::ResetPoses()
 	PMCInstances.Empty();
 }
 
+// Update intial timeline iteration (create the instances)
+void USLVizSkeletalMeshMarker::UpdateInitialTimeline(float DeltaTime)
+{
+	TimelineDeltaTime += DeltaTime;
+	const int32 NumTotalIstances = TimelinePoses.Num();
+	int32 NumInstancesToDraw = (TimelineDeltaTime * NumTotalIstances) / TimelineDuration;
+	if (NumInstancesToDraw == 0)
+	{
+		return;
+	}
+
+	if (TimelineIndex + NumInstancesToDraw < NumTotalIstances)
+	{
+		// It is safe to add all instances
+		while (NumInstancesToDraw > 0)
+		{
+			AddInstance(TimelinePoses[TimelineIndex]);
+			TimelineIndex++;
+			NumInstancesToDraw--;
+		}
+	}
+	else
+	{
+		// Decrease the num of instances to draw to avoid overflow
+		NumInstancesToDraw = NumTotalIstances - TimelineIndex;
+		while (NumInstancesToDraw > 0)
+		{
+			AddInstance(TimelinePoses[TimelineIndex]);
+			TimelineIndex++;
+			NumInstancesToDraw--;
+		}
+
+		// Check if the timeline should be repeated or stopped
+		if (bLoopTimeline)
+		{
+			HideInstances();
+			TimelinePoses.Empty();
+			TimelineIndex = 0;
+		}
+		else
+		{
+			ClearAndStopTimeline();
+		}
+	}
+	TimelineDeltaTime = 0;
+}
+
+// Update loop timeline (set instaces visibility)
+void USLVizSkeletalMeshMarker::UpdateLoopTimeline(float DeltaTime)
+{
+	TimelineDeltaTime += DeltaTime;
+	const int32 NumTotalIstances = PMCInstances.Num();
+	int32 NumInstancesToDraw = (DeltaTime * NumTotalIstances) / TimelineDuration;
+	if (NumInstancesToDraw == 0)
+	{
+		return;
+	}
+
+	if (TimelineIndex + NumInstancesToDraw < NumTotalIstances)
+	{
+		while (NumInstancesToDraw > 0)
+		{
+			PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already created, set it to visible
+			TimelineIndex++;
+			NumInstancesToDraw--;
+		}
+	}
+	else
+	{
+		// Decrease the num of instances to draw to avoid overflow
+		NumInstancesToDraw = NumTotalIstances - TimelineIndex;
+		while (NumInstancesToDraw > 0)
+		{
+			PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already created, set it to visible
+			TimelineIndex++;
+			NumInstancesToDraw--;
+		}
+
+		// Check if the timeline should be repeated or stopped
+		if (bLoopTimeline)
+		{
+			HideInstances();
+			TimelineIndex = 0;
+		}
+		else
+		{
+			ClearAndStopTimeline();
+		}
+	}
+	TimelineDeltaTime = 0;
+}
+
 // Set instances visibility to false
 void USLVizSkeletalMeshMarker::HideInstances()
 {
@@ -364,7 +352,7 @@ void USLVizSkeletalMeshMarker::HideInstances()
 }
 
 // Clear the timeline and the related members
-void USLVizSkeletalMeshMarker::ClearTimelineData()
+void USLVizSkeletalMeshMarker::ClearAndStopTimeline()
 {
 	if (IsComponentTickEnabled())
 	{
@@ -400,10 +388,10 @@ void USLVizSkeletalMeshMarker::SetPoseableMeshComponentVisual(USkeletalMesh* Ske
 // Create poseable mesh component instance attached and registered to this marker
 UPoseableMeshComponent* USLVizSkeletalMeshMarker::CreateNewPoseableMeshInstance()
 {
-	// TODO double check that this works
 	UPoseableMeshComponent* NewPMC = DuplicateObject<UPoseableMeshComponent>(PMCRef, this);
-	//NewPMC->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
 	NewPMC->SetVisibility(true);
+	//NewPMC->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);
+	NewPMC->RegisterComponent();
 	return NewPMC;
 }
 /* End VizMarker interface */

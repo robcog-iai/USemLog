@@ -30,31 +30,16 @@ public:
 	void SetVisual(USkeletalMesh* SkelMesh);
 
 	// Set the visual properties of the skeletal mesh
-	void SetVisual(USkeletalMesh* SkelMesh,	const FLinearColor& InColor,
-		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
+	void SetVisual(USkeletalMesh* SkelMesh,	const FLinearColor& InColor, ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
 
-	// Set the visual properties of the skeletal mesh, visualize only selected material index (use original materials)
-	void SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex);
-
-	// Set the visual properties of the skeletal mesh, visualize only selected material index
-	void SetVisual(USkeletalMesh* SkelMesh, int32 MaterialIndex, const FLinearColor& InColor,
-		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
-
-	// Visualize only selected material indexes (use original materials)
-	void SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes);
-
-	// Visualize only selected material indexes
-	void SetVisual(USkeletalMesh* SkelMesh, const TArray<int32>& MaterialIndexes, const FLinearColor& InColor,
-		ESLVizMaterialType InMaterialType = ESLVizMaterialType::Unlit);
-
-	// Add instances at pose with bones as optional parameter
-	void AddInstance(const FTransform& Pose, const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>());
+	//// Add instances at pose with bones as optional parameter
+	//void AddInstance(const FTransform& Pose, const TMap<int32, FTransform>& BonePoses = TMap<int32, FTransform>());
 
 	// Add instance with bone poses
 	void AddInstance(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose);
 
-	// Add instances with the poses with bones as optinal parameters
-	void AddInstances(const TArray<FTransform>& Poses, const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>());
+	//// Add instances with the poses with bones as optional parameters
+	//void AddInstances(const TArray<FTransform>& Poses, const TArray<TMap<int32, FTransform>>& BonePosesArray = TArray<TMap<int32, FTransform>>());
 
 	// Add instances with bone poses
 	void AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses);
@@ -79,13 +64,18 @@ protected:
 	virtual void ResetPoses() override;
 	/* End VizMarker interface */
 
+	// Update intial timeline iteration (create the instances)
+	void UpdateInitialTimeline(float DeltaTime);
+
+	// Update loop timeline (set instaces visibility)
+	void UpdateLoopTimeline(float DeltaTime);
+
 	// Set instances visibility to false
 	void HideInstances();
 
 	// Clear the timeline and the related members
-	void ClearTimelineData();
+	void ClearAndStopTimeline();
 
-private:
 	// Set visual without the materials (avoid boilerplate code)
 	void SetPoseableMeshComponentVisual(USkeletalMesh* SkelMesh);
 
@@ -94,22 +84,13 @@ private:
 
 protected:
 	// Poseable mesh reference
-	UPROPERTY(VisibleAnywhere)
+	//UPROPERTY(VisibleAnywhere)
 	UPoseableMeshComponent* PMCRef;
 
 	// Skeletal instances
-	UPROPERTY(VisibleAnywhere)
+	//UPROPERTY(VisibleAnywhere)
 	TArray<UPoseableMeshComponent*> PMCInstances;
 
 	// Timeline poses
 	TArray<TPair<FTransform, TMap<int32, FTransform>>> TimelinePoses;
-
-	// Timeline position in the array
-	int32 TimelineIndex;
-
-	// Flag to loop the timeline
-	bool bLoopTimeline;
-
-	// Duration in which the timeline should be drawed
-	float TimelineDuration;
 };

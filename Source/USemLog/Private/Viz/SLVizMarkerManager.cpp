@@ -60,11 +60,21 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const FTrans
 }
 
 // Create a static mesh visual marker at the given pose
-USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const FTransform& Pose, UStaticMesh* SM, const FLinearColor& InColor, ESLVizMaterialType MaterialType)
+USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const FTransform& Pose, UStaticMesh* SM,
+	const FLinearColor& InColor, ESLVizMaterialType MaterialType)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
 	Marker->SetVisual(SM, InColor, MaterialType);
 	Marker->AddInstance(Pose);
+	return Marker;
+}
+
+// Create a static mesh visual marker at the given poses (use original material)
+USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const TArray<FTransform>& Poses, UStaticMesh* SM)
+{
+	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
+	Marker->SetVisual(SM);
+	Marker->AddInstances(Poses);
 	return Marker;
 }
 
@@ -74,15 +84,6 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const TArray
 {
 	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
 	Marker->SetVisual(SM, InColor, MaterialType);
-	Marker->AddInstances(Poses);
-	return Marker;
-}
-
-// Create a static mesh visual marker at the given poses (use original material)
-USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const TArray<FTransform>& Poses, UStaticMesh* SM)
-{
-	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
-	Marker->SetVisual(SM);
 	Marker->AddInstances(Poses);
 	return Marker;
 }
@@ -123,10 +124,8 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const FTransfo
 
 // Create a primitive marker with multiple instances
 USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const TArray<FTransform>& Poses,
-	ESLVizPrimitiveMarkerType PrimitiveType,
-	float Size,
-	const FLinearColor& InColor,
-	ESLVizMaterialType MaterialType)
+	ESLVizPrimitiveMarkerType PrimitiveType, float Size,
+	const FLinearColor& InColor, ESLVizMaterialType MaterialType)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizPrimitiveMarker>(this);
 	Marker->SetVisual(PrimitiveType, Size, InColor, MaterialType);
@@ -136,7 +135,8 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const TArray<F
 
 // Create a primitive marker timeline at the given poses
 USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarkerTimeline(const TArray<FTransform>& Poses, 
-	ESLVizPrimitiveMarkerType PrimitiveType, float Size, const FLinearColor& InColor, ESLVizMaterialType MaterialType,
+	ESLVizPrimitiveMarkerType PrimitiveType, float Size, 
+	const FLinearColor& InColor, ESLVizMaterialType MaterialType,
 	float Duration, bool bLoop, float UpdateRate)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizPrimitiveMarker>(this);
@@ -147,80 +147,99 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarkerTimeline(const 
 
 // Create a skeletal mesh based marker at the given pose (use original material)
 USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose,
-	USkeletalMesh* SkelMesh,
-	const TArray<int32>& MaterialIndexes)
+	USkeletalMesh* SkelMesh)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
-	switch (MaterialIndexes.Num())
-	{
-	case(0):
-		Marker->SetVisual(SkelMesh); break;
-	case(1):
-		Marker->SetVisual(SkelMesh, MaterialIndexes[0]); break;
-	default:
-		Marker->SetVisual(SkelMesh, MaterialIndexes); break;
-	}
+	Marker->SetVisual(SkelMesh);
 	Marker->AddInstance(SkeletalPose);
 	return Marker;
 }
 
 // Create a skeletal mesh based marker at the given pose
 USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TPair<FTransform, TMap<int32, FTransform>>& SkeletalPose,
-	USkeletalMesh* SkelMesh,
-	const FLinearColor& InColor, ESLVizMaterialType MaterialType,
-	const TArray<int32>& MaterialIndexes)
+	USkeletalMesh* SkelMesh, const FLinearColor& InColor, ESLVizMaterialType MaterialType)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
-	switch (MaterialIndexes.Num())
-	{
-	case(0):
-		Marker->SetVisual(SkelMesh, InColor, MaterialType); break;
-	case(1):
-		Marker->SetVisual(SkelMesh, MaterialIndexes[0], InColor, MaterialType); break;
-	default:
-		Marker->SetVisual(SkelMesh, MaterialIndexes, InColor, MaterialType); break;
-	}
+	Marker->SetVisual(SkelMesh, InColor, MaterialType);
 	Marker->AddInstance(SkeletalPose);
 	return Marker;
 }
 
 // Create a skeletal mesh based marker at the given poses (use original material)
 USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-	USkeletalMesh* SkelMesh,
-	const TArray<int32>& MaterialIndexes)
+	USkeletalMesh* SkelMesh)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
-	switch (MaterialIndexes.Num())
-	{
-	case(0):
-		Marker->SetVisual(SkelMesh); break;
-	case(1):
-		Marker->SetVisual(SkelMesh, MaterialIndexes[0]); break;
-	default:
-		Marker->SetVisual(SkelMesh, MaterialIndexes); break;
-	}
+	Marker->SetVisual(SkelMesh);
 	Marker->AddInstances(SkeletalPoses);
 	return Marker;
 }
 
 // Create a skeletal mesh based marker at the given pose
 USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-	USkeletalMesh* SkelMesh,
-	const FLinearColor& InColor,
-	ESLVizMaterialType MaterialType,
-	const TArray<int32>& MaterialIndexes)
+	USkeletalMesh* SkelMesh, const FLinearColor& InColor,ESLVizMaterialType MaterialType)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
-	switch (MaterialIndexes.Num())
-	{
-	case(0):
-		Marker->SetVisual(SkelMesh, InColor, MaterialType); break;
-	case(1):
-		Marker->SetVisual(SkelMesh, MaterialIndexes[0], InColor, MaterialType); break;
-	default:
-		Marker->SetVisual(SkelMesh, MaterialIndexes, InColor, MaterialType); break;
-	}
+
+	Marker->SetVisual(SkelMesh, InColor, MaterialType);
 	Marker->AddInstances(SkeletalPoses);
 	return Marker;
+}
+
+// Create a skeletal mesh based timeline marker at the given poses (use original material)
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarkerTimeline(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses, USkeletalMesh* SkelMesh, float Duration, bool bLoop, float UpdateRate)
+{
+	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
+	Marker->SetVisual(SkelMesh);
+	Marker->AddInstances(SkeletalPoses, Duration, bLoop, UpdateRate);
+	return Marker;
+}
+
+// Create a skeletal mesh based timeline marker at the given poses
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarkerTimeline(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
+	USkeletalMesh* SkelMesh,
+	const FLinearColor& InColor, ESLVizMaterialType MaterialType,
+	float Duration, bool bLoop, float UpdateRate)
+{
+	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
+	Marker->SetVisual(SkelMesh, InColor, MaterialType);
+	Marker->AddInstances(SkeletalPoses, Duration, bLoop, UpdateRate);
+	return Marker;
+}
+
+// Create a skeletal bone visual marker at the given pose (use original material)
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalBoneMarker(const FTransform& Pose, USkeletalMesh* SkelMesh, int32 MaterialIndex)
+{
+	// TODO
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
+
+	auto Marker = CreateAndAddNewMarker<USLVizSkeletalBoneMeshMarker>(this);
+	Marker->SetVisual(SkelMesh, MaterialIndex);
+	//Marker->AddInstance(Pose);
+	return Marker;
+}
+
+// Create a skeletal bone visual marker at the given pose
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalBoneMarker(const FTransform& Pose, USkeletalMesh* SkelMesh, int32 MaterialIndex,
+	const FLinearColor& InColor, ESLVizMaterialType MaterialType)
+{
+	auto Marker = CreateAndAddNewMarker<USLVizSkeletalBoneMeshMarker>(this);
+	Marker->SetVisual(SkelMesh, MaterialIndex, InColor, MaterialType);
+	//Marker->AddInstance(Pose);
+	return Marker;
+}
+
+// Create a skeletal bone visual marker at the given poses (use original material)
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalBoneMarker(const TArray<FTransform>& Poses, USkeletalMesh* SkelMesh, int32 MaterialIndex)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
+	return nullptr;
+}
+
+// Create a skeletal bone visual marker at the given poses
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalBoneMarker(const TArray<FTransform>& Poses, USkeletalMesh* SkelMesh, int32 MaterialIndex, const FLinearColor& InColor, ESLVizMaterialType MaterialType)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
+	return nullptr;
 }
 
