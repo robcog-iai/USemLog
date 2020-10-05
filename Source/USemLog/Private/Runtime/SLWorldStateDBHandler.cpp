@@ -124,8 +124,8 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividuals(bson_t* doc)
 	{
 		Individual->UpdateCachedPose(0.0);
 
-		// TODO workaround
-		Individual->SetHasMovedFlag(true);
+		//// TODO workaround
+		//Individual->SetHasMovedFlag(true);
 
 		bson_t individual_obj;
 		char idx_str[16];
@@ -159,8 +159,8 @@ int32 FSLWorldStateDBWriterAsyncTask::AddIndividualsThatMoved(bson_t* doc)
 	{
 		if (Individual->UpdateCachedPose(MinPoseDiff))
 		{
-			// TODO workaround
-			Individual->SetHasMovedFlag(true);
+			//// TODO workaround
+			//Individual->SetHasMovedFlag(true);
 
 			bson_t individual_obj;
 			char idx_str[16];
@@ -192,10 +192,10 @@ int32 FSLWorldStateDBWriterAsyncTask::AddSkeletalIndividals(bson_t* doc)
 	BSON_APPEND_ARRAY_BEGIN(doc, "skel_individuals", &arr_obj);
 	for (const auto& SkelIndividual : IndividualManager->GetSkeletalIndividuals())
 	{
-		// Check if it was marked as "moved" by the previous iterator function
-		if (SkelIndividual->HasMovedFlagSet())
-		{
-			SkelIndividual->SetHasMovedFlag(false);
+		//// Check if it was marked as "moved" by the previous iterator function
+		//if (SkelIndividual->HasMovedFlagSet())
+		//{
+		//	SkelIndividual->SetHasMovedFlag(false);
 
 			bson_t individual_obj;
 			char idx_str[16];
@@ -216,7 +216,7 @@ int32 FSLWorldStateDBWriterAsyncTask::AddSkeletalIndividals(bson_t* doc)
 
 			arr_idx++;
 			Num++;
-		}
+		//}
 	}
 	bson_append_array_end(doc, &arr_obj);
 	return Num;
@@ -277,13 +277,13 @@ int32 FSLWorldStateDBWriterAsyncTask::AddRobotIndividuals(bson_t* doc)
 	bson_t arr_obj;
 	uint32_t arr_idx = 0;
 
-	BSON_APPEND_ARRAY_BEGIN(doc, "robot_individuals", &arr_obj);
+	BSON_APPEND_ARRAY_BEGIN(doc, "robo_individuals", &arr_obj);
 	for (const auto& RoboIndividual : IndividualManager->GetRobotIndividuals())
 	{
-		// Check if it was marked as "moved" by the previous iterator function
-		if (RoboIndividual->HasMovedFlagSet())
-		{
-			RoboIndividual->SetHasMovedFlag(false);
+		//// Check if it was marked as "moved" by the previous iterator function
+		//if (RoboIndividual->HasMovedFlagSet())
+		//{
+		//	RoboIndividual->SetHasMovedFlag(false);
 
 			bson_t individual_obj;
 			char idx_str[16];
@@ -304,7 +304,7 @@ int32 FSLWorldStateDBWriterAsyncTask::AddRobotIndividuals(bson_t* doc)
 
 			arr_idx++;
 			Num++;
-		}
+		//}
 	}
 	bson_append_array_end(doc, &arr_obj);
 	return Num;
