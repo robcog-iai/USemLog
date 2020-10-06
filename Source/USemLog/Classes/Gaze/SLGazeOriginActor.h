@@ -4,14 +4,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Info.h"
+#include "GameFramework/Actor.h"
 #include "SLGazeOriginActor.generated.h"
 
 /**
  * 
  */
 UCLASS(ClassGroup = (SL), DisplayName = "SL Gaze Origin Actor")
-class USEMLOG_API ASLGazeOriginActor : public AInfo
+class USEMLOG_API ASLGazeOriginActor : public AActor
 {
 	GENERATED_BODY()
 	
@@ -21,19 +21,4 @@ class USEMLOG_API ASLGazeOriginActor : public AInfo
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-//protected:
-//	// Update its location according to the camera location
-//	void Update();
-//
-//protected:
-//	// Update rate to query gaze data
-//	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-//	float UpdateRate;
-//
-//	// Used for getting the gaze origin point
-//	class APlayerCameraManager* CameraManager;
 };

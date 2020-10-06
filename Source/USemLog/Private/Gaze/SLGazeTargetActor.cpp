@@ -18,7 +18,7 @@ ASLGazeTargetActor::ASLGazeTargetActor()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
-	VisualComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM_VisualComponent"));
+	VisualComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM_GazeVisualDebug"));
 	VisualComponent->SetMobility(EComponentMobility::Movable);
 	RootComponent = VisualComponent;
 
