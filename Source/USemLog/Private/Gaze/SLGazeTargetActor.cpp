@@ -78,7 +78,10 @@ void ASLGazeTargetActor::Init()
 			GazeProxy = *Iter;
 			if (GazeProxy->Start())
 			{
-				SetActorTickInterval(UpdateRate);
+				if (UpdateRate > 0)
+				{
+					SetActorTickInterval(UpdateRate);
+				}
 				SetActorTickEnabled(true);
 				bIsInit = true;
 				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s' gaze proxy (%s) found and started.."),
