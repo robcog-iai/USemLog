@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
 #include "Runtime/SLWorldStateLogger.h"
+#include "Runtime/SLSymbolicLogger.h"
 #include "Runtime/SLLoggerStructs.h"
 #include "SLLoggerManager.generated.h"
 

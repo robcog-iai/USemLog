@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Runtime/SLWorldStateLogger.h"
+#include "Runtime/SLSymbolicLogger.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Utils/SLUuid.h"
 #include "EngineUtils.h"
@@ -12,11 +12,10 @@
 #endif // WITH_EDITOR
 
 // Sets default values
-ASLWorldStateLogger::ASLWorldStateLogger()
+ASLSymbolicLogger::ASLSymbolicLogger()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bStartWithTickEnabled = false;
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = false;
 
 	// Default values
 	bIsInit = false;
@@ -28,13 +27,13 @@ ASLWorldStateLogger::ASLWorldStateLogger()
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.35;
-	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLWorldStateLogger"));
+	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLSymbolicLogger"));
 	GetSpriteComponent()->Sprite = SpriteTexture.Get();
 #endif // WITH_EDITORONLY_DATA
 }
 
 // Force call on finish
-ASLWorldStateLogger::~ASLWorldStateLogger()
+ASLSymbolicLogger::~ASLSymbolicLogger()
 {
 	if (!IsTemplate() && !bIsFinished && (bIsStarted || bIsInit))
 	{
@@ -43,7 +42,7 @@ ASLWorldStateLogger::~ASLWorldStateLogger()
 }
 
 // Allow actors to initialize themselves on the C++ side
-void ASLWorldStateLogger::PostInitializeComponents()
+void ASLSymbolicLogger::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	if (bUseIndependently)
@@ -53,7 +52,7 @@ void ASLWorldStateLogger::PostInitializeComponents()
 }
 
 // Called when the game starts or when spawned
-void ASLWorldStateLogger::BeginPlay()
+void ASLSymbolicLogger::BeginPlay()
 {
 	Super::BeginPlay();
 	if (bUseIndependently)
@@ -87,15 +86,8 @@ void ASLWorldStateLogger::BeginPlay()
 	}
 }
 
-// Called every frame
-void ASLWorldStateLogger::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	Update();
-}
-
 // Called when actor removed from game or game ended
-void ASLWorldStateLogger::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void ASLSymbolicLogger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	if (bUseIndependently && !bIsFinished)
@@ -105,29 +97,27 @@ void ASLWorldStateLogger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Init logger (called when the logger is synced externally)
-void ASLWorldStateLogger::Init(const FSLWorldStateLoggerParams& InLoggerParameters,
-	const FSLLoggerLocationParams& InLocationParameters,
-	const FSLLoggerDBServerParams& InDBServerParameters)
+void ASLSymbolicLogger::Init(const FSLSymbolicLoggerParams& InLoggerParameters,
+	const FSLLoggerLocationParams& InLocationParameters)
 {
 	if (bUseIndependently)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is set to work independetly, external calls will have no effect.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) is set to work independetly, external calls will have no effect.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	LoggerParameters = InLoggerParameters;
 	LocationParameters = InLocationParameters;
-	DBServerParameters = InDBServerParameters;
 	InitImpl();
 }
 
 // Start logger (called when the logger is synced externally)
-void ASLWorldStateLogger::Start()
+void ASLSymbolicLogger::Start()
 {
 	if (bUseIndependently)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is set to work independetly, external calls will have no effect.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) is set to work independetly, external calls will have no effect.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -135,11 +125,11 @@ void ASLWorldStateLogger::Start()
 }
 
 // Finish logger (called when the logger is synced externally) (bForced is true if called from destructor)
-void ASLWorldStateLogger::Finish(bool bForced)
+void ASLSymbolicLogger::Finish(bool bForced)
 {
 	if (bUseIndependently)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is set to work independetly, external calls will have no effect.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) is set to work independetly, external calls will have no effect.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -147,11 +137,11 @@ void ASLWorldStateLogger::Finish(bool bForced)
 }
 
 // Init logger (called when the logger is used independently)
-void ASLWorldStateLogger::InitImpl()
+void ASLSymbolicLogger::InitImpl()
 {
 	if (bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is already initialized.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) is already initialized.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
@@ -178,131 +168,89 @@ void ASLWorldStateLogger::InitImpl()
 		return;
 	}
 
-	if (!DBHandler.IsValid())
-	{
-		DBHandler = MakeShareable<FSLWorldStateDBHandler>(new FSLWorldStateDBHandler());
-	}
-
-	if (!DBHandler->Init(IndividualManager, LoggerParameters, LocationParameters, DBServerParameters))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d World state logger (%s) could not init the db handler.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
-		return;
-	}
-
 	bIsInit = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully initialized at %.2f.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) succesfully initialized at %.2f.."),
 		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
 }
 
 // Start logger (called when the logger is used independently)
-void ASLWorldStateLogger::StartImpl()
+void ASLSymbolicLogger::StartImpl()
 {
 	if (bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is already started.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) is already started.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is not initialized, cannot start.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) is not initialized, cannot start.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
-	if (StartParameters.bResetStartTime)
-	{
-		GetWorld()->TimeSeconds = 0.f;
-	}
-
-	// Run first update
-	FirstUpdate();
-
-	// Set update rate
-	if (LoggerParameters.UpdateRate > 0.f)
-	{
-		SetActorTickInterval(LoggerParameters.UpdateRate);
-	}
-
-	// Delay tick activation with one update rate value
-	FTimerHandle DelayTH;
-	const float TickDelayValue = LoggerParameters.UpdateRate > 0.f ? LoggerParameters.UpdateRate : 0.08f;
-	GetWorld()->GetTimerManager().SetTimer(DelayTH, [this]() { SetActorTickEnabled(true); }, TickDelayValue, false);
-
-	/** !! Replaced with delay timer ^^ since it was trigerring in the same tick. !! **/
-	/*FTimerDelegate TimerDelegateNextTick;
-	TimerDelegateNextTick.BindLambda([this]{SetActorTickEnabled(true);});
-	GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);*/
-
 	bIsStarted = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully started at %.2f.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) succesfully started at %.2f.."),
 		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
 }
 
 // Finish logger (called when the logger is used independently) (bForced is true if called from destructor)
-void ASLWorldStateLogger::FinishImpl(bool bForced)
+void ASLSymbolicLogger::FinishImpl(bool bForced)
 {
 	if (bIsFinished)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is already finished.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) is already finished.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	if (!bIsInit && !bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) is not initialized nor started, cannot finish.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) is not initialized nor started, cannot finish.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
-	// Index and disconnect from database
-	DBHandler->Finish();
-	DBHandler.Reset();
-
-	//  Disable tick
-	SetActorTickEnabled(false);
 
 	bIsStarted = false;
 	bIsInit = false;
 	bIsFinished = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully finished at %.2f.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) succesfully finished at %.2f.."),
 		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
 }
 
 // Bind user inputs
-void ASLWorldStateLogger::SetupInputBindings()
+void ASLSymbolicLogger::SetupInputBindings()
 {
 	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{
 		if (UInputComponent* IC = PC->InputComponent)
 		{
-			IC->BindAction(StartParameters.UserInputActionName, IE_Pressed, this, &ASLWorldStateLogger::UserInputToggleCallback);
+			IC->BindAction(StartParameters.UserInputActionName, IE_Pressed, this, &ASLSymbolicLogger::UserInputToggleCallback);
 		}
 	}
 }
 
 // Start input binding
-void ASLWorldStateLogger::UserInputToggleCallback()
+void ASLSymbolicLogger::UserInputToggleCallback()
 {
 	if (bIsInit && !bIsStarted)
 	{
-		ASLWorldStateLogger::StartImpl();
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("[%.2f] World state logger (%s) started.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		ASLSymbolicLogger::StartImpl();
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("[%.2f] Symbolic logger (%s) started.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
 	else if (bIsStarted && !bIsFinished)
 	{
-		ASLWorldStateLogger::FinishImpl();
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("[%.2f] World state logger (%s) finished.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		ASLSymbolicLogger::FinishImpl();
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("[%.2f] Symbolic logger (%s) finished.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] World state logger (%s) logger finished, or not initalized.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] Symbolic logger (%s) logger finished, or not initalized.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
 }
 
 // Get the reference or spawn a new individual manager
-bool ASLWorldStateLogger::SetIndividualManager()
+bool ASLSymbolicLogger::SetIndividualManager()
 {
 	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
 	{
@@ -325,16 +273,4 @@ bool ASLWorldStateLogger::SetIndividualManager()
 	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
 #endif // WITH_EDITOR
 	return true;
-}
-
-// First update call (log all individuals)
-void ASLWorldStateLogger::FirstUpdate()
-{
-	DBHandler->FirstWrite(GetWorld()->GetTimeSeconds());	
-}
-
-// Log individuals which changed state
-void ASLWorldStateLogger::Update()
-{
-	DBHandler->Write(GetWorld()->GetTimeSeconds());
 }

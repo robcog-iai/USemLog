@@ -103,3 +103,35 @@ struct FSLWorldStateLoggerParams
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bIncludeMetadata"))
 	bool bOverwriteMetadata = false;
 };
+
+
+/* Holds the types of events to be logged by the symbolic logger */
+USTRUCT()
+struct FSLSymbolicLoggerParams
+{
+	GENERATED_BODY();
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bWriteTimelines = true;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bPublishToROS = false;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bCustomEvents = false;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	bool bContact = true;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	bool bSupportedBy = true;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	bool bGrasp = true;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	bool bPickAndPlace = true;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	bool bSlicing = true;
+};

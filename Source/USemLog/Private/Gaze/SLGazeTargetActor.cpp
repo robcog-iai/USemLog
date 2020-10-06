@@ -17,9 +17,14 @@ ASLGazeTargetActor::ASLGazeTargetActor()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+		
+	//DisableComponentsSimulatePhysics();
+	//SetActorEnableCollision(ECollisionEnabled::NoCollision);
 
 	VisualComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM_GazeVisualDebug"));
 	VisualComponent->SetMobility(EComponentMobility::Movable);
+	VisualComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	RootComponent = VisualComponent;
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereVisualAsset(TEXT("/USemLog/Gaze/SM_GazeVisual.SM_GazeVisual"));
