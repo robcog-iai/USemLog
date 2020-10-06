@@ -9,6 +9,8 @@
 #include "Individuals/SLIndividualUtils.h"
 #include "Skeletal/SLSkeletalDataAsset.h"
 
+const FString USLIndividualComponent::SkelDataAssetKey = TEXT("SkeletalDataAsset");
+
 // Sets default values for this component's properties
 USLIndividualComponent::USLIndividualComponent()
 {

@@ -616,7 +616,7 @@ void USLVizMarker::LoadAssets()
 // Load assets container
 bool USLVizMarker::LoadAssetsContainer()
 {
-	static ConstructorHelpers::FObjectFinder<USLVizAssets>VizAssetsContainerAsset(AssetsContainerPath);
+	static ConstructorHelpers::FObjectFinder<USLVizAssets>VizAssetsContainerAsset(*AssetsContainerPath);
 	if (VizAssetsContainerAsset.Succeeded())
 	{
 		VizAssetsContainer = VizAssetsContainerAsset.Object;
@@ -671,7 +671,7 @@ bool USLVizMarker::LoadAssetsContainer()
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find the assets container at Path=%s.."),
-			*FString(__FUNCTION__), __LINE__, AssetsContainerPath);
+			*FString(__FUNCTION__), __LINE__, *AssetsContainerPath);
 		return false;
 	}
 }
