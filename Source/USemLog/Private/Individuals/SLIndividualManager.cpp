@@ -406,7 +406,6 @@ void ASLIndividualManager::AddToCache(USLIndividualComponent* IC)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not init.."), *FString(__FUNCTION__), __LINE__, *Child->GetFullName());
 		}
-
 		Individuals.Add(Child);
 
 		/* World state logger */

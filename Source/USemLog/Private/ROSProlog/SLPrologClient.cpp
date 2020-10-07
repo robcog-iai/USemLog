@@ -6,12 +6,14 @@
 #include "Ids.h"
 
 // Constructor
-USLPrologClient::USLPrologClient() {
+USLPrologClient::USLPrologClient() 
+{
 	bIsTickable = true;
 }
 
 // Destructor
-USLPrologClient::~USLPrologClient(){
+USLPrologClient::~USLPrologClient()
+{
 }
 
 // Return if object is ready to be ticked
@@ -30,23 +32,28 @@ TStatId USLPrologClient::GetStatId() const
 
 /** Begin FTickableGameObject interface */
 // Called after ticking all actors, DeltaTime is the time passed since the last call.
-void USLPrologClient::Tick(float DeltaTime) {
+void USLPrologClient::Tick(float DeltaTime) 
+{
 #if SL_WITH_ROSBRIDGE
 	// Call update on tick
-	while (QueriesBuffer.Num() > 0) {
+	while (QueriesBuffer.Num() > 0) 
+	{
 		SendPrologQuery(QueriesBuffer.Pop());
 	}
-	while (NextSolutionCommandsBuffer.Num() > 0) {
+	while (NextSolutionCommandsBuffer.Num() > 0) 
+	{
 		SendNextSolutionCommand(NextSolutionCommandsBuffer.Pop());
 	}
-	while (FinishCommandsBuffer.Num() > 0) {
+	while (FinishCommandsBuffer.Num() > 0) 
+	{
 		SendFinishCommand(FinishCommandsBuffer.Pop());
 	}
 #endif
 }
 
 #if SL_WITH_ROSBRIDGE
-void USLPrologClient::Init(FString Host, uint32 port) {
+void USLPrologClient::Init(FString Host, uint32 port) 
+{
 
 	// Defining ROSBridge handler
 	ROSHandler = MakeShareable<FROSBridgeHandler>(new FROSBridgeHandler(Host, port));
@@ -57,17 +64,20 @@ void USLPrologClient::Init(FString Host, uint32 port) {
 	ROSPrologFinishClient = MakeShareable<SLROSServiceClient>(new SLROSServiceClient(this, "/rosprolog/finish", "finish"));
 
 	// Start Connection
-	if (ROSHandler.IsValid()) {
+	if (ROSHandler.IsValid()) 
+	{
 		ROSHandler->Connect();
 		UE_LOG(LogTemp, Warning, TEXT("Connecting Prolog Client to %s:%d"), *Host, port);
 	}
-	else {
+	else 
+	{
 		UE_LOG(LogTemp, Error, TEXT("No FROSBridgeHandler created for this Prolog Client."));
 	}
 }
 
 // Disconnect from ROSBridge
-void USLPrologClient::Disconnect() {
+void USLPrologClient::Disconnect() 
+{
 
 	// Finish ROS Connection
 	if (ROSHandler.IsValid())
@@ -77,19 +87,22 @@ void USLPrologClient::Disconnect() {
 }
 
 // Add query into buffer
-void USLPrologClient::AddQuery(FString Id, FSLQueryHandler *QueryHandle) {
+void USLPrologClient::AddQuery(FString Id, FSLQueryHandler *QueryHandle) 
+{
 	Queries.Add(Id, QueryHandle);
 	QueriesBuffer.Push(Id);
 }
 
 // Add event query
-void USLPrologClient::AddEventQuery(TSharedPtr<ISLEvent> Event) {
+void USLPrologClient::AddEventQuery(TSharedPtr<ISLEvent> Event) 
+{
 	FSLQueryHandler* QueryHandler =  new FSLQueryHandler(Event->ToROSQuery(), false);
 	AddQuery(Event->Id, QueryHandler);
 }
 
 // Add object query
-void USLPrologClient::AddObjectQuery(FSLEntity *Entity) {
+void USLPrologClient::AddObjectQuery(FSLEntity *Entity) 
+{
 	
 	// Creates query ID
 	FString IdValue = FIds::NewGuidInBase64();
@@ -121,7 +134,8 @@ void USLPrologClient::AddObjectQuery(FSLEntity *Entity) {
 }
 
 // Send query 
-void USLPrologClient::SendPrologQuery(FString Id) {
+void USLPrologClient::SendPrologQuery(FString Id) 
+{
 
 	FSLQueryHandler* QueryHandler = Queries.FindRef(Id);
 	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Query::Request(0, QueryHandler->Query, Id));
@@ -131,7 +145,8 @@ void USLPrologClient::SendPrologQuery(FString Id) {
 }
 
 // Request next solution 
-void USLPrologClient::SendNextSolutionCommand(FString Id) {
+void USLPrologClient::SendNextSolutionCommand(FString Id) 
+{
 
 	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::NextSolution::Request(Id));
 	TSharedPtr<FROSBridgeSrv::SrvResponse> Response = MakeShareable<FROSBridgeSrv::SrvResponse>(new rosprolog_msgs::NextSolution::Response());
@@ -140,7 +155,8 @@ void USLPrologClient::SendNextSolutionCommand(FString Id) {
 }
 
 // Finish query
-void USLPrologClient::SendFinishCommand(FString Id) {
+void USLPrologClient::SendFinishCommand(FString Id) 
+{
 
 	Queries.Remove(Id);
 	TSharedPtr<FROSBridgeSrv::SrvRequest> Request = MakeShareable<FROSBridgeSrv::SrvRequest>(new rosprolog_msgs::Finish::Request(Id));
@@ -150,11 +166,13 @@ void USLPrologClient::SendFinishCommand(FString Id) {
 }
 
 // Process response from commands
-void  USLPrologClient::ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse, FString Type) {
+void  USLPrologClient::ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse, FString Type) 
+{
 	
 	FString Id;
 	
-	if (Type.Equals("query")) {
+	if (Type.Equals("query")) 
+	{
 		TSharedPtr<rosprolog_msgs::Query::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::Query::Response>(InResponse);
 		bool bSuccess = Msg->GetSuccess();
 		if (!SentQueries.RemoveAndCopyValue(InResponse, Id)) {
@@ -166,12 +184,14 @@ void  USLPrologClient::ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse> In
 		}
 	}
 
-	if (Type.Equals("next_solution")) {
+	if (Type.Equals("next_solution")) 
+	{
 		
 		TSharedPtr<rosprolog_msgs::NextSolution::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::NextSolution::Response>(InResponse);
 		int status = Msg->GetStatus();
 
-		if (!SentNextSolutionCommands.RemoveAndCopyValue(InResponse, Id)) {
+		if (!SentNextSolutionCommands.RemoveAndCopyValue(InResponse, Id)) 
+		{
 			UE_LOG(LogTemp, Warning, TEXT("No previous Next_Solution Command found for this response: Status = %d; Solution = \"%s\""), \
 				*Id, status, *Msg->GetSolution());
 		}
@@ -180,27 +200,32 @@ void  USLPrologClient::ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse> In
 		FSLQueryHandler* QueryHandler = Queries.FindRef(Id);
 		QueryHandler->SolutionsCount++;
 
-		if (QueryHandler) {
-
+		if (QueryHandler) 
+		{
 			// Callback
 			QueryHandler->SolutionCallback(status, Msg->GetSolution());
 
 			// Gettig next solution or finishing
-			if (!QueryHandler->bExhaustSolutions || !status || QueryHandler->SolutionsCount >= QueryHandler->SolutionsLimit) {
+			if (!QueryHandler->bExhaustSolutions || !status || QueryHandler->SolutionsCount >= QueryHandler->SolutionsLimit) 
+			{
 				SendFinishCommand(Id);
 			}
-			else {
+			else 
+			{
 				SendNextSolutionCommand(Id);
 			}
 		}
-		else {
+		else 
+		{
 			SendFinishCommand(Id);
 		}
 	}
 
-	if (Type.Equals("finish")) {
+	if (Type.Equals("finish")) 
+	{
 		TSharedPtr<rosprolog_msgs::Finish::Response> Msg = StaticCastSharedPtr<rosprolog_msgs::Finish::Response>(InResponse);
-		if (!SentFinishCommands.RemoveAndCopyValue(InResponse, Id)) {
+		if (!SentFinishCommands.RemoveAndCopyValue(InResponse, Id)) 
+		{
 			UE_LOG(LogTemp, Warning, TEXT("Response for Finish Command received. No previous finish command found."));
 		}
 	}

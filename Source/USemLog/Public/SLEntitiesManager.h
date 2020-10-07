@@ -216,7 +216,7 @@ public:
 	};
 	
 	// Set a reference to ROSProlog logger to update semantic map
-	void setPrologClient(USLPrologClient* InROSProlog);
+	void SetPrologClient(USLPrologClient* InROSProlog);
 
 private:
 	// Instance of the singleton

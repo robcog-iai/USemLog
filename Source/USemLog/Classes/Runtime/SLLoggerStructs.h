@@ -118,20 +118,20 @@ struct FSLSymbolicLoggerParams
 	bool bPublishToROS = false;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bCustomEvents = false;
+	bool bSelectedEventsOnly = false;
 
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
 	bool bContact = true;
 
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
 	bool bSupportedBy = true;
 
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
 	bool bGrasp = true;
 
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
 	bool bPickAndPlace = true;
 
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bCustomEvents"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
 	bool bSlicing = true;
 };

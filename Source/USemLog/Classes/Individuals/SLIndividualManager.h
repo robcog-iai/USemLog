@@ -137,7 +137,7 @@ private:
 	// Set to to false if the cache is being modified to avoid iterating the containers from other threads
 	FThreadSafeBool bThreadSafeToRead;
 
-	/** Containers - start - **/
+	/** Containers **/
 	// The individual components in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TArray<USLIndividualComponent*> IndividualComponents;
@@ -173,7 +173,9 @@ private:
 	// Id to 
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	TMap<FString, USLIndividualComponent*> IdToIndividualComponents;
-	/** Containers - end - **/
+
+
+
 
 
 	/* Editor button hacks */

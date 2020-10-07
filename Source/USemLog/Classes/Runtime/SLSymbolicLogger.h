@@ -6,6 +6,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
 #include "Runtime/SLLoggerStructs.h"
+#include "Events/ISLEventHandler.h"
+#include "SLOwlExperiment.h"
+#include "Events/ISLEventHandler.h"
+#include "ROSProlog/SLPrologClient.h"
 #include "SLSymbolicLogger.generated.h"
 
 // Forward declarations
@@ -71,9 +75,37 @@ protected:
 	// Start/finish logger from user input
 	void UserInputToggleCallback();
 
+	// Called when a semantic event is done
+	void SemanticEventFinishedCallback(TSharedPtr<ISLEvent> Event);
+	
+	// Write data to file
+	void WriteToFile();
+
+	// Create events doc template
+	TSharedPtr<FSLOwlExperiment> CreateEventsDocTemplate(
+		ESLOwlExperimentTemplate TemplateType, const FString& InDocId);
+
 private:
 	// Get the reference or spawn a new initialized individual manager
 	bool SetIndividualManager();
+
+	// Helper function which checks if the individual data is loaded
+	bool IsValidAndLoaded(AActor* Actor);
+
+	// Iterate and init the contact monitors in the world
+	void InitContactMonitors();
+
+	// Iterate and init the manipulator contact monitors
+	void InitManipulatorContactMonitors();
+
+	// Iterate and init the manipulator fixation monitors
+	void InitManipulatorFixationMonitors();
+
+	// Iterate and init the slicing monitors
+	void InitSlicingMonitors();
+
+	// Publish data through ROS
+	void InitROSPublisher();
 
 protected:
 	// True when ready to log
@@ -87,7 +119,7 @@ protected:
 	// True when done logging
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsFinished : 1;
-
+	 
 private:
 	// If true the logger will start on its own (instead of being started by the manager)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -108,4 +140,33 @@ private:
 	// Access to all individuals in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLIndividualManager* IndividualManager;
+
+
+	// Array of finished events
+	TArray<TSharedPtr<ISLEvent>> FinishedEvents;
+
+	// Owl document of the finished events
+	TSharedPtr<FSLOwlExperiment> ExperimentDoc;
+
+	// Semantic event handlers (takes input raw events, outputs finished semantic events)
+	TArray<TSharedPtr<ISLEventHandler>> EventHandlers;
+
+	// List of the contact trigger shapes, stored to call Start and Finish on them
+	TArray<class ISLContactShapeInterface*> ContactShapes;
+
+	// Cache of the grasp listeners
+	TArray<class USLManipulatorListener*> GraspListeners;
+
+	// Cache of the pick and place listeners
+	TArray<class USLPickAndPlaceListener*> PickAndPlaceListeners;
+
+	// Cache of the grasp listeners
+	TArray<class USLReachListener*> ReachListeners;
+
+	// Cache of the container manipulation listeners
+	TArray<class USLContainerListener*> ContainerListeners;
+
+	// ROS publisher
+	UPROPERTY()
+	USLPrologClient* ROSPrologClient;
 };

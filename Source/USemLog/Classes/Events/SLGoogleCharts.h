@@ -32,7 +32,7 @@ struct FSLGoogleCharts
 {
 	// Write google charts timeline html page from the events
 	static bool WriteTimelines(const TArray<TSharedPtr<ISLEvent>>& InEvents,
-		const FString& InLogDir,
+		const FString& DirectoryPath,
 		const FString& InEpId,
 		const FSLGoogleChartsParameters& Params = FSLGoogleChartsParameters())
 	{
@@ -132,8 +132,7 @@ struct FSLGoogleCharts
 		}
 
 		// Write map to file
-		FString FullFilePath = FPaths::ProjectDir() + "/SemLog/" +
-			InLogDir + /*+ TEXT("/Episodes/")*/+ "/" + InEpId + TEXT("_TL.html");
+		FString FullFilePath = DirectoryPath + "/" + InEpId + TEXT("_TL.html");
 		FPaths::RemoveDuplicateSlashes(FullFilePath);
 		return FFileHelper::SaveStringToFile(TimelineStr, *FullFilePath);
 	}
