@@ -31,7 +31,7 @@ private:
 
 private:
 	// Parent
-	class USLReachListener* Parent;
+	class USLReachMonitor* Parent;
 
 	/* Constants */
 	// Minimal duration for the reaching events

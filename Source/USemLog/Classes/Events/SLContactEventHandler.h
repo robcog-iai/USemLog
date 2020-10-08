@@ -56,7 +56,7 @@ private:
 	
 private:
 	// Parent semantic overlap area
-	class ISLContactShapeInterface* Parent = nullptr;
+	class ISLContactMonitorInterface* Parent = nullptr;
 
 	// Array of started contact events
 	TArray<TSharedPtr<FSLContactEvent>> StartedContactEvents;

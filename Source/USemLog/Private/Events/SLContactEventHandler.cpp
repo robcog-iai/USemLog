@@ -2,10 +2,11 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLContactEventHandler.h"
-#include "Monitors/SLContactShapeInterface.h"
+#include "Monitors/SLContactMonitorInterface.h"
 #include "Events/SLContactEvent.h"
 #include "Events/SLSupportedByEvent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
+#include "Utils/SLUuid.h"
 
 
 // Set parent
@@ -14,7 +15,7 @@ void FSLContactEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<ISLContactShapeInterface>(InParent);
+		Parent = Cast<ISLContactMonitorInterface>(InParent);
 		if (Parent)
 		{
 			bIsInit = true;
@@ -125,7 +126,10 @@ bool FSLContactEventHandler::FinishSupportedByEvent(const uint64 InPairId, float
 		if ((*EventItr)->PairId == InPairId)
 		{
 			// Ignore short events
-			if ((EndTime - (*EventItr)->Start) > SupportedByEventMin)
+			const float Duration = EndTime - (*EventItr)->Start;
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Duration=%f; EndTime=%f; Start=%f;"), *FString(__FUNCTION__), __LINE__,
+				Duration, EndTime, (*EventItr)->Start);
+			if (Duration > SupportedByEventMin)
 			{
 				// Set end time and publish event
 				(*EventItr)->End = EndTime;
@@ -146,7 +150,10 @@ void FSLContactEventHandler::FinishAllEvents(float EndTime)
 	for (auto& Ev : StartedContactEvents)
 	{
 		// Ignore short events
-		if ((EndTime - Ev->Start) > ContactEventMin)
+		const float Duration = EndTime - Ev->Start;
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Duration=%f; EndTime=%f; Start=%f;"), *FString(__FUNCTION__), __LINE__,
+			Duration, EndTime, Ev->Start);
+		if (Duration > ContactEventMin)
 		{
 			// Set end time and publish event
 			Ev->End = EndTime;

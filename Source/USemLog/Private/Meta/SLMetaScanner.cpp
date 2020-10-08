@@ -3,7 +3,7 @@
 
 #include "Meta/SLMetaScanner.h"
 #include "Meta/SLMetaScannerStructs.h"
-#include "SLContactShapeInterface.h"
+#include "Monitors/SLContactMonitorInterface.h"
 #include "SLMetadataLogger.h"
 
 #include "Engine/StaticMeshActor.h"
@@ -502,7 +502,7 @@ bool USLMetaScanner::LoadScanPoses(int32 NumScanPose, float DistanceToCamera)
 }
 
 // Load items to scan
-bool USLMetaScanner::LoadScanItems(float MaxVolume, float MaxBoundsLength, bool bWithContactShape)
+bool USLMetaScanner::LoadScanItems(float MaxVolume, float MaxBoundsLength, bool bWithContactMonitor)
 {
 	// Cache the classes that were already iterated
 	TSet<FString> ConsultedClasses;
@@ -541,7 +541,7 @@ bool USLMetaScanner::LoadScanItems(float MaxVolume, float MaxBoundsLength, bool 
 	//		// Make sure the static mesh component is valid
 	//		if(UStaticMeshComponent* SMC = AsSMA->GetStaticMeshComponent())
 	//		{
-	//			if(HasScanningRequirements(SMC, MaxVolume, MaxBoundsLength, bWithContactShape, false))
+	//			if(HasScanningRequirements(SMC, MaxVolume, MaxBoundsLength, bWithContactMonitor, false))
 	//			{
 	//				//SMC->SetSimulatePhysics(false);
 	//				//AsSMA->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
@@ -963,7 +963,7 @@ float USLMetaScanner::GetItemRelativeCameraDistance(UStaticMeshComponent* SMC) c
 
 // Check against varios properties if the item should be scanned
 bool USLMetaScanner::HasScanningRequirements(UStaticMeshComponent* SMC, float MaxVolume, float MaxBoundsLength,
-	bool bWithSemanticContactShape, bool bOnlyMovable) const
+	bool bWithSemanticContactMonitor, bool bOnlyMovable) const
 {
 	bool bShouldBeScanned = true;
 	if(bOnlyMovable && SMC->Mobility != EComponentMobility::Movable)
@@ -973,7 +973,7 @@ bool USLMetaScanner::HasScanningRequirements(UStaticMeshComponent* SMC, float Ma
 		return false;
 	}
 
-	if(bWithSemanticContactShape && !HasSemanticContactShape(SMC))
+	if(bWithSemanticContactMonitor && !HasSemanticContactMonitor(SMC))
 	{
 		//UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t\t %s has no semantic contact shape, skipping item scan.."),
 		//	*FString(__func__), __LINE__, *SMC->GetOwner()->GetName());
@@ -995,12 +995,12 @@ bool USLMetaScanner::HasScanningRequirements(UStaticMeshComponent* SMC, float Ma
 	return bShouldBeScanned;
 }
 
-// Check if the item is wrapped in a semantic contact shape (has a SLContactShapeInterface sibling)
-bool USLMetaScanner::HasSemanticContactShape(UStaticMeshComponent* SMC) const
+// Check if the item is wrapped in a semantic contact shape (has a SLContactMonitorInterface sibling)
+bool USLMetaScanner::HasSemanticContactMonitor(UStaticMeshComponent* SMC) const
 {
 	for(const auto C : SMC->GetOwner()->GetComponentsByClass(UShapeComponent::StaticClass()))
 	{
-		if (Cast<ISLContactShapeInterface>(C))
+		if (Cast<ISLContactMonitorInterface>(C))
 		{
 			return true;
 		}

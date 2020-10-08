@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLGraspEventHandler.h"
-#include "Monitors/SLManipulatorListener.h"
+#include "Monitors/SLManipulatorMonitor.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Utils/SLUuid.h"
@@ -13,7 +13,7 @@ void FSLGraspEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<USLManipulatorListener>(InParent);
+		Parent = Cast<USLManipulatorMonitor>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized

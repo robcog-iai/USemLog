@@ -1,8 +1,8 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Monitors/SLContainerListener.h"
-#include "Monitors/SLManipulatorListener.h"
+#include "Monitors/SLContainerMonitor.h"
+#include "Monitors/SLManipulatorMonitor.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 
@@ -11,7 +11,7 @@
 
 
 // Sets default values for this component's properties
-USLContainerListener::USLContainerListener()
+USLContainerMonitor::USLContainerMonitor()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -27,7 +27,7 @@ USLContainerListener::USLContainerListener()
 }
 
 // Dtor
-USLContainerListener::~USLContainerListener()
+USLContainerMonitor::~USLContainerMonitor()
 {
 	if (!bIsFinished)
 	{
@@ -36,7 +36,7 @@ USLContainerListener::~USLContainerListener()
 }
 
 // Init listener
-bool USLContainerListener::Init()
+bool USLContainerMonitor::Init()
 {
 	if (!bIsInit)
 	{
@@ -66,27 +66,27 @@ bool USLContainerListener::Init()
 }
 
 // Start listening to grasp events, update currently overlapping objects
-void USLContainerListener::Start()
+void USLContainerMonitor::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		if(USLManipulatorListener* Sibling = CastChecked<USLManipulatorListener>(
-			GetOwner()->GetComponentByClass(USLManipulatorListener::StaticClass())))
+		if(USLManipulatorMonitor* Sibling = CastChecked<USLManipulatorMonitor>(
+			GetOwner()->GetComponentByClass(USLManipulatorMonitor::StaticClass())))
 		{
-			Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLContainerListener::OnSLGraspBegin);
-			Sibling->OnEndManipulatorGrasp.AddUObject(this, &USLContainerListener::OnSLGraspEnd);
+			Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLContainerMonitor::OnSLGraspBegin);
+			Sibling->OnEndManipulatorGrasp.AddUObject(this, &USLContainerMonitor::OnSLGraspEnd);
 
 			bIsStarted = true;
 		}
 		else
 		{	
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find sibling USLManipulatorListener .."), *FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find sibling USLManipulatorMonitor .."), *FString(__func__), __LINE__);
 		}
 	}
 }
 
 // Finish active events
-void USLContainerListener::Finish(bool bForced)
+void USLContainerMonitor::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -102,7 +102,7 @@ void USLContainerListener::Finish(bool bForced)
 
 
 // Called when grasp starts
-void USLContainerListener::OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType)
+void USLContainerMonitor::OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType)
 {
 	if(CurrGraspedObj)
 	{
@@ -119,7 +119,7 @@ void USLContainerListener::OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other
 }
 
 // Called when grasp ends
-void USLContainerListener::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time)
+void USLContainerMonitor::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time)
 {
 	if(CurrGraspedObj == nullptr)
 	{
@@ -158,7 +158,7 @@ void USLContainerListener::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, 
 }
 
 // Search which container will be manipulated and save their current distance to the grasped item
-bool USLContainerListener::SetContainersAndDistances()
+bool USLContainerMonitor::SetContainersAndDistances()
 {
 	// Get the outermost attachment parent of the actor
 	const auto GetOutermostAttachmentLambda = [](AActor* Actor)
@@ -217,7 +217,7 @@ bool USLContainerListener::SetContainersAndDistances()
 }
 
 // Finish any active events
-void USLContainerListener::FinishActiveEvents()
+void USLContainerMonitor::FinishActiveEvents()
 {
 	if(CurrGraspedObj)
 	{
@@ -227,7 +227,7 @@ void USLContainerListener::FinishActiveEvents()
 }
 
 // Iterate recursively attached constraints actors of parent, append other constrained actors to set
-void USLContainerListener::GetAllConstraintsOtherActors(AActor* Actor, TSet<AActor*>& OutOtherConstraintActors)
+void USLContainerMonitor::GetAllConstraintsOtherActors(AActor* Actor, TSet<AActor*>& OutOtherConstraintActors)
 {
 	if(APhysicsConstraintActor* AttAsPCA = Cast<APhysicsConstraintActor>(Actor))
 	{
@@ -262,7 +262,7 @@ void USLContainerListener::GetAllConstraintsOtherActors(AActor* Actor, TSet<AAct
 }
 
 // Iterate recursively on the attached actors, and search for container type
-void USLContainerListener::GetAllAttachedContainers(AActor* Actor, TSet<AActor*>& OutContainers)
+void USLContainerMonitor::GetAllAttachedContainers(AActor* Actor, TSet<AActor*>& OutContainers)
 {
 	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO "), *FString(__FUNCTION__), __LINE__);
 	//if(FTags::HasKey(Actor, "SemLog", "Container"))

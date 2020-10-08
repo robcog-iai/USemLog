@@ -73,12 +73,12 @@ void USLContactBox::Init(bool bInLogSupportedByEvents)
 	{
 		bLogSupportedByEvents = bInLogSupportedByEvents;
 
-		// Important, set the interface references
-		if (!InitInterface(this, GetWorld()))
+		// Important, init interface with self
+		if (!InitContactMonitorInterface(this, GetWorld()))
 		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s"), *FString(__FUNCTION__), __LINE__, *GetFullName());
 			return;
 		}
-
 
 		// Make sure the owner is semantically annotated
 		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
@@ -119,6 +119,8 @@ void USLContactBox::Init(bool bInLogSupportedByEvents)
 
 			// Mark as initialized
 			bIsInit = true;
+
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesffully init %s"), *FString(__FUNCTION__), __LINE__, *GetFullName());
 		}
 	}
 }
@@ -137,7 +139,7 @@ void USLContactBox::Start()
 		SetGenerateOverlapEvents(true);
 
 		// Broadcast currently overlapping components
-		USLContactBox::TriggerInitialOverlaps();
+		TriggerInitialOverlaps();
 
 		// Bind future overlapping event delegates
 		OnComponentBeginOverlap.AddDynamic(this, &USLContactBox::OnOverlapBegin);

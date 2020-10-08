@@ -7,7 +7,7 @@
 #include "Components/ActorComponent.h"
 #include "Monitors/SLMonitorStructs.h"
 #include "TimerManager.h"
-#include "SLManipulatorListener.generated.h"
+#include "SLManipulatorMonitor.generated.h"
 
 // Forward declarations
 class AActor;
@@ -71,16 +71,16 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, USLBaseI
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
  */
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Manipulator Listener")
-class USEMLOG_API USLManipulatorListener : public UActorComponent
+class USEMLOG_API USLManipulatorMonitor : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	USLManipulatorListener();
+	USLManipulatorMonitor();
 
 	// Dtor
-	~USLManipulatorListener();
+	~USLManipulatorMonitor();
 
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
 	bool Init(bool bInDetectGrasps, bool bInDetectContacts);

@@ -6,8 +6,8 @@
 
 #include "USemLog.h"
 #include "Components/ActorComponent.h"
-#include "SLContactShapeInterface.h"
-#include "SLPickAndPlaceListener.generated.h"
+#include "SLContactMonitorInterface.h"
+#include "SLPickAndPlaceMonitor.generated.h"
 
 // Forward declaration
 class USLBaseIndividual;
@@ -49,16 +49,16 @@ DECLARE_MULTICAST_DELEGATE_FourParams(FSLPaPSubEventSignature, USLBaseIndividual
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
  */
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL PickAndPlace Listener")
-class USEMLOG_API USLPickAndPlaceListener : public UActorComponent
+class USEMLOG_API USLPickAndPlaceMonitor : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	USLPickAndPlaceListener();
+	USLPickAndPlaceMonitor();
 
 	// Dtor
-	~USLPickAndPlaceListener();
+	~USLPickAndPlaceMonitor();
 
 	// Check if owner is valid and semantically annotated
 	bool Init();
@@ -83,7 +83,7 @@ private:
 	bool SubscribeForGraspEvents();
 
 	// Get grasped objects contact shape component
-	ISLContactShapeInterface* GetContactShapeComponent(AActor* Actor) const;
+	ISLContactMonitorInterface* GetContactMonitorComponent(AActor* Actor) const;
 
 	// Called on grasp begin
 	void OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType);
@@ -146,14 +146,14 @@ private:
 	float PrevRelevantTime;
 
 	// Contact shape of the grasped object, holds information if the object is supported by a surface
-	ISLContactShapeInterface* GraspedObjectContactShape;
+	ISLContactMonitorInterface* GraspedObjectContactMonitor;
 	
 	// Update timer handle
 	FTimerHandle UpdateTimerHandle;
 
 	/* Update function bindings */
 	// Function pointer type for calling the correct update function
-	typedef void(USLPickAndPlaceListener::*UpdateFunctionPointerType)();
+	typedef void(USLPickAndPlaceMonitor::*UpdateFunctionPointerType)();
 
 	// Function pointer for the state check update callback
 	UpdateFunctionPointerType UpdateFunctionPtr;

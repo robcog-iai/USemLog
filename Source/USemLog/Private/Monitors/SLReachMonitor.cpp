@@ -1,11 +1,11 @@
 // Copyright 2019, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Monitors/SLReachListener.h"
+#include "Monitors/SLReachMonitor.h"
 #include "Monitors/SLMonitorStructs.h"
+#include "Monitors/SLManipulatorMonitor.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
-#include "SLManipulatorListener.h"
 
 #include "Animation/SkeletalMeshActor.h"
 #include "Engine/StaticMeshActor.h"
@@ -14,7 +14,7 @@
 
 
 // Set default values
-USLReachListener::USLReachListener()
+USLReachMonitor::USLReachMonitor()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -33,7 +33,7 @@ USLReachListener::USLReachListener()
 }
 
 // Dtor
-USLReachListener::~USLReachListener()
+USLReachMonitor::~USLReachMonitor()
 {
 	if (!bIsFinished)
 	{
@@ -42,7 +42,7 @@ USLReachListener::~USLReachListener()
 }
 
 // Initialize trigger areas for runtime, check if owner is valid and semantically annotated
-bool USLReachListener::Init()
+bool USLReachMonitor::Init()
 {
 	if (!bIsInit)
 	{
@@ -77,12 +77,12 @@ bool USLReachListener::Init()
 }
 
 // Start listening to grasp events, update currently overlapping objects
-void USLReachListener::Start()
+void USLReachMonitor::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
 		// Bind to the update callback function
-		GetWorld()->GetTimerManager().SetTimer(UpdateTimerHandle, this, &USLReachListener::ReachUpdate, UpdateRate, true);
+		GetWorld()->GetTimerManager().SetTimer(UpdateTimerHandle, this, &USLReachMonitor::ReachUpdate, UpdateRate, true);
 		GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
 
 		SetGenerateOverlapEvents(true);
@@ -91,8 +91,8 @@ void USLReachListener::Start()
 		
 		if(!bCallbacksAreBound)
 		{
-			OnComponentBeginOverlap.AddDynamic(this, &USLReachListener::OnOverlapBegin);
-			OnComponentEndOverlap.AddDynamic(this, &USLReachListener::OnOverlapEnd);
+			OnComponentBeginOverlap.AddDynamic(this, &USLReachMonitor::OnOverlapBegin);
+			OnComponentEndOverlap.AddDynamic(this, &USLReachMonitor::OnOverlapEnd);
 			bCallbacksAreBound = true;
 		}
 		
@@ -102,14 +102,14 @@ void USLReachListener::Start()
 }
 
 // Stop publishing grasp events
-void USLReachListener::Finish(bool bForced)
+void USLReachMonitor::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
 		if(bCallbacksAreBound)
 		{
-			OnComponentBeginOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapBegin);
-			OnComponentEndOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapEnd);
+			OnComponentBeginOverlap.RemoveDynamic(this, &USLReachMonitor::OnOverlapBegin);
+			OnComponentEndOverlap.RemoveDynamic(this, &USLReachMonitor::OnOverlapEnd);
 			bCallbacksAreBound = false;
 		}
 		
@@ -122,14 +122,14 @@ void USLReachListener::Finish(bool bForced)
 
 #if WITH_EDITOR
 // Called after the C++ constructor and after the properties have been initialized
-void USLReachListener::PostInitProperties()
+void USLReachMonitor::PostInitProperties()
 {
 	Super::PostInitProperties();
 	RelocateSphere();
 }
 
 // Called when a property is changed in the editor
-void USLReachListener::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLReachMonitor::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -138,14 +138,14 @@ void USLReachListener::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	// Set pre-defined parameters
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLReachListener, SphereRadius))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLReachMonitor, SphereRadius))
 	{
 		RelocateSphere();
 	}
 }
 
 // Move the sphere location so that its surface overlaps with the end of the manipulator
-void USLReachListener::RelocateSphere()
+void USLReachMonitor::RelocateSphere()
 {
 	if (GetOwner())
 	{
@@ -164,17 +164,17 @@ void USLReachListener::RelocateSphere()
 #endif // WITH_EDITOR
 
 // Subscribe for grasp events from sibling component
-bool USLReachListener::SubscribeForManipulatorEvents()
+bool USLReachMonitor::SubscribeForManipulatorEvents()
 {
-	if(USLManipulatorListener* Sibling = CastChecked<USLManipulatorListener>(
-		GetOwner()->GetComponentByClass(USLManipulatorListener::StaticClass())))
+	if(USLManipulatorMonitor* Sibling = CastChecked<USLManipulatorMonitor>(
+		GetOwner()->GetComponentByClass(USLManipulatorMonitor::StaticClass())))
 	{
 		// Timeline reaching,      positioning
 		// [-----------contact][contact--------grasp]
-		Sibling->OnBeginManipulatorContact.AddUObject(this, &USLReachListener::OnSLManipulatorContactBegin);
-		Sibling->OnEndManipulatorContact.AddUObject(this, &USLReachListener::OnSLManipulatorContactEnd);
-		Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLReachListener::OnSLGraspBegin);
-		Sibling->OnEndManipulatorGrasp.AddUObject(this, &USLReachListener::OnSLGraspEnd);
+		Sibling->OnBeginManipulatorContact.AddUObject(this, &USLReachMonitor::OnSLManipulatorContactBegin);
+		Sibling->OnEndManipulatorContact.AddUObject(this, &USLReachMonitor::OnSLManipulatorContactEnd);
+		Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLReachMonitor::OnSLGraspBegin);
+		Sibling->OnEndManipulatorGrasp.AddUObject(this, &USLReachMonitor::OnSLGraspEnd);
 
 		return true;
 	}
@@ -182,7 +182,7 @@ bool USLReachListener::SubscribeForManipulatorEvents()
 }
 
 // Update callback, checks distance to hand, if it increases it resets the start time
-void USLReachListener::ReachUpdate()
+void USLReachMonitor::ReachUpdate()
 {
 	const float CurrTime = GetWorld()->GetTimeSeconds();
 	
@@ -196,7 +196,7 @@ void USLReachListener::ReachUpdate()
 		if(DiffDist > MinDist)
 		{
 			// Positive difference makes the hand closer to the object, update the distance
-			C.Value.Get<ESLTimeAndDist::Dist>() = CurrDist;
+			C.Value.Get<ESLTimeAndDist::SLDist>() = CurrDist;
 
 			//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s is moving closer to %s; PrevDist=%f; CurrDist=%f; DiffDist=%f; [%s - %s];"),
 			//	*FString(__func__), __LINE__, 
@@ -210,8 +210,8 @@ void USLReachListener::ReachUpdate()
 		else if(DiffDist < -MinDist)
 		{
 			// Negative difference makes the hand further away from the object, update distance, reset the start time
-			C.Value.Get<ESLTimeAndDist::Time>() = CurrTime;
-			C.Value.Get<ESLTimeAndDist::Dist>() = CurrDist;
+			C.Value.Get<ESLTimeAndDist::SLTime>() = CurrTime;
+			C.Value.Get<ESLTimeAndDist::SLDist>() = CurrDist;
 
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s is moving further to %s; PrevDist=%f; CurrDist=%f; DiffDist=%f; [%s - %s];"),
 			//	*FString(__func__), __LINE__, 
@@ -239,7 +239,7 @@ void USLReachListener::ReachUpdate()
 }
 
 // Publish currently overlapping components
-void USLReachListener::TriggerInitialOverlaps()
+void USLReachMonitor::TriggerInitialOverlaps()
 {
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
@@ -253,7 +253,7 @@ void USLReachListener::TriggerInitialOverlaps()
 }
 
 // Check if the object is can be a candidate for reaching
-bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject) const
+bool USLReachMonitor::CanBeACandidate(AStaticMeshActor* InObject) const
 {
 	UActorComponent* AC = InObject->GetComponentByClass(USLIndividualComponent::StaticClass());
 	return AC != nullptr;
@@ -286,7 +286,7 @@ bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject) const
 }
 
 // Checks for candidates in the overlap area
-void USLReachListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
+void USLReachMonitor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex,
@@ -311,7 +311,7 @@ void USLReachListener::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 }
 
 // Checks for candidates in the overlap area
-void USLReachListener::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
+void USLReachMonitor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
@@ -335,7 +335,7 @@ void USLReachListener::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 
 
 // Called when sibling detects a grasp, used for ending the manipulator positioning event
-void USLReachListener::OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActor, float Time, const FString& GraspType)
+void USLReachMonitor::OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActor, float Time, const FString& GraspType)
 {
 	if(CurrGraspedObj)
 	{
@@ -363,7 +363,7 @@ void USLReachListener::OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActo
 				GetWorld()->GetTimerManager().ClearTimer(ManipulatorContactDelayTimerHandle);
 
 				// Broadcast reach and pre grasp events
-				const float ReachStartTime = CandidateTimeAndDist->Get<ESLTimeAndDist::Time>();
+				const float ReachStartTime = CandidateTimeAndDist->Get<ESLTimeAndDist::SLTime>();
 				const float ReachEndTime = *ContactTime;
 				OnPreGraspAndReachEvent.Broadcast(IndividualObject, OtherActor, ReachStartTime, ReachEndTime, Time);
 
@@ -376,8 +376,8 @@ void USLReachListener::OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActo
 				// Remove overlap callbacks while grasp is active
 				if(bCallbacksAreBound)
 				{
-					OnComponentBeginOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapBegin);
-					OnComponentEndOverlap.RemoveDynamic(this, &USLReachListener::OnOverlapEnd);
+					OnComponentBeginOverlap.RemoveDynamic(this, &USLReachMonitor::OnOverlapBegin);
+					OnComponentEndOverlap.RemoveDynamic(this, &USLReachMonitor::OnOverlapEnd);
 					bCallbacksAreBound = false;
 				}
 			}
@@ -396,7 +396,7 @@ void USLReachListener::OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActo
 }
 
 // Reset looking for the events
-void USLReachListener::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time)
+void USLReachMonitor::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time)
 {	
 	if(CurrGraspedObj == nullptr)
 	{
@@ -424,14 +424,14 @@ void USLReachListener::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, floa
 	// Start the overlap callbacks
 	if(!bCallbacksAreBound)
 	{
-		OnComponentBeginOverlap.AddDynamic(this, &USLReachListener::OnOverlapBegin);
-		OnComponentEndOverlap.AddDynamic(this, &USLReachListener::OnOverlapEnd);
+		OnComponentBeginOverlap.AddDynamic(this, &USLReachMonitor::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLReachMonitor::OnOverlapEnd);
 		bCallbacksAreBound = true;
 	}
 }
 
 // Called when the sibling is in contact with an object, used for ending the reaching event and starting the manipulator positioning event
-void USLReachListener::OnSLManipulatorContactBegin(const FSLContactResult& ContactResult)
+void USLReachMonitor::OnSLManipulatorContactBegin(const FSLContactResult& ContactResult)
 {
 	if(CurrGraspedObj)
 	{
@@ -462,7 +462,7 @@ void USLReachListener::OnSLManipulatorContactBegin(const FSLContactResult& Conta
 }
 
 // Manipulator is not in contact with object anymore, check for possible concatenation, or reset the potential reach time
-void USLReachListener::OnSLManipulatorContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
+void USLReachMonitor::OnSLManipulatorContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
 {
 	if(CurrGraspedObj)
 	{
@@ -487,7 +487,7 @@ void USLReachListener::OnSLManipulatorContactEnd(USLBaseIndividual* Self, USLBas
 			// Delay reseting the reach time, it might be a small disconnection with the hand
 			if(!GetWorld()->GetTimerManager().IsTimerActive(ManipulatorContactDelayTimerHandle))
 			{
-				GetWorld()->GetTimerManager().SetTimer(ManipulatorContactDelayTimerHandle, this, &USLReachListener::DelayedManipulatorContactEndEventCallback,
+				GetWorld()->GetTimerManager().SetTimer(ManipulatorContactDelayTimerHandle, this, &USLReachMonitor::DelayedManipulatorContactEndEventCallback,
 					MaxPreGraspEventTimeGap * 1.2f, false);
 			}
 		}
@@ -502,7 +502,7 @@ void USLReachListener::OnSLManipulatorContactEnd(USLBaseIndividual* Self, USLBas
 }
 
 // Delayed call of setting finished event to check for possible concatenation of jittering events of the same type
-void USLReachListener::DelayedManipulatorContactEndEventCallback()
+void USLReachMonitor::DelayedManipulatorContactEndEventCallback()
 {
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = GetWorld()->GetTimeSeconds();
@@ -520,7 +520,7 @@ void USLReachListener::DelayedManipulatorContactEndEventCallback()
 				{
 					//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s removed as object in contact with the manipulator.. (after delay, contact end time=%f)"),
 					//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *EvItr->Other->GetName(), EvItr->Time);
-					TimeAndDist->Get<ESLTimeAndDist::Time>() = GetWorld()->GetTimeSeconds();
+					TimeAndDist->Get<ESLTimeAndDist::SLTime>() = GetWorld()->GetTimeSeconds();
 				}
 				else
 				{
@@ -541,13 +541,13 @@ void USLReachListener::DelayedManipulatorContactEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedManipulatorContactEvents.Num() > 0)
 	{
-		GetWorld()->GetTimerManager().SetTimer(ManipulatorContactDelayTimerHandle, this, &USLReachListener::DelayedManipulatorContactEndEventCallback,
+		GetWorld()->GetTimerManager().SetTimer(ManipulatorContactDelayTimerHandle, this, &USLReachMonitor::DelayedManipulatorContactEndEventCallback,
 			MaxPreGraspEventTimeGap * 1.2f, false);
 	}
 }
 
 // Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-bool USLReachListener::SkipRecentManipulatorContactEndEventTime(AStaticMeshActor* Other, float StartTime)
+bool USLReachMonitor::SkipRecentManipulatorContactEndEventTime(AStaticMeshActor* Other, float StartTime)
 {
 	for (auto EvItr(RecentlyEndedManipulatorContactEvents.CreateIterator()); EvItr; ++EvItr)
 	{

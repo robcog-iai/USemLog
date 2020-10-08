@@ -45,7 +45,7 @@ private:
 
 	private:
 	// Parent semantic overlap area
-	class USLManipulatorListener* Parent = nullptr;
+	class USLManipulatorMonitor* Parent = nullptr;
 
 	// Array of started contact events
 	TArray<TSharedPtr<FSLContactEvent>> StartedEvents;

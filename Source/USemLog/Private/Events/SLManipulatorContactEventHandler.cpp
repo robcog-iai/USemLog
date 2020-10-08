@@ -2,8 +2,8 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLManipulatorContactEventHandler.h"
-#include "SLManipulatorOverlapSphere.h"
-#include "SLManipulatorListener.h"
+#include "Monitors/SLManipulatorOverlapSphere.h"
+#include "Monitors/SLManipulatorMonitor.h"
 #include "Events/SLContactEvent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Utils/SLUuid.h"
@@ -14,7 +14,7 @@ void FSLManipulatorContactEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<USLManipulatorListener>(InParent);
+		Parent = Cast<USLManipulatorMonitor>(InParent);
 		if (Parent)
 		{
 			bIsInit = true;

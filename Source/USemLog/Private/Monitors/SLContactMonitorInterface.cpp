@@ -1,13 +1,13 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Monitors/SLContactShapeInterface.h"
+#include "Monitors/SLContactMonitorInterface.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Components/MeshComponent.h"
 #include "Utils/SLUuid.h"
 
 // Stop publishing overlap events
-void ISLContactShapeInterface::Finish(bool bForced)
+void ISLContactMonitorInterface::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -29,20 +29,20 @@ void ISLContactShapeInterface::Finish(bool bForced)
 }
 
 // Init the interface
-bool ISLContactShapeInterface::InitInterface(UShapeComponent* InShapeComponent, UWorld* InWorld)
+bool ISLContactMonitorInterface::InitContactMonitorInterface(UShapeComponent* InShapeComponent, UWorld* InWorld)
 {
 	if(InShapeComponent && InWorld)
 	{
 		World = InWorld;
 		ShapeComponent = InShapeComponent;
-		DelayTimerDelegate.BindRaw(this, &ISLContactShapeInterface::DelayedOverlapEndEventCallback);
+		DelayTimerDelegate.BindRaw(this, &ISLContactMonitorInterface::DelayedOverlapEndEventCallback);
 		return true;
 	}
 	return false;
 }
 
 // Publish currently overlapping components
-void ISLContactShapeInterface::TriggerInitialOverlaps()
+void ISLContactMonitorInterface::TriggerInitialOverlaps()
 {
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
@@ -51,25 +51,25 @@ void ISLContactShapeInterface::TriggerInitialOverlaps()
 	FHitResult Dummy;
 	for (const auto& CompItr : CurrOverlappingComponents)
 	{
-		ISLContactShapeInterface::OnOverlapBegin(
+		ISLContactMonitorInterface::OnOverlapBegin(
 			ShapeComponent, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
 }
 
 // Start checking for supported by events
-void ISLContactShapeInterface::StartSupportedByUpdateCheck()
+void ISLContactMonitorInterface::StartSupportedByUpdateCheck()
 {
 	if(World)
 	{
 		// Start updating the timer, will be paused if there are no candidates
-		SBTimerDelegate.BindRaw(this, &ISLContactShapeInterface::SupportedByUpdateCheckBegin);
+		SBTimerDelegate.BindRaw(this, &ISLContactMonitorInterface::SupportedByUpdateCheckBegin);
 		World->GetTimerManager().SetTimer(SBTimerHandle, SBTimerDelegate, SBUpdateRate, true);
 	}
 }
 
 // Supported by update
 // TODO is a supported by end update look required?
-void ISLContactShapeInterface::SupportedByUpdateCheckBegin()
+void ISLContactMonitorInterface::SupportedByUpdateCheckBegin()
 {
 	// Check if candidates are in a supported by event
 	for (auto CandidateItr(SBCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
@@ -125,7 +125,7 @@ void ISLContactShapeInterface::SupportedByUpdateCheckBegin()
 }
 
 // Remove candidate from array
-bool ISLContactShapeInterface::CheckAndRemoveIfJustCandidate(USLBaseIndividual* InOther)
+bool ISLContactMonitorInterface::CheckAndRemoveIfJustCandidate(USLBaseIndividual* InOther)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto CandidateItr(SBCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
@@ -141,7 +141,7 @@ bool ISLContactShapeInterface::CheckAndRemoveIfJustCandidate(USLBaseIndividual* 
 }
 
 // Called on overlap begin events
-void ISLContactShapeInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
+void ISLContactMonitorInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex,
@@ -190,7 +190,7 @@ void ISLContactShapeInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedCom
 			}
 		}
 	}
-	else if (ISLContactShapeInterface* OtherContactTrigger = Cast<ISLContactShapeInterface>(OtherComp))
+	else if (ISLContactMonitorInterface* OtherContactTrigger = Cast<ISLContactMonitorInterface>(OtherComp))
 	{
 		// If both areas are trigger areas, they will both concurrently trigger overlap events.
 		// To avoid this we consistently ignore one trigger event. This is chosen using
@@ -220,7 +220,7 @@ void ISLContactShapeInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedCom
 }
 
 // Called on overlap end events
-void ISLContactShapeInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
+void ISLContactMonitorInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor,
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
@@ -251,7 +251,7 @@ void ISLContactShapeInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 }
 
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
-void ISLContactShapeInterface::DelayedOverlapEndEventCallback()
+void ISLContactMonitorInterface::DelayedOverlapEndEventCallback()
 {
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = World->GetTimeSeconds();
@@ -274,7 +274,7 @@ void ISLContactShapeInterface::DelayedOverlapEndEventCallback()
 }
 
 // Broadcast delayed overlaps, if curr time < 0, it guarantees a publish
-bool ISLContactShapeInterface::PublishDelayedOverlapEndEvent(const FSLOverlapEndEvent& Ev, float CurrTime)
+bool ISLContactMonitorInterface::PublishDelayedOverlapEndEvent(const FSLOverlapEndEvent& Ev, float CurrTime)
 {
 	// Check if the event is old enough that it had it chance to be concatenated
 	// if CurrTime < 0, it forces publishing
@@ -286,7 +286,7 @@ bool ISLContactShapeInterface::PublishDelayedOverlapEndEvent(const FSLOverlapEnd
 			// Broadcast end of semantic overlap event
 			OnEndSLContact.Broadcast(IndividualObject, Ev.OtherIndividual, Ev.Time);
 		}
-		else if (ISLContactShapeInterface* OtherContactTrigger = Cast<ISLContactShapeInterface>(Ev.OtherComp))
+		else if (ISLContactMonitorInterface* OtherContactTrigger = Cast<ISLContactMonitorInterface>(Ev.OtherComp))
 		{
 			// If both areas are trigger areas, they will both concurrently trigger overlap events.
 			// To avoid this we consistently ignore one trigger event. This is chosen using
@@ -324,7 +324,7 @@ bool ISLContactShapeInterface::PublishDelayedOverlapEndEvent(const FSLOverlapEnd
 }
 
 // Skip publishing overlap event if it can be concatenated with the current event start
-bool ISLContactShapeInterface::SkipOverlapEndEventBroadcast(USLBaseIndividual* InIndividual, float StartTime)
+bool ISLContactMonitorInterface::SkipOverlapEndEventBroadcast(USLBaseIndividual* InIndividual, float StartTime)
 {
 	for (auto OverlapEndEvItr(RecentlyEndedOverlapEvents.CreateIterator()); OverlapEndEvItr; ++OverlapEndEvItr)
 	{

@@ -7,7 +7,7 @@
 #include "Components/ShapeComponent.h"
 #include "TimerManager.h"
 #include "Monitors/SLMonitorStructs.h"
-#include "SLContactShapeInterface.generated.h"
+#include "SLContactMonitorInterface.generated.h"
 
 // Forward declaration
 class USLBaseIndividual;
@@ -46,12 +46,12 @@ struct FSLOverlapEndEvent
  *  Unreal style interface for the contact shapes 
  */
 UINTERFACE(Blueprintable)
-class USLContactShapeInterface : public UInterface
+class USLContactMonitorInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-class ISLContactShapeInterface
+class ISLContactMonitorInterface
 {
 	GENERATED_BODY()
 
@@ -102,7 +102,7 @@ protected:
 #endif // WITH_EDITOR
 
 	// Init interface
-	bool InitInterface(UShapeComponent* InShapeComponent, UWorld* InWorld);
+	bool InitContactMonitorInterface(UShapeComponent* InShapeComponent, UWorld* InWorld);
 
 	// Publish currently overlapping components
 	void TriggerInitialOverlaps();

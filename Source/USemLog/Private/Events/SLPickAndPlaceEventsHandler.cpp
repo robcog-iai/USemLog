@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLPickAndPlaceEventsHandler.h"
-#include "Monitors/SLPickAndPlaceListener.h"
+#include "Monitors/SLPickAndPlaceMonitor.h"
 
 #include "Events/SLPickUpEvent.h"
 #include "Events/SLSlideEvent.h"
@@ -23,7 +23,7 @@ void FSLPickAndPlaceEventsHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<USLPickAndPlaceListener>(InParent);
+		Parent = Cast<USLPickAndPlaceMonitor>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized

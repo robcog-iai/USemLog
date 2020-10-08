@@ -4,25 +4,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/CapsuleComponent.h"
-#include "SLContactShapeInterface.h"
-#include "SLContactCapsule.generated.h"
+#include "Components/SphereComponent.h"
+#include "SLContactMonitorInterface.h"
+#include "SLContactSphere.generated.h"
 
 /**
  * Collision area listening for semantic collision events
  */
-UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Capsule")
-class USEMLOG_API USLContactCapsule : public UCapsuleComponent, public ISLContactShapeInterface
+UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Sphere")
+class USEMLOG_API USLContactSphere : public USphereComponent, public ISLContactMonitorInterface
 {
 	GENERATED_BODY()
 public:
 	// Default constructor
-	USLContactCapsule();
+	USLContactSphere();
 
 	// Dtor
-	~USLContactCapsule();
+	~USLContactSphere();
 
-	/* Begin ISLContactShapeInterface*/
+	/* Begin ISLContactMonitorInterface*/
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
 	virtual void Init(bool bLogSupportedByEvents = true) override;
 
@@ -34,7 +34,7 @@ public:
 	// it is public so it can be accessed from the editor panel for updates
 	virtual void UpdateVisualColor() override;
 #endif // WITH_EDITOR
-	/* End ISLContactShapeInterface*/
+	/* End ISLContactMonitorInterface*/
 
 protected:
 	// Called at level startup
@@ -58,7 +58,7 @@ private:
 	virtual void PostEditComponentMove(bool bFinished) override;
 	// End of USceneComponent interface
 
-	/* Begin ISLContactShapeInterface*/
+	/* Begin ISLContactMonitorInterface*/
 	// Load and apply cached parameters from tags
 	virtual bool LoadShapeBounds() override;
 
@@ -67,22 +67,22 @@ private:
 
 	// Save current parameters to tags
 	virtual bool StoreShapeBounds() override;
-	/* End ISLContactShapeInterface*/
+	/* End ISLContactMonitorInterface*/
 #endif // WITH_EDITOR
 
 #if WITH_EDITOR
 private:
 	// Box extent scale factor (smaller will be chosen)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float CapsuleScaleFactor;
+	float SphereScaleFactor;
 
 	// The box extent will be at least this big
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float CapsuleMinSize;
+	float SphereMinSize;
 
 	// The box extent will be at most this big
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float CapsuleMaxSize;
+	float SphereMaxSize;
 
 	// Mimics a button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

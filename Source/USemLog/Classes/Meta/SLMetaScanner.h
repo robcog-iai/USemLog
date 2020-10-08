@@ -85,7 +85,7 @@ private:
 	bool LoadScanPoses(int32 NumScanPose, float DistanceToCamera);
 
 	// Load items to scan
-	bool LoadScanItems(float MaxVolume = 0.f, float MaxBoundsLength = 0.f, bool bWithContactShape = false);
+	bool LoadScanItems(float MaxVolume = 0.f, float MaxBoundsLength = 0.f, bool bWithContactMonitor = false);
 
 	// Load mask dynamic material
 	bool LoadMaskMaterial();
@@ -125,10 +125,10 @@ private:
 
 	// Check against various properties if the item should be scanned
 	bool HasScanningRequirements(UStaticMeshComponent* SMC, float MaxVolume, float MaxBoundsLength,
-		bool bWithSemanticContactShape = false, bool bOnlyMovable = false) const;
+		bool bWithSemanticContactMonitor = false, bool bOnlyMovable = false) const;
 	
-	// Check if the item is wrapped in a semantic contact shape (has a SLContactShapeInterface sibling)
-	bool HasSemanticContactShape(UStaticMeshComponent* SMC) const;
+	// Check if the item is wrapped in a semantic contact shape (has a SLContactMonitorInterface sibling)
+	bool HasSemanticContactMonitor(UStaticMeshComponent* SMC) const;
 	
 protected:
 	// Set when initialized

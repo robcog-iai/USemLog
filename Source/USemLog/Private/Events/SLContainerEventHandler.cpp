@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLContainerEventHandler.h"
-#include "SLContainerListener.h"
+#include "Monitors/SLContainerMonitor.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Events/SLContainerEvent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
@@ -15,7 +15,7 @@ void FSLContainerEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<USLContainerListener>(InParent);
+		Parent = Cast<USLContainerMonitor>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized

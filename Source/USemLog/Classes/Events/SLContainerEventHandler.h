@@ -27,5 +27,5 @@ private:
 
 private:
 	// Parent
-	class USLContainerListener* Parent;
+	class USLContainerMonitor* Parent;
 };

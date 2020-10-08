@@ -18,6 +18,12 @@ struct FSLGoogleChartsParameters
 	// Use tooltips
 	uint8 bTooltips : 1;
 
+	// Store start time
+	float StartTime = -1.f;
+
+	// Store end time
+	float EndTime = -1.f;
+
 	// Default constructor
 	FSLGoogleChartsParameters() :
 		bLegend(false),
@@ -65,10 +71,27 @@ struct FSLGoogleCharts
 			"\n"
 		);
 
+		// Add episode duration
+		if (Params.StartTime >= 0 && Params.EndTime > 0)
+		{
+			const FString StartStr = FString::Printf(TEXT("%.3f"), Params.StartTime); 
+			const FString EndStr = FString::Printf(TEXT("%.3f"), Params.EndTime); 
+			const FString StartMsStr = FString::Printf(TEXT("%.3f"), Params.StartTime * 1000.f); //FString::SanitizeFloat(Ev->Start * 1000.f);
+			const FString EndMsStr = FString::Printf(TEXT("%.3f"), Params.EndTime * 1000.f);  //FString::SanitizeFloat(Ev->End * 1000.f);
+			const FString ContextStr = "Episode";
+			const FString IdStr = "Id";
+			TimelineStr.Append("\t\t [ \'" + ContextStr + "\' , \'" + IdStr + "\' , ");
+			if (Params.bTooltips)
+			{
+				TimelineStr.Append("emptyFunc(), ");
+			}
+			TimelineStr.Append(StartMsStr + " , " + EndMsStr + " ],\n");  // google charts needs millisecods
+		}
+
 		// Add event times
 		for (const auto& Ev : InEvents)
 		{
-			const FString StartStr = FString::Printf(TEXT("%.3f"),Ev->Start); //FString::SanitizeFloat(Ev->Start);
+			const FString StartStr = FString::Printf(TEXT("%.3f"), Ev->Start); //FString::SanitizeFloat(Ev->Start);
 			const FString EndStr = FString::Printf(TEXT("%.3f"), Ev->End); //FString::SanitizeFloat(Ev->End);
 			const FString StartMsStr = FString::Printf(TEXT("%.3f"), Ev->Start * 1000.f); //FString::SanitizeFloat(Ev->Start * 1000.f);
 			const FString EndMsStr = FString::Printf(TEXT("%.3f"), Ev->End * 1000.f);  //FString::SanitizeFloat(Ev->End * 1000.f);
@@ -118,11 +141,13 @@ struct FSLGoogleCharts
 				"\t\t\t '<font size=\"1\">' +\n"
 				"\t\t\t '<p><strong>' + Key5 + ':</strong> ' + Val5 + '</p>' +\n"
 				"\t\t\t '</font>' +\n"
-				"\t\t\t '</center>'"
-				"\t }");
+				"\t\t\t '</center>' \n"
+				"\t } \n");
 		}
 
-		TimelineStr.Append(			
+		TimelineStr.Append("\n\t function emptyFunc() { return } \n");
+
+		TimelineStr.Append(	
 			"</script>\n"
 			"<div id=\"event_tl\" style=\"height:900px;\"></div>");
 

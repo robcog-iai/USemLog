@@ -21,11 +21,11 @@
 #include "Events/SLPickAndPlaceEventsHandler.h"
 #include "Events/SLContainerEventHandler.h"
 
-#include "Monitors/SLContactShapeInterface.h"
-#include "Monitors/SLManipulatorListener.h"
-#include "Monitors/SLReachListener.h"
-#include "Monitors/SLPickAndPlaceListener.h"
-#include "Monitors/SLContainerListener.h"
+#include "Monitors/SLContactMonitorInterface.h"
+#include "Monitors/SLManipulatorMonitor.h"
+#include "Monitors/SLReachMonitor.h"
+#include "Monitors/SLPickAndPlaceMonitor.h"
+#include "Monitors/SLContainerMonitor.h"
 
 #include "Owl/SLOwlExperimentStatics.h"
 
@@ -264,36 +264,36 @@ void ASLSymbolicLogger::StartImpl()
 		EvHandler->Start();
 
 		// Bind resulting events
-		EvHandler->OnSemanticEvent.BindUObject(
-			this, &ASLSymbolicLogger::SemanticEventFinishedCallback);
+		EvHandler->OnSemanticEvent.BindUObject(this, &ASLSymbolicLogger::SemanticEventFinishedCallback);
 	}
 
 	// Start the semantic overlap areas
-	for (auto& Listener : ContactShapes)
+	for (auto& Monitor : ContactMonitors)
 	{
-		Listener->Start();
+		Monitor->Start();
 	}
-	// Start the grasp listeners
-	for (auto& Listener : GraspListeners)
+	// Start the grasp Monitors
+	for (auto& Monitor : GraspMonitors)
 	{
-		Listener->Start();
+		Monitor->Start();
 	}
-	// Start the pick and place listeners
-	for (auto& Listener : PickAndPlaceListeners)
+	// Start the pick and place Monitors
+	for (auto& Monitor : PickAndPlaceMonitors)
 	{
-		Listener->Start();
+		Monitor->Start();
 	}
-	// Start the reach listeners
-	for (auto& Listener : ReachListeners)
+	// Start the reach Monitors
+	for (auto& Monitor : ReachMonitors)
 	{
-		Listener->Start();
+		Monitor->Start();
 	}
-	// Start the container listeners
-	for (auto& Listener : ContainerListeners)
+	// Start the container Monitors
+	for (auto& Monitor : ContainerMonitors)
 	{
-		Listener->Start();
+		Monitor->Start();
 	}
 
+	EpisodeStartTime = GetWorld()->GetTimeSeconds();
 
 	bIsStarted = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Symbolic logger (%s) succesfully started at %.2f.."),
@@ -317,33 +317,45 @@ void ASLSymbolicLogger::FinishImpl(bool bForced)
 		return;
 	}
 
+	EpisodeEndTime = GetWorld()->GetTimeSeconds();
+
 	// Finish handlers pending events
 	for (auto& EvHandler : EventHandlers)
 	{
-		EvHandler->Finish(Time, bForced);
+		EvHandler->Finish(EpisodeEndTime, bForced);
 	}
 	EventHandlers.Empty();
 
 	// Finish semantic overlap events publishing
-	for (auto& SLContactShape : ContactShapes)
+	for (auto& SLContactMonitor : ContactMonitors)
 	{
-		SLContactShape->Finish();
+		SLContactMonitor->Finish();
 	}
-	ContactShapes.Empty();
-
-	// Finish the grasp listeners
-	for (auto& SLManipulatorListener : GraspListeners)
+	ContactMonitors.Empty();
+	// Finish the grasp Monitors
+	for (auto& SLManipulatorMonitor : GraspMonitors)
 	{
-		SLManipulatorListener->Finish(bForced);
+		SLManipulatorMonitor->Finish(bForced);
 	}
-	GraspListeners.Empty();
-
-	// Start the reach listeners
-	for (auto& SLReachListener : ReachListeners)
+	GraspMonitors.Empty();
+	// Finish the reach Monitors
+	for (auto& SLReachMonitor : ReachMonitors)
 	{
-		SLReachListener->Start();
+		SLReachMonitor->Finish();
 	}
-	ReachListeners.Empty();
+	ReachMonitors.Empty();
+	// Finish the pick and place Monitors
+	for (auto& SLPapMonitor : PickAndPlaceMonitors)
+	{
+		SLPapMonitor->Finish(EpisodeEndTime);
+	}
+	PickAndPlaceMonitors.Empty();
+	// Finish the container Monitors
+	for (auto& SLContainerMonitor : ContainerMonitors)
+	{
+		SLContainerMonitor->Finish();
+	}
+	ContainerMonitors.Empty();
 
 	// Create the experiment owl doc	
 	if (ExperimentDoc.IsValid())
@@ -434,6 +446,8 @@ void ASLSymbolicLogger::WriteToFile()
 	{
 		FSLGoogleChartsParameters Params;
 		Params.bTooltips = true;
+		Params.StartTime = EpisodeStartTime;
+		Params.EndTime = EpisodeEndTime;
 		FSLGoogleCharts::WriteTimelines(FinishedEvents, DirPath, LocationParameters.EpisodeId, Params);
 	}
 
@@ -524,22 +538,20 @@ void ASLSymbolicLogger::InitContactMonitors()
 	// Init all contact trigger handlers
 	for (TObjectIterator<UShapeComponent> Itr; Itr; ++Itr)
 	{
-		//if (Itr->GetClass()->ImplementsInterface(USLContactShapeInterface::StaticClass()))
-		if (ISLContactShapeInterface* ContactShape = Cast<ISLContactShapeInterface>(*Itr))
+		//if (Itr->GetClass()->ImplementsInterface(USLContactMonitorInterface::StaticClass()))
+		if (ISLContactMonitorInterface* ContactMonitor = Cast<ISLContactMonitorInterface>(*Itr))
 		{
 			if (IsValidAndLoaded(Itr->GetOwner()))
 			{
-				ContactShape->Init(LoggerParameters.bSupportedBy);
-				ContactShapes.Emplace(ContactShape);
+				ContactMonitor->Init(LoggerParameters.bSupportedBy);
+				ContactMonitors.Emplace(ContactMonitor);
 
 				// Create a contact event handler 
 				TSharedPtr<FSLContactEventHandler> CEHandler = MakeShareable(new FSLContactEventHandler());
 				CEHandler->Init(*Itr);
 				if (CEHandler->IsInit())
 				{
-					EventHandlers.Add(CEHandler);
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d CONTACT INIT %s "),
-						*FString(__FUNCTION__), __LINE__, *Itr->GetFullName());
+					EventHandlers.Emplace(CEHandler);
 				}
 				else
 				{
@@ -554,14 +566,14 @@ void ASLSymbolicLogger::InitContactMonitors()
 // Iterate and init the manipulator contact monitors in the world
 void ASLSymbolicLogger::InitManipulatorContactMonitors()
 {
-	// Init all grasp listeners
-	for (TObjectIterator<USLManipulatorListener> Itr; Itr; ++Itr)
+	// Init all grasp Monitors
+	for (TObjectIterator<USLManipulatorMonitor> Itr; Itr; ++Itr)
 	{
 		if (IsValidAndLoaded(Itr->GetOwner()))
 		{
 			if (Itr->Init(LoggerParameters.bGrasp, LoggerParameters.bContact))
 			{
-				GraspListeners.Emplace(*Itr);
+				GraspMonitors.Emplace(*Itr);
 				TSharedPtr<FSLGraspEventHandler> GEHandler = MakeShareable(new FSLGraspEventHandler());
 				GEHandler->Init(*Itr);
 				if (GEHandler->IsInit())
@@ -576,7 +588,7 @@ void ASLSymbolicLogger::InitManipulatorContactMonitors()
 						*FString(__func__), __LINE__, *Itr->GetName());
 				}
 
-				// The grasp listener can also publish contact events
+				// The grasp Monitor can also publish contact events
 				if (LoggerParameters.bContact)
 				{
 					TSharedPtr<FSLManipulatorContactEventHandler> MCEHandler = MakeShareable(new FSLManipulatorContactEventHandler());
@@ -602,7 +614,7 @@ void ASLSymbolicLogger::InitManipulatorContactMonitors()
 void ASLSymbolicLogger::InitManipulatorFixationMonitors()
 {
 #if SL_WITH_MC_GRASP
-	// Init fixation grasp listeners
+	// Init fixation grasp Monitors
 	for (TObjectIterator<UMCGraspFixation> Itr; Itr; ++Itr)
 	{
 		if (IsValidAndLoaded(Itr->GetOwner()))

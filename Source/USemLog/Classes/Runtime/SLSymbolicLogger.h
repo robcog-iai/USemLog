@@ -7,9 +7,9 @@
 #include "GameFramework/Info.h"
 #include "Runtime/SLLoggerStructs.h"
 #include "Events/ISLEventHandler.h"
-#include "Owl/SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
 #include "ROSProlog/SLPrologClient.h"
+#include "Owl/SLOwlExperiment.h"
 #include "SLSymbolicLogger.generated.h"
 
 // Forward declarations
@@ -152,19 +152,25 @@ private:
 	TArray<TSharedPtr<ISLEventHandler>> EventHandlers;
 
 	// List of the contact trigger shapes, stored to call Start and Finish on them
-	TArray<class ISLContactShapeInterface*> ContactShapes;
+	TArray<class ISLContactMonitorInterface*> ContactMonitors;
 
-	// Cache of the grasp listeners
-	TArray<class USLManipulatorListener*> GraspListeners;
+	// Cache of the grasp Monitors
+	TArray<class USLManipulatorMonitor*> GraspMonitors;
 
-	// Cache of the pick and place listeners
-	TArray<class USLPickAndPlaceListener*> PickAndPlaceListeners;
+	// Cache of the pick and place Monitors
+	TArray<class USLPickAndPlaceMonitor*> PickAndPlaceMonitors;
 
-	// Cache of the grasp listeners
-	TArray<class USLReachListener*> ReachListeners;
+	// Cache of the grasp Monitors
+	TArray<class USLReachMonitor*> ReachMonitors;
 
-	// Cache of the container manipulation listeners
-	TArray<class USLContainerListener*> ContainerListeners;
+	// Cache of the container manipulation Monitors
+	TArray<class USLContainerMonitor*> ContainerMonitors;
+
+	// Episode start time
+	float EpisodeStartTime;
+
+	// Episode end time
+	float EpisodeEndTime;
 
 	// ROS publisher
 	UPROPERTY()

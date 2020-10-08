@@ -38,6 +38,6 @@ private:
 
 private:
 	// Parent
-	class USLPickAndPlaceListener* Parent;
+	class USLPickAndPlaceMonitor* Parent;
 };
 

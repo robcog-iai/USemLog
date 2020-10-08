@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "SLContainerListener.generated.h"
+#include "SLContainerMonitor.generated.h"
 
 // Forward declaration
 class USLBaseIndividual;
@@ -16,16 +16,16 @@ DECLARE_MULTICAST_DELEGATE_FiveParams(FSLContainerManipulationSignature, USLBase
  * Checks for if the manipulated objects directly/indirectly opens / closes a container
  */
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent) )
-class USEMLOG_API USLContainerListener : public UActorComponent
+class USEMLOG_API USLContainerMonitor : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	USLContainerListener();
+	USLContainerMonitor();
 
 	// Dtor
-	~USLContainerListener();
+	~USLContainerMonitor();
 
 	// Check if owner is valid and semantically annotated
 	bool Init();

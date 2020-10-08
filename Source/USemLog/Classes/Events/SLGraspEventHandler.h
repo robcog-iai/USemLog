@@ -39,7 +39,7 @@ private:
 
 private:
 	// Parent
-	class USLManipulatorListener* Parent;
+	class USLManipulatorMonitor* Parent;
 
 	// Array of started events
 	TArray<TSharedPtr<FSLGraspEvent>> StartedEvents;

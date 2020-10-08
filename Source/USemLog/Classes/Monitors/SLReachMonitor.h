@@ -5,7 +5,7 @@
 
 #include "USemLog.h"
 #include "Components/SphereComponent.h"
-#include "SLReachListener.generated.h"
+#include "SLReachMonitor.generated.h"
 
 // Forward declarations
 class AStaticMeshActor;
@@ -36,8 +36,8 @@ struct FSLPreGraspEndEvent
 // Convenience enum
 enum ESLTimeAndDist
 {
-	Time = 0,
-	Dist = 1
+	SLTime = 0,
+	SLDist = 1
 };
 
 //typedef TPair<float, float> FSLTimeAndDistance;
@@ -51,16 +51,16 @@ DECLARE_MULTICAST_DELEGATE_FiveParams(FSLPreGraspAndReachEventSignature, USLBase
  * Checks for reaching actions
  */
 UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Reach Listener")
-class USEMLOG_API USLReachListener : public USphereComponent
+class USEMLOG_API USLReachMonitor : public USphereComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Set default values
-	USLReachListener();
+	USLReachMonitor();
 
 	// Dtor
-	~USLReachListener();
+	~USLReachMonitor();
 
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
 	bool Init();

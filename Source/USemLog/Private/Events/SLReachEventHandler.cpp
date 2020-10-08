@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLReachEventHandler.h"
-#include "Monitors/SLReachListener.h"
+#include "Monitors/SLReachMonitor.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Utils/SLUuid.h"
@@ -13,7 +13,7 @@ void FSLReachEventHandler::Init(UObject* InParent)
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<USLReachListener>(InParent);
+		Parent = Cast<USLReachMonitor>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized

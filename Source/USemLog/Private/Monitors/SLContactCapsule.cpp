@@ -71,9 +71,10 @@ void USLContactCapsule::Init(bool bInLogSupportedByEvents)
 	{
 		bLogSupportedByEvents = bInLogSupportedByEvents;
 		
-		// Important, set the interface pointers
-		if(!InitInterface(this, GetWorld()))
+		// Important, init interface with self
+		if (!InitContactMonitorInterface(this, GetWorld()))
 		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not init %s"), *FString(__FUNCTION__), __LINE__, *GetFullName());
 			return;
 		}
 

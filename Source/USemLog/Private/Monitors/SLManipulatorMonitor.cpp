@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Monitors/SLManipulatorListener.h"
+#include "Monitors/SLManipulatorMonitor.h"
 #include "Monitors/SLManipulatorOverlapSphere.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
@@ -16,7 +16,7 @@
 #endif // SL_WITH_MC_GRASP
 
 // Sets default values for this component's properties
-USLManipulatorListener::USLManipulatorListener()
+USLManipulatorMonitor::USLManipulatorMonitor()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -43,7 +43,7 @@ USLManipulatorListener::USLManipulatorListener()
 }
 
 // Dtor
-USLManipulatorListener::~USLManipulatorListener()
+USLManipulatorMonitor::~USLManipulatorMonitor()
 {
 	if (!bIsFinished)
 	{
@@ -52,7 +52,7 @@ USLManipulatorListener::~USLManipulatorListener()
 }
 
 // Init listener
-bool USLManipulatorListener::Init(bool bInDetectGrasps, bool bInDetectContacts)
+bool USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 {
 	if (bIgnore)
 	{
@@ -112,7 +112,7 @@ bool USLManipulatorListener::Init(bool bInDetectGrasps, bool bInDetectContacts)
 }
 
 // Start listening to grasp events, update currently overlapping objects
-void USLManipulatorListener::Start()
+void USLManipulatorMonitor::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -121,7 +121,7 @@ void USLManipulatorListener::Start()
 		{
 			if (UInputComponent* IC = PC->InputComponent)
 			{
-				IC->BindAxis(InputAxisName, this, &USLManipulatorListener::GraspInputAxisCallback);
+				IC->BindAxis(InputAxisName, this, &USLManipulatorMonitor::GraspInputAxisCallback);
 			}
 			else
 			{
@@ -141,13 +141,13 @@ void USLManipulatorListener::Start()
 			BoneOverlap->Start();
 			if (bDetectContacts)
 			{
-				BoneOverlap->OnBeginManipulatorContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginOverlapContact);
-				BoneOverlap->OnEndManipulatorContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndOverlapContact);
+				BoneOverlap->OnBeginManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapContact);
+				BoneOverlap->OnEndManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapContact);
 			}
 			if (bDetectGrasps)
 			{
-				BoneOverlap->OnBeginManipulatorGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginOverlapGroupAGrasp);
-				BoneOverlap->OnEndManipulatorGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndOverlapGroupAGrasp);
+				BoneOverlap->OnBeginManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapGroupAGrasp);
+				BoneOverlap->OnEndManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapGroupAGrasp);
 			}
 		}
 		for (auto BoneOverlap : GroupB)
@@ -155,13 +155,13 @@ void USLManipulatorListener::Start()
 			BoneOverlap->Start();
 			if (bDetectContacts)
 			{
-				BoneOverlap->OnBeginManipulatorContactOverlap.AddUObject(this, &USLManipulatorListener::OnBeginOverlapContact);
-				BoneOverlap->OnEndManipulatorContactOverlap.AddUObject(this, &USLManipulatorListener::OnEndOverlapContact);
+				BoneOverlap->OnBeginManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapContact);
+				BoneOverlap->OnEndManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapContact);
 			}
 			if (bDetectGrasps)
 			{
-				BoneOverlap->OnBeginManipulatorGraspOverlap.AddUObject(this, &USLManipulatorListener::OnBeginOverlapGroupBGrasp);
-				BoneOverlap->OnEndManipulatorGraspOverlap.AddUObject(this, &USLManipulatorListener::OnEndOverlapGroupBGrasp);
+				BoneOverlap->OnBeginManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapGroupBGrasp);
+				BoneOverlap->OnEndManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapGroupBGrasp);
 			}
 		}
 
@@ -171,7 +171,7 @@ void USLManipulatorListener::Start()
 }
 
 // Pause/continue grasp detection
-void USLManipulatorListener::PauseGraspDetection(bool bInPause)
+void USLManipulatorMonitor::PauseGraspDetection(bool bInPause)
 {
 	if (bInPause != bIsPaused)
 	{
@@ -201,7 +201,7 @@ void USLManipulatorListener::PauseGraspDetection(bool bInPause)
 }
 
 // Stop publishing grasp events
-void USLManipulatorListener::Finish(bool bForced)
+void USLManipulatorMonitor::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -237,7 +237,7 @@ void USLManipulatorListener::Finish(bool bForced)
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
-void USLManipulatorListener::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLManipulatorMonitor::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -246,7 +246,7 @@ void USLManipulatorListener::PostEditChangeProperty(struct FPropertyChangedEvent
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	// Set pre-defined parameters
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorListener, HandType))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorMonitor, HandType))
 	{
 		if (HandType == ESLGraspHandType::Left)
 		{
@@ -257,7 +257,7 @@ void USLManipulatorListener::PostEditChangeProperty(struct FPropertyChangedEvent
 			InputAxisName = "RightGrasp";
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorListener, bIsNotSkeletal))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorMonitor, bIsNotSkeletal))
 	{
 		Fingers.Empty();
 	}
@@ -265,7 +265,7 @@ void USLManipulatorListener::PostEditChangeProperty(struct FPropertyChangedEvent
 #endif // WITH_EDITOR
 
 // Set overlap groups, return true if at least one valid overlap is in each group
-bool USLManipulatorListener::LoadOverlapGroups()
+bool USLManipulatorMonitor::LoadOverlapGroups()
 {
 	// Lambda to check grasp overlap components of owner and add them to their groups
 	const auto GetOverlapComponentsLambda = [this](AActor* Owner)
@@ -309,19 +309,19 @@ bool USLManipulatorListener::LoadOverlapGroups()
 /* Begin grasp related */
 #if SL_WITH_MC_GRASP
 // Subscribe to grasp type changes
-bool USLManipulatorListener::SubscribeToGraspTypeChanges()
+bool USLManipulatorMonitor::SubscribeToGraspTypeChanges()
 {
 	if (UMCGraspAnimController* Sibling = CastChecked<UMCGraspAnimController>(
 		GetOwner()->GetComponentByClass(UMCGraspAnimController::StaticClass())))
 	{
-		Sibling->OnGraspType.AddUObject(this, &USLManipulatorListener::OnGraspType);
+		Sibling->OnGraspType.AddUObject(this, &USLManipulatorMonitor::OnGraspType);
 		return true;
 	}
 	return false;
 }
 
 // Callback on grasp type change
-void USLManipulatorListener::OnGraspType(const FString& Type)
+void USLManipulatorMonitor::OnGraspType(const FString& Type)
 {
 	ActiveGraspType = Type;
 	ActiveGraspType.RemoveFromStart("GA_");
@@ -333,7 +333,7 @@ void USLManipulatorListener::OnGraspType(const FString& Type)
 #endif // SL_WITH_MC_GRASP
 
 // Check if the grasp trigger is active
-void USLManipulatorListener::GraspInputAxisCallback(float Value)
+void USLManipulatorMonitor::GraspInputAxisCallback(float Value)
 {
 	if (Value >= UnPauseTriggerVal)
 	{
@@ -346,7 +346,7 @@ void USLManipulatorListener::GraspInputAxisCallback(float Value)
 }
 
 // Process beginning of grasp in group A
-void USLManipulatorListener::OnBeginOverlapGroupAGrasp(AActor* OtherActor)
+void USLManipulatorMonitor::OnBeginOverlapGroupAGrasp(AActor* OtherActor)
 {
 	bool bAlreadyInSet = false;
 	SetA.Emplace(OtherActor, &bAlreadyInSet);
@@ -357,7 +357,7 @@ void USLManipulatorListener::OnBeginOverlapGroupAGrasp(AActor* OtherActor)
 }
 
 // Process beginning of grasp in group B
-void USLManipulatorListener::OnBeginOverlapGroupBGrasp(AActor* OtherActor)
+void USLManipulatorMonitor::OnBeginOverlapGroupBGrasp(AActor* OtherActor)
 {
 	bool bAlreadyInSet = false;
 	SetB.Emplace(OtherActor, &bAlreadyInSet);
@@ -368,7 +368,7 @@ void USLManipulatorListener::OnBeginOverlapGroupBGrasp(AActor* OtherActor)
 }
 
 // Process ending of contact in group A
-void USLManipulatorListener::OnEndOverlapGroupAGrasp(AActor* OtherActor)
+void USLManipulatorMonitor::OnEndOverlapGroupAGrasp(AActor* OtherActor)
 {
 	if (SetA.Remove(OtherActor) > 0)
 	{
@@ -382,7 +382,7 @@ void USLManipulatorListener::OnEndOverlapGroupAGrasp(AActor* OtherActor)
 }
 
 // Process ending of contact in group B
-void USLManipulatorListener::OnEndOverlapGroupBGrasp(AActor* OtherActor)
+void USLManipulatorMonitor::OnEndOverlapGroupBGrasp(AActor* OtherActor)
 {
 	if (SetB.Remove(OtherActor) > 0)
 	{
@@ -396,7 +396,7 @@ void USLManipulatorListener::OnEndOverlapGroupBGrasp(AActor* OtherActor)
 }
 
 // Check for grasping state
-void USLManipulatorListener::CheckGraspState()
+void USLManipulatorMonitor::CheckGraspState()
 {
 	for (const auto& Obj : SetA.Intersect(SetB))
 	{
@@ -408,7 +408,7 @@ void USLManipulatorListener::CheckGraspState()
 }
 
 // A grasp has started
-void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
+void USLManipulatorMonitor::BeginGrasp(AActor* OtherActor)
 {
 	// Check if it is a new grasp event, or a concatenation with a previous one, either way, there is a new grasp
 	GraspedObjects.AddUnique(OtherActor);
@@ -426,7 +426,7 @@ void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 }
 
 // A grasp has ended
-void USLManipulatorListener::EndGrasp(AActor* OtherActor)
+void USLManipulatorMonitor::EndGrasp(AActor* OtherActor)
 {
 	if (GraspedObjects.Remove(OtherActor) > 0)
 	{
@@ -436,14 +436,14 @@ void USLManipulatorListener::EndGrasp(AActor* OtherActor)
 		// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 		if(!GetWorld()->GetTimerManager().IsTimerActive(GraspDelayTimerHandle))
 		{
-			GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorListener::DelayedGraspEndEventCallback,
+			GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorMonitor::DelayedGraspEndEventCallback,
 				MaxGraspEventTimeGap * 1.2f, false);
 		}
 	}
 }
 
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
-void USLManipulatorListener::DelayedGraspEndEventCallback()
+void USLManipulatorMonitor::DelayedGraspEndEventCallback()
 {
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = GetWorld()->GetTimeSeconds();
@@ -466,13 +466,13 @@ void USLManipulatorListener::DelayedGraspEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedGraspEvents.Num() > 0)
 	{
-		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorListener::DelayedGraspEndEventCallback,
+		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorMonitor::DelayedGraspEndEventCallback,
 			MaxGraspEventTimeGap * 1.2f, false);
 	}
 }
 
 // Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-bool USLManipulatorListener::SkipRecentGraspEndEventBroadcast(AActor* OtherActor, float StartTime)
+bool USLManipulatorMonitor::SkipRecentGraspEndEventBroadcast(AActor* OtherActor, float StartTime)
 {
 	for (auto EvItr(RecentlyEndedGraspEvents.CreateIterator()); EvItr; ++EvItr)
 	{
@@ -500,7 +500,7 @@ bool USLManipulatorListener::SkipRecentGraspEndEventBroadcast(AActor* OtherActor
 
 /* Begin contact related */
 // Process beginning of contact
-void USLManipulatorListener::OnBeginOverlapContact(AActor* OtherActor)
+void USLManipulatorMonitor::OnBeginOverlapContact(AActor* OtherActor)
 {
 	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);
 	if (OtherIndividual == nullptr)
@@ -528,7 +528,7 @@ void USLManipulatorListener::OnBeginOverlapContact(AActor* OtherActor)
 }
 
 // Process ending of contact
-void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
+void USLManipulatorMonitor::OnEndOverlapContact(AActor* OtherActor)
 {
 	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);
 	if (OtherIndividual == nullptr)
@@ -558,7 +558,7 @@ void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
 			// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 			if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
 			{
-				GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
+				GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorMonitor::DelayedContactEndEventCallback,
 					MaxContactEventTimeGap * 1.2f, false);
 			}
 		}
@@ -571,7 +571,7 @@ void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
 }
 
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
-void USLManipulatorListener::DelayedContactEndEventCallback()
+void USLManipulatorMonitor::DelayedContactEndEventCallback()
 {
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = GetWorld()->GetTimeSeconds();
@@ -589,13 +589,13 @@ void USLManipulatorListener::DelayedContactEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedContactEvents.Num() > 0)
 	{
-		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
+		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorMonitor::DelayedContactEndEventCallback,
 			MaxContactEventTimeGap * 1.2f, false);
 	}
 }
 
 // Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-bool USLManipulatorListener::SkipRecentContactEndEventBroadcast(USLBaseIndividual* InOther, float StartTime)
+bool USLManipulatorMonitor::SkipRecentContactEndEventBroadcast(USLBaseIndividual* InOther, float StartTime)
 {
 	for (auto EvItr(RecentlyEndedContactEvents.CreateIterator()); EvItr; ++EvItr)
 	{
