@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "SLStructs.h" // FSLEntity
 #include "SLContainerListener.generated.h"
 
+// Forward declaration
+class USLBaseIndividual;
+
 /** Notify the beginning and the end of a opening/closing container event */
-DECLARE_MULTICAST_DELEGATE_FiveParams(FSLContainerManipulationSignature, const FSLEntity& /*Self*/, AActor* /*Container*/, float /*StartTime*/, float /*EndTime*/, const FString& /*Type*/);
+DECLARE_MULTICAST_DELEGATE_FiveParams(FSLContainerManipulationSignature, USLBaseIndividual* /*Self*/, AActor* /*Container*/, float /*StartTime*/, float /*EndTime*/, const FString& /*Type*/);
 
 /**
  * Checks for if the manipulated objects directly/indirectly opens / closes a container
@@ -45,10 +47,10 @@ public:
 
 private:
 	// Called on grasp begin
-	void OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType);
+	void OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType);
 
 	// Called on grasp end
-	void OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time);
+	void OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time);
 
 	// Search which container will be manipulated and save their current distance to the grasped item
 	bool SetContainersAndDistances();
@@ -76,8 +78,11 @@ private:
 	// True if finished
 	bool bIsFinished;
 
-	// Semantic data of the owner
-	FSLEntity SemanticOwner;
+	// Semantic data component of the owner
+	class USLIndividualComponent* IndividualComponent;
+
+	// Semantic individual object
+	class USLBaseIndividual* IndividualObject;
 
 	// Object currently grasped
 	AActor* CurrGraspedObj;

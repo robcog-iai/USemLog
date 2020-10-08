@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Vision/SLVisionDBHandler.h"
-#include "SLEntitiesManager.h"
 
 // UUtils
 #if SL_WITH_ROS_CONVERSIONS
@@ -679,23 +678,23 @@ bool FSLVisionDBHandler::GetEntitiesData(bson_iter_t* doc,
 					Quat.W = bson_iter_double(&sub_sub_child_iter);
 				}
 
-				// Add entity
-				if (AStaticMeshActor* SMA = FSLEntitiesManager::GetInstance()->GetStaticMeshActor(Id))
-				{
-#if SL_WITH_ROS_CONVERSIONS
-					OutEntityPoses.Emplace(SMA, FConversions::ROSToU(FTransform(Quat, Loc)));
-#else
-					OutEntityPoses.Emplace(SMA, FTransform(Quat, Loc));
-#endif // SL_WITH_ROS_CONVERSIONS
-				}
-				else if (ASLVirtualCameraView* VCA = FSLEntitiesManager::GetInstance()->GetVisionCameraActor(Id))
-				{					
-#if SL_WITH_ROS_CONVERSIONS
-					OutVirtualCameraPoses.Emplace(VCA, FConversions::ROSToU(FTransform(Quat, Loc)));
-#else
-					OutVirtualCameraPoses.Emplace(VCA, FTransform(Quat, Loc));
-#endif // SL_WITH_ROS_CONVERSIONS
-				}
+//				// Add entity
+//				if (AStaticMeshActor* SMA = FSLEntitiesManager::GetInstance()->GetStaticMeshActor(Id))
+//				{
+//#if SL_WITH_ROS_CONVERSIONS
+//					OutEntityPoses.Emplace(SMA, FConversions::ROSToU(FTransform(Quat, Loc)));
+//#else
+//					OutEntityPoses.Emplace(SMA, FTransform(Quat, Loc));
+//#endif // SL_WITH_ROS_CONVERSIONS
+//				}
+//				else if (ASLVirtualCameraView* VCA = FSLEntitiesManager::GetInstance()->GetVisionCameraActor(Id))
+//				{					
+//#if SL_WITH_ROS_CONVERSIONS
+//					OutVirtualCameraPoses.Emplace(VCA, FConversions::ROSToU(FTransform(Quat, Loc)));
+//#else
+//					OutVirtualCameraPoses.Emplace(VCA, FTransform(Quat, Loc));
+//#endif // SL_WITH_ROS_CONVERSIONS
+//				}
 			}
 		}
 		return OutEntityPoses.Num() > 0;
@@ -785,19 +784,19 @@ bool FSLVisionDBHandler::GetSkeletalEntitiesData(bson_iter_t* doc,
 					}
 				}
 
-				// Add skeletal entity
-				if (ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor((Id)))
-				{
-					if (ASLVisionPoseableMeshActor* const* PMA = InSkelToPoseableMap.Find(SkMA))
-					{
-						OutSkeletalPoses.Emplace(*PMA, BonesMap);
-					}
-					else
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find poseable mesh clone actor for %s, did you run the setup before?"),
-							*FString(__func__), __LINE__, *SkMA->GetName());
-					}
-				}
+				//// Add skeletal entity
+				//if (ASkeletalMeshActor* SkMA = FSLEntitiesManager::GetInstance()->GetSkeletalMeshActor((Id)))
+				//{
+				//	if (ASLVisionPoseableMeshActor* const* PMA = InSkelToPoseableMap.Find(SkMA))
+				//	{
+				//		OutSkeletalPoses.Emplace(*PMA, BonesMap);
+				//	}
+				//	else
+				//	{
+				//		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find poseable mesh clone actor for %s, did you run the setup before?"),
+				//			*FString(__func__), __LINE__, *SkMA->GetName());
+				//	}
+				//}
 			}
 		}
 		return OutSkeletalPoses.Num() > 0;

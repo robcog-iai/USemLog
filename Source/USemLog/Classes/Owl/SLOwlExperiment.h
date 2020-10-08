@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLOwlDoc.h"
+#include "Owl/SLOwlDoc.h"
 
 /**
 * Events owl document template types

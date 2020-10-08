@@ -23,19 +23,19 @@ public:
 
 private:
 	// Start new grasp event
-	void AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime, const FString& Type);
+	void AddNewEvent(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, const FString& Type);
 
 	// Finish then publish the event
-	bool FinishEvent(AActor* Other, float EndTime);
+	bool FinishEvent(USLBaseIndividual* Other, float EndTime);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& Type);
+	void OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& Type);
 
 	// Event called when a semantic overlap event ends
-	void OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time);
+	void OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time);
 
 private:
 	// Parent

@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLOwlSemanticMapStatics.h"
+#include "Owl/SLOwlSemanticMapStatics.h"
 
 /* Semantic map template creation */
 // Create Default semantic map

@@ -2,21 +2,22 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLSlicingEvent.h"
-#include "SLOwlExperimentStatics.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Owl/SLOwlExperimentStatics.h"
 
 // Constructor with initialization
 FSLSlicingEvent::FSLSlicingEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn,
-	const FSLEntity& InOutputsCreated, const bool bInTaskSuccessful) :
+	USLBaseIndividual* InPerformedBy, USLBaseIndividual* InDeviceUsed, USLBaseIndividual* InObjectActedOn,
+	USLBaseIndividual* InOutputsCreated, const bool bInTaskSuccessful) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId),
 	PerformedBy(InPerformedBy), DeviceUsed(InDeviceUsed), ObjectActedOn(InObjectActedOn),
-	OutputsCreated(InOutputsCreated), bTaskSuccessful(bInTaskSuccessful)
+	CreatedSlice(InOutputsCreated), bTaskSuccessful(bInTaskSuccessful)
 {
 }
 
 // Constructor initialization without endTime, endTaskSuccess and outputsCreated.
 FSLSlicingEvent::FSLSlicingEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn) :
+	USLBaseIndividual* InPerformedBy, USLBaseIndividual* InDeviceUsed, USLBaseIndividual* InObjectActedOn) :
 	ISLEvent(InId, InStart), PairId(InPairId),
 	PerformedBy(InPerformedBy), DeviceUsed(InDeviceUsed), ObjectActedOn(InObjectActedOn)
 {
@@ -31,13 +32,13 @@ FSLOwlNode FSLSlicingEvent::ToOwlNode() const
 		"log", Id, "SlicingingSomething");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", PerformedBy.Id));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateDeviceUsedProperty("log", DeviceUsed.Id));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", ObjectActedOn.Id));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", PerformedBy->GetIdValue()));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateDeviceUsedProperty("log", DeviceUsed->GetIdValue()));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", ObjectActedOn->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateTaskSuccessProperty("log", bTaskSuccessful));
 	if (bTaskSuccessful)
 	{
-		EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateOutputsCreatedProperty("log", OutputsCreated.Id));
+		EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateOutputsCreatedProperty("log", CreatedSlice->GetIdValue()));
 	}
 	return EventIndividual;
 }
@@ -54,16 +55,16 @@ void FSLSlicingEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(
 		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(PerformedBy.Obj,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", PerformedBy.Id, PerformedBy.Class));
-	EventsDoc->AddObjectIndividual(DeviceUsed.Obj,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", DeviceUsed.Id, DeviceUsed.Class));
-	EventsDoc->AddObjectIndividual(ObjectActedOn.Obj,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", ObjectActedOn.Id, ObjectActedOn.Class));
+	EventsDoc->AddObjectIndividual(PerformedBy,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", PerformedBy->GetIdValue(), PerformedBy->GetClassValue()));
+	EventsDoc->AddObjectIndividual(DeviceUsed,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", DeviceUsed->GetIdValue(), DeviceUsed->GetClassValue()));
+	EventsDoc->AddObjectIndividual(ObjectActedOn,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", ObjectActedOn->GetIdValue(), ObjectActedOn->GetClassValue()));
 	if (bTaskSuccessful)
 	{
-	EventsDoc->AddObjectIndividual(OutputsCreated.Obj,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", OutputsCreated.Id, OutputsCreated.Class));
+		EventsDoc->AddObjectIndividual(CreatedSlice,
+			FSLOwlExperimentStatics::CreateObjectIndividual("log", CreatedSlice->GetIdValue(), CreatedSlice->GetClassValue()));
 	}
 	OutDoc->AddIndividual(ToOwlNode());
 }
@@ -80,17 +81,20 @@ FString FSLSlicingEvent::ToROSQuery() const
 	Query.Append("executes_task(Action, Task),");
 	Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasEventBegin', %f),"), Start));
 	Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasEventEnd', %f),"), End));
-	if (bTaskSuccessful) {
+	if (bTaskSuccessful) 
+	{
 		Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasExecutionState', soma:'ExecutionState_Succeded')")));
 	}
-	else {
+	else 
+	{
 		Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasExecutionState', soma:'ExecutionState_Failed')")));
 	}
 	Query.Append("]),");
 
 	// Tool
-	if (DeviceUsed.IsSet()) {
-		Query.Append(FString::Printf(TEXT("ObjUsed = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *DeviceUsed.Class, *DeviceUsed.Id));
+	if (DeviceUsed->IsLoaded()) 
+	{
+		Query.Append(FString::Printf(TEXT("ObjUsed = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *DeviceUsed->GetClassValue(), *DeviceUsed->GetIdValue()));
 		Query.Append("tell([");
 		Query.Append(FString::Printf(TEXT("has_type(ObjUsed, soma:\'knife\'),")));
 		Query.Append(FString::Printf(TEXT("has_type(ToolRole, soma:\'Tool\'),")));
@@ -100,8 +104,9 @@ FString FSLSlicingEvent::ToROSQuery() const
 	}
 
 	// Food
-	if (ObjectActedOn.IsSet()) {
-		Query.Append(FString::Printf(TEXT("AlteredObj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *ObjectActedOn.Class, *ObjectActedOn.Id));
+	if (ObjectActedOn->IsLoaded()) 
+	{
+		Query.Append(FString::Printf(TEXT("AlteredObj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *ObjectActedOn->GetClassValue(), *ObjectActedOn->GetIdValue()));
 		Query.Append("tell([");
 		Query.Append("is_physical_object(AlteredObj),");
 		Query.Append(FString::Printf(TEXT("has_type(AlteredRole, soma:\'AlteredObject\'),")));
@@ -111,8 +116,9 @@ FString FSLSlicingEvent::ToROSQuery() const
 	}
 
 	// New piece
-	if (OutputsCreated.IsSet()) {
-		Query.Append(FString::Printf(TEXT("CreatedObj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *OutputsCreated.Class, *OutputsCreated.Id));
+	if (CreatedSlice->IsLoaded()) 
+	{
+		Query.Append(FString::Printf(TEXT("CreatedObj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *CreatedSlice->GetClassValue(), *CreatedSlice->GetIdValue()));
 		Query.Append("tell([");
 		Query.Append("is_physical_object(CreatedObj),");
 		Query.Append(FString::Printf(TEXT("has_type(CreatedRole, soma:\'CreatedObject\'),")));
@@ -138,28 +144,30 @@ FString FSLSlicingEvent::Context() const
 // Get the tooltip data
 FString FSLSlicingEvent::Tooltip() const
 {
-	if (bTaskSuccessful) {
+	if (bTaskSuccessful) 
+	{
 		return FString::Printf(TEXT("\'PerformedBy\',\'%s\',\'Id\',\'%s\',  \
 								 \'DeviceUsed\',\'%s\',\'Id\',\'%s\',  \
 								 \'ObjectActedOn\',\'%s\',\'Id\',\'%s\',\
 								 \'TaskSuccess True\', \
 								 \'OutputsCreated\',\'%s\',\'Id\',\'%s\',\
 								 \'Id\',\'%s\'"),
-						*PerformedBy.Class, *PerformedBy.Id, 
-						*DeviceUsed.Class, *DeviceUsed.Id,
-						*ObjectActedOn.Class, *ObjectActedOn.Id, 
-						*OutputsCreated.Class, *OutputsCreated.Id,
+						*PerformedBy->GetClassValue(), *PerformedBy->GetIdValue(), 
+						*DeviceUsed->GetClassValue(), *DeviceUsed->GetIdValue(),
+						*ObjectActedOn->GetClassValue(), *ObjectActedOn->GetIdValue(), 
+						*CreatedSlice->GetClassValue(), *CreatedSlice->GetIdValue(),
 						*Id);
 	}
-	else {
+	else 
+	{
 		return FString::Printf(TEXT("\'PerformedBy\',\'%s\',\'Id\',\'%s\',  \
 								 \'DeviceUsed\',\'%s\',\'Id\',\'%s\',  \
 								 \'ObjectActedOn\',\'%s\',\'Id\',\'%s\',\
 								 \'TaskSuccess False\', \
 								 \'Id\',\'%s\'"),
-			*PerformedBy.Class, *PerformedBy.Id,
-			*DeviceUsed.Class, *DeviceUsed.Id,
-			*ObjectActedOn.Class, *ObjectActedOn.Id,
+			*PerformedBy->GetClassValue(), *PerformedBy->GetIdValue(),
+			*DeviceUsed->GetClassValue(), *DeviceUsed->GetIdValue(),
+			*ObjectActedOn->GetClassValue(), *ObjectActedOn->GetIdValue(),
 			*Id);
 	}
 }
@@ -167,13 +175,15 @@ FString FSLSlicingEvent::Tooltip() const
 // Get the data as string
 FString FSLSlicingEvent::ToString() const
 {
-	if (bTaskSuccessful) {
+	if (bTaskSuccessful) 
+	{
 		return FString::Printf(TEXT("PerformedBy:[%s] DeviceUsed:[%s] ObjectActedOn:[%s] TaskSuccess:[True] OutputsCreated:[%s] PairId:%lld"),
-			*PerformedBy.ToString(), *DeviceUsed.ToString(), *ObjectActedOn.ToString(), *OutputsCreated.ToString(), PairId);
+			*PerformedBy->GetInfo(), *DeviceUsed->GetInfo(), *ObjectActedOn->GetInfo(), *CreatedSlice->GetInfo(), PairId);
 	}
-	else {
+	else 
+	{
 		return FString::Printf(TEXT("PerformedBy:[%s] DeviceUsed:[%s] ObjectActedOn:[%s] TaskSuccess:[False] PairId:%lld"),
-			*PerformedBy.ToString(), *DeviceUsed.ToString(), *ObjectActedOn.ToString(), PairId);
+			*PerformedBy->GetInfo(), *DeviceUsed->GetInfo(), *ObjectActedOn->GetInfo(), PairId);
 	}
 }
 /* End ISLEvent interface */

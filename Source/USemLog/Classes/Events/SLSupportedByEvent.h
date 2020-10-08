@@ -4,7 +4,9 @@
 #pragma once
 
 #include "ISLEvent.h"
-#include "SLStructs.h"
+
+// Forward declarations
+class USLBaseIndividual;
 
 /**
 * Supported by event class
@@ -17,20 +19,20 @@ public:
 
 	// Constructor with initialization 
 	FSLSupportedByEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLEntity& InSupportedItem, const FSLEntity& InSupportingItem);
+		USLBaseIndividual* InSupportedIndividual, USLBaseIndividual* InSupportingIndividual);
 
 	// Constructor with initialization without end time 
 	FSLSupportedByEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLEntity& InSupportedItem, const FSLEntity& InSupportingItem);
+		USLBaseIndividual* InSupportedIndividual, USLBaseIndividual* InSupportingIndividual);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
 	// Supported item
-	FSLEntity SupportedItem;
+	USLBaseIndividual* SupportedIndividual;
 
 	// Supporting item
-	FSLEntity SupportingItem;
+	USLBaseIndividual* SupportingIndividual;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

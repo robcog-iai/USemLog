@@ -4,7 +4,9 @@
 #pragma once
 
 #include "ISLEvent.h"
-#include "SLStructs.h"
+
+// Forward declarations
+class USLBaseIndividual;
 
 /**
 * Contact event class
@@ -16,21 +18,21 @@ public:
 	FSLContactEvent() = default;
 
 	// Constructor with initialization
-	FSLContactEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLEntity& InItem1, const FSLEntity& InItem2);
+	FSLContactEvent(const FString& InId, float InStart, float InEnd, uint64 InPairId,
+		USLBaseIndividual* InIndividual1, USLBaseIndividual* InIndividual2);
 
 	// Constructor initialization without end time
 	FSLContactEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLEntity& InItem1, const FSLEntity& InItem2);
+		USLBaseIndividual* InIndividual1, USLBaseIndividual* InIndividual2);
 	
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
-	// Item1 in contact
-	FSLEntity Item1;
+	// Individual1 in contact
+	USLBaseIndividual* Individual1;
 
-	// Item2 in contact
-	FSLEntity Item2;
+	// Individual2 in contact
+	USLBaseIndividual* Individual2;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

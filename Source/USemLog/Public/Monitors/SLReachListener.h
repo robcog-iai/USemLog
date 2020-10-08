@@ -5,9 +5,14 @@
 
 #include "USemLog.h"
 #include "Components/SphereComponent.h"
-#include "SLStructs.h"
-#include "Engine/StaticMeshActor.h"
 #include "SLReachListener.generated.h"
+
+// Forward declarations
+class AStaticMeshActor;
+class USLBaseIndividual;
+class USLIndividualComponent;
+struct FSLContactResult;
+
 
 /**
  * PreGrasp event end data
@@ -40,7 +45,7 @@ enum ESLTimeAndDist
 using FSLTimeAndDist = TTuple<float, float>; // <Time, Distance>
 
 /** Notify when a reaching event happened*/
-DECLARE_MULTICAST_DELEGATE_FiveParams(FSLPreGraspAndReachEventSignature, const FSLEntity& /*Self*/, UObject* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
+DECLARE_MULTICAST_DELEGATE_FiveParams(FSLPreGraspAndReachEventSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
 
 /**
  * Checks for reaching actions
@@ -120,16 +125,16 @@ private:
 		int32 OtherBodyIndex);
 	
 	// End reach and positioning events, pause timer
-	void OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType);
+	void OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActor, float Time, const FString& GraspType);
 
 	// Reset looking for the events
-	void OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time);
+	void OnSLGraspEnd(USLBaseIndividual* Self, AActor* OtherActor, float Time);
 	
 	// Used for the reaching and hand positioning detection
 	void OnSLManipulatorContactBegin(const FSLContactResult& ContactResult);
 
 	// Manipulator is not in contact with object anymore, check for possible concatenation, or reset the potential reach time
-	void OnSLManipulatorContactEnd(const FSLEntity& Self, const FSLEntity& Other, float Time);
+	void OnSLManipulatorContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
 	
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedManipulatorContactEndEventCallback();
@@ -154,11 +159,14 @@ private:
 	// Shows if the begin / end overlap callbacks are bound (avoid adding the same callback twice--crash)
 	bool bCallbacksAreBound;
 
+	// Semantic data component of the owner
+	USLIndividualComponent* IndividualComponent;
+
+	// Semantic individual object
+	USLBaseIndividual* IndividualObject;
+
 	// Timer handle for the update rate
 	FTimerHandle UpdateTimerHandle;
-
-	// Semantic data of the owner
-	FSLEntity SemanticOwner;
 
 	// CandidatesWithTimeAndDistance for reaching action, pointing to their starting time
 	TMap<AStaticMeshActor*, FSLTimeAndDist> CandidatesWithTimeAndDistance;

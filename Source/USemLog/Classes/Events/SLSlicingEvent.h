@@ -4,7 +4,9 @@
 #pragma once
 
 #include "ISLEvent.h"
-#include "SLStructs.h"
+
+// Forward declarations
+class USLBaseIndividual;
 
 /**
 * Dummy event class
@@ -18,27 +20,27 @@ public:
 
 	// Constructor with initialization
 	FSLSlicingEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn,
-		const FSLEntity& InOutputsCreated, const bool bInTaskSuccessful);
+		USLBaseIndividual* InPerformedBy, USLBaseIndividual* InDeviceUsed, USLBaseIndividual* InObjectActedOn,
+		USLBaseIndividual* InOutputsCreated, const bool bInTaskSuccessful);
 
 	// Constructor initialization without endTime, endTaskSuccess and outputsCreated.
 	FSLSlicingEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLEntity& InPerformedBy, const FSLEntity& InDeviceUsed, const FSLEntity& InObjectActedOn);
+		USLBaseIndividual* InPerformedBy, USLBaseIndividual* InDeviceUsed, USLBaseIndividual* InObjectActedOn);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
 	// Cutter agent
-	FSLEntity PerformedBy;
+	USLBaseIndividual* PerformedBy;
 	
 	// Cutter Device
-	FSLEntity DeviceUsed;
+	USLBaseIndividual* DeviceUsed;
 
 	// Other item (Sliced item)
-	FSLEntity ObjectActedOn;
+	USLBaseIndividual* ObjectActedOn;
 
 	// Slice
-	FSLEntity OutputsCreated;
+	USLBaseIndividual* CreatedSlice;
 
 	// Task succeeded or not
 	bool bTaskSuccessful;

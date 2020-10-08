@@ -2,12 +2,12 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "EngineMinimal.h"
-#include "SLOwlSemanticMap.h"
+#include "Owl/SLOwlSemanticMap.h"
 
 /**
 * Helper functions for generating semantic maps
 */
-struct USEMLOGOWL_API FSLOwlSemanticMapStatics
+struct USEMLOG_API FSLOwlSemanticMapStatics
 {
 	/* Semantic map template creation */
 	// Create Default semantic map

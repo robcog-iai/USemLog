@@ -43,16 +43,17 @@ struct USEMLOG_API FSLTagIO
 	// Remove the pair with the given type and key (return true if the key existed)
 	static bool RemoveKVPair(AActor* Actor, const FString& TagType, const FString& TagKey);
 
+
 private:
 	/* Utils */
 	// Add key value pair to the tag value
 	static bool AddKVPair(FName& Tag, const FString& TagKey, const FString& TagValue, bool bOverwrite = false);
 
-	// Get tag key value from tag
-	FORCEINLINE static FString GetValue(const FName& InTag, const FString& TagKey);
-
 	// Return the index where the tag type was found in the array
 	FORCEINLINE static int32 IndexOfType(const TArray<FName>& InTags, const FString& TagType);
+
+	// Get tag key value from tag
+	FORCEINLINE static FString GetValue(const FName& InTag, const FString& TagKey);
 
 	// Return the Type;Key,Value; 
 	FORCEINLINE static FString TKVString(const FString& TagType, const FString& TagKey, const FString& TagValue);

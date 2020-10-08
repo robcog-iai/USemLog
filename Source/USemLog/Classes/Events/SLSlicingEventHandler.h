@@ -23,28 +23,28 @@ public:
 
 private:
 	// Start new Slicing event
-	void AddNewEvent(const FSLEntity& PerformedBy, const FSLEntity& DeviceUsed, const FSLEntity& ObjectActedOn, float StartTime);
+	void AddNewEvent(USLBaseIndividual* PerformedBy, USLBaseIndividual* DeviceUsed, USLBaseIndividual* ObjectActedOn, float StartTime);
 
 	// Finish then publish the event
-	bool FinishEvent(UObject* InObjectActedOn, bool bTaskSuccessful, float EndTime, const FSLEntity& OutputsCreated);
+	bool FinishEvent(USLBaseIndividual* InObjectActedOn, bool bTaskSuccessful, float EndTime, USLBaseIndividual* OutputsCreated);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a slicing event begins
-	void OnSLSlicingBegin(UObject* PerformedBy, UObject* DeviceUsed, UObject* ObjectActedOn, float Time);
+	void OnSLSlicingBegin(AActor* PerformedBy, AActor* DeviceUsed, AActor* ObjectActedOn, float Time);
 	
 	// Event called when a slicing event ends unsuccessfuly
-	void OnSLSlicingEndFail(UObject* PerformedBy, UObject* ObjectActedOn, float Time);
+	void OnSLSlicingEndFail(AActor* PerformedBy, AActor* ObjectActedOn, float Time);
 
 	// Event called when a slicing event ends successfuly
-	void OnSLSlicingEndSuccess(UObject* PerformedBy, UObject* ObjectActedOn, UObject* OutputsCreated, float Time);
+	void OnSLSlicingEndSuccess(AActor* PerformedBy, AActor* ObjectActedOn, AActor* OutputsCreated, float Time);
 
 	// Event called when new objects are created
-	void OnSLObjectCreation(UObject* TransformedObject, UObject* NewSlice, float Time);
+	void OnSLObjectCreation(AActor* TransformedObject, AActor* NewSlice, float Time);
 
 	// Event called when an object is destroyed
-	void OnSLObjectDestruction(UObject* ObjectActedOn, float Time);
+	void OnSLObjectDestruction(AActor* ObjectActedOn, float Time);
 
 private:
 	// Parent

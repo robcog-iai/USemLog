@@ -5,10 +5,15 @@
 
 #include "USemLog.h"
 #include "Components/ActorComponent.h"
-#include "Engine/StaticMeshActor.h"
-#include "SLStructs.h" // FSLEntity
+#include "Monitors/SLMonitorStructs.h"
 #include "TimerManager.h"
 #include "SLManipulatorListener.generated.h"
+
+// Forward declarations
+class AActor;
+class USLBaseIndividual;
+class USLIndividualComponent;
+class AStaticMeshActor;
 
 /**
 * Hand type
@@ -48,19 +53,19 @@ struct FSLContactEndEvent
 	FSLContactEndEvent() = default;
 
 	// Init ctor
-	FSLContactEndEvent(const FSLEntity& InOtherItem, float InTime) :
-		OtherItem(InOtherItem), Time(InTime) {};
+	FSLContactEndEvent(USLBaseIndividual* InOther, float InTime) :
+		Other(InOther), Time(InTime) {};
 
 	// Overlap component
-	FSLEntity OtherItem;
+	USLBaseIndividual* Other;
 
 	// End time of the event 
 	float Time;
 };
 
 /** Notify when an object is grasped and released*/
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/, const FString& /*Type*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*Time*/, const FString& /*Type*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*Time*/);
 
 /**
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
@@ -167,7 +172,7 @@ private:
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
-	bool SkipRecentContactEndEventBroadcast(const FSLEntity& OtherItem, float StartTime);
+	bool SkipRecentContactEndEventBroadcast(USLBaseIndividual* InOther, float StartTime);
 	/* End contact related */
 	
 public:
@@ -227,9 +232,11 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bIsNotSkeletal"))
 	TArray<AStaticMeshActor*> Fingers;
 
-	// Semantic data of the owner
-	FSLEntity SemanticOwner;
+	// Semantic data component of the owner
+	USLIndividualComponent* IndividualComponent;
 
+	// Semantic individual object
+	USLBaseIndividual* IndividualObject;
 	
 	/* Grasp related */
 	// Opposing group A for testing for grasps

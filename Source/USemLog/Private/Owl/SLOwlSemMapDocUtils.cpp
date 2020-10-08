@@ -4,14 +4,13 @@
 #include "Owl/SLOwlSemMapDocUtils.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
-#include "SLManager.h"
 
 #include "EngineUtils.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 
 // Owl
-#include "SLOwlDoc.h"
+#include "Owl/SLOwlDoc.h"
 
 #if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
@@ -41,13 +40,12 @@ bool FSLOwlSemMapDocUtils::CreateAndPrintDoc(UWorld* World, bool bOverwrite, ESL
     FSLOwlDoc SemMapOwlDoc = GetDocumentTemplate(Type);
 
     // Add map individual, set the task id
-    FString TaskId = "none";
-    for (TActorIterator<ASLManager> ActItr(World); ActItr; ++ActItr)
-    {
-
-        TaskId = *ActItr->GetTaskId();
-        break;
-    }
+    FString TaskId = "None";
+    //for (TActorIterator<ASLManager> ActItr(World); ActItr; ++ActItr)
+    //{
+    //    TaskId = *ActItr->GetTaskId();
+    //    break;
+    //}
     FSLOwlSemMapDocUtils::AddMapIndividual(SemMapOwlDoc, TaskId);
 
     // Iterate individuals from the world

@@ -23,7 +23,7 @@ public:
 
 private:
 	// Event called when a semantic overlap event begins
-	void OnContainerManipulation(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime, const FString& Type);
+	void OnContainerManipulation(USLBaseIndividual* Self, AActor* Other, float StartTime, float EndTime, const FString& Type);
 
 private:
 	// Parent

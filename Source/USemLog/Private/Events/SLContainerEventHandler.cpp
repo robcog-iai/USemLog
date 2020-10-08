@@ -2,12 +2,11 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLContainerEventHandler.h"
-#include "SLEntitiesManager.h"
 #include "SLContainerListener.h"
+#include "Individuals/SLIndividualUtils.h"
 #include "Events/SLContainerEvent.h"
-
-// UUtils
-#include "Ids.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Utils/SLUuid.h"
 
 
 // Set parent
@@ -15,12 +14,6 @@ void FSLContainerEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{
-		// Make sure the mappings singleton is initialized (the handler uses it)
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
-		{
-			FSLEntitiesManager::GetInstance()->Init(InParent->GetWorld());
-		}
-
 		// Check if parent is of right type
 		Parent = Cast<USLContainerListener>(InParent);
 		if (Parent)
@@ -62,14 +55,15 @@ void FSLContainerEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Event called when a semantic grasp happens
-void FSLContainerEventHandler::OnContainerManipulation(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime, const FString& Type)
+void FSLContainerEventHandler::OnContainerManipulation(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime, const FString& Type)
 {
 	// Check that the objects are semantically annotated
-	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
+	if (USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor))
 	{
 		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLContainerEvent(
-			FIds::NewGuidInBase64Url(), StartTime, EndTime,
-			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
-			Self, *OtherItem, Type)));
+			FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
+			FSLUuid::PairEncodeCantor(Self->GetUniqueID(), OtherIndividual->GetUniqueID()),
+			Self, OtherIndividual, Type)));
 	}
+
 }

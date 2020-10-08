@@ -3,7 +3,6 @@
 
 #include "Vision/SLVirtualCameraView.h"
 #include "Camera/CameraComponent.h"
-#include "Tags.h"
 
 // Ctor
 ASLVirtualCameraView::ASLVirtualCameraView()
@@ -38,20 +37,20 @@ void ASLVirtualCameraView::Tick(float DeltaTime)
 // Get the semantic class name of the virtual camera
 FString ASLVirtualCameraView::GetClassName()
 {
-	if(ClassName.IsEmpty())
-	{
-		ClassName =  FTags::GetValue(this, "SemLog", "Class");
-	}
+	//if(ClassName.IsEmpty())
+	//{
+	//	ClassName =  FTags::GetValue(this, "SemLog", "Class");
+	//}
 	return ClassName;
 }
 
 // Get the unique id of the virtual camera
 FString ASLVirtualCameraView::GetId()
 {
-	if (Id.IsEmpty())
-	{
-		Id = FTags::GetValue(this, "SemLog", "Id");
-	}
+	//if (Id.IsEmpty())
+	//{
+	//	Id = FTags::GetValue(this, "SemLog", "Id");
+	//}
 	return Id;
 }
 

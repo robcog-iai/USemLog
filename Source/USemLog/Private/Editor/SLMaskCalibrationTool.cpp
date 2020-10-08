@@ -16,10 +16,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/GameViewportClient.h"
 
-#include "Skeletal/SLSkeletalDataComponent.h"
-
-// UUtils
-#include "Tags.h"
 
 #if WITH_EDITOR
 #include "Editor.h"
@@ -287,18 +283,18 @@ bool USLMaskCalibrationTool::StoreRenderedColor(const FColor & InRenderedColor)
 		FColor OriginalColor = MaskToEntity[CurrEntityIdx].Key;
 		AActor* Parent = MaskToEntity[CurrEntityIdx].Value;
 #if WITH_EDITOR
-		// Apply the changes in the editor world
-		if (AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(Parent))
-		{
-			FTags::AddKeyValuePair(EdAct, "SemLog", "RenderedVisMask", InRenderedColor.ToHex());
-			PrintProgress(Parent, OriginalColor, InRenderedColor);
-			return true;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.."),
-				*FString(__func__), __LINE__, *Parent->GetName());
-		}
+		//// Apply the changes in the editor world
+		//if (AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(Parent))
+		//{
+		//	FTags::AddKeyValuePair(EdAct, "SemLog", "RenderedVisMask", InRenderedColor.ToHex());
+		//	PrintProgress(Parent, OriginalColor, InRenderedColor);
+		//	return true;
+		//}
+		//else
+		//{
+		//	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.."),
+		//		*FString(__func__), __LINE__, *Parent->GetName());
+		//}
 #endif // WITH_EDITOR
 	}
 	else
@@ -307,25 +303,25 @@ bool USLMaskCalibrationTool::StoreRenderedColor(const FColor & InRenderedColor)
 		AActor* Parent = MaskToSkelAndBone[CurrSkelIdx].Value.Key;
 		FName BoneName = MaskToSkelAndBone[CurrSkelIdx].Value.Value;
 #if WITH_EDITOR
-		// Apply the changes in the editor world
-		if (AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(Parent))
-		{
-			if (UActorComponent* AC = EdAct->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
-			{
-				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
-				if (FSLBoneData* BoneData = SkDC->SemanticBonesData.Find(BoneName))
-				{
-					BoneData->CalibratedVisualMask = InRenderedColor.ToHex();
-					PrintProgress(Parent, OriginalColor, InRenderedColor, BoneName.ToString());
-					return true;
-				}
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.."),
-				*FString(__func__), __LINE__, *Parent->GetName());
-		}
+		//// Apply the changes in the editor world
+		//if (AActor* EdAct = EditorUtilities::GetEditorWorldCounterpartActor(Parent))
+		//{
+		//	if (UActorComponent* AC = EdAct->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+		//	{
+		//		USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+		//		if (FSLBoneData* BoneData = SkDC->SemanticBonesData.Find(BoneName))
+		//		{
+		//			BoneData->CalibratedVisualMask = InRenderedColor.ToHex();
+		//			PrintProgress(Parent, OriginalColor, InRenderedColor, BoneName.ToString());
+		//			return true;
+		//		}
+		//	}
+		//}
+		//else
+		//{
+		//	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access %s in editor world.."),
+		//		*FString(__func__), __LINE__, *Parent->GetName());
+		//}
 #endif // WITH_EDITOR
 	}
 	return false;
@@ -454,67 +450,67 @@ bool USLMaskCalibrationTool::LoadMaskMappings(bool bOverwrite)
 		// Hide and disable physics on all actors by default
 		ActItr->SetActorHiddenInGame(true);
 
-		/*  Static mesh actors */
-		if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(*ActItr))
-		{
-			FString MaskStr = FTags::GetValue(SMA, "SemLog", "VisMask");
-			if (!MaskStr.IsEmpty())
-			{
-				if (!bOverwrite && FTags::HasKey(SMA, "SemLog", "RenderedVisMask"))
-				{
-					//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; Already has a rendered visual mask, skipping.."),
-					//	*FString(__func__), __LINE__, *ActItr->GetName());
-				}
-				else
-				{
-					//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; VisualMask=%s;"), *FString(__func__), __LINE__,
-					//	*ActItr->GetName(), *MaskStr);
-					FColor MaskColor(FColor::FromHex(MaskStr));
-					MaskToEntity.Emplace(MakeTuple(MaskColor, SMA));
-				}
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask.."), *FString(__func__), __LINE__, *ActItr->GetName());
-			}
-		}
-		/* Skeletal mesh actors */
-		else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(*ActItr))
-		{
-			// Get the semantic data component containing the semantics (class names mask colors) about the bones
-			if (UActorComponent* AC = SkMA->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
-			{
-				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
-				
-				for (const auto& BoneDataPair : SkDC->SemanticBonesData)
-				{
-					FName BoneName = BoneDataPair.Key;
-					FString MaskStr = BoneDataPair.Value.VisualMask;
+		///*  Static mesh actors */
+		//if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(*ActItr))
+		//{
+		//	FString MaskStr = FTags::GetValue(SMA, "SemLog", "VisMask");
+		//	if (!MaskStr.IsEmpty())
+		//	{
+		//		if (!bOverwrite && FTags::HasKey(SMA, "SemLog", "RenderedVisMask"))
+		//		{
+		//			//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; Already has a rendered visual mask, skipping.."),
+		//			//	*FString(__func__), __LINE__, *ActItr->GetName());
+		//		}
+		//		else
+		//		{
+		//			//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s; VisualMask=%s;"), *FString(__func__), __LINE__,
+		//			//	*ActItr->GetName(), *MaskStr);
+		//			FColor MaskColor(FColor::FromHex(MaskStr));
+		//			MaskToEntity.Emplace(MakeTuple(MaskColor, SMA));
+		//		}
+		//	}
+		//	else
+		//	{
+		//		UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask.."), *FString(__func__), __LINE__, *ActItr->GetName());
+		//	}
+		//}
+		///* Skeletal mesh actors */
+		//else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(*ActItr))
+		//{
+		//	// Get the semantic data component containing the semantics (class names mask colors) about the bones
+		//	if (UActorComponent* AC = SkMA->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+		//	{
+		//		USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+		//		
+		//		for (const auto& BoneDataPair : SkDC->SemanticBonesData)
+		//		{
+		//			FName BoneName = BoneDataPair.Key;
+		//			FString MaskStr = BoneDataPair.Value.VisualMask;
 
-					if (!MaskStr.IsEmpty())
-					{
-						if (!bOverwrite && !BoneDataPair.Value.CalibratedVisualMask.IsEmpty())
-						{
-							//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; Already has a rendered visual mask, skipping.."),
-							//	*FString(__func__), __LINE__, *ActItr->GetName(), *BoneName.ToString());
-						}
-						else
-						{
-							//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; VisualMask=%s;"), *FString(__func__), __LINE__,
-							//	*ActItr->GetName(), *BoneName.ToString(), *MaskStr);
-							FColor MaskColor(FColor::FromHex(MaskStr));
-							MaskToSkelAndBone.Emplace(MakeTuple(MaskColor, MakeTuple(SkMA, BoneName)));
-						}
-					}
-					else
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d %s - %s has no visual mask.."), *FString(__func__), __LINE__,
-							*ActItr->GetName(), *BoneName.ToString());
-						continue;
-					}					
-				}
-			}
-		}
+		//			if (!MaskStr.IsEmpty())
+		//			{
+		//				if (!bOverwrite && !BoneDataPair.Value.CalibratedVisualMask.IsEmpty())
+		//				{
+		//					//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; Already has a rendered visual mask, skipping.."),
+		//					//	*FString(__func__), __LINE__, *ActItr->GetName(), *BoneName.ToString());
+		//				}
+		//				else
+		//				{
+		//					//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s; VisualMask=%s;"), *FString(__func__), __LINE__,
+		//					//	*ActItr->GetName(), *BoneName.ToString(), *MaskStr);
+		//					FColor MaskColor(FColor::FromHex(MaskStr));
+		//					MaskToSkelAndBone.Emplace(MakeTuple(MaskColor, MakeTuple(SkMA, BoneName)));
+		//				}
+		//			}
+		//			else
+		//			{
+		//				UE_LOG(LogTemp, Error, TEXT("%s::%d %s - %s has no visual mask.."), *FString(__func__), __LINE__,
+		//					*ActItr->GetName(), *BoneName.ToString());
+		//				continue;
+		//			}					
+		//		}
+		//	}
+		//}
 	}
 
 	return MaskToEntity.Num() > 0 || MaskToSkelAndBone.Num() > 0;
@@ -660,118 +656,118 @@ bool USLMaskCalibrationTool::SetupMaskColorsWorld(bool bOnlyDemo)
 	DefaultMaskMaterial->bUsedWithStaticLighting = true;
 	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
 
-	// Temp arrays to store the entities with visual masks 
-	// avoids spawning in the for loop which ends up in an infinite loop due to newly added actors
-	TMap<FColor, AStaticMeshActor*> TempColorToSMA;
-	TMap<USLSkeletalDataComponent*, ASkeletalMeshActor*> TempDataToSkMA;
+	//// Temp arrays to store the entities with visual masks 
+	//// avoids spawning in the for loop which ends up in an infinite loop due to newly added actors
+	//TMap<FColor, AStaticMeshActor*> TempColorToSMA;
+	//TMap<USLSkeletalDataComponent*, ASkeletalMeshActor*> TempDataToSkMA;
 
-	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
-	{
-		// Hide and disable physics on all actors by default
-		ActItr->SetActorHiddenInGame(true);
-		ActItr->DisableComponentsSimulatePhysics();
-		ActItr->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	//for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
+	//{
+	//	// Hide and disable physics on all actors by default
+	//	ActItr->SetActorHiddenInGame(true);
+	//	ActItr->DisableComponentsSimulatePhysics();
+	//	ActItr->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-		/*  Static mesh actors */
-		if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(*ActItr))
-		{
-			// Get the mask color, will be black if it does not exist
-			FColor MaskColor(FColor::FromHex(FTags::GetValue(SMA, "SemLog", "VisMask")));
-			if (MaskColor == FColor::Black)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask.."), *FString(__func__), __LINE__, *ActItr->GetName());
-				continue;
-			}
+	//	/*  Static mesh actors */
+	//	if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(*ActItr))
+	//	{
+	//		// Get the mask color, will be black if it does not exist
+	//		FColor MaskColor(FColor::FromHex(FTags::GetValue(SMA, "SemLog", "VisMask")));
+	//		if (MaskColor == FColor::Black)
+	//		{
+	//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no visual mask.."), *FString(__func__), __LINE__, *ActItr->GetName());
+	//			continue;
+	//		}
 
-			// Temporally store the actors and their designated mask color
-			TempColorToSMA.Emplace(MaskColor, SMA);
-		}
+	//		// Temporally store the actors and their designated mask color
+	//		TempColorToSMA.Emplace(MaskColor, SMA);
+	//	}
 
-		/* Skeletal mesh actors */
-		else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(*ActItr))
-		{
-			// Get the semantic data component containing the semantics (class names mask colors) about the bones
-			if (UActorComponent* AC = SkMA->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
-			{
-				USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
-				TempDataToSkMA.Emplace(SkDC, SkMA);
-			}
-		}
-	}
+	//	/* Skeletal mesh actors */
+	//	else if (ASkeletalMeshActor* SkMA = Cast<ASkeletalMeshActor>(*ActItr))
+	//	{
+	//		// Get the semantic data component containing the semantics (class names mask colors) about the bones
+	//		if (UActorComponent* AC = SkMA->GetComponentByClass(USLSkeletalDataComponent::StaticClass()))
+	//		{
+	//			USLSkeletalDataComponent* SkDC = CastChecked<USLSkeletalDataComponent>(AC);
+	//			TempDataToSkMA.Emplace(SkDC, SkMA);
+	//		}
+	//	}
+	//}
 
-	// Create clones from the sm actors
-	for (const auto& Pair : TempColorToSMA)
-	{
-		const FColor MaskColor = Pair.Key;
-		AStaticMeshActor* SMA = Pair.Value;
+	//// Create clones from the sm actors
+	//for (const auto& Pair : TempColorToSMA)
+	//{
+	//	const FColor MaskColor = Pair.Key;
+	//	AStaticMeshActor* SMA = Pair.Value;
 
-		// Create the mask material with the color
-		UMaterialInstanceDynamic* LocalDynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-		LocalDynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
+	//	// Create the mask material with the color
+	//	UMaterialInstanceDynamic* LocalDynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+	//	LocalDynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
 
-		// Create a clone of the actor
-		FActorSpawnParameters Parameters;
-		Parameters.Template = SMA;
-		Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		//Parameters.Instigator = SMA->GetInstigator();
-		Parameters.Name = FName(*(SMA->GetName() + TEXT("_MaskClone")));
-		AStaticMeshActor* SMAClone = GetWorld()->SpawnActor<AStaticMeshActor>(SMA->GetClass(), Parameters);
+	//	// Create a clone of the actor
+	//	FActorSpawnParameters Parameters;
+	//	Parameters.Template = SMA;
+	//	Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	//	//Parameters.Instigator = SMA->GetInstigator();
+	//	Parameters.Name = FName(*(SMA->GetName() + TEXT("_MaskClone")));
+	//	AStaticMeshActor* SMAClone = GetWorld()->SpawnActor<AStaticMeshActor>(SMA->GetClass(), Parameters);
 
-		// Apply mask color
-		if (UStaticMeshComponent* SMC = SMAClone->GetStaticMeshComponent())
-		{
-			for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
-			{
-				SMC->SetMaterial(MatIdx, LocalDynamicMaskMaterial);
-			}
-		}
+	//	// Apply mask color
+	//	if (UStaticMeshComponent* SMC = SMAClone->GetStaticMeshComponent())
+	//	{
+	//		for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
+	//		{
+	//			SMC->SetMaterial(MatIdx, LocalDynamicMaskMaterial);
+	//		}
+	//	}
 
-		// Hide all mask clones actors initailly by default
-		SMAClone->SetActorHiddenInGame(!bOnlyDemo);
-		CloneToRealArray.Emplace(SMAClone, SMA);
-	}
+	//	// Hide all mask clones actors initailly by default
+	//	SMAClone->SetActorHiddenInGame(!bOnlyDemo);
+	//	CloneToRealArray.Emplace(SMAClone, SMA);
+	//}
 
-	// Create clones from the skel actors
-	if (bOnlyDemo)
-	{
-		for (const auto& DataToSkPair : TempDataToSkMA)
-		{
-			USLSkeletalDataComponent* SkData = DataToSkPair.Key;
-			ASkeletalMeshActor* SkMA = DataToSkPair.Value;
+	//// Create clones from the skel actors
+	//if (bOnlyDemo)
+	//{
+	//	for (const auto& DataToSkPair : TempDataToSkMA)
+	//	{
+	//		USLSkeletalDataComponent* SkData = DataToSkPair.Key;
+	//		ASkeletalMeshActor* SkMA = DataToSkPair.Value;
 
-			// Create a clone of the actor
-			FActorSpawnParameters Parameters;
-			Parameters.Template = SkMA;
-			Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			//Parameters.Instigator = SMA->GetInstigator();
-			Parameters.Name = FName(*(SkMA->GetName() + TEXT("_MaskClone")));
-			ASkeletalMeshActor* SkMAClone = GetWorld()->SpawnActor<ASkeletalMeshActor>(SkMA->GetClass(), Parameters);
+	//		// Create a clone of the actor
+	//		FActorSpawnParameters Parameters;
+	//		Parameters.Template = SkMA;
+	//		Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	//		//Parameters.Instigator = SMA->GetInstigator();
+	//		Parameters.Name = FName(*(SkMA->GetName() + TEXT("_MaskClone")));
+	//		ASkeletalMeshActor* SkMAClone = GetWorld()->SpawnActor<ASkeletalMeshActor>(SkMA->GetClass(), Parameters);
 
-			for (auto& NameToBoneDataPair : SkData->SemanticBonesData)
-			{
-				// Check if bone class and visual mask is set
-				if (NameToBoneDataPair.Value.IsClassSet())
-				{
-					// Get the mask color, will be black if it does not exist
-					FColor SemColor(FColor::FromHex(NameToBoneDataPair.Value.VisualMask));
-					if (SemColor == FColor::Black)
-					{
-						UE_LOG(LogTemp, Error, TEXT("%s::%d %s --> %s has no visual mask, setting to black.."),
-							*FString(__func__), __LINE__, *SkMA->GetName(), *NameToBoneDataPair.Value.Class);
-					}
+	//		for (auto& NameToBoneDataPair : SkData->SemanticBonesData)
+	//		{
+	//			// Check if bone class and visual mask is set
+	//			if (NameToBoneDataPair.Value.IsClassSet())
+	//			{
+	//				// Get the mask color, will be black if it does not exist
+	//				FColor SemColor(FColor::FromHex(NameToBoneDataPair.Value.VisualMask));
+	//				if (SemColor == FColor::Black)
+	//				{
+	//					UE_LOG(LogTemp, Error, TEXT("%s::%d %s --> %s has no visual mask, setting to black.."),
+	//						*FString(__func__), __LINE__, *SkMA->GetName(), *NameToBoneDataPair.Value.Class);
+	//				}
 
-					// Create the mask material with the color
-					UMaterialInstanceDynamic* LocalDynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-					LocalDynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
-						FLinearColor::FromSRGBColor(FColor::FromHex(NameToBoneDataPair.Value.VisualMask)));
-					SkMAClone->GetSkeletalMeshComponent()->SetMaterial(NameToBoneDataPair.Value.MaterialIndex, LocalDynamicMaskMaterial);
-				}
-			}
+	//				// Create the mask material with the color
+	//				UMaterialInstanceDynamic* LocalDynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+	//				LocalDynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
+	//					FLinearColor::FromSRGBColor(FColor::FromHex(NameToBoneDataPair.Value.VisualMask)));
+	//				SkMAClone->GetSkeletalMeshComponent()->SetMaterial(NameToBoneDataPair.Value.MaterialIndex, LocalDynamicMaskMaterial);
+	//			}
+	//		}
 
-			// Hide all mask clones actors initailly by default
-			SkMAClone->SetActorHiddenInGame(!bOnlyDemo);
-		}
-	}
+	//		// Hide all mask clones actors initailly by default
+	//		SkMAClone->SetActorHiddenInGame(!bOnlyDemo);
+	//	}
+	//}
 
 	if (CloneToRealArray.Num() == 0)
 	{

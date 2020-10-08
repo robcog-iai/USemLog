@@ -1,11 +1,16 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "SLManipulatorListener.h"
-#include "SLManipulatorOverlapSphere.h"
+#include "Monitors/SLManipulatorListener.h"
+#include "Monitors/SLManipulatorOverlapSphere.h"
+#include "Individuals/SLIndividualComponent.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/SLIndividualUtils.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "SLEntitiesManager.h"
+#include "Engine/StaticMeshActor.h"
+
 #include "GameFramework/PlayerController.h"
+
 #if SL_WITH_MC_GRASP
 #include "MCGraspAnimController.h"
 #endif // SL_WITH_MC_GRASP
@@ -58,20 +63,25 @@ bool USLManipulatorListener::Init(bool bInDetectGrasps, bool bInDetectContacts)
 	{
 		bDetectGrasps = bInDetectGrasps;
 		bDetectContacts = bInDetectContacts;
-		
-		// Init the semantic entities manager
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
-		{
-			FSLEntitiesManager::GetInstance()->Init(GetWorld());
-		}
 
-		// Check that the owner is part of the semantic entities
-		SemanticOwner = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
-		if (!SemanticOwner.IsSet())
+		// Make sure the owner is semantically annotated
+		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not semantically annotated.."), *FString(__func__), __LINE__);
+			IndividualComponent = CastChecked<USLIndividualComponent>(AC);
+			if (!IndividualComponent->IsLoaded())
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+				return false;
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 			return false;
 		}
+
+		// Set the individual object
+		IndividualObject = IndividualComponent->GetIndividualObject();
 
 		// Remove any unset references in the array
 		Fingers.Remove(nullptr);
@@ -181,7 +191,7 @@ void USLManipulatorListener::PauseGraspDetection(bool bInPause)
 		{
 			for (const auto& Obj : GraspedObjects)
 			{
-				OnEndManipulatorGrasp.Broadcast(SemanticOwner, Obj, GetWorld()->GetTimeSeconds());
+				OnEndManipulatorGrasp.Broadcast(IndividualObject, Obj, GetWorld()->GetTimeSeconds());
 			}
 			GraspedObjects.Empty();
 			SetA.Empty();
@@ -207,14 +217,14 @@ void USLManipulatorListener::Finish(bool bForced)
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedGraspEvents)
 		{
-			OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr.OtherActor, EvItr.Time);
+			OnEndManipulatorGrasp.Broadcast(IndividualObject, EvItr.OtherActor, EvItr.Time);
 		}
 		RecentlyEndedGraspEvents.Empty();
 
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedContactEvents)
 		{
-			OnEndManipulatorContact.Broadcast(SemanticOwner, EvItr.OtherItem, EvItr.Time);
+			OnEndManipulatorContact.Broadcast(IndividualObject, EvItr.Other, EvItr.Time);
 		}
 		RecentlyEndedContactEvents.Empty();
 
@@ -406,7 +416,7 @@ void USLManipulatorListener::BeginGrasp(AActor* OtherActor)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] \t ~~~~~~~~~~~~~~~~~~~~~~~~~~ *BEGIN GRASP BCAST* with %s ~~~~~~~~~~~~~~~~~~~~~~~~~~"),
 		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherActor->GetName());
-		OnBeginManipulatorGrasp.Broadcast(SemanticOwner, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
+		OnBeginManipulatorGrasp.Broadcast(IndividualObject, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
 	}
 	else
 	{
@@ -446,7 +456,7 @@ void USLManipulatorListener::DelayedGraspEndEventCallback()
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ~~~~~~~~~~~~~~~~~~~~~~~~~~ *END GRASP BCAST* (with delay) GraspEnd=%f; with %s;  ~~~~~~~~~~~~~~~~~~~~~~~~~~"),
 			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), EvItr->Time, *EvItr->OtherActor->GetName());
 			// Broadcast delayed event
-			OnEndManipulatorGrasp.Broadcast(SemanticOwner, EvItr->OtherActor, EvItr->Time);
+			OnEndManipulatorGrasp.Broadcast(IndividualObject, EvItr->OtherActor, EvItr->Time);
 			
 			// Remove event from the pending list
 			EvItr.RemoveCurrent();
@@ -492,62 +502,72 @@ bool USLManipulatorListener::SkipRecentGraspEndEventBroadcast(AActor* OtherActor
 // Process beginning of contact
 void USLManipulatorListener::OnBeginOverlapContact(AActor* OtherActor)
 {
-	if (FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(OtherActor))
+	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);
+	if (OtherIndividual == nullptr)
 	{
-		if (int32* NumContacts = ObjectsInContact.Find(OtherActor))
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not annotated, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	if (int32* NumContacts = ObjectsInContact.Find(OtherActor))
+	{
+		(*NumContacts)++;
+	}
+	else
+	{
+		// Check if it is a new contact event, or a concatenation with a previous one, either way, there is a new contact
+		ObjectsInContact.Add(OtherActor, 1);
+		const float CurrTime = GetWorld()->GetTimeSeconds();
+		if(!SkipRecentContactEndEventBroadcast(OtherIndividual, CurrTime))
 		{
-			(*NumContacts)++;
-		}
-		else
-		{
-			// Check if it is a new contact event, or a concatenation with a previous one, either way, there is a new contact
-			ObjectsInContact.Add(OtherActor, 1);
-			const float CurrTime = GetWorld()->GetTimeSeconds();
-			if(!SkipRecentContactEndEventBroadcast(*OtherItem, CurrTime))
-			{
-				// Broadcast begin of semantic overlap event
-				OnBeginManipulatorContact.Broadcast(FSLContactResult(SemanticOwner, *OtherItem, CurrTime, false));
-			}
+			// Broadcast begin of semantic overlap event
+			OnBeginManipulatorContact.Broadcast(FSLContactResult(IndividualObject, OtherIndividual, CurrTime, false));
 		}
 	}
+
 }
 
 // Process ending of contact
 void USLManipulatorListener::OnEndOverlapContact(AActor* OtherActor)
 {
-	if (FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(OtherActor))
+	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);
+	if (OtherIndividual == nullptr)
 	{
-		if (int32* NumContacts = ObjectsInContact.Find(OtherActor))
-		{
-			(*NumContacts)--;
-			
-			if ((*NumContacts) < 1)
-			{
-				// Remove contact object
-				ObjectsInContact.Remove(OtherActor);
-				
-				if (!GetWorld())
-				{
-					// Episode already finished, continuing would be futile
-					return;
-				}
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not annotated, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+		return;
+	}
 
-				// Manipulator contact ended
-				RecentlyEndedContactEvents.Emplace(FSLContactEndEvent(*OtherItem, GetWorld()->GetTimeSeconds()));
+	if (int32* NumContacts = ObjectsInContact.Find(OtherActor))
+	{
+		(*NumContacts)--;
+			
+		if ((*NumContacts) < 1)
+		{
+			// Remove contact object
+			ObjectsInContact.Remove(OtherActor);
 				
-				// Delay publishing for a while, in case the new event is of the same type and should be concatenated
-				if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
-				{
-					GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
-						MaxContactEventTimeGap * 1.2f, false);
-				}
+			if (!GetWorld())
+			{
+				// Episode already finished, continuing would be futile
+				return;
+			}
+
+			// Manipulator contact ended
+			RecentlyEndedContactEvents.Emplace(FSLContactEndEvent(OtherIndividual, GetWorld()->GetTimeSeconds()));
+				
+			// Delay publishing for a while, in case the new event is of the same type and should be concatenated
+			if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
+			{
+				GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorListener::DelayedContactEndEventCallback,
+					MaxContactEventTimeGap * 1.2f, false);
 			}
 		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
-		}
 	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+	}
+
 }
 
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
@@ -561,7 +581,7 @@ void USLManipulatorListener::DelayedContactEndEventCallback()
 		// If enough time has passed, publish the event
 		if(CurrTime - EvItr->Time > MaxContactEventTimeGap)
 		{
-			OnEndManipulatorContact.Broadcast(SemanticOwner, EvItr->OtherItem, EvItr->Time);
+			OnEndManipulatorContact.Broadcast(IndividualObject, EvItr->Other, EvItr->Time);
 			EvItr.RemoveCurrent();
 		}
 	}
@@ -575,12 +595,12 @@ void USLManipulatorListener::DelayedContactEndEventCallback()
 }
 
 // Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-bool USLManipulatorListener::SkipRecentContactEndEventBroadcast(const FSLEntity& OtherItem, float StartTime)
+bool USLManipulatorListener::SkipRecentContactEndEventBroadcast(USLBaseIndividual* InOther, float StartTime)
 {
 	for (auto EvItr(RecentlyEndedContactEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// Check if it is an event between the same entities
-		if(EvItr->OtherItem.EqualsFast(OtherItem))
+		if(EvItr->Other == InOther)
 		{
 			// Check time difference between the previous and current event
 			const float TimeGap = StartTime - EvItr->Time;

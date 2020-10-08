@@ -6,6 +6,9 @@
 #include "Utils/SLUuid.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
+#include "GameFramework/PlayerController.h"
+#include "Components/InputComponent.h"
+#include "Engine/Engine.h"
 
 #if WITH_EDITOR
 #include "Components/BillboardComponent.h"

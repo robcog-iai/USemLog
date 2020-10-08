@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLOwlStructs.h"
+#include "Owl/SLOwlStructs.h"
 
 /**
 * Owl/Xml node

@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "SLOwlDoc.h"
+#include "Owl/SLOwlDoc.h"
 
 // Forward declarations
 class USLBaseIndividual;

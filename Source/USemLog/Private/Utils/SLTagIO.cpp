@@ -158,6 +158,9 @@ bool FSLTagIO::RemoveKVPair(AActor* Actor, const FString& TagType, const FString
 }
 
 
+
+
+
 /* Utils */
 // Add key value pair to the tag value
 bool FSLTagIO::AddKVPair(FName& Tag, const FString& TagKey, const FString& TagValue, bool bOverwrite)
@@ -183,6 +186,22 @@ bool FSLTagIO::AddKVPair(FName& Tag, const FString& TagKey, const FString& TagVa
 	return false;
 }
 
+// Return the index where the tag type was found in the array
+int32 FSLTagIO::IndexOfType(const TArray<FName>& InTags, const FString& TagType)
+{
+	// Iterate all the tags, check for keyword TagType
+	for (int32 i = 0; i < InTags.Num(); ++i)
+	{
+		// Check if tag is of given type
+		if (InTags[i].ToString().StartsWith(TagType + ";"))
+		{
+			return i;
+		}
+	}
+	// return INDEX_NONE if type was not found 
+	return INDEX_NONE;
+}
+
 // Get tag key value from tag
 FString FSLTagIO::GetValue(const FName& InTag, const FString& TagKey)
 {
@@ -201,22 +220,6 @@ FString FSLTagIO::GetValue(const FName& InTag, const FString& TagKey)
 	}
 	// Return empty string if key was not found
 	return FString();
-}
-
-// Return the index where the tag type was found in the array
-int32 FSLTagIO::IndexOfType(const TArray<FName>& InTags, const FString& TagType)
-{
-	// Iterate all the tags, check for keyword TagType
-	for (int32 i = 0; i < InTags.Num(); ++i)
-	{
-		// Check if tag is of given type
-		if (InTags[i].ToString().StartsWith(TagType + ";"))
-		{
-			return i;
-		}
-	}
-	// return INDEX_NONE if type was not found 
-	return INDEX_NONE;
 }
 
 // Return a pair FName value

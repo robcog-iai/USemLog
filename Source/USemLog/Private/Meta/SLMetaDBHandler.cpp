@@ -5,14 +5,15 @@
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "PhysicsEngine/PhysicsConstraintActor.h"
-#include "SLEntitiesManager.h"
+#include "Utils/SLTagIO.h"
+
 
 // UUtils
 #if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
 #endif // SL_WITH_ROS_CONVERSIONS
 
-#include "Tags.h"
+
 
 // Ctor
 FSLMetaDBHandler::FSLMetaDBHandler() {}
@@ -437,325 +438,325 @@ void FSLMetaDBHandler::AddTaskDescription(const FString& InTaskDescription, bson
 // Write the environment data
 void FSLMetaDBHandler::AddEnvironmentData(bson_t* doc)
 {
-	bson_t arr;
-	bson_t sk_arr;
-	bson_t arr_obj;
-	char idx_str[16];
-	const char *idx_key;
-	uint32_t idx = 0;
+	//bson_t arr;
+	//bson_t sk_arr;
+	//bson_t arr_obj;
+	//char idx_str[16];
+	//const char *idx_key;
+	//uint32_t idx = 0;
 
-	// Add visual entities to array
-	BSON_APPEND_ARRAY_BEGIN(doc, "entities", &arr);
+	//// Add visual entities to array
+	//BSON_APPEND_ARRAY_BEGIN(doc, "entities", &arr);
 	// Iterate non skeletal semantic entities
-	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
-	{
-		const FSLEntity SemEntity = Pair.Value;
+//	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
+//	{
+//		const FSLEntity SemEntity = Pair.Value;
+//
+//		// Ignore non static mesh
+//		if (!Cast<AStaticMeshActor>(SemEntity.Obj))
+//		{
+//			continue;
+//		}
+//
+//		// Start array doc
+//		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+//		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
+//
+//		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
+//		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
+//
+//		FString ColorHex = FTags::GetValue(Pair.Value.Obj, "SemLog", "VisMask");
+//		if (!ColorHex.IsEmpty())
+//		{
+//			BSON_APPEND_UTF8(&arr_obj, "mask_hex", TCHAR_TO_UTF8(*ColorHex));
+//		}
+//
+//		// Check if location data is available
+//		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+//			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+//			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//
+//		}
+//		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+//			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+//			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//		}
+//
+//		// Finish array doc
+//		bson_append_document_end(&arr, &arr_obj);
+//		idx++;
+//	}
+	//bson_append_array_end(doc, &arr);
 
-		// Ignore non static mesh
-		if (!Cast<AStaticMeshActor>(SemEntity.Obj))
-		{
-			continue;
-		}
+	//// Add skel entities to array
+	//BSON_APPEND_ARRAY_BEGIN(doc, "skel_entities", &sk_arr);
+	//// Reset array index
+	//idx=0;
+	//// Iterate skeletal semantic entities
+//	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSkeletalSemanticData())
+//	{
+//		USLSkeletalDataComponent* SkelDataComp = Pair.Value;
+//		USkeletalMeshComponent* SkMComp = SkelDataComp->SkeletalMeshParent;
+//		const FSLEntity OwnerSemData = SkelDataComp->OwnerSemanticData;
+//		UObject* SemOwner = SkelDataComp->SemanticOwner;
+//
+//		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+//		BSON_APPEND_DOCUMENT_BEGIN(&sk_arr, idx_key, &arr_obj);
+//
+//		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*OwnerSemData.Id));
+//		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*OwnerSemData.Class));
+//
+//		// Add semantic owner (component or actor) location
+//		if (AActor* ObjAsAct = Cast<AActor>(SemOwner))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+//			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+//			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//		}
+//		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemOwner))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+//			const FQuat RosQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+//			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//		}
 
-		// Start array doc
-		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
-		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
+//		// Check if the skeletal mesh is valid
+//		if (SkMComp)
+//		{
+//			bson_t bones_arr;
+//			bson_t bones_arr_obj;
+//			char jdx_str[16];
+//			const char *jdx_key;
+//			uint32_t jdx = 0;
+//
+//			BSON_APPEND_ARRAY_BEGIN(&arr_obj, "bones", &bones_arr);
+//			// Create array of all the bones (with and without(empty strings) semantic data)
+//			for (const auto& BoneNameToDataPair : SkelDataComp->AllBonesData)
+//			{
+//				const FName BoneName = BoneNameToDataPair.Key;
+//				const FSLBoneData BoneData = BoneNameToDataPair.Value;
+//
+//				bson_uint32_to_string(jdx, &jdx_key, jdx_str, sizeof jdx_str);
+//				BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, jdx_key, &bones_arr_obj);
+//
+//				BSON_APPEND_UTF8(&bones_arr_obj, "name", TCHAR_TO_UTF8(*BoneName.ToString()));
+//
+//				if (!BoneData.Class.IsEmpty())
+//				{
+//					BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*BoneData.Class));
+//					BSON_APPEND_UTF8(&bones_arr_obj, "id", TCHAR_TO_UTF8(*BoneData.Id));
+//
+//					if (!BoneData.VisualMask.IsEmpty())
+//					{
+//						BSON_APPEND_UTF8(&bones_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.VisualMask));
+//					}
+//				}
+//
+//#if SL_WITH_ROS_CONVERSIONS
+//				const FVector ROSLoc = FConversions::UToROS(SkMComp->GetBoneLocation(BoneName));
+//				const FQuat RosQuat = FConversions::UToROS(SkMComp->GetBoneQuaternion(BoneName));
+//				AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+//#else
+//				AddPoseDoc(SkMComp->GetBoneLocation(BoneName), SkMComp->GetBoneQuaternion(BoneName), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//
+//				bson_append_document_end(&bones_arr, &bones_arr_obj);
+//				jdx++;
+//			}
+//			// Add the created array to the semantic item
+//			bson_append_array_end(&arr_obj, &bones_arr);
+//		}
+//
+//		// Add the semantic item to the array
+//		bson_append_document_end(&sk_arr, &arr_obj);
+//		idx++;
+//	}
+//	bson_append_array_end(doc, &sk_arr);
 
-		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
-		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
-
-		FString ColorHex = FTags::GetValue(Pair.Value.Obj, "SemLog", "VisMask");
-		if (!ColorHex.IsEmpty())
-		{
-			BSON_APPEND_UTF8(&arr_obj, "mask_hex", TCHAR_TO_UTF8(*ColorHex));
-		}
-
-		// Check if location data is available
-		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
-			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
-			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-
-		}
-		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
-			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
-			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-		}
-
-		// Finish array doc
-		bson_append_document_end(&arr, &arr_obj);
-		idx++;
-	}
-	bson_append_array_end(doc, &arr);
-
-	// Add skel entities to array
-	BSON_APPEND_ARRAY_BEGIN(doc, "skel_entities", &sk_arr);
-	// Reset array index
-	idx=0;
-	// Iterate skeletal semantic entities
-	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSkeletalSemanticData())
-	{
-		USLSkeletalDataComponent* SkelDataComp = Pair.Value;
-		USkeletalMeshComponent* SkMComp = SkelDataComp->SkeletalMeshParent;
-		const FSLEntity OwnerSemData = SkelDataComp->OwnerSemanticData;
-		UObject* SemOwner = SkelDataComp->SemanticOwner;
-
-		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
-		BSON_APPEND_DOCUMENT_BEGIN(&sk_arr, idx_key, &arr_obj);
-
-		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*OwnerSemData.Id));
-		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*OwnerSemData.Class));
-
-		// Add semantic owner (component or actor) location
-		if (AActor* ObjAsAct = Cast<AActor>(SemOwner))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
-			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
-			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-		}
-		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemOwner))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
-			const FQuat RosQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
-			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-		}
-
-		// Check if the skeletal mesh is valid
-		if (SkMComp)
-		{
-			bson_t bones_arr;
-			bson_t bones_arr_obj;
-			char jdx_str[16];
-			const char *jdx_key;
-			uint32_t jdx = 0;
-
-			BSON_APPEND_ARRAY_BEGIN(&arr_obj, "bones", &bones_arr);
-			// Create array of all the bones (with and without(empty strings) semantic data)
-			for (const auto& BoneNameToDataPair : SkelDataComp->AllBonesData)
-			{
-				const FName BoneName = BoneNameToDataPair.Key;
-				const FSLBoneData BoneData = BoneNameToDataPair.Value;
-
-				bson_uint32_to_string(jdx, &jdx_key, jdx_str, sizeof jdx_str);
-				BSON_APPEND_DOCUMENT_BEGIN(&bones_arr, jdx_key, &bones_arr_obj);
-
-				BSON_APPEND_UTF8(&bones_arr_obj, "name", TCHAR_TO_UTF8(*BoneName.ToString()));
-
-				if (!BoneData.Class.IsEmpty())
-				{
-					BSON_APPEND_UTF8(&bones_arr_obj, "class", TCHAR_TO_UTF8(*BoneData.Class));
-					BSON_APPEND_UTF8(&bones_arr_obj, "id", TCHAR_TO_UTF8(*BoneData.Id));
-
-					if (!BoneData.VisualMask.IsEmpty())
-					{
-						BSON_APPEND_UTF8(&bones_arr_obj, "mask_hex", TCHAR_TO_UTF8(*BoneData.VisualMask));
-					}
-				}
-
-#if SL_WITH_ROS_CONVERSIONS
-				const FVector ROSLoc = FConversions::UToROS(SkMComp->GetBoneLocation(BoneName));
-				const FQuat RosQuat = FConversions::UToROS(SkMComp->GetBoneQuaternion(BoneName));
-				AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
-#else
-				AddPoseDoc(SkMComp->GetBoneLocation(BoneName), SkMComp->GetBoneQuaternion(BoneName), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-
-				bson_append_document_end(&bones_arr, &bones_arr_obj);
-				jdx++;
-			}
-			// Add the created array to the semantic item
-			bson_append_array_end(&arr_obj, &bones_arr);
-		}
-
-		// Add the semantic item to the array
-		bson_append_document_end(&sk_arr, &arr_obj);
-		idx++;
-	}
-	bson_append_array_end(doc, &sk_arr);
-
-	// Add visual entities to array
-	BSON_APPEND_ARRAY_BEGIN(doc, "joint_entities", &arr);
-	// Iterate non skeletal semantic entities
-	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
-	{
-		const FSLEntity SemEntity = Pair.Value;
-
-		// Ignore non static mesh
-		if (!Cast<APhysicsConstraintActor>(SemEntity.Obj))
-		{
-			continue;
-		}
-
-		// Start array doc
-		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
-		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
-
-		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
-		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
-
-		FString ColorHex = FTags::GetValue(Pair.Value.Obj, "SemLog", "VisMask");
-		if (!ColorHex.IsEmpty())
-		{
-			BSON_APPEND_UTF8(&arr_obj, "mask_hex", TCHAR_TO_UTF8(*ColorHex));
-		}
-
-		// Check if location data is available
-		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
-			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
-			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-		}
-		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
-			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
-			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-		}
-
-		// Finish array doc
-		bson_append_document_end(&arr, &arr_obj);
-		idx++;
-	}
-	bson_append_array_end(doc, &arr);
-
-
-	// Add all entities to array (lights, joints, visuals..)
-	BSON_APPEND_ARRAY_BEGIN(doc, "all_entities", &arr);
-	// Iterate non skeletal semantic entities
-	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
-	{
-		const FSLEntity SemEntity = Pair.Value;
-
-		// Start array doc
-		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
-		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
-
-		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
-		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
-
-		FString ColorHex = FTags::GetValue(Pair.Value.Obj, "SemLog", "VisMask");
-		if (!ColorHex.IsEmpty())
-		{
-			BSON_APPEND_UTF8(&arr_obj, "mask_hex", TCHAR_TO_UTF8(*ColorHex));
-		}
-
-		// Check if location data is available
-		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
-			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
-			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-		}
-		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
-			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
-			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-
-
-		}
-
-		// Finish array doc
-		bson_append_document_end(&arr, &arr_obj);
-		idx++;
-	}
-	bson_append_array_end(doc, &arr);
+//	// Add visual entities to array
+//	BSON_APPEND_ARRAY_BEGIN(doc, "joint_entities", &arr);
+//	// Iterate non skeletal semantic entities
+//	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
+//	{
+//		const FSLEntity SemEntity = Pair.Value;
+//
+//		// Ignore non static mesh
+//		if (!Cast<APhysicsConstraintActor>(SemEntity.Obj))
+//		{
+//			continue;
+//		}
+//
+//		// Start array doc
+//		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+//		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
+//
+//		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
+//		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
+//
+//		FString ColorHex = FTags::GetValue(Pair.Value.Obj, "SemLog", "VisMask");
+//		if (!ColorHex.IsEmpty())
+//		{
+//			BSON_APPEND_UTF8(&arr_obj, "mask_hex", TCHAR_TO_UTF8(*ColorHex));
+//		}
+//
+//		// Check if location data is available
+//		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+//			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+//			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//		}
+//		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+//			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+//			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//		}
+//
+//		// Finish array doc
+//		bson_append_document_end(&arr, &arr_obj);
+//		idx++;
+//	}
+//	bson_append_array_end(doc, &arr);
+//
+//
+//	// Add all entities to array (lights, joints, visuals..)
+//	BSON_APPEND_ARRAY_BEGIN(doc, "all_entities", &arr);
+//	// Iterate non skeletal semantic entities
+//	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
+//	{
+//		const FSLEntity SemEntity = Pair.Value;
+//
+//		// Start array doc
+//		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+//		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
+//
+//		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
+//		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
+//
+//		FString ColorHex = FTags::GetValue(Pair.Value.Obj, "SemLog", "VisMask");
+//		if (!ColorHex.IsEmpty())
+//		{
+//			BSON_APPEND_UTF8(&arr_obj, "mask_hex", TCHAR_TO_UTF8(*ColorHex));
+//		}
+//
+//		// Check if location data is available
+//		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+//			const FQuat RosQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+//			AddPoseDoc(ROSLoc, RosQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//		}
+//		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+//			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+//			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//
+//
+//		}
+//
+//		// Finish array doc
+//		bson_append_document_end(&arr, &arr_obj);
+//		idx++;
+//	}
+//	bson_append_array_end(doc, &arr);
 	
 }
 
 // Add camera views
 void FSLMetaDBHandler::AddCameraViews(bson_t* doc)
 {
-	bson_t arr;
-	bson_t arr_obj;
-	char idx_str[16];
-	const char *idx_key;
-	uint32_t idx = 0;
+	//bson_t arr;
+	//bson_t arr_obj;
+	//char idx_str[16];
+	//const char *idx_key;
+	//uint32_t idx = 0;
 
-	// Add entities to array
-	BSON_APPEND_ARRAY_BEGIN(doc, "camera_views", &arr);
+	//// Add entities to array
+	//BSON_APPEND_ARRAY_BEGIN(doc, "camera_views", &arr);
 
-	// Iterate non skeletal semantic entities
-	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetCameraViewsSemanticData())
-	{
-		const FSLEntity SemEntity = Pair.Value;
+//	// Iterate non skeletal semantic entities
+//	for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetCameraViewsSemanticData())
+//	{
+//		const FSLEntity SemEntity = Pair.Value;
+//
+//		if (Cast<ASkeletalMeshActor>(SemEntity.Obj) || Cast<USkeletalMeshComponent>(SemEntity.Obj))
+//		{
+//			continue;
+//		}
+//
+//		// Start array doc
+//		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
+//		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
+//
+//		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
+//		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
+//		
+//		// Check if location data is available
+//		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
+//			const FQuat ROSQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
+//			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//		}
+//		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
+//		{
+//#if SL_WITH_ROS_CONVERSIONS
+//			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
+//			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
+//			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
+//#else
+//			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
+//#endif // SL_WITH_ROS_CONVERSIONS
+//		}
+//
+//		// Finish array doc
+//		bson_append_document_end(&arr, &arr_obj);
+//		idx++;
+//	}
 
-		if (Cast<ASkeletalMeshActor>(SemEntity.Obj) || Cast<USkeletalMeshComponent>(SemEntity.Obj))
-		{
-			continue;
-		}
-
-		// Start array doc
-		bson_uint32_to_string(idx, &idx_key, idx_str, sizeof idx_str);
-		BSON_APPEND_DOCUMENT_BEGIN(&arr, idx_key, &arr_obj);
-
-		BSON_APPEND_UTF8(&arr_obj, "id", TCHAR_TO_UTF8(*Pair.Value.Id));
-		BSON_APPEND_UTF8(&arr_obj, "class", TCHAR_TO_UTF8(*Pair.Value.Class));
-		
-		// Check if location data is available
-		if (AActor* ObjAsAct = Cast<AActor>(SemEntity.Obj))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsAct->GetActorLocation());
-			const FQuat ROSQuat = FConversions::UToROS(ObjAsAct->GetActorQuat());
-			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsAct->GetActorLocation(), ObjAsAct->GetActorQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-		}
-		else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(SemEntity.Obj))
-		{
-#if SL_WITH_ROS_CONVERSIONS
-			const FVector ROSLoc = FConversions::UToROS(ObjAsSceneComp->GetComponentLocation());
-			const FQuat ROSQuat = FConversions::UToROS(ObjAsSceneComp->GetComponentQuat());
-			AddPoseDoc(ROSLoc, ROSQuat, &arr_obj);
-#else
-			AddPoseDoc(ObjAsSceneComp->GetComponentLocation(), ObjAsSceneComp->GetComponentQuat(), &arr_obj);
-#endif // SL_WITH_ROS_CONVERSIONS
-		}
-
-		// Finish array doc
-		bson_append_document_end(&arr, &arr_obj);
-		idx++;
-	}
-
-	bson_append_array_end(doc, &arr);
+	//bson_append_array_end(doc, &arr);
 }
 
 // Add pose to document

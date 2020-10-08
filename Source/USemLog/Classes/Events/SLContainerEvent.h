@@ -4,7 +4,9 @@
 #pragma once
 
 #include "ISLEvent.h"
-#include "SLStructs.h"
+
+// Forward declarations
+class USLBaseIndividual;
 
 /**
 * Dummy event class
@@ -18,20 +20,20 @@ public:
 
 	// Constructor with initialization
 	FSLContainerEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLEntity& InManipulator, const FSLEntity& InItem, const FString& InType);
+		USLBaseIndividual* InManipulator, USLBaseIndividual* InIndividual, const FString& InType);
 
 	// Constructor initialization without end time
 	FSLContainerEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLEntity& InManipulator, const FSLEntity& InItem, const FString& InType);
+		USLBaseIndividual* InManipulator, USLBaseIndividual* InIndividual, const FString& InType);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
-	// Manipulator item
-	FSLEntity Manipulator;
+	// Manipulator Individual
+	USLBaseIndividual* Manipulator;
 	
-	// Item item (manipulated item)
-	FSLEntity Item;
+	// Individual Individual (manipulated Individual)
+	USLBaseIndividual* Individual;
 
 	// Grasp type
 	FString Type;

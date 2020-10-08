@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Meta/SLMetaScanner.h"
+#include "Meta/SLMetaScannerStructs.h"
 #include "SLContactShapeInterface.h"
 #include "SLMetadataLogger.h"
 
@@ -18,10 +19,9 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/Light.h"
+#include "Engine/Engine.h"
 #include "Engine/DirectionalLight.h"
 
-// UUtils
-#include "Tags.h"
 
 // Ctor
 USLMetaScanner::USLMetaScanner()
@@ -507,70 +507,70 @@ bool USLMetaScanner::LoadScanItems(float MaxVolume, float MaxBoundsLength, bool 
 	// Cache the classes that were already iterated
 	TSet<FString> ConsultedClasses;
 
-	// Iterate all actors
-	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
-	{
-		// Check if the item has a visual
-		if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(*ActItr))
-		{
-			// Make all actors movable without physics, detached from any other components/actors
-			// -- avoids errors of moving attached, or actors with attachments
-			AsSMA->DisableComponentsSimulatePhysics();
-			AsSMA->SetMobility(EComponentMobility::Movable);
-			AsSMA->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			//AsSMA->DetachAllSceneComponents(AsSMA->GetRootComponent(), FDetachmentTransformRules::KeepWorldTransform);
-			TArray<AActor*> AttachedActors;
-			AsSMA->GetAttachedActors(AttachedActors);
-			for(auto& A : AttachedActors)
-			{
-				A->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-				//A->DetachAllSceneComponents(A->GetRootComponent(), FDetachmentTransformRules::KeepWorldTransform);
-			}
-			
-			// Everything is hidden by default
-			AsSMA->SetActorHiddenInGame(true);
-			
-			// Skip if class was already checked (or empty)
-			const FString Class = FTags::GetValue(*ActItr, "SemLog", "Class");
-			if(Class.IsEmpty() || ConsultedClasses.Contains(Class))
-			{
-				continue;
-			}
-			ConsultedClasses.Emplace(Class);
+	//// Iterate all actors
+	//for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
+	//{
+	//	// Check if the item has a visual
+	//	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(*ActItr))
+	//	{
+	//		// Make all actors movable without physics, detached from any other components/actors
+	//		// -- avoids errors of moving attached, or actors with attachments
+	//		AsSMA->DisableComponentsSimulatePhysics();
+	//		AsSMA->SetMobility(EComponentMobility::Movable);
+	//		AsSMA->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	//		//AsSMA->DetachAllSceneComponents(AsSMA->GetRootComponent(), FDetachmentTransformRules::KeepWorldTransform);
+	//		TArray<AActor*> AttachedActors;
+	//		AsSMA->GetAttachedActors(AttachedActors);
+	//		for(auto& A : AttachedActors)
+	//		{
+	//			A->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	//			//A->DetachAllSceneComponents(A->GetRootComponent(), FDetachmentTransformRules::KeepWorldTransform);
+	//		}
+	//		
+	//		// Everything is hidden by default
+	//		AsSMA->SetActorHiddenInGame(true);
+	//		
+	//		// Skip if class was already checked (or empty)
+	//		const FString Class = FTags::GetValue(*ActItr, "SemLog", "Class");
+	//		if(Class.IsEmpty() || ConsultedClasses.Contains(Class))
+	//		{
+	//			continue;
+	//		}
+	//		ConsultedClasses.Emplace(Class);
 
-			// Make sure the static mesh component is valid
-			if(UStaticMeshComponent* SMC = AsSMA->GetStaticMeshComponent())
-			{
-				if(HasScanningRequirements(SMC, MaxVolume, MaxBoundsLength, bWithContactShape, false))
-				{
-					//SMC->SetSimulatePhysics(false);
-					//AsSMA->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-					//AsSMA->DetachAllSceneComponents(AsSMA->GetRootComponent(), FDetachmentTransformRules::KeepWorldTransform);
-					//SMC->SetMobility(EComponentMobility::Movable);
-					ActItr->SetActorTransform(FTransform::Identity);
-					
-					ScanItems.Emplace(SMC, Class);
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Added %s to the scan items list.."),
-						*FString(__func__), __LINE__, *Class);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d \t %s does not meet scanning requirements, skipping item scan.."),
-						*FString(__func__), __LINE__, *Class);
-				}
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no static mesh component, skipping item scan.."),
-					*FString(__func__), __LINE__, *Class);
-			}
-		}
-		else if(!Cast<ALight>(*ActItr))
-		{
-			// Hide everything else that is not a light
-			(*ActItr)->SetActorHiddenInGame(true);
-		}
-	}
+	//		// Make sure the static mesh component is valid
+	//		if(UStaticMeshComponent* SMC = AsSMA->GetStaticMeshComponent())
+	//		{
+	//			if(HasScanningRequirements(SMC, MaxVolume, MaxBoundsLength, bWithContactShape, false))
+	//			{
+	//				//SMC->SetSimulatePhysics(false);
+	//				//AsSMA->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	//				//AsSMA->DetachAllSceneComponents(AsSMA->GetRootComponent(), FDetachmentTransformRules::KeepWorldTransform);
+	//				//SMC->SetMobility(EComponentMobility::Movable);
+	//				ActItr->SetActorTransform(FTransform::Identity);
+	//				
+	//				ScanItems.Emplace(SMC, Class);
+	//				UE_LOG(LogTemp, Warning, TEXT("%s::%d Added %s to the scan items list.."),
+	//					*FString(__func__), __LINE__, *Class);
+	//			}
+	//			else
+	//			{
+	//				UE_LOG(LogTemp, Error, TEXT("%s::%d \t %s does not meet scanning requirements, skipping item scan.."),
+	//					*FString(__func__), __LINE__, *Class);
+	//			}
+	//		}
+	//		else
+	//		{
+	//			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no static mesh component, skipping item scan.."),
+	//				*FString(__func__), __LINE__, *Class);
+	//		}
+	//	}
+	//	else if(!Cast<ALight>(*ActItr))
+	//	{
+	//		// Hide everything else that is not a light
+	//		(*ActItr)->SetActorHiddenInGame(true);
+	//	}
+	//}
 
 	if(ScanItems.Num() == 0)
 	{

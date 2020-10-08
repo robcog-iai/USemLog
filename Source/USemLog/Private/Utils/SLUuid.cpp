@@ -65,6 +65,66 @@ FGuid FSLUuid::HexToGuid(const FString& InHex)
 }
 
 
+/* Pairing functions */
+// Encode to cantor pair; !! f(a,b) != f(b,a); (https://en.wikipedia.org/wiki/Pairing_function)
+uint64 FSLUuid::PairEncodeCantor(uint32 X, uint32 Y)
+{
+	 return (uint64)(0.5 * (X + Y) * (X + Y + 1) + Y);
+}
+
+// Decode to cantor pair (if order is ignored the small number will alway be X)	
+void FSLUuid::PairDecodeCantor(uint64 InP, uint32& OutX, uint32& OutY)
+{
+	uint32 W = floor(((sqrt((InP * 8) + 1)) - 1) / 2);
+	uint32 T = (W * (W + 1)) / 2;
+	OutY = InP - T;
+	OutX = W - OutY;
+}
+
+// Encode to 64 bit pair (https://stackoverflow.com/questions/26222273/is-there-a-better-implementation-for-keeping-a-count-for-unique-integer-pairs)
+uint64 FSLUuid::PairEncodeShift(uint32 X, uint32 Y)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
+	return 0;
+	//uint64 A = X + Y;
+	//uint64 B = abs((int32)(X - Y));
+	//return (uint64)(A << 32) | (B);
+}
+
+// Decode from 64 bit pair
+void FSLUuid::PairDecodeShift(uint64 InP, uint32& OutX, uint32& OutY)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
+	//OutX = InP >> 32;
+	//OutY = InP & 0xFFFFFFFF;
+}
+
+// Encode to Szudzik pair (if order is ignored the small number will alway be X) (http://szudzik.com/ElegantPairing.pdf)
+uint64 FSLUuid::PairEncodeSzudzik(uint32 X, uint32 Y)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
+	return 0;
+	//return X < Y ? (uint64)(Y*Y+X) : (uint64)(X*X+X+Y);
+}
+
+// Decode from Szudzik pair
+void FSLUuid::PairDecodeSzudzik(uint64 InP, uint32& OutX, uint32& OutY)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
+	//uint32 Q = floor(sqrt(InP));
+	//uint32 L = InP - Q ^ 2;
+	//if (Q < L)
+	//{
+	//	OutX = Q;
+	//	OutY = L;
+	//}
+	//else
+	//{
+	//	OutX = Q;
+	//	OutY = L - Q;
+	//}
+}
+
 /* Conversions */
 // Encodes GUID to Base64
 FString FSLUuid::GuidToBase64(FGuid InGuid)

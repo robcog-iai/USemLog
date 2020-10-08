@@ -2,12 +2,14 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Monitors/SLContactSphere.h"
-#include "SLEntitiesManager.h"
+#include "Individuals/SLIndividualComponent.h"
+#include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
-// UUTils
-#include "Tags.h"
-#include "Ids.h"
+// Utils
+#include "Utils/SLTagIO.h"
 
 // Default constructor
 USLContactSphere::USLContactSphere()
@@ -23,8 +25,7 @@ USLContactSphere::USLContactSphere()
 
 	bLogSupportedByEvents = true;
 	
-	// Is started by the event logger
-	bStartAtBeginPlay = false;
+	IndividualComponent = nullptr;
 
 #if WITH_EDITOR
 	// Box extent scale
@@ -50,12 +51,6 @@ USLContactSphere::~USLContactSphere()
 void USLContactSphere::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (bStartAtBeginPlay)
-	{
-		Init();
-		Start();
-	}
 }
 
 // Called when actor removed from game or game ended
@@ -82,19 +77,24 @@ void USLContactSphere::Init(bool bInLogSupportedByEvents)
 			return;
 		}
 
-		// Make sure the semantic entities are set
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
+		// Make sure the owner is semantically annotated
+		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
-			FSLEntitiesManager::GetInstance()->Init(GetWorld());
+			IndividualComponent = CastChecked<USLIndividualComponent>(AC);
+			if (!IndividualComponent->IsLoaded())
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+				return;
+			}
 		}
-
-		// TODO add case where owner is a component (e.g. instead of using get owner, use outer)
-		// Make sure owner is a valid semantic item
-		SemanticOwner = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
-		if (!SemanticOwner.IsSet())
+		else
 		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 			return;
 		}
+
+		// Set the individual object
+		IndividualObject = IndividualComponent->GetIndividualObject();
 
 		// Make sure the mesh (static/skeletal) component is valid
 		if (AStaticMeshActor* CastToSMAct = Cast<AStaticMeshActor>(GetOwner()))
@@ -154,7 +154,7 @@ void USLContactSphere::Start()
 void USLContactSphere::UpdateVisualColor()
 {
 	// Set the default color of the shape
-	if (FTags::HasKey(GetOuter(), "SemLog", "Class"))
+	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 	{
 		if (ShapeColor != FColor::Green)
 		{
@@ -177,14 +177,14 @@ void USLContactSphere::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	if (!USLContactSphere::LoadShapeBounds())
-	{
-		USLContactSphere::CalcShapeBounds();
-		USLContactSphere::StoreShapeBounds();
-	}
+	//if (!USLContactSphere::LoadShapeBounds())
+	//{
+	//	USLContactSphere::CalcShapeBounds();
+	//	USLContactSphere::StoreShapeBounds();
+	//}
 
-	// Set bounds visual corresponding color 
-	USLContactSphere::UpdateVisualColor();
+	//// Set bounds visual corresponding color 
+	//USLContactSphere::UpdateVisualColor();
 }
 
 // Called when a property is changed in the editor
@@ -200,25 +200,21 @@ void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 
 	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, SphereRadius))
 	{
-			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "Radius",
-				FString::SanitizeFloat(SphereRadius));
+		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "Radius", FString::SanitizeFloat(SphereRadius));
 	}
 	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, RelativeLocation))
 	{
 		if (PropertyName == FName("X"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "LocX",
-				FString::SanitizeFloat(RelativeLocation.X));
+			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocX", FString::SanitizeFloat(RelativeLocation.X));
 		}
 		else if (PropertyName == FName("Y"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "LocY",
-				FString::SanitizeFloat(RelativeLocation.Y));
+			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocY", FString::SanitizeFloat(RelativeLocation.Y));
 		}
 		else if (PropertyName == FName("Z"))
 		{
-			FTags::AddKeyValuePair(GetOuter(), TagTypeName, "LocZ",
-				FString::SanitizeFloat(RelativeLocation.Y));
+			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocZ", FString::SanitizeFloat(RelativeLocation.Y));
 		}
 	}
 	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, bReCalcShapeButton))
@@ -234,20 +230,15 @@ void USLContactSphere::PostEditComponentMove(bool bFinished)
 	// Update tags with the new transform
 	const FVector RelLoc = GetRelativeTransform().GetLocation();
 
-	TMap<FString, FString> KeyValMap;
-
-	KeyValMap.Add("LocX", FString::SanitizeFloat(RelLoc.X));
-	KeyValMap.Add("LocY", FString::SanitizeFloat(RelLoc.Y));
-	KeyValMap.Add("LocZ", FString::SanitizeFloat(RelLoc.Z));
-
-	FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
+	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocX", FString::SanitizeFloat(RelLoc.X));
+	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocY", FString::SanitizeFloat(RelLoc.Y));
+	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocZ", FString::SanitizeFloat(RelLoc.Z));
 }
 
 // Read values from tags
 bool USLContactSphere::LoadShapeBounds()
 {
-	TMap<FString, FString> TagKeyValMap =
-		FTags::GetKeyValuePairs(GetOuter(), TagTypeName);
+	TMap<FString, FString> TagKeyValMap = FSLTagIO::GetKVPairs(GetOwner(), TagTypeName);
 
 	if (TagKeyValMap.Num() == 0) { return false; }
 
@@ -296,14 +287,10 @@ bool USLContactSphere::StoreShapeBounds()
 {
 	const FVector RelLoc = GetRelativeTransform().GetLocation();
 
-	TMap<FString, FString> KeyValMap;
-
-	KeyValMap.Add("Radius", FString::SanitizeFloat(SphereRadius));
-
-	KeyValMap.Add("LocX", FString::SanitizeFloat(RelLoc.X));
-	KeyValMap.Add("LocY", FString::SanitizeFloat(RelLoc.Y));
-	KeyValMap.Add("LocZ", FString::SanitizeFloat(RelLoc.Z));
-
-	return FTags::AddKeyValuePairs(GetOuter(), TagTypeName, KeyValMap);
+	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "Radius", FString::SanitizeFloat(SphereRadius));
+	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocX", FString::SanitizeFloat(RelLoc.X));
+	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocY", FString::SanitizeFloat(RelLoc.Y));
+	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocZ", FString::SanitizeFloat(RelLoc.Z));
+	return true;
 }
 #endif // WITH_EDITOR

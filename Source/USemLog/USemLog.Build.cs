@@ -52,10 +52,9 @@ public class USemLog : ModuleRules
 			new string[]
 			{
 				"Core",
-				"USemLogOwl",
 				"MongoC",						// SL_WITH_LIBMONGO_C                
 				"UProtobuf", 					// SL_WITH_PROTOBUF
-				"UViz", "UMongoQA",				// SL_WITH_DATA_VIS
+				//"UViz", "UMongoQA",				// SL_WITH_DATA_VIS
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -73,9 +72,9 @@ public class USemLog : ModuleRules
 				//"Json",
 				//"JsonUtilities",
 				//"Landscape", "AIModule",	// whitelisted actors when setting the world to visual only
-				"UTags",
-				"UIds",
-				"UConversions",				// SL_WITH_ROS_CONVERSIONS
+				//"UTags",
+				//"UIds",
+				//"UConversions",				// SL_WITH_ROS_CONVERSIONS
 				"UMCGrasp",					// SL_WITH_MC_GRASP
 				"SRanipal",					// SL_WITH_EYE_TRACKING
 				//"SlicingLogic",		    // SL_WITH_SLICING				

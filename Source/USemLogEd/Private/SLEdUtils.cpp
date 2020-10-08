@@ -7,10 +7,13 @@
 
 // SL
 #include "Editor/SLSemanticMapWriter.h"
-#include "SLManager.h"
+
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualInfoManager.h"
 #include "Individuals/SLIndividualUtils.h"
+
+#include "Engine/StaticMeshActor.h"
+#include "Materials/Material.h"
 
 // Utils
 #include "Utils/SLTagIO.h"
@@ -22,11 +25,11 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 	FSLSemanticMapWriter SemMapWriter;
 	FString TaskDir;
 
-	for (TActorIterator<ASLManager> ActItr(World); ActItr; ++ActItr)
+	/*for (TActorIterator<ASLManager> ActItr(World); ActItr; ++ActItr)
 	{
 		TaskDir = *ActItr->GetTaskId();
 		break;
-	}
+	}*/
 	if(TaskDir.IsEmpty())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find the semantic manager to read the task id, set to default.."),

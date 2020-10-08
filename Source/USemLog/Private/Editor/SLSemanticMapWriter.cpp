@@ -4,6 +4,7 @@
 #include "Editor/SLSemanticMapWriter.h"
 
 #include "PhysicsEngine/PhysicsConstraintActor.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
@@ -11,12 +12,12 @@
 #include "Misc/FileHelper.h"
 
 // UOwl
-#include "SLOwlSemanticMapStatics.h"
+#include "Owl/SLOwlSemanticMap.h"
+#include "Owl/SLOwlSemanticMapStatics.h"
 
 // UUtils
-#include "Tags.h"
-#include "Ids.h"
 #include "Utils/SLTagIO.h"
+#include "Utils/SLUuid.h"
 
 #if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
@@ -59,7 +60,7 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 // Create semantic map template
 TSharedPtr<FSLOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate(ESLOwlSemanticMapTemplate TemplateType, const FString& InDocId)
 {
-	const FString DocId = InDocId.IsEmpty() ? FIds::NewGuidInBase64Url() : InDocId;
+	const FString DocId = InDocId.IsEmpty() ? FSLUuid::NewGuidInBase64Url() : InDocId;
 
 	if (TemplateType == ESLOwlSemanticMapTemplate::Default)
 	{
@@ -155,10 +156,13 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 	}
 	
 	// Add color property
-	FString ColorHex = FTags::GetValue(Object, "SemLog", "VisMask");
-	if (!ColorHex.IsEmpty())
+	if (AActor* ObjAsAct = Cast<AActor>(Object))
 	{
-		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateMaskColorProperty(ColorHex));
+		FString ColorHex = FSLTagIO::GetValue(ObjAsAct, "SemLog", "VisMask");
+		if (!ColorHex.IsEmpty())
+		{
+			ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateMaskColorProperty(ColorHex));
+		}
 	}
 
 	// Lambda to remove path before and including "Models/", after and including ".", and the "SM_" prefixes 
@@ -178,7 +182,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 	if (AActor* ObjAsAct = Cast<AActor>(Object))
 	{
 		// Generate unique id for the properties
-		const FString PoseId = FIds::NewGuidInBase64Url();
+		const FString PoseId = FSLUuid::NewGuidInBase64Url();
 
 		/* Add properties */
 		// Pose property
@@ -214,7 +218,7 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 				for (const auto& BoneName : BoneNames)
 				{
 					// TODO read bone ids from data structure
-					const FString BoneId = FIds::NewGuidInBase64Url();
+					const FString BoneId = FSLUuid::NewGuidInBase64Url();
 					ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreateSrdlSkeletalBoneProperty(MapPrefix, BoneId));
 					CachedBoneIds.Add(BoneName, BoneId);
 				}
@@ -295,8 +299,8 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
 	{
 		// Generate unique id for the properties
-		const FString PoseId = FIds::NewGuidInBase64Url();
-		const FString TagsId = FIds::NewGuidInBase64Url();
+		const FString PoseId = FSLUuid::NewGuidInBase64Url();
+		const FString TagsId = FSLUuid::NewGuidInBase64Url();
 
 		// Add properties
 		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePoseProperty(
@@ -499,8 +503,8 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap>
 
 	if (ParentAct && ChildAct)
 	{
-		const FString ParentId = FTags::GetValue(ParentAct, "SemLog", "Id");
-		const FString ChildId = FTags::GetValue(ChildAct, "SemLog", "Id");
+		const FString ParentId = FSLTagIO::GetValue(ParentAct, "SemLog", "Id");
+		const FString ChildId = FSLTagIO::GetValue(ChildAct, "SemLog", "Id");
 		if (!ParentId.IsEmpty() && !ChildId.IsEmpty())
 		{
 			// Create the object individual
@@ -516,9 +520,9 @@ void FSLSemanticMapWriter::AddConstraintIndividual(TSharedPtr<FSLOwlSemanticMap>
 				InTags));
 
 			// Generate unique ids 
-			const FString PoseId = FIds::NewGuidInBase64Url();
-			const FString LinId = FIds::NewGuidInBase64Url();
-			const FString AngId = FIds::NewGuidInBase64Url();
+			const FString PoseId = FSLUuid::NewGuidInBase64Url();
+			const FString LinId = FSLUuid::NewGuidInBase64Url();
+			const FString AngId = FSLUuid::NewGuidInBase64Url();
 
 			// Add properties
 			ConstrIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePoseProperty(
@@ -613,8 +617,8 @@ FString FSLSemanticMapWriter::GetParentId(UObject* Object)
 	{
 		if (AActor* ParentAct = ObjAsAct->GetParentActor())
 		{
-			const FString ParentId = FTags::GetValue(ParentAct, "SemLog", "Id");
-			if (!ParentId.IsEmpty() && FTags::HasKey(ParentAct, "SemLog", "Class"))
+			const FString ParentId = FSLTagIO::GetValue(ParentAct, "SemLog", "Id");
+			if (!ParentId.IsEmpty() && FSLTagIO::HasKey(ParentAct, "SemLog", "Class"))
 			{
 				return ParentId;
 			}
@@ -622,62 +626,62 @@ FString FSLSemanticMapWriter::GetParentId(UObject* Object)
 
 		if (AActor* ParentAttAct = ObjAsAct->GetAttachParentActor())
 		{
-			const FString Id = FTags::GetValue(ParentAttAct, "SemLog", "Id");
-			if (!Id.IsEmpty() && FTags::HasKey(ParentAttAct, "SemLog", "Class"))
+			const FString Id = FSLTagIO::GetValue(ParentAttAct, "SemLog", "Id");
+			if (!Id.IsEmpty() && FSLTagIO::HasKey(ParentAttAct, "SemLog", "Class"))
 			{
 				return Id;
 			}
 		}
 		
-		if (UChildActorComponent* ParentComp = ObjAsAct->GetParentComponent())
-		{
-			const FString Id = FTags::GetValue(ParentComp, "SemLog", "Id");
-			if (!Id.IsEmpty() && FTags::HasKey(ParentComp, "SemLog", "Class"))
-			{
-				return Id;
-			}
-		}
+		//if (UChildActorComponent* ParentComp = ObjAsAct->GetParentComponent())
+		//{
+		//	const FString Id = FSLTagIO::GetValue(ParentComp, "SemLog", "Id");
+		//	if (!Id.IsEmpty() && FSLTagIO::HasKey(ParentComp, "SemLog", "Class"))
+		//	{
+		//		return Id;
+		//	}
+		//}
 
-		if (USceneComponent* ParentSceneComp = ObjAsAct->GetDefaultAttachComponent())
-		{
-			const FString Id = FTags::GetValue(ParentSceneComp, "SemLog", "Id");
-			if (!Id.IsEmpty() && FTags::HasKey(ParentSceneComp, "SemLog", "Class"))
-			{
-				return Id;
-			}
-		}
+		//if (USceneComponent* ParentSceneComp = ObjAsAct->GetDefaultAttachComponent())
+		//{
+		//	const FString Id = FTags::GetValue(ParentSceneComp, "SemLog", "Id");
+		//	if (!Id.IsEmpty() && FTags::HasKey(ParentSceneComp, "SemLog", "Class"))
+		//	{
+		//		return Id;
+		//	}
+		//}
 	}
-	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
-	{
-		if (USceneComponent* ParentAttComp = ObjAsSceneComp->GetAttachParent())
-		{
-			const FString Id = FTags::GetValue(ParentAttComp, "SemLog", "Id");
-			if (!Id.IsEmpty() && FTags::HasKey(ParentAttComp, "SemLog", "Class"))
-			{
-				return Id;
-			}
-		}
+	//else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
+	//{
+	//	if (USceneComponent* ParentAttComp = ObjAsSceneComp->GetAttachParent())
+	//	{
+	//		const FString Id = FTags::GetValue(ParentAttComp, "SemLog", "Id");
+	//		if (!Id.IsEmpty() && FTags::HasKey(ParentAttComp, "SemLog", "Class"))
+	//		{
+	//			return Id;
+	//		}
+	//	}
 
-		if (AActor* ParentAttRootAct = ObjAsSceneComp->GetAttachmentRootActor())
-		{
-			const FString Id = FTags::GetValue(ParentAttRootAct, "SemLog", "Id");
-			if (!Id.IsEmpty() && FTags::HasKey(ParentAttRootAct, "SemLog", "Class"))
-			{
-				return Id;
-			}
-		}
-	}
-	else if (UActorComponent* ObjAsActComp = Cast<UActorComponent>(Object))
-	{
-		if (AActor* Owner = ObjAsActComp->GetOwner())
-		{
-			const FString Id = FTags::GetValue(Owner, "SemLog", "Id");
-			if (!Id.IsEmpty() && FTags::HasKey(Owner, "SemLog", "Class"))
-			{
-				return Id;
-			}
-		}
-	}
+	//	if (AActor* ParentAttRootAct = ObjAsSceneComp->GetAttachmentRootActor())
+	//	{
+	//		const FString Id = FTags::GetValue(ParentAttRootAct, "SemLog", "Id");
+	//		if (!Id.IsEmpty() && FTags::HasKey(ParentAttRootAct, "SemLog", "Class"))
+	//		{
+	//			return Id;
+	//		}
+	//	}
+	//}
+	//else if (UActorComponent* ObjAsActComp = Cast<UActorComponent>(Object))
+	//{
+	//	if (AActor* Owner = ObjAsActComp->GetOwner())
+	//	{
+	//		const FString Id = FTags::GetValue(Owner, "SemLog", "Id");
+	//		if (!Id.IsEmpty() && FTags::HasKey(Owner, "SemLog", "Class"))
+	//		{
+	//			return Id;
+	//		}
+	//	}
+	//}
 	// No parent
 	return FString();
 }
@@ -693,39 +697,39 @@ void FSLSemanticMapWriter::GetChildIds(UObject* Object, TArray<FString>& OutChil
 		ObjAsActor->GetAttachedActors(AttachedActors);
 		for (const auto& ChildAct : AttachedActors)
 		{
-			const FString ChildId = FTags::GetValue(ChildAct, "SemLog", "Id");
-			if (!ChildId.IsEmpty() && FTags::HasKey(ChildAct, "SemLog", "Class"))
+			const FString ChildId = FSLTagIO::GetValue(ChildAct, "SemLog", "Id");
+			if (!ChildId.IsEmpty() && FSLTagIO::HasKey(ChildAct, "SemLog", "Class"))
 			{
 				OutChildIds.AddUnique(ChildId);
 			}
 		}
 
-		// Iterate child components (only direct children, no grandchildren etc.)
-		TInlineComponentArray<UActorComponent*> ChildComponents;
-		ObjAsActor->GetComponents(ChildComponents, false);
-		for (const auto& ChildComp : ChildComponents)
-		{
-			const FString ChildId = FTags::GetValue(ChildComp, "SemLog", "Id");
-			if (!ChildId.IsEmpty() && FTags::HasKey(ChildComp, "SemLog", "Class"))
-			{
-				OutChildIds.AddUnique(ChildId);
-			}
-		}
+		//// Iterate child components (only direct children, no grandchildren etc.)
+		//TInlineComponentArray<UActorComponent*> ChildComponents;
+		//ObjAsActor->GetComponents(ChildComponents, false);
+		//for (const auto& ChildComp : ChildComponents)
+		//{
+		//	const FString ChildId = FTags::GetValue(ChildComp, "SemLog", "Id");
+		//	if (!ChildId.IsEmpty() && FTags::HasKey(ChildComp, "SemLog", "Class"))
+		//	{
+		//		OutChildIds.AddUnique(ChildId);
+		//	}
+		//}
 	}
 	// Only scene components can have other components as children
 	else if (USceneComponent* ObjAsSceneComp = Cast<USceneComponent>(Object))
 	{
-		// Iterate child components (only direct children, no grandchildren etc.)
-		TArray<USceneComponent*> ChildComponents;
-		ObjAsSceneComp->GetChildrenComponents(false, ChildComponents);
-		for (const auto& ChildComp : ChildComponents)
-		{
-			const FString ChildId = FTags::GetValue(ChildComp, "SemLog", "Id");
-			if (!ChildId.IsEmpty() && FTags::HasKey(ChildComp, "SemLog", "Class"))
-			{
-				OutChildIds.AddUnique(ChildId);
-			}
-		}
+		//// Iterate child components (only direct children, no grandchildren etc.)
+		//TArray<USceneComponent*> ChildComponents;
+		//ObjAsSceneComp->GetChildrenComponents(false, ChildComponents);
+		//for (const auto& ChildComp : ChildComponents)
+		//{
+		//	const FString ChildId = FSLTagIO::GetValue(ChildComp, "SemLog", "Id");
+		//	if (!ChildId.IsEmpty() && FSLTagIO::HasKey(ChildComp, "SemLog", "Class"))
+		//	{
+		//		OutChildIds.AddUnique(ChildId);
+		//	}
+		//}
 	}
 }
 

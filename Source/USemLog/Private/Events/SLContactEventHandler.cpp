@@ -2,10 +2,11 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLContactEventHandler.h"
-#include "SLContactShapeInterface.h"
+#include "Monitors/SLContactShapeInterface.h"
+#include "Events/SLContactEvent.h"
+#include "Events/SLSupportedByEvent.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 
-// UUtils
-#include "Ids.h"
 
 // Set parent
 void FSLContactEventHandler::Init(UObject* InParent)
@@ -70,21 +71,21 @@ void FSLContactEventHandler::AddNewContactEvent(const FSLContactResult& InResult
 {
 	// Start a semantic contact event
 	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
-		FIds::NewGuidInBase64Url(), InResult.Time,
-		FIds::PairEncodeCantor(InResult.Self.Obj->GetUniqueID(), InResult.Other.Obj->GetUniqueID()),
+		FSLUuid::NewGuidInBase64Url(), InResult.Time,
+		FSLUuid::PairEncodeCantor(InResult.Self->GetUniqueID(), InResult.Other->GetUniqueID()),
 		InResult.Self, InResult.Other));
 	// Add event to the pending contacts array
 	StartedContactEvents.Emplace(ContactEvent);
 }
 
 // Publish finished event
-bool FSLContactEventHandler::FinishContactEvent(const FSLEntity& InOther, float EndTime)
+bool FSLContactEventHandler::FinishContactEvent(USLBaseIndividual* InOther, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedContactEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Item2.EqualsFast(InOther))
+		if ((*EventItr)->Individual2 == InOther)
 		{
 			// Set the event end time
 			(*EventItr)->End = EndTime;
@@ -105,11 +106,11 @@ bool FSLContactEventHandler::FinishContactEvent(const FSLEntity& InOther, float 
 }
 
 // Start new supported by event
-void FSLContactEventHandler::AddNewSupportedByEvent(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 EventPairId)
+void FSLContactEventHandler::AddNewSupportedByEvent(USLBaseIndividual* Supported, USLBaseIndividual* Supporting, float StartTime, const uint64 EventPairId)
 {
 	// Start a supported by event
 	TSharedPtr<FSLSupportedByEvent> Event = MakeShareable(new FSLSupportedByEvent(
-		FIds::NewGuidInBase64Url(), StartTime, EventPairId, Supported, Supporting));
+		FSLUuid::NewGuidInBase64Url(), StartTime, EventPairId, Supported, Supporting));
 	// Add event to the pending array
 	StartedSupportedByEvents.Emplace(Event);
 }
@@ -175,13 +176,13 @@ void FSLContactEventHandler::OnSLOverlapBegin(const FSLContactResult& InResult)
 }
 
 // Event called when a semantic overlap event ends
-void FSLContactEventHandler::OnSLOverlapEnd(const FSLEntity& Self, const FSLEntity& Other, float Time)
+void FSLContactEventHandler::OnSLOverlapEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
 {
 	FinishContactEvent(Other, Time);
 }
 
 // Event called when a supported by event begins
-void FSLContactEventHandler::OnSLSupportedByBegin(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 PairId)
+void FSLContactEventHandler::OnSLSupportedByBegin(USLBaseIndividual* Supported, USLBaseIndividual* Supporting, float StartTime, const uint64 PairId)
 {
 	AddNewSupportedByEvent(Supported, Supporting, StartTime, PairId);
 }

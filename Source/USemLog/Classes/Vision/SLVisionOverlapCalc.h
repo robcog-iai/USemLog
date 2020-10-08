@@ -14,7 +14,7 @@ class USLVisionLogger;
 class AStaticMeshActor;
 class UMaterialInterface;
 class UMaterial;
-class USLSkeletalDataComponent;
+//class USLSkeletalDataComponent;
 
 /**
  * Calculates overlap percentages for entities in an image
@@ -163,8 +163,8 @@ private:
 	// Pointer to the current skel mask clone
 	ASLVisionPoseableMeshActor* CurrPMAClone;
 
-	// Currently active skeletal data component
-	USLSkeletalDataComponent* CurrSkelDataComp;
+	//// Currently active skeletal data component
+	//USLSkeletalDataComponent* CurrSkelDataComp;
 
 	// Currently selected bone material index
 	int32 CurrBoneMaterialIndex;

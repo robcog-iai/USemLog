@@ -96,6 +96,9 @@ public:
 	// Check if the individual is movable
 	bool IsMovable() const { return bIsMovable; };
 
+	// Get info about the individual
+	virtual FString GetInfo() const;
+
 	/* SemLog World state logger workaround helper */
 	// Marks if an individual has moved since last check
 	void SetHasMovedFlag(bool Val) { bHasMovedFlag = Val; };

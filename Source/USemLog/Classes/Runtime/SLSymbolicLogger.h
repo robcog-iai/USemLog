@@ -7,7 +7,7 @@
 #include "GameFramework/Info.h"
 #include "Runtime/SLLoggerStructs.h"
 #include "Events/ISLEventHandler.h"
-#include "SLOwlExperiment.h"
+#include "Owl/SLOwlExperiment.h"
 #include "Events/ISLEventHandler.h"
 #include "ROSProlog/SLPrologClient.h"
 #include "SLSymbolicLogger.generated.h"

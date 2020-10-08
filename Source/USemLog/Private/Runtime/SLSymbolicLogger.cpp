@@ -27,7 +27,7 @@
 #include "Monitors/SLPickAndPlaceListener.h"
 #include "Monitors/SLContainerListener.h"
 
-#include "SLOwlExperimentStatics.h"
+#include "Owl/SLOwlExperimentStatics.h"
 
 #if SL_WITH_MC_GRASP
 #include "Events/SLFixationGraspEventHandler.h"
@@ -531,8 +531,6 @@ void ASLSymbolicLogger::InitContactMonitors()
 			{
 				ContactShape->Init(LoggerParameters.bSupportedBy);
 				ContactShapes.Emplace(ContactShape);
-
-
 
 				// Create a contact event handler 
 				TSharedPtr<FSLContactEventHandler> CEHandler = MakeShareable(new FSLContactEventHandler());

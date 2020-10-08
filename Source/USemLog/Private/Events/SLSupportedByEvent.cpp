@@ -2,19 +2,20 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLSupportedByEvent.h"
-#include "SLOwlExperimentStatics.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Owl/SLOwlExperimentStatics.h"
 
 // Constructor with initialization
 FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-	const FSLEntity& InSupportedItem, const FSLEntity& InSupportingItem) :
-	ISLEvent(InId, InStart, InEnd), PairId(InPairId), SupportedItem(InSupportedItem), SupportingItem(InSupportingItem)
+	USLBaseIndividual* InSupportedIndividual, USLBaseIndividual* InSupportingIndividual) :
+	ISLEvent(InId, InStart, InEnd), PairId(InPairId), SupportedIndividual(InSupportedIndividual), SupportingIndividual(InSupportingIndividual)
 {
 }
 
 // Constructor initialization without end time
 FSLSupportedByEvent::FSLSupportedByEvent(const FString& InId, const float InStart, const uint64 InPairId,
-	const FSLEntity& InSupportedItem, const FSLEntity& InSupportingItem) :
-	ISLEvent(InId, InStart), PairId(InPairId), SupportedItem(InSupportedItem), SupportingItem(InSupportingItem)
+	USLBaseIndividual* InSupportedIndividual, USLBaseIndividual* InSupportingIndividual) :
+	ISLEvent(InId, InStart), PairId(InPairId), SupportedIndividual(InSupportedIndividual), SupportingIndividual(InSupportingIndividual)
 {
 }
 
@@ -27,8 +28,8 @@ FSLOwlNode FSLSupportedByEvent::ToOwlNode() const
 		"log", Id, "SupportedBySituation");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportedProperty("log", SupportedItem.Id));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportingProperty("log", SupportingItem.Id));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportedProperty("log", SupportedIndividual->GetIdValue()));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportingProperty("log", SupportingIndividual->GetIdValue()));
 	return EventIndividual;
 }
 
@@ -44,10 +45,10 @@ void FSLSupportedByEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 		FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
 	EventsDoc->AddTimepointIndividual(End,
 		FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
-	EventsDoc->AddObjectIndividual(SupportedItem.Obj,
-		 FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportedItem.Id, SupportedItem.Class));
-	EventsDoc->AddObjectIndividual(SupportingItem.Obj,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportingItem.Id, SupportingItem.Class));
+	EventsDoc->AddObjectIndividual(SupportedIndividual,
+		 FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportedIndividual->GetIdValue(), SupportedIndividual->GetClassValue()));
+	EventsDoc->AddObjectIndividual(SupportingIndividual,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportingIndividual->GetIdValue(), SupportingIndividual->GetClassValue()));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
@@ -60,14 +61,14 @@ FString FSLSupportedByEvent::Context() const
 // Get the tooltip data
 FString FSLSupportedByEvent::Tooltip() const
 {
-	return FString::Printf(TEXT("\'SupportedItem\',\'%s\',\'Id\',\'%s\',\'SupportingItem\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
-		*SupportedItem.Class, *SupportedItem.Id, *SupportingItem.Class, *SupportingItem.Id, *Id);
+	return FString::Printf(TEXT("\'SupportedIndividual\',\'%s\',\'Id\',\'%s\',\'SupportingIndividual\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
+		*SupportedIndividual->GetClassValue(), *SupportedIndividual->GetIdValue(), *SupportingIndividual->GetClassValue(), *SupportingIndividual->GetIdValue(), *Id);
 }
 
 // Get the data as string
 FString FSLSupportedByEvent::ToString() const
 {
-	return FString::Printf(TEXT("SupportedItem:[%s] SupportingItem:[%s] PairId:%lld"),
-		*SupportedItem.ToString(), *SupportingItem.ToString(), PairId);
+	return FString::Printf(TEXT("SupportedIndividual:[%s] SupportingIndividual:[%s] PairId:%lld"),
+		*SupportedIndividual->GetInfo(), *SupportingIndividual->GetInfo(), PairId);
 }
 /* End ISLEvent interface */

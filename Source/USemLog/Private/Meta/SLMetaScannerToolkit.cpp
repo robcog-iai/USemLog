@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Meta/SLMetaScannerToolkit.h"
-#include "SLEntitiesManager.h"
 
 // Ctor
 FSLMetaScannerToolkit::FSLMetaScannerToolkit()

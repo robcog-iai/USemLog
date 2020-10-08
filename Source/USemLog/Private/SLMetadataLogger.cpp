@@ -2,8 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLMetadataLogger.h"
-#include "SLEntitiesManager.h"
-#include "Tags.h"
 #include "Components/SkeletalMeshComponent.h"
 
 // Ctor
@@ -32,13 +30,13 @@ void USLMetadataLogger::Init(const FString& InTaskId, const FString& InServerIp,
 {
 	if (!bIsInit)
 	{
-		// Check that the virtual camera class names are not empty or duplicates
-		FSLEntitiesManager::GetInstance()->Init(GetWorld());
-		if(FSLEntitiesManager::GetInstance()->EmptyOrDuplicatesInTheCameraViews())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Empty or duplicate class names within the vision cameras, aborting.."), *FString(__func__), __LINE__);
-			return;
-		}
+		//// Check that the virtual camera class names are not empty or duplicates
+		//FSLEntitiesManager::GetInstance()->Init(GetWorld());
+		//if(FSLEntitiesManager::GetInstance()->EmptyOrDuplicatesInTheCameraViews())
+		//{
+		//	UE_LOG(LogTemp, Error, TEXT("%s::%d Empty or duplicate class names within the vision cameras, aborting.."), *FString(__func__), __LINE__);
+		//	return;
+		//}
 
 		// Connect to the db
 		if (!DBHandler.Connect(InTaskId, InServerIp, InServerPort, bOverwrite, bScanItems))

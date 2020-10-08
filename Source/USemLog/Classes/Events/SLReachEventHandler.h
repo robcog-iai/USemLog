@@ -7,6 +7,9 @@
 #include "Events/SLReachEvent.h"
 #include "Events/SLPreGraspPositioningEvent.h"
 
+// Forward declaraion
+class AActor;
+
 /**
  * Listens to Reach events input, and outputs finished semantic Reach events
  */
@@ -24,7 +27,7 @@ public:
 
 private:
 	// Create and publish finished reach event
-	void OnSLPreAndReachEvent(const FSLEntity& Self, UObject* Other, float ReachStartTime, float ReachEndTime, float PreGraspEndTime);
+	void OnSLPreAndReachEvent(USLBaseIndividual* Self, AActor* OtherActor, float ReachStartTime, float ReachEndTime, float PreGraspEndTime);
 
 private:
 	// Parent

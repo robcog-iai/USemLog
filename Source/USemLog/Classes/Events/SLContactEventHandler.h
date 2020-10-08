@@ -4,11 +4,11 @@
 #pragma once
 
 #include "Events/ISLEventHandler.h"
-#include "Events/SLContactEvent.h"
-#include "Events/SLSupportedByEvent.h"
-#include "TimerManager.h"
 
 // Forward declarations
+class USLBaseIndividual;
+class FSLContactEvent;
+class FSLSupportedByEvent;
 struct FSLContactResult;
 
 /**
@@ -31,10 +31,10 @@ private:
 	void AddNewContactEvent(const FSLContactResult& InResult);
 
 	// Finish then publish the event
-	bool FinishContactEvent(const FSLEntity&, float EndTime);
+	bool FinishContactEvent(USLBaseIndividual* InOther, float EndTime);
 
 	// Start new supported by event
-	void AddNewSupportedByEvent(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 EventPairId);
+	void AddNewSupportedByEvent(USLBaseIndividual* Supported, USLBaseIndividual* Supporting, float StartTime, const uint64 EventPairId);
 
 	// Finish then publish the event
 	bool FinishSupportedByEvent(const uint64 InPairId, float EndTime);
@@ -46,10 +46,10 @@ private:
 	void OnSLOverlapBegin(const FSLContactResult& InResult);
 	
 	// Event called when a semantic overlap event ends
-	void OnSLOverlapEnd(const FSLEntity& Self, const FSLEntity& Other, float Time);
+	void OnSLOverlapEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
 
 	// Event called when a supported by event begins
-	void OnSLSupportedByBegin(const FSLEntity& Supported, const FSLEntity& Supporting, float StartTime, const uint64 EventPairId);
+	void OnSLSupportedByBegin(USLBaseIndividual* Supported, USLBaseIndividual* Supporting, float StartTime, const uint64 EventPairId);
 	
 	// Event called when a supported by event ends
 	void OnSLSupportedByEnd(const uint64 PairId1, const uint64 PairId2, float Time);

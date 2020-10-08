@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "SLOwlDoc.h"
+#include "Owl/SLOwlDoc.h"
 
 /**
 * Abstract class ensuring every event can be represented as an Owl Node;
@@ -15,11 +15,11 @@ public:
 	ISLEvent() {};
 	
 	// Init constructor
-	ISLEvent(const FString& InId, const float InStart, const float InEnd) 
+	ISLEvent(const FString& InId, float InStart, float InEnd) 
 		: Id(InId), Start(InStart), End(InEnd) {};
 
 	// Init without end constructor
-	ISLEvent(const FString& InId, const float InStart)
+	ISLEvent(const FString& InId, float InStart)
 		: Id(InId), Start(InStart) {};
 
 	// Virtual destructor

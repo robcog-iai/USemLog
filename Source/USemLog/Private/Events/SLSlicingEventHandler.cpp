@@ -2,14 +2,14 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLSlicingEventHandler.h"
-#include "SLEntitiesManager.h"
-#include "Tags.h"
+#include "Utils/SLUuid.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/SLIndividualUtils.h"
+
 #if SL_WITH_SLICING
 #include "SlicingBladeComponent.h"
 #endif // SL_WITH_SLICING
 
-// UUtils
-#include "Ids.h"
 
 
 // Set parent
@@ -17,12 +17,6 @@ void FSLSlicingEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{
-		// Make sure the mappings singleton is initialized (the handler uses it)
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
-		{
-			FSLEntitiesManager::GetInstance()->Init(InParent->GetWorld());
-		}
-
 #if SL_WITH_SLICING
 		// Check if parent is of right type
 		Parent = Cast<USlicingBladeComponent>(InParent);
@@ -74,30 +68,32 @@ void FSLSlicingEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new Slicing event
-void FSLSlicingEventHandler::AddNewEvent(const FSLEntity& PerformedBy, const FSLEntity& DeviceUsed, const FSLEntity& ObjectActedOn, float StartTime)
+void FSLSlicingEventHandler::AddNewEvent(USLBaseIndividual* PerformedBy, USLBaseIndividual* DeviceUsed, USLBaseIndividual* ObjectActedOn, float StartTime)
 {
 	// Start a semantic Slicing event
 	TSharedPtr<FSLSlicingEvent> Event = MakeShareable(new FSLSlicingEvent(
-		FIds::NewGuidInBase64Url(), StartTime, 
-		FIds::PairEncodeCantor(PerformedBy.Obj->GetUniqueID(), ObjectActedOn.Obj->GetUniqueID()),
+		FSLUuid::NewGuidInBase64Url(), StartTime, 
+		FSLUuid::PairEncodeCantor(PerformedBy->GetUniqueID(), ObjectActedOn->GetUniqueID()),
 		PerformedBy, DeviceUsed, ObjectActedOn));
 	// Add event to the pending array
 	StartedEvents.Emplace(Event);
 }
 
 // Publish finished event
-bool FSLSlicingEventHandler::FinishEvent(UObject* ObjectActedOn, bool bInTaskSuccessful, float EndTime, const FSLEntity& OutputsCreated = FSLEntity())
+bool FSLSlicingEventHandler::FinishEvent(USLBaseIndividual* ObjectActedOn,
+	bool bInTaskSuccessful, float EndTime,
+	USLBaseIndividual* OutputsCreated)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->ObjectActedOn.Obj == ObjectActedOn)
+		if ((*EventItr)->ObjectActedOn == ObjectActedOn)
 		{
 			// Set end time and publish event
 			(*EventItr)->End = EndTime;
 			(*EventItr)->bTaskSuccessful = bInTaskSuccessful;
-			(*EventItr)->OutputsCreated = OutputsCreated;
+			(*EventItr)->CreatedSlice = OutputsCreated;
 			OnSemanticEvent.ExecuteIfBound(*EventItr);
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
@@ -122,67 +118,66 @@ void FSLSlicingEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic Slicing event begins
-void FSLSlicingEventHandler::OnSLSlicingBegin(UObject* PerformedBy, UObject* DeviceUsed, UObject* ObjectActedOn, float Time)
+void FSLSlicingEventHandler::OnSLSlicingBegin(AActor* PerformedBy, AActor* DeviceUsed, AActor* ObjectActedOn, float Time)
 {
-	// Check that the objects are semantically annotated
-  	FSLEntity PerformedByEntity = FSLEntitiesManager::GetInstance()->GetEntity(PerformedBy);
-	FSLEntity DeviceUsedEntity = FSLEntitiesManager::GetInstance()->GetEntity(DeviceUsed);
-	FSLEntity CutEntity = FSLEntitiesManager::GetInstance()->GetEntity(ObjectActedOn);
-	if (PerformedByEntity.IsSet()
-		&& CutEntity.IsSet()
-		&& DeviceUsedEntity.IsSet())
+	if (USLBaseIndividual* PerformedByIndvidiual = FSLIndividualUtils::GetIndividualObject(PerformedBy))
 	{
-		FSLSlicingEventHandler::AddNewEvent(PerformedByEntity, DeviceUsedEntity, CutEntity, Time);
+		if (USLBaseIndividual* DeviceUsedIndividual = FSLIndividualUtils::GetIndividualObject(DeviceUsed))
+		{
+			if (USLBaseIndividual* ObjectActedOnIndividual = FSLIndividualUtils::GetIndividualObject(ObjectActedOn))
+			{
+				FSLSlicingEventHandler::AddNewEvent(PerformedByIndvidiual, DeviceUsedIndividual, ObjectActedOnIndividual, Time);
+			}
+		}
 	}
 }
 
 // Event called when a semantic Slicing event ends
-void FSLSlicingEventHandler::OnSLSlicingEndFail(UObject* PerformedBy, UObject* ObjectActedOn, float Time)
+void FSLSlicingEventHandler::OnSLSlicingEndFail(AActor* PerformedBy, AActor* ObjectActedOn, float Time)
 {
-	FSLEntity PerformedByEntity = FSLEntitiesManager::GetInstance()->GetEntity(PerformedBy);
-	FSLEntity CutEntity = FSLEntitiesManager::GetInstance()->GetEntity(ObjectActedOn);
-	if (PerformedByEntity.IsSet()
-		&& CutEntity.IsSet())
+	if (USLBaseIndividual* PerformedByIndvidiual = FSLIndividualUtils::GetIndividualObject(PerformedBy))
 	{
-		FSLSlicingEventHandler::FinishEvent(ObjectActedOn, false, Time);
+		if (USLBaseIndividual* ObjectActedOnIndvidiual = FSLIndividualUtils::GetIndividualObject(ObjectActedOn))
+		{
+			FSLSlicingEventHandler::FinishEvent(ObjectActedOnIndvidiual, false, Time, nullptr);
+		}
 	}
 }
 
 // Event called when a semantic Slicing event ends
-void FSLSlicingEventHandler::OnSLSlicingEndSuccess(UObject* PerformedBy, UObject* ObjectActedOn, UObject* OutputsCreated, float Time)
+void FSLSlicingEventHandler::OnSLSlicingEndSuccess(AActor* PerformedBy, AActor* ObjectActedOn, AActor* ObjectCreated, float Time)
 {
-	FSLEntity PerformedByEntity = FSLEntitiesManager::GetInstance()->GetEntity(PerformedBy);
-	FSLEntity CutEntity = FSLEntitiesManager::GetInstance()->GetEntity(ObjectActedOn);
-	FSLEntity OutputsCreatedEntity = FSLEntitiesManager::GetInstance()->GetEntity(OutputsCreated);
-	if (PerformedByEntity.IsSet()
-		&& CutEntity.IsSet()
-		&& OutputsCreatedEntity.IsSet())
+	if (USLBaseIndividual* PerformedByIndvidiual = FSLIndividualUtils::GetIndividualObject(PerformedBy))
 	{
-		FSLSlicingEventHandler::FinishEvent(ObjectActedOn, true, Time, OutputsCreatedEntity);
+		if (USLBaseIndividual* ObjectActedOnIndividual = FSLIndividualUtils::GetIndividualObject(ObjectActedOn))
+		{
+			if (USLBaseIndividual* ObjectCreatedIndividual = FSLIndividualUtils::GetIndividualObject(ObjectCreated))
+			{
+				FSLSlicingEventHandler::FinishEvent(ObjectActedOnIndividual, true, Time, ObjectCreatedIndividual);
+			}
+		}
 	}
 }
 
 // Event called when new objects are created
-void FSLSlicingEventHandler::OnSLObjectCreation(UObject* TransformedObject, UObject* NewSlice, float Time)
+void FSLSlicingEventHandler::OnSLObjectCreation(AActor* TransformedObject, AActor* NewSlice, float Time)
 {
-	// Only create Id for new Slice and use same old ID for Original object
-	FString IdValue = FIds::NewGuidInBase64() + "_";
-	IdValue.Append(FTags::GetValue(TransformedObject, "SemLog", "Id"));
-	FTags::AddKeyValuePair(NewSlice, "SemLog", "Id", IdValue, true);
-
-	if (FSLEntitiesManager::GetInstance()->AddObject(TransformedObject) &&
-		FSLEntitiesManager::GetInstance()->AddObject(NewSlice))
+	if (USLBaseIndividual* OrigIndividual = FSLIndividualUtils::GetIndividualObject(TransformedObject))
 	{
-		UE_LOG(LogTemp, Error, TEXT(">>Items Have been Created"));
+		// TODO create a new if since it is a new object
+		// Hide / remove previous whole component
 	}
+
+	// TODO Create a new slice individual
 }
 
 // Event called when an object is destroyed
-void FSLSlicingEventHandler::OnSLObjectDestruction(UObject* ObjectActedOn, float Time)
+void FSLSlicingEventHandler::OnSLObjectDestruction(AActor* ObjectActedOn, float Time)
 {
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(ObjectActedOn);
-	if (OtherItem.IsSet())
+	if (USLBaseIndividual* ActedOnIndividual = FSLIndividualUtils::GetIndividualObject(ObjectActedOn))
 	{
-		FSLEntitiesManager::GetInstance()->RemoveEntity(ObjectActedOn);
+		// TODO hide or remove individual
+		UE_LOG(LogTemp, Error, TEXT("%s::%d TODO"), *FString(__FUNCTION__), __LINE__);
 	}
+
 }

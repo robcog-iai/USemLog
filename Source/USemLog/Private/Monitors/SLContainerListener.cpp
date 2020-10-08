@@ -2,14 +2,13 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Monitors/SLContainerListener.h"
-#include "SLManipulatorListener.h"
-#include "SLEntitiesManager.h"
+#include "Monitors/SLManipulatorListener.h"
+#include "Individuals/SLIndividualComponent.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
-// UUtils
-#include "Tags.h"
 
 // Sets default values for this component's properties
 USLContainerListener::USLContainerListener()
@@ -41,19 +40,24 @@ bool USLContainerListener::Init()
 {
 	if (!bIsInit)
 	{
-		// Init the semantic entities manager
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
+		// Make sure the owner is semantically annotated
+		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
-			FSLEntitiesManager::GetInstance()->Init(GetWorld());
+			IndividualComponent = CastChecked<USLIndividualComponent>(AC);
+			if (!IndividualComponent->IsLoaded())
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+				return false;
+			}
 		}
-
-		// Check that the owner is part of the semantic entities
-		SemanticOwner = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
-		if (!SemanticOwner.IsSet())
+		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not semantically annotated.."), *FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 			return false;
 		}
+
+		// Set the individual object
+		IndividualObject = IndividualComponent->GetIndividualObject();
 
 		bIsInit = true;
 		return true;
@@ -98,7 +102,7 @@ void USLContainerListener::Finish(bool bForced)
 
 
 // Called when grasp starts
-void USLContainerListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType)
+void USLContainerListener::OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType)
 {
 	if(CurrGraspedObj)
 	{
@@ -115,7 +119,7 @@ void USLContainerListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, 
 }
 
 // Called when grasp ends
-void USLContainerListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time)
+void USLContainerListener::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time)
 {
 	if(CurrGraspedObj == nullptr)
 	{
@@ -134,11 +138,11 @@ void USLContainerListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, fl
 
 			if(CurrDistance - Pair.Value > MinDistance)
 			{
-				OnContainerManipulation.Broadcast(SemanticOwner, Pair.Key, GraspTime, Time, "open");
+				OnContainerManipulation.Broadcast(IndividualObject, Pair.Key, GraspTime, Time, "open");
 			}
 			else if(CurrDistance - Pair.Value < - MinDistance)
 			{
-				OnContainerManipulation.Broadcast(SemanticOwner, Pair.Key, GraspTime, Time, "close");
+				OnContainerManipulation.Broadcast(IndividualObject, Pair.Key, GraspTime, Time, "close");
 			}
 		}
 		
@@ -218,7 +222,7 @@ void USLContainerListener::FinishActiveEvents()
 	if(CurrGraspedObj)
 	{
 		// Fake a grasp end call
-		OnSLGraspEnd(SemanticOwner, CurrGraspedObj, GetWorld()->GetTimeSeconds());
+		OnSLGraspEnd(IndividualObject, CurrGraspedObj, GetWorld()->GetTimeSeconds());
 	}	
 }
 
@@ -260,20 +264,21 @@ void USLContainerListener::GetAllConstraintsOtherActors(AActor* Actor, TSet<AAct
 // Iterate recursively on the attached actors, and search for container type
 void USLContainerListener::GetAllAttachedContainers(AActor* Actor, TSet<AActor*>& OutContainers)
 {
-	if(FTags::HasKey(Actor, "SemLog", "Container"))
-	{
-		OutContainers.Emplace(Actor);
-	}
+	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO "), *FString(__FUNCTION__), __LINE__);
+	//if(FTags::HasKey(Actor, "SemLog", "Container"))
+	//{
+	//	OutContainers.Emplace(Actor);
+	//}
 
-	TArray<AActor*> AttActors;
-	Actor->GetAttachedActors(AttActors);
-	for(const auto& AttAct : AttActors)
-	{
-		if(FTags::HasKey(AttAct, "SemLog", "Container"))
-		{
-			OutContainers.Emplace(AttAct);
-		}
+	//TArray<AActor*> AttActors;
+	//Actor->GetAttachedActors(AttActors);
+	//for(const auto& AttAct : AttActors)
+	//{
+	//	if(FTags::HasKey(AttAct, "SemLog", "Container"))
+	//	{
+	//		OutContainers.Emplace(AttAct);
+	//	}
 
-		GetAllConstraintsOtherActors(AttAct, OutContainers);
-	}
+	//	GetAllConstraintsOtherActors(AttAct, OutContainers);
+	//}
 }

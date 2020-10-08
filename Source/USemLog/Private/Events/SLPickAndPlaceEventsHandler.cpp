@@ -2,16 +2,19 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLPickAndPlaceEventsHandler.h"
-#include "SLEntitiesManager.h"
-#include "SLPickAndPlaceListener.h"
+#include "Monitors/SLPickAndPlaceListener.h"
 
 #include "Events/SLPickUpEvent.h"
 #include "Events/SLSlideEvent.h"
 #include "Events/SLPutDownEvent.h"
 #include "Events/SLTransportEvent.h"
 
-// UUtils
-#include "Ids.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/SLIndividualUtils.h"
+
+#include "Utils/SLUuid.h"
+
+
 
 
 // Set parent
@@ -19,12 +22,6 @@ void FSLPickAndPlaceEventsHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{
-		// Make sure the mappings singleton is initialized (the handler uses it)
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
-		{
-			FSLEntitiesManager::GetInstance()->Init(InParent->GetWorld());
-		}
-
 		// Check if parent is of right type
 		Parent = Cast<USLPickAndPlaceListener>(InParent);
 		if (Parent)
@@ -75,49 +72,49 @@ void FSLPickAndPlaceEventsHandler::Finish(float EndTime, bool bForced)
 
 
 // Event called when a slide event happened
-void FSLPickAndPlaceEventsHandler::OnSLSlide(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
+void FSLPickAndPlaceEventsHandler::OnSLSlide(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime)
 {
-	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
+	if (USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor))
 	{
 		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLSlideEvent(
-			FIds::NewGuidInBase64Url(), StartTime, EndTime,
-			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
-			Self, *OtherItem)));
+			FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
+			FSLUuid::PairEncodeCantor(Self->GetUniqueID(), OtherIndividual->GetUniqueID()),
+			Self, OtherIndividual)));
 	}
 }
 
 // Event called when a pick up event happened
-void FSLPickAndPlaceEventsHandler::OnSLPickUp(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
+void FSLPickAndPlaceEventsHandler::OnSLPickUp(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime)
 {
-	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
+	if (USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor))
 	{
 		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPickUpEvent(
-			FIds::NewGuidInBase64Url(), StartTime, EndTime,
-			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
-			Self, *OtherItem)));
+			FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
+			FSLUuid::PairEncodeCantor(Self->GetUniqueID(), OtherIndividual->GetUniqueID()),
+			Self, OtherIndividual)));
 	}
 }
 
 // Event called when a transport event happened
-void FSLPickAndPlaceEventsHandler::OnSLTransport(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
+void FSLPickAndPlaceEventsHandler::OnSLTransport(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime)
 {
-	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
+	if (USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor))
 	{
 		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLTransportEvent(
-			FIds::NewGuidInBase64Url(), StartTime, EndTime,
-			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
-			Self, *OtherItem)));
+			FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
+			FSLUuid::PairEncodeCantor(Self->GetUniqueID(), OtherIndividual->GetUniqueID()),
+			Self, OtherIndividual)));
 	}
 }
 
 // Event called when a put down event happened
-void FSLPickAndPlaceEventsHandler::OnSLPutDown(const FSLEntity& Self, AActor* Other, float StartTime, float EndTime)
+void FSLPickAndPlaceEventsHandler::OnSLPutDown(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime)
 {
-	if(FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
+	if (USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor))
 	{
 		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPutDownEvent(
-			FIds::NewGuidInBase64Url(), StartTime, EndTime,
-			FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other->GetUniqueID()),
-			Self, *OtherItem)));
+			FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
+			FSLUuid::PairEncodeCantor(Self->GetUniqueID(), OtherIndividual->GetUniqueID()),
+			Self, OtherIndividual)));
 	}
 }

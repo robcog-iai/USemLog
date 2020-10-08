@@ -2,24 +2,16 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLGraspEventHandler.h"
-#include "SLEntitiesManager.h"
-#include "SLManipulatorListener.h"
-
-// UUtils
-#include "Ids.h"
-
+#include "Monitors/SLManipulatorListener.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/SLIndividualUtils.h"
+#include "Utils/SLUuid.h"
 
 // Set parent
 void FSLGraspEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{
-		// Make sure the mappings singleton is initialized (the handler uses it)
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
-		{
-			FSLEntitiesManager::GetInstance()->Init(InParent->GetWorld());
-		}
-
 		// Check if parent is of right type
 		Parent = Cast<USLManipulatorListener>(InParent);
 		if (Parent)
@@ -69,25 +61,25 @@ void FSLGraspEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Start new grasp event
-void FSLGraspEventHandler::AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime, const FString& InType)
+void FSLGraspEventHandler::AddNewEvent(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, const FString& InType)
 {
 	// Start a semantic grasp event
 	TSharedPtr<FSLGraspEvent> Event = MakeShareable(new FSLGraspEvent(
-		FIds::NewGuidInBase64Url(), StartTime,
-		FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), Other.Obj->GetUniqueID()),
+		FSLUuid::NewGuidInBase64Url(), StartTime,
+		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
 		Self, Other, InType));
 	// Add event to the pending array
 	StartedEvents.Emplace(Event);
 }
 
 // Publish finished event
-bool FSLGraspEventHandler::FinishEvent(AActor* Other, float EndTime)
+bool FSLGraspEventHandler::FinishEvent(USLBaseIndividual* Other, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Item.Obj == Other)
+		if ((*EventItr)->Individual == Other)
 		{
 			// Ignore short events
 			if ((EndTime - (*EventItr)->Start) > GraspEventMin)
@@ -123,18 +115,21 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic grasp event begins
-void FSLGraspEventHandler::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& Type)
+void FSLGraspEventHandler::OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActor, float Time, const FString& Type)
 {
 	// Check that the objects are semantically annotated
-	FSLEntity OtherItem = FSLEntitiesManager::GetInstance()->GetEntity(Other);
-	if (OtherItem.IsSet())
+	if (USLBaseIndividual* OtherIndivdidual = FSLIndividualUtils::GetIndividualObject(OtherActor))
 	{
-		AddNewEvent(Self, OtherItem, Time, Type);
+		AddNewEvent(Self, OtherIndivdidual, Time, Type);
+
 	}
 }
 
 // Event called when a semantic grasp event ends
-void FSLGraspEventHandler::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time)
+void FSLGraspEventHandler::OnSLGraspEnd(USLBaseIndividual* Self, AActor* OtherActor, float Time)
 {
-	FinishEvent(Other, Time);
+	if (USLBaseIndividual* OtherIndivdidual = FSLIndividualUtils::GetIndividualObject(OtherActor))
+	{
+		FinishEvent(OtherIndivdidual, Time);
+	}
 }

@@ -8,6 +8,8 @@
 #include "TimerManager.h"
 
 // Forward declarations
+class USLBaseIndividual;
+class FSLContactEvent;
 struct FSLContactResult;
 
 /**
@@ -30,7 +32,7 @@ private:
 	void AddNewEvent(const FSLContactResult& InResult);
 
 	// Finish then publish the event
-	bool FinishEvent(const FSLEntity&, float EndTime);
+	bool FinishEvent(USLBaseIndividual* InOther, float EndTime);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);
@@ -39,7 +41,7 @@ private:
 	void OnSLOverlapBegin(const FSLContactResult& InResult);
 
 	// Event called when a semantic overlap event ends
-	void OnSLOverlapEnd(const FSLEntity& Self, const FSLEntity& Other, float Time);
+	void OnSLOverlapEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
 
 	private:
 	// Parent semantic overlap area

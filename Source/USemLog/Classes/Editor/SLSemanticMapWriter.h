@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLOwlSemanticMap.h"
+#include "Owl/SLOwlSemanticMap.h"
 
 /**
  * Class for exporting the semantic map in an OWL format

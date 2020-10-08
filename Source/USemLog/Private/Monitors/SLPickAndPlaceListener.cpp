@@ -2,9 +2,10 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "SLPickAndPlaceListener.h"
+#include "Individuals/SLIndividualComponent.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 #include "SLManipulatorListener.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "SLEntitiesManager.h"
 #include "GameFramework/PlayerController.h"
 
 // Sets default values for this component's properties
@@ -51,19 +52,24 @@ bool USLPickAndPlaceListener::Init()
 
 	if (!bIsInit)
 	{
-		// Init the semantic entities manager
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
+		// Make sure the owner is semantically annotated
+		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
-			FSLEntitiesManager::GetInstance()->Init(GetWorld());
+			IndividualComponent = CastChecked<USLIndividualComponent>(AC);
+			if (!IndividualComponent->IsLoaded())
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+				return false;
+			}
 		}
-
-		// Check that the owner is part of the semantic entities
-		SemanticOwner = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
-		if (!SemanticOwner.IsSet())
+		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not semantically annotated.."), *FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 			return false;
 		}
+
+		// Set the individual object
+		IndividualObject = IndividualComponent->GetIndividualObject();
 
 		// Init state
 		EventCheck = ESLPaPStateCheck::NONE;
@@ -143,7 +149,7 @@ ISLContactShapeInterface* USLPickAndPlaceListener::GetContactShapeComponent(AAct
 }
 
 // Called when grasp starts
-void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType)
+void USLPickAndPlaceListener::OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType)
 {
 	if(CurrGraspedObj)
 	{
@@ -200,7 +206,7 @@ void USLPickAndPlaceListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Othe
 }
 
 // Called when grasp ends
-void USLPickAndPlaceListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time)
+void USLPickAndPlaceListener::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time)
 {
 	if(CurrGraspedObj == nullptr)
 	{
@@ -247,7 +253,7 @@ void USLPickAndPlaceListener::FinishActiveEvent(float CurrTime)
 	{
 		//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## SLIDE ##############  [%f <--> %f]"),
 		//	*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
-		OnManipulatorSlideEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
+		OnManipulatorSlideEvent.Broadcast(IndividualObject, CurrGraspedObj, PrevRelevantTime, CurrTime);
 	}
 	else if(EventCheck == ESLPaPStateCheck::PickUp)
 	{
@@ -255,7 +261,7 @@ void USLPickAndPlaceListener::FinishActiveEvent(float CurrTime)
 		{
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
 			//	*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
-			OnManipulatorSlideEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
+			OnManipulatorSlideEvent.Broadcast(IndividualObject, CurrGraspedObj, PrevRelevantTime, CurrTime);
 			bLiftOffHappened = false;
 		}
 	}
@@ -336,7 +342,7 @@ void USLPickAndPlaceListener::Update_Slide()
 				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, ExactSupportedByEndTime);
 
 			// Broadcast event
-			OnManipulatorSlideEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, ExactSupportedByEndTime);
+			OnManipulatorSlideEvent.Broadcast(IndividualObject, CurrGraspedObj, PrevRelevantTime, ExactSupportedByEndTime);
 
 			// Only update if they were part of the sliding event
 			PrevRelevantTime = ExactSupportedByEndTime;
@@ -366,7 +372,7 @@ void USLPickAndPlaceListener::Update_PickUp()
 				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
 					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
 				// Broadcast event
-				OnManipulatorPickUpEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
+				OnManipulatorPickUpEvent.Broadcast(IndividualObject, CurrGraspedObj, PrevRelevantTime, CurrTime);
 
 				// Start checking for the next possible events
 				bLiftOffHappened = false;
@@ -400,7 +406,7 @@ void USLPickAndPlaceListener::Update_PickUp()
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
 				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
-			OnManipulatorPickUpEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
+			OnManipulatorPickUpEvent.Broadcast(IndividualObject, CurrGraspedObj, PrevRelevantTime, CurrTime);
 		}
 
 		// Start checking for next event
@@ -434,14 +440,14 @@ void USLPickAndPlaceListener::Update_TransportOrPutDown()
 				{
 					PutDownStartTime = RecentMovementBuffer[PutDownEndIdx].Key;
 
-					UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
-						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, PutDownStartTime);
-					OnManipulatorTransportEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, PutDownStartTime);
+					//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
+					//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, PutDownStartTime);
+					OnManipulatorTransportEvent.Broadcast(IndividualObject, CurrGraspedObj, PrevRelevantTime, PutDownStartTime);
 
 
-					UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PUT DOWN ##############  [%f <--> %f]"),
-						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PutDownStartTime, CurrTime);
-					OnManipulatorPutDownEvent.Broadcast(SemanticOwner, CurrGraspedObj, PutDownStartTime, CurrTime);
+					//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PUT DOWN ##############  [%f <--> %f]"),
+					//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PutDownStartTime, CurrTime);
+					OnManipulatorPutDownEvent.Broadcast(IndividualObject, CurrGraspedObj, PutDownStartTime, CurrTime);
 					break;
 				}
 				PutDownEndIdx--;
@@ -450,24 +456,24 @@ void USLPickAndPlaceListener::Update_TransportOrPutDown()
 			// If the limits are not crossed in the buffer the oldest available time is used (TODO, or should we ignore the action?)
 			if(PutDownStartTime < 0)
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] The limits were not crossed in the available data in the buffer, the oldest available time is used"),
-					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+				//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] The limits were not crossed in the available data in the buffer, the oldest available time is used"),
+				//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 				PutDownStartTime = RecentMovementBuffer[0].Key;
 
-				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
-					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, PutDownStartTime);
-				OnManipulatorPutDownEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, PutDownStartTime);
+				//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
+				//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, PutDownStartTime);
+				OnManipulatorPutDownEvent.Broadcast(IndividualObject, CurrGraspedObj, PrevRelevantTime, PutDownStartTime);
 
-				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PUT DOWN ##############  [%f <--> %f]"),
-					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PutDownStartTime, CurrTime);
-				OnManipulatorPutDownEvent.Broadcast(SemanticOwner, CurrGraspedObj, PutDownStartTime, CurrTime);
+				//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PUT DOWN ##############  [%f <--> %f]"),
+				//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PutDownStartTime, CurrTime);
+				OnManipulatorPutDownEvent.Broadcast(IndividualObject, CurrGraspedObj, PutDownStartTime, CurrTime);
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
-			OnManipulatorTransportEvent.Broadcast(SemanticOwner, CurrGraspedObj, PrevRelevantTime, CurrTime);
+			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
+			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
+			OnManipulatorTransportEvent.Broadcast(IndividualObject, CurrGraspedObj, PrevRelevantTime, CurrTime);
 		}
 
 		RecentMovementBuffer.Reset(RecentMovementBufferSize);

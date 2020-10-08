@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Vision/SLVisionMaskImageHandler.h"
-#include "SLEntitiesManager.h"
+
 
 // Ctor
 FSLVisionMaskImageHandler::FSLVisionMaskImageHandler()
@@ -15,52 +15,46 @@ bool FSLVisionMaskImageHandler::Init()
 {
 	if(!bIsInit)
 	{
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Init failed, init entities manager first.."), *FString(__func__), __LINE__);
-			return false;
-		}
+		//// Setup NON-skeletal entity mapping
+		//for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
+		//{
+		//	if (Pair.Value.HasVisualMask() && Pair.Value.HasRenderedVisualMask())
+		//	{
+		//		const FColor RenderedMaskColor = FColor::FromHex(Pair.Value.RenderedVisualMask);
+		//		RenderedColorToEntityInfo.Emplace(RenderedMaskColor, 
+		//			FSLVisionMaskEntityInfo(Pair.Value.Class, Pair.Value.Id, Pair.Value.VisualMask));
+		//	}
+		//	else
+		//	{
+		//		if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(Pair.Key))
+		//		{
+		//			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no visual or rendered (calibrated) visual mask.."),
+		//				*FString(__func__), __LINE__, *SMA->GetName());
+		//		}
+		//	}
+		//}
 
-		// Setup NON-skeletal entity mapping
-		for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSemanticData())
-		{
-			if (Pair.Value.HasVisualMask() && Pair.Value.HasRenderedVisualMask())
-			{
-				const FColor RenderedMaskColor = FColor::FromHex(Pair.Value.RenderedVisualMask);
-				RenderedColorToEntityInfo.Emplace(RenderedMaskColor, 
-					FSLVisionMaskEntityInfo(Pair.Value.Class, Pair.Value.Id, Pair.Value.VisualMask));
-			}
-			else
-			{
-				if (AStaticMeshActor* SMA = Cast<AStaticMeshActor>(Pair.Key))
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no visual or rendered (calibrated) visual mask.."),
-						*FString(__func__), __LINE__, *SMA->GetName());
-				}
-			}
-		}
+		//// Setup skeletal entity mapping
+		//for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSkeletalSemanticData())
+		//{
+		//	const FString SkelClass = Pair.Value->OwnerSemanticData.Class;
+		//	const FString SkelId = Pair.Value->OwnerSemanticData.Id;
 
-		// Setup skeletal entity mapping
-		for (const auto& Pair : FSLEntitiesManager::GetInstance()->GetObjectsSkeletalSemanticData())
-		{
-			const FString SkelClass = Pair.Value->OwnerSemanticData.Class;
-			const FString SkelId = Pair.Value->OwnerSemanticData.Id;
-
-			for (const auto& BonePair : Pair.Value->SemanticBonesData)
-			{
-				if (BonePair.Value.HasVisualMask() && BonePair.Value.HasCalibratedVisualMask())
-				{
-					const FColor RenderedMaskColor = FColor::FromHex(BonePair.Value.CalibratedVisualMask);
-					RenderedColorToSkelInfo.Emplace(RenderedMaskColor, 
-						FSLVisionMaskSkelInfo(SkelClass, SkelId, BonePair.Value.Class, BonePair.Value.VisualMask));
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s has no visual or rendered (calibrated) visual mask.."),
-						*FString(__func__), __LINE__, *Pair.Key->GetName(), *BonePair.Key.ToString());
-				}
-			}
-		}
+		//	for (const auto& BonePair : Pair.Value->SemanticBonesData)
+		//	{
+		//		if (BonePair.Value.HasVisualMask() && BonePair.Value.HasCalibratedVisualMask())
+		//		{
+		//			const FColor RenderedMaskColor = FColor::FromHex(BonePair.Value.CalibratedVisualMask);
+		//			RenderedColorToSkelInfo.Emplace(RenderedMaskColor, 
+		//				FSLVisionMaskSkelInfo(SkelClass, SkelId, BonePair.Value.Class, BonePair.Value.VisualMask));
+		//		}
+		//		else
+		//		{
+		//			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s - %s has no visual or rendered (calibrated) visual mask.."),
+		//				*FString(__func__), __LINE__, *Pair.Key->GetName(), *BonePair.Key.ToString());
+		//		}
+		//	}
+		//}
 
 		if (RenderedColorToEntityInfo.Num() == 0 && RenderedColorToSkelInfo.Num() == 0)
 		{

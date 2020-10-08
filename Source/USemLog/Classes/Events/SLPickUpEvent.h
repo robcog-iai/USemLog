@@ -4,7 +4,9 @@
 #pragma once
 
 #include "ISLEvent.h"
-#include "SLStructs.h"
+
+// Forward declarations
+class USLBaseIndividual;
 
 /**
 * Pick and place PickUp event class
@@ -17,20 +19,20 @@ public:
 
 	// Constructor with initialization
 	FSLPickUpEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
-		const FSLEntity& InManipulator, const FSLEntity& InItem);
+		USLBaseIndividual* InManipulator, USLBaseIndividual* InIndividual);
 
 	// Constructor initialization without end time
 	FSLPickUpEvent(const FString& InId, const float InStart, const uint64 InPairId,
-		const FSLEntity& InManipulator, const FSLEntity& InItem);
+		USLBaseIndividual* InManipulator, USLBaseIndividual* InIndividual);
 
 	// Pair id of the event (combination of two unique runtime ids)
 	uint64 PairId;
 
 	// Who is lifting the object
-	FSLEntity Manipulator;
+	USLBaseIndividual* Manipulator;
 	
 	// The object lifted
-	FSLEntity Item;
+	USLBaseIndividual* Individual;
 
 	/* Begin IEvent interface */
 	// Create an owl representation of the event

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SLOwlNode.h"
+#include "Owl/SLOwlNode.h"
 
 /**
 * OWL document

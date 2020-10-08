@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "SLOwlExperimentStatics.h"
+#include "Owl/SLOwlExperimentStatics.h"
 
 /* Semantic map template creation */
 // Create default experiment document

@@ -5,7 +5,7 @@
 
 #include "Tickable.h"
 #include "CoreMinimal.h"
-#include "SLStructs.h"
+
 #if SL_WITH_ROSBRIDGE
 #include "ROSBridgeHandler.h"
 #include "rosprolog_msgs/Query.h"
@@ -13,6 +13,7 @@
 #include "rosprolog_msgs/Finish.h"
 #include "ROSProlog/SLROSServiceClient.h"
 #endif // SL_WITH_ROSBRIDGE
+
 #include "ROSProlog/SLQueryHandler.h"
 #include "UObject/NoExportTypes.h"
 #include "Events/ISLEventHandler.h"
@@ -35,7 +36,6 @@ public:
 	~USLPrologClient();
 
 #if SL_WITH_ROSBRIDGE
-
 	// Disconnect from ROSBridge
 	void Disconnect();
 
@@ -62,7 +62,6 @@ public:
 
 	// Process response pipeline
 	void ProcessResponse(TSharedPtr<FROSBridgeSrv::SrvResponse> InResponse, FString Type);
-
 #endif // SL_WITH_ROSBRIDGE
 
 protected:
@@ -84,7 +83,6 @@ private:
 	bool bIsTickable;
 
 #if SL_WITH_ROSBRIDGE
-
 	// ROS Connection handler
 	TSharedPtr<FROSBridgeHandler> ROSHandler;
 
@@ -97,7 +95,6 @@ private:
 	TMap<TSharedPtr<FROSBridgeSrv::SrvResponse>, FString> SentQueries;
 	TMap<TSharedPtr<FROSBridgeSrv::SrvResponse>, FString> SentNextSolutionCommands;
 	TMap<TSharedPtr<FROSBridgeSrv::SrvResponse>, FString> SentFinishCommands;
-
 #endif // SL_WITH_ROSBRIDGE
 
 	// Record of active queries

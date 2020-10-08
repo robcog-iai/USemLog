@@ -5,9 +5,18 @@
 
 #include "Components/MeshComponent.h"
 #include "Components/ShapeComponent.h"
-#include "SLStructs.h"
 #include "TimerManager.h"
+#include "Monitors/SLMonitorStructs.h"
 #include "SLContactShapeInterface.generated.h"
+
+// Forward declaration
+class USLBaseIndividual;
+class USLIndividualComponent;
+
+// DELEGATES
+/** Notiy the begin/end of a supported by event */
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginSupportedBySignature, USLBaseIndividual* /*Supported*/, USLBaseIndividual* /*Supporting*/, float /*Time*/, const uint64 /*PairId*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndSupportedBySignature, const uint64 /*PairId1*/, const uint64 /*PairId2*/, float /*Time*/);
 
 /**
  * Structure holding the OverlapEnd event data,
@@ -19,23 +28,19 @@ struct FSLOverlapEndEvent
 	FSLOverlapEndEvent() = default;
 
 	// Init ctor
-	FSLOverlapEndEvent(UPrimitiveComponent* InOtherComp, const FSLEntity& InOtherItem, float InTime) :
-		OtherComp(InOtherComp), OtherItem(InOtherItem), Time(InTime) {};
+	FSLOverlapEndEvent(UPrimitiveComponent* InOtherComp, USLBaseIndividual* InOtherIndividual, float InTime) :
+		OtherComp(InOtherComp), OtherIndividual(InOtherIndividual), Time(InTime) {};
 
 	// Overlap component
 	UPrimitiveComponent* OtherComp;
 	
 	// Other item of the overlap end
-	FSLEntity OtherItem;
+	USLBaseIndividual* OtherIndividual;
 
 	// Time
 	float Time;
 };
 
-
-/** Notiy the begin/end of a supported by event */
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginSupportedBySignature, const FSLEntity& /*Supported*/, const FSLEntity& /*Supporting*/, float /*Time*/, const uint64 /*PairId*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndSupportedBySignature, const uint64 /*PairId1*/, const uint64 /*PairId2*/, float /*Time*/);
 
 /**
  *  Unreal style interface for the contact shapes 
@@ -109,7 +114,7 @@ protected:
 	void SupportedByUpdateCheckBegin();
 
 	// Check if Other is a supported by candidate
-	bool CheckAndRemoveIfJustCandidate(UObject* InOther);
+	bool CheckAndRemoveIfJustCandidate(USLBaseIndividual* InOther);
 
 	// Event called when something starts to overlaps this component
 	UFUNCTION()
@@ -134,7 +139,7 @@ protected:
 	bool PublishDelayedOverlapEndEvent(const FSLOverlapEndEvent& Ev, float CurrTime = -1.f);
 
 	// Skip publishing overlap event if it can be concatenated with the current event start
-	bool SkipOverlapEndEventBroadcast(const FSLEntity& InItem, float StartTime);
+	bool SkipOverlapEndEventBroadcast(USLBaseIndividual* InIndividual, float StartTime);
 	
 public:
 	// Event called when a semantic overlap begins / ends
@@ -170,8 +175,11 @@ protected:
 	// Pointer to the outer (owner) mesh component 
 	UMeshComponent* OwnerMeshComp;
 
-	// Semantic data of the owner
-	FSLEntity SemanticOwner;
+	// Semantic data component of the owner
+	USLIndividualComponent* IndividualComponent;
+
+	// Semantic individual object
+	USLBaseIndividual* IndividualObject;
 
 	// Include supported by events
 	bool bLogSupportedByEvents;
@@ -195,8 +203,9 @@ protected:
 	TArray<FSLOverlapEndEvent> RecentlyEndedOverlapEvents;
 
 	/* Constants */
-	static constexpr const char* TagTypeName = "SemLogColl";
+	static constexpr auto TagTypeName = TEXT("SemLogColl");
 	static constexpr float SBUpdateRate = 0.11f;
 	static constexpr float SBMaxVertSpeed = 0.5f;
 	static constexpr float MaxOverlapEventTimeGap = 0.12f;
+	static constexpr float MaxOverlapEventTimeGapMult = 1.12f;
 };

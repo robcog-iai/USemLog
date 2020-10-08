@@ -6,10 +6,12 @@
 
 #include "USemLog.h"
 #include "Components/ActorComponent.h"
-#include "SLStructs.h" // FSLEntity
 #include "SLContactShapeInterface.h"
 #include "SLPickAndPlaceListener.generated.h"
 
+// Forward declaration
+class USLBaseIndividual;
+class USLIndividualComponent;
 
 /**
 * Hand type
@@ -41,7 +43,7 @@ public:
 };
 
 /** Notify the beginning and the end of the pick and place related events */
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLPaPSubEventSignature, const FSLEntity& /*Self*/, AActor* /*Other*/, float /*StartTime*/, float /*EndTime*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLPaPSubEventSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*StartTime*/, float /*EndTime*/);
 
 /**
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
@@ -84,10 +86,10 @@ private:
 	ISLContactShapeInterface* GetContactShapeComponent(AActor* Actor) const;
 
 	// Called on grasp begin
-	void OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType);
+	void OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType);
 
 	// Called on grasp end
-	void OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time);
+	void OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time);
 
 	// Update callback
 	void Update();
@@ -125,8 +127,11 @@ private:
 	// True if finished
 	bool bIsFinished;
 
-	// Semantic data of the owner
-	FSLEntity SemanticOwner;
+	// Semantic data component of the owner
+	USLIndividualComponent* IndividualComponent;
+
+	// Semantic individual object
+	USLBaseIndividual* IndividualObject;
 
 	// Object currently grasped
 	AActor* CurrGraspedObj;

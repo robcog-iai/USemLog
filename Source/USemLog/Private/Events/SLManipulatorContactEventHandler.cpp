@@ -4,9 +4,9 @@
 #include "Events/SLManipulatorContactEventHandler.h"
 #include "SLManipulatorOverlapSphere.h"
 #include "SLManipulatorListener.h"
-
-// UUtils
-#include "Ids.h"
+#include "Events/SLContactEvent.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Utils/SLUuid.h"
 
 // Set parent
 void FSLManipulatorContactEventHandler::Init(UObject* InParent)
@@ -65,21 +65,21 @@ void FSLManipulatorContactEventHandler::AddNewEvent(const FSLContactResult& InRe
 {
 	// Start a semantic contact event
 	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
-		FIds::NewGuidInBase64Url(), InResult.Time,
-		FIds::PairEncodeCantor(InResult.Self.Obj->GetUniqueID(), InResult.Other.Obj->GetUniqueID()),
+		FSLUuid::NewGuidInBase64Url(), InResult.Time,
+		FSLUuid::PairEncodeCantor(InResult.Self->GetUniqueID(), InResult.Other->GetUniqueID()),
 		InResult.Self, InResult.Other));
 	// Add event to the pending contacts array
 	StartedEvents.Emplace(ContactEvent);
 }
 
 // Publish finished event
-bool FSLManipulatorContactEventHandler::FinishEvent(const FSLEntity& InOther, float EndTime)
+bool FSLManipulatorContactEventHandler::FinishEvent(USLBaseIndividual* InOther, float EndTime)
 {
 	// Use iterator to be able to remove the entry from the array
 	for (auto EventItr(StartedEvents.CreateIterator()); EventItr; ++EventItr)
 	{
 		// It is enough to compare against the other id when searching
-		if ((*EventItr)->Item2.EqualsFast(InOther))
+		if ((*EventItr)->Individual2 == InOther)
 		{
 			// Set the event end time
 			(*EventItr)->End = EndTime;
@@ -115,7 +115,7 @@ void FSLManipulatorContactEventHandler::OnSLOverlapBegin(const FSLContactResult&
 }
 
 // Event called when a semantic overlap event ends
-void FSLManipulatorContactEventHandler::OnSLOverlapEnd(const FSLEntity& Self, const FSLEntity& Other, float Time)
+void FSLManipulatorContactEventHandler::OnSLOverlapEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
 {
 	FinishEvent(Other, Time);
 }

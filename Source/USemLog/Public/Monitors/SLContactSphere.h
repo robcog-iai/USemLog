@@ -70,12 +70,8 @@ private:
 	/* End ISLContactShapeInterface*/
 #endif // WITH_EDITOR
 
-private:
-	// Init and start at begin play
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-		bool bStartAtBeginPlay;
-
 #if WITH_EDITOR
+private:
 	// Box extent scale factor (smaller will be chosen)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float SphereScaleFactor;

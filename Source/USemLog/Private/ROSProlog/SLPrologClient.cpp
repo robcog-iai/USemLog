@@ -2,8 +2,6 @@
 // Author: Jose Rojas
 
 #include "ROSProlog/SLPrologClient.h"
-// UUtils
-#include "Ids.h"
 
 // Constructor
 USLPrologClient::USLPrologClient() 
@@ -105,7 +103,7 @@ void USLPrologClient::AddObjectQuery(FSLEntity *Entity)
 {
 	
 	// Creates query ID
-	FString IdValue = FIds::NewGuidInBase64();
+	FString IdValue = FSLUuid::NewGuidInBase64();
 
 	// Temporally remove rotations to get real bounding box
 	AActor* Object = Cast<AActor>(Entity->Obj);

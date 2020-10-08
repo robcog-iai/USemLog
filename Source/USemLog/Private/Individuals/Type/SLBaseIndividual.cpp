@@ -8,6 +8,7 @@
 // Utils
 #include "Utils/SLTagIO.h"
 #include "Utils/SLUuid.h"
+#include "..\..\..\Classes\Individuals\Type\SLBaseIndividual.h"
 
 
 // Ctor
@@ -234,6 +235,17 @@ bool USLBaseIndividual::IsAttachedToAnotherIndividual() const
 const TArray<USLBaseIndividual*> USLBaseIndividual::GetChildrenIndividuals() const
 {
 	return TArray<USLBaseIndividual*>();
+}
+
+// Get info about the individual
+FString USLBaseIndividual::GetInfo() const
+{
+	FString Info;
+	Info.Append(FString::Printf(TEXT("ParentActor=%s; "), ParentActor ? *ParentActor->GetName() : *FString("null")));
+	//Info.Append(FString::Printf(TEXT("AttachedToActor=%s; "), AttachedToActor ? *AttachedToActor->GetName() : *FString("null")));
+	Info.Append(FString::Printf(TEXT("Id=%s; "), *Id));
+	Info.Append(FString::Printf(TEXT("Class=%s; "), *Class));
+	return Info;
 }
 
 // Generate a new id for the individual

@@ -16,7 +16,6 @@
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsConstraintTemplate.h"
 #include "PhysicsEngine/ConstraintInstance.h"
-#include "..\..\..\Classes\Individuals\Type\SLSkeletalIndividual.h"
 
 // Ctor
 USLSkeletalIndividual::USLSkeletalIndividual()

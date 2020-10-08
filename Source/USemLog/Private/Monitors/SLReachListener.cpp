@@ -2,12 +2,16 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Monitors/SLReachListener.h"
+#include "Monitors/SLMonitorStructs.h"
+#include "Individuals/SLIndividualComponent.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "SLManipulatorListener.h"
+
 #include "Animation/SkeletalMeshActor.h"
 #include "Engine/StaticMeshActor.h"
 #include "TimerManager.h"
 #include "Components/StaticMeshComponent.h"
-#include "SLManipulatorListener.h"
-#include "SLEntitiesManager.h"
+
 
 // Set default values
 USLReachListener::USLReachListener()
@@ -42,19 +46,25 @@ bool USLReachListener::Init()
 {
 	if (!bIsInit)
 	{
-		// Init the semantic entities manager
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
-		{
-			FSLEntitiesManager::GetInstance()->Init(GetWorld());
-		}
 
-		// Check that the owner is part of the semantic entities
-		SemanticOwner = FSLEntitiesManager::GetInstance()->GetEntity(GetOwner());
-		if (!SemanticOwner.IsSet())
+		// Make sure the owner is semantically annotated
+		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not semantically annotated.."), *FString(__func__), __LINE__);
+			IndividualComponent = CastChecked<USLIndividualComponent>(AC);
+			if (!IndividualComponent->IsLoaded())
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
+				return false;
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 			return false;
 		}
+
+		// Set the individual object
+		IndividualObject = IndividualComponent->GetIndividualObject();
 		
 		// Subscribe for grasp notifications from sibling component
 		if(SubscribeForManipulatorEvents())
@@ -245,16 +255,8 @@ void USLReachListener::TriggerInitialOverlaps()
 // Check if the object is can be a candidate for reaching
 bool USLReachListener::CanBeACandidate(AStaticMeshActor* InObject) const
 {
-	// Make sure the object is semantically annotated
-	if (!FSLEntitiesManager::GetInstance()->IsObjectEntitySet(InObject))
-	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not semantically annotated, ignoring as candidate.."),
-		//	*FString(__func__), __LINE__, *InObject->GetName());
-		return false;
-	}
-
-	return true;
-
+	UActorComponent* AC = InObject->GetComponentByClass(USLIndividualComponent::StaticClass());
+	return AC != nullptr;
 	
 	//// Check if the object is movable
 	//if (!InObject->IsRootComponentMovable())
@@ -333,16 +335,16 @@ void USLReachListener::OnOverlapEnd(UPrimitiveComponent* OverlappedComp,
 
 
 // Called when sibling detects a grasp, used for ending the manipulator positioning event
-void USLReachListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, float Time, const FString& GraspType)
+void USLReachListener::OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActor, float Time, const FString& GraspType)
 {
 	if(CurrGraspedObj)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] Cannot set %s as grasped object.. manipulator is already grasping %s;"),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName(), *CurrGraspedObj->GetName());
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherActor->GetName(), *CurrGraspedObj->GetName());
 		return;
 	}
 
-	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other))
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherActor))
 	{
 		// Check if the grasped object is a candidate and is in contact with the hand
 		if(FSLTimeAndDist* CandidateTimeAndDist = CandidatesWithTimeAndDistance.Find(AsSMA))
@@ -352,7 +354,7 @@ void USLReachListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, floa
 			if(float* ContactTime = ObjectsInContactWithManipulator.Find(AsSMA))
 			{
 				// Grasp is active, ignore future contact/grasp events
-				CurrGraspedObj = Other;
+				CurrGraspedObj = OtherActor;
 
 				//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s set as grasped object.."),
 				//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
@@ -363,7 +365,7 @@ void USLReachListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, floa
 				// Broadcast reach and pre grasp events
 				const float ReachStartTime = CandidateTimeAndDist->Get<ESLTimeAndDist::Time>();
 				const float ReachEndTime = *ContactTime;
-				OnPreGraspAndReachEvent.Broadcast(SemanticOwner, Other, ReachStartTime, ReachEndTime, Time);
+				OnPreGraspAndReachEvent.Broadcast(IndividualObject, OtherActor, ReachStartTime, ReachEndTime, Time);
 
 				// Remove existing candidates and pause the update callback while the hand is grasping
 				CandidatesWithTimeAndDistance.Empty();
@@ -394,7 +396,7 @@ void USLReachListener::OnSLGraspBegin(const FSLEntity& Self, AActor* Other, floa
 }
 
 // Reset looking for the events
-void USLReachListener::OnSLGraspEnd(const FSLEntity& Self, AActor* Other, float Time)
+void USLReachListener::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time)
 {	
 	if(CurrGraspedObj == nullptr)
 	{
@@ -437,7 +439,7 @@ void USLReachListener::OnSLManipulatorContactBegin(const FSLContactResult& Conta
 		return;
 	}
 	
-	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(ContactResult.Other.Obj))
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(ContactResult.Other->GetParentActor()))
 	{
 		// Check if the object in contact with is one of the candidates (should be)
 		if (CandidatesWithTimeAndDistance.Contains(AsSMA))
@@ -460,7 +462,7 @@ void USLReachListener::OnSLManipulatorContactBegin(const FSLContactResult& Conta
 }
 
 // Manipulator is not in contact with object anymore, check for possible concatenation, or reset the potential reach time
-void USLReachListener::OnSLManipulatorContactEnd(const FSLEntity& Self, const FSLEntity& Other, float Time)
+void USLReachListener::OnSLManipulatorContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
 {
 	if(CurrGraspedObj)
 	{
@@ -468,7 +470,7 @@ void USLReachListener::OnSLManipulatorContactEnd(const FSLEntity& Self, const FS
 		return;
 	}
 
-	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other.Obj))
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(Other->GetParentActor()))
 	{
 		// Check contact with manipulator (remove in delay callback, give concatenation a chance)
 		if (ObjectsInContactWithManipulator.Contains(AsSMA))

@@ -2,24 +2,16 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLReachEventHandler.h"
-#include "SLEntitiesManager.h"
-#include "SLReachListener.h"
-
-// UUtils
-#include "Ids.h"
-
+#include "Monitors/SLReachListener.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/SLIndividualUtils.h"
+#include "Utils/SLUuid.h"
 
 // Set parent
 void FSLReachEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{
-		// Make sure the mappings singleton is initialized (the handler uses it)
-		if (!FSLEntitiesManager::GetInstance()->IsInit())
-		{
-			FSLEntitiesManager::GetInstance()->Init(InParent->GetWorld());
-		}
-
 		// Check if parent is of right type
 		Parent = Cast<USLReachListener>(InParent);
 		if (Parent)
@@ -66,24 +58,24 @@ void FSLReachEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Event called when a semantic Reach event begins
-void FSLReachEventHandler::OnSLPreAndReachEvent(const FSLEntity& Self, UObject* Other, float ReachStartTime, float ReachEndTime, float PreGraspEndTime)
+void FSLReachEventHandler::OnSLPreAndReachEvent(USLBaseIndividual* Self, AActor* OtherActor, float ReachStartTime, float ReachEndTime, float PreGraspEndTime)
 {
 	// Check that the objects are semantically annotated
-	if (FSLEntity* OtherItem = FSLEntitiesManager::GetInstance()->GetEntityPtr(Other))
+	if (USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor))
 	{
-		const uint64 PairID =FIds::PairEncodeCantor(Self.Obj->GetUniqueID(), OtherItem->Obj->GetUniqueID());
+		const uint64 PairID =FSLUuid::PairEncodeCantor(Self->GetUniqueID(), OtherIndividual->GetUniqueID());
 		if(ReachEndTime - ReachStartTime > ReachEventMin)
 		{
 			OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLReachEvent(
-				FIds::NewGuidInBase64Url(), ReachStartTime, ReachEndTime,
-				PairID,Self, *OtherItem)));
+				FSLUuid::NewGuidInBase64Url(), ReachStartTime, ReachEndTime,
+				PairID, Self, OtherIndividual)));
 		}
 
 		if(PreGraspEndTime - ReachEndTime > PreGraspPositioningEventMin)
 		{
 			OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPreGraspPositioningEvent(
-				FIds::NewGuidInBase64Url(), ReachEndTime, PreGraspEndTime,
-				PairID,Self, *OtherItem)));
+				FSLUuid::NewGuidInBase64Url(), ReachEndTime, PreGraspEndTime,
+				PairID, Self, OtherIndividual)));
 		}
 	}
 }

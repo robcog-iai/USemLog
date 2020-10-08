@@ -15,7 +15,7 @@
 #include "FileHelper.h"
 
 #include "Vision/SLVisionStructs.h"
-#include "Skeletal/SLSkeletalDataComponent.h"
+//#include "Skeletal/SLSkeletalDataComponent.h"
 #include "SLVisionLogger.h"
 
 
@@ -312,14 +312,14 @@ bool USLVisionOverlapCalc::SelectFirstSkel()
 		SkelIndex = 0;
 		bSkelArrayActive = true;
 
-		CurrPMAClone = Parent->GetPoseableSkeletalMaskCloneFromId((*SkelEntities)[SkelIndex].Id, &CurrSkelDataComp);
+		//CurrPMAClone = Parent->GetPoseableSkeletalMaskCloneFromId((*SkelEntities)[SkelIndex].Id, &CurrSkelDataComp);
 
-		if (!CurrPMAClone || !CurrSkelDataComp)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find pointer to skel entity or its data component %s - %s, continuing.."),
-				*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id);
-			return SelectNextSkel();
-		}
+		//if (!CurrPMAClone || !CurrSkelDataComp)
+		//{
+		//	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find pointer to skel entity or its data component %s - %s, continuing.."),
+		//		*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id);
+		//	return SelectNextSkel();
+		//}
 		return true;
 	}
 	else
@@ -343,13 +343,13 @@ bool USLVisionOverlapCalc::SelectNextSkel()
 		}
 		else
 		{
-			CurrPMAClone = Parent->GetPoseableSkeletalMaskCloneFromId((*SkelEntities)[SkelIndex].Id, &CurrSkelDataComp);
-			if (!CurrPMAClone)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find pointer to skel entity %s - %s, continuing.."),
-					*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id);
-				return SelectNextSkel();
-			}
+			//CurrPMAClone = Parent->GetPoseableSkeletalMaskCloneFromId((*SkelEntities)[SkelIndex].Id, &CurrSkelDataComp);
+			//if (!CurrPMAClone)
+			//{
+			//	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find pointer to skel entity %s - %s, continuing.."),
+			//		*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Class, *(*SkelEntities)[SkelIndex].Id);
+			//	return SelectNextSkel();
+			//}
 			return true;;
 		}
 	}
@@ -653,19 +653,19 @@ int32 USLVisionOverlapCalc::GetMaterialIndexOfCurrentlySelectedBone()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Skeletal data or bone data index is not set, cannot receive index without this.."), *FString(__func__), __LINE__);
 		return INDEX_NONE;
 	}
-	if (!CurrSkelDataComp)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Curr skeltal data is not set, cannot receive index without this.."), *FString(__func__), __LINE__);
-		return INDEX_NONE;
-	}
-	if (int32* Idx = CurrSkelDataComp->BoneClassToMaterialIndex.Find((*SkelEntities)[SkelIndex].Bones[BoneIndex].Class))
-	{
-		return *Idx;
-	}
-	else
-	{
+	//if (!CurrSkelDataComp)
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Curr skeltal data is not set, cannot receive index without this.."), *FString(__func__), __LINE__);
+	//	return INDEX_NONE;
+	//}
+	//if (int32* Idx = CurrSkelDataComp->BoneClassToMaterialIndex.Find((*SkelEntities)[SkelIndex].Bones[BoneIndex].Class))
+	//{
+	//	return *Idx;
+	//}
+	//else
+	//{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find a material index mapping for bone class %s"),
 			*FString(__func__), __LINE__, *(*SkelEntities)[SkelIndex].Bones[BoneIndex].Class);
 		return INDEX_NONE;
-	}
+	//}
 }

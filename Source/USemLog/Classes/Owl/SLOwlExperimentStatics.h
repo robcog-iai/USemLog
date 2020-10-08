@@ -4,12 +4,12 @@
 #pragma once
 
 #include "EngineMinimal.h"
-#include "SLOwlExperiment.h"
+#include "Owl/SLOwlExperiment.h"
 
 /**
 * Helper functions for generating owl experiment documents
 */
-struct USEMLOGOWL_API FSLOwlExperimentStatics
+struct USEMLOG_API FSLOwlExperimentStatics
 {
 	/* Events doc (experiment) template creation */
 	// Create Default experiment

@@ -4,7 +4,11 @@
 #pragma once
 
 #include "Events/ISLEventHandler.h"
-#include "Events/SLGraspEvent.h"
+
+// Forward declarations
+class AActor;
+class USLBaseIndividual;
+class FSLGraspEvent;
 
 /**
  * Listens to fixation grasp events input, and outputs finished semantic grasp events
@@ -23,26 +27,26 @@ public:
 
 private:
 	// Start new grasp event
-	void AddNewEvent(const FSLEntity& Self, const FSLEntity& Other, float StartTime);
+	void AddNewEvent(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime);
 
 	// Finish then publish the event
-	bool FinishEvent(UObject* InOther, float EndTime);
+	bool FinishEvent(USLBaseIndividual* InOther, float EndTime);
 
 	// Terminate and publish started events (this usually is called at end play)
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLGraspBegin(UObject* Self, UObject* Other, float Time);
+	void OnSLGraspBegin(AActor* SelfActor, AActor* OtherActor, float Time);
 	
 	// Event called when a semantic overlap event ends
-	void OnSLGraspEnd(UObject* Self, UObject* Other, float Time);
+	void OnSLGraspEnd(AActor* SelfActor, AActor* OtherActor, float Time);
 
 private:
 	// Parent
 #if SL_WITH_MC_GRASP
 	class UMCGraspFixation* Parent;
 #else
-	UObject* Parent;
+	USLBaseIndividual* Parent;
 #endif // SL_WITH_MC_GRASP
 
 	// Array of started events
