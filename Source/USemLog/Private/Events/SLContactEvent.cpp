@@ -34,8 +34,8 @@ FSLOwlNode FSLContactEvent::ToOwlNode() const
 	// Create the contact event node
 	FSLOwlNode EventIndividual = FSLOwlExperimentStatics::CreateEventIndividual(
 		"log", Id, "TouchingSituation");
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", StartTime));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", EndTime));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInContactProperty("log", Individual1->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInContactProperty("log", Individual2->GetIdValue()));
 	return EventIndividual;
@@ -50,9 +50,9 @@ void FSLContactEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	// if (FOwlEvents* EventsDoc = dynamic_cast<FOwlEvents*>(OutDoc))
 	FSLOwlExperiment* EventsDoc = static_cast<FSLOwlExperiment*>(OutDoc);
 	EventsDoc->AddTimepointIndividual(
-		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
+		StartTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", StartTime));
 	EventsDoc->AddTimepointIndividual(
-		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
+		EndTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", EndTime));
 	EventsDoc->AddObjectIndividual(Individual1,
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", Individual1->GetIdValue(), Individual1->GetClassValue()));
 	EventsDoc->AddObjectIndividual(Individual2,

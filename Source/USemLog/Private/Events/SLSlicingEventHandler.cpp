@@ -91,7 +91,7 @@ bool FSLSlicingEventHandler::FinishEvent(USLBaseIndividual* ObjectActedOn,
 		if ((*EventItr)->ObjectActedOn == ObjectActedOn)
 		{
 			// Set end time and publish event
-			(*EventItr)->End = EndTime;
+			(*EventItr)->EndTime = EndTime;
 			(*EventItr)->bTaskSuccessful = bInTaskSuccessful;
 			(*EventItr)->CreatedSlice = OutputsCreated;
 			OnSemanticEvent.ExecuteIfBound(*EventItr);
@@ -110,7 +110,7 @@ void FSLSlicingEventHandler::FinishAllEvents(float EndTime)
 	for (auto& Ev : StartedEvents)
 	{
 		// Set end time and publish event
-		Ev->End = EndTime;
+		Ev->EndTime = EndTime;
 		OnSemanticEvent.ExecuteIfBound(Ev);
 	}
 	StartedEvents.Empty();

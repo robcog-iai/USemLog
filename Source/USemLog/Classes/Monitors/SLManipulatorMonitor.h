@@ -70,7 +70,7 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, USLBaseI
 /**
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
  */
-UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Manipulator Listener")
+UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Manipulator Monitor")
 class USEMLOG_API USLManipulatorMonitor : public UActorComponent
 {
 	GENERATED_BODY()
@@ -240,10 +240,10 @@ private:
 	
 	/* Grasp related */
 	// Opposing group A for testing for grasps
-	TArray<class USLManipulatorOverlapSphere*> GroupA;
+	TArray<class USLManipulatorContactMonitorSphere*> GroupA;
 
 	// Opposing group B for testing for grasps
-	TArray<class USLManipulatorOverlapSphere*> GroupB;
+	TArray<class USLManipulatorContactMonitorSphere*> GroupB;
 
 	// Objects currently grasped
 	TArray<AActor*> GraspedObjects;

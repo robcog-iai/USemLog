@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Monitors/SLManipulatorMonitor.h"
-#include "Monitors/SLManipulatorOverlapSphere.h"
+#include "Monitors/SLManipulatorContactMonitorSphere.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
@@ -270,15 +270,15 @@ bool USLManipulatorMonitor::LoadOverlapGroups()
 	// Lambda to check grasp overlap components of owner and add them to their groups
 	const auto GetOverlapComponentsLambda = [this](AActor* Owner)
 	{
-		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLManipulatorOverlapSphere::StaticClass());
+		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLManipulatorContactMonitorSphere::StaticClass());
 		for (UActorComponent* GraspOverlapComp : GraspOverlaps)
 		{
-			USLManipulatorOverlapSphere* GraspOverlap = CastChecked<USLManipulatorOverlapSphere>(GraspOverlapComp);
-			if (GraspOverlap->GetGroup() == ESLManipulatorOverlapGroup::A)
+			USLManipulatorContactMonitorSphere* GraspOverlap = CastChecked<USLManipulatorContactMonitorSphere>(GraspOverlapComp);
+			if (GraspOverlap->GetGroup() == ESLManipulatorContactMonitorGroup::A)
 			{
 				GroupA.Add(GraspOverlap);
 			}
-			else if (GraspOverlap->GetGroup() == ESLManipulatorOverlapGroup::B)
+			else if (GraspOverlap->GetGroup() == ESLManipulatorContactMonitorGroup::B)
 			{
 				GroupB.Add(GraspOverlap);
 			}

@@ -82,10 +82,10 @@ bool FSLGraspEventHandler::FinishEvent(USLBaseIndividual* Other, float EndTime)
 		if ((*EventItr)->Individual == Other)
 		{
 			// Ignore short events
-			if ((EndTime - (*EventItr)->Start) > GraspEventMin)
+			if ((EndTime - (*EventItr)->StartTime) > GraspEventMin)
 			{
 				// Set end time and publish event
-				(*EventItr)->End = EndTime;
+				(*EventItr)->EndTime = EndTime;
 				OnSemanticEvent.ExecuteIfBound(*EventItr);
 			}
 			// Remove event from the pending list
@@ -103,10 +103,10 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 	for (auto& Ev : StartedEvents)
 	{
 		// Ignore short events
-		if ((EndTime - Ev->Start) > GraspEventMin)
+		if ((EndTime - Ev->StartTime) > GraspEventMin)
 		{
 			// Set end time and publish event
-			Ev->End = EndTime;
+			Ev->EndTime = EndTime;
 			OnSemanticEvent.ExecuteIfBound(Ev);
 		}
 	}

@@ -48,7 +48,7 @@ DECLARE_MULTICAST_DELEGATE_FourParams(FSLPaPSubEventSignature, USLBaseIndividual
 /**
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
  */
-UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL PickAndPlace Listener")
+UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL PickAndPlace Monitor")
 class USEMLOG_API USLPickAndPlaceMonitor : public UActorComponent
 {
 	GENERATED_BODY()

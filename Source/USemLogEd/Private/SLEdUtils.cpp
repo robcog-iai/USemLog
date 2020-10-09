@@ -168,14 +168,14 @@ bool FSLEdUtils::AddSemanticMonitorComponents(UWorld* World, bool bOverwrite)
 	//		if (FTags::HasKey(*ActItr, "SemLog", "Class"))
 	//		{
 	//			// Continue if no previous components are created
-	//			TArray<USLContactBox*> Comps;
-	//			ActItr->GetComponents<USLContactBox>(Comps);
+	//			TArray<USLContactMonitorBox*> Comps;
+	//			ActItr->GetComponents<USLContactMonitorBox>(Comps);
 	//			//if (Comps.Num() == 0)
 	//			//{
-	//			//	USLContactBox* Comp = NewObject<USLContactBox>(*ActItr);
+	//			//	USLContactMonitorBox* Comp = NewObject<USLContactMonitorBox>(*ActItr);
 	//			//	Comp->RegisterComponent();
 	//			//	/*FTransform T;
-	//			//	ActItr->AddComponent("USLContactBox", false, T, USLContactBox::StaticClass());*/
+	//			//	ActItr->AddComponent("USLContactMonitorBox", false, T, USLContactMonitorBox::StaticClass());*/
 	//			//}
 	//		}
 	//	}

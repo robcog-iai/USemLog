@@ -4,23 +4,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/SphereComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "SLContactMonitorInterface.h"
-#include "SLContactSphere.generated.h"
+#include "SLContactMonitorCapsule.generated.h"
 
 /**
  * Collision area listening for semantic collision events
  */
-UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Sphere")
-class USEMLOG_API USLContactSphere : public USphereComponent, public ISLContactMonitorInterface
+UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Monitor Capsule")
+class USEMLOG_API USLContactMonitorCapsule : public UCapsuleComponent, public ISLContactMonitorInterface
 {
 	GENERATED_BODY()
 public:
 	// Default constructor
-	USLContactSphere();
+	USLContactMonitorCapsule();
 
 	// Dtor
-	~USLContactSphere();
+	~USLContactMonitorCapsule();
 
 	/* Begin ISLContactMonitorInterface*/
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated
@@ -74,15 +74,15 @@ private:
 private:
 	// Box extent scale factor (smaller will be chosen)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float SphereScaleFactor;
+	float CapsuleScaleFactor;
 
 	// The box extent will be at least this big
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float SphereMinSize;
+	float CapsuleMinSize;
 
 	// The box extent will be at most this big
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float SphereMaxSize;
+	float CapsuleMaxSize;
 
 	// Mimics a button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

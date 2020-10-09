@@ -50,7 +50,7 @@ DECLARE_MULTICAST_DELEGATE_FiveParams(FSLPreGraspAndReachEventSignature, USLBase
 /**
  * Checks for reaching actions
  */
-UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Reach Listener")
+UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Reach Monitor")
 class USEMLOG_API USLReachMonitor : public USphereComponent
 {
 	GENERATED_BODY()

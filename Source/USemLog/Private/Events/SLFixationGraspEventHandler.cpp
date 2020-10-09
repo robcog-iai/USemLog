@@ -87,7 +87,7 @@ bool FSLFixationGraspEventHandler::FinishEvent(USLBaseIndividual* Other, float E
 		if ((*EventItr)->Individual == Other)
 		{
 			// Set end time and publish event
-			(*EventItr)->End = EndTime;
+			(*EventItr)->EndTime = EndTime;
 			OnSemanticEvent.ExecuteIfBound(*EventItr);
 			// Remove event from the pending list
 			EventItr.RemoveCurrent();
@@ -104,7 +104,7 @@ void FSLFixationGraspEventHandler::FinishAllEvents(float EndTime)
 	for (auto& Ev : StartedEvents)
 	{
 		// Set end time and publish event
-		Ev->End = EndTime;
+		Ev->EndTime = EndTime;
 		OnSemanticEvent.ExecuteIfBound(Ev);
 	}
 	StartedEvents.Empty();

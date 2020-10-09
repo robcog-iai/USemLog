@@ -89,10 +89,10 @@ bool FSLContactEventHandler::FinishContactEvent(USLBaseIndividual* InOther, floa
 		if ((*EventItr)->Individual2 == InOther)
 		{
 			// Set the event end time
-			(*EventItr)->End = EndTime;
+			(*EventItr)->EndTime = EndTime;
 
 			// Avoid publishing short events
-			if (((*EventItr)->End - (*EventItr)->Start) > ContactEventMin)
+			if (((*EventItr)->EndTime - (*EventItr)->StartTime) > ContactEventMin)
 			{
 				OnSemanticEvent.ExecuteIfBound(*EventItr);
 			}
@@ -126,13 +126,10 @@ bool FSLContactEventHandler::FinishSupportedByEvent(const uint64 InPairId, float
 		if ((*EventItr)->PairId == InPairId)
 		{
 			// Ignore short events
-			const float Duration = EndTime - (*EventItr)->Start;
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Duration=%f; EndTime=%f; Start=%f;"), *FString(__FUNCTION__), __LINE__,
-				Duration, EndTime, (*EventItr)->Start);
-			if (Duration > SupportedByEventMin)
+			if (EndTime - (*EventItr)->StartTime > SupportedByEventMin)
 			{
 				// Set end time and publish event
-				(*EventItr)->End = EndTime;
+				(*EventItr)->EndTime = EndTime;
 				OnSemanticEvent.ExecuteIfBound(*EventItr);
 			}
 			// Remove event from the pending list
@@ -150,13 +147,10 @@ void FSLContactEventHandler::FinishAllEvents(float EndTime)
 	for (auto& Ev : StartedContactEvents)
 	{
 		// Ignore short events
-		const float Duration = EndTime - Ev->Start;
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Duration=%f; EndTime=%f; Start=%f;"), *FString(__FUNCTION__), __LINE__,
-			Duration, EndTime, Ev->Start);
-		if (Duration > ContactEventMin)
+		if (EndTime - Ev->StartTime > ContactEventMin)
 		{
 			// Set end time and publish event
-			Ev->End = EndTime;
+			Ev->EndTime = EndTime;
 			OnSemanticEvent.ExecuteIfBound(Ev);
 		}
 	}
@@ -166,10 +160,10 @@ void FSLContactEventHandler::FinishAllEvents(float EndTime)
 	for (auto& Ev : StartedSupportedByEvents)
 	{
 		// Ignore short events
-		if ((EndTime - Ev->Start) > SupportedByEventMin)
+		if ((EndTime - Ev->StartTime) > SupportedByEventMin)
 		{
 			// Set end time and publish event
-			Ev->End = EndTime;
+			Ev->EndTime = EndTime;
 			OnSemanticEvent.ExecuteIfBound(Ev);
 		}
 	}

@@ -18,11 +18,20 @@ struct FSLGoogleChartsParameters
 	// Use tooltips
 	uint8 bTooltips : 1;
 
+	// Overwrite if file already exists
+	uint8 bOverwrite : 1;
+
 	// Store start time
 	float StartTime = -1.f;
 
 	// Store end time
 	float EndTime = -1.f;
+
+	// Task id (Description)
+	FString TaskId = "TaskId";
+
+	// Episode id
+	FString EpisodeId = "EpisodeId";
 
 	// Default constructor
 	FSLGoogleChartsParameters() :
@@ -42,6 +51,14 @@ struct FSLGoogleCharts
 		const FString& InEpId,
 		const FSLGoogleChartsParameters& Params = FSLGoogleChartsParameters())
 	{
+		FString FullFilePath = DirectoryPath + "/" + InEpId + TEXT("_TL.html");
+		FPaths::RemoveDuplicateSlashes(FullFilePath);
+
+		if (FPaths::FileExists(FullFilePath) && !Params.bOverwrite)
+		{
+			return false;
+		}
+
 		// Timeline boilerplate 
 		FString TimelineStr =
 			"<script type=\"text/javascript\" src=\"https://www.gstatic.com/charts/loader.js\"></script>\n"
@@ -78,9 +95,8 @@ struct FSLGoogleCharts
 			const FString EndStr = FString::Printf(TEXT("%.3f"), Params.EndTime); 
 			const FString StartMsStr = FString::Printf(TEXT("%.3f"), Params.StartTime * 1000.f); //FString::SanitizeFloat(Ev->Start * 1000.f);
 			const FString EndMsStr = FString::Printf(TEXT("%.3f"), Params.EndTime * 1000.f);  //FString::SanitizeFloat(Ev->End * 1000.f);
-			const FString ContextStr = "Episode";
-			const FString IdStr = "Id";
-			TimelineStr.Append("\t\t [ \'" + ContextStr + "\' , \'" + IdStr + "\' , ");
+			
+			TimelineStr.Append("\t\t [ \'" + Params.TaskId + "\' , \'" + Params.EpisodeId + "\' , ");
 			if (Params.bTooltips)
 			{
 				TimelineStr.Append("emptyFunc(), ");
@@ -91,10 +107,10 @@ struct FSLGoogleCharts
 		// Add event times
 		for (const auto& Ev : InEvents)
 		{
-			const FString StartStr = FString::Printf(TEXT("%.3f"), Ev->Start); //FString::SanitizeFloat(Ev->Start);
-			const FString EndStr = FString::Printf(TEXT("%.3f"), Ev->End); //FString::SanitizeFloat(Ev->End);
-			const FString StartMsStr = FString::Printf(TEXT("%.3f"), Ev->Start * 1000.f); //FString::SanitizeFloat(Ev->Start * 1000.f);
-			const FString EndMsStr = FString::Printf(TEXT("%.3f"), Ev->End * 1000.f);  //FString::SanitizeFloat(Ev->End * 1000.f);
+			const FString StartStr = FString::Printf(TEXT("%.3f"), Ev->StartTime); //FString::SanitizeFloat(Ev->Start);
+			const FString EndStr = FString::Printf(TEXT("%.3f"), Ev->EndTime); //FString::SanitizeFloat(Ev->End);
+			const FString StartMsStr = FString::Printf(TEXT("%.3f"), Ev->StartTime * 1000.f); //FString::SanitizeFloat(Ev->Start * 1000.f);
+			const FString EndMsStr = FString::Printf(TEXT("%.3f"), Ev->EndTime * 1000.f);  //FString::SanitizeFloat(Ev->End * 1000.f);
 
 			TimelineStr.Append("\t\t [ \'" + Ev->Context() + "\' , \'" + Ev->Id + "\' , " );
 			if (Params.bTooltips)
@@ -157,8 +173,6 @@ struct FSLGoogleCharts
 		}
 
 		// Write map to file
-		FString FullFilePath = DirectoryPath + "/" + InEpId + TEXT("_TL.html");
-		FPaths::RemoveDuplicateSlashes(FullFilePath);
 		return FFileHelper::SaveStringToFile(TimelineStr, *FullFilePath);
 	}
 

@@ -30,8 +30,8 @@ FSLOwlNode FSLSlicingEvent::ToOwlNode() const
 	// Create the contact event node
 	FSLOwlNode EventIndividual = FSLOwlExperimentStatics::CreateEventIndividual(
 		"log", Id, "SlicingingSomething");
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", StartTime));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", EndTime));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", PerformedBy->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateDeviceUsedProperty("log", DeviceUsed->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", ObjectActedOn->GetIdValue()));
@@ -52,9 +52,9 @@ void FSLSlicingEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	// if (FOwlEvents* EventsDoc = dynamic_cast<FOwlEvents*>(OutDoc))
 	FSLOwlExperiment* EventsDoc = static_cast<FSLOwlExperiment*>(OutDoc);
 	EventsDoc->AddTimepointIndividual(
-		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
+		StartTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", StartTime));
 	EventsDoc->AddTimepointIndividual(
-		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
+		EndTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", EndTime));
 	EventsDoc->AddObjectIndividual(PerformedBy,
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", PerformedBy->GetIdValue(), PerformedBy->GetClassValue()));
 	EventsDoc->AddObjectIndividual(DeviceUsed,
@@ -79,8 +79,8 @@ FString FSLSlicingEvent::ToROSQuery() const
 	Query.Append("is_action(Action),");
 	Query.Append(FString::Printf(TEXT("has_type(Task, soma:\'Slicing\'),")));
 	Query.Append("executes_task(Action, Task),");
-	Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasEventBegin', %f),"), Start));
-	Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasEventEnd', %f),"), End));
+	Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasEventBegin', %f),"), StartTime));
+	Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasEventEnd', %f),"), EndTime));
 	if (bTaskSuccessful) 
 	{
 		Query.Append(FString::Printf(TEXT("holds(Action, soma:'hasExecutionState', soma:'ExecutionState_Succeded')")));
@@ -98,7 +98,7 @@ FString FSLSlicingEvent::ToROSQuery() const
 		Query.Append("tell([");
 		Query.Append(FString::Printf(TEXT("has_type(ObjUsed, soma:\'knife\'),")));
 		Query.Append(FString::Printf(TEXT("has_type(ToolRole, soma:\'Tool\'),")));
-		Query.Append(FString::Printf(TEXT("has_role(ObjUsed, ToolRole) during [%f,%f],"), Start, End));
+		Query.Append(FString::Printf(TEXT("has_role(ObjUsed, ToolRole) during [%f,%f],"), StartTime, EndTime));
 		Query.Append("has_participant(Action, ObjUsed)");
 		Query.Append("]),");
 	}
@@ -110,7 +110,7 @@ FString FSLSlicingEvent::ToROSQuery() const
 		Query.Append("tell([");
 		Query.Append("is_physical_object(AlteredObj),");
 		Query.Append(FString::Printf(TEXT("has_type(AlteredRole, soma:\'AlteredObject\'),")));
-		Query.Append(FString::Printf(TEXT("has_role(AlteredObj, AlteredRole) during [%f,%f],"), Start, End));
+		Query.Append(FString::Printf(TEXT("has_role(AlteredObj, AlteredRole) during [%f,%f],"), StartTime, EndTime));
 		Query.Append("has_participant(Action, AlteredObj)");
 		Query.Append("]),");
 	}
@@ -122,7 +122,7 @@ FString FSLSlicingEvent::ToROSQuery() const
 		Query.Append("tell([");
 		Query.Append("is_physical_object(CreatedObj),");
 		Query.Append(FString::Printf(TEXT("has_type(CreatedRole, soma:\'CreatedObject\'),")));
-		Query.Append(FString::Printf(TEXT("has_role(CreatedObj, CreatedRole) during [%f,%f],"), Start, End));
+		Query.Append(FString::Printf(TEXT("has_role(CreatedObj, CreatedRole) during [%f,%f],"), StartTime, EndTime));
 		Query.Append("has_participant(Action, CreatedObj)");
 		Query.Append("]),");
 	}

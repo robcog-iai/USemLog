@@ -6,21 +6,21 @@
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
 #include "SLContactMonitorInterface.h"
-#include "SLContactBox.generated.h"
+#include "SLContactMonitorBox.generated.h"
 
 /**
  * Collision area listening for semantic collision events
  */
-UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Box")
-class USEMLOG_API USLContactBox : public UBoxComponent, public ISLContactMonitorInterface
+UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Contact Monitor Box")
+class USEMLOG_API USLContactMonitorBox : public UBoxComponent, public ISLContactMonitorInterface
 {
 	GENERATED_BODY()
 public:
 	// Default constructor
-	USLContactBox();
+	USLContactMonitorBox();
 
 	// Dtor
-	~USLContactBox();
+	~USLContactMonitorBox();
 
 	/* Begin ISLContactMonitorInterface*/
 	// Initialize trigger area for runtime, check if outer is valid and semantically annotated

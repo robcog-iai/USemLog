@@ -7,13 +7,13 @@
 #include "Components/SphereComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "SLManipulatorOverlapSphere.generated.h"
+#include "SLManipulatorContactMonitorSphere.generated.h"
 
 /**
 * Hand type
 */
 UENUM()
-enum class ESLManipulatorOverlapGroup : uint8
+enum class ESLManipulatorContactMonitorGroup : uint8
 {
 	A					UMETA(DisplayName = "A"),
 	B					UMETA(DisplayName = "B"),
@@ -22,42 +22,42 @@ enum class ESLManipulatorOverlapGroup : uint8
 /**
  * Overlap event end data
  */
-struct FSLManipulatorOverlapEndEvent
+struct FSLManipulatorContactMonitorEndEvent
 {
 	// Default ctor
-	FSLManipulatorOverlapEndEvent() = default;
+	FSLManipulatorContactMonitorEndEvent() = default;
 
 	// Init ctor
-	FSLManipulatorOverlapEndEvent(AActor* InOtherActor, float InTime) :
-		OtherActor(InOtherActor), Time(InTime) {};
+	FSLManipulatorContactMonitorEndEvent(AActor* InOtherActor, float InTimestamp) :
+		OtherActor(InOtherActor), Timestamp(InTimestamp) {};
 
 	// Overlap component
 	AActor* OtherActor;
 
 	// End time of the event 
-	float Time;
+	float Timestamp;
 };
 
 /** Delegate to notify that a contact begins between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorOverlapBeginSignature, AActor* /*OtherActor*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorContactMonitorBeginSignature, AActor* /*OtherActor*/);
 
 /** Delegate to notify that a contact ended between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorOverlapEndSignature, AActor* /*OtherActor*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorContactMonitorEndSignature, AActor* /*OtherActor*/);
 
 /**
  * Semantic overlap generator for grasp detection
  */
-UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Overlap Sphere")
-class USEMLOG_API USLManipulatorOverlapSphere : public USphereComponent
+UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Contact Monitor Sphere")
+class USEMLOG_API USLManipulatorContactMonitorSphere : public USphereComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Ctor
-	USLManipulatorOverlapSphere();
+	USLManipulatorContactMonitorSphere();
 
 	// Dtor
-	~USLManipulatorOverlapSphere() = default;
+	~USLManipulatorContactMonitorSphere() = default;
 	
 	// Attach to bone 
 	bool Init(bool bGrasp = true, bool bContact = true);
@@ -84,7 +84,7 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 	// Give access to the group of which the shape belongs to for the grasping detection
-	ESLManipulatorOverlapGroup GetGroup() const { return Group;};
+	ESLManipulatorContactMonitorGroup GetGroup() const { return Group;};
 
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
@@ -154,12 +154,12 @@ private:
 
 public:
 	// Grasp related overlap begin/end
-	FSLManipulatorOverlapBeginSignature OnBeginManipulatorGraspOverlap;
-	FSLManipulatorOverlapEndSignature OnEndManipulatorGraspOverlap;
+	FSLManipulatorContactMonitorBeginSignature OnBeginManipulatorGraspOverlap;
+	FSLManipulatorContactMonitorEndSignature OnEndManipulatorGraspOverlap;
 	
 	// Contact related overlap begin/end
-	FSLManipulatorOverlapBeginSignature OnBeginManipulatorContactOverlap;
-	FSLManipulatorOverlapEndSignature OnEndManipulatorContactOverlap;
+	FSLManipulatorContactMonitorBeginSignature OnBeginManipulatorContactOverlap;
+	FSLManipulatorContactMonitorEndSignature OnEndManipulatorContactOverlap;
 
 private:
 	// True if initialized
@@ -185,7 +185,7 @@ private:
 
 	// The group of which the shape belongs to for the grasping detection
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLManipulatorOverlapGroup Group;
+	ESLManipulatorContactMonitorGroup Group;
 
 	// Name of the skeletal bone to attach the shape to
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -214,14 +214,14 @@ private:
 	FTimerHandle GraspDelayTimerHandle;
 
 	// Array of recently ended events
-	TArray<FSLManipulatorOverlapEndEvent> RecentlyEndedGraspOverlapEvents;
+	TArray<FSLManipulatorContactMonitorEndEvent> RecentlyEndedGraspOverlapEvents;
 	
 	
 	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
 	FTimerHandle ContactDelayTimerHandle;
 
 	// Array of recently ended events
-	TArray<FSLManipulatorOverlapEndEvent> RecentlyEndedContactOverlapEvents;
+	TArray<FSLManipulatorContactMonitorEndEvent> RecentlyEndedContactOverlapEvents;
 	
 
 	/* Constants */

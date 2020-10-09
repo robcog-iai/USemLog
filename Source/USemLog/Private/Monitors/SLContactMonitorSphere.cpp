@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Monitors/SLContactSphere.h"
+#include "Monitors/SLContactMonitorSphere.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
@@ -12,7 +12,7 @@
 #include "Utils/SLTagIO.h"
 
 // Default constructor
-USLContactSphere::USLContactSphere()
+USLContactMonitorSphere::USLContactMonitorSphere()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -39,7 +39,7 @@ USLContactSphere::USLContactSphere()
 }
 
 // Destructor
-USLContactSphere::~USLContactSphere()
+USLContactMonitorSphere::~USLContactMonitorSphere()
 {
 	if (!bIsFinished)
 	{
@@ -48,13 +48,13 @@ USLContactSphere::~USLContactSphere()
 }
 
 // Called at level startup
-void USLContactSphere::BeginPlay()
+void USLContactMonitorSphere::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
 // Called when actor removed from game or game ended
-void USLContactSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void USLContactMonitorSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
@@ -65,7 +65,7 @@ void USLContactSphere::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Setup pointers to outer, check if semantically annotated
-void USLContactSphere::Init(bool bInLogSupportedByEvents)
+void USLContactMonitorSphere::Init(bool bInLogSupportedByEvents)
 {
 	if (!bIsInit)
 	{
@@ -126,7 +126,7 @@ void USLContactSphere::Init(bool bInLogSupportedByEvents)
 }
 
 // Start overlap events, trigger currently overlapping objects
-void USLContactSphere::Start()
+void USLContactMonitorSphere::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
@@ -139,11 +139,11 @@ void USLContactSphere::Start()
 		SetGenerateOverlapEvents(true);
 
 		// Broadcast currently overlapping components
-		USLContactSphere::TriggerInitialOverlaps();
+		USLContactMonitorSphere::TriggerInitialOverlaps();
 
 		// Bind future overlapping event delegates
-		OnComponentBeginOverlap.AddDynamic(this, &USLContactSphere::OnOverlapBegin);
-		OnComponentEndOverlap.AddDynamic(this, &USLContactSphere::OnOverlapEnd);
+		OnComponentBeginOverlap.AddDynamic(this, &USLContactMonitorSphere::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLContactMonitorSphere::OnOverlapEnd);
 
 		// Mark as started
 		bIsStarted = true;
@@ -152,7 +152,7 @@ void USLContactSphere::Start()
 
 #if WITH_EDITOR
 // Update bounds visual (red/green -- parent is not/is semantically annotated)
-void USLContactSphere::UpdateVisualColor()
+void USLContactMonitorSphere::UpdateVisualColor()
 {
 	// Set the default color of the shape
 	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
@@ -174,22 +174,22 @@ void USLContactSphere::UpdateVisualColor()
 }
 
 // Called after the C++ constructor and after the properties have been initialized
-void USLContactSphere::PostInitProperties()
+void USLContactMonitorSphere::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	//if (!USLContactSphere::LoadShapeBounds())
+	//if (!USLContactMonitorSphere::LoadShapeBounds())
 	//{
-	//	USLContactSphere::CalcShapeBounds();
-	//	USLContactSphere::StoreShapeBounds();
+	//	USLContactMonitorSphere::CalcShapeBounds();
+	//	USLContactMonitorSphere::StoreShapeBounds();
 	//}
 
 	//// Set bounds visual corresponding color 
-	//USLContactSphere::UpdateVisualColor();
+	//USLContactMonitorSphere::UpdateVisualColor();
 }
 
 // Called when a property is changed in the editor
-void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLContactMonitorSphere::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -199,11 +199,11 @@ void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 	FName MemberPropertyName = (PropertyChangedEvent.MemberProperty != NULL) ?
 		PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
 
-	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, SphereRadius))
+	if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorSphere, SphereRadius))
 	{
 		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "Radius", FString::SanitizeFloat(SphereRadius));
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, RelativeLocation))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorSphere, RelativeLocation))
 	{
 		if (PropertyName == FName("X"))
 		{
@@ -218,7 +218,7 @@ void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocZ", FString::SanitizeFloat(RelativeLocation.Y));
 		}
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactSphere, bReCalcShapeButton))
+	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorSphere, bReCalcShapeButton))
 	{
 		CalcShapeBounds();
 		bReCalcShapeButton = false;
@@ -226,7 +226,7 @@ void USLContactSphere::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 }
 
 // Called when this component is moved in the editor
-void USLContactSphere::PostEditComponentMove(bool bFinished)
+void USLContactMonitorSphere::PostEditComponentMove(bool bFinished)
 {
 	// Update tags with the new transform
 	const FVector RelLoc = GetRelativeTransform().GetLocation();
@@ -237,7 +237,7 @@ void USLContactSphere::PostEditComponentMove(bool bFinished)
 }
 
 // Read values from tags
-bool USLContactSphere::LoadShapeBounds()
+bool USLContactMonitorSphere::LoadShapeBounds()
 {
 	TMap<FString, FString> TagKeyValMap = FSLTagIO::GetKVPairs(GetOwner(), TagTypeName);
 
@@ -261,7 +261,7 @@ bool USLContactSphere::LoadShapeBounds()
 }
 
 // Calculate trigger area size
-bool USLContactSphere::CalcShapeBounds()
+bool USLContactMonitorSphere::CalcShapeBounds()
 {
 	// Get the static mesh component
 	if (AStaticMeshActor* OuterAsSMAct = Cast<AStaticMeshActor>(GetOuter()))
@@ -284,7 +284,7 @@ bool USLContactSphere::CalcShapeBounds()
 }
 
 // Save values to tags
-bool USLContactSphere::StoreShapeBounds()
+bool USLContactMonitorSphere::StoreShapeBounds()
 {
 	const FVector RelLoc = GetRelativeTransform().GetLocation();
 

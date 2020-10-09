@@ -15,7 +15,7 @@ DECLARE_MULTICAST_DELEGATE_FiveParams(FSLContainerManipulationSignature, USLBase
 /**
  * Checks for if the manipulated objects directly/indirectly opens / closes a container
  */
-UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Container Monitor")
 class USEMLOG_API USLContainerMonitor : public UActorComponent
 {
 	GENERATED_BODY()

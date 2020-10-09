@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLManipulatorContactEventHandler.h"
-#include "Monitors/SLManipulatorOverlapSphere.h"
+#include "Monitors/SLManipulatorContactMonitorSphere.h"
 #include "Monitors/SLManipulatorMonitor.h"
 #include "Events/SLContactEvent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
@@ -82,7 +82,7 @@ bool FSLManipulatorContactEventHandler::FinishEvent(USLBaseIndividual* InOther, 
 		if ((*EventItr)->Individual2 == InOther)
 		{
 			// Set the event end time
-			(*EventItr)->End = EndTime;
+			(*EventItr)->EndTime = EndTime;
 
 			OnSemanticEvent.ExecuteIfBound(*EventItr);
 
@@ -101,7 +101,7 @@ void FSLManipulatorContactEventHandler::FinishAllEvents(float EndTime)
 	for (auto& Ev : StartedEvents)
 	{
 		// Set end time and publish event
-		Ev->End = EndTime;
+		Ev->EndTime = EndTime;
 		OnSemanticEvent.ExecuteIfBound(Ev);
 	}
 	StartedEvents.Empty();

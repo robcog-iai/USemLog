@@ -26,8 +26,8 @@ FSLOwlNode FSLPreGraspPositioningEvent::ToOwlNode() const
 	// Create the Reach event node
 	FSLOwlNode EventIndividual = FSLOwlExperimentStatics::CreateEventIndividual(
 		"log", Id, "PreGraspPositioning");
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", Start));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", End));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", StartTime));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", EndTime));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", Individual->GetIdValue()));
 	return EventIndividual;
@@ -42,9 +42,9 @@ void FSLPreGraspPositioningEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	// if (FOwlEvents* EventsDoc = dynamic_cast<FOwlEvents*>(OutDoc))
 	FSLOwlExperiment* EventsDoc = static_cast<FSLOwlExperiment*>(OutDoc);
 	EventsDoc->AddTimepointIndividual(
-		Start, FSLOwlExperimentStatics::CreateTimepointIndividual("log", Start));
+		StartTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", StartTime));
 	EventsDoc->AddTimepointIndividual(
-		End, FSLOwlExperimentStatics::CreateTimepointIndividual("log", End));
+		EndTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", EndTime));
 	EventsDoc->AddObjectIndividual(Manipulator,
 		FSLOwlExperimentStatics::CreateObjectIndividual("log", Manipulator->GetIdValue(), Manipulator->GetClassValue()));
 	EventsDoc->AddObjectIndividual(Individual,

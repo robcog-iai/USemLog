@@ -448,6 +448,9 @@ void ASLSymbolicLogger::WriteToFile()
 		Params.bTooltips = true;
 		Params.StartTime = EpisodeStartTime;
 		Params.EndTime = EpisodeEndTime;
+		Params.TaskId = LocationParameters.TaskId;
+		Params.EpisodeId = LocationParameters.EpisodeId;
+		Params.bOverwrite = LocationParameters.bOverwrite;
 		FSLGoogleCharts::WriteTimelines(FinishedEvents, DirPath, LocationParameters.EpisodeId, Params);
 	}
 
@@ -457,7 +460,10 @@ void ASLSymbolicLogger::WriteToFile()
 		// Write experiment to file
 		FString FullFilePath = DirPath + LocationParameters.EpisodeId + TEXT("_ED.owl");
 		FPaths::RemoveDuplicateSlashes(FullFilePath);
-		FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);		
+		if (!FPaths::FileExists(FullFilePath) || LocationParameters.bOverwrite)
+		{
+			FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);					
+		}
 	}
 }
 
@@ -579,8 +585,6 @@ void ASLSymbolicLogger::InitManipulatorContactMonitors()
 				if (GEHandler->IsInit())
 				{
 					EventHandlers.Add(GEHandler);
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d GRASP INIT %s "),
-						*FString(__FUNCTION__), __LINE__, *Itr->GetFullName());
 				}
 				else
 				{
@@ -596,8 +600,6 @@ void ASLSymbolicLogger::InitManipulatorContactMonitors()
 					if (MCEHandler->IsInit())
 					{
 						EventHandlers.Add(MCEHandler);
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d GRASP-CONTACT INIT %s "),
-							*FString(__FUNCTION__), __LINE__, *Itr->GetFullName());
 					}
 					else
 					{

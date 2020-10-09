@@ -15,12 +15,12 @@ public:
 	ISLEvent() {};
 	
 	// Init constructor
-	ISLEvent(const FString& InId, float InStart, float InEnd) 
-		: Id(InId), Start(InStart), End(InEnd) {};
+	ISLEvent(const FString& InId, float InStartTime, float InEndTime) 
+		: Id(InId), StartTime(InStartTime), EndTime(InEndTime) {};
 
 	// Init without end constructor
-	ISLEvent(const FString& InId, float InStart)
-		: Id(InId), Start(InStart) {};
+	ISLEvent(const FString& InId, float InStartTime)
+		: Id(InId), StartTime(InStartTime) {};
 
 	// Virtual destructor
 	virtual ~ISLEvent() {};
@@ -29,10 +29,10 @@ public:
 	FString Id;
 
 	// Start time of the event
-	float Start;
+	float StartTime;
 
 	// End time of the event
-	float End;
+	float EndTime;
 
 	// Create owl representation of the event
 	virtual FSLOwlNode ToOwlNode() const = 0;
