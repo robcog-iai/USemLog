@@ -24,7 +24,7 @@ message DrawMarkerAtParams {
   required MarkerType marker = 3;
   required float scale = 4;
   required string color = 5;
-  required string unlit = 6;
+  required string material = 6;
 }
 
 message DrawMarkerTrajParams {
@@ -34,7 +34,7 @@ message DrawMarkerTrajParams {
   required MarkerType marker = 4;
   required float scale = 5;
   required string color = 6;
-  required string unlit = 7;
+  required string material = 7;
 }
 
 message KRAmevaEvent {
