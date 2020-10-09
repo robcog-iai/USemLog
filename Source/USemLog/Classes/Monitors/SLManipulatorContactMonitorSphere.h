@@ -195,11 +195,11 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bSnapToBone;
 
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	// Mimic a button to add the skeletal bone
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bAttachButton;
-#endif // WITH_EDITOR
+#endif // WITH_EDITORONLY_DATA
 
 	// If the owner is not a skeletal actor, one needs to add the children (fingers) manually
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

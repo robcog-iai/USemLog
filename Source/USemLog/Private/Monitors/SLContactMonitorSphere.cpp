@@ -27,7 +27,7 @@ USLContactMonitorSphere::USLContactMonitorSphere()
 	
 	IndividualComponent = nullptr;
 
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	// Box extent scale
 	SphereScaleFactor = 1.25f;
 	SphereMinSize = 0.25f;
@@ -35,7 +35,7 @@ USLContactMonitorSphere::USLContactMonitorSphere()
 
 	// Mimics a button
 	bReCalcShapeButton = false;
-#endif // WITH_EDITOR
+#endif // WITH_EDITORONLY_DATA
 }
 
 // Destructor

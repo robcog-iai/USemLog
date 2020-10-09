@@ -95,7 +95,7 @@ struct FSLVizIndividualHighlightData
 
 	// The mesh that is currently highlighted
 	UPROPERTY(VisibleAnywhere, Category = "Semantic Logger")
-	UMeshComponent* MeshComponent;
+	UMeshComponent* MeshComponent = nullptr;
 
 	// The mesh slots that are highlighted (empty means all)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

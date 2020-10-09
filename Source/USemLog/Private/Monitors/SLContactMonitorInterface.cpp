@@ -158,7 +158,7 @@ void ISLContactMonitorInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedC
 	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);
 	if (OtherIndividual == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not annotated, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not annotated, this should not happen.."), *FString(__FUNCTION__), __LINE__, *OtherActor->GetName());
 		return;
 	}
 

@@ -518,7 +518,9 @@ void USLVisionLogger::CreatePoseableMeshesClones()
 		SpawnParams.Name = FName(*LabelName);
 		ASLVisionPoseableMeshActor* PMA = GetWorld()->SpawnActor<ASLVisionPoseableMeshActor>(
 			ASLVisionPoseableMeshActor::StaticClass(), SpawnParams);
+#if WITH_EDITOR
 		PMA->SetActorLabel(LabelName);
+#endif // WITH_EDITOR
 
 		if(PMA->Init(SkMA))
 		{

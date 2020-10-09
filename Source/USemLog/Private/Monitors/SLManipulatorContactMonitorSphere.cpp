@@ -20,10 +20,10 @@ USLManipulatorContactMonitorSphere::USLManipulatorContactMonitorSphere()
 	bDetectGrasps = false;
 	bDetectContacts = false;
 
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	// Mimic a button to attach to the bone	
 	bAttachButton = false;
-#endif // WITH_EDITOR
+#endif // WITH_EDITORONLY_DATA
 }
 
 // Attach to bone 

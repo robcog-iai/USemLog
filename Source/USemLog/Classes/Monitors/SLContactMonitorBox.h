@@ -70,7 +70,7 @@ private:
 	/* End ISLContactMonitorInterface*/
 #endif // WITH_EDITOR
 
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 private:
 	// Box extent scale factor (smaller will be chosen)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -87,5 +87,5 @@ private:
 	// Mimics a button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bReCalcShapeButton;
-#endif // WITH_EDITOR
+#endif // WITH_EDITORONLY_DATA
 };

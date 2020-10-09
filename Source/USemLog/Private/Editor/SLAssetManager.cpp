@@ -3,11 +3,14 @@
 
 #include "Editor/SLAssetManager.h"
 #include "ModuleManager.h"
-#include "AssetRegistryModule.h"
 #include "EngineGlobals.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+
+#if WITH_EDITOR
 #include "AssetToolsModule.h"
+#include "AssetRegistryModule.h"
+#endif // WITH_EDITOR
 
 // Ctor
 USLAssetManager::USLAssetManager()
@@ -104,11 +107,13 @@ void USLAssetManager::Finish()
 // Move assets to path
 bool USLAssetManager::MoveCurrentLevelAssets(const FString & Path)
 {
+#if WITH_EDITOR
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 	TArray<FAssetData> AssetsList;
 	AssetRegistryModule.Get().GetAssetsByPackageName(GetCurrentLevel(), AssetsList);
 	MoveReferencedObjects(GetCurrentLevel(), TEXT("/Game"), Path);
 	MoveAssets(AssetsList, Path, TEXT("/Game"));
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -135,6 +140,7 @@ FName USLAssetManager::GetCurrentLevel()
 
 void USLAssetManager::MoveReferencedObjects(FName PackageName, const FString& SourceBasePath, const FString& DestBasePath)
 {
+#if WITH_EDITOR
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 
 	TArray<FName> HardDependencies;
@@ -184,10 +190,12 @@ void USLAssetManager::MoveReferencedObjects(FName PackageName, const FString& So
 	{
 		MoveAssets(AssetsList, DestBasePath, SourceBasePath);
 	}
+#endif // WITH_EDITOR
 }
 
 void USLAssetManager::MoveAssets(TArray<FAssetData> AssetList, const FString& DestPath, const FString& SourcePath)
 {
+#if WITH_EDITOR
 	TArray<UObject*> AssetObjects;
 	for (int32 AssetIdx = 0; AssetIdx < AssetList.Num(); ++AssetIdx)
 	{
@@ -250,4 +258,5 @@ void USLAssetManager::MoveAssets(TArray<FAssetData> AssetList, const FString& De
 	{
 		AssetToolsModule.Get().RenameAssetsWithDialog(AssetsAndNames);
 	}
+#endif // WITH_EDITOR
 }

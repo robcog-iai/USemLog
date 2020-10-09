@@ -2,10 +2,14 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Editor/SLAssetDBHandler.h"
-#include "AssetRegistryModule.h"
-#include "AssetToolsModule.h"
+#include "Editor/SLEditorStructs.h"
 #include "HAL/PlatformFilemanager.h"
+#include "GenericPlatform/GenericPlatformFile.h"
+#include "Misc/Paths.h"
 
+#if WITH_EDITOR
+#include "AssetRegistryModule.h"
+#endif // WITH_EDITOR
 
 // Ctor
 FSLAssetDBHandler::FSLAssetDBHandler() {}
@@ -432,6 +436,7 @@ bool FSLAssetDBHandler::AddToGridFs(const TArray<uint8>& InData, bson_oid_t* out
 
 void FSLAssetDBHandler::UploadAllFileToGridFS(const FString& Dir)
 {
+#if WITH_EDITOR
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	TArray<FAssetData> AllAsset;
 	AssetRegistryModule.Get().GetAssetsByPath(FName(*Dir), AllAsset, true, false);
@@ -458,6 +463,7 @@ void FSLAssetDBHandler::UploadAllFileToGridFS(const FString& Dir)
 	}
 
 	WriteFilesToDocument(Files);
+#endif // WITH_EDITOR
 }
 
 bool FSLAssetDBHandler::UploadFileToGridFS(const FString& Path, const FString& FileName, FString& InId)

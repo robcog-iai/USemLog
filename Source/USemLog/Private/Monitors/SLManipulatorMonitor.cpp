@@ -34,10 +34,10 @@ USLManipulatorMonitor::USLManipulatorMonitor()
 	bIsNotSkeletal = false;
 	UnPauseTriggerVal = 0.5;
 	
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	// Default values
 	HandType = ESLGraspHandType::Left;
-#endif // WITH_EDITOR
+#endif // WITH_EDITORONLY_DATA
 
 	ActiveGraspType = "Default";
 }

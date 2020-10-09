@@ -523,7 +523,9 @@ FString FSLEditorToolkit::GetClassName(AActor* Actor, bool bDefaultToLabel)
 	}
 	else if(bDefaultToLabel)
 	{
+#if WITH_EDITOR
 		ClassName = Actor->GetActorLabel();
+#endif // WITH_EDITOR
 	}
 	else
 	{
@@ -585,7 +587,11 @@ FString FSLEditorToolkit::GenerateVisionCameraClassName(ASLVirtualCameraView* Ac
 
 	if (bDefaultToLabel)
 	{
+#if WITH_EDITOR
 		return Actor->GetActorLabel();
+#endif // WITH_EDITOR
+
+
 	}
 
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not use any rule to name the vision camera %s.. saving as default value %s .."),

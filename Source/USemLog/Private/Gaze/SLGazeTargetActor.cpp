@@ -99,7 +99,9 @@ void ASLGazeTargetActor::Init()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SL_GazeProxy");
 	GazeProxy = GetWorld()->SpawnActor<ASLGazeProxy>(SpawnParams);
+#if WITH_EDITOR
 	GazeProxy->SetActorLabel(TEXT("SL_GazeProxy"));
+#endif // WITH_EDITOR
 
 	if (GazeProxy && GazeProxy->IsValidLowLevel() && !GazeProxy->IsPendingKillOrUnreachable())
 	{

@@ -371,6 +371,7 @@ void USLMaskCalibrationTool::InitRenderParameters()
 // Load mesh that will be used to render all the mask colors on screen
 bool USLMaskCalibrationTool::CreateMaskRenderMesh()
 {
+#if WITH_EDITOR
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SM_MaskRenderDummy");
 	MaskRenderActor = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(),
@@ -380,9 +381,7 @@ bool USLMaskCalibrationTool::CreateMaskRenderMesh()
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not spawn convenience camera pose actor.."), *FString(__func__), __LINE__);
 		return false;
 	}
-#if WITH_EDITOR
 	MaskRenderActor->SetActorLabel(FString(TEXT("SM_MaskRenderDummy")));
-#endif // WITH_EDITOR
 
 	MaskRenderMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/USemLog/Vision/MaskRenderDummy/SM_MaskRenderDummy.SM_MaskRenderDummy"));
 	if (!MaskRenderMesh)
@@ -403,13 +402,12 @@ bool USLMaskCalibrationTool::CreateMaskRenderMesh()
 		return false;
 	}
 	//DefaultMaskMaterial->bUsedWithStaticLighting = true;
-	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
-		
+	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;		
+
 	DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 	DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::White);
-
 	MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
-
+#endif // WITH_EDITOR
 	return true;
 }
 
@@ -521,10 +519,12 @@ bool USLMaskCalibrationTool::SetupFirstEntityMaskColor()
 {
 	if (CurrEntityIdx == INDEX_NONE && MaskToEntity.Num() > 0)
 	{
+#if WITH_EDITOR
 		CurrEntityIdx = 0;
 		FColor MaskColor = MaskToEntity[0].Key;
 		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
 		MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
+#endif // WITH_EDITOR
 		return true;
 	}
 	else
@@ -547,9 +547,11 @@ bool USLMaskCalibrationTool::SetupNextEntityMaskColor()
 		}
 		else
 		{
+#if WITH_EDITOR
 			FColor MaskColor = MaskToEntity[CurrEntityIdx].Key;
 			DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
 			MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
+#endif // WITH_EDITOR
 			return true;
 		}
 	}
@@ -565,11 +567,13 @@ bool USLMaskCalibrationTool::SetupFirstSkelMaskColor()
 {
 	if (CurrSkelIdx == INDEX_NONE && MaskToSkelAndBone.Num() > 0)
 	{
+#if WITH_EDITOR
 		CurrSkelIdx = 0;
 		FColor MaskColor = MaskToSkelAndBone[0].Key;
 		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
 		MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
 		bSkelMasksActive = true;
+#endif // WITH_EDITOR
 		return true;
 	}
 	else
@@ -592,9 +596,11 @@ bool USLMaskCalibrationTool::SetupNextSkelMaskColor()
 		}
 		else
 		{
+#if WITH_EDITOR
 			FColor MaskColor = MaskToSkelAndBone[CurrSkelIdx].Key;
 			DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
 			MaskRenderMesh->SetMaterial(0, DynamicMaskMaterial);
+#endif // WITH_EDITOR
 			return true;
 		}
 	}

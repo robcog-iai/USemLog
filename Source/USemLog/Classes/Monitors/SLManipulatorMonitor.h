@@ -210,11 +210,11 @@ private:
 	// Detect contacts
 	bool bDetectContacts;
 	
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 	// Hand type to load pre-defined parameters
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	ESLGraspHandType HandType;
-#endif // WITH_EDITOR
+#endif // WITH_EDITORONLY_DATA
 	
 	// Read the input directly, avoid biding to various controllers
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
