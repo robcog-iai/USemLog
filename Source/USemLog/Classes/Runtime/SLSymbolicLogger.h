@@ -101,6 +101,15 @@ private:
 	// Iterate and init the manipulator fixation monitors
 	void InitManipulatorFixationMonitors();
 
+	// Iterate and init the manipulator reach monitors
+	void InitManipulatorReachMonitors();
+
+	// Iterate and init the manipulator container monitors
+	void InitManipulatorContainerMonitors();
+
+	// Iterate and init the pick and place monitors
+	void InitPickAndPlaceMonitors();
+
 	// Iterate and init the slicing monitors
 	void InitSlicingMonitors();
 

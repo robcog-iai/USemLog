@@ -130,6 +130,12 @@ struct FSLSymbolicLoggerParams
 	bool bGrasp = true;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
+	bool bReach = true;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
+	bool bContainer = true;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
 	bool bPickAndPlace = true;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))

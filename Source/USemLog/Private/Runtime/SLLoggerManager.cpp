@@ -2,7 +2,9 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Runtime/SLLoggerManager.h"
-#include "Utils/SLUUid.h"
+
+// Utils
+#include "Utils/SLUuid.h"
 
 // Sets default values
 ASLLoggerManager::ASLLoggerManager()

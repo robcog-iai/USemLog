@@ -128,23 +128,24 @@ bool FSLAssetDBHandler::Connect(const FString& DBName, const FString& ServerIp,
 
 		if (bOverwrite)
 		{
-			mongoc_gridfs_file_list_t *list;
-			mongoc_gridfs_file_t *file_to_delete;
-			const bson_t query = BSON_INITIALIZER;
+			// TODO mongoc_gridfs_find deprecated
+			//mongoc_gridfs_file_list_t *list;
+			//mongoc_gridfs_file_t *file_to_delete;
+			//const bson_t query = BSON_INITIALIZER;
 
-			list = mongoc_gridfs_find(gridfs, &query);
+			//list = mongoc_gridfs_find(gridfs, &query);
 
-			file_to_delete = mongoc_gridfs_file_list_next(list);
-			while (file_to_delete != NULL) {
-				if (!mongoc_gridfs_file_remove(file_to_delete, &error))
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-						*FString(__func__), __LINE__, *Uri, *FString(error.message));
-					return false;
-				}
-				file_to_delete = mongoc_gridfs_file_list_next(list);
-			}
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Successfully clear gridfs"), *FString(__func__), __LINE__);
+			//file_to_delete = mongoc_gridfs_file_list_next(list);
+			//while (file_to_delete != NULL) {
+			//	if (!mongoc_gridfs_file_remove(file_to_delete, &error))
+			//	{
+			//		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+			//			*FString(__func__), __LINE__, *Uri, *FString(error.message));
+			//		return false;
+			//	}
+			//	file_to_delete = mongoc_gridfs_file_list_next(list);
+			//}
+			//UE_LOG(LogTemp, Warning, TEXT("%s::%d Successfully clear gridfs"), *FString(__func__), __LINE__);
 		}
 	}
 	else if(Action == ESLAssetAction::Download)
@@ -564,66 +565,67 @@ bool FSLAssetDBHandler::WriteFilesToDocument(TMap<FString, FString> Files)
 bool FSLAssetDBHandler::DownloadFileFromGridFS(const FString& Path, const FString& Id)
 {
 #if SL_WITH_LIBMONGO_C
-	bson_error_t error;
-	mongoc_gridfs_file_t *file;
-	const bson_value_t* file_id;
-	mongoc_stream_t *file_stream;
-	mongoc_gridfs_bucket_t *bucket;
+	//bson_error_t error;
+	//mongoc_gridfs_file_t *file;
+	//const bson_value_t* file_id;
+	//mongoc_stream_t *file_stream;
+	//mongoc_gridfs_bucket_t *bucket;
 
-	bson_t *file_query;
-	bson_oid_t id;
+	//bson_t *file_query;
+	//bson_oid_t id;
 
-	file_query = bson_new();
+	//file_query = bson_new();
 
-	char* id_string = TCHAR_TO_ANSI(*Id);
-	bson_oid_init_from_string(&id, id_string);
-	BSON_APPEND_OID(file_query, "_id", &id);
+	//char* id_string = TCHAR_TO_ANSI(*Id);
+	//bson_oid_init_from_string(&id, id_string);
+	//BSON_APPEND_OID(file_query, "_id", &id);
 
-	if (gridfs == nullptr)
-		return false;
+	//if (gridfs == nullptr)
+	//	return false;
 
-	file = mongoc_gridfs_find_one(gridfs, file_query, &error);
-	if (!file)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-		return false;
-	}
+	// TODO deprecated
+	//file = mongoc_gridfs_find_one(gridfs, file_query, &error);
+	//if (!file)
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+	//		*FString(__func__), __LINE__, *FString(error.message));
+	//	return false;
+	//}
 
-	file_id = mongoc_gridfs_file_get_id(file);
+	//file_id = mongoc_gridfs_file_get_id(file);
 
-	bucket = mongoc_gridfs_bucket_new(database, NULL, NULL, &error);
-	if (!bucket)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-		return false;
-	}
+	//bucket = mongoc_gridfs_bucket_new(database, NULL, NULL, &error);
+	//if (!bucket)
+	//{
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+	//		*FString(__func__), __LINE__, *FString(error.message));
+	//	return false;
+	//}
 
-	FString FileName = UTF8_TO_TCHAR(mongoc_gridfs_file_get_filename(file));
-	file_stream = mongoc_stream_file_new_for_path( TCHAR_TO_UTF8(*(Path+ FileName)), O_CREAT | O_RDWR, 0);
-	if (!file_stream)
-	{
-		if ((Path + FileName).Len() > 245) {
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: Can't open file stream, file path is too long"),
-				*FString(__func__), __LINE__);
-			return false;
-		}
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: Can't open file stream"),
-			*FString(__func__), __LINE__);
-		return false;
-	}
+	//FString FileName = UTF8_TO_TCHAR(mongoc_gridfs_file_get_filename(file));
+	//file_stream = mongoc_stream_file_new_for_path( TCHAR_TO_UTF8(*(Path+ FileName)), O_CREAT | O_RDWR, 0);
+	//if (!file_stream)
+	//{
+	//	if ((Path + FileName).Len() > 245) {
+	//		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: Can't open file stream, file path is too long"),
+	//			*FString(__func__), __LINE__);
+	//		return false;
+	//	}
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Err.: Can't open file stream"),
+	//		*FString(__func__), __LINE__);
+	//	return false;
+	//}
 
-	bool result = mongoc_gridfs_bucket_download_to_stream(
-		bucket, file_id, file_stream, &error);
-	if (!result) {
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
-			*FString(__func__), __LINE__, *FString(error.message));
-		return EXIT_FAILURE;
-	}
+	//bool result = mongoc_gridfs_bucket_download_to_stream(
+	//	bucket, file_id, file_stream, &error);
+	//if (!result) {
+	//	UE_LOG(LogTemp, Error, TEXT("%s::%d Err.:%s"),
+	//		*FString(__func__), __LINE__, *FString(error.message));
+	//	return EXIT_FAILURE;
+	//}
 
-	mongoc_stream_close(file_stream);
-	mongoc_stream_destroy(file_stream);
+	//mongoc_stream_close(file_stream);
+	//mongoc_stream_destroy(file_stream);
 
 	return true;
 

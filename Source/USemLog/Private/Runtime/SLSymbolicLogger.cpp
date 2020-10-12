@@ -210,6 +210,9 @@ void ASLSymbolicLogger::InitImpl()
 		InitContactMonitors();
 		InitManipulatorContactMonitors();
 		InitManipulatorFixationMonitors();
+		InitManipulatorReachMonitors();
+		InitManipulatorContainerMonitors();
+		InitPickAndPlaceMonitors();
 		InitSlicingMonitors();
 	}
 	else
@@ -225,6 +228,18 @@ void ASLSymbolicLogger::InitImpl()
 			{
 				InitManipulatorFixationMonitors();
 			}
+			if (LoggerParameters.bReach)
+			{
+				InitManipulatorReachMonitors();
+			}
+			if (LoggerParameters.bContainer)
+			{
+				InitManipulatorContainerMonitors();
+			}
+		}
+		if (LoggerParameters.bPickAndPlace)
+		{
+			InitPickAndPlaceMonitors();
 		}
 		if (LoggerParameters.bSlicing)
 		{
@@ -638,6 +653,86 @@ void ASLSymbolicLogger::InitManipulatorFixationMonitors()
 		}
 	}
 #endif // SL_WITH_MC_GRASP
+}
+
+// Iterate and init the manipulator reach monitors
+void ASLSymbolicLogger::InitManipulatorReachMonitors()
+{
+	for (TObjectIterator<USLReachMonitor> Itr; Itr; ++Itr)
+	{
+		if (IsValidAndLoaded(Itr->GetOwner()))
+		{
+			if (Itr->Init())
+			{
+				ReachMonitors.Emplace(*Itr);
+				TSharedPtr<FSLReachEventHandler> REHandler = MakeShareable(new FSLReachEventHandler());
+				REHandler->Init(*Itr);
+				if (REHandler->IsInit())
+				{
+					EventHandlers.Add(REHandler);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+						*FString(__func__), __LINE__, *Itr->GetName());
+				}
+			}
+
+		}
+	}
+}
+
+// Iterate and init the manipulator container monitors
+void ASLSymbolicLogger::InitManipulatorContainerMonitors()
+{
+	for (TObjectIterator<USLContainerMonitor> Itr; Itr; ++Itr)
+	{
+		if (IsValidAndLoaded(Itr->GetOwner()))
+		{
+			if (Itr->Init())
+			{
+				ContainerMonitors.Emplace(*Itr);
+				TSharedPtr<FSLContainerEventHandler> Handler = MakeShareable(new FSLContainerEventHandler());
+				Handler->Init(*Itr);
+				if (Handler->IsInit())
+				{
+					EventHandlers.Add(Handler);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+						*FString(__func__), __LINE__, *Itr->GetName());
+				}
+			}
+
+		}
+	}
+}
+
+// Iterate and init the pick and place monitors
+void ASLSymbolicLogger::InitPickAndPlaceMonitors()
+{
+	for (TObjectIterator<USLPickAndPlaceMonitor> Itr; Itr; ++Itr)
+	{
+		if (IsValidAndLoaded(Itr->GetOwner()))
+		{
+			if (Itr->Init())
+			{
+				PickAndPlaceMonitors.Emplace(*Itr);
+				TSharedPtr<FSLPickAndPlaceEventsHandler> PAPHandler = MakeShareable(new FSLPickAndPlaceEventsHandler());
+				PAPHandler->Init(*Itr);
+				if (PAPHandler->IsInit())
+				{
+					EventHandlers.Add(PAPHandler);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+						*FString(__func__), __LINE__, *Itr->GetName());
+				}
+			}
+		}
+	}
 }
 
 // Iterate and init the slicing monitors

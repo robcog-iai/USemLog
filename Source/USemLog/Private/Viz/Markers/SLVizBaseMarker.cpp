@@ -12,7 +12,7 @@ USLVizBaseMarker::USLVizBaseMarker()
 	PrimaryComponentTick.bCanEverTick = false;
 	LoadAssetsContainer();
 	MaterialType = ESLVizMaterialType::NONE;
-	VisualColor == FLinearColor::Transparent; // (0,0,0,0)
+	VisualColor = FLinearColor::Transparent; // (0,0,0,0)
 }
 
 // Update the visual color property
