@@ -2,7 +2,9 @@
 
 
 #include "Knowrob/SLKREventDispatcher.h"
-
+#include "Mongo/SLMongoQueryManager.h"
+#include "Viz/SLVizManager.h"
+#include "Viz/SLVizStructs.h"
 
 // Ctor
 FSLKREventDispatcher::FSLKREventDispatcher(ASLMongoQueryManager* InMongoManger, ASLVizManager* InVizManager) : MongoManager(InMongoManger), VizManager(InVizManager)
@@ -22,53 +24,71 @@ void FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
 	AmevaEvent.ParseFromString(ProtoStr);
 	if (AmevaEvent.functocall() == AmevaEvent.SetTask)
 	{
-		LogSetTask(AmevaEvent.settaskparam());
+		SetTask(AmevaEvent.settaskparam());
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.DrawMarkerAt)
+	else if (AmevaEvent.functocall() == AmevaEvent.SetEpisode)
 	{
-		LogDrawMarker(AmevaEvent.drawmarkeratparams());
+		SetEpisode(AmevaEvent.setepisodeparams());
+	}
+	else if (AmevaEvent.functocall() == AmevaEvent.DrawMarkerTraj)
+	{
+		DrawMarkerTraj(AmevaEvent.drawmarkertrajparams());
 	}
 }
 
-void FSLKREventDispatcher::LogSetTask(sl_pb::SetTaskParams params)
+// Set the task of MongoManager
+void FSLKREventDispatcher::SetTask(sl_pb::SetTaskParams params)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[ProtoMessage]Set Task Event"));
-	UE_LOG(LogTemp, Warning, TEXT("[ProtoMessage]Task: %s"), UTF8_TO_TCHAR(params.task().c_str()));
+	MongoManager->SetTask(UTF8_TO_TCHAR(params.task().c_str()));
 }
 
-void FSLKREventDispatcher::LogDrawMarker(sl_pb::DrawMarkerAtParams params)
+// Set the episode of MongoManager
+void FSLKREventDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[ProtoMessage]Draw Marker At Event"));
-	UE_LOG(LogTemp, Warning, TEXT("[ProtoMessage]Id: %s"), UTF8_TO_TCHAR(params.id().c_str()));
-	UE_LOG(LogTemp, Warning, TEXT("[ProtoMessage]Ts: %ld"), params.timestamp());
-	UE_LOG(LogTemp, Warning, TEXT("[ProtoMessage]Marker: %s"), *GetVizMeshType(params.marker()));
-	UE_LOG(LogTemp, Warning, TEXT("[ProtoMessage]Scale: %ld"), params.scale());
-	UE_LOG(LogTemp, Warning, TEXT("[ProtoMessage]Color: %s"), UTF8_TO_TCHAR(params.color().c_str()));
-	UE_LOG(LogTemp, Warning, TEXT("[ProtoMessage]Unlit: %s"), UTF8_TO_TCHAR(params.unlit().c_str()));
+	MongoManager->SetEpisode(UTF8_TO_TCHAR(params.episode().c_str()));
 }
 
-FString FSLKREventDispatcher::GetVizMeshType(sl_pb::MarkerType Marker)
+// Draw the trajectory
+void FSLKREventDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
+{
+	FString Id = UTF8_TO_TCHAR(params.id().c_str());
+	float Start = params.start();
+	float End = params.end();
+	FVector Scale(params.scale());
+	ESLVizPrimitiveMarkerType Type = GetMarkerType(params.marker());
+	ESLVizMaterialType MaterialType = GetMarkerMaterialType(UTF8_TO_TCHAR(params.material().c_str()));
+	FLinearColor Color = GetMarkerColor(UTF8_TO_TCHAR(params.color().c_str()));
+	TArray<FTransform> Poses = MongoManager->GetIndividualTrajectory(Id, Start, End);
+	VizManager->CreatePrimitiveMarker(Id, Poses, Type, params.scale(), Color, MaterialType);
+}
+
+// Transform the maker type
+ESLVizPrimitiveMarkerType FSLKREventDispatcher::GetMarkerType(sl_pb::MarkerType Marker)
 {
 	if (Marker == sl_pb::Sphere)
 	{
-		return TEXT("Sphere");
+		return ESLVizPrimitiveMarkerType::Sphere;
 	}
 	else if (Marker == sl_pb::Cylinder)
 	{
-		return TEXT("Cylinder");
+		return ESLVizPrimitiveMarkerType::Cylinder;
 	}
 	else if (Marker == sl_pb::Arrow)
 	{
-		return TEXT("Arrow");
+		return ESLVizPrimitiveMarkerType::Arrow;
 	}
 	else if (Marker == sl_pb::Axis)
 	{
-		return TEXT("Axis");
+		return ESLVizPrimitiveMarkerType::Axis;
 	}
-	return TEXT("Box");
+	else if (Marker == sl_pb::Box) {
+		return ESLVizPrimitiveMarkerType::Box;
+	}
+	return ESLVizPrimitiveMarkerType::NONE;
 }
 
-FLinearColor FSLKREventDispatcher::GetMarkerColor(FString Color)
+// Transform the string to color
+FLinearColor FSLKREventDispatcher::GetMarkerColor(const FString &Color)
 {
 	if (Color.Equals("Red") || Color.Equals("red") || Color.Equals("RED"))
 	{
@@ -95,4 +115,26 @@ FLinearColor FSLKREventDispatcher::GetMarkerColor(FString Color)
 		return FLinearColor::Green;
 	}
 	return FLinearColor::White;
+}
+
+// Transform the material type
+ESLVizMaterialType FSLKREventDispatcher::GetMarkerMaterialType(const FString& MaterialType)
+{
+	if (MaterialType.Equals("Lit") || MaterialType.Equals("lit")) 
+	{
+		return ESLVizMaterialType::Lit;
+	}
+	else if (MaterialType.Equals("Unlit") || MaterialType.Equals("unlit")) 
+	{
+		return ESLVizMaterialType::Unlit;
+	}
+	else if (MaterialType.Equals("Additive") || MaterialType.Equals("additive"))
+	{
+		return ESLVizMaterialType::Additive;
+	}
+	else if (MaterialType.Equals("Translucent") || MaterialType.Equals("translucent"))
+	{
+		return ESLVizMaterialType::Translucent;
+	}
+	return ESLVizMaterialType::NONE;
 }

@@ -49,7 +49,7 @@ void ASLKnowrobManager::BeginPlay()
 	FParse::Value(FCommandLine::Get(), TEXT("MongoServerPort="), MongoServerPort);
 
 	Init();
-	//Start();
+	Start();
 }
 
 #if WITH_EDITOR
