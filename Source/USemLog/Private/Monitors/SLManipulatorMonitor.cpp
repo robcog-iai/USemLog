@@ -545,9 +545,11 @@ void USLManipulatorMonitor::OnEndOverlapContact(AActor* OtherActor)
 		{
 			// Remove contact object
 			ObjectsInContact.Remove(OtherActor);
-				
+
 			if (!GetWorld())
 			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d The world is finished.. this should not happen (often).."),
+					*FString(__FUNCTION__), __LINE__);
 				// Episode already finished, continuing would be futile
 				return;
 			}
@@ -565,7 +567,8 @@ void USLManipulatorMonitor::OnEndOverlapContact(AActor* OtherActor)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not in the contacts list, this should not happen.."),
+			*FString(__func__), __LINE__, *OtherActor->GetName());
 	}
 
 }

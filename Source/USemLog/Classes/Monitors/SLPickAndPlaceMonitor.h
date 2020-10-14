@@ -137,7 +137,7 @@ private:
 	AActor* CurrGraspedObj;
 
 	// Previous event check
-	ESLPaPStateCheck EventCheck;
+	ESLPaPStateCheck EventCheckState;
 
 	// Cache of various relevant locations
 	FVector PrevRelevantLocation;

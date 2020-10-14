@@ -81,7 +81,8 @@ bool USLVisibleIndividual::ExportValues(bool bOverwrite)
 {
 	if (!HasValidParentActor())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d No valid parent actor found, could not export values"), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No valid parent actor found, could not export values (%s)"),
+			*FString(__FUNCTION__), __LINE__, *GetFullName());
 		return false;
 	}
 

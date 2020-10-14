@@ -275,8 +275,8 @@ bool USLReachMonitor::CanBeACandidate(AStaticMeshActor* InObject) const
 	//	//}
 
 	//	// Check that object is not too heavy/large
-	//	if (SMC->GetMass() < WeightLimit &&
-	//		InObject->GetComponentsBoundingBox().GetVolume() < VolumeLimit)
+	//	if (SMC->GetMass() < ObjectWeightLimit &&
+	//		InObject->GetComponentsBoundingBox().GetVolume() < ObjectVolumeLimit)
 	//	{
 	//		return true;
 	//	}

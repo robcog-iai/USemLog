@@ -143,7 +143,7 @@ void USLContactMonitorBox::Init(bool bInLogSupportedByEvents)
 			// Mark as initialized
 			bIsInit = true;
 
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Succesffully init %s"), *FString(__FUNCTION__), __LINE__, *GetFullName());
+			//UE_LOG(LogTemp, Log, TEXT("%s::%d Succesffully init %s"), *FString(__FUNCTION__), __LINE__, *GetFullName());
 		}
 	}
 }
