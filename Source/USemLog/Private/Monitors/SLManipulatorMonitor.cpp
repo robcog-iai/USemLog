@@ -8,8 +8,12 @@
 #include "Individuals/SLIndividualUtils.h"
 #include "Animation/SkeletalMeshActor.h"
 #include "Engine/StaticMeshActor.h"
-
 #include "GameFramework/PlayerController.h"
+#include "Components/InputComponent.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h" // AdHoc grasp helper
+#include "Engine/StaticMeshActor.h" // AdHoc grasp helper
+#include "Components/StaticMeshComponent.h" // AdHoc grasp helper
+#include "Components/SkeletalMeshComponent.h" // AdHoc grasp helper
 
 #if SL_WITH_MC_GRASP
 #include "MCGraspAnimController.h"
@@ -32,14 +36,32 @@ USLManipulatorMonitor::USLManipulatorMonitor()
 	bIsPaused = false;
 	InputAxisName = "LeftGrasp";
 	bIsNotSkeletal = false;
-	UnPauseTriggerVal = 0.5;
-	
+	UnPauseTriggerVal = 0.3;
+
 #if WITH_EDITORONLY_DATA
 	// Default values
 	HandType = ESLGraspHandType::Left;
 #endif // WITH_EDITORONLY_DATA
 
 	ActiveGraspType = "Default";
+
+	// Grasp helper
+	bUseAdHocGraspHelper = false;
+	bUseAdHocManualOverrideAction = false;
+	AdHocManualOverrideInputActionName = "LeftGraspHelper";
+	AdHocOwnerHandBoneName = "lHand";
+	bDisableGravityOfGraspedObject = true;
+	bScaleMassOfGraspedObject = true;
+	GraspedObjectMassScaleValue = 0.1f;
+	ConstraintLimit = 0.1f;
+	ConstraintStiffness = 500.f;
+	ConstraintDamping = 5.f;
+	ConstraintContactDistance = 1.f;
+	bConstraintParentDominates = false;
+	bAdHocGraspHelpIsActive = false;
+	AdHocGraspHelperConstraint = nullptr;
+	AdHocGraspedObjectSMC = nullptr;
+	AdHocOwnerSkelMC = nullptr;
 }
 
 // Dtor
@@ -90,7 +112,16 @@ bool USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 		// Subscribe to grasp type changes
 		 SubscribeToGraspTypeChanges();
 #endif // SL_WITH_MC_GRASP
-		
+
+		 // Ad Hoc grasp helper
+		 if (bUseAdHocGraspHelper)
+		 {
+			 if (!InitAdHocGraspHelper())
+			 {
+				 // Init failed, disable grasp helper
+				 bUseAdHocGraspHelper = false;
+			 }
+		 }
 
 		// True if each group has at least one bone overlap
 		if (LoadOverlapGroups())
@@ -116,29 +147,11 @@ void USLManipulatorMonitor::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		// Bind grasp trigger input and update check functions
-		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
-		{
-			if (UInputComponent* IC = PC->InputComponent)
-			{
-				IC->BindAxis(InputAxisName, this, &USLManipulatorMonitor::GraspInputAxisCallback);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d No Input Component found.."), *FString(__func__), __LINE__);
-				return;
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d No Player controller found.."), *FString(__func__), __LINE__);
-			return;
-		}
+		SetupInputBindings();
 
 		// Start listening on the bone overlaps
 		for (auto BoneOverlap : GroupA)
 		{
-			BoneOverlap->Start();
 			if (bDetectContacts)
 			{
 				BoneOverlap->OnBeginManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapContact);
@@ -149,10 +162,11 @@ void USLManipulatorMonitor::Start()
 				BoneOverlap->OnBeginManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapGroupAGrasp);
 				BoneOverlap->OnEndManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapGroupAGrasp);
 			}
+			// Start after subscribing
+			BoneOverlap->Start();
 		}
 		for (auto BoneOverlap : GroupB)
 		{
-			BoneOverlap->Start();
 			if (bDetectContacts)
 			{
 				BoneOverlap->OnBeginManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapContact);
@@ -163,6 +177,8 @@ void USLManipulatorMonitor::Start()
 				BoneOverlap->OnBeginManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapGroupBGrasp);
 				BoneOverlap->OnEndManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapGroupBGrasp);
 			}
+			// Start after subscribing
+			BoneOverlap->Start();
 		}
 
 		// Mark as started
@@ -251,10 +267,14 @@ void USLManipulatorMonitor::PostEditChangeProperty(struct FPropertyChangedEvent&
 		if (HandType == ESLGraspHandType::Left)
 		{
 			InputAxisName = "LeftGrasp";
+			AdHocManualOverrideInputActionName = "LeftGraspHelper";
+			AdHocOwnerHandBoneName = "lHand";
 		}
 		else if (HandType == ESLGraspHandType::Right)
 		{
 			InputAxisName = "RightGrasp";
+			AdHocManualOverrideInputActionName = "RightGraspHelper";
+			AdHocOwnerHandBoneName = "rHand";
 		}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorMonitor, bIsNotSkeletal))
@@ -331,6 +351,36 @@ void USLManipulatorMonitor::OnGraspType(const FString& Type)
 	//UE_LOG(LogTemp, Warning, TEXT("%s::%d ActiveGraspType=%s"), *FString(__func__), __LINE__, *ActiveGraspType);
 }
 #endif // SL_WITH_MC_GRASP
+
+// Bind user inputs
+void USLManipulatorMonitor::SetupInputBindings()
+{
+	// Bind grasp trigger input and update check functions
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		if (UInputComponent* IC = PC->InputComponent)
+		{
+			IC->BindAxis(InputAxisName, this, &USLManipulatorMonitor::GraspInputAxisCallback);
+
+			if (bUseAdHocGraspHelper && bUseAdHocManualOverrideAction)
+			{
+				IC->BindAction(AdHocManualOverrideInputActionName, IE_Pressed, this, &USLManipulatorMonitor::AdHocManualOverride);
+				//IC->BindAction(AdHocManualOverrideInputActionName, IE_Pressed, this, &USLManipulatorMonitor::AdHocManualOverride);
+				//IC->BindAction(AdHocManualOverrideInputActionName, IE_Released, this, &USLManipulatorMonitor::AdHocManualOverride);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d No Input Component found.."), *FString(__func__), __LINE__);
+			return;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No Player controller found.."), *FString(__func__), __LINE__);
+		return;
+	}
+}
 
 // Check if the grasp trigger is active
 void USLManipulatorMonitor::GraspInputAxisCallback(float Value)
@@ -417,6 +467,29 @@ void USLManipulatorMonitor::BeginGrasp(AActor* OtherActor)
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] \t ~~~~~~~~~~~~~~~~~~~~~~~~~~ *BEGIN GRASP BCAST* with %s ~~~~~~~~~~~~~~~~~~~~~~~~~~"),
 		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherActor->GetName());
 		OnBeginManipulatorGrasp.Broadcast(IndividualObject, OtherActor, GetWorld()->GetTimeSeconds(), ActiveGraspType);
+
+		if (bUseAdHocGraspHelper)
+		{
+			if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherActor))
+			{
+				if (!bUseAdHocManualOverrideAction)
+				{
+					AdHocGraspedObjectSMC = AsSMA->GetStaticMeshComponent();
+					StartAdHocGraspHelper();
+				}
+				else if (!bAdHocGraspHelpIsActive)
+				{
+					// Allow manual grasp override
+					AdHocGraspedObjectSMC = AsSMA->GetStaticMeshComponent();
+					bCanExecuteManualOverride = true;
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s could not help grasp %s because it is not a static mesh actor.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
+			}
+		}
 	}
 	else
 	{
@@ -436,8 +509,9 @@ void USLManipulatorMonitor::EndGrasp(AActor* OtherActor)
 		// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 		if(!GetWorld()->GetTimerManager().IsTimerActive(GraspDelayTimerHandle))
 		{
-			GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorMonitor::DelayedGraspEndEventCallback,
-				MaxGraspEventTimeGap * 1.2f, false);
+			GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this,
+				&USLManipulatorMonitor::DelayedGraspEndEventCallback,
+				MaxGraspJitterInterval + 0.05f, false);
 		}
 	}
 }
@@ -451,13 +525,26 @@ void USLManipulatorMonitor::DelayedGraspEndEventCallback()
 	for (auto EvItr(RecentlyEndedGraspEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// If enough time has passed, publish the event
-		if(CurrTime - EvItr->Time > MaxGraspEventTimeGap)
+		if(CurrTime - EvItr->Time > MaxGraspJitterInterval)
 		{
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ~~~~~~~~~~~~~~~~~~~~~~~~~~ *END GRASP BCAST* (with delay) GraspEnd=%f; with %s;  ~~~~~~~~~~~~~~~~~~~~~~~~~~"),
 			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), EvItr->Time, *EvItr->OtherActor->GetName());
 			// Broadcast delayed event
 			OnEndManipulatorGrasp.Broadcast(IndividualObject, EvItr->OtherActor, EvItr->Time);
 			
+			if (bUseAdHocGraspHelper)
+			{
+				if (!bUseAdHocManualOverrideAction)
+				{
+					StopAdHocGraspHelper();
+				}
+				else if (!bAdHocGraspHelpIsActive)
+				{
+					// Cancel the manual override
+					bCanExecuteManualOverride = false;
+				}
+			}
+
 			// Remove event from the pending list
 			EvItr.RemoveCurrent();
 		}
@@ -466,8 +553,9 @@ void USLManipulatorMonitor::DelayedGraspEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedGraspEvents.Num() > 0)
 	{
-		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorMonitor::DelayedGraspEndEventCallback,
-			MaxGraspEventTimeGap * 1.2f, false);
+		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this,
+			&USLManipulatorMonitor::DelayedGraspEndEventCallback,
+			MaxGraspJitterInterval + 0.05f, false);
 	}
 }
 
@@ -480,7 +568,7 @@ bool USLManipulatorMonitor::SkipRecentGraspEndEventBroadcast(AActor* OtherActor,
 		if(EvItr->OtherActor == OtherActor)
 		{
 			// Check time difference
-			if(StartTime - EvItr->Time < MaxGraspEventTimeGap)
+			if(StartTime - EvItr->Time < MaxGraspJitterInterval)
 			{
 				EvItr.RemoveCurrent();
 
@@ -560,15 +648,16 @@ void USLManipulatorMonitor::OnEndOverlapContact(AActor* OtherActor)
 			// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 			if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
 			{
-				GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorMonitor::DelayedContactEndEventCallback,
-					MaxContactEventTimeGap * 1.2f, false);
+				GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this,
+					&USLManipulatorMonitor::DelayedContactEndEventCallback,
+					MaxContactJitterInterval + 0.05, false);
 			}
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not in the contacts list, this should not happen.."),
-			*FString(__func__), __LINE__, *OtherActor->GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's overlap end object (%s) is not in the contacts list, this should not happen.."),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
 	}
 
 }
@@ -582,7 +671,7 @@ void USLManipulatorMonitor::DelayedContactEndEventCallback()
 	for (auto EvItr(RecentlyEndedContactEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// If enough time has passed, publish the event
-		if(CurrTime - EvItr->Time > MaxContactEventTimeGap)
+		if(CurrTime - EvItr->Time > MaxContactJitterInterval)
 		{
 			OnEndManipulatorContact.Broadcast(IndividualObject, EvItr->Other, EvItr->Time);
 			EvItr.RemoveCurrent();
@@ -592,8 +681,9 @@ void USLManipulatorMonitor::DelayedContactEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedContactEvents.Num() > 0)
 	{
-		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorMonitor::DelayedContactEndEventCallback,
-			MaxContactEventTimeGap * 1.2f, false);
+		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this,
+			&USLManipulatorMonitor::DelayedContactEndEventCallback,
+			MaxContactJitterInterval + 0.05f, false);
 	}
 }
 
@@ -607,7 +697,7 @@ bool USLManipulatorMonitor::SkipRecentContactEndEventBroadcast(USLBaseIndividual
 		{
 			// Check time difference between the previous and current event
 			const float TimeGap = StartTime - EvItr->Time;
-			if(TimeGap < MaxContactEventTimeGap)
+			if(TimeGap < MaxContactJitterInterval)
 			{
 				// Event will be concatenated
 				EvItr.RemoveCurrent();
@@ -624,3 +714,157 @@ bool USLManipulatorMonitor::SkipRecentContactEndEventBroadcast(USLBaseIndividual
 	return false;
 }
 /* End contact related */
+
+/* Ad Hoc grasp helper */
+// Ad hoc manual override
+void USLManipulatorMonitor::AdHocManualOverride()
+{
+	if (bCanExecuteManualOverride)
+	{
+		if (!bAdHocGraspHelpIsActive)
+		{
+			StartAdHocGraspHelper();
+		}
+		else
+		{
+			StopAdHocGraspHelper();
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s has nothing to manually override.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+	}
+}
+
+// Setup the grasp helper constraint
+bool USLManipulatorMonitor::InitAdHocGraspHelper()
+{
+	if (ASkeletalMeshActor* AsSkelMA = Cast<ASkeletalMeshActor>(GetOwner()))
+	{
+		AdHocOwnerSkelMC = AsSkelMA->GetSkeletalMeshComponent();
+
+		if (AdHocOwnerSkelMC->GetBoneIndex(AdHocOwnerHandBoneName) != INDEX_NONE)
+		{
+			// Create and init the ad hoc grasp helper constraint
+			AdHocGraspHelperConstraint = NewObject<UPhysicsConstraintComponent>(this, FName("AdHocGraspHelperConstraint"));
+			AdHocGraspHelperConstraint->RegisterComponent();
+			AdHocGraspHelperConstraint->AttachToComponent(AdHocOwnerSkelMC,
+				FAttachmentTransformRules::SnapToTargetIncludingScale, AdHocOwnerHandBoneName);
+
+
+			AdHocGraspHelperConstraint->ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, ConstraintLimit);
+			AdHocGraspHelperConstraint->ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, ConstraintLimit);
+			AdHocGraspHelperConstraint->ConstraintInstance.SetAngularTwistLimit(EAngularConstraintMotion::ACM_Limited, ConstraintLimit);
+
+			AdHocGraspHelperConstraint->ConstraintInstance.SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, ConstraintLimit);
+			AdHocGraspHelperConstraint->ConstraintInstance.SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, ConstraintLimit);
+			AdHocGraspHelperConstraint->ConstraintInstance.SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, ConstraintLimit);
+
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = true;
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = ConstraintStiffness;
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.Damping = ConstraintDamping;
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.ContactDistance = ConstraintContactDistance;
+
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.bSoftConstraint = true;
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.Stiffness = ConstraintStiffness;
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.Damping = ConstraintDamping;
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.ContactDistance = ConstraintContactDistance;
+
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.bSoftConstraint = true;
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.Stiffness = ConstraintStiffness;
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.Damping = ConstraintDamping;
+			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.ContactDistance = ConstraintContactDistance;
+
+			if (bConstraintParentDominates)
+			{
+				AdHocGraspHelperConstraint->ConstraintInstance.EnableParentDominates();
+			}
+
+			return true;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner attachment bone %s does not exist.. aborting grasp help.."),
+				*FString(__FUNCTION__), __LINE__, *AdHocOwnerHandBoneName.ToString());
+			return false;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not a skeletal component.. aborting grasp help.."), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
+}
+
+// Start grasp help
+void USLManipulatorMonitor::StartAdHocGraspHelper()
+{
+	if (bAdHocGraspHelpIsActive)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasp help is already active, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+		return;
+	}
+
+	if (AdHocGraspedObjectSMC && AdHocGraspedObjectSMC->IsValidLowLevel() && !AdHocGraspedObjectSMC->IsPendingKillOrUnreachable())
+	{
+		// Apply the properties to the grasped object
+		if (bDisableGravityOfGraspedObject)
+		{
+			AdHocGraspedObjectSMC->SetEnableGravity(false);
+		}
+
+		if (bScaleMassOfGraspedObject)
+		{
+			AdHocGraspedObjectSMC->SetMassScale(NAME_None, GraspedObjectMassScaleValue);
+		}
+
+		AdHocGraspHelperConstraint->SetConstrainedComponents(AdHocOwnerSkelMC, AdHocOwnerHandBoneName,
+			AdHocGraspedObjectSMC, NAME_None);
+
+		bAdHocGraspHelpIsActive = true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasped object is not valid, cannot start helping, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+	}
+}
+
+// Stop grasp help
+void USLManipulatorMonitor::StopAdHocGraspHelper()
+{
+	if (!bAdHocGraspHelpIsActive)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasp help is already stopped, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+		return;
+	}
+
+	AdHocGraspHelperConstraint->BreakConstraint();
+
+	if (AdHocGraspedObjectSMC && AdHocGraspedObjectSMC->IsValidLowLevel() && !AdHocGraspedObjectSMC->IsPendingKillOrUnreachable())
+	{
+		// Reset the properties to the grasped object
+		if (bDisableGravityOfGraspedObject)
+		{
+			AdHocGraspedObjectSMC->SetEnableGravity(true);
+		}
+
+		if (bScaleMassOfGraspedObject)
+		{
+			AdHocGraspedObjectSMC->SetMassScale(NAME_None, 1.f);
+		}
+
+		AdHocGraspedObjectSMC = nullptr;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasped object is not valid, cannot reset the grasped object values, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+	}
+
+	bAdHocGraspHelpIsActive = false;
+	bCanExecuteManualOverride = false;
+}

@@ -13,6 +13,7 @@
 class USLBaseIndividual;
 class USLIndividualComponent;
 
+
 /**
 * Hand type
 */
@@ -60,6 +61,14 @@ public:
 	// Dtor
 	~USLPickAndPlaceMonitor();
 
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
+
+	// Called every frame, used for timeline visualizations, activated and deactivated on request
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+public:
 	// Check if owner is valid and semantically annotated
 	bool Init();
 
@@ -116,16 +125,16 @@ public:
 private:
 	// Skip initialization if true
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bIgnore;
+	uint8 bIgnore : 1;
 
 	// True if initialized
-	bool bIsInit;
+	uint8 bIsInit : 1;
 
 	// True if started
-	bool bIsStarted;
+	uint8 bIsStarted : 1;
 
 	// True if finished
-	bool bIsFinished;
+	uint8 bIsFinished : 1;
 
 	// Semantic data component of the owner
 	USLIndividualComponent* IndividualComponent;
@@ -148,9 +157,6 @@ private:
 	// Contact shape of the grasped object, holds information if the object is supported by a surface
 	ISLContactMonitorInterface* GraspedObjectContactMonitor;
 	
-	// Update timer handle
-	FTimerHandle UpdateTimerHandle;
-
 	/* Update function bindings */
 	// Function pointer type for calling the correct update function
 	typedef void(USLPickAndPlaceMonitor::*UpdateFunctionPointerType)();

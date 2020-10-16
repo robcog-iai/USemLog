@@ -51,4 +51,7 @@ public:
 		
 	// To string
 	virtual FString ToString() const = 0;
+
+	// Type name
+	virtual FString TypeName() const = 0;
 };

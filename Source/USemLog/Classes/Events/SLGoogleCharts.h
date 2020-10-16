@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Events/SLEvents.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 
@@ -32,6 +33,9 @@ struct FSLGoogleChartsParameters
 
 	// Episode id
 	FString EpisodeId = "EpisodeId";
+
+	// Events selection
+	FLSymbolicEventsSelection EventsSelection;
 
 	// Default constructor
 	FSLGoogleChartsParameters() :
@@ -107,6 +111,11 @@ struct FSLGoogleCharts
 		// Add event times
 		for (const auto& Ev : InEvents)
 		{
+			if (!ShouldEventBeWritten(Ev, Params.EventsSelection))
+			{
+				continue;
+			}
+
 			const FString StartStr = FString::Printf(TEXT("%.3f"), Ev->StartTime); //FString::SanitizeFloat(Ev->Start);
 			const FString EndStr = FString::Printf(TEXT("%.3f"), Ev->EndTime); //FString::SanitizeFloat(Ev->End);
 			const FString StartMsStr = FString::Printf(TEXT("%.3f"), Ev->StartTime * 1000.f); //FString::SanitizeFloat(Ev->Start * 1000.f);
@@ -185,5 +194,100 @@ private:
 			"\n"
 			"\n";
 		return Legend;
+	}
+
+	// Should the event be written
+	static bool ShouldEventBeWritten(TSharedPtr<ISLEvent> Event, const FLSymbolicEventsSelection& EventSelection)
+	{
+		if (!Event.IsValid())
+		{
+			return false;
+		}
+		if (EventSelection.bSelectAll)
+		{
+			return true;
+		}
+		/* Contact */
+		else if (Event.Get()->TypeName().StartsWith("Contact"))
+		{
+			return EventSelection.bContact || EventSelection.bManipulatorContact;
+		}
+		/* SupportedBy */
+		else if (Event.Get()->TypeName().StartsWith("SupportedBy"))
+		{
+			return EventSelection.bSupportedBy;
+		}
+		/* Reach + PreGrasp*/
+		else if (Event.Get()->TypeName().StartsWith("Reach")
+			|| Event.Get()->TypeName().StartsWith("PreGrasp")
+			)
+		{
+			return EventSelection.bReachAndPreGrasp;
+		}
+		/* Grasp */
+		else if (Event.Get()->TypeName().StartsWith("Grasp"))
+		{
+			return EventSelection.bGrasp;
+		}
+		/* PickAndPlace */
+		else if (Event.Get()->TypeName().StartsWith("Slide")
+			|| Event.Get()->TypeName().StartsWith("PickUp")
+			|| Event.Get()->TypeName().StartsWith("Transport")
+			|| Event.Get()->TypeName().StartsWith("PutDown")
+			)
+		{
+			return EventSelection.bPickAndPlace;
+		}
+		
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Unknown event %s, will be written anyhow.."),
+			*FString(__FUNCTION__), __LINE__, *Event.Get()->ToString());
+		return true;
+
+		//// TODO switch to UPROPERTY pure dynamic_cast does not work without RTTI
+		///* All events */
+		//if (EventSelection.bSelectAll)
+		//{
+		//	return true;
+		//}
+		///* Contact */
+		//else if (dynamic_cast<FSLContactEvent*>(Event.Get()))
+		//{
+		//	return EventSelection.bContact;
+		//}
+		///* Supported By */
+		//else if (dynamic_cast<FSLSupportedByEvent*>(Event.Get()))
+		//{
+		//	return EventSelection.bSupportedBy;
+		//}
+		///* Reach */
+		//else if (dynamic_cast<FSLReachEvent*>(Event.Get()))
+		//{
+		//	return EventSelection.bReachAndPreGrasp;
+		//}
+		///* Grasp */
+		//else if (dynamic_cast<FSLGraspEvent*>(Event.Get()))
+		//{
+		//	return EventSelection.bGrasp;
+		//}
+		///* PickAndPlace */
+		//else if (dynamic_cast<FSLSlideEvent*>(Event.Get()))
+		//{
+		//	return EventSelection.bPickAndPlace;
+		//}
+		//else if (dynamic_cast<FSLPickUpEvent*>(Event.Get()))
+		//{
+		//	return EventSelection.bPickAndPlace;
+		//}
+		//else if (dynamic_cast<FSLTransportEvent*>(Event.Get()))
+		//{
+		//	return EventSelection.bPickAndPlace;
+		//}
+		//else if (dynamic_cast<FSLPutDownEvent*>(Event.Get()))
+		//{
+		//	return EventSelection.bPickAndPlace;
+		//}
+
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d Unknown event %s.."), *FString(__FUNCTION__), __LINE__, *Event.Get()->ToString());
+		//return false;
 	}
 };

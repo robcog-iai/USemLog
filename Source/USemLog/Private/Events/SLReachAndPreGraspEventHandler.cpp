@@ -1,19 +1,19 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Events/SLReachEventHandler.h"
-#include "Monitors/SLReachMonitor.h"
+#include "Events/SLReachAndPreGraspEventHandler.h"
+#include "Monitors/SLReachAndPreGraspMonitor.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Utils/SLUuid.h"
 
 // Set parent
-void FSLReachEventHandler::Init(UObject* InParent)
+void FSLReachAndPreGraspEventHandler::Init(UObject* InParent)
 {
 	if (!bIsInit)
 	{
 		// Check if parent is of right type
-		Parent = Cast<USLReachMonitor>(InParent);
+		Parent = Cast<USLReachAndPreGraspMonitor>(InParent);
 		if (Parent)
 		{
 			// Mark as initialized
@@ -23,12 +23,12 @@ void FSLReachEventHandler::Init(UObject* InParent)
 }
 
 // Bind to input delegates
-void FSLReachEventHandler::Start()
+void FSLReachAndPreGraspEventHandler::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
 		// Subscribe to the forwarded semantically annotated Reaching broadcasts
-		Parent->OnPreGraspAndReachEvent.AddRaw(this, &FSLReachEventHandler::OnSLPreAndReachEvent);
+		Parent->OnReachAndPreGraspEvent.AddRaw(this, &FSLReachAndPreGraspEventHandler::OnSLReachAndPreGraspEvent);
 
 		// Mark as started
 		bIsStarted = true;
@@ -36,7 +36,7 @@ void FSLReachEventHandler::Start()
 }
 
 // Terminate listener, finish and publish remaining events
-void FSLReachEventHandler::Finish(float EndTime, bool bForced)
+void FSLReachAndPreGraspEventHandler::Finish(float EndTime, bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
@@ -58,7 +58,7 @@ void FSLReachEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Event called when a semantic Reach event begins
-void FSLReachEventHandler::OnSLPreAndReachEvent(USLBaseIndividual* Self, AActor* OtherActor, float ReachStartTime, float ReachEndTime, float PreGraspEndTime)
+void FSLReachAndPreGraspEventHandler::OnSLReachAndPreGraspEvent(USLBaseIndividual* Self, AActor* OtherActor, float ReachStartTime, float ReachEndTime, float PreGraspEndTime)
 {
 	// Check that the objects are semantically annotated
 	if (USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor))
@@ -71,9 +71,9 @@ void FSLReachEventHandler::OnSLPreAndReachEvent(USLBaseIndividual* Self, AActor*
 				PairID, Self, OtherIndividual)));
 		}
 
-		if(PreGraspEndTime - ReachEndTime > PreGraspPositioningEventMin)
+		if(PreGraspEndTime - ReachEndTime > PreGraspEventMin)
 		{
-			OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPreGraspPositioningEvent(
+			OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPreGraspEvent(
 				FSLUuid::NewGuidInBase64Url(), ReachEndTime, PreGraspEndTime,
 				PairID, Self, OtherIndividual)));
 		}

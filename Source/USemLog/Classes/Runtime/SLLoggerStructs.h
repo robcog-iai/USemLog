@@ -105,39 +105,69 @@ struct FSLWorldStateLoggerParams
 };
 
 
+
+/* Supported Events Struct*/
+USTRUCT()
+struct FLSymbolicEventsSelection
+{
+	GENERATED_BODY();
+
+	/* All or selection */
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events")
+	bool bSelectAll = true;
+
+	/* Contact */
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "!bSelectAll"))
+	bool bContact = true;
+
+	/* Supported By */
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "!bSelectAll"))
+	bool bSupportedBy = true;
+
+	/* Manipulator contact */
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "!bSelectAll"))
+	bool bManipulatorContact = true;
+
+	/* Reach + PreGrasp */
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "!bSelectAll"))
+	bool bReachAndPreGrasp = true;
+
+	/* Grasp */
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "!bSelectAll"))
+	bool bGrasp = true;
+
+	/* PickAndPlace - Slide - PickUp - Transport - PutDown */
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "!bSelectAll"))
+	bool bPickAndPlace = true;
+
+	///* Container */
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "!bSelectAll"))
+	//bool bContainer = true;
+
+	///* Slicing */
+	//UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "!bSelectAll"))
+	//bool bSlicing = true;
+};
+
+
 /* Holds the types of events to be logged by the symbolic logger */
 USTRUCT()
 struct FSLSymbolicLoggerParams
 {
 	GENERATED_BODY();
+	
+	/* Events */
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FLSymbolicEventsSelection EventsSelection;
 
+	/* Timelines */
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bWriteTimelines = true;
 
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bWriteTimelines"))
+	FLSymbolicEventsSelection TimelineEventsSelection;
+
+	/* ROS */
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bPublishToROS = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bSelectedEventsOnly = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
-	bool bContact = true;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
-	bool bSupportedBy = true;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
-	bool bGrasp = true;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
-	bool bReach = true;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
-	bool bContainer = true;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
-	bool bPickAndPlace = true;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Events", meta = (editcondition = "bSelectedEventsOnly"))
-	bool bSlicing = true;
 };

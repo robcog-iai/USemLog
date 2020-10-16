@@ -5,9 +5,12 @@
 
 #include "SLContactEvent.h"
 #include "SLSupportedByEvent.h"
-#include "SLGraspEvent.h"
-#include "SLSlidingEvent.h"
-#include "SLPushedEvent.h"
-#include "SLPickUpEvent.h"
 #include "SLReachEvent.h"
+#include "SLGraspEvent.h"
+
+/* Pick and place */
+#include "SLSlideEvent.h"
+#include "SLPickUpEvent.h"
 #include "SLTransportEvent.h"
+#include "SLPutDownEvent.h"
+

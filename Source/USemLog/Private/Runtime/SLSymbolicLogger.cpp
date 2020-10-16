@@ -17,13 +17,13 @@
 #include "Events/SLContactEventHandler.h"
 #include "Events/SLManipulatorContactEventHandler.h"
 #include "Events/SLGraspEventHandler.h"
-#include "Events/SLReachEventHandler.h"
+#include "Events/SLReachAndPreGraspEventHandler.h"
 #include "Events/SLPickAndPlaceEventsHandler.h"
 #include "Events/SLContainerEventHandler.h"
 
 #include "Monitors/SLContactMonitorInterface.h"
 #include "Monitors/SLManipulatorMonitor.h"
-#include "Monitors/SLReachMonitor.h"
+#include "Monitors/SLReachAndPreGraspMonitor.h"
 #include "Monitors/SLPickAndPlaceMonitor.h"
 #include "Monitors/SLContainerMonitor.h"
 
@@ -205,46 +205,62 @@ void ASLSymbolicLogger::InitImpl()
 	ExperimentDoc = CreateEventsDocTemplate(ESLOwlExperimentTemplate::Default, LocationParameters.EpisodeId);
 
 	// Setup monitors
-	if (!LoggerParameters.bSelectedEventsOnly)
+	if (LoggerParameters.EventsSelection.bSelectAll)
 	{
 		InitContactMonitors();
-		InitManipulatorContactMonitors();
-		InitManipulatorFixationMonitors();
-		InitManipulatorReachMonitors();
-		InitManipulatorContainerMonitors();
+		InitManipulatorContactAndGraspMonitors();
+		InitReachAndPreGraspMonitors();
 		InitPickAndPlaceMonitors();
-		InitSlicingMonitors();
+		//InitManipulatorGraspFixationMonitors();
+		/*InitManipulatorContainerMonitors();
+		InitSlicingMonitors();*/
 	}
 	else
 	{
-		if (LoggerParameters.bContact)
+		/* Basic contact */
+		if (LoggerParameters.EventsSelection.bContact)
 		{
 			InitContactMonitors();
 		}
-		if (LoggerParameters.bGrasp || LoggerParameters.bContact)
+
+		/* Hand contact and/or grasp*/
+		if (LoggerParameters.EventsSelection.bManipulatorContact || LoggerParameters.EventsSelection.bGrasp)
 		{
-			InitManipulatorContactMonitors();
-			if (LoggerParameters.bGrasp)
+			InitManipulatorContactAndGraspMonitors();
+		}
+
+		/* Reach */
+		if (LoggerParameters.EventsSelection.bReachAndPreGrasp)
+		{
+			if (LoggerParameters.EventsSelection.bGrasp)
 			{
-				InitManipulatorFixationMonitors();
+				InitReachAndPreGraspMonitors();
 			}
-			if (LoggerParameters.bReach)
+			else
 			{
-				InitManipulatorReachMonitors();
-			}
-			if (LoggerParameters.bContainer)
-			{
-				InitManipulatorContainerMonitors();
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Reach monitors only work if grasp events are enabled.."),
+					*FString(__FUNCTION__), __LINE__);
 			}
 		}
-		if (LoggerParameters.bPickAndPlace)
+
+		/* Pick and place */
+		if (LoggerParameters.EventsSelection.bPickAndPlace)
 		{
-			InitPickAndPlaceMonitors();
+			if (LoggerParameters.EventsSelection.bGrasp)
+			{
+				InitPickAndPlaceMonitors();
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Pick-and-Place monitors only work if grasp events are enabled.."),
+					*FString(__FUNCTION__), __LINE__);
+			}
 		}
-		if (LoggerParameters.bSlicing)
-		{
-			InitSlicingMonitors();
-		}
+
+		//if (LoggerParameters.EventsSelection.bSlicing)
+		//{
+		//	InitSlicingMonitors();
+		//}
 	}
 
 	if (LoggerParameters.bPublishToROS)
@@ -282,31 +298,35 @@ void ASLSymbolicLogger::StartImpl()
 		EvHandler->OnSemanticEvent.BindUObject(this, &ASLSymbolicLogger::SemanticEventFinishedCallback);
 	}
 
+	// Start the pick and place Monitors (subscribes for grasp events)
+	for (auto& Monitor : PickAndPlaceMonitors)
+	{
+		Monitor->Start();
+	}
+
+	// Start the reach Monitors
+	for (auto& Monitor : ReachAndPreGraspMonitors)
+	{
+		Monitor->Start();
+	}
+
+	// Start the manipulator contact and grasp monitors (start after subscribers)
+	for (auto& Monitor : ManipulatorContactAndGraspMonitors)
+	{
+		Monitor->Start();
+	}
+
 	// Start the semantic overlap areas
 	for (auto& Monitor : ContactMonitors)
 	{
 		Monitor->Start();
 	}
-	// Start the grasp Monitors
-	for (auto& Monitor : GraspMonitors)
-	{
-		Monitor->Start();
-	}
-	// Start the pick and place Monitors
-	for (auto& Monitor : PickAndPlaceMonitors)
-	{
-		Monitor->Start();
-	}
-	// Start the reach Monitors
-	for (auto& Monitor : ReachMonitors)
-	{
-		Monitor->Start();
-	}
-	// Start the container Monitors
-	for (auto& Monitor : ContainerMonitors)
-	{
-		Monitor->Start();
-	}
+
+	//// Start the container Monitors
+	//for (auto& Monitor : ContainerMonitors)
+	//{
+	//	Monitor->Start();
+	//}
 
 	EpisodeStartTime = GetWorld()->GetTimeSeconds();
 
@@ -347,30 +367,34 @@ void ASLSymbolicLogger::FinishImpl(bool bForced)
 		SLContactMonitor->Finish();
 	}
 	ContactMonitors.Empty();
+
+	// Finish the reach Monitors
+	for (auto& SLReachAndPreGraspMonitor : ReachAndPreGraspMonitors)
+	{
+		SLReachAndPreGraspMonitor->Finish();
+	}
+	ReachAndPreGraspMonitors.Empty();
+
 	// Finish the grasp Monitors
-	for (auto& SLManipulatorMonitor : GraspMonitors)
+	for (auto& SLManipulatorMonitor : ManipulatorContactAndGraspMonitors)
 	{
 		SLManipulatorMonitor->Finish(bForced);
 	}
-	GraspMonitors.Empty();
-	// Finish the reach Monitors
-	for (auto& SLReachMonitor : ReachMonitors)
-	{
-		SLReachMonitor->Finish();
-	}
-	ReachMonitors.Empty();
+	ManipulatorContactAndGraspMonitors.Empty();
+
 	// Finish the pick and place Monitors
 	for (auto& SLPapMonitor : PickAndPlaceMonitors)
 	{
 		SLPapMonitor->Finish(EpisodeEndTime);
 	}
 	PickAndPlaceMonitors.Empty();
-	// Finish the container Monitors
-	for (auto& SLContainerMonitor : ContainerMonitors)
-	{
-		SLContainerMonitor->Finish();
-	}
-	ContainerMonitors.Empty();
+
+	//// Finish the container Monitors
+	//for (auto& SLContainerMonitor : ContainerMonitors)
+	//{
+	//	SLContainerMonitor->Finish();
+	//}
+	//ContainerMonitors.Empty();
 
 	// Create the experiment owl doc	
 	if (ExperimentDoc.IsValid())
@@ -466,6 +490,7 @@ void ASLSymbolicLogger::WriteToFile()
 		Params.TaskId = LocationParameters.TaskId;
 		Params.EpisodeId = LocationParameters.EpisodeId;
 		Params.bOverwrite = LocationParameters.bOverwrite;
+		Params.EventsSelection = LoggerParameters.TimelineEventsSelection;
 		FSLGoogleCharts::WriteTimelines(FinishedEvents, DirPath, LocationParameters.EpisodeId, Params);
 	}
 
@@ -564,7 +589,7 @@ void ASLSymbolicLogger::InitContactMonitors()
 		{
 			if (IsValidAndLoaded(Itr->GetOwner()))
 			{
-				ContactMonitor->Init(LoggerParameters.bSupportedBy);
+				ContactMonitor->Init(LoggerParameters.EventsSelection.bSupportedBy);
 				ContactMonitors.Emplace(ContactMonitor);
 
 				// Create a contact event handler 
@@ -585,36 +610,39 @@ void ASLSymbolicLogger::InitContactMonitors()
 }
 
 // Iterate and init the manipulator contact monitors in the world
-void ASLSymbolicLogger::InitManipulatorContactMonitors()
+void ASLSymbolicLogger::InitManipulatorContactAndGraspMonitors()
 {
 	// Init all grasp Monitors
 	for (TObjectIterator<USLManipulatorMonitor> Itr; Itr; ++Itr)
 	{
 		if (IsValidAndLoaded(Itr->GetOwner()))
 		{
-			if (Itr->Init(LoggerParameters.bGrasp, LoggerParameters.bContact))
+			if (Itr->Init(LoggerParameters.EventsSelection.bGrasp, LoggerParameters.EventsSelection.bManipulatorContact))
 			{
-				GraspMonitors.Emplace(*Itr);
-				TSharedPtr<FSLGraspEventHandler> GEHandler = MakeShareable(new FSLGraspEventHandler());
-				GEHandler->Init(*Itr);
-				if (GEHandler->IsInit())
+				ManipulatorContactAndGraspMonitors.Emplace(*Itr);
+
+				if (LoggerParameters.EventsSelection.bGrasp)
 				{
-					EventHandlers.Add(GEHandler);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-						*FString(__func__), __LINE__, *Itr->GetName());
+					TSharedPtr<FSLGraspEventHandler> EvHandler = MakeShareable(new FSLGraspEventHandler());
+					EvHandler->Init(*Itr);
+					if (EvHandler->IsInit())
+					{
+						EventHandlers.Add(EvHandler);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+							*FString(__func__), __LINE__, *Itr->GetName());
+					}
 				}
 
-				// The grasp Monitor can also publish contact events
-				if (LoggerParameters.bContact)
+				if (LoggerParameters.EventsSelection.bManipulatorContact)
 				{
-					TSharedPtr<FSLManipulatorContactEventHandler> MCEHandler = MakeShareable(new FSLManipulatorContactEventHandler());
-					MCEHandler->Init(*Itr);
-					if (MCEHandler->IsInit())
+					TSharedPtr<FSLManipulatorContactEventHandler> EvHandler = MakeShareable(new FSLManipulatorContactEventHandler());
+					EvHandler->Init(*Itr);
+					if (EvHandler->IsInit())
 					{
-						EventHandlers.Add(MCEHandler);
+						EventHandlers.Add(EvHandler);
 					}
 					else
 					{
@@ -628,7 +656,7 @@ void ASLSymbolicLogger::InitManipulatorContactMonitors()
 }
 
 // Iterate and init the manipulator fixation monitors in the world
-void ASLSymbolicLogger::InitManipulatorFixationMonitors()
+void ASLSymbolicLogger::InitManipulatorGraspFixationMonitors()
 {
 #if SL_WITH_MC_GRASP
 	// Init fixation grasp Monitors
@@ -637,13 +665,11 @@ void ASLSymbolicLogger::InitManipulatorFixationMonitors()
 		if (IsValidAndLoaded(Itr->GetOwner()))
 		{
 			// Create a grasp event handler 
-			TSharedPtr<FSLFixationGraspEventHandler> FGEHandler = MakeShareable(new FSLFixationGraspEventHandler());
-			FGEHandler->Init(*Itr);
-			if (FGEHandler->IsInit())
+			TSharedPtr<FSLFixationGraspEventHandler> EvHandler = MakeShareable(new FSLFixationGraspEventHandler());
+			EvHandler->Init(*Itr);
+			if (EvHandler->IsInit())
 			{
-				EventHandlers.Add(FGEHandler);
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d FIXATION-GRASP INIT %s "),
-					*FString(__FUNCTION__), __LINE__, *Itr->GetFullName());
+				EventHandlers.Add(EvHandler);
 			}
 			else
 			{
@@ -656,20 +682,20 @@ void ASLSymbolicLogger::InitManipulatorFixationMonitors()
 }
 
 // Iterate and init the manipulator reach monitors
-void ASLSymbolicLogger::InitManipulatorReachMonitors()
+void ASLSymbolicLogger::InitReachAndPreGraspMonitors()
 {
-	for (TObjectIterator<USLReachMonitor> Itr; Itr; ++Itr)
+	for (TObjectIterator<USLReachAndPreGraspMonitor> Itr; Itr; ++Itr)
 	{
 		if (IsValidAndLoaded(Itr->GetOwner()))
 		{
 			if (Itr->Init())
 			{
-				ReachMonitors.Emplace(*Itr);
-				TSharedPtr<FSLReachEventHandler> REHandler = MakeShareable(new FSLReachEventHandler());
-				REHandler->Init(*Itr);
-				if (REHandler->IsInit())
+				ReachAndPreGraspMonitors.Emplace(*Itr);
+				TSharedPtr<FSLReachAndPreGraspEventHandler> EvHandler = MakeShareable(new FSLReachAndPreGraspEventHandler());
+				EvHandler->Init(*Itr);
+				if (EvHandler->IsInit())
 				{
-					EventHandlers.Add(REHandler);
+					EventHandlers.Add(EvHandler);
 				}
 				else
 				{
@@ -685,28 +711,28 @@ void ASLSymbolicLogger::InitManipulatorReachMonitors()
 // Iterate and init the manipulator container monitors
 void ASLSymbolicLogger::InitManipulatorContainerMonitors()
 {
-	for (TObjectIterator<USLContainerMonitor> Itr; Itr; ++Itr)
-	{
-		if (IsValidAndLoaded(Itr->GetOwner()))
-		{
-			if (Itr->Init())
-			{
-				ContainerMonitors.Emplace(*Itr);
-				TSharedPtr<FSLContainerEventHandler> Handler = MakeShareable(new FSLContainerEventHandler());
-				Handler->Init(*Itr);
-				if (Handler->IsInit())
-				{
-					EventHandlers.Add(Handler);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-						*FString(__func__), __LINE__, *Itr->GetName());
-				}
-			}
+	//for (TObjectIterator<USLContainerMonitor> Itr; Itr; ++Itr)
+	//{
+	//	if (IsValidAndLoaded(Itr->GetOwner()))
+	//	{
+	//		if (Itr->Init())
+	//		{
+	//			ContainerMonitors.Emplace(*Itr);
+	//			TSharedPtr<FSLContainerEventHandler> Handler = MakeShareable(new FSLContainerEventHandler());
+	//			Handler->Init(*Itr);
+	//			if (Handler->IsInit())
+	//			{
+	//				EventHandlers.Add(Handler);
+	//			}
+	//			else
+	//			{
+	//				UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+	//					*FString(__func__), __LINE__, *Itr->GetName());
+	//			}
+	//		}
 
-		}
-	}
+	//	}
+	//}
 }
 
 // Iterate and init the pick and place monitors

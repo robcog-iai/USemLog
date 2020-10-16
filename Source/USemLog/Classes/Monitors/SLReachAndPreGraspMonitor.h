@@ -5,7 +5,7 @@
 
 #include "USemLog.h"
 #include "Components/SphereComponent.h"
-#include "SLReachMonitor.generated.h"
+#include "SLReachAndPreGraspMonitor.generated.h"
 
 // Forward declarations
 class AStaticMeshActor;
@@ -45,22 +45,22 @@ enum ESLTimeAndDist
 using FSLTimeAndDist = TTuple<float, float>; // <Time, Distance>
 
 /** Notify when a reaching event happened*/
-DECLARE_MULTICAST_DELEGATE_FiveParams(FSLPreGraspAndReachEventSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
+DECLARE_MULTICAST_DELEGATE_FiveParams(FSLReachAndPreGraspEventSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
 
 /**
  * Checks for reaching actions
  */
-UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Reach Monitor")
-class USEMLOG_API USLReachMonitor : public USphereComponent
+UCLASS(ClassGroup = SL, meta = (BlueprintSpawnableComponent), hidecategories = (HLOD, Mobile, Cooking, Navigation, Physics), DisplayName = "SL Reach And PreGrasp Monitor")
+class USEMLOG_API USLReachAndPreGraspMonitor : public USphereComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Set default values
-	USLReachMonitor();
+	USLReachAndPreGraspMonitor();
 
 	// Dtor
-	~USLReachMonitor();
+	~USLReachAndPreGraspMonitor();
 
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
 	bool Init();
@@ -144,20 +144,20 @@ private:
 
 public:
 	// Event called when the reaching motion is finished
-	FSLPreGraspAndReachEventSignature OnPreGraspAndReachEvent;
+	FSLReachAndPreGraspEventSignature OnReachAndPreGraspEvent;
 	
 private:
 	// True if initialized
-	bool bIsInit;
+	uint8 bIsInit : 1;
 
 	// True if started
-	bool bIsStarted;
+	uint8 bIsStarted : 1;
 
 	// True if finished
-	bool bIsFinished;
+	uint8 bIsFinished : 1;
 
 	// Shows if the begin / end overlap callbacks are bound (avoid adding the same callback twice--crash)
-	bool bCallbacksAreBound;
+	uint8 bCallbacksAreBound : 1;
 
 	// Semantic data component of the owner
 	USLIndividualComponent* IndividualComponent;

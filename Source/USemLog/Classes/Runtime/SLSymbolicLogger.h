@@ -7,7 +7,6 @@
 #include "GameFramework/Info.h"
 #include "Runtime/SLLoggerStructs.h"
 #include "Events/ISLEventHandler.h"
-#include "Events/ISLEventHandler.h"
 #include "ROSProlog/SLPrologClient.h"
 #include "Owl/SLOwlExperiment.h"
 #include "SLSymbolicLogger.generated.h"
@@ -96,13 +95,13 @@ private:
 	void InitContactMonitors();
 
 	// Iterate and init the manipulator contact monitors
-	void InitManipulatorContactMonitors();
+	void InitManipulatorContactAndGraspMonitors();
 
 	// Iterate and init the manipulator fixation monitors
-	void InitManipulatorFixationMonitors();
+	void InitManipulatorGraspFixationMonitors();
 
 	// Iterate and init the manipulator reach monitors
-	void InitManipulatorReachMonitors();
+	void InitReachAndPreGraspMonitors();
 
 	// Iterate and init the manipulator container monitors
 	void InitManipulatorContainerMonitors();
@@ -164,16 +163,16 @@ private:
 	TArray<class ISLContactMonitorInterface*> ContactMonitors;
 
 	// Cache of the grasp Monitors
-	TArray<class USLManipulatorMonitor*> GraspMonitors;
+	TArray<class USLReachAndPreGraspMonitor*> ReachAndPreGraspMonitors;
+
+	// Cache of the grasp Monitors
+	TArray<class USLManipulatorMonitor*> ManipulatorContactAndGraspMonitors;
 
 	// Cache of the pick and place Monitors
 	TArray<class USLPickAndPlaceMonitor*> PickAndPlaceMonitors;
 
-	// Cache of the grasp Monitors
-	TArray<class USLReachMonitor*> ReachMonitors;
-
-	// Cache of the container manipulation Monitors
-	TArray<class USLContainerMonitor*> ContainerMonitors;
+	//// Cache of the container manipulation Monitors
+	//TArray<class USLContainerMonitor*> ContainerMonitors;
 
 	// Episode start time
 	float EpisodeStartTime;

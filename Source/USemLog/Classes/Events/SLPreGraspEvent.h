@@ -9,20 +9,20 @@
 class USLBaseIndividual;
 
 /**
-* PreGraspPositioning event class
+* PreGrasp event class
 */
-class FSLPreGraspPositioningEvent : public ISLEvent
+class FSLPreGraspEvent : public ISLEvent
 {
 public:
 	// Default constructor
-	FSLPreGraspPositioningEvent() = default;
+	FSLPreGraspEvent() = default;
 
 	// Constructor with initialization
-	FSLPreGraspPositioningEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
+	FSLPreGraspEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 		USLBaseIndividual* InManipulator, USLBaseIndividual* InIndividual);
 
 	// Constructor initialization without end time
-	FSLPreGraspPositioningEvent(const FString& InId, const float InStart, const uint64 InPairId,
+	FSLPreGraspEvent(const FString& InId, const float InStart, const uint64 InPairId,
 		USLBaseIndividual* InManipulator, USLBaseIndividual* InIndividual);
 
 	// Pair id of the event (combination of two unique runtime ids)
@@ -52,5 +52,8 @@ public:
 
 	// Get the data as string
 	virtual FString ToString() const override;
+
+	// Get the event type name
+	virtual FString TypeName() const override { return FString(TEXT("PreGrasp")); };
 	/* End IEvent interface */
 };

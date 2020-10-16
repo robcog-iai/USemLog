@@ -6,14 +6,14 @@
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Animation/SkeletalMeshActor.h"
-#include "GameFramework/PlayerController.h"
 
 // Sets default values for this component's properties
 USLPickAndPlaceMonitor::USLPickAndPlaceMonitor()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
 	
 	bIgnore = false;
 
@@ -41,6 +41,20 @@ USLPickAndPlaceMonitor::~USLPickAndPlaceMonitor()
 		Finish(true);
 	}
 }
+
+// Called when the game starts
+void USLPickAndPlaceMonitor::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+// Called every frame, used for timeline visualizations, activated and deactivated on request
+void USLPickAndPlaceMonitor::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	(this->*UpdateFunctionPtr)();
+}
+
 
 // Init listener
 bool USLPickAndPlaceMonitor::Init()
@@ -89,16 +103,17 @@ void USLPickAndPlaceMonitor::Start()
 		// Subscribe for grasp notifications from sibling component
 		if(SubscribeForGraspEvents())
 		{
-			// Start update callback (will directly be paused until a grasp is active)
-			GetWorld()->GetTimerManager().SetTimer(UpdateTimerHandle, this, &USLPickAndPlaceMonitor::Update, UpdateRate, true);
-			GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
-			
+			// Set tick update rate
+			if(UpdateRate > 0.f)
+			{
+				SetComponentTickInterval(UpdateRate);
+			}
+
 			// Mark as started
 			bIsStarted = true;
 		}
 	}
 }
-
 
 // Stop publishing grasp events
 void USLPickAndPlaceMonitor::Finish(float EndTime, bool bForced)
@@ -179,8 +194,8 @@ void USLPickAndPlaceMonitor::OnSLGraspBegin(USLBaseIndividual* Self, AActor* Oth
 		}
 		else
 		{
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s should be in a SupportedBy state.. aborting interaction.."),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f]  %s's grasped object (%s) should be in a SupportedBy state.. aborting interaction.."),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *Other->GetName());
 
 			CurrGraspedObj = nullptr;
 			GraspedObjectContactMonitor = nullptr;
@@ -188,17 +203,17 @@ void USLPickAndPlaceMonitor::OnSLGraspBegin(USLBaseIndividual* Self, AActor* Oth
 			UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s's PickAndPlace CheckState=NONE;"),
 				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+
 			return;
 		}
 
-		
-		if(GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
+		if (!IsComponentTickEnabled())
 		{
-			GetWorld()->GetTimerManager().UnPauseTimer(UpdateTimerHandle);
+			SetComponentTickEnabled(true);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, timer should have been paused here.."),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, tick should have been disabled here.."),
 				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 		}
 	}
@@ -232,14 +247,13 @@ void USLPickAndPlaceMonitor::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s removed as grasped object.."),
 		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
 
-
-		if(!GetWorld()->GetTimerManager().IsTimerPaused(UpdateTimerHandle))
+		if (IsComponentTickEnabled())
 		{
-			GetWorld()->GetTimerManager().PauseTimer(UpdateTimerHandle);
+			SetComponentTickEnabled(false);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, timer should have been running here.."),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, tick should be running here.."),
 				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
 		}
 	}
@@ -517,4 +531,5 @@ void USLPickAndPlaceMonitor::Update_TransportOrPutDown()
 		}
 	}
 }
+
 

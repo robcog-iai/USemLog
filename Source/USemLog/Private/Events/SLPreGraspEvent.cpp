@@ -1,19 +1,19 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "Events/SLPreGraspPositioningEvent.h"
+#include "Events/SLPreGraspEvent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Owl/SLOwlExperimentStatics.h"
 
 // Constructor with initialization
-FSLPreGraspPositioningEvent::FSLPreGraspPositioningEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
+FSLPreGraspEvent::FSLPreGraspEvent(const FString& InId, const float InStart, const float InEnd, const uint64 InPairId,
 	USLBaseIndividual* InManipulator, USLBaseIndividual* InIndividual) :
 	ISLEvent(InId, InStart, InEnd), PairId(InPairId), Manipulator(InManipulator), Individual(InIndividual)
 {
 }
 
 // Constructor initialization without end time
-FSLPreGraspPositioningEvent::FSLPreGraspPositioningEvent(const FString& InId, const float InStart, const uint64 InPairId,
+FSLPreGraspEvent::FSLPreGraspEvent(const FString& InId, const float InStart, const uint64 InPairId,
 	USLBaseIndividual* InIndividual, USLBaseIndividual* InManipulator) :
 	ISLEvent(InId, InStart), PairId(InPairId), Manipulator(InManipulator), Individual(InIndividual)
 {
@@ -21,11 +21,11 @@ FSLPreGraspPositioningEvent::FSLPreGraspPositioningEvent(const FString& InId, co
 
 /* Begin ISLEvent interface */
 // Get an owl representation of the event
-FSLOwlNode FSLPreGraspPositioningEvent::ToOwlNode() const
+FSLOwlNode FSLPreGraspEvent::ToOwlNode() const
 {
 	// Create the Reach event node
 	FSLOwlNode EventIndividual = FSLOwlExperimentStatics::CreateEventIndividual(
-		"log", Id, "PreGraspPositioning");
+		"log", Id, "PreGrasp");
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateStartTimeProperty("log", StartTime));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", EndTime));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator->GetIdValue()));
@@ -34,7 +34,7 @@ FSLOwlNode FSLPreGraspPositioningEvent::ToOwlNode() const
 }
 
 // Add the owl representation of the event to the owl document
-void FSLPreGraspPositioningEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
+void FSLPreGraspEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 {
 	// Add timepoint individuals
 	// We know that the document is of type FOwlExperiment,
@@ -53,20 +53,20 @@ void FSLPreGraspPositioningEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 }
 
 // Get event context data as string (ToString equivalent)
-FString FSLPreGraspPositioningEvent::Context() const
+FString FSLPreGraspEvent::Context() const
 {
 	return FString::Printf(TEXT("PreGrasp - %lld"), PairId);
 }
 
 // Get the tooltip data
-FString FSLPreGraspPositioningEvent::Tooltip() const
+FString FSLPreGraspEvent::Tooltip() const
 {
 	return FString::Printf(TEXT("\'O1\',\'%s\',\'Id\',\'%s\',\'O2\',\'%s\',\'Id\',\'%s\',\'Id\',\'%s\'"),
 		*Manipulator->GetClassValue(), *Manipulator->GetIdValue(), *Individual->GetClassValue(), *Individual->GetIdValue(), *Id);
 }
 
 // Get the data as string
-FString FSLPreGraspPositioningEvent::ToString() const
+FString FSLPreGraspEvent::ToString() const
 {
 	return FString::Printf(TEXT("Individual:[%s] Manipulator:[%s] PairId:%lld"),
 		*Manipulator->GetInfo(), *Individual->GetInfo(), PairId);

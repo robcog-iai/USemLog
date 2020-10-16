@@ -56,5 +56,8 @@ public:
 
 	// Get data as string
 	virtual FString ToString() const override;
+
+	// Get the event type name
+	virtual FString TypeName() const override { return FString(TEXT("Grasp")); };
 	/* End IEvent interface */
 };

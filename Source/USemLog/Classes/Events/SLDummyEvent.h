@@ -24,5 +24,8 @@ public:
 
 	// Get event context data as string (ToString equivalent)
 	virtual FString Context() const override;
+
+	// Get the event type name
+	virtual FString TypeName() const override { return FString(TEXT("Dummy")); };
 	/* End IEvent interface */
 };

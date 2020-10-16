@@ -14,6 +14,9 @@ class AActor;
 class USLBaseIndividual;
 class USLIndividualComponent;
 class AStaticMeshActor;
+class UPhysicsConstraintComponent; // AdHoc grasp helper
+class UStaticMeshComponent; // AdHoc grasp helper
+class USkeletalMeshComponent; // AdHoc grasp helper
 
 /**
 * Hand type
@@ -68,7 +71,7 @@ DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignature, USLBase
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*Time*/);
 
 /**
- * Checks for manipulator related events (contact, grasp, lift, transport, slide)
+ * Checks for manipulator related events (contact, grasp)
  */
 UCLASS( ClassGroup=(SL), meta=(BlueprintSpawnableComponent), DisplayName = "SL Manipulator Monitor")
 class USEMLOG_API USLManipulatorMonitor : public UActorComponent
@@ -119,6 +122,9 @@ protected:
 #endif // SL_WITH_MC_GRASP
 
 private:
+	// Bind user inputs
+	void SetupInputBindings();
+
 	// Pause/continue the grasp detection
 	void PauseGraspDetection(bool bInPause);
 
@@ -174,6 +180,21 @@ private:
 	// if so remove it from the array, and cancel publishing the begin event
 	bool SkipRecentContactEndEventBroadcast(USLBaseIndividual* InOther, float StartTime);
 	/* End contact related */
+
+	/* Begin Ad Hoc grasp help */
+
+	// Ad hoc manual override
+	void AdHocManualOverride();
+
+	// Setup the grasp helper constraint
+	bool InitAdHocGraspHelper();
+
+	// Start grasp help
+	void StartAdHocGraspHelper();
+
+	// Stop grasp help
+	void StopAdHocGraspHelper();
+	/* End Ad Hoc grasp help */
 	
 public:
 	// Event called when grasp begins/ends
@@ -187,29 +208,32 @@ public:
 private:
 	// Skip initialization if true
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bIgnore;
+	uint8 bIgnore : 1;
 
 	// True if initialized
-	bool bIsInit;
+	uint8 bIsInit : 1;
 
 	// True if started
-	bool bIsStarted;
+	uint8 bIsStarted : 1;
 
 	// True if finished
-	bool bIsFinished;
+	uint8 bIsFinished : 1;
 
 	// True grasp detection is paused
-	bool bIsPaused;
+	uint8 bIsPaused : 1;
 
 	// New information added 
-	bool bGraspIsDirty;
+	uint8 bGraspIsDirty : 1;
 
 	// Detect grasp contacts
-	bool bDetectGrasps;
+	uint8 bDetectGrasps : 1;
 
 	// Detect contacts
-	bool bDetectContacts;
-	
+	uint8 bDetectContacts : 1;
+
+	// Ad Hoc grasp helper is active or not
+	uint8 bAdHocGraspHelpIsActive : 1;
+		
 #if WITH_EDITORONLY_DATA
 	// Hand type to load pre-defined parameters
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -231,6 +255,78 @@ private:
 	// Explicit reference to the children (fingers) if the owner is not a skeletal actor
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bIsNotSkeletal"))
 	TArray<AStaticMeshActor*> Fingers;
+
+	// Concatenate grasp events with jitters
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float MaxGraspJitterInterval = 0.6f;
+
+	// Concatenate contact events with jitters
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float MaxContactJitterInterval = 0.4f;
+
+	/* Begin Ad Hoc Grasp Helper */
+	// Help out with the grasping
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper")
+	bool bUseAdHocGraspHelper;
+
+	// Use manual override
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper")
+	bool bUseAdHocManualOverrideAction;
+
+	// Input action name (uses manual override)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	FName AdHocManualOverrideInputActionName;
+
+	// Attach constraint to the given bone
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	FName AdHocOwnerHandBoneName;
+
+	// Disable gravity on grasp
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	bool bDisableGravityOfGraspedObject;
+
+	// Decrease mass of object
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	bool bScaleMassOfGraspedObject;
+
+	// Decrease mass of grasped object
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	float GraspedObjectMassScaleValue;
+
+	// Constraint movement limit (all axis)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	float ConstraintLimit;
+
+	// AdHoc grasp helper constraint properties
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	float ConstraintStiffness;
+
+	// AdHoc grasp helper constraint properties
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	float ConstraintDamping;
+
+	// AdHoc grasp helper constraint properties
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	float ConstraintContactDistance;
+
+	// AdHoc grasp helper constraint properties
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseAdHocGraspHelper"))
+	bool bConstraintParentDominates;
+
+	// AdHoc grasp helper constraint component
+	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger|Grasp Helper"*/)
+	UPhysicsConstraintComponent* AdHocGraspHelperConstraint;
+
+	// AdHoc grasped object
+	UStaticMeshComponent* AdHocGraspedObjectSMC;
+
+	// Owner skeletal mesh component
+	USkeletalMeshComponent* AdHocOwnerSkelMC;
+
+	// Manual override flags
+	bool bCanExecuteManualOverride;
+	/* End Ad Hoc Gras Helper */
+
 
 	// Semantic data component of the owner
 	USLIndividualComponent* IndividualComponent;
@@ -257,7 +353,6 @@ private:
 	// Array of recently ended events
 	TArray<FSLGraspEndEvent> RecentlyEndedGraspEvents;
 
-
 	/* Contact related */
 	// Objects in contact with group A
 	TSet<AActor*> SetA;
@@ -273,9 +368,8 @@ private:
 
 	// Array of recently ended events
 	TArray<FSLContactEndEvent> RecentlyEndedContactEvents;
-	
 
 	/* Constants */
-	static constexpr float MaxGraspEventTimeGap = 0.55f;
-	static constexpr float MaxContactEventTimeGap = 0.35f;
+	//static constexpr float MaxGraspEventTimeGap = 0.55f;
+	//static constexpr float MaxContactEventTimeGap = 0.35f;
 };
