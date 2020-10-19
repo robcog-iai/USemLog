@@ -23,11 +23,11 @@ struct FSLPreGraspEndEvent
 	FSLPreGraspEndEvent() = default;
 
 	// Init ctor
-	FSLPreGraspEndEvent(AStaticMeshActor* InOther, float InTime) :
+	FSLPreGraspEndEvent(USLBaseIndividual* InOther, float InTime) :
 		Other(InOther), Time(InTime) {};
 
 	// Other actor
-	AStaticMeshActor* Other;
+	USLBaseIndividual* Other;
 
 	// End time of the event 
 	float Time;
@@ -45,7 +45,7 @@ enum ESLTimeAndDist
 using FSLTimeAndDist = TTuple<float, float>; // <Time, Distance>
 
 /** Notify when a reaching event happened*/
-DECLARE_MULTICAST_DELEGATE_FiveParams(FSLReachAndPreGraspEventSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
+DECLARE_MULTICAST_DELEGATE_FiveParams(FSLReachAndPreGraspEventSignature, USLBaseIndividual* /*Self*/, USLBaseIndividual* /*Other*/, float /*ReachStartTime*/, float /*ReachEndTime*/, float /*PreGraspEndTime*/);
 
 /**
  * Checks for reaching actions
@@ -62,6 +62,11 @@ public:
 	// Dtor
 	~USLReachAndPreGraspMonitor();
 
+protected:
+	// Called every frame, used for timeline visualizations, activated and deactivated on request
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+public:
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
 	bool Init();
 
@@ -100,13 +105,13 @@ private:
 	bool SubscribeForManipulatorEvents();
 	
 	// Update callback, checks distance to hand, if it increases it resets the start time
-	void ReachUpdate();
+	void UpdateCandidatesData();
 
 	// Publish currently overlapping components
 	void TriggerInitialOverlaps();
 
-	// Check if the object is can be a candidate for reaching
-	bool CanBeACandidate(AStaticMeshActor* InObject) const;
+	// Check of the overlapping actor can be a reach candidate
+	bool CanBeACandidate(AActor* InOther) const;	
 	
 	// Checks for candidates in the overlap area
 	UFUNCTION()
@@ -125,10 +130,10 @@ private:
 		int32 OtherBodyIndex);
 	
 	// End reach and positioning events, pause timer
-	void OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActor, float Time, const FString& GraspType);
+	void OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& GraspType);
 
 	// Reset looking for the events
-	void OnSLGraspEnd(USLBaseIndividual* Self, AActor* OtherActor, float Time);
+	void OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
 	
 	// Used for the reaching and hand positioning detection
 	void OnSLManipulatorContactBegin(const FSLContactResult& ContactResult);
@@ -140,13 +145,17 @@ private:
 	void DelayedManipulatorContactEndEventCallback();
 
 	// Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-	bool SkipRecentManipulatorContactEndEventTime(AStaticMeshActor* Other, float StartTime);
+	bool SkipRecentManipulatorContactEndEventTime(USLBaseIndividual* Other, float StartTime);
 
 public:
 	// Event called when the reaching motion is finished
 	FSLReachAndPreGraspEventSignature OnReachAndPreGraspEvent;
 	
 private:
+	// Skip initialization if true
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bIgnore : 1;
+
 	// True if initialized
 	uint8 bIsInit : 1;
 
@@ -156,26 +165,25 @@ private:
 	// True if finished
 	uint8 bIsFinished : 1;
 
-	// Shows if the begin / end overlap callbacks are bound (avoid adding the same callback twice--crash)
-	uint8 bCallbacksAreBound : 1;
+	// Candidate check update rate
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float UpdateRate;
+
 
 	// Semantic data component of the owner
-	USLIndividualComponent* IndividualComponent;
+	USLIndividualComponent* OwnerIndividualComponent;
 
 	// Semantic individual object
-	USLBaseIndividual* IndividualObject;
+	USLBaseIndividual* OwnerIndividualObject;
 
-	// Timer handle for the update rate
-	FTimerHandle UpdateTimerHandle;
+	// Individual candidates with information about the possible reaching time and distance form reaching actor
+	TMap<USLBaseIndividual*, FSLTimeAndDist> CandidatesData;
 
-	// CandidatesWithTimeAndDistance for reaching action, pointing to their starting time
-	TMap<AStaticMeshActor*, FSLTimeAndDist> CandidatesWithTimeAndDistance;
+	// Individuals and the start timestamp in contact with the manipulator (hand)
+	TMap<USLBaseIndividual*, float> ManipulatorContactData;
 
-	// The objects currently in contact with (before grasping)
-	TMap<AStaticMeshActor*, float> ObjectsInContactWithManipulator;
-	
 	// Pause everything if the hand is currently grasping something
-	AActor* CurrGraspedObj;
+	USLBaseIndividual* CurrGraspedIndividual;
 
 	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
 	FTimerHandle ManipulatorContactDelayTimerHandle;
@@ -185,6 +193,6 @@ private:
 	
 	/* Constants */
 	constexpr static float MinDist = 2.5f;
-	constexpr static float UpdateRate = 0.27f;
+	//constexpr static float UpdateRate = 0.037f;
 	constexpr static float MaxPreGraspEventTimeGap = 1.3f;
 };

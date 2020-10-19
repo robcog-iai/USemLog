@@ -14,6 +14,7 @@ class AActor;
 class USLBaseIndividual;
 class USLIndividualComponent;
 class AStaticMeshActor;
+class USLManipulatorBoneContactMonitor;
 class UPhysicsConstraintComponent; // AdHoc grasp helper
 class UStaticMeshComponent; // AdHoc grasp helper
 class USkeletalMeshComponent; // AdHoc grasp helper
@@ -37,11 +38,11 @@ struct FSLGraspEndEvent
 	FSLGraspEndEvent() = default;
 
 	// Init ctor
-	FSLGraspEndEvent(AActor* InOtherActor, float InTime) :
-		OtherActor(InOtherActor), Time(InTime) {};
+	FSLGraspEndEvent(USLBaseIndividual* InOther, float InTime) :
+		Other(InOther), Time(InTime) {};
 
 	// Overlap component
-	AActor* OtherActor;
+	USLBaseIndividual* Other;
 
 	// End time of the event 
 	float Time;
@@ -67,8 +68,8 @@ struct FSLContactEndEvent
 };
 
 /** Notify when an object is grasped and released*/
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*Time*/, const FString& /*Type*/);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*Time*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignature, USLBaseIndividual* /*Self*/, USLBaseIndividual* /*Other*/, float /*Time*/, const FString& /*Type*/);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, USLBaseIndividual* /*Self*/, USLBaseIndividual* /*Other*/, float /*Time*/);
 
 /**
  * Checks for manipulator related events (contact, grasp)
@@ -133,45 +134,45 @@ private:
 
 	// Process beginning of grasp related contact in group A
 	UFUNCTION()
-	void OnBeginOverlapGroupAGrasp(AActor* OtherActor);
+	void OnBeginOverlapGroupAGrasp(USLBaseIndividual* OtherIndividual);
 
 	// Process beginning of grasp related contact in group B
 	UFUNCTION()
-	void OnBeginOverlapGroupBGrasp(AActor* OtherActor);
+	void OnBeginOverlapGroupBGrasp(USLBaseIndividual* OtherIndividual);
 	
 	// Process ending of grasp related contact in group A
 	UFUNCTION()
-	void OnEndOverlapGroupAGrasp(AActor* OtherActor);
+	void OnEndOverlapGroupAGrasp(USLBaseIndividual* OtherIndividual);
 
 	// Process ending of grasp related  contact in group B
 	UFUNCTION()
-	void OnEndOverlapGroupBGrasp(AActor* OtherActor);
+	void OnEndOverlapGroupBGrasp(USLBaseIndividual* OtherIndividual);
 	
 	// Grasp update check
 	void CheckGraspState();
 	
 	// A grasp has started
-	void BeginGrasp(AActor* Other);
+	void BeginGrasp(USLBaseIndividual* OtherIndividual);
 	
 	// A grasp has ended
-	void EndGrasp(AActor* Other);
+	void EndGrasp(USLBaseIndividual* OtherIndividual);
 
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedGraspEndEventCallback();
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
-	bool SkipRecentGraspEndEventBroadcast(AActor* OtherActor, float StartTime);
+	bool SkipRecentGraspEndEventBroadcast(USLBaseIndividual* OtherIndividual, float StartTime);
 	/* End grasp related */
 
 	/* Begin contact related */
 	// Process beginning of contact
 	UFUNCTION()
-	void OnBeginOverlapContact(AActor* OtherActor);
+	void OnBeginOverlapContact(USLBaseIndividual* OtherIndividual);
 
 	// Process ending of contact
 	UFUNCTION()
-	void OnEndOverlapContact(AActor* OtherActor);
+	void OnEndOverlapContact(USLBaseIndividual* OtherIndividual);
 
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedContactEndEventCallback();
@@ -318,7 +319,7 @@ private:
 	UPhysicsConstraintComponent* AdHocGraspHelperConstraint;
 
 	// AdHoc grasped object
-	UStaticMeshComponent* AdHocGraspedObjectSMC;
+	UStaticMeshComponent* AdHocGraspedSMC;
 
 	// Owner skeletal mesh component
 	USkeletalMeshComponent* AdHocOwnerSkelMC;
@@ -332,17 +333,17 @@ private:
 	USLIndividualComponent* IndividualComponent;
 
 	// Semantic individual object
-	USLBaseIndividual* IndividualObject;
+	USLBaseIndividual* OwnerIndividualObject;
 	
 	/* Grasp related */
 	// Opposing group A for testing for grasps
-	TArray<class USLManipulatorContactMonitorSphere*> GroupA;
+	TArray<USLManipulatorBoneContactMonitor*> GroupA;
 
 	// Opposing group B for testing for grasps
-	TArray<class USLManipulatorContactMonitorSphere*> GroupB;
+	TArray<USLManipulatorBoneContactMonitor*> GroupB;
 
-	// Objects currently grasped
-	TArray<AActor*> GraspedObjects;
+	// Individuals currently grasped
+	TSet<USLBaseIndividual*> GraspedIndividuals;
 
 	// Active grasp type
 	FString ActiveGraspType;
@@ -354,14 +355,14 @@ private:
 	TArray<FSLGraspEndEvent> RecentlyEndedGraspEvents;
 
 	/* Contact related */
-	// Objects in contact with group A
-	TSet<AActor*> SetA;
+	// Individuals in contact with group A
+	TSet<USLBaseIndividual*> SetA;
 
-	// Objects in contact with group B
-	TSet<AActor*> SetB;
+	// Individuals in contact with group B
+	TSet<USLBaseIndividual*> SetB;
 
 	// Objects currently in contact and the number of shapes in contact with. Used of semantic contact detection
-	TMap<AActor*, int32> ObjectsInContact;
+	TMap<USLBaseIndividual*, int32> IndividualsInContact;
 
 	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
 	FTimerHandle ContactDelayTimerHandle;

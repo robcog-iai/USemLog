@@ -87,6 +87,9 @@ void USLContactMonitorSphere::Init(bool bInLogSupportedByEvents)
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 				return;
 			}
+
+			// Set the individual object
+			IndividualObject = IndividualComponent->GetIndividualObject();
 		}
 		else
 		{
@@ -94,8 +97,6 @@ void USLContactMonitorSphere::Init(bool bInLogSupportedByEvents)
 			return;
 		}
 
-		// Set the individual object
-		IndividualObject = IndividualComponent->GetIndividualObject();
 
 		// Make sure the mesh (static/skeletal) component is valid
 		if (AStaticMeshActor* CastToSMAct = Cast<AStaticMeshActor>(GetOwner()))

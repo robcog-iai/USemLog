@@ -604,20 +604,20 @@ USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AA
 // Convert individual to the given type
 bool FSLIndividualUtils::ConvertIndividualObject(USLBaseIndividual*& IndividualObject, TSubclassOf<class USLBaseIndividual> ConvertToClass)
 {
-	//if (ConvertToClass && IndividualObject && !IndividualObject->IsPendingKill())
+	//if (ConvertToClass && OwnerIndividualObject && !OwnerIndividualObject->IsPendingKill())
 	//{
-	//	if (IndividualObject->GetClass() != ConvertToClass)
+	//	if (OwnerIndividualObject->GetClass() != ConvertToClass)
 	//	{
 	//		// TODO cache common individual data to copy to the newly created individual
-	//		UObject* Outer = IndividualObject->GetOuter();
-	//		IndividualObject->ConditionalBeginClear();
-	//		IndividualObject = NewObject<USLBaseIndividual>(Outer, ConvertToClass);
+	//		UObject* Outer = OwnerIndividualObject->GetOuter();
+	//		OwnerIndividualObject->ConditionalBeginClear();
+	//		OwnerIndividualObject = NewObject<USLBaseIndividual>(Outer, ConvertToClass);
 	//		return true;
 	//	}
 	//	else
 	//	{
 	//		//UE_LOG(LogTemp, Error, TEXT("%s::%d Same class type (%s-%s), no conversion is required.."),
-	//		//	*FString(__FUNCTION__), __LINE__, *IndividualObject->GetClass()->GetName(), *ConvertToClass->GetName());
+	//		//	*FString(__FUNCTION__), __LINE__, *OwnerIndividualObject->GetClass()->GetName(), *ConvertToClass->GetName());
 	//	}
 	//}
 	return false;

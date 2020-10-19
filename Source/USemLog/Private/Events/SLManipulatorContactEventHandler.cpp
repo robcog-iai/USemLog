@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Events/SLManipulatorContactEventHandler.h"
-#include "Monitors/SLManipulatorContactMonitorSphere.h"
+#include "Monitors/SLManipulatorBoneContactMonitor.h"
 #include "Monitors/SLManipulatorMonitor.h"
 #include "Events/SLContactEvent.h"
 #include "Individuals/Type/SLBaseIndividual.h"

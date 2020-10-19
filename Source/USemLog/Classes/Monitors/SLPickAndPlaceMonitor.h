@@ -44,7 +44,7 @@ public:
 };
 
 /** Notify the beginning and the end of the pick and place related events */
-DECLARE_MULTICAST_DELEGATE_FourParams(FSLPaPSubEventSignature, USLBaseIndividual* /*Self*/, AActor* /*Other*/, float /*StartTime*/, float /*EndTime*/);
+DECLARE_MULTICAST_DELEGATE_FourParams(FSLPaPSubEventSignature, USLBaseIndividual* /*Self*/, USLBaseIndividual* /*Other*/, float /*StartTime*/, float /*EndTime*/);
 
 /**
  * Checks for manipulator related events (contact, grasp, lift, transport, slide)
@@ -95,10 +95,10 @@ private:
 	ISLContactMonitorInterface* GetContactMonitorComponent(AActor* Actor) const;
 
 	// Called on grasp begin
-	void OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType);
+	void OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& GraspType);
 
 	// Called on grasp end
-	void OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time);
+	void OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
 
 	// Update callback
 	void Update();
@@ -137,13 +137,13 @@ private:
 	uint8 bIsFinished : 1;
 
 	// Semantic data component of the owner
-	USLIndividualComponent* IndividualComponent;
+	USLIndividualComponent* OwnerIndividualComponent;
 
 	// Semantic individual object
-	USLBaseIndividual* IndividualObject;
+	USLBaseIndividual* OwnerIndividualObject;
 
 	// Object currently grasped
-	AActor* CurrGraspedObj;
+	USLBaseIndividual* CurrGraspedIndividual;
 
 	// Previous event check
 	ESLPaPStateCheck EventCheckState;
@@ -176,7 +176,7 @@ private:
 	TArray<TPair<float, FVector>> RecentMovementBuffer;
 
 	/* Constants */
-	constexpr static float UpdateRate = 0.05f;
+	constexpr static float UpdateRate = 0.035f;
 
 	// Slide
 	constexpr static float MinSlideDistXY = 9.f;

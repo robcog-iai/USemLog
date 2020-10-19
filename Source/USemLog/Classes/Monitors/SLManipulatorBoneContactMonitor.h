@@ -5,9 +5,12 @@
 
 #include "USemLog.h"
 #include "Components/SphereComponent.h"
-#include "Engine/StaticMeshActor.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "SLManipulatorContactMonitorSphere.generated.h"
+#include "SLManipulatorBoneContactMonitor.generated.h"
+
+// Forward declarations
+class USLBaseIndividual;
+class AStaticMeshActor;
+class USkeletalMeshComponent;
 
 /**
 * Hand type
@@ -28,36 +31,36 @@ struct FSLManipulatorContactMonitorEndEvent
 	FSLManipulatorContactMonitorEndEvent() = default;
 
 	// Init ctor
-	FSLManipulatorContactMonitorEndEvent(AActor* InOtherActor, float InTimestamp) :
-		OtherActor(InOtherActor), Timestamp(InTimestamp) {};
+	FSLManipulatorContactMonitorEndEvent(USLBaseIndividual* InOther, float InTimestamp) :
+		Other(InOther), Timestamp(InTimestamp) {};
 
 	// Overlap component
-	AActor* OtherActor;
+	USLBaseIndividual* Other;
 
 	// End time of the event 
 	float Timestamp;
 };
 
 /** Delegate to notify that a contact begins between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorContactMonitorBeginSignature, AActor* /*OtherActor*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorContactMonitorBeginSignature, USLBaseIndividual* /*Other*/);
 
 /** Delegate to notify that a contact ended between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorContactMonitorEndSignature, AActor* /*OtherActor*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorContactMonitorEndSignature, USLBaseIndividual* /*Other*/);
 
 /**
  * Semantic overlap generator for grasp detection
  */
 UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Contact Monitor Sphere")
-class USEMLOG_API USLManipulatorContactMonitorSphere : public USphereComponent
+class USEMLOG_API USLManipulatorBoneContactMonitor : public USphereComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Ctor
-	USLManipulatorContactMonitorSphere();
+	USLManipulatorBoneContactMonitor();
 
 	// Dtor
-	~USLManipulatorContactMonitorSphere() = default;
+	~USLManipulatorBoneContactMonitor() = default;
 	
 	// Attach to bone 
 	bool Init(bool bGrasp = true, bool bContact = true);
@@ -123,7 +126,7 @@ private:
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
-	bool SkipRecentGraspOverlapEndEventBroadcast(AActor* OtherActor, float StartTime);
+	bool SkipRecentGraspOverlapEndEventBroadcast(USLBaseIndividual* OtherIndividual, float StartTime);
 
 	/* Contact related */
 	// Publish currently contact related overlapping components
@@ -150,7 +153,7 @@ private:
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
-	bool SkipRecentContactOverlapEndEventBroadcast(AActor* OtherActor, float StartTime);
+	bool SkipRecentContactOverlapEndEventBroadcast(USLBaseIndividual* OtherIndividual, float StartTime);
 
 public:
 	// Grasp related overlap begin/end
@@ -163,25 +166,25 @@ public:
 
 private:
 	// True if initialized
-	bool bIsInit;
+	uint8 bIsInit : 1;
 
 	// True if started
-	bool bIsStarted;
+	uint8 bIsStarted : 1;
 
 	// True if grasp overlaps are paused
-	bool bGraspPaused;
+	uint8 bGraspPaused : 1;
 
 	// True if finished
-	bool bIsFinished;
+	uint8 bIsFinished : 1;
 
 	// Detect grasp contacts (separated since the grasp detection can be paused)
-	bool bDetectGrasps;
+	uint8 bDetectGrasps : 1;
 
 	// Detect contacts
-	bool bDetectContacts;
+	uint8 bDetectContacts : 1;
 
 	// Cache valid contacts
-	TSet<AActor*> ActiveContacts;
+	TSet<USLBaseIndividual*> ActiveContacts;
 
 	// The group of which the shape belongs to for the grasping detection
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

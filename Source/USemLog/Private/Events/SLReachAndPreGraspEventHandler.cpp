@@ -4,7 +4,6 @@
 #include "Events/SLReachAndPreGraspEventHandler.h"
 #include "Monitors/SLReachAndPreGraspMonitor.h"
 #include "Individuals/Type/SLBaseIndividual.h"
-#include "Individuals/SLIndividualUtils.h"
 #include "Utils/SLUuid.h"
 
 // Set parent
@@ -58,24 +57,20 @@ void FSLReachAndPreGraspEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Event called when a semantic Reach event begins
-void FSLReachAndPreGraspEventHandler::OnSLReachAndPreGraspEvent(USLBaseIndividual* Self, AActor* OtherActor, float ReachStartTime, float ReachEndTime, float PreGraspEndTime)
+void FSLReachAndPreGraspEventHandler::OnSLReachAndPreGraspEvent(USLBaseIndividual* Self, USLBaseIndividual* Other, float ReachStartTime, float ReachEndTime, float PreGraspEndTime)
 {
-	// Check that the objects are semantically annotated
-	if (USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor))
+	const uint64 PairID =FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID());
+	if(ReachEndTime - ReachStartTime > ReachEventMin)
 	{
-		const uint64 PairID =FSLUuid::PairEncodeCantor(Self->GetUniqueID(), OtherIndividual->GetUniqueID());
-		if(ReachEndTime - ReachStartTime > ReachEventMin)
-		{
-			OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLReachEvent(
-				FSLUuid::NewGuidInBase64Url(), ReachStartTime, ReachEndTime,
-				PairID, Self, OtherIndividual)));
-		}
+		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLReachEvent(
+			FSLUuid::NewGuidInBase64Url(), ReachStartTime, ReachEndTime,
+			PairID, Self, Other)));
+	}
 
-		if(PreGraspEndTime - ReachEndTime > PreGraspEventMin)
-		{
-			OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPreGraspEvent(
-				FSLUuid::NewGuidInBase64Url(), ReachEndTime, PreGraspEndTime,
-				PairID, Self, OtherIndividual)));
-		}
+	if(PreGraspEndTime - ReachEndTime > PreGraspEventMin)
+	{
+		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPreGraspEvent(
+			FSLUuid::NewGuidInBase64Url(), ReachEndTime, PreGraspEndTime,
+			PairID, Self, Other)));
 	}
 }

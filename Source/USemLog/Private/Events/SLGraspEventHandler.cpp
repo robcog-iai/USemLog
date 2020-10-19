@@ -4,7 +4,6 @@
 #include "Events/SLGraspEventHandler.h"
 #include "Monitors/SLManipulatorMonitor.h"
 #include "Individuals/Type/SLBaseIndividual.h"
-#include "Individuals/SLIndividualUtils.h"
 #include "Utils/SLUuid.h"
 
 // Set parent
@@ -115,21 +114,13 @@ void FSLGraspEventHandler::FinishAllEvents(float EndTime)
 
 
 // Event called when a semantic grasp event begins
-void FSLGraspEventHandler::OnSLGraspBegin(USLBaseIndividual* Self, AActor* OtherActor, float Time, const FString& Type)
+void FSLGraspEventHandler::OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& Type)
 {
-	// Check that the objects are semantically annotated
-	if (USLBaseIndividual* OtherIndivdidual = FSLIndividualUtils::GetIndividualObject(OtherActor))
-	{
-		AddNewEvent(Self, OtherIndivdidual, Time, Type);
-
-	}
+	AddNewEvent(Self, Other, Time, Type);
 }
 
 // Event called when a semantic grasp event ends
-void FSLGraspEventHandler::OnSLGraspEnd(USLBaseIndividual* Self, AActor* OtherActor, float Time)
+void FSLGraspEventHandler::OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
 {
-	if (USLBaseIndividual* OtherIndivdidual = FSLIndividualUtils::GetIndividualObject(OtherActor))
-	{
-		FinishEvent(OtherIndivdidual, Time);
-	}
+	FinishEvent(Other, Time);
 }

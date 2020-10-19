@@ -10,7 +10,7 @@
 class USLBaseIndividual;
 
 /** Notify the beginning and the end of a opening/closing container event */
-DECLARE_MULTICAST_DELEGATE_FiveParams(FSLContainerManipulationSignature, USLBaseIndividual* /*Self*/, AActor* /*Container*/, float /*StartTime*/, float /*EndTime*/, const FString& /*Type*/);
+DECLARE_MULTICAST_DELEGATE_FiveParams(FSLContainerManipulationSignature, USLBaseIndividual* /*Self*/, USLBaseIndividual* /*Container*/, float /*StartTime*/, float /*EndTime*/, const FString& /*Type*/);
 
 /**
  * Checks for if the manipulated objects directly/indirectly opens / closes a container
@@ -47,10 +47,10 @@ public:
 
 private:
 	// Called on grasp begin
-	void OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType);
+	void OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& GraspType);
 
 	// Called on grasp end
-	void OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time);
+	void OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
 
 	// Search which container will be manipulated and save their current distance to the grasped item
 	bool SetContainersAndDistances();
@@ -70,22 +70,22 @@ public:
 
 private:
 	// True if initialized
-	bool bIsInit;
+	uint8 bIsInit : 1;
 
 	// True if started
-	bool bIsStarted;
+	uint8 bIsStarted : 1;
 
 	// True if finished
-	bool bIsFinished;
+	uint8 bIsFinished : 1;
 
 	// Semantic data component of the owner
-	class USLIndividualComponent* IndividualComponent;
+	class USLIndividualComponent* OwnerIndividualComponent;
 
 	// Semantic individual object
-	class USLBaseIndividual* IndividualObject;
+	USLBaseIndividual* OwnerIndividualObject;
 
 	// Object currently grasped
-	AActor* CurrGraspedObj;
+	USLBaseIndividual* CurrGraspedIndividual;
 
 	// Grasp time
 	float GraspTime;

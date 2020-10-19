@@ -27,7 +27,7 @@ public:
 
 private:
 	// Create and publish finished reach event
-	void OnSLReachAndPreGraspEvent(USLBaseIndividual* Self, AActor* OtherActor, float ReachStartTime, float ReachEndTime, float PreGraspEndTime);
+	void OnSLReachAndPreGraspEvent(USLBaseIndividual* Self, USLBaseIndividual* Other, float ReachStartTime, float ReachEndTime, float PreGraspEndTime);
 
 private:
 	// Parent

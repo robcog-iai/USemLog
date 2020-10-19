@@ -25,16 +25,16 @@ public:
 
 private:	
 	// Event called when a slide event happened
-	void OnSLSlide(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime);
+	void OnSLSlide(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, float EndTime);
 
 	// Event called when a pick up event happened
-	void OnSLPickUp(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime);
+	void OnSLPickUp(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, float EndTime);
 
 	// Event called when a transport event happened
-	void OnSLTransport(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime);
+	void OnSLTransport(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, float EndTime);
 
 	// Event called when a put down event happened
-	void OnSLPutDown(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime);
+	void OnSLPutDown(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, float EndTime);
 
 private:
 	// Parent

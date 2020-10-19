@@ -55,15 +55,10 @@ void FSLContainerEventHandler::Finish(float EndTime, bool bForced)
 }
 
 // Event called when a semantic grasp happens
-void FSLContainerEventHandler::OnContainerManipulation(USLBaseIndividual* Self, AActor* OtherActor, float StartTime, float EndTime, const FString& Type)
+void FSLContainerEventHandler::OnContainerManipulation(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, float EndTime, const FString& Type)
 {
-	// Check that the objects are semantically annotated
-	if (USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor))
-	{
-		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLContainerEvent(
-			FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
-			FSLUuid::PairEncodeCantor(Self->GetUniqueID(), OtherIndividual->GetUniqueID()),
-			Self, OtherIndividual, Type)));
-	}
-
+	OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLContainerEvent(
+		FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
+		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
+		Self, Other, Type)));
 }

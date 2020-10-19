@@ -32,10 +32,10 @@ private:
 	void FinishAllEvents(float EndTime);
 
 	// Event called when a semantic overlap event begins
-	void OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& Type);
+	void OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& Type);
 
 	// Event called when a semantic overlap event ends
-	void OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time);
+	void OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
 
 private:
 	// Parent

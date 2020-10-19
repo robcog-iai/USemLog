@@ -5,6 +5,7 @@
 #include "Monitors/SLManipulatorMonitor.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
+#include "Individuals/SLIndividualUtils.h"
 
 #include "PhysicsEngine/PhysicsConstraintActor.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
@@ -22,7 +23,7 @@ USLContainerMonitor::USLContainerMonitor()
 	bIsStarted = false;
 	bIsFinished = false;
 
-	CurrGraspedObj = nullptr;
+	CurrGraspedIndividual = nullptr;
 	GraspTime = -1.f;
 }
 
@@ -43,8 +44,8 @@ bool USLContainerMonitor::Init()
 		// Make sure the owner is semantically annotated
 		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
-			IndividualComponent = CastChecked<USLIndividualComponent>(AC);
-			if (!IndividualComponent->IsLoaded())
+			OwnerIndividualComponent = CastChecked<USLIndividualComponent>(AC);
+			if (!OwnerIndividualComponent->IsLoaded())
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 				return false;
@@ -57,7 +58,7 @@ bool USLContainerMonitor::Init()
 		}
 
 		// Set the individual object
-		IndividualObject = IndividualComponent->GetIndividualObject();
+		OwnerIndividualObject = OwnerIndividualComponent->GetIndividualObject();
 
 		bIsInit = true;
 		return true;
@@ -102,58 +103,66 @@ void USLContainerMonitor::Finish(bool bForced)
 
 
 // Called when grasp starts
-void USLContainerMonitor::OnSLGraspBegin(USLBaseIndividual* Self, AActor* Other, float Time, const FString& GraspType)
+void USLContainerMonitor::OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& GraspType)
 {
-	if(CurrGraspedObj)
+	if(CurrGraspedIndividual)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] Cannot set %s as grasped object.. manipulator is already grasping %s;"),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName(), *CurrGraspedObj->GetName());
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
+			*Other->GetParentActor()->GetName(), *CurrGraspedIndividual->GetParentActor()->GetName());
 		return;
 	}
 	
 	// Mark as grasped
-	CurrGraspedObj = Other;
+	CurrGraspedIndividual = Other;
 	GraspTime = Time;
 
 	SetContainersAndDistances();
 }
 
 // Called when grasp ends
-void USLContainerMonitor::OnSLGraspEnd(USLBaseIndividual* Self, AActor* Other, float Time)
+void USLContainerMonitor::OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
 {
-	if(CurrGraspedObj == nullptr)
+	if(CurrGraspedIndividual == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen.. currently grasped object is nullptr while ending grasp with %s"),
 			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
 		return;
 	}
 
-	if(CurrGraspedObj == Other)
+	if(CurrGraspedIndividual == Other)
 	{
-
 		// Publish close/open events
 		for(const auto Pair : ContainerToDistance)
 		{
-			const float CurrDistance = FVector::Distance(Pair.Key->GetActorLocation(), CurrGraspedObj->GetActorLocation());
+			const float CurrDistance = FVector::Distance(Pair.Key->GetParentActor()->GetActorLocation(),
+				CurrGraspedIndividual->GetParentActor()->GetActorLocation());
 
 			if(CurrDistance - Pair.Value > MinDistance)
 			{
-				OnContainerManipulation.Broadcast(IndividualObject, Pair.Key, GraspTime, Time, "open");
+				if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(Pair.Key))
+				{
+					OnContainerManipulation.Broadcast(OwnerIndividualObject, BI, GraspTime, Time, "open");
+				}
 			}
 			else if(CurrDistance - Pair.Value < - MinDistance)
 			{
-				OnContainerManipulation.Broadcast(IndividualObject, Pair.Key, GraspTime, Time, "close");
+				if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(Pair.Key))
+				{
+					OnContainerManipulation.Broadcast(OwnerIndividualObject, BI, GraspTime, Time, "close");
+				}
 			}
 		}
 		
 		// Mark as released, empty previous container
-		CurrGraspedObj = nullptr;
+		CurrGraspedIndividual = nullptr;
 		ContainerToDistance.Empty();
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] End grasp with %s while %s is still grasped.. ignoring event.."),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName(), *CurrGraspedObj->GetName());
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
+			*Other->GetParentActor()->GetName(), *CurrGraspedIndividual->GetParentActor()->GetName());
 	}
 }
 
@@ -178,13 +187,13 @@ bool USLContainerMonitor::SetContainersAndDistances()
 	// (containers can only be linked through constrained actors, since otherwise they would be moving together)
 	TSet<AActor*> OtherConstraintActors;
 	// Get outermost attachment
-	if(AActor* OutermostAttachParent = GetOutermostAttachmentLambda(CurrGraspedObj))
+	if(AActor* OutermostAttachParent = GetOutermostAttachmentLambda(CurrGraspedIndividual->GetParentActor()))
 	{
 		GetAllConstraintsOtherActors(OutermostAttachParent, OtherConstraintActors);
 	}
 	else
 	{
-		GetAllConstraintsOtherActors(CurrGraspedObj, OtherConstraintActors);
+		GetAllConstraintsOtherActors(CurrGraspedIndividual->GetParentActor(), OtherConstraintActors);
 	}
 
 	// Set of the found containers
@@ -207,9 +216,9 @@ bool USLContainerMonitor::SetContainersAndDistances()
 	// Store the containers and their distances to the manipulator
 	for(const auto& C : Containers)
 	{
-		ContainerToDistance.Emplace(C, FVector::Distance(C->GetActorLocation(), CurrGraspedObj->GetActorLocation()));
+		ContainerToDistance.Emplace(C, FVector::Distance(C->GetActorLocation(), CurrGraspedIndividual->GetParentActor()->GetActorLocation()));
 		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] Container=%s; Dist=%f"),
-		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *C->GetName(), FVector::Distance(C->GetActorLocation(), CurrGraspedObj->GetActorLocation()));
+		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *C->GetName(), FVector::Distance(C->GetActorLocation(), CurrGraspedActor->GetActorLocation()));
 	}
 
 
@@ -219,10 +228,10 @@ bool USLContainerMonitor::SetContainersAndDistances()
 // Finish any active events
 void USLContainerMonitor::FinishActiveEvents()
 {
-	if(CurrGraspedObj)
+	if(CurrGraspedIndividual)
 	{
 		// Fake a grasp end call
-		OnSLGraspEnd(IndividualObject, CurrGraspedObj, GetWorld()->GetTimeSeconds());
+		OnSLGraspEnd(OwnerIndividualObject, CurrGraspedIndividual, GetWorld()->GetTimeSeconds());
 	}	
 }
 
