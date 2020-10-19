@@ -13,7 +13,6 @@
 #include "TimerManager.h"
 #include "Components/StaticMeshComponent.h"
 
-
 // Set default values
 USLReachAndPreGraspMonitor::USLReachAndPreGraspMonitor()
 {
@@ -34,6 +33,9 @@ USLReachAndPreGraspMonitor::USLReachAndPreGraspMonitor()
 	UpdateRate = 0.027;
 	
 	ShapeColor = FColor::Orange.WithAlpha(64);
+
+	// Set overlap area collision parameters
+	SetCollisionParameters();
 }
 
 // Dtor
@@ -49,15 +51,15 @@ USLReachAndPreGraspMonitor::~USLReachAndPreGraspMonitor()
 void USLReachAndPreGraspMonitor::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	UpdateCandidatesData();
+	UpdateCandidatesData(DeltaTime);
 }
 
 // Initialize trigger areas for runtime, check if owner is valid and semantically annotated
-bool USLReachAndPreGraspMonitor::Init()
+void USLReachAndPreGraspMonitor::Init()
 {
 	if (bIgnore)
 	{
-		return false;
+		return;
 	}
 
 	if (!bIsInit)
@@ -69,7 +71,7 @@ bool USLReachAndPreGraspMonitor::Init()
 			if (!OwnerIndividualComponent->IsLoaded())
 			{				
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-				return false;
+				return;
 			}
 
 			// Set the individual object
@@ -78,7 +80,7 @@ bool USLReachAndPreGraspMonitor::Init()
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-			return false;
+			return;
 		}
 
 		// Set tick update rate
@@ -88,16 +90,18 @@ bool USLReachAndPreGraspMonitor::Init()
 		}
 		
 		// Disable overlaps until start
-		SetGenerateOverlapEvents(false);
+		SetGenerateOverlapEvents(false);	
 
 		// Subscribe for grasp notifications from sibling monitor component
 		if(SubscribeForManipulatorEvents())
 		{
 			bIsInit = true;
-			return true;
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully initialized %s::%s at %.4fs.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
+			return;
 		}
-	}
-	return false;
+	}	
+	return;
 }
 
 // Start listening to grasp events, update currently overlapping objects
@@ -115,11 +119,11 @@ void USLReachAndPreGraspMonitor::Start()
 		OnComponentBeginOverlap.AddDynamic(this, &USLReachAndPreGraspMonitor::OnOverlapBegin);
 		OnComponentEndOverlap.AddDynamic(this, &USLReachAndPreGraspMonitor::OnOverlapEnd);
 		
-		// Start candidate update callback
-		SetComponentTickEnabled(true);
-		
 		// Mark as started
 		bIsStarted = true;
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully started %s::%s at %.4fs.."),
+			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -136,6 +140,9 @@ void USLReachAndPreGraspMonitor::Finish(bool bForced)
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s component at %.4fs.."),
+			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -182,6 +189,15 @@ void USLReachAndPreGraspMonitor::RelocateSphere()
 }
 #endif // WITH_EDITOR
 
+// Set collision parameters such as object name and collision responses
+void USLReachAndPreGraspMonitor::SetCollisionParameters()
+{
+	SetCollisionProfileName("SLReachAndPreGrasp");
+	//SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel4);
+	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Overlap);
+}
+
 // Subscribe for grasp events from sibling component (contacts with hand and grasp events)
 bool USLReachAndPreGraspMonitor::SubscribeForManipulatorEvents()
 {
@@ -200,8 +216,11 @@ bool USLReachAndPreGraspMonitor::SubscribeForManipulatorEvents()
 }
 
 // Update callback, checks distance to hand, if it increases it resets the start time
-void USLReachAndPreGraspMonitor::UpdateCandidatesData()
+void USLReachAndPreGraspMonitor::UpdateCandidatesData(float DeltaTime)
 {
+	/*UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs CandidatesNum=%d; ContactNum=%d; DeltaTime=%f;"),
+		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), CandidatesData.Num(), ManipulatorContactData.Num(), DeltaTime);*/
+
 	const float CurrTimestamp = GetWorld()->GetTimeSeconds();
 	for (auto& CanidateData : CandidatesData)
 	{
@@ -355,7 +374,7 @@ void USLReachAndPreGraspMonitor::OnOverlapEnd(UPrimitiveComponent* OverlappedCom
 		return;
 	}
 
-	FString DebugLogString = FString::Printf(TEXT("%s::%d::%.4fs \t OverlapBegin: \t %s:%s;"),
+	FString DebugLogString = FString::Printf(TEXT("%s::%d::%.4fs \t OverlapEnd: \t %s:%s;"),
 		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherActor->GetName(), *OtherComp->GetName());
 
 	if (CandidatesData.Remove(OtherIndividual) > 0)

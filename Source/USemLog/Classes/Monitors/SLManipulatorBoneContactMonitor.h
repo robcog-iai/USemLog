@@ -50,7 +50,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorContactMonitorEndSignature, US
 /**
  * Semantic overlap generator for grasp detection
  */
-UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Contact Monitor Sphere")
+UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Bone Contact")
 class USEMLOG_API USLManipulatorBoneContactMonitor : public USphereComponent
 {
 	GENERATED_BODY()
@@ -95,6 +95,9 @@ public:
 #endif
 
 private:
+	// Set collision parameters such as object name and collision responses
+	void SetCollisionParameters();
+
 	// Attach component to bone
 	bool AttachToBone();
 

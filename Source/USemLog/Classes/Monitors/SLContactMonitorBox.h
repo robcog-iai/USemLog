@@ -43,8 +43,8 @@ protected:
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-#if WITH_EDITOR
 private:
+#if WITH_EDITOR
 	// UObject interface
 	// Called after the C++ constructor and after the properties have been initialized
 	virtual void PostInitProperties() override;
@@ -69,6 +69,9 @@ private:
 	virtual bool StoreShapeBounds() override;
 	/* End ISLContactMonitorInterface*/
 #endif // WITH_EDITOR
+
+	// Set collision parameters such as object name and collision responses
+	void SetCollisionParameters();
 
 #if WITH_EDITORONLY_DATA
 private:

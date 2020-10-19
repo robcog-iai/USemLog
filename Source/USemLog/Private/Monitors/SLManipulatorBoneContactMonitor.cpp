@@ -28,6 +28,9 @@ USLManipulatorBoneContactMonitor::USLManipulatorBoneContactMonitor()
 	// Mimic a button to attach to the bone	
 	bAttachButton = false;
 #endif // WITH_EDITORONLY_DATA
+
+	// Set overlap area collision parameters
+	SetCollisionParameters();
 }
 
 // Attach to bone 
@@ -274,6 +277,15 @@ void USLManipulatorBoneContactMonitor::PostEditChangeProperty(struct FPropertyCh
 	}
 }
 #endif // WITH_EDITOR
+
+// Set collision parameters such as object name and collision responses
+void USLManipulatorBoneContactMonitor::SetCollisionParameters()
+{
+	SetCollisionProfileName("SLManipulatorContact");
+	//SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel4);
+	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Overlap);
+}
 
 // Attach component to bone
 bool USLManipulatorBoneContactMonitor::AttachToBone()

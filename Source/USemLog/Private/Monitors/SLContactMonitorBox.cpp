@@ -37,6 +37,8 @@ USLContactMonitorBox::USLContactMonitorBox()
 	// Mimics a button
 	bReCalcShapeButton = false;
 #endif // WITH_EDITORONLY_DATA
+
+	SetCollisionParameters();
 }
 
 // Destructor
@@ -139,7 +141,7 @@ void USLContactMonitorBox::Init(bool bInLogSupportedByEvents)
 			// Make sure there are no overlap events on the mesh as well
 			// (these will be calculated on the contact listener)
 			// TODO this might cause problems with grasping objects
-			OwnerMeshComp->SetGenerateOverlapEvents(false);
+			//OwnerMeshComp->SetGenerateOverlapEvents(false);
 
 			// Mark as initialized
 			bIsInit = true;
@@ -350,3 +352,11 @@ bool USLContactMonitorBox::StoreShapeBounds()
 	return true;
 }
 #endif // WITH_EDITOR
+
+void USLContactMonitorBox::SetCollisionParameters()
+{
+	SetCollisionProfileName("SLContact");
+	//SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel4);
+	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Overlap);
+}

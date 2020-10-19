@@ -590,19 +590,22 @@ void ASLSymbolicLogger::InitContactMonitors()
 			if (IsValidAndLoaded(Itr->GetOwner()))
 			{
 				ContactMonitor->Init(LoggerParameters.EventsSelection.bSupportedBy);
-				ContactMonitors.Emplace(ContactMonitor);
+				if (ContactMonitor->IsInit())
+				{
+					ContactMonitors.Emplace(ContactMonitor);
 
-				// Create a contact event handler 
-				TSharedPtr<FSLContactEventHandler> CEHandler = MakeShareable(new FSLContactEventHandler());
-				CEHandler->Init(*Itr);
-				if (CEHandler->IsInit())
-				{
-					EventHandlers.Emplace(CEHandler);
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-						*FString(__func__), __LINE__, *Itr->GetName());
+					// Create a contact event handler 
+					TSharedPtr<FSLContactEventHandler> CEHandler = MakeShareable(new FSLContactEventHandler());
+					CEHandler->Init(*Itr);
+					if (CEHandler->IsInit())
+					{
+						EventHandlers.Emplace(CEHandler);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+							*FString(__func__), __LINE__, *Itr->GetName());
+					}
 				}
 			}
 		}
@@ -617,7 +620,8 @@ void ASLSymbolicLogger::InitManipulatorContactAndGraspMonitors()
 	{
 		if (IsValidAndLoaded(Itr->GetOwner()))
 		{
-			if (Itr->Init(LoggerParameters.EventsSelection.bGrasp, LoggerParameters.EventsSelection.bManipulatorContact))
+			Itr->Init(LoggerParameters.EventsSelection.bGrasp, LoggerParameters.EventsSelection.bManipulatorContact);
+			if (Itr->IsInit())
 			{
 				ManipulatorContactAndGraspMonitors.Emplace(*Itr);
 
@@ -688,7 +692,8 @@ void ASLSymbolicLogger::InitReachAndPreGraspMonitors()
 	{
 		if (IsValidAndLoaded(Itr->GetOwner()))
 		{
-			if (Itr->Init())
+			Itr->Init();
+			if (Itr->IsInit())
 			{
 				ReachAndPreGraspMonitors.Emplace(*Itr);
 				TSharedPtr<FSLReachAndPreGraspEventHandler> EvHandler = MakeShareable(new FSLReachAndPreGraspEventHandler());

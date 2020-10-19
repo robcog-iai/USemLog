@@ -68,7 +68,7 @@ protected:
 
 public:
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
-	bool Init();
+	void Init();
 
 	// Start listening to grasp events, update currently overlapping objects
 	void Start();
@@ -101,11 +101,14 @@ private:
 	void RelocateSphere();
 #endif // WITH_EDITOR
 
+	// Set collision parameters such as object name and collision responses
+	void SetCollisionParameters();
+
 	// Subscribe for grasp event from sibling component
 	bool SubscribeForManipulatorEvents();
 	
 	// Update callback, checks distance to hand, if it increases it resets the start time
-	void UpdateCandidatesData();
+	void UpdateCandidatesData(float DeltaTime);
 
 	// Publish currently overlapping components
 	void TriggerInitialOverlaps();

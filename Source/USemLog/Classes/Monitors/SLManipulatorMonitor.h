@@ -87,7 +87,7 @@ public:
 	~USLManipulatorMonitor();
 
 	// Initialize trigger areas for runtime, check if owner is valid and semantically annotated
-	bool Init(bool bInDetectGrasps, bool bInDetectContacts);
+	void Init(bool bInDetectGrasps, bool bInDetectContacts);
 
 	// Start listening to grasp events, update currently overlapping objects
 	void Start();

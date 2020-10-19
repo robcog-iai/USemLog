@@ -74,11 +74,11 @@ USLManipulatorMonitor::~USLManipulatorMonitor()
 }
 
 // Init listener
-bool USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
+void USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 {
 	if (bIgnore)
 	{
-		return false;
+		return;
 	}
 
 	if (!bIsInit)
@@ -93,13 +93,13 @@ bool USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 			if (!IndividualComponent->IsLoaded())
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-				return false;
+				return;
 			}
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-			return false;
+			return;
 		}
 
 		// Set the individual object
@@ -136,10 +136,9 @@ bool USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 			}
 
 			bIsInit = true;
-			return true;
 		}
 	}
-	return false;
+	return;
 }
 
 // Start listening to grasp events, update currently overlapping objects
