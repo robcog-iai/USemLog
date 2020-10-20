@@ -26,7 +26,7 @@ USLContactMonitorBox::USLContactMonitorBox()
 
 	bLogSupportedByEvents = true;
 
-	IndividualComponent = nullptr;
+	OwnerIndividualComponent = nullptr;
 
 #if WITH_EDITORONLY_DATA
 	// Box extent scale
@@ -38,7 +38,7 @@ USLContactMonitorBox::USLContactMonitorBox()
 	bReCalcShapeButton = false;
 #endif // WITH_EDITORONLY_DATA
 
-	SetCollisionParameters();
+	//SetCollisionParameters();
 }
 
 // Destructor
@@ -108,23 +108,21 @@ void USLContactMonitorBox::Init(bool bInLogSupportedByEvents)
 		// Make sure the owner is semantically annotated
 		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
-			IndividualComponent = CastChecked<USLIndividualComponent>(AC);
-			if (!IndividualComponent->IsLoaded())
+			OwnerIndividualComponent = CastChecked<USLIndividualComponent>(AC);
+			if (!OwnerIndividualComponent->IsLoaded())
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 				return;
 			}
 
 			// Set the individual object
-			IndividualObject = IndividualComponent->GetIndividualObject();
+			OwnerIndividualObject = OwnerIndividualComponent->GetIndividualObject();
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 			return;
-		}
-
-		
+		}		
 
 		// Make sure the mesh (static/skeletal) component is valid
 		if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(GetOwner()))
@@ -141,7 +139,7 @@ void USLContactMonitorBox::Init(bool bInLogSupportedByEvents)
 			// Make sure there are no overlap events on the mesh as well
 			// (these will be calculated on the contact listener)
 			// TODO this might cause problems with grasping objects
-			//OwnerMeshComp->SetGenerateOverlapEvents(false);
+			OwnerMeshComp->SetGenerateOverlapEvents(false);			
 
 			// Mark as initialized
 			bIsInit = true;

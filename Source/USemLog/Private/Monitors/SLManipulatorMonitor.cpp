@@ -36,7 +36,10 @@ USLManipulatorMonitor::USLManipulatorMonitor()
 	bIsPaused = false;
 	InputAxisName = "LeftGrasp";
 	bIsNotSkeletal = false;
-	UnPauseTriggerVal = 0.3;
+	InputAxisTriggerThresholdValue = 0.3f;
+	
+	bLogDebug = false;
+
 
 #if WITH_EDITORONLY_DATA
 	// Default values
@@ -45,23 +48,26 @@ USLManipulatorMonitor::USLManipulatorMonitor()
 
 	ActiveGraspType = "Default";
 
+	GraspConcatenateIfSmaller = 0.42f;
+	ContactConcatenateIfSmaller = 0.22f;
+
 	// Grasp helper
-	bUseAdHocGraspHelper = false;
-	bUseAdHocManualOverrideAction = false;
-	AdHocManualOverrideInputActionName = "LeftGraspHelper";
-	AdHocOwnerHandBoneName = "lHand";
-	bDisableGravityOfGraspedObject = true;
-	bScaleMassOfGraspedObject = true;
-	GraspedObjectMassScaleValue = 0.1f;
-	ConstraintLimit = 0.1f;
-	ConstraintStiffness = 500.f;
-	ConstraintDamping = 5.f;
-	ConstraintContactDistance = 1.f;
-	bConstraintParentDominates = false;
+	bUseGraspHelper = false;
+	bGraspHelperManualOverride = false;
+	GraspHelperInputActionName = "LeftGraspHelper";
+	GraspHelperHandBoneName = "lHand";
+	bGraspHelperItemDisableGravity = true;
+	bGraspHelperItemScaleMass = true;
+	GraspHelperItemMassScaleValue = 0.1f;
+	GraspHelperConstraintLimit = 0.1f;
+	GraspHelperConstraintStiffness = 500.f;
+	GraspHelperConstraintDamping = 5.f;
+	GraspHelperConstraintContactDistance = 1.f;
+	bGraspHelperConstraintParentDominates = false;
 	bAdHocGraspHelpIsActive = false;
-	AdHocGraspHelperConstraint = nullptr;
-	AdHocGraspedSMC = nullptr;
-	AdHocOwnerSkelMC = nullptr;
+	GraspHelperConstraint = nullptr;
+	GraspHelperItemSMC = nullptr;
+	GraspHelperOwnerSkelMC = nullptr;
 }
 
 // Dtor
@@ -95,15 +101,14 @@ void USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 				return;
 			}
+			// Set the individual object
+			OwnerIndividualObject = IndividualComponent->GetIndividualObject();
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 			return;
 		}
-
-		// Set the individual object
-		OwnerIndividualObject = IndividualComponent->GetIndividualObject();
 
 		// Remove any unset references in the array
 		Fingers.Remove(nullptr);
@@ -114,12 +119,12 @@ void USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 #endif // SL_WITH_MC_GRASP
 
 		 // Ad Hoc grasp helper
-		 if (bUseAdHocGraspHelper)
+		 if (bUseGraspHelper)
 		 {
-			 if (!InitAdHocGraspHelper())
+			 if (!InitGraspHelper())
 			 {
 				 // Init failed, disable grasp helper
-				 bUseAdHocGraspHelper = false;
+				 bUseGraspHelper = false;
 			 }
 		 }
 
@@ -136,9 +141,10 @@ void USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 			}
 
 			bIsInit = true;
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully initialized %s::%s at %.4fs.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
 		}
 	}
-	return;
 }
 
 // Start listening to grasp events, update currently overlapping objects
@@ -153,35 +159,44 @@ void USLManipulatorMonitor::Start()
 		{
 			if (bDetectContacts)
 			{
-				BoneOverlap->OnBeginManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapContact);
-				BoneOverlap->OnEndManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapContact);
+				BoneOverlap->OnBeginContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnContactBoneOverlapBegin);
+				BoneOverlap->OnEndContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnContactBoneOverlapEnd);
 			}
 			if (bDetectGrasps)
 			{
-				BoneOverlap->OnBeginManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapGroupAGrasp);
-				BoneOverlap->OnEndManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapGroupAGrasp);
+				BoneOverlap->OnBeginGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnGraspGroupAOverlapBegin);
+				BoneOverlap->OnEndGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnGraspGroupAOverlapEnd);
 			}
+			
 			// Start after subscribing
-			BoneOverlap->Start();
+			if (bDetectContacts || bDetectGrasps)
+			{
+				BoneOverlap->Start();
+			}
 		}
 		for (auto BoneOverlap : GroupB)
 		{
 			if (bDetectContacts)
 			{
-				BoneOverlap->OnBeginManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapContact);
-				BoneOverlap->OnEndManipulatorContactOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapContact);
+				BoneOverlap->OnBeginContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnContactBoneOverlapBegin);
+				BoneOverlap->OnEndContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnContactBoneOverlapEnd);
 			}
 			if (bDetectGrasps)
 			{
-				BoneOverlap->OnBeginManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapGroupBGrasp);
-				BoneOverlap->OnEndManipulatorGraspOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapGroupBGrasp);
+				BoneOverlap->OnBeginGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapGroupBGrasp);
+				BoneOverlap->OnEndGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapGroupBGrasp);
 			}
 			// Start after subscribing
-			BoneOverlap->Start();
+			if (bDetectContacts || bDetectGrasps)
+			{
+				BoneOverlap->Start();
+			}
 		}
 
 		// Mark as started
 		bIsStarted = true;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully started %s::%s at %.4fs.."),
+			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -192,11 +207,11 @@ void USLManipulatorMonitor::PauseGraspDetection(bool bInPause)
 	{
 		for (auto BoneOverlap : GroupA)
 		{
-			BoneOverlap->PauseGrasp(bInPause);
+			BoneOverlap->SetGraspCheckPaused(bInPause);
 		}
 		for (auto BoneOverlap : GroupB)
 		{
-			BoneOverlap->PauseGrasp(bInPause);
+			BoneOverlap->SetGraspCheckPaused(bInPause);
 		}
 		bIsPaused = bInPause;
 
@@ -248,6 +263,9 @@ void USLManipulatorMonitor::Finish(bool bForced)
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at %.4fs.."),
+			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -267,14 +285,14 @@ void USLManipulatorMonitor::PostEditChangeProperty(struct FPropertyChangedEvent&
 		if (HandType == ESLGraspHandType::Left)
 		{
 			InputAxisName = "LeftGrasp";
-			AdHocManualOverrideInputActionName = "LeftGraspHelper";
-			AdHocOwnerHandBoneName = "lHand";
+			GraspHelperInputActionName = "LeftGraspHelper";
+			GraspHelperHandBoneName = "lHand";
 		}
 		else if (HandType == ESLGraspHandType::Right)
 		{
 			InputAxisName = "RightGrasp";
-			AdHocManualOverrideInputActionName = "RightGraspHelper";
-			AdHocOwnerHandBoneName = "rHand";
+			GraspHelperInputActionName = "RightGraspHelper";
+			GraspHelperHandBoneName = "rHand";
 		}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorMonitor, bIsNotSkeletal))
@@ -362,11 +380,11 @@ void USLManipulatorMonitor::SetupInputBindings()
 		{
 			IC->BindAxis(InputAxisName, this, &USLManipulatorMonitor::GraspInputAxisCallback);
 
-			if (bUseAdHocGraspHelper && bUseAdHocManualOverrideAction)
+			if (bUseGraspHelper && bGraspHelperManualOverride)
 			{
-				IC->BindAction(AdHocManualOverrideInputActionName, IE_Pressed, this, &USLManipulatorMonitor::AdHocManualOverride);
-				//IC->BindAction(AdHocManualOverrideInputActionName, IE_Pressed, this, &USLManipulatorMonitor::AdHocManualOverride);
-				//IC->BindAction(AdHocManualOverrideInputActionName, IE_Released, this, &USLManipulatorMonitor::AdHocManualOverride);
+				IC->BindAction(GraspHelperInputActionName, IE_Pressed, this, &USLManipulatorMonitor::GraspHelperInputCallback);
+				//IC->BindAction(GraspHelperInputActionName, IE_Pressed, this, &USLManipulatorMonitor::GraspHelperInputCallback);
+				//IC->BindAction(GraspHelperInputActionName, IE_Released, this, &USLManipulatorMonitor::GraspHelperInputCallback);
 			}
 		}
 		else
@@ -385,7 +403,7 @@ void USLManipulatorMonitor::SetupInputBindings()
 // Check if the grasp trigger is active
 void USLManipulatorMonitor::GraspInputAxisCallback(float Value)
 {
-	if (Value >= UnPauseTriggerVal)
+	if (Value >= InputAxisTriggerThresholdValue)
 	{
 		PauseGraspDetection(false);
 	}
@@ -396,7 +414,7 @@ void USLManipulatorMonitor::GraspInputAxisCallback(float Value)
 }
 
 // Process beginning of grasp in group A
-void USLManipulatorMonitor::OnBeginOverlapGroupAGrasp(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnGraspGroupAOverlapBegin(USLBaseIndividual* OtherIndividual)
 {
 	bool bAlreadyInSet = false;
 	SetA.Emplace(OtherIndividual, &bAlreadyInSet);
@@ -418,7 +436,7 @@ void USLManipulatorMonitor::OnBeginOverlapGroupBGrasp(USLBaseIndividual* OtherIn
 }
 
 // Process ending of contact in group A
-void USLManipulatorMonitor::OnEndOverlapGroupAGrasp(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnGraspGroupAOverlapEnd(USLBaseIndividual* OtherIndividual)
 {
 	if (SetA.Remove(OtherIndividual) > 0)
 	{
@@ -426,7 +444,7 @@ void USLManipulatorMonitor::OnEndOverlapGroupAGrasp(USLBaseIndividual* OtherIndi
 		{
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t ~~~~~~~~~~ *END GRASP* init from Group A. ~~~~~~~~~~"),
 			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-			EndGrasp(OtherIndividual);
+			GraspEnded(OtherIndividual);
 		}
 	}
 }
@@ -440,7 +458,7 @@ void USLManipulatorMonitor::OnEndOverlapGroupBGrasp(USLBaseIndividual* OtherIndi
 		{
 			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t ~~~~~~~~~~ *END GRASP* init from Group B. ~~~~~~~~~~"),
 			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-			EndGrasp(OtherIndividual);
+			GraspEnded(OtherIndividual);
 		}
 	}
 }
@@ -452,36 +470,36 @@ void USLManipulatorMonitor::CheckGraspState()
 	{
 		if (!GraspedIndividuals.Contains(Individual))
 		{
-			BeginGrasp(Individual);
+			GraspStarted(Individual);
 		}
 	}
 }
 
 // A grasp has started
-void USLManipulatorMonitor::BeginGrasp(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::GraspStarted(USLBaseIndividual* OtherIndividual)
 {
 	// Check if it is a new grasp event, or a concatenation with a previous one, either way, there is a new grasp
 	GraspedIndividuals.Emplace(OtherIndividual);
-	if(!SkipRecentGraspEndEventBroadcast(OtherIndividual, GetWorld()->GetTimeSeconds()))
+	if(!SkipIfJitterGrasp(OtherIndividual, GetWorld()->GetTimeSeconds()))
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] \t ~~~~~~~~~~~~~~~~~~~~~~~~~~ *BEGIN GRASP BCAST* with %s ~~~~~~~~~~~~~~~~~~~~~~~~~~"),
-		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherIndividual->GetName());
+		/*UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs \t BeginManipulatorGrasp: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+				GetWorld()->GetTimeSeconds(), *OwnerIndividualObject->GetParentActor()->GetName(), *EvItr->Other->GetParentActor()->GetName());*/
 		OnBeginManipulatorGrasp.Broadcast(OwnerIndividualObject, OtherIndividual, GetWorld()->GetTimeSeconds(), ActiveGraspType);
 
-		if (bUseAdHocGraspHelper)
+		if (bUseGraspHelper)
 		{
 			if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherIndividual->GetParentActor()))
 			{
-				if (!bUseAdHocManualOverrideAction)
+				if (!bGraspHelperManualOverride)
 				{
-					AdHocGraspedSMC = AsSMA->GetStaticMeshComponent();
-					StartAdHocGraspHelper();
+					GraspHelperItemSMC = AsSMA->GetStaticMeshComponent();
+					StartGraspHelper();
 				}
 				else if (!bAdHocGraspHelpIsActive)
 				{
 					// Allow manual grasp override
-					AdHocGraspedSMC = AsSMA->GetStaticMeshComponent();
-					bCanExecuteManualOverride = true;
+					GraspHelperItemSMC = AsSMA->GetStaticMeshComponent();
+					bGraspHelperCanExecuteManualOverrideFlag = true;
 				}
 			}
 			else
@@ -499,7 +517,7 @@ void USLManipulatorMonitor::BeginGrasp(USLBaseIndividual* OtherIndividual)
 }
 
 // A grasp has ended
-void USLManipulatorMonitor::EndGrasp(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::GraspEnded(USLBaseIndividual* OtherIndividual)
 {
 	if (GraspedIndividuals.Remove(OtherIndividual) > 0)
 	{
@@ -509,15 +527,15 @@ void USLManipulatorMonitor::EndGrasp(USLBaseIndividual* OtherIndividual)
 		// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 		if(!GetWorld()->GetTimerManager().IsTimerActive(GraspDelayTimerHandle))
 		{
+			const float DelayValue = GraspConcatenateIfSmaller + ConcatenateIfSmallerDelay;
 			GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this,
-				&USLManipulatorMonitor::DelayedGraspEndEventCallback,
-				MaxGraspJitterInterval + 0.05f, false);
+				&USLManipulatorMonitor::DelayedGraspEndCallback, DelayValue, false);
 		}
 	}
 }
 
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
-void USLManipulatorMonitor::DelayedGraspEndEventCallback()
+void USLManipulatorMonitor::DelayedGraspEndCallback()
 {
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = GetWorld()->GetTimeSeconds();
@@ -525,23 +543,23 @@ void USLManipulatorMonitor::DelayedGraspEndEventCallback()
 	for (auto EvItr(RecentlyEndedGraspEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// If enough time has passed, publish the event
-		if(CurrTime - EvItr->Time > MaxGraspJitterInterval)
+		if(CurrTime - EvItr->Time > GraspConcatenateIfSmaller)
 		{
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ~~~~~~~~~~~~~~~~~~~~~~~~~~ *END GRASP BCAST* (with delay) GraspEnd=%f; with %s;  ~~~~~~~~~~~~~~~~~~~~~~~~~~"),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), EvItr->Time, *EvItr->OtherIndividual->GetName());
+			/*UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs \t (wDelay) EndManipulatorGrasp: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+				GetWorld()->GetTimeSeconds(), *OwnerIndividualObject->GetParentActor()->GetName(), *EvItr->Other->GetParentActor()->GetName());*/
 			// Broadcast delayed event
 			OnEndManipulatorGrasp.Broadcast(OwnerIndividualObject, EvItr->Other, EvItr->Time);
 			
-			if (bUseAdHocGraspHelper)
+			if (bUseGraspHelper)
 			{
-				if (!bUseAdHocManualOverrideAction)
+				if (!bGraspHelperManualOverride)
 				{
-					StopAdHocGraspHelper();
+					StopGraspHelper();
 				}
 				else if (!bAdHocGraspHelpIsActive)
 				{
 					// Cancel the manual override
-					bCanExecuteManualOverride = false;
+					bGraspHelperCanExecuteManualOverrideFlag = false;
 				}
 			}
 
@@ -553,14 +571,14 @@ void USLManipulatorMonitor::DelayedGraspEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedGraspEvents.Num() > 0)
 	{
+		const float DelayValue = GraspConcatenateIfSmaller + ConcatenateIfSmallerDelay;
 		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this,
-			&USLManipulatorMonitor::DelayedGraspEndEventCallback,
-			MaxGraspJitterInterval + 0.05f, false);
+			&USLManipulatorMonitor::DelayedGraspEndCallback, DelayValue, false);
 	}
 }
 
 // Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-bool USLManipulatorMonitor::SkipRecentGraspEndEventBroadcast(USLBaseIndividual* OtherIndividual, float StartTime)
+bool USLManipulatorMonitor::SkipIfJitterGrasp(USLBaseIndividual* OtherIndividual, float StartTime)
 {
 	for (auto EvItr(RecentlyEndedGraspEvents.CreateIterator()); EvItr; ++EvItr)
 	{
@@ -568,7 +586,7 @@ bool USLManipulatorMonitor::SkipRecentGraspEndEventBroadcast(USLBaseIndividual* 
 		if(EvItr->Other == OtherIndividual)
 		{
 			// Check time difference
-			if(StartTime - EvItr->Time < MaxGraspJitterInterval)
+			if(StartTime - EvItr->Time < GraspConcatenateIfSmaller)
 			{
 				EvItr.RemoveCurrent();
 
@@ -588,9 +606,8 @@ bool USLManipulatorMonitor::SkipRecentGraspEndEventBroadcast(USLBaseIndividual* 
 
 /* Begin contact related */
 // Process beginning of contact
-void USLManipulatorMonitor::OnBeginOverlapContact(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnContactBoneOverlapBegin(USLBaseIndividual* OtherIndividual)
 {
-
 	if (int32* NumContacts = IndividualsInContact.Find(OtherIndividual))
 	{
 		(*NumContacts)++;
@@ -600,8 +617,10 @@ void USLManipulatorMonitor::OnBeginOverlapContact(USLBaseIndividual* OtherIndivi
 		// Check if it is a new contact event, or a concatenation with a previous one, either way, there is a new contact
 		IndividualsInContact.Add(OtherIndividual, 1);
 		const float CurrTime = GetWorld()->GetTimeSeconds();
-		if(!SkipRecentContactEndEventBroadcast(OtherIndividual, CurrTime))
+		if(!SkipIfJitterContact(OtherIndividual, CurrTime))
 		{
+			/*UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs \t BeginManipulatorContact: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+				GetWorld()->GetTimeSeconds(), *OwnerIndividualObject->GetParentActor()->GetName(), *OtherIndividual->GetParentActor()->GetName());*/
 			// Broadcast begin of semantic overlap event
 			OnBeginManipulatorContact.Broadcast(FSLContactResult(OwnerIndividualObject, OtherIndividual, CurrTime, false));
 		}
@@ -609,7 +628,7 @@ void USLManipulatorMonitor::OnBeginOverlapContact(USLBaseIndividual* OtherIndivi
 }
 
 // Process ending of contact
-void USLManipulatorMonitor::OnEndOverlapContact(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnContactBoneOverlapEnd(USLBaseIndividual* OtherIndividual)
 {
 	if (int32* NumContacts = IndividualsInContact.Find(OtherIndividual))
 	{
@@ -634,9 +653,9 @@ void USLManipulatorMonitor::OnEndOverlapContact(USLBaseIndividual* OtherIndividu
 			// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 			if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
 			{
+				const float DelayValue = ContactConcatenateIfSmaller + ConcatenateIfSmallerDelay;
 				GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this,
-					&USLManipulatorMonitor::DelayedContactEndEventCallback,
-					MaxContactJitterInterval + 0.05, false);
+					&USLManipulatorMonitor::DelayedContactEndCallback,	DelayValue, false);
 			}
 		}
 	}
@@ -649,7 +668,7 @@ void USLManipulatorMonitor::OnEndOverlapContact(USLBaseIndividual* OtherIndividu
 }
 
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
-void USLManipulatorMonitor::DelayedContactEndEventCallback()
+void USLManipulatorMonitor::DelayedContactEndCallback()
 {
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = GetWorld()->GetTimeSeconds();
@@ -657,8 +676,10 @@ void USLManipulatorMonitor::DelayedContactEndEventCallback()
 	for (auto EvItr(RecentlyEndedContactEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// If enough time has passed, publish the event
-		if(CurrTime - EvItr->Time > MaxContactJitterInterval)
+		if(CurrTime - EvItr->Time > ContactConcatenateIfSmaller)
 		{
+			/*UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs \t (wDelay) EndManipulatorContact: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+				GetWorld()->GetTimeSeconds(), *OwnerIndividualObject->GetParentActor()->GetName(), *EvItr->Other->GetParentActor()->GetName());*/
 			OnEndManipulatorContact.Broadcast(OwnerIndividualObject, EvItr->Other, EvItr->Time);
 			EvItr.RemoveCurrent();
 		}
@@ -667,14 +688,14 @@ void USLManipulatorMonitor::DelayedContactEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedContactEvents.Num() > 0)
 	{
+		const float DelayValue = ContactConcatenateIfSmaller + ConcatenateIfSmallerDelay;
 		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this,
-			&USLManipulatorMonitor::DelayedContactEndEventCallback,
-			MaxContactJitterInterval + 0.05f, false);
+			&USLManipulatorMonitor::DelayedContactEndCallback, DelayValue, false);
 	}
 }
 
 // Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-bool USLManipulatorMonitor::SkipRecentContactEndEventBroadcast(USLBaseIndividual* InOther, float StartTime)
+bool USLManipulatorMonitor::SkipIfJitterContact(USLBaseIndividual* InOther, float StartTime)
 {
 	for (auto EvItr(RecentlyEndedContactEvents.CreateIterator()); EvItr; ++EvItr)
 	{
@@ -683,7 +704,7 @@ bool USLManipulatorMonitor::SkipRecentContactEndEventBroadcast(USLBaseIndividual
 		{
 			// Check time difference between the previous and current event
 			const float TimeGap = StartTime - EvItr->Time;
-			if(TimeGap < MaxContactJitterInterval)
+			if(TimeGap < ContactConcatenateIfSmaller)
 			{
 				// Event will be concatenated
 				EvItr.RemoveCurrent();
@@ -701,70 +722,50 @@ bool USLManipulatorMonitor::SkipRecentContactEndEventBroadcast(USLBaseIndividual
 }
 /* End contact related */
 
-/* Ad Hoc grasp helper */
-// Ad hoc manual override
-void USLManipulatorMonitor::AdHocManualOverride()
-{
-	if (bCanExecuteManualOverride)
-	{
-		if (!bAdHocGraspHelpIsActive)
-		{
-			StartAdHocGraspHelper();
-		}
-		else
-		{
-			StopAdHocGraspHelper();
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s has nothing to manually override.."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-	}
-}
 
+/* Begin grasp helper */
 // Setup the grasp helper constraint
-bool USLManipulatorMonitor::InitAdHocGraspHelper()
+bool USLManipulatorMonitor::InitGraspHelper()
 {
 	if (ASkeletalMeshActor* AsSkelMA = Cast<ASkeletalMeshActor>(GetOwner()))
 	{
-		AdHocOwnerSkelMC = AsSkelMA->GetSkeletalMeshComponent();
+		GraspHelperOwnerSkelMC = AsSkelMA->GetSkeletalMeshComponent();
 
-		if (AdHocOwnerSkelMC->GetBoneIndex(AdHocOwnerHandBoneName) != INDEX_NONE)
+		if (GraspHelperOwnerSkelMC->GetBoneIndex(GraspHelperHandBoneName) != INDEX_NONE)
 		{
 			// Create and init the ad hoc grasp helper constraint
-			AdHocGraspHelperConstraint = NewObject<UPhysicsConstraintComponent>(this, FName("AdHocGraspHelperConstraint"));
-			AdHocGraspHelperConstraint->RegisterComponent();
-			AdHocGraspHelperConstraint->AttachToComponent(AdHocOwnerSkelMC,
-				FAttachmentTransformRules::SnapToTargetIncludingScale, AdHocOwnerHandBoneName);
+			GraspHelperConstraint = NewObject<UPhysicsConstraintComponent>(this, FName("AdHocGraspHelperConstraint"));
+			GraspHelperConstraint->RegisterComponent();
+			GraspHelperConstraint->AttachToComponent(GraspHelperOwnerSkelMC,
+				FAttachmentTransformRules::SnapToTargetIncludingScale, GraspHelperHandBoneName);
 
 
-			AdHocGraspHelperConstraint->ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, ConstraintLimit);
-			AdHocGraspHelperConstraint->ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, ConstraintLimit);
-			AdHocGraspHelperConstraint->ConstraintInstance.SetAngularTwistLimit(EAngularConstraintMotion::ACM_Limited, ConstraintLimit);
+			GraspHelperConstraint->ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, GraspHelperConstraintLimit);
+			GraspHelperConstraint->ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, GraspHelperConstraintLimit);
+			GraspHelperConstraint->ConstraintInstance.SetAngularTwistLimit(EAngularConstraintMotion::ACM_Limited, GraspHelperConstraintLimit);
 
-			AdHocGraspHelperConstraint->ConstraintInstance.SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, ConstraintLimit);
-			AdHocGraspHelperConstraint->ConstraintInstance.SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, ConstraintLimit);
-			AdHocGraspHelperConstraint->ConstraintInstance.SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, ConstraintLimit);
+			GraspHelperConstraint->ConstraintInstance.SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, GraspHelperConstraintLimit);
+			GraspHelperConstraint->ConstraintInstance.SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, GraspHelperConstraintLimit);
+			GraspHelperConstraint->ConstraintInstance.SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, GraspHelperConstraintLimit);
 
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = true;
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = ConstraintStiffness;
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.Damping = ConstraintDamping;
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.ContactDistance = ConstraintContactDistance;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = true;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = GraspHelperConstraintStiffness;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.Damping = GraspHelperConstraintDamping;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.LinearLimit.ContactDistance = GraspHelperConstraintContactDistance;
 
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.bSoftConstraint = true;
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.Stiffness = ConstraintStiffness;
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.Damping = ConstraintDamping;
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.ContactDistance = ConstraintContactDistance;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.bSoftConstraint = true;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.Stiffness = GraspHelperConstraintStiffness;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.Damping = GraspHelperConstraintDamping;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.ConeLimit.ContactDistance = GraspHelperConstraintContactDistance;
 
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.bSoftConstraint = true;
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.Stiffness = ConstraintStiffness;
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.Damping = ConstraintDamping;
-			AdHocGraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.ContactDistance = ConstraintContactDistance;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.bSoftConstraint = true;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.Stiffness = GraspHelperConstraintStiffness;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.Damping = GraspHelperConstraintDamping;
+			GraspHelperConstraint->ConstraintInstance.ProfileInstance.TwistLimit.ContactDistance = GraspHelperConstraintContactDistance;
 
-			if (bConstraintParentDominates)
+			if (bGraspHelperConstraintParentDominates)
 			{
-				AdHocGraspHelperConstraint->ConstraintInstance.EnableParentDominates();
+				GraspHelperConstraint->ConstraintInstance.EnableParentDominates();
 			}
 
 			return true;
@@ -772,7 +773,7 @@ bool USLManipulatorMonitor::InitAdHocGraspHelper()
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Owner attachment bone %s does not exist.. aborting grasp help.."),
-				*FString(__FUNCTION__), __LINE__, *AdHocOwnerHandBoneName.ToString());
+				*FString(__FUNCTION__), __LINE__, *GraspHelperHandBoneName.ToString());
 			return false;
 		}
 	}
@@ -783,8 +784,29 @@ bool USLManipulatorMonitor::InitAdHocGraspHelper()
 	}
 }
 
+// Ad hoc manual override
+void USLManipulatorMonitor::GraspHelperInputCallback()
+{
+	if (bGraspHelperCanExecuteManualOverrideFlag)
+	{
+		if (!bAdHocGraspHelpIsActive)
+		{
+			StartGraspHelper();
+		}
+		else
+		{
+			StopGraspHelper();
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s has nothing to manually override.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+	}
+}
+
 // Start grasp help
-void USLManipulatorMonitor::StartAdHocGraspHelper()
+void USLManipulatorMonitor::StartGraspHelper()
 {
 	if (bAdHocGraspHelpIsActive)
 	{
@@ -793,21 +815,21 @@ void USLManipulatorMonitor::StartAdHocGraspHelper()
 		return;
 	}
 
-	if (AdHocGraspedSMC && AdHocGraspedSMC->IsValidLowLevel() && !AdHocGraspedSMC->IsPendingKillOrUnreachable())
+	if (GraspHelperItemSMC && GraspHelperItemSMC->IsValidLowLevel() && !GraspHelperItemSMC->IsPendingKillOrUnreachable())
 	{
 		// Apply the properties to the grasped object
-		if (bDisableGravityOfGraspedObject)
+		if (bGraspHelperItemDisableGravity)
 		{
-			AdHocGraspedSMC->SetEnableGravity(false);
+			GraspHelperItemSMC->SetEnableGravity(false);
 		}
 
-		if (bScaleMassOfGraspedObject)
+		if (bGraspHelperItemScaleMass)
 		{
-			AdHocGraspedSMC->SetMassScale(NAME_None, GraspedObjectMassScaleValue);
+			GraspHelperItemSMC->SetMassScale(NAME_None, GraspHelperItemMassScaleValue);
 		}
 
-		AdHocGraspHelperConstraint->SetConstrainedComponents(AdHocOwnerSkelMC, AdHocOwnerHandBoneName,
-			AdHocGraspedSMC, NAME_None);
+		GraspHelperConstraint->SetConstrainedComponents(GraspHelperOwnerSkelMC, GraspHelperHandBoneName,
+			GraspHelperItemSMC, NAME_None);
 
 		bAdHocGraspHelpIsActive = true;
 	}
@@ -819,7 +841,7 @@ void USLManipulatorMonitor::StartAdHocGraspHelper()
 }
 
 // Stop grasp help
-void USLManipulatorMonitor::StopAdHocGraspHelper()
+void USLManipulatorMonitor::StopGraspHelper()
 {
 	if (!bAdHocGraspHelpIsActive)
 	{
@@ -828,22 +850,22 @@ void USLManipulatorMonitor::StopAdHocGraspHelper()
 		return;
 	}
 
-	AdHocGraspHelperConstraint->BreakConstraint();
+	GraspHelperConstraint->BreakConstraint();
 
-	if (AdHocGraspedSMC && AdHocGraspedSMC->IsValidLowLevel() && !AdHocGraspedSMC->IsPendingKillOrUnreachable())
+	if (GraspHelperItemSMC && GraspHelperItemSMC->IsValidLowLevel() && !GraspHelperItemSMC->IsPendingKillOrUnreachable())
 	{
 		// Reset the properties to the grasped object
-		if (bDisableGravityOfGraspedObject)
+		if (bGraspHelperItemDisableGravity)
 		{
-			AdHocGraspedSMC->SetEnableGravity(true);
+			GraspHelperItemSMC->SetEnableGravity(true);
 		}
 
-		if (bScaleMassOfGraspedObject)
+		if (bGraspHelperItemScaleMass)
 		{
-			AdHocGraspedSMC->SetMassScale(NAME_None, 1.f);
+			GraspHelperItemSMC->SetMassScale(NAME_None, 1.f);
 		}
 
-		AdHocGraspedSMC = nullptr;
+		GraspHelperItemSMC = nullptr;
 	}
 	else
 	{
@@ -852,5 +874,6 @@ void USLManipulatorMonitor::StopAdHocGraspHelper()
 	}
 
 	bAdHocGraspHelpIsActive = false;
-	bCanExecuteManualOverride = false;
+	bGraspHelperCanExecuteManualOverrideFlag = false;
 }
+/* End grasp helper */

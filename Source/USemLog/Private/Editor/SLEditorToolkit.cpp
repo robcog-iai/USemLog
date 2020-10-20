@@ -328,7 +328,7 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 //	}
 //
 //	/* Lambda to return a new unique random color, black if it failed to generate one */
-//	const auto GenerateANewUniqueColorLambda = [](const int32 MinDist, int32 MaxNumTrials, TArray<FColor>& ConsumedColors)->FString
+//	const auto GenerateANewUniqueColorLambda = [](const int32 IgnoreMovementsSmallerThanValue, int32 MaxNumTrials, TArray<FColor>& ConsumedColors)->FString
 //	{
 //		for (int32 TrialIdx = 0; TrialIdx < MaxNumTrials; TrialIdx++)
 //		{
@@ -344,9 +344,9 @@ void FSLEditorToolkit::RandomlyGenerateVisualMasks(UWorld* World, bool bOverwrit
 //			}
 //
 //			/* Nested lambda for FindByPredicate*/
-//			const auto EqualWithToleranceLambda = [RandColor, MinDist](const FColor& Item)
+//			const auto EqualWithToleranceLambda = [RandColor, IgnoreMovementsSmallerThanValue](const FColor& Item)
 //			{
-//				return ColorEqual(RandColor, Item, MinDist);
+//				return ColorEqual(RandColor, Item, IgnoreMovementsSmallerThanValue);
 //			};
 //
 //			if(!ConsumedColors.FindByPredicate(EqualWithToleranceLambda))

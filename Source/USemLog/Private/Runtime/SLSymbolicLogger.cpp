@@ -208,8 +208,8 @@ void ASLSymbolicLogger::InitImpl()
 	if (LoggerParameters.EventsSelection.bSelectAll)
 	{
 		InitContactMonitors();
-		InitManipulatorContactAndGraspMonitors();
 		InitReachAndPreGraspMonitors();
+		InitManipulatorContactAndGraspMonitors();
 		InitPickAndPlaceMonitors();
 		//InitManipulatorGraspFixationMonitors();
 		/*InitManipulatorContainerMonitors();
@@ -221,12 +221,6 @@ void ASLSymbolicLogger::InitImpl()
 		if (LoggerParameters.EventsSelection.bContact)
 		{
 			InitContactMonitors();
-		}
-
-		/* Hand contact and/or grasp*/
-		if (LoggerParameters.EventsSelection.bManipulatorContact || LoggerParameters.EventsSelection.bGrasp)
-		{
-			InitManipulatorContactAndGraspMonitors();
 		}
 
 		/* Reach */
@@ -241,6 +235,12 @@ void ASLSymbolicLogger::InitImpl()
 				UE_LOG(LogTemp, Error, TEXT("%s::%d Reach monitors only work if grasp events are enabled.."),
 					*FString(__FUNCTION__), __LINE__);
 			}
+		}
+
+		/* Hand contact and/or grasp*/
+		if (LoggerParameters.EventsSelection.bManipulatorContact || LoggerParameters.EventsSelection.bGrasp)
+		{
+			InitManipulatorContactAndGraspMonitors();
 		}
 
 		/* Pick and place */
@@ -655,6 +655,11 @@ void ASLSymbolicLogger::InitManipulatorContactAndGraspMonitors()
 					}
 				}
 			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Monitor %s could not be init.."),
+					*FString(__func__), __LINE__, *Itr->GetName());
+			}
 		}
 	}
 }
@@ -708,7 +713,11 @@ void ASLSymbolicLogger::InitReachAndPreGraspMonitors()
 						*FString(__func__), __LINE__, *Itr->GetName());
 				}
 			}
-
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Monitor %s could not be init.."),
+					*FString(__func__), __LINE__, *Itr->GetName());
+			}
 		}
 	}
 }
@@ -747,7 +756,8 @@ void ASLSymbolicLogger::InitPickAndPlaceMonitors()
 	{
 		if (IsValidAndLoaded(Itr->GetOwner()))
 		{
-			if (Itr->Init())
+			Itr->Init();
+			if (Itr->IsInit())
 			{
 				PickAndPlaceMonitors.Emplace(*Itr);
 				TSharedPtr<FSLPickAndPlaceEventsHandler> PAPHandler = MakeShareable(new FSLPickAndPlaceEventsHandler());
@@ -758,9 +768,14 @@ void ASLSymbolicLogger::InitPickAndPlaceMonitors()
 				}
 				else
 				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Handler could not be init with parent %s.."),
 						*FString(__func__), __LINE__, *Itr->GetName());
 				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Monitor %s could not be init.."),
+					*FString(__func__), __LINE__, *Itr->GetName());
 			}
 		}
 	}

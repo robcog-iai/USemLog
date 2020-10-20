@@ -27,11 +27,14 @@ USLReachAndPreGraspMonitor::USLReachAndPreGraspMonitor()
 	bIsStarted = false;
 	bIsFinished = false;
 
+	bLogDebug = false;
+
 	CurrGraspedIndividual = nullptr;
 
 	// Default values
 	UpdateRate = 0.027;
-	
+	ConcatenateIfSmaller = 0.4f;
+
 	ShapeColor = FColor::Orange.WithAlpha(64);
 
 	// Set overlap area collision parameters
@@ -90,7 +93,11 @@ void USLReachAndPreGraspMonitor::Init()
 		}
 		
 		// Disable overlaps until start
-		SetGenerateOverlapEvents(false);	
+		SetGenerateOverlapEvents(false);
+
+		// Bind overlap events
+		OnComponentBeginOverlap.AddDynamic(this, &USLReachAndPreGraspMonitor::OnOverlapBegin);
+		OnComponentEndOverlap.AddDynamic(this, &USLReachAndPreGraspMonitor::OnOverlapEnd);
 
 		// Subscribe for grasp notifications from sibling monitor component
 		if(SubscribeForManipulatorEvents())
@@ -112,12 +119,8 @@ void USLReachAndPreGraspMonitor::Start()
 		// Start listening for overlaps
 		SetGenerateOverlapEvents(true);
 
-		// Iterate through the currently overlapping componets
-		TriggerInitialOverlaps();
-
-		// Bind overlap events
-		OnComponentBeginOverlap.AddDynamic(this, &USLReachAndPreGraspMonitor::OnOverlapBegin);
-		OnComponentEndOverlap.AddDynamic(this, &USLReachAndPreGraspMonitor::OnOverlapEnd);
+		//// Iterate through the currently overlapping componets
+		//TriggerInitialOverlaps();
 		
 		// Mark as started
 		bIsStarted = true;
@@ -196,6 +199,7 @@ void USLReachAndPreGraspMonitor::SetCollisionParameters()
 	//SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel4);
 	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Overlap);
+	SetAllUseCCD(true);
 }
 
 // Subscribe for grasp events from sibling component (contacts with hand and grasp events)
@@ -206,8 +210,8 @@ bool USLReachAndPreGraspMonitor::SubscribeForManipulatorEvents()
 	{
 		// Timeline reaching   ,    pre grasp
 		// [-----------contact][contact--------grasp]
-		ManipulatorMonitor->OnBeginManipulatorContact.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLManipulatorContactBegin);
-		ManipulatorMonitor->OnEndManipulatorContact.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLManipulatorContactEnd);
+		ManipulatorMonitor->OnBeginManipulatorContact.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLContactBegin);
+		ManipulatorMonitor->OnEndManipulatorContact.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLContactEnd);
 		ManipulatorMonitor->OnBeginManipulatorGrasp.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLGraspBegin);
 		ManipulatorMonitor->OnEndManipulatorGrasp.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLGraspEnd);
 		return true;
@@ -228,8 +232,8 @@ void USLReachAndPreGraspMonitor::UpdateCandidatesData(float DeltaTime)
 		const float PrevDist = CanidateData.Value.Get<1>();
 		const float DiffDist = PrevDist - CurrDist;
 
-		// Ignore small difference changes (MinDist)
-		if (DiffDist > MinDist)
+		// Ignore small difference changes (IgnoreMovementsSmallerThanValue)
+		if (DiffDist > IgnoreMovementsSmallerThanValue)
 		{
 			// Positive difference makes the hand closer to the object, update the distance
 			CanidateData.Value.Get<ESLTimeAndDist::SLDist>() = CurrDist;
@@ -243,7 +247,7 @@ void USLReachAndPreGraspMonitor::UpdateCandidatesData(float DeltaTime)
 			//	*GetOwner()->GetActorLocation().ToString(),
 			//	*CanidateData.Key->GetActorLocation().ToString());
 		}
-		else if (DiffDist < -MinDist)
+		else if (DiffDist < -IgnoreMovementsSmallerThanValue)
 		{
 			// Negative difference makes the hand further away from the object, update distance, reset the start time
 			CanidateData.Value.Get<ESLTimeAndDist::SLTime>() = CurrTimestamp;
@@ -276,6 +280,9 @@ void USLReachAndPreGraspMonitor::UpdateCandidatesData(float DeltaTime)
 // Publish currently overlapping components
 void USLReachAndPreGraspMonitor::TriggerInitialOverlaps()
 {
+	/*UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4fs \t\t Started manual overlap trigger"),
+		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());*/
+
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
 	TSet<UPrimitiveComponent*> CurrOverlappingComponents;
@@ -285,6 +292,9 @@ void USLReachAndPreGraspMonitor::TriggerInitialOverlaps()
 	{
 		OnOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
 	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4fs \t\t Finished manual overlap trigger"),
+	//	*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
 }
 
 // Check if the object is can be a candidate for reaching
@@ -339,9 +349,8 @@ void USLReachAndPreGraspMonitor::OnOverlapBegin(UPrimitiveComponent* OverlappedC
 		return;
 	}
 
-	FString DebugLogString = FString::Printf(TEXT("%s::%d::%.4fs \t OverlapBegin: \t %s:%s;"),
-		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherActor->GetName(), *OtherComp->GetName());
-	
+	FString DebugLogString = FString::Printf(TEXT("%s::%d::%.4fs \t BeginOverlap: \t %s->%s::%s;"),
+		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName(), *OtherComp->GetName());	
 	// Check if the individual can be a reach candidate
 	if (CanBeACandidate(OtherActor))
 	{
@@ -353,11 +362,12 @@ void USLReachAndPreGraspMonitor::OnOverlapBegin(UPrimitiveComponent* OverlappedC
 		{
 			SetComponentTickEnabled(true);
 		}
-
 		DebugLogString.Append("\t ADD as candidate;");
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *DebugLogString);
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *DebugLogString);
+	}
 }
 
 // Checks for candidates in the overlap area
@@ -374,9 +384,8 @@ void USLReachAndPreGraspMonitor::OnOverlapEnd(UPrimitiveComponent* OverlappedCom
 		return;
 	}
 
-	FString DebugLogString = FString::Printf(TEXT("%s::%d::%.4fs \t OverlapEnd: \t %s:%s;"),
-		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *OtherActor->GetName(), *OtherComp->GetName());
-
+	FString DebugLogString = FString::Printf(TEXT("%s::%d::%.4fs \t EndOverlap: \t %s->%s::%s;"),
+		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName(), *OtherComp->GetName());
 	if (CandidatesData.Remove(OtherIndividual) > 0)
 	{
 		// Stop candidate update if this was the last candidate
@@ -384,17 +393,24 @@ void USLReachAndPreGraspMonitor::OnOverlapEnd(UPrimitiveComponent* OverlappedCom
 		{
 			SetComponentTickEnabled(false);
 		}
-
 		DebugLogString.Append("\t RM as candidate;");
 	}
-
-	UE_LOG(LogTemp, Error, TEXT("%s"), *DebugLogString);
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s"), *DebugLogString);
+	}
 }
 
 
 // Called when sibling detects a grasp, used for ending the manipulator positioning event
 void USLReachAndPreGraspMonitor::OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Timestamp, const FString& GraspType)
 {
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4fs \t\t GraspBegin: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+	}
+
 	if(CurrGraspedIndividual)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs Already grasping %s, cannot set a new grasp to %s.."), *FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
@@ -416,12 +432,20 @@ void USLReachAndPreGraspMonitor::OnSLGraspBegin(USLBaseIndividual* Self, USLBase
 			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
 
 			// Cancel delay callback if active
-			GetWorld()->GetTimerManager().ClearTimer(ManipulatorContactDelayTimerHandle);
+			GetWorld()->GetTimerManager().ClearTimer(DelayTimerHandle);
 
 			// Broadcast reach and pre grasp events
 			const float ReachStartTime = CandidateTimeAndDist->Get<ESLTimeAndDist::SLTime>();
 			const float ReachEndTime = *ContactTime;
 			OnReachAndPreGraspEvent.Broadcast(OwnerIndividualObject, Other, ReachStartTime, ReachEndTime, Timestamp);
+
+			FString CandidatesStr;
+			for (const auto& C : CandidatesData)
+			{
+				CandidatesStr.Append(C.Key->GetParentActor()->GetName() + ";");
+			}
+			UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4fs \t\t RemovingCandidates: %s"), *FString(__FUNCTION__), __LINE__,
+				GetWorld()->GetTimeSeconds(), *CandidatesStr);
 
 			// Remove existing candidates and pause the update callback while the hand is grasping
 			CandidatesData.Empty();
@@ -448,6 +472,12 @@ void USLReachAndPreGraspMonitor::OnSLGraspBegin(USLBaseIndividual* Self, USLBase
 // Reset looking for the events
 void USLReachAndPreGraspMonitor::OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
 {	
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4fs \t\t GraspEnd: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+	}
+
 	if (CurrGraspedIndividual == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs No object is currently grasped while ending theoretical grasp with %s.."),
@@ -468,19 +498,29 @@ void USLReachAndPreGraspMonitor::OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIn
 			*Other->GetParentActor()->GetName(), *CurrGraspedIndividual->GetParentActor()->GetName());
 		return;
 	}
-
-	// Start looking for new candidates
-	TriggerInitialOverlaps();
 	
 	// Grasp released start listening to overlaps
-	SetGenerateOverlapEvents(false);
+	SetGenerateOverlapEvents(true);
+
+	// TODO seems this is not needed anymore since the generate overlap events function already triggers the values
+	//// Start looking for new candidates
+	//TriggerInitialOverlaps();
 }
 
 // Called when the sibling is in contact with an object, used for ending the reaching event and starting the manipulator positioning event
-void USLReachAndPreGraspMonitor::OnSLManipulatorContactBegin(const FSLContactResult& ContactResult)
+void USLReachAndPreGraspMonitor::OnSLContactBegin(const FSLContactResult& ContactResult)
 {
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4fs \t\t ContactBegin: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *ContactResult.Self->GetParentActor()->GetName(), *ContactResult.Other->GetParentActor()->GetName());
+	}
+
 	if(CurrGraspedIndividual)
 	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs There should be no contact publishing during grasps (%s->%s).."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+			*ContactResult.Self->GetParentActor()->GetName(), *ContactResult.Other->GetParentActor()->GetName());
 		// Ignore any manipulator contacts while in grasp mode
 		return;
 	}
@@ -489,7 +529,7 @@ void USLReachAndPreGraspMonitor::OnSLManipulatorContactBegin(const FSLContactRes
 	if (CandidatesData.Contains(ContactResult.Other))
 	{
 		// Check if the contact should be concatenated 
-		if(!SkipRecentManipulatorContactEndEventTime(ContactResult.Other, ContactResult.Time))
+		if(!SkipIfJitterContact(ContactResult.Other, ContactResult.Time))
 		{
 			// Overwrite previous time or create a new contact result
 			ManipulatorContactData.Emplace(ContactResult.Other, ContactResult.Time);
@@ -506,8 +546,14 @@ void USLReachAndPreGraspMonitor::OnSLManipulatorContactBegin(const FSLContactRes
 }
 
 // Manipulator is not in contact with object anymore, check for possible concatenation, or reset the potential reach time
-void USLReachAndPreGraspMonitor::OnSLManipulatorContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
+void USLReachAndPreGraspMonitor::OnSLContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float EndTime)
 {
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4fs \t\t ContactEnd: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+	}
+
 	if(CurrGraspedIndividual)
 	{
 		// Ignore any manipulator contacts while in grasp mode
@@ -518,7 +564,7 @@ void USLReachAndPreGraspMonitor::OnSLManipulatorContactEnd(USLBaseIndividual* Se
 	if (CandidatesData.Contains(Other))
 	{
 		// Cache the event
-		RecentlyEndedManipulatorContactEvents.Emplace(Other, Time);
+		RecentlyEndedEvents.Emplace(Other, EndTime);
 
 		if (!GetWorld())
 		{
@@ -527,10 +573,11 @@ void USLReachAndPreGraspMonitor::OnSLManipulatorContactEnd(USLBaseIndividual* Se
 		}
 
 		// Delay reseting the reach time, it might be a small disconnection with the hand
-		if(!GetWorld()->GetTimerManager().IsTimerActive(ManipulatorContactDelayTimerHandle))
+		if(!GetWorld()->GetTimerManager().IsTimerActive(DelayTimerHandle))
 		{
-			GetWorld()->GetTimerManager().SetTimer(ManipulatorContactDelayTimerHandle, this, &USLReachAndPreGraspMonitor::DelayedManipulatorContactEndEventCallback,
-				MaxPreGraspEventTimeGap * 1.2f, false);
+			const float DelayValue = ConcatenateIfSmaller + ConcatenateIfSmallerDelay;
+			GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle,
+				this, &USLReachAndPreGraspMonitor::DelayContactEndCallback, DelayValue, false);
 		}
 	}
 	else
@@ -544,15 +591,15 @@ void USLReachAndPreGraspMonitor::OnSLManipulatorContactEnd(USLBaseIndividual* Se
 }
 
 // Delayed call of setting finished event to check for possible concatenation of jittering events of the same type
-void USLReachAndPreGraspMonitor::DelayedManipulatorContactEndEventCallback()
+void USLReachAndPreGraspMonitor::DelayContactEndCallback()
 {
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = GetWorld()->GetTimeSeconds();
 	
-	for (auto EvItr(RecentlyEndedManipulatorContactEvents.CreateIterator()); EvItr; ++EvItr)
+	for (auto EvItr(RecentlyEndedEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// If enough time has passed, reset the reach time
-		if(CurrTime - EvItr->Time > MaxPreGraspEventTimeGap)
+		if(CurrTime - EvItr->Time > ConcatenateIfSmaller)
 		{
 			// Reset reach start in the candidate
 			if(FSLTimeAndDist* TimeAndDist = CandidatesData.Find(EvItr->Other))
@@ -581,32 +628,33 @@ void USLReachAndPreGraspMonitor::DelayedManipulatorContactEndEventCallback()
 	}
 
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
-	if(RecentlyEndedManipulatorContactEvents.Num() > 0)
+	if(RecentlyEndedEvents.Num() > 0)
 	{
-		GetWorld()->GetTimerManager().SetTimer(ManipulatorContactDelayTimerHandle, this, &USLReachAndPreGraspMonitor::DelayedManipulatorContactEndEventCallback,
-			MaxPreGraspEventTimeGap * 1.2f, false);
+		const float DelayValue = ConcatenateIfSmaller + ConcatenateIfSmallerDelay;
+		GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle,
+			this, &USLReachAndPreGraspMonitor::DelayContactEndCallback, DelayValue, false);
 	}
 }
 
 // Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-bool USLReachAndPreGraspMonitor::SkipRecentManipulatorContactEndEventTime(USLBaseIndividual* Other, float StartTime)
+bool USLReachAndPreGraspMonitor::SkipIfJitterContact(USLBaseIndividual* Other, float StartTime)
 {
-	for (auto EvItr(RecentlyEndedManipulatorContactEvents.CreateIterator()); EvItr; ++EvItr)
+	for (auto EvItr(RecentlyEndedEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// Check if it is an event between the same entities
 		if(EvItr->Other == Other)
 		{
 			// Check time difference between the previous and current event
 			const float TimeGap = StartTime - EvItr->Time;
-			if(TimeGap < MaxPreGraspEventTimeGap)
+			if(TimeGap < ConcatenateIfSmaller)
 			{
 				// Event will be concatenated
 				EvItr.RemoveCurrent();
 
 				// Check if it was the last event, if so, pause the delay publisher
-				if(RecentlyEndedManipulatorContactEvents.Num() == 0)
+				if(RecentlyEndedEvents.Num() == 0)
 				{
-					GetWorld()->GetTimerManager().ClearTimer(ManipulatorContactDelayTimerHandle);
+					GetWorld()->GetTimerManager().ClearTimer(DelayTimerHandle);
 				}
 				return true;
 			}

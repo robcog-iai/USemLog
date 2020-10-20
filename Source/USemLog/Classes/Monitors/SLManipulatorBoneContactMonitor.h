@@ -42,10 +42,10 @@ struct FSLManipulatorContactMonitorEndEvent
 };
 
 /** Delegate to notify that a contact begins between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorContactMonitorBeginSignature, USLBaseIndividual* /*Other*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLBoneOverlapBeginSignature, USLBaseIndividual* /*Other*/);
 
 /** Delegate to notify that a contact ended between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLManipulatorContactMonitorEndSignature, USLBaseIndividual* /*Other*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FSLBoneOverlapEndSignature, USLBaseIndividual* /*Other*/);
 
 /**
  * Semantic overlap generator for grasp detection
@@ -63,13 +63,13 @@ public:
 	~USLManipulatorBoneContactMonitor() = default;
 	
 	// Attach to bone 
-	bool Init(bool bGrasp = true, bool bContact = true);
+	void Init(bool bGrasp = true, bool bContact = true);
 
 	// Start listening to overlaps
 	void Start();
 
 	// Pause/continue the overlap detection
-	void PauseGrasp(bool bInPause);
+	void SetGraspCheckPaused(bool bNewValue);
 
 	// Stop publishing overlap events
 	void Finish(bool bForced = false);
@@ -81,7 +81,7 @@ public:
 	bool IsStarted() const { return bIsStarted; };
 
 	// True if grasp overlaps are paused
-	bool IsGraspPaused() const { return bGraspPaused; };
+	bool IsGraspPaused() const { return bIsGraspCheckPaused; };
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
@@ -104,7 +104,14 @@ private:
 	// Set debug color
 	void SetColor(FColor Color);
 
+
 	/* Grasp related*/
+	// Bind grasp related overlaps
+	void BindGraspOverlapCallbacks();
+
+	// Unbind grasp related overlaps
+	void UnbindGraspOverlapCallbacks();
+
 	// Publish currently grasp related overlapping components
 	void TriggerInitialGraspOverlaps();
 	
@@ -132,6 +139,12 @@ private:
 	bool SkipRecentGraspOverlapEndEventBroadcast(USLBaseIndividual* OtherIndividual, float StartTime);
 
 	/* Contact related */
+	// Bind contact related overlaps
+	void BindContactOverlapCallbacks();
+
+	// Unbind contact related overlaps
+	void UnbindContactOverlapCallbacks();
+
 	// Publish currently contact related overlapping components
 	void TriggerInitialContactOverlaps();
 
@@ -152,22 +165,26 @@ private:
 		int32 OtherBodyIndex);
 
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
-	void DelayedContactOverlapEndEventCallback();
+	void DelayContactEndCallback();
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
-	bool SkipRecentContactOverlapEndEventBroadcast(USLBaseIndividual* OtherIndividual, float StartTime);
+	bool SkipIfJitterContact(USLBaseIndividual* OtherIndividual, float StartTime);
 
 public:
 	// Grasp related overlap begin/end
-	FSLManipulatorContactMonitorBeginSignature OnBeginManipulatorGraspOverlap;
-	FSLManipulatorContactMonitorEndSignature OnEndManipulatorGraspOverlap;
+	FSLBoneOverlapBeginSignature OnBeginGraspBoneOverlap;
+	FSLBoneOverlapEndSignature OnEndGraspBoneOverlap;
 	
 	// Contact related overlap begin/end
-	FSLManipulatorContactMonitorBeginSignature OnBeginManipulatorContactOverlap;
-	FSLManipulatorContactMonitorEndSignature OnEndManipulatorContactOverlap;
+	FSLBoneOverlapBeginSignature OnBeginContactBoneOverlap;
+	FSLBoneOverlapEndSignature OnEndContactBoneOverlap;
 
 private:
+	// Candidate check update rate
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogDebug : 1;
+
 	// True if initialized
 	uint8 bIsInit : 1;
 
@@ -175,7 +192,7 @@ private:
 	uint8 bIsStarted : 1;
 
 	// True if grasp overlaps are paused
-	uint8 bGraspPaused : 1;
+	uint8 bIsGraspCheckPaused : 1;
 
 	// True if finished
 	uint8 bIsFinished : 1;
@@ -232,5 +249,6 @@ private:
 
 	/* Constants */
 	constexpr static bool bVisualDebug = true;
-	constexpr static float MaxOverlapEventTimeGap = 0.11f;
+	constexpr static float ConcatenateIfSmaller = 0.31f;
+	constexpr static float ConcatenateIfSmallerDelay = 0.05f;
 };

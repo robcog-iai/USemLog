@@ -62,8 +62,8 @@ void ISLContactMonitorInterface::StartSupportedByUpdateCheck()
 	if(World)
 	{
 		// Start updating the timer, will be paused if there are no candidates
-		SBTimerDelegate.BindRaw(this, &ISLContactMonitorInterface::SupportedByUpdateCheckBegin);
-		World->GetTimerManager().SetTimer(SBTimerHandle, SBTimerDelegate, SBUpdateRate, true);
+		SupportedByTimerDelegate.BindRaw(this, &ISLContactMonitorInterface::SupportedByUpdateCheckBegin);
+		World->GetTimerManager().SetTimer(SupportedByTimerHandle, SupportedByTimerDelegate, SupportedByUpdateRate, true);
 	}
 }
 
@@ -72,14 +72,14 @@ void ISLContactMonitorInterface::StartSupportedByUpdateCheck()
 void ISLContactMonitorInterface::SupportedByUpdateCheckBegin()
 {
 	// Check if candidates are in a supported by event
-	for (auto CandidateItr(SBCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
+	for (auto CandidateItr(SupportedByCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
 	{
 		// Get relative vertical speed
 		const float RelVertSpeed = FMath::Abs(CandidateItr->SelfMeshComponent->GetComponentVelocity().Z -
 			CandidateItr->OtherMeshComponent->GetComponentVelocity().Z);
 		
 		// Check that the relative speed on Z between the two objects is smaller than the threshold
-		if (RelVertSpeed < SBMaxVertSpeed)
+		if (RelVertSpeed < SupportedByMaxVertSpeed)
 		{
 			if (CandidateItr->bIsOtherASemanticOverlapArea)
 			{
@@ -118,9 +118,9 @@ void ISLContactMonitorInterface::SupportedByUpdateCheckBegin()
 	}
 	
 	// PauseGraspDetection timer
-	if (SBCandidates.Num() == 0)
+	if (SupportedByCandidates.Num() == 0)
 	{
-		World->GetTimerManager().PauseTimer(SBTimerHandle);
+		World->GetTimerManager().PauseTimer(SupportedByTimerHandle);
 	}
 }
 
@@ -128,7 +128,7 @@ void ISLContactMonitorInterface::SupportedByUpdateCheckBegin()
 bool ISLContactMonitorInterface::CheckAndRemoveIfJustCandidate(USLBaseIndividual* InOther)
 {
 	// Use iterator to be able to remove the entry from the array
-	for (auto CandidateItr(SBCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
+	for (auto CandidateItr(SupportedByCandidates.CreateIterator()); CandidateItr; ++CandidateItr)
 	{
 		if ((*CandidateItr).Other == InOther)
 		{
@@ -148,6 +148,9 @@ void ISLContactMonitorInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedC
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs \t BeginContact: \t %s:%s;"),
+	//	*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *OtherActor->GetName(), *OtherComp->GetName());
+
 	// Ignore self overlaps (area with static mesh)
 	if (OtherActor == ShapeComponent->GetOwner())
 	{
@@ -176,17 +179,17 @@ void ISLContactMonitorInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedC
 	if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(OtherComp))
 	{
 		// Broadcast begin of semantic overlap event
-		FSLContactResult SemanticOverlapResult(IndividualObject, OtherIndividual,
+		FSLContactResult SemanticOverlapResult(OwnerIndividualObject, OtherIndividual,
 			StartTime, false, OwnerMeshComp, OtherAsMeshComp);
 		OnBeginSLContact.Broadcast(SemanticOverlapResult);
 
 		if(bLogSupportedByEvents)
 		{
 			// Add candidate and re-start (if paused) timer cb
-			SBCandidates.Emplace(SemanticOverlapResult);
-			if(World->GetTimerManager().IsTimerPaused(SBTimerHandle))
+			SupportedByCandidates.Emplace(SemanticOverlapResult);
+			if(World->GetTimerManager().IsTimerPaused(SupportedByTimerHandle))
 			{
-				World->GetTimerManager().UnPauseTimer(SBTimerHandle);
+				World->GetTimerManager().UnPauseTimer(SupportedByTimerHandle);
 			}
 		}
 	}
@@ -199,20 +202,20 @@ void ISLContactMonitorInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedC
 		// This allows us to be in sync with the overlap end event 
 		// since the unique ids and the rule of ignoring the one event will not change
 		// Filter out one of the trigger areas (compare unique ids)
-		if (OtherIndividual->GetUniqueID() > IndividualObject->GetUniqueID())
+		if (OtherIndividual->GetUniqueID() > OwnerIndividualObject->GetUniqueID())
 		{
 			// Broadcast begin of semantic overlap event
-			FSLContactResult SemanticOverlapResult(IndividualObject, OtherIndividual,
+			FSLContactResult SemanticOverlapResult(OwnerIndividualObject, OtherIndividual,
 				StartTime, true, OwnerMeshComp, OtherContactTrigger->OwnerMeshComp);
 			OnBeginSLContact.Broadcast(SemanticOverlapResult);
 			
 			if(bLogSupportedByEvents)
 			{
 				// Add candidate and re-start (if paused) timer cb
-				SBCandidates.Emplace(SemanticOverlapResult);
-				if(World->GetTimerManager().IsTimerPaused(SBTimerHandle))
+				SupportedByCandidates.Emplace(SemanticOverlapResult);
+				if(World->GetTimerManager().IsTimerPaused(SupportedByTimerHandle))
 				{
-					World->GetTimerManager().UnPauseTimer(SBTimerHandle);
+					World->GetTimerManager().UnPauseTimer(SupportedByTimerHandle);
 				}
 			}
 		}
@@ -225,6 +228,9 @@ void ISLContactMonitorInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedCom
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
+	//UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs \t EndContact: \t %s::%s;"),
+	//	*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *OtherActor->GetName(), *OtherComp->GetName());
+
 	// Ignore self overlaps (area with static mesh)
 	if (OtherActor == ShapeComponent->GetOwner())
 	{
@@ -245,8 +251,8 @@ void ISLContactMonitorInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedCom
 	// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 	if(!World->GetTimerManager().IsTimerActive(DelayTimerHandle))
 	{
-		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,
-			MaxOverlapEventTimeGap*MaxOverlapEventTimeGapMult, false);
+		const float DelayValue = ConcatenateIfSmaller + ConcatenateIfSmallerDelay;
+		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate, DelayValue, false);
 	}
 }
 
@@ -268,8 +274,8 @@ void ISLContactMonitorInterface::DelayedOverlapEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedOverlapEvents.Num() > 0)
 	{
-		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate,
-			MaxOverlapEventTimeGap*MaxOverlapEventTimeGapMult, false);
+		const float DelayValue = ConcatenateIfSmaller + ConcatenateIfSmallerDelay;
+		World->GetTimerManager().SetTimer(DelayTimerHandle, DelayTimerDelegate, DelayValue, false);
 	}
 }
 
@@ -278,13 +284,13 @@ bool ISLContactMonitorInterface::PublishDelayedOverlapEndEvent(const FSLOverlapE
 {
 	// Check if the event is old enough that it had it chance to be concatenated
 	// if CurrTime < 0, it forces publishing
-	if(CurrTime < 0 || (CurrTime - Ev.Time > MaxOverlapEventTimeGap))
+	if(CurrTime < 0 || (CurrTime - Ev.Time > ConcatenateIfSmaller))
 	{
 		// Check the type of the other component
 		if (UMeshComponent* OtherAsMeshComp = Cast<UMeshComponent>(Ev.OtherComp))
 		{
 			// Broadcast end of semantic overlap event
-			OnEndSLContact.Broadcast(IndividualObject, Ev.OtherIndividual, Ev.Time);
+			OnEndSLContact.Broadcast(OwnerIndividualObject, Ev.OtherIndividual, Ev.Time);
 		}
 		else if (ISLContactMonitorInterface* OtherContactTrigger = Cast<ISLContactMonitorInterface>(Ev.OtherComp))
 		{
@@ -295,10 +301,10 @@ bool ISLContactMonitorInterface::PublishDelayedOverlapEndEvent(const FSLOverlapE
 			// This allows us to be in sync with the overlap end event 
 			// since the unique ids and the rule of ignoring the one event will not change
 			// Filter out one of the trigger areas (compare unique ids)
-			if (Ev.OtherIndividual->GetUniqueID() > IndividualObject->GetUniqueID())
+			if (Ev.OtherIndividual->GetUniqueID() > OwnerIndividualObject->GetUniqueID())
 			{
 				// Broadcast end of semantic overlap event
-				OnEndSLContact.Broadcast(IndividualObject, Ev.OtherIndividual, Ev.Time);
+				OnEndSLContact.Broadcast(OwnerIndividualObject, Ev.OtherIndividual, Ev.Time);
 			}
 		}
 
@@ -308,8 +314,8 @@ bool ISLContactMonitorInterface::PublishDelayedOverlapEndEvent(const FSLOverlapE
 			// (it cannot be a candidate and an event, e.g. contact ended with a candidate only)
 			if(!CheckAndRemoveIfJustCandidate(Ev.OtherIndividual))
 			{
-				const uint64 PairId1 = FSLUuid::PairEncodeCantor(IndividualObject->GetUniqueID(), Ev.OtherIndividual->GetUniqueID());
-				const uint64 PairId2 = FSLUuid::PairEncodeCantor(Ev.OtherIndividual->GetUniqueID(), IndividualObject->GetUniqueID());
+				const uint64 PairId1 = FSLUuid::PairEncodeCantor(OwnerIndividualObject->GetUniqueID(), Ev.OtherIndividual->GetUniqueID());
+				const uint64 PairId2 = FSLUuid::PairEncodeCantor(Ev.OtherIndividual->GetUniqueID(), OwnerIndividualObject->GetUniqueID());
 				OnEndSLSupportedBy.Broadcast(PairId1, PairId2, Ev.Time);
 				PrevSupportedByEndTime =  Ev.Time;
 				if(IsSupportedByPariIds.Remove(PairId1) == 0)
@@ -332,7 +338,7 @@ bool ISLContactMonitorInterface::SkipOverlapEndEventBroadcast(USLBaseIndividual*
 		if(OverlapEndEvItr->OtherIndividual == InIndividual)
 		{
 			// Check time difference
-			if(StartTime - OverlapEndEvItr->Time < MaxOverlapEventTimeGap)
+			if(StartTime - OverlapEndEvItr->Time < ConcatenateIfSmaller)
 			{
 				OverlapEndEvItr.RemoveCurrent();
 

@@ -22,6 +22,9 @@ USLPickAndPlaceMonitor::USLPickAndPlaceMonitor()
 	bIsStarted = false;
 	bIsFinished = false;
 	
+	// Default values
+	UpdateRate = 0.016f;
+
 	CurrGraspedIndividual = nullptr;
 	EventCheckState = ESLPaPStateCheck::NONE;
 	UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
@@ -57,11 +60,11 @@ void USLPickAndPlaceMonitor::TickComponent(float DeltaTime, ELevelTick TickType,
 
 
 // Init listener
-bool USLPickAndPlaceMonitor::Init()
+void USLPickAndPlaceMonitor::Init()
 {
 	if (bIgnore)
 	{
-		return false;
+		return;
 	}
 
 	if (!bIsInit)
@@ -73,7 +76,7 @@ bool USLPickAndPlaceMonitor::Init()
 			if (!OwnerIndividualComponent->IsLoaded())
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-				return false;
+				return;
 			}
 
 			// Set the individual object
@@ -82,7 +85,7 @@ bool USLPickAndPlaceMonitor::Init()
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual component.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
-			return false;
+			return;
 		}
 
 		// Init state
@@ -90,9 +93,9 @@ bool USLPickAndPlaceMonitor::Init()
 		UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
 
 		bIsInit = true;
-		return true;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully initialized %s::%s at %.4fs.."),
+			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
 	}
-	return false;
 }
 
 // Start listening to grasp events, update currently overlapping objects
@@ -111,6 +114,8 @@ void USLPickAndPlaceMonitor::Start()
 
 			// Mark as started
 			bIsStarted = true;
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully started %s::%s at %.4fs.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
 		}
 	}
 }
@@ -127,18 +132,20 @@ void USLPickAndPlaceMonitor::Finish(float EndTime, bool bForced)
 		bIsStarted = false;
 		bIsInit = false;
 		bIsFinished = true;
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at %.4fs.."),
+			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
 	}
 }
 
 // Subscribe for grasp events from sibling component
 bool USLPickAndPlaceMonitor::SubscribeForGraspEvents()
 {
-	if(USLManipulatorMonitor* Sibling = CastChecked<USLManipulatorMonitor>(
+	if(USLManipulatorMonitor* ManipulatorMonitor = CastChecked<USLManipulatorMonitor>(
 		GetOwner()->GetComponentByClass(USLManipulatorMonitor::StaticClass())))
 	{
-		Sibling->OnBeginManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnSLGraspBegin);
-		Sibling->OnEndManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnSLGraspEnd);
-
+		ManipulatorMonitor->OnBeginManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnSLGraspBegin);
+		ManipulatorMonitor->OnEndManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnSLGraspEnd);
 		return true;
 	}
 	return false;

@@ -20,9 +20,11 @@ USLManipulatorBoneContactMonitor::USLManipulatorBoneContactMonitor()
 	Group = ESLManipulatorContactMonitorGroup::A;
 	bSnapToBone = true;
 	bIsNotSkeletal = false;
-	bGraspPaused = false;
+	bIsGraspCheckPaused = false;
 	bDetectGrasps = false;
 	bDetectContacts = false;
+
+	bLogDebug = false;
 
 #if WITH_EDITORONLY_DATA
 	// Mimic a button to attach to the bone	
@@ -34,45 +36,55 @@ USLManipulatorBoneContactMonitor::USLManipulatorBoneContactMonitor()
 }
 
 // Attach to bone 
-bool USLManipulatorBoneContactMonitor::Init(bool bGrasp, bool bContact)
+void USLManipulatorBoneContactMonitor::Init(bool bGrasp, bool bContact)
 {
+	if (!bGrasp && !bContact)
+	{
+		// Nothing to init
+		return;
+	}
+
 	if (!bIsInit)
 	{
 		bDetectGrasps = bGrasp;
 		bDetectContacts = bContact;
+
 		// Remove any unset references in the array
 		IgnoreList.Remove(nullptr);
 
-		// Make sure the shape is attached to it bone
-		if (!bIsNotSkeletal)
+		// Disable overlaps until start
+		SetGenerateOverlapEvents(false);
+
+		// Bind overlap events
+		if (bDetectGrasps)
 		{
-			if (AttachToBone())
-			{
-				if (bVisualDebug)
-				{
-					SetHiddenInGame(false);
-					bGraspPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
-				}
-				bIsInit = true;
-				return true;
-			}
-			else 
-			{
-				return false;
-			}
+			BindGraspOverlapCallbacks();
 		}
-		else
+		if (bDetectContacts)
+		{
+			BindContactOverlapCallbacks();
+		}
+		
+		if (bIsNotSkeletal)
 		{
 			if (bVisualDebug)
 			{
 				SetHiddenInGame(false);
-				bGraspPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
+				bIsGraspCheckPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
 			}
 			bIsInit = true;
-			return true;
+		}
+		else if(AttachToBone())
+		{
+			// Make sure the shape is attached to it bone
+			if (bVisualDebug)
+			{
+				SetHiddenInGame(false);
+				bIsGraspCheckPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
+			}
+			bIsInit = true;			
 		}
 	}
-	return true;
 }
 
 // Start listening to overlaps 
@@ -82,26 +94,11 @@ void USLManipulatorBoneContactMonitor::Start()
 	{
 		if (bVisualDebug)
 		{
-			bGraspPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
+			bIsGraspCheckPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
 		}
 
 		// Enable overlap events
 		SetGenerateOverlapEvents(true);
-
-		// Bind overlap events
-		if (bDetectGrasps)
-		{
-			TriggerInitialGraspOverlaps(); // TODO this was commented out, any reason?
-			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapBegin);
-			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapEnd);
-		}
-
-		if (bDetectContacts)
-		{
-			TriggerInitialContactOverlaps();
-			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnContactOverlapBegin);
-			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnContactOverlapEnd);
-		}
 
 		// Mark as started
 		bIsStarted = true;
@@ -109,38 +106,35 @@ void USLManipulatorBoneContactMonitor::Start()
 }
 
 // PauseGraspDetection/continue listening to overlaps 
-void USLManipulatorBoneContactMonitor::PauseGrasp(bool bInPause)
-{
-	if (bInPause != bGraspPaused)
+void USLManipulatorBoneContactMonitor::SetGraspCheckPaused(bool bNewValue)
+{	
+	if (bNewValue != bIsGraspCheckPaused)
 	{
-		bGraspPaused = bInPause;
+		bIsGraspCheckPaused = bNewValue;
 
 		if (bVisualDebug)
 		{
-			bGraspPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
+			bIsGraspCheckPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
 		}
 
-		if (bInPause)
+		if (bIsGraspCheckPaused)
 		{
 			// Broadcast ending of any active grasp related contacts
 			for (auto& AC : ActiveContacts)
 			{
-				OnEndManipulatorGraspOverlap.Broadcast(AC);
+				OnEndGraspBoneOverlap.Broadcast(AC);
 			}
 			ActiveContacts.Empty();
 
-			// Remove grasp related overlap bindings
-			OnComponentBeginOverlap.RemoveDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapBegin);
-			OnComponentEndOverlap.RemoveDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapEnd);
+			// Grasp check is paused, stop listening to grasp overlaps
+			UnbindGraspOverlapCallbacks();
 		}
 		else
 		{
+			// Grasp check is re-started, start listening to grasp overlaps
 			TriggerInitialGraspOverlaps();
-			// Re-bind the grasp related overlap bindings
-			OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapBegin);
-			OnComponentEndOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapEnd);
-		}
-		
+			BindGraspOverlapCallbacks();
+		}		
 	}
 }
 
@@ -152,14 +146,14 @@ void USLManipulatorBoneContactMonitor::Finish(bool bForced)
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedGraspOverlapEvents)
 		{
-			OnEndManipulatorGraspOverlap.Broadcast(EvItr.Other);
+			OnEndGraspBoneOverlap.Broadcast(EvItr.Other);
 		}
 		RecentlyEndedGraspOverlapEvents.Empty();
 
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedContactOverlapEvents)
 		{
-			OnEndManipulatorContactOverlap.Broadcast(EvItr.Other);
+			OnEndContactBoneOverlap.Broadcast(EvItr.Other);
 		}
 		RecentlyEndedContactOverlapEvents.Empty();
 
@@ -285,6 +279,7 @@ void USLManipulatorBoneContactMonitor::SetCollisionParameters()
 	//SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel4);
 	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 	//SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Overlap);
+	SetAllUseCCD(true);
 }
 
 // Attach component to bone
@@ -330,10 +325,44 @@ void USLManipulatorBoneContactMonitor::SetColor(FColor Color)
 	}
 }
 
+// Bind grasp related overlaps
+void USLManipulatorBoneContactMonitor::BindGraspOverlapCallbacks()
+{
+	if(OnComponentBeginOverlap.IsAlreadyBound(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapBegin)
+		|| OnComponentEndOverlap.IsAlreadyBound(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapEnd))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs Grasp callback already bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
+			return;
+	}
+	OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapBegin);
+	OnComponentEndOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapEnd);
+}
+
+// Remove grasp related overlap callbacks
+void USLManipulatorBoneContactMonitor::UnbindGraspOverlapCallbacks()
+{
+	if (!OnComponentBeginOverlap.IsAlreadyBound(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapBegin)
+		|| !OnComponentEndOverlap.IsAlreadyBound(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapEnd))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs Grasp callback not bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
+		return;
+	}
+	OnComponentBeginOverlap.RemoveDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapBegin);
+	OnComponentEndOverlap.RemoveDynamic(this, &USLManipulatorBoneContactMonitor::OnGraspOverlapEnd);
+}
+
 /* Grasp related */
 // Publish currently grasp related overlapping components
 void USLManipulatorBoneContactMonitor::TriggerInitialGraspOverlaps()
 {
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4fs \t\t Started manual overlap trigger"),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
+	}
+
 	// If objects are already overlapping at begin play, they will not be triggered
 	// Here we do a manual overlap check and forward them to OnOverlapBegin
 	TSet<UPrimitiveComponent*> CurrOverlappingComponents;
@@ -342,6 +371,12 @@ void USLManipulatorBoneContactMonitor::TriggerInitialGraspOverlaps()
 	for (const auto& CompItr : CurrOverlappingComponents)
 	{
 		OnGraspOverlapBegin(this, CompItr->GetOwner(), CompItr, 0, false, Dummy);
+	}
+
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4fs \t\t Finished manual overlap trigger"),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
 	}
 }
 
@@ -353,6 +388,12 @@ void USLManipulatorBoneContactMonitor::OnGraspOverlapBegin(UPrimitiveComponent* 
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs \t Grasp Overlap Begin: \t %s->%s::%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GetName(), *OtherActor->GetName(), *OtherComp->GetName());
+	}
+
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
@@ -374,7 +415,7 @@ void USLManipulatorBoneContactMonitor::OnGraspOverlapBegin(UPrimitiveComponent* 
 		ActiveContacts.Emplace(OtherIndividual);
 		if(!SkipRecentGraspOverlapEndEventBroadcast(OtherIndividual, GetWorld()->GetTimeSeconds()))
 		{
-			OnBeginManipulatorGraspOverlap.Broadcast(OtherIndividual);
+			OnBeginGraspBoneOverlap.Broadcast(OtherIndividual);
 		}
 
 		if (bVisualDebug)
@@ -390,6 +431,12 @@ void USLManipulatorBoneContactMonitor::OnGraspOverlapEnd(UPrimitiveComponent* Ov
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs \t Grasp Overlap End: \t %s->%s::%s;"), *FString(__FUNCTION__), __LINE__, 
+			GetWorld()->GetTimeSeconds(), *GetName(), *OtherActor->GetName(), *OtherComp->GetName());
+	}
+
 	// Ignore self overlaps 
 	if (OtherActor == GetOwner())
 	{
@@ -417,7 +464,7 @@ void USLManipulatorBoneContactMonitor::OnGraspOverlapEnd(UPrimitiveComponent* Ov
 			if(!GetWorld()->GetTimerManager().IsTimerActive(GraspDelayTimerHandle))
 			{
 				GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, 
-					&USLManipulatorBoneContactMonitor::DelayedGraspOverlapEndEventCallback, MaxOverlapEventTimeGap*1.1f, false);
+					&USLManipulatorBoneContactMonitor::DelayedGraspOverlapEndEventCallback, ConcatenateIfSmaller*1.1f, false);
 			}
 		}
 
@@ -440,10 +487,10 @@ void USLManipulatorBoneContactMonitor::DelayedGraspOverlapEndEventCallback()
 	for (auto EvItr(RecentlyEndedGraspOverlapEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// If enough time has passed, publish the event
-		if(CurrTime - EvItr->Timestamp > MaxOverlapEventTimeGap)
+		if(CurrTime - EvItr->Timestamp > ConcatenateIfSmaller)
 		{
 			// Broadcast delayed event
-			OnEndManipulatorGraspOverlap.Broadcast(EvItr->Other);
+			OnEndGraspBoneOverlap.Broadcast(EvItr->Other);
 			
 			// Remove event from the pending list
 			EvItr.RemoveCurrent();
@@ -453,8 +500,9 @@ void USLManipulatorBoneContactMonitor::DelayedGraspOverlapEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedGraspOverlapEvents.Num() > 0)
 	{
-		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this, &USLManipulatorBoneContactMonitor::DelayedGraspOverlapEndEventCallback,
-			MaxOverlapEventTimeGap*1.1f, false);
+		const float DelayValue = ConcatenateIfSmaller + ConcatenateIfSmallerDelay;
+		GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle,
+			this, &USLManipulatorBoneContactMonitor::DelayedGraspOverlapEndEventCallback, DelayValue, false);
 	}
 }
 
@@ -467,7 +515,7 @@ bool USLManipulatorBoneContactMonitor::SkipRecentGraspOverlapEndEventBroadcast(U
 		if(EvItr->Other == OtherIndividual)
 		{
 			// Check time difference
-			if(StartTime - EvItr->Timestamp < MaxOverlapEventTimeGap)
+			if(StartTime - EvItr->Timestamp < ConcatenateIfSmaller)
 			{
 				EvItr.RemoveCurrent();
 
@@ -481,6 +529,34 @@ bool USLManipulatorBoneContactMonitor::SkipRecentGraspOverlapEndEventBroadcast(U
 		}
 	}
 	return false;
+}
+
+// Bind contact related overlaps
+void USLManipulatorBoneContactMonitor::BindContactOverlapCallbacks()
+{
+	if (OnComponentBeginOverlap.IsAlreadyBound(this, &USLManipulatorBoneContactMonitor::OnContactOverlapBegin)
+		|| OnComponentEndOverlap.IsAlreadyBound(this, &USLManipulatorBoneContactMonitor::OnContactOverlapEnd))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs Contact callback already bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
+		return;
+	}
+	OnComponentBeginOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnContactOverlapBegin);
+	OnComponentEndOverlap.AddDynamic(this, &USLManipulatorBoneContactMonitor::OnContactOverlapEnd);
+}
+
+// Remove contact related overlap callbacks
+void USLManipulatorBoneContactMonitor::UnbindContactOverlapCallbacks()
+{
+	if (!OnComponentBeginOverlap.IsAlreadyBound(this, &USLManipulatorBoneContactMonitor::OnContactOverlapBegin)
+		|| !OnComponentEndOverlap.IsAlreadyBound(this, &USLManipulatorBoneContactMonitor::OnContactOverlapEnd))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs Contact callback not bound, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds());
+		return;
+	}
+	OnComponentBeginOverlap.RemoveDynamic(this, &USLManipulatorBoneContactMonitor::OnContactOverlapBegin);
+	OnComponentEndOverlap.RemoveDynamic(this, &USLManipulatorBoneContactMonitor::OnContactOverlapEnd);
 }
 
 
@@ -507,6 +583,12 @@ void USLManipulatorBoneContactMonitor::OnContactOverlapBegin(UPrimitiveComponent
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs \t Contact Overlap Begin: \t %s->%s::%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GetName(), *OtherActor->GetName(), *OtherComp->GetName());
+	}
+
 	// Ignore self overlaps
 	if (OtherActor == GetOwner())
 	{
@@ -521,12 +603,11 @@ void USLManipulatorBoneContactMonitor::OnContactOverlapBegin(UPrimitiveComponent
 		return;
 	}
 
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass())
-		&& !IgnoreList.Contains(OtherActor))
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) && !IgnoreList.Contains(OtherActor))
 	{
-		if(!SkipRecentContactOverlapEndEventBroadcast(OtherIndividual, GetWorld()->GetTimeSeconds()))
+		if(!SkipIfJitterContact(OtherIndividual, GetWorld()->GetTimeSeconds()))
 		{
-			OnBeginManipulatorContactOverlap.Broadcast(OtherIndividual);
+			OnBeginContactBoneOverlap.Broadcast(OtherIndividual);
 		}
 	}
 }
@@ -537,6 +618,12 @@ void USLManipulatorBoneContactMonitor::OnContactOverlapEnd(UPrimitiveComponent* 
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs \t Contact Overlap End: \t %s->%s::%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GetName(), *OtherActor->GetName(), *OtherComp->GetName());
+	}
+
 	// Ignore self overlaps
 	if (OtherActor == GetOwner())
 	{
@@ -551,8 +638,7 @@ void USLManipulatorBoneContactMonitor::OnContactOverlapEnd(UPrimitiveComponent* 
 		return;
 	}
 
-	if (OtherActor->IsA(AStaticMeshActor::StaticClass())
-		&& !IgnoreList.Contains(OtherActor))
+	if (OtherActor->IsA(AStaticMeshActor::StaticClass()) && !IgnoreList.Contains(OtherActor))
 	{
 		// Contact overlap ended ended
 		RecentlyEndedContactOverlapEvents.Emplace(FSLManipulatorContactMonitorEndEvent(
@@ -561,14 +647,15 @@ void USLManipulatorBoneContactMonitor::OnContactOverlapEnd(UPrimitiveComponent* 
 		// Delay publishing for a while, in case the new event is of the same type and should be concatenated
 		if(!GetWorld()->GetTimerManager().IsTimerActive(ContactDelayTimerHandle))
 		{
-			GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, 
-				&USLManipulatorBoneContactMonitor::DelayedContactOverlapEndEventCallback, MaxOverlapEventTimeGap*1.1f, false);
+			const float DelayValue = ConcatenateIfSmaller + ConcatenateIfSmallerDelay;
+			GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, 
+				this, &USLManipulatorBoneContactMonitor::DelayContactEndCallback, DelayValue, false);
 		}
 	}
 }
 
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
-void USLManipulatorBoneContactMonitor::DelayedContactOverlapEndEventCallback()
+void USLManipulatorBoneContactMonitor::DelayContactEndCallback()
 {
 	// Curr time (keep very recently added events for another delay)
 	const float CurrTime = GetWorld()->GetTimeSeconds();
@@ -576,10 +663,10 @@ void USLManipulatorBoneContactMonitor::DelayedContactOverlapEndEventCallback()
 	for (auto EvItr(RecentlyEndedContactOverlapEvents.CreateIterator()); EvItr; ++EvItr)
 	{
 		// If enough time has passed, publish the event
-		if(CurrTime - EvItr->Timestamp > MaxOverlapEventTimeGap)
+		if(CurrTime - EvItr->Timestamp > ConcatenateIfSmaller)
 		{
 			// Broadcast delayed event
-			OnEndManipulatorContactOverlap.Broadcast(EvItr->Other);
+			OnEndContactBoneOverlap.Broadcast(EvItr->Other);
 			
 			// Remove event from the pending list
 			EvItr.RemoveCurrent();
@@ -589,14 +676,15 @@ void USLManipulatorBoneContactMonitor::DelayedContactOverlapEndEventCallback()
 	// There are very recent events still available, spin another delay callback to give them a chance to concatenate
 	if(RecentlyEndedContactOverlapEvents.Num() > 0)
 	{
-		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle, this, &USLManipulatorBoneContactMonitor::DelayedContactOverlapEndEventCallback,
-			MaxOverlapEventTimeGap*1.1f, false);
+		const float DelayValue = ConcatenateIfSmaller + ConcatenateIfSmallerDelay;
+		GetWorld()->GetTimerManager().SetTimer(ContactDelayTimerHandle,
+			this, &USLManipulatorBoneContactMonitor::DelayContactEndCallback, DelayValue, false);
 	}
 }
 
-// Check if this begin event happened right after the previous one ended
+// Check if this begin event happened right after the previous one ended,
 // if so remove it from the array, and cancel publishing the begin event
-bool USLManipulatorBoneContactMonitor::SkipRecentContactOverlapEndEventBroadcast(USLBaseIndividual* OtherIndividual, float StartTime)
+bool USLManipulatorBoneContactMonitor::SkipIfJitterContact(USLBaseIndividual* OtherIndividual, float StartTime)
 {
 	for (auto EvItr(RecentlyEndedContactOverlapEvents.CreateIterator()); EvItr; ++EvItr)
 	{
@@ -604,7 +692,7 @@ bool USLManipulatorBoneContactMonitor::SkipRecentContactOverlapEndEventBroadcast
 		if(EvItr->Other == OtherIndividual)
 		{
 			// Check time difference
-			if(StartTime - EvItr->Timestamp < MaxOverlapEventTimeGap)
+			if(StartTime - EvItr->Timestamp < ConcatenateIfSmaller)
 			{
 				EvItr.RemoveCurrent();
 

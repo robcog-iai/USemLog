@@ -152,13 +152,16 @@ public:
 	
 protected:
 	// True if initialized
-	bool bIsInit;
+	uint8 bIsInit : 1;
 
 	// True if started
-	bool bIsStarted;
+	uint8 bIsStarted : 1;
 
 	// True if finished
-	bool bIsFinished;
+	uint8 bIsFinished : 1;
+
+	// Include supported by events
+	uint8 bLogSupportedByEvents : 1;
 
 	// Array of events id of objects currently supporting this item, used for checking if this object is supported by any suface(s)
 	TArray<uint64> IsSupportedByPariIds;
@@ -176,22 +179,19 @@ protected:
 	UMeshComponent* OwnerMeshComp;
 
 	// Semantic data component of the owner
-	USLIndividualComponent* IndividualComponent;
+	USLIndividualComponent* OwnerIndividualComponent;
 
 	// Semantic individual object
-	USLBaseIndividual* IndividualObject;
-
-	// Include supported by events
-	bool bLogSupportedByEvents;
+	USLBaseIndividual* OwnerIndividualObject;
 
 	// SupportedBy contact candidates
-	TArray<FSLContactResult> SBCandidates;
+	TArray<FSLContactResult> SupportedByCandidates;
 	
 	// Supported by event update timer handle
-	FTimerHandle SBTimerHandle;
+	FTimerHandle SupportedByTimerHandle;
 
 	// Allow binding against non-UObject functions
-	FTimerDelegate SBTimerDelegate;
+	FTimerDelegate SupportedByTimerDelegate;
 
 	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
 	FTimerHandle DelayTimerHandle;
@@ -204,8 +204,8 @@ protected:
 
 	/* Constants */
 	static constexpr auto TagTypeName = TEXT("SemLogColl");
-	static constexpr float SBUpdateRate = 0.11f;
-	static constexpr float SBMaxVertSpeed = 0.5f;
-	static constexpr float MaxOverlapEventTimeGap = 0.12f;
-	static constexpr float MaxOverlapEventTimeGapMult = 1.12f;
+	static constexpr float SupportedByUpdateRate = 0.11f;
+	static constexpr float SupportedByMaxVertSpeed = 0.5f;
+	static constexpr float ConcatenateIfSmaller = 0.21f;
+	static constexpr float ConcatenateIfSmallerDelay = 0.05f;
 };

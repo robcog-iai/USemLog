@@ -70,7 +70,7 @@ protected:
 
 public:
 	// Check if owner is valid and semantically annotated
-	bool Init();
+	void Init();
 
 	// Start listening to grasp events, update currently overlapping objects
 	void Start();
@@ -136,6 +136,10 @@ private:
 	// True if finished
 	uint8 bIsFinished : 1;
 
+	// Candidate check update rate
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float UpdateRate;
+
 	// Semantic data component of the owner
 	USLIndividualComponent* OwnerIndividualComponent;
 
@@ -176,7 +180,7 @@ private:
 	TArray<TPair<float, FVector>> RecentMovementBuffer;
 
 	/* Constants */
-	constexpr static float UpdateRate = 0.035f;
+	//constexpr static float UpdateRate = 0.035f;
 
 	// Slide
 	constexpr static float MinSlideDistXY = 9.f;

@@ -133,28 +133,32 @@ private:
 		int32 OtherBodyIndex);
 	
 	// End reach and positioning events, pause timer
-	void OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& GraspType);
+	void OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, const FString& GraspType);
 
 	// Reset looking for the events
-	void OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
+	void OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float EndTime);
 	
 	// Used for the reaching and hand positioning detection
-	void OnSLManipulatorContactBegin(const FSLContactResult& ContactResult);
+	void OnSLContactBegin(const FSLContactResult& ContactResult);
 
 	// Manipulator is not in contact with object anymore, check for possible concatenation, or reset the potential reach time
-	void OnSLManipulatorContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
+	void OnSLContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float EndTime);
 	
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
-	void DelayedManipulatorContactEndEventCallback();
+	void DelayContactEndCallback();
 
 	// Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-	bool SkipRecentManipulatorContactEndEventTime(USLBaseIndividual* Other, float StartTime);
+	bool SkipIfJitterContact(USLBaseIndividual* Other, float StartTime);
 
 public:
 	// Event called when the reaching motion is finished
 	FSLReachAndPreGraspEventSignature OnReachAndPreGraspEvent;
 	
 private:
+	// Candidate check update rate
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogDebug : 1;
+
 	// Skip initialization if true
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;
@@ -172,6 +176,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float UpdateRate;
 
+	// Candidate check update rate
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	float ConcatenateIfSmaller;
 
 	// Semantic data component of the owner
 	USLIndividualComponent* OwnerIndividualComponent;
@@ -189,13 +196,14 @@ private:
 	USLBaseIndividual* CurrGraspedIndividual;
 
 	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
-	FTimerHandle ManipulatorContactDelayTimerHandle;
+	FTimerHandle DelayTimerHandle;
 
 	// Array of recently ended events
-	TArray<FSLPreGraspEndEvent> RecentlyEndedManipulatorContactEvents;
+	TArray<FSLPreGraspEndEvent> RecentlyEndedEvents;
 	
 	/* Constants */
-	constexpr static float MinDist = 2.5f;
+	constexpr static float IgnoreMovementsSmallerThanValue = 2.5f;
 	//constexpr static float UpdateRate = 0.037f;
-	constexpr static float MaxPreGraspEventTimeGap = 1.3f;
+	//constexpr static float ConcatenateIfSmaller = 1.3f;
+	static constexpr float ConcatenateIfSmallerDelay = 0.05f;
 };

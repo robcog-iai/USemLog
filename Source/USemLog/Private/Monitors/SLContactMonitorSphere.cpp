@@ -25,7 +25,7 @@ USLContactMonitorSphere::USLContactMonitorSphere()
 
 	bLogSupportedByEvents = true;
 	
-	IndividualComponent = nullptr;
+	OwnerIndividualComponent = nullptr;
 
 #if WITH_EDITORONLY_DATA
 	// Box extent scale
@@ -83,15 +83,15 @@ void USLContactMonitorSphere::Init(bool bInLogSupportedByEvents)
 		// Make sure the owner is semantically annotated
 		if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
 		{
-			IndividualComponent = CastChecked<USLIndividualComponent>(AC);
-			if (!IndividualComponent->IsLoaded())
+			OwnerIndividualComponent = CastChecked<USLIndividualComponent>(AC);
+			if (!OwnerIndividualComponent->IsLoaded())
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual component is not loaded.."), *FString(__FUNCTION__), __LINE__, *GetOwner()->GetName());
 				return;
 			}
 
 			// Set the individual object
-			IndividualObject = IndividualComponent->GetIndividualObject();
+			OwnerIndividualObject = OwnerIndividualComponent->GetIndividualObject();
 		}
 		else
 		{
