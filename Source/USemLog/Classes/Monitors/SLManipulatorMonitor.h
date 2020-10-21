@@ -15,9 +15,9 @@ class USLBaseIndividual;
 class USLIndividualComponent;
 class AStaticMeshActor;
 class USLManipulatorBoneContactMonitor;
-class UPhysicsConstraintComponent; // AdHoc grasp helper
-class UStaticMeshComponent; // AdHoc grasp helper
-class USkeletalMeshComponent; // AdHoc grasp helper
+class UPhysicsConstraintComponent; // Grasp helper
+class UStaticMeshComponent; // Grasp helper
+class USkeletalMeshComponent; // Grasp helper
 
 /**
 * Hand type
@@ -111,7 +111,7 @@ protected:
 #endif // WITH_EDITOR
 
 	// Load overlap groups, return true if at least one valid overlap is in each group
-	bool LoadOverlapGroups();
+	bool LoadBoneOverlapGroups();
 
 	/* Begin grasp related */
 #if SL_WITH_MC_GRASP
@@ -127,30 +127,27 @@ private:
 	void SetupInputBindings();
 
 	// Pause/continue the grasp detection
-	void PauseGraspDetection(bool bInPause);
+	void PauseGraspDetection(bool bNewValue);
 
 	// Check if the grasp trigger is active
 	void GraspInputAxisCallback(float Value);
 
 	// Process beginning of grasp related contact in group A
 	UFUNCTION()
-	void OnGraspGroupAOverlapBegin(USLBaseIndividual* OtherIndividual);
+	void OnGroupAGraspContactBegin(USLBaseIndividual* OtherIndividual);
 
 	// Process beginning of grasp related contact in group B
 	UFUNCTION()
-	void OnBeginOverlapGroupBGrasp(USLBaseIndividual* OtherIndividual);
+	void OnGroupBGraspContactBegin(USLBaseIndividual* OtherIndividual);
 	
 	// Process ending of grasp related contact in group A
 	UFUNCTION()
-	void OnGraspGroupAOverlapEnd(USLBaseIndividual* OtherIndividual);
+	void OnGroupAGraspContactEnd(USLBaseIndividual* OtherIndividual);
 
 	// Process ending of grasp related  contact in group B
 	UFUNCTION()
-	void OnEndOverlapGroupBGrasp(USLBaseIndividual* OtherIndividual);
-	
-	// Grasp update check
-	void CheckGraspState();
-	
+	void OnGroupBGraspContactEnd(USLBaseIndividual* OtherIndividual);
+
 	// A grasp has started
 	void GraspStarted(USLBaseIndividual* OtherIndividual);
 	
@@ -162,24 +159,24 @@ private:
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
-	bool SkipIfJitterGrasp(USLBaseIndividual* OtherIndividual, float StartTime);
+	bool IsAJitterGrasp(USLBaseIndividual* OtherIndividual, float StartTime);
 	/* End grasp related */
 
 	/* Begin contact related */
 	// Process beginning of contact
 	UFUNCTION()
-	void OnContactBoneOverlapBegin(USLBaseIndividual* OtherIndividual);
+	void OnBoneContactBegin(USLBaseIndividual* OtherIndividual);
 
 	// Process ending of contact
 	UFUNCTION()
-	void OnContactBoneOverlapEnd(USLBaseIndividual* OtherIndividual);
+	void OnBoneContactEnd(USLBaseIndividual* OtherIndividual);
 
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayedContactEndCallback();
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
-	bool SkipIfJitterContact(USLBaseIndividual* InOther, float StartTime);
+	bool IsAJitterContact(USLBaseIndividual* InOther, float StartTime);
 	/* End contact related */
 
 	/* Begin Ad Hoc grasp help */
@@ -188,6 +185,12 @@ private:
 
 	// Grasp help input trigger manual override
 	void GraspHelperInputCallback();
+
+	// Triggered from the grasp started callback function
+	void GraspHelpStartTrigger(AActor* OtherActor);
+
+	// Triggered from the grasp end callback function
+	void GraspHelpStopTrigger();
 
 	// Start grasp help
 	void StartGraspHelper();
@@ -206,9 +209,17 @@ public:
 	FSLEndContactSignature OnEndManipulatorContact;
 	
 private:
-	// Candidate check update rate
+	// Log contact related debug messages
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	uint8 bLogDebug : 1;
+	uint8 bLogContactDebug : 1;
+
+	// Log grasp related debug messages
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogGraspDebug : 1;
+
+	// Log grasp related debug messages
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogVerboseGraspDebug : 1;
 
 	// Skip initialization if true
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -224,7 +235,7 @@ private:
 	uint8 bIsFinished : 1;
 
 	// True grasp detection is paused
-	uint8 bIsPaused : 1;
+	uint8 bIsGraspDetectionPaused : 1;
 
 	// New information added 
 	uint8 bGraspIsDirty : 1;
@@ -236,7 +247,7 @@ private:
 	uint8 bDetectContacts : 1;
 
 	// Ad Hoc grasp helper is active or not
-	uint8 bAdHocGraspHelpIsActive : 1;
+	uint8 bIsGraspHelpActive : 1;
 		
 #if WITH_EDITORONLY_DATA
 	// Hand type to load pre-defined parameters
@@ -305,27 +316,27 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
 	float GraspHelperConstraintLimit;
 
-	// AdHoc grasp helper constraint properties
+	// Grasp helper constraint properties
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
 	float GraspHelperConstraintStiffness;
 
-	// AdHoc grasp helper constraint properties
+	// Grasp helper constraint properties
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
 	float GraspHelperConstraintDamping;
 
-	// AdHoc grasp helper constraint properties
+	// Grasp helper constraint properties
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
 	float GraspHelperConstraintContactDistance;
 
-	// AdHoc grasp helper constraint properties
+	// Grasp helper constraint properties
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
 	bool bGraspHelperConstraintParentDominates;
 
-	// AdHoc grasp helper constraint component
+	// Grasp helper constraint component
 	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger|Grasp Helper"*/)
 	UPhysicsConstraintComponent* GraspHelperConstraint;
 
-	// AdHoc grasped object
+	// Grasped helper item static mesh component
 	UStaticMeshComponent* GraspHelperItemSMC;
 
 	// Owner skeletal mesh component
@@ -333,8 +344,7 @@ private:
 
 	// Manual override flags
 	bool bGraspHelperCanExecuteManualOverrideFlag;
-	/* End Ad Hoc Gras Helper */
-
+	/* End Grasp Helper */
 
 	// Semantic data component of the owner
 	USLIndividualComponent* IndividualComponent;
@@ -344,13 +354,19 @@ private:
 	
 	/* Grasp related */
 	// Opposing group A for testing for grasps
-	TArray<USLManipulatorBoneContactMonitor*> GroupA;
+	TArray<USLManipulatorBoneContactMonitor*> BoneMonitorsGroupA;
 
 	// Opposing group B for testing for grasps
-	TArray<USLManipulatorBoneContactMonitor*> GroupB;
+	TArray<USLManipulatorBoneContactMonitor*> BoneMonitorsGroupB;
 
 	// Individuals currently grasped
 	TSet<USLBaseIndividual*> GraspedIndividuals;
+
+	// Individuals in contact with group A
+	TMap<USLBaseIndividual*, int32> GroupANumGraspContacts;
+
+	// Individuals in contact with group B
+	TMap<USLBaseIndividual*, int32> GroupBNumGraspContacts;
 
 	// Active grasp type
 	FString ActiveGraspType;
@@ -362,14 +378,8 @@ private:
 	TArray<FSLGraspEndEvent> RecentlyEndedGraspEvents;
 
 	/* Contact related */
-	// Individuals in contact with group A
-	TSet<USLBaseIndividual*> SetA;
-
-	// Individuals in contact with group B
-	TSet<USLBaseIndividual*> SetB;
-
 	// Objects currently in contact and the number of shapes in contact with. Used of semantic contact detection
-	TMap<USLBaseIndividual*, int32> IndividualsInContact;
+	TMap<USLBaseIndividual*, int32> ManipulatorNumContacts;
 
 	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
 	FTimerHandle ContactDelayTimerHandle;

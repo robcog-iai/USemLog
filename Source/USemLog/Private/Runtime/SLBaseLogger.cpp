@@ -3,6 +3,10 @@
 
 #include "Runtime/SLBaseLogger.h"
 #include "TimerManager.h"
+#include "GameFramework/PlayerController.h"
+#include "Components/InputComponent.h"
+#include "Engine/World.h"
+#include "Engine/Engine.h"
 
 // Utils
 #include "Utils/SLUuid.h"

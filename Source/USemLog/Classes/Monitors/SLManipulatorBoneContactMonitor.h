@@ -50,7 +50,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FSLBoneOverlapEndSignature, USLBaseIndividua
 /**
  * Semantic overlap generator for grasp detection
  */
-UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Bone Contact")
+UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Bone Contact Monitor")
 class USEMLOG_API USLManipulatorBoneContactMonitor : public USphereComponent
 {
 	GENERATED_BODY()
@@ -69,7 +69,7 @@ public:
 	void Start();
 
 	// Pause/continue the overlap detection
-	void SetGraspCheckPaused(bool bNewValue);
+	void PauseGraspDetection(bool bNewValue);
 
 	// Stop publishing overlap events
 	void Finish(bool bForced = false);
@@ -81,7 +81,7 @@ public:
 	bool IsStarted() const { return bIsStarted; };
 
 	// True if grasp overlaps are paused
-	bool IsGraspPaused() const { return bIsGraspCheckPaused; };
+	bool IsGraspPaused() const { return bIsGraspDetectionPaused; };
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
@@ -136,7 +136,7 @@ private:
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
-	bool SkipRecentGraspOverlapEndEventBroadcast(USLBaseIndividual* OtherIndividual, float StartTime);
+	bool IsAJitterGrasp(USLBaseIndividual* OtherIndividual, float StartTime);
 
 	/* Contact related */
 	// Bind contact related overlaps
@@ -169,7 +169,7 @@ private:
 
 	// Check if this begin event happened right after the previous one ended
 	// if so remove it from the array, and cancel publishing the begin event
-	bool SkipIfJitterContact(USLBaseIndividual* OtherIndividual, float StartTime);
+	bool IsAJitterContact(USLBaseIndividual* OtherIndividual, float StartTime);
 
 public:
 	// Grasp related overlap begin/end
@@ -183,7 +183,11 @@ public:
 private:
 	// Candidate check update rate
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	uint8 bLogDebug : 1;
+	uint8 bLogContactDebug : 1;
+
+	// Candidate check update rate
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogGraspDebug : 1;
 
 	// True if initialized
 	uint8 bIsInit : 1;
@@ -192,7 +196,7 @@ private:
 	uint8 bIsStarted : 1;
 
 	// True if grasp overlaps are paused
-	uint8 bIsGraspCheckPaused : 1;
+	uint8 bIsGraspDetectionPaused : 1;
 
 	// True if finished
 	uint8 bIsFinished : 1;

@@ -33,12 +33,14 @@ USLManipulatorMonitor::USLManipulatorMonitor()
 	bIsStarted = false;
 	bIsFinished = false;
 	bGraspIsDirty = true;
-	bIsPaused = false;
+	bIsGraspDetectionPaused = false;
 	InputAxisName = "LeftGrasp";
 	bIsNotSkeletal = false;
 	InputAxisTriggerThresholdValue = 0.3f;
 	
-	bLogDebug = false;
+	bLogContactDebug = false;
+	bLogGraspDebug = false;
+	bLogVerboseGraspDebug = false;
 
 
 #if WITH_EDITORONLY_DATA
@@ -64,7 +66,7 @@ USLManipulatorMonitor::USLManipulatorMonitor()
 	GraspHelperConstraintDamping = 5.f;
 	GraspHelperConstraintContactDistance = 1.f;
 	bGraspHelperConstraintParentDominates = false;
-	bAdHocGraspHelpIsActive = false;
+	bIsGraspHelpActive = false;
 	GraspHelperConstraint = nullptr;
 	GraspHelperItemSMC = nullptr;
 	GraspHelperOwnerSkelMC = nullptr;
@@ -121,21 +123,18 @@ void USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 		 // Ad Hoc grasp helper
 		 if (bUseGraspHelper)
 		 {
-			 if (!InitGraspHelper())
-			 {
-				 // Init failed, disable grasp helper
-				 bUseGraspHelper = false;
-			 }
+			 // Init failed, disable grasp helper
+			 bUseGraspHelper = InitGraspHelper();
 		 }
 
 		// True if each group has at least one bone overlap
-		if (LoadOverlapGroups())
+		if (LoadBoneOverlapGroups())
 		{
-			for (auto BoneOverlap : GroupA)
+			for (auto BoneOverlap : BoneMonitorsGroupA)
 			{
 				BoneOverlap->Init(bDetectGrasps, bDetectContacts);
 			}
-			for (auto BoneOverlap : GroupB)
+			for (auto BoneOverlap : BoneMonitorsGroupB)
 			{
 				BoneOverlap->Init(bDetectGrasps, bDetectContacts);
 			}
@@ -152,20 +151,26 @@ void USLManipulatorMonitor::Start()
 {
 	if (!bIsStarted && bIsInit)
 	{
-		SetupInputBindings();
+		if (bDetectGrasps)
+		{
+			SetupInputBindings();
+		}
 
 		// Start listening on the bone overlaps
-		for (auto BoneOverlap : GroupA)
+		for (auto BoneOverlap : BoneMonitorsGroupA)
 		{
+			/* Contacts */
 			if (bDetectContacts)
 			{
-				BoneOverlap->OnBeginContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnContactBoneOverlapBegin);
-				BoneOverlap->OnEndContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnContactBoneOverlapEnd);
+				BoneOverlap->OnBeginContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnBoneContactBegin);
+				BoneOverlap->OnEndContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnBoneContactEnd);
 			}
+
+			/* Grasps */
 			if (bDetectGrasps)
 			{
-				BoneOverlap->OnBeginGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnGraspGroupAOverlapBegin);
-				BoneOverlap->OnEndGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnGraspGroupAOverlapEnd);
+				BoneOverlap->OnBeginGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnGroupAGraspContactBegin);
+				BoneOverlap->OnEndGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnGroupAGraspContactEnd);
 			}
 			
 			// Start after subscribing
@@ -174,18 +179,22 @@ void USLManipulatorMonitor::Start()
 				BoneOverlap->Start();
 			}
 		}
-		for (auto BoneOverlap : GroupB)
+		for (auto BoneOverlap : BoneMonitorsGroupB)
 		{
+			/* Contacts */
 			if (bDetectContacts)
 			{
-				BoneOverlap->OnBeginContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnContactBoneOverlapBegin);
-				BoneOverlap->OnEndContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnContactBoneOverlapEnd);
+				BoneOverlap->OnBeginContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnBoneContactBegin);
+				BoneOverlap->OnEndContactBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnBoneContactEnd);
 			}
+
+			/* Grasps */
 			if (bDetectGrasps)
 			{
-				BoneOverlap->OnBeginGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnBeginOverlapGroupBGrasp);
-				BoneOverlap->OnEndGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnEndOverlapGroupBGrasp);
+				BoneOverlap->OnBeginGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnGroupBGraspContactBegin);
+				BoneOverlap->OnEndGraspBoneOverlap.AddUObject(this, &USLManipulatorMonitor::OnGroupBGraspContactEnd);
 			}
+
 			// Start after subscribing
 			if (bDetectContacts || bDetectGrasps)
 			{
@@ -201,32 +210,59 @@ void USLManipulatorMonitor::Start()
 }
 
 // Pause/continue grasp detection
-void USLManipulatorMonitor::PauseGraspDetection(bool bInPause)
+void USLManipulatorMonitor::PauseGraspDetection(bool bNewValue)
 {
-	if (bInPause != bIsPaused)
+	if (bNewValue != bIsGraspDetectionPaused)
 	{
-		for (auto BoneOverlap : GroupA)
+		bIsGraspDetectionPaused = bNewValue;
+		
+		if (bLogGraspDebug)
 		{
-			BoneOverlap->SetGraspCheckPaused(bInPause);
+			if (bIsGraspDetectionPaused)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Pausing Grasp Detection: \t\t %s::%s;"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *GetName());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t %.4fs \t\t Starting Grasp Detection: \t\t %s::%s;"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *GetName());
+			}
 		}
-		for (auto BoneOverlap : GroupB)
+
+		// Notify bones
+		for (auto BoneOverlap : BoneMonitorsGroupA)
 		{
-			BoneOverlap->SetGraspCheckPaused(bInPause);
+			BoneOverlap->PauseGraspDetection(bIsGraspDetectionPaused);
 		}
-		bIsPaused = bInPause;
-
-
-		// Clear sets
-		if (bInPause)
+		for (auto BoneOverlap : BoneMonitorsGroupB)
 		{
-			const float CurrTimestamp = GetWorld()->GetTimeSeconds();
+			BoneOverlap->PauseGraspDetection(bIsGraspDetectionPaused);
+		}
+
+		if (bIsGraspDetectionPaused)
+		{
+			// Broadcast grasp ending through release trigger
 			for (const auto& Individual : GraspedIndividuals)
 			{
-				OnEndManipulatorGrasp.Broadcast(OwnerIndividualObject, Individual, CurrTimestamp);
+				if (bLogGraspDebug)
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Grasp Ended ( !!! broadcast !!! through release): \t\t %s::%s->%s;"),
+						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+						*GetOwner()->GetName(), *GetName(), *Individual->GetParentActor()->GetName());
+				}
+				OnEndManipulatorGrasp.Broadcast(OwnerIndividualObject, Individual, GetWorld()->GetTimeSeconds());
 			}
+
+			// Clear bone grasp contacts and any grasped individuals
 			GraspedIndividuals.Empty();
-			SetA.Empty();
-			SetB.Empty();
+			GroupANumGraspContacts.Empty();
+			GroupBNumGraspContacts.Empty();
+			if (bLogVerboseGraspDebug)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Cleard group A+B grasp contacts \t\t %s::%s;"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *GetName());
+			}
 		}
 	}
 }
@@ -236,11 +272,11 @@ void USLManipulatorMonitor::Finish(bool bForced)
 {
 	if (!bIsFinished && (bIsInit || bIsStarted))
 	{
-		for (auto BoneOverlap : GroupA)
+		for (auto BoneOverlap : BoneMonitorsGroupA)
 		{
 			BoneOverlap->Finish();
 		}
-		for (auto BoneOverlap : GroupB)
+		for (auto BoneOverlap : BoneMonitorsGroupB)
 		{
 			BoneOverlap->Finish();
 		}
@@ -248,6 +284,12 @@ void USLManipulatorMonitor::Finish(bool bForced)
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedGraspEvents)
 		{
+			if (bLogGraspDebug)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Grasp Ended ( !!! broadcast !!! through finish): \t\t %s::%s->%s;"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetName(), *EvItr.Other->GetParentActor()->GetName());
+			}
 			OnEndManipulatorGrasp.Broadcast(OwnerIndividualObject, EvItr.Other, EvItr.Time);
 		}
 		RecentlyEndedGraspEvents.Empty();
@@ -255,6 +297,12 @@ void USLManipulatorMonitor::Finish(bool bForced)
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedContactEvents)
 		{
+			if (bLogGraspDebug)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Contact Ended ( !!! broadcast !!! through finish): \t\t %s::%s->%s;"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetName(), *EvItr.Other->GetParentActor()->GetName());
+			}
 			OnEndManipulatorContact.Broadcast(OwnerIndividualObject, EvItr.Other, EvItr.Time);
 		}
 		RecentlyEndedContactEvents.Empty();
@@ -303,7 +351,7 @@ void USLManipulatorMonitor::PostEditChangeProperty(struct FPropertyChangedEvent&
 #endif // WITH_EDITOR
 
 // Set overlap groups, return true if at least one valid overlap is in each group
-bool USLManipulatorMonitor::LoadOverlapGroups()
+bool USLManipulatorMonitor::LoadBoneOverlapGroups()
 {
 	// Lambda to check grasp overlap components of owner and add them to their groups
 	const auto GetOverlapComponentsLambda = [this](AActor* Owner)
@@ -314,11 +362,11 @@ bool USLManipulatorMonitor::LoadOverlapGroups()
 			USLManipulatorBoneContactMonitor* GraspOverlap = CastChecked<USLManipulatorBoneContactMonitor>(GraspOverlapComp);
 			if (GraspOverlap->GetGroup() == ESLManipulatorContactMonitorGroup::A)
 			{
-				GroupA.Add(GraspOverlap);
+				BoneMonitorsGroupA.Add(GraspOverlap);
 			}
 			else if (GraspOverlap->GetGroup() == ESLManipulatorContactMonitorGroup::B)
 			{
-				GroupB.Add(GraspOverlap);
+				BoneMonitorsGroupB.Add(GraspOverlap);
 			}
 		}
 	};
@@ -336,7 +384,7 @@ bool USLManipulatorMonitor::LoadOverlapGroups()
 	}
 
 	// Check if at least one valid overlap shape is in each group
-	if (GroupA.Num() == 0 || GroupB.Num() == 0)
+	if (BoneMonitorsGroupA.Num() == 0 || BoneMonitorsGroupB.Num() == 0)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d One of the grasp groups is empty grasp detection disabled."), *FString(__func__), __LINE__);
 		bDetectGrasps = false;
@@ -414,64 +462,245 @@ void USLManipulatorMonitor::GraspInputAxisCallback(float Value)
 }
 
 // Process beginning of grasp in group A
-void USLManipulatorMonitor::OnGraspGroupAOverlapBegin(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnGroupAGraspContactBegin(USLBaseIndividual* OtherIndividual)
 {
-	bool bAlreadyInSet = false;
-	SetA.Emplace(OtherIndividual, &bAlreadyInSet);
-	if (!bAlreadyInSet && GroupB.Num() != 0 && !GraspedIndividuals.Contains(OtherIndividual))
+	if (int32* NumContacts = GroupANumGraspContacts.Find(OtherIndividual))
 	{
-		CheckGraspState();
+		// Already in contact with the group, increase the number of contacts
+		(*NumContacts)++;
+		if (bLogVerboseGraspDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: %s is already in contact with group, new num=%d.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+		}
+	}
+	else
+	{
+		// First contact with group, check if a new grasp is triggered
+		GroupANumGraspContacts.Add(OtherIndividual, 1);
+		if (bLogVerboseGraspDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: %s's first contact with group.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+		}
+
+		// Make sure the individual is not already grasped
+		if (GraspedIndividuals.Contains(OtherIndividual))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s::%s \t\t GroupA: %s is already grasped, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
+			return;
+		}
+
+		// If the individual is in contact with the other group as well, trigger a grasp start event
+		if (GroupBNumGraspContacts.Contains(OtherIndividual))
+		{
+			if (bLogVerboseGraspDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: %s is in contact with other group as well, triggering grasp event.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+			}
+			// Trigger grasp started event
+			GraspStarted(OtherIndividual);
+		}
+		else
+		{
+			if (bLogVerboseGraspDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: %s is NOT in contact with other group, grasp will not be triggered.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+			}
+		}
 	}
 }
 
 // Process beginning of grasp in group B
-void USLManipulatorMonitor::OnBeginOverlapGroupBGrasp(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnGroupBGraspContactBegin(USLBaseIndividual* OtherIndividual)
 {
-	bool bAlreadyInSet = false;
-	SetB.Emplace(OtherIndividual, &bAlreadyInSet);
-	if (!bAlreadyInSet && GroupA.Num() != 0 && !GraspedIndividuals.Contains(OtherIndividual))
+	if (int32* NumContacts = GroupBNumGraspContacts.Find(OtherIndividual))
 	{
-		CheckGraspState();
+		// Already in contact with the group, increase the number of contacts
+		(*NumContacts)++;
+		if (bLogVerboseGraspDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB: %s is already in contact with group, new num=%d.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+		}
+	}
+	else
+	{
+		// First contact with group, check if a new grasp is triggered
+		GroupBNumGraspContacts.Add(OtherIndividual, 1);
+		if (bLogVerboseGraspDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB: %s's first contact with group.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+		}
+
+		// Make sure the individual is not already grasped
+		if (GraspedIndividuals.Contains(OtherIndividual))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s::%s \t\t GroupB: %s is already grasped, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
+			return;
+		}
+
+		// If the individual is in contact with the other group as well, trigger a grasp start event
+		if (GroupANumGraspContacts.Contains(OtherIndividual))
+		{
+			if (bLogVerboseGraspDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB: %s is in contact with other group as well, triggering grasp event.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+			}
+			// Trigger grasp started event
+			GraspStarted(OtherIndividual);
+		}
+		else
+		{
+			if (bLogVerboseGraspDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB: %s is NOT in contact with other group, grasp will not be triggered.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+			}
+		}
 	}
 }
 
 // Process ending of contact in group A
-void USLManipulatorMonitor::OnGraspGroupAOverlapEnd(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnGroupAGraspContactEnd(USLBaseIndividual* OtherIndividual)
 {
-	if (SetA.Remove(OtherIndividual) > 0)
+	if (int32* NumContacts = GroupANumGraspContacts.Find(OtherIndividual))
 	{
-		if (GraspedIndividuals.Contains(OtherIndividual))
+		// Decrease the number of contacts
+		(*NumContacts)--;
+
+		// Check if this was the last contact with the group
+		if ((*NumContacts) <= 0)
 		{
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t ~~~~~~~~~~ *END GRASP* init from Group A. ~~~~~~~~~~"),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-			GraspEnded(OtherIndividual);
+			// Remove individual from group
+			GroupANumGraspContacts.Remove(OtherIndividual);
+
+			if (bLogVerboseGraspDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: %s last contact with the group.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
+			}
+
+			// If currently in contact with the other group as well, it should be grasped, trigger grasp end
+			if (GroupBNumGraspContacts.Contains(OtherIndividual))
+			{
+				// Make sure the individual is grasped
+				if (GraspedIndividuals.Contains(OtherIndividual))
+				{
+					if (bLogVerboseGraspDebug)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: %s is in the other group as well, triggering grasp end.."),
+							*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+							*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
+					}
+					// Trigger grasp end event
+					GraspEnded(OtherIndividual);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s::%s \t\t GroupA: %s is NOT grasped, this should not happen.."),
+						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+						*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
+				}
+			}
+
 		}
+		else
+		{
+			if (bLogVerboseGraspDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: %s contact num decreased to Num=%d.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s::%s \t\t GroupA: %s is not in the contact list, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+			*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
 	}
 }
 
 // Process ending of contact in group B
-void USLManipulatorMonitor::OnEndOverlapGroupBGrasp(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnGroupBGraspContactEnd(USLBaseIndividual* OtherIndividual)
 {
-	if (SetB.Remove(OtherIndividual) > 0)
+	if (int32* NumContacts = GroupBNumGraspContacts.Find(OtherIndividual))
 	{
-		if (GraspedIndividuals.Contains(OtherIndividual))
+		// Decrease the number of contacts
+		(*NumContacts)--;
+
+		// Check if this was the last contact with the group
+		if ((*NumContacts) <= 0)
 		{
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t ~~~~~~~~~~ *END GRASP* init from Group B. ~~~~~~~~~~"),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-			GraspEnded(OtherIndividual);
+			// Remove individual from group
+			GroupBNumGraspContacts.Remove(OtherIndividual);
+
+			if (bLogVerboseGraspDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB: %s last contact with the group.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
+			}
+
+			// If currently in contact with the other group as well, it should be grasped, trigger grasp end
+			if (GroupANumGraspContacts.Contains(OtherIndividual))
+			{
+				// Make sure the individual is grasped
+				if (GraspedIndividuals.Contains(OtherIndividual))
+				{
+					if (bLogVerboseGraspDebug)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB: %s is in the other group as well, triggering grasp end.."),
+							*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+							*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
+					}
+					// Trigger grasp end event
+					GraspEnded(OtherIndividual);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s::%s \t\t GroupB: %s is NOT grasped, this should not happen.."),
+						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+						*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
+					return;
+				}
+			}
+
+		}
+		else
+		{
+			if (bLogVerboseGraspDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: %s contact num decreased to Num=%d.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName(), *NumContacts);
+			}
 		}
 	}
-}
-
-// Check for grasping state
-void USLManipulatorMonitor::CheckGraspState()
-{
-	for (const auto& Individual : SetA.Intersect(SetB))
+	else
 	{
-		if (!GraspedIndividuals.Contains(Individual))
-		{
-			GraspStarted(Individual);
-		}
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s::%s \t\t GroupA: %s is not in the contact list, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+			*GetOwner()->GetName(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
 	}
 }
 
@@ -480,39 +709,28 @@ void USLManipulatorMonitor::GraspStarted(USLBaseIndividual* OtherIndividual)
 {
 	// Check if it is a new grasp event, or a concatenation with a previous one, either way, there is a new grasp
 	GraspedIndividuals.Emplace(OtherIndividual);
-	if(!SkipIfJitterGrasp(OtherIndividual, GetWorld()->GetTimeSeconds()))
+	if(!IsAJitterGrasp(OtherIndividual, GetWorld()->GetTimeSeconds()))
 	{
-		/*UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs \t BeginManipulatorGrasp: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
-				GetWorld()->GetTimeSeconds(), *OwnerIndividualObject->GetParentActor()->GetName(), *EvItr->Other->GetParentActor()->GetName());*/
+		if (bLogGraspDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t %.4fs \t\t Grasp Started ( !!! broadcast !!! ): \t\t %s::%s->%s;"),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *GetName(), *OtherIndividual->GetParentActor()->GetName());
+		}
+
+		// Broadcast grasp event
 		OnBeginManipulatorGrasp.Broadcast(OwnerIndividualObject, OtherIndividual, GetWorld()->GetTimeSeconds(), ActiveGraspType);
 
 		if (bUseGraspHelper)
 		{
-			if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherIndividual->GetParentActor()))
-			{
-				if (!bGraspHelperManualOverride)
-				{
-					GraspHelperItemSMC = AsSMA->GetStaticMeshComponent();
-					StartGraspHelper();
-				}
-				else if (!bAdHocGraspHelpIsActive)
-				{
-					// Allow manual grasp override
-					GraspHelperItemSMC = AsSMA->GetStaticMeshComponent();
-					bGraspHelperCanExecuteManualOverrideFlag = true;
-				}
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s could not help grasp %s because it is not a static mesh actor.."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
-			}
+			GraspHelpStartTrigger(OtherIndividual->GetParentActor());
 		}
 	}
-	else
+	else if (bLogGraspDebug)
 	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t ~~~~~~~~~~ *END GRASP* cancelled (concatenation) ~~~~~~~~~~"),
-		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t %.4fs \t\t Grasp Started (jitter grasp - cancelled): \t\t %s::%s->%s;"),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+			*GetOwner()->GetName(), *GetName(), *OtherIndividual->GetParentActor()->GetName());
 	}
 }
 
@@ -521,6 +739,13 @@ void USLManipulatorMonitor::GraspEnded(USLBaseIndividual* OtherIndividual)
 {
 	if (GraspedIndividuals.Remove(OtherIndividual) > 0)
 	{
+		if (bLogGraspDebug)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Grasp Ended (jitter check started): \t\t %s::%s->%s;"),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *GetName(), *OtherIndividual->GetParentActor()->GetName());
+		}
+
 		// Grasp ended
 		RecentlyEndedGraspEvents.Emplace(FSLGraspEndEvent(OtherIndividual, GetWorld()->GetTimeSeconds()));
 		
@@ -531,6 +756,11 @@ void USLManipulatorMonitor::GraspEnded(USLBaseIndividual* OtherIndividual)
 			GetWorld()->GetTimerManager().SetTimer(GraspDelayTimerHandle, this,
 				&USLManipulatorMonitor::DelayedGraspEndCallback, DelayValue, false);
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s->%s is not registered, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
 	}
 }
 
@@ -545,22 +775,19 @@ void USLManipulatorMonitor::DelayedGraspEndCallback()
 		// If enough time has passed, publish the event
 		if(CurrTime - EvItr->Time > GraspConcatenateIfSmaller)
 		{
-			/*UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs \t (wDelay) EndManipulatorGrasp: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
-				GetWorld()->GetTimeSeconds(), *OwnerIndividualObject->GetParentActor()->GetName(), *EvItr->Other->GetParentActor()->GetName());*/
+			if (bLogGraspDebug)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Grasp Ended ( !!! broadcast !!! with delay): \t\t %s::%s->%s;"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetName(), *EvItr->Other->GetParentActor()->GetName());
+			}
+
 			// Broadcast delayed event
 			OnEndManipulatorGrasp.Broadcast(OwnerIndividualObject, EvItr->Other, EvItr->Time);
 			
 			if (bUseGraspHelper)
 			{
-				if (!bGraspHelperManualOverride)
-				{
-					StopGraspHelper();
-				}
-				else if (!bAdHocGraspHelpIsActive)
-				{
-					// Cancel the manual override
-					bGraspHelperCanExecuteManualOverrideFlag = false;
-				}
+				GraspHelpStopTrigger();
 			}
 
 			// Remove event from the pending list
@@ -578,7 +805,7 @@ void USLManipulatorMonitor::DelayedGraspEndCallback()
 }
 
 // Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-bool USLManipulatorMonitor::SkipIfJitterGrasp(USLBaseIndividual* OtherIndividual, float StartTime)
+bool USLManipulatorMonitor::IsAJitterGrasp(USLBaseIndividual* OtherIndividual, float StartTime)
 {
 	for (auto EvItr(RecentlyEndedGraspEvents.CreateIterator()); EvItr; ++EvItr)
 	{
@@ -606,38 +833,49 @@ bool USLManipulatorMonitor::SkipIfJitterGrasp(USLBaseIndividual* OtherIndividual
 
 /* Begin contact related */
 // Process beginning of contact
-void USLManipulatorMonitor::OnContactBoneOverlapBegin(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnBoneContactBegin(USLBaseIndividual* OtherIndividual)
 {
-	if (int32* NumContacts = IndividualsInContact.Find(OtherIndividual))
+	if (int32* NumContacts = ManipulatorNumContacts.Find(OtherIndividual))
 	{
 		(*NumContacts)++;
 	}
 	else
 	{
 		// Check if it is a new contact event, or a concatenation with a previous one, either way, there is a new contact
-		IndividualsInContact.Add(OtherIndividual, 1);
+		ManipulatorNumContacts.Add(OtherIndividual, 1);
 		const float CurrTime = GetWorld()->GetTimeSeconds();
-		if(!SkipIfJitterContact(OtherIndividual, CurrTime))
+		if(!IsAJitterContact(OtherIndividual, CurrTime))
 		{
-			/*UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs \t BeginManipulatorContact: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
-				GetWorld()->GetTimeSeconds(), *OwnerIndividualObject->GetParentActor()->GetName(), *OtherIndividual->GetParentActor()->GetName());*/
+			if (bLogContactDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t %.4fs \t\t Contact Started ( !!! broadcast !!! ): \t\t %s::%s->%s;"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetName(), *OtherIndividual->GetParentActor()->GetName());
+			}
+
 			// Broadcast begin of semantic overlap event
 			OnBeginManipulatorContact.Broadcast(FSLContactResult(OwnerIndividualObject, OtherIndividual, CurrTime, false));
+		}
+		else if (bLogContactDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t %.4fs \t\t Contact Started (jitter contact - cancelled): \t\t %s::%s->%s;"),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *GetName(), *OtherIndividual->GetParentActor()->GetName());
 		}
 	}
 }
 
 // Process ending of contact
-void USLManipulatorMonitor::OnContactBoneOverlapEnd(USLBaseIndividual* OtherIndividual)
+void USLManipulatorMonitor::OnBoneContactEnd(USLBaseIndividual* OtherIndividual)
 {
-	if (int32* NumContacts = IndividualsInContact.Find(OtherIndividual))
+	if (int32* NumContacts = ManipulatorNumContacts.Find(OtherIndividual))
 	{
 		(*NumContacts)--;
 			
-		if ((*NumContacts) < 1)
+		if ((*NumContacts) <= 0)
 		{
 			// Remove contact object
-			IndividualsInContact.Remove(OtherIndividual);
+			ManipulatorNumContacts.Remove(OtherIndividual);
 
 			if (!GetWorld())
 			{
@@ -645,6 +883,13 @@ void USLManipulatorMonitor::OnContactBoneOverlapEnd(USLBaseIndividual* OtherIndi
 					*FString(__FUNCTION__), __LINE__);
 				// Episode already finished, continuing would be futile
 				return;
+			}
+
+			if (bLogContactDebug)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Contact Ended (jitter check started): \t\t %s::%s->%s;"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetName(), *OtherIndividual->GetParentActor()->GetName());
 			}
 
 			// Manipulator contact ended
@@ -664,7 +909,6 @@ void USLManipulatorMonitor::OnContactBoneOverlapEnd(USLBaseIndividual* OtherIndi
 		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's overlap end object (%s) is not in the contacts list, this should not happen.."),
 			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherIndividual->GetParentActor()->GetName());
 	}
-
 }
 
 // Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
@@ -678,9 +922,17 @@ void USLManipulatorMonitor::DelayedContactEndCallback()
 		// If enough time has passed, publish the event
 		if(CurrTime - EvItr->Time > ContactConcatenateIfSmaller)
 		{
-			/*UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs \t (wDelay) EndManipulatorContact: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
-				GetWorld()->GetTimeSeconds(), *OwnerIndividualObject->GetParentActor()->GetName(), *EvItr->Other->GetParentActor()->GetName());*/
+			if (bLogContactDebug)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Contact Ended ( !!! broadcast !!! with delay): \t\t %s::%s->%s;"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *GetName(), *EvItr->Other->GetParentActor()->GetName());
+			}
+
+			// Broadcast contact event
 			OnEndManipulatorContact.Broadcast(OwnerIndividualObject, EvItr->Other, EvItr->Time);
+
+			// Remove from the pending list
 			EvItr.RemoveCurrent();
 		}
 	}
@@ -695,7 +947,7 @@ void USLManipulatorMonitor::DelayedContactEndCallback()
 }
 
 // Check if this begin event happened right after the previous one ended, if so remove it from the array, and cancel publishing the begin event
-bool USLManipulatorMonitor::SkipIfJitterContact(USLBaseIndividual* InOther, float StartTime)
+bool USLManipulatorMonitor::IsAJitterContact(USLBaseIndividual* InOther, float StartTime)
 {
 	for (auto EvItr(RecentlyEndedContactEvents.CreateIterator()); EvItr; ++EvItr)
 	{
@@ -789,7 +1041,7 @@ void USLManipulatorMonitor::GraspHelperInputCallback()
 {
 	if (bGraspHelperCanExecuteManualOverrideFlag)
 	{
-		if (!bAdHocGraspHelpIsActive)
+		if (!bIsGraspHelpActive)
 		{
 			StartGraspHelper();
 		}
@@ -805,10 +1057,48 @@ void USLManipulatorMonitor::GraspHelperInputCallback()
 	}
 }
 
+// Called from the grasp started callback function
+void USLManipulatorMonitor::GraspHelpStartTrigger(AActor* OtherActor)
+{
+	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherActor))
+	{
+		if (!bGraspHelperManualOverride)
+		{
+			GraspHelperItemSMC = AsSMA->GetStaticMeshComponent();
+			StartGraspHelper();
+		}
+		else if (!bIsGraspHelpActive)
+		{
+			// Allow manual grasp override
+			GraspHelperItemSMC = AsSMA->GetStaticMeshComponent();
+			bGraspHelperCanExecuteManualOverrideFlag = true;
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s could not help grasp %s because it is not a static mesh actor.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
+	}
+}
+
+// Triggered from the grasp end callback function
+void USLManipulatorMonitor::GraspHelpStopTrigger()
+{
+	if (!bGraspHelperManualOverride)
+	{
+		StopGraspHelper();
+	}
+	else if (!bIsGraspHelpActive)
+	{
+		// Cancel the manual override
+		bGraspHelperCanExecuteManualOverrideFlag = false;
+	}
+}
+
 // Start grasp help
 void USLManipulatorMonitor::StartGraspHelper()
 {
-	if (bAdHocGraspHelpIsActive)
+	if (bIsGraspHelpActive)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasp help is already active, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
@@ -831,7 +1121,7 @@ void USLManipulatorMonitor::StartGraspHelper()
 		GraspHelperConstraint->SetConstrainedComponents(GraspHelperOwnerSkelMC, GraspHelperHandBoneName,
 			GraspHelperItemSMC, NAME_None);
 
-		bAdHocGraspHelpIsActive = true;
+		bIsGraspHelpActive = true;
 	}
 	else
 	{
@@ -843,7 +1133,7 @@ void USLManipulatorMonitor::StartGraspHelper()
 // Stop grasp help
 void USLManipulatorMonitor::StopGraspHelper()
 {
-	if (!bAdHocGraspHelpIsActive)
+	if (!bIsGraspHelpActive)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasp help is already stopped, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
@@ -873,7 +1163,7 @@ void USLManipulatorMonitor::StopGraspHelper()
 			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
 	}
 
-	bAdHocGraspHelpIsActive = false;
+	bIsGraspHelpActive = false;
 	bGraspHelperCanExecuteManualOverrideFlag = false;
 }
 /* End grasp helper */
