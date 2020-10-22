@@ -14,7 +14,7 @@ class AActor;
 class USLBaseIndividual;
 class USLIndividualComponent;
 class AStaticMeshActor;
-class USLManipulatorBoneContactMonitor;
+class USLBoneContactMonitor;
 class UPhysicsConstraintComponent; // Grasp helper
 class UStaticMeshComponent; // Grasp helper
 class USkeletalMeshComponent; // Grasp helper
@@ -112,6 +112,9 @@ protected:
 
 	// Load overlap groups, return true if at least one valid overlap is in each group
 	bool LoadBoneOverlapGroups();
+
+	// Create and attach bone monitors to the owner
+	void CreateBoneMonitors();
 
 	/* Begin grasp related */
 #if SL_WITH_MC_GRASP
@@ -279,6 +282,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float ContactConcatenateIfSmaller;
 
+	// Button hack for loading all bone contact sensors
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Editor")
+	bool bLoadBoneContactMonitorsButtonHack;
+
 	/* Begin Ad Hoc Grasp Helper */
 	// Help out with the grasping
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper")
@@ -354,10 +361,10 @@ private:
 	
 	/* Grasp related */
 	// Opposing group A for testing for grasps
-	TArray<USLManipulatorBoneContactMonitor*> BoneMonitorsGroupA;
+	TArray<USLBoneContactMonitor*> BoneMonitorsGroupA;
 
 	// Opposing group B for testing for grasps
-	TArray<USLManipulatorBoneContactMonitor*> BoneMonitorsGroupB;
+	TArray<USLBoneContactMonitor*> BoneMonitorsGroupB;
 
 	// Individuals currently grasped
 	TSet<USLBaseIndividual*> GraspedIndividuals;

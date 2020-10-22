@@ -5,7 +5,7 @@
 
 #include "USemLog.h"
 #include "Components/SphereComponent.h"
-#include "SLManipulatorBoneContactMonitor.generated.h"
+#include "SLBoneContactMonitor.generated.h"
 
 // Forward declarations
 class USLBaseIndividual;
@@ -16,7 +16,7 @@ class USkeletalMeshComponent;
 * Hand type
 */
 UENUM()
-enum class ESLManipulatorContactMonitorGroup : uint8
+enum class ESLBoneContactGroup : uint8
 {
 	A					UMETA(DisplayName = "A"),
 	B					UMETA(DisplayName = "B"),
@@ -25,13 +25,13 @@ enum class ESLManipulatorContactMonitorGroup : uint8
 /**
  * Overlap event end data
  */
-struct FSLManipulatorContactMonitorEndEvent
+struct FSLBoneContactEndEvent
 {
 	// Default ctor
-	FSLManipulatorContactMonitorEndEvent() = default;
+	FSLBoneContactEndEvent() = default;
 
 	// Init ctor
-	FSLManipulatorContactMonitorEndEvent(USLBaseIndividual* InOther, float InTimestamp) :
+	FSLBoneContactEndEvent(USLBaseIndividual* InOther, float InTimestamp) :
 		Other(InOther), Timestamp(InTimestamp) {};
 
 	// Overlap component
@@ -50,17 +50,17 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FSLBoneOverlapEndSignature, USLBaseIndividua
 /**
  * Semantic overlap generator for grasp detection
  */
-UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Manipulator Bone Contact Monitor")
-class USEMLOG_API USLManipulatorBoneContactMonitor : public USphereComponent
+UCLASS(ClassGroup = (SL), meta = (BlueprintSpawnableComponent), DisplayName = "SL Bone Contact Monitor")
+class USEMLOG_API USLBoneContactMonitor : public USphereComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Ctor
-	USLManipulatorBoneContactMonitor();
+	USLBoneContactMonitor();
 
 	// Dtor
-	~USLManipulatorBoneContactMonitor() = default;
+	~USLBoneContactMonitor() = default;
 	
 	// Attach to bone 
 	void Init(bool bGrasp = true, bool bContact = true);
@@ -87,7 +87,16 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 	// Give access to the group of which the shape belongs to for the grasping detection
-	ESLManipulatorContactMonitorGroup GetGroup() const { return Group;};
+	ESLBoneContactGroup GetGroup() const { return Group;};
+
+	// Get the bone name attached to
+	FName GetAttachedBoneName() const { return BoneName; };
+
+	// Set the bone name attached to
+	void SetAttachedBoneNameChecked(const FName& NewName) { BoneName = NewName; };
+
+	// Attach component to bone
+	bool AttachToBone();
 
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
@@ -98,12 +107,8 @@ private:
 	// Set collision parameters such as object name and collision responses
 	void SetCollisionParameters();
 
-	// Attach component to bone
-	bool AttachToBone();
-
 	// Set debug color
 	void SetColor(FColor Color);
-
 
 	/* Grasp related*/
 	// Bind grasp related overlaps
@@ -212,7 +217,7 @@ private:
 
 	// The group of which the shape belongs to for the grasping detection
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLManipulatorContactMonitorGroup Group;
+	ESLBoneContactGroup Group;
 
 	// Name of the skeletal bone to attach the shape to
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -241,14 +246,14 @@ private:
 	FTimerHandle GraspDelayTimerHandle;
 
 	// Array of recently ended events
-	TArray<FSLManipulatorContactMonitorEndEvent> RecentlyEndedGraspOverlapEvents;
+	TArray<FSLBoneContactEndEvent> RecentlyEndedGraspOverlapEvents;
 	
 	
 	// Send finished events with a delay to check for possible concatenation of equal and consecutive events with small time gaps in between
 	FTimerHandle ContactDelayTimerHandle;
 
 	// Array of recently ended events
-	TArray<FSLManipulatorContactMonitorEndEvent> RecentlyEndedContactOverlapEvents;
+	TArray<FSLBoneContactEndEvent> RecentlyEndedContactOverlapEvents;
 	
 
 	/* Constants */

@@ -2,7 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Monitors/SLManipulatorMonitor.h"
-#include "Monitors/SLManipulatorBoneContactMonitor.h"
+#include "Monitors/SLBoneContactMonitor.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
@@ -42,6 +42,8 @@ USLManipulatorMonitor::USLManipulatorMonitor()
 	bLogGraspDebug = false;
 	bLogVerboseGraspDebug = false;
 
+	// Editor button hack
+	bLoadBoneContactMonitorsButtonHack = false;
 
 #if WITH_EDITORONLY_DATA
 	// Default values
@@ -347,6 +349,11 @@ void USLManipulatorMonitor::PostEditChangeProperty(struct FPropertyChangedEvent&
 	{
 		Fingers.Empty();
 	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorMonitor, bLoadBoneContactMonitorsButtonHack))
+	{
+		bLoadBoneContactMonitorsButtonHack = false;
+		CreateBoneMonitors();
+	}
 }
 #endif // WITH_EDITOR
 
@@ -356,15 +363,15 @@ bool USLManipulatorMonitor::LoadBoneOverlapGroups()
 	// Lambda to check grasp overlap components of owner and add them to their groups
 	const auto GetOverlapComponentsLambda = [this](AActor* Owner)
 	{
-		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLManipulatorBoneContactMonitor::StaticClass());
+		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLBoneContactMonitor::StaticClass());
 		for (UActorComponent* GraspOverlapComp : GraspOverlaps)
 		{
-			USLManipulatorBoneContactMonitor* GraspOverlap = CastChecked<USLManipulatorBoneContactMonitor>(GraspOverlapComp);
-			if (GraspOverlap->GetGroup() == ESLManipulatorContactMonitorGroup::A)
+			USLBoneContactMonitor* GraspOverlap = CastChecked<USLBoneContactMonitor>(GraspOverlapComp);
+			if (GraspOverlap->GetGroup() == ESLBoneContactGroup::A)
 			{
 				BoneMonitorsGroupA.Add(GraspOverlap);
 			}
-			else if (GraspOverlap->GetGroup() == ESLManipulatorContactMonitorGroup::B)
+			else if (GraspOverlap->GetGroup() == ESLBoneContactGroup::B)
 			{
 				BoneMonitorsGroupB.Add(GraspOverlap);
 			}
@@ -392,6 +399,99 @@ bool USLManipulatorMonitor::LoadBoneOverlapGroups()
 	return true;
 }
 
+// Create and attach bone monitors to the owner
+void USLManipulatorMonitor::CreateBoneMonitors()
+{
+	if (ASkeletalMeshActor* AsSkelMA = Cast<ASkeletalMeshActor>(GetOwner()))
+	{
+		if (USkeletalMeshComponent* SkelMC = AsSkelMA->GetSkeletalMeshComponent())
+		{
+			AActor* OnwerActor = GetOwner();
+
+			// Get existing bone monitors
+			TArray<UActorComponent*> ExistingBoneMonitors = AsSkelMA->GetComponentsByClass(USLBoneContactMonitor::StaticClass());
+
+			// Get list of the skeletal bone names
+			TArray<FName> BoneNames;
+			SkelMC->GetBoneNames(BoneNames);
+
+			// Create bone monitors for the missing bones
+			for (const auto& BoneName : BoneNames)
+			{
+				// Check if monitor already exists
+				bool bAlreadyExists = false;
+				for (int32 BMIdx = 0; BMIdx < ExistingBoneMonitors.Num(); ++BMIdx)
+				{
+					if (CastChecked<USLBoneContactMonitor>(ExistingBoneMonitors[BMIdx])->GetAttachedBoneName().IsEqual(BoneName))
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d Bone monitor %s for bone %s already exists.."),
+							*FString(__FUNCTION__), __LINE__, *ExistingBoneMonitors[BMIdx]->GetName(), *BoneName.ToString());
+						bAlreadyExists = true;
+					}
+					if (bAlreadyExists)
+					{
+						// Remove from array
+						ExistingBoneMonitors.RemoveAt(BMIdx);					
+						break;
+					}
+				}
+	
+				if (!bAlreadyExists)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d Creating new bone monitor %s.."),
+						*FString(__FUNCTION__), __LINE__, *BoneName.ToString());
+
+					// Mark actor as modified
+					OnwerActor->Modify();
+
+					// Get the set of owned components that exists prior to instancing the new component.
+					TInlineComponentArray<UActorComponent*> PreInstanceComponents;
+					OnwerActor->GetComponents(PreInstanceComponents);
+
+					// Create a new component
+					USLBoneContactMonitor* NewComp = NewObject<USLBoneContactMonitor>(GetOwner(), BoneName, RF_Transactional);
+					NewComp->SetAttachedBoneNameChecked(BoneName);
+					if (!NewComp->AttachToBone())
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d Could not attach %s::%s to bone, this should not happen.."),
+							*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *NewComp->GetName());
+					}
+
+					// Make visible in the components list in the editor
+					OnwerActor->AddInstanceComponent(NewComp);
+					OnwerActor->AddOwnedComponent(NewComp);
+
+					NewComp->RegisterComponent();
+
+					// Register any new components that may have been created during construction of the instanced component, but were not explicitly registered.
+					TInlineComponentArray<UActorComponent*> PostInstanceComponents;
+					OnwerActor->GetComponents(PostInstanceComponents);
+					for (UActorComponent* ActorComponent : PostInstanceComponents)
+					{
+						if (!ActorComponent->IsRegistered() && ActorComponent->bAutoRegister && !ActorComponent->IsPendingKill() && !PreInstanceComponents.Contains(ActorComponent))
+						{
+							ActorComponent->RegisterComponent();
+						}
+					}
+
+					OnwerActor->RerunConstructionScripts();
+				}
+			}
+
+			// Removing monitors without corresponding bones
+			for (const auto& DanglingMonitor : ExistingBoneMonitors)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Bone monitor %s has no bone skeletal bone, please remove.."),
+					*FString(__FUNCTION__), __LINE__, *DanglingMonitor->GetName());
+				/*OnwerActor->Modify();
+				OnwerActor->RemoveOwnedComponent(DanglingMonitor);
+				OnwerActor->RemoveInstanceComponent(DanglingMonitor);
+				OnwerActor->ConditionalBeginDestroy();*/
+			}
+		}
+	}
+}
+
 /* Begin grasp related */
 #if SL_WITH_MC_GRASP
 // Subscribe to grasp type changes
@@ -417,6 +517,8 @@ void USLManipulatorMonitor::OnGraspType(const FString& Type)
 	//UE_LOG(LogTemp, Warning, TEXT("%s::%d ActiveGraspType=%s"), *FString(__func__), __LINE__, *ActiveGraspType);
 }
 #endif // SL_WITH_MC_GRASP
+
+
 
 // Bind user inputs
 void USLManipulatorMonitor::SetupInputBindings()
