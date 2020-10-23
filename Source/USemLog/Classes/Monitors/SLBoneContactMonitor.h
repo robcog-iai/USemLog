@@ -42,10 +42,12 @@ struct FSLBoneContactEndEvent
 };
 
 /** Delegate to notify that a contact begins between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLBoneOverlapBeginSignature, USLBaseIndividual* /*Other*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FSLBoneOverlapBeginSignature, USLBaseIndividual* /*Other*/, const FName& /*BoneName*/);
+// OR DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLBoneOverlapBeginSignature, USLBaseIndividual*, Other);
 
 /** Delegate to notify that a contact ended between the grasp overlap and an item**/
-DECLARE_MULTICAST_DELEGATE_OneParam(FSLBoneOverlapEndSignature, USLBaseIndividual* /*Other*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FSLBoneOverlapEndSignature, USLBaseIndividual* /*Other*/, const FName& /*BoneName*/);
+// OR DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSLBoneOverlapEndSignature, USLBaseIndividual*, Other);
 
 /**
  * Semantic overlap generator for grasp detection
@@ -180,7 +182,7 @@ public:
 	// Grasp related overlap begin/end
 	FSLBoneOverlapBeginSignature OnBeginGraspBoneOverlap;
 	FSLBoneOverlapEndSignature OnEndGraspBoneOverlap;
-	
+
 	// Contact related overlap begin/end
 	FSLBoneOverlapBeginSignature OnBeginContactBoneOverlap;
 	FSLBoneOverlapEndSignature OnEndContactBoneOverlap;

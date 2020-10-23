@@ -163,7 +163,7 @@ void USLBoneContactMonitor::PauseGraspDetection(bool bNewValue)
 			// Broadcast ending of any active grasp related contacts
 			for (auto& AC : ActiveContacts)
 			{
-				OnEndGraspBoneOverlap.Broadcast(AC);
+				OnEndGraspBoneOverlap.Broadcast(AC, BoneName);
 			}
 			ActiveContacts.Empty();
 
@@ -193,14 +193,14 @@ void USLBoneContactMonitor::Finish(bool bForced)
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedGraspOverlapEvents)
 		{
-			OnEndGraspBoneOverlap.Broadcast(EvItr.Other);
+			OnEndGraspBoneOverlap.Broadcast(EvItr.Other, BoneName);
 		}
 		RecentlyEndedGraspOverlapEvents.Empty();
 
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedContactOverlapEvents)
 		{
-			OnEndContactBoneOverlap.Broadcast(EvItr.Other);
+			OnEndContactBoneOverlap.Broadcast(EvItr.Other, BoneName);
 		}
 		RecentlyEndedContactOverlapEvents.Empty();
 
@@ -431,7 +431,7 @@ void USLBoneContactMonitor::OnGraspOverlapBegin(UPrimitiveComponent* OverlappedC
 				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
 				*GetOwner()->GetName(), *GetName(), *OtherActor->GetName(), *OtherComp->GetName());
 		}
-		OnBeginGraspBoneOverlap.Broadcast(OtherIndividual);
+		OnBeginGraspBoneOverlap.Broadcast(OtherIndividual, BoneName);
 	}
 	else if (bLogGraspDebug)
 	{
@@ -538,7 +538,7 @@ void USLBoneContactMonitor::DelayedGraspOverlapEndEventCallback()
 			}
 
 			// Broadcast delayed event
-			OnEndGraspBoneOverlap.Broadcast(EvItr->Other);
+			OnEndGraspBoneOverlap.Broadcast(EvItr->Other, BoneName);
 			
 			// Remove event from the pending list
 			EvItr.RemoveCurrent();
@@ -673,7 +673,7 @@ void USLBoneContactMonitor::OnContactOverlapBegin(UPrimitiveComponent* Overlappe
 		}
 
 		// Broadcast the start of the contact event
-		OnBeginContactBoneOverlap.Broadcast(OtherIndividual);
+		OnBeginContactBoneOverlap.Broadcast(OtherIndividual, BoneName);
 	}
 	else if (bLogContactDebug)
 	{
@@ -761,7 +761,7 @@ void USLBoneContactMonitor::DelayContactEndCallback()
 			}
 
 			// Broadcast delayed event
-			OnEndContactBoneOverlap.Broadcast(EvItr->Other);
+			OnEndContactBoneOverlap.Broadcast(EvItr->Other, BoneName);
 			
 			// Remove event from the pending list
 			EvItr.RemoveCurrent();
