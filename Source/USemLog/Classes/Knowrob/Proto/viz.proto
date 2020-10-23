@@ -36,22 +36,3 @@ message DrawMarkerTrajParams {
   required string color = 6;
   required string material = 7;
 }
-
-message KRAmevaEvent {
-  enum FuncToCall {
-    SetTask = 1;
-    SetEpisode = 2;
-    ShowIndividualAt = 3;
-    HighlightIndividual = 4;
-    DrawMarkerAt = 5;
-    DrawMarkerTraj = 6;
-    ShowWorldAt = 7;
-    ReplayWorld = 8;
-    SetView = 9;
-  } 
-  required FuncToCall funcToCall = 1;
-  optional SetTaskParams setTaskParam = 2;
-  optional SetEpisodeParams setEpisodeParams = 3;
-  optional DrawMarkerAtParams drawMarkerAtParams = 4;
-  optional DrawMarkerTrajParams drawMarkerTrajParams = 5;
-}
