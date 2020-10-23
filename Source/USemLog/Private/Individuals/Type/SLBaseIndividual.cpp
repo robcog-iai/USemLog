@@ -8,7 +8,6 @@
 // Utils
 #include "Utils/SLTagIO.h"
 #include "Utils/SLUuid.h"
-#include "..\..\..\Classes\Individuals\Type\SLBaseIndividual.h"
 
 
 // Ctor

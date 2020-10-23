@@ -16,6 +16,8 @@
 #include "Editor.h"
 #endif //WITH_EDITOR
 
+const char USLIndividualInfoComponent::OwnTextInfoKey[] = "iic";
+const char USLIndividualInfoComponent::ICTextInfoKey[] = "ic";
 
 // Sets default values for this component's properties
 USLIndividualInfoComponent::USLIndividualInfoComponent()

@@ -16,6 +16,9 @@
 #include "Conversions.h"
 #endif // SL_WITH_ROS_CONVERSIONS
 
+const char FSLOwlSemMapDocUtils::AmevaNs[] = "ameva";
+const char FSLOwlSemMapDocUtils::KRNs[] = "knowrob";
+
 /* Common structures */
 // Owl
 const FSLOwlPrefixName FSLOwlSemMapDocUtils::OwlNamedIndividual("owl", "NamedIndividual");

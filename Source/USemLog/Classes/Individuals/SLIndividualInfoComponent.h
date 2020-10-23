@@ -227,6 +227,6 @@ private:
 	constexpr static float TextScaleMin = 0.25f;
 	constexpr static float TextScaleMax = 2.f;
 
-	static constexpr char OwnTextInfoKey[] = "iic";
-	static constexpr char ICTextInfoKey[] = "ic";
+	static const char OwnTextInfoKey[];
+	static const char ICTextInfoKey[];
 };
