@@ -195,34 +195,10 @@ private:
 	bool IsAJitterContact(USLBaseIndividual* InOther, float StartTime);
 	/* End contact related */
 
-	/* Begin Ad Hoc grasp help */
-	// Setup the grasp helper constraint
-	bool InitGraspHelper();
-
-	// Create and register the grasp helper constraint
-	UPhysicsConstraintComponent* CreateGraspHelperConstraint(const FName& Name);
-
+	//* Begin grasp help */
 	// Grasp help input trigger manual override
-	void GraspHelperInputCallback();
-
-	// Triggered from the grasp started callback function
-	void GraspHelperStartLogic(AActor* OtherActor);
-
-	// Triggered from the grasp end callback function
-	void GraspHelpStopTrigger(AActor* OtherActor);
-
-	// Call start grasp helper with a delay
-	void DelayedStartGraspHelper();
-
-	// Start grasp help
-	void StartGraspHelper();
-
-	// Stop grasp help
-	void StopGraspHelper();
-
-	// Check if the object should be helped
-	bool ShouldGraspHelperBeAppliedToActor(AActor* Actor);
-	/* End Ad Hoc grasp help */
+	void GraspHelperInputCallback();	
+	///* End Grasp help */
 	
 public:
 	// Event called when grasp begins/ends
@@ -265,9 +241,6 @@ private:
 
 	// True grasp detection is paused
 	uint8 bIsGraspDetectionPaused : 1;
-
-	//// New information added 
-	//uint8 bGraspIsDirty : 1;
 
 	// Detect grasp contacts
 	uint8 bDetectGrasps : 1;
@@ -315,106 +288,12 @@ private:
 	/* Begin Grasp Helper */
 	// Help out with the grasping
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper")
-	uint8 bUseGraspHelper : 1;
+	bool bUseGraspHelper;
 
 	// Grasp helper 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
 	FSLGraspHelper GraspHelper;
-
-	// Use two constraints, one attached to a group A bone, the other to a group B
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	uint8 bGraspHelperUseGroupABConstraints : 1;
-
-	// Use manual override
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	uint8 bGraspHelperManualOverride : 1;
-
-	// Use manual override for event publishing
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	uint8 bGraspHelperEventManualOverride : 1;
-
-	// Use manual override for event publishing
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	uint8 bTriggerBeforeJitterCheck : 1;
-
-	// Start helping the grasp after a delay
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	uint8 bDelayGraspHelper : 1;
-
-	// Decrease mass of grasped object
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bDelayGraspHelper"))
-	float GraspHelperDelay;
-
-	// Input action name (uses manual override)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	FName GraspHelperInputActionName;
-
-	// Attach constraint to the given bone
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	FName GraspHelperDefaultBoneAttachmentName;
-
-	// Disable gravity on grasp
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	bool bGraspHelperItemDisableGravity;
-
-	// Decrease mass of object
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	bool bGraspHelperItemScaleMass;
-
-	// Decrease mass of grasped object
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper && bGraspHelperItemScaleMass"))
-	float GraspHelperItemMassScaleValue;
-
-	// Constraint movement limit (all axis)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	float GraspHelperConstraintLimit;
-
-	// Grasp helper constraint properties
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	float GraspHelperConstraintStiffness;
-
-	// Grasp helper constraint properties
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	float GraspHelperConstraintDamping;
-
-	// Grasp helper constraint properties
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	float GraspHelperConstraintContactDistance;
-
-	// Grasp helper constraint properties
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Grasp Helper", meta = (editcondition = "bUseGraspHelper"))
-	bool bGraspHelperConstraintParentDominates;
-
-	// Grasp helper constraint component
-	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger|Grasp Helper"*/)
-	UPhysicsConstraintComponent* GraspHelperConstraint;
-
-	// Constraint attached to a group A bone
-	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger|Grasp Helper"*/)
-	UPhysicsConstraintComponent* GraspHelperConstraintGroupA;
-
-	// Constraint attached to a group B bone
-	UPROPERTY(/*VisibleAnywhere, Category = "Semantic Logger|Grasp Helper"*/)
-	UPhysicsConstraintComponent* GraspHelperConstraintGroupB;
-
-	// Group A bone name
-	FName GraspHelperBoneNameGroupA;
-
-	// Group B bone name
-	FName GraspHelperBoneNameGroupB;
-
-	// Grasped helper item static mesh component
-	UStaticMeshComponent* GraspHelperOtherSMC;
-
-	// Owner skeletal mesh component
-	USkeletalMeshComponent* GraspHelperOwnerSkelMC;
-
-	// Manual override flags
-	bool bGraspHelperCanExecuteManualOverrideFlag;
-
-	// Grasp helper trigger delay
-	FTimerHandle GraspHelperDelayTimerHandle;
-	/* End Grasp Helper */
+	///* End Grasp Helper */
 
 	// Semantic data component of the owner
 	USLIndividualComponent* IndividualComponent;

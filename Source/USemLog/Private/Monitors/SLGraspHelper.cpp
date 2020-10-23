@@ -61,7 +61,7 @@ void FSLGraspHelper::Init(USLManipulatorMonitor* ManipulatorMonitor)
 				*FString(__FUNCTION__), __LINE__, *GetOwnerActorName(), *DefaultConstraint->GetName());
 		}
 	}
-	if (GraspHelpType == ESLGraspHelperType::ABGroup)
+	else if (GraspHelpType == ESLGraspHelperType::ABGroup)
 	{
 		ConstraintGroupA = CreateGraspHelperConstraint("GraspHelperConstraintA");
 		ConstraintGroupB = CreateGraspHelperConstraint("GraspHelperConstraintB");
@@ -93,8 +93,7 @@ void FSLGraspHelper::Init(USLManipulatorMonitor* ManipulatorMonitor)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Unkown type, this should not happen.. aborting grasp help.."),
-			*FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Unkown type, this should not happen.. aborting grasp help.."), *FString(__FUNCTION__), __LINE__);
 		return;
 	}
 
@@ -347,8 +346,8 @@ void FSLGraspHelper::CheckStartGraspHelp(AActor* Actor)
 			if (bLogDebug)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's started delay timer (%.4fs) to grasp %s .."),
-					*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(),
-					*GraspedStaticMeshComp->GetOwner()->GetName(), GraspDelayValue, *Actor->GetName());
+					*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(),
+					*GetOwnerActorName(), GraspDelayValue, *Actor->GetName());
 			}
 			World->GetTimerManager().SetTimer(DelayTimerHandle, TimerDelegate, GraspDelayValue, false);			
 		}

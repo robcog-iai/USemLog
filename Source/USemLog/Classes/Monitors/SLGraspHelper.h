@@ -41,6 +41,9 @@ public:
 	// Get init state
 	bool IsInit() const { return bIsInit; };
 
+	// User input callback
+	void UserInputCallback() {};
+
 	// Start grasp help
 	void StartGraspHelp();
 
@@ -98,7 +101,7 @@ public:
 
 	// Attach default constraint to the given bone
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FName DefaultBoneName;
+	FName DefaultBoneName = "lHand";
 
 	// Start helping the grasp after a delay
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -106,39 +109,39 @@ public:
 
 	// Input action name in case manual override is used
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseUserInput"))
-	FName InputActionName;
+	FName InputActionName = "LeftGraspHelper";
 
 	// Disable gravity on grasp
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bDisableGravityOnGraspedSMC;
+	bool bDisableGravityOnGraspedSMC = false;
 
 	// Decrease mass of object
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bScaleMassOnGraspedSMC;
+	bool bScaleMassOnGraspedSMC = false;
 
 	// Decrease mass of grasped object
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bScaleMassOnGraspedIndividual"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bScaleMassOnGraspedSMC"))
 	float ScaleMassValue = 0.1f;
 
 	// Constraint movement limit (all axis)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Constraint")
-	float ConstraintLimit;
+	float ConstraintLimit = 0.5f;
 
 	// Grasp helper constraint properties
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Constraint")
-	float ConstraintStiffness;
+	float ConstraintStiffness = 15000.f;
 
 	// Grasp helper constraint properties
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Constraint")
-	float ConstraintDamping;
+	float ConstraintDamping = 10.f;
 
 	// Grasp helper constraint properties
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Constraint")
-	float ConstraintContactDistance;
+	float ConstraintContactDistance = 10.f;
 
 	// Grasp helper constraint properties
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Constraint")
-	bool bConstraintParentDominates;
+	bool bConstraintParentDominates = false;
 
 private:
 	// True if initialized
@@ -151,16 +154,16 @@ private:
 	bool bWaitingForUserInputEnabled = false;
 
 	// Pointer to owner manipulator monitor
-	USLManipulatorMonitor* OwnerMM;
+	USLManipulatorMonitor* OwnerMM = nullptr;
 
 	// Pointer to world
-	UWorld* World;
+	UWorld* World = nullptr;
 
 	// Grasped mesh component
-	UStaticMeshComponent* GraspedStaticMeshComp;
+	UStaticMeshComponent* GraspedStaticMeshComp = nullptr;
 
 	// Hand skeletal mesh component
-	USkeletalMeshComponent* HandSkelMeshComp;
+	USkeletalMeshComponent* HandSkelMeshComp = nullptr;
 
 	// Grasp helper trigger delay
 	FTimerHandle DelayTimerHandle;
