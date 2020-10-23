@@ -3,7 +3,7 @@
 #pragma once
 
 #include <string>
-#include "Knowrob/Proto/knowrob_ameva.pb.h"
+#include "Knowrob/Proto/ameva.pb.h"
 #include "CoreMinimal.h"
 
 class ASLMongoQueryManager;
