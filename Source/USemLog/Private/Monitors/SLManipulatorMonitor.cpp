@@ -56,30 +56,6 @@ USLManipulatorMonitor::USLManipulatorMonitor()
 
 	// Grasp helper
 	bUseGraspHelper = false;
-	bGraspHelperUseGroupABConstraints = false;
-	bGraspHelperManualOverride = false;
-	bGraspHelperEventManualOverride = false;
-	bTriggerBeforeJitterCheck = false;
-	bDelayGraspHelper = false;
-	GraspHelperDelay = 0.25f;
-	GraspHelperInputActionName = "LeftGraspHelper";
-	GraspHelperDefaultBoneAttachmentName = "lHand";
-	bGraspHelperItemDisableGravity = false;
-	bGraspHelperItemScaleMass = false;
-	GraspHelperItemMassScaleValue = 0.1f;
-	GraspHelperConstraintLimit = 0.5f;
-	GraspHelperConstraintStiffness = 15000.f;
-	GraspHelperConstraintDamping = 10.f;
-	GraspHelperConstraintContactDistance = 10.f;
-	bGraspHelperConstraintParentDominates = false;
-	bIsGraspHelpActive = false;
-	GraspHelperOtherSMC = nullptr;
-	GraspHelperOwnerSkelMC = nullptr;
-	GraspHelperConstraint = nullptr;
-	GraspHelperConstraintGroupA = nullptr;
-	GraspHelperConstraintGroupB = nullptr;
-	GraspHelperBoneNameGroupA = NAME_None;
-	GraspHelperBoneNameGroupB = NAME_None;
 }
 
 // Dtor
@@ -136,10 +112,6 @@ void USLManipulatorMonitor::Init(bool bInDetectGrasps, bool bInDetectContacts)
 		// Grasp helper
 		if (bUseGraspHelper)
 		{
-			// todorm
-			// Init failed, disable grasp helper
-			bUseGraspHelper = InitGraspHelper();
-
 			// Init, if it fails, disable grasp help flag
 			GraspHelper.Init(this);
 			bUseGraspHelper = GraspHelper.IsInit();
@@ -330,20 +302,12 @@ void USLManipulatorMonitor::PostEditChangeProperty(struct FPropertyChangedEvent&
 			InputAxisName = "LeftGrasp";
 			GraspHelper.DefaultBoneName = "lHand";
 			GraspHelper.InputActionName = "LeftGraspHelper";
-
-			// todorm
-			GraspHelperInputActionName = "LeftGraspHelper";
-			GraspHelperDefaultBoneAttachmentName = "lHand";
 		}
 		else if (HandType == ESLGraspHandType::Right)
 		{
 			InputAxisName = "RightGrasp";
 			GraspHelper.DefaultBoneName = "rHand";
 			GraspHelper.InputActionName = "RightGraspHelper";
-			
-			// todorm
-			GraspHelperInputActionName = "RightGraspHelper";
-			GraspHelperDefaultBoneAttachmentName = "rHand";
 		}
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLManipulatorMonitor, bIsNotSkeletal))
@@ -528,18 +492,9 @@ void USLManipulatorMonitor::SetupInputBindings()
 		if (UInputComponent* IC = PC->InputComponent)
 		{
 			IC->BindAxis(InputAxisName, this, &USLManipulatorMonitor::GraspInputAxisCallback);
-
 			if (bUseGraspHelper && GraspHelper.bUseUserInput)
 			{
 				IC->BindAction(GraspHelper.InputActionName, IE_Pressed, this, &USLManipulatorMonitor::GraspHelperInputCallback);				
-			}
-
-			// todorm
-			if (bUseGraspHelper && bGraspHelperManualOverride)
-			{
-				IC->BindAction(GraspHelperInputActionName, IE_Pressed, this, &USLManipulatorMonitor::GraspHelperInputCallback);
-				//IC->BindAction(GraspHelperInputActionName, IE_Pressed, this, &USLManipulatorMonitor::GraspHelperInputCallback);
-				//IC->BindAction(GraspHelperInputActionName, IE_Released, this, &USLManipulatorMonitor::GraspHelperInputCallback);
 			}
 		}
 		else
@@ -608,27 +563,6 @@ void USLManipulatorMonitor::OnGroupAGraspContactBegin(USLBaseIndividual* OtherIn
 			GraspHelper.SetBoneNameGroupA(BoneName);
 		}
 
-		// todorm
-		if (bUseGraspHelper && bGraspHelperUseGroupABConstraints)
-		{
-			if (!GraspHelperBoneNameGroupA.IsNone())
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA bone name (%s) should've been NONE here .."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-					*GetOwner()->GetName(), *GetOwner()->GetName(), *GraspHelperBoneNameGroupA.ToString());
-			}
-
-			// Save the first bone name of group A
-			GraspHelperBoneNameGroupA = BoneName;
-
-			if (bLogGraspHelpDebug)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: set bone name to %s.."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-					*GetOwner()->GetName(), *GetOwner()->GetName(), *GraspHelperBoneNameGroupA.ToString());
-			}
-		}
-
 		// If the individual is in contact with the other group as well, trigger a grasp start event
 		if (GroupBNumGraspContacts.Contains(OtherIndividual))
 		{
@@ -693,27 +627,6 @@ void USLManipulatorMonitor::OnGroupBGraspContactBegin(USLBaseIndividual* OtherIn
 			GraspHelper.SetBoneNameGroupB(BoneName);
 		}
 
-		// todorm
-		if (bUseGraspHelper && bGraspHelperUseGroupABConstraints)
-		{
-			if (!GraspHelperBoneNameGroupB.IsNone())
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB bone name (%s) should've been NONE here .."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-					*GetOwner()->GetName(), *GetOwner()->GetName(), *GraspHelperBoneNameGroupB.ToString());
-			}
-
-			// Save the first bone name of group A
-			GraspHelperBoneNameGroupB = BoneName;
-
-			if (bLogGraspHelpDebug)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB: set bone name to %s.."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-					*GetOwner()->GetName(), *GetOwner()->GetName(), *GraspHelperBoneNameGroupB.ToString());
-			}
-		}
-
 		// If the individual is in contact with the other group as well, trigger a grasp start event
 		if (GroupANumGraspContacts.Contains(OtherIndividual))
 		{
@@ -763,27 +676,6 @@ void USLManipulatorMonitor::OnGroupAGraspContactEnd(USLBaseIndividual* OtherIndi
 			if (bUseGraspHelper && GraspHelper.GraspHelpType == ESLGraspHelperType::ABGroup)
 			{
 				GraspHelper.ClearBoneNameGroupA();
-			}
-
-			// todorm
-			if (bUseGraspHelper && bGraspHelperUseGroupABConstraints)
-			{
-				if (GraspHelperBoneNameGroupA.IsNone())
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA bone name (NONE) should've been set here .."),
-						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-						*GetOwner()->GetName(), *GetOwner()->GetName());
-				}
-
-				// Save the first bone name of group A
-				GraspHelperBoneNameGroupA = NAME_None;
-
-				if (bLogGraspHelpDebug)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupA: set bone name to NONE.."),
-						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-						*GetOwner()->GetName(), *GetOwner()->GetName());
-				}
 			}
 
 			// If currently in contact with the other group as well, it should be grasped, trigger grasp end
@@ -852,27 +744,6 @@ void USLManipulatorMonitor::OnGroupBGraspContactEnd(USLBaseIndividual* OtherIndi
 			if (bUseGraspHelper && GraspHelper.GraspHelpType == ESLGraspHelperType::ABGroup)
 			{
 				GraspHelper.ClearBoneNameGroupB();
-			}
-
-			// todorm
-			if (bUseGraspHelper && bGraspHelperUseGroupABConstraints)
-			{
-				if (GraspHelperBoneNameGroupB.IsNone())
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB bone name (NONE) should've been set here .."),
-						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-						*GetOwner()->GetName(), *GetOwner()->GetName());
-				}
-
-				// Save the first bone name of group A
-				GraspHelperBoneNameGroupB = NAME_None;
-
-				if (bLogGraspHelpDebug)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f %s::%s \t\t GroupB: set bone name to NONE.."),
-						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-						*GetOwner()->GetName(), *GetOwner()->GetName());
-				}
 			}
 
 			// If currently in contact with the other group as well, it should be grasped, trigger grasp end
@@ -959,8 +830,6 @@ void USLManipulatorMonitor::GraspStarted(USLBaseIndividual* OtherIndividual)
 		if (bUseGraspHelper)
 		{
 			GraspHelper.CheckStartGraspHelp(OtherIndividual->GetParentActor());
-			// todo rm
-			GraspHelperStartLogic(OtherIndividual->GetParentActor());
 		}
 	}
 	else if (bLogGraspDebug)
@@ -981,12 +850,6 @@ void USLManipulatorMonitor::GraspEnded(USLBaseIndividual* OtherIndividual)
 			UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t Grasp Ended (jitter check started): \t\t %s::%s->%s;"),
 				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
 				*GetOwner()->GetName(), *GetName(), *OtherIndividual->GetParentActor()->GetName());
-		}
-
-		// todo rm
-		if(bUseGraspHelper && bTriggerBeforeJitterCheck)
-		{
-			GraspHelpStopTrigger(OtherIndividual->GetParentActor());
 		}
 
 		// Grasp ended
@@ -1027,12 +890,6 @@ void USLManipulatorMonitor::DelayedGraspEndCallback()
 
 			// Broadcast delayed event
 			OnEndManipulatorGrasp.Broadcast(OwnerIndividualObject, EvItr->Other, EvItr->Time);
-
-			// todorm
-			if (bUseGraspHelper && !bTriggerBeforeJitterCheck)
-			{
-				GraspHelpStopTrigger(EvItr->Other->GetParentActor());
-			}
 
 			// Check if the grasp helper should be ended
 			if (bUseGraspHelper)
@@ -1260,428 +1117,429 @@ bool USLManipulatorMonitor::IsAJitterContact(USLBaseIndividual* InOther, float S
 /* End contact related */
 
 
-/* Begin grasp helper */
-// Setup the grasp helper constraint
-bool USLManipulatorMonitor::InitGraspHelper()
-{
-	if (ASkeletalMeshActor* AsSkelMA = Cast<ASkeletalMeshActor>(GetOwner()))
-	{
-		GraspHelperOwnerSkelMC = AsSkelMA->GetSkeletalMeshComponent();
-		if (GraspHelperOwnerSkelMC->GetBoneIndex(GraspHelperDefaultBoneAttachmentName) != INDEX_NONE)
-		{
-			GraspHelperConstraint = CreateGraspHelperConstraint("GraspHelperConstraint");
-			if (bGraspHelperUseGroupABConstraints)
-			{
-				GraspHelperConstraintGroupA = CreateGraspHelperConstraint("GraspHelperConstraintA");
-				GraspHelperConstraintGroupB = CreateGraspHelperConstraint("GraspHelperConstraintB");
-			}
-			return true;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Owner (%s) attachment bone %s does not exist.. aborting grasp help.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GraspHelperDefaultBoneAttachmentName.ToString());
-			return false;
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not a skeletal component.. aborting grasp help.."), *FString(__FUNCTION__), __LINE__);
-		return false;
-	}
-}
-
-// Create and register the grasp helper constraint
-UPhysicsConstraintComponent* USLManipulatorMonitor::CreateGraspHelperConstraint(const FName& Name)
-{
-	// Create and init the ad hoc grasp helper constraint
-	UPhysicsConstraintComponent* Constraint = NewObject<UPhysicsConstraintComponent>(this, Name);
-	Constraint->RegisterComponent();
-	Constraint->AttachToComponent(GraspHelperOwnerSkelMC,
-		FAttachmentTransformRules::SnapToTargetIncludingScale, GraspHelperDefaultBoneAttachmentName);
-
-	Constraint->ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, GraspHelperConstraintLimit);
-	Constraint->ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, GraspHelperConstraintLimit);
-	Constraint->ConstraintInstance.SetAngularTwistLimit(EAngularConstraintMotion::ACM_Limited, GraspHelperConstraintLimit);
-
-	Constraint->ConstraintInstance.SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, GraspHelperConstraintLimit);
-	Constraint->ConstraintInstance.SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, GraspHelperConstraintLimit);
-	Constraint->ConstraintInstance.SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, GraspHelperConstraintLimit);
-
-	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = true;
-	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = GraspHelperConstraintStiffness;
-	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.Damping = GraspHelperConstraintDamping;
-	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.ContactDistance = GraspHelperConstraintContactDistance;
-
-	Constraint->ConstraintInstance.ProfileInstance.ConeLimit.bSoftConstraint = true;
-	Constraint->ConstraintInstance.ProfileInstance.ConeLimit.Stiffness = GraspHelperConstraintStiffness;
-	Constraint->ConstraintInstance.ProfileInstance.ConeLimit.Damping = GraspHelperConstraintDamping;
-	Constraint->ConstraintInstance.ProfileInstance.ConeLimit.ContactDistance = GraspHelperConstraintContactDistance;
-
-	Constraint->ConstraintInstance.ProfileInstance.TwistLimit.bSoftConstraint = true;
-	Constraint->ConstraintInstance.ProfileInstance.TwistLimit.Stiffness = GraspHelperConstraintStiffness;
-	Constraint->ConstraintInstance.ProfileInstance.TwistLimit.Damping = GraspHelperConstraintDamping;
-	Constraint->ConstraintInstance.ProfileInstance.TwistLimit.ContactDistance = GraspHelperConstraintContactDistance;
-
-	if (bGraspHelperConstraintParentDominates)
-	{
-		Constraint->ConstraintInstance.EnableParentDominates();
-	}
-	if (bLogGraspHelpDebug)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Initialized %s's grasp helper constraint %s .."),
-			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *Constraint->GetName());
-	}
-	return Constraint;
-}
+///* Begin grasp helper */
+//// Setup the grasp helper constraint
+//bool USLManipulatorMonitor::InitGraspHelper()
+//{
+//	if (ASkeletalMeshActor* AsSkelMA = Cast<ASkeletalMeshActor>(GetOwner()))
+//	{
+//		GraspHelperOwnerSkelMC = AsSkelMA->GetSkeletalMeshComponent();
+//		if (GraspHelperOwnerSkelMC->GetBoneIndex(GraspHelperDefaultBoneAttachmentName) != INDEX_NONE)
+//		{
+//			GraspHelperConstraint = CreateGraspHelperConstraint("GraspHelperConstraint");
+//			if (bGraspHelperUseGroupABConstraints)
+//			{
+//				GraspHelperConstraintGroupA = CreateGraspHelperConstraint("GraspHelperConstraintA");
+//				GraspHelperConstraintGroupB = CreateGraspHelperConstraint("GraspHelperConstraintB");
+//			}
+//			return true;
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d Owner (%s) attachment bone %s does not exist.. aborting grasp help.."),
+//				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GraspHelperDefaultBoneAttachmentName.ToString());
+//			return false;
+//		}
+//	}
+//	else
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d Owner is not a skeletal component.. aborting grasp help.."), *FString(__FUNCTION__), __LINE__);
+//		return false;
+//	}
+//}
+//
+//// Create and register the grasp helper constraint
+//UPhysicsConstraintComponent* USLManipulatorMonitor::CreateGraspHelperConstraint(const FName& Name)
+//{
+//	// Create and init the ad hoc grasp helper constraint
+//	UPhysicsConstraintComponent* Constraint = NewObject<UPhysicsConstraintComponent>(this, Name);
+//	Constraint->RegisterComponent();
+//	Constraint->AttachToComponent(GraspHelperOwnerSkelMC,
+//		FAttachmentTransformRules::SnapToTargetIncludingScale, GraspHelperDefaultBoneAttachmentName);
+//
+//	Constraint->ConstraintInstance.SetAngularSwing1Limit(EAngularConstraintMotion::ACM_Limited, GraspHelperConstraintLimit);
+//	Constraint->ConstraintInstance.SetAngularSwing2Limit(EAngularConstraintMotion::ACM_Limited, GraspHelperConstraintLimit);
+//	Constraint->ConstraintInstance.SetAngularTwistLimit(EAngularConstraintMotion::ACM_Limited, GraspHelperConstraintLimit);
+//
+//	Constraint->ConstraintInstance.SetLinearXLimit(ELinearConstraintMotion::LCM_Limited, GraspHelperConstraintLimit);
+//	Constraint->ConstraintInstance.SetLinearYLimit(ELinearConstraintMotion::LCM_Limited, GraspHelperConstraintLimit);
+//	Constraint->ConstraintInstance.SetLinearZLimit(ELinearConstraintMotion::LCM_Limited, GraspHelperConstraintLimit);
+//
+//	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.bSoftConstraint = true;
+//	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.Stiffness = GraspHelperConstraintStiffness;
+//	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.Damping = GraspHelperConstraintDamping;
+//	Constraint->ConstraintInstance.ProfileInstance.LinearLimit.ContactDistance = GraspHelperConstraintContactDistance;
+//
+//	Constraint->ConstraintInstance.ProfileInstance.ConeLimit.bSoftConstraint = true;
+//	Constraint->ConstraintInstance.ProfileInstance.ConeLimit.Stiffness = GraspHelperConstraintStiffness;
+//	Constraint->ConstraintInstance.ProfileInstance.ConeLimit.Damping = GraspHelperConstraintDamping;
+//	Constraint->ConstraintInstance.ProfileInstance.ConeLimit.ContactDistance = GraspHelperConstraintContactDistance;
+//
+//	Constraint->ConstraintInstance.ProfileInstance.TwistLimit.bSoftConstraint = true;
+//	Constraint->ConstraintInstance.ProfileInstance.TwistLimit.Stiffness = GraspHelperConstraintStiffness;
+//	Constraint->ConstraintInstance.ProfileInstance.TwistLimit.Damping = GraspHelperConstraintDamping;
+//	Constraint->ConstraintInstance.ProfileInstance.TwistLimit.ContactDistance = GraspHelperConstraintContactDistance;
+//
+//	if (bGraspHelperConstraintParentDominates)
+//	{
+//		Constraint->ConstraintInstance.EnableParentDominates();
+//	}
+//	if (bLogGraspHelpDebug)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d Initialized %s's grasp helper constraint %s .."),
+//			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *Constraint->GetName());
+//	}
+//	return Constraint;
+//}
 
 // Ad hoc manual override
 void USLManipulatorMonitor::GraspHelperInputCallback()
 {
-	if (bGraspHelperCanExecuteManualOverrideFlag)
-	{
-		if (!bIsGraspHelpActive)
-		{
-			if (bLogGraspHelpDebug)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s's start grasp helper manual override.."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-			}
-			StartGraspHelper();
-		}
-		else
-		{
-			if (bLogGraspHelpDebug)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s's stop grasp helper manual override.."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-			}
-			StopGraspHelper();
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s has nothing to manually override.."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-	}
+	GraspHelper.UserInputCallback();
+	//if (bGraspHelperCanExecuteManualOverrideFlag)
+	//{
+	//	if (!bIsGraspHelpActive)
+	//	{
+	//		if (bLogGraspHelpDebug)
+	//		{
+	//			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s's start grasp helper manual override.."),
+	//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+	//		}
+	//		StartGraspHelper();
+	//	}
+	//	else
+	//	{
+	//		if (bLogGraspHelpDebug)
+	//		{
+	//			UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s's stop grasp helper manual override.."),
+	//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+	//		}
+	//		StopGraspHelper();
+	//	}
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s has nothing to manually override.."),
+	//		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+	//}
 }
-
-// Called from the grasp started callback function
-void USLManipulatorMonitor::GraspHelperStartLogic(AActor* OtherActor)
-{
-	if (GraspHelperOtherSMC)
-	{
-		if (bLogGraspHelpDebug)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s's grasp helper item is already set %s, ignoring this trigger (%s) .."),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-				*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName(), *OtherActor->GetName());
-		}
-		return;
-	}
-
-	// Ignore if there is a delay timer running
-	if (bDelayGraspHelper && GetWorld()->GetTimerManager().IsTimerActive(GraspHelperDelayTimerHandle))
-	{
-		if (bLogGraspDebug)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t %s's delay grasp call is still waiting, ignoring this trigger (%s) .."),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-				*GetOwner()->GetName(), *GetName(), *OtherActor->GetName());
-		}
-		return;
-	}
-
-	// Check if other actor can be helped
-	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherActor))
-	{
-		if (!ShouldGraspHelperBeAppliedToActor(OtherActor))
-		{
-			if (bLogGraspHelpDebug)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s grasped actor %s does not fulfill grasp helper criterias, skippin.."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
-			}
-			return;
-		}
-
-		if (!bGraspHelperManualOverride)
-		{
-			// Set the grasped item (or soon the be grasped)
-			GraspHelperOtherSMC = AsSMA->GetStaticMeshComponent();
-
-			// Check if the helper should happen now or after a delay
-			if (bDelayGraspHelper)
-			{
-				if (bLogGraspHelpDebug)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasped actor set %s starting helper (with delay).."),
-						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
-				}
-				GetWorld()->GetTimerManager().SetTimer(GraspHelperDelayTimerHandle, this,
-					&USLManipulatorMonitor::DelayedStartGraspHelper, GraspHelperDelay, false);
-			}
-			else
-			{
-				if (bLogGraspHelpDebug)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasped actor set %s starting helper.."),
-						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
-				}
-				StartGraspHelper();		
-			}
-		}
-		else if (!bIsGraspHelpActive)
-		{
-			if (bLogGraspHelpDebug)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasped actor set %s manual grasp help enabled.."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
-			}
-			// Allow manual grasp override
-			GraspHelperOtherSMC = AsSMA->GetStaticMeshComponent();
-			bGraspHelperCanExecuteManualOverrideFlag = true;
-		}
-	}
-	else
-	{
-		if (bLogGraspDebug)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t %s could not help grasp %s because it is not a static mesh actor.."),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-				*GetOwner()->GetName(), *GetName(), *OtherActor->GetName());
-		}
-	}
-}
-
-// Triggered from the grasp end callback function
-void USLManipulatorMonitor::GraspHelpStopTrigger(AActor* OtherActor)
-{
-	if (GraspHelperOtherSMC == nullptr)
-	{
-		if (bLogGraspHelpDebug)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasp helper is clear, nothing to release.."),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-		}
-		return;
-	}
-
-	if (GraspHelperOtherSMC->GetOwner() != OtherActor)
-	{
-		if (bLogGraspHelpDebug)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasp helper triggered from another grasp (%s != %s), ignoring.."),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
-				*GraspHelperOtherSMC->GetOwner()->GetName(), *OtherActor->GetName());
-		}
-		return;
-	}
-
-	// Abort any started waiting trigger
-	if (bDelayGraspHelper && GetWorld()->GetTimerManager().IsTimerActive(GraspHelperDelayTimerHandle))
-	{
-		if (bLogGraspHelpDebug)
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t %s' delay grasp call is still active (%s == %s), canceling timer, aborting grasp stop.."),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-				*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName(), *OtherActor->GetName());
-		}
-
-		// Clear timer
-		GetWorld()->GetTimerManager().ClearTimer(GraspHelperDelayTimerHandle);
-
-		// Clear any set flags
-		GraspHelperOtherSMC = nullptr;
-		bIsGraspHelpActive = false;
-		bGraspHelperCanExecuteManualOverrideFlag = false;
-		return;
-	}
-
-	if (!bGraspHelperManualOverride)
-	{
-		if (bLogGraspHelpDebug)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t calling %s's stop grasp helper on %s.."),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-				*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName());
-		}
-		StopGraspHelper();
-	}
-	else if (!bIsGraspHelpActive)
-	{
-		if (bLogGraspHelpDebug)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s manual grasp can now be manually disabled.."),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-		}
-		// Cancel the manual override
-		bGraspHelperCanExecuteManualOverrideFlag = false;
-	}
-}
-
-// Call start grasp helper with a delay
-void USLManipulatorMonitor::DelayedStartGraspHelper()
-{
-	if (bLogGraspHelpDebug)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t calling  %s's start grasp helper after delay.."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-	}
-	StartGraspHelper();
-}
-
-// Start grasp help
-void USLManipulatorMonitor::StartGraspHelper()
-{
-	if (bIsGraspHelpActive)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasp help is already active, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-		return;
-	}
-
-	if (!GraspHelperOtherSMC || !GraspHelperOtherSMC->IsValidLowLevel() || GraspHelperOtherSMC->IsPendingKillOrUnreachable())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasped object is not valid, cannot start helping, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-		return;
-	}
-
-	// Apply the properties to the grasped object
-	if (bGraspHelperItemDisableGravity)
-	{
-		GraspHelperOtherSMC->SetEnableGravity(false);
-	}
-
-	if (bGraspHelperItemScaleMass)
-	{
-		GraspHelperOtherSMC->SetMassScale(NAME_None, GraspHelperItemMassScaleValue);
-	}
-
-	// Set the constraint
-	GraspHelperConstraint->SetConstrainedComponents(GraspHelperOwnerSkelMC,
-		GraspHelperDefaultBoneAttachmentName, GraspHelperOtherSMC, NAME_None);
-
-	if (bGraspHelperUseGroupABConstraints)
-	{
-		if (!GraspHelperBoneNameGroupA.IsNone() && !GraspHelperBoneNameGroupB.IsNone())
-		{
-			if (GraspHelperOwnerSkelMC->GetBoneIndex(GraspHelperBoneNameGroupA) != INDEX_NONE
-				&& GraspHelperOwnerSkelMC->GetBoneIndex(GraspHelperBoneNameGroupB) != INDEX_NONE)
-			{
-				// Attach to hand bones and create the constraint
-				GraspHelperConstraintGroupA->AttachToComponent(GraspHelperOwnerSkelMC,
-					FAttachmentTransformRules::SnapToTargetIncludingScale, GraspHelperBoneNameGroupA);
-				GraspHelperConstraintGroupA->SetConstrainedComponents(GraspHelperOwnerSkelMC,
-					GraspHelperBoneNameGroupA, GraspHelperOtherSMC, NAME_None);
-
-				GraspHelperConstraintGroupB->AttachToComponent(GraspHelperOwnerSkelMC,
-					FAttachmentTransformRules::SnapToTargetIncludingScale, GraspHelperBoneNameGroupB);
-				GraspHelperConstraintGroupB->SetConstrainedComponents(GraspHelperOwnerSkelMC,
-					GraspHelperBoneNameGroupB, GraspHelperOtherSMC, NAME_None);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s's group AB bones (A=%s;B=%s) are not in the owner skeletal component, this should not happen .."),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-					*GetOwner()->GetName(), *GraspHelperBoneNameGroupA.ToString(), *GraspHelperBoneNameGroupB.ToString());
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s's group AB bones (A=%s;B=%s) are not set, this should not happen .."),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-				*GetOwner()->GetName(), *GraspHelperBoneNameGroupA.ToString(), *GraspHelperBoneNameGroupB.ToString());
-		}
-	}
-
-	if (bLogGraspHelpDebug)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s's grasp help is active on %s.."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-			*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName());
-	}
-	bIsGraspHelpActive = true;
-}
-
-// Stop grasp help
-void USLManipulatorMonitor::StopGraspHelper()
-{
-	if (!bIsGraspHelpActive)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasp help is already stopped, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-		// Even though this should not happen make sure the flags are in order
-		GraspHelperConstraint->BreakConstraint();
-		if (bGraspHelperUseGroupABConstraints)
-		{
-			GraspHelperConstraintGroupA->BreakConstraint();
-			GraspHelperConstraintGroupB->BreakConstraint();
-		}
-		GraspHelperOtherSMC = nullptr;
-		bIsGraspHelpActive = false;
-		bGraspHelperCanExecuteManualOverrideFlag = false;
-		return;
-	}
-
-	if (!GraspHelperOtherSMC || !GraspHelperOtherSMC->IsValidLowLevel() || GraspHelperOtherSMC->IsPendingKillOrUnreachable())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasped object is not valid, cannot reset the grasped object values, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-		// Even though this should not happen make sure the flags are in order
-		GraspHelperConstraint->BreakConstraint();
-		if (bGraspHelperUseGroupABConstraints)
-		{
-			GraspHelperConstraintGroupA->BreakConstraint();
-			GraspHelperConstraintGroupB->BreakConstraint();
-		}
-		GraspHelperOtherSMC = nullptr;
-		bIsGraspHelpActive = false;
-		bGraspHelperCanExecuteManualOverrideFlag = false;
-		return;
-	}
-
-	// Reset the properties to the grasped object
-	if (bGraspHelperItemDisableGravity)
-	{
-		GraspHelperOtherSMC->SetEnableGravity(true);
-	}
-	if (bGraspHelperItemScaleMass)
-	{
-		GraspHelperOtherSMC->SetMassScale(NAME_None, 1.f);
-	}
-
-	if (bLogGraspHelpDebug)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s's grasp help disabled on %s .."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-			*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName());
-	}
-
-	// Clear grasped individual
-	GraspHelperConstraint->BreakConstraint();
-	if (bGraspHelperUseGroupABConstraints)
-	{
-		GraspHelperConstraintGroupA->BreakConstraint();
-		GraspHelperConstraintGroupB->BreakConstraint();
-	}
-	GraspHelperOtherSMC = nullptr;
-	bIsGraspHelpActive = false;
-	bGraspHelperCanExecuteManualOverrideFlag = false;
-}
-
-// Check if the object should be helped
-bool USLManipulatorMonitor::ShouldGraspHelperBeAppliedToActor(AActor* Actor)
-{
-	// Check if object has a contact area
-	for (const auto& C : Actor->GetComponentsByClass(UShapeComponent::StaticClass()))
-	{
-		if (C->GetName().StartsWith("SLContactMonitor"))
-		{
-			return true;
-		}
-	}
-	return false;
-}
-/* End grasp helper */
+//
+//// Called from the grasp started callback function
+//void USLManipulatorMonitor::GraspHelperStartLogic(AActor* OtherActor)
+//{
+//	if (GraspHelperOtherSMC)
+//	{
+//		if (bLogGraspHelpDebug)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s's grasp helper item is already set %s, ignoring this trigger (%s) .."),
+//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+//				*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName(), *OtherActor->GetName());
+//		}
+//		return;
+//	}
+//
+//	// Ignore if there is a delay timer running
+//	if (bDelayGraspHelper && GetWorld()->GetTimerManager().IsTimerActive(GraspHelperDelayTimerHandle))
+//	{
+//		if (bLogGraspDebug)
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t %s's delay grasp call is still waiting, ignoring this trigger (%s) .."),
+//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+//				*GetOwner()->GetName(), *GetName(), *OtherActor->GetName());
+//		}
+//		return;
+//	}
+//
+//	// Check if other actor can be helped
+//	if (AStaticMeshActor* AsSMA = Cast<AStaticMeshActor>(OtherActor))
+//	{
+//		if (!ShouldGraspHelperBeAppliedToActor(OtherActor))
+//		{
+//			if (bLogGraspHelpDebug)
+//			{
+//				UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s grasped actor %s does not fulfill grasp helper criterias, skippin.."),
+//					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
+//			}
+//			return;
+//		}
+//
+//		if (!bGraspHelperManualOverride)
+//		{
+//			// Set the grasped item (or soon the be grasped)
+//			GraspHelperOtherSMC = AsSMA->GetStaticMeshComponent();
+//
+//			// Check if the helper should happen now or after a delay
+//			if (bDelayGraspHelper)
+//			{
+//				if (bLogGraspHelpDebug)
+//				{
+//					UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasped actor set %s starting helper (with delay).."),
+//						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
+//				}
+//				GetWorld()->GetTimerManager().SetTimer(GraspHelperDelayTimerHandle, this,
+//					&USLManipulatorMonitor::DelayedStartGraspHelper, GraspHelperDelay, false);
+//			}
+//			else
+//			{
+//				if (bLogGraspHelpDebug)
+//				{
+//					UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasped actor set %s starting helper.."),
+//						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
+//				}
+//				StartGraspHelper();		
+//			}
+//		}
+//		else if (!bIsGraspHelpActive)
+//		{
+//			if (bLogGraspHelpDebug)
+//			{
+//				UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasped actor set %s manual grasp help enabled.."),
+//					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName());
+//			}
+//			// Allow manual grasp override
+//			GraspHelperOtherSMC = AsSMA->GetStaticMeshComponent();
+//			bGraspHelperCanExecuteManualOverrideFlag = true;
+//		}
+//	}
+//	else
+//	{
+//		if (bLogGraspDebug)
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t %s could not help grasp %s because it is not a static mesh actor.."),
+//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+//				*GetOwner()->GetName(), *GetName(), *OtherActor->GetName());
+//		}
+//	}
+//}
+//
+//// Triggered from the grasp end callback function
+//void USLManipulatorMonitor::GraspHelpStopTrigger(AActor* OtherActor)
+//{
+//	if (GraspHelperOtherSMC == nullptr)
+//	{
+//		if (bLogGraspHelpDebug)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasp helper is clear, nothing to release.."),
+//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+//		}
+//		return;
+//	}
+//
+//	if (GraspHelperOtherSMC->GetOwner() != OtherActor)
+//	{
+//		if (bLogGraspHelpDebug)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s grasp helper triggered from another grasp (%s != %s), ignoring.."),
+//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+//				*GraspHelperOtherSMC->GetOwner()->GetName(), *OtherActor->GetName());
+//		}
+//		return;
+//	}
+//
+//	// Abort any started waiting trigger
+//	if (bDelayGraspHelper && GetWorld()->GetTimerManager().IsTimerActive(GraspHelperDelayTimerHandle))
+//	{
+//		if (bLogGraspHelpDebug)
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d \t %.4fs \t\t %s' delay grasp call is still active (%s == %s), canceling timer, aborting grasp stop.."),
+//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+//				*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName(), *OtherActor->GetName());
+//		}
+//
+//		// Clear timer
+//		GetWorld()->GetTimerManager().ClearTimer(GraspHelperDelayTimerHandle);
+//
+//		// Clear any set flags
+//		GraspHelperOtherSMC = nullptr;
+//		bIsGraspHelpActive = false;
+//		bGraspHelperCanExecuteManualOverrideFlag = false;
+//		return;
+//	}
+//
+//	if (!bGraspHelperManualOverride)
+//	{
+//		if (bLogGraspHelpDebug)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t calling %s's stop grasp helper on %s.."),
+//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+//				*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName());
+//		}
+//		StopGraspHelper();
+//	}
+//	else if (!bIsGraspHelpActive)
+//	{
+//		if (bLogGraspHelpDebug)
+//		{
+//			UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s manual grasp can now be manually disabled.."),
+//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+//		}
+//		// Cancel the manual override
+//		bGraspHelperCanExecuteManualOverrideFlag = false;
+//	}
+//}
+//
+//// Call start grasp helper with a delay
+//void USLManipulatorMonitor::DelayedStartGraspHelper()
+//{
+//	if (bLogGraspHelpDebug)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t calling  %s's start grasp helper after delay.."),
+//			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+//	}
+//	StartGraspHelper();
+//}
+//
+//// Start grasp help
+//void USLManipulatorMonitor::StartGraspHelper()
+//{
+//	if (bIsGraspHelpActive)
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasp help is already active, this should not happen.."),
+//			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+//		return;
+//	}
+//
+//	if (!GraspHelperOtherSMC || !GraspHelperOtherSMC->IsValidLowLevel() || GraspHelperOtherSMC->IsPendingKillOrUnreachable())
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasped object is not valid, cannot start helping, this should not happen.."),
+//			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+//		return;
+//	}
+//
+//	// Apply the properties to the grasped object
+//	if (bGraspHelperItemDisableGravity)
+//	{
+//		GraspHelperOtherSMC->SetEnableGravity(false);
+//	}
+//
+//	if (bGraspHelperItemScaleMass)
+//	{
+//		GraspHelperOtherSMC->SetMassScale(NAME_None, GraspHelperItemMassScaleValue);
+//	}
+//
+//	// Set the constraint
+//	GraspHelperConstraint->SetConstrainedComponents(GraspHelperOwnerSkelMC,
+//		GraspHelperDefaultBoneAttachmentName, GraspHelperOtherSMC, NAME_None);
+//
+//	if (bGraspHelperUseGroupABConstraints)
+//	{
+//		if (!GraspHelperBoneNameGroupA.IsNone() && !GraspHelperBoneNameGroupB.IsNone())
+//		{
+//			if (GraspHelperOwnerSkelMC->GetBoneIndex(GraspHelperBoneNameGroupA) != INDEX_NONE
+//				&& GraspHelperOwnerSkelMC->GetBoneIndex(GraspHelperBoneNameGroupB) != INDEX_NONE)
+//			{
+//				// Attach to hand bones and create the constraint
+//				GraspHelperConstraintGroupA->AttachToComponent(GraspHelperOwnerSkelMC,
+//					FAttachmentTransformRules::SnapToTargetIncludingScale, GraspHelperBoneNameGroupA);
+//				GraspHelperConstraintGroupA->SetConstrainedComponents(GraspHelperOwnerSkelMC,
+//					GraspHelperBoneNameGroupA, GraspHelperOtherSMC, NAME_None);
+//
+//				GraspHelperConstraintGroupB->AttachToComponent(GraspHelperOwnerSkelMC,
+//					FAttachmentTransformRules::SnapToTargetIncludingScale, GraspHelperBoneNameGroupB);
+//				GraspHelperConstraintGroupB->SetConstrainedComponents(GraspHelperOwnerSkelMC,
+//					GraspHelperBoneNameGroupB, GraspHelperOtherSMC, NAME_None);
+//			}
+//			else
+//			{
+//				UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s's group AB bones (A=%s;B=%s) are not in the owner skeletal component, this should not happen .."),
+//					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+//					*GetOwner()->GetName(), *GraspHelperBoneNameGroupA.ToString(), *GraspHelperBoneNameGroupB.ToString());
+//			}
+//		}
+//		else
+//		{
+//			UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s's group AB bones (A=%s;B=%s) are not set, this should not happen .."),
+//				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+//				*GetOwner()->GetName(), *GraspHelperBoneNameGroupA.ToString(), *GraspHelperBoneNameGroupB.ToString());
+//		}
+//	}
+//
+//	if (bLogGraspHelpDebug)
+//	{
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4f \t\t %s's grasp help is active on %s.."),
+//			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+//			*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName());
+//	}
+//	bIsGraspHelpActive = true;
+//}
+//
+//// Stop grasp help
+//void USLManipulatorMonitor::StopGraspHelper()
+//{
+//	if (!bIsGraspHelpActive)
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasp help is already stopped, this should not happen.."),
+//			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+//		// Even though this should not happen make sure the flags are in order
+//		GraspHelperConstraint->BreakConstraint();
+//		if (bGraspHelperUseGroupABConstraints)
+//		{
+//			GraspHelperConstraintGroupA->BreakConstraint();
+//			GraspHelperConstraintGroupB->BreakConstraint();
+//		}
+//		GraspHelperOtherSMC = nullptr;
+//		bIsGraspHelpActive = false;
+//		bGraspHelperCanExecuteManualOverrideFlag = false;
+//		return;
+//	}
+//
+//	if (!GraspHelperOtherSMC || !GraspHelperOtherSMC->IsValidLowLevel() || GraspHelperOtherSMC->IsPendingKillOrUnreachable())
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d [%.4f] %s's grasped object is not valid, cannot reset the grasped object values, this should not happen.."),
+//			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+//		// Even though this should not happen make sure the flags are in order
+//		GraspHelperConstraint->BreakConstraint();
+//		if (bGraspHelperUseGroupABConstraints)
+//		{
+//			GraspHelperConstraintGroupA->BreakConstraint();
+//			GraspHelperConstraintGroupB->BreakConstraint();
+//		}
+//		GraspHelperOtherSMC = nullptr;
+//		bIsGraspHelpActive = false;
+//		bGraspHelperCanExecuteManualOverrideFlag = false;
+//		return;
+//	}
+//
+//	// Reset the properties to the grasped object
+//	if (bGraspHelperItemDisableGravity)
+//	{
+//		GraspHelperOtherSMC->SetEnableGravity(true);
+//	}
+//	if (bGraspHelperItemScaleMass)
+//	{
+//		GraspHelperOtherSMC->SetMassScale(NAME_None, 1.f);
+//	}
+//
+//	if (bLogGraspHelpDebug)
+//	{
+//		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4f \t\t %s's grasp help disabled on %s .."),
+//			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+//			*GetOwner()->GetName(), *GraspHelperOtherSMC->GetOwner()->GetName());
+//	}
+//
+//	// Clear grasped individual
+//	GraspHelperConstraint->BreakConstraint();
+//	if (bGraspHelperUseGroupABConstraints)
+//	{
+//		GraspHelperConstraintGroupA->BreakConstraint();
+//		GraspHelperConstraintGroupB->BreakConstraint();
+//	}
+//	GraspHelperOtherSMC = nullptr;
+//	bIsGraspHelpActive = false;
+//	bGraspHelperCanExecuteManualOverrideFlag = false;
+//}
+//
+//// Check if the object should be helped
+//bool USLManipulatorMonitor::ShouldGraspHelperBeAppliedToActor(AActor* Actor)
+//{
+//	// Check if object has a contact area
+//	for (const auto& C : Actor->GetComponentsByClass(UShapeComponent::StaticClass()))
+//	{
+//		if (C->GetName().StartsWith("SLContactMonitor"))
+//		{
+//			return true;
+//		}
+//	}
+//	return false;
+//}
+///* End grasp helper */
