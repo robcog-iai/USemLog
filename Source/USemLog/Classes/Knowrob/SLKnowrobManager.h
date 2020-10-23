@@ -6,97 +6,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
 #include "Knowrob/SLKRWSClient.h"
-#include "Viz/SLVizStructs.h"
+#include "Knowrob/SLKREventDispatcher.h"
 #include "SLKnowrobManager.generated.h"
 
 // Forward declarations
 class ASLMongoQueryManager;
 class ASLVizManager;
-
-
-/**
- * Highlight hack
- */
-USTRUCT()
-struct FSLVizHighlightHackStruct
-{
-	GENERATED_BODY();
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString IndividualId = TEXT("DefaultIndividualId");
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FLinearColor Color = FLinearColor::Green;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit;
-};
-
-/**
- * Marker test hack struct
- */
-USTRUCT()
-struct FSLVizMarkerHackStruct
-{
-	GENERATED_BODY();
-
-	/* Query data */
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString IndividualId = TEXT("DefaultIndividualId");
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bIsSkeletal = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float StartTime = 0.f;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float EndTime = -1.f;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float DeltaT = -1.f;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString MarkerId = TEXT("DefaultMarkerId");
-
-
-	/* Primitive marker */
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Primitive")
-	bool bUsePrimitiveMesh = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Primitive", meta = (editcondition = "bUsePrimitiveMesh"))
-	ESLVizPrimitiveMarkerType PrimitiveType = ESLVizPrimitiveMarkerType::Box;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Primitive", meta = (editcondition = "bUsePrimitiveMesh"))
-	float Size = .1f;
-
-
-	/* Custom color */
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Color")
-	bool bUseCustomColor = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Color", meta = (editcondition = "bUseCustomColor"))
-	FLinearColor Color = FLinearColor::Green;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Color", meta = (editcondition = "bUseCustomColor"))
-	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit;
-
-
-	/* Timeline */
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline")
-	bool bAsTimeline = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
-	float Duration = -1.f;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
-	bool bLoop = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
-	float UpdateRate = -1.f;
-};
-
-
 
 /**
 *
@@ -196,6 +111,9 @@ private:
 	// Websocket connection to knowrob
 	TSharedPtr<FSLKRWSClient> KRWSClient;
 
+	// Handle the protobuf message
+	TSharedPtr<FSLKREventDispatcher> KREventDispatcher;
+
 	/* Managers */
 	// Manages the mongo connection
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
@@ -206,10 +124,7 @@ private:
 	ASLVizManager* VizManager;	
 
 
-
-	/****************************************************************/
-	/*					Editor button hacks							*/
-	/****************************************************************/
+	/* Editor button hacks */
 	// Triggers a call to init
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Setup Buttons")
 	bool bInitButtonHack = false;
@@ -223,114 +138,42 @@ private:
 	bool bFinishButtonHack = false;
 
 
-	/****************************************************************/
-	/*						Episode data							*/
-	/****************************************************************/
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
-	bool bMongoConnectButtonHack = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
-	bool bMongoDisconnectButtonHack = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
-	FString TaskIdValueHack = TEXT("DefaultTaskId");
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
-	bool bSetTaskButtonhack = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
-	FString EpisodeIdValueHack = TEXT("DefaultEpisodeId");
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
-	bool bSetEpisodeButtonHack = false;
-
-
-	/****************************************************************/
-	/*						VIZ episode replay						*/
-	/****************************************************************/
+	/* MONGO Editor button hacks */
 	// Triggers a call to set the world as visual only
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Buttons")
 	bool bSetupWorldForEpisodeReplayButtonHack = false;
 
 	// Triggers an episode query call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Viz Buttons")
 	bool bLoadEpisodeDataButtonHack = false;
 
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	float GotoValueHack = 0.f;
-
-	// Triggers a goto call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bGotoButtonHack = false;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	float ReplayBeginValueHack = -1.f;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	float ReplayEndValueHack = -1.f;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bReplayLoopValueHack = true;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	float ReplayUpdateRateValueHack = -1.f;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	FString ReplayTargetViewIdValueHack = TEXT("");
-
-	// Triggers a goto call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bReplayButtonHack = false;
-
-	// Triggers a pause call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bReplayPauseButtonHack = false;
-
-	// Triggers a stop call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bReplayStopButtonHack = false;
 
 
-	/****************************************************************/
-	/*						VIZ highlights							*/
-	/****************************************************************/
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Highlight Buttons")
-	bool bDrawSelectedHighlights = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Highlight Buttons")
-	bool bUpdateHighlights = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Highlight Buttons")
-	bool bRemoveAllHighlights = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Highlight Buttons")
-	TArray<FSLVizHighlightHackStruct> HighlightValuesHack;
-
-
-	/****************************************************************/
-	/*						VIZ markers								*/
-	/****************************************************************/
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Markers Buttons")
-	bool bDrawMarkers = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Markers Buttons")
-	bool bRemoveAllMarkers = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Markers Buttons")
-	TArray<FSLVizMarkerHackStruct> MarkerValuesHack;
-
-
-
-	/****************************************************************/
-	/*						Mongo query tests						*/
-	/****************************************************************/
 	/* MONGO Editor button hacks */
+	// Triggers a call to connect
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	bool bMongoConnectButtonHack = false;
+
+	// Triggers a call to discconnect
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	bool bMongoDisconnectButtonHack = false;
+
+	// Task to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	FString TaskIdValueHack = TEXT("DefaultTaskId");
+
+	// Triggers a call to set task
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	bool bSetTaskButtonhack = false;
+
+	// Episode to query from
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
+	FString EpisodeIdValueHack = TEXT("DefaultEpisodeId");
+
+	// Triggers a call to set episode
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Mongo Buttons")
+	bool bSetEpisodeButtonHack = false;
+
 	// Individual id to query
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo Buttons")
 	FString IndividualIdValueHack = TEXT("DefaultIndividualId");
