@@ -20,6 +20,11 @@ void FSLKRWSClient::Connect(const FString& InHost, int32 InPort, const FString& 
 {
 	TArray<FString> Protocols{ InProtocol };
 	const FString Url = TEXT("ws://") + InHost + TEXT(":") + FString::FromInt(InPort);
+	
+	if (!FModuleManager::Get().IsModuleLoaded("WebSockets"))
+	{
+		FModuleManager::Get().LoadModule("WebSockets");
+	}
 
 	// Clear any previous connection
 	if (WebSocket.IsValid())

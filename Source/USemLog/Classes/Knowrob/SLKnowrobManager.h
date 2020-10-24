@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
 #include "Knowrob/SLKRWSClient.h"
+#include "Knowrob/SLKREventDispatcher.h"
 #include "Viz/SLVizStructs.h"
 #include "SLKnowrobManager.generated.h"
 
@@ -195,6 +196,9 @@ private:
 
 	// Websocket connection to knowrob
 	TSharedPtr<FSLKRWSClient> KRWSClient;
+
+	// Handle the protobuf message
+	TSharedPtr<FSLKREventDispatcher> KREventDispatcher;
 
 	/* Managers */
 	// Manages the mongo connection
