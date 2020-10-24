@@ -28,11 +28,12 @@ USLReachAndPreGraspMonitor::USLReachAndPreGraspMonitor()
 	bIsFinished = false;
 
 	bLogDebug = false;
+	bLogVerboseDebug = false;
 
 	CurrGraspedIndividual = nullptr;
 
 	// Default values
-	UpdateRate = 0.027;
+	UpdateRate = 0.037;
 	ConcatenateIfSmaller = 0.4f;
 
 	ShapeColor = FColor::Orange.WithAlpha(64);
@@ -202,7 +203,7 @@ void USLReachAndPreGraspMonitor::SetCollisionParameters()
 	SetAllUseCCD(true);
 }
 
-// Subscribe for grasp events from sibling component (contacts with hand and grasp events)
+// Subscribe for hand contact and grasp events
 bool USLReachAndPreGraspMonitor::SubscribeForManipulatorEvents()
 {
 	if(USLManipulatorMonitor* ManipulatorMonitor = CastChecked<USLManipulatorMonitor>(
@@ -210,10 +211,10 @@ bool USLReachAndPreGraspMonitor::SubscribeForManipulatorEvents()
 	{
 		// Timeline reaching   ,    pre grasp
 		// [-----------contact][contact--------grasp]
-		ManipulatorMonitor->OnBeginManipulatorContact.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLContactBegin);
-		ManipulatorMonitor->OnEndManipulatorContact.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLContactEnd);
-		ManipulatorMonitor->OnBeginManipulatorGrasp.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLGraspBegin);
-		ManipulatorMonitor->OnEndManipulatorGrasp.AddUObject(this, &USLReachAndPreGraspMonitor::OnSLGraspEnd);
+		ManipulatorMonitor->OnBeginManipulatorContact.AddUObject(this, &USLReachAndPreGraspMonitor::OnManipulatorContactBegin);
+		ManipulatorMonitor->OnEndManipulatorContact.AddUObject(this, &USLReachAndPreGraspMonitor::OnManipulatorContactEnd);
+		ManipulatorMonitor->OnBeginManipulatorGrasp.AddUObject(this, &USLReachAndPreGraspMonitor::OnManipulatorGraspBegin);
+		ManipulatorMonitor->OnEndManipulatorGrasp.AddUObject(this, &USLReachAndPreGraspMonitor::OnManipulatorGraspEnd);
 		return true;
 	}
 	return false;
@@ -222,8 +223,12 @@ bool USLReachAndPreGraspMonitor::SubscribeForManipulatorEvents()
 // Update callback, checks distance to hand, if it increases it resets the start time
 void USLReachAndPreGraspMonitor::UpdateCandidatesData(float DeltaTime)
 {
-	/*UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs CandidatesNum=%d; ContactNum=%d; DeltaTime=%f;"),
-		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), CandidatesData.Num(), ManipulatorContactData.Num(), DeltaTime);*/
+	if (bLogVerboseDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's CandidatesNum=%d; ContactNum=%d; DeltaTime=%f;"),
+		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			CandidatesData.Num(), ManipulatorContactData.Num(), DeltaTime);
+	}
 
 	const float CurrTimestamp = GetWorld()->GetTimeSeconds();
 	for (auto& CanidateData : CandidatesData)
@@ -235,17 +240,15 @@ void USLReachAndPreGraspMonitor::UpdateCandidatesData(float DeltaTime)
 		// Ignore small difference changes (IgnoreMovementsSmallerThanValue)
 		if (DiffDist > IgnoreMovementsSmallerThanValue)
 		{
+			if (bLogVerboseDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's is moving closer to %s; (PrevDist=%f; CurrDist=%f; DiffDist=%f;)"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *CanidateData.Key->GetParentActor()->GetName(),
+					PrevDist, CurrDist, DiffDist);
+			}
 			// Positive difference makes the hand closer to the object, update the distance
 			CanidateData.Value.Get<ESLTimeAndDist::SLDist>() = CurrDist;
-
-			//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s is moving closer to %s; PrevDist=%f; CurrDist=%f; DiffDist=%f; [%s - %s];"),
-			//	*FString(__func__), __LINE__, 
-			//	CurrTimestamp, 
-			//	*SemanticOwner.Obj->GetName(), 
-			//	*CanidateData.Key->GetName(),
-			//	PrevDist, CurrDist, DiffDist,
-			//	*GetOwner()->GetActorLocation().ToString(),
-			//	*CanidateData.Key->GetActorLocation().ToString());
 		}
 		else if (DiffDist < -IgnoreMovementsSmallerThanValue)
 		{
@@ -253,26 +256,24 @@ void USLReachAndPreGraspMonitor::UpdateCandidatesData(float DeltaTime)
 			CanidateData.Value.Get<ESLTimeAndDist::SLTime>() = CurrTimestamp;
 			CanidateData.Value.Get<ESLTimeAndDist::SLDist>() = CurrDist;
 
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s is moving further to %s; PrevDist=%f; CurrDist=%f; DiffDist=%f; [%s - %s];"),
-			//	*FString(__func__), __LINE__, 
-			//	CurrTimestamp, 
-			//	*SemanticOwner.Obj->GetName(), 
-			//	*CanidateData.Key->GetName(),
-			//	PrevDist, CurrDist, DiffDist,
-			//	*GetOwner()->GetActorLocation().ToString(),
-			//	*CanidateData.Key->GetActorLocation().ToString());
+			if (bLogVerboseDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's is moving further to %s; (PrevDist=%f; CurrDist=%f; DiffDist=%f;)"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *CanidateData.Key->GetParentActor()->GetName(),
+					PrevDist, CurrDist, DiffDist);
+			}
 		}
 		else
 		{
 			// TODO reset time when idling for a longer period
-			//UE_LOG(LogTemp, Log, TEXT("%s::%d [%f] %s is idling relative to %s; PrevDist=%f; CurrDist=%f; DiffDist=%f; [%s - %s];"),
-			//	*FString(__func__), __LINE__, 
-			//	CurrTimestamp, 
-			//	*SemanticOwner.Obj->GetName(), 
-			//	*CanidateData.Key->GetName(),
-			//	PrevDist, CurrDist, DiffDist,
-			//	*GetOwner()->GetActorLocation().ToString(),
-			//	*CanidateData.Key->GetActorLocation().ToString());
+			if (bLogVerboseDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's is idling relative to %s; (PrevDist=%f; CurrDist=%f; DiffDist=%f;)"),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *CanidateData.Key->GetParentActor()->GetName(),
+					PrevDist, CurrDist, DiffDist);
+			}
 		}
 	}
 }
@@ -349,24 +350,38 @@ void USLReachAndPreGraspMonitor::OnOverlapBegin(UPrimitiveComponent* OverlappedC
 		return;
 	}
 
-	FString DebugLogString = FString::Printf(TEXT("%s::%d::%.4fs \t BeginOverlap: \t %s->%s::%s;"),
-		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName(), *OtherComp->GetName());	
 	// Check if the individual can be a reach candidate
 	if (CanBeACandidate(OtherActor))
 	{
 		const float Dist = FVector::Distance(GetOwner()->GetActorLocation(), OtherActor->GetActorLocation());
 		CandidatesData.Emplace(OtherIndividual, MakeTuple(GetWorld()->GetTimeSeconds(), Dist));
 
+		if (bLogDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's added %s::%s as candidate (CandidatesNum=%d).."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *OtherActor->GetName(), *OtherComp->GetName(), CandidatesData.Num());
+		}
+
 		// Make sure the candidate update check is running
 		if (!IsComponentTickEnabled())
 		{
+			if (bLogDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f \t %s's first candidate added, starting tick.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+			}
 			SetComponentTickEnabled(true);
 		}
-		DebugLogString.Append("\t ADD as candidate;");
 	}
-	if (bLogDebug)
+	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *DebugLogString);
+		if (bLogDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's overlap begin %s::%s is not a suitable candidate.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+				*OtherActor->GetName(), *OtherComp->GetName());
+		}
 	}
 }
 
@@ -384,36 +399,53 @@ void USLReachAndPreGraspMonitor::OnOverlapEnd(UPrimitiveComponent* OverlappedCom
 		return;
 	}
 
-	FString DebugLogString = FString::Printf(TEXT("%s::%d::%.4fs \t EndOverlap: \t %s->%s::%s;"),
-		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *OtherActor->GetName(), *OtherComp->GetName());
+	// Remove candidate
 	if (CandidatesData.Remove(OtherIndividual) > 0)
 	{
+		if (bLogDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's removed %s::%s as candidate (CandidatesNum=%d).."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *OtherActor->GetName(), *OtherComp->GetName(), CandidatesData.Num());
+		}
+
 		// Stop candidate update if this was the last candidate
 		if (CandidatesData.Num() == 0)
 		{
+			if (bLogDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f \t %s's last candidate removed, stopping tick.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+			}
 			SetComponentTickEnabled(false);
 		}
-		DebugLogString.Append("\t RM as candidate;");
 	}
-	if (bLogDebug)
+	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s"), *DebugLogString);
+		if (bLogDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's overlap end %s::%s was not a candidate to remove.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+				*OtherActor->GetName(), *OtherComp->GetName());
+		}
 	}
 }
 
 
 // Called when sibling detects a grasp, used for ending the manipulator positioning event
-void USLReachAndPreGraspMonitor::OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Timestamp, const FString& GraspType)
+void USLReachAndPreGraspMonitor::OnManipulatorGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Timestamp, const FString& GraspType)
 {
 	if (bLogDebug)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4fs \t\t GraspBegin: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
-			GetWorld()->GetTimeSeconds(), *Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's Grasp event started received: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
 	}
 
 	if(CurrGraspedIndividual)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs Already grasping %s, cannot set a new grasp to %s.."), *FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasp individual is already set (%s), this can happen if grasping mulitple individuals, ignoring grasp %s.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
 			*CurrGraspedIndividual->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
 		return;
 	}
@@ -425,11 +457,15 @@ void USLReachAndPreGraspMonitor::OnSLGraspBegin(USLBaseIndividual* Self, USLBase
 		// since if there is a grasp with the object, it should also be in contact with
 		if(float* ContactTime = ManipulatorContactData.Find(Other))
 		{
+			if (bLogDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's setting grasped individual to %s.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(),	*Other->GetParentActor()->GetName());
+			}
+
 			// Grasp is active, ignore future contact/grasp events
 			CurrGraspedIndividual = Other;
-
-			//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s set as grasped object.."),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
 
 			// Cancel delay callback if active
 			GetWorld()->GetTimerManager().ClearTimer(DelayTimerHandle);
@@ -439,13 +475,17 @@ void USLReachAndPreGraspMonitor::OnSLGraspBegin(USLBaseIndividual* Self, USLBase
 			const float ReachEndTime = *ContactTime;
 			OnReachAndPreGraspEvent.Broadcast(OwnerIndividualObject, Other, ReachStartTime, ReachEndTime, Timestamp);
 
-			FString CandidatesStr;
-			for (const auto& C : CandidatesData)
+			if (bLogDebug)
 			{
-				CandidatesStr.Append(C.Key->GetParentActor()->GetName() + ";");
+				FString CandidatesStr;
+				for (const auto& C : CandidatesData)
+				{
+					CandidatesStr.Append(C.Key->GetParentActor()->GetName() + ";");
+				}
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's removing candidates %s.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *CandidatesStr);
 			}
-			UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4fs \t\t RemovingCandidates: %s"), *FString(__FUNCTION__), __LINE__,
-				GetWorld()->GetTimeSeconds(), *CandidatesStr);
 
 			// Remove existing candidates and pause the update callback while the hand is grasping
 			CandidatesData.Empty();
@@ -457,47 +497,52 @@ void USLReachAndPreGraspMonitor::OnSLGraspBegin(USLBaseIndividual* Self, USLBase
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] Grasped %s is not in the objects in contact with the manipulator list, this should not happen.."),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetParentActor()->GetName());
+			UE_LOG(LogTemp, Error, TEXT("%s::%d::%4.f %s's grasped individual %s is not in the contacts list, this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *Other->GetParentActor()->GetName());
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] Grasped %s is not in the candidates list, this should not happen.."),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetParentActor()->GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%4.f %s's grasped individual %s is not in the candidates list, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *Other->GetParentActor()->GetName());
 	}
 
 }
 
 // Reset looking for the events
-void USLReachAndPreGraspMonitor::OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
+void USLReachAndPreGraspMonitor::OnManipulatorGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
 {	
 	if (bLogDebug)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4fs \t\t GraspEnd: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
-			GetWorld()->GetTimeSeconds(), *Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's Grasp event ended received: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
 	}
 
 	if (CurrGraspedIndividual == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs No object is currently grasped while ending theoretical grasp with %s.."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetParentActor()->GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's no individual is set as grasped (whilst grasp ended with %s), this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *Other->GetParentActor()->GetName());
 		return;
 	}
 
-	if(CurrGraspedIndividual == Other)
+	if (CurrGraspedIndividual != Other)
 	{
-		CurrGraspedIndividual = nullptr;
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s removed as grasped object.."),
-		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs End grasp with %s while %s is still grasped.. ignoring event.."),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-			*Other->GetParentActor()->GetName(), *CurrGraspedIndividual->GetParentActor()->GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's unrelated grasp ended (%s != %s), this can happen if grasping multiple individuals.. skipping.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*CurrGraspedIndividual->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
 		return;
 	}
+
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasp ended (%s==%s) start listening to overlaps.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*CurrGraspedIndividual->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+	}
+
+	// Set individual to nullptr
+	CurrGraspedIndividual = nullptr;
 	
 	// Grasp released start listening to overlaps
 	SetGenerateOverlapEvents(true);
@@ -508,86 +553,92 @@ void USLReachAndPreGraspMonitor::OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIn
 }
 
 // Called when the sibling is in contact with an object, used for ending the reaching event and starting the manipulator positioning event
-void USLReachAndPreGraspMonitor::OnSLContactBegin(const FSLContactResult& ContactResult)
+void USLReachAndPreGraspMonitor::OnManipulatorContactBegin(const FSLContactResult& ContactResult)
 {
 	if (bLogDebug)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d \t\t %.4fs \t\t ContactBegin: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
-			GetWorld()->GetTimeSeconds(), *ContactResult.Self->GetParentActor()->GetName(), *ContactResult.Other->GetParentActor()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's Contact event started received: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*ContactResult.Self->GetParentActor()->GetName(), *ContactResult.Other->GetParentActor()->GetName());
 	}
 
 	if(CurrGraspedIndividual)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs There should be no contact publishing during grasps (%s->%s).."),
-			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
-			*ContactResult.Self->GetParentActor()->GetName(), *ContactResult.Other->GetParentActor()->GetName());
+		// TODO ususbscribe on grasp event (needs to use dynamic delegates)
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasp individual is set, there should be no contact publishing happening.."),
+		//	*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+		//	*ContactResult.Self->GetParentActor()->GetName(), *ContactResult.Other->GetParentActor()->GetName());
 		// Ignore any manipulator contacts while in grasp mode
 		return;
 	}
 
-	// Check if the object in contact with is one of the candidates (should be)
-	if (CandidatesData.Contains(ContactResult.Other))
+	// Make sure the individual in contact with the hand is in the candidates list
+	if (!CandidatesData.Contains(ContactResult.Other))
 	{
-		// Check if the contact should be concatenated 
-		if(!SkipIfJitterContact(ContactResult.Other, ContactResult.Time))
-		{
-			// Overwrite previous time or create a new contact result
-			ManipulatorContactData.Emplace(ContactResult.Other, ContactResult.Time);
-			//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s added as object in contact with the manipulator.."),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *AsSMA->GetName());
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s is in contact with the manipulator, but it is not in the candidates list, this should not happen.. "),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *ContactResult.Other->GetParentActor()->GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%4.f %s's %s IS in contact with the manipulator, but it is not in the candidates list, this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *ContactResult.Other->GetParentActor()->GetName());
+		return;
 	}
 
+	// Check if the contact should be concatenated 
+	if(!SkipIfJitterContact(ContactResult.Other, ContactResult.Time))
+	{
+		// Overwrite previous time or create a new contact result
+		ManipulatorContactData.Emplace(ContactResult.Other, ContactResult.Time);
+
+		if (bLogDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's Added %s to contacts with manipulator list.."), *FString(__FUNCTION__), __LINE__,
+				GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *ContactResult.Other->GetParentActor()->GetName());
+		}
+	}
 }
 
 // Manipulator is not in contact with object anymore, check for possible concatenation, or reset the potential reach time
-void USLReachAndPreGraspMonitor::OnSLContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float EndTime)
+void USLReachAndPreGraspMonitor::OnManipulatorContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float EndTime)
 {
 	if (bLogDebug)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d \t\t %.4fs \t\t ContactEnd: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
-			GetWorld()->GetTimeSeconds(), *Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's Contact event ended received: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
 	}
 
 	if(CurrGraspedIndividual)
 	{
+		// TODO ususbscribe on grasp event (needs to use dynamic delegates)
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasp individual is set, there should be no contact publishing happening.."),
+		//	*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+		//	*Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
 		// Ignore any manipulator contacts while in grasp mode
 		return;
 	}
 
-	// Check contact with manipulator (remove in delay callback, give concatenation a chance)
-	if (CandidatesData.Contains(Other))
+	// Make sure the individual in contact with the hand is in the candidates list
+	if (!CandidatesData.Contains(Other))
 	{
-		// Cache the event
-		RecentlyEndedEvents.Emplace(Other, EndTime);
-
-		if (!GetWorld())
-		{
-			// The episode finished, going further is futile
-			return;
-		}
-
-		// Delay reseting the reach time, it might be a small disconnection with the hand
-		if(!GetWorld()->GetTimerManager().IsTimerActive(DelayTimerHandle))
-		{
-			const float DelayValue = ConcatenateIfSmaller + ConcatenateIfSmallerDelay;
-			GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle,
-				this, &USLReachAndPreGraspMonitor::DelayContactEndCallback, DelayValue, false);
-		}
-	}
-	else
-	{
-		// 
-		// It can happen, during the grasp there is a contact with the manipulator
-		// when the contact ends after the grasp, this gets called and there are no items in ObjectsInContactWithManipulator
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d This should not happen.."), *FString(__func__), __LINE__);
+		// Might happen due to the contact event end jitter check publishing delay
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%4.f %s's %s WAS in contact with the manipulator, but it is not in the candidates list, this can happen if moving fast.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),	*Other->GetParentActor()->GetName());
+		return;
 	}
 
+	// Cache the event
+	RecentlyEndedEvents.Emplace(Other, EndTime);
+
+	if (!GetWorld())
+	{
+		// The episode finished, going further is futile
+		return;
+	}
+
+	// Delay reseting the reach time, it might be a small disconnection with the hand
+	if(!GetWorld()->GetTimerManager().IsTimerActive(DelayTimerHandle))
+	{
+		const float DelayValue = ConcatenateIfSmaller + ConcatenateIfSmallerDelay;
+		GetWorld()->GetTimerManager().SetTimer(DelayTimerHandle,
+			this, &USLReachAndPreGraspMonitor::DelayContactEndCallback, DelayValue, false);
+	}
 }
 
 // Delayed call of setting finished event to check for possible concatenation of jittering events of the same type
@@ -613,14 +664,18 @@ void USLReachAndPreGraspMonitor::DelayContactEndCallback()
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s is not in the contact list.. this should not happen.."),
-						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *EvItr->Other->GetName());
+					// Might happen due to the contact event end jitter check publishing delay
+					UE_LOG(LogTemp, Error, TEXT("%s::%d::%4.f %s's %s is not in the contact list.. this should not happen.."),
+						*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
+						*GetOwner()->GetName(),	*EvItr->Other->GetParentActor()->GetName());
 				}
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s is not in the candidates list.. this should not happen.."),
-					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *EvItr->Other->GetName());
+				// Might happen due to the contact event end jitter check publishing delay
+				UE_LOG(LogTemp, Error, TEXT("%s::%d::%4.f %s's %s is not in the candidates list.. this should not happen.."),
+					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *EvItr->Other->GetParentActor()->GetName());
 			}
 			
 			EvItr.RemoveCurrent();

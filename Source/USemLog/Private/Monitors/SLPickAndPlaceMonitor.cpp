@@ -16,6 +16,12 @@ USLPickAndPlaceMonitor::USLPickAndPlaceMonitor()
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 	
 	bIgnore = false;
+	bLogDebug = false;
+	bLogVerboseDebug = false;
+	bLogAllEventsDebug = false;
+	bLogSlideDebug = false;
+	bLogPickUpDebug = false;
+	bLogTransportPutDownDebug = false;
 
 	// State flags
 	bIsInit = false;
@@ -23,14 +29,14 @@ USLPickAndPlaceMonitor::USLPickAndPlaceMonitor()
 	bIsFinished = false;
 	
 	// Default values
-	UpdateRate = 0.016f;
+	UpdateRate = 0.029f;
 
 	CurrGraspedIndividual = nullptr;
 	EventCheckState = ESLPaPStateCheck::NONE;
 	UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
 
 	/* PickUp */
-	bLiftOffHappened = false;
+	bPickUpHappened = false;
 
 	/* PutDown */
 	RecentMovementBuffer.Reserve(RecentMovementBufferSize);
@@ -57,7 +63,6 @@ void USLPickAndPlaceMonitor::TickComponent(float DeltaTime, ELevelTick TickType,
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	(this->*UpdateFunctionPtr)();
 }
-
 
 // Init listener
 void USLPickAndPlaceMonitor::Init()
@@ -128,6 +133,9 @@ void USLPickAndPlaceMonitor::Finish(float EndTime, bool bForced)
 		// Finish any active event
 		FinishActiveEvent(EndTime);
 
+		// Make sure tick is disabled
+		SetComponentTickEnabled(false);
+
 		// Mark as finished
 		bIsStarted = false;
 		bIsInit = false;
@@ -144,127 +152,146 @@ bool USLPickAndPlaceMonitor::SubscribeForGraspEvents()
 	if(USLManipulatorMonitor* ManipulatorMonitor = CastChecked<USLManipulatorMonitor>(
 		GetOwner()->GetComponentByClass(USLManipulatorMonitor::StaticClass())))
 	{
-		ManipulatorMonitor->OnBeginManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnSLGraspBegin);
-		ManipulatorMonitor->OnEndManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnSLGraspEnd);
+		ManipulatorMonitor->OnBeginManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnManipulatorGraspBegin);
+		ManipulatorMonitor->OnEndManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnManipulatorGraspEnd);
 		return true;
 	}
 	return false;
 }
 
-// Get grasped objects contact shape component
-ISLContactMonitorInterface* USLPickAndPlaceMonitor::GetContactMonitorComponent(AActor* Actor) const
-{
-	for (const auto& C : Actor->GetComponents())
-	{
-		if(C->Implements<USLContactMonitorInterface>())
-		{
-			if(ISLContactMonitorInterface* CSI = Cast<ISLContactMonitorInterface>(C))
-			{
-				return CSI;
-			}
-		}
-	}
-	return nullptr;
-}
-
 // Called when grasp starts
-void USLPickAndPlaceMonitor::OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& GraspType)
+void USLPickAndPlaceMonitor::OnManipulatorGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& GraspType)
 {
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's Grasp event started received: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+	}
+
 	if(CurrGraspedIndividual)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] Cannot set %s as grasped object.. manipulator is already grasping %s;"),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName(), *CurrGraspedIndividual->GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasp individual is already set (%s), this can happen if grasping mulitple individuals, ignoring grasp %s.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*CurrGraspedIndividual->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
 		return;
 	}
 
 	// Take into account only objects that have a contact shape component
 	if(ISLContactMonitorInterface* ContactMonitor = GetContactMonitorComponent(Other->GetParentActor()))
 	{
+		// Set the grasped individual and its contact monitor
 		CurrGraspedIndividual = Other;
 		GraspedObjectContactMonitor = ContactMonitor;
 
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s set as grasped object.."),
-		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
+		if (bLogDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual and contact monitor set, owner=%s.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+				*Other->GetParentActor()->GetName());
+		}
 
+		// Cache locations and time
 		PrevRelevantLocation = Other->GetParentActor()->GetActorLocation();
 		PrevRelevantTime = GetWorld()->GetTimeSeconds();
 
+		// Make sure the grasped individual is in a supported by state
 		if(GraspedObjectContactMonitor->IsSupportedBySomething())
 		{
+			if (bLogAllEventsDebug || bLogSlideDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual (%s) is in a supported by state, checking for slide events.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *Other->GetParentActor()->GetName());
+			}
 			EventCheckState = ESLPaPStateCheck::Slide;
 			UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_Slide;
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s's PickAndPlace CheckState=Slide;"),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f]  %s's grasped object (%s) should be in a SupportedBy state.. aborting interaction.."),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasped individual (%s) is not in a supported by state.. aborting interaction.."),
 				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *Other->GetName());
 
 			CurrGraspedIndividual = nullptr;
 			GraspedObjectContactMonitor = nullptr;
 			EventCheckState = ESLPaPStateCheck::NONE;
 			UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s's PickAndPlace CheckState=NONE;"),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
-
 			return;
 		}
 
+		// Start update
 		if (!IsComponentTickEnabled())
 		{
 			SetComponentTickEnabled(true);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, tick should have been disabled here.."),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-		}
-	}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] %s does not have a ContactMonitorInterface required to query the SupportedBy state..  aborting interaction.."),
-	//		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
-	//}
-}
-
-// Called when grasp ends
-void USLPickAndPlaceMonitor::OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
-{
-	if(CurrGraspedIndividual == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen.. currently grasped object is nullptr while ending grasp with %s"),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
-		return;
-	}
-
-	if(CurrGraspedIndividual == Other)
-	{
-		CurrGraspedIndividual = nullptr;
-		GraspedObjectContactMonitor = nullptr;
-		EventCheckState = ESLPaPStateCheck::NONE;
-		UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
-
-		// Terminate active event
-		FinishActiveEvent(Time);
-
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] %s removed as grasped object.."),
-		//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName());
-
-		if (IsComponentTickEnabled())
-		{
-			SetComponentTickEnabled(false);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen, tick should be running here.."),
-				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's tick shoudl had been disabled, this should not happen.."),
+				*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] End grasp with %s while %s is still grasped.. ignoring event.."),
-			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *Other->GetName(), *CurrGraspedIndividual->GetName());
+		if (bLogDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual (%s) does not have a contact monitor, ignoring.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+				*Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+		}
+	}
+}
+
+// Called when grasp ends
+void USLPickAndPlaceMonitor::OnManipulatorGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time)
+{
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's Grasp event ended received: \t %s->%s;"), *FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*Self->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+	}
+
+	if (CurrGraspedIndividual == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's no individual is set as grasped (whilst grasp ended with %s), this should not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), *Other->GetParentActor()->GetName());
+		return;
+	}
+
+	if (CurrGraspedIndividual != Other)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's unrelated grasp ended (%s != %s), this can happen if grasping multiple individuals.. skipping.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*CurrGraspedIndividual->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+		return;
+	}
+
+	if (bLogDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasp ended (%s==%s) finishing any active events.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*CurrGraspedIndividual->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
+	}
+
+	// Terminate active event
+	FinishActiveEvent(Time);
+
+	// Finish active event sets this
+	//// Clear grapsed individual
+	//CurrGraspedIndividual = nullptr;
+	//GraspedObjectContactMonitor = nullptr;
+	//// Clear check state update function
+	//EventCheckState = ESLPaPStateCheck::NONE;
+	//UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
+
+	// Stop update
+	if (IsComponentTickEnabled())
+	{
+		SetComponentTickEnabled(false);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's tick should had been enabled, this should not happen.."),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
 	}
 }
 
@@ -273,18 +300,24 @@ void USLPickAndPlaceMonitor::FinishActiveEvent(float CurrTime)
 {
 	if(EventCheckState == ESLPaPStateCheck::Slide)
 	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## SLIDE ##############  [%f <--> %f]"),
-		//	*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
+		if (bLogAllEventsDebug || bLogSlideDebug)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's active event ended **SLIDE** (%.4f-%.4f) event happened.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), PrevRelevantTime, CurrTime);
+		}
 		OnManipulatorSlideEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PrevRelevantTime, CurrTime);
 	}
 	else if(EventCheckState == ESLPaPStateCheck::PickUp)
 	{
-		if(bLiftOffHappened)
+		if(bPickUpHappened)
 		{
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
-			//	*FString(__func__), __LINE__, CurrTime, PrevRelevantTime, CurrTime);
-			OnManipulatorSlideEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PrevRelevantTime, CurrTime);
-			bLiftOffHappened = false;
+			if (bLogAllEventsDebug || bLogPickUpDebug)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's active event ended **PICK-UP** (%.4f-%.4f) event happened.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), PrevRelevantTime, CurrTime);
+			}
+			OnManipulatorPickUpEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PrevRelevantTime, CurrTime);
+			bPickUpHappened = false;
 		}
 	}
 	else if(EventCheckState == ESLPaPStateCheck::TransportOrPutDown)
@@ -293,10 +326,9 @@ void USLPickAndPlaceMonitor::FinishActiveEvent(float CurrTime)
 	}
 
 	CurrGraspedIndividual = nullptr;
+	GraspedObjectContactMonitor = nullptr;
 	EventCheckState = ESLPaPStateCheck::NONE;
 	UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s's PickAndPlace CheckState=NONE;"),
-		*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
 }
 
 // Backtrace and check if a put-down event happened
@@ -325,13 +357,6 @@ bool USLPickAndPlaceMonitor::HasPutDownEventHappened(const float CurrTime, const
 	return false;
 }
 
-// Update callback
-void USLPickAndPlaceMonitor::Update()
-{
-	// Call the state update function
-	(this->*UpdateFunctionPtr)();
-}
-
 /* Update functions*/
 // Default update function
 void USLPickAndPlaceMonitor::Update_NONE()
@@ -344,7 +369,8 @@ void USLPickAndPlaceMonitor::Update_Slide()
 {
 	if(CurrGraspedIndividual == nullptr || GraspedObjectContactMonitor == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] This should not happen.."), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's this should not happen, the grasped individual needs to be set during update check.."),
+			*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
 		return;
 	}
 
@@ -352,18 +378,34 @@ void USLPickAndPlaceMonitor::Update_Slide()
 	const float CurrTime = GetWorld()->GetTimeSeconds();
 	const float CurrDistXY = FVector::DistXY(PrevRelevantLocation, CurrObjLocation);
 
+	if (bLogVerboseDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's checking if %s is still supported by.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*CurrGraspedIndividual->GetParentActor()->GetName());
+	}
+
 	// Sliding events can only end when the object is not supported by the surface anymore
 	if(!GraspedObjectContactMonitor->IsSupportedBySomething())
 	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f]  \t\t **** END SupportedBy ****"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		if (bLogAllEventsDebug || bLogSlideDebug || bLogPickUpDebug)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual %s is not supported by anymore, check if slide happened, starting pick-up event check.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+				*CurrGraspedIndividual->GetParentActor()->GetName());
+		}
 
 		// Check if enough distance and time has passed for a sliding event
-		if(CurrDistXY > MinSlideDistXY && CurrTime - PrevRelevantTime > MinSlideDuration)
+		if((CurrDistXY > MinSlideDistXY) && (CurrTime - PrevRelevantTime > MinSlideDuration))
 		{
 			const float ExactSupportedByEndTime = GraspedObjectContactMonitor->GetLastSupportedByEndTime();
 
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## SLIDE ##############  [%f <--> %f]"),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, ExactSupportedByEndTime);
+			if (bLogAllEventsDebug || bLogSlideDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's supported by ended on %s **SLIDE** (%.4f-%.4f) event happened.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+					*CurrGraspedIndividual->GetParentActor()->GetName(), PrevRelevantTime, ExactSupportedByEndTime);
+			}
 
 			// Broadcast event
 			OnManipulatorSlideEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PrevRelevantTime, ExactSupportedByEndTime);
@@ -372,8 +414,18 @@ void USLPickAndPlaceMonitor::Update_Slide()
 			PrevRelevantTime = ExactSupportedByEndTime;
 			PrevRelevantLocation = CurrObjLocation;
 		}
+		else
+		{
+			if (bLogAllEventsDebug || bLogSlideDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual %s is **NO** **SLIDE** happned.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+					*CurrGraspedIndividual->GetParentActor()->GetName());
+			}
+		}
 
-		bLiftOffHappened = false;
+		// Set check for pick-up
+		bPickUpHappened = false;
 		EventCheckState = ESLPaPStateCheck::PickUp;
 		UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_PickUp;
 	}
@@ -385,56 +437,107 @@ void USLPickAndPlaceMonitor::Update_PickUp()
 	const FVector CurrObjLocation = CurrGraspedIndividual->GetParentActor()->GetActorLocation();
 	const float CurrTime = GetWorld()->GetTimeSeconds();
 
+	if (bLogVerboseDebug)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's pickup update checking on %s...."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*CurrGraspedIndividual->GetParentActor()->GetName());
+	}
+
+	// Check distances whilst the object is not supported by
 	if(!GraspedObjectContactMonitor->IsSupportedBySomething())
 	{
-		if(bLiftOffHappened)
+		if(bPickUpHappened)
 		{
 			if(CurrObjLocation.Z - LiftOffLocation.Z > MaxPickUpHeight ||
 				FVector::DistXY(LiftOffLocation, CurrObjLocation) > MaxPickUpDistXY)
 			{
+				if (bLogAllEventsDebug || bLogPickUpDebug)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual %s **PICK-UP** (%.4f-%.4f) event happened.."),
+						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+						*CurrGraspedIndividual->GetParentActor()->GetName(), PrevRelevantTime, CurrTime);
+				}
 
-				//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
-				//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
 				// Broadcast event
 				OnManipulatorPickUpEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PrevRelevantTime, CurrTime);
 
+				if (bLogAllEventsDebug || bLogTransportPutDownDebug)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual %s was picked-up starting checking for transport+put-down event.."),
+						*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+						*CurrGraspedIndividual->GetParentActor()->GetName());
+				}
+
 				// Start checking for the next possible events
-				bLiftOffHappened = false;
+				bPickUpHappened = false;
 				PrevRelevantTime = CurrTime;
 				PrevRelevantLocation = CurrObjLocation;
 				EventCheckState = ESLPaPStateCheck::TransportOrPutDown;
 				UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_TransportOrPutDown;
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s's PickAndPlace CheckState=TransportOrPutDown;"),
-					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
 			}
 		}
 		else if(CurrObjLocation.Z - PrevRelevantLocation.Z > MinPickUpHeight)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t **** LiftOFF **** \t\t\t\t\t\t\t\t LIFTOFF"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			if (bLogAllEventsDebug || bLogPickUpDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grapsed obj %s, setting pick-up flag to TRUE, event will be published next tick.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+					*CurrGraspedIndividual->GetParentActor()->GetName());
+			}
 
 			// This is not going to be the start time of the PickUp event, we use the SupportedBy end time
 			// we save the LiftOffLocation to check against the ending of the PickUp event by comparing distances against
-			bLiftOffHappened = true;
+			bPickUpHappened = true;
 			LiftOffLocation = CurrObjLocation;
 		}
 		else if(FVector::DistXY(LiftOffLocation, PrevRelevantLocation) > MaxPickUpDistXY)
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t **** Skip PickUp **** \t\t\t\t\t\t\t\t SKIP PICKUP"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			if (bLogAllEventsDebug || bLogPickUpDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grapsed obj %s, skipping pick-up, event did not happen.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+					*CurrGraspedIndividual->GetParentActor()->GetName());
+			}
+
+			if (bLogAllEventsDebug || bLogTransportPutDownDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual %s was NOT picked up, starting checking for transport+put-down event.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+					*CurrGraspedIndividual->GetParentActor()->GetName());
+			}
+
 			EventCheckState = ESLPaPStateCheck::TransportOrPutDown;
 			UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_TransportOrPutDown;
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d [%.4f] %s's PickAndPlace CheckState=TransportOrPutDown;"),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
 		}
 	}
 	else
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] \t\t **** START SupportedBy ****"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
-
-		if(bLiftOffHappened)
+		if (bLogAllEventsDebug || bLogSlideDebug || bLogPickUpDebug)
 		{
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PICK UP ##############  [%f <--> %f]"),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual %s is supported by again, starting checking for slide event.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+				*CurrGraspedIndividual->GetParentActor()->GetName());
+		}
+
+		if(bPickUpHappened)
+		{
+			if (bLogAllEventsDebug || bLogPickUpDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual %s **PICK-UP** (%.4f-%.4f) event happened before supported by.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+					*CurrGraspedIndividual->GetParentActor()->GetName(), PrevRelevantTime, CurrTime);
+			}
 			OnManipulatorPickUpEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PrevRelevantTime, CurrTime);
+		}
+		else
+		{
+			if (bLogAllEventsDebug || bLogPickUpDebug)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4fs %s's grasped individual %s **NO** **PICK-UP**.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+					*CurrGraspedIndividual->GetParentActor()->GetName());
+			}
 		}
 
 		// Start checking for next event
@@ -450,6 +553,13 @@ void USLPickAndPlaceMonitor::Update_TransportOrPutDown()
 {
 	const float CurrTime = GetWorld()->GetTimeSeconds();
 	const FVector CurrObjLocation = CurrGraspedIndividual->GetParentActor()->GetActorLocation();
+
+	if (bLogVerboseDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's transport+put-down update checking on %s...."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+			*CurrGraspedIndividual->GetParentActor()->GetName());
+	}
 
 	if(GraspedObjectContactMonitor->IsSupportedBySomething())
 	{
@@ -504,8 +614,17 @@ void USLPickAndPlaceMonitor::Update_TransportOrPutDown()
 			OnManipulatorTransportEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PrevRelevantTime, CurrTime);
 		}
 
+		// Clear movement buffer
 		RecentMovementBuffer.Reset(RecentMovementBufferSize);
 
+		if (bLogAllEventsDebug || bLogSlideDebug)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasped individual %s is supported by again, starting checking for slide event.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(),
+				*CurrGraspedIndividual->GetParentActor()->GetName());
+		}
+
+		// Start checking for slide events until the grasped individual is released
 		PrevRelevantTime = CurrTime;
 		PrevRelevantLocation = CurrObjLocation;
 		EventCheckState = ESLPaPStateCheck::Slide;
@@ -536,4 +655,19 @@ void USLPickAndPlaceMonitor::Update_TransportOrPutDown()
 	}
 }
 
+// Get grasped objects contact shape component
+ISLContactMonitorInterface* USLPickAndPlaceMonitor::GetContactMonitorComponent(AActor* Actor) const
+{
+	for (const auto& C : Actor->GetComponents())
+	{
+		if (C->Implements<USLContactMonitorInterface>())
+		{
+			if (ISLContactMonitorInterface* CSI = Cast<ISLContactMonitorInterface>(C))
+			{
+				return CSI;
+			}
+		}
+	}
+	return nullptr;
+}
 

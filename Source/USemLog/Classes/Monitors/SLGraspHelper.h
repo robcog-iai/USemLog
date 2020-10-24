@@ -57,16 +57,16 @@ public:
 	void CheckEndGraspHelp(AActor* Actor);
 
 	// Set group A bone name
-	void SetBoneNameGroupA(const FName& BoneName);
+	void SetBoneNameGroupA(AActor* Actor, const FName& BoneName);
 
 	// Clear group A bone name
-	void ClearBoneNameGroupA();
+	void ClearBoneNameGroupA(AActor* Actor);
 
 	// Set group B bone name
-	void SetBoneNameGroupB(const FName& BoneName);
+	void SetBoneNameGroupB(AActor* Actor, const FName& BoneName);
 
 	// Clear group B bone name
-	void ClearBoneNameGroupB();
+	void ClearBoneNameGroupB(AActor* Actor);
 		
 private:
 	// Delayd all for start help
@@ -187,11 +187,11 @@ private:
 	UPROPERTY()
 	TMap<UPhysicsConstraintComponent*, FName> AllBonesConstraints;
 
-	// Bone name from group A
-	FName BoneNameGroupA = NAME_None;
+	// Bone name mappings for group A
+	TMap<AActor*, FName> BoneNameMapGroupA;
 
-	// Bone name from group A
-	FName BoneNameGroupB = NAME_None;
+	// Bone name mappings for group B
+	TMap<AActor*, FName> BoneNameMapGroupB;
 
 
 };

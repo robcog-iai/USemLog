@@ -128,6 +128,20 @@ void FSLGraspHelper::StartGraspHelp()
 	}
 	else if (GraspHelpType == ESLGraspHelperType::ABGroup)
 	{
+		// Default names of the bones
+		FName BoneNameGroupA = NAME_None;
+		FName BoneNameGroupB = NAME_None;
+
+		// Get the bone names for the given grasped actor
+		if (FName* FoundName = BoneNameMapGroupA.Find(GraspedStaticMeshComp->GetOwner()))
+		{
+			BoneNameGroupA = *FoundName;
+		}
+		if (FName* FoundName = BoneNameMapGroupB.Find(GraspedStaticMeshComp->GetOwner()))
+		{
+			BoneNameGroupB = *FoundName;
+		}
+
 		// Make sure the bone names are set
 		if (BoneNameGroupA.IsNone() || BoneNameGroupB.IsNone())
 		{
@@ -303,7 +317,7 @@ void FSLGraspHelper::CheckStartGraspHelp(AActor* Actor)
 	{
 		if (bLogDebug)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's delay timer is still running, ignoring new actor %s.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's delay timer is still running on %s, ignoring new actor %s.."),
 				*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(),
 				*GraspedStaticMeshComp->GetOwner()->GetName(), *Actor->GetName());
 		}
@@ -328,8 +342,7 @@ void FSLGraspHelper::CheckStartGraspHelp(AActor* Actor)
 		if (bLogDebug)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's to be grasped %s does not fullfill the grasping criterias, ignoring.."),
-				*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(),
-				*GraspedStaticMeshComp->GetOwner()->GetName(), *Actor->GetName());
+				*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *Actor->GetName());
 		}
 		return;
 	}
@@ -449,74 +462,78 @@ void FSLGraspHelper::CheckEndGraspHelp(AActor* Actor)
 }
 
 // Set group A bone name
-void FSLGraspHelper::SetBoneNameGroupA(const FName& BoneName)
+void FSLGraspHelper::SetBoneNameGroupA(AActor* Actor, const FName& BoneName)
 {
-	if (!BoneNameGroupA.IsNone())
+	if (BoneNameMapGroupA.Contains(Actor))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s's BoneNameGroupA=%s should had been NONE here.."),
-			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *BoneNameGroupA.ToString());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s's BoneNameGroupA %s::%s should had been empty here.."),
+			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(),
+			*Actor->GetName(), *BoneNameMapGroupA[Actor].ToString());
 	}
 
-	BoneNameGroupA = BoneName;
+	BoneNameMapGroupA.Emplace(Actor, BoneName);
 
 	if (bLogDebug)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's BoneNameGroupA set to %s.."),
-			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *BoneNameGroupA.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's BoneNameGroupA set to %s::%s.."),
+			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(),
+			*Actor->GetName(), *BoneName.ToString());
 	}
 }
 
 // Clear group A bone name
-void FSLGraspHelper::ClearBoneNameGroupA()
+void FSLGraspHelper::ClearBoneNameGroupA(AActor* Actor)
 {
-	if (BoneNameGroupA.IsNone())
+	if (!BoneNameMapGroupA.Contains(Actor))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s's BoneNameGroupA=%s should had been set here.."),
-			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *BoneNameGroupA.ToString());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s's BoneNameGroupA %s::NONE should had been set here.."),
+			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(),*Actor->GetName());
 	}
 
-	BoneNameGroupA = NAME_None;
+	BoneNameMapGroupA.Remove(Actor);
 
 	if (bLogDebug)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's BoneNameGroupA cleared (%s).."),
-			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *BoneNameGroupA.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's BoneNameGroupA cleared (%s::NONE) .."),
+			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *Actor->GetName());
 	}
 }
 
 // Set group B bone name
-void FSLGraspHelper::SetBoneNameGroupB(const FName& BoneName)
+void FSLGraspHelper::SetBoneNameGroupB(AActor* Actor, const FName& BoneName)
 {
-	if (!BoneNameGroupB.IsNone())
+	if (BoneNameMapGroupB.Contains(Actor))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s's BoneNameGroupB=%s should had been NONE here.."),
-			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *BoneNameGroupB.ToString());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s's BoneNameGroupB %s::%s should had been empty here.."),
+			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(),
+			*Actor->GetName(), *BoneNameMapGroupB[Actor].ToString());
 	}
 
-	BoneNameGroupB = BoneName;
+	BoneNameMapGroupB.Emplace(Actor, BoneName);
 
 	if (bLogDebug)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's BoneNameGroupB set to %s.."),
-			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *BoneNameGroupB.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's BoneNameGroupB set to %s::%s.."),
+			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(),
+			*Actor->GetName(), *BoneName.ToString());
 	}
 }
 
 // Clear group B bone name
-void FSLGraspHelper::ClearBoneNameGroupB()
+void FSLGraspHelper::ClearBoneNameGroupB(AActor* Actor)
 {
-	if (BoneNameGroupB.IsNone())
+	if (!BoneNameMapGroupB.Contains(Actor))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s's BoneNameGroupB=%s should had been set here.."),
-			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *BoneNameGroupB.ToString());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s's BoneNameGroupB %s::NONE should had been set here.."),
+			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *Actor->GetName());
 	}
 
-	BoneNameGroupB = NAME_None;
+	BoneNameMapGroupB.Remove(Actor);
 
 	if (bLogDebug)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's BoneNameGroupB cleared (%s).."),
-			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *BoneNameGroupB.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's BoneNameGroupB cleared (%s::NONE) .."),
+			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName(), *Actor->GetName());
 	}
 }
 

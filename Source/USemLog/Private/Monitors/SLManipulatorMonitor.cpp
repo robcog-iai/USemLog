@@ -39,7 +39,6 @@ USLManipulatorMonitor::USLManipulatorMonitor()
 	bLogContactDebug = false;
 	bLogGraspDebug = false;
 	bLogVerboseGraspDebug = false;
-	bLogGraspHelpDebug = false;
 
 	// Editor button hack
 	bLoadBoneMonitorsButtonHack = false;
@@ -560,7 +559,7 @@ void USLManipulatorMonitor::OnGroupAGraspContactBegin(USLBaseIndividual* OtherIn
 		// Set bone name
 		if (bUseGraspHelper && GraspHelper.GraspHelpType == ESLGraspHelperType::ABGroup)
 		{
-			GraspHelper.SetBoneNameGroupA(BoneName);
+			GraspHelper.SetBoneNameGroupA(OtherIndividual->GetParentActor(), BoneName);
 		}
 
 		// If the individual is in contact with the other group as well, trigger a grasp start event
@@ -624,7 +623,7 @@ void USLManipulatorMonitor::OnGroupBGraspContactBegin(USLBaseIndividual* OtherIn
 		// Set bone name
 		if (bUseGraspHelper && GraspHelper.GraspHelpType == ESLGraspHelperType::ABGroup)
 		{
-			GraspHelper.SetBoneNameGroupB(BoneName);
+			GraspHelper.SetBoneNameGroupB(OtherIndividual->GetParentActor(), BoneName);
 		}
 
 		// If the individual is in contact with the other group as well, trigger a grasp start event
@@ -675,7 +674,7 @@ void USLManipulatorMonitor::OnGroupAGraspContactEnd(USLBaseIndividual* OtherIndi
 			// Clear bone name
 			if (bUseGraspHelper && GraspHelper.GraspHelpType == ESLGraspHelperType::ABGroup)
 			{
-				GraspHelper.ClearBoneNameGroupA();
+				GraspHelper.ClearBoneNameGroupA(OtherIndividual->GetParentActor());
 			}
 
 			// If currently in contact with the other group as well, it should be grasped, trigger grasp end
@@ -743,7 +742,7 @@ void USLManipulatorMonitor::OnGroupBGraspContactEnd(USLBaseIndividual* OtherIndi
 			// Clear bone name
 			if (bUseGraspHelper && GraspHelper.GraspHelpType == ESLGraspHelperType::ABGroup)
 			{
-				GraspHelper.ClearBoneNameGroupB();
+				GraspHelper.ClearBoneNameGroupB(OtherIndividual->GetParentActor());
 			}
 
 			// If currently in contact with the other group as well, it should be grasped, trigger grasp end

@@ -91,17 +91,11 @@ private:
 	// Subscribe to grasp events from sibling
 	bool SubscribeForGraspEvents();
 
-	// Get grasped objects contact shape component
-	ISLContactMonitorInterface* GetContactMonitorComponent(AActor* Actor) const;
-
 	// Called on grasp begin
-	void OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& GraspType);
+	void OnManipulatorGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time, const FString& GraspType);
 
 	// Called on grasp end
-	void OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
-
-	// Update callback
-	void Update();
+	void OnManipulatorGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float Time);
 
 	// Object released, terminate active even
 	void FinishActiveEvent(float CurrTime);
@@ -115,6 +109,9 @@ private:
 	void Update_PickUp();
 	void Update_TransportOrPutDown();
 
+	// Get grasped objects contact shape component
+	ISLContactMonitorInterface* GetContactMonitorComponent(AActor* Actor) const;
+
 public:
 	// PaP events delegates
 	FSLPaPSubEventSignature OnManipulatorSlideEvent;
@@ -123,6 +120,30 @@ public:
 	FSLPaPSubEventSignature OnManipulatorTransportEvent;
 	
 private:
+	// Log debug messages (non event related)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogDebug : 1;
+
+	// Log debug messages verbose (non event related)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogVerboseDebug : 1;
+
+	// Log all events debug messages
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogAllEventsDebug : 1;
+
+	// Log slide event debug messages only
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogSlideDebug : 1;
+
+	// Log pick-up event debug messages only
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogPickUpDebug : 1;
+
+	// Log transport + put down event debug messages only
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogTransportPutDownDebug : 1;
+
 	// Skip initialization if true
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;
@@ -170,7 +191,7 @@ private:
 
 	/* PickUp related */
 	// Set when the object is lifted from the supported area more than the MinPickUpHeight value
-	bool bLiftOffHappened;
+	bool bPickUpHappened;
 
 	// The location where the object was started to be lifted (use this to compare against MaxPickUpDistXY and MaxPickUpHeight)
 	FVector LiftOffLocation;
@@ -192,7 +213,7 @@ private:
 	constexpr static float MaxPickUpHeight = 12.f;
 
 	// PutDown
-	constexpr static int32 RecentMovementBufferSize = 256;
+	constexpr static int32 RecentMovementBufferSize = 512;
 	constexpr static float RecentMovementBufferDuration = 3.3f;
 	constexpr static float PutDownMovementBacktrackDuration = 1.5f;
 	constexpr static float MinPutDownHeight = 2.f;

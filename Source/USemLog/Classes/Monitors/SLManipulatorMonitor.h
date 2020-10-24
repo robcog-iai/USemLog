@@ -222,10 +222,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bLogVerboseGraspDebug : 1;
 
-	// Log grasp help related debug messages
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	uint8 bLogGraspHelpDebug : 1;
-
 	// Skip initialization if true
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;

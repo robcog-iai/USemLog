@@ -603,8 +603,8 @@ void ASLSymbolicLogger::InitContactMonitors()
 					}
 					else
 					{
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-							*FString(__func__), __LINE__, *Itr->GetName());
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s::%s's handler could not be init.."),
+							*FString(__func__), __LINE__, *Itr->GetOwner()->GetName(), *Itr->GetName());
 					}
 				}
 			}
@@ -635,8 +635,8 @@ void ASLSymbolicLogger::InitManipulatorContactAndGraspMonitors()
 					}
 					else
 					{
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-							*FString(__func__), __LINE__, *Itr->GetName());
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s::%s's handler could not be init.."),
+							*FString(__func__), __LINE__, *Itr->GetOwner()->GetName(), *Itr->GetName());
 					}
 				}
 
@@ -650,15 +650,15 @@ void ASLSymbolicLogger::InitManipulatorContactAndGraspMonitors()
 					}
 					else
 					{
-						UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-							*FString(__func__), __LINE__, *Itr->GetName());
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s::%s's handler could not be init.."),
+							*FString(__func__), __LINE__, *Itr->GetOwner()->GetName(), *Itr->GetName());
 					}
 				}
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Monitor %s could not be init.."),
-					*FString(__func__), __LINE__, *Itr->GetName());
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's monitor could not be init.."),
+					*FString(__func__), __LINE__, *Itr->GetOwner()->GetName(), *Itr->GetName());
 			}
 		}
 	}
@@ -682,8 +682,8 @@ void ASLSymbolicLogger::InitManipulatorGraspFixationMonitors()
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-					*FString(__func__), __LINE__, *Itr->GetName());
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s::%s's handler could not be init.."),
+					*FString(__func__), __LINE__, *Itr->GetOwner()->GetName(), *Itr->GetName());
 			}
 		}
 	}
@@ -709,14 +709,14 @@ void ASLSymbolicLogger::InitReachAndPreGraspMonitors()
 				}
 				else
 				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d Handler could not be init with parent %s.."),
-						*FString(__func__), __LINE__, *Itr->GetName());
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s::%s's handler could not be init.."),
+						*FString(__func__), __LINE__, *Itr->GetOwner()->GetName(), *Itr->GetName());
 				}
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Monitor %s could not be init.."),
-					*FString(__func__), __LINE__, *Itr->GetName());
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's monitor could not be init.."),
+					*FString(__func__), __LINE__, *Itr->GetOwner()->GetName(), *Itr->GetName());
 			}
 		}
 	}
@@ -768,14 +768,14 @@ void ASLSymbolicLogger::InitPickAndPlaceMonitors()
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d Handler could not be init with parent %s.."),
-						*FString(__func__), __LINE__, *Itr->GetName());
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's handler could not be init.."),
+						*FString(__func__), __LINE__, *Itr->GetOwner()->GetName(), *Itr->GetName());
 				}
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Monitor %s could not be init.."),
-					*FString(__func__), __LINE__, *Itr->GetName());
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's monitor could not be init.."),
+					*FString(__func__), __LINE__, *Itr->GetOwner()->GetName(), *Itr->GetName());
 			}
 		}
 	}

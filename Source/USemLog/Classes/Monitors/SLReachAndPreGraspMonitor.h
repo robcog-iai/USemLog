@@ -104,7 +104,7 @@ private:
 	// Set collision parameters such as object name and collision responses
 	void SetCollisionParameters();
 
-	// Subscribe for grasp event from sibling component
+	// Subscribe for hand contact and grasp events
 	bool SubscribeForManipulatorEvents();
 	
 	// Update callback, checks distance to hand, if it increases it resets the start time
@@ -133,16 +133,16 @@ private:
 		int32 OtherBodyIndex);
 	
 	// End reach and positioning events, pause timer
-	void OnSLGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, const FString& GraspType);
+	void OnManipulatorGraspBegin(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, const FString& GraspType);
 
 	// Reset looking for the events
-	void OnSLGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float EndTime);
+	void OnManipulatorGraspEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float EndTime);
 	
 	// Used for the reaching and hand positioning detection
-	void OnSLContactBegin(const FSLContactResult& ContactResult);
+	void OnManipulatorContactBegin(const FSLContactResult& ContactResult);
 
 	// Manipulator is not in contact with object anymore, check for possible concatenation, or reset the potential reach time
-	void OnSLContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float EndTime);
+	void OnManipulatorContactEnd(USLBaseIndividual* Self, USLBaseIndividual* Other, float EndTime);
 	
 	// Delayed call of sending the finished event to check for possible concatenation of jittering events of the same type
 	void DelayContactEndCallback();
@@ -155,9 +155,13 @@ public:
 	FSLReachAndPreGraspEventSignature OnReachAndPreGraspEvent;
 	
 private:
-	// Candidate check update rate
+	// Log debug messages
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bLogDebug : 1;
+
+	// Log verbose debug messages
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bLogVerboseDebug : 1;
 
 	// Skip initialization if true
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
