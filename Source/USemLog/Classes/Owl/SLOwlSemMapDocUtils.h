@@ -84,6 +84,8 @@ private:
 	static const FSLOwlAttributeValue AVFloat;
 
 	/* Constants */
-	constexpr static char AmevaNs[] = "ameva";
-	constexpr static char KRNs[] = "knowrob";
+	//constexpr static char AmevaNs[] = "ameva";
+	static constexpr auto AmevaNs = TEXT("ameva");
+	//constexpr static char KRNs[] = "knowrob";
+	static constexpr auto KRNs = TEXT("knowrob");
 };
