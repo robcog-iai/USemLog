@@ -41,8 +41,15 @@ ASLKnowrobManager::~ASLKnowrobManager()
 void ASLKnowrobManager::BeginPlay()
 {
 	Super::BeginPlay();	
+
+	FParse::Value(FCommandLine::Get(), TEXT("KRServerIP="), KRServerIP);
+	FParse::Value(FCommandLine::Get(), TEXT("KRServerPort="), KRServerPort);
+	FParse::Value(FCommandLine::Get(), TEXT("KRProtocol="), KRWSProtocol);
+	FParse::Value(FCommandLine::Get(), TEXT("MongoServerIP="), MongoServerIP);
+	FParse::Value(FCommandLine::Get(), TEXT("MongoServerPort="), MongoServerPort);
+
 	Init();
-	//Start();
+	Start();
 }
 
 #if WITH_EDITOR
@@ -452,6 +459,9 @@ void ASLKnowrobManager::Start()
 	KRWSClient->OnNewProcessedMsg.BindUObject(this, &ASLKnowrobManager::OnKRMsg);
 	KRWSClient->OnConnection.BindUObject(this, &ASLKnowrobManager::OnKRConnection);
 
+	// Initialize dispatcher for parsing protobuf message
+	KREventDispatcher = MakeShareable<FSLKREventDispatcher>(new FSLKREventDispatcher(MongoQueryManager, VizManager));
+
 	bIsStarted = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully started.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
@@ -495,6 +505,7 @@ void ASLKnowrobManager::OnKRMsg()
 	while (KRWSClient->MessageQueue.Dequeue(ProtoMsgBinary))
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Processing message.."), *FString(__FUNCTION__), __LINE__);
+		KREventDispatcher->ProcessProtobuf(ProtoMsgBinary);
 	}
 }
 
