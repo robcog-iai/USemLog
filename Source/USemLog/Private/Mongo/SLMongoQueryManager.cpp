@@ -2,7 +2,6 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Mongo/SLMongoQueryManager.h"
-#include "..\..\Classes\Mongo\SLMongoQueryManager.h"
 
 // Ctor
 ASLMongoQueryManager::ASLMongoQueryManager()

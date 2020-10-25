@@ -1365,6 +1365,7 @@ FTransform ASLMongoManager::GetPose(const bson_t* doc) const
 		Quat.W = bson_iter_double(&value);
 	}
 
+	Quat.Normalize();
 #if SL_WITH_ROS_CONVERSIONS
 	return FConversions::ROSToU(FTransform(Quat, Loc));
 #else
@@ -1421,6 +1422,7 @@ FTransform ASLMongoManager::GetPose(const bson_iter_t* iter) const
 		Quat.W = bson_iter_double(&sub_value);
 	}
 
+	Quat.Normalize();
 #if SL_WITH_ROS_CONVERSIONS
 	return FConversions::ROSToU(FTransform(Quat, Loc));
 #else
