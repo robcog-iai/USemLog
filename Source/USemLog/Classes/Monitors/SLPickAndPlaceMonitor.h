@@ -148,6 +148,38 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;
 
+	// Minimal horizontal movement to count a as  slide event
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Slide")
+	float MinSlideDistXY;
+
+	// Minimal slide duration count a as an event
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Slide")
+	float MinSlideDuration;
+
+	// Maximal horizontal movement to count as a pick-up movement
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|PickUp")
+	float MaxPickUpDistXY;
+
+	// Minimal vertical height to count as pick-up event
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|PickUp")
+	float MinPickUpHeight;
+
+	// Maximal vertical height to stop counting as pick-up event
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|PickUp")
+	float MaxPickUpHeight;
+
+	// Minimal height to count as put-down
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|PutDown")
+	float MinPutDownHeight;
+
+	// Maximal height to start counting as put-down
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|PutDown")
+	float MaxPutDownHeight;
+
+	// Maximal horzintal distance to start counting as put-down
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|PutDown")
+	float MaxPutDownDistXY;
+
 	// True if initialized
 	uint8 bIsInit : 1;
 
@@ -204,21 +236,21 @@ private:
 	//constexpr static float UpdateRate = 0.035f;
 
 	// Slide
-	constexpr static float MinSlideDistXY = 9.f;
-	constexpr static float MinSlideDuration = 0.9f;
+	//constexpr static float MinSlideDistXY = 9.f;
+	//constexpr static float MinSlideDuration = 0.9f;
 	
 	// PickUp
-	constexpr static float MaxPickUpDistXY = 9.f;
-	constexpr static float MinPickUpHeight = 3.f;
-	constexpr static float MaxPickUpHeight = 12.f;
+	//constexpr static float MaxPickUpDistXY = 9.f;
+	//constexpr static float MinPickUpHeight = 3.f;
+	//constexpr static float MaxPickUpHeight = 12.f;
 
 	// PutDown
 	constexpr static int32 RecentMovementBufferSize = 512;
 	constexpr static float RecentMovementBufferDuration = 3.3f;
 	constexpr static float PutDownMovementBacktrackDuration = 1.5f;
-	constexpr static float MinPutDownHeight = 2.f;
 
-	constexpr static float MaxPutDownHeight = 8.f;
-	constexpr static float MaxPutDownDistXY = 9.f;
+	//constexpr static float MinPutDownHeight = 2.f;
+	//constexpr static float MaxPutDownHeight = 8.f;
+	//constexpr static float MaxPutDownDistXY = 9.f;
 };
 

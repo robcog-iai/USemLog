@@ -31,6 +31,21 @@ USLPickAndPlaceMonitor::USLPickAndPlaceMonitor()
 	// Default values
 	UpdateRate = 0.029f;
 
+	// Slide detection
+	MinSlideDistXY = 9.f;
+	MinSlideDuration = 0.9f;
+	
+	// PickUp detection
+	MaxPickUpDistXY = 9.f;
+	MinPickUpHeight = 3.f;
+	MaxPickUpHeight = 12.f;
+
+	// PutDown
+	MinPutDownHeight = 2.f;
+	MaxPutDownHeight = 8.f;
+	MaxPutDownDistXY = 9.f;
+
+	// Event check defaults
 	CurrGraspedIndividual = nullptr;
 	EventCheckState = ESLPaPStateCheck::NONE;
 	UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
@@ -132,6 +147,12 @@ void USLPickAndPlaceMonitor::Finish(float EndTime, bool bForced)
 	{
 		// Finish any active event
 		FinishActiveEvent(EndTime);
+
+		// Clear references
+		CurrGraspedIndividual = nullptr;
+		GraspedObjectContactMonitor = nullptr;
+		EventCheckState = ESLPaPStateCheck::NONE;
+		UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
 
 		// Make sure tick is disabled
 		SetComponentTickEnabled(false);
@@ -272,16 +293,14 @@ void USLPickAndPlaceMonitor::OnManipulatorGraspEnd(USLBaseIndividual* Self, USLB
 			*CurrGraspedIndividual->GetParentActor()->GetName(), *Other->GetParentActor()->GetName());
 	}
 
-	// Terminate active event
+	// Grasp ended, terminate any current event
 	FinishActiveEvent(Time);
 
-	// Finish active event sets this
-	//// Clear grapsed individual
-	//CurrGraspedIndividual = nullptr;
-	//GraspedObjectContactMonitor = nullptr;
-	//// Clear check state update function
-	//EventCheckState = ESLPaPStateCheck::NONE;
-	//UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
+	// Clear references
+	CurrGraspedIndividual = nullptr;
+	GraspedObjectContactMonitor = nullptr;
+	EventCheckState = ESLPaPStateCheck::NONE;
+	UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
 
 	// Stop update
 	if (IsComponentTickEnabled())
@@ -324,36 +343,39 @@ void USLPickAndPlaceMonitor::FinishActiveEvent(float CurrTime)
 	{
 		//TODO
 	}
-
-	CurrGraspedIndividual = nullptr;
-	GraspedObjectContactMonitor = nullptr;
-	EventCheckState = ESLPaPStateCheck::NONE;
-	UpdateFunctionPtr = &USLPickAndPlaceMonitor::Update_NONE;
 }
 
 // Backtrace and check if a put-down event happened
 bool USLPickAndPlaceMonitor::HasPutDownEventHappened(const float CurrTime, const FVector& CurrObjLocation, uint32& OutPutDownEndIdx)
 {
+	if (bLogAllEventsDebug || bLogTransportPutDownDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s checking if put-down happened.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+	}
+
+	// Backtrack movement buffer and see when put-down might have started
 	OutPutDownEndIdx = RecentMovementBuffer.Num() - 1;
 	while(OutPutDownEndIdx > 0 && CurrTime - RecentMovementBuffer[OutPutDownEndIdx].Key < PutDownMovementBacktrackDuration)
 	{
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t\t\t [%f] [%f/%f] MinPutDownHeight"),
-		//	*FString(__func__), __LINE__,
-		//	GetWorld()->GetTimeSeconds(), 
-		//	RecentMovementBuffer[OutPutDownEndIdx].Key,
-		//	RecentMovementBuffer[OutPutDownEndIdx].Value.Z - CurrObjLocation.Z,
-		//	MinPutDownHeight);
-
 		if(RecentMovementBuffer[OutPutDownEndIdx].Value.Z - CurrObjLocation.Z > MinPutDownHeight)
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t\t\t\t PUT DOWN HAPPENED"),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+			if (bLogAllEventsDebug || bLogTransportPutDownDebug)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s put-down happened at index=%d.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName(), OutPutDownEndIdx);
+			}
 			return true;
 		}
 		OutPutDownEndIdx--;
 	}
-	//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f]  \t\t\t\t PUT DOWN HAS NOT HAPPENED"),
-	//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+
+	// No put-down has been found in the movement buffer
+	if (bLogAllEventsDebug || bLogTransportPutDownDebug)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s put-down did not happen.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetOwner()->GetName());
+	}
 	return false;
 }
 
@@ -561,9 +583,16 @@ void USLPickAndPlaceMonitor::Update_TransportOrPutDown()
 			*CurrGraspedIndividual->GetParentActor()->GetName());
 	}
 
+	// Check if the grasped object is supported by
 	if(GraspedObjectContactMonitor->IsSupportedBySomething())
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f]  \t\t **** START SupportedBy ****"), *FString(__func__), __LINE__, GetWorld()->GetTimeSeconds());
+		// No put-down has been found in the movement buffer
+		if (bLogAllEventsDebug || bLogTransportPutDownDebug)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasped object %s is started being supported by.."),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+				*GetOwner()->GetName(), *CurrGraspedIndividual->GetParentActor()->GetName());
+		}
 
 		// Check for the PutDown movement start time
 		uint32 PutDownEndIdx = 0;
@@ -578,13 +607,14 @@ void USLPickAndPlaceMonitor::Update_TransportOrPutDown()
 				{
 					PutDownStartTime = RecentMovementBuffer[PutDownEndIdx].Key;
 
-					//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
-					//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, PutDownStartTime);
+					if (bLogAllEventsDebug || bLogTransportPutDownDebug)
+					{
+						UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasped object %s **TRASNPORT** (%.4f-%.4f) with **PUT-DOWN** (%.4f-%.4f) .."),
+							*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+							*GetOwner()->GetName(), *CurrGraspedIndividual->GetParentActor()->GetName(),
+							PrevRelevantTime, PutDownStartTime, PutDownStartTime, CurrTime);
+					}
 					OnManipulatorTransportEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PrevRelevantTime, PutDownStartTime);
-
-
-					//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## PUT DOWN ##############  [%f <--> %f]"),
-					//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PutDownStartTime, CurrTime);
 					OnManipulatorPutDownEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PutDownStartTime, CurrTime);
 					break;
 				}
@@ -609,8 +639,13 @@ void USLPickAndPlaceMonitor::Update_TransportOrPutDown()
 		}
 		else
 		{
-			//UE_LOG(LogTemp, Error, TEXT("%s::%d [%f] \t ############## TRANSPORT ##############  [%f <--> %f]"),
-			//	*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), PrevRelevantTime, CurrTime);
+			if (bLogAllEventsDebug || bLogTransportPutDownDebug)
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4fs %s's grasped object %s **TRASNPORT** (%.4f-%.4f) without **PUT-DOWN**.."),
+					*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(),
+					*GetOwner()->GetName(), *CurrGraspedIndividual->GetParentActor()->GetName(),
+					PrevRelevantTime, CurrTime);
+			}
 			OnManipulatorTransportEvent.Broadcast(OwnerIndividualObject, CurrGraspedIndividual, PrevRelevantTime, CurrTime);
 		}
 
