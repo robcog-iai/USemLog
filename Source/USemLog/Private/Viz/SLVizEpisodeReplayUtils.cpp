@@ -51,7 +51,7 @@ void FSLVizEpisodeUtils::AddPoseablMeshComponentsToSkeletalActors(UWorld* World)
 	{
 		UPoseableMeshComponent* PMC = NewObject<UPoseableMeshComponent>(*SkelActItr);
 		PMC->SetSkeletalMesh((*SkelActItr)->GetSkeletalMeshComponent()->SkeletalMesh);
-		PMC->AttachToComponent((*SkelActItr)->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		PMC->AttachToComponent((*SkelActItr)->GetRootComponent(), FAttachmentTransformRules::SnapToTargetIncludingScale);
 		PMC->RegisterComponent();
 		PMC->bHasMotionBlurVelocityMeshes = false;
 		PMC->bPerBoneMotionBlur = false;
@@ -205,6 +205,11 @@ int32 FSLVizEpisodeUtils::BinarySearchLessEqual(const TArray<float>& Array, floa
 // Check if actor requires any special attention when switching to visual only world (return true if the components should be left alone)
 bool FSLVizEpisodeUtils::IsSpecialCaseActor(AActor* Actor)
 {
+	/* quick hack */
+	if (Actor->GetName().Contains("Landscape"))
+	{
+		return true;
+	}
 	//if (Actor->IsA(ALandscape::StaticClass()))
 	//{
 	//	return true;

@@ -8,6 +8,7 @@
 #include "Knowrob/SLKRWSClient.h"
 #include "Knowrob/SLKREventDispatcher.h"
 #include "Viz/SLVizStructs.h"
+#include "VizQ/SLVizQBase.h"
 #include "SLKnowrobManager.generated.h"
 
 // Forward declarations
@@ -186,6 +187,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
 	FString KRWSProtocol = TEXT("prolog_websocket");
 
+	// Auto connect to mongodb at init
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
+	bool bAutoConnectToKnowrob = true;
+
 	// Mongo server ip addres
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
 	FString MongoServerIP = TEXT("127.0.0.1");
@@ -193,6 +198,10 @@ private:
 	// Knowrob server port
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
 	int32 MongoServerPort = 27017;
+
+	// Auto connect to mongodb at init
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
+	bool bAutoConnectToMongo = true;
 
 	// Websocket connection to knowrob
 	TSharedPtr<FSLKRWSClient> KRWSClient;
@@ -207,9 +216,18 @@ private:
 
 	// Manages the visualization
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	ASLVizManager* VizManager;	
+	ASLVizManager* VizManager;
+
+	// Auto init world to viz
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
+	bool bAutoConvertWorld = true;
 
 
+	/****************************************************************/
+	/*							VizQ								*/
+	/****************************************************************/
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
+	TArray<USLVizQBase*> Queries;
 
 	/****************************************************************/
 	/*					Editor button hacks							*/

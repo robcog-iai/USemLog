@@ -69,7 +69,8 @@ private:
 
 	// Misc
 	SVerticalBox::FSlot& CreateUtilsTxtSlot();
-	SVerticalBox::FSlot& CreateAddSemMonitorsSlot();	
+	SVerticalBox::FSlot& CreateConvertToVizMapSlot();
+	SVerticalBox::FSlot& CreateAddSemMonitorsSlot();
 	SVerticalBox::FSlot& CreateEnableOverlapsSlot();
 	SVerticalBox::FSlot& CreateShowSemData();
 	SVerticalBox::FSlot& CreateEnableInstacedMeshMaterialsSlot();
@@ -136,7 +137,8 @@ private:
 	FReply OnWriteOntology();
 
 
-	FReply OnAddSemMon();	
+	FReply OnConvertToViz();
+	FReply OnAddSemMon();
 	FReply OnEnableOverlaps();
 	FReply OnShowSemData();
 	FReply OnEnableMaterialsForInstancedStaticMesh();

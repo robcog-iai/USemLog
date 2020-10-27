@@ -20,6 +20,9 @@
 #include "Individuals/SLIndividualInfoManager.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/SLIndividualInfoUtils.h"
+
+#include "Viz/SLVizEpisodeUtils.h"
+
 #include "Owl/SLOwlSemMapDocUtils.h"
 #include "Owl/SLOwlOntologyDocUtils.h"
 
@@ -94,6 +97,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			// Misc
 			+ CreateSeparatorHackSlot()
 			+ CreateUtilsTxtSlot()
+			+ CreateConvertToVizMapSlot()
 			+ CreateAddSemMonitorsSlot()
 			+ CreateEnableOverlapsSlot()
 			+ CreateShowSemData()
@@ -893,6 +897,21 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateUtilsTxtSlot()
 		[
 			SNew(STextBlock)
 			.Text(LOCTEXT("UtilsTxt", "Utils:"))
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateConvertToVizMapSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SButton)
+			.Text(LOCTEXT("ConvertToViz", "Convert Map to Viz"))
+			.IsEnabled(true)
+			.ToolTipText(LOCTEXT("ConvertToVizTip", "Removes physics creates poseable mesh components.."))
+			.OnClicked(this, &FSLEdModeToolkit::OnConvertToViz)
 		];
 }
 
@@ -1724,8 +1743,6 @@ FReply FSLEdModeToolkit::OnConnectIndividualManagers()
 	return FReply::Handled();
 }
 
-
-
 // Semantic map
 FReply FSLEdModeToolkit::OnWriteSemMap()
 {
@@ -1741,8 +1758,29 @@ FReply FSLEdModeToolkit::OnWriteOntology()
 	return FReply::Handled();
 }
 
-
 ////
+// Convert map to vizual only
+FReply FSLEdModeToolkit::OnConvertToViz()
+{
+	FScopedTransaction Transaction(LOCTEXT("ConvertToVizST", "Converting map to VIZ.."));
+	
+	bool bMarkDirty = true;
+
+	// Set actors as visuals only (disable physics, set as movable, clear any attachments)
+	FSLVizEpisodeUtils::SetActorsAsVisualsOnly(GEditor->GetEditorWorldContext().World());
+
+	// Add a poseable mesh component clone to the skeletal actors
+	FSLVizEpisodeUtils::AddPoseablMeshComponentsToSkeletalActors(GEditor->GetEditorWorldContext().World());
+
+	if (bMarkDirty)
+	{
+		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
+
+	return FReply::Handled();
+}
+
+
 FReply FSLEdModeToolkit::OnAddSemMon()
 {
 	FScopedTransaction Transaction(LOCTEXT("AddSemMonitorsST", "Add semantic monitor components"));

@@ -404,19 +404,9 @@ void ASLKnowrobManager::Init()
 	{
 		KRWSClient = MakeShareable<FSLKRWSClient>(new FSLKRWSClient());
 	}
-	KRWSClient->Connect(KRServerIP, KRServerPort, KRWSProtocol);
-
-	if (!SetVizManager())
+	if (bAutoConnectToKnowrob)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the viz manager.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
-		return;
-	}
-	if (!VizManager->Init())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the viz manager.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		KRWSClient->Connect(KRServerIP, KRServerPort, KRWSProtocol);
 	}
 
 	// Get and connect the mongo query manager
@@ -426,10 +416,30 @@ void ASLKnowrobManager::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	if (!MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
+	if (bAutoConnectToMongo)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not connect to mongo db.. (%s::%d)"),
-			*FString(__FUNCTION__), __LINE__, *GetName(), *MongoServerIP, MongoServerPort);
+		if (!MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not connect to mongo db.. (%s::%d)"),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *MongoServerIP, MongoServerPort);
+			return;
+		}
+	}
+
+	if (!SetVizManager())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the viz manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	if (!VizManager->Init())
+	{
+		if (bAutoConvertWorld)
+		{
+			VizManager->SetupWorldForEpisodeReplay();
+		}
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the viz manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
@@ -550,7 +560,6 @@ bool ASLKnowrobManager::SetMongoQueryManager()
 #endif // WITH_EDITOR
 	return true;
 }
-
 
 // Get the viz manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetVizManager()
