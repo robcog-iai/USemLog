@@ -203,7 +203,7 @@ void FSLGraspHelper::EndGraspHelp()
 	// Grasp should be active when this is called
 	if (!bIsGraspHelpActive)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s grasp is not active (%s), this should not happen.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d::%.4f %s's grasp is not active, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, World->GetTimeSeconds(), *GetOwnerActorName());
 
 		// Even though this should not happen make sure the grasp is clear

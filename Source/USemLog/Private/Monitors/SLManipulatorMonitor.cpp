@@ -246,7 +246,7 @@ void USLManipulatorMonitor::Finish(bool bForced)
 		{
 			BoneMonitor->Finish();
 		}
-		
+
 		// Publish dangling recently finished events
 		for (const auto& EvItr : RecentlyEndedGraspEvents)
 		{
@@ -278,8 +278,16 @@ void USLManipulatorMonitor::Finish(bool bForced)
 		bIsInit = false;
 		bIsFinished = true;
 
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at %.4fs.."),
-			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
+		if (GetWorld())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at %.4fs.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at unknown (world was not valid).."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName());
+		}
 	}
 }
 
@@ -461,10 +469,10 @@ void USLManipulatorMonitor::CreateBoneMonitors()
 // Subscribe to grasp type changes
 bool USLManipulatorMonitor::SubscribeToGraspTypeChanges()
 {
-	if (UMCGraspAnimController* Sibling = CastChecked<UMCGraspAnimController>(
-		GetOwner()->GetComponentByClass(UMCGraspAnimController::StaticClass())))
+	if (UActorComponent* AC = GetOwner()->GetComponentByClass(UMCGraspAnimController::StaticClass()))
 	{
-		Sibling->OnGraspType.AddUObject(this, &USLManipulatorMonitor::OnGraspType);
+		UMCGraspAnimController* GraspAnimController = CastChecked<UMCGraspAnimController>(AC);
+		GraspAnimController->OnGraspType.AddUObject(this, &USLManipulatorMonitor::OnGraspType);
 		return true;
 	}
 	return false;

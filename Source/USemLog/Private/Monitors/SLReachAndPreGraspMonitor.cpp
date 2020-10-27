@@ -145,8 +145,17 @@ void USLReachAndPreGraspMonitor::Finish(bool bForced)
 		bIsInit = false;
 		bIsFinished = true;
 
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s component at %.4fs.."),
+
+		if (GetWorld())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s component at %.4fs.."),
 			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s component at unknown (world was not valid anymore).."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName());
+		}
 	}
 }
 

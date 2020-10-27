@@ -662,7 +662,11 @@ USLSkeletalDataAsset* FSLIndividualUtils::FindSkeletalDataAsset(AActor* Owner)
 			// Search for the results
 			for (const auto& AD : AssetData)
 			{
-				if (AD.AssetName.ToString().Contains(SkelAssetName))
+				//if (AD.AssetName.ToString().Contains(SkelAssetName))
+				//{
+				//	return Cast<USLSkeletalDataAsset>(AD.GetAsset());
+				//}
+				if (AD.AssetName.ToString().EndsWith(SkelAssetName))
 				{
 					return Cast<USLSkeletalDataAsset>(AD.GetAsset());
 				}

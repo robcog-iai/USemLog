@@ -70,7 +70,7 @@ public class USemLog : ModuleRules
 				//"Landscape", "AIModule",	// whitelisted actors when setting the world to visual only
 				//"UConversions",				// SL_WITH_ROS_CONVERSIONS
 				"UMCGrasp",					// SL_WITH_MC_GRASP
-				//"SRanipal",					// SL_WITH_EYE_TRACKING
+				"SRanipal",					// SL_WITH_EYE_TRACKING
 				//"SlicingLogic",		    // SL_WITH_SLICING				
 				//"MongoCxx",			    // SL_WITH_LIBMONGO_CXX				
 				//"Boost",				    // SL_WITH_BOOST			

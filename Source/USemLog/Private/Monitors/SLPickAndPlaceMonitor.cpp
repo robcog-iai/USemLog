@@ -162,8 +162,16 @@ void USLPickAndPlaceMonitor::Finish(float EndTime, bool bForced)
 		bIsInit = false;
 		bIsFinished = true;
 
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at %.4fs.."),
-			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
+		if (GetWorld())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at %.4fs.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at unknown (world not valid).."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName());
+		}
 	}
 }
 

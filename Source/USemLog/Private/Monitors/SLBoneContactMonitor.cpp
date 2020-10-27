@@ -227,11 +227,14 @@ void USLBoneContactMonitor::PostEditChangeProperty(struct FPropertyChangedEvent&
 	{
 		if (!bIsNotSkeletal && AttachToBone())
 		{
-			if (Rename(*BoneName.ToString()))
+			if (!GetName().Equals(BoneName.ToString()))
 			{
-				// TODO find the 'refresh' to see the renaming
-				//GetOwner()->MarkPackageDirty();
-				//MarkPackageDirty();
+				if (Rename(*BoneName.ToString()))
+				{
+					// TODO find the 'refresh' to see the renaming
+					//GetOwner()->MarkPackageDirty();
+					//MarkPackageDirty();
+				}
 			}
 			SetColor(FColor::Green);
 		}

@@ -199,6 +199,7 @@ bool FSLEdUtils::EnableOverlaps(UWorld* World)
 		{
 			if (!SMC->GetGenerateOverlapEvents())
 			{
+				ActItr->Modify();
 				SMC->SetGenerateOverlapEvents(true);
 				bMarkDirty = true;
 			}
@@ -218,6 +219,7 @@ bool FSLEdUtils::EnableOverlaps(const TArray<AActor*>& Actors)
 			{
 				if (!SMC->GetGenerateOverlapEvents())
 				{
+					Act->Modify();
 					SMC->SetGenerateOverlapEvents(true);
 					bMarkDirty = true;
 				}

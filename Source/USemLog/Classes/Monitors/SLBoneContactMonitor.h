@@ -260,6 +260,6 @@ private:
 
 	/* Constants */
 	constexpr static bool bVisualDebug = true;
-	constexpr static float ConcatenateIfSmaller = 0.21f;
+	constexpr static float ConcatenateIfSmaller = 0.26f;
 	constexpr static float ConcatenateIfSmallerDelay = 0.05f;
 };
