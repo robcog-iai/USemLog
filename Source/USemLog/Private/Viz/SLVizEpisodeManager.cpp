@@ -49,7 +49,7 @@ void ASLVizEpisodeManager::Tick(float DeltaTime)
 }
 
 // Set the whole world as a visual, disable physics, collisions, attachments, unnecesary components
-void ASLVizEpisodeManager::SetWorldAsVisualOnly()
+void ASLVizEpisodeManager::ConvertWorld()
 {
 	if (bWorldSetAsVisualOnly)
 	{
@@ -146,6 +146,42 @@ bool ASLVizEpisodeManager::GotoFrame(int32 FrameIndex)
 bool ASLVizEpisodeManager::GotoFrame(float Timestamp)
 {
 	return GotoFrame(FSLVizEpisodeUtils::BinarySearchLessEqual(EpisodeData.Timestamps, Timestamp));
+}
+
+// Play episode with the given parameters
+bool ASLVizEpisodeManager::Play(const FSLVizEpisodePlayParams& PlayParams)
+{
+	if (!bWorldSetAsVisualOnly)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World is not set as visual only.."), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
+
+	if (!bEpisodeLoaded)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d No episode is loaded.."), *FString(__FUNCTION__), __LINE__);
+		return false;
+	}
+
+	// Stop any previous replays
+	StopReplay();
+
+	// Set first frame
+	ReplayFirstFrameIndex = PlayParams.StartTime < 0 ? 0 
+		: FSLVizEpisodeUtils::BinarySearchLessEqual(EpisodeData.Timestamps, PlayParams.StartTime);
+
+	// Set last frame
+	ReplayLastFrameIndex = PlayParams.EndTime < 0 ? EpisodeData.Timestamps.Num()
+		: PlayParams.EndTime < PlayParams.StartTime ? EpisodeData.Timestamps.Num() 
+			: FSLVizEpisodeUtils::BinarySearchLessEqual(EpisodeData.Timestamps, PlayParams.EndTime);
+
+	// Goto first frame
+	GotoFrame(ReplayFirstFrameIndex);
+
+	// Start playing the frames
+	StartReplay();
+
+	return false;
 }
 
 // Play whole episode
@@ -438,31 +474,31 @@ bool ASLVizEpisodeManager::ApplyNextFrameChanges()
 	if (ActiveFrameIndex < ReplayLastFrameIndex)
 	{
 		ActiveFrameIndex++;
-		if (EpisodeData.CompactFrames.IsValidIndex(ActiveFrameIndex))
+		//if (EpisodeData.CompactFrames.IsValidIndex(ActiveFrameIndex))
+		if (EpisodeData.FullFrames.IsValidIndex(ActiveFrameIndex))
 		{
-			ApplyPoses(EpisodeData.CompactFrames[ActiveFrameIndex]);
+			//ApplyPoses(EpisodeData.CompactFrames[ActiveFrameIndex]);
+			ApplyPoses(EpisodeData.FullFrames[ActiveFrameIndex]);
 			return true;
 		}
 		else
 		{
+			//UE_LOG(LogTemp, Warning, TEXT("%s::%d ActiveFrameIndex=%d (Num=%d) is not valid, this should not happen.."),
+			//	*FString(__FUNCTION__), __LINE__, ActiveFrameIndex, EpisodeData.CompactFrames.Num());
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d ActiveFrameIndex=%d (Num=%d) is not valid, this should not happen.."),
-				*FString(__FUNCTION__), __LINE__, ActiveFrameIndex, EpisodeData.CompactFrames.Num());
+				*FString(__FUNCTION__), __LINE__, ActiveFrameIndex, EpisodeData.FullFrames.Num());
 			ActiveFrameIndex--;
 		}
 	}
 	return false;	
 }
 
-// Apply the compact episode data given frame changes
-void ASLVizEpisodeManager::ApplyFrameChanges(int32 FrameIndex)
+// Start replay
+void ASLVizEpisodeManager::StartReplay()
 {
-	if (!EpisodeData.CompactFrames.IsValidIndex(FrameIndex))
-	{
-		
-		return;
-	}
-	ApplyPoses(EpisodeData.CompactFrames[FrameIndex]);
-}
+	// Enable tick with the given update rate
+	SetActorTickEnabled(true);
+	bReplayRunning = true;}
 
 // Apply frame poses
 void ASLVizEpisodeManager::ApplyPoses(const FSLVizEpisodeFrameData& Frame)
@@ -472,12 +508,16 @@ void ASLVizEpisodeManager::ApplyPoses(const FSLVizEpisodeFrameData& Frame)
 		ActorPosePair.Key->SetActorTransform(ActorPosePair.Value);
 	}
 
-	for (const auto& PMCBonePosesPair : Frame.BonePoses)
+	for (int32 Idx = 0; Idx < 5; Idx++)
 	{
-		UPoseableMeshComponent* PMC = PMCBonePosesPair.Key;
-		for (const auto& BoneIndexPosePair : PMCBonePosesPair.Value)
+		for (const auto& PMCBonePosesPair : Frame.BonePoses)
 		{
-			PMC->SetBoneTransformByName(PMC->GetBoneName(BoneIndexPosePair.Key), BoneIndexPosePair.Value, EBoneSpaces::WorldSpace);
+			UPoseableMeshComponent* PMC = PMCBonePosesPair.Key;
+			for (const auto& BoneIndexPosePair : PMCBonePosesPair.Value)
+			{
+				const FName BoneName = PMC->GetBoneName(BoneIndexPosePair.Key);
+				PMC->SetBoneTransformByName(BoneName, BoneIndexPosePair.Value, EBoneSpaces::WorldSpace);
+			}
 		}
 	}
 }

@@ -4,6 +4,7 @@
 #include "Knowrob/SLKRWSClient.h"
 #include "WebSocketsModule.h"
 
+
 // Ctor
 FSLKRWSClient::FSLKRWSClient()
 {
@@ -12,24 +13,30 @@ FSLKRWSClient::FSLKRWSClient()
 // Dtor
 FSLKRWSClient::~FSLKRWSClient()
 {
-	Disconnect();
 }
 
-// Initiate a client connection to the server and bind event handlers
-void FSLKRWSClient::Connect(const FString& InHost, int32 InPort, const FString& InProtocol)
+// Set websocket conection parameters
+void FSLKRWSClient::Init(const FString& InHost, int32 InPort, const FString& InProtocol)
 {
-	TArray<FString> Protocols{ InProtocol };
-	const FString Url = TEXT("ws://") + InHost + TEXT(":") + FString::FromInt(InPort);
-	
+	// TODO, why is this needed
+	// Make sure the webscokets module is loaded
 	if (!FModuleManager::Get().IsModuleLoaded("WebSockets"))
 	{
 		FModuleManager::Get().LoadModule("WebSockets");
 	}
 
+	// Create the url and protocol entries
+	TArray<FString> Protocols{ InProtocol };
+	const FString Url = TEXT("ws://") + InHost + TEXT(":") + FString::FromInt(InPort);
+
 	// Clear any previous connection
 	if (WebSocket.IsValid())
 	{
-		Disconnect();
+		if (WebSocket->IsConnected())
+		{
+			Disconnect();
+		}
+		Clear();
 		WebSocket = FWebSocketsModule::Get().CreateWebSocket(Url, Protocols);
 	}
 	else
@@ -42,9 +49,26 @@ void FSLKRWSClient::Connect(const FString& InHost, int32 InPort, const FString& 
 	WebSocket->OnConnectionError().AddRaw(this, &FSLKRWSClient::HandleWebSocketConnectionError);
 	WebSocket->OnClosed().AddRaw(this, &FSLKRWSClient::HandleWebSocketConnectionClosed);
 	WebSocket->OnRawMessage().AddRaw(this, &FSLKRWSClient::HandleWebSocketData);
-	
-	// Initialize connection
-	WebSocket->Connect();
+}
+
+// Start connection
+void FSLKRWSClient::Connect()
+{
+	if (WebSocket.IsValid())
+	{
+		if (!WebSocket->IsConnected())
+		{
+			WebSocket->Connect();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d WebSocket is already connected.."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d WebSocket is not valid, call init first.."), *FString(__FUNCTION__), __LINE__);
+	}
 }
 
 // Disconnect from the server.
@@ -54,7 +78,21 @@ void FSLKRWSClient::Disconnect()
 	{
 		// Close connection
 		WebSocket->Close();
-		
+	}
+
+	// Clear any remaining messages
+	ReceiveBuffer.Empty();
+	MessageQueue.Empty();
+}
+
+// Clear the webscosket 
+void FSLKRWSClient::Clear()
+{
+	if (WebSocket.IsValid())
+	{
+		// Close connection
+		WebSocket->Close();
+
 		// Unbind delgates
 		WebSocket->OnConnected().RemoveAll(this);
 		WebSocket->OnConnectionError().RemoveAll(this);
@@ -124,8 +162,10 @@ void FSLKRWSClient::HandleWebSocketFullData(const uint8* Data, SIZE_T Length)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f KR websocket client new message enqueued.."),
 		*FString(__FUNCTION__), __LINE__, FPlatformTime::Seconds());
+
 	MessageQueue.Enqueue(std::string(Data, Data + Length));
 
 	// Trigger delegate
 	OnNewProcessedMsg.ExecuteIfBound();
 }
+

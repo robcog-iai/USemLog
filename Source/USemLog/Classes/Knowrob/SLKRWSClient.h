@@ -26,14 +26,20 @@ public:
 	// Dtor
 	~FSLKRWSClient();
 
-	// Initiate a client connection to the server and bind event handlers
-	void Connect(const FString& InHost, int32 InPort, const FString& InProtocol);
+	// Set websocket connection parameters
+	void Init(const FString& InHost, int32 InPort, const FString& InProtocol);
 
-	// Disconnect from the server.
-	void Disconnect();
+	// Initiate a client connection to the server and bind event handlers
+	void Connect();
 	
 	// Check if the client is connected to the server
 	bool IsConnected() const { return WebSocket.IsValid() ? WebSocket->IsConnected() : false; }
+
+	// Disconnect from the server.
+	void Disconnect();
+
+	// Clear the webscosket 
+	void Clear();
 
 protected:
 	/* IWebSocket delegate handlers */
@@ -51,6 +57,7 @@ protected:
 
 	// Called when the full data has been received
 	void HandleWebSocketFullData(const uint8* Data, SIZE_T Length);
+
 
 public:
 	// Triggered when a new processed message is added to the queue

@@ -6,12 +6,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
 #include "Viz/SLVizStructs.h"
+#include "Viz/SLVizEpisodeManager.h"
 #include "SLVizManager.generated.h"
 
 // Forward declarations
 class ASLVizHighlightManager;
 class ASLVizMarkerManager;
-class ASLVizEpisodeManager;
+//class ASLVizEpisodeManager;
 class ASLIndividualManager;
 class ASLVizCameraDirector;
 class USLVizBaseMarker;
@@ -148,19 +149,27 @@ public:
 	// Remove all markers
 	void RemoveAllMarkers();
 
-
 	/* Episode */
 	// Setup the world for episode replay (remove physics, pause simulation, change skeletal meshes to poseable meshes)
-	bool SetupWorldForEpisodeReplay();
+	bool ConvertWorldToVisualizationMode();
 
 	// Check if world is set for episode replay
-	bool IsWorldSetForEpisodeReplay() const;
+	bool IsWorldConvertedToVisualizationMode() const;
 
 	// Check if the episode is already cached
-	bool IsEpisodeCached(const FString& Id) const { return false; };
+	void CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData);
 
 	// Check if the episode is already cached
-	void LoadCachedEpisode(const FString& Id) const { };
+	bool IsEpisodeCached(const FString& Id) const { return CachedEpisodeData.Contains(Id); };
+
+	// Load cached episode data
+	bool LoadCachedEpisodeData(const FString& Id);
+
+	// Replay cached episode 
+	bool ReplayCachedEpisode(const FString& Id, const FSLVizEpisodePlayParams& Params = FSLVizEpisodePlayParams());
+
+	// Goto cached episode frame
+	bool GotoCachedEpisodeFrame(const FString& Id, float Ts);
 
 	// Change the data into an episode format and load it to the episode replay manager
 	void LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTransform>>>& InCompactEpisodeData);
@@ -172,18 +181,16 @@ public:
 	bool GotoEpisodeFrame(float Ts);
 
 	// Replay the whole loaded episode
-	bool PlayEpisode(FSLVizEpisodeReplayPlayParams PlayParams = FSLVizEpisodeReplayPlayParams());
+	bool PlayEpisode(FSLVizEpisodePlayParams PlayParams = FSLVizEpisodePlayParams());
 
 	// Replay the whole loaded episode
-	bool PlayEpisodeTimeline(float StartTime, float EndTime, FSLVizEpisodeReplayPlayParams PlayParams = FSLVizEpisodeReplayPlayParams());
+	bool PlayEpisodeTimeline(float StartTime, float EndTime, FSLVizEpisodePlayParams PlayParams = FSLVizEpisodePlayParams());
 
 	// Pause/unpause the replay (if active)
 	void PauseReplay(bool bPause);
 
 	// Stop replay (if active, and goto frame 0)
 	void StopReplay();
-
-	// TODO pre cache multiple episodes
 
 
 	/* View */
@@ -254,6 +261,5 @@ private:
 
 	/* Cached data */
 	// Episode id to viz episode data
-	//TMap<FString, struct FSLVizEpisodeData> CachedEpisodeData;
-
+	TMap<FString, FSLVizEpisodeData> CachedEpisodeData;
 };

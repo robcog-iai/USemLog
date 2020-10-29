@@ -5,7 +5,6 @@
 
 #if SL_WITH_ROS_CONVERSIONS
 #include "Conversions.h"
-#include "..\..\Classes\Mongo\SLMongoQueryDBHandler.h"
 #endif // SL_WITH_ROS_CONVERSIONS
 
 // Ctor
@@ -770,6 +769,7 @@ TArray<TPair<float, TMap<FString, FTransform>>> FSLMongoQueryDBHandler::GetEpiso
 // Get the whole episode data in an async thread
 TArray<TPair<float, TMap<FString, FTransform>>> FSLMongoQueryDBHandler::GetEpisodeDataAsync() const
 {
+	// TODO
 	return TArray<TPair<float, TMap<FString, FTransform>>>();
 }
 

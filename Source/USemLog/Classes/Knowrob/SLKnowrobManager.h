@@ -99,7 +99,6 @@ struct FSLVizMarkerHackStruct
 };
 
 
-
 /**
 *
 **/
@@ -124,10 +123,13 @@ protected:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
-public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// Called when actor removed from game or game ended
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+public:	
 	// Set up any required references and connect to server
 	void Init();
 
@@ -147,12 +149,18 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 protected:
+	// Setup user input bindings
+	void SetupInputBindings();
+
 	/* Knowrob websocket client delegate triggers */
-	// Called when a new message is received from knowrob
-	void OnKRMsg();
+	// KR retry connection timer callback
+	void KRConnectRetryCallback();
 
 	// Called when connected or disconnecetd with knowrob
 	void OnKRConnection(bool bConnectionValue);
+
+	// Called when a new message is received from knowrob
+	void OnKRMsg();
 
 private:
 	// Get the mongo query manager from the world (or spawn a new one)
@@ -161,50 +169,76 @@ private:
 	// Get the viz manager from the world (or spawn a new one)
 	bool SetVizManager();
 
+
+	/****************************************************************/
+	/*							VizQ								*/
+	/****************************************************************/
+	// VizQ trigger
+	void UserInputVizQActionTrigger();
+
+	// Execute next query, return false if not more queries are available
+	bool ExecuteNextQuery();
+
+	// Execute the selected query (return false if index is not valid)
+	bool ExecuteQuery(int32 Index);
+
 protected:
 	// True when all references are set and it is connected to the server
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsInit : 1;
 
 	// True when active
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	uint8 bIsStarted : 1;
 
-	// True when done logging
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	// True when done 
 	uint8 bIsFinished : 1;
 
 private:
 	// Knowrob server ip addres
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString KRServerIP = TEXT("127.0.0.1");
 
 	// Knowrob server port
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	int32 KRServerPort = 8080;
 	
 	// Websocket protocal
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
-	FString KRWSProtocol = TEXT("prolog_websocket");
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString KRWSProtocol = TEXT("kr_websocket");
 
-	// Auto connect to mongodb at init
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Knowrob")
-	bool bAutoConnectToKnowrob = true;
+	// Retry connecting to knowrob
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bKRConnectRetry = false;
+
+	// Interval at which to re-try to connect to the server
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bKRConnectRetry"))
+	float KRConnectRetryInterval = 0.5f;
+
+	// Max number of retrials (INDEX_NONE / -1 = infinite)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bKRConnectRetry"))
+	int32 KRConnectRetryMaxNum = INDEX_NONE;
+
 
 	// Mongo server ip addres
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString MongoServerIP = TEXT("127.0.0.1");
 
 	// Knowrob server port
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	int32 MongoServerPort = 27017;
 
+
 	// Auto connect to mongodb at init
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Mongo")
-	bool bAutoConnectToMongo = true;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bLoadValuesFromCommandLine = false;
 
 	// Websocket connection to knowrob
 	TSharedPtr<FSLKRWSClient> KRWSClient;
+
+	// KR reconnect timer handle
+	FTimerHandle KRConnectRetryTimerHandle;
+
+	// Number of reconnect retrials
+	int32 KRConnectRetryNum;
 
 	// Handle the protobuf message
 	TSharedPtr<FSLKREventDispatcher> KREventDispatcher;
@@ -218,42 +252,33 @@ private:
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizManager* VizManager;
 
-	// Auto init world to viz
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
-	bool bAutoConvertWorld = true;
-
 
 	/****************************************************************/
 	/*							VizQ								*/
 	/****************************************************************/
+	// Store predefined queries to execute
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
 	TArray<USLVizQBase*> Queries;
 
-	/****************************************************************/
-	/*					Editor button hacks							*/
-	/****************************************************************/
-	// Triggers a call to init
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Setup Buttons")
-	bool bInitButtonHack = false;
+	// Auto init world to viz
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
+	bool bAutoConvertWorld = true;
 
-	// Triggers a call to init
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Setup Buttons")
-	bool bStartButtonHack = false;
+	// User input trigger action name (Shift+V)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
+	FName UserInputActionName = "VizQTrigger";
 
-	// Triggers a call to init or reset
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Setup Buttons")
-	bool bFinishButtonHack = false;
+	// Execute next query
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
+	bool bTriggerButtonHack;
+
+	// Current active query
+	int32 QueryIndex = INDEX_NONE;
 
 
 	/****************************************************************/
 	/*						Episode data							*/
 	/****************************************************************/
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
-	bool bMongoConnectButtonHack = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
-	bool bMongoDisconnectButtonHack = false;
-
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
 	FString TaskIdValueHack = TEXT("DefaultTaskId");
 

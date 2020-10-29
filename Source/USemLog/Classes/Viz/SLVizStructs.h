@@ -121,27 +121,35 @@ struct FSLVizIndividualHighlightData
  * A set of parameters to describe how to replay the episode data
  */
 USTRUCT()
-struct FSLVizEpisodeReplayPlayParams
+struct FSLVizEpisodePlayParams
 {
 	GENERATED_BODY()
 
+	// For negative value it will start from first frame
+	UPROPERTY(EditAnywhere, Category = "Time")
+	float StartTime = -1.f;
+
+	// For negative value it will run until the last frame
+	UPROPERTY(EditAnywhere, Category = "Time")
+	float EndTime = -1.f;
+
 	// Repeat replay after finishing
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(EditAnywhere, Category = "Properties")
 	bool bLoop = false;
 
 	// How quickly to move to the next frame (if negative, it will calculate an average update rate from the episode data)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(EditAnywhere, Category = "Properties")
 	float UpdateRate = -1.f;
 
 	// How many steps to update every frame
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(EditAnywhere, Category = "Properties")
 	int32 StepSize = 1;
 
 	// Default ctor
-	FSLVizEpisodeReplayPlayParams() {};
+	FSLVizEpisodePlayParams() {};
 
 	// Init ctor
-	FSLVizEpisodeReplayPlayParams(bool bLoopValue, float InUpdateRate, int32 InStepSize, const FString& InTargetViewId) :
+	FSLVizEpisodePlayParams(bool bLoopValue, float InUpdateRate, int32 InStepSize, const FString& InTargetViewId) :
 	bLoop(bLoopValue),
 	UpdateRate(InUpdateRate),
 	StepSize(InStepSize) {}

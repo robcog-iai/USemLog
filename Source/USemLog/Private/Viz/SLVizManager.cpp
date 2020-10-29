@@ -5,7 +5,7 @@
 
 #include "Viz/SLVizMarkerManager.h"
 #include "Viz/SLVizHighlightManager.h"
-#include "Viz/SLVizEpisodeManager.h"
+//#include "Viz/SLVizEpisodeManager.h"
 #include "Viz/SLVizEpisodeUtils.h"
 #include "Viz/SLVizCameraDirector.h"
 #include "Individuals/SLIndividualManager.h"
@@ -124,6 +124,7 @@ void ASLVizManager::Reset()
 	MarkerManager = nullptr;
 	EpisodeManager = nullptr;
 	bIsInit = false;
+	CachedEpisodeData.Empty();
 }
 
 
@@ -772,10 +773,9 @@ void ASLVizManager::RemoveAllMarkers()
 }
 
 
-
 /* Episode replay */
 // Setup the world for episode replay (remove physics, pause simulation, change skeletal meshes to poseable meshes)
-bool ASLVizManager::SetupWorldForEpisodeReplay()
+bool ASLVizManager::ConvertWorldToVisualizationMode()
 {
 	if (!bIsInit)
 	{
@@ -813,19 +813,112 @@ bool ASLVizManager::SetupWorldForEpisodeReplay()
 	}
 #endif // WITH_EDITOR
 
-	EpisodeManager->SetWorldAsVisualOnly();
-	return EpisodeManager->IsWorldSetASVisualOnly();
+	EpisodeManager->ConvertWorld();
+	return EpisodeManager->IsWorldConverted();
 }
 
 // Check if world is set for episode replay
-bool ASLVizManager::IsWorldSetForEpisodeReplay() const
+bool ASLVizManager::IsWorldConvertedToVisualizationMode() const
 {
 	if (!bIsInit)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
-	return EpisodeManager->IsWorldSetASVisualOnly();
+	return EpisodeManager->IsWorldConverted();
+}
+
+// Cache the episode data
+void ASLVizManager::CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	if (InMongoEpisodeData.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) the episode data is empty.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	if (IsEpisodeCached(Id))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) the episode data is already cached.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	// Create and reserve episode data with the array size
+	FSLVizEpisodeData VizEpisodeData(InMongoEpisodeData.Num());
+	VizEpisodeData.Id = Id;
+	if (FSLVizEpisodeUtils::BuildEpisodeData(IndividualManager, InMongoEpisodeData, VizEpisodeData))
+	{
+		CachedEpisodeData.Add(Id, VizEpisodeData);
+	}
+}
+
+// Load cached episode data
+bool ASLVizManager::LoadCachedEpisodeData(const FString& Id)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+	if (!EpisodeManager->IsWorldConverted())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) cannot load episode data because the world is not set as visual only.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+	if (!IsEpisodeCached(Id))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) the episode (%s) data is not cached.."), *FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		return false;
+	}
+	
+	EpisodeManager->LoadEpisode(CachedEpisodeData[Id]);
+	return true;
+}
+
+// Replay cached episode 
+bool ASLVizManager::ReplayCachedEpisode(const FString& Id, const FSLVizEpisodePlayParams& Params)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+	if (!IsEpisodeCached(Id))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) episode (%s) is not cached.."), *FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		return false;
+	}
+	if (!EpisodeManager->GetEpisodeId().Equals(Id))
+	{
+		EpisodeManager->LoadEpisode(CachedEpisodeData[Id]);
+	}
+
+	return EpisodeManager->Play(Params);
+}
+
+// Goto cached episode frame
+bool ASLVizManager::GotoCachedEpisodeFrame(const FString& Id, float Ts)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+	if (!IsEpisodeCached(Id))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) episode (%s) is not cached.."), *FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		return false;
+	}
+	if (!EpisodeManager->GetEpisodeId().Equals(Id))
+	{
+		EpisodeManager->LoadEpisode(CachedEpisodeData[Id]);
+	}
+
+	return EpisodeManager->GotoFrame(Ts);
 }
 
 // Change the data into an episode format and load it to the episode replay manager
@@ -836,7 +929,7 @@ void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTra
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	if (!EpisodeManager->IsWorldSetASVisualOnly())
+	if (!EpisodeManager->IsWorldConverted())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) cannot load episode data because the world is not set as visual only.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
@@ -847,11 +940,11 @@ void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTra
 		return;
 	}
 
+
 	// Create and reserve episode data with the array size
 	FSLVizEpisodeData VizEpisodeData(InMongoEpisodeData.Num());
 	if (FSLVizEpisodeUtils::BuildEpisodeData(IndividualManager, InMongoEpisodeData, VizEpisodeData))
 	{
-		//CachedEpisodeData.Emplace("TODO Id", VizEpisodeData);
 		EpisodeManager->LoadEpisode(VizEpisodeData);
 	}
 }
@@ -879,7 +972,7 @@ bool ASLVizManager::GotoEpisodeFrame(float Ts)
 }
 
 // Replay the whole loaded episode
-bool ASLVizManager::PlayEpisode(FSLVizEpisodeReplayPlayParams PlayParams)
+bool ASLVizManager::PlayEpisode(FSLVizEpisodePlayParams PlayParams)
 {
 	if (!bIsInit)
 	{
@@ -887,11 +980,18 @@ bool ASLVizManager::PlayEpisode(FSLVizEpisodeReplayPlayParams PlayParams)
 		return false;
 	}
 	EpisodeManager->SetReplayParams(PlayParams.bLoop, PlayParams.UpdateRate, PlayParams.StepSize);
-	return EpisodeManager->PlayEpisode();
+	if (PlayParams.StartTime < 0.f && PlayParams.EndTime < 0.f)
+	{
+		return EpisodeManager->PlayEpisode();
+	}
+	else
+	{
+		return EpisodeManager->PlayTimeline(PlayParams.StartTime, PlayParams.EndTime);
+	}
 }
 
 // Replay the selected timeline in the episode
-bool ASLVizManager::PlayEpisodeTimeline(float StartTime, float EndTime, FSLVizEpisodeReplayPlayParams PlayParams)
+bool ASLVizManager::PlayEpisodeTimeline(float StartTime, float EndTime, FSLVizEpisodePlayParams PlayParams)
 {
 	if (!bIsInit)
 	{

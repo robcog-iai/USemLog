@@ -28,6 +28,9 @@ struct FSLVizEpisodeFrameData
 */
 struct FSLVizEpisodeData
 {
+	// Id of the episode
+	FString Id;
+
 	// Array of the timestamps
 	TArray<float> Timestamps;
 
@@ -57,6 +60,7 @@ struct FSLVizEpisodeData
 	// Clear all the data in the episode
 	void Clear() 
 	{
+		Id = "";
 		Timestamps.Empty(); 
 		FullFrames.Empty();
 		CompactFrames.Empty();
@@ -82,16 +86,19 @@ protected:
 
 public:
 	// Set world as visual only, remove unnecessary non-visual components/actors from world, create poseable skeletal mesh components etc.
-	void SetWorldAsVisualOnly();
+	void ConvertWorld();
 
 	// True if initalized
-	bool IsWorldSetASVisualOnly() const { return bWorldSetAsVisualOnly; };
+	bool IsWorldConverted() const { return bWorldSetAsVisualOnly; };
 
 	// Load episode data
 	void LoadEpisode(const FSLVizEpisodeData& InEpisodeData);
 
 	// Check if an episode is loaded
 	bool IsEpisodeLoaded() const { return bEpisodeLoaded; };
+
+	// Get loaded episode id
+	FString GetEpisodeId() const { return EpisodeData.Id; };
 
 	// Remove episode data
 	void ClearEpisode();
@@ -101,6 +108,9 @@ public:
 
 	// Set visual world as in the given timestamp (binary search for nearest index)
 	bool GotoFrame(float Timestamp);
+
+	// Play episode
+	bool Play(const FSLVizEpisodePlayParams& PlayParams = FSLVizEpisodePlayParams());
 
 	// Play whole episode
 	bool PlayEpisode();
@@ -121,14 +131,14 @@ public:
 	void StopReplay();
 
 private:
+	// Start replay
+	void StartReplay();
+
 	// Apply frame poses
 	void ApplyPoses(const FSLVizEpisodeFrameData& Frame);
 
 	// Apply next frame changes (return false if there are no more frames)
 	bool ApplyNextFrameChanges();
-	
-	// Apply the compact episode data given frame changes
-	void ApplyFrameChanges(int32 FrameIndex);
 
 	// Calculate an approximation of the update rate value to coincide with realtime
 	void CalcRealtimeAproxUpdateRateValue(int32 MaxNumSteps);

@@ -63,7 +63,7 @@ void FSLVizEpisodeUtils::AddPoseablMeshComponentsToSkeletalActors(UWorld* World)
 }
 
 // Build the full replay episode data from the mongo compact form
-bool FSLVizEpisodeUtils::BuildEpisodeData(ASLIndividualManager* IndividualManager, 
+bool FSLVizEpisodeUtils::BuildEpisodeData(ASLIndividualManager* IndividualManager,
 	const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData,
 	FSLVizEpisodeData& OutVizEpisodeData)
 {
@@ -173,7 +173,7 @@ bool FSLVizEpisodeUtils::BuildEpisodeData(ASLIndividualManager* IndividualManage
 		OutVizEpisodeData.FullFrames.Emplace(FullFrameData);
 		OutVizEpisodeData.CompactFrames.Emplace(CompactFrameData);
 	}
-
+	
 	double FollowingFramesDuration = FPlatformTime::Seconds() - ExecBegin - FirstFrameDuration;
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: first frame=[%f], following frames(num=%d)=[%f], total=[%f] seconds..;"),
 		*FString(__func__), __LINE__, FirstFrameDuration, OutVizEpisodeData.Timestamps.Num(),
@@ -205,11 +205,16 @@ int32 FSLVizEpisodeUtils::BinarySearchLessEqual(const TArray<float>& Array, floa
 // Check if actor requires any special attention when switching to visual only world (return true if the components should be left alone)
 bool FSLVizEpisodeUtils::IsSpecialCaseActor(AActor* Actor)
 {
-	/* quick hack */
+	/* quick hacks */
 	if (Actor->GetName().Contains("Landscape"))
 	{
 		return true;
 	}
+	if (Actor->GetName().Contains("Sky"))
+	{
+		return true;
+	}
+
 	//if (Actor->IsA(ALandscape::StaticClass()))
 	//{
 	//	return true;
@@ -220,6 +225,7 @@ bool FSLVizEpisodeUtils::IsSpecialCaseActor(AActor* Actor)
 	//	PC->GetPawnOrSpectator()->SetActorHiddenInGame(true);
 	//	return false;
 	//}
+
 	return false;
 }
 

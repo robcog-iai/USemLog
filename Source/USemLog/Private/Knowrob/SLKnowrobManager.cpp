@@ -5,6 +5,9 @@
 #include "Mongo/SLMongoQueryManager.h"
 #include "Viz/SLVizManager.h"
 #include "EngineUtils.h"
+#include "GameFramework/PlayerController.h"
+#include "Components/InputComponent.h"
+#include "TimerManager.h"
 
 #if WITH_EDITOR
 #include "Components/BillboardComponent.h"
@@ -31,10 +34,10 @@ ASLKnowrobManager::ASLKnowrobManager()
 // Dtor
 ASLKnowrobManager::~ASLKnowrobManager()
 {
-	//if (!IsTemplate() && !bIsFinished && (bIsStarted || bIsInit))
-	//{
-	//	Finish(true);
-	//}
+	if (!IsTemplate() && !bIsFinished && (bIsStarted || bIsInit))
+	{
+		Finish(true);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -42,11 +45,15 @@ void ASLKnowrobManager::BeginPlay()
 {
 	Super::BeginPlay();	
 
-	FParse::Value(FCommandLine::Get(), TEXT("KRServerIP="), KRServerIP);
-	FParse::Value(FCommandLine::Get(), TEXT("KRServerPort="), KRServerPort);
-	FParse::Value(FCommandLine::Get(), TEXT("KRProtocol="), KRWSProtocol);
-	FParse::Value(FCommandLine::Get(), TEXT("MongoServerIP="), MongoServerIP);
-	FParse::Value(FCommandLine::Get(), TEXT("MongoServerPort="), MongoServerPort);
+	// Load values from the commandline
+	if (bLoadValuesFromCommandLine)
+	{
+		FParse::Value(FCommandLine::Get(), TEXT("KRServerIP="), KRServerIP);
+		FParse::Value(FCommandLine::Get(), TEXT("KRServerPort="), KRServerPort);
+		FParse::Value(FCommandLine::Get(), TEXT("KRProtocol="), KRWSProtocol);
+		FParse::Value(FCommandLine::Get(), TEXT("MongoServerIP="), MongoServerIP);
+		FParse::Value(FCommandLine::Get(), TEXT("MongoServerPort="), MongoServerPort);
+	}
 
 	Init();
 	Start();
@@ -61,45 +68,36 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 	// Get the changed property name
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
-
-	/* Button hacks */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bInitButtonHack))
+		
+	/* VizQ */
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bTriggerButtonHack))
 	{
-		bInitButtonHack = false;
-		Init();
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bStartButtonHack))
-	{
-		bStartButtonHack = false;
-		Start();
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bFinishButtonHack))
-	{
-		bFinishButtonHack = false;
-		Finish();
-	}
-
-	/* Episode data hacks */
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMongoConnectButtonHack))
-	{
-		bMongoConnectButtonHack = false;
-		if (!bIsInit) { return; }
-		if (MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
+		bTriggerButtonHack = false;
+		if (!VizManager || !VizManager->IsValidLowLevel() || VizManager->IsPendingKillOrUnreachable()
+			|| !VizManager->IsInit() || !VizManager->IsWorldConvertedToVisualizationMode())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Connected to %s:%ld"), *FString(__FUNCTION__), __LINE__, *MongoServerIP, MongoServerPort);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager is not valid, init or world is not converted.. "), *FString(__FUNCTION__), __LINE__);
+			return;
+		}
+		if (!MongoQueryManager || !MongoQueryManager->IsValidLowLevel() || MongoQueryManager->IsPendingKillOrUnreachable()
+			|| !MongoQueryManager->IsConnected())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d MongoQueryManager is not valid or not connected.. "), *FString(__FUNCTION__), __LINE__);
+			return;
+		}
+		if(ExecuteNextQuery())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d Executed query %d.. "),
+				*FString(__FUNCTION__), __LINE__, QueryIndex);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect to %s:%ld"), *FString(__FUNCTION__), __LINE__, *MongoServerIP, MongoServerPort);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d No more queries to execute (last=%d).. "),
+				*FString(__FUNCTION__), __LINE__, QueryIndex);
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMongoDisconnectButtonHack))
-	{
-		bMongoDisconnectButtonHack = false;
-		if (!bIsInit) { return; }
-		MongoQueryManager->Disconnect();
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Disconnected.."), *FString(__FUNCTION__), __LINE__);
-	}
+
+	/* Episode data hacks */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetTaskButtonhack))
 	{
 		bSetTaskButtonhack = false;
@@ -127,21 +125,20 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		}
 	}
 
-
 	/* VIZ episode replay */
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetupWorldForEpisodeReplayButtonHack))
 	{
 		bSetupWorldForEpisodeReplayButtonHack = false;
 		if (!bIsInit) { return; }
-		VizManager->SetupWorldForEpisodeReplay();
+		VizManager->ConvertWorldToVisualizationMode();
 	}
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bLoadEpisodeDataButtonHack))
 	{
 		bLoadEpisodeDataButtonHack = false;
 		if (!bIsInit) { return; }
-		if (!VizManager->IsWorldSetForEpisodeReplay())
+		if (!VizManager->IsWorldConvertedToVisualizationMode())
 		{
-			VizManager->SetupWorldForEpisodeReplay();
+			VizManager->ConvertWorldToVisualizationMode();
 		}
 		VizManager->LoadEpisodeData(MongoQueryManager->GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack));
 	}
@@ -149,9 +146,9 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 	{
 		bGotoButtonHack = false;
 		if (!bIsInit) { return; }
-		if (!VizManager->IsWorldSetForEpisodeReplay())
+		if (!VizManager->IsWorldConvertedToVisualizationMode())
 		{
-			VizManager->SetupWorldForEpisodeReplay();
+			VizManager->ConvertWorldToVisualizationMode();
 		}
 		if (!VizManager->IsEpisodeLoaded())
 		{
@@ -163,9 +160,9 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 	{
 		bReplayButtonHack = false;
 		if (!bIsInit) { return; }
-		if (!VizManager->IsWorldSetForEpisodeReplay())
+		if (!VizManager->IsWorldConvertedToVisualizationMode())
 		{
-			VizManager->SetupWorldForEpisodeReplay();
+			VizManager->ConvertWorldToVisualizationMode();
 		}
 		if (!VizManager->IsEpisodeLoaded())
 		{
@@ -173,14 +170,14 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		}
 		if (ReplayBeginValueHack > 0 && ReplayEndValueHack > 0 && ReplayBeginValueHack < ReplayEndValueHack)
 		{
-			FSLVizEpisodeReplayPlayParams PlayParams;
+			FSLVizEpisodePlayParams PlayParams;
 			PlayParams.bLoop = bReplayLoopValueHack;
 			PlayParams.UpdateRate = ReplayUpdateRateValueHack;
 			VizManager->PlayEpisodeTimeline(ReplayBeginValueHack, ReplayEndValueHack, PlayParams);
 		}
 		else
 		{
-			FSLVizEpisodeReplayPlayParams PlayParams;
+			FSLVizEpisodePlayParams PlayParams;
 			PlayParams.bLoop = bReplayLoopValueHack;
 			PlayParams.UpdateRate = ReplayUpdateRateValueHack;
 			VizManager->PlayEpisode(PlayParams);
@@ -378,8 +375,7 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		{
 			UE_LOG(LogTemp, Warning, TEXT("\t\t\t\t Loc=%s; \t Quat=%s;"), *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString());
 		}
-	}
-	
+	}	
 }
 #endif // WITH_EDITOR
 
@@ -387,6 +383,16 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 void ASLKnowrobManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+// Called when actor removed from game or game ended
+void ASLKnowrobManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	if (!bIsFinished)
+	{
+		Finish();
+	}
 }
 
 // Set up any required references and connect to server
@@ -399,14 +405,11 @@ void ASLKnowrobManager::Init()
 		return;
 	}
 
-	// Initialize connection with knowrob
+	// Initialize KR connection client
 	if (!KRWSClient.IsValid())
 	{
 		KRWSClient = MakeShareable<FSLKRWSClient>(new FSLKRWSClient());
-	}
-	if (bAutoConnectToKnowrob)
-	{
-		KRWSClient->Connect(KRServerIP, KRServerPort, KRWSProtocol);
+		KRWSClient->Init(KRServerIP, KRServerPort, KRWSProtocol);
 	}
 
 	// Get and connect the mongo query manager
@@ -416,16 +419,14 @@ void ASLKnowrobManager::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	if (bAutoConnectToMongo)
+	if (!MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
 	{
-		if (!MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not connect to mongo db.. (%s::%d)"),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *MongoServerIP, MongoServerPort);
-			return;
-		}
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not connect to mongo db.. (%s::%d)"),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *MongoServerIP, MongoServerPort);
+		return;
 	}
 
+	// Get an initialise the visualization manager
 	if (!SetVizManager())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the viz manager.."),
@@ -434,13 +435,13 @@ void ASLKnowrobManager::Init()
 	}
 	if (!VizManager->Init())
 	{
-		if (bAutoConvertWorld)
-		{
-			VizManager->SetupWorldForEpisodeReplay();
-		}
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the viz manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
+	}
+	if (bAutoConvertWorld)
+	{
+		VizManager->ConvertWorldToVisualizationMode();
 	}
 
 	bIsInit = true;
@@ -464,13 +465,22 @@ void ASLKnowrobManager::Start()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
+	
+	if (KRWSClient.IsValid())
+	{
+		// Bind delegates of the knowrob websocket client
+		KRWSClient->OnConnection.BindUObject(this, &ASLKnowrobManager::OnKRConnection);
+		KRWSClient->OnNewProcessedMsg.BindUObject(this, &ASLKnowrobManager::OnKRMsg);
 
-	// Bind delegates of the knowrob websocket client
-	KRWSClient->OnNewProcessedMsg.BindUObject(this, &ASLKnowrobManager::OnKRMsg);
-	KRWSClient->OnConnection.BindUObject(this, &ASLKnowrobManager::OnKRConnection);
+		// Try connection
+		KRWSClient->Connect();
+	}
 
 	// Initialize dispatcher for parsing protobuf message
 	KREventDispatcher = MakeShareable<FSLKREventDispatcher>(new FSLKREventDispatcher(MongoQueryManager, VizManager));
+
+	// Bind user inputs
+	SetupInputBindings();
 
 	bIsStarted = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully started.."),
@@ -497,8 +507,10 @@ void ASLKnowrobManager::Finish(bool bForced)
 	if (KRWSClient.IsValid())
 	{
 		KRWSClient->Disconnect();
+		KRWSClient->Clear();
 		KRWSClient->OnNewProcessedMsg.Unbind();
 		KRWSClient->OnConnection.Unbind();
+		KRWSClient.Reset();
 	}
 
 	bIsStarted = false;
@@ -506,6 +518,78 @@ void ASLKnowrobManager::Finish(bool bForced)
 	bIsFinished = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully finished.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
+}
+
+// Setup user input bindings
+void ASLKnowrobManager::SetupInputBindings()
+{
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		if (UInputComponent* IC = PC->InputComponent)
+		{
+			IC->BindAction(UserInputActionName, IE_Pressed, this, &ASLKnowrobManager::UserInputVizQActionTrigger);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access player controller (make sure it is not called before BeginPlay).."), *FString(__FUNCTION__), __LINE__);
+	}
+}
+
+// KR retry connection timer callback
+void ASLKnowrobManager::KRConnectRetryCallback()
+{
+	if (KRWSClient.IsValid())
+	{
+		if (!KRWSClient->IsConnected())
+		{
+			if (KRConnectRetryMaxNum == INDEX_NONE)
+			{
+				KRConnectRetryNum++;
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d KRWSClient connect retry num %d.."),
+					*FString(__FUNCTION__), __LINE__, KRConnectRetryNum);
+				KRWSClient->Connect();
+			}
+			else if(KRConnectRetryNum <= KRConnectRetryMaxNum)
+			{
+				KRConnectRetryNum++;
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d KRWSClient connect retry num %d/%d.."),
+					*FString(__FUNCTION__), __LINE__, KRConnectRetryNum, KRConnectRetryMaxNum);
+				KRWSClient->Connect();
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d KRWSClient is already connected.."), *FString(__FUNCTION__), __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d KRWSClient is not valid, cannot reconnect.."), *FString(__FUNCTION__), __LINE__);
+	}
+}
+
+// Called when connected or disconnecetd with knowrob
+void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
+{
+	if (bConnectionValue)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) connected to knowrob.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+	}
+	else if(bKRConnectRetry)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) is disconnected from knowrob, retrying in %f seconds.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), KRConnectRetryInterval);
+
+		GetWorld()->GetTimerManager().SetTimer(KRConnectRetryTimerHandle,
+			this, &ASLKnowrobManager::KRConnectRetryCallback, KRConnectRetryInterval);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) knowrob connection is closed.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+	}
 }
 
 // Called when a new message is received from knowrob
@@ -516,21 +600,6 @@ void ASLKnowrobManager::OnKRMsg()
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Processing message.."), *FString(__FUNCTION__), __LINE__);
 		KREventDispatcher->ProcessProtobuf(ProtoMsgBinary);
-	}
-}
-
-// Called when connected or disconnecetd with knowrob
-void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
-{
-	if (bConnectionValue)
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) succesfully connected to knowrob.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) disconnected from knowrob.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
 	}
 }
 
@@ -586,4 +655,48 @@ bool ASLKnowrobManager::SetVizManager()
 	VizManager->SetActorLabel(TEXT("SL_VizManager"));
 #endif // WITH_EDITOR
 	return true;
+}
+
+
+/****************************************************************/
+/*							VizQ								*/
+/****************************************************************/
+// VizQ trigger
+void ASLKnowrobManager::UserInputVizQActionTrigger()
+{
+	if (ExecuteNextQuery())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d Executed query %d.. "),
+			*FString(__FUNCTION__), __LINE__, QueryIndex);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d No more queries to execute (last=%d).. "),
+			*FString(__FUNCTION__), __LINE__, QueryIndex);
+	}
+}
+
+// Execute next query, return false if not more queries are available
+bool ASLKnowrobManager::ExecuteNextQuery()
+{
+	if (ExecuteQuery(QueryIndex + 1))
+	{
+		QueryIndex++;
+		return true;
+	}
+	return false;
+}
+
+// Execute the selected query (return false if index is not valid)
+bool ASLKnowrobManager::ExecuteQuery(int32 Index)
+{
+	if (Queries.IsValidIndex(Index))
+	{
+		if (Queries[Index]->IsValidLowLevel())
+		{
+			Queries[Index]->Execute(VizManager, MongoQueryManager);
+			return true;
+		}
+	}
+	return false;
 }

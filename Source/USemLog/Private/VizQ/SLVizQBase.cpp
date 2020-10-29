@@ -3,15 +3,10 @@
 
 #include "VizQ/SLVizQBase.h"
 #include "Viz/SLVizManager.h"
+#include "Mongo/SLMongoQueryManager.h"
 
 // Base
 void USLVizQBase::Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager)
-{
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Nothing to execute.."), *FString(__FUNCTION__), __LINE__);
-}
-
-// Batch
-void USLVizQBatch::Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager)
 {
 	for (const auto& C : Children)
 	{
@@ -19,8 +14,37 @@ void USLVizQBatch::Execute(ASLVizManager* VizManager, ASLMongoQueryManager* Mong
 	}
 }
 
-// Episode
-void USLVizQEpisode::Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager)
+// Goto
+void USLVizQGotoFrame::Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d ID=%.."), *FString(__FUNCTION__), __LINE__, *EpisodeId);
+	VizManager->GotoCachedEpisodeFrame(EpisodeId, Timestamp);
+
+	Super::Execute(VizManager, MongoManager);
+}
+
+// Play
+void USLVizQReplayEpisode::Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager)
+{
+	FSLVizEpisodePlayParams Params;
+	Params.StartTime = StartTime;
+	Params.EndTime = EndTime;
+	Params.bLoop = bLoop;
+	Params.UpdateRate = UpdateRate;
+	Params.StepSize = StepSize;
+	VizManager->ReplayCachedEpisode(EpisodeId, Params);
+
+	Super::Execute(VizManager, MongoManager);
+}
+
+// Episode
+void USLVizQCacheEpisodes::Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager)
+{
+	MongoManager->SetTask(TaskId);
+	for (const auto& EpId : EpisodeIds)
+	{
+		TArray<TPair<float, TMap<FString, FTransform>>> EpisodeData = MongoManager->GetEpisodeData(EpId);
+		VizManager->CacheEpisodeData(EpId, EpisodeData);
+	}
+
+	Super::Execute(VizManager, MongoManager);
 }

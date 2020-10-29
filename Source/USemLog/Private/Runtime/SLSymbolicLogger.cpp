@@ -11,6 +11,8 @@
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 #include "Engine/Engine.h"
+#include "GameFramework/PlayerController.h"
+#include "Components/InputComponent.h"
 
 #include "Events/SLGoogleCharts.h"
 
