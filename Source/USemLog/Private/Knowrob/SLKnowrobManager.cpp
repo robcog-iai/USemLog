@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Knowrob/SLKnowrobManager.h"
+#include "Control/SLControlManager.h"
 #include "Mongo/SLMongoQueryManager.h"
 #include "Viz/SLVizManager.h"
 #include "EngineUtils.h"
@@ -389,6 +390,23 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
         SemanticMapManager->GetAllMaps();
     }
 
+    /*    Control Individual    */
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMoveIndividualButtonHack))
+    {
+        bMoveIndividualButtonHack = false;
+        ControlManager->SetIndividualPose(IndividualToMove, ControlLocation, ControlQuat);
+    }
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StartSelectedSimulationButtonHack))
+    {
+        StartSelectedSimulationButtonHack = false;
+        ControlManager->StartSimulationSelectionOnly(SelectedInividual);
+
+    }
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StopSelectedSimulationButtonHack))
+    {
+        StopSelectedSimulationButtonHack = false;
+        ControlManager->StopSimulationSelectionOnly(SelectedInividual);
+    }
 }
 #endif // WITH_EDITOR
 
@@ -465,6 +483,19 @@ void ASLKnowrobManager::Init()
         return;
     }
        
+	// Get the control manager
+    if (!SetControlManager())
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the control manager.."),
+            *FString(__FUNCTION__), __LINE__, *GetName());
+        return;
+    }
+    if (!ControlManager->Init())
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the control manager.."),
+            *FString(__FUNCTION__), __LINE__, *GetName());
+        return;
+    }
 
 	bIsInit = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully initialized.."),
@@ -705,6 +736,34 @@ bool ASLKnowrobManager::SetSemancticMapManager()
     SemanticMapManager = GetWorld()->SpawnActor<ASLSemanticMapManager>(SpawnParams);
 #if WITH_EDITOR
     SemanticMapManager->SetActorLabel(TEXT("SL_MapManager"));
+#endif // WITH_EDITOR
+    return true;
+}
+
+
+// Get the control manager from the world (or spawn a new one)
+bool ASLKnowrobManager::SetControlManager()
+{
+    if (ControlManager && ControlManager->IsValidLowLevel() && !ControlManager->IsPendingKillOrUnreachable())
+    {
+        return true;
+    }
+
+    for (TActorIterator<ASLControlManager>Iter(GetWorld()); Iter; ++Iter)
+    {
+        if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+        {
+            ControlManager = *Iter;
+            return true;
+        }
+    }
+
+    // Spawning a new manager
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Name = TEXT("SL_ControlManager");
+    ControlManager = GetWorld()->SpawnActor<ASLControlManager>(SpawnParams);
+#if WITH_EDITOR
+    ControlManager->SetActorLabel(TEXT("SL_ControlManager"));
 #endif // WITH_EDITOR
     return true;
 }

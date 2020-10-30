@@ -15,7 +15,7 @@
 // Forward declarations
 class ASLMongoQueryManager;
 class ASLVizManager;
-
+class ASLControlManager;
 
 /**
  * Highlight hack
@@ -173,6 +173,9 @@ private:
 	// Get the semantic map manager from the world (or spawn a new one)
     bool SetSemancticMapManager();
 
+	// Get the control manager from the world (or spawn a new one)
+    bool SetControlManager();
+
 	/****************************************************************/
 	/*							VizQ								*/
 	/****************************************************************/
@@ -259,6 +262,9 @@ private:
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     ASLSemanticMapManager* SemanticMapManager;
 
+    // Manages controlling individual 
+    UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+    ASLControlManager* ControlManager;
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -420,4 +426,28 @@ private:
 
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
     bool bPrintAllMapsButtonHack = false;
+
+	/****************************************************************/
+    /*                        Control tests                         */
+    /****************************************************************/
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    FString IndividualToMove;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    FVector ControlLocation;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    FQuat ControlQuat;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    bool bMoveIndividualButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    TArray<FString> SelectedInividual;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    bool StartSelectedSimulationButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    bool StopSelectedSimulationButtonHack = false;
 };
