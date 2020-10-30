@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
+#include "Knowrob/SLSemanticMapManager.h"
 #include "Knowrob/SLKRWSClient.h"
 #include "Knowrob/SLKREventDispatcher.h"
 #include "Viz/SLVizStructs.h"
@@ -169,6 +170,8 @@ private:
 	// Get the viz manager from the world (or spawn a new one)
 	bool SetVizManager();
 
+	// Get the semantic map manager from the world (or spawn a new one)
+    bool SetSemancticMapManager();
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -251,6 +254,10 @@ private:
 	// Manages the visualization
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizManager* VizManager;
+
+	// Manages loading semantic map
+    UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+    ASLSemanticMapManager* SemanticMapManager;
 
 
 	/****************************************************************/
@@ -402,5 +409,15 @@ private:
 	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Mongo Buttons")
 	bool bTrajectoryQueryButtonHack = false;
 
+	/****************************************************************/
+	/*					 SemanticMap Editor button hacks 			*/	
+	/****************************************************************/
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
+    FName MapToLoad = TEXT("Map1");
 
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
+    bool bLoadMapButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
+    bool bPrintAllMapsButtonHack = false;
 };

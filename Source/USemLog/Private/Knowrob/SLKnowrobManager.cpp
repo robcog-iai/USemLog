@@ -376,6 +376,19 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 			UE_LOG(LogTemp, Warning, TEXT("\t\t\t\t Loc=%s; \t Quat=%s;"), *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString());
 		}
 	}	
+	
+    /* Map button hacks */
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bLoadMapButtonHack))
+    {
+        bLoadMapButtonHack = false;
+        SemanticMapManager->LoadMap(MapToLoad);
+    }
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bPrintAllMapsButtonHack))
+    {
+        bPrintAllMapsButtonHack = false;
+        SemanticMapManager->GetAllMaps();
+    }
+
 }
 #endif // WITH_EDITOR
 
@@ -443,6 +456,15 @@ void ASLKnowrobManager::Init()
 	{
 		VizManager->ConvertWorldToVisualizationMode();
 	}
+
+	// Get the map manager
+    if (!SetSemancticMapManager())
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the map manager.."),
+            *FString(__FUNCTION__), __LINE__, *GetName());
+        return;
+    }
+       
 
 	bIsInit = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully initialized.."),
@@ -659,6 +681,33 @@ bool ASLKnowrobManager::SetVizManager()
 	return true;
 }
 
+
+// Get the semantic map manager from the world (or spawn a new one)
+bool ASLKnowrobManager::SetSemancticMapManager()
+{
+    if (SemanticMapManager && SemanticMapManager->IsValidLowLevel() && !SemanticMapManager->IsPendingKillOrUnreachable())
+    {
+        return true;
+    }
+
+    for (TActorIterator<ASLSemanticMapManager>Iter(GetWorld()); Iter; ++Iter)
+    {
+        if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+        {
+            SemanticMapManager = *Iter;
+            return true;
+        }
+    }
+
+    // Spawning a new manager
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Name = TEXT("SL_MapManager");
+    SemanticMapManager = GetWorld()->SpawnActor<ASLSemanticMapManager>(SpawnParams);
+#if WITH_EDITOR
+    SemanticMapManager->SetActorLabel(TEXT("SL_MapManager"));
+#endif // WITH_EDITOR
+    return true;
+}
 
 /****************************************************************/
 /*							VizQ								*/
