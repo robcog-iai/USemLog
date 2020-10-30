@@ -24,17 +24,17 @@ public:
 
 public:
 	// Parse the proto sequence and trigger function
-	void ProcessProtobuf(std::string ProtoStr);
+	FString ProcessProtobuf(std::string ProtoStr);
 
 private:
 	// Set the task of MongoManager
-	void SetTask(sl_pb::SetTaskParams params);
+	FString SetTask(sl_pb::SetTaskParams params);
 
 	// Set the episode of MongoManager
-	void SetEpisode(sl_pb::SetEpisodeParams params);
+	FString SetEpisode(sl_pb::SetEpisodeParams params);
 
 	// Draw the trajectory
-	void DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params);
+	FString DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params);
 
 	// Transform the maker type
 	ESLVizPrimitiveMarkerType GetMarkerType(sl_pb::MarkerType Marker);

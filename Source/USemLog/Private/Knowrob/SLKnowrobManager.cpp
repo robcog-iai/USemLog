@@ -599,7 +599,9 @@ void ASLKnowrobManager::OnKRMsg()
 	while (KRWSClient->MessageQueue.Dequeue(ProtoMsgBinary))
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Processing message.."), *FString(__FUNCTION__), __LINE__);
-		KREventDispatcher->ProcessProtobuf(ProtoMsgBinary);
+		FString Response = KREventDispatcher->ProcessProtobuf(ProtoMsgBinary);
+		if (!Response.Equals(""))
+			KRWSClient->SendResponse(Response);
 	}
 }
 
