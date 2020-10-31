@@ -41,6 +41,9 @@ public:
 	// Clear the webscosket 
 	void Clear();
 
+	// Send message via websocket
+	void SendResponse(const FString& StrToSend);
+
 protected:
 	/* IWebSocket delegate handlers */
 	// Called on connection
@@ -58,6 +61,8 @@ protected:
 	// Called when the full data has been received
 	void HandleWebSocketFullData(const uint8* Data, SIZE_T Length);
 
+	// Append element to uint8 array and handle escape character
+	void AppendToUInt8Array(TArray<uint8>& Out, uint8* In, SIZE_T Length, bool bShouldEscape);
 
 public:
 	// Triggered when a new processed message is added to the queue
