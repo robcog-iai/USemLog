@@ -10,12 +10,14 @@
 #include "Knowrob/SLKREventDispatcher.h"
 #include "Viz/SLVizStructs.h"
 #include "VizQ/SLVizQBase.h"
+#include "Runtime/SLLoggerStructs.h"
 #include "SLKnowrobManager.generated.h"
 
 // Forward declarations
 class ASLMongoQueryManager;
 class ASLVizManager;
 class ASLControlManager;
+class ASLSymbolicLogger;
 
 /**
  * Highlight hack
@@ -176,6 +178,9 @@ private:
 	// Get the control manager from the world (or spawn a new one)
     bool SetControlManager();
 
+	// Get the symbolic logger from the world (or spawn a new one)
+    bool SetSymbolicLogger();
+
 	/****************************************************************/
 	/*							VizQ								*/
 	/****************************************************************/
@@ -265,6 +270,10 @@ private:
     // Manages controlling individual 
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     ASLControlManager* ControlManager;
+
+	// Keeps access to all the individuals in the world
+    UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+    ASLSymbolicLogger* SymbolicLogger;
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -450,4 +459,21 @@ private:
 
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
     bool StopSelectedSimulationButtonHack = false;
+
+	/****************************************************************/
+    /*                        Symbolic Logger tests                 */
+    /****************************************************************/
+    // Logger parameters
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    FSLSymbolicLoggerParams LoggerParameters;
+
+    // Location parameters
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    FSLLoggerLocationParams LocationParameters;
+    
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    bool StartSymbolicLogButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    bool StopSymbolicLogButtonHack = false;
 };

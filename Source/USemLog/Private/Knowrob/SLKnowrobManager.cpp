@@ -8,6 +8,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
+#include "Runtime/SLSymbolicLogger.h"
 #include "TimerManager.h"
 
 #if WITH_EDITOR
@@ -407,6 +408,18 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
         StopSelectedSimulationButtonHack = false;
         ControlManager->StopSimulationSelectionOnly(SelectedInividual);
     }
+	
+    /*    Symbolic logging    */
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StartSymbolicLogButtonHack))
+    {
+        StartSymbolicLogButtonHack = false;
+        SymbolicLogger->Start();
+    }
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StopSymbolicLogButtonHack))
+    {
+        StopSymbolicLogButtonHack = false;
+        SymbolicLogger->Finish();
+    }
 }
 #endif // WITH_EDITOR
 
@@ -496,6 +509,14 @@ void ASLKnowrobManager::Init()
             *FString(__FUNCTION__), __LINE__, *GetName());
         return;
     }
+
+    // Get the symbolic logger
+    if (!SetSymbolicLogger())
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Control manager (%s) could not set the symbolic logger.."),
+            *FString(__FUNCTION__), __LINE__, *GetName());
+    }
+    SymbolicLogger->Init(LoggerParameters, LocationParameters);
 
 	bIsInit = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully initialized.."),
@@ -764,6 +785,33 @@ bool ASLKnowrobManager::SetControlManager()
     ControlManager = GetWorld()->SpawnActor<ASLControlManager>(SpawnParams);
 #if WITH_EDITOR
     ControlManager->SetActorLabel(TEXT("SL_ControlManager"));
+#endif // WITH_EDITOR
+    return true;
+}
+
+// Get the symbolic logger from the world (or spawn a new one)
+bool ASLKnowrobManager::SetSymbolicLogger()
+{
+    if (SymbolicLogger && SymbolicLogger->IsValidLowLevel() && !SymbolicLogger->IsPendingKillOrUnreachable())
+    {
+        return true;
+    }
+
+    for (TActorIterator<ASLSymbolicLogger>Iter(GetWorld()); Iter; ++Iter)
+    {
+        if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+        {
+            SymbolicLogger = *Iter;
+            return true;
+        }
+    }
+
+    // Spawning a new manager
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Name = TEXT("SL_SymbolLogger");
+    SymbolicLogger = GetWorld()->SpawnActor<ASLSymbolicLogger>(SpawnParams);
+#if WITH_EDITOR
+    SymbolicLogger->SetActorLabel(TEXT("SL_SymbolLogger"));
 #endif // WITH_EDITOR
     return true;
 }

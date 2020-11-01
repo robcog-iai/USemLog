@@ -27,6 +27,12 @@ bool ASLControlManager::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		RetValue = false;
 	}
+    if (!IndividualManager->Load(false))
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not load the individual manager (%s).."),
+            *FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
+        RetValue = false;
+    }
 	bIsInit = RetValue;
 	return RetValue;
 }
