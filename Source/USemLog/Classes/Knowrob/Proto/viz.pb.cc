@@ -31,6 +31,10 @@ class DrawMarkerTrajParamsDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DrawMarkerTrajParams> _instance;
 } _DrawMarkerTrajParams_default_instance_;
+class LoadMapParamsDefaultTypeInternal {
+ public:
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LoadMapParams> _instance;
+} _LoadMapParams_default_instance_;
 }  // namespace sl_pb
 static void InitDefaultsscc_info_DrawMarkerAtParams_viz_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -60,6 +64,20 @@ static void InitDefaultsscc_info_DrawMarkerTrajParams_viz_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DrawMarkerTrajParams_viz_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_DrawMarkerTrajParams_viz_2eproto}, {}};
 
+static void InitDefaultsscc_info_LoadMapParams_viz_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::sl_pb::_LoadMapParams_default_instance_;
+    new (ptr) ::sl_pb::LoadMapParams();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::sl_pb::LoadMapParams::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LoadMapParams_viz_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_LoadMapParams_viz_2eproto}, {}};
+
 static void InitDefaultsscc_info_SetEpisodeParams_viz_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -88,7 +106,7 @@ static void InitDefaultsscc_info_SetTaskParams_viz_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetTaskParams_viz_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SetTaskParams_viz_2eproto}, {}};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_viz_2eproto[4];
+static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_viz_2eproto[5];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_viz_2eproto[1];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_viz_2eproto = nullptr;
 
@@ -143,12 +161,20 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_viz_2eproto::offsets[] PROTOBU
   5,
   1,
   2,
+  PROTOBUF_FIELD_OFFSET(::sl_pb::LoadMapParams, _has_bits_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::LoadMapParams, _internal_metadata_),
+  ~0u,  // no _extensions_
+  ~0u,  // no _oneof_case_
+  ~0u,  // no _weak_field_map_
+  PROTOBUF_FIELD_OFFSET(::sl_pb::LoadMapParams, map_),
+  0,
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, 6, sizeof(::sl_pb::SetTaskParams)},
   { 7, 13, sizeof(::sl_pb::SetEpisodeParams)},
   { 14, 25, sizeof(::sl_pb::DrawMarkerAtParams)},
   { 31, 43, sizeof(::sl_pb::DrawMarkerTrajParams)},
+  { 50, 56, sizeof(::sl_pb::LoadMapParams)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -156,6 +182,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_SetEpisodeParams_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_DrawMarkerAtParams_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_DrawMarkerTrajParams_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_LoadMapParams_default_instance_),
 };
 
 const char descriptor_table_protodef_viz_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
@@ -168,24 +195,25 @@ const char descriptor_table_protodef_viz_2eproto[] PROTOBUF_SECTION_VARIABLE(pro
   "ajParams\022\n\n\002id\030\001 \002(\t\022\r\n\005start\030\002 \002(\002\022\013\n\003e"
   "nd\030\003 \002(\002\022!\n\006marker\030\004 \002(\0162\021.sl_pb.MarkerT"
   "ype\022\r\n\005scale\030\005 \002(\002\022\r\n\005color\030\006 \002(\t\022\020\n\010mat"
-  "erial\030\007 \002(\t*D\n\nMarkerType\022\007\n\003Box\020\001\022\n\n\006Sp"
-  "here\020\002\022\014\n\010Cylinder\020\003\022\t\n\005Arrow\020\004\022\010\n\004Axis\020"
-  "\005"
+  "erial\030\007 \002(\t\"\034\n\rLoadMapParams\022\013\n\003map\030\001 \002("
+  "\t*D\n\nMarkerType\022\007\n\003Box\020\001\022\n\n\006Sphere\020\002\022\014\n\010"
+  "Cylinder\020\003\022\t\n\005Arrow\020\004\022\010\n\004Axis\020\005"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_viz_2eproto_deps[1] = {
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_viz_2eproto_sccs[4] = {
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_viz_2eproto_sccs[5] = {
   &scc_info_DrawMarkerAtParams_viz_2eproto.base,
   &scc_info_DrawMarkerTrajParams_viz_2eproto.base,
+  &scc_info_LoadMapParams_viz_2eproto.base,
   &scc_info_SetEpisodeParams_viz_2eproto.base,
   &scc_info_SetTaskParams_viz_2eproto.base,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_viz_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_viz_2eproto = {
-  false, false, descriptor_table_protodef_viz_2eproto, "viz.proto", 441,
-  &descriptor_table_viz_2eproto_once, descriptor_table_viz_2eproto_sccs, descriptor_table_viz_2eproto_deps, 4, 0,
+  false, false, descriptor_table_protodef_viz_2eproto, "viz.proto", 471,
+  &descriptor_table_viz_2eproto_once, descriptor_table_viz_2eproto_sccs, descriptor_table_viz_2eproto_deps, 5, 0,
   schemas, file_default_instances, TableStruct_viz_2eproto::offsets,
-  file_level_metadata_viz_2eproto, 4, file_level_enum_descriptors_viz_2eproto, file_level_service_descriptors_viz_2eproto,
+  file_level_metadata_viz_2eproto, 5, file_level_enum_descriptors_viz_2eproto, file_level_service_descriptors_viz_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -1611,6 +1639,233 @@ void DrawMarkerTrajParams::InternalSwap(DrawMarkerTrajParams* other) {
 }
 
 
+// ===================================================================
+
+void LoadMapParams::InitAsDefaultInstance() {
+}
+class LoadMapParams::_Internal {
+ public:
+  using HasBits = decltype(std::declval<LoadMapParams>()._has_bits_);
+  static void set_has_map(HasBits* has_bits) {
+    (*has_bits)[0] |= 1u;
+  }
+  static bool MissingRequiredFields(const HasBits& has_bits) {
+    return ((has_bits[0] & 0x00000001) ^ 0x00000001) != 0;
+  }
+};
+
+LoadMapParams::LoadMapParams(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+  SharedCtor();
+  RegisterArenaDtor(arena);
+  // @@protoc_insertion_point(arena_constructor:sl_pb.LoadMapParams)
+}
+LoadMapParams::LoadMapParams(const LoadMapParams& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message(),
+      _has_bits_(from._has_bits_) {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  map_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (from._internal_has_map()) {
+    map_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_map(),
+      GetArena());
+  }
+  // @@protoc_insertion_point(copy_constructor:sl_pb.LoadMapParams)
+}
+
+void LoadMapParams::SharedCtor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_LoadMapParams_viz_2eproto.base);
+  map_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+
+LoadMapParams::~LoadMapParams() {
+  // @@protoc_insertion_point(destructor:sl_pb.LoadMapParams)
+  SharedDtor();
+  _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+void LoadMapParams::SharedDtor() {
+  GOOGLE_DCHECK(GetArena() == nullptr);
+  map_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+
+void LoadMapParams::ArenaDtor(void* object) {
+  LoadMapParams* _this = reinterpret_cast< LoadMapParams* >(object);
+  (void)_this;
+}
+void LoadMapParams::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+}
+void LoadMapParams::SetCachedSize(int size) const {
+  _cached_size_.Set(size);
+}
+const LoadMapParams& LoadMapParams::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LoadMapParams_viz_2eproto.base);
+  return *internal_default_instance();
+}
+
+
+void LoadMapParams::Clear() {
+// @@protoc_insertion_point(message_clear_start:sl_pb.LoadMapParams)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    map_.ClearNonDefaultToEmpty();
+  }
+  _has_bits_.Clear();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+}
+
+const char* LoadMapParams::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  _Internal::HasBits has_bits{};
+  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
+  while (!ctx->Done(&ptr)) {
+    ::PROTOBUF_NAMESPACE_ID::uint32 tag;
+    ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
+    CHK_(ptr);
+    switch (tag >> 3) {
+      // required string map = 1;
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+          auto str = _internal_mutable_map();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          #ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "sl_pb.LoadMapParams.map");
+          #endif  // !NDEBUG
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      default: {
+      handle_unusual:
+        if ((tag & 7) == 4 || tag == 0) {
+          ctx->SetLastTag(tag);
+          goto success;
+        }
+        ptr = UnknownFieldParse(tag,
+            _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+            ptr, ctx);
+        CHK_(ptr != nullptr);
+        continue;
+      }
+    }  // switch
+  }  // while
+success:
+  _has_bits_.Or(has_bits);
+  return ptr;
+failure:
+  ptr = nullptr;
+  goto success;
+#undef CHK_
+}
+
+::PROTOBUF_NAMESPACE_ID::uint8* LoadMapParams::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:sl_pb.LoadMapParams)
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  cached_has_bits = _has_bits_[0];
+  // required string map = 1;
+  if (cached_has_bits & 0x00000001u) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
+      this->_internal_map().data(), static_cast<int>(this->_internal_map().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+      "sl_pb.LoadMapParams.map");
+    target = stream->WriteStringMaybeAliased(
+        1, this->_internal_map(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:sl_pb.LoadMapParams)
+  return target;
+}
+
+size_t LoadMapParams::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:sl_pb.LoadMapParams)
+  size_t total_size = 0;
+
+  // required string map = 1;
+  if (_internal_has_map()) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_map());
+  }
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
+        _internal_metadata_, total_size, &_cached_size_);
+  }
+  int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
+}
+
+void LoadMapParams::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:sl_pb.LoadMapParams)
+  GOOGLE_DCHECK_NE(&from, this);
+  const LoadMapParams* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<LoadMapParams>(
+          &from);
+  if (source == nullptr) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:sl_pb.LoadMapParams)
+    ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:sl_pb.LoadMapParams)
+    MergeFrom(*source);
+  }
+}
+
+void LoadMapParams::MergeFrom(const LoadMapParams& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:sl_pb.LoadMapParams)
+  GOOGLE_DCHECK_NE(&from, this);
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (from._internal_has_map()) {
+    _internal_set_map(from._internal_map());
+  }
+}
+
+void LoadMapParams::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:sl_pb.LoadMapParams)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void LoadMapParams::CopyFrom(const LoadMapParams& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:sl_pb.LoadMapParams)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool LoadMapParams::IsInitialized() const {
+  if (_Internal::MissingRequiredFields(_has_bits_)) return false;
+  return true;
+}
+
+void LoadMapParams::InternalSwap(LoadMapParams* other) {
+  using std::swap;
+  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  swap(_has_bits_[0], other->_has_bits_[0]);
+  map_.Swap(&other->map_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+
+::PROTOBUF_NAMESPACE_ID::Metadata LoadMapParams::GetMetadata() const {
+  return GetMetadataStatic();
+}
+
+
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace sl_pb
 PROTOBUF_NAMESPACE_OPEN
@@ -1625,6 +1880,9 @@ template<> PROTOBUF_NOINLINE ::sl_pb::DrawMarkerAtParams* Arena::CreateMaybeMess
 }
 template<> PROTOBUF_NOINLINE ::sl_pb::DrawMarkerTrajParams* Arena::CreateMaybeMessage< ::sl_pb::DrawMarkerTrajParams >(Arena* arena) {
   return Arena::CreateMessageInternal< ::sl_pb::DrawMarkerTrajParams >(arena);
+}
+template<> PROTOBUF_NOINLINE ::sl_pb::LoadMapParams* Arena::CreateMaybeMessage< ::sl_pb::LoadMapParams >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::sl_pb::LoadMapParams >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

@@ -28,8 +28,10 @@
 #include <google/protobuf/inlined_string_field.h>
 #include <google/protobuf/metadata_lite.h>
 #include <google/protobuf/generated_message_reflection.h>
+#include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
+#include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
 #define PROTOBUF_INTERNAL_EXPORT_control_2eproto
@@ -45,20 +47,798 @@ struct TableStruct_control_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[1]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[4]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
   static const ::PROTOBUF_NAMESPACE_ID::uint32 offsets[];
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_control_2eproto;
+namespace sl_pb {
+class MoveIndividualParams;
+class MoveIndividualParamsDefaultTypeInternal;
+extern MoveIndividualParamsDefaultTypeInternal _MoveIndividualParams_default_instance_;
+class StartSimulationParams;
+class StartSimulationParamsDefaultTypeInternal;
+extern StartSimulationParamsDefaultTypeInternal _StartSimulationParams_default_instance_;
+class StartSymbolicLogParams;
+class StartSymbolicLogParamsDefaultTypeInternal;
+extern StartSymbolicLogParamsDefaultTypeInternal _StartSymbolicLogParams_default_instance_;
+class StopSimulationParams;
+class StopSimulationParamsDefaultTypeInternal;
+extern StopSimulationParamsDefaultTypeInternal _StopSimulationParams_default_instance_;
+}  // namespace sl_pb
 PROTOBUF_NAMESPACE_OPEN
+template<> ::sl_pb::MoveIndividualParams* Arena::CreateMaybeMessage<::sl_pb::MoveIndividualParams>(Arena*);
+template<> ::sl_pb::StartSimulationParams* Arena::CreateMaybeMessage<::sl_pb::StartSimulationParams>(Arena*);
+template<> ::sl_pb::StartSymbolicLogParams* Arena::CreateMaybeMessage<::sl_pb::StartSymbolicLogParams>(Arena*);
+template<> ::sl_pb::StopSimulationParams* Arena::CreateMaybeMessage<::sl_pb::StopSimulationParams>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace sl_pb {
 
 // ===================================================================
 
+class StartSimulationParams PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.StartSimulationParams) */ {
+ public:
+  inline StartSimulationParams() : StartSimulationParams(nullptr) {}
+  virtual ~StartSimulationParams();
 
+  StartSimulationParams(const StartSimulationParams& from);
+  StartSimulationParams(StartSimulationParams&& from) noexcept
+    : StartSimulationParams() {
+    *this = ::std::move(from);
+  }
+
+  inline StartSimulationParams& operator=(const StartSimulationParams& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline StartSimulationParams& operator=(StartSimulationParams&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const StartSimulationParams& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const StartSimulationParams* internal_default_instance() {
+    return reinterpret_cast<const StartSimulationParams*>(
+               &_StartSimulationParams_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    0;
+
+  friend void swap(StartSimulationParams& a, StartSimulationParams& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(StartSimulationParams* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(StartSimulationParams* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline StartSimulationParams* New() const final {
+    return CreateMaybeMessage<StartSimulationParams>(nullptr);
+  }
+
+  StartSimulationParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<StartSimulationParams>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const StartSimulationParams& from);
+  void MergeFrom(const StartSimulationParams& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(StartSimulationParams* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "sl_pb.StartSimulationParams";
+  }
+  protected:
+  explicit StartSimulationParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_control_2eproto);
+    return ::descriptor_table_control_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kIdFieldNumber = 1,
+  };
+  // repeated string id = 1;
+  int id_size() const;
+  private:
+  int _internal_id_size() const;
+  public:
+  void clear_id();
+  const std::string& id(int index) const;
+  std::string* mutable_id(int index);
+  void set_id(int index, const std::string& value);
+  void set_id(int index, std::string&& value);
+  void set_id(int index, const char* value);
+  void set_id(int index, const char* value, size_t size);
+  std::string* add_id();
+  void add_id(const std::string& value);
+  void add_id(std::string&& value);
+  void add_id(const char* value);
+  void add_id(const char* value, size_t size);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& id() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_id();
+  private:
+  const std::string& _internal_id(int index) const;
+  std::string* _internal_add_id();
+  public:
+
+  // @@protoc_insertion_point(class_scope:sl_pb.StartSimulationParams)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> id_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_control_2eproto;
+};
+// -------------------------------------------------------------------
+
+class StopSimulationParams PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.StopSimulationParams) */ {
+ public:
+  inline StopSimulationParams() : StopSimulationParams(nullptr) {}
+  virtual ~StopSimulationParams();
+
+  StopSimulationParams(const StopSimulationParams& from);
+  StopSimulationParams(StopSimulationParams&& from) noexcept
+    : StopSimulationParams() {
+    *this = ::std::move(from);
+  }
+
+  inline StopSimulationParams& operator=(const StopSimulationParams& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline StopSimulationParams& operator=(StopSimulationParams&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const StopSimulationParams& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const StopSimulationParams* internal_default_instance() {
+    return reinterpret_cast<const StopSimulationParams*>(
+               &_StopSimulationParams_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    1;
+
+  friend void swap(StopSimulationParams& a, StopSimulationParams& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(StopSimulationParams* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(StopSimulationParams* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline StopSimulationParams* New() const final {
+    return CreateMaybeMessage<StopSimulationParams>(nullptr);
+  }
+
+  StopSimulationParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<StopSimulationParams>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const StopSimulationParams& from);
+  void MergeFrom(const StopSimulationParams& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(StopSimulationParams* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "sl_pb.StopSimulationParams";
+  }
+  protected:
+  explicit StopSimulationParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_control_2eproto);
+    return ::descriptor_table_control_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kIdFieldNumber = 1,
+  };
+  // repeated string id = 1;
+  int id_size() const;
+  private:
+  int _internal_id_size() const;
+  public:
+  void clear_id();
+  const std::string& id(int index) const;
+  std::string* mutable_id(int index);
+  void set_id(int index, const std::string& value);
+  void set_id(int index, std::string&& value);
+  void set_id(int index, const char* value);
+  void set_id(int index, const char* value, size_t size);
+  std::string* add_id();
+  void add_id(const std::string& value);
+  void add_id(std::string&& value);
+  void add_id(const char* value);
+  void add_id(const char* value, size_t size);
+  const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>& id() const;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>* mutable_id();
+  private:
+  const std::string& _internal_id(int index) const;
+  std::string* _internal_add_id();
+  public:
+
+  // @@protoc_insertion_point(class_scope:sl_pb.StopSimulationParams)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string> id_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  friend struct ::TableStruct_control_2eproto;
+};
+// -------------------------------------------------------------------
+
+class MoveIndividualParams PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.MoveIndividualParams) */ {
+ public:
+  inline MoveIndividualParams() : MoveIndividualParams(nullptr) {}
+  virtual ~MoveIndividualParams();
+
+  MoveIndividualParams(const MoveIndividualParams& from);
+  MoveIndividualParams(MoveIndividualParams&& from) noexcept
+    : MoveIndividualParams() {
+    *this = ::std::move(from);
+  }
+
+  inline MoveIndividualParams& operator=(const MoveIndividualParams& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MoveIndividualParams& operator=(MoveIndividualParams&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const MoveIndividualParams& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const MoveIndividualParams* internal_default_instance() {
+    return reinterpret_cast<const MoveIndividualParams*>(
+               &_MoveIndividualParams_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    2;
+
+  friend void swap(MoveIndividualParams& a, MoveIndividualParams& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(MoveIndividualParams* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MoveIndividualParams* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline MoveIndividualParams* New() const final {
+    return CreateMaybeMessage<MoveIndividualParams>(nullptr);
+  }
+
+  MoveIndividualParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<MoveIndividualParams>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const MoveIndividualParams& from);
+  void MergeFrom(const MoveIndividualParams& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(MoveIndividualParams* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "sl_pb.MoveIndividualParams";
+  }
+  protected:
+  explicit MoveIndividualParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_control_2eproto);
+    return ::descriptor_table_control_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kIdFieldNumber = 1,
+    kVecXFieldNumber = 2,
+    kVecYFieldNumber = 3,
+    kVecZFieldNumber = 4,
+    kQuatXFieldNumber = 5,
+    kQuatYFieldNumber = 6,
+    kQuatZFieldNumber = 7,
+    kQuatWFieldNumber = 8,
+  };
+  // required string id = 1;
+  bool has_id() const;
+  private:
+  bool _internal_has_id() const;
+  public:
+  void clear_id();
+  const std::string& id() const;
+  void set_id(const std::string& value);
+  void set_id(std::string&& value);
+  void set_id(const char* value);
+  void set_id(const char* value, size_t size);
+  std::string* mutable_id();
+  std::string* release_id();
+  void set_allocated_id(std::string* id);
+  private:
+  const std::string& _internal_id() const;
+  void _internal_set_id(const std::string& value);
+  std::string* _internal_mutable_id();
+  public:
+
+  // required float vecX = 2;
+  bool has_vecx() const;
+  private:
+  bool _internal_has_vecx() const;
+  public:
+  void clear_vecx();
+  float vecx() const;
+  void set_vecx(float value);
+  private:
+  float _internal_vecx() const;
+  void _internal_set_vecx(float value);
+  public:
+
+  // required float vecY = 3;
+  bool has_vecy() const;
+  private:
+  bool _internal_has_vecy() const;
+  public:
+  void clear_vecy();
+  float vecy() const;
+  void set_vecy(float value);
+  private:
+  float _internal_vecy() const;
+  void _internal_set_vecy(float value);
+  public:
+
+  // required float vecZ = 4;
+  bool has_vecz() const;
+  private:
+  bool _internal_has_vecz() const;
+  public:
+  void clear_vecz();
+  float vecz() const;
+  void set_vecz(float value);
+  private:
+  float _internal_vecz() const;
+  void _internal_set_vecz(float value);
+  public:
+
+  // required float quatX = 5;
+  bool has_quatx() const;
+  private:
+  bool _internal_has_quatx() const;
+  public:
+  void clear_quatx();
+  float quatx() const;
+  void set_quatx(float value);
+  private:
+  float _internal_quatx() const;
+  void _internal_set_quatx(float value);
+  public:
+
+  // required float quatY = 6;
+  bool has_quaty() const;
+  private:
+  bool _internal_has_quaty() const;
+  public:
+  void clear_quaty();
+  float quaty() const;
+  void set_quaty(float value);
+  private:
+  float _internal_quaty() const;
+  void _internal_set_quaty(float value);
+  public:
+
+  // required float quatZ = 7;
+  bool has_quatz() const;
+  private:
+  bool _internal_has_quatz() const;
+  public:
+  void clear_quatz();
+  float quatz() const;
+  void set_quatz(float value);
+  private:
+  float _internal_quatz() const;
+  void _internal_set_quatz(float value);
+  public:
+
+  // required float quatW = 8;
+  bool has_quatw() const;
+  private:
+  bool _internal_has_quatw() const;
+  public:
+  void clear_quatw();
+  float quatw() const;
+  void set_quatw(float value);
+  private:
+  float _internal_quatw() const;
+  void _internal_set_quatw(float value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:sl_pb.MoveIndividualParams)
+ private:
+  class _Internal;
+
+  // helper for ByteSizeLong()
+  size_t RequiredFieldsByteSizeFallback() const;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr id_;
+  float vecx_;
+  float vecy_;
+  float vecz_;
+  float quatx_;
+  float quaty_;
+  float quatz_;
+  float quatw_;
+  friend struct ::TableStruct_control_2eproto;
+};
+// -------------------------------------------------------------------
+
+class StartSymbolicLogParams PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.StartSymbolicLogParams) */ {
+ public:
+  inline StartSymbolicLogParams() : StartSymbolicLogParams(nullptr) {}
+  virtual ~StartSymbolicLogParams();
+
+  StartSymbolicLogParams(const StartSymbolicLogParams& from);
+  StartSymbolicLogParams(StartSymbolicLogParams&& from) noexcept
+    : StartSymbolicLogParams() {
+    *this = ::std::move(from);
+  }
+
+  inline StartSymbolicLogParams& operator=(const StartSymbolicLogParams& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline StartSymbolicLogParams& operator=(StartSymbolicLogParams&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const StartSymbolicLogParams& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const StartSymbolicLogParams* internal_default_instance() {
+    return reinterpret_cast<const StartSymbolicLogParams*>(
+               &_StartSymbolicLogParams_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    3;
+
+  friend void swap(StartSymbolicLogParams& a, StartSymbolicLogParams& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(StartSymbolicLogParams* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(StartSymbolicLogParams* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline StartSymbolicLogParams* New() const final {
+    return CreateMaybeMessage<StartSymbolicLogParams>(nullptr);
+  }
+
+  StartSymbolicLogParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<StartSymbolicLogParams>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const StartSymbolicLogParams& from);
+  void MergeFrom(const StartSymbolicLogParams& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(StartSymbolicLogParams* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "sl_pb.StartSymbolicLogParams";
+  }
+  protected:
+  explicit StartSymbolicLogParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_control_2eproto);
+    return ::descriptor_table_control_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kTaskIdFieldNumber = 1,
+    kEpisodeIdFieldNumber = 2,
+  };
+  // required string taskId = 1;
+  bool has_taskid() const;
+  private:
+  bool _internal_has_taskid() const;
+  public:
+  void clear_taskid();
+  const std::string& taskid() const;
+  void set_taskid(const std::string& value);
+  void set_taskid(std::string&& value);
+  void set_taskid(const char* value);
+  void set_taskid(const char* value, size_t size);
+  std::string* mutable_taskid();
+  std::string* release_taskid();
+  void set_allocated_taskid(std::string* taskid);
+  private:
+  const std::string& _internal_taskid() const;
+  void _internal_set_taskid(const std::string& value);
+  std::string* _internal_mutable_taskid();
+  public:
+
+  // required string episodeId = 2;
+  bool has_episodeid() const;
+  private:
+  bool _internal_has_episodeid() const;
+  public:
+  void clear_episodeid();
+  const std::string& episodeid() const;
+  void set_episodeid(const std::string& value);
+  void set_episodeid(std::string&& value);
+  void set_episodeid(const char* value);
+  void set_episodeid(const char* value, size_t size);
+  std::string* mutable_episodeid();
+  std::string* release_episodeid();
+  void set_allocated_episodeid(std::string* episodeid);
+  private:
+  const std::string& _internal_episodeid() const;
+  void _internal_set_episodeid(const std::string& value);
+  std::string* _internal_mutable_episodeid();
+  public:
+
+  // @@protoc_insertion_point(class_scope:sl_pb.StartSymbolicLogParams)
+ private:
+  class _Internal;
+
+  // helper for ByteSizeLong()
+  size_t RequiredFieldsByteSizeFallback() const;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr taskid_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr episodeid_;
+  friend struct ::TableStruct_control_2eproto;
+};
 // ===================================================================
 
 
@@ -68,9 +848,595 @@ namespace sl_pb {
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
+// StartSimulationParams
+
+// repeated string id = 1;
+inline int StartSimulationParams::_internal_id_size() const {
+  return id_.size();
+}
+inline int StartSimulationParams::id_size() const {
+  return _internal_id_size();
+}
+inline void StartSimulationParams::clear_id() {
+  id_.Clear();
+}
+inline std::string* StartSimulationParams::add_id() {
+  // @@protoc_insertion_point(field_add_mutable:sl_pb.StartSimulationParams.id)
+  return _internal_add_id();
+}
+inline const std::string& StartSimulationParams::_internal_id(int index) const {
+  return id_.Get(index);
+}
+inline const std::string& StartSimulationParams::id(int index) const {
+  // @@protoc_insertion_point(field_get:sl_pb.StartSimulationParams.id)
+  return _internal_id(index);
+}
+inline std::string* StartSimulationParams::mutable_id(int index) {
+  // @@protoc_insertion_point(field_mutable:sl_pb.StartSimulationParams.id)
+  return id_.Mutable(index);
+}
+inline void StartSimulationParams::set_id(int index, const std::string& value) {
+  // @@protoc_insertion_point(field_set:sl_pb.StartSimulationParams.id)
+  id_.Mutable(index)->assign(value);
+}
+inline void StartSimulationParams::set_id(int index, std::string&& value) {
+  // @@protoc_insertion_point(field_set:sl_pb.StartSimulationParams.id)
+  id_.Mutable(index)->assign(std::move(value));
+}
+inline void StartSimulationParams::set_id(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  id_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:sl_pb.StartSimulationParams.id)
+}
+inline void StartSimulationParams::set_id(int index, const char* value, size_t size) {
+  id_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartSimulationParams.id)
+}
+inline std::string* StartSimulationParams::_internal_add_id() {
+  return id_.Add();
+}
+inline void StartSimulationParams::add_id(const std::string& value) {
+  id_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:sl_pb.StartSimulationParams.id)
+}
+inline void StartSimulationParams::add_id(std::string&& value) {
+  id_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:sl_pb.StartSimulationParams.id)
+}
+inline void StartSimulationParams::add_id(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  id_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:sl_pb.StartSimulationParams.id)
+}
+inline void StartSimulationParams::add_id(const char* value, size_t size) {
+  id_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:sl_pb.StartSimulationParams.id)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+StartSimulationParams::id() const {
+  // @@protoc_insertion_point(field_list:sl_pb.StartSimulationParams.id)
+  return id_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+StartSimulationParams::mutable_id() {
+  // @@protoc_insertion_point(field_mutable_list:sl_pb.StartSimulationParams.id)
+  return &id_;
+}
+
+// -------------------------------------------------------------------
+
+// StopSimulationParams
+
+// repeated string id = 1;
+inline int StopSimulationParams::_internal_id_size() const {
+  return id_.size();
+}
+inline int StopSimulationParams::id_size() const {
+  return _internal_id_size();
+}
+inline void StopSimulationParams::clear_id() {
+  id_.Clear();
+}
+inline std::string* StopSimulationParams::add_id() {
+  // @@protoc_insertion_point(field_add_mutable:sl_pb.StopSimulationParams.id)
+  return _internal_add_id();
+}
+inline const std::string& StopSimulationParams::_internal_id(int index) const {
+  return id_.Get(index);
+}
+inline const std::string& StopSimulationParams::id(int index) const {
+  // @@protoc_insertion_point(field_get:sl_pb.StopSimulationParams.id)
+  return _internal_id(index);
+}
+inline std::string* StopSimulationParams::mutable_id(int index) {
+  // @@protoc_insertion_point(field_mutable:sl_pb.StopSimulationParams.id)
+  return id_.Mutable(index);
+}
+inline void StopSimulationParams::set_id(int index, const std::string& value) {
+  // @@protoc_insertion_point(field_set:sl_pb.StopSimulationParams.id)
+  id_.Mutable(index)->assign(value);
+}
+inline void StopSimulationParams::set_id(int index, std::string&& value) {
+  // @@protoc_insertion_point(field_set:sl_pb.StopSimulationParams.id)
+  id_.Mutable(index)->assign(std::move(value));
+}
+inline void StopSimulationParams::set_id(int index, const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  id_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:sl_pb.StopSimulationParams.id)
+}
+inline void StopSimulationParams::set_id(int index, const char* value, size_t size) {
+  id_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.StopSimulationParams.id)
+}
+inline std::string* StopSimulationParams::_internal_add_id() {
+  return id_.Add();
+}
+inline void StopSimulationParams::add_id(const std::string& value) {
+  id_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:sl_pb.StopSimulationParams.id)
+}
+inline void StopSimulationParams::add_id(std::string&& value) {
+  id_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:sl_pb.StopSimulationParams.id)
+}
+inline void StopSimulationParams::add_id(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  id_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:sl_pb.StopSimulationParams.id)
+}
+inline void StopSimulationParams::add_id(const char* value, size_t size) {
+  id_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:sl_pb.StopSimulationParams.id)
+}
+inline const ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>&
+StopSimulationParams::id() const {
+  // @@protoc_insertion_point(field_list:sl_pb.StopSimulationParams.id)
+  return id_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField<std::string>*
+StopSimulationParams::mutable_id() {
+  // @@protoc_insertion_point(field_mutable_list:sl_pb.StopSimulationParams.id)
+  return &id_;
+}
+
+// -------------------------------------------------------------------
+
+// MoveIndividualParams
+
+// required string id = 1;
+inline bool MoveIndividualParams::_internal_has_id() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool MoveIndividualParams::has_id() const {
+  return _internal_has_id();
+}
+inline void MoveIndividualParams::clear_id() {
+  id_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline const std::string& MoveIndividualParams::id() const {
+  // @@protoc_insertion_point(field_get:sl_pb.MoveIndividualParams.id)
+  return _internal_id();
+}
+inline void MoveIndividualParams::set_id(const std::string& value) {
+  _internal_set_id(value);
+  // @@protoc_insertion_point(field_set:sl_pb.MoveIndividualParams.id)
+}
+inline std::string* MoveIndividualParams::mutable_id() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.MoveIndividualParams.id)
+  return _internal_mutable_id();
+}
+inline const std::string& MoveIndividualParams::_internal_id() const {
+  return id_.Get();
+}
+inline void MoveIndividualParams::_internal_set_id(const std::string& value) {
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void MoveIndividualParams::set_id(std::string&& value) {
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.MoveIndividualParams.id)
+}
+inline void MoveIndividualParams::set_id(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.MoveIndividualParams.id)
+}
+inline void MoveIndividualParams::set_id(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.MoveIndividualParams.id)
+}
+inline std::string* MoveIndividualParams::_internal_mutable_id() {
+  _has_bits_[0] |= 0x00000001u;
+  return id_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* MoveIndividualParams::release_id() {
+  // @@protoc_insertion_point(field_release:sl_pb.MoveIndividualParams.id)
+  if (!_internal_has_id()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000001u;
+  return id_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void MoveIndividualParams::set_allocated_id(std::string* id) {
+  if (id != nullptr) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  id_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), id,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.MoveIndividualParams.id)
+}
+
+// required float vecX = 2;
+inline bool MoveIndividualParams::_internal_has_vecx() const {
+  bool value = (_has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool MoveIndividualParams::has_vecx() const {
+  return _internal_has_vecx();
+}
+inline void MoveIndividualParams::clear_vecx() {
+  vecx_ = 0;
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline float MoveIndividualParams::_internal_vecx() const {
+  return vecx_;
+}
+inline float MoveIndividualParams::vecx() const {
+  // @@protoc_insertion_point(field_get:sl_pb.MoveIndividualParams.vecX)
+  return _internal_vecx();
+}
+inline void MoveIndividualParams::_internal_set_vecx(float value) {
+  _has_bits_[0] |= 0x00000002u;
+  vecx_ = value;
+}
+inline void MoveIndividualParams::set_vecx(float value) {
+  _internal_set_vecx(value);
+  // @@protoc_insertion_point(field_set:sl_pb.MoveIndividualParams.vecX)
+}
+
+// required float vecY = 3;
+inline bool MoveIndividualParams::_internal_has_vecy() const {
+  bool value = (_has_bits_[0] & 0x00000004u) != 0;
+  return value;
+}
+inline bool MoveIndividualParams::has_vecy() const {
+  return _internal_has_vecy();
+}
+inline void MoveIndividualParams::clear_vecy() {
+  vecy_ = 0;
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline float MoveIndividualParams::_internal_vecy() const {
+  return vecy_;
+}
+inline float MoveIndividualParams::vecy() const {
+  // @@protoc_insertion_point(field_get:sl_pb.MoveIndividualParams.vecY)
+  return _internal_vecy();
+}
+inline void MoveIndividualParams::_internal_set_vecy(float value) {
+  _has_bits_[0] |= 0x00000004u;
+  vecy_ = value;
+}
+inline void MoveIndividualParams::set_vecy(float value) {
+  _internal_set_vecy(value);
+  // @@protoc_insertion_point(field_set:sl_pb.MoveIndividualParams.vecY)
+}
+
+// required float vecZ = 4;
+inline bool MoveIndividualParams::_internal_has_vecz() const {
+  bool value = (_has_bits_[0] & 0x00000008u) != 0;
+  return value;
+}
+inline bool MoveIndividualParams::has_vecz() const {
+  return _internal_has_vecz();
+}
+inline void MoveIndividualParams::clear_vecz() {
+  vecz_ = 0;
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline float MoveIndividualParams::_internal_vecz() const {
+  return vecz_;
+}
+inline float MoveIndividualParams::vecz() const {
+  // @@protoc_insertion_point(field_get:sl_pb.MoveIndividualParams.vecZ)
+  return _internal_vecz();
+}
+inline void MoveIndividualParams::_internal_set_vecz(float value) {
+  _has_bits_[0] |= 0x00000008u;
+  vecz_ = value;
+}
+inline void MoveIndividualParams::set_vecz(float value) {
+  _internal_set_vecz(value);
+  // @@protoc_insertion_point(field_set:sl_pb.MoveIndividualParams.vecZ)
+}
+
+// required float quatX = 5;
+inline bool MoveIndividualParams::_internal_has_quatx() const {
+  bool value = (_has_bits_[0] & 0x00000010u) != 0;
+  return value;
+}
+inline bool MoveIndividualParams::has_quatx() const {
+  return _internal_has_quatx();
+}
+inline void MoveIndividualParams::clear_quatx() {
+  quatx_ = 0;
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline float MoveIndividualParams::_internal_quatx() const {
+  return quatx_;
+}
+inline float MoveIndividualParams::quatx() const {
+  // @@protoc_insertion_point(field_get:sl_pb.MoveIndividualParams.quatX)
+  return _internal_quatx();
+}
+inline void MoveIndividualParams::_internal_set_quatx(float value) {
+  _has_bits_[0] |= 0x00000010u;
+  quatx_ = value;
+}
+inline void MoveIndividualParams::set_quatx(float value) {
+  _internal_set_quatx(value);
+  // @@protoc_insertion_point(field_set:sl_pb.MoveIndividualParams.quatX)
+}
+
+// required float quatY = 6;
+inline bool MoveIndividualParams::_internal_has_quaty() const {
+  bool value = (_has_bits_[0] & 0x00000020u) != 0;
+  return value;
+}
+inline bool MoveIndividualParams::has_quaty() const {
+  return _internal_has_quaty();
+}
+inline void MoveIndividualParams::clear_quaty() {
+  quaty_ = 0;
+  _has_bits_[0] &= ~0x00000020u;
+}
+inline float MoveIndividualParams::_internal_quaty() const {
+  return quaty_;
+}
+inline float MoveIndividualParams::quaty() const {
+  // @@protoc_insertion_point(field_get:sl_pb.MoveIndividualParams.quatY)
+  return _internal_quaty();
+}
+inline void MoveIndividualParams::_internal_set_quaty(float value) {
+  _has_bits_[0] |= 0x00000020u;
+  quaty_ = value;
+}
+inline void MoveIndividualParams::set_quaty(float value) {
+  _internal_set_quaty(value);
+  // @@protoc_insertion_point(field_set:sl_pb.MoveIndividualParams.quatY)
+}
+
+// required float quatZ = 7;
+inline bool MoveIndividualParams::_internal_has_quatz() const {
+  bool value = (_has_bits_[0] & 0x00000040u) != 0;
+  return value;
+}
+inline bool MoveIndividualParams::has_quatz() const {
+  return _internal_has_quatz();
+}
+inline void MoveIndividualParams::clear_quatz() {
+  quatz_ = 0;
+  _has_bits_[0] &= ~0x00000040u;
+}
+inline float MoveIndividualParams::_internal_quatz() const {
+  return quatz_;
+}
+inline float MoveIndividualParams::quatz() const {
+  // @@protoc_insertion_point(field_get:sl_pb.MoveIndividualParams.quatZ)
+  return _internal_quatz();
+}
+inline void MoveIndividualParams::_internal_set_quatz(float value) {
+  _has_bits_[0] |= 0x00000040u;
+  quatz_ = value;
+}
+inline void MoveIndividualParams::set_quatz(float value) {
+  _internal_set_quatz(value);
+  // @@protoc_insertion_point(field_set:sl_pb.MoveIndividualParams.quatZ)
+}
+
+// required float quatW = 8;
+inline bool MoveIndividualParams::_internal_has_quatw() const {
+  bool value = (_has_bits_[0] & 0x00000080u) != 0;
+  return value;
+}
+inline bool MoveIndividualParams::has_quatw() const {
+  return _internal_has_quatw();
+}
+inline void MoveIndividualParams::clear_quatw() {
+  quatw_ = 0;
+  _has_bits_[0] &= ~0x00000080u;
+}
+inline float MoveIndividualParams::_internal_quatw() const {
+  return quatw_;
+}
+inline float MoveIndividualParams::quatw() const {
+  // @@protoc_insertion_point(field_get:sl_pb.MoveIndividualParams.quatW)
+  return _internal_quatw();
+}
+inline void MoveIndividualParams::_internal_set_quatw(float value) {
+  _has_bits_[0] |= 0x00000080u;
+  quatw_ = value;
+}
+inline void MoveIndividualParams::set_quatw(float value) {
+  _internal_set_quatw(value);
+  // @@protoc_insertion_point(field_set:sl_pb.MoveIndividualParams.quatW)
+}
+
+// -------------------------------------------------------------------
+
+// StartSymbolicLogParams
+
+// required string taskId = 1;
+inline bool StartSymbolicLogParams::_internal_has_taskid() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool StartSymbolicLogParams::has_taskid() const {
+  return _internal_has_taskid();
+}
+inline void StartSymbolicLogParams::clear_taskid() {
+  taskid_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline const std::string& StartSymbolicLogParams::taskid() const {
+  // @@protoc_insertion_point(field_get:sl_pb.StartSymbolicLogParams.taskId)
+  return _internal_taskid();
+}
+inline void StartSymbolicLogParams::set_taskid(const std::string& value) {
+  _internal_set_taskid(value);
+  // @@protoc_insertion_point(field_set:sl_pb.StartSymbolicLogParams.taskId)
+}
+inline std::string* StartSymbolicLogParams::mutable_taskid() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.StartSymbolicLogParams.taskId)
+  return _internal_mutable_taskid();
+}
+inline const std::string& StartSymbolicLogParams::_internal_taskid() const {
+  return taskid_.Get();
+}
+inline void StartSymbolicLogParams::_internal_set_taskid(const std::string& value) {
+  _has_bits_[0] |= 0x00000001u;
+  taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void StartSymbolicLogParams::set_taskid(std::string&& value) {
+  _has_bits_[0] |= 0x00000001u;
+  taskid_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartSymbolicLogParams.taskId)
+}
+inline void StartSymbolicLogParams::set_taskid(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000001u;
+  taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.StartSymbolicLogParams.taskId)
+}
+inline void StartSymbolicLogParams::set_taskid(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000001u;
+  taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartSymbolicLogParams.taskId)
+}
+inline std::string* StartSymbolicLogParams::_internal_mutable_taskid() {
+  _has_bits_[0] |= 0x00000001u;
+  return taskid_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* StartSymbolicLogParams::release_taskid() {
+  // @@protoc_insertion_point(field_release:sl_pb.StartSymbolicLogParams.taskId)
+  if (!_internal_has_taskid()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000001u;
+  return taskid_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void StartSymbolicLogParams::set_allocated_taskid(std::string* taskid) {
+  if (taskid != nullptr) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  taskid_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), taskid,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartSymbolicLogParams.taskId)
+}
+
+// required string episodeId = 2;
+inline bool StartSymbolicLogParams::_internal_has_episodeid() const {
+  bool value = (_has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool StartSymbolicLogParams::has_episodeid() const {
+  return _internal_has_episodeid();
+}
+inline void StartSymbolicLogParams::clear_episodeid() {
+  episodeid_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline const std::string& StartSymbolicLogParams::episodeid() const {
+  // @@protoc_insertion_point(field_get:sl_pb.StartSymbolicLogParams.episodeId)
+  return _internal_episodeid();
+}
+inline void StartSymbolicLogParams::set_episodeid(const std::string& value) {
+  _internal_set_episodeid(value);
+  // @@protoc_insertion_point(field_set:sl_pb.StartSymbolicLogParams.episodeId)
+}
+inline std::string* StartSymbolicLogParams::mutable_episodeid() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.StartSymbolicLogParams.episodeId)
+  return _internal_mutable_episodeid();
+}
+inline const std::string& StartSymbolicLogParams::_internal_episodeid() const {
+  return episodeid_.Get();
+}
+inline void StartSymbolicLogParams::_internal_set_episodeid(const std::string& value) {
+  _has_bits_[0] |= 0x00000002u;
+  episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void StartSymbolicLogParams::set_episodeid(std::string&& value) {
+  _has_bits_[0] |= 0x00000002u;
+  episodeid_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartSymbolicLogParams.episodeId)
+}
+inline void StartSymbolicLogParams::set_episodeid(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000002u;
+  episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.StartSymbolicLogParams.episodeId)
+}
+inline void StartSymbolicLogParams::set_episodeid(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000002u;
+  episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartSymbolicLogParams.episodeId)
+}
+inline std::string* StartSymbolicLogParams::_internal_mutable_episodeid() {
+  _has_bits_[0] |= 0x00000002u;
+  return episodeid_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* StartSymbolicLogParams::release_episodeid() {
+  // @@protoc_insertion_point(field_release:sl_pb.StartSymbolicLogParams.episodeId)
+  if (!_internal_has_episodeid()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000002u;
+  return episodeid_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void StartSymbolicLogParams::set_allocated_episodeid(std::string* episodeid) {
+  if (episodeid != nullptr) {
+    _has_bits_[0] |= 0x00000002u;
+  } else {
+    _has_bits_[0] &= ~0x00000002u;
+  }
+  episodeid_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), episodeid,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartSymbolicLogParams.episodeId)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 

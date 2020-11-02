@@ -17,8 +17,13 @@
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DrawMarkerAtParams_viz_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DrawMarkerTrajParams_viz_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_tutorial_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_HelloWorldParams_tutorial_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LoadMapParams_viz_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MoveIndividualParams_control_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetEpisodeParams_viz_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetTaskParams_viz_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StartSimulationParams_control_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StartSymbolicLogParams_control_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StopSimulationParams_control_2eproto;
 namespace sl_pb {
 class KRAmevaEventDefaultTypeInternal {
  public:
@@ -36,13 +41,18 @@ static void InitDefaultsscc_info_KRAmevaEvent_ameva_2eproto() {
   ::sl_pb::KRAmevaEvent::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<5> scc_info_KRAmevaEvent_ameva_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 5, 0, InitDefaultsscc_info_KRAmevaEvent_ameva_2eproto}, {
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<10> scc_info_KRAmevaEvent_ameva_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 10, 0, InitDefaultsscc_info_KRAmevaEvent_ameva_2eproto}, {
       &scc_info_SetTaskParams_viz_2eproto.base,
       &scc_info_SetEpisodeParams_viz_2eproto.base,
       &scc_info_DrawMarkerAtParams_viz_2eproto.base,
       &scc_info_DrawMarkerTrajParams_viz_2eproto.base,
-      &scc_info_HelloWorldParams_tutorial_2eproto.base,}};
+      &scc_info_HelloWorldParams_tutorial_2eproto.base,
+      &scc_info_LoadMapParams_viz_2eproto.base,
+      &scc_info_StartSimulationParams_control_2eproto.base,
+      &scc_info_StopSimulationParams_control_2eproto.base,
+      &scc_info_MoveIndividualParams_control_2eproto.base,
+      &scc_info_StartSymbolicLogParams_control_2eproto.base,}};
 
 static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_ameva_2eproto[1];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_ameva_2eproto[1];
@@ -60,15 +70,25 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_ameva_2eproto::offsets[] PROTO
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, drawmarkeratparams_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, drawmarkertrajparams_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, helloworldparams_),
-  5,
+  PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, loadmapparams_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, startsimulationparams_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, stopsimulationparams_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, moveindividualparams_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, startsymboliclogparams_),
+  10,
   0,
   1,
   2,
   3,
   4,
+  5,
+  6,
+  7,
+  8,
+  9,
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, 11, sizeof(::sl_pb::KRAmevaEvent)},
+  { 0, 16, sizeof(::sl_pb::KRAmevaEvent)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -77,18 +97,28 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 
 const char descriptor_table_protodef_ameva_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\013ameva.proto\022\005sl_pb\032\tviz.proto\032\016tutoria"
-  "l.proto\032\rcontrol.proto\"\247\003\n\014KRAmevaEvent\022"
+  "l.proto\032\rcontrol.proto\"\274\006\n\014KRAmevaEvent\022"
   "2\n\nfuncToCall\030\001 \002(\0162\036.sl_pb.KRAmevaEvent"
   ".FuncToCall\022*\n\014setTaskParam\030\002 \001(\0132\024.sl_p"
   "b.SetTaskParams\0221\n\020setEpisodeParams\030\003 \001("
   "\0132\027.sl_pb.SetEpisodeParams\0225\n\022drawMarker"
   "AtParams\030\004 \001(\0132\031.sl_pb.DrawMarkerAtParam"
   "s\0229\n\024drawMarkerTrajParams\030\005 \001(\0132\033.sl_pb."
-  "DrawMarkerTrajParams\0221\n\020HelloWorldParams"
-  "\030\006 \001(\0132\027.sl_pb.HelloWorldParams\"_\n\nFuncT"
-  "oCall\022\013\n\007SetTask\020\001\022\016\n\nSetEpisode\020\002\022\020\n\014Dr"
-  "awMarkerAt\020\003\022\022\n\016DrawMarkerTraj\020\004\022\016\n\nHell"
-  "oWorld\020\005"
+  "DrawMarkerTrajParams\0221\n\020helloWorldParams"
+  "\030\006 \001(\0132\027.sl_pb.HelloWorldParams\022+\n\rloadM"
+  "apParams\030\007 \001(\0132\024.sl_pb.LoadMapParams\022;\n\025"
+  "startSimulationParams\030\010 \001(\0132\034.sl_pb.Star"
+  "tSimulationParams\0229\n\024stopSimulationParam"
+  "s\030\t \001(\0132\033.sl_pb.StopSimulationParams\0229\n\024"
+  "moveIndividualParams\030\n \001(\0132\033.sl_pb.MoveI"
+  "ndividualParams\022=\n\026startSymbolicLogParam"
+  "s\030\013 \001(\0132\035.sl_pb.StartSymbolicLogParams\"\324"
+  "\001\n\nFuncToCall\022\013\n\007SetTask\020\001\022\016\n\nSetEpisode"
+  "\020\002\022\020\n\014DrawMarkerAt\020\003\022\022\n\016DrawMarkerTraj\020\004"
+  "\022\016\n\nHelloWorld\020\005\022\013\n\007LoadMap\020\006\022\024\n\020StartSy"
+  "mbolicLog\020\007\022\023\n\017StopSymbolicLog\020\010\022\023\n\017Star"
+  "tSimulation\020\t\022\022\n\016StopSimulation\020\n\022\022\n\016Mov"
+  "eIndividual\020\013"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_ameva_2eproto_deps[3] = {
   &::descriptor_table_control_2eproto,
@@ -100,7 +130,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_ame
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_ameva_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_ameva_2eproto = {
-  false, false, descriptor_table_protodef_ameva_2eproto, "ameva.proto", 488,
+  false, false, descriptor_table_protodef_ameva_2eproto, "ameva.proto", 893,
   &descriptor_table_ameva_2eproto_once, descriptor_table_ameva_2eproto_sccs, descriptor_table_ameva_2eproto_deps, 1, 3,
   schemas, file_default_instances, TableStruct_ameva_2eproto::offsets,
   file_level_metadata_ameva_2eproto, 1, file_level_enum_descriptors_ameva_2eproto, file_level_service_descriptors_ameva_2eproto,
@@ -120,6 +150,12 @@ bool KRAmevaEvent_FuncToCall_IsValid(int value) {
     case 3:
     case 4:
     case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    case 11:
       return true;
     default:
       return false;
@@ -132,6 +168,12 @@ constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::SetEpisode;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::DrawMarkerAt;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::DrawMarkerTraj;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::HelloWorld;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::LoadMap;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StartSymbolicLog;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StopSymbolicLog;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StartSimulation;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StopSimulation;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::MoveIndividual;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::FuncToCall_MIN;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::FuncToCall_MAX;
 constexpr int KRAmevaEvent::FuncToCall_ARRAYSIZE;
@@ -150,12 +192,22 @@ void KRAmevaEvent::InitAsDefaultInstance() {
       ::sl_pb::DrawMarkerTrajParams::internal_default_instance());
   ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->helloworldparams_ = const_cast< ::sl_pb::HelloWorldParams*>(
       ::sl_pb::HelloWorldParams::internal_default_instance());
+  ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->loadmapparams_ = const_cast< ::sl_pb::LoadMapParams*>(
+      ::sl_pb::LoadMapParams::internal_default_instance());
+  ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->startsimulationparams_ = const_cast< ::sl_pb::StartSimulationParams*>(
+      ::sl_pb::StartSimulationParams::internal_default_instance());
+  ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->stopsimulationparams_ = const_cast< ::sl_pb::StopSimulationParams*>(
+      ::sl_pb::StopSimulationParams::internal_default_instance());
+  ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->moveindividualparams_ = const_cast< ::sl_pb::MoveIndividualParams*>(
+      ::sl_pb::MoveIndividualParams::internal_default_instance());
+  ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->startsymboliclogparams_ = const_cast< ::sl_pb::StartSymbolicLogParams*>(
+      ::sl_pb::StartSymbolicLogParams::internal_default_instance());
 }
 class KRAmevaEvent::_Internal {
  public:
   using HasBits = decltype(std::declval<KRAmevaEvent>()._has_bits_);
   static void set_has_functocall(HasBits* has_bits) {
-    (*has_bits)[0] |= 32u;
+    (*has_bits)[0] |= 1024u;
   }
   static const ::sl_pb::SetTaskParams& settaskparam(const KRAmevaEvent* msg);
   static void set_has_settaskparam(HasBits* has_bits) {
@@ -177,8 +229,28 @@ class KRAmevaEvent::_Internal {
   static void set_has_helloworldparams(HasBits* has_bits) {
     (*has_bits)[0] |= 16u;
   }
+  static const ::sl_pb::LoadMapParams& loadmapparams(const KRAmevaEvent* msg);
+  static void set_has_loadmapparams(HasBits* has_bits) {
+    (*has_bits)[0] |= 32u;
+  }
+  static const ::sl_pb::StartSimulationParams& startsimulationparams(const KRAmevaEvent* msg);
+  static void set_has_startsimulationparams(HasBits* has_bits) {
+    (*has_bits)[0] |= 64u;
+  }
+  static const ::sl_pb::StopSimulationParams& stopsimulationparams(const KRAmevaEvent* msg);
+  static void set_has_stopsimulationparams(HasBits* has_bits) {
+    (*has_bits)[0] |= 128u;
+  }
+  static const ::sl_pb::MoveIndividualParams& moveindividualparams(const KRAmevaEvent* msg);
+  static void set_has_moveindividualparams(HasBits* has_bits) {
+    (*has_bits)[0] |= 256u;
+  }
+  static const ::sl_pb::StartSymbolicLogParams& startsymboliclogparams(const KRAmevaEvent* msg);
+  static void set_has_startsymboliclogparams(HasBits* has_bits) {
+    (*has_bits)[0] |= 512u;
+  }
   static bool MissingRequiredFields(const HasBits& has_bits) {
-    return ((has_bits[0] & 0x00000020) ^ 0x00000020) != 0;
+    return ((has_bits[0] & 0x00000400) ^ 0x00000400) != 0;
   }
 };
 
@@ -202,6 +274,26 @@ const ::sl_pb::HelloWorldParams&
 KRAmevaEvent::_Internal::helloworldparams(const KRAmevaEvent* msg) {
   return *msg->helloworldparams_;
 }
+const ::sl_pb::LoadMapParams&
+KRAmevaEvent::_Internal::loadmapparams(const KRAmevaEvent* msg) {
+  return *msg->loadmapparams_;
+}
+const ::sl_pb::StartSimulationParams&
+KRAmevaEvent::_Internal::startsimulationparams(const KRAmevaEvent* msg) {
+  return *msg->startsimulationparams_;
+}
+const ::sl_pb::StopSimulationParams&
+KRAmevaEvent::_Internal::stopsimulationparams(const KRAmevaEvent* msg) {
+  return *msg->stopsimulationparams_;
+}
+const ::sl_pb::MoveIndividualParams&
+KRAmevaEvent::_Internal::moveindividualparams(const KRAmevaEvent* msg) {
+  return *msg->moveindividualparams_;
+}
+const ::sl_pb::StartSymbolicLogParams&
+KRAmevaEvent::_Internal::startsymboliclogparams(const KRAmevaEvent* msg) {
+  return *msg->startsymboliclogparams_;
+}
 void KRAmevaEvent::clear_settaskparam() {
   if (settaskparam_ != nullptr) settaskparam_->Clear();
   _has_bits_[0] &= ~0x00000001u;
@@ -221,6 +313,26 @@ void KRAmevaEvent::clear_drawmarkertrajparams() {
 void KRAmevaEvent::clear_helloworldparams() {
   if (helloworldparams_ != nullptr) helloworldparams_->Clear();
   _has_bits_[0] &= ~0x00000010u;
+}
+void KRAmevaEvent::clear_loadmapparams() {
+  if (loadmapparams_ != nullptr) loadmapparams_->Clear();
+  _has_bits_[0] &= ~0x00000020u;
+}
+void KRAmevaEvent::clear_startsimulationparams() {
+  if (startsimulationparams_ != nullptr) startsimulationparams_->Clear();
+  _has_bits_[0] &= ~0x00000040u;
+}
+void KRAmevaEvent::clear_stopsimulationparams() {
+  if (stopsimulationparams_ != nullptr) stopsimulationparams_->Clear();
+  _has_bits_[0] &= ~0x00000080u;
+}
+void KRAmevaEvent::clear_moveindividualparams() {
+  if (moveindividualparams_ != nullptr) moveindividualparams_->Clear();
+  _has_bits_[0] &= ~0x00000100u;
+}
+void KRAmevaEvent::clear_startsymboliclogparams() {
+  if (startsymboliclogparams_ != nullptr) startsymboliclogparams_->Clear();
+  _has_bits_[0] &= ~0x00000200u;
 }
 KRAmevaEvent::KRAmevaEvent(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
@@ -257,6 +369,31 @@ KRAmevaEvent::KRAmevaEvent(const KRAmevaEvent& from)
   } else {
     helloworldparams_ = nullptr;
   }
+  if (from._internal_has_loadmapparams()) {
+    loadmapparams_ = new ::sl_pb::LoadMapParams(*from.loadmapparams_);
+  } else {
+    loadmapparams_ = nullptr;
+  }
+  if (from._internal_has_startsimulationparams()) {
+    startsimulationparams_ = new ::sl_pb::StartSimulationParams(*from.startsimulationparams_);
+  } else {
+    startsimulationparams_ = nullptr;
+  }
+  if (from._internal_has_stopsimulationparams()) {
+    stopsimulationparams_ = new ::sl_pb::StopSimulationParams(*from.stopsimulationparams_);
+  } else {
+    stopsimulationparams_ = nullptr;
+  }
+  if (from._internal_has_moveindividualparams()) {
+    moveindividualparams_ = new ::sl_pb::MoveIndividualParams(*from.moveindividualparams_);
+  } else {
+    moveindividualparams_ = nullptr;
+  }
+  if (from._internal_has_startsymboliclogparams()) {
+    startsymboliclogparams_ = new ::sl_pb::StartSymbolicLogParams(*from.startsymboliclogparams_);
+  } else {
+    startsymboliclogparams_ = nullptr;
+  }
   functocall_ = from.functocall_;
   // @@protoc_insertion_point(copy_constructor:sl_pb.KRAmevaEvent)
 }
@@ -264,8 +401,8 @@ KRAmevaEvent::KRAmevaEvent(const KRAmevaEvent& from)
 void KRAmevaEvent::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_KRAmevaEvent_ameva_2eproto.base);
   ::memset(&settaskparam_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&helloworldparams_) -
-      reinterpret_cast<char*>(&settaskparam_)) + sizeof(helloworldparams_));
+      reinterpret_cast<char*>(&startsymboliclogparams_) -
+      reinterpret_cast<char*>(&settaskparam_)) + sizeof(startsymboliclogparams_));
   functocall_ = 1;
 }
 
@@ -282,6 +419,11 @@ void KRAmevaEvent::SharedDtor() {
   if (this != internal_default_instance()) delete drawmarkeratparams_;
   if (this != internal_default_instance()) delete drawmarkertrajparams_;
   if (this != internal_default_instance()) delete helloworldparams_;
+  if (this != internal_default_instance()) delete loadmapparams_;
+  if (this != internal_default_instance()) delete startsimulationparams_;
+  if (this != internal_default_instance()) delete stopsimulationparams_;
+  if (this != internal_default_instance()) delete moveindividualparams_;
+  if (this != internal_default_instance()) delete startsymboliclogparams_;
 }
 
 void KRAmevaEvent::ArenaDtor(void* object) {
@@ -306,7 +448,7 @@ void KRAmevaEvent::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  if (cached_has_bits & 0x0000003fu) {
+  if (cached_has_bits & 0x000000ffu) {
     if (cached_has_bits & 0x00000001u) {
       GOOGLE_DCHECK(settaskparam_ != nullptr);
       settaskparam_->Clear();
@@ -326,6 +468,28 @@ void KRAmevaEvent::Clear() {
     if (cached_has_bits & 0x00000010u) {
       GOOGLE_DCHECK(helloworldparams_ != nullptr);
       helloworldparams_->Clear();
+    }
+    if (cached_has_bits & 0x00000020u) {
+      GOOGLE_DCHECK(loadmapparams_ != nullptr);
+      loadmapparams_->Clear();
+    }
+    if (cached_has_bits & 0x00000040u) {
+      GOOGLE_DCHECK(startsimulationparams_ != nullptr);
+      startsimulationparams_->Clear();
+    }
+    if (cached_has_bits & 0x00000080u) {
+      GOOGLE_DCHECK(stopsimulationparams_ != nullptr);
+      stopsimulationparams_->Clear();
+    }
+  }
+  if (cached_has_bits & 0x00000700u) {
+    if (cached_has_bits & 0x00000100u) {
+      GOOGLE_DCHECK(moveindividualparams_ != nullptr);
+      moveindividualparams_->Clear();
+    }
+    if (cached_has_bits & 0x00000200u) {
+      GOOGLE_DCHECK(startsymboliclogparams_ != nullptr);
+      startsymboliclogparams_->Clear();
     }
     functocall_ = 1;
   }
@@ -382,10 +546,45 @@ const char* KRAmevaEvent::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
-      // optional .sl_pb.HelloWorldParams HelloWorldParams = 6;
+      // optional .sl_pb.HelloWorldParams helloWorldParams = 6;
       case 6:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
           ptr = ctx->ParseMessage(_internal_mutable_helloworldparams(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // optional .sl_pb.LoadMapParams loadMapParams = 7;
+      case 7:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 58)) {
+          ptr = ctx->ParseMessage(_internal_mutable_loadmapparams(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // optional .sl_pb.StartSimulationParams startSimulationParams = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 66)) {
+          ptr = ctx->ParseMessage(_internal_mutable_startsimulationparams(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // optional .sl_pb.StopSimulationParams stopSimulationParams = 9;
+      case 9:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 74)) {
+          ptr = ctx->ParseMessage(_internal_mutable_stopsimulationparams(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // optional .sl_pb.MoveIndividualParams moveIndividualParams = 10;
+      case 10:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 82)) {
+          ptr = ctx->ParseMessage(_internal_mutable_moveindividualparams(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // optional .sl_pb.StartSymbolicLogParams startSymbolicLogParams = 11;
+      case 11:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 90)) {
+          ptr = ctx->ParseMessage(_internal_mutable_startsymboliclogparams(), ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -420,7 +619,7 @@ failure:
 
   cached_has_bits = _has_bits_[0];
   // required .sl_pb.KRAmevaEvent.FuncToCall funcToCall = 1;
-  if (cached_has_bits & 0x00000020u) {
+  if (cached_has_bits & 0x00000400u) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
       1, this->_internal_functocall(), target);
@@ -458,12 +657,52 @@ failure:
         5, _Internal::drawmarkertrajparams(this), target, stream);
   }
 
-  // optional .sl_pb.HelloWorldParams HelloWorldParams = 6;
+  // optional .sl_pb.HelloWorldParams helloWorldParams = 6;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
       InternalWriteMessage(
         6, _Internal::helloworldparams(this), target, stream);
+  }
+
+  // optional .sl_pb.LoadMapParams loadMapParams = 7;
+  if (cached_has_bits & 0x00000020u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        7, _Internal::loadmapparams(this), target, stream);
+  }
+
+  // optional .sl_pb.StartSimulationParams startSimulationParams = 8;
+  if (cached_has_bits & 0x00000040u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        8, _Internal::startsimulationparams(this), target, stream);
+  }
+
+  // optional .sl_pb.StopSimulationParams stopSimulationParams = 9;
+  if (cached_has_bits & 0x00000080u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        9, _Internal::stopsimulationparams(this), target, stream);
+  }
+
+  // optional .sl_pb.MoveIndividualParams moveIndividualParams = 10;
+  if (cached_has_bits & 0x00000100u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        10, _Internal::moveindividualparams(this), target, stream);
+  }
+
+  // optional .sl_pb.StartSymbolicLogParams startSymbolicLogParams = 11;
+  if (cached_has_bits & 0x00000200u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        11, _Internal::startsymboliclogparams(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -488,7 +727,7 @@ size_t KRAmevaEvent::ByteSizeLong() const {
   (void) cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  if (cached_has_bits & 0x0000001fu) {
+  if (cached_has_bits & 0x000000ffu) {
     // optional .sl_pb.SetTaskParams setTaskParam = 2;
     if (cached_has_bits & 0x00000001u) {
       total_size += 1 +
@@ -517,11 +756,48 @@ size_t KRAmevaEvent::ByteSizeLong() const {
           *drawmarkertrajparams_);
     }
 
-    // optional .sl_pb.HelloWorldParams HelloWorldParams = 6;
+    // optional .sl_pb.HelloWorldParams helloWorldParams = 6;
     if (cached_has_bits & 0x00000010u) {
       total_size += 1 +
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
           *helloworldparams_);
+    }
+
+    // optional .sl_pb.LoadMapParams loadMapParams = 7;
+    if (cached_has_bits & 0x00000020u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *loadmapparams_);
+    }
+
+    // optional .sl_pb.StartSimulationParams startSimulationParams = 8;
+    if (cached_has_bits & 0x00000040u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *startsimulationparams_);
+    }
+
+    // optional .sl_pb.StopSimulationParams stopSimulationParams = 9;
+    if (cached_has_bits & 0x00000080u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *stopsimulationparams_);
+    }
+
+  }
+  if (cached_has_bits & 0x00000300u) {
+    // optional .sl_pb.MoveIndividualParams moveIndividualParams = 10;
+    if (cached_has_bits & 0x00000100u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *moveindividualparams_);
+    }
+
+    // optional .sl_pb.StartSymbolicLogParams startSymbolicLogParams = 11;
+    if (cached_has_bits & 0x00000200u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *startsymboliclogparams_);
     }
 
   }
@@ -557,7 +833,7 @@ void KRAmevaEvent::MergeFrom(const KRAmevaEvent& from) {
   (void) cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
-  if (cached_has_bits & 0x0000003fu) {
+  if (cached_has_bits & 0x000000ffu) {
     if (cached_has_bits & 0x00000001u) {
       _internal_mutable_settaskparam()->::sl_pb::SetTaskParams::MergeFrom(from._internal_settaskparam());
     }
@@ -574,6 +850,23 @@ void KRAmevaEvent::MergeFrom(const KRAmevaEvent& from) {
       _internal_mutable_helloworldparams()->::sl_pb::HelloWorldParams::MergeFrom(from._internal_helloworldparams());
     }
     if (cached_has_bits & 0x00000020u) {
+      _internal_mutable_loadmapparams()->::sl_pb::LoadMapParams::MergeFrom(from._internal_loadmapparams());
+    }
+    if (cached_has_bits & 0x00000040u) {
+      _internal_mutable_startsimulationparams()->::sl_pb::StartSimulationParams::MergeFrom(from._internal_startsimulationparams());
+    }
+    if (cached_has_bits & 0x00000080u) {
+      _internal_mutable_stopsimulationparams()->::sl_pb::StopSimulationParams::MergeFrom(from._internal_stopsimulationparams());
+    }
+  }
+  if (cached_has_bits & 0x00000700u) {
+    if (cached_has_bits & 0x00000100u) {
+      _internal_mutable_moveindividualparams()->::sl_pb::MoveIndividualParams::MergeFrom(from._internal_moveindividualparams());
+    }
+    if (cached_has_bits & 0x00000200u) {
+      _internal_mutable_startsymboliclogparams()->::sl_pb::StartSymbolicLogParams::MergeFrom(from._internal_startsymboliclogparams());
+    }
+    if (cached_has_bits & 0x00000400u) {
       functocall_ = from.functocall_;
     }
     _has_bits_[0] |= cached_has_bits;
@@ -611,6 +904,15 @@ bool KRAmevaEvent::IsInitialized() const {
   if (_internal_has_helloworldparams()) {
     if (!helloworldparams_->IsInitialized()) return false;
   }
+  if (_internal_has_loadmapparams()) {
+    if (!loadmapparams_->IsInitialized()) return false;
+  }
+  if (_internal_has_moveindividualparams()) {
+    if (!moveindividualparams_->IsInitialized()) return false;
+  }
+  if (_internal_has_startsymboliclogparams()) {
+    if (!startsymboliclogparams_->IsInitialized()) return false;
+  }
   return true;
 }
 
@@ -619,8 +921,8 @@ void KRAmevaEvent::InternalSwap(KRAmevaEvent* other) {
   _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(KRAmevaEvent, helloworldparams_)
-      + sizeof(KRAmevaEvent::helloworldparams_)
+      PROTOBUF_FIELD_OFFSET(KRAmevaEvent, startsymboliclogparams_)
+      + sizeof(KRAmevaEvent::startsymboliclogparams_)
       - PROTOBUF_FIELD_OFFSET(KRAmevaEvent, settaskparam_)>(
           reinterpret_cast<char*>(&settaskparam_),
           reinterpret_cast<char*>(&other->settaskparam_));

@@ -2,3 +2,26 @@ syntax = "proto2";
 
 package sl_pb;
 
+message StartSimulationParams{
+    repeated string id = 1;
+}
+
+message StopSimulationParams{
+    repeated string id = 1;
+}
+
+message MoveIndividualParams {
+    required string id = 1;
+    required float vecX = 2;
+    required float vecY = 3;
+    required float vecZ = 4;
+    required float quatX = 5;
+    required float quatY = 6;
+    required float quatZ = 7;
+    required float quatW = 8;
+}
+
+message StartSymbolicLogParams {
+    required string taskId = 1;
+    required string episodeId = 2;
+}

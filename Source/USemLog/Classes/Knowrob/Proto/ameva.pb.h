@@ -73,11 +73,17 @@ enum KRAmevaEvent_FuncToCall : int {
   KRAmevaEvent_FuncToCall_SetEpisode = 2,
   KRAmevaEvent_FuncToCall_DrawMarkerAt = 3,
   KRAmevaEvent_FuncToCall_DrawMarkerTraj = 4,
-  KRAmevaEvent_FuncToCall_HelloWorld = 5
+  KRAmevaEvent_FuncToCall_HelloWorld = 5,
+  KRAmevaEvent_FuncToCall_LoadMap = 6,
+  KRAmevaEvent_FuncToCall_StartSymbolicLog = 7,
+  KRAmevaEvent_FuncToCall_StopSymbolicLog = 8,
+  KRAmevaEvent_FuncToCall_StartSimulation = 9,
+  KRAmevaEvent_FuncToCall_StopSimulation = 10,
+  KRAmevaEvent_FuncToCall_MoveIndividual = 11
 };
 bool KRAmevaEvent_FuncToCall_IsValid(int value);
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent_FuncToCall_FuncToCall_MIN = KRAmevaEvent_FuncToCall_SetTask;
-constexpr KRAmevaEvent_FuncToCall KRAmevaEvent_FuncToCall_FuncToCall_MAX = KRAmevaEvent_FuncToCall_HelloWorld;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent_FuncToCall_FuncToCall_MAX = KRAmevaEvent_FuncToCall_MoveIndividual;
 constexpr int KRAmevaEvent_FuncToCall_FuncToCall_ARRAYSIZE = KRAmevaEvent_FuncToCall_FuncToCall_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* KRAmevaEvent_FuncToCall_descriptor();
@@ -224,6 +230,18 @@ class KRAmevaEvent PROTOBUF_FINAL :
     KRAmevaEvent_FuncToCall_DrawMarkerTraj;
   static constexpr FuncToCall HelloWorld =
     KRAmevaEvent_FuncToCall_HelloWorld;
+  static constexpr FuncToCall LoadMap =
+    KRAmevaEvent_FuncToCall_LoadMap;
+  static constexpr FuncToCall StartSymbolicLog =
+    KRAmevaEvent_FuncToCall_StartSymbolicLog;
+  static constexpr FuncToCall StopSymbolicLog =
+    KRAmevaEvent_FuncToCall_StopSymbolicLog;
+  static constexpr FuncToCall StartSimulation =
+    KRAmevaEvent_FuncToCall_StartSimulation;
+  static constexpr FuncToCall StopSimulation =
+    KRAmevaEvent_FuncToCall_StopSimulation;
+  static constexpr FuncToCall MoveIndividual =
+    KRAmevaEvent_FuncToCall_MoveIndividual;
   static inline bool FuncToCall_IsValid(int value) {
     return KRAmevaEvent_FuncToCall_IsValid(value);
   }
@@ -257,6 +275,11 @@ class KRAmevaEvent PROTOBUF_FINAL :
     kDrawMarkerAtParamsFieldNumber = 4,
     kDrawMarkerTrajParamsFieldNumber = 5,
     kHelloWorldParamsFieldNumber = 6,
+    kLoadMapParamsFieldNumber = 7,
+    kStartSimulationParamsFieldNumber = 8,
+    kStopSimulationParamsFieldNumber = 9,
+    kMoveIndividualParamsFieldNumber = 10,
+    kStartSymbolicLogParamsFieldNumber = 11,
     kFuncToCallFieldNumber = 1,
   };
   // optional .sl_pb.SetTaskParams setTaskParam = 2;
@@ -331,7 +354,7 @@ class KRAmevaEvent PROTOBUF_FINAL :
       ::sl_pb::DrawMarkerTrajParams* drawmarkertrajparams);
   ::sl_pb::DrawMarkerTrajParams* unsafe_arena_release_drawmarkertrajparams();
 
-  // optional .sl_pb.HelloWorldParams HelloWorldParams = 6;
+  // optional .sl_pb.HelloWorldParams helloWorldParams = 6;
   bool has_helloworldparams() const;
   private:
   bool _internal_has_helloworldparams() const;
@@ -348,6 +371,96 @@ class KRAmevaEvent PROTOBUF_FINAL :
   void unsafe_arena_set_allocated_helloworldparams(
       ::sl_pb::HelloWorldParams* helloworldparams);
   ::sl_pb::HelloWorldParams* unsafe_arena_release_helloworldparams();
+
+  // optional .sl_pb.LoadMapParams loadMapParams = 7;
+  bool has_loadmapparams() const;
+  private:
+  bool _internal_has_loadmapparams() const;
+  public:
+  void clear_loadmapparams();
+  const ::sl_pb::LoadMapParams& loadmapparams() const;
+  ::sl_pb::LoadMapParams* release_loadmapparams();
+  ::sl_pb::LoadMapParams* mutable_loadmapparams();
+  void set_allocated_loadmapparams(::sl_pb::LoadMapParams* loadmapparams);
+  private:
+  const ::sl_pb::LoadMapParams& _internal_loadmapparams() const;
+  ::sl_pb::LoadMapParams* _internal_mutable_loadmapparams();
+  public:
+  void unsafe_arena_set_allocated_loadmapparams(
+      ::sl_pb::LoadMapParams* loadmapparams);
+  ::sl_pb::LoadMapParams* unsafe_arena_release_loadmapparams();
+
+  // optional .sl_pb.StartSimulationParams startSimulationParams = 8;
+  bool has_startsimulationparams() const;
+  private:
+  bool _internal_has_startsimulationparams() const;
+  public:
+  void clear_startsimulationparams();
+  const ::sl_pb::StartSimulationParams& startsimulationparams() const;
+  ::sl_pb::StartSimulationParams* release_startsimulationparams();
+  ::sl_pb::StartSimulationParams* mutable_startsimulationparams();
+  void set_allocated_startsimulationparams(::sl_pb::StartSimulationParams* startsimulationparams);
+  private:
+  const ::sl_pb::StartSimulationParams& _internal_startsimulationparams() const;
+  ::sl_pb::StartSimulationParams* _internal_mutable_startsimulationparams();
+  public:
+  void unsafe_arena_set_allocated_startsimulationparams(
+      ::sl_pb::StartSimulationParams* startsimulationparams);
+  ::sl_pb::StartSimulationParams* unsafe_arena_release_startsimulationparams();
+
+  // optional .sl_pb.StopSimulationParams stopSimulationParams = 9;
+  bool has_stopsimulationparams() const;
+  private:
+  bool _internal_has_stopsimulationparams() const;
+  public:
+  void clear_stopsimulationparams();
+  const ::sl_pb::StopSimulationParams& stopsimulationparams() const;
+  ::sl_pb::StopSimulationParams* release_stopsimulationparams();
+  ::sl_pb::StopSimulationParams* mutable_stopsimulationparams();
+  void set_allocated_stopsimulationparams(::sl_pb::StopSimulationParams* stopsimulationparams);
+  private:
+  const ::sl_pb::StopSimulationParams& _internal_stopsimulationparams() const;
+  ::sl_pb::StopSimulationParams* _internal_mutable_stopsimulationparams();
+  public:
+  void unsafe_arena_set_allocated_stopsimulationparams(
+      ::sl_pb::StopSimulationParams* stopsimulationparams);
+  ::sl_pb::StopSimulationParams* unsafe_arena_release_stopsimulationparams();
+
+  // optional .sl_pb.MoveIndividualParams moveIndividualParams = 10;
+  bool has_moveindividualparams() const;
+  private:
+  bool _internal_has_moveindividualparams() const;
+  public:
+  void clear_moveindividualparams();
+  const ::sl_pb::MoveIndividualParams& moveindividualparams() const;
+  ::sl_pb::MoveIndividualParams* release_moveindividualparams();
+  ::sl_pb::MoveIndividualParams* mutable_moveindividualparams();
+  void set_allocated_moveindividualparams(::sl_pb::MoveIndividualParams* moveindividualparams);
+  private:
+  const ::sl_pb::MoveIndividualParams& _internal_moveindividualparams() const;
+  ::sl_pb::MoveIndividualParams* _internal_mutable_moveindividualparams();
+  public:
+  void unsafe_arena_set_allocated_moveindividualparams(
+      ::sl_pb::MoveIndividualParams* moveindividualparams);
+  ::sl_pb::MoveIndividualParams* unsafe_arena_release_moveindividualparams();
+
+  // optional .sl_pb.StartSymbolicLogParams startSymbolicLogParams = 11;
+  bool has_startsymboliclogparams() const;
+  private:
+  bool _internal_has_startsymboliclogparams() const;
+  public:
+  void clear_startsymboliclogparams();
+  const ::sl_pb::StartSymbolicLogParams& startsymboliclogparams() const;
+  ::sl_pb::StartSymbolicLogParams* release_startsymboliclogparams();
+  ::sl_pb::StartSymbolicLogParams* mutable_startsymboliclogparams();
+  void set_allocated_startsymboliclogparams(::sl_pb::StartSymbolicLogParams* startsymboliclogparams);
+  private:
+  const ::sl_pb::StartSymbolicLogParams& _internal_startsymboliclogparams() const;
+  ::sl_pb::StartSymbolicLogParams* _internal_mutable_startsymboliclogparams();
+  public:
+  void unsafe_arena_set_allocated_startsymboliclogparams(
+      ::sl_pb::StartSymbolicLogParams* startsymboliclogparams);
+  ::sl_pb::StartSymbolicLogParams* unsafe_arena_release_startsymboliclogparams();
 
   // required .sl_pb.KRAmevaEvent.FuncToCall funcToCall = 1;
   bool has_functocall() const;
@@ -376,6 +489,11 @@ class KRAmevaEvent PROTOBUF_FINAL :
   ::sl_pb::DrawMarkerAtParams* drawmarkeratparams_;
   ::sl_pb::DrawMarkerTrajParams* drawmarkertrajparams_;
   ::sl_pb::HelloWorldParams* helloworldparams_;
+  ::sl_pb::LoadMapParams* loadmapparams_;
+  ::sl_pb::StartSimulationParams* startsimulationparams_;
+  ::sl_pb::StopSimulationParams* stopsimulationparams_;
+  ::sl_pb::MoveIndividualParams* moveindividualparams_;
+  ::sl_pb::StartSymbolicLogParams* startsymboliclogparams_;
   int functocall_;
   friend struct ::TableStruct_ameva_2eproto;
 };
@@ -392,7 +510,7 @@ class KRAmevaEvent PROTOBUF_FINAL :
 
 // required .sl_pb.KRAmevaEvent.FuncToCall funcToCall = 1;
 inline bool KRAmevaEvent::_internal_has_functocall() const {
-  bool value = (_has_bits_[0] & 0x00000020u) != 0;
+  bool value = (_has_bits_[0] & 0x00000400u) != 0;
   return value;
 }
 inline bool KRAmevaEvent::has_functocall() const {
@@ -400,7 +518,7 @@ inline bool KRAmevaEvent::has_functocall() const {
 }
 inline void KRAmevaEvent::clear_functocall() {
   functocall_ = 1;
-  _has_bits_[0] &= ~0x00000020u;
+  _has_bits_[0] &= ~0x00000400u;
 }
 inline ::sl_pb::KRAmevaEvent_FuncToCall KRAmevaEvent::_internal_functocall() const {
   return static_cast< ::sl_pb::KRAmevaEvent_FuncToCall >(functocall_);
@@ -411,7 +529,7 @@ inline ::sl_pb::KRAmevaEvent_FuncToCall KRAmevaEvent::functocall() const {
 }
 inline void KRAmevaEvent::_internal_set_functocall(::sl_pb::KRAmevaEvent_FuncToCall value) {
   assert(::sl_pb::KRAmevaEvent_FuncToCall_IsValid(value));
-  _has_bits_[0] |= 0x00000020u;
+  _has_bits_[0] |= 0x00000400u;
   functocall_ = value;
 }
 inline void KRAmevaEvent::set_functocall(::sl_pb::KRAmevaEvent_FuncToCall value) {
@@ -735,7 +853,7 @@ inline void KRAmevaEvent::set_allocated_drawmarkertrajparams(::sl_pb::DrawMarker
   // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.drawMarkerTrajParams)
 }
 
-// optional .sl_pb.HelloWorldParams HelloWorldParams = 6;
+// optional .sl_pb.HelloWorldParams helloWorldParams = 6;
 inline bool KRAmevaEvent::_internal_has_helloworldparams() const {
   bool value = (_has_bits_[0] & 0x00000010u) != 0;
   PROTOBUF_ASSUME(!value || helloworldparams_ != nullptr);
@@ -750,7 +868,7 @@ inline const ::sl_pb::HelloWorldParams& KRAmevaEvent::_internal_helloworldparams
       &::sl_pb::_HelloWorldParams_default_instance_);
 }
 inline const ::sl_pb::HelloWorldParams& KRAmevaEvent::helloworldparams() const {
-  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.HelloWorldParams)
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.helloWorldParams)
   return _internal_helloworldparams();
 }
 inline void KRAmevaEvent::unsafe_arena_set_allocated_helloworldparams(
@@ -764,7 +882,7 @@ inline void KRAmevaEvent::unsafe_arena_set_allocated_helloworldparams(
   } else {
     _has_bits_[0] &= ~0x00000010u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.HelloWorldParams)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.helloWorldParams)
 }
 inline ::sl_pb::HelloWorldParams* KRAmevaEvent::release_helloworldparams() {
   _has_bits_[0] &= ~0x00000010u;
@@ -776,7 +894,7 @@ inline ::sl_pb::HelloWorldParams* KRAmevaEvent::release_helloworldparams() {
   return temp;
 }
 inline ::sl_pb::HelloWorldParams* KRAmevaEvent::unsafe_arena_release_helloworldparams() {
-  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.HelloWorldParams)
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.helloWorldParams)
   _has_bits_[0] &= ~0x00000010u;
   ::sl_pb::HelloWorldParams* temp = helloworldparams_;
   helloworldparams_ = nullptr;
@@ -791,7 +909,7 @@ inline ::sl_pb::HelloWorldParams* KRAmevaEvent::_internal_mutable_helloworldpara
   return helloworldparams_;
 }
 inline ::sl_pb::HelloWorldParams* KRAmevaEvent::mutable_helloworldparams() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.HelloWorldParams)
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.helloWorldParams)
   return _internal_mutable_helloworldparams();
 }
 inline void KRAmevaEvent::set_allocated_helloworldparams(::sl_pb::HelloWorldParams* helloworldparams) {
@@ -811,7 +929,402 @@ inline void KRAmevaEvent::set_allocated_helloworldparams(::sl_pb::HelloWorldPara
     _has_bits_[0] &= ~0x00000010u;
   }
   helloworldparams_ = helloworldparams;
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.HelloWorldParams)
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.helloWorldParams)
+}
+
+// optional .sl_pb.LoadMapParams loadMapParams = 7;
+inline bool KRAmevaEvent::_internal_has_loadmapparams() const {
+  bool value = (_has_bits_[0] & 0x00000020u) != 0;
+  PROTOBUF_ASSUME(!value || loadmapparams_ != nullptr);
+  return value;
+}
+inline bool KRAmevaEvent::has_loadmapparams() const {
+  return _internal_has_loadmapparams();
+}
+inline const ::sl_pb::LoadMapParams& KRAmevaEvent::_internal_loadmapparams() const {
+  const ::sl_pb::LoadMapParams* p = loadmapparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::LoadMapParams*>(
+      &::sl_pb::_LoadMapParams_default_instance_);
+}
+inline const ::sl_pb::LoadMapParams& KRAmevaEvent::loadmapparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.loadMapParams)
+  return _internal_loadmapparams();
+}
+inline void KRAmevaEvent::unsafe_arena_set_allocated_loadmapparams(
+    ::sl_pb::LoadMapParams* loadmapparams) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(loadmapparams_);
+  }
+  loadmapparams_ = loadmapparams;
+  if (loadmapparams) {
+    _has_bits_[0] |= 0x00000020u;
+  } else {
+    _has_bits_[0] &= ~0x00000020u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.loadMapParams)
+}
+inline ::sl_pb::LoadMapParams* KRAmevaEvent::release_loadmapparams() {
+  _has_bits_[0] &= ~0x00000020u;
+  ::sl_pb::LoadMapParams* temp = loadmapparams_;
+  loadmapparams_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::sl_pb::LoadMapParams* KRAmevaEvent::unsafe_arena_release_loadmapparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.loadMapParams)
+  _has_bits_[0] &= ~0x00000020u;
+  ::sl_pb::LoadMapParams* temp = loadmapparams_;
+  loadmapparams_ = nullptr;
+  return temp;
+}
+inline ::sl_pb::LoadMapParams* KRAmevaEvent::_internal_mutable_loadmapparams() {
+  _has_bits_[0] |= 0x00000020u;
+  if (loadmapparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::LoadMapParams>(GetArena());
+    loadmapparams_ = p;
+  }
+  return loadmapparams_;
+}
+inline ::sl_pb::LoadMapParams* KRAmevaEvent::mutable_loadmapparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.loadMapParams)
+  return _internal_mutable_loadmapparams();
+}
+inline void KRAmevaEvent::set_allocated_loadmapparams(::sl_pb::LoadMapParams* loadmapparams) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(loadmapparams_);
+  }
+  if (loadmapparams) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(loadmapparams)->GetArena();
+    if (message_arena != submessage_arena) {
+      loadmapparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, loadmapparams, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00000020u;
+  } else {
+    _has_bits_[0] &= ~0x00000020u;
+  }
+  loadmapparams_ = loadmapparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.loadMapParams)
+}
+
+// optional .sl_pb.StartSimulationParams startSimulationParams = 8;
+inline bool KRAmevaEvent::_internal_has_startsimulationparams() const {
+  bool value = (_has_bits_[0] & 0x00000040u) != 0;
+  PROTOBUF_ASSUME(!value || startsimulationparams_ != nullptr);
+  return value;
+}
+inline bool KRAmevaEvent::has_startsimulationparams() const {
+  return _internal_has_startsimulationparams();
+}
+inline const ::sl_pb::StartSimulationParams& KRAmevaEvent::_internal_startsimulationparams() const {
+  const ::sl_pb::StartSimulationParams* p = startsimulationparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::StartSimulationParams*>(
+      &::sl_pb::_StartSimulationParams_default_instance_);
+}
+inline const ::sl_pb::StartSimulationParams& KRAmevaEvent::startsimulationparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.startSimulationParams)
+  return _internal_startsimulationparams();
+}
+inline void KRAmevaEvent::unsafe_arena_set_allocated_startsimulationparams(
+    ::sl_pb::StartSimulationParams* startsimulationparams) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startsimulationparams_);
+  }
+  startsimulationparams_ = startsimulationparams;
+  if (startsimulationparams) {
+    _has_bits_[0] |= 0x00000040u;
+  } else {
+    _has_bits_[0] &= ~0x00000040u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.startSimulationParams)
+}
+inline ::sl_pb::StartSimulationParams* KRAmevaEvent::release_startsimulationparams() {
+  _has_bits_[0] &= ~0x00000040u;
+  ::sl_pb::StartSimulationParams* temp = startsimulationparams_;
+  startsimulationparams_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::sl_pb::StartSimulationParams* KRAmevaEvent::unsafe_arena_release_startsimulationparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.startSimulationParams)
+  _has_bits_[0] &= ~0x00000040u;
+  ::sl_pb::StartSimulationParams* temp = startsimulationparams_;
+  startsimulationparams_ = nullptr;
+  return temp;
+}
+inline ::sl_pb::StartSimulationParams* KRAmevaEvent::_internal_mutable_startsimulationparams() {
+  _has_bits_[0] |= 0x00000040u;
+  if (startsimulationparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::StartSimulationParams>(GetArena());
+    startsimulationparams_ = p;
+  }
+  return startsimulationparams_;
+}
+inline ::sl_pb::StartSimulationParams* KRAmevaEvent::mutable_startsimulationparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.startSimulationParams)
+  return _internal_mutable_startsimulationparams();
+}
+inline void KRAmevaEvent::set_allocated_startsimulationparams(::sl_pb::StartSimulationParams* startsimulationparams) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(startsimulationparams_);
+  }
+  if (startsimulationparams) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startsimulationparams)->GetArena();
+    if (message_arena != submessage_arena) {
+      startsimulationparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, startsimulationparams, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00000040u;
+  } else {
+    _has_bits_[0] &= ~0x00000040u;
+  }
+  startsimulationparams_ = startsimulationparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.startSimulationParams)
+}
+
+// optional .sl_pb.StopSimulationParams stopSimulationParams = 9;
+inline bool KRAmevaEvent::_internal_has_stopsimulationparams() const {
+  bool value = (_has_bits_[0] & 0x00000080u) != 0;
+  PROTOBUF_ASSUME(!value || stopsimulationparams_ != nullptr);
+  return value;
+}
+inline bool KRAmevaEvent::has_stopsimulationparams() const {
+  return _internal_has_stopsimulationparams();
+}
+inline const ::sl_pb::StopSimulationParams& KRAmevaEvent::_internal_stopsimulationparams() const {
+  const ::sl_pb::StopSimulationParams* p = stopsimulationparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::StopSimulationParams*>(
+      &::sl_pb::_StopSimulationParams_default_instance_);
+}
+inline const ::sl_pb::StopSimulationParams& KRAmevaEvent::stopsimulationparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.stopSimulationParams)
+  return _internal_stopsimulationparams();
+}
+inline void KRAmevaEvent::unsafe_arena_set_allocated_stopsimulationparams(
+    ::sl_pb::StopSimulationParams* stopsimulationparams) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(stopsimulationparams_);
+  }
+  stopsimulationparams_ = stopsimulationparams;
+  if (stopsimulationparams) {
+    _has_bits_[0] |= 0x00000080u;
+  } else {
+    _has_bits_[0] &= ~0x00000080u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.stopSimulationParams)
+}
+inline ::sl_pb::StopSimulationParams* KRAmevaEvent::release_stopsimulationparams() {
+  _has_bits_[0] &= ~0x00000080u;
+  ::sl_pb::StopSimulationParams* temp = stopsimulationparams_;
+  stopsimulationparams_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::sl_pb::StopSimulationParams* KRAmevaEvent::unsafe_arena_release_stopsimulationparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.stopSimulationParams)
+  _has_bits_[0] &= ~0x00000080u;
+  ::sl_pb::StopSimulationParams* temp = stopsimulationparams_;
+  stopsimulationparams_ = nullptr;
+  return temp;
+}
+inline ::sl_pb::StopSimulationParams* KRAmevaEvent::_internal_mutable_stopsimulationparams() {
+  _has_bits_[0] |= 0x00000080u;
+  if (stopsimulationparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::StopSimulationParams>(GetArena());
+    stopsimulationparams_ = p;
+  }
+  return stopsimulationparams_;
+}
+inline ::sl_pb::StopSimulationParams* KRAmevaEvent::mutable_stopsimulationparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.stopSimulationParams)
+  return _internal_mutable_stopsimulationparams();
+}
+inline void KRAmevaEvent::set_allocated_stopsimulationparams(::sl_pb::StopSimulationParams* stopsimulationparams) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(stopsimulationparams_);
+  }
+  if (stopsimulationparams) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(stopsimulationparams)->GetArena();
+    if (message_arena != submessage_arena) {
+      stopsimulationparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, stopsimulationparams, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00000080u;
+  } else {
+    _has_bits_[0] &= ~0x00000080u;
+  }
+  stopsimulationparams_ = stopsimulationparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.stopSimulationParams)
+}
+
+// optional .sl_pb.MoveIndividualParams moveIndividualParams = 10;
+inline bool KRAmevaEvent::_internal_has_moveindividualparams() const {
+  bool value = (_has_bits_[0] & 0x00000100u) != 0;
+  PROTOBUF_ASSUME(!value || moveindividualparams_ != nullptr);
+  return value;
+}
+inline bool KRAmevaEvent::has_moveindividualparams() const {
+  return _internal_has_moveindividualparams();
+}
+inline const ::sl_pb::MoveIndividualParams& KRAmevaEvent::_internal_moveindividualparams() const {
+  const ::sl_pb::MoveIndividualParams* p = moveindividualparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::MoveIndividualParams*>(
+      &::sl_pb::_MoveIndividualParams_default_instance_);
+}
+inline const ::sl_pb::MoveIndividualParams& KRAmevaEvent::moveindividualparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.moveIndividualParams)
+  return _internal_moveindividualparams();
+}
+inline void KRAmevaEvent::unsafe_arena_set_allocated_moveindividualparams(
+    ::sl_pb::MoveIndividualParams* moveindividualparams) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(moveindividualparams_);
+  }
+  moveindividualparams_ = moveindividualparams;
+  if (moveindividualparams) {
+    _has_bits_[0] |= 0x00000100u;
+  } else {
+    _has_bits_[0] &= ~0x00000100u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.moveIndividualParams)
+}
+inline ::sl_pb::MoveIndividualParams* KRAmevaEvent::release_moveindividualparams() {
+  _has_bits_[0] &= ~0x00000100u;
+  ::sl_pb::MoveIndividualParams* temp = moveindividualparams_;
+  moveindividualparams_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::sl_pb::MoveIndividualParams* KRAmevaEvent::unsafe_arena_release_moveindividualparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.moveIndividualParams)
+  _has_bits_[0] &= ~0x00000100u;
+  ::sl_pb::MoveIndividualParams* temp = moveindividualparams_;
+  moveindividualparams_ = nullptr;
+  return temp;
+}
+inline ::sl_pb::MoveIndividualParams* KRAmevaEvent::_internal_mutable_moveindividualparams() {
+  _has_bits_[0] |= 0x00000100u;
+  if (moveindividualparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::MoveIndividualParams>(GetArena());
+    moveindividualparams_ = p;
+  }
+  return moveindividualparams_;
+}
+inline ::sl_pb::MoveIndividualParams* KRAmevaEvent::mutable_moveindividualparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.moveIndividualParams)
+  return _internal_mutable_moveindividualparams();
+}
+inline void KRAmevaEvent::set_allocated_moveindividualparams(::sl_pb::MoveIndividualParams* moveindividualparams) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(moveindividualparams_);
+  }
+  if (moveindividualparams) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(moveindividualparams)->GetArena();
+    if (message_arena != submessage_arena) {
+      moveindividualparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, moveindividualparams, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00000100u;
+  } else {
+    _has_bits_[0] &= ~0x00000100u;
+  }
+  moveindividualparams_ = moveindividualparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.moveIndividualParams)
+}
+
+// optional .sl_pb.StartSymbolicLogParams startSymbolicLogParams = 11;
+inline bool KRAmevaEvent::_internal_has_startsymboliclogparams() const {
+  bool value = (_has_bits_[0] & 0x00000200u) != 0;
+  PROTOBUF_ASSUME(!value || startsymboliclogparams_ != nullptr);
+  return value;
+}
+inline bool KRAmevaEvent::has_startsymboliclogparams() const {
+  return _internal_has_startsymboliclogparams();
+}
+inline const ::sl_pb::StartSymbolicLogParams& KRAmevaEvent::_internal_startsymboliclogparams() const {
+  const ::sl_pb::StartSymbolicLogParams* p = startsymboliclogparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::StartSymbolicLogParams*>(
+      &::sl_pb::_StartSymbolicLogParams_default_instance_);
+}
+inline const ::sl_pb::StartSymbolicLogParams& KRAmevaEvent::startsymboliclogparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.startSymbolicLogParams)
+  return _internal_startsymboliclogparams();
+}
+inline void KRAmevaEvent::unsafe_arena_set_allocated_startsymboliclogparams(
+    ::sl_pb::StartSymbolicLogParams* startsymboliclogparams) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startsymboliclogparams_);
+  }
+  startsymboliclogparams_ = startsymboliclogparams;
+  if (startsymboliclogparams) {
+    _has_bits_[0] |= 0x00000200u;
+  } else {
+    _has_bits_[0] &= ~0x00000200u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.startSymbolicLogParams)
+}
+inline ::sl_pb::StartSymbolicLogParams* KRAmevaEvent::release_startsymboliclogparams() {
+  _has_bits_[0] &= ~0x00000200u;
+  ::sl_pb::StartSymbolicLogParams* temp = startsymboliclogparams_;
+  startsymboliclogparams_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::sl_pb::StartSymbolicLogParams* KRAmevaEvent::unsafe_arena_release_startsymboliclogparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.startSymbolicLogParams)
+  _has_bits_[0] &= ~0x00000200u;
+  ::sl_pb::StartSymbolicLogParams* temp = startsymboliclogparams_;
+  startsymboliclogparams_ = nullptr;
+  return temp;
+}
+inline ::sl_pb::StartSymbolicLogParams* KRAmevaEvent::_internal_mutable_startsymboliclogparams() {
+  _has_bits_[0] |= 0x00000200u;
+  if (startsymboliclogparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::StartSymbolicLogParams>(GetArena());
+    startsymboliclogparams_ = p;
+  }
+  return startsymboliclogparams_;
+}
+inline ::sl_pb::StartSymbolicLogParams* KRAmevaEvent::mutable_startsymboliclogparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.startSymbolicLogParams)
+  return _internal_mutable_startsymboliclogparams();
+}
+inline void KRAmevaEvent::set_allocated_startsymboliclogparams(::sl_pb::StartSymbolicLogParams* startsymboliclogparams) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(startsymboliclogparams_);
+  }
+  if (startsymboliclogparams) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startsymboliclogparams)->GetArena();
+    if (message_arena != submessage_arena) {
+      startsymboliclogparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, startsymboliclogparams, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00000200u;
+  } else {
+    _has_bits_[0] &= ~0x00000200u;
+  }
+  startsymboliclogparams_ = startsymboliclogparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.startSymbolicLogParams)
 }
 
 #ifdef __GNUC__
