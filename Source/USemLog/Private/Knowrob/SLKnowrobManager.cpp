@@ -4,6 +4,7 @@
 #include "Knowrob/SLKnowrobManager.h"
 #include "Mongo/SLMongoQueryManager.h"
 #include "Viz/SLVizManager.h"
+#include "Viz/SLVizSemMapManager.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
@@ -19,6 +20,7 @@ ASLKnowrobManager::ASLKnowrobManager()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+	bIgnore = false;
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
@@ -54,9 +56,11 @@ void ASLKnowrobManager::BeginPlay()
 		FParse::Value(FCommandLine::Get(), TEXT("MongoServerIP="), MongoServerIP);
 		FParse::Value(FCommandLine::Get(), TEXT("MongoServerPort="), MongoServerPort);
 	}
-
-	Init();
-	Start();
+	if (!bIgnore)
+	{
+		Init();
+		Start();
+	}
 }
 
 #if WITH_EDITOR
@@ -400,7 +404,7 @@ void ASLKnowrobManager::Init()
 {
 	if (bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is already initialized.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already initialized.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -415,13 +419,13 @@ void ASLKnowrobManager::Init()
 	// Get and connect the mongo query manager
 	if (!SetMongoQueryManager())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the mongo query manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not get access to the mongo query manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 	if (!MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not connect to mongo db.. (%s::%d)"),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not connect to mongo db.. (%s::%d)"),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MongoServerIP, MongoServerPort);
 		return;
 	}
@@ -429,13 +433,14 @@ void ASLKnowrobManager::Init()
 	// Get an initialise the visualization manager
 	if (!SetVizManager())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the viz manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not get access to the viz manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	if (!VizManager->Init())
+	VizManager->Init();
+	if (!VizManager->IsInit())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the viz manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init the viz manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -444,8 +449,22 @@ void ASLKnowrobManager::Init()
 		VizManager->ConvertWorldToVisualizationMode();
 	}
 
+	if (!SetVizSemMapManager())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not get access to the viz sem map manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	VizSemMapManager->Init();
+	if (!VizSemMapManager->IsInit())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init the viz sem map manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
 	bIsInit = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully initialized.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully initialized.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
 }
 
@@ -454,14 +473,14 @@ void ASLKnowrobManager::Start()
 {
 	if (bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is already started.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already started.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is not initialized, cannot start.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, cannot start.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -483,7 +502,7 @@ void ASLKnowrobManager::Start()
 	SetupInputBindings();
 
 	bIsStarted = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully started.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully started.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
 }
 
@@ -492,14 +511,14 @@ void ASLKnowrobManager::Finish(bool bForced)
 {
 	if (bIsFinished)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is already finished.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already finished.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	if (!bIsInit && !bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is not initialized nor started, cannot finish.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized nor started, cannot finish.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -516,7 +535,7 @@ void ASLKnowrobManager::Finish(bool bForced)
 	bIsStarted = false;
 	bIsInit = false;
 	bIsFinished = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully finished.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully finished.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
 }
 
@@ -574,12 +593,12 @@ void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
 {
 	if (bConnectionValue)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) connected to knowrob.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s connected to knowrob.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 	}
 	else if(bKRConnectRetry)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) is disconnected from knowrob, retrying in %f seconds.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s is disconnected from knowrob, retrying in %f seconds.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), KRConnectRetryInterval);
 
 		GetWorld()->GetTimerManager().SetTimer(KRConnectRetryTimerHandle,
@@ -587,7 +606,7 @@ void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) knowrob connection is closed.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s knowrob connection is closed.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 	}
 }
@@ -653,6 +672,33 @@ bool ASLKnowrobManager::SetVizManager()
 	VizManager = GetWorld()->SpawnActor<ASLVizManager>(SpawnParams);
 #if WITH_EDITOR
 	VizManager->SetActorLabel(TEXT("SL_VizManager"));
+#endif // WITH_EDITOR
+	return true;
+}
+
+// Get the viz semantic map manager from the world (or spawn a new one)
+bool ASLKnowrobManager::SetVizSemMapManager()
+{
+	if (VizSemMapManager && VizSemMapManager->IsValidLowLevel() && !VizSemMapManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
+	for (TActorIterator<ASLVizSemMapManager>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			VizSemMapManager = *Iter;
+			return true;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_VizSemMapManager");
+	VizSemMapManager = GetWorld()->SpawnActor<ASLVizSemMapManager>(SpawnParams);
+#if WITH_EDITOR
+	VizSemMapManager->SetActorLabel(TEXT("SL_VizSemMapManager"));
 #endif // WITH_EDITOR
 	return true;
 }

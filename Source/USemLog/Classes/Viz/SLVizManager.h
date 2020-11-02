@@ -39,7 +39,7 @@ protected:
 
 public:
 	// Load required managers
-	bool Init();
+	void Init();
 
 	// Check if the manager is initialized
 	bool IsInit() const { return bIsInit; };

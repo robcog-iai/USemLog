@@ -14,7 +14,7 @@
 // Forward declarations
 class ASLMongoQueryManager;
 class ASLVizManager;
-
+class ASLVizSemMapManager;
 
 /**
  * Highlight hack
@@ -148,6 +148,15 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
+	// Get viz manager
+	ASLVizManager* GetVizManager() { return VizManager; };
+
+	// Get viz sem map manager
+	ASLVizSemMapManager* GetVizSemMapManager() { return VizSemMapManager; };
+
+	// Get mongo manager
+	ASLMongoQueryManager* GetMongoQueryManager() { return MongoQueryManager; };
+
 protected:
 	// Setup user input bindings
 	void SetupInputBindings();
@@ -169,6 +178,8 @@ private:
 	// Get the viz manager from the world (or spawn a new one)
 	bool SetVizManager();
 
+	// Get the viz semantic map manager from the world (or spawn a new one)
+	bool SetVizSemMapManager();
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -183,6 +194,9 @@ private:
 	bool ExecuteQuery(int32 Index);
 
 protected:
+	// Don't start at begin play
+	uint8 bIgnore : 1;
+
 	// True when all references are set and it is connected to the server
 	uint8 bIsInit : 1;
 
@@ -244,13 +258,17 @@ private:
 	TSharedPtr<FSLKREventDispatcher> KREventDispatcher;
 
 	/* Managers */
-	// Manages the mongo connection
+	// Delegates mongo queries
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLMongoQueryManager* MongoQueryManager;
 
-	// Manages the visualization
+	// Marker visualization
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizManager* VizManager;
+
+	// Semantic map related visualization
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLVizSemMapManager* VizSemMapManager;
 
 
 	/****************************************************************/

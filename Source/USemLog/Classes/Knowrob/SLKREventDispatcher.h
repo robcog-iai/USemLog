@@ -1,15 +1,19 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 
 #pragma once
 
 #include <string>
-#include "Knowrob/Proto/ameva.pb.h"
+#if SL_WITH_PROTO_MSGS
+#include "Proto/ameva.pb.h"
+#endif // SL_WITH_PROTO_MSGS	
 #include "CoreMinimal.h"
 
+// Forward declarations
 class ASLMongoQueryManager;
 class ASLVizManager;
 enum class ESLVizPrimitiveMarkerType : uint8;
 enum class ESLVizMaterialType : uint8;
+
 /**
  * 
  */
@@ -27,6 +31,7 @@ public:
 	void ProcessProtobuf(std::string ProtoStr);
 
 private:
+#if SL_WITH_PROTO_MSGS
 	// Set the task of MongoManager
 	void SetTask(sl_pb::SetTaskParams params);
 
@@ -38,7 +43,7 @@ private:
 
 	// Transform the maker type
 	ESLVizPrimitiveMarkerType GetMarkerType(sl_pb::MarkerType Marker);
-	
+#endif // SL_WITH_PROTO_MSGS	
 	// Transform the string to color
 	FLinearColor GetMarkerColor(const FString& Color);
 

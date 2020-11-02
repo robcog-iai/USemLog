@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 
 #include "Knowrob/SLKREventDispatcher.h"
 #include "Mongo/SLMongoQueryManager.h"
@@ -16,10 +15,10 @@ FSLKREventDispatcher::~FSLKREventDispatcher()
 {
 }
 
-
 // Parse the proto sequence and trigger function
 void FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
 {
+#if SL_WITH_PROTO_MSGS
 	sl_pb::KRAmevaEvent AmevaEvent;
 	AmevaEvent.ParseFromString(ProtoStr);
 	if (AmevaEvent.functocall() == AmevaEvent.SetTask)
@@ -34,8 +33,10 @@ void FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
 	{
 		DrawMarkerTraj(AmevaEvent.drawmarkertrajparams());
 	}
+#endif // SL_WITH_PROTO_MSGS
 }
 
+#if SL_WITH_PROTO_MSGS
 // Set the task of MongoManager
 void FSLKREventDispatcher::SetTask(sl_pb::SetTaskParams params)
 {
@@ -81,11 +82,13 @@ ESLVizPrimitiveMarkerType FSLKREventDispatcher::GetMarkerType(sl_pb::MarkerType 
 	{
 		return ESLVizPrimitiveMarkerType::Axis;
 	}
-	else if (Marker == sl_pb::Box) {
+	else if (Marker == sl_pb::Box) 
+	{
 		return ESLVizPrimitiveMarkerType::Box;
 	}
 	return ESLVizPrimitiveMarkerType::NONE;
 }
+#endif // SL_WITH_PROTO_MSGS
 
 // Transform the string to color
 FLinearColor FSLKREventDispatcher::GetMarkerColor(const FString &Color)

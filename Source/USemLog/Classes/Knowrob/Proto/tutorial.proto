@@ -1,7 +1,0 @@
-syntax = "proto2";
-
-package sl_pb;
-
-message HelloWorldParams{
-  required string msg = 1;
-}
