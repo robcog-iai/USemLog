@@ -42,6 +42,13 @@ public:
 	// Ctor
 	USLBaseIndividual();
 
+protected:
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
+
+public:
 	// Called before destroying the object.
 	virtual void BeginDestroy() override;
 
@@ -234,8 +241,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "SL")
 	FString TagType;
 
+	/* Edit buttons */
+	// Reload parent pointer
+	UPROPERTY(EditAnywhere, Category = "SL|Edit Buttons")
+	bool bReloadParentButton = false;
 
 	/* SemLog World state logger workaround helper */
 	// Marks if an individual has moved since last check
 	bool bHasMovedFlag;
+
+
 };

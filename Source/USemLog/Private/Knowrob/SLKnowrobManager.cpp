@@ -743,7 +743,7 @@ bool ASLKnowrobManager::ExecuteQuery(int32 Index)
 	{
 		if (Queries[Index]->IsValidLowLevel())
 		{
-			Queries[Index]->Execute(VizManager, MongoQueryManager);
+			Queries[Index]->Execute(this);
 			return true;
 		}
 	}

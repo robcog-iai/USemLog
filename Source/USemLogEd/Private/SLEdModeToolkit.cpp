@@ -98,6 +98,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateSeparatorHackSlot()
 			+ CreateUtilsTxtSlot()
 			+ CreateConvertToVizMapSlot()
+			+ CreateLogIdsSlot()
 			+ CreateAddSemMonitorsSlot()
 			+ CreateEnableOverlapsSlot()
 			+ CreateShowSemData()
@@ -912,6 +913,21 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateConvertToVizMapSlot()
 			.IsEnabled(true)
 			.ToolTipText(LOCTEXT("ConvertToVizTip", "Removes physics creates poseable mesh components.."))
 			.OnClicked(this, &FSLEdModeToolkit::OnConvertToViz)
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateLogIdsSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SButton)
+			.Text(LOCTEXT("LogIds", "Log Ids"))
+			.IsEnabled(true)
+			.ToolTipText(LOCTEXT("LogIdsTip", "write the individual ids in the as a log string.."))
+			.OnClicked(this, &FSLEdModeToolkit::OnLogIds)
 		];
 }
 
@@ -1775,6 +1791,23 @@ FReply FSLEdModeToolkit::OnConvertToViz()
 	if (bMarkDirty)
 	{
 		GEditor->GetEditorWorldContext().World()->MarkPackageDirty();
+	}
+
+	return FReply::Handled();
+}
+
+
+FReply FSLEdModeToolkit::OnLogIds()
+{
+	FScopedTransaction Transaction(LOCTEXT("LogIdsST", "Writing individual ids.."));
+
+	if (bOnlySelectedFlag)
+	{
+		FSLEdUtils::LogIds(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::LogIds(GEditor->GetEditorWorldContext().World());
 	}
 
 	return FReply::Handled();

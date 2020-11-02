@@ -8,8 +8,7 @@
 #include "SLVizQBase.generated.h"
 
 // Forward declaration
-class ASLVizManager;
-class ASLMongoQueryManager;
+class ASLKnowrobManager;
 
 /**
  * 
@@ -20,7 +19,7 @@ class USLVizQBase : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	virtual void Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager);
+	virtual void Execute(ASLKnowrobManager* KRManager);
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Description")
@@ -39,7 +38,7 @@ class USLVizQGotoFrame : public USLVizQBase
 	GENERATED_BODY()
 
 public:
-	virtual void Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager) override;
+	virtual void Execute(ASLKnowrobManager* KRManager) override;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Id")
@@ -59,7 +58,7 @@ class USLVizQReplayEpisode : public USLVizQBase
 	GENERATED_BODY()
 
 public:
-	virtual void Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager) override;
+	virtual void Execute(ASLKnowrobManager* KRManager) override;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Id")
@@ -97,7 +96,7 @@ class USLVizQCacheEpisodes : public USLVizQBase
 	GENERATED_BODY()
 
 public:
-	virtual void Execute(ASLVizManager* VizManager, ASLMongoQueryManager* MongoManager) override;
+	virtual void Execute(ASLKnowrobManager* KRManager) override;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "VizQ")

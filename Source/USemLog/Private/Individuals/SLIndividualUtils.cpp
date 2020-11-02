@@ -22,6 +22,8 @@
 #include "Engine/Light.h"
 #include "Engine/SkyLight.h"
 
+#include "Landscape.h"
+
 #include "Vision/SLVirtualCameraView.h"
 
 #include "Gaze/SLGazeTargetActor.h"
@@ -581,6 +583,10 @@ USLBaseIndividual* FSLIndividualUtils::CreateIndividualObject(UObject* Outer, AA
 	{
 		return NewObject<USLBaseIndividual>(Outer, USLSkyIndividual::StaticClass());
 	}
+	else if (Owner->IsA(ALandscape::StaticClass()))
+	{
+		return NewObject<USLBaseIndividual>(Outer, USLLandscapeIndividual::StaticClass());
+	}
 	else if (Owner->IsA(ASLVirtualCameraView::StaticClass()))
 	{
 		return NewObject<USLBaseIndividual>(Outer, USLVirtualViewIndividual::StaticClass());
@@ -754,6 +760,7 @@ bool FSLIndividualUtils::CanHaveIndividualComponent(AActor* Actor)
 		|| Actor->IsA(ASLGazeTargetActor::StaticClass())
 		|| Actor->IsA(APhysicsConstraintActor::StaticClass())
 		|| Actor->IsA(AAtmosphericFog::StaticClass())
+		|| Actor->IsA(ALandscape::StaticClass())
 		|| Actor->IsA(ALight::StaticClass())
 		|| Actor->IsA(ASkyLight::StaticClass())
 		|| Actor->IsA(ASLVirtualCameraView::StaticClass())

@@ -196,7 +196,7 @@ void ASLSymbolicLogger::InitImpl()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	if (!IndividualManager->Load(false))
+	if (!IndividualManager->IsLoaded() && !IndividualManager->Load(true))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not load the individual manager (%s).."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());

@@ -21,6 +21,9 @@ public:
 	//// Get the vis info manager form the world, add new one if none are available
 	//static class ASLIndividualInfoManager* GetOrCreateNewVisualInfoManager(UWorld* World, bool bCreateNew = true);
 
+	// Log id values 
+	static void LogIds(UWorld* World);
+	static void LogIds(const TArray<AActor*>& Actors);
 
 	// Remove all tag keys
 	static bool RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey);

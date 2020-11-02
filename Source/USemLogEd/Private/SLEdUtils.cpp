@@ -11,6 +11,7 @@
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualInfoManager.h"
 #include "Individuals/SLIndividualUtils.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 
 #include "Engine/StaticMeshActor.h"
 #include "Materials/Material.h"
@@ -102,6 +103,47 @@ void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 //	}
 //	return Manager;
 //}
+
+	// Log id values 
+void FSLEdUtils::LogIds(UWorld* World)
+{
+	FString LogIdsString;
+	int32 Num = 0;
+	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
+	{
+		if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(*ActItr))
+		{
+			LogIdsString.Append(BI->GetIdValue()).Append(";");
+			Num++;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual.. "), *FString(__FUNCTION__), __LINE__, *ActItr->GetName());
+		}
+	}
+	UE_LOG(LogTemp, Log, TEXT("%s::%d\tNum=%d;\tString:\n\n%s\n\n"),
+		*FString(__FUNCTION__), __LINE__, Num, *LogIdsString);
+}
+
+void FSLEdUtils::LogIds(const TArray<AActor*>& Actors)
+{
+	FString LogIdsString;
+	int32 Num = 0;
+	for (const auto& Act : Actors)
+	{
+		if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(Act))
+		{
+			LogIdsString.Append(BI->GetIdValue()).Append(";");
+			Num++;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s has no individual.. "), *FString(__FUNCTION__), __LINE__, *Act->GetName());
+		}
+	}
+	UE_LOG(LogTemp, Log, TEXT("%s::%d\tNum=%d;\tString:\n\n%s\n\n"),
+		*FString(__FUNCTION__), __LINE__, Num, *LogIdsString);
+}
 
 // Remove all tag keys
 bool FSLEdUtils::RemoveTagKey(UWorld* World, const FString& TagType, const FString& TagKey)

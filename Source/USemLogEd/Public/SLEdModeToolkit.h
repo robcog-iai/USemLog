@@ -70,6 +70,7 @@ private:
 	// Misc
 	SVerticalBox::FSlot& CreateUtilsTxtSlot();
 	SVerticalBox::FSlot& CreateConvertToVizMapSlot();
+	SVerticalBox::FSlot& CreateLogIdsSlot();
 	SVerticalBox::FSlot& CreateAddSemMonitorsSlot();
 	SVerticalBox::FSlot& CreateEnableOverlapsSlot();
 	SVerticalBox::FSlot& CreateShowSemData();
@@ -138,6 +139,7 @@ private:
 
 
 	FReply OnConvertToViz();
+	FReply OnLogIds();
 	FReply OnAddSemMon();
 	FReply OnEnableOverlaps();
 	FReply OnShowSemData();

@@ -4,6 +4,7 @@
 #include "Viz/SLVizSemMapManager.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Viz/SLVizManager.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 #include "TimerManager.h"
 #include "EngineUtils.h"
 
@@ -65,7 +66,7 @@ void ASLVizSemMapManager::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	if (!IndividualManager->Load(false))
+	if (!IndividualManager->IsLoaded() && !IndividualManager->Load(true))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not load the individual manager (%s).."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
@@ -105,6 +106,100 @@ void ASLVizSemMapManager::Reset()
 
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully started.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
+}
+
+// Hide/show all individuals in the world
+void ASLVizSemMapManager::SetAllIndividualsHidden(bool bNewHidden)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not initialized, init first.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	for (const auto Individual : IndividualManager->GetIndividuals())
+	{
+		if (AActor* ParentActor = Individual->GetParentActor())
+		{
+			ParentActor->SetActorHiddenInGame(bNewHidden);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Individual %s has no valid parent actor.."), *FString(__FUNCTION__), __LINE__,
+				*Individual->GetFullName());
+		}
+	}
+}
+
+
+// Hide/show selected individuals
+void ASLVizSemMapManager::SetIndividualsHidden(const TArray<FString>& Ids, bool bNewHidden,
+	bool bIterate, float IterateInterval)
+{
+	if (!bIsInit)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not initialized, init first.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	
+	// Check if there are any running iterations
+	if (GetWorld()->GetTimerManager().IsTimerActive(IterateTimerHandle))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s's timer is still active, terminating timer and finishing up task.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetName());
+
+		// Deactivate timer, and finish the task
+		GetWorld()->GetTimerManager().ClearTimer(IterateTimerHandle);
+		
+		// Finish up previous work
+		for (IterateIdx; IterateIdx < IterateIds.Num(); ++IterateIdx)
+		{
+			IndividualManager->GetIndividualActor(IterateIds[IterateIdx])->SetActorHiddenInGame(bIterateHiddenValue);
+		}
+		IterateIdx = INDEX_NONE;
+		IterateIds.Empty();
+	}
+
+	if (bIterate && IterateInterval > 0.f)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d::%.4f %s's iter timer started.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetName());
+		IterateIdx = 0;
+		IterateIds = Ids;		
+		GetWorld()->GetTimerManager().SetTimer(IterateTimerHandle,
+			this, &ASLVizSemMapManager::SetIndividualsHiddenIterateCallback, IterateInterval, true);
+	}
+	else
+	{
+		for (const auto& Id : Ids)
+		{
+			IndividualManager->GetIndividualActor(Id)->SetActorHiddenInGame(bNewHidden);
+		}
+	}
+}
+
+// Iterate callback
+void ASLVizSemMapManager::SetIndividualsHiddenIterateCallback()
+{
+	if (IterateIds.IsValidIndex(IterateIdx))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d::%.4f %s's iter timer trigger %d/%d.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetName(),
+			IterateIdx, IterateIds.Num());
+		IndividualManager->GetIndividualActor(IterateIds[IterateIdx])->SetActorHiddenInGame(bIterateHiddenValue);
+		IterateIdx++;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d::%.4f %s's iter timer reached end %d/%d.."),
+			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetName(),
+			IterateIdx, IterateIds.Num());
+		GetWorld()->GetTimerManager().ClearTimer(IterateTimerHandle);
+		IterateIdx = INDEX_NONE;
+		IterateIds.Empty();
+	}
 }
 
 // Get the individual manager from the world (or spawn a new one)

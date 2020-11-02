@@ -13,7 +13,7 @@ USLVisibleIndividual::USLVisibleIndividual()
 	VisualMaskMaterial = Cast<UMaterial>(StaticLoadObject(
 		UMaterial::StaticClass(), NULL, TEXT("Material'/USemLog/Individuals/M_VisualIndividualMask.M_VisualIndividualMask'"),
 		NULL, LOAD_None, NULL));
-
+	OriginalMaterials.Empty();
 	bIsMaskMaterialOn = false;
 }
 

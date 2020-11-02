@@ -43,17 +43,15 @@ public:
 	// Clear changes to the world
 	void Reset();
 
-	// Hide all individuals in the world
-	void HideAllIndividuals();
-
-	// Hide all individuals in the world
-	void ShowAllIndividuals();
+	// Hide/show all individuals in the world
+	void SetAllIndividualsHidden(bool bNewHidden);
 	
 	// Hide selected individuals
-	void HideIndividuals(const TArray<FString>& Ids, bool bIterate);
+	void SetIndividualsHidden(const TArray<FString>& Ids, bool bNewHidden,
+		bool bIterate = false, float IterateInterval = -1.f);
 
-	// Show selected individuals
-	void ShowIndividuals(const TArray<FString>& Ids, bool bIterate);
+	// Iterate callback
+	void SetIndividualsHiddenIterateCallback();
 
 protected:
 	/* Managers */
@@ -79,14 +77,17 @@ protected:
 	ASLVizManager* VizManager;
 
 private:
-	// Execute tasks iteratively
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bIterate = false;
-
-	// Interval on which to execute the task
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float bIterateInterval = 0.05f;
-
 	// Iterate execution timer handle
 	FTimerHandle IterateTimerHandle;
+
+	// Iterate individuals cache
+	TArray<FString> IterateIds;
+
+	// Cache the visiblity flag to apply
+	bool bIterateHiddenValue;
+
+	// Current index in the iteration
+	int32 IterateIdx = INDEX_NONE;
+
+	//
 };

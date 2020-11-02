@@ -51,7 +51,7 @@ public class USemLog : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
+				"Core",				
 				"MongoC",						// SL_WITH_LIBMONGO_C                
 				"UProtobuf", 					// SL_WITH_PROTOBUF
 				//"UProtoMsgs", 					// SL_WITH_PROTO_MSGS
@@ -67,6 +67,7 @@ public class USemLog : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"Landscape",
 				"WebSockets",
 				//"Landscape", "AIModule",	// whitelisted actors when setting the world to visual only
 				//"UConversions",				// SL_WITH_ROS_CONVERSIONS

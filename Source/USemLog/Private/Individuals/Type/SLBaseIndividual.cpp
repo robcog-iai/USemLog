@@ -24,6 +24,24 @@ USLBaseIndividual::USLBaseIndividual()
 	bHasMovedFlag = false;
 }
 
+#if WITH_EDITOR
+// Called when a property is changed in the editor
+void USLBaseIndividual::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property name
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+		PropertyChangedEvent.Property->GetFName() : NAME_None;
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLBaseIndividual, bReloadParentButton))
+	{
+		bReloadParentButton = false;
+		SetParentActor();
+	}
+}
+#endif // WITH_EDITOR
+
 // Called before destroying the object.
 void USLBaseIndividual::BeginDestroy()
 {
