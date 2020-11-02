@@ -449,6 +449,7 @@ void ASLKnowrobManager::Init()
 		VizManager->ConvertWorldToVisualizationMode();
 	}
 
+	// Get and init the sem map visualizer
 	if (!SetVizSemMapManager())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not get access to the viz sem map manager.."),
