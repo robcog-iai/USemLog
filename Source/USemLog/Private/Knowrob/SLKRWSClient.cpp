@@ -169,3 +169,32 @@ void FSLKRWSClient::HandleWebSocketFullData(const uint8* Data, SIZE_T Length)
 	OnNewProcessedMsg.ExecuteIfBound();
 }
 
+// Send message via websocket
+void FSLKRWSClient::SendResponse(const FString& StrToSend)
+{
+	FTCHARToUTF8 UTStr(*StrToSend);
+	TArray<uint8> BinaryArr;
+	AppendToUInt8Array(BinaryArr, (uint8*)UTStr.Get(), UTStr.Length(), true);
+	BinaryArr.Add('\0');
+	WebSocket->Send(BinaryArr.GetData(), BinaryArr.Num(), false);
+}
+
+// Append element to uint8 array and handle escape character
+void FSLKRWSClient::AppendToUInt8Array(TArray<uint8>& Out, uint8* In, SIZE_T Length, bool bShouldEscape)
+{
+	if (bShouldEscape)
+	{
+		for (SIZE_T I = 0; I < Length; I++)
+		{
+			if (In[I] == ':' || In[I] == '\\' || In[I] == '\n' || In[I] == '\r')
+			{
+				Out.Add('\\');
+			}
+			Out.Add(In[I]);
+		}
+	}
+	else
+	{
+		Out.Append(In, Length);
+	}
+}

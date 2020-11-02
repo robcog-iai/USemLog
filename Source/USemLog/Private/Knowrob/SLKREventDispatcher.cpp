@@ -16,41 +16,44 @@ FSLKREventDispatcher::~FSLKREventDispatcher()
 }
 
 // Parse the proto sequence and trigger function
-void FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
+FString FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
 {
 #if SL_WITH_PROTO_MSGS
 	sl_pb::KRAmevaEvent AmevaEvent;
 	AmevaEvent.ParseFromString(ProtoStr);
 	if (AmevaEvent.functocall() == AmevaEvent.SetTask)
 	{
-		SetTask(AmevaEvent.settaskparam());
+		return SetTask(AmevaEvent.settaskparam());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.SetEpisode)
 	{
-		SetEpisode(AmevaEvent.setepisodeparams());
+		return SetEpisode(AmevaEvent.setepisodeparams());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.DrawMarkerTraj)
 	{
-		DrawMarkerTraj(AmevaEvent.drawmarkertrajparams());
+		return DrawMarkerTraj(AmevaEvent.drawmarkertrajparams());
 	}
 #endif // SL_WITH_PROTO_MSGS
+	return "";
 }
 
 #if SL_WITH_PROTO_MSGS
 // Set the task of MongoManager
-void FSLKREventDispatcher::SetTask(sl_pb::SetTaskParams params)
+FString FSLKREventDispatcher::SetTask(sl_pb::SetTaskParams params)
 {
 	MongoManager->SetTask(UTF8_TO_TCHAR(params.task().c_str()));
+	return TEXT("Set task successfully");
 }
 
 // Set the episode of MongoManager
-void FSLKREventDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
+FString FSLKREventDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
 {
 	MongoManager->SetEpisode(UTF8_TO_TCHAR(params.episode().c_str()));
+	return TEXT("Set episode successfully");
 }
 
 // Draw the trajectory
-void FSLKREventDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
+FString FSLKREventDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 {
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
 	float Start = params.start();
@@ -61,6 +64,7 @@ void FSLKREventDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 	FLinearColor Color = GetMarkerColor(UTF8_TO_TCHAR(params.color().c_str()));
 	TArray<FTransform> Poses = MongoManager->GetIndividualTrajectory(Id, Start, End);
 	VizManager->CreatePrimitiveMarker(Id, Poses, Type, params.scale(), Color, MaterialType);
+	return TEXT("draw trajectory");
 }
 
 // Transform the maker type
