@@ -162,12 +162,14 @@ void ASLVizSemMapManager::SetIndividualsHidden(const TArray<FString>& Ids, bool 
 		IterateIds.Empty();
 	}
 
+	// Execute as iteration with given interval or all at once
 	if (bIterate && IterateInterval > 0.f)
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d::%.4f %s's iter timer started.."),
 			*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), *GetName());
 		IterateIdx = 0;
-		IterateIds = Ids;		
+		IterateIds = Ids;	
+		bIterateHiddenValue = bNewHidden;
 		GetWorld()->GetTimerManager().SetTimer(IterateTimerHandle,
 			this, &ASLVizSemMapManager::SetIndividualsHiddenIterateCallback, IterateInterval, true);
 	}

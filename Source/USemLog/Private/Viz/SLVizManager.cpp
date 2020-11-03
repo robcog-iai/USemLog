@@ -135,11 +135,14 @@ bool ASLVizManager::HighlightIndividual(const FString& Id, const FLinearColor& C
 		return false;
 	}
 
-	if (auto HM = HighlightedIndividuals.Find(Id))
+	if (auto HD = HighlightedIndividuals.Find(Id))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is already highlighted.."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
-		return false;
+		HighlightManager->UpdateHighlight(HD->MeshComponent,
+			FSLVizVisualParams(Color, MaterialType, HD->MaterialSlots));
+		return true;
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is already highlighted.."),
+		//	*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		//return false;
 	}
 
 	if (auto Individual = IndividualManager->GetIndividual(Id))
@@ -200,10 +203,10 @@ bool ASLVizManager::UpdateIndividualHighlight(const FString& Id, const FLinearCo
 		return false;
 	}
 
-	if (auto HighlightData = HighlightedIndividuals.Find(Id))
+	if (auto HD = HighlightedIndividuals.Find(Id))
 	{
-		HighlightManager->UpdateHighlight(HighlightData->MeshComponent,
-			FSLVizVisualParams(Color, MaterialType, HighlightData->MaterialSlots));
+		HighlightManager->UpdateHighlight(HD->MeshComponent,
+			FSLVizVisualParams(Color, MaterialType, HD->MaterialSlots));
 		return true;
 	}
 

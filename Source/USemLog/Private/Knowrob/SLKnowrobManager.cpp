@@ -199,32 +199,6 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		VizManager->StopReplay();
 	}
 
-	/*	VIZ highlights	*/
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bDrawSelectedHighlights))
-	{
-		bDrawSelectedHighlights = false;
-		if (!bIsInit) { return; }
-		for (const auto HC : HighlightValuesHack)
-		{
-			VizManager->HighlightIndividual(HC.IndividualId, HC.Color, HC.MaterialType);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bUpdateHighlights))
-	{
-		bUpdateHighlights = false;
-		if (!bIsInit) { return; }
-		for (const auto HC : HighlightValuesHack)
-		{
-			VizManager->UpdateIndividualHighlight(HC.IndividualId, HC.Color, HC.MaterialType);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bRemoveAllHighlights))
-	{
-		bRemoveAllHighlights = false;
-		if (!bIsInit) { return; }
-		VizManager->RemoveAllIndividualHighlights();
-	}
-
 	/*	VIZ markers	*/
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bDrawMarkers))
 	{
@@ -741,9 +715,10 @@ bool ASLKnowrobManager::ExecuteQuery(int32 Index)
 {
 	if (Queries.IsValidIndex(Index))
 	{
-		if (Queries[Index]->IsValidLowLevel())
+		USLVizQBase* QueryObj = Queries[Index];
+		if (QueryObj && QueryObj->IsValidLowLevel())
 		{
-			Queries[Index]->Execute(this);
+			QueryObj->Execute(this);
 			return true;
 		}
 	}

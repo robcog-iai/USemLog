@@ -4,11 +4,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DataAsset.h"
+#include "VizQ/SLVizQBase.h"
 #include "SLVizQSemMap.generated.h"
 
 // Forward declaration
-class USLVizQBase;
 class ASLKnowrobManager;
 
 /**
@@ -25,10 +24,11 @@ protected:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
-public:
-	virtual void Execute(ASLKnowrobManager* KRManager) override;
+	// Virtual implementation of the execute function
+	virtual void ExecuteImpl(ASLKnowrobManager* KRManager) override;
 
 protected:
+	/* Semantic map parameters */
 	UPROPERTY(EditAnywhere, Category = "Semantic Map")
 	bool bHide = false;
 
@@ -44,12 +44,17 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Map", meta = (editcondition = "bIterate"))
 	float IterateInterval = 0.05f;
 
+
+	/* Editor interaction */
 	UPROPERTY(EditAnywhere, Category = "Semantic Map|Edit")
-	bool bLoadButton = false;
+	bool bAddSelectedButton = false;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Map|Edit")
-	FString ArrayToLoadFromString;
+	bool bRemoveSelectedButton = false;
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Map|Edit")
 	bool bOverwrite = false;
+
+	UPROPERTY(EditAnywhere, Category = "Semantic Map|Edit")
+	bool bEnsureUniqueness = true;
 };

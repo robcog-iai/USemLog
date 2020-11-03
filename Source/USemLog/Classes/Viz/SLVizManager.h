@@ -51,11 +51,11 @@ public:
 	/* Highlights */
 	// Highlight the individual (returns false if the individual is not found or is not of visual type)
 	bool HighlightIndividual(const FString& Id,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+		const FLinearColor& Color = FLinearColor::Green, ESLVizMaterialType MaterialType = ESLVizMaterialType::Translucent);
 
 	// Change the visual values of the highligted individual
 	bool UpdateIndividualHighlight(const FString& Id,
-		const FLinearColor& Color, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+		const FLinearColor& Color, ESLVizMaterialType MaterialType = ESLVizMaterialType::Translucent);
 
 	// Remove highlight from individual (returns false if the individual not found or it is not highlighted)
 	bool RemoveIndividualHighlight(const FString& Id);

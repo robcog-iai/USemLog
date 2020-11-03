@@ -1,9 +1,9 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "VizQ/SLVizQSemMap.h"
-#include "Viz/SLVizSemMapManager.h"
+#include "VizQ/SLVizQHighlight.h"
 #include "Knowrob/SLKnowrobManager.h"
+#include "Viz/SLVizManager.h"
 
 #if WITH_EDITOR
 #include "Engine/Selection.h"
@@ -14,7 +14,7 @@
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
-void USLVizQSemMap::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLVizQHighlight::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -23,7 +23,7 @@ void USLVizQSemMap::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	/* Add selected actors ids to array */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQSemMap, bAddSelectedButton))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQHighlight, bAddSelectedButton))
 	{
 		bAddSelectedButton = false;
 		if (bOverwrite)
@@ -37,7 +37,7 @@ void USLVizQSemMap::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 			{
 				if (BI->IsLoaded())
 				{
-					bEnsureUniqueness ? Ids.AddUnique(BI->GetIdValue()) : Ids.Add(BI->GetIdValue());
+					bEnsureUniqueness ? Ids.AddUnique(BI->GetIdValue()) : Ids.Add(BI->GetIdValue());					
 				}
 				else
 				{
@@ -52,7 +52,7 @@ void USLVizQSemMap::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 			}
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQSemMap, bRemoveSelectedButton))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQHighlight, bRemoveSelectedButton))
 	{
 		bRemoveSelectedButton = false;
 		for (FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
@@ -76,19 +76,30 @@ void USLVizQSemMap::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 					*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
 			}
 		}
-	}
+	}	
 }
 #endif // WITH_EDITOR
 
 // Virtual implementation of the execute function
-void USLVizQSemMap::ExecuteImpl(ASLKnowrobManager* KRManager)
+void USLVizQHighlight::ExecuteImpl(ASLKnowrobManager* KRManager)
 {
-	if (bAllIndividuals)
+	ASLVizManager* VizManager = KRManager->GetVizManager();
+	if (bRemoveAll)
 	{
-		KRManager->GetVizSemMapManager()->SetAllIndividualsHidden(bHide);
+		VizManager->RemoveAllIndividualHighlights();
+	}
+	else if (bRemoveSelected)
+	{
+		for (const auto& Id : Ids)
+		{
+			VizManager->RemoveIndividualHighlight(Id);
+		}
 	}
 	else
 	{
-		KRManager->GetVizSemMapManager()->SetIndividualsHidden(Ids, bHide, bIterate, IterateInterval);
+		for (const auto& Id : Ids)
+		{
+			VizManager->HighlightIndividual(Id, Color, MaterialType);
+		}
 	}
 }

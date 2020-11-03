@@ -17,24 +17,6 @@ class ASLVizManager;
 class ASLVizSemMapManager;
 
 /**
- * Highlight hack
- */
-USTRUCT()
-struct FSLVizHighlightHackStruct
-{
-	GENERATED_BODY();
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString IndividualId = TEXT("DefaultIndividualId");
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FLinearColor Color = FLinearColor::Green;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit;
-};
-
-/**
  * Marker test hack struct
  */
 USTRUCT()
@@ -360,22 +342,6 @@ private:
 	// Triggers a stop call
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
 	bool bReplayStopButtonHack = false;
-
-
-	/****************************************************************/
-	/*						VIZ highlights							*/
-	/****************************************************************/
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Highlight Buttons")
-	bool bDrawSelectedHighlights = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Highlight Buttons")
-	bool bUpdateHighlights = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Highlight Buttons")
-	bool bRemoveAllHighlights = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Highlight Buttons")
-	TArray<FSLVizHighlightHackStruct> HighlightValuesHack;
 
 
 	/****************************************************************/
