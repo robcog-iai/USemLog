@@ -55,11 +55,11 @@ public:
 	// Create a static mesh visual marker timeline at the given poses
 	USLVizStaticMeshMarker* CreateStaticMeshMarkerTimeline(const TArray<FTransform>& Poses, UStaticMesh* SM,
 		const FLinearColor& InColor, ESLVizMaterialType MaterialType, 
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a static mesh visual marker timeline at the given poses (use original material)
 	USLVizStaticMeshMarker* CreateStaticMeshMarkerTimeline(const TArray<FTransform>& Poses, UStaticMesh* SM,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 
 	/* Primitive mesh markers */
@@ -77,7 +77,7 @@ public:
 	USLVizPrimitiveMarker* CreatePrimitiveMarkerTimeline(const TArray<FTransform>& Poses,
 		ESLVizPrimitiveMarkerType PrimitiveType, float Size,
 		const FLinearColor& InColor, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 
 	/* Skeletal mesh markers */
@@ -102,13 +102,13 @@ public:
 	// Create a skeletal mesh based timeline marker at the given poses (use original material)
 	USLVizSkeletalMeshMarker* CreateSkeletalMarkerTimeline(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		USkeletalMesh* SkelMesh,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a skeletal mesh based timeline marker at the given poses
 	USLVizSkeletalMeshMarker* CreateSkeletalMarkerTimeline(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		USkeletalMesh* SkelMesh,
 		const FLinearColor& InColor, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 
 	/* Skeletal mesh (bone) markers */

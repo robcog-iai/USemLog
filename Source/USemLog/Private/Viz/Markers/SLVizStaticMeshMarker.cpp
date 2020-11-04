@@ -15,8 +15,6 @@ USLVizStaticMeshMarker::USLVizStaticMeshMarker()
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 
 	ISMC = nullptr;
-	TimelineIndex = INDEX_NONE;
-	bLoopTimeline = false;
 }
 
 // Called every frame, used for timeline visualizations, activated and deactivated on request
@@ -24,43 +22,29 @@ void USLVizStaticMeshMarker::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	// Increase the passed time
 	TimelineDeltaTime += DeltaTime;
+
+	// Calculate the number of instances to draw depending on the passed time
 	int32 NumInstancesToDraw = (TimelineDeltaTime * TimelinePoses.Num()) / TimelineDuration;
+
+	// Wait if not enough time has passed
 	if (NumInstancesToDraw == 0)
 	{
 		return;
 	}	
 
-	if (TimelineIndex + NumInstancesToDraw < TimelinePoses.Num())
+	// Draw all instances, or use a limit
+	if (TimelineMaxNumInstances <= 0)
 	{
-		// It is safe to add all instances
-		while (NumInstancesToDraw > 0)
-		{
-			AddInstanceChecked(TimelinePoses[TimelineIndex]);
-			TimelineIndex++;
-			NumInstancesToDraw--;
-		}
+		UpdateTimeline(NumInstancesToDraw);
 	}
 	else
 	{
-		// Reached end of the poses array, add remaining values
-		while (TimelinePoses.IsValidIndex(TimelineIndex))
-		{
-			AddInstanceChecked(TimelinePoses[TimelineIndex]);
-			TimelineIndex++;
-		}
-
-		// Check if the timeline should be repeated or stopped
-		if (bLoopTimeline)
-		{
-			ISMC->ClearInstances();
-			TimelineIndex = 0;
-		}
-		else
-		{
-			ClearTimelineData();
-		}
+		UpdateTimelineWithMaxNumInstances(NumInstancesToDraw);
 	}
+
+	// Reset the elapsed time
 	TimelineDeltaTime = 0;
 }
 
@@ -156,7 +140,8 @@ void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses)
 }
 
 // Add instances with timeline update
-void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses, float Duration, bool bLoop, float UpdateRate)
+void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses,
+	const FSLVizTimelineParams& TimelineParams)
 {
 	if (!ISMC || !ISMC->IsValidLowLevel() || ISMC->IsPendingKillOrUnreachable())
 	{
@@ -164,7 +149,7 @@ void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses, float
 		return;
 	}
 
-	if (Duration <= 0.008f)
+	if (TimelineParams.Duration <= 0.008f)
 	{
 		AddInstancesChecked(Poses);
 		return;
@@ -178,14 +163,16 @@ void USLVizStaticMeshMarker::AddInstances(const TArray<FTransform>& Poses, float
 
 	// Set the timeline data
 	TimelinePoses = Poses;
-	TimelineDuration = Duration;
-	bLoopTimeline = bLoop;
-	TimelineIndex = 0;
+	TimelineDuration = TimelineParams.Duration;
+	TimelineMaxNumInstances = TimelineParams.MaxNumInstances;
+	bLoopTimeline = TimelineParams.bLoop;
 
+	TimelineIndex = 0;
+	
 	// Start timeline
-	if (UpdateRate > 0.f)
+	if (TimelineParams.UpdateRate > 0.f)
 	{
-		SetComponentTickInterval(UpdateRate);
+		SetComponentTickInterval(TimelineParams.UpdateRate);
 	}
 	SetComponentTickEnabled(true);
 }
@@ -196,7 +183,7 @@ void USLVizStaticMeshMarker::Reset()
 {
 	ResetVisuals();
 	ResetPoses();
-	ClearTimelineData();
+	ClearAndStopTimeline();
 }
 
 // Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
@@ -240,6 +227,12 @@ void USLVizStaticMeshMarker::AddInstanceChecked(const FTransform& Pose)
 	ISMC->AddInstance(Pose);
 }
 
+// Virtual update instance transform
+bool USLVizStaticMeshMarker::UpdateInstanceTransform(int32 Index, const FTransform& Pose)
+{
+	return ISMC->UpdateInstanceTransform(Index, Pose, true, true, true);
+}
+
 // Virtual add instances function
 void USLVizStaticMeshMarker::AddInstancesChecked(const TArray<FTransform>& Poses)
 {
@@ -250,13 +243,102 @@ void USLVizStaticMeshMarker::AddInstancesChecked(const TArray<FTransform>& Poses
 }
 
 // Reset the timeline related members
-void USLVizStaticMeshMarker::ClearTimelineData()
+void USLVizStaticMeshMarker::ClearAndStopTimeline()
 {
 	if (IsComponentTickEnabled())
 	{
 		SetComponentTickEnabled(false);
 		SetComponentTickInterval(-1.f); // Tick every frame by default (If less than or equal to 0 then it will tick every frame)
 	}
+	TimelineMaxNumInstances = INDEX_NONE;
 	TimelineIndex = INDEX_NONE;
 	TimelinePoses.Empty();
+}
+
+// Update timeline with the given number of new instances
+void USLVizStaticMeshMarker::UpdateTimeline(int32 NumNewInstances)
+{
+	// Check if it is safe to draw all new instances
+	if (TimelineIndex + NumNewInstances < TimelinePoses.Num())
+	{
+		// Safe to draw all new instances
+		while (NumNewInstances > 0)
+		{
+			AddInstanceChecked(TimelinePoses[TimelineIndex]);
+			TimelineIndex++;
+			NumNewInstances--;
+		}
+	}
+	else
+	{
+		// Reached end of the poses array, add only remaining values
+		while (TimelinePoses.IsValidIndex(TimelineIndex))
+		{
+			AddInstanceChecked(TimelinePoses[TimelineIndex]);
+			TimelineIndex++;
+		}
+
+		// Check if the timeline should be repeated or stopped
+		if (bLoopTimeline)
+		{
+			ISMC->ClearInstances();
+			TimelineIndex = 0;
+		}
+		else
+		{
+			ClearAndStopTimeline();
+		}
+	}
+}
+
+// Update timeline with max number of instances
+void USLVizStaticMeshMarker::UpdateTimelineWithMaxNumInstances(int32 NumNewInstances)
+{
+	// Check if it is safe to draw all new instances
+	if (TimelineIndex + NumNewInstances < TimelinePoses.Num())
+	{
+		// Safe to draw all new instances
+		while (NumNewInstances > 0)
+		{
+			if (TimelineIndex < TimelineMaxNumInstances)
+			{
+				AddInstanceChecked(TimelinePoses[TimelineIndex]);
+			}
+			else
+			{
+				int32 UpdateIndex = TimelineIndex % TimelineMaxNumInstances;
+				UpdateInstanceTransform(UpdateIndex, TimelinePoses[TimelineIndex]);
+			}
+			TimelineIndex++;
+			NumNewInstances--;
+		}
+	}
+	else
+	{
+		// Reached end of the poses array, add only remaining values
+		while (TimelinePoses.IsValidIndex(TimelineIndex))
+		{
+			if (TimelineIndex < TimelineMaxNumInstances)
+			{
+				AddInstanceChecked(TimelinePoses[TimelineIndex]);
+			}
+			else
+			{
+				int32 UpdateIndex = TimelineIndex % TimelineMaxNumInstances;
+				UpdateInstanceTransform(UpdateIndex, TimelinePoses[TimelineIndex]);
+			}
+			TimelineIndex++;
+		}
+
+		// Check if the timeline should be repeated or stopped
+		if (bLoopTimeline)
+		{
+			ISMC->ClearInstances();
+			TimelineIndex = 0;
+		}
+		else
+		{
+			ClearAndStopTimeline();
+		}
+	}
 }

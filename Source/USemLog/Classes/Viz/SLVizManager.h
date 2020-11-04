@@ -74,7 +74,7 @@ public:
 	bool CreatePrimitiveMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		ESLVizPrimitiveMarkerType PrimitiveType, float Size,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 
 	/* Static mesh markers */
@@ -89,12 +89,12 @@ public:
 	// Create a timeline marker by cloning the visual of the given individual (use original materials)
 	bool CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		const FString& IndividualId,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a timeline marker by cloning the visual of the given individual
 	bool CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 
 	/* Skeletal mesh markers */
@@ -113,14 +113,14 @@ public:
 	bool CreateSkeletalMeshMarkerTimeline(const FString& MarkerId,
 		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		const FString& IndividualId,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a timeline by cloning the visual of the given skeletal individual
 	bool CreateSkeletalMeshMarkerTimeline(const FString& MarkerId,
 		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		const FString& IndividualId,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	/* Skeletal bone mesh markers */
 	// Create a marker by cloning the visual of the given individual (use original materials)
@@ -135,13 +135,13 @@ public:
 	// Create a timeline by cloning the visual (bone only) of the given skeletal individual (use original materials)
 	bool CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		const FString& IndividualId,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a timeline by cloning the visual (bone only) of the given skeletal individual
 	bool CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		const FString& IndividualId,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Remove marker with the given id
 	bool RemoveMarker(const FString& Id);

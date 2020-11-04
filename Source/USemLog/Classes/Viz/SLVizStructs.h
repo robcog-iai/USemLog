@@ -154,3 +154,29 @@ struct FSLVizEpisodePlayParams
 	UpdateRate(InUpdateRate),
 	StepSize(InStepSize) {}
 };
+
+/**
+ * Parameters for timeline markers
+ */
+USTRUCT()
+struct FSLVizTimelineParams
+{
+	GENERATED_BODY()
+
+	// For negative value the duration will be computed
+	UPROPERTY(EditAnywhere, Category = "Time")
+	float Duration = -1.f;
+
+	// For negative value it will run every tick
+	UPROPERTY(EditAnywhere, Category = "Time")
+	float UpdateRate = -1.f;
+
+	// Maximum number of instaces to simultaneusly draw (negative values ignored)
+	UPROPERTY(EditAnywhere, Category = "Properties")
+	int32 MaxNumInstances = INDEX_NONE;
+
+	// Repeat timeline after finishing
+	UPROPERTY(EditAnywhere, Category = "Properties")
+	bool bLoop = false;
+};
+

@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Viz/Markers/SLVizBaseMarker.h"
+#include "Viz/SLVizStructs.h"
 #include "SLVizStaticMeshMarker.generated.h"
 
 // Forward declarations
@@ -42,7 +43,7 @@ public:
 	void AddInstances(const TArray<FTransform>& Poses);
 
 	// Add instances with timeline update
-	void AddInstances(const TArray<FTransform>& Poses, float Duration, bool bLoop, float UpdateRate = -1.f);
+	void AddInstances(const TArray<FTransform>& Poses, const FSLVizTimelineParams& TimelineParams);
 
 	//~ Begin ActorComponent Interface
 	// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
@@ -64,11 +65,20 @@ protected:
 	// Virtual add instance function
 	virtual void AddInstanceChecked(const FTransform& Pose);
 
+	// Virtual update instance transform
+	virtual bool UpdateInstanceTransform(int32 Index, const FTransform& Pose);
+
 	// Virtual add instances function
 	virtual void AddInstancesChecked(const TArray<FTransform>& Poses);
 
 	// Clear the timeline and the related members
-	void ClearTimelineData();
+	void ClearAndStopTimeline();
+
+	// Update timeline with the given number of new instances
+	void UpdateTimeline(int32 NumNewInstances);
+
+	// Update timeline with max number of instances
+	void UpdateTimelineWithMaxNumInstances(int32 NumNewInstances);
 
 protected:
 	// A component that efficiently renders multiple instances of the same StaticMesh.

@@ -17,71 +17,6 @@ class ASLVizManager;
 class ASLVizSemMapManager;
 
 /**
- * Marker test hack struct
- */
-USTRUCT()
-struct FSLVizMarkerHackStruct
-{
-	GENERATED_BODY();
-
-	/* Query data */
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString IndividualId = TEXT("DefaultIndividualId");
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bIsSkeletal = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float StartTime = 0.f;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float EndTime = -1.f;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float DeltaT = -1.f;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString MarkerId = TEXT("DefaultMarkerId");
-
-
-	/* Primitive marker */
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Primitive")
-	bool bUsePrimitiveMesh = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Primitive", meta = (editcondition = "bUsePrimitiveMesh"))
-	ESLVizPrimitiveMarkerType PrimitiveType = ESLVizPrimitiveMarkerType::Box;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Primitive", meta = (editcondition = "bUsePrimitiveMesh"))
-	float Size = .1f;
-
-
-	/* Custom color */
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Color")
-	bool bUseCustomColor = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Color", meta = (editcondition = "bUseCustomColor"))
-	FLinearColor Color = FLinearColor::Green;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Color", meta = (editcondition = "bUseCustomColor"))
-	ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit;
-
-
-	/* Timeline */
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline")
-	bool bAsTimeline = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
-	float Duration = -1.f;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
-	bool bLoop = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Timeline", meta = (editcondition = "bAsTimeline"))
-	float UpdateRate = -1.f;
-};
-
-
-/**
 *
 **/
 UCLASS()
@@ -290,21 +225,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Episode Buttons")
 	bool bSetEpisodeButtonHack = false;
-
-
-	/****************************************************************/
-	/*						VIZ markers								*/
-	/****************************************************************/
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Markers Buttons")
-	bool bDrawMarkers = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Markers Buttons")
-	bool bRemoveAllMarkers = false;
-
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Markers Buttons")
-	TArray<FSLVizMarkerHackStruct> MarkerValuesHack;
-
-
 
 	/****************************************************************/
 	/*						Mongo query tests						*/

@@ -21,19 +21,31 @@ void USLVizSkeletalMeshMarker::TickComponent(float DeltaTime, ELevelTick TickTyp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
-	// Update timeline, check if it is the initial iteration or loop
-	if (TimelinePoses.Num() > 0)
+	// Increase the passed time
+	TimelineDeltaTime += DeltaTime;
+
+	// Calculate the number of instances to draw depending on the passed time
+	int32 NumInstancesToDraw = (TimelineDeltaTime * TimelinePoses.Num()) / TimelineDuration;
+
+	// Wait if not enough time has passed
+	if (NumInstancesToDraw == 0)
 	{
-		// Timeline poses are not removed, it is still the initial iteration
-		UpdateInitialTimeline(DeltaTime);
+		return;
+	}
+
+	// Draw all instances, or use a limit
+	if (TimelineMaxNumInstances <= 0)
+	{
+		UpdateTimeline(NumInstancesToDraw);
 	}
 	else
 	{
-		// Timeline instances are already created, iterate and change visibilities
-		UpdateLoopTimeline(DeltaTime);
+		UpdateTimelineWithMaxNumInstances(NumInstancesToDraw);
 	}
-}
 
+	// Reset the elapsed time
+	TimelineDeltaTime = 0;
+}
 
 // Set the visual properties of the skeletal mesh (use original materials)
 void USLVizSkeletalMeshMarker::SetVisual(USkeletalMesh* SkelMesh)
@@ -98,10 +110,13 @@ void USLVizSkeletalMeshMarker::AddInstance(const TPair<FTransform, TMap<int32, F
 	UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
 	PMC->SetWorldTransform(SkeletalPose.Key);
 
-	for (const auto& BonePosePair : SkeletalPose.Value)
+	for (int32 Idx = 0; Idx < 3; ++Idx)
 	{
-		const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
-		PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+		for (const auto& BonePosePair : SkeletalPose.Value)
+		{
+			const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
+			PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+		}
 	}
 
 	PMCInstances.Add(PMC);
@@ -153,10 +168,13 @@ void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<
 		UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
 		PMC->SetWorldTransform(SkelPosePair.Key);
 
-		for (const auto& BonePosePair : SkelPosePair.Value)
+		for (int32 Idx = 0; Idx < 3; ++Idx)
 		{
-			const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
-			PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+			for (const auto& BonePosePair : SkelPosePair.Value)
+			{
+				const FName BoneName = PMC->GetBoneName(BonePosePair.Key);
+				PMC->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+			}
 		}
 
 		PMCInstances.Add(PMC);
@@ -164,7 +182,8 @@ void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<
 }
 
 // Add instances with timeline update
-void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses, float Duration, bool bLoop, float UpdateRate)
+void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
+	const FSLVizTimelineParams& TimelineParams)
 {
 	if (!PMCRef || !PMCRef->IsValidLowLevel() || PMCRef->IsPendingKillOrUnreachable())
 	{
@@ -172,7 +191,7 @@ void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<
 		return;
 	}
 
-	if (Duration <= 0.008f)
+	if (TimelineParams.Duration <= 0.008f)
 	{
 		AddInstances(SkeletalPoses);
 		return;
@@ -186,14 +205,15 @@ void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<
 
 	// Set the timeline data
 	TimelinePoses = SkeletalPoses;
-	TimelineDuration = Duration;
-	bLoopTimeline = bLoop;
+	TimelineDuration = TimelineParams.Duration;
+	TimelineMaxNumInstances = TimelineParams.MaxNumInstances;
+	bLoopTimeline = TimelineParams.bLoop;
 	TimelineIndex = 0;
 
 	// Start timeline
-	if (UpdateRate > 0.f)
+	if (TimelineParams.UpdateRate > 0.f)
 	{
-		SetComponentTickInterval(UpdateRate);
+		SetComponentTickInterval(TimelineParams.UpdateRate);
 	}
 	SetComponentTickEnabled(true);
 }
@@ -203,13 +223,13 @@ void USLVizSkeletalMeshMarker::DestroyComponent(bool bPromoteChildren)
 {
 	for (const auto& PMCInst : PMCInstances)
 	{
-		if (PMCInst && PMCInst->IsValidLowLevel() && PMCInst->IsPendingKillOrUnreachable())
+		if (PMCInst && PMCInst->IsValidLowLevel() && !PMCInst->IsPendingKillOrUnreachable())
 		{
 			PMCInst->DestroyComponent();
 		}
 	}
 
-	if (PMCRef && PMCRef->IsValidLowLevel() && PMCRef->IsPendingKillOrUnreachable())
+	if (PMCRef && PMCRef->IsValidLowLevel() && !PMCRef->IsPendingKillOrUnreachable())
 	{
 		PMCRef->DestroyComponent();
 	}
@@ -250,97 +270,95 @@ void USLVizSkeletalMeshMarker::ResetPoses()
 	PMCInstances.Empty();
 }
 
-// Update intial timeline iteration (create the instances)
-void USLVizSkeletalMeshMarker::UpdateInitialTimeline(float DeltaTime)
-{
-	TimelineDeltaTime += DeltaTime;
-	const int32 NumTotalIstances = TimelinePoses.Num();
-	int32 NumInstancesToDraw = (TimelineDeltaTime * NumTotalIstances) / TimelineDuration;
-	if (NumInstancesToDraw == 0)
-	{
-		return;
-	}
-
-	if (TimelineIndex + NumInstancesToDraw < NumTotalIstances)
-	{
-		// It is safe to add all instances
-		while (NumInstancesToDraw > 0)
-		{
-			AddInstance(TimelinePoses[TimelineIndex]);
-			TimelineIndex++;
-			NumInstancesToDraw--;
-		}
-	}
-	else
-	{
-		// Decrease the num of instances to draw to avoid overflow
-		NumInstancesToDraw = NumTotalIstances - TimelineIndex;
-		while (NumInstancesToDraw > 0)
-		{
-			AddInstance(TimelinePoses[TimelineIndex]);
-			TimelineIndex++;
-			NumInstancesToDraw--;
-		}
-
-		// Check if the timeline should be repeated or stopped
-		if (bLoopTimeline)
-		{
-			HideInstances();
-			TimelinePoses.Empty();
-			TimelineIndex = 0;
-		}
-		else
-		{
-			ClearAndStopTimeline();
-		}
-	}
-	TimelineDeltaTime = 0;
-}
-
-// Update loop timeline (set instaces visibility)
-void USLVizSkeletalMeshMarker::UpdateLoopTimeline(float DeltaTime)
-{
-	TimelineDeltaTime += DeltaTime;
-	const int32 NumTotalIstances = PMCInstances.Num();
-	int32 NumInstancesToDraw = (DeltaTime * NumTotalIstances) / TimelineDuration;
-	if (NumInstancesToDraw == 0)
-	{
-		return;
-	}
-
-	if (TimelineIndex + NumInstancesToDraw < NumTotalIstances)
-	{
-		while (NumInstancesToDraw > 0)
-		{
-			PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already created, set it to visible
-			TimelineIndex++;
-			NumInstancesToDraw--;
-		}
-	}
-	else
-	{
-		// Decrease the num of instances to draw to avoid overflow
-		NumInstancesToDraw = NumTotalIstances - TimelineIndex;
-		while (NumInstancesToDraw > 0)
-		{
-			PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already created, set it to visible
-			TimelineIndex++;
-			NumInstancesToDraw--;
-		}
-
-		// Check if the timeline should be repeated or stopped
-		if (bLoopTimeline)
-		{
-			HideInstances();
-			TimelineIndex = 0;
-		}
-		else
-		{
-			ClearAndStopTimeline();
-		}
-	}
-	TimelineDeltaTime = 0;
-}
+//// Update intial timeline iteration (create the instances)
+//void USLVizSkeletalMeshMarker::UpdateInitialTimeline(float DeltaTime)
+//{
+//	TimelineDeltaTime += DeltaTime;
+//	const int32 NumTotalIstances = TimelinePoses.Num();
+//	int32 NumInstancesToDraw = (TimelineDeltaTime * NumTotalIstances) / TimelineDuration;
+//	if (NumInstancesToDraw == 0)
+//	{
+//		return;
+//	}
+//
+//	if (TimelineIndex + NumInstancesToDraw < NumTotalIstances)
+//	{
+//		// Safe to draw all instances
+//		while (NumInstancesToDraw > 0)
+//		{
+//			AddInstance(TimelinePoses[TimelineIndex]);
+//			TimelineIndex++;
+//			NumInstancesToDraw--;
+//		}
+//	}
+//	else
+//	{
+//		// Decrease the num of instances to draw to avoid overflow
+//		NumInstancesToDraw = NumTotalIstances - TimelineIndex;
+//		while (NumInstancesToDraw > 0)
+//		{
+//			AddInstance(TimelinePoses[TimelineIndex]);
+//			TimelineIndex++;
+//			NumInstancesToDraw--;
+//		}
+//
+//		// Check if the timeline should be repeated or stopped
+//		if (bLoopTimeline)
+//		{
+//			HideInstances();
+//			TimelinePoses.Empty();
+//			TimelineIndex = 0;
+//		}
+//		else
+//		{
+//			ClearAndStopTimeline();
+//		}
+//	}
+//}
+//
+//// Update loop timeline (set instaces visibility)
+//void USLVizSkeletalMeshMarker::UpdateLoopTimeline(float DeltaTime)
+//{
+//	TimelineDeltaTime += DeltaTime;
+//	const int32 NumTotalIstances = PMCInstances.Num();
+//	int32 NumInstancesToDraw = (DeltaTime * NumTotalIstances) / TimelineDuration;
+//	if (NumInstancesToDraw == 0)
+//	{
+//		return;
+//	}
+//
+//	if (TimelineIndex + NumInstancesToDraw < NumTotalIstances)
+//	{
+//		while (NumInstancesToDraw > 0)
+//		{
+//			PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already created, set it to visible
+//			TimelineIndex++;
+//			NumInstancesToDraw--;
+//		}
+//	}
+//	else
+//	{
+//		// Decrease the num of instances to draw to avoid overflow
+//		NumInstancesToDraw = NumTotalIstances - TimelineIndex;
+//		while (NumInstancesToDraw > 0)
+//		{
+//			PMCInstances[TimelineIndex]->SetVisibility(true); // Instance is already created, set it to visible
+//			TimelineIndex++;
+//			NumInstancesToDraw--;
+//		}
+//
+//		// Check if the timeline should be repeated or stopped
+//		if (bLoopTimeline)
+//		{
+//			HideInstances();
+//			TimelineIndex = 0;
+//		}
+//		else
+//		{
+//			ClearAndStopTimeline();
+//		}
+//	}
+//}
 
 // Set instances visibility to false
 void USLVizSkeletalMeshMarker::HideInstances()
@@ -359,8 +377,107 @@ void USLVizSkeletalMeshMarker::ClearAndStopTimeline()
 		SetComponentTickEnabled(false);
 		SetComponentTickInterval(-1.f); // Tick every frame by default (If less than or equal to 0 then it will tick every frame)
 	}
+	TimelineMaxNumInstances = INDEX_NONE;
 	TimelineIndex = INDEX_NONE;
 	TimelinePoses.Empty();
+}
+
+// Update timeline with the given number of new instances
+void USLVizSkeletalMeshMarker::UpdateTimeline(int32 NumNewInstances)
+{
+	// Check if the instances have already been created (number of timeline poses equals the number of intances)
+	bool bInstancesAlreadyCreated = TimelinePoses.Num() == PMCInstances.Num();
+
+	// Check if it is safe to draw all new instances
+	if (TimelineIndex + NumNewInstances < TimelinePoses.Num())
+	{
+		// Safe to draw all instances
+		while (NumNewInstances > 0)
+		{
+			bInstancesAlreadyCreated ? PMCInstances[TimelineIndex]->SetVisibility(true) : AddInstance(TimelinePoses[TimelineIndex]);
+			TimelineIndex++;
+			NumNewInstances--;
+		}
+	}
+	else
+	{
+		// Reached end of the poses array, add only remaining values
+		while (TimelinePoses.IsValidIndex(TimelineIndex))
+		{
+			bInstancesAlreadyCreated ? PMCInstances[TimelineIndex]->SetVisibility(true) : AddInstance(TimelinePoses[TimelineIndex]);
+			TimelineIndex++;
+		}
+
+		// Hide existing instances if timeline should be looped
+		if (bLoopTimeline)
+		{
+			// Avoid destroying the instances
+			HideInstances();
+			// TimelinePoses.Empty(); commented out since it is used to detect if the instances were created, or create explicit flag
+			TimelineIndex = 0;
+		}
+		else
+		{
+			ClearAndStopTimeline();
+		}
+	}
+}
+
+// Update timeline with max number of instances
+void USLVizSkeletalMeshMarker::UpdateTimelineWithMaxNumInstances(int32 NumNewInstances)
+{
+	// Check if the instances have already been created (number of timeline poses equals the number of intances)
+	bool bInstancesAlreadyCreated = TimelinePoses.Num() == PMCInstances.Num();
+
+	// Check if it is safe to draw all new instances
+	if (TimelineIndex + NumNewInstances < TimelinePoses.Num())
+	{
+		// Safe to draw all instances
+		while (NumNewInstances > 0)
+		{
+			if (TimelineIndex < TimelineMaxNumInstances)
+			{
+				bInstancesAlreadyCreated ? PMCInstances[TimelineIndex]->SetVisibility(true) : AddInstance(TimelinePoses[TimelineIndex]);
+			}
+			else
+			{
+				PMCInstances[TimelineIndex-TimelineMaxNumInstances]->SetVisibility(false);
+				bInstancesAlreadyCreated ? PMCInstances[TimelineIndex]->SetVisibility(true) : AddInstance(TimelinePoses[TimelineIndex]);
+			}
+			TimelineIndex++;
+			NumNewInstances--;
+		}
+	}
+	else
+	{
+		// Reached end of the poses array, add only remaining values
+		while (TimelinePoses.IsValidIndex(TimelineIndex))
+		{
+			if (TimelineIndex < TimelineMaxNumInstances)
+			{
+				bInstancesAlreadyCreated ? PMCInstances[TimelineIndex]->SetVisibility(true) : AddInstance(TimelinePoses[TimelineIndex]);				bInstancesAlreadyCreated ? PMCInstances[TimelineIndex]->SetVisibility(true) : AddInstance(TimelinePoses[TimelineIndex]);
+			}
+			else
+			{
+				PMCInstances[TimelineIndex - TimelineMaxNumInstances]->SetVisibility(false);
+				bInstancesAlreadyCreated ? PMCInstances[TimelineIndex]->SetVisibility(true) : AddInstance(TimelinePoses[TimelineIndex]);
+			}
+			TimelineIndex++;
+		}
+
+		// Hide existing instances if timeline should be looped
+		if (bLoopTimeline)
+		{
+			// Avoid destroying the instances
+			HideInstances();
+			// TimelinePoses.Empty(); commented out since it is used to detect if the instances were created, or create explicit flag
+			TimelineIndex = 0;
+		}
+		else
+		{
+			ClearAndStopTimeline();
+		}
+	}
 }
 
 //   Set visual without the materials (avoid boilerplate code)

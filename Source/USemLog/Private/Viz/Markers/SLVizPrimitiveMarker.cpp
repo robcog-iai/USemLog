@@ -54,6 +54,12 @@ void USLVizPrimitiveMarker::AddInstanceChecked(const FTransform& Pose)
 	ISMC->AddInstance(FTransform(Pose.GetRotation(), Pose.GetLocation(), MarkerScale));
 }
 
+// Virtual update instance transform
+bool USLVizPrimitiveMarker::UpdateInstanceTransform(int32 Index, const FTransform& Pose)
+{
+	return ISMC->UpdateInstanceTransform(Index, FTransform(Pose.GetRotation(), Pose.GetLocation(), MarkerScale), true, true, true);
+}
+
 // Virtual add instances function
 void USLVizPrimitiveMarker::AddInstancesChecked(const TArray<FTransform>& Poses)
 {
