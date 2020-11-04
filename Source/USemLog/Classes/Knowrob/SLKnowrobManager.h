@@ -18,7 +18,6 @@ class ASLMongoQueryManager;
 class ASLVizManager;
 class ASLControlManager;
 class ASLSymbolicLogger;
-class ASLIndividualManager;
 
 /**
  * Highlight hack
@@ -182,9 +181,6 @@ private:
 	// Get the symbolic logger from the world (or spawn a new one)
     bool SetSymbolicLogger();
 
-	// Get the individual manager from the world (or spawn a new one)
-	bool SetIndividualManager();
-
 	/****************************************************************/
 	/*							VizQ								*/
 	/****************************************************************/
@@ -278,10 +274,6 @@ private:
 	// Keeps access to all the individuals in the world
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     ASLSymbolicLogger* SymbolicLogger;
-
-	// Keeps access to all the individuals in the world
-	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-	ASLIndividualManager* IndividualManager;
 
 	/****************************************************************/
 	/*							VizQ								*/

@@ -29,7 +29,7 @@ bool ASLControlManager::Init()
 	}
     if (!IndividualManager->Load(false))
     {
-        UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not load the individual manager (%s).."),
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Control manager (%s) could not load the individual manager (%s).."),
             *FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
         RetValue = false;
     }

@@ -6,6 +6,8 @@
 #include "GameFramework/Info.h"
 #include "SLSemanticMapManager.generated.h"
 
+// Forward declarations
+class ASLIndividualManager;
 /**
  * 
  */
@@ -18,6 +20,10 @@ public:
     ASLSemanticMapManager();
 
 public:
+	bool Init();
+
+	bool IsInit() const { return bIsInit; }
+
     // Load the Semantic Map
     void LoadMap(const FName& Map);
 
@@ -36,4 +42,19 @@ private:
 
     // Remove PIE prefix and path
     FString RemoveAssetPathAndPrefix(const FString&  Asset);
+	
+	// Reset Individual manager after level is changed
+	UFUNCTION(BlueprintCallable)
+	void ResetIndividualManager();
+
+	// Get the individual manager from the world (or spawn a new one)
+	bool SetIndividualManager();
+
+	// True if the manager is initialized
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	bool bIsInit;
+
+	// Keeps access to all the individuals in the world
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLIndividualManager* IndividualManager;
 };

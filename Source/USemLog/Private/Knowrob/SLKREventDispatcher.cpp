@@ -9,15 +9,13 @@
 #include "Viz/SLVizStructs.h"
 #include "Runtime/SLSymbolicLogger.h"
 #include "Runtime/SLLoggerStructs.h"
-#include "Individuals/SLIndividualManager.h"
-#include "Individuals/Type/SLBaseIndividual.h"
 
 // Ctor
 FSLKREventDispatcher::FSLKREventDispatcher(ASLMongoQueryManager* InMongoManger, 
 	ASLVizManager* InVizManager, ASLSemanticMapManager* InSemanticMapManager, 
-	ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger, ASLIndividualManager* InIndividualManager) :
+	ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger) :
 	MongoManager(InMongoManger), VizManager(InVizManager), SemanticMapManager(InSemanticMapManager),
-	ControlManager(InControlManager), SymbolicLogger(InSymbolicLogger), IndividualManager(InIndividualManager)
+	ControlManager(InControlManager), SymbolicLogger(InSymbolicLogger)
 	
 {
 }
@@ -102,8 +100,6 @@ FString FSLKREventDispatcher::LoadMap(sl_pb::LoadMapParams params)
 {
 	FString Map = UTF8_TO_TCHAR(params.map().c_str());
 	SemanticMapManager->LoadMap(FName(*Map));
-	//IndividualManager->Init(true);
-	//IndividualManager->Load(true);
 	return TEXT("Switch successfully");
 }
 

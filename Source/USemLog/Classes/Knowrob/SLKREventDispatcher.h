@@ -11,7 +11,6 @@ class ASLVizManager;
 class ASLControlManager;
 class ASLSemanticMapManager;
 class ASLSymbolicLogger;
-class ASLIndividualManager;
 
 enum class ESLVizPrimitiveMarkerType : uint8;
 enum class ESLVizMaterialType : uint8;
@@ -22,7 +21,7 @@ class USEMLOG_API FSLKREventDispatcher
 {
 public:
 	// Default ctor
-	FSLKREventDispatcher(ASLMongoQueryManager* InMongoManger, ASLVizManager* InVizManager, ASLSemanticMapManager* InSemanticMapManager, ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger, ASLIndividualManager* IndividualManager);
+	FSLKREventDispatcher(ASLMongoQueryManager* InMongoManger, ASLVizManager* InVizManager, ASLSemanticMapManager* InSemanticMapManager, ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger);
 	
 	// Dector
 	~FSLKREventDispatcher();
@@ -84,6 +83,4 @@ private:
 	// Used for symbolic logging
 	ASLSymbolicLogger* SymbolicLogger;
 
-	// Keeps access to all the individuals in the world
-	ASLIndividualManager* IndividualManager;
 };

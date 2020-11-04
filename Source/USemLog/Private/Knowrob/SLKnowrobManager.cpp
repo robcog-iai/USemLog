@@ -4,8 +4,6 @@
 #include "Knowrob/SLKnowrobManager.h"
 #include "Control/SLControlManager.h"
 #include "Mongo/SLMongoQueryManager.h"
-#include "Individuals/SLIndividualManager.h"
-#include "Individuals/Type/SLBaseIndividual.h"
 #include "Viz/SLVizManager.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
@@ -497,6 +495,12 @@ void ASLKnowrobManager::Init()
             *FString(__FUNCTION__), __LINE__, *GetName());
         return;
     }
+	if (!SemanticMapManager->Init())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the map manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
        
 	// Get the control manager
     if (!SetControlManager())
@@ -554,7 +558,7 @@ void ASLKnowrobManager::Start()
 
 	// Initialize dispatcher for parsing protobuf message
 	KREventDispatcher = MakeShareable<FSLKREventDispatcher>(
-		new FSLKREventDispatcher(MongoQueryManager, VizManager, SemanticMapManager, ControlManager, SymbolicLogger, IndividualManager)
+		new FSLKREventDispatcher(MongoQueryManager, VizManager, SemanticMapManager, ControlManager, SymbolicLogger)
 		);
 
 	// Bind user inputs
@@ -818,33 +822,6 @@ bool ASLKnowrobManager::SetSymbolicLogger()
     SymbolicLogger->SetActorLabel(TEXT("SL_SymbolLogger"));
 #endif // WITH_EDITOR
     return true;
-}
-
-// Get the individual manager from the world (or spawn a new one)
-bool ASLKnowrobManager::SetIndividualManager()
-{
-	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
-	{
-		return true;
-	}
-
-	for (TActorIterator<ASLIndividualManager>Iter(GetWorld()); Iter; ++Iter)
-	{
-		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
-		{
-			IndividualManager = *Iter;
-			return true;
-		}
-	}
-
-	// Spawning a new manager
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = TEXT("SL_IndividualManager");
-	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
-#if WITH_EDITOR
-	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
-#endif // WITH_EDITOR
-	return true;
 }
 
 /****************************************************************/

@@ -35,7 +35,6 @@ private:
     // Get the individual manager from the world (or spawn a new one)
     bool SetIndividualManager();
 
-private:
     // True if the manager is initialized
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     bool bIsInit;

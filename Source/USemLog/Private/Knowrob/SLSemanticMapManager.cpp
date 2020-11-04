@@ -6,12 +6,41 @@
 #include "Engine/LatentActionManager.h"
 #include "Engine/World.h"
 #include "Engine/LevelStreaming.h"
+#include "Individuals/SLIndividualManager.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 
 ASLSemanticMapManager::ASLSemanticMapManager()
 {
     // Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = false;
 }
+
+bool ASLSemanticMapManager::Init()
+{
+	if (bIsInit)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Semantic Map manager (%s) is already init.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return true;
+	}
+
+	bool RetValue = true;
+	if (!SetIndividualManager())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic Map manager (%s) could not set the individual manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		RetValue = false;
+	}
+	if (!IndividualManager->Load(false))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic Map (%s) could not load the individual manager (%s).."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
+		RetValue = false;
+	}
+	bIsInit = RetValue;
+	return RetValue;
+}
+
 
 // Load the Semantic Map
 void ASLSemanticMapManager::LoadMap(const FName& Map) 
@@ -52,16 +81,20 @@ void ASLSemanticMapManager::GetAllMaps()
 void ASLSemanticMapManager::LoadLevel(const FName& Level)
 {
     FLatentActionInfo LatentInfo;
-    LatentInfo.UUID = 0;
-    UGameplayStatics::LoadStreamLevel(this, Level, true, false, LatentInfo);
+    LatentInfo.UUID = 1;
+	LatentInfo.CallbackTarget = this; 
+	LatentInfo.ExecutionFunction = FName(TEXT("ResetIndividualManager"));
+	LatentInfo.Linkage = 0;
+    UGameplayStatics::LoadStreamLevel(this, Level, true, true, LatentInfo);
 }
 
 // Unload the streaming level
 void ASLSemanticMapManager::UnloadLevel(const FName& Level)
 {
     FLatentActionInfo LatentInfo;
-    LatentInfo.UUID = 1;
-    UGameplayStatics::UnloadStreamLevel(this, Level, LatentInfo, false);
+    LatentInfo.UUID = 2;
+    UGameplayStatics::UnloadStreamLevel(this, Level, LatentInfo, true);
+
 }
 
 // Get the current visible streaming level
@@ -93,4 +126,38 @@ FString ASLSemanticMapManager::RemoveAssetPathAndPrefix(const FString&  Asset)
     TArray<FString> AssetPathArr;
     GetWorld()->RemovePIEPrefix(Asset).ParseIntoArray(AssetPathArr, TEXT("/"), true);
     return AssetPathArr.Last();
+}
+
+// Reset Individual manager after level is changed
+void ASLSemanticMapManager::ResetIndividualManager()
+{
+	IndividualManager->Init(true);
+	IndividualManager->Load(true);
+}
+
+// Get the individual manager from the world (or spawn a new one)
+bool ASLSemanticMapManager::SetIndividualManager()
+{
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
+	for (TActorIterator<ASLIndividualManager>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			IndividualManager = *Iter;
+			return true;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_IndividualManager");
+	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
+#if WITH_EDITOR
+	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
+#endif // WITH_EDITOR
+	return true;
 }
