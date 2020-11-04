@@ -31,7 +31,7 @@ protected:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 
 	// Check if the references are set for calling the execute function from the editor
-	bool ReadyForManualExecution() const;
+	bool IsReadyForManualExecution() const;
 #endif // WITH_EDITOR
 
 	// Execute batch command if any
@@ -49,7 +49,7 @@ protected:
 	bool bExecuteChildrenFirst = false;
 
 
-	/* Manual interaction properties button */
+	/* Manual interaction */
 	UPROPERTY(EditAnywhere, Category = "Manual Interaction")
 	TSoftObjectPtr<ASLKnowrobManager> KnowrobManager = nullptr;
 
@@ -61,84 +61,3 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Description")
 	FString Description;
 };
-
-
-
-///////////////////////////////////////// RM
-///**
-// *
-// */
-//UCLASS()
-//class USLVizQGotoFrame : public USLVizQBase
-//{
-//	GENERATED_BODY()
-//
-//public:
-//	virtual void Execute(ASLKnowrobManager* KRManager) override;
-//
-//private:
-//	UPROPERTY(EditAnywhere, Category = "Id")
-//	FString EpisodeId;
-//
-//	// For negative value it will start from first frame
-//	UPROPERTY(EditAnywhere, Category = "Time")
-//	float Timestamp = -1.f;
-//};
-//
-///**
-// *
-// */
-//UCLASS()
-//class USLVizQReplayEpisode : public USLVizQBase
-//{
-//	GENERATED_BODY()
-//
-//public:
-//	virtual void Execute(ASLKnowrobManager* KRManager) override;
-//
-//private:
-//	UPROPERTY(EditAnywhere, Category = "Id")
-//	FString EpisodeId;
-//
-//	// For negative value it will start from first frame
-//	UPROPERTY(EditAnywhere, Category = "Time")
-//	float StartTime = -1.f;
-//
-//	// For negative value it will run until the last frame
-//	UPROPERTY(EditAnywhere, Category = "Time")
-//	float EndTime = -1.f;
-//
-//	// Repeat replay after finishing
-//	UPROPERTY(EditAnywhere, Category = "Properties")
-//	bool bLoop = true;
-//
-//	// How quickly to move to the next frame (if negative, it will calculate an average update rate from the episode data)
-//	UPROPERTY(EditAnywhere, Category = "Properties")
-//	float UpdateRate = -1.f;
-//
-//	// How many steps to update every frame
-//	UPROPERTY(EditAnywhere, Category = "Properties")
-//	int32 StepSize = 1;
-//};
-//
-//
-//
-///**
-// *
-// */
-//UCLASS()
-//class USLVizQCacheEpisodes : public USLVizQBase
-//{
-//	GENERATED_BODY()
-//
-//public:
-//	virtual void Execute(ASLKnowrobManager* KRManager) override;
-//
-//private:
-//	UPROPERTY(EditAnywhere, Category = "VizQ")
-//	FString TaskId;
-//
-//	UPROPERTY(EditAnywhere, Category = "VizQ")
-//	TArray<FString> EpisodeIds;
-//};
-//

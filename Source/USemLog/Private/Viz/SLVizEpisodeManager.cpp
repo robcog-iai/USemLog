@@ -175,6 +175,9 @@ bool ASLVizEpisodeManager::Play(const FSLVizEpisodePlayParams& PlayParams)
 		: PlayParams.EndTime < PlayParams.StartTime ? EpisodeData.Timestamps.Num() 
 			: FSLVizEpisodeUtils::BinarySearchLessEqual(EpisodeData.Timestamps, PlayParams.EndTime);
 
+	// Should the replay be looped
+	bLoopReplay = PlayParams.bLoop;
+
 	// Goto first frame
 	GotoFrame(ReplayFirstFrameIndex);
 

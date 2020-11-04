@@ -293,58 +293,6 @@ private:
 
 
 	/****************************************************************/
-	/*						VIZ episode replay						*/
-	/****************************************************************/
-	// Triggers a call to set the world as visual only
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bSetupWorldForEpisodeReplayButtonHack = false;
-
-	// Triggers an episode query call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bLoadEpisodeDataButtonHack = false;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	float GotoValueHack = 0.f;
-
-	// Triggers a goto call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bGotoButtonHack = false;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	float ReplayBeginValueHack = -1.f;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	float ReplayEndValueHack = -1.f;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bReplayLoopValueHack = true;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	float ReplayUpdateRateValueHack = -1.f;
-
-	// Task to query from
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	FString ReplayTargetViewIdValueHack = TEXT("");
-
-	// Triggers a goto call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bReplayButtonHack = false;
-
-	// Triggers a pause call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bReplayPauseButtonHack = false;
-
-	// Triggers a stop call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Episode Buttons")
-	bool bReplayStopButtonHack = false;
-
-
-	/****************************************************************/
 	/*						VIZ markers								*/
 	/****************************************************************/
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Viz Markers Buttons")

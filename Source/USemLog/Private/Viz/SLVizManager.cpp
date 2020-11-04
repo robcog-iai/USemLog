@@ -834,22 +834,22 @@ bool ASLVizManager::IsWorldConvertedToVisualizationMode() const
 }
 
 // Cache the episode data
-void ASLVizManager::CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData)
+bool ASLVizManager::CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData)
 {
 	if (!bIsInit)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		return false;
 	}
 	if (InMongoEpisodeData.Num() == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s the episode data is empty.."), *FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		return false;
 	}
 	if (IsEpisodeCached(Id))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s the episode data is already cached.."), *FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		return true;
 	}
 
 	// Create and reserve episode data with the array size
@@ -858,6 +858,12 @@ void ASLVizManager::CacheEpisodeData(const FString& Id, const TArray<TPair<float
 	if (FSLVizEpisodeUtils::BuildEpisodeData(IndividualManager, InMongoEpisodeData, VizEpisodeData))
 	{
 		CachedEpisodeData.Add(Id, VizEpisodeData);
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s could not generate episode format.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
 	}
 }
 

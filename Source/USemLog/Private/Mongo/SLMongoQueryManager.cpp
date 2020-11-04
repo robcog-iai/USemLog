@@ -187,7 +187,7 @@ bool ASLMongoQueryManager::SetEpisode(const FString& InEpisodeId)
 	}
 	if (!bTaskSet)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Set task first.."), *FString(__FUNCTION__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Set task first.."), *FString(__FUNCTION__), __LINE__);
 		return false;
 	}
 	if (bEpisodeSet && EpisodeId.Equals(InEpisodeId))

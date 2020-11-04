@@ -11,6 +11,12 @@
 // Public execute function
 void USLVizQBase::Execute(ASLKnowrobManager* KRManager)
 {
+	if (!KRManager || !KRManager->IsValidLowLevel() || KRManager->IsPendingKillOrUnreachable() || !KRManager->IsInit())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s knowrob manager is not valid/init, aborting execution.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+	}
+
 	if (bExecuteChildrenFirst)
 	{
 		ExecuteChildren(KRManager);
@@ -27,7 +33,7 @@ void USLVizQBase::Execute(ASLKnowrobManager* KRManager)
 // Execute function called from the editor, references need to be set manually
 void USLVizQBase::ManualExecute()
 {
-	if (ReadyForManualExecution())
+	if (IsReadyForManualExecution())
 	{
 		Execute(KnowrobManager.Get());
 	}
@@ -50,7 +56,7 @@ void USLVizQBase::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyC
 }
 
 // Check if the references are set for calling the execute function from the editor
-bool USLVizQBase::ReadyForManualExecution() const
+bool USLVizQBase::IsReadyForManualExecution() const
 {
 	if (KnowrobManager.IsValid() 
 		&& KnowrobManager->IsValidLowLevel() 
@@ -124,40 +130,3 @@ void USLVizQBase::ExecuteImpl(ASLKnowrobManager* KRManager)
 {
 	UE_LOG(LogTemp, Log, TEXT("%s::%d %'s execution"), *FString(__FUNCTION__), __LINE__);
 }
-
-//
-/////////////////////////////////////////// RM
-//// Goto
-//void USLVizQGotoFrame::Execute(ASLKnowrobManager* KRManager)
-//{
-//	//VizManager->GotoCachedEpisodeFrame(EpisodeId, Timestamp);
-//
-//	Super::Execute(KRManager);
-//}
-//
-//// Play
-//void USLVizQReplayEpisode::Execute(ASLKnowrobManager* KRManager)
-//{
-//	//FSLVizEpisodePlayParams Params;
-//	//Params.StartTime = StartTime;
-//	//Params.EndTime = EndTime;
-//	//Params.bLoop = bLoop;
-//	//Params.UpdateRate = UpdateRate;
-//	//Params.StepSize = StepSize;
-//	//VizManager->ReplayCachedEpisode(EpisodeId, Params);
-//
-//	Super::Execute(KRManager);
-//}
-//
-//// Episode
-//void USLVizQCacheEpisodes::Execute(ASLKnowrobManager* KRManager)
-//{
-//	//MongoManager->SetTask(TaskId);
-//	//for (const auto& EpId : EpisodeIds)
-//	//{
-//	//	TArray<TPair<float, TMap<FString, FTransform>>> EpisodeData = MongoManager->GetEpisodeData(EpId);
-//	//	VizManager->CacheEpisodeData(EpId, EpisodeData);
-//	//}
-//
-//	Super::Execute(KRManager);
-//}

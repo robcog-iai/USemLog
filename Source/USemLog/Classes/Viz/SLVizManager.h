@@ -156,8 +156,8 @@ public:
 	// Check if world is set for episode replay
 	bool IsWorldConvertedToVisualizationMode() const;
 
-	// Check if the episode is already cached
-	void CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData);
+	// Cache the mongo data into an episode format
+	bool CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData);
 
 	// Check if the episode is already cached
 	bool IsEpisodeCached(const FString& Id) const { return CachedEpisodeData.Contains(Id); };
