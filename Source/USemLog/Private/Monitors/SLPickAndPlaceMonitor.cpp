@@ -178,9 +178,9 @@ void USLPickAndPlaceMonitor::Finish(float EndTime, bool bForced)
 // Subscribe for grasp events from sibling component
 bool USLPickAndPlaceMonitor::SubscribeForGraspEvents()
 {
-	if(USLManipulatorMonitor* ManipulatorMonitor = CastChecked<USLManipulatorMonitor>(
-		GetOwner()->GetComponentByClass(USLManipulatorMonitor::StaticClass())))
+	if (auto* AC = GetOwner()->GetComponentByClass(USLManipulatorMonitor::StaticClass()))
 	{
+		USLManipulatorMonitor* ManipulatorMonitor = CastChecked<USLManipulatorMonitor>(AC);
 		ManipulatorMonitor->OnBeginManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnManipulatorGraspBegin);
 		ManipulatorMonitor->OnEndManipulatorGrasp.AddUObject(this, &USLPickAndPlaceMonitor::OnManipulatorGraspEnd);
 		return true;

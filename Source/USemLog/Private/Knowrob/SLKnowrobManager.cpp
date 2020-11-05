@@ -47,6 +47,12 @@ void ASLKnowrobManager::BeginPlay()
 {
 	Super::BeginPlay();	
 
+	if (bIgnore)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's ignore flag is true, skipping"), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
 	// Load values from the commandline
 	if (bLoadValuesFromCommandLine)
 	{
@@ -56,11 +62,10 @@ void ASLKnowrobManager::BeginPlay()
 		FParse::Value(FCommandLine::Get(), TEXT("MongoServerIP="), MongoServerIP);
 		FParse::Value(FCommandLine::Get(), TEXT("MongoServerPort="), MongoServerPort);
 	}
-	if (!bIgnore)
-	{
-		Init();
-		Start();
-	}
+
+	Init();
+	Start();
+
 }
 
 #if WITH_EDITOR

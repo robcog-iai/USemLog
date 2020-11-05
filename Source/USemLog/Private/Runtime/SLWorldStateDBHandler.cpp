@@ -488,11 +488,8 @@ void FSLWorldStateDBHandler::Finish()
 		UE_LOG(LogTemp, Log, TEXT("%s::%d World state db handler is already finished.."), *FString(__FUNCTION__), __LINE__);
 		return;
 	}
-
-	CreateIndexes();
-	Disconnect();
-
-
+	
+	// Wait for writer to finish
 	if (DBWriterTask != nullptr)
 	{
 		if (DBWriterTask->IsDone())
@@ -515,6 +512,10 @@ void FSLWorldStateDBHandler::Finish()
 			}
 		}
 	}
+
+	// Finish up handler
+	CreateIndexes();
+	Disconnect();
 
 	bIsInit = false;
 	bIsFinished = true;

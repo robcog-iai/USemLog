@@ -111,7 +111,8 @@ private:
 	bool ExecuteQuery(int32 Index);
 
 protected:
-	// Don't start at begin play
+	// Skip auto init and start
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;
 
 	// True when all references are set and it is connected to the server
