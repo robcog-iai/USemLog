@@ -88,7 +88,8 @@ int32 FSLWorldStateDBWriterAsyncTask::Write()
 
 	AddTimestamp(ws_doc);
 
-	Num += AddIndividualsThatMoved(ws_doc);
+	Num += AddAllIndividuals(ws_doc); // TODO workaround to have synced timeline markers
+	//Num += AddIndividualsThatMoved(ws_doc);
 	Num += AddSkeletalIndividals(ws_doc);
 	//Num += AddRobotIndividuals(ws_doc);
 

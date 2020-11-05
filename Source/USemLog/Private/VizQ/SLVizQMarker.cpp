@@ -32,6 +32,27 @@ void USLVizQMarker::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 			KnowrobManager->GetVizManager()->RemoveAllMarkers();
 		}
 	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bCalcTimelineDuration))
+	{
+		bCalcTimelineDuration = false;
+		TimelineParams.Duration = EndTime - StartTime;
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bSyncDataWithChildren))
+	{
+		bSyncDataWithChildren = false;
+		for (const auto& C : Children)
+		{
+			if (auto MC = Cast<USLVizQMarker>(C))
+			{
+				MC->Task = Task;
+				MC->Episode = Episode;
+				MC->StartTime = StartTime;
+				MC->EndTime = EndTime;
+				MC->DeltaT = DeltaT;
+				MC->TimelineParams = TimelineParams;
+			}
+		}
+	}
 }
 #endif // WITH_EDITOR
 

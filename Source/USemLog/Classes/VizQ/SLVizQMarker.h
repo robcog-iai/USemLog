@@ -50,7 +50,7 @@ protected:
 	// Virtual implementation of the execute function
 	virtual void ExecuteImpl(ASLKnowrobManager* KRManager) override;
 
-protected:	
+public:	
 	UPROPERTY(EditAnywhere, Category = "Marker")
 	FString MarkerId = TEXT("DefaultMarkerId");
 
@@ -104,11 +104,17 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Marker|Visual|Primitive", meta = (editcondition = "MeshType==ESLVizQMarkerMeshType::Primitive"))
 	float Size = 0.05f;
 
-
+protected:
 	/* Manual interaction */
 	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
 	bool bRemove = false;
 
 	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
 	bool bRemoveAll = false;
+
+	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
+	bool bCalcTimelineDuration = false;
+
+	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
+	bool bSyncDataWithChildren = false;
 };

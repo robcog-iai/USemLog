@@ -110,7 +110,7 @@ void USLVizSkeletalMeshMarker::AddInstance(const TPair<FTransform, TMap<int32, F
 	UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
 	PMC->SetWorldTransform(SkeletalPose.Key);
 
-	for (int32 Idx = 0; Idx < 3; ++Idx)
+	for (int32 Idx = 0; Idx < 5; ++Idx)
 	{
 		for (const auto& BonePosePair : SkeletalPose.Value)
 		{
@@ -168,7 +168,7 @@ void USLVizSkeletalMeshMarker::AddInstances(const TArray<TPair<FTransform, TMap<
 		UPoseableMeshComponent* PMC = CreateNewPoseableMeshInstance();
 		PMC->SetWorldTransform(SkelPosePair.Key);
 
-		for (int32 Idx = 0; Idx < 3; ++Idx)
+		for (int32 Idx = 0; Idx < 5; ++Idx)
 		{
 			for (const auto& BonePosePair : SkelPosePair.Value)
 			{
