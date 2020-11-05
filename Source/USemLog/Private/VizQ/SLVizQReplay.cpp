@@ -16,19 +16,29 @@ void USLVizQReplay::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQReplay, bPause))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQReplay, bPauseRadioButton))
 	{
 		if (IsReadyForManualExecution())
 		{
-			KnowrobManager->GetVizManager()->PauseReplay(bPause);
+			KnowrobManager->GetVizManager()->PauseReplay(bPauseRadioButton);
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQReplay, bStop))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQReplay, bStopButton))
 	{
-		bStop = false;
+		bStopButton = false;
 		if (IsReadyForManualExecution())
 		{
 			KnowrobManager->GetVizManager()->StopReplay();
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQReplay, StartTime))
+	{
+		if (bLiveUpdate && Type == ESLVizQReplayType::Goto)
+		{
+			if (IsReadyForManualExecution())
+			{
+				KnowrobManager->GetVizManager()->GotoCachedEpisodeFrame(Episode, StartTime);
+			}
 		}
 	}
 }

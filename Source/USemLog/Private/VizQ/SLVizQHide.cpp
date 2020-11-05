@@ -1,9 +1,9 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "VizQ/SLVizQHighlight.h"
+#include "VizQ/SLVizQHide.h"
 #include "Knowrob/SLKnowrobManager.h"
-#include "Viz/SLVizManager.h"
+#include "Individuals/SLIndividualManager.h"
 
 #if WITH_EDITOR
 #include "Engine/Selection.h"
@@ -14,7 +14,7 @@
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
-void USLVizQHighlight::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+void USLVizQHide::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -23,12 +23,12 @@ void USLVizQHighlight::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	/* Add selected actors ids to array */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQHighlight, bAddSelectedButton))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQHide, bAddSelectedButton))
 	{
 		bAddSelectedButton = false;
 		if (bOverwrite)
 		{
-			Ids.Empty();
+			Individuals.Empty();
 		}
 		for (FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
 		{
@@ -37,7 +37,7 @@ void USLVizQHighlight::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 			{
 				if (BI->IsLoaded())
 				{
-					bEnsureUniqueness ? Ids.AddUnique(BI->GetIdValue()) : Ids.Add(BI->GetIdValue());					
+					bEnsureUniqueness ? Individuals.AddUnique(BI->GetIdValue()) : Individuals.Add(BI->GetIdValue());
 				}
 				else
 				{
@@ -52,7 +52,7 @@ void USLVizQHighlight::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 			}
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQHighlight, bRemoveSelectedButton))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQHide, bRemoveSelectedButton))
 	{
 		bRemoveSelectedButton = false;
 		for (FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
@@ -62,7 +62,7 @@ void USLVizQHighlight::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 			{
 				if (BI->IsLoaded())
 				{
-					Ids.Remove(BI->GetIdValue());
+					Individuals.Remove(BI->GetIdValue());
 				}
 				else
 				{
@@ -76,30 +76,17 @@ void USLVizQHighlight::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 					*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
 			}
 		}
-	}	
+	}
 }
 #endif // WITH_EDITOR
 
 // Virtual implementation of the execute function
-void USLVizQHighlight::ExecuteImpl(ASLKnowrobManager* KRManager)
+void USLVizQHide::ExecuteImpl(ASLKnowrobManager* KRManager)
 {
-	ASLVizManager* VizManager = KRManager->GetVizManager();
-	if (Action == ESLVizQHighlightAction::Highlight)
+	ASLIndividualManager* IndividualManager = KRManager->GetVizManager()->GetIndividualManager();
+
+	for (const auto& Individual : Individuals)
 	{
-		for (const auto& Id : Ids)
-		{
-			VizManager->HighlightIndividual(Id, Color, MaterialType);
-		}
-	}
-	else if (Action == ESLVizQHighlightAction::Remove)
-	{
-		for (const auto& Id : Ids)
-		{
-			VizManager->RemoveIndividualHighlight(Id);
-		}
-	}
-	else if (Action == ESLVizQHighlightAction::RemoveAll)
-	{
-		VizManager->RemoveAllIndividualHighlights();
+		IndividualManager->GetIndividualActor(Individual)->SetActorHiddenInGame(bHideValue);
 	}
 }

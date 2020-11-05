@@ -104,17 +104,23 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Marker|Visual|Primitive", meta = (editcondition = "MeshType==ESLVizQMarkerMeshType::Primitive"))
 	float Size = 0.05f;
 
+
 protected:
 	/* Manual interaction */
 	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
-	bool bRemove = false;
+	bool bRemoveButton = false;
 
 	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
-	bool bRemoveAll = false;
+	bool bRemoveAllButton = false;
 
-	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
-	bool bCalcTimelineDuration = false;
 
-	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
-	bool bSyncDataWithChildren = false;
+	/* Editor interaction */
+	UPROPERTY(EditAnywhere, Category = "Marker|Edit")
+	bool bCalcTimelineDurationButton = false;
+
+	UPROPERTY(EditAnywhere, Category = "Marker|Edit")
+	bool bSyncWithChildrenButton = false;
+
+	UPROPERTY(EditAnywhere, Category = "Marker|Edit")
+	bool bAddSelectedButton = false;
 };

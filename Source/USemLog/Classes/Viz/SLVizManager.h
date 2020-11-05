@@ -47,6 +47,8 @@ public:
 	// Clear any created markers / viz components
 	void Reset();
 
+	// Get the individual manager
+	ASLIndividualManager* GetIndividualManager() const { return IndividualManager; };
 
 	/* Highlights */
 	// Highlight the individual (returns false if the individual is not found or is not of visual type)

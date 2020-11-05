@@ -63,8 +63,11 @@ protected:
 
 	/* Manual interaction */
 	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Replay", meta = (editcondition = "Type==ESLVizQReplayType::Replay"))
-	bool bPause = false;
+	bool bPauseRadioButton = false;
 
 	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Replay", meta = (editcondition = "Type==ESLVizQReplayType::Replay"))
-	bool bStop = false;
+	bool bStopButton = false;
+
+	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Replay", meta = (editcondition = "Type==ESLVizQReplayType::Replay"))
+	bool bLiveUpdate = false;
 };

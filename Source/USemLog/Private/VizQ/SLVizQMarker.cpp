@@ -2,9 +2,17 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "VizQ/SLVizQMarker.h"
+#include "VizQ/SLVizQMarkerArray.h"
 #include "Knowrob/SLKnowrobManager.h"
 #include "Mongo/SLMongoQueryManager.h"
 #include "Viz/SLVizManager.h"
+
+#if WITH_EDITOR
+#include "Engine/Selection.h"
+#include "Editor.h"
+#include "Individuals/SLIndividualUtils.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#endif // WITH_EDITOR
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
@@ -16,30 +24,30 @@ void USLVizQMarker::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bRemove))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bRemoveButton))
 	{
-		bRemove = false;
+		bRemoveButton = false;
 		if (IsReadyForManualExecution())
 		{
 			KnowrobManager->GetVizManager()->RemoveMarker(MarkerId);
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bRemoveAll))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bRemoveAllButton))
 	{
-		bRemoveAll = false;
+		bRemoveAllButton = false;
 		if (IsReadyForManualExecution())
 		{
 			KnowrobManager->GetVizManager()->RemoveAllMarkers();
 		}
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bCalcTimelineDuration))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bCalcTimelineDurationButton))
 	{
-		bCalcTimelineDuration = false;
+		bCalcTimelineDurationButton = false;
 		TimelineParams.Duration = EndTime - StartTime;
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bSyncDataWithChildren))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bSyncWithChildrenButton))
 	{
-		bSyncDataWithChildren = false;
+		bSyncWithChildrenButton = false;
 		for (const auto& C : Children)
 		{
 			if (auto MC = Cast<USLVizQMarker>(C))
@@ -50,6 +58,42 @@ void USLVizQMarker::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 				MC->EndTime = EndTime;
 				MC->DeltaT = DeltaT;
 				MC->TimelineParams = TimelineParams;
+			}
+			else if (auto MAC = Cast<USLVizQMarkerArray>(C))
+			{
+				MAC->Task = Task;
+				MAC->Episode = Episode;
+				MAC->StartTime = StartTime;
+				MAC->EndTime = EndTime;
+				MAC->DeltaT = DeltaT;
+				MAC->TimelineParams = TimelineParams;
+			}
+		}
+	}
+	/* Add selected actors ids to array */
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bAddSelectedButton))
+	{
+		bAddSelectedButton = false;
+		for (FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
+		{
+			AActor* SelectedActor = CastChecked<AActor>(*It);
+			if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(SelectedActor))
+			{
+				if (BI->IsLoaded())
+				{
+					Individual = BI->GetIdValue();
+					return;
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual is not loaded.."),
+						*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no individual representation.."),
+					*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
 			}
 		}
 	}

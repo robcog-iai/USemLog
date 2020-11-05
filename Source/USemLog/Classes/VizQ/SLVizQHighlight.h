@@ -11,6 +11,14 @@
 // Forward declaration
 class ASLKnowrobManager;
 
+UENUM()
+enum class ESLVizQHighlightAction : uint8
+{
+	Highlight			UMETA(DisplayName = "Highlight"),
+	Remove				UMETA(DisplayName = "Remove"),
+	RemoveAll			UMETA(DisplayName = "RemoveAll"),
+};
+
 /**
  * 
  */
@@ -34,16 +42,13 @@ protected:
 	TArray<FString> Ids;
 
 	UPROPERTY(EditAnywhere, Category = "Highlight")
+	ESLVizQHighlightAction Action = ESLVizQHighlightAction::Highlight;
+
+	UPROPERTY(EditAnywhere, Category = "Highlight", meta=(editcondition="Action==ESLVizQHighlightAction::Highlight"))
 	FLinearColor Color = FLinearColor::Green;
 
-	UPROPERTY(EditAnywhere, Category = "Highlight")
+	UPROPERTY(EditAnywhere, Category = "Highlight", meta = (editcondition = "Action==ESLVizQHighlightAction::Highlight"))
 	ESLVizMaterialType MaterialType = ESLVizMaterialType::Translucent;
-
-	UPROPERTY(EditAnywhere, Category = "Highlight")
-	bool bRemoveSelected = false;
-
-	UPROPERTY(EditAnywhere, Category = "Highlight")
-	bool bRemoveAll = false;
 
 
 	/* Editor interaction */
