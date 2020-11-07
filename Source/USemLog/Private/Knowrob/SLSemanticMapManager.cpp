@@ -85,7 +85,7 @@ void ASLSemanticMapManager::LoadLevel(const FName& Level)
 	LatentInfo.CallbackTarget = this; 
 	LatentInfo.ExecutionFunction = FName(TEXT("ResetIndividualManager"));
 	LatentInfo.Linkage = 0;
-    UGameplayStatics::LoadStreamLevel(this, Level, true, true, LatentInfo);
+    UGameplayStatics::LoadStreamLevel(this, Level, true, false, LatentInfo);
 }
 
 // Unload the streaming level
@@ -93,7 +93,7 @@ void ASLSemanticMapManager::UnloadLevel(const FName& Level)
 {
     FLatentActionInfo LatentInfo;
     LatentInfo.UUID = 2;
-    UGameplayStatics::UnloadStreamLevel(this, Level, LatentInfo, true);
+    UGameplayStatics::UnloadStreamLevel(this, Level, LatentInfo, false);
 
 }
 
