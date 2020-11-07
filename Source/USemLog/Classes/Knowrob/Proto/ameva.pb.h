@@ -51,7 +51,7 @@ struct TableStruct_ameva_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[1]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[2]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -62,9 +62,13 @@ namespace sl_pb {
 class KRAmevaEvent;
 class KRAmevaEventDefaultTypeInternal;
 extern KRAmevaEventDefaultTypeInternal _KRAmevaEvent_default_instance_;
+class KRAmevaResponse;
+class KRAmevaResponseDefaultTypeInternal;
+extern KRAmevaResponseDefaultTypeInternal _KRAmevaResponse_default_instance_;
 }  // namespace sl_pb
 PROTOBUF_NAMESPACE_OPEN
 template<> ::sl_pb::KRAmevaEvent* Arena::CreateMaybeMessage<::sl_pb::KRAmevaEvent>(Arena*);
+template<> ::sl_pb::KRAmevaResponse* Arena::CreateMaybeMessage<::sl_pb::KRAmevaResponse>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace sl_pb {
 
@@ -99,6 +103,31 @@ inline bool KRAmevaEvent_FuncToCall_Parse(
     ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, KRAmevaEvent_FuncToCall* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<KRAmevaEvent_FuncToCall>(
     KRAmevaEvent_FuncToCall_descriptor(), name, value);
+}
+enum KRAmevaResponse_ResponseType : int {
+  KRAmevaResponse_ResponseType_Text = 1,
+  KRAmevaResponse_ResponseType_FileCreation = 2,
+  KRAmevaResponse_ResponseType_FileData = 3,
+  KRAmevaResponse_ResponseType_FileFinish = 4
+};
+bool KRAmevaResponse_ResponseType_IsValid(int value);
+constexpr KRAmevaResponse_ResponseType KRAmevaResponse_ResponseType_ResponseType_MIN = KRAmevaResponse_ResponseType_Text;
+constexpr KRAmevaResponse_ResponseType KRAmevaResponse_ResponseType_ResponseType_MAX = KRAmevaResponse_ResponseType_FileFinish;
+constexpr int KRAmevaResponse_ResponseType_ResponseType_ARRAYSIZE = KRAmevaResponse_ResponseType_ResponseType_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* KRAmevaResponse_ResponseType_descriptor();
+template<typename T>
+inline const std::string& KRAmevaResponse_ResponseType_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, KRAmevaResponse_ResponseType>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function KRAmevaResponse_ResponseType_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    KRAmevaResponse_ResponseType_descriptor(), enum_t_value);
+}
+inline bool KRAmevaResponse_ResponseType_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, KRAmevaResponse_ResponseType* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<KRAmevaResponse_ResponseType>(
+    KRAmevaResponse_ResponseType_descriptor(), name, value);
 }
 // ===================================================================
 
@@ -495,6 +524,270 @@ class KRAmevaEvent PROTOBUF_FINAL :
   ::sl_pb::MoveIndividualParams* moveindividualparams_;
   ::sl_pb::StartSymbolicLogParams* startsymboliclogparams_;
   int functocall_;
+  friend struct ::TableStruct_ameva_2eproto;
+};
+// -------------------------------------------------------------------
+
+class KRAmevaResponse PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.KRAmevaResponse) */ {
+ public:
+  inline KRAmevaResponse() : KRAmevaResponse(nullptr) {}
+  virtual ~KRAmevaResponse();
+
+  KRAmevaResponse(const KRAmevaResponse& from);
+  KRAmevaResponse(KRAmevaResponse&& from) noexcept
+    : KRAmevaResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline KRAmevaResponse& operator=(const KRAmevaResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline KRAmevaResponse& operator=(KRAmevaResponse&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const KRAmevaResponse& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const KRAmevaResponse* internal_default_instance() {
+    return reinterpret_cast<const KRAmevaResponse*>(
+               &_KRAmevaResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    1;
+
+  friend void swap(KRAmevaResponse& a, KRAmevaResponse& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(KRAmevaResponse* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(KRAmevaResponse* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline KRAmevaResponse* New() const final {
+    return CreateMaybeMessage<KRAmevaResponse>(nullptr);
+  }
+
+  KRAmevaResponse* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<KRAmevaResponse>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const KRAmevaResponse& from);
+  void MergeFrom(const KRAmevaResponse& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(KRAmevaResponse* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "sl_pb.KRAmevaResponse";
+  }
+  protected:
+  explicit KRAmevaResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_ameva_2eproto);
+    return ::descriptor_table_ameva_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  typedef KRAmevaResponse_ResponseType ResponseType;
+  static constexpr ResponseType Text =
+    KRAmevaResponse_ResponseType_Text;
+  static constexpr ResponseType FileCreation =
+    KRAmevaResponse_ResponseType_FileCreation;
+  static constexpr ResponseType FileData =
+    KRAmevaResponse_ResponseType_FileData;
+  static constexpr ResponseType FileFinish =
+    KRAmevaResponse_ResponseType_FileFinish;
+  static inline bool ResponseType_IsValid(int value) {
+    return KRAmevaResponse_ResponseType_IsValid(value);
+  }
+  static constexpr ResponseType ResponseType_MIN =
+    KRAmevaResponse_ResponseType_ResponseType_MIN;
+  static constexpr ResponseType ResponseType_MAX =
+    KRAmevaResponse_ResponseType_ResponseType_MAX;
+  static constexpr int ResponseType_ARRAYSIZE =
+    KRAmevaResponse_ResponseType_ResponseType_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  ResponseType_descriptor() {
+    return KRAmevaResponse_ResponseType_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& ResponseType_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, ResponseType>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function ResponseType_Name.");
+    return KRAmevaResponse_ResponseType_Name(enum_t_value);
+  }
+  static inline bool ResponseType_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
+      ResponseType* value) {
+    return KRAmevaResponse_ResponseType_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kTextFieldNumber = 2,
+    kFileNameFieldNumber = 3,
+    kFileDataFieldNumber = 4,
+    kDataLengthFieldNumber = 5,
+    kTypeFieldNumber = 1,
+  };
+  // optional string text = 2;
+  bool has_text() const;
+  private:
+  bool _internal_has_text() const;
+  public:
+  void clear_text();
+  const std::string& text() const;
+  void set_text(const std::string& value);
+  void set_text(std::string&& value);
+  void set_text(const char* value);
+  void set_text(const char* value, size_t size);
+  std::string* mutable_text();
+  std::string* release_text();
+  void set_allocated_text(std::string* text);
+  private:
+  const std::string& _internal_text() const;
+  void _internal_set_text(const std::string& value);
+  std::string* _internal_mutable_text();
+  public:
+
+  // optional string fileName = 3;
+  bool has_filename() const;
+  private:
+  bool _internal_has_filename() const;
+  public:
+  void clear_filename();
+  const std::string& filename() const;
+  void set_filename(const std::string& value);
+  void set_filename(std::string&& value);
+  void set_filename(const char* value);
+  void set_filename(const char* value, size_t size);
+  std::string* mutable_filename();
+  std::string* release_filename();
+  void set_allocated_filename(std::string* filename);
+  private:
+  const std::string& _internal_filename() const;
+  void _internal_set_filename(const std::string& value);
+  std::string* _internal_mutable_filename();
+  public:
+
+  // optional bytes fileData = 4;
+  bool has_filedata() const;
+  private:
+  bool _internal_has_filedata() const;
+  public:
+  void clear_filedata();
+  const std::string& filedata() const;
+  void set_filedata(const std::string& value);
+  void set_filedata(std::string&& value);
+  void set_filedata(const char* value);
+  void set_filedata(const void* value, size_t size);
+  std::string* mutable_filedata();
+  std::string* release_filedata();
+  void set_allocated_filedata(std::string* filedata);
+  private:
+  const std::string& _internal_filedata() const;
+  void _internal_set_filedata(const std::string& value);
+  std::string* _internal_mutable_filedata();
+  public:
+
+  // optional int32 dataLength = 5;
+  bool has_datalength() const;
+  private:
+  bool _internal_has_datalength() const;
+  public:
+  void clear_datalength();
+  ::PROTOBUF_NAMESPACE_ID::int32 datalength() const;
+  void set_datalength(::PROTOBUF_NAMESPACE_ID::int32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::int32 _internal_datalength() const;
+  void _internal_set_datalength(::PROTOBUF_NAMESPACE_ID::int32 value);
+  public:
+
+  // required .sl_pb.KRAmevaResponse.ResponseType type = 1;
+  bool has_type() const;
+  private:
+  bool _internal_has_type() const;
+  public:
+  void clear_type();
+  ::sl_pb::KRAmevaResponse_ResponseType type() const;
+  void set_type(::sl_pb::KRAmevaResponse_ResponseType value);
+  private:
+  ::sl_pb::KRAmevaResponse_ResponseType _internal_type() const;
+  void _internal_set_type(::sl_pb::KRAmevaResponse_ResponseType value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:sl_pb.KRAmevaResponse)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr text_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr filename_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr filedata_;
+  ::PROTOBUF_NAMESPACE_ID::int32 datalength_;
+  int type_;
   friend struct ::TableStruct_ameva_2eproto;
 };
 // ===================================================================
@@ -1327,9 +1620,294 @@ inline void KRAmevaEvent::set_allocated_startsymboliclogparams(::sl_pb::StartSym
   // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.startSymbolicLogParams)
 }
 
+// -------------------------------------------------------------------
+
+// KRAmevaResponse
+
+// required .sl_pb.KRAmevaResponse.ResponseType type = 1;
+inline bool KRAmevaResponse::_internal_has_type() const {
+  bool value = (_has_bits_[0] & 0x00000010u) != 0;
+  return value;
+}
+inline bool KRAmevaResponse::has_type() const {
+  return _internal_has_type();
+}
+inline void KRAmevaResponse::clear_type() {
+  type_ = 1;
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline ::sl_pb::KRAmevaResponse_ResponseType KRAmevaResponse::_internal_type() const {
+  return static_cast< ::sl_pb::KRAmevaResponse_ResponseType >(type_);
+}
+inline ::sl_pb::KRAmevaResponse_ResponseType KRAmevaResponse::type() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaResponse.type)
+  return _internal_type();
+}
+inline void KRAmevaResponse::_internal_set_type(::sl_pb::KRAmevaResponse_ResponseType value) {
+  assert(::sl_pb::KRAmevaResponse_ResponseType_IsValid(value));
+  _has_bits_[0] |= 0x00000010u;
+  type_ = value;
+}
+inline void KRAmevaResponse::set_type(::sl_pb::KRAmevaResponse_ResponseType value) {
+  _internal_set_type(value);
+  // @@protoc_insertion_point(field_set:sl_pb.KRAmevaResponse.type)
+}
+
+// optional string text = 2;
+inline bool KRAmevaResponse::_internal_has_text() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool KRAmevaResponse::has_text() const {
+  return _internal_has_text();
+}
+inline void KRAmevaResponse::clear_text() {
+  text_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline const std::string& KRAmevaResponse::text() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaResponse.text)
+  return _internal_text();
+}
+inline void KRAmevaResponse::set_text(const std::string& value) {
+  _internal_set_text(value);
+  // @@protoc_insertion_point(field_set:sl_pb.KRAmevaResponse.text)
+}
+inline std::string* KRAmevaResponse::mutable_text() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaResponse.text)
+  return _internal_mutable_text();
+}
+inline const std::string& KRAmevaResponse::_internal_text() const {
+  return text_.Get();
+}
+inline void KRAmevaResponse::_internal_set_text(const std::string& value) {
+  _has_bits_[0] |= 0x00000001u;
+  text_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void KRAmevaResponse::set_text(std::string&& value) {
+  _has_bits_[0] |= 0x00000001u;
+  text_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.KRAmevaResponse.text)
+}
+inline void KRAmevaResponse::set_text(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000001u;
+  text_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.KRAmevaResponse.text)
+}
+inline void KRAmevaResponse::set_text(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000001u;
+  text_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.KRAmevaResponse.text)
+}
+inline std::string* KRAmevaResponse::_internal_mutable_text() {
+  _has_bits_[0] |= 0x00000001u;
+  return text_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* KRAmevaResponse::release_text() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaResponse.text)
+  if (!_internal_has_text()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000001u;
+  return text_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void KRAmevaResponse::set_allocated_text(std::string* text) {
+  if (text != nullptr) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  text_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), text,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaResponse.text)
+}
+
+// optional string fileName = 3;
+inline bool KRAmevaResponse::_internal_has_filename() const {
+  bool value = (_has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool KRAmevaResponse::has_filename() const {
+  return _internal_has_filename();
+}
+inline void KRAmevaResponse::clear_filename() {
+  filename_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline const std::string& KRAmevaResponse::filename() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaResponse.fileName)
+  return _internal_filename();
+}
+inline void KRAmevaResponse::set_filename(const std::string& value) {
+  _internal_set_filename(value);
+  // @@protoc_insertion_point(field_set:sl_pb.KRAmevaResponse.fileName)
+}
+inline std::string* KRAmevaResponse::mutable_filename() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaResponse.fileName)
+  return _internal_mutable_filename();
+}
+inline const std::string& KRAmevaResponse::_internal_filename() const {
+  return filename_.Get();
+}
+inline void KRAmevaResponse::_internal_set_filename(const std::string& value) {
+  _has_bits_[0] |= 0x00000002u;
+  filename_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void KRAmevaResponse::set_filename(std::string&& value) {
+  _has_bits_[0] |= 0x00000002u;
+  filename_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.KRAmevaResponse.fileName)
+}
+inline void KRAmevaResponse::set_filename(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000002u;
+  filename_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.KRAmevaResponse.fileName)
+}
+inline void KRAmevaResponse::set_filename(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000002u;
+  filename_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.KRAmevaResponse.fileName)
+}
+inline std::string* KRAmevaResponse::_internal_mutable_filename() {
+  _has_bits_[0] |= 0x00000002u;
+  return filename_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* KRAmevaResponse::release_filename() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaResponse.fileName)
+  if (!_internal_has_filename()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000002u;
+  return filename_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void KRAmevaResponse::set_allocated_filename(std::string* filename) {
+  if (filename != nullptr) {
+    _has_bits_[0] |= 0x00000002u;
+  } else {
+    _has_bits_[0] &= ~0x00000002u;
+  }
+  filename_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), filename,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaResponse.fileName)
+}
+
+// optional bytes fileData = 4;
+inline bool KRAmevaResponse::_internal_has_filedata() const {
+  bool value = (_has_bits_[0] & 0x00000004u) != 0;
+  return value;
+}
+inline bool KRAmevaResponse::has_filedata() const {
+  return _internal_has_filedata();
+}
+inline void KRAmevaResponse::clear_filedata() {
+  filedata_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline const std::string& KRAmevaResponse::filedata() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaResponse.fileData)
+  return _internal_filedata();
+}
+inline void KRAmevaResponse::set_filedata(const std::string& value) {
+  _internal_set_filedata(value);
+  // @@protoc_insertion_point(field_set:sl_pb.KRAmevaResponse.fileData)
+}
+inline std::string* KRAmevaResponse::mutable_filedata() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaResponse.fileData)
+  return _internal_mutable_filedata();
+}
+inline const std::string& KRAmevaResponse::_internal_filedata() const {
+  return filedata_.Get();
+}
+inline void KRAmevaResponse::_internal_set_filedata(const std::string& value) {
+  _has_bits_[0] |= 0x00000004u;
+  filedata_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void KRAmevaResponse::set_filedata(std::string&& value) {
+  _has_bits_[0] |= 0x00000004u;
+  filedata_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.KRAmevaResponse.fileData)
+}
+inline void KRAmevaResponse::set_filedata(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000004u;
+  filedata_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.KRAmevaResponse.fileData)
+}
+inline void KRAmevaResponse::set_filedata(const void* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000004u;
+  filedata_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.KRAmevaResponse.fileData)
+}
+inline std::string* KRAmevaResponse::_internal_mutable_filedata() {
+  _has_bits_[0] |= 0x00000004u;
+  return filedata_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* KRAmevaResponse::release_filedata() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaResponse.fileData)
+  if (!_internal_has_filedata()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000004u;
+  return filedata_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void KRAmevaResponse::set_allocated_filedata(std::string* filedata) {
+  if (filedata != nullptr) {
+    _has_bits_[0] |= 0x00000004u;
+  } else {
+    _has_bits_[0] &= ~0x00000004u;
+  }
+  filedata_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), filedata,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaResponse.fileData)
+}
+
+// optional int32 dataLength = 5;
+inline bool KRAmevaResponse::_internal_has_datalength() const {
+  bool value = (_has_bits_[0] & 0x00000008u) != 0;
+  return value;
+}
+inline bool KRAmevaResponse::has_datalength() const {
+  return _internal_has_datalength();
+}
+inline void KRAmevaResponse::clear_datalength() {
+  datalength_ = 0;
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 KRAmevaResponse::_internal_datalength() const {
+  return datalength_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::int32 KRAmevaResponse::datalength() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaResponse.dataLength)
+  return _internal_datalength();
+}
+inline void KRAmevaResponse::_internal_set_datalength(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  _has_bits_[0] |= 0x00000008u;
+  datalength_ = value;
+}
+inline void KRAmevaResponse::set_datalength(::PROTOBUF_NAMESPACE_ID::int32 value) {
+  _internal_set_datalength(value);
+  // @@protoc_insertion_point(field_set:sl_pb.KRAmevaResponse.dataLength)
+}
+
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -1341,6 +1919,11 @@ template <> struct is_proto_enum< ::sl_pb::KRAmevaEvent_FuncToCall> : ::std::tru
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::sl_pb::KRAmevaEvent_FuncToCall>() {
   return ::sl_pb::KRAmevaEvent_FuncToCall_descriptor();
+}
+template <> struct is_proto_enum< ::sl_pb::KRAmevaResponse_ResponseType> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::sl_pb::KRAmevaResponse_ResponseType>() {
+  return ::sl_pb::KRAmevaResponse_ResponseType_descriptor();
 }
 
 PROTOBUF_NAMESPACE_CLOSE

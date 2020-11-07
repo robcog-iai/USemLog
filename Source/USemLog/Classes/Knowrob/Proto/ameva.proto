@@ -32,3 +32,17 @@ message KRAmevaEvent {
   optional MoveIndividualParams moveIndividualParams = 10;
   optional StartSymbolicLogParams startSymbolicLogParams = 11;
 }
+
+message KRAmevaResponse {
+  enum ResponseType {
+    Text = 1;
+    FileCreation = 2;
+    FileData = 3;
+    FileFinish = 4;
+  }
+  required ResponseType type = 1;
+  optional string text = 2;
+  optional string fileName = 3;
+  optional bytes fileData = 4;
+  optional int32 dataLength = 5;
+}

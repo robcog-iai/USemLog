@@ -3,6 +3,7 @@
 
 #include "Knowrob/SLKRWSClient.h"
 #include "WebSocketsModule.h"
+#include "Knowrob/Proto/ameva.pb.h"
 
 
 // Ctor
@@ -170,31 +171,48 @@ void FSLKRWSClient::HandleWebSocketFullData(const uint8* Data, SIZE_T Length)
 }
 
 // Send message via websocket
-void FSLKRWSClient::SendResponse(const FString& StrToSend)
+void FSLKRWSClient::SendResponse(const FSLKRResponse& Response)
 {
-	FTCHARToUTF8 UTStr(*StrToSend);
-	TArray<uint8> BinaryArr;
-	AppendToUInt8Array(BinaryArr, (uint8*)UTStr.Get(), UTStr.Length(), true);
-	BinaryArr.Add('\0');
-	WebSocket->Send(BinaryArr.GetData(), BinaryArr.Num(), false);
-}
-
-// Append element to uint8 array and handle escape character
-void FSLKRWSClient::AppendToUInt8Array(TArray<uint8>& Out, uint8* In, SIZE_T Length, bool bShouldEscape)
-{
-	if (bShouldEscape)
+	if (Response.Type == ResponseType::TEXT)
 	{
-		for (SIZE_T I = 0; I < Length; I++)
-		{
-			if (In[I] == ':' || In[I] == '\\' || In[I] == '\n' || In[I] == '\r')
-			{
-				Out.Add('\\');
-			}
-			Out.Add(In[I]);
-		}
+		std::string TextStr(TCHAR_TO_UTF8(*Response.Text));
+		sl_pb::KRAmevaResponse AmevaResponse;
+		AmevaResponse.set_type(sl_pb::KRAmevaResponse::Text);
+		AmevaResponse.set_text(TextStr);
+		std::string ProtoStr = AmevaResponse.SerializeAsString();
+		WebSocket->Send(ProtoStr.data(), ProtoStr.size(), true);
 	}
-	else
+	else if (Response.Type == ResponseType::FILE)
 	{
-		Out.Append(In, Length);
+		// Notify knowrob to create a file
+		std::string FLNameStr(TCHAR_TO_UTF8(*Response.FileName));
+		sl_pb::KRAmevaResponse CreationResponse;
+		CreationResponse.set_type(sl_pb::KRAmevaResponse::FileCreation);
+		CreationResponse.set_filename(FLNameStr);
+		std::string ProtoStr = CreationResponse.SerializeAsString();
+		WebSocket->Send(ProtoStr.data(), ProtoStr.size(), true);
+
+		// Slice the file data into frames and send them to knowrob
+		const int DefaultFrameSize = 64;
+		for (int Offset = 0; Offset < Response.FileData.Num(); Offset += DefaultFrameSize)
+		{
+			sl_pb::KRAmevaResponse DataResponse;
+			DataResponse.set_type(sl_pb::KRAmevaResponse::FileData);
+			int32 FrameSize = Response.FileData.Num() - Offset < DefaultFrameSize ? Response.FileData.Num() - Offset : DefaultFrameSize;
+			const uint8* FileData = Response.FileData.GetData();
+			uint8 DataFrame[DefaultFrameSize];
+			memcpy(DataFrame, FileData + Offset, FrameSize);
+			DataResponse.set_datalength(FrameSize);
+			DataResponse.set_filedata((char*)DataFrame);
+			ProtoStr = DataResponse.SerializeAsString();
+			WebSocket->Send(ProtoStr.data(), ProtoStr.size(), true);
+		}
+
+		// Notify that all the data is sent
+		sl_pb::KRAmevaResponse FinishResponse;
+		FinishResponse.set_type(sl_pb::KRAmevaResponse::FileFinish);
+		FinishResponse.set_filename(FLNameStr);
+		ProtoStr = FinishResponse.SerializeAsString();
+		WebSocket->Send(ProtoStr.data(), ProtoStr.size(), true);
 	}
 }

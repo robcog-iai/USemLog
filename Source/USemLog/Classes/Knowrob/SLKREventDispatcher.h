@@ -4,6 +4,8 @@
 
 #include <string>
 #include "Knowrob/Proto/ameva.pb.h"
+#include "Runtime/SLLoggerStructs.h"
+#include "SLKRResponseStruct.h"
 #include "CoreMinimal.h"
 
 class ASLMongoQueryManager;
@@ -28,32 +30,32 @@ public:
 
 public:
 	// Parse the proto sequence and trigger function
-	FString ProcessProtobuf(std::string ProtoStr);
+	void ProcessProtobuf(FSLKRResponse& Out, std::string ProtoStr);
 
 private:
 	// Load the Semantic Map
-	FString LoadMap(sl_pb::LoadMapParams params);
+	void LoadMap(FSLKRResponse& Out, sl_pb::LoadMapParams params);
 	
 	// Set the task of MongoManager
-	FString SetTask(sl_pb::SetTaskParams params);
+	void SetTask(FSLKRResponse& Out, sl_pb::SetTaskParams params);
 
 	// Set the episode of MongoManager
-	FString SetEpisode(sl_pb::SetEpisodeParams params);
+	void SetEpisode(FSLKRResponse& Out, sl_pb::SetEpisodeParams params);
 
 	// Draw the trajectory
-	FString DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params);
+	void DrawMarkerTraj(FSLKRResponse& Out, sl_pb::DrawMarkerTrajParams params);
 
 	// Start Symbolic Logger
-	FString StartSymbolicLogger(sl_pb::StartSymbolicLogParams params);
+	void StartSymbolicLogger(FSLKRResponse& Out, sl_pb::StartSymbolicLogParams params);
 
 	// Stop Symbolic Logger
-	FString StoptSymbolicLogger();
+	void StoptSymbolicLogger(FSLKRResponse& Out);
 
 	// Start Simulation
-	FString StartSimulation(sl_pb::StartSimulationParams params);
+	void StartSimulation(FSLKRResponse& Out, sl_pb::StartSimulationParams params);
 
 	// Stop Simulation
-	FString StopSimulation(sl_pb::StopSimulationParams params);
+	void StopSimulation(FSLKRResponse& Out, sl_pb::StopSimulationParams params);
 
 private:
 	// -----  helper function  ------//
@@ -83,4 +85,9 @@ private:
 	// Used for symbolic logging
 	ASLSymbolicLogger* SymbolicLogger;
 
+	// Logger parameters
+	FSLSymbolicLoggerParams LoggerParameters;
+
+	// Location parameters
+	FSLLoggerLocationParams LocationParameters;
 };

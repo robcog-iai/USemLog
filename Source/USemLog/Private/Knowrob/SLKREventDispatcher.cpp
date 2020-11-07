@@ -9,6 +9,8 @@
 #include "Viz/SLVizStructs.h"
 #include "Runtime/SLSymbolicLogger.h"
 #include "Runtime/SLLoggerStructs.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
 
 // Ctor
 FSLKREventDispatcher::FSLKREventDispatcher(ASLMongoQueryManager* InMongoManger, 
@@ -27,61 +29,62 @@ FSLKREventDispatcher::~FSLKREventDispatcher()
 
 
 // Parse the proto sequence and trigger function
-FString FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
+void  FSLKREventDispatcher::ProcessProtobuf(FSLKRResponse& Out, std::string ProtoStr)
 {
 	sl_pb::KRAmevaEvent AmevaEvent;
 	AmevaEvent.ParseFromString(ProtoStr);
 	if (AmevaEvent.functocall() == AmevaEvent.SetTask)
 	{
-		return SetTask(AmevaEvent.settaskparam());
+		SetTask(Out, AmevaEvent.settaskparam());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.SetEpisode)
 	{
-		return SetEpisode(AmevaEvent.setepisodeparams());
+		SetEpisode(Out, AmevaEvent.setepisodeparams());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.DrawMarkerTraj)
 	{
-		return DrawMarkerTraj(AmevaEvent.drawmarkertrajparams());
+		DrawMarkerTraj(Out, AmevaEvent.drawmarkertrajparams());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.LoadMap)
 	{
-		return LoadMap(AmevaEvent.loadmapparams());
+		LoadMap(Out, AmevaEvent.loadmapparams());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.StartSimulation)
 	{
-		return StartSimulation(AmevaEvent.startsimulationparams());
+		StartSimulation(Out, AmevaEvent.startsimulationparams());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.StopSimulation)
 	{
-		return StopSimulation(AmevaEvent.stopsimulationparams());
+		StopSimulation(Out, AmevaEvent.stopsimulationparams());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.StartSymbolicLog)
 	{
-		return StartSymbolicLogger(AmevaEvent.startsymboliclogparams());
+		StartSymbolicLogger(Out, AmevaEvent.startsymboliclogparams());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.StopSymbolicLog)
 	{
-		return StoptSymbolicLogger();
+		StoptSymbolicLogger(Out);
 	}
-	return "";
 }
 
 // Set the task of MongoManager
-FString FSLKREventDispatcher::SetTask(sl_pb::SetTaskParams params)
+void FSLKREventDispatcher::SetTask(FSLKRResponse& Out, sl_pb::SetTaskParams params)
 {
 	MongoManager->SetTask(UTF8_TO_TCHAR(params.task().c_str()));
-	return TEXT("Set task successfully");
+	Out.Type = ResponseType::TEXT;
+	Out.Text = TEXT("Set task successfully");
 }
 
 // Set the episode of MongoManager
-FString FSLKREventDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
+void FSLKREventDispatcher::SetEpisode(FSLKRResponse& Out, sl_pb::SetEpisodeParams params)
 {
 	MongoManager->SetEpisode(UTF8_TO_TCHAR(params.episode().c_str()));
-	return TEXT("Set episode successfully");
+	Out.Type = ResponseType::TEXT;
+	Out.Text = TEXT("Set episode successfully");
 }
 
 // Draw the trajectory
-FString FSLKREventDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
+void FSLKREventDispatcher::DrawMarkerTraj(FSLKRResponse& Out, sl_pb::DrawMarkerTrajParams params)
 {
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
 	float Start = params.start();
@@ -92,24 +95,24 @@ FString FSLKREventDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 	FLinearColor Color = GetMarkerColor(UTF8_TO_TCHAR(params.color().c_str()));
 	TArray<FTransform> Poses = MongoManager->GetIndividualTrajectory(Id, Start, End);
 	VizManager->CreatePrimitiveMarker(Id, Poses, Type, params.scale(), Color, MaterialType);
-	return TEXT("draw trajectory");
+	Out.Type = ResponseType::TEXT;
+	Out.Text = TEXT("draw trajectory");
 }
 
 // Load the Semantic Map
-FString FSLKREventDispatcher::LoadMap(sl_pb::LoadMapParams params)
+void FSLKREventDispatcher::LoadMap(FSLKRResponse& Out, sl_pb::LoadMapParams params)
 {
 	FString Map = UTF8_TO_TCHAR(params.map().c_str());
 	SemanticMapManager->LoadMap(FName(*Map));
-	return TEXT("Switch successfully");
+	Out.Type = ResponseType::TEXT;
+	Out.Text = TEXT("Switch successfully");
 }
 
 // Start Symbolic Logger
-FString FSLKREventDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams params)
+void FSLKREventDispatcher::StartSymbolicLogger(FSLKRResponse& Out, sl_pb::StartSymbolicLogParams params)
 {
 	FString TaskId = UTF8_TO_TCHAR(params.taskid().c_str());
 	FString EpisodeId = UTF8_TO_TCHAR(params.episodeid().c_str());
-	FSLSymbolicLoggerParams LoggerParameters;
-	FSLLoggerLocationParams LocationParameters;
 	LocationParameters.bUseCustomTaskId = true;
 	LocationParameters.TaskId = TaskId;
 	LocationParameters.bUseCustomEpisodeId = true;
@@ -117,18 +120,29 @@ FString FSLKREventDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams 
 	LocationParameters.bOverwrite = true;
 	SymbolicLogger->Init(LoggerParameters, LocationParameters);
 	SymbolicLogger->Start();
-	return TEXT("Start logging");
+	Out.Type = ResponseType::TEXT;
+	Out.Text = TEXT("Start logging");
 }
 
 // Stop Symbolic Logger
-FString FSLKREventDispatcher::StoptSymbolicLogger()
+void FSLKREventDispatcher::StoptSymbolicLogger(FSLKRResponse& Out)
 {
 	SymbolicLogger->Finish();
-	return TEXT("Stop logging");
+	const FString DirPath = FPaths::ProjectDir() + "/SL/" + LocationParameters.TaskId /*+ TEXT("/Episodes/")*/ + "/";
+	// Write experiment to file
+	FString FullFilePath = DirPath + LocationParameters.EpisodeId + TEXT("_ED.owl");
+	FPaths::RemoveDuplicateSlashes(FullFilePath);
+	if (FPaths::FileExists(FullFilePath))
+	{
+		TArray<uint8> FileBinary;
+		Out.Type = ResponseType::FILE;
+		Out.FileName = LocationParameters.EpisodeId + TEXT("_ED.owl");
+		FFileHelper::LoadFileToArray(Out.FileData, *FullFilePath);
+	}
 }
 
 // Start Simulation
-FString FSLKREventDispatcher::StartSimulation(sl_pb::StartSimulationParams params)
+void FSLKREventDispatcher::StartSimulation(FSLKRResponse& Out, sl_pb::StartSimulationParams params)
 {
 	TArray<FString> Ids;
 	for (int i = 0; i < params.id_size(); i++) 
@@ -137,11 +151,12 @@ FString FSLKREventDispatcher::StartSimulation(sl_pb::StartSimulationParams param
 		Ids.Add(Id);
 	}
 	ControlManager->StartSimulationSelectionOnly(Ids);
-	return TEXT("Start Sim");
+	Out.Type = ResponseType::TEXT;
+	Out.Text = TEXT("Start Sim");
 }
 
 // Stop Simulation
-FString FSLKREventDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
+void FSLKREventDispatcher::StopSimulation(FSLKRResponse& Out, sl_pb::StopSimulationParams params)
 {
 	TArray<FString> Ids;
 	for (int i = 0; i < params.id_size(); i++)
@@ -150,7 +165,8 @@ FString FSLKREventDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
 		Ids.Add(Id);
 	}
 	ControlManager->StopSimulationSelectionOnly(Ids);
-	return TEXT("Stop Sim");
+	Out.Type = ResponseType::TEXT;
+	Out.Text = TEXT("Stop Sim");
 }
 
 // Transform the maker type
