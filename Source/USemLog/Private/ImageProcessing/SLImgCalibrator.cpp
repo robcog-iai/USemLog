@@ -2,6 +2,10 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "ImageProcessing/SLImgCalibrator.h"
+#include "Individuals/SLIndividualManager.h"
+#include "Individuals/Type/SLVisibleIndividual.h"
+#include "EngineUtils.h"
+#include "GameFramework/PlayerController.h"
 
 #if WITH_EDITOR
 #include "Components/BillboardComponent.h"
@@ -11,7 +15,8 @@
 ASLImgCalibrator::ASLImgCalibrator()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	bIgnore = true;
 	bIsInit = false;
@@ -47,7 +52,8 @@ void ASLImgCalibrator::BeginPlay()
 	}
 
 	Init();
-	Start();}
+	Start();
+}
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
@@ -70,6 +76,16 @@ void ASLImgCalibrator::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 void ASLImgCalibrator::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (CalibrateIndividual())
+	{
+		IndividualIdx++;
+	}
+	else
+	{
+		IndividualIdx = INDEX_NONE;
+		SetActorTickEnabled(false);
+	}
 }
 
 // Called when actor removed from game or game ended
@@ -92,6 +108,33 @@ void ASLImgCalibrator::Init()
 		return;
 	}
 
+	if (!SetIndividualManager())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the individual manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	if (!IndividualManager->IsLoaded() && !IndividualManager->Load(true))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not load the individual manager (%s).."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
+		return;
+	}
+
+	// Cache the visual individuals	
+	for (const auto& BI : IndividualManager->GetIndividuals())
+	{
+		if (auto AsVI = Cast<USLVisibleIndividual>(BI))
+		{
+			VisibleIndividuals.Add(AsVI);
+		}
+	}
+	if (VisibleIndividuals.Num() == 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not find any visible individuals in the world (%s).."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *GetWorld()->GetName());
+		return;
+	}
 
 	bIsInit = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully initialized.."),
@@ -115,6 +158,21 @@ void ASLImgCalibrator::Start()
 		return;
 	}
 
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		// Hide default pawn
+		PC->GetPawnOrSpectator()->SetActorHiddenInGame(true);
+
+		// Set view mode to unlit
+		PC->ConsoleCommand("viewmode unlit");
+
+		// Set view target to dummy camera
+		//PC->SetViewTarget(CameraPoseActor);
+	}
+
+	// Start calibrating the individuals
+	IndividualIdx = 0;
+	SetActorTickEnabled(true);
 
 	bIsStarted = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully started.."),
@@ -139,9 +197,58 @@ void ASLImgCalibrator::Finish(bool bForced)
 	}
 
 
+	// Start calibrating the individuals
+	IndividualIdx = 0;
+	SetActorTickEnabled(false);
+
 	bIsStarted = false;
 	bIsInit = false;
 	bIsFinished = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully finished.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
+}
+
+// Set and calibrate the next individual (return false if there are no more indvidiuals)
+bool ASLImgCalibrator::CalibrateIndividual()
+{
+	if (VisibleIndividuals.IsValidIndex(IndividualIdx))
+	{
+		USLVisibleIndividual* VI = VisibleIndividuals[IndividualIdx];
+		UE_LOG(LogTemp, Log, TEXT("%s::%d::%.4f Calibrating %s, %s->%s"),
+			*FString(__FUNCTION__), __LINE__,
+			GetWorld()->GetTimeSeconds(), *VI->GetParentActor()->GetName(),
+			*VI->GetVisualMaskValue(), *VI->GetCalibratedVisualMaskValue());
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+// Get the individual manager from the world (or spawn a new one)
+bool ASLImgCalibrator::SetIndividualManager()
+{
+	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
+	for (TActorIterator<ASLIndividualManager>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			IndividualManager = *Iter;
+			return true;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_IndividualManager");
+	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
+#if WITH_EDITOR
+	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
+#endif // WITH_EDITOR
+	return true;
 }

@@ -7,6 +7,14 @@
 #include "GameFramework/Info.h"
 #include "SLImgCalibrator.generated.h"
 
+// Forward declarations
+class ASLIndividualManager;
+class USLVisibleIndividual;
+class ASkeletalMeshActor;
+class AStaticMeshActor;
+class UGameViewportClient;
+class UMaterialInstanceDynamic;
+
 /**
  * 
  */
@@ -57,6 +65,15 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 protected:
+	// Set and calibrate the next individual (return false if there are no more indvidiuals)
+	bool CalibrateIndividual();
+
+private:
+	/* Managers */
+	// Get the individual manager from the world (or spawn a new one)
+	bool SetIndividualManager();
+
+protected:
 	// Skip auto init and start
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;
@@ -70,12 +87,30 @@ protected:
 	// True when done 
 	uint8 bIsFinished : 1;
 
-private:
-	// Mongo server ip addres
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString MongoServerIP = TEXT("127.0.0.1");
+	// Keeps access to all the individuals in the world
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLIndividualManager* IndividualManager;
 
-	// Knowrob server port
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	int32 MongoServerPort = 27017;
+
+	// Mesh used to load all the mask materials and rendered on screen
+	UPROPERTY() // Avoid GC
+	AStaticMeshActor* MaskRenderActor;
+
+	// Convenience actor for setting the camera pose (SetViewTarget(InActor))
+	UPROPERTY() // Avoid GC
+	AStaticMeshActor* CameraPoseActor;
+
+	// Material to apply to the render mesh
+	UPROPERTY() // Avoid GC
+	UMaterialInstanceDynamic* DynamicMaskMaterial;
+
+	// Pointer to the render SMA mesh
+	class UStaticMesh* MaskRenderMesh;
+
+private:
+	// Individuals to iterate through
+	TArray<USLVisibleIndividual*> VisibleIndividuals;
+
+	// Active index
+	int32 IndividualIdx = INDEX_NONE;
 };
