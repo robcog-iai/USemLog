@@ -51,8 +51,11 @@ protected:
 	virtual void ExecuteImpl(ASLKnowrobManager* KRManager) override;
 
 public:	
+	UPROPERTY(EditAnywhere, Category = "Marker|Edit")
+	FString MarkerIdPrefix = "";
+
 	UPROPERTY(EditAnywhere, Category = "Marker")
-	FString MarkerId = TEXT("DefaultMarkerId");
+	FString MarkerId = "";
 
 	UPROPERTY(EditAnywhere, Category = "Marker")
 	ESLVizQMarkerType Type = ESLVizQMarkerType::Pose;
@@ -116,11 +119,11 @@ protected:
 
 	/* Editor interaction */
 	UPROPERTY(EditAnywhere, Category = "Marker|Edit")
+	bool bAddSelectedButton = false;
+
+	UPROPERTY(EditAnywhere, Category = "Marker|Edit", meta = (editcondition = "Type==ESLVizQMarkerType::Timeline"))
 	bool bCalcTimelineDurationButton = false;
 
-	UPROPERTY(EditAnywhere, Category = "Marker|Edit")
+	UPROPERTY(EditAnywhere, Category = "Children|Edit")
 	bool bSyncWithChildrenButton = false;
-
-	UPROPERTY(EditAnywhere, Category = "Marker|Edit")
-	bool bAddSelectedButton = false;
 };

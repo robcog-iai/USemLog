@@ -11,10 +11,18 @@
 // Public execute function
 void USLVizQBase::Execute(ASLKnowrobManager* KRManager)
 {
+	if (bIgnore)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is set to be ignored, skipping execution.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
 	if (!KRManager || !KRManager->IsValidLowLevel() || KRManager->IsPendingKillOrUnreachable() || !KRManager->IsInit())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s knowrob manager is not valid/init, aborting execution.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
 	}
 
 	if (bExecuteChildrenFirst)
@@ -43,6 +51,13 @@ void USLVizQBase::ManualExecute()
 void USLVizQBase::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (bIgnore)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is set to be ignored, ignoring property change events.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
 
 	// Get the changed property name
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?

@@ -725,11 +725,13 @@ TArray<TPair<float, TMap<FString, FTransform>>> FSLMongoQueryDBHandler::GetEpiso
 
 	double QueryDuration = FPlatformTime::Seconds() - ExecBegin;
 
+	int32 FrameIdx = 0;
 	// Read cursor if no errors occured
 	if (!mongoc_cursor_error(cursor, &error))
 	{
 		while (mongoc_cursor_next(cursor, &doc))
 		{
+			if (FrameIdx++ % 250 == 0) { UE_LOG(LogTemp, Log, TEXT(" mongo processing frame %d .."), FrameIdx++); }
 			bson_iter_t frame_iter;
 			if (bson_iter_init(&frame_iter, doc))
 			{

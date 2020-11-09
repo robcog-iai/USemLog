@@ -51,6 +51,9 @@ protected:
 	virtual void ExecuteImpl(ASLKnowrobManager* KRManager) override;
 
 public:	
+	UPROPERTY(EditAnywhere, Category = "MarkerArray|Edit")
+	FString MarkerIdPrefix = "";
+
 	UPROPERTY(EditAnywhere, Category = "MarkerArray")
 	TArray<FString> MarkerIds;
 
@@ -106,22 +109,19 @@ public:
 
 protected:
 	/* Manual interaction */
-	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
+	UPROPERTY(EditAnywhere, Category = "Manual Interaction|MarkerArray")
 	bool bRemoveButton = false;
 
-	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
+	UPROPERTY(EditAnywhere, Category = "Manual Interaction|MarkerArray")
 	bool bRemoveAllButton = false;
-
-	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
-	bool bCalcTimelineDurationButton = false;
-
-	UPROPERTY(EditAnywhere, Category = "Manual Interaction|Marker")
-	bool bSyncWithChildrenButton = false;
 
 
 	/* Editor interaction */
 	UPROPERTY(EditAnywhere, Category = "MarkerArray|Edit")
 	bool bAddSelectedButton = false;
+
+	UPROPERTY(EditAnywhere, Category = "MarkerArray|Edit", meta = (editcondition = "Type==ESLVizQMarkerType::Timeline"))
+	bool bCalcTimelineDurationButton = false;
 
 	UPROPERTY(EditAnywhere, Category = "MarkerArray|Edit")
 	bool bRemoveSelectedButton = false;
@@ -135,6 +135,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "MarkerArray|Edit")
 	bool bEnsureUniqueness = true;
 
-	UPROPERTY(EditAnywhere, Category = "MarkerArray|Edit")
-	FString MarkerIdPrefix = "";
+	UPROPERTY(EditAnywhere, Category = "Children|Edit")
+	bool bSyncWithChildrenButton = false;
 };

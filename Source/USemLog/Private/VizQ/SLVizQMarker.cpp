@@ -24,6 +24,7 @@ void USLVizQMarker::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
+	/* Manual interaction */
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bRemoveButton))
 	{
 		bRemoveButton = false;
@@ -58,6 +59,7 @@ void USLVizQMarker::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 				MC->EndTime = EndTime;
 				MC->DeltaT = DeltaT;
 				MC->TimelineParams = TimelineParams;
+				MC->MarkerIdPrefix = MarkerIdPrefix;
 			}
 			else if (auto MAC = Cast<USLVizQMarkerArray>(C))
 			{
@@ -67,10 +69,11 @@ void USLVizQMarker::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 				MAC->EndTime = EndTime;
 				MAC->DeltaT = DeltaT;
 				MAC->TimelineParams = TimelineParams;
+				MAC->MarkerIdPrefix = MarkerIdPrefix;
 			}
 		}
 	}
-	/* Add selected actors ids to array */
+	/* Editor interaction */
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, bAddSelectedButton))
 	{
 		bAddSelectedButton = false;
@@ -96,6 +99,12 @@ void USLVizQMarker::PostEditChangeProperty(struct FPropertyChangedEvent& Propert
 					*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
 			}
 		}
+		// Sync
+		MarkerId = MarkerIdPrefix + Individual;
+	}
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarker, MarkerIdPrefix))
+	{
+		MarkerId = MarkerIdPrefix + Individual;
 	}
 }
 #endif // WITH_EDITOR

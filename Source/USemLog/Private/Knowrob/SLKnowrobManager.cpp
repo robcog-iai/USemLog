@@ -105,65 +105,6 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 				*FString(__FUNCTION__), __LINE__, QueryIndex);
 		}
 	}
-
-	/* Episode data hacks */
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetTaskButtonhack))
-	{
-		bSetTaskButtonhack = false;
-		if (!bIsInit) { return; }
-		if (MongoQueryManager->SetTask(TaskIdValueHack))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetEpisodeButtonHack))
-	{
-		bSetEpisodeButtonHack = false;
-		if (!bIsInit) { return; }
-		if (MongoQueryManager->SetEpisode(EpisodeIdValueHack))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
-		}
-	}
-
-	/* MONGO query button hacks */
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bPoseQueryButtonHack))
-	{
-		bPoseQueryButtonHack = false;
-		if (!bIsInit) { return; }
-
-		FTransform Pose = MongoQueryManager->GetIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack,
-			IndividualIdValueHack, StartTimestampValueHack);
-
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] IndividualPose: Loc=%s; \t Quat=%s; \t (%s:%s:%s)"),
-			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString(),
-			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bTrajectoryQueryButtonHack))
-	{
-		bTrajectoryQueryButtonHack = false;
-		if (!bIsInit) { return; }
-
-		TArray<FTransform> Trajectory = MongoQueryManager->GetIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
-			IndividualIdValueHack, StartTimestampValueHack, EndTimestampValueHack, DeltaTValueHack);
-
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f-%f] IndividualTrajectoryNum=%ld; (%s:%s:%s)"),
-			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, EndTimestampValueHack, Trajectory.Num(),
-			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
-
-		for (const auto& Pose : Trajectory)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("\t\t\t\t Loc=%s; \t Quat=%s;"), *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString());
-		}
-	}	
 }
 #endif // WITH_EDITOR
 

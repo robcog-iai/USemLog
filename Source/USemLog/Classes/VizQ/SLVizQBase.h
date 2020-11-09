@@ -57,7 +57,10 @@ protected:
 	bool bManualExecuteButton = false;
 
 
-	/* Description of the query */
-	UPROPERTY(EditAnywhere, Category = "Description")
+	/* Base properties */
+	UPROPERTY(EditAnywhere, Category = "VizQ")
 	FString Description;
+
+	UPROPERTY(EditAnywhere, Category = "VizQ")
+	bool bIgnore;
 };

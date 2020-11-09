@@ -141,6 +141,14 @@ void USLVizQMarkerArray::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 			MarkerIds.Add(MarkerIdPrefix + Individual);
 		}
 	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarkerArray, MarkerIdPrefix))
+	{
+		MarkerIds.Empty();
+		for (const auto Individual : Individuals)
+		{
+			MarkerIds.Add(MarkerIdPrefix + Individual);
+		}
+	}
 }
 #endif // WITH_EDITOR
 
