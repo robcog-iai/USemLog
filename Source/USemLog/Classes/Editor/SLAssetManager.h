@@ -6,7 +6,6 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Editor/SLAssetDBHandler.h"
-#include "Editor/SLEditorStructs.h"
 #include "SLAssetManager.generated.h"
 
 /**

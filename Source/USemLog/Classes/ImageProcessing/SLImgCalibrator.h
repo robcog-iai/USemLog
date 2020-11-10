@@ -10,7 +10,6 @@
 // Forward declarations
 class ASLIndividualManager;
 class USLVisibleIndividual;
-class ASkeletalMeshActor;
 class AStaticMeshActor;
 class UStaticMesh;
 class UGameViewportClient;
@@ -86,7 +85,6 @@ protected:
 	void QuitEditor();
 
 private:
-	/* Managers */
 	// Get the individual manager from the world (or spawn a new one)
 	bool SetIndividualManager();
 
@@ -105,10 +103,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bSaveToFile : 1;
 
-	// Folder to store the images in
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString TaskId;
-
 	// True when all references are set and it is connected to the server
 	uint8 bIsInit : 1;
 
@@ -117,6 +111,10 @@ protected:
 
 	// True when done 
 	uint8 bIsFinished : 1;
+
+	// Folder to store the images in
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString TaskId;
 
 	// Keeps access to all the individuals in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")

@@ -9,7 +9,6 @@
 #include "SLMetaScanner.generated.h"
 
 // Forward declarations
-class USLMetadataLogger; // Parent
 class UMaterialInstanceDynamic;
 class UMaterialInterface;
 class UGameViewportClient;
@@ -147,8 +146,8 @@ private:
 	// Contains the data of the current scan in a given camera pose
 	FSLScanPoseData ScanPoseData;
 
-	// Pointer to the parent, used for updating the metadata mongo document;
-	USLMetadataLogger* MetadataLoggerParent;
+	//// Pointer to the parent, used for updating the metadata mongo document;
+	//USLMetadataLogger* MetadataLoggerParent;
 	
 	// Location on where to save the data locally (skip if empty)
 	FString SaveLocallyFolderName;

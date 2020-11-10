@@ -5,6 +5,8 @@
 #include "Mongo/SLMongoQueryManager.h"
 #include "Viz/SLVizManager.h"
 #include "Viz/SLVizSemMapManager.h"
+#include "VizQ/SLVizQBase.h"
+
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"

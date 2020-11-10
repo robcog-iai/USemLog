@@ -4,6 +4,7 @@
 #include "VizQ/SLVizQHide.h"
 #include "Knowrob/SLKnowrobManager.h"
 #include "Individuals/SLIndividualManager.h"
+#include "Viz/SLVizManager.h"
 
 #if WITH_EDITOR
 #include "Engine/Selection.h"

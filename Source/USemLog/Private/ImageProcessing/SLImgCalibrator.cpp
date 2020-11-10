@@ -126,7 +126,7 @@ void ASLImgCalibrator::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	CanvasSMA->SetActorLocation(FVector(150.f, 0.f, 0.f));
+	CanvasSMA->SetActorTransform(FTransform(FRotator(0.f, 0.f, 0.f), FVector(150.f, 0.f, 0.f)));
 
 	/* Set the camera pose dummy actor */
 	if (!SetCameraPoseActor())
@@ -135,6 +135,7 @@ void ASLImgCalibrator::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
+	CameraPoseActor->SetActorTransform(FTransform(FRotator(0.f, 0.f, 0.f), FVector(0.f, 0.f, 0.f)));
 
 	/* Set render and screenshot params */
 	SetScreenshotResolution(FIntPoint(40, 30));
@@ -525,7 +526,6 @@ bool ASLImgCalibrator::SetCanvasMeshActor()
 // Spawn a dummy actor to move the camera to
 bool ASLImgCalibrator::SetCameraPoseActor()
 {
-	// Spawn actor
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SM_CalibCameraPoseDummy");
 	CameraPoseActor = GetWorld()->SpawnActor<AStaticMeshActor>(SpawnParams);

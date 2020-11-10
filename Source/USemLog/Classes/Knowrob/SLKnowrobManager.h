@@ -8,13 +8,13 @@
 #include "Knowrob/SLKRWSClient.h"
 #include "Knowrob/SLKREventDispatcher.h"
 #include "Viz/SLVizStructs.h"
-#include "VizQ/SLVizQBase.h"
 #include "SLKnowrobManager.generated.h"
 
 // Forward declarations
 class ASLMongoQueryManager;
 class ASLVizManager;
 class ASLVizSemMapManager;
+class USLVizQBase;
 
 /**
 *
