@@ -3,7 +3,9 @@
 
 #include "Knowrob/SLKRWSClient.h"
 #include "WebSocketsModule.h"
-#include "Knowrob/Proto/ameva.pb.h"
+#if SL_WITH_PROTO_MSGS
+#include "Proto/ameva.pb.h"
+#endif // SL_WITH_PROTO_MSGS	
 
 
 // Ctor

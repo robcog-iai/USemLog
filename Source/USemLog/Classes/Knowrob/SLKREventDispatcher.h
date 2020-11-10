@@ -3,7 +3,9 @@
 #pragma once
 
 #include <string>
-#include "Knowrob/Proto/ameva.pb.h"
+#if SL_WITH_PROTO_MSGS
+#include "Proto/ameva.pb.h"
+#endif // SL_WITH_PROTO_MSGS	
 #include "Runtime/SLLoggerStructs.h"
 #include "SLKRResponseStruct.h"
 #include "CoreMinimal.h"
