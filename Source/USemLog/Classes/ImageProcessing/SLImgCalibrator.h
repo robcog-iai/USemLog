@@ -12,6 +12,7 @@ class ASLIndividualManager;
 class USLVisibleIndividual;
 class ASkeletalMeshActor;
 class AStaticMeshActor;
+class UStaticMesh;
 class UGameViewportClient;
 class UMaterialInstanceDynamic;
 
@@ -33,14 +34,6 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-#if WITH_EDITOR
-	// Called when a property is changed in the editor
-	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif // WITH_EDITOR
-
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -65,18 +58,56 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 protected:
-	// Set and calibrate the next individual (return false if there are no more indvidiuals)
-	bool CalibrateIndividual();
+	// Request a high res screenshot
+	void AsyncScreenshotRequest();
+
+	// Called when the screenshot is captured
+	void ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap);
+
+	// Set the next individual to calibrate
+	bool SetNextIndividual();
+
+	// Hide all actors in the world
+	void HideAllActors();
+
+	// Set screenshot image resolution
+	void SetScreenshotResolution(FIntPoint Resolution);
+
+	// Set the rendering parameters
+	void SetRenderParams();
+
+	// Get the calibrated color from the rendered screenshot image
+	FString GetCalibratedColorMask(const TArray<FColor>& Bitmap);
+
+	// Apply changes to the editor individual
+	bool ApplyChangesToEditorIndividual(USLVisibleIndividual* VisibleIndividual);
+
+	//  Quit the editor when finished
+	void QuitEditor();
 
 private:
 	/* Managers */
 	// Get the individual manager from the world (or spawn a new one)
 	bool SetIndividualManager();
 
+	// Spawn the canvas static mesh actor (mesh on which the mask colors will be applied)
+	bool SetCanvasMeshActor();
+
+	// Spawn a dummy actor to move the camera to
+	bool SetCameraPoseActor();
+
 protected:
 	// Skip auto init and start
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;
+
+	// Save images to file
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bSaveToFile : 1;
+
+	// Folder to store the images in
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString TaskId;
 
 	// True when all references are set and it is connected to the server
 	uint8 bIsInit : 1;
@@ -91,26 +122,36 @@ protected:
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLIndividualManager* IndividualManager;
 
-
 	// Mesh used to load all the mask materials and rendered on screen
-	UPROPERTY() // Avoid GC
-	AStaticMeshActor* MaskRenderActor;
+	UPROPERTY() 
+	AStaticMeshActor* CanvasSMA;
 
 	// Convenience actor for setting the camera pose (SetViewTarget(InActor))
-	UPROPERTY() // Avoid GC
+	UPROPERTY()
 	AStaticMeshActor* CameraPoseActor;
 
-	// Material to apply to the render mesh
-	UPROPERTY() // Avoid GC
+	// Material used to render the masks
+	UPROPERTY()
 	UMaterialInstanceDynamic* DynamicMaskMaterial;
 
-	// Pointer to the render SMA mesh
-	class UStaticMesh* MaskRenderMesh;
+	// Static mesh of the canvas
+	UStaticMesh* CanvasSM;
+
+	// Used for triggering the screenshot request
+	UGameViewportClient* ViewportClient;
 
 private:
-	// Individuals to iterate through
+	// Visual individuals to calibrate
 	TArray<USLVisibleIndividual*> VisibleIndividuals;
 
-	// Active index
+	// Current individual index in the array
 	int32 IndividualIdx = INDEX_NONE;
+
+	// The name of the current image
+	FString CurrImageName;
+
+	/* Constants */
+	static constexpr auto CanvasSMAssetPath = TEXT("/USemLog/Vision/MaskRenderDummy/SM_MaskRenderDummy.SM_MaskRenderDummy");
+	static constexpr auto CameraDummySMAssetPath = TEXT("/USemLog/Vision/ScanCameraPoseDummy/SM_ScanCameraPoseDummy.SM_ScanCameraPoseDummy");
+	static constexpr auto DynMaskMatAssetPath = TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask");
 };
