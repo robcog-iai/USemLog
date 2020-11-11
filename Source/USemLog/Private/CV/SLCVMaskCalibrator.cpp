@@ -1,7 +1,7 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 // Author: Andrei Haidu (http://haidu.eu)
 
-#include "ImageProcessing/SLImgCalibrator.h"
+#include "CV/SLCVMaskCalibrator.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/Type/SLVisibleIndividual.h"
@@ -24,7 +24,7 @@
 #endif // WITH_EDITOR
 
 // Sets default values
-ASLImgCalibrator::ASLImgCalibrator()
+ASLCVMaskCalibrator::ASLCVMaskCalibrator()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
@@ -38,13 +38,13 @@ ASLImgCalibrator::ASLImgCalibrator()
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
 	SpriteScale = 0.35;
-	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLImgCalibrator"));
+	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLCVMaskCalibrator"));
 	GetSpriteComponent()->Sprite = SpriteTexture.Get();
 #endif // WITH_EDITORONLY_DATA
 }
 
 // Dtor
-ASLImgCalibrator::~ASLImgCalibrator()
+ASLCVMaskCalibrator::~ASLCVMaskCalibrator()
 {
 	if (!IsTemplate() && !bIsFinished && (bIsStarted || bIsInit))
 	{
@@ -53,7 +53,7 @@ ASLImgCalibrator::~ASLImgCalibrator()
 }
 
 // Called when the game starts or when spawned
-void ASLImgCalibrator::BeginPlay()
+void ASLCVMaskCalibrator::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -68,7 +68,7 @@ void ASLImgCalibrator::BeginPlay()
 }
 
 // Called when actor removed from game or game ended
-void ASLImgCalibrator::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void ASLCVMaskCalibrator::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	if (!bIsFinished && (bIsStarted || bIsInit))
@@ -78,7 +78,7 @@ void ASLImgCalibrator::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Set up any required references and connect to server
-void ASLImgCalibrator::Init()
+void ASLCVMaskCalibrator::Init()
 {
 	if (bIsInit)
 	{
@@ -109,10 +109,10 @@ void ASLImgCalibrator::Init()
 	{
 		if (auto AsVI = Cast<USLVisibleIndividual>(BI))
 		{
-			VisibleIndividuals.Add(AsVI);
+			Individuals.Add(AsVI);
 		}
 	}
-	if (VisibleIndividuals.Num() == 0)
+	if (Individuals.Num() == 0)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not find any visible individuals in the world (%s).."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *GetWorld()->GetName());
@@ -150,7 +150,7 @@ void ASLImgCalibrator::Init()
 	}
 
 	// Bind screenshot callback
-	ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLImgCalibrator::ScreenshotCapturedCallback);
+	ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLCVMaskCalibrator::ScreenshotCapturedCallback);
 
 	bIsInit = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully initialized.."),
@@ -158,7 +158,7 @@ void ASLImgCalibrator::Init()
 }
 
 // Start processing any incomming messages
-void ASLImgCalibrator::Start()
+void ASLCVMaskCalibrator::Start()
 {
 	if (bIsStarted)
 	{
@@ -200,7 +200,7 @@ void ASLImgCalibrator::Start()
 	}
 
 	// Start the dominoes
-	AsyncScreenshotRequest();
+	RequestScreenshotAsync();
 
 	bIsStarted = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully started.."),
@@ -208,7 +208,7 @@ void ASLImgCalibrator::Start()
 }
 
 // Stop processing the messages, and disconnect from server
-void ASLImgCalibrator::Finish(bool bForced)
+void ASLCVMaskCalibrator::Finish(bool bForced)
 {
 	if (bIsFinished)
 	{
@@ -237,7 +237,7 @@ void ASLImgCalibrator::Finish(bool bForced)
 }
 
 // Request a high res screenshot
-void ASLImgCalibrator::AsyncScreenshotRequest()
+void ASLCVMaskCalibrator::RequestScreenshotAsync()
 {
 	// Request screenshot on game thread
 	AsyncTask(ENamedThreads::GameThread, [this]()
@@ -248,7 +248,7 @@ void ASLImgCalibrator::AsyncScreenshotRequest()
 }
 
 // Called when the screenshot is captured
-void ASLImgCalibrator::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap)
+void ASLCVMaskCalibrator::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap)
 {
 	// Check if the image should be stored locally
 	if (bSaveToFile)
@@ -262,28 +262,28 @@ void ASLImgCalibrator::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, cons
 	}
 
 	// Set the individuals calibrated/rendered color
-	if (VisibleIndividuals.IsValidIndex(IndividualIdx))
+	if (Individuals.IsValidIndex(IndividualIdx))
 	{
-		USLVisibleIndividual* VI = VisibleIndividuals[IndividualIdx];
-		VI->SetCalibratedVisualMaskValue(GetCalibratedColorMask(InBitmap));
+		USLVisibleIndividual* VI = Individuals[IndividualIdx];
+		VI->SetCalibratedVisualMaskValue(GetCalibratedMask(InBitmap));
 		if (ApplyChangesToEditorIndividual(VI))
 		{
 			UE_LOG(LogTemp, Log, TEXT("%s::%d::%.4f\t[%d/%d]\t%s\t calibrated:\t%s->%s;"),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), IndividualIdx, VisibleIndividuals.Num(),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), IndividualIdx, Individuals.Num(),
 				*VI->GetParentActor()->GetName(), *VI->GetVisualMaskValue(), *VI->GetCalibratedVisualMaskValue());
 		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Index %d/%d is not valid, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, IndividualIdx, VisibleIndividuals.Num());
+			*FString(__FUNCTION__), __LINE__, IndividualIdx, Individuals.Num());
 		return;
 	}
 
 	// Goto next individual
 	if (SetNextIndividual())
 	{
-		AsyncScreenshotRequest();
+		RequestScreenshotAsync();
 	}
 	else
 	{
@@ -294,16 +294,16 @@ void ASLImgCalibrator::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, cons
 }
 
 // Set the next individual to calibrate
-bool ASLImgCalibrator::SetNextIndividual()
+bool ASLCVMaskCalibrator::SetNextIndividual()
 {
 	IndividualIdx++;
-	if (VisibleIndividuals.IsValidIndex(IndividualIdx))
+	if (Individuals.IsValidIndex(IndividualIdx))
 	{
-		auto VI = VisibleIndividuals[IndividualIdx];
+		auto VI = Individuals[IndividualIdx];
 
 		// Set image name
 		CurrImageName = FString::FromInt(IndividualIdx)
-			+ "_" + FString::FromInt(VisibleIndividuals.Num())
+			+ "_" + FString::FromInt(Individuals.Num())
 			+ VI->GetIdValue();
 
 		// Get the color from the individual
@@ -326,58 +326,8 @@ bool ASLImgCalibrator::SetNextIndividual()
 	}
 }
 
-// Hide all actors in the world
-void ASLImgCalibrator::HideAllActors()
-{
-	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
-	{
-		ActItr->SetActorHiddenInGame(true);
-	}
-}
-
-// Set screenshot image resolution
-void ASLImgCalibrator::SetScreenshotResolution(FIntPoint Resolution)
-{
-	// Set screenshot image and viewport resolution size
-	GetHighResScreenshotConfig().SetResolution(Resolution.X, Resolution.Y, 1.0f);
-	// !! Workaround !! Avoid triggering the callback be overwriting the resolution -> SetResolution() sets GIsHighResScreenshot to true, which triggers the callback (ScreenshotCB)
-	GIsHighResScreenshot = false;
-}
-
-// Set the rendering parameters
-void ASLImgCalibrator::SetRenderParams()
-{
-	// Defines the memory layout used for the GBuffer,
-	// 0: lower precision (8bit per component, for profiling), 1: low precision (default)
-	// 3: high precision normals encoding, 5: high precision
-	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.GBufferFormat"))->Set(5);
-
-
-	// Set the near clipping plane (in cm)
-	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetNearClipPlane"))->Set(0); // Not a console variable, but a command
-	//GNearClippingPlane = 0; // View is distorted after finishing the scanning
-	//#if WITH_EDITOR
-	//	if (GEngine)
-	//	{
-	//		GEngine->DeferredCommands.Add(TEXT("r.SetNearClipPlane 0"));
-	//	}
-	//#endif // WITH_EDITOR
-
-	//// AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
-	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AntiAliasing"))->Set(AAM_None);
-
-	//// Whether the default for AutoExposure is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
-	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AutoExposure"))->Set(0);
-
-	// Whether the default for MotionBlur is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
-	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.MotionBlur"))->Set(0);
-
-	// LOD level to force, -1 is off. (0 - Best)
-	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
-}
-
 // Get the calibrated color from the rendered screenshot image
-FString ASLImgCalibrator::GetCalibratedColorMask(const TArray<FColor>& Bitmap)
+FString ASLCVMaskCalibrator::GetCalibratedMask(const TArray<FColor>& Bitmap)
 {
 	bool bRenderedColorIsSet = false;
 	FColor RenderedColor;
@@ -406,7 +356,7 @@ FString ASLImgCalibrator::GetCalibratedColorMask(const TArray<FColor>& Bitmap)
 }
 
 // Apply changes to the editor individual
-bool ASLImgCalibrator::ApplyChangesToEditorIndividual(USLVisibleIndividual* VisibleIndividual)
+bool ASLCVMaskCalibrator::ApplyChangesToEditorIndividual(USLVisibleIndividual* VisibleIndividual)
 {
 	// Apply the changes in the editor world
 #if WITH_EDITOR
@@ -441,7 +391,7 @@ bool ASLImgCalibrator::ApplyChangesToEditorIndividual(USLVisibleIndividual* Visi
 }
 
 //  Quit the editor when finished
-void ASLImgCalibrator::QuitEditor()
+void ASLCVMaskCalibrator::QuitEditor()
 {
 	//FGenericPlatformMisc::RequestExit(false);
 	//
@@ -457,8 +407,59 @@ void ASLImgCalibrator::QuitEditor()
 #endif // WITH_EDITOR
 }
 
+// Hide all actors in the world
+void ASLCVMaskCalibrator::HideAllActors()
+{
+	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
+	{
+		ActItr->SetActorHiddenInGame(true);
+	}
+}
+
+// Set screenshot image resolution
+void ASLCVMaskCalibrator::SetScreenshotResolution(FIntPoint Resolution)
+{
+	// Set screenshot image and viewport resolution size
+	GetHighResScreenshotConfig().SetResolution(Resolution.X, Resolution.Y, 1.0f);
+	// !! Workaround !! Avoid triggering the callback be overwriting the resolution -> SetResolution() sets GIsHighResScreenshot to true, which triggers the callback (ScreenshotCB)
+	GIsHighResScreenshot = false;
+}
+
+// Set the rendering parameters
+void ASLCVMaskCalibrator::SetRenderParams()
+{
+	// Defines the memory layout used for the GBuffer,
+	// 0: lower precision (8bit per component, for profiling), 1: low precision (default)
+	// 3: high precision normals encoding, 5: high precision
+	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.GBufferFormat"))->Set(5);
+
+
+	// Set the near clipping plane (in cm)
+	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.SetNearClipPlane"))->Set(0); // Not a console variable, but a command
+	//GNearClippingPlane = 0; // View is distorted after finishing the scanning
+	//#if WITH_EDITOR
+	//	if (GEngine)
+	//	{
+	//		GEngine->DeferredCommands.Add(TEXT("r.SetNearClipPlane 0"));
+	//	}
+	//#endif // WITH_EDITOR
+
+	//// AAM_None=None, AAM_FXAA=FXAA, AAM_TemporalAA=TemporalAA, AAM_MSAA=MSAA (Only supported with forward shading.  MSAA sample count is controlled by r.MSAACount)
+	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AntiAliasing"))->Set(AAM_None);
+
+	//// Whether the default for AutoExposure is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
+	//IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AutoExposure"))->Set(0);
+
+	// Whether the default for MotionBlur is enabled or not (postprocess volume/camera/game setting can still override and enable or disable it independently)
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.MotionBlur"))->Set(0);
+
+	// LOD level to force, -1 is off. (0 - Best)
+	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
+}
+
+
 // Get the individual manager from the world (or spawn a new one)
-bool ASLImgCalibrator::SetIndividualManager()
+bool ASLCVMaskCalibrator::SetIndividualManager()
 {
 	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
 	{
@@ -485,7 +486,7 @@ bool ASLImgCalibrator::SetIndividualManager()
 }
 
 // Spawn the canvas static mesh actor (mesh on which the mask colors will be applied)
-bool ASLImgCalibrator::SetCanvasMeshActor()
+bool ASLCVMaskCalibrator::SetCanvasMeshActor()
 {
 	// Spawn actor
 	FActorSpawnParameters SpawnParams;
@@ -524,7 +525,7 @@ bool ASLImgCalibrator::SetCanvasMeshActor()
 }
 
 // Spawn a dummy actor to move the camera to
-bool ASLImgCalibrator::SetCameraPoseActor()
+bool ASLCVMaskCalibrator::SetCameraPoseActor()
 {
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Name = TEXT("SM_CalibCameraPoseDummy");

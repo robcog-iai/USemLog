@@ -99,7 +99,7 @@ private:
 	void InitRenderParameters();
 
 	// Apply view mode
-	void ApplyViewMode(ESLMetaScannerViewMode Mode);
+	void ApplyViewMode(ESLMetaScannerViewMode NewViewMode);
 
 	// Apply mask material to current item
 	void ApplyMaskMaterial();

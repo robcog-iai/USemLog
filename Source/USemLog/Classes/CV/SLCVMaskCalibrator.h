@@ -5,30 +5,30 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "SLImgScanner.generated.h"
+#include "SLCVMaskCalibrator.generated.h"
 
 // Forward declarations
 class ASLIndividualManager;
 class USLVisibleIndividual;
 class AStaticMeshActor;
+class UStaticMesh;
 class UGameViewportClient;
 class UMaterialInstanceDynamic;
-class ADirectionalLight;
 
 /**
  * 
  */
-UCLASS(ClassGroup = (SL), DisplayName = "SL Img Scanner")
-class ASLImgScanner : public AInfo
+UCLASS(ClassGroup = (SL), DisplayName = "SL CV Mask Calibrator")
+class ASLCVMaskCalibrator : public AInfo
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this actor's properties
-	ASLImgScanner();
+	ASLCVMaskCalibrator();
 
 	// Dtor
-	~ASLImgScanner();
+	~ASLCVMaskCalibrator();
 
 protected:
 	// Called when the game starts or when spawned
@@ -58,20 +58,41 @@ public:
 
 protected:
 	// Request a high res screenshot
-	void AsyncScreenshotRequest();
+	void RequestScreenshotAsync();
 
 	// Called when the screenshot is captured
 	void ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap);
 
+	// Set the next individual to calibrate
+	bool SetNextIndividual();
+
+	// Get the calibrated color from the rendered screenshot image
+	FString GetCalibratedMask(const TArray<FColor>& Bitmap);
+
+	// Apply changes to the editor individual
+	bool ApplyChangesToEditorIndividual(USLVisibleIndividual* VisibleIndividual);
+
+	//  Quit the editor when finished
+	void QuitEditor();
+
+private:
 	// Hide all actors in the world
 	void HideAllActors();
 
-private:
+	// Set screenshot image resolution
+	void SetScreenshotResolution(FIntPoint Resolution);
+
+	// Set the rendering parameters
+	void SetRenderParams();
+
 	// Get the individual manager from the world (or spawn a new one)
 	bool SetIndividualManager();
 
-	// Spawn a light actor which will also be used to move the camera around
-	bool SetCameraPoseAndLightActor();
+	// Spawn the canvas static mesh actor (mesh on which the mask colors will be applied)
+	bool SetCanvasMeshActor();
+
+	// Spawn a dummy actor to move the camera to
+	bool SetCameraPoseActor();
 
 protected:
 	// Skip auto init and start
@@ -93,38 +114,42 @@ protected:
 
 	// Folder to store the images in
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float CameraLightIntensity = 1.6f;
-
-	// Folder to store the images in
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString TaskId;
-
-	// Mongo server ip addres
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString MongoServerIP = TEXT("127.0.0.1");
-
-	// Knowrob server port
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	int32 MongoServerPort = 27017;
 
 	// Keeps access to all the individuals in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLIndividualManager* IndividualManager;
 
+	// Mesh used to load all the mask materials and rendered on screen
+	UPROPERTY() 
+	AStaticMeshActor* CanvasSMA;
+
 	// Convenience actor for setting the camera pose (SetViewTarget(InActor))
 	UPROPERTY()
-	ADirectionalLight* CameraPoseAndLightActor;
+	AStaticMeshActor* CameraPoseActor;
 
-private:
-	// Visual individuals to calibrate
-	TArray<USLVisibleIndividual*> VisibleIndividuals;
+	// Material used to render the masks
+	UPROPERTY()
+	UMaterialInstanceDynamic* DynamicMaskMaterial;
 
-	// Current individual index in the array
-	int32 IndividualIdx = INDEX_NONE;
+	// Static mesh of the canvas
+	UStaticMesh* CanvasSM;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
 
+private:
+	// Visual individuals to calibrate
+	TArray<USLVisibleIndividual*> Individuals;
+
+	// Current individual index in the array
+	int32 IndividualIdx = INDEX_NONE;
+
 	// The name of the current image
 	FString CurrImageName;
+
+	/* Constants */
+	static constexpr auto CanvasSMAssetPath = TEXT("/USemLog/Vision/MaskRenderDummy/SM_MaskRenderDummy.SM_MaskRenderDummy");
+	static constexpr auto CameraDummySMAssetPath = TEXT("/USemLog/Vision/ScanCameraPoseDummy/SM_ScanCameraPoseDummy.SM_ScanCameraPoseDummy");
+	static constexpr auto DynMaskMatAssetPath = TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask");
 };
