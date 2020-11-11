@@ -410,6 +410,10 @@ TArray<FTransform> FSLMongoQueryDBHandler::GetIndividualTrajectory(const FString
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds, Num=[%d]..;"),
 		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin, Trajectory.Num());
 #endif
+	if (Trajectory.Num() == 0)
+	{
+		Trajectory.Add(GetIndividualPoseAt(Id, StartTs));
+	}
 	return Trajectory;
 }
 
@@ -661,6 +665,10 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> FSLMongoQueryDBHandler::GetSk
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Durations: query=[%f], cursor=[%f], total=[%f] seconds, Num=[%d]..;"),
 		*FString(__func__), __LINE__, QueryDuration, CursorReadDuration, FPlatformTime::Seconds() - ExecBegin, SkeletalTrajectoryPair.Num());
 #endif
+	if (SkeletalTrajectoryPair.Num() == 0)
+	{
+		SkeletalTrajectoryPair.Add(GetSkeletalIndividualPoseAt(Id, StartTs));
+	}
 	return SkeletalTrajectoryPair;
 }
 
@@ -717,11 +725,13 @@ TArray<TPair<float, TMap<FString, FTransform>>> FSLMongoQueryDBHandler::GetEpiso
 
 	double QueryDuration = FPlatformTime::Seconds() - ExecBegin;
 
+	int32 FrameIdx = 0;
 	// Read cursor if no errors occured
 	if (!mongoc_cursor_error(cursor, &error))
 	{
 		while (mongoc_cursor_next(cursor, &doc))
 		{
+			if (FrameIdx++ % 250 == 0) { UE_LOG(LogTemp, Log, TEXT(" mongo processing frame %d .."), FrameIdx++); }
 			bson_iter_t frame_iter;
 			if (bson_iter_init(&frame_iter, doc))
 			{

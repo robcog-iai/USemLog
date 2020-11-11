@@ -4,7 +4,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Editor/SLEditorStructs.h"
 #include "AssetData.h"
 #if SL_WITH_LIBMONGO_C
 	THIRD_PARTY_INCLUDES_START
@@ -17,6 +16,19 @@
 	#endif // #if PLATFORM_WINDOWS
 THIRD_PARTY_INCLUDES_END
 #endif //SL_WITH_LIBMONGO_C
+
+/**
+ * 
+ */
+UENUM()
+enum class ESLAssetAction : uint8
+	{
+		NONE				UMETA(DisplayName = "NONE"),
+		Download			UMETA(DisplayName = "Download"),
+		Move				UMETA(DisplayName = "Move"),
+		Upload				UMETA(DisplayName = "Upload"),
+		MoveAndUpload		UMETA(DisplayName = "MoveAndUpload"),
+	};
 
 /**
  * Helper class for reading and writing vision related data to mongodb

@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
+#include "SLVizStructs.h"
 #include "SLVizEpisodeManager.generated.h"
 
 // Forward declaration

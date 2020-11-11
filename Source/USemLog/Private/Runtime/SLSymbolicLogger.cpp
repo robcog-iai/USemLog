@@ -196,7 +196,7 @@ void ASLSymbolicLogger::InitImpl()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	if (!IndividualManager->Load(false))
+	if (!IndividualManager->IsLoaded() && !IndividualManager->Load(true))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not load the individual manager (%s).."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
@@ -558,7 +558,7 @@ bool ASLSymbolicLogger::IsValidAndLoaded(AActor* Actor)
 {
 	if (Actor == nullptr || !Actor->IsValidLowLevel() || Actor->IsPendingKillOrUnreachable())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not valid.."), *FString(__func__), __LINE__, *Actor->GetName());
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Actor not valid.."), *FString(__func__), __LINE__);
 		return false;
 	}
 	if (!GetWorld()->ContainsActor(Actor))

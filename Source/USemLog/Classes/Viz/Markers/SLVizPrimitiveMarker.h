@@ -45,6 +45,9 @@ protected:
 	// Virtual add instance function
 	virtual void AddInstanceChecked(const FTransform& Pose) override;
 
+	// Virtual update instance transform
+	virtual bool UpdateInstanceTransform(int32 Index, const FTransform& Pose) override;
+
 	// Virtual add instances function
 	virtual void AddInstancesChecked(const TArray<FTransform>& Poses) override;
 

@@ -75,6 +75,9 @@ protected:
 	// Timeline position in the array
 	int32 TimelineIndex;
 
+	// Max number of instances to draw in a timeline
+	int32 TimelineMaxNumInstances;
+
 	// Flag to loop the timeline
 	bool bLoopTimeline;
 

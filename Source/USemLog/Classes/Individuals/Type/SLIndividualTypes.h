@@ -14,6 +14,9 @@
 #include "Individuals/Type/SLRigidConstraintIndividual.h"
 #include "Individuals/Type/SLRigidIndividual.h"
 #include "Individuals/Type/SLSkyIndividual.h"
+
+#include "Individuals/Type/SLLandscapeIndividual.h"
+
 #include "Individuals/Type/SLLightIndividual.h"
 #include "Individuals/Type/SLSkeletalIndividual.h"
 #include "Individuals/Type/SLBoneIndividual.h"

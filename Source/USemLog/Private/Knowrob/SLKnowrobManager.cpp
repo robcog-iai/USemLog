@@ -5,6 +5,9 @@
 #include "Control/SLControlManager.h"
 #include "Mongo/SLMongoQueryManager.h"
 #include "Viz/SLVizManager.h"
+#include "Viz/SLVizSemMapManager.h"
+#include "VizQ/SLVizQBase.h"
+
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
@@ -21,6 +24,7 @@ ASLKnowrobManager::ASLKnowrobManager()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+	bIgnore = false;
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
@@ -47,6 +51,12 @@ void ASLKnowrobManager::BeginPlay()
 {
 	Super::BeginPlay();	
 
+	if (bIgnore)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's ignore flag is true, skipping"), *FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
 	// Load values from the commandline
 	if (bLoadValuesFromCommandLine)
 	{
@@ -59,6 +69,7 @@ void ASLKnowrobManager::BeginPlay()
 
 	Init();
 	Start();
+
 }
 
 #if WITH_EDITOR
@@ -99,286 +110,6 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 		}
 	}
 
-	/* Episode data hacks */
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetTaskButtonhack))
-	{
-		bSetTaskButtonhack = false;
-		if (!bIsInit) { return; }
-		if (MongoQueryManager->SetTask(TaskIdValueHack))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set task to %s"), *FString(__FUNCTION__), __LINE__, *TaskIdValueHack);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetEpisodeButtonHack))
-	{
-		bSetEpisodeButtonHack = false;
-		if (!bIsInit) { return; }
-		if (MongoQueryManager->SetEpisode(EpisodeIdValueHack))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to set episode to %s"), *FString(__FUNCTION__), __LINE__, *EpisodeIdValueHack);
-		}
-	}
-
-	/* VIZ episode replay */
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSetupWorldForEpisodeReplayButtonHack))
-	{
-		bSetupWorldForEpisodeReplayButtonHack = false;
-		if (!bIsInit) { return; }
-		VizManager->ConvertWorldToVisualizationMode();
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bLoadEpisodeDataButtonHack))
-	{
-		bLoadEpisodeDataButtonHack = false;
-		if (!bIsInit) { return; }
-		if (!VizManager->IsWorldConvertedToVisualizationMode())
-		{
-			VizManager->ConvertWorldToVisualizationMode();
-		}
-		VizManager->LoadEpisodeData(MongoQueryManager->GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack));
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bGotoButtonHack))
-	{
-		bGotoButtonHack = false;
-		if (!bIsInit) { return; }
-		if (!VizManager->IsWorldConvertedToVisualizationMode())
-		{
-			VizManager->ConvertWorldToVisualizationMode();
-		}
-		if (!VizManager->IsEpisodeLoaded())
-		{
-			VizManager->LoadEpisodeData(MongoQueryManager->GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack));
-		}
-		VizManager->GotoEpisodeFrame(GotoValueHack);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bReplayButtonHack))
-	{
-		bReplayButtonHack = false;
-		if (!bIsInit) { return; }
-		if (!VizManager->IsWorldConvertedToVisualizationMode())
-		{
-			VizManager->ConvertWorldToVisualizationMode();
-		}
-		if (!VizManager->IsEpisodeLoaded())
-		{
-			VizManager->LoadEpisodeData(MongoQueryManager->GetEpisodeData(TaskIdValueHack, EpisodeIdValueHack));
-		}
-		if (ReplayBeginValueHack > 0 && ReplayEndValueHack > 0 && ReplayBeginValueHack < ReplayEndValueHack)
-		{
-			FSLVizEpisodePlayParams PlayParams;
-			PlayParams.bLoop = bReplayLoopValueHack;
-			PlayParams.UpdateRate = ReplayUpdateRateValueHack;
-			VizManager->PlayEpisodeTimeline(ReplayBeginValueHack, ReplayEndValueHack, PlayParams);
-		}
-		else
-		{
-			FSLVizEpisodePlayParams PlayParams;
-			PlayParams.bLoop = bReplayLoopValueHack;
-			PlayParams.UpdateRate = ReplayUpdateRateValueHack;
-			VizManager->PlayEpisode(PlayParams);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bReplayPauseButtonHack))
-	{
-		if (!bIsInit) { return; }
-		VizManager->PauseReplay(bReplayPauseButtonHack);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bReplayStopButtonHack))
-	{
-		bReplayStopButtonHack = false;
-		if (!bIsInit) { return; }
-		VizManager->StopReplay();
-	}
-
-	/*	VIZ highlights	*/
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bDrawSelectedHighlights))
-	{
-		bDrawSelectedHighlights = false;
-		if (!bIsInit) { return; }
-		for (const auto HC : HighlightValuesHack)
-		{
-			VizManager->HighlightIndividual(HC.IndividualId, HC.Color, HC.MaterialType);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bUpdateHighlights))
-	{
-		bUpdateHighlights = false;
-		if (!bIsInit) { return; }
-		for (const auto HC : HighlightValuesHack)
-		{
-			VizManager->UpdateIndividualHighlight(HC.IndividualId, HC.Color, HC.MaterialType);
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bRemoveAllHighlights))
-	{
-		bRemoveAllHighlights = false;
-		if (!bIsInit) { return; }
-		VizManager->RemoveAllIndividualHighlights();
-	}
-
-	/*	VIZ markers	*/
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bDrawMarkers))
-	{
-		bDrawMarkers = false;
-		if (!bIsInit) { return; }
-		for (const auto M : MarkerValuesHack)
-		{
-			TArray<FTransform> Poses;
-			TArray<TPair<FTransform, TMap<int32, FTransform>>> SkeletalPoses;
-
-			if (M.EndTime > 0)
-			{
-				if (!M.bIsSkeletal)
-				{
-					Poses = MongoQueryManager->GetIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
-						M.IndividualId, M.StartTime, M.EndTime, M.DeltaT);
-				}
-				else
-				{
-					SkeletalPoses = MongoQueryManager->GetSkeletalIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
-						M.IndividualId, M.StartTime, M.EndTime, M.DeltaT);
-				}
-			}
-			else
-			{
-				if (!M.bIsSkeletal)
-				{
-					Poses.Add(MongoQueryManager->GetIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack,
-						M.IndividualId, M.StartTime));
-				}
-				else
-				{
-					SkeletalPoses.Add(MongoQueryManager->GetSkeletalIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack,
-						M.IndividualId, M.StartTime));
-				}
-			}
-			
-			if (Poses.Num() == 0 && SkeletalPoses.Num() == 0)
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Empty poses array.."), *FString(__FUNCTION__), __LINE__);
-				return;
-			}
-
-			if (M.bAsTimeline)
-			{
-				if (Poses.Num() < 2 && SkeletalPoses.Num() < 2)
-				{
-					UE_LOG(LogTemp, Error, TEXT("%s::%d Not enought poses for a timeline.."), *FString(__FUNCTION__), __LINE__);
-					return;
-				}
-
-				if (M.bIsSkeletal)
-				{
-					if (M.bUseCustomColor)
-					{
-						VizManager->CreateSkeletalMeshMarkerTimeline(M.MarkerId, SkeletalPoses,
-							M.IndividualId, M.Color, M.MaterialType,
-							M.Duration, M.bLoop, M.UpdateRate);
-					}
-					else
-					{
-						VizManager->CreateSkeletalMeshMarkerTimeline(M.MarkerId, SkeletalPoses, M.IndividualId,
-							M.Duration, M.bLoop, M.UpdateRate);
-					}
-				}
-				else if (M.bUsePrimitiveMesh)
-				{
-					VizManager->CreatePrimitiveMarkerTimeline(M.MarkerId, Poses,
-						M.PrimitiveType, M.Size, M.Color, M.MaterialType, 
-						M.Duration, M.bLoop, M.UpdateRate);
-				}
-				else
-				{
-					if (M.bUseCustomColor)
-					{
-						VizManager->CreateStaticMeshMarkerTimeline(M.MarkerId, Poses, 
-							M.IndividualId, M.Color, M.MaterialType,
-							M.Duration, M.bLoop, M.UpdateRate);
-					}
-					else
-					{
-						VizManager->CreateStaticMeshMarkerTimeline(M.MarkerId, Poses, M.IndividualId,
-							M.Duration, M.bLoop, M.UpdateRate);
-					}
-				}
-			}
-			else
-			{
-				if (M.bIsSkeletal)
-				{
-					if (M.bUseCustomColor)
-					{
-						VizManager->CreateSkeletalMeshMarker(M.MarkerId, SkeletalPoses,
-							M.IndividualId, M.Color, M.MaterialType);
-					}
-					else
-					{
-						VizManager->CreateSkeletalMeshMarker(M.MarkerId, SkeletalPoses, M.IndividualId);
-					}
-				}
-				else if (M.bUsePrimitiveMesh)
-				{
-					VizManager->CreatePrimitiveMarker(M.MarkerId, Poses, M.PrimitiveType, M.Size, M.Color, M.MaterialType);
-				}
-				else
-				{
-					if (M.bUseCustomColor)
-					{
-						VizManager->CreateStaticMeshMarker(M.MarkerId, Poses, M.IndividualId, M.Color, M.MaterialType);
-					}
-					else
-					{
-						VizManager->CreateStaticMeshMarker(M.MarkerId, Poses, M.IndividualId);
-					}
-				}
-			}
-		}
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bRemoveAllMarkers))
-	{
-		bRemoveAllMarkers = false;
-		if (!bIsInit) { return; }
-		VizManager->RemoveAllMarkers();
-	}
-
-	/* MONGO query button hacks */
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bPoseQueryButtonHack))
-	{
-		bPoseQueryButtonHack = false;
-		if (!bIsInit) { return; }
-
-		FTransform Pose = MongoQueryManager->GetIndividualPoseAt(TaskIdValueHack, EpisodeIdValueHack,
-			IndividualIdValueHack, StartTimestampValueHack);
-
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f] IndividualPose: Loc=%s; \t Quat=%s; \t (%s:%s:%s)"),
-			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString(),
-			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
-	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bTrajectoryQueryButtonHack))
-	{
-		bTrajectoryQueryButtonHack = false;
-		if (!bIsInit) { return; }
-
-		TArray<FTransform> Trajectory = MongoQueryManager->GetIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
-			IndividualIdValueHack, StartTimestampValueHack, EndTimestampValueHack, DeltaTValueHack);
-
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f-%f] IndividualTrajectoryNum=%ld; (%s:%s:%s)"),
-			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, EndTimestampValueHack, Trajectory.Num(),
-			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
-
-		for (const auto& Pose : Trajectory)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("\t\t\t\t Loc=%s; \t Quat=%s;"), *Pose.GetLocation().ToString(), *Pose.GetRotation().ToString());
-		}
-	}	
-	
     /* Map button hacks */
     else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bLoadMapButtonHack))
     {
@@ -444,7 +175,7 @@ void ASLKnowrobManager::Init()
 {
 	if (bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is already initialized.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already initialized.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -459,13 +190,13 @@ void ASLKnowrobManager::Init()
 	// Get and connect the mongo query manager
 	if (!SetMongoQueryManager())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the mongo query manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not get access to the mongo query manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 	if (!MongoQueryManager->Connect(MongoServerIP, MongoServerPort))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not connect to mongo db.. (%s::%d)"),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not connect to mongo db.. (%s::%d)"),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MongoServerIP, MongoServerPort);
 		return;
 	}
@@ -473,13 +204,14 @@ void ASLKnowrobManager::Init()
 	// Get an initialise the visualization manager
 	if (!SetVizManager())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the viz manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not get access to the viz manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	if (!VizManager->Init())
+	VizManager->Init();
+	if (!VizManager->IsInit())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the viz manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init the viz manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -524,8 +256,23 @@ void ASLKnowrobManager::Init()
     }
     SymbolicLogger->Init(LoggerParameters, LocationParameters);
 
+	// Get and init the sem map visualizer
+	if (!SetVizSemMapManager())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not get access to the viz sem map manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+	VizSemMapManager->Init();
+	if (!VizSemMapManager->IsInit())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init the viz sem map manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
 	bIsInit = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully initialized.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully initialized.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
 }
 
@@ -534,14 +281,14 @@ void ASLKnowrobManager::Start()
 {
 	if (bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is already started.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already started.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is not initialized, cannot start.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, cannot start.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -565,7 +312,7 @@ void ASLKnowrobManager::Start()
 	SetupInputBindings();
 
 	bIsStarted = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully started.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully started.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
 }
 
@@ -574,14 +321,14 @@ void ASLKnowrobManager::Finish(bool bForced)
 {
 	if (bIsFinished)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is already finished.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already finished.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
 	if (!bIsInit && !bIsStarted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) is not initialized nor started, cannot finish.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized nor started, cannot finish.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
@@ -598,7 +345,7 @@ void ASLKnowrobManager::Finish(bool bForced)
 	bIsStarted = false;
 	bIsInit = false;
 	bIsFinished = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Knowrob manager (%s) succesfully finished.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully finished.."),
 		*FString(__FUNCTION__), __LINE__, *GetName());
 }
 
@@ -656,12 +403,12 @@ void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
 {
 	if (bConnectionValue)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) connected to knowrob.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s connected to knowrob.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 	}
 	else if(bKRConnectRetry)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) is disconnected from knowrob, retrying in %f seconds.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s is disconnected from knowrob, retrying in %f seconds.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), KRConnectRetryInterval);
 
 		GetWorld()->GetTimerManager().SetTimer(KRConnectRetryTimerHandle,
@@ -669,7 +416,7 @@ void ASLKnowrobManager::OnKRConnection(bool bConnectionValue)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Knowrob manager (%s) knowrob connection is closed.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s knowrob connection is closed.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 	}
 }
@@ -680,11 +427,13 @@ void ASLKnowrobManager::OnKRMsg()
 	std::string ProtoMsgBinary;
 	while (KRWSClient->MessageQueue.Dequeue(ProtoMsgBinary))
 	{
+#if SL_WITH_PROTO_MSGS
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Processing message.."), *FString(__FUNCTION__), __LINE__);
 		FSLKRResponse Response;
 		Response.Type = ResponseType::None;
 		KREventDispatcher->ProcessProtobuf(Response, ProtoMsgBinary);
 		KRWSClient->SendResponse(Response);
+#endif // SL_WITH_PROTO_MSGS	
 	}
 }
 
@@ -738,6 +487,33 @@ bool ASLKnowrobManager::SetVizManager()
 	VizManager = GetWorld()->SpawnActor<ASLVizManager>(SpawnParams);
 #if WITH_EDITOR
 	VizManager->SetActorLabel(TEXT("SL_VizManager"));
+#endif // WITH_EDITOR
+	return true;
+}
+
+// Get the viz semantic map manager from the world (or spawn a new one)
+bool ASLKnowrobManager::SetVizSemMapManager()
+{
+	if (VizSemMapManager && VizSemMapManager->IsValidLowLevel() && !VizSemMapManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
+	for (TActorIterator<ASLVizSemMapManager>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			VizSemMapManager = *Iter;
+			return true;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_VizSemMapManager");
+	VizSemMapManager = GetWorld()->SpawnActor<ASLVizSemMapManager>(SpawnParams);
+#if WITH_EDITOR
+	VizSemMapManager->SetActorLabel(TEXT("SL_VizSemMapManager"));
 #endif // WITH_EDITOR
 	return true;
 }
@@ -859,9 +635,10 @@ bool ASLKnowrobManager::ExecuteQuery(int32 Index)
 {
 	if (Queries.IsValidIndex(Index))
 	{
-		if (Queries[Index]->IsValidLowLevel())
+		USLVizQBase* QueryObj = Queries[Index];
+		if (QueryObj && QueryObj->IsValidLowLevel())
 		{
-			Queries[Index]->Execute(VizManager, MongoQueryManager);
+			QueryObj->Execute(this);
 			return true;
 		}
 	}

@@ -19,7 +19,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "EngineUtils.h"
 
-#include "GameFramework/PlayerController.h"
 
 #if WITH_EDITOR
 #include "Editor.h"	// GEditor
@@ -61,58 +60,56 @@ void ASLVizManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Load all the required managers
-bool ASLVizManager::Init()
+void ASLVizManager::Init()
 {
 	if (bIsInit)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Viz manager (%s) is already init.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d %s is already init.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		return true;
+		return;
 	}
 
-	bool RetValue = true;
 	if (!SetIndividualManager())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not set the individual manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the individual manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		RetValue = false;
+		return;
 	}
-	if (!IndividualManager->Load(false))
+	if (!IndividualManager->IsLoaded() && !IndividualManager->Load(true))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not load the individual manager (%s).."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not load the individual manager (%s).."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
-		RetValue = false;
+		return;
 	}
 
 	if (!SetVizHighlightManager())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not set the viz highligh marker manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the viz highligh marker manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		RetValue = false;
+		return;
 	}
 
 	if (!SetVizMarkerManager())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not set the viz marker manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the viz marker manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		RetValue = false;
+		return;
 	}
 
 	if (!SetEpisodeManager())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not set the viz world manager.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the viz world manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		RetValue = false;
+		return;
 	}
 
 	if (!SetCameraDirector())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Viz manager (%s) could not set the viz camera director.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the viz camera director.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		RetValue = false;
+		return;
 	}
-	bIsInit = RetValue;	
-	return RetValue;
+	bIsInit = true;	
 }
 
 // Clear any created markers / viz components
@@ -134,15 +131,18 @@ bool ASLVizManager::HighlightIndividual(const FString& Id, const FLinearColor& C
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
-	if (auto HM = HighlightedIndividuals.Find(Id))
+	if (auto HD = HighlightedIndividuals.Find(Id))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is already highlighted.."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
-		return false;
+		HighlightManager->UpdateHighlight(HD->MeshComponent,
+			FSLVizVisualParams(Color, MaterialType, HD->MaterialSlots));
+		return true;
+		//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is already highlighted.."),
+		//	*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		//return false;
 	}
 
 	if (auto Individual = IndividualManager->GetIndividual(Id))
@@ -173,21 +173,21 @@ bool ASLVizManager::HighlightIndividual(const FString& Id, const FLinearColor& C
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is of unssuported visual type.."),
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is of unssuported visual type.."),
 					*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 				return false;
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of visible type, cannot highlight.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of visible type, cannot highlight.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 			return false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) cannot find individual (Id=%s).."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s cannot find individual (Id=%s).."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 		return false;
 	}
@@ -199,18 +199,18 @@ bool ASLVizManager::UpdateIndividualHighlight(const FString& Id, const FLinearCo
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
-	if (auto HighlightData = HighlightedIndividuals.Find(Id))
+	if (auto HD = HighlightedIndividuals.Find(Id))
 	{
-		HighlightManager->UpdateHighlight(HighlightData->MeshComponent,
-			FSLVizVisualParams(Color, MaterialType, HighlightData->MaterialSlots));
+		HighlightManager->UpdateHighlight(HD->MeshComponent,
+			FSLVizVisualParams(Color, MaterialType, HD->MaterialSlots));
 		return true;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual (Id=%s) as highlighted.."),
+	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s could not find individual (Id=%s) as highlighted.."),
 		*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 	return false;
 }
@@ -220,7 +220,7 @@ bool ASLVizManager::RemoveIndividualHighlight(const FString& Id)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
@@ -232,7 +232,7 @@ bool ASLVizManager::RemoveIndividualHighlight(const FString& Id)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) could not find individual (Id=%s) as highlighted.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s could not find individual (Id=%s) as highlighted.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 		return false;
 	}
@@ -243,7 +243,7 @@ void ASLVizManager::RemoveAllIndividualHighlights()
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
@@ -256,22 +256,22 @@ void ASLVizManager::RemoveAllIndividualHighlights()
 
 
 /* Markers */
+/* Primitive */
 // Create a primitive marker
 bool ASLVizManager::CreatePrimitiveMarker(const FString& MarkerId, 	const TArray<FTransform>& Poses, 
 	ESLVizPrimitiveMarkerType PrimitiveType,
 	float Size, 
-	const FLinearColor& Color, 
-	ESLVizMaterialType MaterialType)
+	const FLinearColor& Color, ESLVizMaterialType MaterialType)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp,Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp,Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -287,24 +287,26 @@ bool ASLVizManager::CreatePrimitiveMarker(const FString& MarkerId, 	const TArray
 
 // Create a primitive marker timeline
 bool ASLVizManager::CreatePrimitiveMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
-	ESLVizPrimitiveMarkerType PrimitiveType, float Size, const FLinearColor& Color, ESLVizMaterialType MaterialType,
-	float Duration, bool bLoop, float UpdateRate)
+	ESLVizPrimitiveMarkerType PrimitiveType,
+	float Size,
+	const FLinearColor& Color, ESLVizMaterialType MaterialType,
+	const FSLVizTimelineParams& TimelineParams)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
 
 	if (auto Marker = MarkerManager->CreatePrimitiveMarkerTimeline(Poses, PrimitiveType, Size,
-		Color, MaterialType, Duration, bLoop, UpdateRate))
+		Color, MaterialType, TimelineParams))
 	{
 		Markers.Add(MarkerId, Marker);
 		return true;
@@ -313,18 +315,20 @@ bool ASLVizManager::CreatePrimitiveMarkerTimeline(const FString& MarkerId, const
 	return false;
 }
 
+
+/* Static mesh */
 // Create a marker by cloning the visual of the given individual (use original materials)
 bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -342,7 +346,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -356,13 +360,13 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -380,7 +384,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -390,17 +394,17 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 
 // Create a timeline marker by cloning the visual of the given individual (use original materials)
 bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId,
-	float Duration, bool bLoop, float UpdateRate)
+	const FSLVizTimelineParams& TimelineParams)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -410,7 +414,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 		if (auto RI = Cast<USLRigidIndividual>(Individual))
 		{
 			UStaticMesh* SM = RI->GetStaticMeshComponent()->GetStaticMesh();
-			if (auto Marker = MarkerManager->CreateStaticMeshMarkerTimeline(Poses, SM, Duration, bLoop, UpdateRate))
+			if (auto Marker = MarkerManager->CreateStaticMeshMarkerTimeline(Poses, SM, TimelineParams))
 			{
 				Markers.Add(MarkerId, Marker);
 				return true;
@@ -418,7 +422,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -429,17 +433,17 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 // Create a timeline marker by cloning the visual of the given individual
 bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 	const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType,
-	float Duration, bool bLoop, float UpdateRate)
+	const FSLVizTimelineParams& TimelineParams)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -449,7 +453,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 		if (auto RI = Cast<USLRigidIndividual>(Individual))
 		{
 			UStaticMesh* SM = RI->GetStaticMeshComponent()->GetStaticMesh();
-			if (auto Marker = MarkerManager->CreateStaticMeshMarkerTimeline(Poses, SM, Color, MaterialType, Duration, bLoop, UpdateRate))
+			if (auto Marker = MarkerManager->CreateStaticMeshMarkerTimeline(Poses, SM, Color, MaterialType, TimelineParams))
 			{
 				Markers.Add(MarkerId, Marker);
 				return true;
@@ -457,7 +461,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -465,6 +469,8 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 	return false;
 }
 
+
+/* Skeletal mesh */
 // Create a marker by cloning the visual of the given skeletal individual (use original materials)
 bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 	const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
@@ -472,13 +478,13 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -496,7 +502,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -511,13 +517,13 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -535,7 +541,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -545,17 +551,17 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 
 // Create a timeline by cloning the visual of the given skeletal individual (use original materials)
 bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-	const FString& IndividualId, float Duration, bool bLoop, float UpdateRate)
+	const FString& IndividualId, const FSLVizTimelineParams& TimelineParams)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -566,7 +572,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 		{
 			USkeletalMesh* SkelM = SkI->GetSkeletalMeshComponent()->SkeletalMesh;
 			if (auto Marker = MarkerManager->CreateSkeletalMarkerTimeline(SkeletalPoses, SkelM,
-				Duration, bLoop, UpdateRate))
+				TimelineParams))
 			{
 				Markers.Add(MarkerId, Marker);
 				return true;
@@ -574,7 +580,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -585,17 +591,17 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 // Create a timeline by cloning the visual of the given skeletal individual
 bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 	const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType,
-	float Duration, bool bLoop, float UpdateRate)
+	const FSLVizTimelineParams& TimelineParams)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -606,7 +612,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 		{
 			USkeletalMesh* SkelM = SkI->GetSkeletalMeshComponent()->SkeletalMesh;
 			if (auto Marker = MarkerManager->CreateSkeletalMarkerTimeline(SkeletalPoses, SkelM,
-				Color, MaterialType, Duration, bLoop, UpdateRate))
+				Color, MaterialType, TimelineParams))
 			{
 				Markers.Add(MarkerId, Marker);
 				return true;
@@ -614,7 +620,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -627,13 +633,13 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -662,7 +668,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -678,13 +684,13 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
 	if (Markers.Contains(MarkerId))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) marker (Id=%s) already exists.."),
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s marker (Id=%s) already exists.."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *MarkerId);
 		return false;
 	}
@@ -713,7 +719,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
 			return false;
 		}
@@ -722,7 +728,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 }
 
 // Create a timeline marker by cloning the visual of the given individual
-bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, float Duration, bool bLoop, float UpdateRate)
+bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, const FSLVizTimelineParams& TimelineParams)
 {
 	// TODO
 	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO "), *FString(__FUNCTION__), __LINE__);
@@ -730,7 +736,7 @@ bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const 
 }
 
 // Create a timeline marker by cloning the visual of the given individual
-bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType, float Duration, bool bLoop, float UpdateRate)
+bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType, const FSLVizTimelineParams& TimelineParams)
 {
 	// TODO
 	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO "), *FString(__FUNCTION__), __LINE__);
@@ -743,7 +749,7 @@ bool ASLVizManager::RemoveMarker(const FString& Id)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
@@ -761,7 +767,7 @@ void ASLVizManager::RemoveAllMarkers()
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
@@ -779,12 +785,17 @@ bool ASLVizManager::ConvertWorldToVisualizationMode()
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 
-#if WITH_EDITOR
+	if (EpisodeManager->IsWorldConverted())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s world is already converted to viz mode.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return true;
+	}
 
+#if WITH_EDITOR
 	/*
 	* World types info:
 	* 
@@ -822,29 +833,29 @@ bool ASLVizManager::IsWorldConvertedToVisualizationMode() const
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 	return EpisodeManager->IsWorldConverted();
 }
 
 // Cache the episode data
-void ASLVizManager::CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData)
+bool ASLVizManager::CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
 	}
 	if (InMongoEpisodeData.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) the episode data is empty.."), *FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s the episode data is empty.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
 	}
 	if (IsEpisodeCached(Id))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) the episode data is already cached.."), *FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s the episode data is already cached.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return true;
 	}
 
 	// Create and reserve episode data with the array size
@@ -853,6 +864,12 @@ void ASLVizManager::CacheEpisodeData(const FString& Id, const TArray<TPair<float
 	if (FSLVizEpisodeUtils::BuildEpisodeData(IndividualManager, InMongoEpisodeData, VizEpisodeData))
 	{
 		CachedEpisodeData.Add(Id, VizEpisodeData);
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s could not generate episode format.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
 	}
 }
 
@@ -861,17 +878,17 @@ bool ASLVizManager::LoadCachedEpisodeData(const FString& Id)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 	if (!EpisodeManager->IsWorldConverted())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) cannot load episode data because the world is not set as visual only.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s cannot load episode data because the world is not set as visual only.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 	if (!IsEpisodeCached(Id))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) the episode (%s) data is not cached.."), *FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s the episode (%s) data is not cached.."), *FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 		return false;
 	}
 	
@@ -884,12 +901,12 @@ bool ASLVizManager::ReplayCachedEpisode(const FString& Id, const FSLVizEpisodePl
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 	if (!IsEpisodeCached(Id))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) episode (%s) is not cached.."), *FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s episode (%s) is not cached.."), *FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 		return false;
 	}
 	if (!EpisodeManager->GetEpisodeId().Equals(Id))
@@ -905,12 +922,12 @@ bool ASLVizManager::GotoCachedEpisodeFrame(const FString& Id, float Ts)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 	if (!IsEpisodeCached(Id))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) episode (%s) is not cached.."), *FString(__FUNCTION__), __LINE__, *GetName(), *Id);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s episode (%s) is not cached.."), *FString(__FUNCTION__), __LINE__, *GetName(), *Id);
 		return false;
 	}
 	if (!EpisodeManager->GetEpisodeId().Equals(Id))
@@ -926,17 +943,17 @@ void ASLVizManager::LoadEpisodeData(const TArray<TPair<float, TMap<FString, FTra
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 	if (!EpisodeManager->IsWorldConverted())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) cannot load episode data because the world is not set as visual only.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s cannot load episode data because the world is not set as visual only.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 	if (InMongoEpisodeData.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) the episode data is empty.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s the episode data is empty.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
@@ -954,7 +971,7 @@ bool ASLVizManager::IsEpisodeLoaded() const
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 	return EpisodeManager->IsEpisodeLoaded();
@@ -965,7 +982,7 @@ bool ASLVizManager::GotoEpisodeFrame(float Ts)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 	return EpisodeManager->GotoFrame(Ts);
@@ -976,7 +993,7 @@ bool ASLVizManager::PlayEpisode(FSLVizEpisodePlayParams PlayParams)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 	EpisodeManager->SetReplayParams(PlayParams.bLoop, PlayParams.UpdateRate, PlayParams.StepSize);
@@ -995,7 +1012,7 @@ bool ASLVizManager::PlayEpisodeTimeline(float StartTime, float EndTime, FSLVizEp
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
 	EpisodeManager->SetReplayParams(PlayParams.bLoop, PlayParams.UpdateRate, PlayParams.StepSize);
@@ -1007,7 +1024,7 @@ void ASLVizManager::PauseReplay(bool bPause)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 	EpisodeManager->SetPauseReplay(bPause);
@@ -1018,7 +1035,7 @@ void ASLVizManager::StopReplay()
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 	EpisodeManager->StopReplay();
@@ -1029,7 +1046,7 @@ void ASLVizManager::SetCameraView(const FTransform& Pose)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 	CameraDirector->MoveCameraTo(Pose);
@@ -1040,7 +1057,7 @@ void ASLVizManager::SetCameraView(const FString& Id)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
@@ -1055,7 +1072,7 @@ void ASLVizManager::AttachCameraViewTo(const FString& Id)
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
@@ -1070,7 +1087,7 @@ void ASLVizManager::DetachCameraView()
 {
 	if (!bIsInit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d Viz manager (%s) is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not initialized, call init first.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 	CameraDirector->DetachCamera();

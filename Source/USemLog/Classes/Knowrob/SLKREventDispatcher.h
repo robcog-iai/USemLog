@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 
 #pragma once
 
@@ -10,6 +10,7 @@
 #include "SLKRResponseStruct.h"
 #include "CoreMinimal.h"
 
+// Forward declarations
 class ASLMongoQueryManager;
 class ASLVizManager;
 class ASLControlManager;
@@ -18,6 +19,7 @@ class ASLSymbolicLogger;
 
 enum class ESLVizPrimitiveMarkerType : uint8;
 enum class ESLVizMaterialType : uint8;
+
 /**
  * 
  */
@@ -35,9 +37,10 @@ public:
 	void ProcessProtobuf(FSLKRResponse& Out, std::string ProtoStr);
 
 private:
+#if SL_WITH_PROTO_MSGS
 	// Load the Semantic Map
 	void LoadMap(FSLKRResponse& Out, sl_pb::LoadMapParams params);
-	
+
 	// Set the task of MongoManager
 	void SetTask(FSLKRResponse& Out, sl_pb::SetTaskParams params);
 
@@ -63,7 +66,7 @@ private:
 	// -----  helper function  ------//
 	// Transform the maker type
 	ESLVizPrimitiveMarkerType GetMarkerType(sl_pb::MarkerType Marker);
-	
+#endif // SL_WITH_PROTO_MSGS	
 	// Transform the string to color
 	FLinearColor GetMarkerColor(const FString& Color);
 

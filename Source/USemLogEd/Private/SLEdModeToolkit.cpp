@@ -98,6 +98,7 @@ void FSLEdModeToolkit::Init(const TSharedPtr<IToolkitHost>& InitToolkitHost)
 			+ CreateSeparatorHackSlot()
 			+ CreateUtilsTxtSlot()
 			+ CreateConvertToVizMapSlot()
+			+ CreateLogIdsSlot()
 			+ CreateAddSemMonitorsSlot()
 			+ CreateEnableOverlapsSlot()
 			+ CreateShowSemData()
@@ -912,6 +913,21 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateConvertToVizMapSlot()
 			.IsEnabled(true)
 			.ToolTipText(LOCTEXT("ConvertToVizTip", "Removes physics creates poseable mesh components.."))
 			.OnClicked(this, &FSLEdModeToolkit::OnConvertToViz)
+		];
+}
+
+SVerticalBox::FSlot& FSLEdModeToolkit::CreateLogIdsSlot()
+{
+	return SVerticalBox::Slot()
+		.AutoHeight()
+		.Padding(2)
+		.HAlign(HAlign_Center)
+		[
+			SNew(SButton)
+			.Text(LOCTEXT("LogIds", "Log Ids"))
+			.IsEnabled(true)
+			.ToolTipText(LOCTEXT("LogIdsTip", "write the individual ids in the as a log string.."))
+			.OnClicked(this, &FSLEdModeToolkit::OnLogIds)
 		];
 }
 
@@ -1781,6 +1797,23 @@ FReply FSLEdModeToolkit::OnConvertToViz()
 }
 
 
+FReply FSLEdModeToolkit::OnLogIds()
+{
+	FScopedTransaction Transaction(LOCTEXT("LogIdsST", "Writing individual ids.."));
+
+	if (bOnlySelectedFlag)
+	{
+		FSLEdUtils::LogIds(GetSelectedActors());
+	}
+	else
+	{
+		FSLEdUtils::LogIds(GEditor->GetEditorWorldContext().World());
+	}
+
+	return FReply::Handled();
+}
+
+
 FReply FSLEdModeToolkit::OnAddSemMon()
 {
 	FScopedTransaction Transaction(LOCTEXT("AddSemMonitorsST", "Add semantic monitor components"));
@@ -1877,44 +1910,71 @@ FReply FSLEdModeToolkit::OnGenericButton()
 {
 	FScopedTransaction Transaction(LOCTEXT("GenericST", "Generic button.."));
 	UWorld* CurrWorld = GEditor->GetEditorWorldContext().World();
-	//UE_LOG(LogTemp, Error, TEXT("%s::%d *** -BEGIN-  GenericButton ***"), *FString(__FUNCTION__), __LINE__);
 
-	///* WORLD */
-	//UE_LOG(LogTemp, Log, TEXT("%s::%d CurrWorld:"), *FString(__FUNCTION__), __LINE__);
-	//UE_LOG(LogTemp, Log, TEXT("\t\t\t%s"), *CurrWorld->GetName());
+	for (const auto Act : GetSelectedActors())
+	{
+		if (!Act->IsValidLowLevel() || Act->IsPendingKillOrUnreachable())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Actor with issues found.."),
+				*FString(__FUNCTION__), __LINE__, *Act->GetName());
+		}
+		else
+		{
+			for (const auto C : Act->GetComponents())
+			{
+				if (!C->IsValidLowLevel() || !C->IsRegistered() || C->IsPendingKillOrUnreachable())
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d %s: component with issues found.."),
+						*FString(__FUNCTION__), __LINE__, *Act->GetName());
+				}
+				else
+				{
+					UE_LOG(LogTemp, Log, TEXT("%s::%d %s::%s all good.."),
+						*FString(__FUNCTION__), __LINE__, *Act->GetName(), *C->GetName());
+				}
+			}
+		}
+	}
+
+
+	////UE_LOG(LogTemp, Error, TEXT("%s::%d *** -BEGIN-  GenericButton ***"), *FString(__FUNCTION__), __LINE__);
+
+	/////* WORLD */
+	////UE_LOG(LogTemp, Log, TEXT("%s::%d CurrWorld:"), *FString(__FUNCTION__), __LINE__);
+	////UE_LOG(LogTemp, Log, TEXT("\t\t\t%s"), *CurrWorld->GetName());
+	////UE_LOG(LogTemp, Log, TEXT("***"));
+
+	/////* LEVELS */
+	////UE_LOG(LogTemp, Log, TEXT("%s::%d Levels:"), *FString(__FUNCTION__), __LINE__);
+	////for (const auto& Level : CurrWorld->GetLevels())
+	////{
+	////	UE_LOG(LogTemp, Log, TEXT("\t\t\t%s"), *Level->GetName());
+	////}
+	////UE_LOG(LogTemp, Log, TEXT("***"));
+
+	/////* STREAMING LEVELS */
+	////UE_LOG(LogTemp, Log, TEXT("%s::%d Streaming levels:"), *FString(__FUNCTION__), __LINE__);
+	////for (const auto& StreamingLevel : CurrWorld->GetStreamingLevels())
+	////{
+	////	UE_LOG(LogTemp, Log, TEXT("\t\t\t%s"), *StreamingLevel->GetName());
+	////}
+	////UE_LOG(LogTemp, Log, TEXT("***"));
+
+
+	///* UOBJECTS INFO */
+	////UE_LOG(LogTemp, Log, TEXT("%s::%d UObject Infos:"), *FString(__FUNCTION__), __LINE__);
+	//LogObjectInfo(CurrWorld);
 	//UE_LOG(LogTemp, Log, TEXT("***"));
 
-	///* LEVELS */
-	//UE_LOG(LogTemp, Log, TEXT("%s::%d Levels:"), *FString(__FUNCTION__), __LINE__);
-	//for (const auto& Level : CurrWorld->GetLevels())
-	//{
-	//	UE_LOG(LogTemp, Log, TEXT("\t\t\t%s"), *Level->GetName());
-	//}
-	//UE_LOG(LogTemp, Log, TEXT("***"));
+	/////* SELECTED ACTORS */
+	////UE_LOG(LogTemp, Log, TEXT("%s::%d Selected actors: "), *FString(__func__), __LINE__);
+	////for (const auto Act : GetSelectedActors())
+	////{
+	////	UE_LOG(LogTemp, Error, TEXT("\t\t\t%s"), *Act->GetName());
+	////}
+	////UE_LOG(LogTemp, Log, TEXT("***"));
 
-	///* STREAMING LEVELS */
-	//UE_LOG(LogTemp, Log, TEXT("%s::%d Streaming levels:"), *FString(__FUNCTION__), __LINE__);
-	//for (const auto& StreamingLevel : CurrWorld->GetStreamingLevels())
-	//{
-	//	UE_LOG(LogTemp, Log, TEXT("\t\t\t%s"), *StreamingLevel->GetName());
-	//}
-	//UE_LOG(LogTemp, Log, TEXT("***"));
-
-
-	/* UOBJECTS INFO */
-	//UE_LOG(LogTemp, Log, TEXT("%s::%d UObject Infos:"), *FString(__FUNCTION__), __LINE__);
-	LogObjectInfo(CurrWorld);
-	UE_LOG(LogTemp, Log, TEXT("***"));
-
-	///* SELECTED ACTORS */
-	//UE_LOG(LogTemp, Log, TEXT("%s::%d Selected actors: "), *FString(__func__), __LINE__);
-	//for (const auto Act : GetSelectedActors())
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("\t\t\t%s"), *Act->GetName());
-	//}
-	//UE_LOG(LogTemp, Log, TEXT("***"));
-
-	//UE_LOG(LogTemp, Error, TEXT("%s::%d *** -END- GenericButton ***"), *FString(__FUNCTION__), __LINE__);
+	////UE_LOG(LogTemp, Error, TEXT("%s::%d *** -END- GenericButton ***"), *FString(__FUNCTION__), __LINE__);
 	return FReply::Handled();
 }
 

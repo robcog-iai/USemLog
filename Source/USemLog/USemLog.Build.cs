@@ -51,9 +51,10 @@ public class USemLog : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
+				"Core",				
 				"MongoC",						// SL_WITH_LIBMONGO_C                
-				"UProtobuf", 					// SL_WITH_PROTOBUF
+				"UProtobuf", 					// SL_WITH_PROTO
+				//"UProtoMsgs", 					// SL_WITH_PROTO_MSGS
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -66,6 +67,7 @@ public class USemLog : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"Landscape",
 				"WebSockets",
 				//"Landscape", "AIModule",	// whitelisted actors when setting the world to visual only
 				//"UConversions",				// SL_WITH_ROS_CONVERSIONS
@@ -103,7 +105,8 @@ public class USemLog : ModuleRules
 		SetDependencyPrepreocessorDefinition("MongoCxx", "SL_WITH_LIBMONGO_CXX");
 		SetDependencyPrepreocessorDefinition("SRanipal", "SL_WITH_EYE_TRACKING");
 		SetDependencyPrepreocessorDefinition("SlicingLogic", "SL_WITH_SLICING");
-		SetDependencyPrepreocessorDefinition("UProtobuf", "SL_WITH_PROTOBUF");
+		SetDependencyPrepreocessorDefinition("UProtobuf", "SL_WITH_PROTO");
+		SetDependencyPrepreocessorDefinition("UProtoMsgs", "SL_WITH_PROTO_MSGS");
 		SetDependencyPrepreocessorDefinition("UROSBridge", "SL_WITH_ROSBRIDGE");
 
 		string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));

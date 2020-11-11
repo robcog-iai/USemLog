@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Viz/Markers/SLVizBaseMarker.h"
+#include "Viz/SLVizStructs.h"
 #include "SLVizSkeletalMeshMarker.generated.h"
 
 // Forward declarations
@@ -45,7 +46,8 @@ public:
 	void AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses);
 
 	// Add instances with timeline update
-	void AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses, float Duration, bool bLoop, float UpdateRate = -1.f);
+	void AddInstances(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
+		const FSLVizTimelineParams& TimelineParams);
 
 	//~ Begin ActorComponent Interface
 	// Unregister the component, remove it from its outer Actor's Components array and mark for pending kill
@@ -64,17 +66,23 @@ protected:
 	virtual void ResetPoses() override;
 	/* End VizMarker interface */
 
-	// Update intial timeline iteration (create the instances)
-	void UpdateInitialTimeline(float DeltaTime);
+	//// Update intial timeline iteration (create the instances)
+	//void UpdateInitialTimeline(float DeltaTime);
 
-	// Update loop timeline (set instaces visibility)
-	void UpdateLoopTimeline(float DeltaTime);
+	//// Update loop timeline (set instaces visibility)
+	//void UpdateLoopTimeline(float DeltaTime);
 
 	// Set instances visibility to false
 	void HideInstances();
 
 	// Clear the timeline and the related members
 	void ClearAndStopTimeline();
+
+	// Update timeline with the given number of new instances
+	void UpdateTimeline(int32 NumNewInstances);
+
+	// Update timeline with max number of instances
+	void UpdateTimelineWithMaxNumInstances(int32 NumNewInstances);
 
 	// Set visual without the materials (avoid boilerplate code)
 	void SetPoseableMeshComponentVisual(USkeletalMesh* SkelMesh);
@@ -84,11 +92,11 @@ protected:
 
 protected:
 	// Poseable mesh reference
-	//UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	UPoseableMeshComponent* PMCRef;
 
 	// Skeletal instances
-	//UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	TArray<UPoseableMeshComponent*> PMCInstances;
 
 	// Timeline poses

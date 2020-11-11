@@ -72,6 +72,35 @@ void ASLIndividualManager::PostEditChangeProperty(struct FPropertyChangedEvent& 
 		bResetButtonHack = false;
 		InitReset();
 	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bFindIdButtonHack))
+	{
+		bFindIdButtonHack = false;
+		if (FindIdValue.IsEmpty())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Id value is empty, set value first.. "), *FString(__FUNCTION__), __LINE__);
+			return;
+		}
+		
+		if (auto Individual = GetIndividual(FindIdValue))
+		{
+			if (AActor* ParentActor = Individual->GetParentActor())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual %s ParentActor=%s.. "),
+					*FString(__FUNCTION__), __LINE__, *FindIdValue, *ParentActor->GetName());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Individual %s has no valid parent actor set, OuterOuter=%s.. "),
+					*FString(__FUNCTION__), __LINE__, *FindIdValue, *Individual->GetOuter()->GetOuter()->GetName());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Individual %s could not be found.. "), *FString(__FUNCTION__), __LINE__, *FindIdValue);
+		}
+
+	}
+
 }
 #endif // WITH_EDITOR
 

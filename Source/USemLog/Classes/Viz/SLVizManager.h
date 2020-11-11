@@ -39,7 +39,7 @@ protected:
 
 public:
 	// Load required managers
-	bool Init();
+	void Init();
 
 	// Check if the manager is initialized
 	bool IsInit() const { return bIsInit; };
@@ -47,15 +47,17 @@ public:
 	// Clear any created markers / viz components
 	void Reset();
 
+	// Get the individual manager
+	ASLIndividualManager* GetIndividualManager() const { return IndividualManager; };
 
 	/* Highlights */
 	// Highlight the individual (returns false if the individual is not found or is not of visual type)
 	bool HighlightIndividual(const FString& Id,
-		const FLinearColor& Color = FLinearColor::Green, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+		const FLinearColor& Color = FLinearColor::Green, ESLVizMaterialType MaterialType = ESLVizMaterialType::Translucent);
 
 	// Change the visual values of the highligted individual
 	bool UpdateIndividualHighlight(const FString& Id,
-		const FLinearColor& Color, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+		const FLinearColor& Color, ESLVizMaterialType MaterialType = ESLVizMaterialType::Translucent);
 
 	// Remove highlight from individual (returns false if the individual not found or it is not highlighted)
 	bool RemoveIndividualHighlight(const FString& Id);
@@ -74,7 +76,7 @@ public:
 	bool CreatePrimitiveMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		ESLVizPrimitiveMarkerType PrimitiveType, float Size,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 
 	/* Static mesh markers */
@@ -89,12 +91,12 @@ public:
 	// Create a timeline marker by cloning the visual of the given individual (use original materials)
 	bool CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		const FString& IndividualId,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a timeline marker by cloning the visual of the given individual
 	bool CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 
 	/* Skeletal mesh markers */
@@ -113,14 +115,14 @@ public:
 	bool CreateSkeletalMeshMarkerTimeline(const FString& MarkerId,
 		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		const FString& IndividualId,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a timeline by cloning the visual of the given skeletal individual
 	bool CreateSkeletalMeshMarkerTimeline(const FString& MarkerId,
 		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 		const FString& IndividualId,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	/* Skeletal bone mesh markers */
 	// Create a marker by cloning the visual of the given individual (use original materials)
@@ -135,13 +137,13 @@ public:
 	// Create a timeline by cloning the visual (bone only) of the given skeletal individual (use original materials)
 	bool CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		const FString& IndividualId,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a timeline by cloning the visual (bone only) of the given skeletal individual
 	bool CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
 		const FString& IndividualId,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType,
-		float Duration, bool bLoop, float UpdateRate = -1.f);
+		const FSLVizTimelineParams& TimelineParams);
 
 	// Remove marker with the given id
 	bool RemoveMarker(const FString& Id);
@@ -156,8 +158,8 @@ public:
 	// Check if world is set for episode replay
 	bool IsWorldConvertedToVisualizationMode() const;
 
-	// Check if the episode is already cached
-	void CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData);
+	// Cache the mongo data into an episode format
+	bool CacheEpisodeData(const FString& Id, const TArray<TPair<float, TMap<FString, FTransform>>>& InMongoEpisodeData);
 
 	// Check if the episode is already cached
 	bool IsEpisodeCached(const FString& Id) const { return CachedEpisodeData.Contains(Id); };

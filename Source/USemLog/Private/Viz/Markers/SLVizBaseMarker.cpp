@@ -10,9 +10,15 @@
 USLVizBaseMarker::USLVizBaseMarker()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+
 	LoadAssetsContainer();
+
 	MaterialType = ESLVizMaterialType::NONE;
 	VisualColor = FLinearColor::Transparent; // (0,0,0,0)
+
+	TimelineIndex = INDEX_NONE;
+	TimelineMaxNumInstances = INDEX_NONE;
+	bLoopTimeline = false;
 }
 
 // Update the visual color property

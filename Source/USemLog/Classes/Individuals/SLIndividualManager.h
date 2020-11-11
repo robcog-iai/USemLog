@@ -188,11 +188,19 @@ private:
 	bool bLoadButtonHack = false;
 
 	// Triggered call reset argument
-	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bResetFlagButtonHack = false;
 
 	// Triggers a reset call
-	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bResetButtonHack = false;
+
+	// Searches for id value in the world
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	FString FindIdValue = "";
+
+	// Triggers searching for the id
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	bool bFindIdButtonHack = false;
 };
 

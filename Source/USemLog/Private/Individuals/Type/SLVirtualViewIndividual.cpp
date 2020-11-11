@@ -3,7 +3,6 @@
 
 #include "Individuals/Type/SLVirtualViewIndividual.h"
 
-
 // Ctor
 USLVirtualViewIndividual::USLVirtualViewIndividual()
 {

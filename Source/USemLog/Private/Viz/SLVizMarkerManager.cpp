@@ -91,21 +91,21 @@ USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarker(const TArray
 // Create a static mesh visual marker timeline at the given poses
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarkerTimeline(const TArray<FTransform>& Poses, UStaticMesh* SM,
 	const FLinearColor& InColor, ESLVizMaterialType MaterialType,
-	float Duration, bool bLoop, float UpdateRate)
+	const FSLVizTimelineParams& TimelineParams)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
 	Marker->SetVisual(SM, InColor, MaterialType);
-	Marker->AddInstances(Poses, Duration, bLoop, UpdateRate);
+	Marker->AddInstances(Poses, TimelineParams);
 	return Marker;
 }
 
 // Create a static mesh visual marker timeline at the given poses (use original material)
 USLVizStaticMeshMarker* ASLVizMarkerManager::CreateStaticMeshMarkerTimeline(const TArray<FTransform>& Poses, UStaticMesh* SM,
-	float Duration, bool bLoop, float UpdateRate)
+	const FSLVizTimelineParams& TimelineParams)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizStaticMeshMarker>(this);
 	Marker->SetVisual(SM);
-	Marker->AddInstances(Poses, Duration, bLoop, UpdateRate);
+	Marker->AddInstances(Poses, TimelineParams);
 	return Marker;
 }
 
@@ -137,11 +137,11 @@ USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarker(const TArray<F
 USLVizPrimitiveMarker* ASLVizMarkerManager::CreatePrimitiveMarkerTimeline(const TArray<FTransform>& Poses, 
 	ESLVizPrimitiveMarkerType PrimitiveType, float Size, 
 	const FLinearColor& InColor, ESLVizMaterialType MaterialType,
-	float Duration, bool bLoop, float UpdateRate)
+	const FSLVizTimelineParams& TimelineParams)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizPrimitiveMarker>(this);
 	Marker->SetVisual(PrimitiveType, Size, InColor, MaterialType);
-	Marker->AddInstances(Poses, Duration, bLoop, UpdateRate);
+	Marker->AddInstances(Poses, TimelineParams);
 	return Marker;
 }
 
@@ -187,11 +187,11 @@ USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarker(const TArray
 }
 
 // Create a skeletal mesh based timeline marker at the given poses (use original material)
-USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarkerTimeline(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses, USkeletalMesh* SkelMesh, float Duration, bool bLoop, float UpdateRate)
+USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarkerTimeline(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses, USkeletalMesh* SkelMesh, const FSLVizTimelineParams& TimelineParams)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
 	Marker->SetVisual(SkelMesh);
-	Marker->AddInstances(SkeletalPoses, Duration, bLoop, UpdateRate);
+	Marker->AddInstances(SkeletalPoses, TimelineParams);
 	return Marker;
 }
 
@@ -199,11 +199,11 @@ USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarkerTimeline(cons
 USLVizSkeletalMeshMarker* ASLVizMarkerManager::CreateSkeletalMarkerTimeline(const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
 	USkeletalMesh* SkelMesh,
 	const FLinearColor& InColor, ESLVizMaterialType MaterialType,
-	float Duration, bool bLoop, float UpdateRate)
+	const FSLVizTimelineParams& TimelineParams)
 {
 	auto Marker = CreateAndAddNewMarker<USLVizSkeletalMeshMarker>(this);
 	Marker->SetVisual(SkelMesh, InColor, MaterialType);
-	Marker->AddInstances(SkeletalPoses, Duration, bLoop, UpdateRate);
+	Marker->AddInstances(SkeletalPoses, TimelineParams);
 	return Marker;
 }
 

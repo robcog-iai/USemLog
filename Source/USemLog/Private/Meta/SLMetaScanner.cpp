@@ -4,8 +4,6 @@
 #include "Meta/SLMetaScanner.h"
 #include "Meta/SLMetaScannerStructs.h"
 #include "Monitors/SLContactMonitorInterface.h"
-#include "SLMetadataLogger.h"
-
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
 #include "Async.h"
@@ -57,15 +55,15 @@ void USLMetaScanner::Init(const FString& InTaskId, FSLMetaScannerParams ScanPara
 {
 	if (!bIsInit)
 	{
-		// Check if owner is of type USLMetadataLogger, used to access the mongodb calls
-		if(USLMetadataLogger* MLOuter = Cast<USLMetadataLogger>(GetOuter()))
-		{
-			MetadataLoggerParent = MLOuter;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Parent is not of type USLMetadataLogger.. aborting.."), *FString(__func__), __LINE__);
-		}
+		//// Check if owner is of type USLMetadataLogger, used to access the mongodb calls
+		//if(USLMetadataLogger* MLOuter = Cast<USLMetadataLogger>(GetOuter()))
+		//{
+		//	MetadataLoggerParent = MLOuter;
+		//}
+		//else
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Parent is not of type USLMetadataLogger.. aborting.."), *FString(__func__), __LINE__);
+		//}
 		
 		// Check if the scans should be stored locally as well
 		if(ScanParams.bIncludeScansLocally)
@@ -129,7 +127,7 @@ void USLMetaScanner::Init(const FString& InTaskId, FSLMetaScannerParams ScanPara
 
 		// TODO different approach, store gridfs oids in an array, and update the db after each finished item
 		// Open the first scan document in mongodb
-		MetadataLoggerParent->StartScanEntry(ScanItems[CurrItemIdx].Value, ScanParams.Resolution.X, ScanParams.Resolution.Y);
+		//MetadataLoggerParent->StartScanEntry(ScanItems[CurrItemIdx].Value, ScanParams.Resolution.X, ScanParams.Resolution.Y);
 
 		// Set the screenshot resolution;
 		InitScreenshotResolution(ScanParams.Resolution);
@@ -250,7 +248,7 @@ void USLMetaScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		// Check for next camera poses
 		if (GotoNextScanPose())
 		{
-			MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
+			//MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
 			ScanPoseData.Images.Empty();
 			ScanPoseData.CameraPose = CameraPoseActor->GetActorTransform(); //ScanPoses[CurrPoseIdx];
 
@@ -258,9 +256,9 @@ void USLMetaScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 		}
 		else
 		{
-			MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
+			//MetadataLoggerParent->AddScanPoseEntry(ScanPoseData);
 			ScanPoseData.Images.Empty();
-			MetadataLoggerParent->FinishScanEntry();
+			//MetadataLoggerParent->FinishScanEntry();
 
 			if (SetupNextItem())
 			{
@@ -274,7 +272,7 @@ void USLMetaScanner::ScreenshotCB(int32 SizeX, int32 SizeY, const TArray<FColor>
 				// No other scan poses found, set next item and first camera scan pose
 				GotoFirstScanPose();
 
-				MetadataLoggerParent->StartScanEntry(ScanItems[CurrItemIdx].Value, SizeX, SizeY);
+				//MetadataLoggerParent->StartScanEntry(ScanItems[CurrItemIdx].Value, SizeX, SizeY);
 				ScanPoseData.CameraPose = CameraPoseActor->GetActorTransform(); //ScanPoses[CurrPoseIdx];
 
 				RequestScreenshot();

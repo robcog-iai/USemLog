@@ -113,12 +113,13 @@ bool FSLVizEpisodeUtils::BuildEpisodeData(ASLIndividualManager* IndividualManage
 	OutVizEpisodeData.FullFrames.Emplace(FullFrameData);
 	OutVizEpisodeData.CompactFrames.Emplace(FullFrameData);
 
-
 	/* Process the following frames */
 	// Update full frame with the new transform values
 	// Create compact frame holding only the changes fromt he previous frame
 	for (int32 FrameIndex = 1; FrameIndex < InMongoEpisodeData.Num(); ++FrameIndex)
 	{
+		if (FrameIndex % 250 == 0) { UE_LOG(LogTemp, Log, TEXT(" processing frame %d / %d .."),  FrameIndex, InMongoEpisodeData.Num()); }
+
 		// TODO will emplace make a copy, or one needs to make one here ?
 		//FSLVizEpisodeFrameData PrevFrameCopy = FullFrameData;
 		FSLVizEpisodeFrameData CompactFrameData;
