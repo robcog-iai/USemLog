@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "IWebSocket.h"
 #include "Containers/Queue.h"
+#include "SLKRResponseStruct.h"
 #include <string>
 
 // Triggered when a new messages is added to the queue
@@ -42,7 +43,7 @@ public:
 	void Clear();
 
 	// Send message via websocket
-	void SendResponse(const FString& StrToSend);
+	void SendResponse(const FSLKRResponse& Response);
 
 protected:
 	/* IWebSocket delegate handlers */
@@ -60,9 +61,6 @@ protected:
 
 	// Called when the full data has been received
 	void HandleWebSocketFullData(const uint8* Data, SIZE_T Length);
-
-	// Append element to uint8 array and handle escape character
-	void AppendToUInt8Array(TArray<uint8>& Out, uint8* In, SIZE_T Length, bool bShouldEscape);
 
 public:
 	// Triggered when a new processed message is added to the queue
