@@ -59,7 +59,8 @@ void ASLCVMaskCalibrator::BeginPlay()
 
 	if (bIgnore)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's ignore flag is true, skipping"), *FString(__FUNCTION__), __LINE__, *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's ignore flag is true, skipping.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
@@ -145,7 +146,8 @@ void ASLCVMaskCalibrator::Init()
 	ViewportClient = GetWorld()->GetGameViewport();
 	if (!ViewportClient)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access the GameViewport.."), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not access the GameViewport.."),
+			*FString(__func__), __LINE__, *GetName());
 		return;
 	}
 
@@ -193,7 +195,7 @@ void ASLCVMaskCalibrator::Start()
 	}
 
 	// Set the first individual
-	if (!SetNextIndividual())
+	if (!SetNextView())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not set the first individual.."), *FString(__func__), __LINE__);
 		return;
@@ -226,7 +228,7 @@ void ASLCVMaskCalibrator::Finish(bool bForced)
 
 
 	// Start calibrating the individuals
-	IndividualIdx = 0;
+	ViewIdx = 0;
 	SetActorTickEnabled(false);
 
 	bIsStarted = false;
@@ -262,26 +264,26 @@ void ASLCVMaskCalibrator::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, c
 	}
 
 	// Set the individuals calibrated/rendered color
-	if (Individuals.IsValidIndex(IndividualIdx))
+	if (Individuals.IsValidIndex(ViewIdx))
 	{
-		USLVisibleIndividual* VI = Individuals[IndividualIdx];
+		USLVisibleIndividual* VI = Individuals[ViewIdx];
 		VI->SetCalibratedVisualMaskValue(GetCalibratedMask(InBitmap));
 		if (ApplyChangesToEditorIndividual(VI))
 		{
 			UE_LOG(LogTemp, Log, TEXT("%s::%d::%.4f\t[%d/%d]\t%s\t calibrated:\t%s->%s;"),
-				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), IndividualIdx, Individuals.Num(),
+				*FString(__FUNCTION__), __LINE__, GetWorld()->GetTimeSeconds(), ViewIdx, Individuals.Num(),
 				*VI->GetParentActor()->GetName(), *VI->GetVisualMaskValue(), *VI->GetCalibratedVisualMaskValue());
 		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Index %d/%d is not valid, this should not happen.."),
-			*FString(__FUNCTION__), __LINE__, IndividualIdx, Individuals.Num());
+			*FString(__FUNCTION__), __LINE__, ViewIdx, Individuals.Num());
 		return;
 	}
 
 	// Goto next individual
-	if (SetNextIndividual())
+	if (SetNextView())
 	{
 		RequestScreenshotAsync();
 	}
@@ -294,15 +296,15 @@ void ASLCVMaskCalibrator::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, c
 }
 
 // Set the next individual to calibrate
-bool ASLCVMaskCalibrator::SetNextIndividual()
+bool ASLCVMaskCalibrator::SetNextView()
 {
-	IndividualIdx++;
-	if (Individuals.IsValidIndex(IndividualIdx))
+	ViewIdx++;
+	if (Individuals.IsValidIndex(ViewIdx))
 	{
-		auto VI = Individuals[IndividualIdx];
+		auto VI = Individuals[ViewIdx];
 
 		// Set image name
-		CurrImageName = FString::FromInt(IndividualIdx)
+		CurrImageName = FString::FromInt(ViewIdx)
 			+ "_" + FString::FromInt(Individuals.Num())
 			+ VI->GetIdValue();
 
@@ -321,7 +323,7 @@ bool ASLCVMaskCalibrator::SetNextIndividual()
 	}
 	else
 	{
-		IndividualIdx = INDEX_NONE;
+		ViewIdx = INDEX_NONE;
 		return false;
 	}
 }

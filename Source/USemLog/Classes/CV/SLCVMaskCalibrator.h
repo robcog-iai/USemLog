@@ -64,7 +64,7 @@ protected:
 	void ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap);
 
 	// Set the next individual to calibrate
-	bool SetNextIndividual();
+	bool SetNextView();
 
 	// Get the calibrated color from the rendered screenshot image
 	FString GetCalibratedMask(const TArray<FColor>& Bitmap);
@@ -114,7 +114,7 @@ protected:
 
 	// Folder to store the images in
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString TaskId;
+	FString TaskId = "DefaultTaskId";
 
 	// Keeps access to all the individuals in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
@@ -143,7 +143,7 @@ private:
 	TArray<USLVisibleIndividual*> Individuals;
 
 	// Current individual index in the array
-	int32 IndividualIdx = INDEX_NONE;
+	int32 ViewIdx = INDEX_NONE;
 
 	// The name of the current image
 	FString CurrImageName;

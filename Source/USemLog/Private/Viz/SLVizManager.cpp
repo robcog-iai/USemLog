@@ -318,7 +318,7 @@ bool ASLVizManager::CreatePrimitiveMarkerTimeline(const FString& MarkerId, const
 
 /* Static mesh */
 // Create a marker by cloning the visual of the given individual (use original materials)
-bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId)
+bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& ViewNameString)
 {
 	if (!bIsInit)
 	{
@@ -333,7 +333,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto RI = Cast<USLRigidIndividual>(Individual))
 		{
@@ -347,7 +347,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -355,7 +355,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 }
 
 // Create a marker by cloning the visual of the given individual
-bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId,
+bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& ViewNameString,
 	const FLinearColor& Color, ESLVizMaterialType MaterialType)
 {
 	if (!bIsInit)
@@ -371,7 +371,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto RI = Cast<USLRigidIndividual>(Individual))
 		{
@@ -385,7 +385,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -393,7 +393,7 @@ bool ASLVizManager::CreateStaticMeshMarker(const FString& MarkerId, const TArray
 }
 
 // Create a timeline marker by cloning the visual of the given individual (use original materials)
-bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId,
+bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& ViewNameString,
 	const FSLVizTimelineParams& TimelineParams)
 {
 	if (!bIsInit)
@@ -409,7 +409,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto RI = Cast<USLRigidIndividual>(Individual))
 		{
@@ -423,7 +423,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -432,7 +432,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 
 // Create a timeline marker by cloning the visual of the given individual
 bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
-	const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType,
+	const FString& ViewNameString, const FLinearColor& Color, ESLVizMaterialType MaterialType,
 	const FSLVizTimelineParams& TimelineParams)
 {
 	if (!bIsInit)
@@ -448,7 +448,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto RI = Cast<USLRigidIndividual>(Individual))
 		{
@@ -462,7 +462,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of rigid visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -474,7 +474,7 @@ bool ASLVizManager::CreateStaticMeshMarkerTimeline(const FString& MarkerId, cons
 // Create a marker by cloning the visual of the given skeletal individual (use original materials)
 bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 	const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-	const FString& IndividualId)
+	const FString& ViewNameString)
 {
 	if (!bIsInit)
 	{
@@ -489,7 +489,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
 		{
@@ -503,7 +503,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -513,7 +513,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 // Create a marker by cloning the visual of the given skeletal individual
 bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 	const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-	const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType)
+	const FString& ViewNameString, const FLinearColor& Color, ESLVizMaterialType MaterialType)
 {
 	if (!bIsInit)
 	{
@@ -528,7 +528,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
 		{
@@ -542,7 +542,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -551,7 +551,7 @@ bool ASLVizManager::CreateSkeletalMeshMarker(const FString& MarkerId,
 
 // Create a timeline by cloning the visual of the given skeletal individual (use original materials)
 bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-	const FString& IndividualId, const FSLVizTimelineParams& TimelineParams)
+	const FString& ViewNameString, const FSLVizTimelineParams& TimelineParams)
 {
 	if (!bIsInit)
 	{
@@ -566,7 +566,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
 		{
@@ -581,7 +581,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -590,7 +590,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 
 // Create a timeline by cloning the visual of the given skeletal individual
 bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-	const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType,
+	const FString& ViewNameString, const FLinearColor& Color, ESLVizMaterialType MaterialType,
 	const FSLVizTimelineParams& TimelineParams)
 {
 	if (!bIsInit)
@@ -606,7 +606,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto SkI = Cast<USLSkeletalIndividual>(Individual))
 		{
@@ -621,7 +621,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -629,7 +629,7 @@ bool ASLVizManager::CreateSkeletalMeshMarkerTimeline(const FString& MarkerId, co
 }
 
 // Create a marker by cloning the visual of the given individual (use original materials)
-bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId)
+bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& ViewNameString)
 {
 	if (!bIsInit)
 	{
@@ -644,7 +644,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto BI = Cast<USLBoneIndividual>(Individual))
 		{
@@ -669,7 +669,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -677,7 +677,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 }
 
 // Create a marker by cloning the visual of the given individual
-bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType)
+bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& ViewNameString, const FLinearColor& Color, ESLVizMaterialType MaterialType)
 {
 	// TODO
 	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO "), *FString(__FUNCTION__), __LINE__);
@@ -695,7 +695,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 		return false;
 	}
 
-	if (auto Individual = IndividualManager->GetIndividual(IndividualId))
+	if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
 	{
 		if (auto BI = Cast<USLBoneIndividual>(Individual))
 		{
@@ -720,7 +720,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s individual (Id=%s) is not of skeletal visible type, cannot create a clone marker.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualId);
+				*FString(__FUNCTION__), __LINE__, *GetName(), *ViewNameString);
 			return false;
 		}
 	}
@@ -728,7 +728,7 @@ bool ASLVizManager::CreateBoneMeshMarker(const FString& MarkerId, const TArray<F
 }
 
 // Create a timeline marker by cloning the visual of the given individual
-bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, const FSLVizTimelineParams& TimelineParams)
+bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& ViewNameString, const FSLVizTimelineParams& TimelineParams)
 {
 	// TODO
 	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO "), *FString(__FUNCTION__), __LINE__);
@@ -736,7 +736,7 @@ bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const 
 }
 
 // Create a timeline marker by cloning the visual of the given individual
-bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType, const FSLVizTimelineParams& TimelineParams)
+bool ASLVizManager::CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses, const FString& ViewNameString, const FLinearColor& Color, ESLVizMaterialType MaterialType, const FSLVizTimelineParams& TimelineParams)
 {
 	// TODO
 	UE_LOG(LogTemp, Error, TEXT("%s::%d TODO "), *FString(__FUNCTION__), __LINE__);

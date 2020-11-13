@@ -185,9 +185,9 @@ void USLMetaScanner::Finish()
 void USLMetaScanner::RequestScreenshot()
 {
 	CurrScanName = /*FString::FromInt(CurrItemIdx) + "_" + */ScanItems[CurrItemIdx].Value + "_" + FString::FromInt(CurrPoseIdx);
-	if (!ViewModePostfix.IsEmpty())
+	if (!ViewModeString.IsEmpty())
 	{
-		CurrScanName.Append("_" + ViewModePostfix);
+		CurrScanName.Append("_" + ViewModeString);
 	}
 
 	GetHighResScreenshotConfig().FilenameOverride = CurrScanName;
@@ -721,7 +721,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 		}
-		ViewModePostfix = "C";
+		ViewModeString = "C";
 	}
 	else if(Mode == ESLMetaScannerViewMode::Unlit)
 	{
@@ -743,7 +743,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
-		ViewModePostfix = "U";
+		ViewModeString = "U";
 	}
 	else if(Mode == ESLMetaScannerViewMode::White)
 	{
@@ -768,7 +768,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
-		ViewModePostfix = "M";
+		ViewModeString = "M";
 	}
 	else if(Mode == ESLMetaScannerViewMode::Depth)
 	{
@@ -801,7 +801,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
 		}
-		ViewModePostfix = "D";
+		ViewModeString = "D";
 	}
 	else if(Mode == ESLMetaScannerViewMode::Normal)
 	{
@@ -834,7 +834,7 @@ void USLMetaScanner::ApplyViewMode(ESLMetaScannerViewMode Mode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("WorldNormal"));
 		}
-		ViewModePostfix = "N";
+		ViewModeString = "N";
 	}
 
 	// Cache as previous view mode
@@ -906,7 +906,7 @@ void USLMetaScanner::QuitEditor()
 // Save the compressed screenshot image locally
 void USLMetaScanner::SaveImageLocally(const TArray<uint8>& CompressedBitmap)
 {
-	FString ItemClassFolder = ScanItems[CurrItemIdx].Value + "_" + ViewModePostfix + "/";
+	FString ItemClassFolder = ScanItems[CurrItemIdx].Value + "_" + ViewModeString + "/";
 	FString Path = FPaths::ProjectDir() + SaveLocallyFolderName + ItemClassFolder + CurrScanName + ".png";
 	FPaths::RemoveDuplicateSlashes(Path);
 	FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);

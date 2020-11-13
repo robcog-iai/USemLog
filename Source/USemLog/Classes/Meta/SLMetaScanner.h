@@ -156,7 +156,7 @@ private:
 	FString CurrScanName;
 
 	// Current scan view mode postfix
-	FString ViewModePostfix;
+	FString ViewModeString;
 
 	// Convenience actor for setting the camera pose (SetViewTarget(InActor))
 	UPROPERTY() // Avoid GC

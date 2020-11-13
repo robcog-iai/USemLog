@@ -12,6 +12,10 @@
 #include "Engine.h"
 
 #if WITH_EDITOR
+#include "Engine/Selection.h"
+#include "Editor.h"
+#include "Individuals/SLIndividualUtils.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 #include "Components/BillboardComponent.h"
 #endif // WITH_EDITOR
 
@@ -23,6 +27,9 @@ ASLCVScanner::ASLCVScanner()
 
 	bIgnore = true;
 	bSaveToFile = false;
+	bPrintProgress = false;
+	bUseActorNamesForFolders = true;
+	bScanOnlySelectedIndividuals = true;
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
@@ -76,6 +83,49 @@ void ASLCVScanner::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
+#if WITH_EDITOR
+// Called when a property is changed in the editor
+void ASLCVScanner::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property name
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+		PropertyChangedEvent.Property->GetFName() : NAME_None;
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLCVScanner, bAddSelectedIdsButton))
+	{
+		bAddSelectedIdsButton = false;
+		if (bOverwriteSelectedIds)
+		{
+			SelectedIndividualsId.Empty();
+			IdCSVString.ParseIntoArray(SelectedIndividualsId, TEXT(","));
+		}
+		else
+		{
+			TArray<FString> NewIds;
+			IdCSVString.ParseIntoArray(NewIds, TEXT(","));
+			for (const auto& Id : NewIds)
+			{
+				SelectedIndividualsId.AddUnique(Id);
+
+			}			
+		}
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLCVScanner, bRemoveSelectedIdsButton))
+	{
+		bRemoveSelectedIdsButton = false;
+		TArray<FString> NewIds;
+		IdCSVString.ParseIntoArray(NewIds, TEXT(","));
+		for (const auto& Id : NewIds)
+		{
+			SelectedIndividualsId.Remove(Id);
+		}
+	}
+}
+#endif // WITH_EDITOR
+
+
 // Set up any required references and connect to server
 void ASLCVScanner::Init()
 {
@@ -83,6 +133,14 @@ void ASLCVScanner::Init()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is already initialized.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	const FString ScanDir = FPaths::ProjectDir() + "/Scans/" + ViewNameString;
+	if (FPaths::DirectoryExists(ScanDir))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s scan directory %s already exists, mv or rm first.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *ScanDir);
 		return;
 	}
 
@@ -104,17 +162,29 @@ void ASLCVScanner::Init()
 	}
 
 	/* Set the individuals to be scanned */
-	if (!SetScanIndividuals())
+	if (ScanMode == ESLCVScanMode::Individuals)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not find any visible individuals in the world (%s).."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), *GetWorld()->GetName());
-		return;
+		if (!SetScanIndividuals())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not find any visible individuals in the world (%s).."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *GetWorld()->GetName());
+			return;
+		}
+	}
+	else if(ScanMode == ESLCVScanMode::Scenes)
+	{
+		if (Scenes.Num() == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s no scenes found, aborting scan .."),
+				*FString(__func__), __LINE__, *GetName());
+		}
 	}
 
 	// If no view modes are available, add a default one
 	if (ViewModes.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d No view modes found, added default one (lit).."), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s no view modes found, added default one (lit).."),
+			*FString(__func__), __LINE__, *GetName());
 		ViewModes.Add(ESLCVViewMode::Lit);
 	}
 
@@ -124,14 +194,16 @@ void ASLCVScanner::Init()
 		if (!SetMaskClones())
 		{
 			ViewModes.Remove(ESLCVViewMode::Mask);
-			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup mask clones .."), *FString(__func__), __LINE__);
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s Could not setup mask clones .."),
+				*FString(__func__), __LINE__, *GetName());
 		}
 	}
 
 	// Set camera sphere poses
 	if (!SetScanPoses(MaxNumScanPoints))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not setup camera scan points .."), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not setup camera scan points .."),
+			*FString(__func__), __LINE__, *GetName());
 	}
 
 	/* Set the camera pose dummy actor */
@@ -142,6 +214,22 @@ void ASLCVScanner::Init()
 		return;
 	}
 	CameraPoseAndLightActor->SetActorTransform(FTransform(FRotator(0.f, 0.f, 0.f), FVector(0.f, 0.f, 0.f)));
+
+	/* Set render and screenshot params */
+	SetScreenshotResolution(Resolution);
+	SetRenderParams();
+
+	// Set and bind the viewport client screenshot callback
+	ViewportClient = GetWorld()->GetGameViewport();
+	if (!ViewportClient)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not access the GameViewport.."),
+			*FString(__func__), __LINE__, *GetName());
+		return;
+	}
+
+	// Bind screenshot callback
+	ViewportClient->OnScreenshotCaptured().AddUObject(this, &ASLCVScanner::ScreenshotCapturedCallback);
 
 	bIsInit = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully initialized.."),
@@ -165,6 +253,7 @@ void ASLCVScanner::Start()
 		return;
 	}
 
+	// Make sure the player controller can be accessed
 	if (!GetWorld()->GetFirstPlayerController())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s can only be started after begin play (PlayerController==nullptr) .."),
@@ -172,17 +261,9 @@ void ASLCVScanner::Start()
 		return;
 	}
 
-	// Set the first camera pose
-	CameraPoseIdx = INDEX_NONE;
-	SetNextCameraPose();
-
-	// Set the first view mode
-	ViewModeIdx = INDEX_NONE;
-	SetNextViewMode();
-
 	// Set the first individual
-	IndividualIdx = INDEX_NONE;
-	SetNextIndividual();
+	ViewIdx = INDEX_NONE;
+	SetNextView();
 
 	// Make sure pawn is hidden
 	GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
@@ -212,7 +293,6 @@ void ASLCVScanner::Finish(bool bForced)
 		return;
 	}
 
-
 	bIsStarted = false;
 	bIsInit = false;
 	bIsFinished = true;
@@ -234,17 +314,19 @@ void ASLCVScanner::RequestScreenshotAsync()
 // Called when the screenshot is captured
 void ASLCVScanner::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap)
 {
+	// Print to terminal the progress state
+	if (bPrintProgress)
+	{
+		PrintProgress();
+	}
+
 	// Check if the image should be stored locally
 	if (bSaveToFile)
 	{
-		// Compress image
-		TArray<uint8> CompressedBitmap;
-		FImageUtils::CompressImageArray(SizeX, SizeY, InBitmap, CompressedBitmap);
-		FString Path = FPaths::ProjectDir() + "/SL/" + TaskId + "/Scans/" + CurrImageName + ".png";
-		FPaths::RemoveDuplicateSlashes(Path);
-		FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
+		SaveToFile(SizeX, SizeY, InBitmap);
 	}
 
+	// Set and trigger the next shot
 	if (SetNextViewMode())
 	{
 		RequestScreenshotAsync();
@@ -253,26 +335,19 @@ void ASLCVScanner::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TA
 	{
 		if (SetNextCameraPose())
 		{
-			// First view mode
-			SetNextViewMode();
-
 			RequestScreenshotAsync();
 		}
 		else
 		{
-			if (SetNextIndividual())
+			if (SetNextView())
 			{
-				// First view mode
-				SetNextViewMode();
-				// First camera pose
-				SetNextCameraPose();
-
 				RequestScreenshotAsync();
 			}
 			else
 			{
 				UE_LOG(LogTemp, Warning, TEXT("%s::%d::%.4f %s finished, quitting editor.."),
 					*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(), *GetName());
+				Finish();
 				QuitEditor();
 			}
 		}
@@ -285,7 +360,11 @@ bool ASLCVScanner::SetNextViewMode()
 	ViewModeIdx++;
 	if (ViewModes.IsValidIndex(ViewModeIdx))
 	{
-		SetViewMode(ViewModes[ViewModeIdx]);
+		// Apply desired view mode
+		ApplyViewMode(ViewModes[ViewModeIdx]);
+
+		// Set image name
+		SetImageName();
 		return true;
 	}
 	else
@@ -301,12 +380,16 @@ bool ASLCVScanner::SetNextCameraPose()
 	CameraPoseIdx++;
 	if (CameraScanPoses.IsValidIndex(CameraPoseIdx))
 	{
-		FTransform T = CameraScanPoses[CameraPoseIdx];
-		T.SetTranslation(T.GetTranslation() * CurrCameraPoseSphereRadius);
-		CameraPoseAndLightActor->SetActorTransform(T);
-		GetWorld()->GetFirstPlayerController()->SetViewTarget(CameraPoseAndLightActor);
+		// Goto first view mode
+		ViewModeIdx = INDEX_NONE;
+		SetNextViewMode();
 
-		CameraPosePostfix = FString::FromInt(CameraPoseIdx) + "_" + FString::FromInt(CameraScanPoses.Num());
+		// Move camera to the desired pose
+		ApplyCameraPose(CameraScanPoses[CameraPoseIdx]);
+
+		// Set image name
+		CameraPoseIdxString = FString::FromInt(CameraPoseIdx) + "_" + FString::FromInt(CameraScanPoses.Num());
+		SetImageName();
 
 		return true;
 	}
@@ -318,22 +401,74 @@ bool ASLCVScanner::SetNextCameraPose()
 }
 
 // Set next view mode (return false if the last view mode was reached)
-bool ASLCVScanner::SetNextIndividual()
+bool ASLCVScanner::SetNextView()
 {
-	IndividualIdx++;
-	if (Individuals.IsValidIndex(IndividualIdx))
+	ViewIdx++;
+	if (ScanMode == ESLCVScanMode::Individuals)
 	{
+		if (Individuals.IsValidIndex(ViewIdx))
+		{
+			// Update camera distance from individual
+			CalcCameraPoseSphereRadius();
 
-		IndividualPostfix = FString::FromInt(IndividualIdx) + "_" + FString::FromInt(Individuals.Num());
+			// Goto first camera pose
+			CameraPoseIdx = INDEX_NONE;
+			SetNextCameraPose();
 
-		return true;
+			// Move the individual into position
+			ApplyIndividual(Individuals[ViewIdx]);
+
+			// Set individual string
+			ViewNameString = bUseActorNamesForFolders ? Individuals[ViewIdx]->GetParentActor()->GetName() 
+				: Individuals[ViewIdx]->GetIdValue();
+
+			// Set image name
+			ViewIdxString = FString::FromInt(ViewIdx) + "_" + FString::FromInt(Individuals.Num());
+			SetImageName();
+
+			return true;
+		}
+		else
+		{
+			ViewIdx = INDEX_NONE;
+			return false;
+		}
+	}
+	else if (ScanMode == ESLCVScanMode::Scenes)
+	{
+		if (Scenes.IsValidIndex(ViewIdx))
+		{
+			// Update camera distance from individual
+			CalcCameraPoseSphereRadius();
+
+			// Goto first camera pose
+			CameraPoseIdx = INDEX_NONE;
+			SetNextCameraPose();
+
+			// Set the scene individuals in position
+			ApplyScene();
+
+			// Set individual string
+			ViewNameString = Scenes[ViewIdx];
+
+			// Set image name
+			ViewIdxString = FString::FromInt(ViewIdx) + "_" + FString::FromInt(Scenes.Num());
+			SetImageName();
+
+			return true;
+		}
+		else
+		{
+			ViewIdx = INDEX_NONE;
+			return false;
+		}
 	}
 	else
 	{
-		IndividualIdx = INDEX_NONE;
 		return false;
 	}
 }
+
 
 // Quit the editor once the scanning is finished
 void ASLCVScanner::QuitEditor()
@@ -353,7 +488,7 @@ void ASLCVScanner::QuitEditor()
 }
 
 // Apply the selected view mode
-void ASLCVScanner::SetViewMode(ESLCVViewMode NewViewMode)
+void ASLCVScanner::ApplyViewMode(ESLCVViewMode NewViewMode)
 {
 	// No change in the rendering view mode
 	if (NewViewMode == CurrViewmode)
@@ -384,7 +519,7 @@ void ASLCVScanner::SetViewMode(ESLCVViewMode NewViewMode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 		}
-		ViewModePostfix = "L";
+		ViewModeString = "L";
 	}
 	else if (NewViewMode == ESLCVViewMode::Unlit)
 	{
@@ -406,7 +541,7 @@ void ASLCVScanner::SetViewMode(ESLCVViewMode NewViewMode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
-		ViewModePostfix = "U";
+		ViewModeString = "U";
 	}
 	else if (NewViewMode == ESLCVViewMode::Mask)
 	{
@@ -431,7 +566,7 @@ void ASLCVScanner::SetViewMode(ESLCVViewMode NewViewMode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
-		ViewModePostfix = "M";
+		ViewModeString = "M";
 	}
 	else if (NewViewMode == ESLCVViewMode::Depth)
 	{
@@ -464,7 +599,7 @@ void ASLCVScanner::SetViewMode(ESLCVViewMode NewViewMode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
 		}
-		ViewModePostfix = "D";
+		ViewModeString = "D";
 	}
 	else if (NewViewMode == ESLCVViewMode::Normal)
 	{
@@ -497,9 +632,98 @@ void ASLCVScanner::SetViewMode(ESLCVViewMode NewViewMode)
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
 			BufferVisTargetCV->Set(*FString("WorldNormal"));
 		}
-		ViewModePostfix = "N";
+		ViewModeString = "N";
 	}
 	CurrViewmode = NewViewMode;
+}
+
+// Apply the camera pose
+void ASLCVScanner::ApplyCameraPose(FTransform NormalizedTransform)
+{
+	NormalizedTransform.SetTranslation(NormalizedTransform.GetTranslation() * CurrCameraPoseSphereRadius);
+	CameraPoseAndLightActor->SetActorTransform(NormalizedTransform);
+	GetWorld()->GetFirstPlayerController()->SetViewTarget(CameraPoseAndLightActor);
+}
+
+// Apply the individual into position
+void ASLCVScanner::ApplyIndividual(USLVisibleIndividual* Individual)
+{
+	// Hide any previous individual
+	const int32 PrevIdx = ViewIdx - 1;
+	if (Individuals.IsValidIndex(PrevIdx))
+	{
+		auto PrevIndividual = Individuals[PrevIdx];
+		PrevIndividual->GetParentActor()->SetActorHiddenInGame(true);
+		// Hide mask
+		if (auto Clone = IndividualsMaskClones.Find(PrevIndividual))
+		{
+			(*Clone)->SetActorHiddenInGame(true);
+		}
+	}
+
+	// Set current individual (and clone) into position
+	Individual->GetParentActor()->SetActorHiddenInGame(false);
+	FTransform InitialPose = FTransform::Identity;
+	Individual->GetParentActor()->SetActorTransform(InitialPose);
+	if (auto Clone = IndividualsMaskClones.Find(Individual))
+	{
+		(*Clone)->SetActorTransform(InitialPose);
+	}
+}
+
+// Apply the scene into position
+void ASLCVScanner::ApplyScene()
+{
+	UE_LOG(LogTemp, Error, TEXT("%s::%d Applying scene %s .. "),
+		*FString(__FUNCTION__), __LINE__, *Scenes[ViewIdx]);
+}
+
+// Hide mask clone, show original individual
+void ASLCVScanner::ShowOriginalIndividual()
+{
+	if (Individuals.IsValidIndex(ViewIdx))
+	{
+		auto Individual = Individuals[ViewIdx];
+		Individual->GetParentActor()->SetActorHiddenInGame(false);
+		if (auto Clone = IndividualsMaskClones.Find(Individual))
+		{
+			(*Clone)->SetActorHiddenInGame(true);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual clone is not found, this should not happen .."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), ViewIdx, Individuals.Num());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), ViewIdx, Individuals.Num());
+	}
+}
+
+// Hide original individual, show mask clone
+void ASLCVScanner::ShowMaskIndividual()
+{
+	if (Individuals.IsValidIndex(ViewIdx))
+	{
+		auto Individual = Individuals[ViewIdx];
+		Individual->GetParentActor()->SetActorHiddenInGame(true);
+		if (auto Clone = IndividualsMaskClones.Find(Individual))
+		{
+			(*Clone)->SetActorHiddenInGame(false);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual clone is not found, this should not happen .."),
+				*FString(__FUNCTION__), __LINE__, ViewIdx, Individuals.Num());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
+			*FString(__FUNCTION__), __LINE__, ViewIdx, Individuals.Num());
+	}
 }
 
 // Remove detachments and hide all actors in the world
@@ -598,31 +822,41 @@ bool ASLCVScanner::SetIndividualManager()
 // Set the individuals to be scanned
 bool ASLCVScanner::SetScanIndividuals()
 {
-	for (const auto& BI : IndividualManager->GetIndividuals())
+	if (bScanOnlySelectedIndividuals)
 	{
-		if (auto AsVI = Cast<USLVisibleIndividual>(BI))
+		for (const auto& Id : SelectedIndividualsId)
 		{
-			if (auto AsSMA = Cast<AStaticMeshActor>(BI->GetParentActor()))
+			if (auto BI = IndividualManager->GetIndividual(Id))
 			{
-				if (AsSMA->GetStaticMeshComponent()->Bounds.GetSphere().W < MaxBoundsSphereRadius)
+				if (auto AsVI = Cast<USLVisibleIndividual>(BI))
 				{
 					Individuals.Add(AsVI);
 				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is too large to be scanned %f/%f .."),
-						*FString(__FUNCTION__), __LINE__,
-						*AsSMA->GetName(), AsSMA->GetStaticMeshComponent()->Bounds.GetSphere().W, MaxBoundsSphereRadius);
-				}
-
-			}
-			//else if (BI->GetParentActor()->IsA(ASkeletalMeshActor::StaticClass()))
-			//{
-			//	Individuals.Add(AsVI);
-			//}
+			}			
 		}
 	}
-
+	else
+	{
+		for (const auto& BI : IndividualManager->GetIndividuals())
+		{
+			if (auto AsVI = Cast<USLVisibleIndividual>(BI))
+			{
+				if (auto AsSMA = Cast<AStaticMeshActor>(BI->GetParentActor()))
+				{
+					if (AsSMA->GetStaticMeshComponent()->Bounds.GetSphere().W < MaxBoundsSphereRadius)
+					{
+						Individuals.Add(AsVI);
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s' %s is too large to be scanned %f/%f .."),
+							*FString(__FUNCTION__), __LINE__, *GetName(),
+							*AsSMA->GetName(), AsSMA->GetStaticMeshComponent()->Bounds.GetSphere().W, MaxBoundsSphereRadius);
+					}
+				}
+			}
+		}
+	}
 	return Individuals.Num() > 0;
 }
 
@@ -647,7 +881,8 @@ bool ASLCVScanner::SetMaskClones()
 	UMaterial* DefaultMaskMaterial = LoadObject<UMaterial>(this, DynMaskMatAssetPath);
 	if (!DefaultMaskMaterial)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material.."), *FString(__func__), __LINE__);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not load default mask material.."),
+			*FString(__func__), __LINE__, *GetName());
 		return false;
 	}
 	DefaultMaskMaterial->bUsedWithStaticLighting = true;
@@ -655,35 +890,38 @@ bool ASLCVScanner::SetMaskClones()
 
 	// Create the dynamic mask material and set color
 	UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-	DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::Mask);
+	DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::White);
 
-	// Create individual clones
-	for (const auto& VI : Individuals)
+	if (ScanMode == ESLCVScanMode::Individuals)
 	{
-		if (auto AsSMA = Cast<AStaticMeshActor>(VI->GetParentActor()))
+		for (const auto& VI : Individuals)
 		{
-			FActorSpawnParameters Parameters;
-			Parameters.Template = AsSMA;
-			Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			//Parameters.Instigator = SMA->GetInstigator();
-			Parameters.Name = FName(*(AsSMA->GetName() + TEXT("_MaskClone")));
-			AStaticMeshActor* SMAClone = GetWorld()->SpawnActor<AStaticMeshActor>(AsSMA->GetClass(), Parameters);
-			if (UStaticMeshComponent* SMC = SMAClone->GetStaticMeshComponent())
+			if (auto AsSMA = Cast<AStaticMeshActor>(VI->GetParentActor()))
 			{
-				for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
+				FActorSpawnParameters Parameters;
+				Parameters.Template = AsSMA;
+				Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+				//Parameters.Instigator = SMA->GetInstigator();
+				Parameters.Name = FName(*(AsSMA->GetName() + TEXT("_MaskClone")));
+				AStaticMeshActor* SMAClone = GetWorld()->SpawnActor<AStaticMeshActor>(AsSMA->GetClass(), Parameters);
+				if (UStaticMeshComponent* SMC = SMAClone->GetStaticMeshComponent())
 				{
-					SMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+					for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
+					{
+						SMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+					}
 				}
+				SMAClone->SetActorHiddenInGame(true);
+				IndividualsMaskClones.Add(VI, SMAClone);
 			}
-			SMAClone->SetActorHiddenInGame(true);
-			IndividualsMaskClones.Add(VI, SMAClone);
 		}
-		//else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(VI->GetParentActor())
-		//{
-		//	// todo
-		//}
 	}
-
+	else if (ScanMode == ESLCVScanMode::Scenes)
+	{
+		for (const auto& Scene : Scenes)
+		{
+		}
+	}
 	return IndividualsMaskClones.Num() > 0;
 }
 
@@ -723,4 +961,73 @@ bool ASLCVScanner::SetScanPoses(uint32 MaxNumPoints/*, float Radius*/)
 	}
 
 	return CameraScanPoses.Num() > 0;
+}
+
+// Set the image name
+void ASLCVScanner::SetImageName()
+{
+	CurrImageName = ViewIdxString + "_" + CameraPoseIdxString + "_" + ViewModeString;
+}
+
+// Calculate camera pose sphere radius (proportionate to the sphere bounds of the visual mesh)
+void ASLCVScanner::CalcCameraPoseSphereRadius()
+{
+	if (ScanMode == ESLCVScanMode::Individuals)
+	{
+		if (Individuals.IsValidIndex(ViewIdx))
+		{
+			if (auto AsSMA = Cast<AStaticMeshActor>(Individuals[ViewIdx]->GetParentActor()))
+			{
+				const float SphereRadius = AsSMA->GetStaticMeshComponent()->Bounds.SphereRadius;
+				CurrCameraPoseSphereRadius = SphereRadius * 1.75f;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual %s is not of a supported type.."),
+					*FString(__FUNCTION__), __LINE__, *GetName(), *Individuals[ViewIdx]->GetParentActor()->GetName());
+
+				FVector BBOrigin;
+				FVector BBBoxExtent;
+				Individuals[ViewIdx]->GetParentActor()->GetActorBounds(false, BBOrigin, BBBoxExtent);
+				CurrCameraPoseSphereRadius = BBBoxExtent.Size() * 1.75;
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), ViewIdx, Individuals.Num());
+		}
+	}
+	else if (ScanMode == ESLCVScanMode::Scenes)
+	{
+		CurrCameraPoseSphereRadius = 200.f;
+	}
+}
+
+// Print progress to terminal
+void ASLCVScanner::PrintProgress() const
+{
+	// Current scan
+	int32 CurrScan = ViewIdx * CameraScanPoses.Num() * ViewModes.Num() 
+		+ CameraPoseIdx * ViewModes.Num() 
+		+ ViewModeIdx + 1;
+	int32 NumScans = Individuals.Num() * CameraScanPoses.Num() * ViewModes.Num();	
+	UE_LOG(LogTemp, Log, TEXT("%s::%d::%f Individual:\t%ld/%ld; CameraPose:\t%ld/%ld; ViewMode=\t%ld/%ld; Scan:\t%ld/%ld;"),
+		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
+		ViewIdx + 1, Individuals.Num(),
+		CameraPoseIdx + 1, CameraScanPoses.Num(),
+		ViewModeIdx + 1, ViewModes.Num(),
+		CurrScan, NumScans );
+}
+
+// Save image to file
+void ASLCVScanner::SaveToFile(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap) const
+{
+	// Compress image
+	TArray<uint8> CompressedBitmap;
+	FImageUtils::CompressImageArray(SizeX, SizeY, InBitmap, CompressedBitmap);
+	const FString RelativeFolderPath = TaskId + "/Scans/" + ViewNameString + "/" + ViewModeString + "/";
+	FString Path = FPaths::ProjectDir() + "/SL/" + RelativeFolderPath + CurrImageName + ".png";
+	FPaths::RemoveDuplicateSlashes(Path);
+	FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 }

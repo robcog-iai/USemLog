@@ -16,6 +16,16 @@ class UMaterialInstanceDynamic;
 class ADirectionalLight;
 
 /**
+* Scan modes
+*/
+UENUM()
+enum class ESLCVScanMode : uint8
+{
+	Individuals				UMETA(DisplayName = "Individuals"),
+	Scenes					UMETA(DisplayName = "Scenes"),
+};
+
+/**
 * View modes
 */
 UENUM()
@@ -51,6 +61,11 @@ protected:
 	// Called when actor removed from game or game ended
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
+
 public:
 	// Set up any required references and connect to server
 	void Init();
@@ -80,23 +95,32 @@ protected:
 	// Set next view mode (return false if the last view mode was reached)
 	bool SetNextViewMode();
 
-	// Set next camera pose (return false if the last pose was reached)
+	// Set next camera pose (return false if the last was reached)
 	bool SetNextCameraPose();
 
-	// Set next individual (return false if the last individual was reached)
-	bool SetNextIndividual();
+	// Set next view (individual or scene) (return false if the last was reached)
+	bool SetNextView();
 
 	//  Quit the editor when finished
 	void QuitEditor();
 
 private:
 	// Apply the selected view mode
-	void SetViewMode(ESLCVViewMode Mode);
+	void ApplyViewMode(ESLCVViewMode Mode);
 
-	// Show original individual
+	// Apply the camera pose
+	void ApplyCameraPose(FTransform NormalizedTransform);
+
+	// Apply the individual into position
+	void ApplyIndividual(USLVisibleIndividual* Individual);
+
+	// Apply the scene into position
+	void ApplyScene();
+
+	// Hide mask clone, show original individual
 	void ShowOriginalIndividual();
 
-	// Show mask individual
+	// Hide original individual, show mask clone
 	void ShowMaskIndividual();
 
 	// Remove detachments and hide all actors in the world
@@ -123,6 +147,18 @@ private:
 	// Generate sphere camera scan poses
 	bool SetScanPoses(uint32 MaxNumPoints/*, float Radius = 1.f*/);
 
+	// Set the image name
+	void SetImageName();
+
+	// Calculate camera pose sphere radius (proportionate to the sphere bounds of the visual mesh)
+	void CalcCameraPoseSphereRadius();
+
+	// Print progress to terminal
+	void PrintProgress() const;
+
+	// Save image to file
+	void SaveToFile(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap) const;
+
 protected:
 	// Skip auto init and start
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -131,6 +167,46 @@ protected:
 	// Save images to file
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bSaveToFile : 1;
+
+	// Save images to file
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bPrintProgress : 1;
+
+	// Use parent actor names for folder names
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bUseActorNamesForFolders : 1;
+
+	// Choose what to scan (individuals or scenes)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	ESLCVScanMode ScanMode = ESLCVScanMode::Individuals;
+
+	// Scan only the selected individuals
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bScanOnlySelectedIndividuals : 1;
+
+	// List of individuals to scan
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bScanOnlySelectedIndividuals && ScanMode==ESLCVScanMode::Individuals"))
+	TArray<FString> SelectedIndividualsId;
+
+	// Add ids from selection button
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	FString IdCSVString;
+
+	// Add ids from selection button
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bAddSelectedIdsButton = false;
+
+	// Remove selected ids from selection button
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bRemoveSelectedIdsButton = false;
+
+	// Overwrite selection
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bOverwriteSelectedIds = false;
+
+	// Scenes to scan
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta=(editcondition="ScanMode==ESLCVScanMode::Scenes"))
+	TArray<FString> Scenes;
 
 	// True when all references are set and it is connected to the server
 	uint8 bIsInit : 1;
@@ -163,7 +239,7 @@ protected:
 
 	// Folder to store the images in
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString TaskId;
+	FString TaskId = "DefaultTaskId";
 
 	// Mongo server ip addres
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -198,7 +274,7 @@ private:
 	float CurrCameraPoseSphereRadius;
 
 	// Current individual index in the array
-	int32 IndividualIdx = INDEX_NONE;
+	int32 ViewIdx = INDEX_NONE;
 
 	// Current camera pose index in the array
 	int32 CameraPoseIdx = INDEX_NONE;
@@ -212,14 +288,17 @@ private:
 	// The name of the current image
 	FString CurrImageName;
 
-	// The view mode post fix to be applied to the image name
-	FString ViewModePostfix;
+	// The individual id (used for the folder name)
+	FString ViewNameString;
+
+	// View mode as string (used as folder and image name)
+	FString ViewModeString;
 
 	// The camera pose post fix to be applied to the image name
-	FString CameraPosePostfix;
+	FString CameraPoseIdxString;
 
 	// The camera pose post fix to be applied to the image name
-	FString IndividualPostfix;
+	FString ViewIdxString;
 
 	/* Constants */
 	static constexpr auto DynMaskMatAssetPath = TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask");

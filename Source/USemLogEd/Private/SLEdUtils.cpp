@@ -133,7 +133,7 @@ void FSLEdUtils::LogIds(const TArray<AActor*>& Actors)
 	{
 		if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(Act))
 		{
-			LogIdsString.Append(BI->GetIdValue()).Append(";");
+			LogIdsString.Append(BI->GetIdValue()).Append(",");
 			Num++;
 		}
 		else

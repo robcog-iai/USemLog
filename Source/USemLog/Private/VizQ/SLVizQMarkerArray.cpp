@@ -164,11 +164,11 @@ void USLVizQMarkerArray::ExecuteImpl(ASLKnowrobManager* KRManager)
 		return;
 	}
 
-	int32 IndividualIdx = 0;
+	int32 ViewIdx = 0;
 	for (const auto& MarkerId : MarkerIds)
 	{
-		const FString Individual = Individuals[IndividualIdx];
-		IndividualIdx++;
+		const FString Individual = Individuals[ViewIdx];
+		ViewIdx++;
 
 		/* Skeletal */
 		if (MeshType == ESLVizQMarkerArrayMeshType::SkeletalMesh)

@@ -209,11 +209,11 @@ bool ASLMongoQueryManager::SetEpisode(const FString& InEpisodeId)
 
 /* Queries */
 // Get the individual pose with task and episode init
-FTransform ASLMongoQueryManager::GetIndividualPoseAt(const FString& InTaskId, const FString& InEpisodeId, const FString& IndividualId, float Ts)
+FTransform ASLMongoQueryManager::GetIndividualPoseAt(const FString& InTaskId, const FString& InEpisodeId, const FString& ViewNameString, float Ts)
 {
 	if (SetTask(InTaskId))
 	{
-		return GetIndividualPoseAt(InEpisodeId, IndividualId, Ts);
+		return GetIndividualPoseAt(InEpisodeId, ViewNameString, Ts);
 	}
 	else
 	{
@@ -223,11 +223,11 @@ FTransform ASLMongoQueryManager::GetIndividualPoseAt(const FString& InTaskId, co
 }
 
 // Get the individual pose with episode init
-FTransform ASLMongoQueryManager::GetIndividualPoseAt(const FString& InEpisodeId, const FString& IndividualId, float Ts)
+FTransform ASLMongoQueryManager::GetIndividualPoseAt(const FString& InEpisodeId, const FString& ViewNameString, float Ts)
 {
 	if (SetEpisode(InEpisodeId))
 	{
-		return GetIndividualPoseAt(IndividualId, Ts);
+		return GetIndividualPoseAt(ViewNameString, Ts);
 	}
 	else
 	{
@@ -237,17 +237,17 @@ FTransform ASLMongoQueryManager::GetIndividualPoseAt(const FString& InEpisodeId,
 }
 
 // Get the individual pose
-FTransform ASLMongoQueryManager::GetIndividualPoseAt(const FString& IndividualId, float Ts) const
+FTransform ASLMongoQueryManager::GetIndividualPoseAt(const FString& ViewNameString, float Ts) const
 {
-	return DBHandler.GetIndividualPoseAt(IndividualId, Ts);
+	return DBHandler.GetIndividualPoseAt(ViewNameString, Ts);
 }
 
 // Get the individual trajectory with task and episode init
-TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& InTaskId, const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT)
+TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& InTaskId, const FString& InEpisodeId, const FString& ViewNameString, float StartTs, float EndTs, float DeltaT)
 {
 	if (SetTask(InTaskId))
 	{
-		return GetIndividualTrajectory(InEpisodeId, IndividualId, StartTs, EndTs, DeltaT);
+		return GetIndividualTrajectory(InEpisodeId, ViewNameString, StartTs, EndTs, DeltaT);
 	}
 	else
 	{
@@ -257,11 +257,11 @@ TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& 
 }
 
 // Get the individual trajectory with episode init
-TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT)
+TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& InEpisodeId, const FString& ViewNameString, float StartTs, float EndTs, float DeltaT)
 {
 	if (SetEpisode(InEpisodeId))
 	{
-		return GetIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
+		return GetIndividualTrajectory(ViewNameString, StartTs, EndTs, DeltaT);
 	}
 	else
 	{
@@ -271,18 +271,18 @@ TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& 
 }
 
 // Get the individual trajectory 
-TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT) const
+TArray<FTransform> ASLMongoQueryManager::GetIndividualTrajectory(const FString& ViewNameString, float StartTs, float EndTs, float DeltaT) const
 {
-	return DBHandler.GetIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
+	return DBHandler.GetIndividualTrajectory(ViewNameString, StartTs, EndTs, DeltaT);
 }
 
 
 // Get skeletal individual pose with task and episode init
-TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& InTaskId, const FString& InEpisodeId, const FString& IndividualId, float Ts)
+TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& InTaskId, const FString& InEpisodeId, const FString& ViewNameString, float Ts)
 {
 	if (SetTask(InTaskId))
 	{
-		return GetSkeletalIndividualPoseAt(InEpisodeId, IndividualId, Ts);
+		return GetSkeletalIndividualPoseAt(InEpisodeId, ViewNameString, Ts);
 	}
 	else
 	{
@@ -292,11 +292,11 @@ TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndi
 }
 
 // Get skeletal individual pose with episode init
-TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& InEpisodeId, const FString& IndividualId, float Ts)
+TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& InEpisodeId, const FString& ViewNameString, float Ts)
 {
 	if (SetEpisode(InEpisodeId))
 	{
-		return GetSkeletalIndividualPoseAt(IndividualId, Ts);
+		return GetSkeletalIndividualPoseAt(ViewNameString, Ts);
 	}
 	else
 	{
@@ -306,17 +306,17 @@ TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndi
 }
 
 // Get skeletal individual pose
-TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& IndividualId, float Ts) const
+TPair<FTransform, TMap<int32, FTransform>> ASLMongoQueryManager::GetSkeletalIndividualPoseAt(const FString& ViewNameString, float Ts) const
 {
-	return DBHandler.GetSkeletalIndividualPoseAt(IndividualId, Ts);	
+	return DBHandler.GetSkeletalIndividualPoseAt(ViewNameString, Ts);	
 }
 
 // Get skeletal individual trajectory with task and episode init
-TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& InTaskId, const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT)
+TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& InTaskId, const FString& InEpisodeId, const FString& ViewNameString, float StartTs, float EndTs, float DeltaT)
 {
 	if (SetTask(InTaskId))
 	{
-		return GetSkeletalIndividualTrajectory(InEpisodeId, IndividualId, StartTs, EndTs, DeltaT);
+		return GetSkeletalIndividualTrajectory(InEpisodeId, ViewNameString, StartTs, EndTs, DeltaT);
 	}
 	else
 	{
@@ -327,11 +327,11 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkel
 }
 
 // Get skeletal individual trajectoru with episode init
-TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& InEpisodeId, const FString& IndividualId, float StartTs, float EndTs, float DeltaT)
+TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& InEpisodeId, const FString& ViewNameString, float StartTs, float EndTs, float DeltaT)
 {
 	if (SetEpisode(InEpisodeId))
 	{
-		return GetSkeletalIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
+		return GetSkeletalIndividualTrajectory(ViewNameString, StartTs, EndTs, DeltaT);
 	}
 	else
 	{
@@ -341,9 +341,9 @@ TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkel
 }
 
 // Get skeletal individual trajectory
-TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& IndividualId, float StartTs, float EndTs, float DeltaT) const
+TArray<TPair<FTransform, TMap<int32, FTransform>>> ASLMongoQueryManager::GetSkeletalIndividualTrajectory(const FString& ViewNameString, float StartTs, float EndTs, float DeltaT) const
 {
-	return DBHandler.GetSkeletalIndividualTrajectory(IndividualId, StartTs, EndTs, DeltaT);
+	return DBHandler.GetSkeletalIndividualTrajectory(ViewNameString, StartTs, EndTs, DeltaT);
 }
 
 // Get the episode data with task and episode init

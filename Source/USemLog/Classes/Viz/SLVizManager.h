@@ -82,20 +82,20 @@ public:
 	/* Static mesh markers */
 	// Create a marker by cloning the visual of the given individual (use original materials)
 	bool CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const FString& IndividualId);
+		const FString& ViewNameString);
 
 	// Create a marker by cloning the visual of the given individual
 	bool CreateStaticMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
+		const FString& ViewNameString, const FLinearColor& Color, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Create a timeline marker by cloning the visual of the given individual (use original materials)
 	bool CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const FString& IndividualId,
+		const FString& ViewNameString,
 		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a timeline marker by cloning the visual of the given individual
 	bool CreateStaticMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const FString& IndividualId, const FLinearColor& Color, ESLVizMaterialType MaterialType,
+		const FString& ViewNameString, const FLinearColor& Color, ESLVizMaterialType MaterialType,
 		const FSLVizTimelineParams& TimelineParams);
 
 
@@ -103,45 +103,45 @@ public:
 	// Create a marker by cloning the visual of the given skeletal individual (use original materials)
 	bool CreateSkeletalMeshMarker(const FString& MarkerId,
 		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-		const FString& IndividualId);
+		const FString& ViewNameString);
 
 	// Create a marker by cloning the visual of the given skeletal individual
 	bool CreateSkeletalMeshMarker(const FString& MarkerId, 
 		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-		const FString& IndividualId,
+		const FString& ViewNameString,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Create a timeline by cloning the visual of the given skeletal individual (use original materials)
 	bool CreateSkeletalMeshMarkerTimeline(const FString& MarkerId,
 		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-		const FString& IndividualId,
+		const FString& ViewNameString,
 		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a timeline by cloning the visual of the given skeletal individual
 	bool CreateSkeletalMeshMarkerTimeline(const FString& MarkerId,
 		const TArray<TPair<FTransform, TMap<int32, FTransform>>>& SkeletalPoses,
-		const FString& IndividualId,
+		const FString& ViewNameString,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType,
 		const FSLVizTimelineParams& TimelineParams);
 
 	/* Skeletal bone mesh markers */
 	// Create a marker by cloning the visual of the given individual (use original materials)
 	bool CreateBoneMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const FString& IndividualId);
+		const FString& ViewNameString);
 
 	// Create a marker by cloning the visual of the given individual
 	bool CreateBoneMeshMarker(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const FString& IndividualId,
+		const FString& ViewNameString,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType = ESLVizMaterialType::Unlit);
 
 	// Create a timeline by cloning the visual (bone only) of the given skeletal individual (use original materials)
 	bool CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const FString& IndividualId,
+		const FString& ViewNameString,
 		const FSLVizTimelineParams& TimelineParams);
 
 	// Create a timeline by cloning the visual (bone only) of the given skeletal individual
 	bool CreateBoneMeshMarkerTimeline(const FString& MarkerId, const TArray<FTransform>& Poses,
-		const FString& IndividualId,
+		const FString& ViewNameString,
 		const FLinearColor& Color, ESLVizMaterialType MaterialType,
 		const FSLVizTimelineParams& TimelineParams);
 
