@@ -514,6 +514,7 @@ bool ASLCVMaskCalibrator::SetCanvasMeshActor()
 	if (!DefaultMaskMaterial)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material.."), *FString(__func__), __LINE__);
+		CanvasSMA->Destroy();
 		return false;
 	}
 	//DefaultMaskMaterial->bUsedWithStaticLighting = true;

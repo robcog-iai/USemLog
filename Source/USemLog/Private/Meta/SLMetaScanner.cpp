@@ -421,7 +421,7 @@ bool USLMetaScanner::SpawnCameraPoseActorDummy()
 	CameraPoseActor->SetActorLabel(FString(TEXT("SM_ScanCameraPoseDummy")));
 #endif // WITH_EDITOR
 
-	UStaticMesh* CameraPoseDummyMesh = LoadObject<UStaticMesh>(nullptr,TEXT("/USemLog/Vision/ScanCameraPoseDummy/SM_ScanCameraPoseDummy.SM_ScanCameraPoseDummy"));
+	UStaticMesh* CameraPoseDummyMesh = LoadObject<UStaticMesh>(nullptr,TEXT("/USemLog/CV/ScanCameraPoseDummy/SM_ScanCameraPoseDummy.SM_ScanCameraPoseDummy"));
 	if(!CameraPoseDummyMesh)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find camera pose dummy mesh.."), *FString(__func__), __LINE__);
@@ -583,7 +583,7 @@ bool USLMetaScanner::LoadScanItems(float MaxVolume, float MaxBoundsLength, bool 
 bool USLMetaScanner::LoadMaskMaterial()
 {
 	UMaterial* DefaultMaskMaterial = LoadObject<UMaterial>(this,
-		TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask"));
+		TEXT("/USemLog/CV/M_SLDefaultMask.M_SLDefaultMask"));
 	if (!DefaultMaskMaterial)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material.."),

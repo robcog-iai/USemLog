@@ -149,7 +149,7 @@ private:
 	FString CurrImageName;
 
 	/* Constants */
-	static constexpr auto CanvasSMAssetPath = TEXT("/USemLog/Vision/MaskRenderDummy/SM_MaskRenderDummy.SM_MaskRenderDummy");
-	static constexpr auto CameraDummySMAssetPath = TEXT("/USemLog/Vision/ScanCameraPoseDummy/SM_ScanCameraPoseDummy.SM_ScanCameraPoseDummy");
-	static constexpr auto DynMaskMatAssetPath = TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask");
+	static constexpr auto CanvasSMAssetPath = TEXT("/USemLog/CV/MaskRenderDummy/SM_MaskRenderDummy.SM_MaskRenderDummy");
+	static constexpr auto CameraDummySMAssetPath = TEXT("/USemLog/CV/ScanCameraPoseDummy/SM_ScanCameraPoseDummy.SM_ScanCameraPoseDummy");
+	static constexpr auto DynMaskMatAssetPath = TEXT("/USemLog/CV/M_SLDefaultMask.M_SLDefaultMask");
 };

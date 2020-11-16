@@ -9,7 +9,9 @@
 #include "HighResScreenshot.h"
 #include "ImageUtils.h"
 #include "FileHelper.h"
+
 #include "Engine.h"
+#include "Engine/PostProcessVolume.h"
 
 #if WITH_EDITOR
 #include "Engine/Selection.h"
@@ -30,6 +32,10 @@ ASLCVScanner::ASLCVScanner()
 	bPrintProgress = false;
 	bUseActorNamesForFolders = true;
 	bScanOnlySelectedIndividuals = true;
+	bUseIndividualMaskValue = false;
+	bDisablePostProcessVolumes = false;
+	bDisableAO = false;
+
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
@@ -125,7 +131,6 @@ void ASLCVScanner::PostEditChangeProperty(struct FPropertyChangedEvent& Property
 }
 #endif // WITH_EDITOR
 
-
 // Set up any required references and connect to server
 void ASLCVScanner::Init()
 {
@@ -136,7 +141,8 @@ void ASLCVScanner::Init()
 		return;
 	}
 
-	const FString ScanDir = FPaths::ProjectDir() + "/Scans/" + ViewNameString;
+	FString ScanDir = FPaths::ProjectDir() + "/SL/" + TaskId + "/Scans/";
+	FPaths::RemoveDuplicateSlashes(ScanDir);
 	if (FPaths::DirectoryExists(ScanDir))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s scan directory %s already exists, mv or rm first.."),
@@ -171,7 +177,7 @@ void ASLCVScanner::Init()
 			return;
 		}
 	}
-	else if(ScanMode == ESLCVScanMode::Scenes)
+	else if (ScanMode == ESLCVScanMode::Scenes)
 	{
 		if (Scenes.Num() == 0)
 		{
@@ -214,6 +220,17 @@ void ASLCVScanner::Init()
 		return;
 	}
 	CameraPoseAndLightActor->SetActorTransform(FTransform(FRotator(0.f, 0.f, 0.f), FVector(0.f, 0.f, 0.f)));
+
+	// Set the background mesh and material
+	if (BackgroundColor != FColor::Black)
+	{
+		if (!SetBackgroundStaticMeshActor())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the bacground mesh actor .."),
+				*FString(__FUNCTION__), __LINE__, *GetName());
+			return;
+		}
+	}
 
 	/* Set render and screenshot params */
 	SetScreenshotResolution(Resolution);
@@ -261,12 +278,12 @@ void ASLCVScanner::Start()
 		return;
 	}
 
+	// Make sure pawn is not in the scene
+	GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
+
 	// Set the first individual
 	ViewIdx = INDEX_NONE;
 	SetNextView();
-
-	// Make sure pawn is hidden
-	GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
 
 	// Start the dominoes
 	RequestScreenshotAsync();
@@ -469,7 +486,6 @@ bool ASLCVScanner::SetNextView()
 	}
 }
 
-
 // Quit the editor once the scanning is finished
 void ASLCVScanner::QuitEditor()
 {
@@ -575,29 +591,34 @@ void ASLCVScanner::ApplyViewMode(ESLCVViewMode NewViewMode)
 			ShowOriginalIndividual();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
 		}
 		else if (CurrViewmode == ESLCVViewMode::Unlit)
 		{
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
 		}
 		else if (CurrViewmode == ESLCVViewMode::Lit)
 		{
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
 		}
 		else if (CurrViewmode == ESLCVViewMode::Normal)
 		{
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
 		}
 		else
 		{
 			ShowOriginalIndividual();
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
+			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
 		}
 		ViewModeString = "D";
 	}
@@ -746,6 +767,22 @@ void ASLCVScanner::SetWorldState()
 		// Hide by default
 		ActItr->SetActorHiddenInGame(true);
 	}
+
+	if (bDisablePostProcessVolumes || bDisableAO)
+	{
+		for (TActorIterator<APostProcessVolume> PPVItr(GetWorld()); PPVItr; ++PPVItr)
+		{
+			if (bDisablePostProcessVolumes)
+			{
+				PPVItr->bEnabled = false;
+				PPVItr->BlendWeight = 0.f;
+			}
+			else if (bDisableAO)
+			{
+				PPVItr->Settings.AmbientOcclusionIntensity = 0.f;
+			}
+		}
+	}
 }
 
 // Set screenshot image resolution
@@ -790,6 +827,12 @@ void ASLCVScanner::SetRenderParams()
 
 	// LOD level to force, -1 is off. (0 - Best)
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
+
+	if (bDisableAO)
+	{
+		// 0: off Engine default (project setting) for AmbientOcclusion is (postprocess volume/camera/game setting still can override)
+		IConsoleManager::Get().FindConsoleVariable(TEXT("r.DefaultFeature.AmbientOcclusion"))->Set(0);
+	}
 }
 
 // Get the individual manager from the world (or spawn a new one)
@@ -889,13 +932,23 @@ bool ASLCVScanner::SetMaskClones()
 	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
 
 	// Create the dynamic mask material and set color
-	UMaterialInstanceDynamic* DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-	DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::White);
+	UMaterialInstanceDynamic* DynamicMaskMaterial = nullptr;
+	if (!bUseIndividualMaskValue)
+	{
+		DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), MaskColor);
+	}
 
 	if (ScanMode == ESLCVScanMode::Individuals)
 	{
 		for (const auto& VI : Individuals)
 		{
+			if (bUseIndividualMaskValue)
+			{				
+				DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+				DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FColor::FromHex(VI->GetVisualMaskValue()));
+			}
+
 			if (auto AsSMA = Cast<AStaticMeshActor>(VI->GetParentActor()))
 			{
 				FActorSpawnParameters Parameters;
@@ -923,6 +976,47 @@ bool ASLCVScanner::SetMaskClones()
 		}
 	}
 	return IndividualsMaskClones.Num() > 0;
+}
+
+// Set the background static mesh actor and material
+bool ASLCVScanner::SetBackgroundStaticMeshActor()
+{
+	// Spawn actor
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SM_BackgroundSphereMesh");
+	BackgroundSMA = GetWorld()->SpawnActor<AStaticMeshActor>(SpawnParams);
+#if WITH_EDITOR
+	BackgroundSMA->SetActorLabel(FString(TEXT("SM_Background")));
+#endif // WITH_EDITOR
+
+	// Set the mesh component
+	UStaticMesh* BackgroundSM = LoadObject<UStaticMesh>(nullptr, BackgroundAssetPath);
+	if (!BackgroundSM)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load background mesh.."), *FString(__func__), __LINE__);
+		BackgroundSMA->Destroy();
+		return false;
+	}
+	BackgroundSMA->GetStaticMeshComponent()->SetStaticMesh(BackgroundSM);
+	BackgroundSMA->SetMobility(EComponentMobility::Movable);
+	FTransform T(FRotator::ZeroRotator, FVector::ZeroVector, FVector(400));
+	BackgroundSMA->SetActorTransform(T);
+
+	UMaterial* BackgroundMaterial = LoadObject<UMaterial>(this, BackgroundDynMatAssetPath);
+	if (!BackgroundMaterial)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load background material.."), *FString(__func__), __LINE__);
+		BackgroundSMA->Destroy();
+		return false;
+	}
+	//DefaultMaskMaterial->bUsedWithStaticLighting = true;
+	//DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
+
+	UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(BackgroundMaterial, GetTransientPackage());
+	MID->SetVectorParameterValue(FName("MaskColorParam"), BackgroundColor);
+	BackgroundSM->SetMaterial(0, MID);
+
+	return true;
 }
 
 // Generate sphere camera scan poses
@@ -966,7 +1060,8 @@ bool ASLCVScanner::SetScanPoses(uint32 MaxNumPoints/*, float Radius*/)
 // Set the image name
 void ASLCVScanner::SetImageName()
 {
-	CurrImageName = ViewIdxString + "_" + CameraPoseIdxString + "_" + ViewModeString;
+	//CurrImageName = ViewIdxString + "_" + CameraPoseIdxString + "_" + ViewModeString;
+	CurrImageName = ViewModeString + "_" + ViewIdxString + "_" + CameraPoseIdxString + "_";
 }
 
 // Calculate camera pose sphere radius (proportionate to the sphere bounds of the visual mesh)
@@ -1026,8 +1121,9 @@ void ASLCVScanner::SaveToFile(int32 SizeX, int32 SizeY, const TArray<FColor>& In
 	// Compress image
 	TArray<uint8> CompressedBitmap;
 	FImageUtils::CompressImageArray(SizeX, SizeY, InBitmap, CompressedBitmap);
-	const FString RelativeFolderPath = TaskId + "/Scans/" + ViewNameString + "/" + ViewModeString + "/";
-	FString Path = FPaths::ProjectDir() + "/SL/" + RelativeFolderPath + CurrImageName + ".png";
+	//const FString TaskFolderPath = TaskId + "/Scans/" + ViewNameString + "/" + ViewModeString + "/";
+	const FString TaskFolderPath = "/SL/" + TaskId + "/Scans/" + ViewNameString + /*"/" + ViewModeString*/ + "/";
+	FString Path = FPaths::ProjectDir() + TaskFolderPath + CurrImageName + ".png";
 	FPaths::RemoveDuplicateSlashes(Path);
 	FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
 }

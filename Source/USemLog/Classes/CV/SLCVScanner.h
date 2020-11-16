@@ -144,6 +144,9 @@ private:
 	// Create clones of the individuals with mask material
 	bool SetMaskClones();
 
+	// Set the background static mesh actor and material
+	bool SetBackgroundStaticMeshActor();
+
 	// Generate sphere camera scan poses
 	bool SetScanPoses(uint32 MaxNumPoints/*, float Radius = 1.f*/);
 
@@ -188,6 +191,30 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bScanOnlySelectedIndividuals && ScanMode==ESLCVScanMode::Individuals"))
 	TArray<FString> SelectedIndividualsId;
 
+	// Maximal individual size
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "!bScanOnlySelectedIndividuals && ScanMode==ESLCVScanMode::Individuals"))
+	float MaxBoundsSphereRadius = 500.f;
+
+	// Color of the background
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FColor BackgroundColor = FColor::Black;
+
+	// Color of the mask image
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bUseIndividualMaskValue : 1;
+
+	// Color of the mask image
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "!bUseIndividualMaskValue"))
+	FColor MaskColor = FColor::White;
+
+	// Disable post process volumes in the world
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bDisablePostProcessVolumes : 1;
+
+	// Disable ambient occlusion (world and process volumes)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bDisableAO : 1;
+
 	// Add ids from selection button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
 	FString IdCSVString;
@@ -229,9 +256,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FIntPoint Resolution = FIntPoint(640, 480);
 
-	// Maximal item size
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float MaxBoundsSphereRadius = 500.f;
+
 
 	// Directional camera light intensity
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -256,6 +281,14 @@ protected:
 	// Convenience actor for setting the camera pose (SetViewTarget(InActor))
 	UPROPERTY()
 	ADirectionalLight* CameraPoseAndLightActor;
+
+	// Mesh used for the background
+	UPROPERTY()
+	AStaticMeshActor* BackgroundSMA;
+	
+	// Material used to render the masks
+	UPROPERTY()
+	UMaterialInstanceDynamic* DynamicMaskMaterial;
 
 private:
 	// Camera poses on the sphere
@@ -301,5 +334,7 @@ private:
 	FString ViewIdxString;
 
 	/* Constants */
-	static constexpr auto DynMaskMatAssetPath = TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask");
+	static constexpr auto DynMaskMatAssetPath = TEXT("/USemLog/CV/M_SLDefaultMask.M_SLDefaultMask");
+	static constexpr auto BackgroundAssetPath = TEXT("/USemLog/CV/Background/SM_CVBackgroundSphere.SM_CVBackgroundSphere");
+	static constexpr auto BackgroundDynMatAssetPath = TEXT("/USemLog/CV/Background/M_CVBackground.M_CVBackground");
 };

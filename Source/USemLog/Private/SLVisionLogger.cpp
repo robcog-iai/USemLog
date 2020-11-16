@@ -566,7 +566,7 @@ bool USLVisionLogger::CreateMaskClones()
 	// Load the default mask material
 	// this will be used as a template to create the colored mask materials to add to the clones
 	UMaterial* DefaultMaskMaterial = LoadObject<UMaterial>(this,
-		TEXT("/USemLog/Vision/M_SLDefaultMask.M_SLDefaultMask"));
+		TEXT("/USemLog/CV/M_SLDefaultMask.M_SLDefaultMask"));
 	if (!DefaultMaskMaterial)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material.."), *FString(__func__), __LINE__);

@@ -52,7 +52,7 @@ void USLVisionOverlapCalc::Init(USLVisionLogger* InParent, FIntPoint InResolutio
 		// Load the default mask material
 		// this will be used as a template to create the non-occluding mask materials to add to the clones
 		DefaultNonOccludingMaterial = LoadObject<UMaterial>(this,
-			TEXT("/USemLog/Vision/M_SLNonOccludingDefaultMask.M_SLNonOccludingDefaultMask"));
+			TEXT("/USemLog/CV/M_SLNonOccludingDefaultMask.M_SLNonOccludingDefaultMask"));
 		if (!DefaultNonOccludingMaterial)
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Could not load default mask material.."), *FString(__func__), __LINE__);
