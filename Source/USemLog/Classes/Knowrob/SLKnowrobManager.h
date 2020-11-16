@@ -5,9 +5,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
+#include "Knowrob/SLSemanticMapManager.h"
 #include "Knowrob/SLKRWSClient.h"
 #include "Knowrob/SLKREventDispatcher.h"
 #include "Viz/SLVizStructs.h"
+#include "VizQ/SLVizQBase.h"
+#include "Runtime/SLLoggerStructs.h"
 #include "SLKnowrobManager.generated.h"
 
 // Forward declarations
@@ -15,6 +18,8 @@ class ASLMongoQueryManager;
 class ASLVizManager;
 class ASLVizSemMapManager;
 class USLVizQBase;
+class ASLControlManager;
+class ASLSymbolicLogger;
 
 /**
 *
@@ -97,6 +102,15 @@ private:
 
 	// Get the viz semantic map manager from the world (or spawn a new one)
 	bool SetVizSemMapManager();
+
+	// Get the semantic map manager from the world (or spawn a new one)
+    bool SetSemancticMapManager();
+
+	// Get the control manager from the world (or spawn a new one)
+    bool SetControlManager();
+
+	// Get the symbolic logger from the world (or spawn a new one)
+    bool SetSymbolicLogger();
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -188,6 +202,17 @@ private:
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLVizSemMapManager* VizSemMapManager;
 
+	// Manages loading semantic map
+    UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+    ASLSemanticMapManager* SemanticMapManager;
+
+    // Manages controlling individual 
+    UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+    ASLControlManager* ControlManager;
+
+	// Keeps access to all the individuals in the world
+    UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+    ASLSymbolicLogger* SymbolicLogger;
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -210,4 +235,57 @@ private:
 
 	// Current active query
 	int32 QueryIndex = INDEX_NONE;
+
+	/****************************************************************/
+	/*					 SemanticMap Editor button hacks 			*/	
+	/****************************************************************/
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
+    FName MapToLoad = TEXT("Map1");
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
+    bool bLoadMapButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
+    bool bPrintAllMapsButtonHack = false;
+
+	/****************************************************************/
+    /*                        Control tests                         */
+    /****************************************************************/
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    FString IndividualToMove;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    FVector ControlLocation;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    FQuat ControlQuat;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    bool bMoveIndividualButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    TArray<FString> SelectedInividual;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    bool StartSelectedSimulationButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+    bool StopSelectedSimulationButtonHack = false;
+
+	/****************************************************************/
+    /*                        Symbolic Logger tests                 */
+    /****************************************************************/
+    // Logger parameters
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    FSLSymbolicLoggerParams LoggerParameters;
+
+    // Location parameters
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    FSLLoggerLocationParams LocationParameters;
+    
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    bool StartSymbolicLogButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    bool StopSymbolicLogButtonHack = false;
 };

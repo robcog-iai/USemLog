@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Knowrob/SLKnowrobManager.h"
+#include "Control/SLControlManager.h"
 #include "Mongo/SLMongoQueryManager.h"
 #include "Viz/SLVizManager.h"
 #include "Viz/SLVizSemMapManager.h"
@@ -10,6 +11,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
+#include "Runtime/SLSymbolicLogger.h"
 #include "TimerManager.h"
 
 #if WITH_EDITOR
@@ -107,6 +109,48 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 				*FString(__FUNCTION__), __LINE__, QueryIndex);
 		}
 	}
+
+    /* Map button hacks */
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bLoadMapButtonHack))
+    {
+        bLoadMapButtonHack = false;
+        SemanticMapManager->LoadMap(MapToLoad);
+    }
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bPrintAllMapsButtonHack))
+    {
+        bPrintAllMapsButtonHack = false;
+        SemanticMapManager->GetAllMaps();
+    }
+
+    /*    Control Individual    */
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bMoveIndividualButtonHack))
+    {
+        bMoveIndividualButtonHack = false;
+        ControlManager->SetIndividualPose(IndividualToMove, ControlLocation, ControlQuat);
+    }
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StartSelectedSimulationButtonHack))
+    {
+        StartSelectedSimulationButtonHack = false;
+        ControlManager->StartSimulationSelectionOnly(SelectedInividual);
+
+    }
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StopSelectedSimulationButtonHack))
+    {
+        StopSelectedSimulationButtonHack = false;
+        ControlManager->StopSimulationSelectionOnly(SelectedInividual);
+    }
+	
+    /*    Symbolic logging    */
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StartSymbolicLogButtonHack))
+    {
+        StartSymbolicLogButtonHack = false;
+        SymbolicLogger->Start();
+    }
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StopSymbolicLogButtonHack))
+    {
+        StopSymbolicLogButtonHack = false;
+        SymbolicLogger->Finish();
+    }
 }
 #endif // WITH_EDITOR
 
@@ -171,10 +215,46 @@ void ASLKnowrobManager::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	if (bAutoConvertWorld)
+	//if (bAutoConvertWorld)
+	//{
+	//	VizManager->ConvertWorldToVisualizationMode();
+	//}
+
+	// Get the map manager
+    if (!SetSemancticMapManager())
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the map manager.."),
+            *FString(__FUNCTION__), __LINE__, *GetName());
+        return;
+    }
+	if (!SemanticMapManager->Init())
 	{
-		VizManager->ConvertWorldToVisualizationMode();
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the map manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
 	}
+       
+	// Get the control manager
+    if (!SetControlManager())
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not get access to the control manager.."),
+            *FString(__FUNCTION__), __LINE__, *GetName());
+        return;
+    }
+    if (!ControlManager->Init())
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the control manager.."),
+            *FString(__FUNCTION__), __LINE__, *GetName());
+        return;
+    }
+
+    // Get the symbolic logger
+    if (!SetSymbolicLogger())
+    {
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Control manager (%s) could not set the symbolic logger.."),
+            *FString(__FUNCTION__), __LINE__, *GetName());
+    }
+    SymbolicLogger->Init(LoggerParameters, LocationParameters);
 
 	// Get and init the sem map visualizer
 	if (!SetVizSemMapManager())
@@ -224,7 +304,9 @@ void ASLKnowrobManager::Start()
 	}
 
 	// Initialize dispatcher for parsing protobuf message
-	KREventDispatcher = MakeShareable<FSLKREventDispatcher>(new FSLKREventDispatcher(MongoQueryManager, VizManager));
+	KREventDispatcher = MakeShareable<FSLKREventDispatcher>(
+		new FSLKREventDispatcher(MongoQueryManager, VizManager, SemanticMapManager, ControlManager, SymbolicLogger)
+		);
 
 	// Bind user inputs
 	SetupInputBindings();
@@ -345,10 +427,13 @@ void ASLKnowrobManager::OnKRMsg()
 	std::string ProtoMsgBinary;
 	while (KRWSClient->MessageQueue.Dequeue(ProtoMsgBinary))
 	{
+#if SL_WITH_PROTO_MSGS
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Processing message.."), *FString(__FUNCTION__), __LINE__);
-		FString Response = KREventDispatcher->ProcessProtobuf(ProtoMsgBinary);
-		if (!Response.Equals(""))
-			KRWSClient->SendResponse(Response);
+		FSLKRResponse Response;
+		Response.Type = ResponseType::None;
+		KREventDispatcher->ProcessProtobuf(Response, ProtoMsgBinary);
+		KRWSClient->SendResponse(Response);
+#endif // SL_WITH_PROTO_MSGS	
 	}
 }
 
@@ -433,6 +518,88 @@ bool ASLKnowrobManager::SetVizSemMapManager()
 	return true;
 }
 
+
+// Get the semantic map manager from the world (or spawn a new one)
+bool ASLKnowrobManager::SetSemancticMapManager()
+{
+    if (SemanticMapManager && SemanticMapManager->IsValidLowLevel() && !SemanticMapManager->IsPendingKillOrUnreachable())
+    {
+        return true;
+    }
+
+    for (TActorIterator<ASLSemanticMapManager>Iter(GetWorld()); Iter; ++Iter)
+    {
+        if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+        {
+            SemanticMapManager = *Iter;
+            return true;
+        }
+    }
+
+    // Spawning a new manager
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Name = TEXT("SL_MapManager");
+    SemanticMapManager = GetWorld()->SpawnActor<ASLSemanticMapManager>(SpawnParams);
+#if WITH_EDITOR
+    SemanticMapManager->SetActorLabel(TEXT("SL_MapManager"));
+#endif // WITH_EDITOR
+    return true;
+}
+
+
+// Get the control manager from the world (or spawn a new one)
+bool ASLKnowrobManager::SetControlManager()
+{
+    if (ControlManager && ControlManager->IsValidLowLevel() && !ControlManager->IsPendingKillOrUnreachable())
+    {
+        return true;
+    }
+
+    for (TActorIterator<ASLControlManager>Iter(GetWorld()); Iter; ++Iter)
+    {
+        if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+        {
+            ControlManager = *Iter;
+            return true;
+        }
+    }
+
+    // Spawning a new manager
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Name = TEXT("SL_ControlManager");
+    ControlManager = GetWorld()->SpawnActor<ASLControlManager>(SpawnParams);
+#if WITH_EDITOR
+    ControlManager->SetActorLabel(TEXT("SL_ControlManager"));
+#endif // WITH_EDITOR
+    return true;
+}
+
+// Get the symbolic logger from the world (or spawn a new one)
+bool ASLKnowrobManager::SetSymbolicLogger()
+{
+    if (SymbolicLogger && SymbolicLogger->IsValidLowLevel() && !SymbolicLogger->IsPendingKillOrUnreachable())
+    {
+        return true;
+    }
+
+    for (TActorIterator<ASLSymbolicLogger>Iter(GetWorld()); Iter; ++Iter)
+    {
+        if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+        {
+            SymbolicLogger = *Iter;
+            return true;
+        }
+    }
+
+    // Spawning a new manager
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Name = TEXT("SL_SymbolLogger");
+    SymbolicLogger = GetWorld()->SpawnActor<ASLSymbolicLogger>(SpawnParams);
+#if WITH_EDITOR
+    SymbolicLogger->SetActorLabel(TEXT("SL_SymbolLogger"));
+#endif // WITH_EDITOR
+    return true;
+}
 
 /****************************************************************/
 /*							VizQ								*/
