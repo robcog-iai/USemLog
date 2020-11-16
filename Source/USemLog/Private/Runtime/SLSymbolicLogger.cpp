@@ -69,10 +69,6 @@ ASLSymbolicLogger::ASLSymbolicLogger()
 // Force call on finish
 ASLSymbolicLogger::~ASLSymbolicLogger()
 {
-	if (!IsTemplate() && !bIsFinished && (bIsStarted || bIsInit))
-	{
-		FinishImpl(true);
-	}
 }
 
 // Allow actors to initialize themselves on the C++ side
@@ -354,7 +350,15 @@ void ASLSymbolicLogger::FinishImpl(bool bForced)
 		return;
 	}
 
-	EpisodeEndTime = GetWorld()->GetTimeSeconds();
+	if (GetWorld())
+	{
+		EpisodeEndTime = GetWorld()->GetTimeSeconds();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not access the world pointer.."),	*FString(__FUNCTION__), __LINE__);
+		return;
+	}
 
 	// Finish handlers pending events
 	for (auto& EvHandler : EventHandlers)
