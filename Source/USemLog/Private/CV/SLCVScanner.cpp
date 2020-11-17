@@ -507,7 +507,7 @@ void ASLCVScanner::QuitEditor()
 void ASLCVScanner::ApplyViewMode(ESLCVViewMode NewViewMode)
 {
 	// No change in the rendering view mode
-	if (NewViewMode == CurrViewmode)
+	if (NewViewMode == PrevViewMode)
 	{
 		return;
 	}
@@ -517,145 +517,85 @@ void ASLCVScanner::ApplyViewMode(ESLCVViewMode NewViewMode)
 
 	if (NewViewMode == ESLCVViewMode::Lit)
 	{
-		if (CurrViewmode == ESLCVViewMode::Depth || CurrViewmode == ESLCVViewMode::Normal)
+		ViewModeString = "L";
+		if (PrevViewMode == ESLCVViewMode::Depth || PrevViewMode == ESLCVViewMode::Normal)
 		{
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
-		}
-		else if (CurrViewmode == ESLCVViewMode::Unlit)
-		{
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-		}
-		else if (CurrViewmode == ESLCVViewMode::Mask)
-		{
-			ShowOriginalIndividual();
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 		}
 		else
 		{
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			if (PrevViewMode == ESLCVViewMode::Mask)
+			{
+				ShowOriginalIndividual();
+			}
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-		}
-		ViewModeString = "L";
+		}		
 	}
 	else if (NewViewMode == ESLCVViewMode::Unlit)
 	{
-		if (CurrViewmode == ESLCVViewMode::Lit)
-		{
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
-		}
-		else if (CurrViewmode == ESLCVViewMode::Mask)
+		ViewModeString = "U";
+		if (PrevViewMode == ESLCVViewMode::Mask)
 		{
 			ShowOriginalIndividual();
 		}
-		else if (CurrViewmode == ESLCVViewMode::Depth || CurrViewmode == ESLCVViewMode::Normal)
-		{
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
-		}
 		else
 		{
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			if (PrevViewMode == ESLCVViewMode::Depth || PrevViewMode == ESLCVViewMode::Normal)
+			{
+				ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			}
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
-		ViewModeString = "U";
 	}
 	else if (NewViewMode == ESLCVViewMode::Mask)
 	{
-		if (CurrViewmode == ESLCVViewMode::Unlit)
-		{
-			ShowMaskIndividual();
-		}
-		else if (CurrViewmode == ESLCVViewMode::Lit)
-		{
-			ShowMaskIndividual();
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
-		}
-		else if (CurrViewmode == ESLCVViewMode::Depth || CurrViewmode == ESLCVViewMode::Normal)
-		{
-			ShowMaskIndividual();
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
-		}
-		else
-		{
-			ShowMaskIndividual();
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
-		}
 		ViewModeString = "M";
+		if (PrevViewMode != ESLCVViewMode::Unlit)
+		{
+			if (PrevViewMode == ESLCVViewMode::Depth || PrevViewMode == ESLCVViewMode::Normal)
+			{
+				ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
+			}
+			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
+		}
+		ShowMaskIndividual();
 	}
 	else if (NewViewMode == ESLCVViewMode::Depth)
 	{
-		if (CurrViewmode == ESLCVViewMode::Mask)
-		{
-			ShowOriginalIndividual();
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
-		}
-		else if (CurrViewmode == ESLCVViewMode::Unlit)
-		{
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
-		}
-		else if (CurrViewmode == ESLCVViewMode::Lit)
-		{
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
-		}
-		else if (CurrViewmode == ESLCVViewMode::Normal)
-		{
-			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
-		}
-		else
-		{
-			ShowOriginalIndividual();
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			//BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraPlane"));
-			BufferVisTargetCV->Set(*FString("SLSceneDepthToCameraLocation"));
-		}
 		ViewModeString = "D";
+		if (PrevViewMode != ESLCVViewMode::Normal)
+		{
+			if (PrevViewMode != ESLCVViewMode::Lit)
+			{
+				GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+				if (PrevViewMode == ESLCVViewMode::Mask)
+				{
+					ShowOriginalIndividual();
+				}
+			}
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+		}
+		// SLSceneDepthToCameraPlane / SLSceneDepthToCameraLocation / SLCVScanDepthToCameraPlane / SLCVScanDepthToCameraLocation 
+		BufferVisTargetCV->Set(*FString("SLCVScanDepthToCameraPlane"));
 	}
 	else if (NewViewMode == ESLCVViewMode::Normal)
 	{
-		if (CurrViewmode == ESLCVViewMode::Depth)
-		{
-			BufferVisTargetCV->Set(*FString("WorldNormal"));
-		}
-		else if (CurrViewmode == ESLCVViewMode::Mask)
-		{
-			ShowOriginalIndividual();
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*FString("WorldNormal"));
-		}
-		else if (CurrViewmode == ESLCVViewMode::Unlit)
-		{
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*FString("WorldNormal"));
-		}
-		else if (CurrViewmode == ESLCVViewMode::Lit)
-		{
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*FString("WorldNormal"));
-		}
-		else
-		{
-			ShowOriginalIndividual();
-			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
-			BufferVisTargetCV->Set(*FString("WorldNormal"));
-		}
 		ViewModeString = "N";
-	}
-	CurrViewmode = NewViewMode;
+		if (PrevViewMode != ESLCVViewMode::Depth)
+		{
+			if (PrevViewMode != ESLCVViewMode::Lit)
+			{
+				GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
+				if (PrevViewMode == ESLCVViewMode::Mask)
+				{
+					ShowOriginalIndividual();
+				}
+			}
+			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(true);
+		}
+		BufferVisTargetCV->Set(*FString("WorldNormal"));
+	}	
+	PrevViewMode = NewViewMode;
 }
 
 // Apply the camera pose

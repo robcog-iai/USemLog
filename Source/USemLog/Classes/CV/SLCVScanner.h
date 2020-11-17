@@ -301,7 +301,7 @@ private:
 	TMap<USLVisibleIndividual*, AStaticMeshActor*> IndividualsMaskClones;
 
 	// Current active view mode
-	ESLCVViewMode CurrViewmode = ESLCVViewMode::NONE;
+	ESLCVViewMode PrevViewMode = ESLCVViewMode::NONE;
 
 	// Current radius of the camera sphere poses
 	float CurrCameraPoseSphereRadius;
