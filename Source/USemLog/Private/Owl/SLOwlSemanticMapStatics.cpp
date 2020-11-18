@@ -33,7 +33,7 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 
 	// Add imports
 	SemMap->CreateOntologyNode();
-	SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob.owl");
+	SemMap->AddOntologyImport("package://knowrob/owl/knowrob.owl");
 
 	// Add property definitions
 	SemMap->AddPropertyDefinition(FOwlCommentNode("Property Definitions"));
@@ -66,7 +66,7 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAIKitchenSemantic
 	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
 		InDocId, InDocPrefix, InDocOntologyName);
 
-	//SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_kitchen_ue.owl");
+	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
 
 	return SemMap;
 }
@@ -80,7 +80,7 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAISupermarketSema
 	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
 		InDocId, InDocPrefix, InDocOntologyName);
 
-	SemMap->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_supermarket_ue.owl");
+	SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_supermarket_ue.owl");
 
 	return SemMap;
 }

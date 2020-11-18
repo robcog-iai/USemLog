@@ -198,8 +198,8 @@ void FSLOwlSemMapDocUtils::AddOntologies(FSLOwlDoc& Doc, ESLOwlSemMapTemplateTyp
     /**
         <!-- Ontologies -->
         <owl:Ontology rdf:about="http://knowrob.org/kb/.owl">
-            <owl:imports rdf:resource="package://knowrob_common/owl/knowrob.owl"/>
-            <owl:imports rdf:resource="package://knowrob_common/owl/ameva.owl"/>
+            <owl:imports rdf:resource="package://knowrob/owl/knowrob.owl"/>
+            <owl:imports rdf:resource="package://knowrob/owl/ameva.owl"/>
         </owl:Ontology>
     **/
 
@@ -207,8 +207,8 @@ void FSLOwlSemMapDocUtils::AddOntologies(FSLOwlDoc& Doc, ESLOwlSemMapTemplateTyp
     {
         Doc.OntologyName = FString(AmevaNs);
         Doc.CreateOntologyNode();
-        Doc.AddOntologyImport("package://knowrob_common/owl/knowrob.owl");
-        Doc.AddOntologyImport("package://knowrob_common/owl/" + FString(AmevaNs) + ".owl");
+        Doc.AddOntologyImport("package://knowrob/owl/knowrob.owl");
+        Doc.AddOntologyImport("package://knowrob/owl/" + FString(AmevaNs) + ".owl");
     }
 }
 

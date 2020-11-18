@@ -36,7 +36,7 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 
 	// Set and add imports
 	Experiment->CreateOntologyNode();
-	Experiment->AddOntologyImport("package://knowrob_common/owl/knowrob.owl");
+	Experiment->AddOntologyImport("package://knowrob/owl/knowrob.owl");
 
 	// Add property definitions
 	Experiment->AddPropertyDefinition(FOwlCommentNode("Property Definitions"));
@@ -79,7 +79,7 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateUEExperiment(
 	TSharedPtr<FSLOwlExperiment> Experiment = FSLOwlExperimentStatics::CreateDefaultExperiment(
 		InDocId, InDocPrefix, InDocOntologyName);
 
-	Experiment->AddOntologyImport("package://knowrob_common/owl/knowrob_iai_kitchen_ue.owl");
+	Experiment->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
 
 	return Experiment;
 }
