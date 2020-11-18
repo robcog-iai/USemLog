@@ -3,7 +3,6 @@
 #pragma once
 
 #include <string>
-#define SL_WITH_PROTO_MSGS 1
 #if SL_WITH_PROTO_MSGS
 #include "Proto/ameva.pb.h"
 #endif // SL_WITH_PROTO_MSGS	
