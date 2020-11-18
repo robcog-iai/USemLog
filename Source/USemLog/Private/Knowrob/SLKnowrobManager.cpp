@@ -305,7 +305,7 @@ void ASLKnowrobManager::Start()
 
 	// Initialize dispatcher for parsing protobuf message
 	KREventDispatcher = MakeShareable<FSLKREventDispatcher>(
-		new FSLKREventDispatcher(MongoQueryManager, VizManager, SemanticMapManager, ControlManager, SymbolicLogger)
+		new FSLKREventDispatcher(KRWSClient, GetWorld(), MongoQueryManager, VizManager, SemanticMapManager, ControlManager, SymbolicLogger)
 		);
 
 	// Bind user inputs
@@ -429,10 +429,7 @@ void ASLKnowrobManager::OnKRMsg()
 	{
 #if SL_WITH_PROTO_MSGS
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Processing message.."), *FString(__FUNCTION__), __LINE__);
-		FSLKRResponse Response;
-		Response.Type = ResponseType::None;
-		KREventDispatcher->ProcessProtobuf(Response, ProtoMsgBinary);
-		KRWSClient->SendResponse(Response);
+		KREventDispatcher->ProcessProtobuf(ProtoMsgBinary);
 #endif // SL_WITH_PROTO_MSGS	
 	}
 }

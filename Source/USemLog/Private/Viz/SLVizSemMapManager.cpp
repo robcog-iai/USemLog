@@ -86,7 +86,7 @@ void ASLVizSemMapManager::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	VizManager->ConvertWorldToVisualizationMode();
+	//VizManager->ConvertWorldToVisualizationMode();
 
 	bIsInit = true;
 	UE_LOG(LogTemp, Warning, TEXT("%s::%d %s succesfully initialized.."),
