@@ -3,10 +3,12 @@
 #pragma once
 
 #include <string>
+#define SL_WITH_PROTO_MSGS 1
 #if SL_WITH_PROTO_MSGS
 #include "Proto/ameva.pb.h"
 #endif // SL_WITH_PROTO_MSGS	
 #include "Runtime/SLLoggerStructs.h"
+#include "Knowrob/SLKRWSClient.h"
 #include "SLKRResponseStruct.h"
 #include "CoreMinimal.h"
 
@@ -27,40 +29,46 @@ class USEMLOG_API FSLKREventDispatcher
 {
 public:
 	// Default ctor
-	FSLKREventDispatcher(ASLMongoQueryManager* InMongoManger, ASLVizManager* InVizManager, ASLSemanticMapManager* InSemanticMapManager, ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger);
+	FSLKREventDispatcher(TSharedPtr<FSLKRWSClient> InKRWSClient, UWorld* InWorld, ASLMongoQueryManager* InMongoManger, ASLVizManager* InVizManager, ASLSemanticMapManager* InSemanticMapManager, ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger);
 	
 	// Dector
 	~FSLKREventDispatcher();
 
 public:
 	// Parse the proto sequence and trigger function
-	void ProcessProtobuf(FSLKRResponse& Out, std::string ProtoStr);
+	void ProcessProtobuf(std::string ProtoStr);
 
 private:
 #if SL_WITH_PROTO_MSGS
 	// Load the Semantic Map
-	void LoadMap(FSLKRResponse& Out, sl_pb::LoadMapParams params);
+	void LoadMap(sl_pb::LoadMapParams params);
 
 	// Set the task of MongoManager
-	void SetTask(FSLKRResponse& Out, sl_pb::SetTaskParams params);
+	void SetTask(sl_pb::SetTaskParams params);
 
 	// Set the episode of MongoManager
-	void SetEpisode(FSLKRResponse& Out, sl_pb::SetEpisodeParams params);
+	void SetEpisode(sl_pb::SetEpisodeParams params);
 
 	// Draw the trajectory
-	void DrawMarkerTraj(FSLKRResponse& Out, sl_pb::DrawMarkerTrajParams params);
+	void DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params);
 
 	// Start Symbolic Logger
-	void StartSymbolicLogger(FSLKRResponse& Out, sl_pb::StartSymbolicLogParams params);
+	void StartSymbolicLogger(sl_pb::StartSymbolicLogParams params);
 
 	// Stop Symbolic Logger
-	void StoptSymbolicLogger(FSLKRResponse& Out);
+	void StopSymbolicLogger();
 
 	// Start Simulation
-	void StartSimulation(FSLKRResponse& Out, sl_pb::StartSimulationParams params);
+	void StartSimulation(sl_pb::StartSimulationParams params);
 
 	// Stop Simulation
-	void StopSimulation(FSLKRResponse& Out, sl_pb::StopSimulationParams params);
+	void StopSimulation(sl_pb::StopSimulationParams params);
+
+	// Move Individual
+	void MoveIndividual(sl_pb::MoveIndividualParams params);
+
+	// Start Symbolic logging and simulation for seconds
+	void SimulateAndLogForSeconds(sl_pb::SimulateAndLogForSecondsParams params);
 
 private:
 	// -----  helper function  ------//
@@ -89,6 +97,12 @@ private:
 	
 	// Used for symbolic logging
 	ASLSymbolicLogger* SymbolicLogger;
+
+	// Used for sending response 
+	TSharedPtr<FSLKRWSClient> KRWSClient;
+
+	// Used for keep the current world
+	UWorld* World;
 
 	// Logger parameters
 	FSLSymbolicLoggerParams LoggerParameters;
