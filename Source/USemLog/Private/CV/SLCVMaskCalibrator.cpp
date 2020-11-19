@@ -459,7 +459,6 @@ void ASLCVMaskCalibrator::SetRenderParams()
 	IConsoleManager::Get().FindConsoleVariable(TEXT("r.ForceLOD"))->Set(0);
 }
 
-
 // Get the individual manager from the world (or spawn a new one)
 bool ASLCVMaskCalibrator::SetIndividualManager()
 {

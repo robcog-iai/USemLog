@@ -34,7 +34,7 @@ class FSLWorldStateDBWriterAsyncTask : public FNonAbandonableTask
 public:
 #if SL_WITH_LIBMONGO_C
 	// Set the individuals
-	bool Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float PoseTolerance);
+	bool Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float PoseTolerance, bool bInWriteSparse);
 #endif //SL_WITH_LIBMONGO_C	
 
 	// Do the db writing here
@@ -50,8 +50,11 @@ private:
 	// First write where all the individuals are written irregardresly of their previous position
 	int32 FirstWrite();
 
-	// Normal write, where all the individuals are written if the tolerance theshold is passed
-	int32 Write();
+	// Write sparse (only individuals that moved)
+	int32 WriteSparse();
+
+	// Write all individuals (event if they did not move)
+	int32 WriteAll();
 
 #if SL_WITH_LIBMONGO_C
 	// Add timestamp to the bson doc
@@ -99,6 +102,9 @@ private:
 
 	// Pose diff tolerance
 	float MinPoseDiff;
+
+	// Write mode
+	bool bWriteSparse;
 
 #if SL_WITH_LIBMONGO_C
 	// Database collection

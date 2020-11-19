@@ -18,12 +18,13 @@
 /* DB Write Async Task */
 // Init task
 #if SL_WITH_LIBMONGO_C
-bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float PoseTolerance)
+bool FSLWorldStateDBWriterAsyncTask::Init(mongoc_collection_t* in_collection, ASLIndividualManager* Manager, float PoseTolerance, bool bInWriteSparse)
 {
 	IndividualManager = Manager;
 	mongo_collection = in_collection;
 	MinPoseDiff = PoseTolerance;
-	
+	bWriteSparse = bInWriteSparse;
+
 	// Set the write function pointer (first write is without optimization, write all individuals)
 	WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::FirstWrite;
 
@@ -71,13 +72,20 @@ int32 FSLWorldStateDBWriterAsyncTask::FirstWrite()
 #endif //SL_WITH_LIBMONGO_C	
 
 	// Change the write function pointer to write only individuals that are moving
-	WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::Write;
+	if (bWriteSparse)
+	{
+		WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::WriteSparse;
+	}
+	else
+	{
+		WriteFunctionPtr = &FSLWorldStateDBWriterAsyncTask::WriteAll;
+	}
 
 	return Num;
 }
 
 // Write only the indviduals that changed pose
-int32 FSLWorldStateDBWriterAsyncTask::Write()
+int32 FSLWorldStateDBWriterAsyncTask::WriteSparse()
 {
 	// Count the number of entries written to the document (if 0, skip upload)
 	int32 Num = 0;
@@ -88,8 +96,36 @@ int32 FSLWorldStateDBWriterAsyncTask::Write()
 
 	AddTimestamp(ws_doc);
 
-	Num += AddAllIndividuals(ws_doc); // TODO workaround to have synced timeline markers
-	//Num += AddIndividualsThatMoved(ws_doc);
+	Num += AddIndividualsThatMoved(ws_doc);
+	Num += AddSkeletalIndividals(ws_doc);
+	//Num += AddRobotIndividuals(ws_doc);
+
+	// Write only if there are any entries in the document
+	if (Num > 0)
+	{
+		UploadDoc(ws_doc);
+	}
+
+	// Clean up
+	bson_destroy(ws_doc);
+#endif //SL_WITH_LIBMONGO_C
+
+	return Num;
+}
+
+// Write all individuals
+int32 FSLWorldStateDBWriterAsyncTask::WriteAll()
+{
+	// Count the number of entries written to the document (if 0, skip upload)
+	int32 Num = 0;
+
+#if SL_WITH_LIBMONGO_C
+	bson_t* ws_doc;
+	ws_doc = bson_new();
+
+	AddTimestamp(ws_doc);
+
+	Num += AddAllIndividuals(ws_doc);
 	Num += AddSkeletalIndividals(ws_doc);
 	//Num += AddRobotIndividuals(ws_doc);
 
@@ -123,7 +159,7 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividuals(bson_t* doc)
 	BSON_APPEND_ARRAY_BEGIN(doc, "individuals", &arr_obj);
 	for (const auto& Individual : IndividualManager->GetIndividuals())
 	{
-		Individual->UpdateCachedPose(0.0);
+		//Individual->UpdateCachedPose(0.0);
 
 		//// TODO workaround
 		//Individual->SetHasMovedFlag(true);
@@ -433,7 +469,7 @@ bool FSLWorldStateDBHandler::Init(ASLIndividualManager* IndividualManager,
 
 #if SL_WITH_LIBMONGO_C
 	// Set worker parameters
-	if (!DBWriterTask->GetTask().Init(collection, IndividualManager, InLoggerParameters.PoseTolerance))
+	if (!DBWriterTask->GetTask().Init(collection, IndividualManager, InLoggerParameters.PoseTolerance, InLoggerParameters.bWriteSparse))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d World state async writer could not be initialized.."),
 			*FString(__FUNCTION__), __LINE__);

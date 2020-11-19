@@ -215,10 +215,10 @@ void ASLKnowrobManager::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
-	//if (bAutoConvertWorld)
-	//{
-	//	VizManager->ConvertWorldToVisualizationMode();
-	//}
+	if (bAutoConvertWorld)
+	{
+		VizManager->ConvertWorldToVisualizationMode();
+	}
 
 	// Get the map manager
     if (!SetSemancticMapManager())

@@ -95,6 +95,10 @@ struct FSLWorldStateLoggerParams
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	float PoseTolerance = 0.5f;
 
+	// Write mode, only individuals that moved only (sparse) or all individuals
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bWriteSparse = true;
+
 	// Include individuals metadata 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bIncludeMetadata = true;

@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "CV/SLCVScanner.h"
+#include "CV/SLCVQScene.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/Type/SLVisibleIndividual.h"
@@ -466,7 +467,7 @@ bool ASLCVScanner::SetNextView()
 			ApplyScene();
 
 			// Set individual string
-			ViewNameString = Scenes[ViewIdx];
+			ViewNameString = Scenes[ViewIdx]->GetSceneName();
 
 			// Set image name
 			ViewIdxString = FString::FromInt(ViewIdx) + "_" + FString::FromInt(Scenes.Num());
@@ -636,7 +637,7 @@ void ASLCVScanner::ApplyIndividual(USLVisibleIndividual* Individual)
 void ASLCVScanner::ApplyScene()
 {
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Applying scene %s .. "),
-		*FString(__FUNCTION__), __LINE__, *Scenes[ViewIdx]);
+		*FString(__FUNCTION__), __LINE__, *Scenes[ViewIdx]->GetSceneName());
 }
 
 // Hide mask clone, show original individual

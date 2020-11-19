@@ -14,6 +14,7 @@ class AStaticMeshActor;
 class UGameViewportClient;
 class UMaterialInstanceDynamic;
 class ADirectionalLight;
+class USLCVQScene;
 
 /**
 * Scan modes
@@ -167,17 +168,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;
 
-	// Save images to file
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	uint8 bSaveToFile : 1;
-
-	// Save images to file
+	// Output progress to terminal
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bPrintProgress : 1;
-
-	// Use parent actor names for folder names
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	uint8 bUseActorNamesForFolders : 1;
 
 	// Choose what to scan (individuals or scenes)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -191,29 +184,71 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bScanOnlySelectedIndividuals && ScanMode==ESLCVScanMode::Individuals"))
 	TArray<FString> SelectedIndividualsId;
 
+	// Scenes to scan
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "ScanMode==ESLCVScanMode::Scenes"))
+	TArray<USLCVQScene*> Scenes;
+
 	// Maximal individual size
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "!bScanOnlySelectedIndividuals && ScanMode==ESLCVScanMode::Individuals"))
 	float MaxBoundsSphereRadius = 500.f;
 
+	// Folder to store the images in
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
+	FString TaskId = "DefaultTaskId";
+
+	// Mongo server ip addres
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
+	FString MongoServerIP = TEXT("127.0.0.1");
+
+	// Knowrob server port
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
+	int32 MongoServerPort = 27017;
+
+	// Save images to file
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
+	uint8 bSaveToFile : 1;
+
+	// Use parent actor names for folder names
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location", meta = (editcondition = "bSaveToFile"))
+	uint8 bUseActorNamesForFolders : 1;
+
+
+	// Maximal number of scan points on the sphere
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	uint32 MaxNumScanPoints = 32;
+
+	// Image resolution
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	FIntPoint Resolution = FIntPoint(640, 480);
+
+	// Rendering modes to include
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	TArray<ESLCVViewMode> ViewModes;
+
 	// Color of the background
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
 	FColor BackgroundColor = FColor::Black;
 
 	// Color of the mask image
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
 	uint8 bUseIndividualMaskValue : 1;
 
 	// Color of the mask image
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "!bUseIndividualMaskValue"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering", meta = (editcondition = "!bUseIndividualMaskValue"))
 	FColor MaskColor = FColor::White;
 
 	// Disable post process volumes in the world
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
 	uint8 bDisablePostProcessVolumes : 1;
 
 	// Disable ambient occlusion (world and process volumes)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
 	uint8 bDisableAO : 1;
+
+	// Directional camera light intensity
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	float CameraLightIntensity = 1.6f;
+
 
 	// Add ids from selection button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
@@ -231,10 +266,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
 	bool bOverwriteSelectedIds = false;
 
-	// Scenes to scan
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta=(editcondition="ScanMode==ESLCVScanMode::Scenes"))
-	TArray<FString> Scenes;
-
 	// True when all references are set and it is connected to the server
 	uint8 bIsInit : 1;
 
@@ -243,36 +274,6 @@ protected:
 
 	// True when done 
 	uint8 bIsFinished : 1;
-	
-	// Rendering modes to include
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	TArray<ESLCVViewMode> ViewModes;
-
-	// Maximal number of scan points on the sphere
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	uint32 MaxNumScanPoints = 32;
-
-	// Image resolution
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FIntPoint Resolution = FIntPoint(640, 480);
-
-
-
-	// Directional camera light intensity
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float CameraLightIntensity = 1.6f;
-
-	// Folder to store the images in
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString TaskId = "DefaultTaskId";
-
-	// Mongo server ip addres
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	FString MongoServerIP = TEXT("127.0.0.1");
-
-	// Knowrob server port
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	int32 MongoServerPort = 27017;
 
 	// Keeps access to all the individuals in the world
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
@@ -285,10 +286,6 @@ protected:
 	// Mesh used for the background
 	UPROPERTY()
 	AStaticMeshActor* BackgroundSMA;
-	
-	// Material used to render the masks
-	UPROPERTY()
-	UMaterialInstanceDynamic* DynamicMaskMaterial;
 
 private:
 	// Camera poses on the sphere
