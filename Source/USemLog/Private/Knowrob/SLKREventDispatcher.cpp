@@ -72,6 +72,10 @@ void  FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
 	{
 		SimulateAndLogForSeconds(AmevaEvent.simulateandlogforsecondsparams());
 	}
+	else if (AmevaEvent.functocall() == AmevaEvent.SimulateForSeconds) 
+	{
+		SimulateForSeconds(AmevaEvent.simulateforsecondsparams());
+	}
 #endif // SL_WITH_PROTO_MSGS
 }
 
@@ -198,7 +202,7 @@ void FSLKREventDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
 void FSLKREventDispatcher::MoveIndividual(sl_pb::MoveIndividualParams params)
 {
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
-	FVector Loc = FVector(params.vecx(), params.vecy(), params.vecx());
+	FVector Loc = FVector(params.vecx(), params.vecy(), params.vecz());
 	FQuat Quat = FQuat(params.quatw(), params.quatx(), params.quaty(), params.quatz());
 	ControlManager->SetIndividualPose(Id, Loc, Quat);
 	FSLKRResponse Response;
@@ -235,6 +239,29 @@ void FSLKREventDispatcher::SimulateAndLogForSeconds(sl_pb::SimulateAndLogForSeco
 		}, Ids);
 	World->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, params.seconds(), false);
 }
+
+// Start simulation for seconds
+void FSLKREventDispatcher::SimulateForSeconds(sl_pb::SimulateForSecondesParams params)
+{
+	TArray<FString> Ids;
+	for (int i = 0; i < params.id_size(); i++)
+	{
+		FString Id = UTF8_TO_TCHAR(params.id(i).c_str());
+		Ids.Add(Id);
+	}
+	ControlManager->StartSimulationSelectionOnly(Ids);
+	FTimerHandle TimerHandle;
+	FTimerDelegate TimerDelegateDelay;
+	TimerDelegateDelay.BindLambda([this](TArray<FString> Ids) {
+		ControlManager->StopSimulationSelectionOnly(Ids);
+		FSLKRResponse Response;
+		Response.Type = ResponseType::TEXT;
+		Response.Text = TEXT("Stop Sim");
+		KRWSClient->SendResponse(Response);
+	}, Ids);
+	World->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, params.seconds(), false);
+}
+
 
 // Transform the maker type
 ESLVizPrimitiveMarkerType FSLKREventDispatcher::GetMarkerType(sl_pb::MarkerType Marker)

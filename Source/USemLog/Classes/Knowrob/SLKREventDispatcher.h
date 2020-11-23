@@ -69,6 +69,9 @@ private:
 	// Start Symbolic logging and simulation for seconds
 	void SimulateAndLogForSeconds(sl_pb::SimulateAndLogForSecondsParams params);
 
+	// Start simulation for seconds
+	void SimulateForSeconds(sl_pb::SimulateForSecondesParams params);
+
 private:
 	// -----  helper function  ------//
 	// Transform the maker type
