@@ -132,7 +132,8 @@ void ASLSymbolicLogger::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 // Init logger (called when the logger is synced externally)
 void ASLSymbolicLogger::Init(const FSLSymbolicLoggerParams& InLoggerParameters,
-	const FSLLoggerLocationParams& InLocationParameters)
+	const FSLLoggerLocationParams& InLocationParameters,
+	const FSLLoggerDBServerParams& InDBServerParameters)
 {
 	if (bUseIndependently)
 	{
@@ -143,6 +144,7 @@ void ASLSymbolicLogger::Init(const FSLSymbolicLoggerParams& InLoggerParameters,
 
 	LoggerParameters = InLoggerParameters;
 	LocationParameters = InLocationParameters;
+	DBServerParameters = InDBServerParameters;
 	InitImpl();
 }
 
@@ -816,8 +818,8 @@ void ASLSymbolicLogger::InitROSPublisher()
 {
 #if SL_WITH_ROSBRIDGE
 	ROSPrologClient = NewObject<USLPrologClient>(this);
-	ROSPrologClient->Init(WriterParams.ServerIp, WriterParams.ServerPort);
-	FSLEntitiesManager::GetInstance()->SetPrologClient(ROSPrologClient);
+	ROSPrologClient->Init(DBServerParameters.Ip, DBServerParameters.Port);
+	IndividualManager->SetPrologClient(ROSPrologClient);
 #endif // SL_WITH_ROSBRIDGE
 }
 

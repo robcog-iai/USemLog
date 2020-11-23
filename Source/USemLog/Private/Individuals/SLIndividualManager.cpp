@@ -422,6 +422,13 @@ void ASLIndividualManager::AddToCache(USLIndividualComponent* IC)
 			ChildlessRootIndividuals.Add(Individual);
 		}
 
+#if SL_WITH_ROSBRIDGE
+		// Add with ROSProlog
+		if (ROSPrologClient) {
+			ROSPrologClient->AddObjectQuery(Individual);
+		}
+#endif // SL_WITH_ROSBRIDGE
+
 	}
 	else
 	{
@@ -513,4 +520,9 @@ bool ASLIndividualManager::RemoveFromCache(USLIndividualComponent* IC)
 void ASLIndividualManager::OnIndividualComponentDestroyed(USLIndividualComponent* DestroyedComponent)
 {
 	RemoveFromCache(DestroyedComponent);
+}
+
+// Set reference to ROS Prolog client
+void ASLIndividualManager::SetPrologClient(USLPrologClient* InROSProlog) {
+	ROSPrologClient = InROSProlog;
 }

@@ -33,6 +33,44 @@ FSLOwlNode FSLSupportedByEvent::ToOwlNode() const
 	return EventIndividual;
 }
 
+// Send event through ROS
+FString FSLSupportedByEvent::ToROSQuery() const
+{
+	// has_region, has_role, has_participant, has_time_interval, 
+	// Action
+	FString Query = FString::Printf(TEXT("Process = \'http://www.ease-crc.org/ont/SOMA.owl#PhysicsProcess_%s\',"), *Id);
+	Query.Append("tell([");
+	Query.Append("is_physical_process(Process),");
+	Query.Append(FString::Printf(TEXT("has_type(EventType, soma:\'ForceInteraction\'),")));
+	Query.Append("holds(Process, soma:\'isOccurrenceOf\', EventType),");
+	Query.Append(FString::Printf(TEXT("holds(Process, soma:'hasEventBegin', %f),"), StartTime));
+	Query.Append(FString::Printf(TEXT("holds(Process, soma:'hasEventEnd', %f)"), EndTime));
+	Query.Append("]),");
+
+
+	// Objects
+	if (SupportingIndividual->IsLoaded() && SupportedIndividual->IsLoaded())
+	{
+		Query.Append(FString::Printf(TEXT("SupportingObj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *SupportingIndividual->GetClassValue(), *SupportingIndividual->GetIdValue()));
+		Query.Append(FString::Printf(TEXT("SupportedObj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *SupportedIndividual->GetClassValue(), *SupportedIndividual->GetIdValue()));
+		Query.Append("tell([");
+		Query.Append("is_physical_object(SupportingObj),");
+		Query.Append("is_physical_object(SupportedObj),");
+		Query.Append(FString::Printf(TEXT("holds(SupportedObj, soma:\'isSupportedBy\', SupportingObj) during [%f,%f],"), StartTime, EndTime));
+		Query.Append(FString::Printf(TEXT("holds(SupportingObj, soma:\'supports\', SupportedObj) during [%f,%f],"), StartTime, EndTime));
+		Query.Append("has_participant(Process, SupportingObj),");
+		Query.Append("has_participant(Process, SupportedObj)");
+		Query.Append("]),");
+	}
+
+	// Episode
+	Query.Append("tell([");
+	Query.Append("is_episode(Episode),");
+	Query.Append("is_setting_for(Episode, Process)");
+	Query.Append("]).");
+	return Query;
+}
+
 // Add the owl representation of the event to the owl document
 void FSLSupportedByEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 {

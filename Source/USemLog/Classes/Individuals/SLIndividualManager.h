@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
 #include "HAL/ThreadSafeBool.h"
+#include "ROSProlog/SLPrologClient.h"
 #include "SLIndividualManager.generated.h"
 
 // Forward declaration
@@ -75,6 +76,9 @@ public:
 	// Get the individual component owner from the unique id
 	AActor* GetIndividualActor(const FString& Id);
 
+	// Set a reference to ROSProlog logger to update semantic map
+	void SetPrologClient(USLPrologClient* InROSProlog);
+
 protected:
 	// Clear all cached references
 	void InitReset();
@@ -119,7 +123,6 @@ private:
 	// Triggered by external destruction of individual component
 	UFUNCTION()
 	void OnIndividualComponentDestroyed(USLIndividualComponent* DestroyedComponent);
-
 
 private:
 	// True if the manager is init
@@ -202,5 +205,8 @@ private:
 	// Triggers searching for the id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
 	bool bFindIdButtonHack = false;
+
+	// Channel to add objects into knowrob via prolog
+	USLPrologClient* ROSPrologClient = NULL;
 };
 

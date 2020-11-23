@@ -194,6 +194,20 @@ bool USLBaseIndividual::ClearExportedValues()
 	return bNewValue;
 }
 
+// Get the extend of the actor represented by the individual
+FVector USLBaseIndividual::GetParentActorExtent() const
+{
+	// Temporally remove rotations to get real bounding box
+	FRotator OrigRot = ParentActor->GetActorRotation();
+	ParentActor->SetActorRotation(FRotator(0, 0, 0));
+	// Get Bounds
+	FVector Extent = ParentActor->GetComponentsBoundingBox().GetExtent();
+	// Set original rotation
+	ParentActor->SetActorRotation(OrigRot);
+
+	return Extent;
+}
+
 // Cache the current transform of the individual (returns true on a new value)
 bool USLBaseIndividual::UpdateCachedPose(float Tolerance, FTransform* OutPose)
 {

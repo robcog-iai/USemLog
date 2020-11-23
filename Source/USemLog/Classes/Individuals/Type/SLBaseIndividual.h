@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "GameFramework/Actor.h"
 //#if SL_WITH_LIBMONGO_C
 //THIRD_PARTY_INCLUDES_START
 //	#if PLATFORM_WINDOWS
@@ -81,6 +82,9 @@ public:
 
 	// Get the cached transform of the individual
 	FTransform GetCachedPose() const { return CachedPose; };
+
+	// Get the extend of the actor represented by the individual
+	FVector GetParentActorExtent() const;
 
 	// Get actor represented by the individual
 	AActor* GetParentActor() const { return ParentActor; };

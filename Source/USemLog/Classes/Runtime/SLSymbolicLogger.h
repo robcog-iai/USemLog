@@ -41,7 +41,9 @@ protected:
 
 public:
 	// Init logger (called when the logger is synced externally)
-	void Init(const FSLSymbolicLoggerParams& InLoggerParameters, const FSLLoggerLocationParams& InLocationParameters);
+	void Init(const FSLSymbolicLoggerParams& InLoggerParameters, 
+		const FSLLoggerLocationParams& InLocationParameters,
+		const FSLLoggerDBServerParams& InDBServerParameters);
 
 	// Start logger (called when the logger is synced externally)
 	void Start();
@@ -140,6 +142,10 @@ private:
 	// Location parameters
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseIndependently"))
 	FSLLoggerLocationParams LocationParameters;
+
+	// Database parameters
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseIndependently"))
+	FSLLoggerDBServerParams DBServerParameters;
 
 	// Logger start parameters
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseIndependently"))

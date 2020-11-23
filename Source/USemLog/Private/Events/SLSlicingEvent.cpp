@@ -91,6 +91,15 @@ FString FSLSlicingEvent::ToROSQuery() const
 	}
 	Query.Append("]),");
 
+	// Manipulator
+	if (PerformedBy->IsLoaded())
+	{
+		Query.Append(FString::Printf(TEXT("Manipulator = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *PerformedBy->GetClassValue(), *PerformedBy->GetIdValue()));
+		Query.Append("tell([");
+		Query.Append("holds(Action, soma:'isPerformedBy', Manipulator)");
+		Query.Append("]),");
+	}
+
 	// Tool
 	if (DeviceUsed->IsLoaded()) 
 	{

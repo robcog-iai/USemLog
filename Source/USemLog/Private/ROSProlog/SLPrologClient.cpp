@@ -99,23 +99,17 @@ void USLPrologClient::AddEventQuery(TSharedPtr<ISLEvent> Event)
 }
 
 // Add object query
-void USLPrologClient::AddObjectQuery(FSLEntity *Entity) 
+void USLPrologClient::AddObjectQuery(USLBaseIndividual *Entity)
 {
 	
 	// Creates query ID
 	FString IdValue = FSLUuid::NewGuidInBase64();
 
-	// Temporally remove rotations to get real bounding box
-	AActor* Object = Cast<AActor>(Entity->Obj);
-	FRotator OrigRot = Object->GetActorRotation();
-	Object->SetActorRotation(FRotator(0, 0, 0));
 	// Get Bounds
-	FVector Extent = Object->GetComponentsBoundingBox().GetExtent();
-	// Set original rotation
-	Object->SetActorRotation(OrigRot);
+	FVector Extent = Entity->GetParentActorExtent();
 
 	// Creates query
-	FString Query = FString::Printf(TEXT("Obj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\', "), *Entity->Class, *Entity->Id);
+	FString Query = FString::Printf(TEXT("Obj = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\', "), *Entity->GetClassValue(), *Entity->GetIdValue());
 	Query.Append("tell([");
 	Query.Append("is_object(Obj), ");
 	Query.Append(FString::Printf(TEXT("has_type(Shape, soma:\'Shape\'), ")));

@@ -13,7 +13,8 @@
 #include "rosprolog_msgs/Finish.h"
 #include "ROSProlog/SLROSServiceClient.h"
 #endif // SL_WITH_ROSBRIDGE
-
+#include "Utils/SLUuid.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 #include "ROSProlog/SLQueryHandler.h"
 #include "UObject/NoExportTypes.h"
 #include "Events/ISLEventHandler.h"
@@ -49,7 +50,7 @@ public:
 	void AddEventQuery(TSharedPtr<ISLEvent> Event);
 
 	// Add an add object query
-	void AddObjectQuery(FSLEntity *Entity);
+	void AddObjectQuery(USLBaseIndividual *Entity);
 
 	// Send query <Id>
 	void SendPrologQuery(FString Id);

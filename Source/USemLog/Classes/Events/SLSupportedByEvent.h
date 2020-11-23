@@ -42,7 +42,7 @@ public:
 	virtual void AddToOwlDoc(FSLOwlDoc* OutDoc) override;
 
 	// Send through ROSBridge
-	virtual FString ToROSQuery() const override { return ""; };
+	virtual FString ToROSQuery() const override;
 
 	// Get event context data as string (ToString equivalent)
 	virtual FString Context() const override;

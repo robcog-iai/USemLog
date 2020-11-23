@@ -41,6 +41,42 @@ FSLOwlNode FSLContactEvent::ToOwlNode() const
 	return EventIndividual;
 }
 
+// Send event through ROS
+FString FSLContactEvent::ToROSQuery() const
+{
+	// has_region, has_role, has_participant, has_time_interval, 
+	// Action
+	FString Query = FString::Printf(TEXT("Process = \'http://www.ease-crc.org/ont/SOMA.owl#PhysicsProcess_%s\',"), *Id);
+	Query.Append("tell([");
+	Query.Append("is_physical_process(Process),");
+	Query.Append(FString::Printf(TEXT("has_type(EventType, soma:\'Collision\'),")));
+	Query.Append("holds(Process, soma:\'isOccurrenceOf\', EventType),");
+	Query.Append(FString::Printf(TEXT("holds(Process, soma:'hasEventBegin', %f),"), StartTime));
+	Query.Append(FString::Printf(TEXT("holds(Process, soma:'hasEventEnd', %f)"), EndTime));
+	Query.Append("]),");
+
+
+	// Objects
+	if (Individual1->IsLoaded() && Individual2->IsLoaded())
+	{
+		Query.Append(FString::Printf(TEXT("Obj1 = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *Individual1->GetClassValue(), *Individual1->GetIdValue()));
+		Query.Append(FString::Printf(TEXT("Obj2 = \'http://www.ease-crc.org/ont/SOMA.owl#%s_%s\',"), *Individual2->GetClassValue(), *Individual2->GetIdValue()));
+		Query.Append("tell([");
+		Query.Append("is_physical_object(Obj1),");
+		Query.Append("is_physical_object(Obj2),");
+		Query.Append("has_participant(Process, Obj1),");
+		Query.Append("has_participant(Process, Obj2)");
+		Query.Append("]),");
+	}
+
+	// Episode
+	Query.Append("tell([");
+	Query.Append("is_episode(Episode),");
+	Query.Append("is_setting_for(Episode, Process)");
+	Query.Append("]).");
+	return Query;
+}
+
 // Add the owl representation of the event to the owl document
 void FSLContactEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 {
