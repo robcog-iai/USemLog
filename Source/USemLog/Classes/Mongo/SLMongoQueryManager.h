@@ -153,4 +153,8 @@ private:
 	//// Triggers an episode query call
 	//UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
 	//bool bLoadEpisodeDataButtonHack = false;
+
+	//// Triggers a trajectory query call
+	//UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Buttons")
+	//bool bSkelTrajectoryQueryButtonHack = false;
 };
