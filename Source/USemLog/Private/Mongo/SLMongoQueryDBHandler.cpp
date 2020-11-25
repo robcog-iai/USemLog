@@ -797,39 +797,31 @@ FTransform FSLMongoQueryDBHandler::GetPose(const bson_t* doc) const
 	FVector Loc;
 	FQuat Quat;
 
-	// TODO use pose[x y z qx qy qz qw]
-	//bson_iter_array
-
 	bson_iter_t iter;
-	bson_iter_t value;
-
-	if (bson_iter_init(&iter, doc) && bson_iter_find_descendant(&iter, "loc.x", &value)/* && BSON_ITER_HOLDS_DOUBLE(&value)*/)
+	const uint8_t *data = NULL;
+	uint32_t len = 0;
+	
+	if (bson_iter_init_find(&iter, doc, "pose"))
 	{
-		Loc.X = bson_iter_double(&value);
-	}
-	if (bson_iter_init(&iter, doc) && bson_iter_find_descendant(&iter, "loc.y", &value)/* && BSON_ITER_HOLDS_DOUBLE(&value)*/)
-	{
-		Loc.Y = bson_iter_double(&value);
-	}
-	if (bson_iter_init(&iter, doc) && bson_iter_find_descendant(&iter, "loc.z", &value)/* && BSON_ITER_HOLDS_DOUBLE(&value)*/)
-	{
-		Loc.Z = bson_iter_double(&value);
-	}
-	if (bson_iter_init(&iter, doc) && bson_iter_find_descendant(&iter, "quat.x", &value)/* && BSON_ITER_HOLDS_DOUBLE(&value)*/)
-	{
-		Quat.X = bson_iter_double(&value);
-	}
-	if (bson_iter_init(&iter, doc) && bson_iter_find_descendant(&iter, "quat.y", &value)/* && BSON_ITER_HOLDS_DOUBLE(&value)*/)
-	{
-		Quat.Y = bson_iter_double(&value);
-	}
-	if (bson_iter_init(&iter, doc) && bson_iter_find_descendant(&iter, "quat.z", &value)/* && BSON_ITER_HOLDS_DOUBLE(&value)*/)
-	{
-		Quat.Z = bson_iter_double(&value);
-	}
-	if (bson_iter_init(&iter, doc) && bson_iter_find_descendant(&iter, "quat.w", &value)/* && BSON_ITER_HOLDS_DOUBLE(&value)*/)
-	{
-		Quat.W = bson_iter_double(&value);
+		bson_iter_array(&iter, &len, &data);
+		bson_t * pose_arr = bson_new_from_data(data, len);
+		bson_iter_t pose_iter;
+		bson_iter_init(&pose_iter, pose_arr);
+		
+		bson_iter_find(&pose_iter, "0");
+		Loc.X = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "1");
+		Loc.Y = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "2");
+		Loc.Z = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "3");
+		Quat.X = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "4");
+		Quat.Y = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "5");
+		Quat.Z = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "6");
+		Quat.W = bson_iter_double(&pose_iter);
 	}
 
 	Quat.Normalize();
@@ -846,39 +838,30 @@ FTransform FSLMongoQueryDBHandler::GetPose(const bson_iter_t* iter) const
 	FVector Loc;
 	FQuat Quat;
 
-	// TODO use pose[x y z qx qy qz qw]
-	//bson_iter_array
+	const uint8_t *data = NULL;
+	uint32_t len = 0;
+	bson_iter_t  value;
+	if (bson_iter_recurse(iter, &value) && bson_iter_find(&value, "pose"))
+	{
+		bson_iter_array(&value, &len, &data);
+		bson_t * pose_arr = bson_new_from_data(data, len);
+		bson_iter_t pose_iter;
+		bson_iter_init(&pose_iter, pose_arr);
 
-	bson_iter_t value;
-	bson_iter_t sub_value;
-
-	if (bson_iter_recurse(iter, &value) && bson_iter_find_descendant(&value, "loc.x", &sub_value))
-	{
-		Loc.X = bson_iter_double(&sub_value);
-	}
-	if (bson_iter_recurse(iter, &value) && bson_iter_find_descendant(&value, "loc.y", &sub_value))
-	{
-		Loc.Y = bson_iter_double(&sub_value);
-	}
-	if (bson_iter_recurse(iter, &value) && bson_iter_find_descendant(&value, "loc.z", &sub_value))
-	{
-		Loc.Z = bson_iter_double(&sub_value);
-	}
-	if (bson_iter_recurse(iter, &value) && bson_iter_find_descendant(&value, "quat.x", &sub_value))
-	{
-		Quat.X = bson_iter_double(&sub_value);
-	}
-	if (bson_iter_recurse(iter, &value) && bson_iter_find_descendant(&value, "quat.y", &sub_value))
-	{
-		Quat.Y = bson_iter_double(&sub_value);
-	}
-	if (bson_iter_recurse(iter, &value) && bson_iter_find_descendant(&value, "quat.z", &sub_value))
-	{
-		Quat.Z = bson_iter_double(&sub_value);
-	}
-	if (bson_iter_recurse(iter, &value) && bson_iter_find_descendant(&value, "quat.w", &sub_value))
-	{
-		Quat.W = bson_iter_double(&sub_value);
+		bson_iter_find(&pose_iter, "0");
+		Loc.X = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "1");
+		Loc.Y = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "2");
+		Loc.Z = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "3");
+		Quat.X = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "4");
+		Quat.Y = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "5");
+		Quat.Z = bson_iter_double(&pose_iter);
+		bson_iter_find(&pose_iter, "6");
+		Quat.W = bson_iter_double(&pose_iter);
 	}
 
 	Quat.Normalize();
