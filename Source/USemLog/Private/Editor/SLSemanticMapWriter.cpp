@@ -36,7 +36,7 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 	const FString& InFilename,
 	bool bOverwrite)
 {
-	FString FullFilePath = FPaths::ProjectDir() + "/SemLog/" +
+	FString FullFilePath = FPaths::ProjectDir() + "/SL/" +
 		InDirectory + TEXT("/") + InFilename + TEXT(".owl");
 
 	// Check if map already exists

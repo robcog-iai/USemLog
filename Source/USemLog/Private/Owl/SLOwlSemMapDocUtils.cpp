@@ -4,7 +4,7 @@
 #include "Owl/SLOwlSemMapDocUtils.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "Individuals/SLIndividualUtils.h"
-
+#include "Runtime/SLLoggerManager.h"
 #include "EngineUtils.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
@@ -40,12 +40,12 @@ bool FSLOwlSemMapDocUtils::CreateAndPrintDoc(UWorld* World, bool bOverwrite, ESL
     FSLOwlDoc SemMapOwlDoc = GetDocumentTemplate(Type);
 
     // Add map individual, set the task id
-    FString TaskId = "None";
-    //for (TActorIterator<ASLManager> ActItr(World); ActItr; ++ActItr)
-    //{
-    //    TaskId = *ActItr->GetTaskId();
-    //    break;
-    //}
+    FString TaskId = "DefaultTaskId";
+    for (TActorIterator<ASLLoggerManager> ActItr(World); ActItr; ++ActItr)
+    {
+        TaskId = *ActItr->GetTaskId();
+        break;
+    }
     FSLOwlSemMapDocUtils::AddMapIndividual(SemMapOwlDoc, TaskId);
 
     // Iterate individuals from the world
@@ -58,7 +58,7 @@ bool FSLOwlSemMapDocUtils::CreateAndPrintDoc(UWorld* World, bool bOverwrite, ESL
     }
 
     // Print the document
-    return FSLOwlSemMapDocUtils::PrintDoc(SemMapOwlDoc, "/SL/" + TaskId, TEXT("SemanticMap"), bOverwrite);
+    return FSLOwlSemMapDocUtils::PrintDoc(SemMapOwlDoc, "/SL/" + TaskId, TEXT("SemanticMap_new"), bOverwrite);
 }
 
 // Print the document to file

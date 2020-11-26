@@ -880,9 +880,9 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemMapSlot()
 		[
 			SNew(SButton)
 			.Text(LOCTEXT("SemMapWrite", "Write"))
-		.IsEnabled(true)
-		.ToolTipText(LOCTEXT("SemMapWriteTip", "Exports the generated semantic map to an owl file"))
-		.OnClicked(this, &FSLEdModeToolkit::OnWriteSemMap)
+			.IsEnabled(true)
+			.ToolTipText(LOCTEXT("SemMapWriteTip", "Exports the generated semantic map to an owl file"))
+			.OnClicked(this, &FSLEdModeToolkit::OnWriteSemMap)
 		]
 		];
 }

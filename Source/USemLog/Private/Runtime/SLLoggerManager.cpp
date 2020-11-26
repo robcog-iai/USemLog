@@ -33,7 +33,7 @@ ASLLoggerManager::ASLLoggerManager()
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
-	SpriteScale = 0.65;
+	SpriteScale = 0.5;
 	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLLoggerManager"));
 	GetSpriteComponent()->Sprite = SpriteTexture.Get();
 #endif // WITH_EDITORONLY_DATA
