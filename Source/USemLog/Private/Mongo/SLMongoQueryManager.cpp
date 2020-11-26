@@ -31,9 +31,9 @@ ASLMongoQueryManager::ASLMongoQueryManager()
 //		PropertyChangedEvent.Property->GetFName() : NAME_None;
 //
 //	/* Button hacks */
-//	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bConnectButtonHack))
+//	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bMongoConnectButtonHack))
 //	{
-//		bConnectButtonHack = false;
+//		bMongoConnectButtonHack = false;
 //		if (Connect(ServerIpValueHack, ServerPortValueHack))
 //		{
 //			UE_LOG(LogTemp, Warning, TEXT("%s::%d Connected to %s:%ld"), *FString(__FUNCTION__), __LINE__, *ServerIpValueHack, ServerPortValueHack);
@@ -43,9 +43,9 @@ ASLMongoQueryManager::ASLMongoQueryManager()
 //			UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to connect to %s:%ld"), *FString(__FUNCTION__), __LINE__, *ServerIpValueHack, ServerPortValueHack);
 //		}
 //	}
-//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bDisconnectButtonHack))
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bMongoDisconnectButtonHack))
 //	{
-//		bDisconnectButtonHack = false;
+//		bMongoDisconnectButtonHack = false;
 //		Disconnect();
 //		UE_LOG(LogTemp, Warning, TEXT("%s::%d Disconnected.."), *FString(__FUNCTION__), __LINE__);
 //	}
@@ -112,6 +112,16 @@ ASLMongoQueryManager::ASLMongoQueryManager()
 //		{
 //			UE_LOG(LogTemp, Warning, TEXT("\t\t\t Frame: Ts=%f; \t IndividualsNum=%d;"), Frame.Key, Frame.Value.Num());
 //		}
+//	}
+//	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLMongoQueryManager, bSkelTrajectoryQueryButtonHack))
+//	{
+//		bTrajectoryQueryButtonHack = false;
+//		TArray<TPair<FTransform, TMap<int32, FTransform>>> Trajectory = GetSkeletalIndividualTrajectory(TaskIdValueHack, EpisodeIdValueHack,
+//			IndividualIdValueHack, StartTimestampValueHack, EndTimestampValueHack, DeltaTValueHack);
+//
+//		UE_LOG(LogTemp, Warning, TEXT("%s::%d [%f-%f] IndividualTrajectoryNum=%ld; (%s:%s:%s)"),
+//			*FString(__FUNCTION__), __LINE__, StartTimestampValueHack, EndTimestampValueHack, Trajectory.Num(),
+//			*TaskIdValueHack, *EpisodeIdValueHack, *IndividualIdValueHack);
 //	}
 //}
 //#endif // WITH_EDITOR
