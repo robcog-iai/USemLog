@@ -61,6 +61,9 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
+	// Check if the manager is running independently
+	bool IsRunningIndependently() const { return bUseIndependently; };
+
 protected:
 	// Init logger (called when the logger is used independently)
 	void InitImpl();
@@ -103,7 +106,7 @@ protected:
 private:
 	// If true the logger will start on its own (instead of being started by the manager)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bUseIndependently;
+	uint8 bUseIndependently : 1;
 
 	// Logger parameters
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseIndependently"))

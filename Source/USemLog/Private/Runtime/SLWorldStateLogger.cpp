@@ -25,7 +25,6 @@ ASLWorldStateLogger::ASLWorldStateLogger()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
-
 	bUseIndependently = false;
 
 #if WITH_EDITORONLY_DATA

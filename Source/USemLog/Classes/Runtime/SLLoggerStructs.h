@@ -73,11 +73,11 @@ struct FSLLoggerStartParams
 	ESLLoggerStartTime StartTime = ESLLoggerStartTime::AtBeginPlay;
 
 	// Start after a given delay (if ESLLoggerStartTime::AfterDelay is selected)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger"/*, meta = (editcondition = todo 4.22+)*/)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "StartTime==ESLLoggerStartTime::AfterDelay"))
 	float StartDelay = 0.5f;
 
 	// Action name for starting from user input (if ESLLoggerStartTime::FromUserInput is selected)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger"/*, meta = (editcondition = todo 4.22+)*/)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "StartTime==ESLLoggerStartTime::FromUserInput"))
 	FName UserInputActionName = TEXT("SLTrigger");
 };
 
