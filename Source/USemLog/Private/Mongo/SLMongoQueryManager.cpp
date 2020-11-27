@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Mongo/SLMongoQueryManager.h"
+#include "EngineUtils.h"
 
 // Ctor
 ASLMongoQueryManager::ASLMongoQueryManager()
@@ -388,4 +389,26 @@ TArray<TPair<float, TMap<FString, FTransform>>> ASLMongoQueryManager::GetEpisode
 TArray<TPair<float, TMap<FString, FTransform>>> ASLMongoQueryManager::GetEpisodeData() const
 {
 	return DBHandler.GetEpisodeData();
+}
+
+// Spawn or get manager from the world
+ASLMongoQueryManager* ASLMongoQueryManager::GetExistingOrSpawnNew(UWorld* World)
+{
+	// Check in world
+	for (TActorIterator<ASLMongoQueryManager>Iter(World); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			return *Iter;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_MongoQueryManager");
+	auto Manager = World->SpawnActor<ASLMongoQueryManager>(SpawnParams);
+#if WITH_EDITOR
+	Manager->SetActorLabel(TEXT("SL_MongoQueryManager"));
+#endif // WITH_EDITOR
+	return Manager;
 }

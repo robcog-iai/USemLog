@@ -349,6 +349,28 @@ void ASLKnowrobManager::Finish(bool bForced)
 		*FString(__FUNCTION__), __LINE__, *GetName());
 }
 
+// Spawn or get manager from the world
+ASLKnowrobManager* ASLKnowrobManager::GetExistingOrSpawnNew(UWorld* World)
+{
+	// Check in world
+	for (TActorIterator<ASLKnowrobManager>Iter(World); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			return *Iter;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_KnowrobManager");
+	auto Manager = World->SpawnActor<ASLKnowrobManager>(SpawnParams);
+#if WITH_EDITOR
+	Manager->SetActorLabel(TEXT("SL_KnowrobManager"));
+#endif // WITH_EDITOR
+	return Manager;
+}
+
 // Setup user input bindings
 void ASLKnowrobManager::SetupInputBindings()
 {

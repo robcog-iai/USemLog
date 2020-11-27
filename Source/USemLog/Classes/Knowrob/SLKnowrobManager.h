@@ -79,6 +79,9 @@ public:
 	// Get mongo manager
 	ASLMongoQueryManager* GetMongoQueryManager() { return MongoQueryManager; };
 
+	// Spawn or get manager from the world
+	static ASLKnowrobManager* GetExistingOrSpawnNew(UWorld* World);
+
 protected:
 	// Setup user input bindings
 	void SetupInputBindings();

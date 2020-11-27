@@ -254,6 +254,28 @@ void ASLVizManager::RemoveAllIndividualHighlights()
 	HighlightedIndividuals.Empty();
 }
 
+// Spawn or get manager from the world
+ASLVizManager* ASLVizManager::GetExistingOrSpawnNew(UWorld* World)
+{
+	// Check in world
+	for (TActorIterator<ASLVizManager>Iter(World); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			return *Iter;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_VizManager");
+	auto Manager = World->SpawnActor<ASLVizManager>(SpawnParams);
+#if WITH_EDITOR
+	Manager->SetActorLabel(TEXT("SL_VizManager"));
+#endif // WITH_EDITOR
+	return Manager;
+}
+
 
 /* Markers */
 /* Primitive */

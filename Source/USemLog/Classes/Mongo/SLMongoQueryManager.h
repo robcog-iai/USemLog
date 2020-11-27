@@ -73,6 +73,9 @@ public:
 	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData(const FString& InEpisodeId);
 	TArray<TPair<float, TMap<FString, FTransform>>> GetEpisodeData() const;
 
+	// Spawn or get manager from the world
+	static ASLMongoQueryManager* GetExistingOrSpawnNew(UWorld* World);
+
 protected:
 	// True when successfully connected to the server
 	bool bConnected : 1;

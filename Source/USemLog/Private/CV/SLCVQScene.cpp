@@ -2,14 +2,18 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "CV/SLCVQScene.h"
-#include "Knowrob/SLKnowrobManager.h"
+#include "Individuals/SLIndividualManager.h"
+#include "Mongo/SLMongoQueryManager.h"
 
 #if WITH_EDITOR
-#include "Editor.h"	// GEditor
+#include "Engine/Selection.h"
+#include "Editor.h"
+#include "Individuals/SLIndividualUtils.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 #endif // WITH_EDITOR
 
 // Public execute function
-void USLCVQScene::Execute(ASLKnowrobManager* KRManager)
+void USLCVQScene::ShowScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
 {
 	if (bIgnore)
 	{
@@ -18,35 +22,44 @@ void USLCVQScene::Execute(ASLKnowrobManager* KRManager)
 		return;
 	}
 
-	if (!KRManager || !KRManager->IsValidLowLevel() || KRManager->IsPendingKillOrUnreachable() || !KRManager->IsInit())
+	if (!IndividualManager || !IndividualManager->IsValidLowLevel() || IndividualManager->IsPendingKillOrUnreachable() || !IndividualManager->IsLoaded())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s knowrob manager is not valid/init, aborting execution.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s individual manager is not valid/loaded, aborting execution.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
 
-	if (bExecuteChildrenFirst)
+	if (!MQManager || !MQManager->IsValidLowLevel() || MQManager->IsPendingKillOrUnreachable() || !MQManager->IsConnected())
 	{
-		ExecuteChildren(KRManager);
-		ExecuteImpl(KRManager);
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager is not valid/connected, aborting execution.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
 	}
-	else
+
+	ShowSceneImpl(IndividualManager, MQManager);
+}
+
+// Hide scene
+void USLCVQScene::HideScene(ASLIndividualManager* IndividualManager)
+{
+	if (bIgnore)
 	{
-		ExecuteImpl(KRManager);
-		ExecuteChildren(KRManager);
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is set to be ignored, skipping execution.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
 	}
+
+	if (!IndividualManager || !IndividualManager->IsValidLowLevel() || IndividualManager->IsPendingKillOrUnreachable() || !IndividualManager->IsLoaded())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s individual manager is not valid/loaded, aborting execution.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
+
+	HideSceneImpl(IndividualManager);
 }
 
 #if WITH_EDITOR
-// Execute function called from the editor, references need to be set manually
-void USLCVQScene::ManualExecute()
-{
-	if (IsReadyForManualExecution())
-	{
-		Execute(KnowrobManager.Get());
-	}
-}
-
 // Called when a property is changed in the editor
 void USLCVQScene::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
@@ -63,85 +76,71 @@ void USLCVQScene::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyC
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLCVQScene, bManualExecuteButton))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USLCVQScene, bAddSelectedButton))
 	{
-		bManualExecuteButton = false;
-		ManualExecute();
-	}
-}
-
-// Check if the references are set for calling the execute function from the editor
-bool USLCVQScene::IsReadyForManualExecution() const
-{
-	if (KnowrobManager.IsValid() 
-		&& KnowrobManager->IsValidLowLevel() 
-		&& !KnowrobManager->IsPendingKillOrUnreachable())
-	{
-
-		/*
-		* World types info:
-		*
-		* GIsEditor						-  True if we are in the editor. (True also when Play in Editor (PIE), or Simulating in Editor (SIE))
-		*
-		* EWorldType::None				- An untyped world, in most cases this will be the vestigial worlds of streamed in sub-levels
-		* EWorldType::Game				- The game world
-		* EWorldType::Editor			- A world being edited in the editor
-		* EWorldType::PIE				- A Play In Editor world
-		* EWorldType::EditorPreview		- A preview world for an editor tool
-		* EWorldType::GamePreview		- A preview world for a game
-		* EWorldType::GameRPC			- A minimal RPC world for a game
-		* EWorldType::Inactive			- An editor world that was loaded but not currently being edited in the level editor
-		*
-		* GEditor->PlayWorld				- A pointer to a UWorld that is the duplicated/saved-loaded to be played in with "Play From Here"
-		* GEditor->bIsSimulatingInEditor	- True if we're Simulating In Editor, as opposed to Playing In Editor.  In this mode, simulation takes place right the level editing environment
-		* GIsPlayInEditorWorld				- Whether GWorld points to the play in editor world
-		* GWorld->HasBegunPlay()			- True if gamplay has started
-		*/
-
-		// If we are running in the editor, make sure we are running a duplicated world (not the editor active one)
-		if (GIsEditor && !GEditor->PlayWorld)
+		bAddSelectedButton = false;
+		if (bOverwrite)
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s is in editor world, skipping manual execution.."),
-				*FString(__FUNCTION__), __LINE__, *GetName());
-			return false;
+			Ids.Empty();
 		}
-		
-		//// Check that the referenced pointer is in the same world
-		//if (GWorld && GWorld == KnowrobManager->GetWorld())
-		//{
-		//	UE_LOG(LogTemp, Log, TEXT("%s::%d %s's GWorld[%s;%p] == KnowrobManager->GetWorld()[%s;%p] .."),	*FString(__FUNCTION__), __LINE__,
-		//		*GetName(), *GWorld->GetName(), GWorld, *KnowrobManager->GetWorld()->GetName(), KnowrobManager->GetWorld());
-		//	return true;
-		//}
-		//else
-		//{
-		//	UE_LOG(LogTemp, Error, TEXT("%s::%d %s's %s's GWorld[%s;%p] != KnowrobManager->GetWorld()[%s;%p] .."), *FString(__FUNCTION__), __LINE__,
-		//		*GetName(), *GWorld->GetName(), GWorld, *KnowrobManager->GetWorld()->GetName(), KnowrobManager->GetWorld());
-		//	return false;
-		//}
-
-		return true;
+		for (FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
+		{
+			AActor* SelectedActor = CastChecked<AActor>(*It);
+			if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(SelectedActor))
+			{
+				if (BI->IsLoaded())
+				{
+					bEnsureUniqueness ? Ids.AddUnique(BI->GetIdValue()) : Ids.Add(BI->GetIdValue());
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual is not loaded.."),
+						*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no individual representation.."),
+					*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
+			}
+		}
 	}
-	else
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLCVQScene, bRemoveSelectedButton))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's KnowrobManager's soft reference is not valid.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
-		return false;
+		bRemoveSelectedButton = false;
+		for (FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
+		{
+			AActor* SelectedActor = CastChecked<AActor>(*It);
+			if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(SelectedActor))
+			{
+				if (BI->IsLoaded())
+				{
+					Ids.Remove(BI->GetIdValue());
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual is not loaded.."),
+						*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no individual representation.."),
+					*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
+			}
+		}
 	}
 }
 #endif // WITH_EDITOR
 
-// Execute batch command if any
-void USLCVQScene::ExecuteChildren(ASLKnowrobManager* KRManager)
+// Virtual implementation of the execute function
+void USLCVQScene::ShowSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
 {
-	for (const auto C : Children)
-	{
-		C->Execute(KRManager);
-	}
+	UE_LOG(LogTemp, Log, TEXT("%s::%d %'s execution"), *FString(__FUNCTION__), __LINE__);	
 }
 
-// Virtual implementation of the execute function
-void USLCVQScene::ExecuteImpl(ASLKnowrobManager* KRManager)
+// Virtual implementation of the hide executed scene function
+void USLCVQScene::HideSceneImpl(ASLIndividualManager* IndividualManager)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d %'s execution"), *FString(__FUNCTION__), __LINE__);
+	UE_LOG(LogTemp, Log, TEXT("%s::%d %'s hide execution"), *FString(__FUNCTION__), __LINE__);
 }

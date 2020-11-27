@@ -304,7 +304,7 @@ private:
 	float CurrCameraPoseSphereRadius;
 
 	// Current individual index in the array
-	int32 ViewIdx = INDEX_NONE;
+	int32 IndividualOrSceneIdx = INDEX_NONE;
 
 	// Current camera pose index in the array
 	int32 CameraPoseIdx = INDEX_NONE;

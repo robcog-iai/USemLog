@@ -65,6 +65,9 @@ public:
 	// Remove all individual highlights
 	void RemoveAllIndividualHighlights();
 
+	// Spawn or get manager from the world
+	static ASLVizManager* GetExistingOrSpawnNew(UWorld* World);
+
 
 	/* Primitive markers */
 	// Create a primitive marker

@@ -75,6 +75,9 @@ public:
 	// Get the individual component owner from the unique id
 	AActor* GetIndividualActor(const FString& Id);
 
+	// Spawn or get manager from the world
+	static ASLIndividualManager* GetExistingOrSpawnNew(UWorld* World);
+
 protected:
 	// Clear all cached references
 	void InitReset();

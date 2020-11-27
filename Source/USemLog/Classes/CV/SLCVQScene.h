@@ -8,7 +8,8 @@
 #include "SLCVQScene.generated.h"
 
 // Forward declaration
-class ASLKnowrobManager;
+class ASLIndividualManager;
+class ASLMongoQueryManager;
 
 /**
  * Base class for viz queries
@@ -20,50 +21,56 @@ class USLCVQScene : public UDataAsset
 
 public:
 	// Public execute function
-	void Execute(ASLKnowrobManager* KRManager);
+	void ShowScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
+
+	// Hide executed scene
+	void HideScene(ASLIndividualManager* IndividualManager);
 
 	// Get the scene name
 	FString GetSceneName() const { return "DefaultSceneName"; };
 
 protected:
 #if WITH_EDITOR
-	// Execute function called from the editor, references need to be set manually
-	void ManualExecute();
-
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-
-	// Check if the references are set for calling the execute function from the editor
-	bool IsReadyForManualExecution() const;
 #endif // WITH_EDITOR
 
-	// Execute batch command if any
-	void ExecuteChildren(ASLKnowrobManager* KRManager);
-
 	// Virtual implementation of the execute function
-	virtual void ExecuteImpl(ASLKnowrobManager* KRManager);
+	virtual void ShowSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
+
+	// Virtual implementation of the hide executed scene function
+	virtual void HideSceneImpl(ASLIndividualManager* IndividualManager);
 
 protected:
-	/* Children to be called in a batch */
-	UPROPERTY(EditAnywhere, Category = "Children")
-	TArray<USLCVQScene*> Children;
+	/* Individuals in the scene */
+	UPROPERTY(EditAnywhere, Category = "CV Scene")
+	TArray<FString> Ids;
 
-	UPROPERTY(EditAnywhere, Category = "Children")
-	bool bExecuteChildrenFirst = false;
+	// Timestamp of the scene
+	UPROPERTY(EditAnywhere, Category = "CV Scene")
+	float Timestamp;
 
+	// Task id of the scene
+	UPROPERTY(EditAnywhere, Category = "CV Scene")
+	FString Task;
 
-	/* Manual interaction */
-	UPROPERTY(EditAnywhere, Category = "Manual Interaction")
-	TSoftObjectPtr<ASLKnowrobManager> KnowrobManager = nullptr;
+	// Episode id of the scene
+	UPROPERTY(EditAnywhere, Category = "CV Scene")
+	FString Episode;
 
-	UPROPERTY(EditAnywhere, Category = "Manual Interaction")
-	bool bManualExecuteButton = false;
-
-
-	/* Base properties */
-	UPROPERTY(EditAnywhere, Category = "VizQ")
-	FString Description;
-
-	UPROPERTY(EditAnywhere, Category = "VizQ")
+	UPROPERTY(EditAnywhere, Category = "CV Scene")
 	bool bIgnore;
+
+	/* Editor interaction */
+	UPROPERTY(EditAnywhere, Category = "CV Scene|Edit")
+	bool bAddSelectedButton = false;
+
+	UPROPERTY(EditAnywhere, Category = "CV Scene|Edit")
+	bool bRemoveSelectedButton = false;
+
+	UPROPERTY(EditAnywhere, Category = "CV Scene|Edit")
+	bool bOverwrite = false;
+
+	UPROPERTY(EditAnywhere, Category = "CV Scene|Edit")
+	bool bEnsureUniqueness = true;
 };

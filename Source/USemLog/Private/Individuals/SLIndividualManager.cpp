@@ -187,6 +187,28 @@ AActor* ASLIndividualManager::GetIndividualActor(const FString& Id)
 	return nullptr;
 }
 
+// Spawn or get manager from the world
+ASLIndividualManager* ASLIndividualManager::GetExistingOrSpawnNew(UWorld* World)
+{
+	// Check in world
+	for (TActorIterator<ASLIndividualManager>Iter(World); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			return *Iter;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_IndividualManager");
+	auto Manager = World->SpawnActor<ASLIndividualManager>(SpawnParams);
+#if WITH_EDITOR
+	Manager->SetActorLabel(TEXT("SL_IndividualManager"));
+#endif // WITH_EDITOR
+	return Manager;
+}
+
 // Clear all cached references
 void ASLIndividualManager::InitReset()
 {

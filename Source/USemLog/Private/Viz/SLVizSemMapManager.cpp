@@ -204,6 +204,28 @@ void ASLVizSemMapManager::SetIndividualsHiddenIterateCallback()
 	}
 }
 
+// Spawn or get manager from the world
+ASLVizSemMapManager* ASLVizSemMapManager::GetExistingOrSpawnNew(UWorld* World)
+{
+	// Check in world
+	for (TActorIterator<ASLVizSemMapManager>Iter(World); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			return *Iter;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_VizSemMapManager");
+	auto Manager = World->SpawnActor<ASLVizSemMapManager>(SpawnParams);
+#if WITH_EDITOR
+	Manager->SetActorLabel(TEXT("SL_VizSemMapManager"));
+#endif // WITH_EDITOR
+	return Manager;
+}
+
 // Get the individual manager from the world (or spawn a new one)
 bool ASLVizSemMapManager::SetIndividualManager()
 {

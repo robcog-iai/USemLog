@@ -283,7 +283,7 @@ void ASLCVScanner::Start()
 	GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
 
 	// Set the first individual
-	ViewIdx = INDEX_NONE;
+	IndividualOrSceneIdx = INDEX_NONE;
 	SetNextView();
 
 	// Start the dominoes
@@ -421,10 +421,10 @@ bool ASLCVScanner::SetNextCameraPose()
 // Set next view mode (return false if the last view mode was reached)
 bool ASLCVScanner::SetNextView()
 {
-	ViewIdx++;
+	IndividualOrSceneIdx++;
 	if (ScanMode == ESLCVScanMode::Individuals)
 	{
-		if (Individuals.IsValidIndex(ViewIdx))
+		if (Individuals.IsValidIndex(IndividualOrSceneIdx))
 		{
 			// Update camera distance from individual
 			CalcCameraPoseSphereRadius();
@@ -434,27 +434,27 @@ bool ASLCVScanner::SetNextView()
 			SetNextCameraPose();
 
 			// Move the individual into position
-			ApplyIndividual(Individuals[ViewIdx]);
+			ApplyIndividual(Individuals[IndividualOrSceneIdx]);
 
 			// Set individual string
-			ViewNameString = bUseActorNamesForFolders ? Individuals[ViewIdx]->GetParentActor()->GetName() 
-				: Individuals[ViewIdx]->GetIdValue();
+			ViewNameString = bUseActorNamesForFolders ? Individuals[IndividualOrSceneIdx]->GetParentActor()->GetName() 
+				: Individuals[IndividualOrSceneIdx]->GetIdValue();
 
 			// Set image name
-			ViewIdxString = FString::FromInt(ViewIdx) + "_" + FString::FromInt(Individuals.Num());
+			ViewIdxString = FString::FromInt(IndividualOrSceneIdx) + "_" + FString::FromInt(Individuals.Num());
 			SetImageName();
 
 			return true;
 		}
 		else
 		{
-			ViewIdx = INDEX_NONE;
+			IndividualOrSceneIdx = INDEX_NONE;
 			return false;
 		}
 	}
 	else if (ScanMode == ESLCVScanMode::Scenes)
 	{
-		if (Scenes.IsValidIndex(ViewIdx))
+		if (Scenes.IsValidIndex(IndividualOrSceneIdx))
 		{
 			// Update camera distance from individual
 			CalcCameraPoseSphereRadius();
@@ -467,17 +467,17 @@ bool ASLCVScanner::SetNextView()
 			ApplyScene();
 
 			// Set individual string
-			ViewNameString = Scenes[ViewIdx]->GetSceneName();
+			ViewNameString = Scenes[IndividualOrSceneIdx]->GetSceneName();
 
 			// Set image name
-			ViewIdxString = FString::FromInt(ViewIdx) + "_" + FString::FromInt(Scenes.Num());
+			ViewIdxString = FString::FromInt(IndividualOrSceneIdx) + "_" + FString::FromInt(Scenes.Num());
 			SetImageName();
 
 			return true;
 		}
 		else
 		{
-			ViewIdx = INDEX_NONE;
+			IndividualOrSceneIdx = INDEX_NONE;
 			return false;
 		}
 	}
@@ -611,7 +611,7 @@ void ASLCVScanner::ApplyCameraPose(FTransform NormalizedTransform)
 void ASLCVScanner::ApplyIndividual(USLVisibleIndividual* Individual)
 {
 	// Hide any previous individual
-	const int32 PrevIdx = ViewIdx - 1;
+	const int32 PrevIdx = IndividualOrSceneIdx - 1;
 	if (Individuals.IsValidIndex(PrevIdx))
 	{
 		auto PrevIndividual = Individuals[PrevIdx];
@@ -637,15 +637,24 @@ void ASLCVScanner::ApplyIndividual(USLVisibleIndividual* Individual)
 void ASLCVScanner::ApplyScene()
 {
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Applying scene %s .. "),
-		*FString(__FUNCTION__), __LINE__, *Scenes[ViewIdx]->GetSceneName());
+		*FString(__FUNCTION__), __LINE__, *Scenes[IndividualOrSceneIdx]->GetSceneName());
+	
+	// Hide previous scene
+	if (Scenes.IsValidIndex(IndividualOrSceneIdx - 1))
+	{
+		Scenes[IndividualOrSceneIdx]->HideScene(IndividualManager);
+	}
+
+	// Show current scene
+	//Scenes[IndividualOrSceneIdx]->Execute(IndividualManager);
 }
 
 // Hide mask clone, show original individual
 void ASLCVScanner::ShowOriginalIndividual()
 {
-	if (Individuals.IsValidIndex(ViewIdx))
+	if (Individuals.IsValidIndex(IndividualOrSceneIdx))
 	{
-		auto Individual = Individuals[ViewIdx];
+		auto Individual = Individuals[IndividualOrSceneIdx];
 		Individual->GetParentActor()->SetActorHiddenInGame(false);
 		if (auto Clone = IndividualsMaskClones.Find(Individual))
 		{
@@ -654,22 +663,22 @@ void ASLCVScanner::ShowOriginalIndividual()
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual clone is not found, this should not happen .."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), ViewIdx, Individuals.Num());
+				*FString(__FUNCTION__), __LINE__, *GetName(), IndividualOrSceneIdx, Individuals.Num());
 		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), ViewIdx, Individuals.Num());
+			*FString(__FUNCTION__), __LINE__, *GetName(), IndividualOrSceneIdx, Individuals.Num());
 	}
 }
 
 // Hide original individual, show mask clone
 void ASLCVScanner::ShowMaskIndividual()
 {
-	if (Individuals.IsValidIndex(ViewIdx))
+	if (Individuals.IsValidIndex(IndividualOrSceneIdx))
 	{
-		auto Individual = Individuals[ViewIdx];
+		auto Individual = Individuals[IndividualOrSceneIdx];
 		Individual->GetParentActor()->SetActorHiddenInGame(true);
 		if (auto Clone = IndividualsMaskClones.Find(Individual))
 		{
@@ -678,13 +687,13 @@ void ASLCVScanner::ShowMaskIndividual()
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual clone is not found, this should not happen .."),
-				*FString(__FUNCTION__), __LINE__, ViewIdx, Individuals.Num());
+				*FString(__FUNCTION__), __LINE__, IndividualOrSceneIdx, Individuals.Num());
 		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
-			*FString(__FUNCTION__), __LINE__, ViewIdx, Individuals.Num());
+			*FString(__FUNCTION__), __LINE__, IndividualOrSceneIdx, Individuals.Num());
 	}
 }
 
@@ -1010,9 +1019,9 @@ void ASLCVScanner::CalcCameraPoseSphereRadius()
 {
 	if (ScanMode == ESLCVScanMode::Individuals)
 	{
-		if (Individuals.IsValidIndex(ViewIdx))
+		if (Individuals.IsValidIndex(IndividualOrSceneIdx))
 		{
-			if (auto AsSMA = Cast<AStaticMeshActor>(Individuals[ViewIdx]->GetParentActor()))
+			if (auto AsSMA = Cast<AStaticMeshActor>(Individuals[IndividualOrSceneIdx]->GetParentActor()))
 			{
 				const float SphereRadius = AsSMA->GetStaticMeshComponent()->Bounds.SphereRadius;
 				CurrCameraPoseSphereRadius = SphereRadius * 1.75f;
@@ -1020,18 +1029,18 @@ void ASLCVScanner::CalcCameraPoseSphereRadius()
 			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual %s is not of a supported type.."),
-					*FString(__FUNCTION__), __LINE__, *GetName(), *Individuals[ViewIdx]->GetParentActor()->GetName());
+					*FString(__FUNCTION__), __LINE__, *GetName(), *Individuals[IndividualOrSceneIdx]->GetParentActor()->GetName());
 
 				FVector BBOrigin;
 				FVector BBBoxExtent;
-				Individuals[ViewIdx]->GetParentActor()->GetActorBounds(false, BBOrigin, BBBoxExtent);
+				Individuals[IndividualOrSceneIdx]->GetParentActor()->GetActorBounds(false, BBOrigin, BBBoxExtent);
 				CurrCameraPoseSphereRadius = BBBoxExtent.Size() * 1.75;
 			}
 		}
 		else
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), ViewIdx, Individuals.Num());
+				*FString(__FUNCTION__), __LINE__, *GetName(), IndividualOrSceneIdx, Individuals.Num());
 		}
 	}
 	else if (ScanMode == ESLCVScanMode::Scenes)
@@ -1044,13 +1053,13 @@ void ASLCVScanner::CalcCameraPoseSphereRadius()
 void ASLCVScanner::PrintProgress() const
 {
 	// Current scan
-	int32 CurrScan = ViewIdx * CameraScanPoses.Num() * ViewModes.Num() 
+	int32 CurrScan = IndividualOrSceneIdx * CameraScanPoses.Num() * ViewModes.Num() 
 		+ CameraPoseIdx * ViewModes.Num() 
 		+ ViewModeIdx + 1;
 	int32 NumScans = Individuals.Num() * CameraScanPoses.Num() * ViewModes.Num();	
 	UE_LOG(LogTemp, Log, TEXT("%s::%d::%f Individual:\t%ld/%ld; CameraPose:\t%ld/%ld; ViewMode=\t%ld/%ld; Scan:\t%ld/%ld;"),
 		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-		ViewIdx + 1, Individuals.Num(),
+		IndividualOrSceneIdx + 1, Individuals.Num(),
 		CameraPoseIdx + 1, CameraScanPoses.Num(),
 		ViewModeIdx + 1, ViewModes.Num(),
 		CurrScan, NumScans );
