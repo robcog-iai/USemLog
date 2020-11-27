@@ -15,7 +15,7 @@
 class ASLMongoQueryManager;
 class ASLVizManager;
 class ASLControlManager;
-class ASLSemanticMapManager;
+class ASLLevelManager;
 class ASLSymbolicLogger;
 
 enum class ESLVizPrimitiveMarkerType : uint8;
@@ -28,7 +28,7 @@ class USEMLOG_API FSLKREventDispatcher
 {
 public:
 	// Default ctor
-	FSLKREventDispatcher(TSharedPtr<FSLKRWSClient> InKRWSClient, UWorld* InWorld, ASLMongoQueryManager* InMongoManger, ASLVizManager* InVizManager, ASLSemanticMapManager* InSemanticMapManager, ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger);
+	FSLKREventDispatcher(TSharedPtr<FSLKRWSClient> InKRWSClient, UWorld* InWorld, ASLMongoQueryManager* InMongoManger, ASLVizManager* InVizManager, ASLLevelManager* InLevelManager, ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger);
 	
 	// Dector
 	~FSLKREventDispatcher();
@@ -92,7 +92,7 @@ private:
 	ASLVizManager* VizManager;
 	
 	// Used to switch Semantic Map
-	ASLSemanticMapManager* SemanticMapManager;
+	ASLLevelManager* LevelManager;
 
 	// Used to control individual
 	ASLControlManager* ControlManager;

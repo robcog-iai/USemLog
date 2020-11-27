@@ -5,7 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "Knowrob/SLSemanticMapManager.h"
+#include "Knowrob/SLLevelManager.h"
 #include "Knowrob/SLKRWSClient.h"
 #include "Knowrob/SLKREventDispatcher.h"
 #include "Viz/SLVizStructs.h"
@@ -207,7 +207,7 @@ private:
 
 	// Manages loading semantic map
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-    ASLSemanticMapManager* SemanticMapManager;
+    ASLLevelManager* LevelManager;
 
     // Manages controlling individual 
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
@@ -240,13 +240,13 @@ private:
 	int32 QueryIndex = INDEX_NONE;
 
 	/****************************************************************/
-	/*					 SemanticMap Editor button hacks 			*/	
+	/*					 Level Switch button hacks 			*/	
 	/****************************************************************/
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
-    FName MapToLoad = TEXT("Map1");
+    FName LevelToSwitch = TEXT("");
 
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
-    bool bLoadMapButtonHack = false;
+    bool bSwitchLevelButtonHack = false;
 
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
     bool bPrintAllMapsButtonHack = false;

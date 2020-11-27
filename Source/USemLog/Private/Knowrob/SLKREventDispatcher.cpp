@@ -2,7 +2,7 @@
 
 #include "Knowrob/SLKREventDispatcher.h"
 #include "Mongo/SLMongoQueryManager.h"
-#include "Knowrob/SLSemanticMapManager.h"
+#include "Knowrob/SLLevelManager.h"
 #include "Control/SLControlManager.h"
 #include "Viz/SLVizManager.h"
 #include "Viz/SLVizStructs.h"
@@ -14,10 +14,10 @@
 
 // Ctor
 FSLKREventDispatcher::FSLKREventDispatcher(TSharedPtr<FSLKRWSClient> InKRWSClient, UWorld* InWorld, ASLMongoQueryManager* InMongoManger,
-	ASLVizManager* InVizManager, ASLSemanticMapManager* InSemanticMapManager, 
+	ASLVizManager* InVizManager, ASLLevelManager* InSemanticMapManager, 
 	ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger) :
 	KRWSClient(InKRWSClient), World(InWorld), MongoManager(InMongoManger), VizManager(InVizManager), 
-	SemanticMapManager(InSemanticMapManager), ControlManager(InControlManager), SymbolicLogger(InSymbolicLogger)
+	LevelManager(InSemanticMapManager), ControlManager(InControlManager), SymbolicLogger(InSymbolicLogger)
 {
 }
 
@@ -122,7 +122,7 @@ void FSLKREventDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 void FSLKREventDispatcher::LoadMap(sl_pb::LoadMapParams params)
 {
 	FString Map = UTF8_TO_TCHAR(params.map().c_str());
-	SemanticMapManager->LoadMap(FName(*Map));
+	LevelManager->SwitchLevelTo(FName(*Map));
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
 	Response.Text = TEXT("Switch successfully");

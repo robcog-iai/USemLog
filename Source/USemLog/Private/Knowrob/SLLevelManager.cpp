@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Knowrob/SLSemanticMapManager.h"
+#include "Knowrob/SLLevelManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/LatentActionManager.h"
 #include "Engine/World.h"
@@ -9,19 +9,19 @@
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 
-ASLSemanticMapManager::ASLSemanticMapManager()
+ASLLevelManager::ASLLevelManager()
 {
     // Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = false;
 }
 
-bool ASLSemanticMapManager::Init()
+void ASLLevelManager::Init()
 {
 	if (bIsInit)
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Semantic Map manager (%s) is already init.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		return true;
+		return;
 	}
 
 	bool RetValue = true;
@@ -31,19 +31,18 @@ bool ASLSemanticMapManager::Init()
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		RetValue = false;
 	}
-	if (!IndividualManager->Load(false))
+	if (!IndividualManager->IsLoaded() && !IndividualManager->Load(false))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Semantic Map (%s) could not load the individual manager (%s).."),
 			*FString(__FUNCTION__), __LINE__, *GetName(), *IndividualManager->GetName());
 		RetValue = false;
 	}
 	bIsInit = RetValue;
-	return RetValue;
 }
 
 
 // Load the Semantic Map
-void ASLSemanticMapManager::LoadMap(const FName& Map) 
+void ASLLevelManager::SwitchLevelTo(const FName& Map) 
 {
     FString VisibleLevel = GetVisibleLevel();
     if (!VisibleLevel.Equals("None") && VisibleLevel.Equals(Map.ToString()))
@@ -60,7 +59,7 @@ void ASLSemanticMapManager::LoadMap(const FName& Map)
 }
 
 // Print all the available Semantic map
-void ASLSemanticMapManager::GetAllMaps()
+void ASLLevelManager::GetAllLevel()
 {
     const TArray<ULevelStreaming*>& StreamedLevels = GetWorld()->GetStreamingLevels();
 
@@ -78,7 +77,7 @@ void ASLSemanticMapManager::GetAllMaps()
 }
 
 // Load the streaming level
-void ASLSemanticMapManager::LoadLevel(const FName& Level)
+void ASLLevelManager::LoadLevel(const FName& Level)
 {
     FLatentActionInfo LatentInfo;
     LatentInfo.UUID = 1;
@@ -89,7 +88,7 @@ void ASLSemanticMapManager::LoadLevel(const FName& Level)
 }
 
 // Unload the streaming level
-void ASLSemanticMapManager::UnloadLevel(const FName& Level)
+void ASLLevelManager::UnloadLevel(const FName& Level)
 {
     FLatentActionInfo LatentInfo;
     LatentInfo.UUID = 2;
@@ -98,7 +97,7 @@ void ASLSemanticMapManager::UnloadLevel(const FName& Level)
 }
 
 // Get the current visible streaming level
-FString ASLSemanticMapManager::GetVisibleLevel()
+FString ASLLevelManager::GetVisibleLevel()
 {
     const TArray<ULevelStreaming*>& StreamedLevels = GetWorld()->GetStreamingLevels();
 
@@ -121,7 +120,7 @@ FString ASLSemanticMapManager::GetVisibleLevel()
 }
 
 // Remove PIE prefix and path
-FString ASLSemanticMapManager::RemoveAssetPathAndPrefix(const FString&  Asset)
+FString ASLLevelManager::RemoveAssetPathAndPrefix(const FString&  Asset)
 {
     TArray<FString> AssetPathArr;
     GetWorld()->RemovePIEPrefix(Asset).ParseIntoArray(AssetPathArr, TEXT("/"), true);
@@ -129,14 +128,14 @@ FString ASLSemanticMapManager::RemoveAssetPathAndPrefix(const FString&  Asset)
 }
 
 // Reset Individual manager after level is changed
-void ASLSemanticMapManager::ResetIndividualManager()
+void ASLLevelManager::ResetIndividualManager()
 {
 	IndividualManager->Init(true);
 	IndividualManager->Load(true);
 }
 
 // Get the individual manager from the world (or spawn a new one)
-bool ASLSemanticMapManager::SetIndividualManager()
+bool ASLLevelManager::SetIndividualManager()
 {
 	if (IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable())
 	{
