@@ -242,7 +242,8 @@ void ASLKnowrobManager::Init()
             *FString(__FUNCTION__), __LINE__, *GetName());
         return;
     }
-    if (!ControlManager->Init())
+	ControlManager->Init();
+    if (!ControlManager->IsInit())
     {
         UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the control manager.."),
             *FString(__FUNCTION__), __LINE__, *GetName());
@@ -305,9 +306,14 @@ void ASLKnowrobManager::Start()
 	}
 
 	// Initialize dispatcher for parsing protobuf message
-	KREventDispatcher = MakeShareable<FSLKREventDispatcher>(
-		new FSLKREventDispatcher(KRWSClient, GetWorld(), MongoQueryManager, VizManager, LevelManager, ControlManager, SymbolicLogger)
-		);
+	KRMsgDispatcher = MakeShareable<SLKRMsgDispatcher>(new SLKRMsgDispatcher());
+	KRMsgDispatcher->Init(KRWSClient, MongoQueryManager, VizManager, LevelManager, ControlManager, SymbolicLogger);
+	if (!KRMsgDispatcher->IsInit())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init kr msg dispatcher.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
 
 	// Bind user inputs
 	SetupInputBindings();
@@ -452,7 +458,7 @@ void ASLKnowrobManager::OnKRMsg()
 	{
 #if SL_WITH_PROTO_MSGS
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Processing message.."), *FString(__FUNCTION__), __LINE__);
-		KREventDispatcher->ProcessProtobuf(ProtoMsgBinary);
+		KRMsgDispatcher->ProcessProtobuf(ProtoMsgBinary);
 #endif // SL_WITH_PROTO_MSGS	
 	}
 }

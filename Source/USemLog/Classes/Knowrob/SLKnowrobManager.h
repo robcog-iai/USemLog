@@ -7,7 +7,7 @@
 #include "GameFramework/Info.h"
 #include "Knowrob/SLLevelManager.h"
 #include "Knowrob/SLKRWSClient.h"
-#include "Knowrob/SLKREventDispatcher.h"
+#include "Knowrob/SLKRMsgDispatcher.h"
 #include "Viz/SLVizStructs.h"
 #include "VizQ/SLVizQBase.h"
 #include "Runtime/SLLoggerStructs.h"
@@ -190,7 +190,7 @@ private:
 	int32 KRConnectRetryNum;
 
 	// Handle the protobuf message
-	TSharedPtr<FSLKREventDispatcher> KREventDispatcher;
+	TSharedPtr<SLKRMsgDispatcher> KRMsgDispatcher;
 
 	/* Managers */
 	// Delegates mongo queries

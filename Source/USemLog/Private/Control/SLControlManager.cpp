@@ -5,19 +5,20 @@
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "EngineUtils.h"
+#include "TimerManager.h"
 
 ASLControlManager::ASLControlManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-bool ASLControlManager::Init()
+void ASLControlManager::Init()
 {
 	if (bIsInit)
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Control manager (%s) is already init.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		return true;
+		return;
 	}
 
 	bool RetValue = true;
@@ -34,7 +35,6 @@ bool ASLControlManager::Init()
         RetValue = false;
     }
 	bIsInit = RetValue;
-	return RetValue;
 }
 
 void ASLControlManager::SetIndividualPose(const FString& Id, FVector Location, FQuat Quat)
@@ -105,6 +105,18 @@ void ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids)
 		UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(Actor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
 		StaticMesh->SetSimulatePhysics(false);
 	}
+	OnSimulationFinish.ExecuteIfBound();
+}
+
+void ASLControlManager::StartSimulationSelectionOnlyForSeconds(const TArray<FString>& Ids, int32 Seconds)
+{
+	StartSimulationSelectionOnly(Ids);
+	FTimerHandle TimerHandle;
+	FTimerDelegate TimerDelegateDelay;
+	TimerDelegateDelay.BindLambda([this](TArray<FString> Ids) {
+		StopSimulationSelectionOnly(Ids);
+	}, Ids);
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, Seconds, false);
 }
 
 /* Managers */

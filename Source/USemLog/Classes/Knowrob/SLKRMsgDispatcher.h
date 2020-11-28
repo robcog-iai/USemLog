@@ -24,14 +24,25 @@ enum class ESLVizMaterialType : uint8;
 /**
  * 
  */
-class USEMLOG_API FSLKREventDispatcher
+class USEMLOG_API SLKRMsgDispatcher
 {
 public:
 	// Default ctor
-	FSLKREventDispatcher(TSharedPtr<FSLKRWSClient> InKRWSClient, UWorld* InWorld, ASLMongoQueryManager* InMongoManger, ASLVizManager* InVizManager, ASLLevelManager* InLevelManager, ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger);
+	SLKRMsgDispatcher();
 	
 	// Dector
-	~FSLKREventDispatcher();
+	~SLKRMsgDispatcher();
+
+	// Set up required manager
+	void Init(TSharedPtr<FSLKRWSClient> InKRWSClient, ASLMongoQueryManager* InMongoManger, 
+		ASLVizManager* InVizManager, ASLLevelManager* InLevelManager, 
+		ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger);
+
+	// Check if the manager is set
+	bool IsInit() const { return bIsInit; }
+
+	// Reset setting
+	void Reset();
 
 public:
 	// Parse the proto sequence and trigger function
@@ -83,6 +94,8 @@ private:
 	// Transform the material type
 	ESLVizMaterialType GetMarkerMaterialType(const FString& MaterialType);
 
+	// Send response when simulation stop
+	void OnSimulationStop();
 
 private:
 	// Used to query the subsymbolic data from mongo
@@ -103,12 +116,13 @@ private:
 	// Used for sending response 
 	TSharedPtr<FSLKRWSClient> KRWSClient;
 
-	// Used for keep the current world
-	UWorld* World;
-
 	// Logger parameters
 	FSLSymbolicLoggerParams LoggerParameters;
 
 	// Location parameters
 	FSLLoggerLocationParams LocationParameters;
+
+	// True if the manager is initialized
+	bool bIsInit;
+
 };
