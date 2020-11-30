@@ -50,30 +50,6 @@ USLContactMonitorBox::~USLContactMonitorBox()
 	}
 }
 
-#if WITH_EDITOR
-// Update bounds visual (red/green -- parent is not/is semantically annotated)
-void USLContactMonitorBox::UpdateVisualColor()
-{
-	// Set the default color of the shape
-	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
-	{
-		if (ShapeColor != FColor::Green)
-		{
-			ShapeColor = FColor::Green;
-			MarkRenderStateDirty();
-		}
-	}
-	else
-	{
-		if (ShapeColor != FColor::Red)
-		{
-			ShapeColor = FColor::Red;
-			MarkRenderStateDirty();
-		}
-	}
-}
-#endif // WITH_EDITOR
-
 // Called at level startup
 void USLContactMonitorBox::BeginPlay()
 {
@@ -175,6 +151,28 @@ void USLContactMonitorBox::Start()
 }
 
 #if WITH_EDITOR
+// Update bounds visual (red/green -- parent is not/is semantically annotated)
+void USLContactMonitorBox::UpdateVisualColor()
+{
+	// Set the default color of the shape
+	if (UActorComponent* AC = GetOwner()->GetComponentByClass(USLIndividualComponent::StaticClass()))
+	{
+		if (ShapeColor != FColor::Green)
+		{
+			ShapeColor = FColor::Green;
+			MarkRenderStateDirty();
+		}
+	}
+	else
+	{
+		if (ShapeColor != FColor::Red)
+		{
+			ShapeColor = FColor::Red;
+			MarkRenderStateDirty();
+		}
+	}
+}
+
 // Called after the C++ constructor and after the properties have been initialized
 void USLContactMonitorBox::PostInitProperties()
 {

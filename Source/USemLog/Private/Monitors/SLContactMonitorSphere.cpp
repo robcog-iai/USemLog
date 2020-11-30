@@ -115,10 +115,12 @@ void USLContactMonitorSphere::Init(bool bInLogSupportedByEvents)
 			// Make sure there are no overlap events on the mesh as well
 			// (these will be calculated on the contact listener)
 			// TODO this might cause problems with grasping objects
-			//OwnerMeshComp->SetGenerateOverlapEvents(false);
+			OwnerMeshComp->SetGenerateOverlapEvents(false);
 
 			// Mark as initialized
 			bIsInit = true;
+
+			//UE_LOG(LogTemp, Log, TEXT("%s::%d Succesffully init %s"), *FString(__FUNCTION__), __LINE__, *GetFullName());
 		}
 	}
 }
@@ -137,7 +139,7 @@ void USLContactMonitorSphere::Start()
 		SetGenerateOverlapEvents(true);
 
 		// Broadcast currently overlapping components
-		USLContactMonitorSphere::TriggerInitialOverlaps();
+		TriggerInitialOverlaps();
 
 		// Bind future overlapping event delegates
 		OnComponentBeginOverlap.AddDynamic(this, &USLContactMonitorSphere::OnOverlapBegin);

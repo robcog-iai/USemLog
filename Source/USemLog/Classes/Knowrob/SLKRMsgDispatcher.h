@@ -88,6 +88,7 @@ private:
 	// Transform the maker type
 	ESLVizPrimitiveMarkerType GetMarkerType(sl_pb::MarkerType Marker);
 #endif // SL_WITH_PROTO_MSGS	
+
 	// Transform the string to color
 	FLinearColor GetMarkerColor(const FString& Color);
 

@@ -239,15 +239,6 @@ void SLKRMsgDispatcher::SimulateForSeconds(sl_pb::SimulateForSecondesParams para
 	ControlManager->StartSimulationSelectionOnlyForSeconds(Ids, params.seconds());
 }
 
-// Send response when simulation stop
-void SLKRMsgDispatcher::OnSimulationStop()
-{
-	FSLKRResponse Response;
-	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Stop Simulation");
-	KRWSClient->SendResponse(Response);
-}
-
 // Transform the maker type
 ESLVizPrimitiveMarkerType SLKRMsgDispatcher::GetMarkerType(sl_pb::MarkerType Marker)
 {
@@ -325,4 +316,13 @@ ESLVizMaterialType SLKRMsgDispatcher::GetMarkerMaterialType(const FString& Mater
 		return ESLVizMaterialType::Translucent;
 	}
 	return ESLVizMaterialType::NONE;
+}
+
+// Send response when simulation stop
+void SLKRMsgDispatcher::OnSimulationStop()
+{
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Stop Simulation");
+	KRWSClient->SendResponse(Response);
 }
