@@ -1,8 +1,8 @@
 // Copyright 2017-2020, Institute for Artificial Intelligence - University of Bremen
 
-#include "Knowrob/SLKREventDispatcher.h"
+#include "Knowrob/SLKRMsgDispatcher.h"
 #include "Mongo/SLMongoQueryManager.h"
-#include "Knowrob/SLSemanticMapManager.h"
+#include "Knowrob/SLLevelManager.h"
 #include "Control/SLControlManager.h"
 #include "Viz/SLVizManager.h"
 #include "Viz/SLVizStructs.h"
@@ -13,21 +13,45 @@
 #include "TimerManager.h"
 
 // Ctor
-FSLKREventDispatcher::FSLKREventDispatcher(TSharedPtr<FSLKRWSClient> InKRWSClient, UWorld* InWorld, ASLMongoQueryManager* InMongoManger,
-	ASLVizManager* InVizManager, ASLSemanticMapManager* InSemanticMapManager, 
-	ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger) :
-	KRWSClient(InKRWSClient), World(InWorld), MongoManager(InMongoManger), VizManager(InVizManager), 
-	SemanticMapManager(InSemanticMapManager), ControlManager(InControlManager), SymbolicLogger(InSymbolicLogger)
+SLKRMsgDispatcher::SLKRMsgDispatcher()
 {
 }
 
 // Dtor
-FSLKREventDispatcher::~FSLKREventDispatcher()
+SLKRMsgDispatcher::~SLKRMsgDispatcher()
 {
 }
 
+// Set up required manager
+void SLKRMsgDispatcher::Init(TSharedPtr<FSLKRWSClient> InKRWSClient, ASLMongoQueryManager* InMongoManger,
+	ASLVizManager* InVizManager, ASLLevelManager* InLevelManager,
+	ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger)
+{
+	KRWSClient = InKRWSClient;
+	MongoManager = InMongoManger;
+	VizManager = InVizManager;
+	LevelManager = InLevelManager;
+	ControlManager = InControlManager;
+	SymbolicLogger = InSymbolicLogger;
+
+	ControlManager->OnSimulationFinish.BindRaw(this, &SLKRMsgDispatcher::OnSimulationStop);
+	bIsInit = true;
+}
+
+void SLKRMsgDispatcher::Reset()
+{
+	KRWSClient = nullptr;
+	MongoManager = nullptr;
+	VizManager = nullptr;
+	LevelManager = nullptr;
+	ControlManager = nullptr;
+	SymbolicLogger = nullptr;
+	ControlManager->OnSimulationFinish.Unbind();
+	bIsInit = false;
+}
+
 // Parse the proto sequence and trigger function
-void  FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
+void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 {
 #if SL_WITH_PROTO_MSGS
 	sl_pb::KRAmevaEvent AmevaEvent;
@@ -68,10 +92,6 @@ void  FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
 	{
 		MoveIndividual(AmevaEvent.moveindividualparams());
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.SimulateAndLogForSeconds)
-	{
-		SimulateAndLogForSeconds(AmevaEvent.simulateandlogforsecondsparams());
-	}
 	else if (AmevaEvent.functocall() == AmevaEvent.SimulateForSeconds) 
 	{
 		SimulateForSeconds(AmevaEvent.simulateforsecondsparams());
@@ -81,7 +101,7 @@ void  FSLKREventDispatcher::ProcessProtobuf(std::string ProtoStr)
 
 #if SL_WITH_PROTO_MSGS
 // Set the task of MongoManager
-void FSLKREventDispatcher::SetTask(sl_pb::SetTaskParams params)
+void SLKRMsgDispatcher::SetTask(sl_pb::SetTaskParams params)
 {
 	MongoManager->SetTask(UTF8_TO_TCHAR(params.task().c_str()));
 	FSLKRResponse Response;
@@ -91,7 +111,7 @@ void FSLKREventDispatcher::SetTask(sl_pb::SetTaskParams params)
 }
 
 // Set the episode of MongoManager
-void FSLKREventDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
+void SLKRMsgDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
 {
 	MongoManager->SetEpisode(UTF8_TO_TCHAR(params.episode().c_str()));
 	FSLKRResponse Response;
@@ -101,7 +121,7 @@ void FSLKREventDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
 }
 
 // Draw the trajectory
-void FSLKREventDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
+void SLKRMsgDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 {
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
 	float Start = params.start();
@@ -119,10 +139,10 @@ void FSLKREventDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 }
 
 // Load the Semantic Map
-void FSLKREventDispatcher::LoadMap(sl_pb::LoadMapParams params)
+void SLKRMsgDispatcher::LoadMap(sl_pb::LoadMapParams params)
 {
 	FString Map = UTF8_TO_TCHAR(params.map().c_str());
-	SemanticMapManager->LoadMap(FName(*Map));
+	LevelManager->SwitchLevelTo(FName(*Map));
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
 	Response.Text = TEXT("Switch successfully");
@@ -130,7 +150,7 @@ void FSLKREventDispatcher::LoadMap(sl_pb::LoadMapParams params)
 }
 
 // Start Symbolic Logger
-void FSLKREventDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams params)
+void SLKRMsgDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams params)
 {
 	FString TaskId = UTF8_TO_TCHAR(params.taskid().c_str());
 	FString EpisodeId = UTF8_TO_TCHAR(params.episodeid().c_str());
@@ -148,7 +168,7 @@ void FSLKREventDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams par
 }
 
 // Stop Symbolic Logger
-void FSLKREventDispatcher::StopSymbolicLogger()
+void SLKRMsgDispatcher::StopSymbolicLogger()
 {
 	SymbolicLogger->Finish();
 	const FString DirPath = FPaths::ProjectDir() + "/SL/" + LocationParameters.TaskId /*+ TEXT("/Episodes/")*/ + "/";
@@ -167,7 +187,7 @@ void FSLKREventDispatcher::StopSymbolicLogger()
 }
 
 // Start Simulation
-void FSLKREventDispatcher::StartSimulation(sl_pb::StartSimulationParams params)
+void SLKRMsgDispatcher::StartSimulation(sl_pb::StartSimulationParams params)
 {
 	TArray<FString> Ids;
 	for (int i = 0; i < params.id_size(); i++) 
@@ -178,12 +198,12 @@ void FSLKREventDispatcher::StartSimulation(sl_pb::StartSimulationParams params)
 	ControlManager->StartSimulationSelectionOnly(Ids);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Start Sim");
+	Response.Text = TEXT("Start Simulation");
 	KRWSClient->SendResponse(Response);
 }
 
 // Stop Simulation
-void FSLKREventDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
+void SLKRMsgDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
 {
 	TArray<FString> Ids;
 	for (int i = 0; i < params.id_size(); i++)
@@ -192,14 +212,10 @@ void FSLKREventDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
 		Ids.Add(Id);
 	}
 	ControlManager->StopSimulationSelectionOnly(Ids);
-	FSLKRResponse Response;
-	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Stop Sim");
-	KRWSClient->SendResponse(Response);
 }
 
 // Move Individual
-void FSLKREventDispatcher::MoveIndividual(sl_pb::MoveIndividualParams params)
+void SLKRMsgDispatcher::MoveIndividual(sl_pb::MoveIndividualParams params)
 {
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
 	FVector Loc = FVector(params.vecx(), params.vecy(), params.vecz());
@@ -211,37 +227,8 @@ void FSLKREventDispatcher::MoveIndividual(sl_pb::MoveIndividualParams params)
 	KRWSClient->SendResponse(Response);
 }
 
-// Start Symbolic logging and simulation for seconds
-void FSLKREventDispatcher::SimulateAndLogForSeconds(sl_pb::SimulateAndLogForSecondsParams params)
-{
-	FString TaskId = UTF8_TO_TCHAR(params.taskid().c_str());
-	FString EpisodeId = UTF8_TO_TCHAR(params.episodeid().c_str());
-	LocationParameters.bUseCustomTaskId = true;
-	LocationParameters.TaskId = TaskId;
-	LocationParameters.bUseCustomEpisodeId = true;
-	LocationParameters.EpisodeId = EpisodeId;
-	LocationParameters.bOverwrite = true;
-	SymbolicLogger->Init(LoggerParameters, LocationParameters);
-	SymbolicLogger->Start();
-
-	TArray<FString> Ids;
-	for (int i = 0; i < params.id_size(); i++)
-	{
-		FString Id = UTF8_TO_TCHAR(params.id(i).c_str());
-		Ids.Add(Id);
-	}
-	ControlManager->StartSimulationSelectionOnly(Ids);
-	FTimerHandle TimerHandle;
-	FTimerDelegate TimerDelegateDelay;
-	TimerDelegateDelay.BindLambda([this](TArray<FString> Ids) {
-			ControlManager->StopSimulationSelectionOnly(Ids);
-			StopSymbolicLogger();
-		}, Ids);
-	World->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, params.seconds(), false);
-}
-
 // Start simulation for seconds
-void FSLKREventDispatcher::SimulateForSeconds(sl_pb::SimulateForSecondesParams params)
+void SLKRMsgDispatcher::SimulateForSeconds(sl_pb::SimulateForSecondesParams params)
 {
 	TArray<FString> Ids;
 	for (int i = 0; i < params.id_size(); i++)
@@ -249,22 +236,20 @@ void FSLKREventDispatcher::SimulateForSeconds(sl_pb::SimulateForSecondesParams p
 		FString Id = UTF8_TO_TCHAR(params.id(i).c_str());
 		Ids.Add(Id);
 	}
-	ControlManager->StartSimulationSelectionOnly(Ids);
-	FTimerHandle TimerHandle;
-	FTimerDelegate TimerDelegateDelay;
-	TimerDelegateDelay.BindLambda([this](TArray<FString> Ids) {
-		ControlManager->StopSimulationSelectionOnly(Ids);
-		FSLKRResponse Response;
-		Response.Type = ResponseType::TEXT;
-		Response.Text = TEXT("Stop Sim");
-		KRWSClient->SendResponse(Response);
-	}, Ids);
-	World->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, params.seconds(), false);
+	ControlManager->StartSimulationSelectionOnlyForSeconds(Ids, params.seconds());
 }
 
+// Send response when simulation stop
+void SLKRMsgDispatcher::OnSimulationStop()
+{
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Stop Simulation");
+	KRWSClient->SendResponse(Response);
+}
 
 // Transform the maker type
-ESLVizPrimitiveMarkerType FSLKREventDispatcher::GetMarkerType(sl_pb::MarkerType Marker)
+ESLVizPrimitiveMarkerType SLKRMsgDispatcher::GetMarkerType(sl_pb::MarkerType Marker)
 {
 	if (Marker == sl_pb::Sphere)
 	{
@@ -291,29 +276,29 @@ ESLVizPrimitiveMarkerType FSLKREventDispatcher::GetMarkerType(sl_pb::MarkerType 
 #endif // SL_WITH_PROTO_MSGS
 
 // Transform the string to color
-FLinearColor FSLKREventDispatcher::GetMarkerColor(const FString &Color)
+FLinearColor SLKRMsgDispatcher::GetMarkerColor(const FString &Color)
 {
-	if (Color.Equals("Red") || Color.Equals("red") || Color.Equals("RED"))
+	if (Color.Equals("Red", ESearchCase::IgnoreCase))
 	{
 		return FLinearColor::Red;
 	}
-	else if (Color.Equals("Black") || Color.Equals("black") || Color.Equals("BLACK"))
+	else if (Color.Equals("Black", ESearchCase::IgnoreCase))
 	{
 		return FLinearColor::Black;
 	}
-	else if (Color.Equals("Blue") || Color.Equals("black") || Color.Equals("BLUE"))
+	else if (Color.Equals("Blue", ESearchCase::IgnoreCase))
 	{
 		return FLinearColor::Blue;
 	}
-	else if (Color.Equals("Gray") || Color.Equals("gray") || Color.Equals("GRAY"))
+	else if (Color.Equals("Gray", ESearchCase::IgnoreCase))
 	{
 		return FLinearColor::Gray;
 	}
-	else if (Color.Equals("Yellow") || Color.Equals("yellow") || Color.Equals("YELLOW"))
+	else if (Color.Equals("Yellow", ESearchCase::IgnoreCase))
 	{
 		return FLinearColor::Yellow;
 	}
-	else if (Color.Equals("Green") || Color.Equals("green") || Color.Equals("GREEN"))
+	else if (Color.Equals("Green", ESearchCase::IgnoreCase))
 	{
 		return FLinearColor::Green;
 	}
@@ -321,21 +306,21 @@ FLinearColor FSLKREventDispatcher::GetMarkerColor(const FString &Color)
 }
 
 // Transform the material type
-ESLVizMaterialType FSLKREventDispatcher::GetMarkerMaterialType(const FString& MaterialType)
+ESLVizMaterialType SLKRMsgDispatcher::GetMarkerMaterialType(const FString& MaterialType)
 {
-	if (MaterialType.Equals("Lit") || MaterialType.Equals("lit")) 
+	if (MaterialType.Equals("Lit", ESearchCase::IgnoreCase))
 	{
 		return ESLVizMaterialType::Lit;
 	}
-	else if (MaterialType.Equals("Unlit") || MaterialType.Equals("unlit")) 
+	else if (MaterialType.Equals("Unlit", ESearchCase::IgnoreCase))
 	{
 		return ESLVizMaterialType::Unlit;
 	}
-	else if (MaterialType.Equals("Additive") || MaterialType.Equals("additive"))
+	else if (MaterialType.Equals("Additive", ESearchCase::IgnoreCase))
 	{
 		return ESLVizMaterialType::Additive;
 	}
-	else if (MaterialType.Equals("Translucent") || MaterialType.Equals("translucent"))
+	else if (MaterialType.Equals("Translucent", ESearchCase::IgnoreCase))
 	{
 		return ESLVizMaterialType::Translucent;
 	}

@@ -111,15 +111,15 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 	}
 
     /* Map button hacks */
-    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bLoadMapButtonHack))
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bSwitchLevelButtonHack))
     {
-        bLoadMapButtonHack = false;
-        SemanticMapManager->LoadMap(MapToLoad);
+        bSwitchLevelButtonHack = false;
+        LevelManager->SwitchLevelTo(LevelToSwitch);
     }
     else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, bPrintAllMapsButtonHack))
     {
         bPrintAllMapsButtonHack = false;
-        SemanticMapManager->GetAllMaps();
+        LevelManager->GetAllLevel();
     }
 
     /*    Control Individual    */
@@ -227,7 +227,8 @@ void ASLKnowrobManager::Init()
             *FString(__FUNCTION__), __LINE__, *GetName());
         return;
     }
-	if (!SemanticMapManager->Init())
+	LevelManager->Init();
+	if (!LevelManager->IsInit())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the map manager.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
@@ -241,7 +242,8 @@ void ASLKnowrobManager::Init()
             *FString(__FUNCTION__), __LINE__, *GetName());
         return;
     }
-    if (!ControlManager->Init())
+	ControlManager->Init();
+    if (!ControlManager->IsInit())
     {
         UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not init the control manager.."),
             *FString(__FUNCTION__), __LINE__, *GetName());
@@ -304,9 +306,14 @@ void ASLKnowrobManager::Start()
 	}
 
 	// Initialize dispatcher for parsing protobuf message
-	KREventDispatcher = MakeShareable<FSLKREventDispatcher>(
-		new FSLKREventDispatcher(KRWSClient, GetWorld(), MongoQueryManager, VizManager, SemanticMapManager, ControlManager, SymbolicLogger)
-		);
+	KRMsgDispatcher = MakeShareable<SLKRMsgDispatcher>(new SLKRMsgDispatcher());
+	KRMsgDispatcher->Init(KRWSClient, MongoQueryManager, VizManager, LevelManager, ControlManager, SymbolicLogger);
+	if (!KRMsgDispatcher->IsInit())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init kr msg dispatcher.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
 
 	// Bind user inputs
 	SetupInputBindings();
@@ -451,7 +458,7 @@ void ASLKnowrobManager::OnKRMsg()
 	{
 #if SL_WITH_PROTO_MSGS
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Processing message.."), *FString(__FUNCTION__), __LINE__);
-		KREventDispatcher->ProcessProtobuf(ProtoMsgBinary);
+		KRMsgDispatcher->ProcessProtobuf(ProtoMsgBinary);
 #endif // SL_WITH_PROTO_MSGS	
 	}
 }
@@ -541,16 +548,16 @@ bool ASLKnowrobManager::SetVizSemMapManager()
 // Get the semantic map manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetSemancticMapManager()
 {
-    if (SemanticMapManager && SemanticMapManager->IsValidLowLevel() && !SemanticMapManager->IsPendingKillOrUnreachable())
+    if (LevelManager && LevelManager->IsValidLowLevel() && !LevelManager->IsPendingKillOrUnreachable())
     {
         return true;
     }
 
-    for (TActorIterator<ASLSemanticMapManager>Iter(GetWorld()); Iter; ++Iter)
+    for (TActorIterator<ASLLevelManager>Iter(GetWorld()); Iter; ++Iter)
     {
         if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
         {
-            SemanticMapManager = *Iter;
+            LevelManager = *Iter;
             return true;
         }
     }
@@ -558,9 +565,9 @@ bool ASLKnowrobManager::SetSemancticMapManager()
     // Spawning a new manager
     FActorSpawnParameters SpawnParams;
     SpawnParams.Name = TEXT("SL_MapManager");
-    SemanticMapManager = GetWorld()->SpawnActor<ASLSemanticMapManager>(SpawnParams);
+    LevelManager = GetWorld()->SpawnActor<ASLLevelManager>(SpawnParams);
 #if WITH_EDITOR
-    SemanticMapManager->SetActorLabel(TEXT("SL_MapManager"));
+    LevelManager->SetActorLabel(TEXT("SL_MapManager"));
 #endif // WITH_EDITOR
     return true;
 }

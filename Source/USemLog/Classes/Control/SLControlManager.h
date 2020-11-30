@@ -6,6 +6,9 @@
 #include "GameFramework/Info.h"
 #include "SLControlManager.generated.h"
 
+
+DECLARE_DELEGATE(FSLSimulationFinish);
+
 // Forward declarations
 class ASLIndividualManager;
 /**
@@ -21,15 +24,25 @@ public:
     ASLControlManager();
     
 public:
-    bool Init();
+	// Load required manager
+    void Init();
 
+	// Check if the manager if initialized
     bool IsInit() const { return bIsInit; }
 
+	// Set the location and rotation of the individual
     void SetIndividualPose(const FString& Id, FVector Location, FQuat Quat);
-
+	
+	// Apply physics simulation on individuals
     void StartSimulationSelectionOnly(const TArray<FString>& Ids);
 
+	// Stop physics simulation on individuals
     void StopSimulationSelectionOnly(const TArray<FString>& Ids);
+
+	// Apply physics simulation on individuals for seconds
+	void StartSimulationSelectionOnlyForSeconds(const TArray<FString>& Ids, int32 Seconds);
+
+	FSLSimulationFinish OnSimulationFinish;
     
 private:
     // Get the individual manager from the world (or spawn a new one)

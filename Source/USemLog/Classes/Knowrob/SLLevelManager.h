@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "SLSemanticMapManager.generated.h"
+#include "SLLevelManager.generated.h"
 
 // Forward declarations
 class ASLIndividualManager;
@@ -12,23 +12,25 @@ class ASLIndividualManager;
  * 
  */
 UCLASS()
-class USEMLOG_API ASLSemanticMapManager : public AInfo
+class USEMLOG_API ASLLevelManager : public AInfo
 {
     GENERATED_BODY()
 public:
     // Sets default values for this actor's properties
-    ASLSemanticMapManager();
+    ASLLevelManager();
 
 public:
-	bool Init();
+	// Load required manager
+	void Init();
 
+	// Check if the manager is initialized
 	bool IsInit() const { return bIsInit; }
 
-    // Load the Semantic Map
-    void LoadMap(const FName& Map);
+    // Switch the level (load another streaming level)
+    void SwitchLevelTo(const FName& Map);
 
-    // Print all the available Semantic map
-    void GetAllMaps();
+    // Print all the available level
+    void GetAllLevel();
 
 private:
     // Load the streaming level
