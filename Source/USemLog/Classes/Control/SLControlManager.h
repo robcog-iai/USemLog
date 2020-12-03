@@ -4,10 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
+#include "HAL/ThreadSafeBool.h"
+
 #include "SLControlManager.generated.h"
 
 
+DECLARE_DELEGATE(FSLSimulationStart);
 DECLARE_DELEGATE(FSLSimulationFinish);
+DECLARE_DELEGATE_OneParam(FSLSimulationStopCountDown, int32);
 
 // Forward declarations
 class ASLIndividualManager;
@@ -30,20 +34,33 @@ public:
 	// Check if the manager if initialized
     bool IsInit() const { return bIsInit; }
 
+	// Check if simulation starts
+	bool IsSimulationStarted() const { return bIsSimStart;  }
+
 	// Set the location and rotation of the individual
     void SetIndividualPose(const FString& Id, FVector Location, FQuat Quat);
 	
+	// Apply force to individual
+	void ApplyForceTo(const FString& Id, FVector Force);
+
 	// Apply physics simulation on individuals
-    void StartSimulationSelectionOnly(const TArray<FString>& Ids);
+    bool StartSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds);
 
-	// Stop physics simulation on individuals
-    void StopSimulationSelectionOnly(const TArray<FString>& Ids);
+	// Stop physics simulation on individuals with delay
+    bool StopSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds);
 
-	// Apply physics simulation on individuals for seconds
-	void StartSimulationSelectionOnlyForSeconds(const TArray<FString>& Ids, int32 Seconds);
+	// Stop physics simulation on individuals without delay
+	bool StopSimulationSelectionOnly(const TArray<FString>& Ids);
 
+	// Delegate for simulation start
+	FSLSimulationFinish OnSimulationStart;
+
+	// Delegate for simulation stop
 	FSLSimulationFinish OnSimulationFinish;
-    
+
+	// Delegate for start counting down to stop simulation 
+	FSLSimulationStopCountDown OnSimulationStopCountDown;
+
 private:
     // Get the individual manager from the world (or spawn a new one)
     bool SetIndividualManager();
@@ -56,4 +73,9 @@ private:
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     ASLIndividualManager* IndividualManager;
 
+	// Used to check if simulation start
+	FThreadSafeBool bIsSimStart;
+
+	// Record the simulation start time
+	float SimStartTime;
 };

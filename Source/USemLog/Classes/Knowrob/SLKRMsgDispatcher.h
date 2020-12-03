@@ -50,16 +50,19 @@ public:
 
 private:
 #if SL_WITH_PROTO_MSGS
-	// Load the Semantic Map
-	void LoadMap(sl_pb::LoadMapParams params);
+	// Load the level 
+	void LoadLevel(sl_pb::LoadLevelParams params);
 
 	// Set the task of MongoManager
 	void SetTask(sl_pb::SetTaskParams params);
 
 	// Set the episode of MongoManager
 	void SetEpisode(sl_pb::SetEpisodeParams params);
+	
+	// Draw the individual marker
+	void DrawMarker(sl_pb::DrawMarkerAtParams);
 
-	// Draw the trajectory
+	// Draw the individual trajectory
 	void DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params);
 
 	// Start Symbolic Logger
@@ -68,20 +71,20 @@ private:
 	// Stop Symbolic Logger
 	void StopSymbolicLogger();
 
+	// Send the Symbolic log owl file
+	void SendSymbolicLog(sl_pb::RecvSymbolicLogParams params);
+
 	// Start Simulation
 	void StartSimulation(sl_pb::StartSimulationParams params);
 
 	// Stop Simulation
 	void StopSimulation(sl_pb::StopSimulationParams params);
 
-	// Move Individual
-	void MoveIndividual(sl_pb::MoveIndividualParams params);
-
-	// Start Symbolic logging and simulation for seconds
-	void SimulateAndLogForSeconds(sl_pb::SimulateAndLogForSecondsParams params);
-
-	// Start simulation for seconds
-	void SimulateForSeconds(sl_pb::SimulateForSecondesParams params);
+	// Set the pose of the idividual
+	void SetIndividualPose(sl_pb::SetIndividualPoseParams params);
+	
+	// Apply force to individual
+	void ApplyForceTo(sl_pb::ApplyForceToParams params);
 
 private:
 	// -----  helper function  ------//
@@ -95,8 +98,14 @@ private:
 	// Transform the material type
 	ESLVizMaterialType GetMarkerMaterialType(const FString& MaterialType);
 
+	// Send response when simulation start
+	void SimulationStartResponse();
+
 	// Send response when simulation stop
-	void OnSimulationStop();
+	void SimulationStopResponse();
+
+	// Send response when start counting down to stop simulation
+	void SimulationStopCountDownResponse(int32 Seconds);
 
 private:
 	// Used to query the subsymbolic data from mongo
@@ -116,12 +125,6 @@ private:
 
 	// Used for sending response 
 	TSharedPtr<FSLKRWSClient> KRWSClient;
-
-	// Logger parameters
-	FSLSymbolicLoggerParams LoggerParameters;
-
-	// Location parameters
-	FSLLoggerLocationParams LocationParameters;
 
 	// True if the manager is initialized
 	bool bIsInit;
