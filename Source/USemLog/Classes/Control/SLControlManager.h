@@ -35,7 +35,7 @@ public:
     bool IsInit() const { return bIsInit; }
 
 	// Check if simulation starts
-	bool IsSimStart() const { return bIsSimStart;  }
+	bool IsSimulationStarted() const { return bIsSimStart;  }
 
 	// Set the location and rotation of the individual
     void SetIndividualPose(const FString& Id, FVector Location, FQuat Quat);

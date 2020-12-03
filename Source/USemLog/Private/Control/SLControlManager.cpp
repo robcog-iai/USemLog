@@ -70,8 +70,13 @@ void ASLControlManager::ApplyForceTo(const FString& Id, FVector Force)
 
 bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds)
 {
-	if (IsSimStart())
+	if (IsSimulationStarted())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is already started."),
+			*FString(__FUNCTION__), __LINE__);
 		return false;
+	}
+		
 
 	for (FString Id : Ids)
 	{
@@ -102,9 +107,13 @@ bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids,
 // Stop physics simulation on individuals with delay
 bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds)
 {
-	if (!IsSimStart())
+	if (!IsSimulationStarted())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is not started."),
+			*FString(__FUNCTION__), __LINE__);
 		return false;
-
+	}
+		
 	if (Seconds > 0)
 	{
 		FTimerHandle TimerHandle;
@@ -121,6 +130,11 @@ bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids, 
 		{
 			StopSimulationSelectionOnly(Ids);
 		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is not started."),
+				*FString(__FUNCTION__), __LINE__);
+		}
 	}
 
 	return true;
@@ -129,15 +143,14 @@ bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids, 
 // Stop physics simulation on individuals without delay
 bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids)
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual ) sssssssssssd111111.."),
-		*FString(__FUNCTION__), __LINE__);
 
-	if (!IsSimStart() || !bIsSimStart.AtomicSet(false))
+	if (!IsSimulationStarted() || !bIsSimStart.AtomicSet(false))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is not started."),
+			*FString(__FUNCTION__), __LINE__);
 		return false;
-	
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d Individual ) sssssssssssd.."),
-		*FString(__FUNCTION__), __LINE__);
-
+	}
+		
 	for (FString Id : Ids)
 	{
 		USLBaseIndividual* Individual = IndividualManager->GetIndividual(Id);
