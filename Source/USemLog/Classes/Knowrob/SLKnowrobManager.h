@@ -263,6 +263,9 @@ private:
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
     FQuat ControlQuat;
 
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+	float DelaySecond;
+
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
     bool bMoveIndividualButtonHack = false;
 

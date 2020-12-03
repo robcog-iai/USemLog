@@ -82,6 +82,9 @@ private:
 
 	// Set the pose of the idividual
 	void SetIndividualPose(sl_pb::SetIndividualPoseParams params);
+	
+	// Apply force to individual
+	void ApplyForceTo(sl_pb::ApplyForceToParams params);
 
 private:
 	// -----  helper function  ------//
@@ -95,8 +98,14 @@ private:
 	// Transform the material type
 	ESLVizMaterialType GetMarkerMaterialType(const FString& MaterialType);
 
+	// Send response when simulation start
+	void SimulationStartResponse();
+
 	// Send response when simulation stop
 	void SimulationStopResponse();
+
+	// Send response when start counting down to stop simulation
+	void SimulationStopCountDownResponse(int32 Seconds);
 
 private:
 	// Used to query the subsymbolic data from mongo

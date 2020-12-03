@@ -34,7 +34,9 @@ void SLKRMsgDispatcher::Init(TSharedPtr<FSLKRWSClient> InKRWSClient, ASLMongoQue
 	ControlManager = InControlManager;
 	SymbolicLogger = InSymbolicLogger;
 
+	ControlManager->OnSimulationStart.BindRaw(this, &SLKRMsgDispatcher::SimulationStartResponse);
 	ControlManager->OnSimulationFinish.BindRaw(this, &SLKRMsgDispatcher::SimulationStopResponse);
+	ControlManager->OnSimulationStopCountDown.BindRaw(this, &SLKRMsgDispatcher::SimulationStopCountDownResponse);
 	bIsInit = true;
 }
 
@@ -47,6 +49,7 @@ void SLKRMsgDispatcher::Reset()
 	ControlManager = nullptr;
 	SymbolicLogger = nullptr;
 	ControlManager->OnSimulationFinish.Unbind();
+	ControlManager->OnSimulationStopCountDown.Unbind();
 	bIsInit = false;
 }
 
@@ -100,6 +103,10 @@ void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 	{
 		SetIndividualPose(AmevaEvent.setindividualposeparams());
 	}
+	else if (AmevaEvent.functocall() == AmevaEvent.ApplyForceTo)
+	{
+		ApplyForceTo(AmevaEvent.applyforcetoparams());
+	}
 
 #endif // SL_WITH_PROTO_MSGS
 }
@@ -111,7 +118,7 @@ void SLKRMsgDispatcher::SetTask(sl_pb::SetTaskParams params)
 	MongoManager->SetTask(UTF8_TO_TCHAR(params.task().c_str()));
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed: Set task");
+	Response.Text = TEXT("Completed - Set task");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -121,7 +128,7 @@ void SLKRMsgDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
 	MongoManager->SetEpisode(UTF8_TO_TCHAR(params.episode().c_str()));
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed: Set episode");
+	Response.Text = TEXT("Completed - Set episode");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -140,7 +147,7 @@ void SLKRMsgDispatcher::DrawMarker(sl_pb::DrawMarkerAtParams params)
 	VizManager->CreatePrimitiveMarker(Id, Poses, Type, params.scale(), Color, MaterialType);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed: Draw marker");
+	Response.Text = TEXT("Completed - Draw marker");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -158,7 +165,7 @@ void SLKRMsgDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 	VizManager->CreatePrimitiveMarker(Id, Poses, Type, params.scale(), Color, MaterialType);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed: Draw trajectory");
+	Response.Text = TEXT("Completed - Draw trajectory");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -169,7 +176,7 @@ void SLKRMsgDispatcher::LoadLevel(sl_pb::LoadLevelParams params)
 	LevelManager->SwitchLevelTo(FName(*Level));
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed: Switch level");
+	Response.Text = TEXT("Completed - Switch level");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -189,7 +196,7 @@ void SLKRMsgDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams params
 	SymbolicLogger->Start();
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed: Start logging");
+	Response.Text = TEXT("Completed - Start logging");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -199,7 +206,8 @@ void SLKRMsgDispatcher::StopSymbolicLogger()
 	SymbolicLogger->Finish();
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed: Stop logging");
+	Response.Text = TEXT("Completed - Stop logging");
+	KRWSClient->SendResponse(Response);
 }
 
 // Send the Symbolic log owl file
@@ -238,19 +246,14 @@ void SLKRMsgDispatcher::StartSimulation(sl_pb::StartSimulationParams params)
 		FString Id = UTF8_TO_TCHAR(params.id(i).c_str());
 		Ids.Add(Id);
 	}
-	if (params.seconds() < 0) 
+
+	if (!ControlManager->StartSimulationSelectionOnly(Ids, params.seconds()))
 	{
-		ControlManager->StartSimulationSelectionOnly(Ids);
+		FSLKRResponse Response;
+		Response.Type = ResponseType::TEXT;
+		Response.Text = TEXT("Error: Simulation is already Start");
+		KRWSClient->SendResponse(Response);
 	}
-	else
-	{
-		ControlManager->StartSimulationSelectionOnlyForSeconds(Ids, params.seconds());
-	}
-	
-	FSLKRResponse Response;
-	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed: Start simulation");
-	KRWSClient->SendResponse(Response);
 }
 
 // Stop Simulation
@@ -262,7 +265,14 @@ void SLKRMsgDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
 		FString Id = UTF8_TO_TCHAR(params.id(i).c_str());
 		Ids.Add(Id);
 	}
-	// No need to send response for stopping simulation, will be triggered by delegate
+
+	if (!ControlManager->StopSimulationSelectionOnly(Ids, params.seconds()))
+	{
+		FSLKRResponse Response;
+		Response.Type = ResponseType::TEXT;
+		Response.Text = TEXT("Error: Simulation is not running");
+		KRWSClient->SendResponse(Response);
+	}
 }
 
 // Move Individual
@@ -274,7 +284,18 @@ void SLKRMsgDispatcher::SetIndividualPose(sl_pb::SetIndividualPoseParams params)
 	ControlManager->SetIndividualPose(Id, Loc, Quat);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed: Set individual pose");
+	Response.Text = TEXT("Completed - Set individual pose");
+	KRWSClient->SendResponse(Response);
+}
+
+void SLKRMsgDispatcher::ApplyForceTo(sl_pb::ApplyForceToParams params)
+{
+	FString Id = UTF8_TO_TCHAR(params.id().c_str());
+	FVector Force = FVector(params.forcex(), params.forcey(), params.forcez());
+	ControlManager->ApplyForceTo(Id, Force);
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Completed - Apply Force");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -362,6 +383,23 @@ void SLKRMsgDispatcher::SimulationStopResponse()
 {
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Stop Simulation");
+	Response.Text = TEXT("Completed - Stop Simulation");
+	KRWSClient->SendResponse(Response);
+}
+
+// Send response when start counting down to stop simulation
+void SLKRMsgDispatcher::SimulationStopCountDownResponse(int32 Seconds)
+{
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = FString::Printf(TEXT("Register - Stop Simulation in %d s"), Seconds);
+	KRWSClient->SendResponse(Response);
+}
+
+void SLKRMsgDispatcher::SimulationStartResponse()
+{
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Completed - Start Simulation");
 	KRWSClient->SendResponse(Response);
 }
