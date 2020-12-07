@@ -48,6 +48,10 @@ struct USEMLOG_API FSLOwlExperimentStatics
 	// Create class property
 	static FSLOwlNode CreateClassProperty(const FString& InClass);
 
+	// Create inEpisode property
+	static FSLOwlNode CreateInEpisodeProperty(
+		const FString& InDocPrefix, const FString& EpisodeId);
+
 	// Create startTime property
 	static FSLOwlNode CreateStartTimeProperty(
 		const FString& InDocPrefix, const float Timepoint);

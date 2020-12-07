@@ -33,6 +33,7 @@ FSLOwlNode FSLGraspEvent::ToOwlNode() const
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", Individual->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateGraspTypeProperty("knowrob", GraspType));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInEpisodeProperty("log", EpisodeId));
 	return EventIndividual;
 }
 

@@ -71,12 +71,13 @@ void FSLContactEventHandler::Finish(float EndTime, bool bForced)
 void FSLContactEventHandler::AddNewContactEvent(const FSLContactResult& InResult)
 {
 	// Start a semantic contact event
-	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
+	TSharedPtr<FSLContactEvent> Event = MakeShareable(new FSLContactEvent(
 		FSLUuid::NewGuidInBase64Url(), InResult.Time,
 		FSLUuid::PairEncodeCantor(InResult.Self->GetUniqueID(), InResult.Other->GetUniqueID()),
 		InResult.Self, InResult.Other));
+	Event->EpisodeId = EpisodeId;
 	// Add event to the pending contacts array
-	StartedContactEvents.Emplace(ContactEvent);
+	StartedContactEvents.Emplace(Event);
 }
 
 // Publish finished event
@@ -112,6 +113,7 @@ void FSLContactEventHandler::AddNewSupportedByEvent(USLBaseIndividual* Supported
 	// Start a supported by event
 	TSharedPtr<FSLSupportedByEvent> Event = MakeShareable(new FSLSupportedByEvent(
 		FSLUuid::NewGuidInBase64Url(), StartTime, EventPairId, Supported, Supporting));
+	Event->EpisodeId = EpisodeId;
 	// Add event to the pending array
 	StartedSupportedByEvents.Emplace(Event);
 }

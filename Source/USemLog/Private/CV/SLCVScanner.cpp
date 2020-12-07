@@ -642,7 +642,7 @@ void ASLCVScanner::ApplyScene()
 	// Hide previous scene
 	if (Scenes.IsValidIndex(IndividualOrSceneIdx - 1))
 	{
-		Scenes[IndividualOrSceneIdx]->HideScene(IndividualManager);
+		Scenes[IndividualOrSceneIdx]->HideScene();
 	}
 
 	// Show current scene

@@ -601,11 +601,12 @@ void ASLSymbolicLogger::InitContactMonitors()
 					ContactMonitors.Emplace(ContactMonitor);
 
 					// Create a contact event handler 
-					TSharedPtr<FSLContactEventHandler> CEHandler = MakeShareable(new FSLContactEventHandler());
-					CEHandler->Init(*Itr);
-					if (CEHandler->IsInit())
+					TSharedPtr<FSLContactEventHandler> EvHandler = MakeShareable(new FSLContactEventHandler());
+					EvHandler->Init(*Itr);
+					EvHandler->EpisodeId = LocationParameters.EpisodeId;
+					if (EvHandler->IsInit())
 					{
-						EventHandlers.Emplace(CEHandler);
+						EventHandlers.Emplace(EvHandler);
 					}
 					else
 					{
@@ -635,6 +636,7 @@ void ASLSymbolicLogger::InitManipulatorContactAndGraspMonitors()
 				{
 					TSharedPtr<FSLGraspEventHandler> EvHandler = MakeShareable(new FSLGraspEventHandler());
 					EvHandler->Init(*Itr);
+					EvHandler->EpisodeId = LocationParameters.EpisodeId;
 					if (EvHandler->IsInit())
 					{
 						EventHandlers.Add(EvHandler);
@@ -650,6 +652,7 @@ void ASLSymbolicLogger::InitManipulatorContactAndGraspMonitors()
 				{
 					TSharedPtr<FSLManipulatorContactEventHandler> EvHandler = MakeShareable(new FSLManipulatorContactEventHandler());
 					EvHandler->Init(*Itr);
+					EvHandler->EpisodeId = LocationParameters.EpisodeId;
 					if (EvHandler->IsInit())
 					{
 						EventHandlers.Add(EvHandler);
@@ -682,6 +685,7 @@ void ASLSymbolicLogger::InitManipulatorGraspFixationMonitors()
 			// Create a grasp event handler 
 			TSharedPtr<FSLFixationGraspEventHandler> EvHandler = MakeShareable(new FSLFixationGraspEventHandler());
 			EvHandler->Init(*Itr);
+			EvHandler->EpisodeId = LocationParameters.EpisodeId;
 			if (EvHandler->IsInit())
 			{
 				EventHandlers.Add(EvHandler);
@@ -709,6 +713,7 @@ void ASLSymbolicLogger::InitReachAndPreGraspMonitors()
 				ReachAndPreGraspMonitors.Emplace(*Itr);
 				TSharedPtr<FSLReachAndPreGraspEventHandler> EvHandler = MakeShareable(new FSLReachAndPreGraspEventHandler());
 				EvHandler->Init(*Itr);
+				EvHandler->EpisodeId = LocationParameters.EpisodeId;
 				if (EvHandler->IsInit())
 				{
 					EventHandlers.Add(EvHandler);
@@ -766,11 +771,12 @@ void ASLSymbolicLogger::InitPickAndPlaceMonitors()
 			if (Itr->IsInit())
 			{
 				PickAndPlaceMonitors.Emplace(*Itr);
-				TSharedPtr<FSLPickAndPlaceEventsHandler> PAPHandler = MakeShareable(new FSLPickAndPlaceEventsHandler());
-				PAPHandler->Init(*Itr);
-				if (PAPHandler->IsInit())
+				TSharedPtr<FSLPickAndPlaceEventsHandler> EvHandler = MakeShareable(new FSLPickAndPlaceEventsHandler());
+				EvHandler->Init(*Itr);
+				EvHandler->EpisodeId = LocationParameters.EpisodeId;
+				if (EvHandler->IsInit())
 				{
-					EventHandlers.Add(PAPHandler);
+					EventHandlers.Add(EvHandler);
 				}
 				else
 				{

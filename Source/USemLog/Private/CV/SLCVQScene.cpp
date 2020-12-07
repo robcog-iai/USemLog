@@ -4,6 +4,10 @@
 #include "CV/SLCVQScene.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Mongo/SLMongoQueryManager.h"
+#include "Engine/StaticMeshActor.h"
+#include "Animation/SkeletalMeshActor.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 
 #if WITH_EDITOR
 #include "Engine/Selection.h"
@@ -40,7 +44,7 @@ void USLCVQScene::ShowScene(ASLIndividualManager* IndividualManager, ASLMongoQue
 }
 
 // Hide scene
-void USLCVQScene::HideScene(ASLIndividualManager* IndividualManager)
+void USLCVQScene::HideScene()
 {
 	if (bIgnore)
 	{
@@ -48,15 +52,30 @@ void USLCVQScene::HideScene(ASLIndividualManager* IndividualManager)
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return;
 	}
+	HideSceneImpl();
+}
 
-	if (!IndividualManager || !IndividualManager->IsValidLowLevel() || IndividualManager->IsPendingKillOrUnreachable() || !IndividualManager->IsLoaded())
+// Get the bounding sphere radius of the scene
+float USLCVQScene::GetSphereBoundsRadius() const
+{
+	FBoxSphereBounds SphereBounds;
+	for (const auto& Act : SceneActors)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s individual manager is not valid/loaded, aborting execution.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
-		return;
-	}
-
-	HideSceneImpl(IndividualManager);
+		if (auto AsSMA = Cast<AStaticMeshActor>(Act))
+		{
+			SphereBounds = SphereBounds + AsSMA->GetStaticMeshComponent()->Bounds;
+		}
+		else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(Act))
+		{
+			SphereBounds = SphereBounds + AsSkelMA->GetSkeletalMeshComponent()->Bounds;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is an unsupported actor type.."),
+				*FString(__FUNCTION__), __LINE__, *Act->GetName());
+		}
+	}	
+	return SphereBounds.SphereRadius;
 }
 
 #if WITH_EDITOR
@@ -136,11 +155,23 @@ void USLCVQScene::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyC
 // Virtual implementation of the execute function
 void USLCVQScene::ShowSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d %'s execution"), *FString(__FUNCTION__), __LINE__);	
+	UE_LOG(LogTemp, Log, TEXT("%s::%d %'s execution"), *FString(__FUNCTION__), __LINE__);
+
+	for (const auto& Id : Ids)
+	{
+		if (auto Act = IndividualManager->GetIndividualActor(Id))
+		{
+			SceneActors.Add(Act);
+		}
+	}
 }
 
 // Virtual implementation of the hide executed scene function
-void USLCVQScene::HideSceneImpl(ASLIndividualManager* IndividualManager)
+void USLCVQScene::HideSceneImpl()
 {
+	for (const auto& Actor : SceneActors)
+	{
+		Actor->SetActorHiddenInGame(true);
+	}
 	UE_LOG(LogTemp, Log, TEXT("%s::%d %'s hide execution"), *FString(__FUNCTION__), __LINE__);
 }

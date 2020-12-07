@@ -65,36 +65,46 @@ void FSLPickAndPlaceEventsHandler::Finish(float EndTime, bool bForced)
 // Event called when a slide event happened
 void FSLPickAndPlaceEventsHandler::OnSLSlide(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, float EndTime)
 {
-	OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLSlideEvent(
+	TSharedPtr<FSLSlideEvent> Event = MakeShareable(new FSLSlideEvent(
 		FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
 		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
-		Self, Other)));
+		Self, Other));
+	Event->EpisodeId = EpisodeId;
+	OnSemanticEvent.ExecuteIfBound(Event);
 }
 
 // Event called when a pick up event happened
 void FSLPickAndPlaceEventsHandler::OnSLPickUp(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, float EndTime)
 {
-	OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPickUpEvent(
+	TSharedPtr<FSLPickUpEvent> Event = MakeShareable(new FSLPickUpEvent(
 		FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
 		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
-		Self, Other)));
+		Self, Other));
+
+	Event->EpisodeId = EpisodeId;
+	OnSemanticEvent.ExecuteIfBound(Event);
 }
 
 // Event called when a transport event happened
 void FSLPickAndPlaceEventsHandler::OnSLTransport(USLBaseIndividual* Self, USLBaseIndividual* Other, float StartTime, float EndTime)
 {
-	OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLTransportEvent(
+	TSharedPtr<FSLTransportEvent> Event = MakeShareable(new FSLTransportEvent(
 		FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
 		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
-		Self, Other)));
+		Self, Other));
 
+	Event->EpisodeId = EpisodeId;
+	OnSemanticEvent.ExecuteIfBound(Event);
 }
 
 // Event called when a put down event happened
 void FSLPickAndPlaceEventsHandler::OnSLPutDown(USLBaseIndividual* Self,USLBaseIndividual* Other, float StartTime, float EndTime)
 {
-	OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPutDownEvent(
+	TSharedPtr<FSLPutDownEvent> Event = MakeShareable(new FSLPutDownEvent(
 		FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
 		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
-		Self, Other)));
+		Self, Other));
+
+	Event->EpisodeId = EpisodeId;
+	OnSemanticEvent.ExecuteIfBound(Event);
 }

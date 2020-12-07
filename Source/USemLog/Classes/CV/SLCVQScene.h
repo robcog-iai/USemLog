@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "GameFramework/Actor.h"
 #include "SLCVQScene.generated.h"
 
 // Forward declaration
@@ -24,10 +25,13 @@ public:
 	void ShowScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
 
 	// Hide executed scene
-	void HideScene(ASLIndividualManager* IndividualManager);
+	void HideScene();
 
 	// Get the scene name
 	FString GetSceneName() const { return "DefaultSceneName"; };
+
+	// Get the bounding sphere radius of the scene
+	float GetSphereBoundsRadius() const;
 
 protected:
 #if WITH_EDITOR
@@ -39,7 +43,7 @@ protected:
 	virtual void ShowSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
 
 	// Virtual implementation of the hide executed scene function
-	virtual void HideSceneImpl(ASLIndividualManager* IndividualManager);
+	virtual void HideSceneImpl();
 
 protected:
 	/* Individuals in the scene */
@@ -73,4 +77,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "CV Scene|Edit")
 	bool bEnsureUniqueness = true;
+
+private:
+	// Current cache of the actors from the ids
+	TArray<AActor*> SceneActors;
 };
