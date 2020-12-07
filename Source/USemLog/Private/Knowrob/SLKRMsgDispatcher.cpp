@@ -34,7 +34,9 @@ void SLKRMsgDispatcher::Init(TSharedPtr<FSLKRWSClient> InKRWSClient, ASLMongoQue
 	ControlManager = InControlManager;
 	SymbolicLogger = InSymbolicLogger;
 
-	ControlManager->OnSimulationFinish.BindRaw(this, &SLKRMsgDispatcher::OnSimulationStop);
+	ControlManager->OnSimulationStart.BindRaw(this, &SLKRMsgDispatcher::SimulationStartResponse);
+	ControlManager->OnSimulationFinish.BindRaw(this, &SLKRMsgDispatcher::SimulationStopResponse);
+	ControlManager->OnSimulationStopCountDown.BindRaw(this, &SLKRMsgDispatcher::SimulationStopCountDownResponse);
 	bIsInit = true;
 }
 
@@ -47,6 +49,7 @@ void SLKRMsgDispatcher::Reset()
 	ControlManager = nullptr;
 	SymbolicLogger = nullptr;
 	ControlManager->OnSimulationFinish.Unbind();
+	ControlManager->OnSimulationStopCountDown.Unbind();
 	bIsInit = false;
 }
 
@@ -64,13 +67,17 @@ void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 	{
 		SetEpisode(AmevaEvent.setepisodeparams());
 	}
+	else if (AmevaEvent.functocall() == AmevaEvent.DrawMarkerAt)
+	{
+		DrawMarker(AmevaEvent.drawmarkeratparams());
+	}
 	else if (AmevaEvent.functocall() == AmevaEvent.DrawMarkerTraj)
 	{
 		DrawMarkerTraj(AmevaEvent.drawmarkertrajparams());
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.LoadMap)
+	else if (AmevaEvent.functocall() == AmevaEvent.LoadLevel)
 	{
-		LoadMap(AmevaEvent.loadmapparams());
+		LoadLevel(AmevaEvent.loadlevelparams());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.StartSimulation)
 	{
@@ -88,14 +95,19 @@ void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 	{
 		StopSymbolicLogger();
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.MoveIndividual)
+	else if (AmevaEvent.functocall() == AmevaEvent.RecvSymbolicLog)
 	{
-		MoveIndividual(AmevaEvent.moveindividualparams());
+		SendSymbolicLog(AmevaEvent.recvsymboliclogparams());
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.SimulateForSeconds) 
+	else if (AmevaEvent.functocall() == AmevaEvent.SetIndividualPose)
 	{
-		SimulateForSeconds(AmevaEvent.simulateforsecondsparams());
+		SetIndividualPose(AmevaEvent.setindividualposeparams());
 	}
+	else if (AmevaEvent.functocall() == AmevaEvent.ApplyForceTo)
+	{
+		ApplyForceTo(AmevaEvent.applyforcetoparams());
+	}
+
 #endif // SL_WITH_PROTO_MSGS
 }
 
@@ -106,7 +118,7 @@ void SLKRMsgDispatcher::SetTask(sl_pb::SetTaskParams params)
 	MongoManager->SetTask(UTF8_TO_TCHAR(params.task().c_str()));
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Set task successfully");
+	Response.Text = TEXT("Completed - Set task");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -116,11 +128,30 @@ void SLKRMsgDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
 	MongoManager->SetEpisode(UTF8_TO_TCHAR(params.episode().c_str()));
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Set episode successfully");
+	Response.Text = TEXT("Completed - Set episode");
 	KRWSClient->SendResponse(Response);
 }
 
-// Draw the trajectory
+// Draw the individual marker
+void SLKRMsgDispatcher::DrawMarker(sl_pb::DrawMarkerAtParams params)
+{
+	FString Id = UTF8_TO_TCHAR(params.id().c_str());
+	float TimeStamp = params.timestamp();
+	FVector Scale(params.scale());
+	ESLVizPrimitiveMarkerType Type = GetMarkerType(params.marker());
+	ESLVizMaterialType MaterialType = GetMarkerMaterialType(UTF8_TO_TCHAR(params.material().c_str()));
+	FLinearColor Color = GetMarkerColor(UTF8_TO_TCHAR(params.color().c_str()));
+	FTransform Pose = MongoManager->GetIndividualPoseAt(Id, TimeStamp);
+	TArray<FTransform> Poses;
+	Poses.Add(Pose);
+	VizManager->CreatePrimitiveMarker(Id, Poses, Type, params.scale(), Color, MaterialType);
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Completed - Draw marker");
+	KRWSClient->SendResponse(Response);
+}
+
+// Draw the individual trajectory
 void SLKRMsgDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 {
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
@@ -134,18 +165,18 @@ void SLKRMsgDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 	VizManager->CreatePrimitiveMarker(Id, Poses, Type, params.scale(), Color, MaterialType);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("draw trajectory");
+	Response.Text = TEXT("Completed - Draw trajectory");
 	KRWSClient->SendResponse(Response);
 }
 
 // Load the Semantic Map
-void SLKRMsgDispatcher::LoadMap(sl_pb::LoadMapParams params)
+void SLKRMsgDispatcher::LoadLevel(sl_pb::LoadLevelParams params)
 {
-	FString Map = UTF8_TO_TCHAR(params.map().c_str());
-	LevelManager->SwitchLevelTo(FName(*Map));
+	FString Level = UTF8_TO_TCHAR(params.level().c_str());
+	LevelManager->SwitchLevelTo(FName(*Level));
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Switch successfully");
+	Response.Text = TEXT("Completed - Switch level");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -154,6 +185,8 @@ void SLKRMsgDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams params
 {
 	FString TaskId = UTF8_TO_TCHAR(params.taskid().c_str());
 	FString EpisodeId = UTF8_TO_TCHAR(params.episodeid().c_str());
+	FSLSymbolicLoggerParams LoggerParameters;
+	FSLLoggerLocationParams LocationParameters;
 	LocationParameters.bUseCustomTaskId = true;
 	LocationParameters.TaskId = TaskId;
 	LocationParameters.bUseCustomEpisodeId = true;
@@ -163,7 +196,7 @@ void SLKRMsgDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams params
 	SymbolicLogger->Start();
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Start logging");
+	Response.Text = TEXT("Completed - Start logging");
 	KRWSClient->SendResponse(Response);
 }
 
@@ -171,17 +204,35 @@ void SLKRMsgDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams params
 void SLKRMsgDispatcher::StopSymbolicLogger()
 {
 	SymbolicLogger->Finish();
-	const FString DirPath = FPaths::ProjectDir() + "/SL/" + LocationParameters.TaskId /*+ TEXT("/Episodes/")*/ + "/";
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Completed - Stop logging");
+	KRWSClient->SendResponse(Response);
+}
+
+// Send the Symbolic log owl file
+void SLKRMsgDispatcher::SendSymbolicLog(sl_pb::RecvSymbolicLogParams params)
+{
+	FString TaskId = UTF8_TO_TCHAR(params.taskid().c_str());
+	FString EpisodeId = UTF8_TO_TCHAR(params.episodeid().c_str());
+	const FString DirPath = FPaths::ProjectDir() + "/SL/" + TaskId + "/";
 	// Write experiment to file
-	FString FullFilePath = DirPath + LocationParameters.EpisodeId + TEXT("_ED.owl");
+	FString FullFilePath = DirPath + EpisodeId + TEXT("_ED.owl");
 	FPaths::RemoveDuplicateSlashes(FullFilePath);
 	if (FPaths::FileExists(FullFilePath))
 	{
 		TArray<uint8> FileBinary;
 		FSLKRResponse Response;
 		Response.Type = ResponseType::FILE;
-		Response.FileName = LocationParameters.EpisodeId + TEXT("_ED.owl");
+		Response.FileName = EpisodeId + TEXT("_ED.owl");
 		FFileHelper::LoadFileToArray(Response.FileData, *FullFilePath);
+		KRWSClient->SendResponse(Response);
+	}
+	else 
+	{
+		FSLKRResponse Response;
+		Response.Type = ResponseType::TEXT;
+		Response.Text = TEXT("Error: File not exists");
 		KRWSClient->SendResponse(Response);
 	}
 }
@@ -195,11 +246,14 @@ void SLKRMsgDispatcher::StartSimulation(sl_pb::StartSimulationParams params)
 		FString Id = UTF8_TO_TCHAR(params.id(i).c_str());
 		Ids.Add(Id);
 	}
-	ControlManager->StartSimulationSelectionOnly(Ids);
-	FSLKRResponse Response;
-	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Start Simulation");
-	KRWSClient->SendResponse(Response);
+
+	if (!ControlManager->StartSimulationSelectionOnly(Ids, params.seconds()))
+	{
+		FSLKRResponse Response;
+		Response.Type = ResponseType::TEXT;
+		Response.Text = TEXT("Error: Simulation is already Start");
+		KRWSClient->SendResponse(Response);
+	}
 }
 
 // Stop Simulation
@@ -211,11 +265,18 @@ void SLKRMsgDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
 		FString Id = UTF8_TO_TCHAR(params.id(i).c_str());
 		Ids.Add(Id);
 	}
-	ControlManager->StopSimulationSelectionOnly(Ids);
+
+	if (!ControlManager->StopSimulationSelectionOnly(Ids, params.seconds()))
+	{
+		FSLKRResponse Response;
+		Response.Type = ResponseType::TEXT;
+		Response.Text = TEXT("Error: Simulation is not running");
+		KRWSClient->SendResponse(Response);
+	}
 }
 
 // Move Individual
-void SLKRMsgDispatcher::MoveIndividual(sl_pb::MoveIndividualParams params)
+void SLKRMsgDispatcher::SetIndividualPose(sl_pb::SetIndividualPoseParams params)
 {
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
 	FVector Loc = FVector(params.vecx(), params.vecy(), params.vecz());
@@ -223,20 +284,19 @@ void SLKRMsgDispatcher::MoveIndividual(sl_pb::MoveIndividualParams params)
 	ControlManager->SetIndividualPose(Id, Loc, Quat);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Move Successfuly");
+	Response.Text = TEXT("Completed - Set individual pose");
 	KRWSClient->SendResponse(Response);
 }
 
-// Start simulation for seconds
-void SLKRMsgDispatcher::SimulateForSeconds(sl_pb::SimulateForSecondesParams params)
+void SLKRMsgDispatcher::ApplyForceTo(sl_pb::ApplyForceToParams params)
 {
-	TArray<FString> Ids;
-	for (int i = 0; i < params.id_size(); i++)
-	{
-		FString Id = UTF8_TO_TCHAR(params.id(i).c_str());
-		Ids.Add(Id);
-	}
-	ControlManager->StartSimulationSelectionOnlyForSeconds(Ids, params.seconds());
+	FString Id = UTF8_TO_TCHAR(params.id().c_str());
+	FVector Force = FVector(params.forcex(), params.forcey(), params.forcez());
+	ControlManager->ApplyForceTo(Id, Force);
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Completed - Apply Force");
+	KRWSClient->SendResponse(Response);
 }
 
 // Transform the maker type
@@ -319,10 +379,27 @@ ESLVizMaterialType SLKRMsgDispatcher::GetMarkerMaterialType(const FString& Mater
 }
 
 // Send response when simulation stop
-void SLKRMsgDispatcher::OnSimulationStop()
+void SLKRMsgDispatcher::SimulationStopResponse()
 {
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Stop Simulation");
+	Response.Text = TEXT("Completed - Stop Simulation");
+	KRWSClient->SendResponse(Response);
+}
+
+// Send response when start counting down to stop simulation
+void SLKRMsgDispatcher::SimulationStopCountDownResponse(int32 Seconds)
+{
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = FString::Printf(TEXT("Register - Stop Simulation in %d s"), Seconds);
+	KRWSClient->SendResponse(Response);
+}
+
+void SLKRMsgDispatcher::SimulationStartResponse()
+{
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Completed - Start Simulation");
 	KRWSClient->SendResponse(Response);
 }
