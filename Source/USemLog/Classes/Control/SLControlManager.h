@@ -11,7 +11,6 @@
 
 DECLARE_DELEGATE(FSLSimulationStart);
 DECLARE_DELEGATE(FSLSimulationFinish);
-DECLARE_DELEGATE_OneParam(FSLSimulationStopCountDown, int32);
 
 // Forward declarations
 class ASLIndividualManager;
@@ -35,7 +34,7 @@ public:
     bool IsInit() const { return bIsInit; }
 
 	// Check if simulation starts
-	bool IsSimulationStarted() const { return bIsSimStart;  }
+	bool IsSimulationStart() const { return bIsSimStart;  }
 
 	// Set the location and rotation of the individual
     void SetIndividualPose(const FString& Id, FVector Location, FQuat Quat);
@@ -46,9 +45,6 @@ public:
 	// Apply physics simulation on individuals
     bool StartSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds);
 
-	// Stop physics simulation on individuals with delay
-    bool StopSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds);
-
 	// Stop physics simulation on individuals without delay
 	bool StopSimulationSelectionOnly(const TArray<FString>& Ids);
 
@@ -57,9 +53,6 @@ public:
 
 	// Delegate for simulation stop
 	FSLSimulationFinish OnSimulationFinish;
-
-	// Delegate for start counting down to stop simulation 
-	FSLSimulationStopCountDown OnSimulationStopCountDown;
 
 private:
     // Get the individual manager from the world (or spawn a new one)
@@ -75,7 +68,4 @@ private:
 
 	// Used to check if simulation start
 	FThreadSafeBool bIsSimStart;
-
-	// Record the simulation start time
-	float SimStartTime;
 };

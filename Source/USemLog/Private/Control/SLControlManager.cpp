@@ -70,7 +70,7 @@ void ASLControlManager::ApplyForceTo(const FString& Id, FVector Force)
 
 bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds)
 {
-	if (IsSimulationStarted())
+	if (IsSimulationStart())
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is already started."),
 			*FString(__FUNCTION__), __LINE__);
@@ -93,27 +93,6 @@ bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids,
 		StaticMesh->SetSimulatePhysics(true);
 	}
 
-	bIsSimStart.AtomicSet(true);
-	OnSimulationStart.ExecuteIfBound();
-
-	if (Seconds > 0)
-	{
-		StopSimulationSelectionOnly(Ids, Seconds);
-	}
-	
-	return true;
-}
-
-// Stop physics simulation on individuals with delay
-bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds)
-{
-	if (!IsSimulationStarted())
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is not started."),
-			*FString(__FUNCTION__), __LINE__);
-		return false;
-	}
-		
 	if (Seconds > 0)
 	{
 		FTimerHandle TimerHandle;
@@ -122,20 +101,11 @@ bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids, 
 			StopSimulationSelectionOnly(Ids);
 		}, Ids);
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, Seconds, false);
-		OnSimulationStopCountDown.ExecuteIfBound(Seconds);
+
 	}
-	else
-	{
-		if (!bIsSimStart.AtomicSet(false))
-		{
-			StopSimulationSelectionOnly(Ids);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is not started."),
-				*FString(__FUNCTION__), __LINE__);
-		}
-	}
+	
+	bIsSimStart.AtomicSet(true);
+	OnSimulationStart.ExecuteIfBound();
 
 	return true;
 }
@@ -144,7 +114,7 @@ bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids, 
 bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids)
 {
 
-	if (!IsSimulationStarted() || !bIsSimStart.AtomicSet(false))
+	if (!IsSimulationStart() || !bIsSimStart.AtomicSet(false))
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is not started."),
 			*FString(__FUNCTION__), __LINE__);
