@@ -50,6 +50,7 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddPropertyDefinition("knowrob", "objectActedOn");
 	Experiment->AddPropertyDefinition("knowrob", "deviceUsed");
 	Experiment->AddPropertyDefinition("knowrob", "outputsCreated");
+	Experiment->AddPropertyDefinition("knowrob", "inEpisode");
 
 	// Add datatype definitions
 	Experiment->AddDatatypeDefinition(FOwlCommentNode("Property Definitions"));
@@ -144,6 +145,16 @@ FSLOwlNode FSLOwlExperimentStatics::CreateClassProperty(const FString& InClass)
 
 	return FSLOwlNode(RdfType, FSLOwlAttribute(
 		RdfResource, FSLOwlAttributeValue("knowrob", InClass)));
+}
+
+// Create inEpisode property
+FSLOwlNode FSLOwlExperimentStatics::CreateInEpisodeProperty(const FString& InDocPrefix, const FString& EpisodeId)
+{
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "inEpisode");
+
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, EpisodeId)));
 }
 
 // Create startTime property

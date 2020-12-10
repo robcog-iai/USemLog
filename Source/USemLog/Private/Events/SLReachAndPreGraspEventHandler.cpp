@@ -62,15 +62,19 @@ void FSLReachAndPreGraspEventHandler::OnSLReachAndPreGraspEvent(USLBaseIndividua
 	const uint64 PairID =FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID());
 	if(ReachEndTime - ReachStartTime > ReachEventMin)
 	{
-		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLReachEvent(
+		TSharedPtr<FSLReachEvent> Event = MakeShareable(new FSLReachEvent(
 			FSLUuid::NewGuidInBase64Url(), ReachStartTime, ReachEndTime,
-			PairID, Self, Other)));
+			PairID, Self, Other));
+		Event->EpisodeId = EpisodeId;
+		OnSemanticEvent.ExecuteIfBound(Event);
 	}
 
 	if(PreGraspEndTime - ReachEndTime > PreGraspEventMin)
 	{
-		OnSemanticEvent.ExecuteIfBound(MakeShareable(new FSLPreGraspEvent(
+		TSharedPtr<FSLPreGraspEvent> Event = MakeShareable(new FSLPreGraspEvent(
 			FSLUuid::NewGuidInBase64Url(), ReachEndTime, PreGraspEndTime,
-			PairID, Self, Other)));
+			PairID, Self, Other));
+		Event->EpisodeId = EpisodeId;
+		OnSemanticEvent.ExecuteIfBound(Event);
 	}
 }
