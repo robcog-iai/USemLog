@@ -40,7 +40,7 @@ public:
 
 	// Check if the manager is set
 	bool IsInit() const { return bIsInit; }
-
+	
 	// Reset setting
 	void Reset();
 
@@ -103,9 +103,6 @@ private:
 
 	// Send response when simulation stop
 	void SimulationStopResponse();
-
-	// Send response when start counting down to stop simulation
-	void SimulationStopCountDownResponse(int32 Seconds);
 
 private:
 	// Used to query the subsymbolic data from mongo

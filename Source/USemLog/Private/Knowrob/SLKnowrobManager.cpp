@@ -136,7 +136,7 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
     else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StopSelectedSimulationButtonHack))
     {
         StopSelectedSimulationButtonHack = false;
-        ControlManager->StopSimulationSelectionOnly(SelectedInividual, -1);
+        ControlManager->StopSimulationSelectionOnly(SelectedInividual);
     }
 	
     /*    Symbolic logging    */

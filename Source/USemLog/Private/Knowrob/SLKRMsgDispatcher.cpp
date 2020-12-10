@@ -36,7 +36,6 @@ void SLKRMsgDispatcher::Init(TSharedPtr<FSLKRWSClient> InKRWSClient, ASLMongoQue
 
 	ControlManager->OnSimulationStart.BindRaw(this, &SLKRMsgDispatcher::SimulationStartResponse);
 	ControlManager->OnSimulationFinish.BindRaw(this, &SLKRMsgDispatcher::SimulationStopResponse);
-	ControlManager->OnSimulationStopCountDown.BindRaw(this, &SLKRMsgDispatcher::SimulationStopCountDownResponse);
 	bIsInit = true;
 }
 
@@ -49,7 +48,7 @@ void SLKRMsgDispatcher::Reset()
 	ControlManager = nullptr;
 	SymbolicLogger = nullptr;
 	ControlManager->OnSimulationFinish.Unbind();
-	ControlManager->OnSimulationStopCountDown.Unbind();
+	ControlManager->OnSimulationStart.Unbind();
 	bIsInit = false;
 }
 
@@ -247,7 +246,7 @@ void SLKRMsgDispatcher::StartSimulation(sl_pb::StartSimulationParams params)
 		Ids.Add(Id);
 	}
 
-	if (!ControlManager->StartSimulationSelectionOnly(Ids, params.seconds()))
+	if (!ControlManager->StartSimulationSelectionOnly(Ids, params.duration()))
 	{
 		FSLKRResponse Response;
 		Response.Type = ResponseType::TEXT;
@@ -266,7 +265,7 @@ void SLKRMsgDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
 		Ids.Add(Id);
 	}
 
-	if (!ControlManager->StopSimulationSelectionOnly(Ids, params.seconds()))
+	if (!ControlManager->StopSimulationSelectionOnly(Ids))
 	{
 		FSLKRResponse Response;
 		Response.Type = ResponseType::TEXT;
@@ -384,15 +383,6 @@ void SLKRMsgDispatcher::SimulationStopResponse()
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
 	Response.Text = TEXT("Completed - Stop Simulation");
-	KRWSClient->SendResponse(Response);
-}
-
-// Send response when start counting down to stop simulation
-void SLKRMsgDispatcher::SimulationStopCountDownResponse(int32 Seconds)
-{
-	FSLKRResponse Response;
-	Response.Type = ResponseType::TEXT;
-	Response.Text = FString::Printf(TEXT("Register - Stop Simulation in %d s"), Seconds);
 	KRWSClient->SendResponse(Response);
 }
 
