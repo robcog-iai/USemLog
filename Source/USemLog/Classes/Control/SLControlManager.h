@@ -33,9 +33,6 @@ public:
 	// Check if the manager if initialized
     bool IsInit() const { return bIsInit; }
 
-	// Check if simulation starts
-	bool IsSimulationStart() const { return bIsSimStart;  }
-
 	// Set the location and rotation of the individual
     void SetIndividualPose(const FString& Id, FVector Location, FQuat Quat);
 	
@@ -65,7 +62,4 @@ private:
     // Keeps access to all the individuals in the world
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     ASLIndividualManager* IndividualManager;
-
-	// Used to check if simulation start
-	FThreadSafeBool bIsSimStart;
 };
