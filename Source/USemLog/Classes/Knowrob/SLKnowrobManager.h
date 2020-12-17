@@ -20,6 +20,7 @@ class ASLVizSemMapManager;
 class USLVizQBase;
 class ASLControlManager;
 class ASLSymbolicLogger;
+class ASLWorldStateLogger;
 
 /**
 *
@@ -114,6 +115,9 @@ private:
 
 	// Get the symbolic logger from the world (or spawn a new one)
     bool SetSymbolicLogger();
+
+	// Get the world state logger from the world (or spawn a new one)
+	bool SetWorldStateLogger               ();
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -213,9 +217,13 @@ private:
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     ASLControlManager* ControlManager;
 
-	// Keeps access to all the individuals in the world
+	// Symbolic data logger
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     ASLSymbolicLogger* SymbolicLogger;
+
+	// Subsymbolic data logger
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLWorldStateLogger* WorldStateLogger;
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -281,17 +289,25 @@ private:
 	/****************************************************************/
     /*                        Symbolic Logger tests                 */
     /****************************************************************/
-    // Logger parameters
+    // Symbolic Logger parameters
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
-    FSLSymbolicLoggerParams LoggerParameters;
+    FSLSymbolicLoggerParams SymbolicLoggerParameters;
 
     // Location parameters
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
     FSLLoggerLocationParams LocationParameters;
     
-    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
-    bool StartSymbolicLogButtonHack = false;
+	// World state logger parameters
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+	FSLWorldStateLoggerParams WorldStateLoggerParameters;
+
+	// DB server parameters
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+	FSLLoggerDBServerParams DBServerParameters;
 
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
-    bool StopSymbolicLogButtonHack = false;
+    bool StartLogButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    bool StopLogButtonHack = false;
 };

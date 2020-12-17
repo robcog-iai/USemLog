@@ -60,28 +60,28 @@ namespace sl_pb {
 class ApplyForceToParams;
 class ApplyForceToParamsDefaultTypeInternal;
 extern ApplyForceToParamsDefaultTypeInternal _ApplyForceToParams_default_instance_;
-class RecvSymbolicLogParams;
-class RecvSymbolicLogParamsDefaultTypeInternal;
-extern RecvSymbolicLogParamsDefaultTypeInternal _RecvSymbolicLogParams_default_instance_;
+class GetEpisodeDataParams;
+class GetEpisodeDataParamsDefaultTypeInternal;
+extern GetEpisodeDataParamsDefaultTypeInternal _GetEpisodeDataParams_default_instance_;
 class SetIndividualPoseParams;
 class SetIndividualPoseParamsDefaultTypeInternal;
 extern SetIndividualPoseParamsDefaultTypeInternal _SetIndividualPoseParams_default_instance_;
+class StartLoggersParams;
+class StartLoggersParamsDefaultTypeInternal;
+extern StartLoggersParamsDefaultTypeInternal _StartLoggersParams_default_instance_;
 class StartSimulationParams;
 class StartSimulationParamsDefaultTypeInternal;
 extern StartSimulationParamsDefaultTypeInternal _StartSimulationParams_default_instance_;
-class StartSymbolicLogParams;
-class StartSymbolicLogParamsDefaultTypeInternal;
-extern StartSymbolicLogParamsDefaultTypeInternal _StartSymbolicLogParams_default_instance_;
 class StopSimulationParams;
 class StopSimulationParamsDefaultTypeInternal;
 extern StopSimulationParamsDefaultTypeInternal _StopSimulationParams_default_instance_;
 }  // namespace sl_pb
 PROTOBUF_NAMESPACE_OPEN
 template<> ::sl_pb::ApplyForceToParams* Arena::CreateMaybeMessage<::sl_pb::ApplyForceToParams>(Arena*);
-template<> ::sl_pb::RecvSymbolicLogParams* Arena::CreateMaybeMessage<::sl_pb::RecvSymbolicLogParams>(Arena*);
+template<> ::sl_pb::GetEpisodeDataParams* Arena::CreateMaybeMessage<::sl_pb::GetEpisodeDataParams>(Arena*);
 template<> ::sl_pb::SetIndividualPoseParams* Arena::CreateMaybeMessage<::sl_pb::SetIndividualPoseParams>(Arena*);
+template<> ::sl_pb::StartLoggersParams* Arena::CreateMaybeMessage<::sl_pb::StartLoggersParams>(Arena*);
 template<> ::sl_pb::StartSimulationParams* Arena::CreateMaybeMessage<::sl_pb::StartSimulationParams>(Arena*);
-template<> ::sl_pb::StartSymbolicLogParams* Arena::CreateMaybeMessage<::sl_pb::StartSymbolicLogParams>(Arena*);
 template<> ::sl_pb::StopSimulationParams* Arena::CreateMaybeMessage<::sl_pb::StopSimulationParams>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
 namespace sl_pb {
@@ -686,23 +686,23 @@ class SetIndividualPoseParams PROTOBUF_FINAL :
 };
 // -------------------------------------------------------------------
 
-class StartSymbolicLogParams PROTOBUF_FINAL :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.StartSymbolicLogParams) */ {
+class StartLoggersParams PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.StartLoggersParams) */ {
  public:
-  inline StartSymbolicLogParams() : StartSymbolicLogParams(nullptr) {}
-  virtual ~StartSymbolicLogParams();
+  inline StartLoggersParams() : StartLoggersParams(nullptr) {}
+  virtual ~StartLoggersParams();
 
-  StartSymbolicLogParams(const StartSymbolicLogParams& from);
-  StartSymbolicLogParams(StartSymbolicLogParams&& from) noexcept
-    : StartSymbolicLogParams() {
+  StartLoggersParams(const StartLoggersParams& from);
+  StartLoggersParams(StartLoggersParams&& from) noexcept
+    : StartLoggersParams() {
     *this = ::std::move(from);
   }
 
-  inline StartSymbolicLogParams& operator=(const StartSymbolicLogParams& from) {
+  inline StartLoggersParams& operator=(const StartLoggersParams& from) {
     CopyFrom(from);
     return *this;
   }
-  inline StartSymbolicLogParams& operator=(StartSymbolicLogParams&& from) noexcept {
+  inline StartLoggersParams& operator=(StartLoggersParams&& from) noexcept {
     if (GetArena() == from.GetArena()) {
       if (this != &from) InternalSwap(&from);
     } else {
@@ -727,20 +727,20 @@ class StartSymbolicLogParams PROTOBUF_FINAL :
   static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
     return GetMetadataStatic().reflection;
   }
-  static const StartSymbolicLogParams& default_instance();
+  static const StartLoggersParams& default_instance();
 
   static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const StartSymbolicLogParams* internal_default_instance() {
-    return reinterpret_cast<const StartSymbolicLogParams*>(
-               &_StartSymbolicLogParams_default_instance_);
+  static inline const StartLoggersParams* internal_default_instance() {
+    return reinterpret_cast<const StartLoggersParams*>(
+               &_StartLoggersParams_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
     3;
 
-  friend void swap(StartSymbolicLogParams& a, StartSymbolicLogParams& b) {
+  friend void swap(StartLoggersParams& a, StartLoggersParams& b) {
     a.Swap(&b);
   }
-  inline void Swap(StartSymbolicLogParams* other) {
+  inline void Swap(StartLoggersParams* other) {
     if (other == this) return;
     if (GetArena() == other->GetArena()) {
       InternalSwap(other);
@@ -748,7 +748,7 @@ class StartSymbolicLogParams PROTOBUF_FINAL :
       ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(StartSymbolicLogParams* other) {
+  void UnsafeArenaSwap(StartLoggersParams* other) {
     if (other == this) return;
     GOOGLE_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -756,17 +756,17 @@ class StartSymbolicLogParams PROTOBUF_FINAL :
 
   // implements Message ----------------------------------------------
 
-  inline StartSymbolicLogParams* New() const final {
-    return CreateMaybeMessage<StartSymbolicLogParams>(nullptr);
+  inline StartLoggersParams* New() const final {
+    return CreateMaybeMessage<StartLoggersParams>(nullptr);
   }
 
-  StartSymbolicLogParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
-    return CreateMaybeMessage<StartSymbolicLogParams>(arena);
+  StartLoggersParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<StartLoggersParams>(arena);
   }
   void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
   void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
-  void CopyFrom(const StartSymbolicLogParams& from);
-  void MergeFrom(const StartSymbolicLogParams& from);
+  void CopyFrom(const StartLoggersParams& from);
+  void MergeFrom(const StartLoggersParams& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -780,13 +780,13 @@ class StartSymbolicLogParams PROTOBUF_FINAL :
   inline void SharedCtor();
   inline void SharedDtor();
   void SetCachedSize(int size) const final;
-  void InternalSwap(StartSymbolicLogParams* other);
+  void InternalSwap(StartLoggersParams* other);
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "sl_pb.StartSymbolicLogParams";
+    return "sl_pb.StartLoggersParams";
   }
   protected:
-  explicit StartSymbolicLogParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  explicit StartLoggersParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
   private:
   static void ArenaDtor(void* object);
   inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
@@ -849,7 +849,7 @@ class StartSymbolicLogParams PROTOBUF_FINAL :
   std::string* _internal_mutable_episodeid();
   public:
 
-  // @@protoc_insertion_point(class_scope:sl_pb.StartSymbolicLogParams)
+  // @@protoc_insertion_point(class_scope:sl_pb.StartLoggersParams)
  private:
   class _Internal;
 
@@ -867,23 +867,23 @@ class StartSymbolicLogParams PROTOBUF_FINAL :
 };
 // -------------------------------------------------------------------
 
-class RecvSymbolicLogParams PROTOBUF_FINAL :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.RecvSymbolicLogParams) */ {
+class GetEpisodeDataParams PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.GetEpisodeDataParams) */ {
  public:
-  inline RecvSymbolicLogParams() : RecvSymbolicLogParams(nullptr) {}
-  virtual ~RecvSymbolicLogParams();
+  inline GetEpisodeDataParams() : GetEpisodeDataParams(nullptr) {}
+  virtual ~GetEpisodeDataParams();
 
-  RecvSymbolicLogParams(const RecvSymbolicLogParams& from);
-  RecvSymbolicLogParams(RecvSymbolicLogParams&& from) noexcept
-    : RecvSymbolicLogParams() {
+  GetEpisodeDataParams(const GetEpisodeDataParams& from);
+  GetEpisodeDataParams(GetEpisodeDataParams&& from) noexcept
+    : GetEpisodeDataParams() {
     *this = ::std::move(from);
   }
 
-  inline RecvSymbolicLogParams& operator=(const RecvSymbolicLogParams& from) {
+  inline GetEpisodeDataParams& operator=(const GetEpisodeDataParams& from) {
     CopyFrom(from);
     return *this;
   }
-  inline RecvSymbolicLogParams& operator=(RecvSymbolicLogParams&& from) noexcept {
+  inline GetEpisodeDataParams& operator=(GetEpisodeDataParams&& from) noexcept {
     if (GetArena() == from.GetArena()) {
       if (this != &from) InternalSwap(&from);
     } else {
@@ -908,20 +908,20 @@ class RecvSymbolicLogParams PROTOBUF_FINAL :
   static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
     return GetMetadataStatic().reflection;
   }
-  static const RecvSymbolicLogParams& default_instance();
+  static const GetEpisodeDataParams& default_instance();
 
   static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const RecvSymbolicLogParams* internal_default_instance() {
-    return reinterpret_cast<const RecvSymbolicLogParams*>(
-               &_RecvSymbolicLogParams_default_instance_);
+  static inline const GetEpisodeDataParams* internal_default_instance() {
+    return reinterpret_cast<const GetEpisodeDataParams*>(
+               &_GetEpisodeDataParams_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
     4;
 
-  friend void swap(RecvSymbolicLogParams& a, RecvSymbolicLogParams& b) {
+  friend void swap(GetEpisodeDataParams& a, GetEpisodeDataParams& b) {
     a.Swap(&b);
   }
-  inline void Swap(RecvSymbolicLogParams* other) {
+  inline void Swap(GetEpisodeDataParams* other) {
     if (other == this) return;
     if (GetArena() == other->GetArena()) {
       InternalSwap(other);
@@ -929,7 +929,7 @@ class RecvSymbolicLogParams PROTOBUF_FINAL :
       ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(RecvSymbolicLogParams* other) {
+  void UnsafeArenaSwap(GetEpisodeDataParams* other) {
     if (other == this) return;
     GOOGLE_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -937,17 +937,17 @@ class RecvSymbolicLogParams PROTOBUF_FINAL :
 
   // implements Message ----------------------------------------------
 
-  inline RecvSymbolicLogParams* New() const final {
-    return CreateMaybeMessage<RecvSymbolicLogParams>(nullptr);
+  inline GetEpisodeDataParams* New() const final {
+    return CreateMaybeMessage<GetEpisodeDataParams>(nullptr);
   }
 
-  RecvSymbolicLogParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
-    return CreateMaybeMessage<RecvSymbolicLogParams>(arena);
+  GetEpisodeDataParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<GetEpisodeDataParams>(arena);
   }
   void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
   void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
-  void CopyFrom(const RecvSymbolicLogParams& from);
-  void MergeFrom(const RecvSymbolicLogParams& from);
+  void CopyFrom(const GetEpisodeDataParams& from);
+  void MergeFrom(const GetEpisodeDataParams& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -961,13 +961,13 @@ class RecvSymbolicLogParams PROTOBUF_FINAL :
   inline void SharedCtor();
   inline void SharedDtor();
   void SetCachedSize(int size) const final;
-  void InternalSwap(RecvSymbolicLogParams* other);
+  void InternalSwap(GetEpisodeDataParams* other);
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "sl_pb.RecvSymbolicLogParams";
+    return "sl_pb.GetEpisodeDataParams";
   }
   protected:
-  explicit RecvSymbolicLogParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  explicit GetEpisodeDataParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
   private:
   static void ArenaDtor(void* object);
   inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
@@ -1030,7 +1030,7 @@ class RecvSymbolicLogParams PROTOBUF_FINAL :
   std::string* _internal_mutable_episodeid();
   public:
 
-  // @@protoc_insertion_point(class_scope:sl_pb.RecvSymbolicLogParams)
+  // @@protoc_insertion_point(class_scope:sl_pb.GetEpisodeDataParams)
  private:
   class _Internal;
 
@@ -1717,72 +1717,72 @@ inline void SetIndividualPoseParams::set_quatw(float value) {
 
 // -------------------------------------------------------------------
 
-// StartSymbolicLogParams
+// StartLoggersParams
 
 // required string taskId = 1;
-inline bool StartSymbolicLogParams::_internal_has_taskid() const {
+inline bool StartLoggersParams::_internal_has_taskid() const {
   bool value = (_has_bits_[0] & 0x00000001u) != 0;
   return value;
 }
-inline bool StartSymbolicLogParams::has_taskid() const {
+inline bool StartLoggersParams::has_taskid() const {
   return _internal_has_taskid();
 }
-inline void StartSymbolicLogParams::clear_taskid() {
+inline void StartLoggersParams::clear_taskid() {
   taskid_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   _has_bits_[0] &= ~0x00000001u;
 }
-inline const std::string& StartSymbolicLogParams::taskid() const {
-  // @@protoc_insertion_point(field_get:sl_pb.StartSymbolicLogParams.taskId)
+inline const std::string& StartLoggersParams::taskid() const {
+  // @@protoc_insertion_point(field_get:sl_pb.StartLoggersParams.taskId)
   return _internal_taskid();
 }
-inline void StartSymbolicLogParams::set_taskid(const std::string& value) {
+inline void StartLoggersParams::set_taskid(const std::string& value) {
   _internal_set_taskid(value);
-  // @@protoc_insertion_point(field_set:sl_pb.StartSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set:sl_pb.StartLoggersParams.taskId)
 }
-inline std::string* StartSymbolicLogParams::mutable_taskid() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.StartSymbolicLogParams.taskId)
+inline std::string* StartLoggersParams::mutable_taskid() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.StartLoggersParams.taskId)
   return _internal_mutable_taskid();
 }
-inline const std::string& StartSymbolicLogParams::_internal_taskid() const {
+inline const std::string& StartLoggersParams::_internal_taskid() const {
   return taskid_.Get();
 }
-inline void StartSymbolicLogParams::_internal_set_taskid(const std::string& value) {
+inline void StartLoggersParams::_internal_set_taskid(const std::string& value) {
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
 }
-inline void StartSymbolicLogParams::set_taskid(std::string&& value) {
+inline void StartLoggersParams::set_taskid(std::string&& value) {
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(
     &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
-  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartLoggersParams.taskId)
 }
-inline void StartSymbolicLogParams::set_taskid(const char* value) {
+inline void StartLoggersParams::set_taskid(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
               GetArena());
-  // @@protoc_insertion_point(field_set_char:sl_pb.StartSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set_char:sl_pb.StartLoggersParams.taskId)
 }
-inline void StartSymbolicLogParams::set_taskid(const char* value,
+inline void StartLoggersParams::set_taskid(const char* value,
     size_t size) {
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size), GetArena());
-  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartLoggersParams.taskId)
 }
-inline std::string* StartSymbolicLogParams::_internal_mutable_taskid() {
+inline std::string* StartLoggersParams::_internal_mutable_taskid() {
   _has_bits_[0] |= 0x00000001u;
   return taskid_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline std::string* StartSymbolicLogParams::release_taskid() {
-  // @@protoc_insertion_point(field_release:sl_pb.StartSymbolicLogParams.taskId)
+inline std::string* StartLoggersParams::release_taskid() {
+  // @@protoc_insertion_point(field_release:sl_pb.StartLoggersParams.taskId)
   if (!_internal_has_taskid()) {
     return nullptr;
   }
   _has_bits_[0] &= ~0x00000001u;
   return taskid_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline void StartSymbolicLogParams::set_allocated_taskid(std::string* taskid) {
+inline void StartLoggersParams::set_allocated_taskid(std::string* taskid) {
   if (taskid != nullptr) {
     _has_bits_[0] |= 0x00000001u;
   } else {
@@ -1790,73 +1790,73 @@ inline void StartSymbolicLogParams::set_allocated_taskid(std::string* taskid) {
   }
   taskid_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), taskid,
       GetArena());
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartLoggersParams.taskId)
 }
 
 // required string episodeId = 2;
-inline bool StartSymbolicLogParams::_internal_has_episodeid() const {
+inline bool StartLoggersParams::_internal_has_episodeid() const {
   bool value = (_has_bits_[0] & 0x00000002u) != 0;
   return value;
 }
-inline bool StartSymbolicLogParams::has_episodeid() const {
+inline bool StartLoggersParams::has_episodeid() const {
   return _internal_has_episodeid();
 }
-inline void StartSymbolicLogParams::clear_episodeid() {
+inline void StartLoggersParams::clear_episodeid() {
   episodeid_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   _has_bits_[0] &= ~0x00000002u;
 }
-inline const std::string& StartSymbolicLogParams::episodeid() const {
-  // @@protoc_insertion_point(field_get:sl_pb.StartSymbolicLogParams.episodeId)
+inline const std::string& StartLoggersParams::episodeid() const {
+  // @@protoc_insertion_point(field_get:sl_pb.StartLoggersParams.episodeId)
   return _internal_episodeid();
 }
-inline void StartSymbolicLogParams::set_episodeid(const std::string& value) {
+inline void StartLoggersParams::set_episodeid(const std::string& value) {
   _internal_set_episodeid(value);
-  // @@protoc_insertion_point(field_set:sl_pb.StartSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set:sl_pb.StartLoggersParams.episodeId)
 }
-inline std::string* StartSymbolicLogParams::mutable_episodeid() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.StartSymbolicLogParams.episodeId)
+inline std::string* StartLoggersParams::mutable_episodeid() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.StartLoggersParams.episodeId)
   return _internal_mutable_episodeid();
 }
-inline const std::string& StartSymbolicLogParams::_internal_episodeid() const {
+inline const std::string& StartLoggersParams::_internal_episodeid() const {
   return episodeid_.Get();
 }
-inline void StartSymbolicLogParams::_internal_set_episodeid(const std::string& value) {
+inline void StartLoggersParams::_internal_set_episodeid(const std::string& value) {
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
 }
-inline void StartSymbolicLogParams::set_episodeid(std::string&& value) {
+inline void StartLoggersParams::set_episodeid(std::string&& value) {
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(
     &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
-  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartLoggersParams.episodeId)
 }
-inline void StartSymbolicLogParams::set_episodeid(const char* value) {
+inline void StartLoggersParams::set_episodeid(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
               GetArena());
-  // @@protoc_insertion_point(field_set_char:sl_pb.StartSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set_char:sl_pb.StartLoggersParams.episodeId)
 }
-inline void StartSymbolicLogParams::set_episodeid(const char* value,
+inline void StartLoggersParams::set_episodeid(const char* value,
     size_t size) {
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size), GetArena());
-  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartLoggersParams.episodeId)
 }
-inline std::string* StartSymbolicLogParams::_internal_mutable_episodeid() {
+inline std::string* StartLoggersParams::_internal_mutable_episodeid() {
   _has_bits_[0] |= 0x00000002u;
   return episodeid_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline std::string* StartSymbolicLogParams::release_episodeid() {
-  // @@protoc_insertion_point(field_release:sl_pb.StartSymbolicLogParams.episodeId)
+inline std::string* StartLoggersParams::release_episodeid() {
+  // @@protoc_insertion_point(field_release:sl_pb.StartLoggersParams.episodeId)
   if (!_internal_has_episodeid()) {
     return nullptr;
   }
   _has_bits_[0] &= ~0x00000002u;
   return episodeid_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline void StartSymbolicLogParams::set_allocated_episodeid(std::string* episodeid) {
+inline void StartLoggersParams::set_allocated_episodeid(std::string* episodeid) {
   if (episodeid != nullptr) {
     _has_bits_[0] |= 0x00000002u;
   } else {
@@ -1864,77 +1864,77 @@ inline void StartSymbolicLogParams::set_allocated_episodeid(std::string* episode
   }
   episodeid_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), episodeid,
       GetArena());
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartLoggersParams.episodeId)
 }
 
 // -------------------------------------------------------------------
 
-// RecvSymbolicLogParams
+// GetEpisodeDataParams
 
 // required string taskId = 1;
-inline bool RecvSymbolicLogParams::_internal_has_taskid() const {
+inline bool GetEpisodeDataParams::_internal_has_taskid() const {
   bool value = (_has_bits_[0] & 0x00000001u) != 0;
   return value;
 }
-inline bool RecvSymbolicLogParams::has_taskid() const {
+inline bool GetEpisodeDataParams::has_taskid() const {
   return _internal_has_taskid();
 }
-inline void RecvSymbolicLogParams::clear_taskid() {
+inline void GetEpisodeDataParams::clear_taskid() {
   taskid_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   _has_bits_[0] &= ~0x00000001u;
 }
-inline const std::string& RecvSymbolicLogParams::taskid() const {
-  // @@protoc_insertion_point(field_get:sl_pb.RecvSymbolicLogParams.taskId)
+inline const std::string& GetEpisodeDataParams::taskid() const {
+  // @@protoc_insertion_point(field_get:sl_pb.GetEpisodeDataParams.taskId)
   return _internal_taskid();
 }
-inline void RecvSymbolicLogParams::set_taskid(const std::string& value) {
+inline void GetEpisodeDataParams::set_taskid(const std::string& value) {
   _internal_set_taskid(value);
-  // @@protoc_insertion_point(field_set:sl_pb.RecvSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set:sl_pb.GetEpisodeDataParams.taskId)
 }
-inline std::string* RecvSymbolicLogParams::mutable_taskid() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.RecvSymbolicLogParams.taskId)
+inline std::string* GetEpisodeDataParams::mutable_taskid() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.GetEpisodeDataParams.taskId)
   return _internal_mutable_taskid();
 }
-inline const std::string& RecvSymbolicLogParams::_internal_taskid() const {
+inline const std::string& GetEpisodeDataParams::_internal_taskid() const {
   return taskid_.Get();
 }
-inline void RecvSymbolicLogParams::_internal_set_taskid(const std::string& value) {
+inline void GetEpisodeDataParams::_internal_set_taskid(const std::string& value) {
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
 }
-inline void RecvSymbolicLogParams::set_taskid(std::string&& value) {
+inline void GetEpisodeDataParams::set_taskid(std::string&& value) {
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(
     &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
-  // @@protoc_insertion_point(field_set_rvalue:sl_pb.RecvSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.GetEpisodeDataParams.taskId)
 }
-inline void RecvSymbolicLogParams::set_taskid(const char* value) {
+inline void GetEpisodeDataParams::set_taskid(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
               GetArena());
-  // @@protoc_insertion_point(field_set_char:sl_pb.RecvSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set_char:sl_pb.GetEpisodeDataParams.taskId)
 }
-inline void RecvSymbolicLogParams::set_taskid(const char* value,
+inline void GetEpisodeDataParams::set_taskid(const char* value,
     size_t size) {
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size), GetArena());
-  // @@protoc_insertion_point(field_set_pointer:sl_pb.RecvSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.GetEpisodeDataParams.taskId)
 }
-inline std::string* RecvSymbolicLogParams::_internal_mutable_taskid() {
+inline std::string* GetEpisodeDataParams::_internal_mutable_taskid() {
   _has_bits_[0] |= 0x00000001u;
   return taskid_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline std::string* RecvSymbolicLogParams::release_taskid() {
-  // @@protoc_insertion_point(field_release:sl_pb.RecvSymbolicLogParams.taskId)
+inline std::string* GetEpisodeDataParams::release_taskid() {
+  // @@protoc_insertion_point(field_release:sl_pb.GetEpisodeDataParams.taskId)
   if (!_internal_has_taskid()) {
     return nullptr;
   }
   _has_bits_[0] &= ~0x00000001u;
   return taskid_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline void RecvSymbolicLogParams::set_allocated_taskid(std::string* taskid) {
+inline void GetEpisodeDataParams::set_allocated_taskid(std::string* taskid) {
   if (taskid != nullptr) {
     _has_bits_[0] |= 0x00000001u;
   } else {
@@ -1942,73 +1942,73 @@ inline void RecvSymbolicLogParams::set_allocated_taskid(std::string* taskid) {
   }
   taskid_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), taskid,
       GetArena());
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.RecvSymbolicLogParams.taskId)
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.GetEpisodeDataParams.taskId)
 }
 
 // required string episodeId = 2;
-inline bool RecvSymbolicLogParams::_internal_has_episodeid() const {
+inline bool GetEpisodeDataParams::_internal_has_episodeid() const {
   bool value = (_has_bits_[0] & 0x00000002u) != 0;
   return value;
 }
-inline bool RecvSymbolicLogParams::has_episodeid() const {
+inline bool GetEpisodeDataParams::has_episodeid() const {
   return _internal_has_episodeid();
 }
-inline void RecvSymbolicLogParams::clear_episodeid() {
+inline void GetEpisodeDataParams::clear_episodeid() {
   episodeid_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   _has_bits_[0] &= ~0x00000002u;
 }
-inline const std::string& RecvSymbolicLogParams::episodeid() const {
-  // @@protoc_insertion_point(field_get:sl_pb.RecvSymbolicLogParams.episodeId)
+inline const std::string& GetEpisodeDataParams::episodeid() const {
+  // @@protoc_insertion_point(field_get:sl_pb.GetEpisodeDataParams.episodeId)
   return _internal_episodeid();
 }
-inline void RecvSymbolicLogParams::set_episodeid(const std::string& value) {
+inline void GetEpisodeDataParams::set_episodeid(const std::string& value) {
   _internal_set_episodeid(value);
-  // @@protoc_insertion_point(field_set:sl_pb.RecvSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set:sl_pb.GetEpisodeDataParams.episodeId)
 }
-inline std::string* RecvSymbolicLogParams::mutable_episodeid() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.RecvSymbolicLogParams.episodeId)
+inline std::string* GetEpisodeDataParams::mutable_episodeid() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.GetEpisodeDataParams.episodeId)
   return _internal_mutable_episodeid();
 }
-inline const std::string& RecvSymbolicLogParams::_internal_episodeid() const {
+inline const std::string& GetEpisodeDataParams::_internal_episodeid() const {
   return episodeid_.Get();
 }
-inline void RecvSymbolicLogParams::_internal_set_episodeid(const std::string& value) {
+inline void GetEpisodeDataParams::_internal_set_episodeid(const std::string& value) {
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
 }
-inline void RecvSymbolicLogParams::set_episodeid(std::string&& value) {
+inline void GetEpisodeDataParams::set_episodeid(std::string&& value) {
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(
     &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
-  // @@protoc_insertion_point(field_set_rvalue:sl_pb.RecvSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.GetEpisodeDataParams.episodeId)
 }
-inline void RecvSymbolicLogParams::set_episodeid(const char* value) {
+inline void GetEpisodeDataParams::set_episodeid(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
               GetArena());
-  // @@protoc_insertion_point(field_set_char:sl_pb.RecvSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set_char:sl_pb.GetEpisodeDataParams.episodeId)
 }
-inline void RecvSymbolicLogParams::set_episodeid(const char* value,
+inline void GetEpisodeDataParams::set_episodeid(const char* value,
     size_t size) {
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size), GetArena());
-  // @@protoc_insertion_point(field_set_pointer:sl_pb.RecvSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.GetEpisodeDataParams.episodeId)
 }
-inline std::string* RecvSymbolicLogParams::_internal_mutable_episodeid() {
+inline std::string* GetEpisodeDataParams::_internal_mutable_episodeid() {
   _has_bits_[0] |= 0x00000002u;
   return episodeid_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline std::string* RecvSymbolicLogParams::release_episodeid() {
-  // @@protoc_insertion_point(field_release:sl_pb.RecvSymbolicLogParams.episodeId)
+inline std::string* GetEpisodeDataParams::release_episodeid() {
+  // @@protoc_insertion_point(field_release:sl_pb.GetEpisodeDataParams.episodeId)
   if (!_internal_has_episodeid()) {
     return nullptr;
   }
   _has_bits_[0] &= ~0x00000002u;
   return episodeid_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline void RecvSymbolicLogParams::set_allocated_episodeid(std::string* episodeid) {
+inline void GetEpisodeDataParams::set_allocated_episodeid(std::string* episodeid) {
   if (episodeid != nullptr) {
     _has_bits_[0] |= 0x00000002u;
   } else {
@@ -2016,7 +2016,7 @@ inline void RecvSymbolicLogParams::set_allocated_episodeid(std::string* episodei
   }
   episodeid_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), episodeid,
       GetArena());
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.RecvSymbolicLogParams.episodeId)
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.GetEpisodeDataParams.episodeId)
 }
 
 // -------------------------------------------------------------------

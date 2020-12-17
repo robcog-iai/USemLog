@@ -22,12 +22,12 @@ message SetIndividualPoseParams {
     required float quatW = 8;
 }
 
-message StartSymbolicLogParams {
+message StartLoggersParams {
     required string taskId = 1;
     required string episodeId = 2;
 }
 
-message RecvSymbolicLogParams {
+message GetEpisodeDataParams {
     required string taskId = 1;
     required string episodeId = 2;
 }

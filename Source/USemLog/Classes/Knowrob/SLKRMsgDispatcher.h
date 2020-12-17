@@ -17,6 +17,7 @@ class ASLVizManager;
 class ASLControlManager;
 class ASLLevelManager;
 class ASLSymbolicLogger;
+class ASLWorldStateLogger;
 
 enum class ESLVizPrimitiveMarkerType : uint8;
 enum class ESLVizMaterialType : uint8;
@@ -36,7 +37,8 @@ public:
 	// Set up required manager
 	void Init(TSharedPtr<FSLKRWSClient> InKRWSClient, ASLMongoQueryManager* InMongoManger, 
 		ASLVizManager* InVizManager, ASLLevelManager* InLevelManager, 
-		ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger);
+		ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger, 
+		ASLWorldStateLogger* InWorldStateLogger, const FString InMongoSrvIP, int32 InMongoSrvPort);
 
 	// Check if the manager is set
 	bool IsInit() const { return bIsInit; }
@@ -65,14 +67,14 @@ private:
 	// Draw the individual trajectory
 	void DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params);
 
-	// Start Symbolic Logger
-	void StartSymbolicLogger(sl_pb::StartSymbolicLogParams params);
+	// Start Symbolic and World State Logger
+	void StartLoggers(sl_pb::StartLoggersParams params);
 
-	// Stop Symbolic Logger
-	void StopSymbolicLogger();
+	// Stop Symbolic and World Logger
+	void StopLoggers();
 
-	// Send the Symbolic log owl file
-	void SendSymbolicLog(sl_pb::RecvSymbolicLogParams params);
+	// Send the Episode data
+	void SendEpisodeData(sl_pb::GetEpisodeDataParams params);
 
 	// Start Simulation
 	void StartSimulation(sl_pb::StartSimulationParams params);
@@ -120,8 +122,17 @@ private:
 	// Used for symbolic logging
 	ASLSymbolicLogger* SymbolicLogger;
 
+	// Used for symbolic logging
+	ASLWorldStateLogger* WorldStateLogger;
+
 	// Used for sending response 
 	TSharedPtr<FSLKRWSClient> KRWSClient;
+
+	// Mongo server ip addres
+	FString MongoServerIP;
+
+	// Knowrob server port
+	int32 MongoServerPort;
 
 	// True if the manager is initialized
 	bool bIsInit;
