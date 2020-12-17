@@ -65,7 +65,7 @@ void FSLReachAndPreGraspEventHandler::OnSLReachAndPreGraspEvent(USLBaseIndividua
 		TSharedPtr<FSLReachEvent> Event = MakeShareable(new FSLReachEvent(
 			FSLUuid::NewGuidInBase64Url(), ReachStartTime, ReachEndTime,
 			PairID, Self, Other));
-		Event->EpisodeId = EpisodeId;
+		//Event->EpisodeId = EpisodeId;
 		OnSemanticEvent.ExecuteIfBound(Event);
 	}
 
@@ -74,7 +74,7 @@ void FSLReachAndPreGraspEventHandler::OnSLReachAndPreGraspEvent(USLBaseIndividua
 		TSharedPtr<FSLPreGraspEvent> Event = MakeShareable(new FSLPreGraspEvent(
 			FSLUuid::NewGuidInBase64Url(), ReachEndTime, PreGraspEndTime,
 			PairID, Self, Other));
-		Event->EpisodeId = EpisodeId;
+		//Event->EpisodeId = EpisodeId;
 		OnSemanticEvent.ExecuteIfBound(Event);
 	}
 }

@@ -189,18 +189,19 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePoseProperty(MapPrefix, PoseId));
 
 
-		// If static mesh, add pathToCadModel property
-		if (AStaticMeshActor* ActAsSMA = Cast<AStaticMeshActor>(ObjAsAct))
-		{
-			if (UStaticMeshComponent* SMC = ActAsSMA->GetStaticMeshComponent())
-			{
-				if (UStaticMesh* SM = SMC->GetStaticMesh())
-				{
-					//ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
-					ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
-				}
-			}
-		}
+		// Commented out since value it is stored as a class property
+		//// If static mesh, add pathToCadModel property
+		//if (AStaticMeshActor* ActAsSMA = Cast<AStaticMeshActor>(ObjAsAct))
+		//{
+		//	if (UStaticMeshComponent* SMC = ActAsSMA->GetStaticMeshComponent())
+		//	{
+		//		if (UStaticMesh* SM = SMC->GetStaticMesh())
+		//		{
+		//			//ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
+		//			ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
+		//		}
+		//	}
+		//}
 
 		// If skeletalmesh, add bones as properties
 		// Cache created bone individuals (if any)
@@ -379,11 +380,13 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 	{
 		if (UStaticMeshComponent* SMComp = ObjAsSMAct->GetStaticMeshComponent())
 		{
+			// Bounding box size
 			FVector BBSize;
 #if SL_WITH_ROS_CONVERSIONS
 			BBSize = FConversions::CmToM(SMComp->Bounds.GetBox().GetSize());
 #else
-			BBSize = SMComp->Bounds.GetBox().GetSize();
+			BBSize = SMComp->Bounds.GetBox().GetSize();	
+			
 #endif // SL_WITH_ROS_CONVERSIONS
 			if (!BBSize.IsZero())
 			{
@@ -391,6 +394,16 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateWidthProperty(BBSize.Y));
 				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateHeightProperty(BBSize.Z));
 			}
+
+			// Path to cad model
+			if (UStaticMesh* SM = SMComp->GetStaticMesh())
+			{
+				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
+			}
+
+			// Mass property
+			float Mass = SMComp->IsSimulatingPhysics() ? SMComp->GetMass() : SMComp->CalculateMass();
+			ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateMassProperty(Mass));
 		}
 	}
 	else if (ASkeletalMeshActor* ObjAsSkelAct = Cast<ASkeletalMeshActor>(Object))

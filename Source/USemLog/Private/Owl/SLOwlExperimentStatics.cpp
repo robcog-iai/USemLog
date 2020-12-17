@@ -50,7 +50,10 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddPropertyDefinition("knowrob", "objectActedOn");
 	Experiment->AddPropertyDefinition("knowrob", "deviceUsed");
 	Experiment->AddPropertyDefinition("knowrob", "outputsCreated");
+	Experiment->AddPropertyDefinition("knowrob", "isSupported");
+	Experiment->AddPropertyDefinition("knowrob", "isSupporting");
 	Experiment->AddPropertyDefinition("knowrob", "inEpisode");
+	Experiment->AddPropertyDefinition("knowrob", "subAction");
 
 	// Add datatype definitions
 	Experiment->AddDatatypeDefinition(FOwlCommentNode("Property Definitions"));
@@ -63,6 +66,15 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddClassDefinition("knowrob", "GraspingSomething");
 	Experiment->AddClassDefinition("knowrob", "SlicingSomething");
 	Experiment->AddClassDefinition("knowrob", "TouchingSituation");
+	Experiment->AddClassDefinition("knowrob", "SupportedBySituation");
+	Experiment->AddClassDefinition("knowrob", "ContainerManipulation");
+	Experiment->AddClassDefinition("knowrob", "PickUpSituation");
+	Experiment->AddClassDefinition("knowrob", "PreGraspSituation");
+	Experiment->AddClassDefinition("knowrob", "PutDownSituation");
+	Experiment->AddClassDefinition("knowrob", "ReachingForSomething");
+	Experiment->AddClassDefinition("knowrob", "SlidingSituation");
+	Experiment->AddClassDefinition("knowrob", "TransportingSituation");
+
 
 	// Add individuals comment
 	// Experiment->AddExperimentIndividual(InDocPrefix, InDocId); // Adding at end
