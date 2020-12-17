@@ -911,7 +911,9 @@ bool ASLCVScanner::SetMaskClones()
 				{
 					for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
 					{
+#if WITH_EDITOR	
 						SMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+#endif
 					}
 				}
 				SMAClone->SetActorHiddenInGame(true);
@@ -964,8 +966,9 @@ bool ASLCVScanner::SetBackgroundStaticMeshActor()
 
 	UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(BackgroundMaterial, GetTransientPackage());
 	MID->SetVectorParameterValue(FName("MaskColorParam"), BackgroundColor);
+#if WITH_EDITOR	
 	BackgroundSM->SetMaterial(0, MID);
-
+#endif
 	return true;
 }
 

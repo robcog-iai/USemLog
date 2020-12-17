@@ -154,7 +154,7 @@ void ASLVizSemMapManager::SetIndividualsHidden(const TArray<FString>& Ids, bool 
 		GetWorld()->GetTimerManager().ClearTimer(IterateTimerHandle);
 		
 		// Finish up previous work
-		for (IterateIdx; IterateIdx < IterateIds.Num(); ++IterateIdx)
+		for (; IterateIdx < IterateIds.Num(); ++IterateIdx)
 		{
 			IndividualManager->GetIndividualActor(IterateIds[IterateIdx])->SetActorHiddenInGame(bIterateHiddenValue);
 		}
