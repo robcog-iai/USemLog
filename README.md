@@ -35,4 +35,9 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 
 #### Semantically annotate skeletal components:
 
-* [Tutorial](Documentation/SkelAnnotationTutorial.md)
+* [Seletal annotation tutorial](Documentation/SkelAnnotationTutorial.md)
+
+#### Proto msgs compilation
+
+* [Compile proto msgs](Documentation/ProtoMsgs.md)
+
