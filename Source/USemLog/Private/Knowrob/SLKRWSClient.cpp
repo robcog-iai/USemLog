@@ -3,9 +3,9 @@
 
 #include "Knowrob/SLKRWSClient.h"
 #include "WebSocketsModule.h"
-#if SL_WITH_PROTO_MSGS
-#include "Proto/ameva.pb.h"
-#endif // SL_WITH_PROTO_MSGS	
+#if SL_WITH_PROTO
+#include "Knowrob/Proto/SLProtoMsgType.h"
+#endif // SL_WITH_PROTO	
 
 
 // Ctor
@@ -175,7 +175,7 @@ void FSLKRWSClient::HandleWebSocketFullData(const uint8* Data, SIZE_T Length)
 // Send message via websocket
 void FSLKRWSClient::SendResponse(const FSLKRResponse& Response)
 {
-#if SL_WITH_PROTO_MSGS
+#if SL_WITH_PROTO
 	if (Response.Type == ResponseType::TEXT)
 	{
 		std::string TextStr(TCHAR_TO_UTF8(*Response.Text));
@@ -218,5 +218,5 @@ void FSLKRWSClient::SendResponse(const FSLKRResponse& Response)
 		ProtoStr = FinishResponse.SerializeAsString();
 		WebSocket->Send(ProtoStr.data(), ProtoStr.size(), true);
 	}
-#endif // SL_WITH_PROTO_MSGS	
+#endif // SL_WITH_PROTO	
 }

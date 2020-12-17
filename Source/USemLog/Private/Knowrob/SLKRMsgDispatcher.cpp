@@ -55,7 +55,7 @@ void SLKRMsgDispatcher::Reset()
 // Parse the proto sequence and trigger function
 void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 {
-#if SL_WITH_PROTO_MSGS
+#if SL_WITH_PROTO
 	sl_pb::KRAmevaEvent AmevaEvent;
 	AmevaEvent.ParseFromString(ProtoStr);
 	if (AmevaEvent.functocall() == AmevaEvent.SetTask)
@@ -107,10 +107,10 @@ void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 		ApplyForceTo(AmevaEvent.applyforcetoparams());
 	}
 
-#endif // SL_WITH_PROTO_MSGS
+#endif // SL_WITH_PROTO
 }
 
-#if SL_WITH_PROTO_MSGS
+#if SL_WITH_PROTO
 // Set the task of MongoManager
 void SLKRMsgDispatcher::SetTask(sl_pb::SetTaskParams params)
 {
@@ -323,7 +323,7 @@ ESLVizPrimitiveMarkerType SLKRMsgDispatcher::GetMarkerType(sl_pb::MarkerType Mar
 	}
 	return ESLVizPrimitiveMarkerType::NONE;
 }
-#endif // SL_WITH_PROTO_MSGS
+#endif // SL_WITH_PROTO
 
 // Transform the string to color
 FLinearColor SLKRMsgDispatcher::GetMarkerColor(const FString &Color)

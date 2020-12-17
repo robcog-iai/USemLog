@@ -3,9 +3,9 @@
 #pragma once
 
 #include <string>
-#if SL_WITH_PROTO_MSGS
-#include "Proto/ameva.pb.h"
-#endif // SL_WITH_PROTO_MSGS	
+#if SL_WITH_PROTO
+#include "Proto/SLProtoMsgType.h"
+#endif // SL_WITH_PROTO	
 #include "Runtime/SLLoggerStructs.h"
 #include "Knowrob/SLKRWSClient.h"
 #include "SLKRResponseStruct.h"
@@ -49,7 +49,7 @@ public:
 	void ProcessProtobuf(std::string ProtoStr);
 
 private:
-#if SL_WITH_PROTO_MSGS
+#if SL_WITH_PROTO
 	// Load the level 
 	void LoadLevel(sl_pb::LoadLevelParams params);
 
@@ -90,7 +90,7 @@ private:
 	// -----  helper function  ------//
 	// Transform the maker type
 	ESLVizPrimitiveMarkerType GetMarkerType(sl_pb::MarkerType Marker);
-#endif // SL_WITH_PROTO_MSGS	
+#endif // SL_WITH_PROTO	
 
 	// Transform the string to color
 	FLinearColor GetMarkerColor(const FString& Color);
