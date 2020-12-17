@@ -65,19 +65,11 @@ void ASLControlManager::ApplyForceTo(const FString& Id, FVector Force)
 
 	AActor* ActorToApply = Individual->GetParentActor();
 	UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(ActorToApply->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-	StaticMesh->AddForce(Force * 10000 * StaticMesh->GetMass());
+	StaticMesh->AddForce(Force * 100 * StaticMesh->GetMass());
 }
 
 bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds)
 {
-	if (IsSimulationStart())
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is already started."),
-			*FString(__FUNCTION__), __LINE__);
-		return false;
-	}
-		
-
 	for (FString Id : Ids)
 	{
 		USLBaseIndividual* Individual = IndividualManager->GetIndividual(Id);
@@ -104,7 +96,6 @@ bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids,
 
 	}
 	
-	bIsSimStart.AtomicSet(true);
 	OnSimulationStart.ExecuteIfBound();
 
 	return true;
@@ -112,15 +103,7 @@ bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids,
 
 // Stop physics simulation on individuals without delay
 bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids)
-{
-
-	if (!IsSimulationStart() || !bIsSimStart.AtomicSet(false))
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Simulation is not started."),
-			*FString(__FUNCTION__), __LINE__);
-		return false;
-	}
-		
+{		
 	for (FString Id : Ids)
 	{
 		USLBaseIndividual* Individual = IndividualManager->GetIndividual(Id);

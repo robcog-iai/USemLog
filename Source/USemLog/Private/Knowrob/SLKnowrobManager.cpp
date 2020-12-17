@@ -455,10 +455,10 @@ void ASLKnowrobManager::OnKRMsg()
 	std::string ProtoMsgBinary;
 	while (KRWSClient->MessageQueue.Dequeue(ProtoMsgBinary))
 	{
-#if SL_WITH_PROTO_MSGS
+#if SL_WITH_PROTO
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Processing message.."), *FString(__FUNCTION__), __LINE__);
 		KRMsgDispatcher->ProcessProtobuf(ProtoMsgBinary);
-#endif // SL_WITH_PROTO_MSGS	
+#endif // SL_WITH_PROTO	
 	}
 }
 
