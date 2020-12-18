@@ -12,6 +12,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
 #include "Runtime/SLSymbolicLogger.h"
+#include "Runtime/SLWorldStateLogger.h"
 #include "TimerManager.h"
 
 #if WITH_EDITOR
@@ -140,15 +141,33 @@ void ASLKnowrobManager::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
     }
 	
     /*    Symbolic logging    */
-    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StartSymbolicLogButtonHack))
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StartLogButtonHack))
     {
-        StartSymbolicLogButtonHack = false;
+        StartLogButtonHack = false;
+		SymbolicLogger->Init(SymbolicLoggerParameters, LocationParameters);
+		if (!SymbolicLogger->IsInit())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init the symbolic logger.."),
+				*FString(__FUNCTION__), __LINE__, *GetName());
+			return;
+		}
+	
+		WorldStateLogger->Init(WorldStateLoggerParameters, LocationParameters, DBServerParameters);
+		if (!WorldStateLogger->IsInit())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init the world state logger.."),
+				*FString(__FUNCTION__), __LINE__, *GetName());
+			return;
+		}
+
         SymbolicLogger->Start();
+		WorldStateLogger->Start();
     }
-    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StopSymbolicLogButtonHack))
+    else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLKnowrobManager, StopLogButtonHack))
     {
-        StopSymbolicLogButtonHack = false;
+        StopLogButtonHack = false;
         SymbolicLogger->Finish();
+		WorldStateLogger->Finish();
     }
 }
 #endif // WITH_EDITOR
@@ -252,10 +271,16 @@ void ASLKnowrobManager::Init()
     // Get the symbolic logger
     if (!SetSymbolicLogger())
     {
-        UE_LOG(LogTemp, Error, TEXT("%s::%d Control manager (%s) could not set the symbolic logger.."),
+        UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager(%s) could not set the symbolic logger.."),
             *FString(__FUNCTION__), __LINE__, *GetName());
     }
-    SymbolicLogger->Init(LoggerParameters, LocationParameters);
+
+	// Get the world state logger
+	if (!SetWorldStateLogger())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Knowrob manager (%s) could not set the world state logger.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+	}
 
 	// Get and init the sem map visualizer
 	if (!SetVizSemMapManager())
@@ -306,7 +331,7 @@ void ASLKnowrobManager::Start()
 
 	// Initialize dispatcher for parsing protobuf message
 	KRMsgDispatcher = MakeShareable<SLKRMsgDispatcher>(new SLKRMsgDispatcher());
-	KRMsgDispatcher->Init(KRWSClient, MongoQueryManager, VizManager, LevelManager, ControlManager, SymbolicLogger);
+	KRMsgDispatcher->Init(KRWSClient, MongoQueryManager, VizManager, LevelManager, ControlManager, SymbolicLogger, WorldStateLogger, MongoServerIP, MongoServerPort);
 	if (!KRMsgDispatcher->IsInit())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init kr msg dispatcher.."),
@@ -571,7 +596,6 @@ bool ASLKnowrobManager::SetSemancticMapManager()
     return true;
 }
 
-
 // Get the control manager from the world (or spawn a new one)
 bool ASLKnowrobManager::SetControlManager()
 {
@@ -624,6 +648,33 @@ bool ASLKnowrobManager::SetSymbolicLogger()
     SymbolicLogger->SetActorLabel(TEXT("SL_SymbolLogger"));
 #endif // WITH_EDITOR
     return true;
+}
+
+// Get the symbolic logger from the world (or spawn a new one)
+bool ASLKnowrobManager::SetWorldStateLogger()
+{
+	if (WorldStateLogger && WorldStateLogger->IsValidLowLevel() && !WorldStateLogger->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
+	for (TActorIterator<ASLWorldStateLogger>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			WorldStateLogger = *Iter;
+			return true;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_WorldStateLogger");
+	SymbolicLogger = GetWorld()->SpawnActor<ASLSymbolicLogger>(SpawnParams);
+#if WITH_EDITOR
+	SymbolicLogger->SetActorLabel(TEXT("SL_WorldStateLogger"));
+#endif // WITH_EDITOR
+	return true;
 }
 
 /****************************************************************/

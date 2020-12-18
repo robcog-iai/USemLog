@@ -8,6 +8,7 @@
 #include "Viz/SLVizStructs.h"
 #include "Runtime/SLSymbolicLogger.h"
 #include "Runtime/SLLoggerStructs.h"
+#include "Runtime/SLWorldStateLogger.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 #include "TimerManager.h"
@@ -25,7 +26,8 @@ SLKRMsgDispatcher::~SLKRMsgDispatcher()
 // Set up required manager
 void SLKRMsgDispatcher::Init(TSharedPtr<FSLKRWSClient> InKRWSClient, ASLMongoQueryManager* InMongoManger,
 	ASLVizManager* InVizManager, ASLLevelManager* InLevelManager,
-	ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger)
+	ASLControlManager* InControlManager, ASLSymbolicLogger* InSymbolicLogger, 
+	ASLWorldStateLogger* InWorldStateLogger, const FString InMongoSrvIP, int32 InMongoSrvPort)
 {
 	KRWSClient = InKRWSClient;
 	MongoManager = InMongoManger;
@@ -33,6 +35,10 @@ void SLKRMsgDispatcher::Init(TSharedPtr<FSLKRWSClient> InKRWSClient, ASLMongoQue
 	LevelManager = InLevelManager;
 	ControlManager = InControlManager;
 	SymbolicLogger = InSymbolicLogger;
+	WorldStateLogger = InWorldStateLogger;
+
+	MongoServerIP = InMongoSrvIP;
+	MongoServerPort = InMongoSrvPort;
 
 	ControlManager->OnSimulationStart.BindRaw(this, &SLKRMsgDispatcher::SimulationStartResponse);
 	ControlManager->OnSimulationFinish.BindRaw(this, &SLKRMsgDispatcher::SimulationStopResponse);
@@ -86,17 +92,17 @@ void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 	{
 		StopSimulation(AmevaEvent.stopsimulationparams());
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.StartSymbolicLog)
+	else if (AmevaEvent.functocall() == AmevaEvent.StartLoggers)
 	{
-		StartSymbolicLogger(AmevaEvent.startsymboliclogparams());
+		StartLoggers(AmevaEvent.startloggersparams());
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.StopSymbolicLog)
+	else if (AmevaEvent.functocall() == AmevaEvent.StopLoggers)
 	{
-		StopSymbolicLogger();
+		StopLoggers();
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.RecvSymbolicLog)
+	else if (AmevaEvent.functocall() == AmevaEvent.GetEpisodeData)
 	{
-		SendSymbolicLog(AmevaEvent.recvsymboliclogparams());
+		SendEpisodeData(AmevaEvent.getepisodedataparams());
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.SetIndividualPose)
 	{
@@ -179,28 +185,49 @@ void SLKRMsgDispatcher::LoadLevel(sl_pb::LoadLevelParams params)
 	KRWSClient->SendResponse(Response);
 }
 
-// Start Symbolic Logger
-void SLKRMsgDispatcher::StartSymbolicLogger(sl_pb::StartSymbolicLogParams params)
+// Start Symbolic and World State Logger
+void SLKRMsgDispatcher::StartLoggers(sl_pb::StartLoggersParams params)
 {
 	FString TaskId = UTF8_TO_TCHAR(params.taskid().c_str());
 	FString EpisodeId = UTF8_TO_TCHAR(params.episodeid().c_str());
-	FSLSymbolicLoggerParams LoggerParameters;
+	FSLSymbolicLoggerParams SymbolicLoggerParameters;
 	FSLLoggerLocationParams LocationParameters;
+	FSLWorldStateLoggerParams WorldStateLoggerParameters;
+	FSLLoggerDBServerParams DBServerParameters;
 	LocationParameters.bUseCustomTaskId = true;
 	LocationParameters.TaskId = TaskId;
 	LocationParameters.bUseCustomEpisodeId = true;
 	LocationParameters.EpisodeId = EpisodeId;
 	LocationParameters.bOverwrite = true;
-	SymbolicLogger->Init(LoggerParameters, LocationParameters);
+	DBServerParameters.Ip = MongoServerIP;
+	DBServerParameters.Port = MongoServerPort;
+	
+	SymbolicLogger->Init(SymbolicLoggerParameters, LocationParameters);
+	if (!SymbolicLogger->IsInit())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d SLKMsgDispatcher could not init the symbolic logger.."),
+			*FString(__FUNCTION__), __LINE__);
+		return;
+	}
+
+	WorldStateLogger->Init(WorldStateLoggerParameters, LocationParameters, DBServerParameters);
+	if (!WorldStateLogger->IsInit())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d SLKMsgDispatcher could not init the world state logger.."),
+			*FString(__FUNCTION__), __LINE__ );
+		return;
+	}
+
 	SymbolicLogger->Start();
+	WorldStateLogger->Start();
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
 	Response.Text = TEXT("Completed - Start logging");
 	KRWSClient->SendResponse(Response);
 }
 
-// Stop Symbolic Logger
-void SLKRMsgDispatcher::StopSymbolicLogger()
+// Stop Symbolicand World State Logger
+void SLKRMsgDispatcher::StopLoggers()
 {
 	SymbolicLogger->Finish();
 	FSLKRResponse Response;
@@ -210,7 +237,7 @@ void SLKRMsgDispatcher::StopSymbolicLogger()
 }
 
 // Send the Symbolic log owl file
-void SLKRMsgDispatcher::SendSymbolicLog(sl_pb::RecvSymbolicLogParams params)
+void SLKRMsgDispatcher::SendEpisodeData(sl_pb::GetEpisodeDataParams params)
 {
 	FString TaskId = UTF8_TO_TCHAR(params.taskid().c_str());
 	FString EpisodeId = UTF8_TO_TCHAR(params.episodeid().c_str());

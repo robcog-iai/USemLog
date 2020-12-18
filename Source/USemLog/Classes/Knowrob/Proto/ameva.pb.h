@@ -80,9 +80,9 @@ enum KRAmevaEvent_FuncToCall : int {
   KRAmevaEvent_FuncToCall_DrawMarkerAt = 3,
   KRAmevaEvent_FuncToCall_DrawMarkerTraj = 4,
   KRAmevaEvent_FuncToCall_LoadLevel = 5,
-  KRAmevaEvent_FuncToCall_StartSymbolicLog = 6,
-  KRAmevaEvent_FuncToCall_StopSymbolicLog = 7,
-  KRAmevaEvent_FuncToCall_RecvSymbolicLog = 8,
+  KRAmevaEvent_FuncToCall_StartLoggers = 6,
+  KRAmevaEvent_FuncToCall_StopLoggers = 7,
+  KRAmevaEvent_FuncToCall_GetEpisodeData = 8,
   KRAmevaEvent_FuncToCall_StartSimulation = 9,
   KRAmevaEvent_FuncToCall_StopSimulation = 10,
   KRAmevaEvent_FuncToCall_SetIndividualPose = 11,
@@ -262,12 +262,12 @@ class KRAmevaEvent PROTOBUF_FINAL :
     KRAmevaEvent_FuncToCall_DrawMarkerTraj;
   static constexpr FuncToCall LoadLevel =
     KRAmevaEvent_FuncToCall_LoadLevel;
-  static constexpr FuncToCall StartSymbolicLog =
-    KRAmevaEvent_FuncToCall_StartSymbolicLog;
-  static constexpr FuncToCall StopSymbolicLog =
-    KRAmevaEvent_FuncToCall_StopSymbolicLog;
-  static constexpr FuncToCall RecvSymbolicLog =
-    KRAmevaEvent_FuncToCall_RecvSymbolicLog;
+  static constexpr FuncToCall StartLoggers =
+    KRAmevaEvent_FuncToCall_StartLoggers;
+  static constexpr FuncToCall StopLoggers =
+    KRAmevaEvent_FuncToCall_StopLoggers;
+  static constexpr FuncToCall GetEpisodeData =
+    KRAmevaEvent_FuncToCall_GetEpisodeData;
   static constexpr FuncToCall StartSimulation =
     KRAmevaEvent_FuncToCall_StartSimulation;
   static constexpr FuncToCall StopSimulation =
@@ -309,8 +309,8 @@ class KRAmevaEvent PROTOBUF_FINAL :
     kDrawMarkerAtParamsFieldNumber = 4,
     kDrawMarkerTrajParamsFieldNumber = 5,
     kLoadLevelParamsFieldNumber = 6,
-    kStartSymbolicLogParamsFieldNumber = 7,
-    kRecvSymbolicLogParamsFieldNumber = 8,
+    kStartLoggersParamsFieldNumber = 7,
+    kGetEpisodeDataParamsFieldNumber = 8,
     kStartSimulationParamsFieldNumber = 9,
     kStopSimulationParamsFieldNumber = 10,
     kSetIndividualPoseParamsFieldNumber = 11,
@@ -407,41 +407,41 @@ class KRAmevaEvent PROTOBUF_FINAL :
       ::sl_pb::LoadLevelParams* loadlevelparams);
   ::sl_pb::LoadLevelParams* unsafe_arena_release_loadlevelparams();
 
-  // optional .sl_pb.StartSymbolicLogParams startSymbolicLogParams = 7;
-  bool has_startsymboliclogparams() const;
+  // optional .sl_pb.StartLoggersParams startLoggersParams = 7;
+  bool has_startloggersparams() const;
   private:
-  bool _internal_has_startsymboliclogparams() const;
+  bool _internal_has_startloggersparams() const;
   public:
-  void clear_startsymboliclogparams();
-  const ::sl_pb::StartSymbolicLogParams& startsymboliclogparams() const;
-  ::sl_pb::StartSymbolicLogParams* release_startsymboliclogparams();
-  ::sl_pb::StartSymbolicLogParams* mutable_startsymboliclogparams();
-  void set_allocated_startsymboliclogparams(::sl_pb::StartSymbolicLogParams* startsymboliclogparams);
+  void clear_startloggersparams();
+  const ::sl_pb::StartLoggersParams& startloggersparams() const;
+  ::sl_pb::StartLoggersParams* release_startloggersparams();
+  ::sl_pb::StartLoggersParams* mutable_startloggersparams();
+  void set_allocated_startloggersparams(::sl_pb::StartLoggersParams* startloggersparams);
   private:
-  const ::sl_pb::StartSymbolicLogParams& _internal_startsymboliclogparams() const;
-  ::sl_pb::StartSymbolicLogParams* _internal_mutable_startsymboliclogparams();
+  const ::sl_pb::StartLoggersParams& _internal_startloggersparams() const;
+  ::sl_pb::StartLoggersParams* _internal_mutable_startloggersparams();
   public:
-  void unsafe_arena_set_allocated_startsymboliclogparams(
-      ::sl_pb::StartSymbolicLogParams* startsymboliclogparams);
-  ::sl_pb::StartSymbolicLogParams* unsafe_arena_release_startsymboliclogparams();
+  void unsafe_arena_set_allocated_startloggersparams(
+      ::sl_pb::StartLoggersParams* startloggersparams);
+  ::sl_pb::StartLoggersParams* unsafe_arena_release_startloggersparams();
 
-  // optional .sl_pb.RecvSymbolicLogParams recvSymbolicLogParams = 8;
-  bool has_recvsymboliclogparams() const;
+  // optional .sl_pb.GetEpisodeDataParams getEpisodeDataParams = 8;
+  bool has_getepisodedataparams() const;
   private:
-  bool _internal_has_recvsymboliclogparams() const;
+  bool _internal_has_getepisodedataparams() const;
   public:
-  void clear_recvsymboliclogparams();
-  const ::sl_pb::RecvSymbolicLogParams& recvsymboliclogparams() const;
-  ::sl_pb::RecvSymbolicLogParams* release_recvsymboliclogparams();
-  ::sl_pb::RecvSymbolicLogParams* mutable_recvsymboliclogparams();
-  void set_allocated_recvsymboliclogparams(::sl_pb::RecvSymbolicLogParams* recvsymboliclogparams);
+  void clear_getepisodedataparams();
+  const ::sl_pb::GetEpisodeDataParams& getepisodedataparams() const;
+  ::sl_pb::GetEpisodeDataParams* release_getepisodedataparams();
+  ::sl_pb::GetEpisodeDataParams* mutable_getepisodedataparams();
+  void set_allocated_getepisodedataparams(::sl_pb::GetEpisodeDataParams* getepisodedataparams);
   private:
-  const ::sl_pb::RecvSymbolicLogParams& _internal_recvsymboliclogparams() const;
-  ::sl_pb::RecvSymbolicLogParams* _internal_mutable_recvsymboliclogparams();
+  const ::sl_pb::GetEpisodeDataParams& _internal_getepisodedataparams() const;
+  ::sl_pb::GetEpisodeDataParams* _internal_mutable_getepisodedataparams();
   public:
-  void unsafe_arena_set_allocated_recvsymboliclogparams(
-      ::sl_pb::RecvSymbolicLogParams* recvsymboliclogparams);
-  ::sl_pb::RecvSymbolicLogParams* unsafe_arena_release_recvsymboliclogparams();
+  void unsafe_arena_set_allocated_getepisodedataparams(
+      ::sl_pb::GetEpisodeDataParams* getepisodedataparams);
+  ::sl_pb::GetEpisodeDataParams* unsafe_arena_release_getepisodedataparams();
 
   // optional .sl_pb.StartSimulationParams startSimulationParams = 9;
   bool has_startsimulationparams() const;
@@ -542,8 +542,8 @@ class KRAmevaEvent PROTOBUF_FINAL :
   ::sl_pb::DrawMarkerAtParams* drawmarkeratparams_;
   ::sl_pb::DrawMarkerTrajParams* drawmarkertrajparams_;
   ::sl_pb::LoadLevelParams* loadlevelparams_;
-  ::sl_pb::StartSymbolicLogParams* startsymboliclogparams_;
-  ::sl_pb::RecvSymbolicLogParams* recvsymboliclogparams_;
+  ::sl_pb::StartLoggersParams* startloggersparams_;
+  ::sl_pb::GetEpisodeDataParams* getepisodedataparams_;
   ::sl_pb::StartSimulationParams* startsimulationparams_;
   ::sl_pb::StopSimulationParams* stopsimulationparams_;
   ::sl_pb::SetIndividualPoseParams* setindividualposeparams_;
@@ -1250,162 +1250,162 @@ inline void KRAmevaEvent::set_allocated_loadlevelparams(::sl_pb::LoadLevelParams
   // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.loadLevelParams)
 }
 
-// optional .sl_pb.StartSymbolicLogParams startSymbolicLogParams = 7;
-inline bool KRAmevaEvent::_internal_has_startsymboliclogparams() const {
+// optional .sl_pb.StartLoggersParams startLoggersParams = 7;
+inline bool KRAmevaEvent::_internal_has_startloggersparams() const {
   bool value = (_has_bits_[0] & 0x00000020u) != 0;
-  PROTOBUF_ASSUME(!value || startsymboliclogparams_ != nullptr);
+  PROTOBUF_ASSUME(!value || startloggersparams_ != nullptr);
   return value;
 }
-inline bool KRAmevaEvent::has_startsymboliclogparams() const {
-  return _internal_has_startsymboliclogparams();
+inline bool KRAmevaEvent::has_startloggersparams() const {
+  return _internal_has_startloggersparams();
 }
-inline const ::sl_pb::StartSymbolicLogParams& KRAmevaEvent::_internal_startsymboliclogparams() const {
-  const ::sl_pb::StartSymbolicLogParams* p = startsymboliclogparams_;
-  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::StartSymbolicLogParams*>(
-      &::sl_pb::_StartSymbolicLogParams_default_instance_);
+inline const ::sl_pb::StartLoggersParams& KRAmevaEvent::_internal_startloggersparams() const {
+  const ::sl_pb::StartLoggersParams* p = startloggersparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::StartLoggersParams*>(
+      &::sl_pb::_StartLoggersParams_default_instance_);
 }
-inline const ::sl_pb::StartSymbolicLogParams& KRAmevaEvent::startsymboliclogparams() const {
-  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.startSymbolicLogParams)
-  return _internal_startsymboliclogparams();
+inline const ::sl_pb::StartLoggersParams& KRAmevaEvent::startloggersparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.startLoggersParams)
+  return _internal_startloggersparams();
 }
-inline void KRAmevaEvent::unsafe_arena_set_allocated_startsymboliclogparams(
-    ::sl_pb::StartSymbolicLogParams* startsymboliclogparams) {
+inline void KRAmevaEvent::unsafe_arena_set_allocated_startloggersparams(
+    ::sl_pb::StartLoggersParams* startloggersparams) {
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startsymboliclogparams_);
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startloggersparams_);
   }
-  startsymboliclogparams_ = startsymboliclogparams;
-  if (startsymboliclogparams) {
+  startloggersparams_ = startloggersparams;
+  if (startloggersparams) {
     _has_bits_[0] |= 0x00000020u;
   } else {
     _has_bits_[0] &= ~0x00000020u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.startSymbolicLogParams)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.startLoggersParams)
 }
-inline ::sl_pb::StartSymbolicLogParams* KRAmevaEvent::release_startsymboliclogparams() {
+inline ::sl_pb::StartLoggersParams* KRAmevaEvent::release_startloggersparams() {
   _has_bits_[0] &= ~0x00000020u;
-  ::sl_pb::StartSymbolicLogParams* temp = startsymboliclogparams_;
-  startsymboliclogparams_ = nullptr;
+  ::sl_pb::StartLoggersParams* temp = startloggersparams_;
+  startloggersparams_ = nullptr;
   if (GetArena() != nullptr) {
     temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
   }
   return temp;
 }
-inline ::sl_pb::StartSymbolicLogParams* KRAmevaEvent::unsafe_arena_release_startsymboliclogparams() {
-  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.startSymbolicLogParams)
+inline ::sl_pb::StartLoggersParams* KRAmevaEvent::unsafe_arena_release_startloggersparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.startLoggersParams)
   _has_bits_[0] &= ~0x00000020u;
-  ::sl_pb::StartSymbolicLogParams* temp = startsymboliclogparams_;
-  startsymboliclogparams_ = nullptr;
+  ::sl_pb::StartLoggersParams* temp = startloggersparams_;
+  startloggersparams_ = nullptr;
   return temp;
 }
-inline ::sl_pb::StartSymbolicLogParams* KRAmevaEvent::_internal_mutable_startsymboliclogparams() {
+inline ::sl_pb::StartLoggersParams* KRAmevaEvent::_internal_mutable_startloggersparams() {
   _has_bits_[0] |= 0x00000020u;
-  if (startsymboliclogparams_ == nullptr) {
-    auto* p = CreateMaybeMessage<::sl_pb::StartSymbolicLogParams>(GetArena());
-    startsymboliclogparams_ = p;
+  if (startloggersparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::StartLoggersParams>(GetArena());
+    startloggersparams_ = p;
   }
-  return startsymboliclogparams_;
+  return startloggersparams_;
 }
-inline ::sl_pb::StartSymbolicLogParams* KRAmevaEvent::mutable_startsymboliclogparams() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.startSymbolicLogParams)
-  return _internal_mutable_startsymboliclogparams();
+inline ::sl_pb::StartLoggersParams* KRAmevaEvent::mutable_startloggersparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.startLoggersParams)
+  return _internal_mutable_startloggersparams();
 }
-inline void KRAmevaEvent::set_allocated_startsymboliclogparams(::sl_pb::StartSymbolicLogParams* startsymboliclogparams) {
+inline void KRAmevaEvent::set_allocated_startloggersparams(::sl_pb::StartLoggersParams* startloggersparams) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
   if (message_arena == nullptr) {
-    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(startsymboliclogparams_);
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(startloggersparams_);
   }
-  if (startsymboliclogparams) {
+  if (startloggersparams) {
     ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
-      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startsymboliclogparams)->GetArena();
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startloggersparams)->GetArena();
     if (message_arena != submessage_arena) {
-      startsymboliclogparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
-          message_arena, startsymboliclogparams, submessage_arena);
+      startloggersparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, startloggersparams, submessage_arena);
     }
     _has_bits_[0] |= 0x00000020u;
   } else {
     _has_bits_[0] &= ~0x00000020u;
   }
-  startsymboliclogparams_ = startsymboliclogparams;
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.startSymbolicLogParams)
+  startloggersparams_ = startloggersparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.startLoggersParams)
 }
 
-// optional .sl_pb.RecvSymbolicLogParams recvSymbolicLogParams = 8;
-inline bool KRAmevaEvent::_internal_has_recvsymboliclogparams() const {
+// optional .sl_pb.GetEpisodeDataParams getEpisodeDataParams = 8;
+inline bool KRAmevaEvent::_internal_has_getepisodedataparams() const {
   bool value = (_has_bits_[0] & 0x00000040u) != 0;
-  PROTOBUF_ASSUME(!value || recvsymboliclogparams_ != nullptr);
+  PROTOBUF_ASSUME(!value || getepisodedataparams_ != nullptr);
   return value;
 }
-inline bool KRAmevaEvent::has_recvsymboliclogparams() const {
-  return _internal_has_recvsymboliclogparams();
+inline bool KRAmevaEvent::has_getepisodedataparams() const {
+  return _internal_has_getepisodedataparams();
 }
-inline const ::sl_pb::RecvSymbolicLogParams& KRAmevaEvent::_internal_recvsymboliclogparams() const {
-  const ::sl_pb::RecvSymbolicLogParams* p = recvsymboliclogparams_;
-  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::RecvSymbolicLogParams*>(
-      &::sl_pb::_RecvSymbolicLogParams_default_instance_);
+inline const ::sl_pb::GetEpisodeDataParams& KRAmevaEvent::_internal_getepisodedataparams() const {
+  const ::sl_pb::GetEpisodeDataParams* p = getepisodedataparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::GetEpisodeDataParams*>(
+      &::sl_pb::_GetEpisodeDataParams_default_instance_);
 }
-inline const ::sl_pb::RecvSymbolicLogParams& KRAmevaEvent::recvsymboliclogparams() const {
-  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.recvSymbolicLogParams)
-  return _internal_recvsymboliclogparams();
+inline const ::sl_pb::GetEpisodeDataParams& KRAmevaEvent::getepisodedataparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.getEpisodeDataParams)
+  return _internal_getepisodedataparams();
 }
-inline void KRAmevaEvent::unsafe_arena_set_allocated_recvsymboliclogparams(
-    ::sl_pb::RecvSymbolicLogParams* recvsymboliclogparams) {
+inline void KRAmevaEvent::unsafe_arena_set_allocated_getepisodedataparams(
+    ::sl_pb::GetEpisodeDataParams* getepisodedataparams) {
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(recvsymboliclogparams_);
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(getepisodedataparams_);
   }
-  recvsymboliclogparams_ = recvsymboliclogparams;
-  if (recvsymboliclogparams) {
+  getepisodedataparams_ = getepisodedataparams;
+  if (getepisodedataparams) {
     _has_bits_[0] |= 0x00000040u;
   } else {
     _has_bits_[0] &= ~0x00000040u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.recvSymbolicLogParams)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.getEpisodeDataParams)
 }
-inline ::sl_pb::RecvSymbolicLogParams* KRAmevaEvent::release_recvsymboliclogparams() {
+inline ::sl_pb::GetEpisodeDataParams* KRAmevaEvent::release_getepisodedataparams() {
   _has_bits_[0] &= ~0x00000040u;
-  ::sl_pb::RecvSymbolicLogParams* temp = recvsymboliclogparams_;
-  recvsymboliclogparams_ = nullptr;
+  ::sl_pb::GetEpisodeDataParams* temp = getepisodedataparams_;
+  getepisodedataparams_ = nullptr;
   if (GetArena() != nullptr) {
     temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
   }
   return temp;
 }
-inline ::sl_pb::RecvSymbolicLogParams* KRAmevaEvent::unsafe_arena_release_recvsymboliclogparams() {
-  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.recvSymbolicLogParams)
+inline ::sl_pb::GetEpisodeDataParams* KRAmevaEvent::unsafe_arena_release_getepisodedataparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.getEpisodeDataParams)
   _has_bits_[0] &= ~0x00000040u;
-  ::sl_pb::RecvSymbolicLogParams* temp = recvsymboliclogparams_;
-  recvsymboliclogparams_ = nullptr;
+  ::sl_pb::GetEpisodeDataParams* temp = getepisodedataparams_;
+  getepisodedataparams_ = nullptr;
   return temp;
 }
-inline ::sl_pb::RecvSymbolicLogParams* KRAmevaEvent::_internal_mutable_recvsymboliclogparams() {
+inline ::sl_pb::GetEpisodeDataParams* KRAmevaEvent::_internal_mutable_getepisodedataparams() {
   _has_bits_[0] |= 0x00000040u;
-  if (recvsymboliclogparams_ == nullptr) {
-    auto* p = CreateMaybeMessage<::sl_pb::RecvSymbolicLogParams>(GetArena());
-    recvsymboliclogparams_ = p;
+  if (getepisodedataparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::GetEpisodeDataParams>(GetArena());
+    getepisodedataparams_ = p;
   }
-  return recvsymboliclogparams_;
+  return getepisodedataparams_;
 }
-inline ::sl_pb::RecvSymbolicLogParams* KRAmevaEvent::mutable_recvsymboliclogparams() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.recvSymbolicLogParams)
-  return _internal_mutable_recvsymboliclogparams();
+inline ::sl_pb::GetEpisodeDataParams* KRAmevaEvent::mutable_getepisodedataparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.getEpisodeDataParams)
+  return _internal_mutable_getepisodedataparams();
 }
-inline void KRAmevaEvent::set_allocated_recvsymboliclogparams(::sl_pb::RecvSymbolicLogParams* recvsymboliclogparams) {
+inline void KRAmevaEvent::set_allocated_getepisodedataparams(::sl_pb::GetEpisodeDataParams* getepisodedataparams) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
   if (message_arena == nullptr) {
-    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(recvsymboliclogparams_);
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(getepisodedataparams_);
   }
-  if (recvsymboliclogparams) {
+  if (getepisodedataparams) {
     ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
-      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(recvsymboliclogparams)->GetArena();
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(getepisodedataparams)->GetArena();
     if (message_arena != submessage_arena) {
-      recvsymboliclogparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
-          message_arena, recvsymboliclogparams, submessage_arena);
+      getepisodedataparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, getepisodedataparams, submessage_arena);
     }
     _has_bits_[0] |= 0x00000040u;
   } else {
     _has_bits_[0] &= ~0x00000040u;
   }
-  recvsymboliclogparams_ = recvsymboliclogparams;
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.recvSymbolicLogParams)
+  getepisodedataparams_ = getepisodedataparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.getEpisodeDataParams)
 }
 
 // optional .sl_pb.StartSimulationParams startSimulationParams = 9;

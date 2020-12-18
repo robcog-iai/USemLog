@@ -28,14 +28,14 @@ class SetIndividualPoseParamsDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SetIndividualPoseParams> _instance;
 } _SetIndividualPoseParams_default_instance_;
-class StartSymbolicLogParamsDefaultTypeInternal {
+class StartLoggersParamsDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<StartSymbolicLogParams> _instance;
-} _StartSymbolicLogParams_default_instance_;
-class RecvSymbolicLogParamsDefaultTypeInternal {
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<StartLoggersParams> _instance;
+} _StartLoggersParams_default_instance_;
+class GetEpisodeDataParamsDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RecvSymbolicLogParams> _instance;
-} _RecvSymbolicLogParams_default_instance_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<GetEpisodeDataParams> _instance;
+} _GetEpisodeDataParams_default_instance_;
 class ApplyForceToParamsDefaultTypeInternal {
  public:
   ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ApplyForceToParams> _instance;
@@ -55,19 +55,19 @@ static void InitDefaultsscc_info_ApplyForceToParams_control_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ApplyForceToParams_control_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ApplyForceToParams_control_2eproto}, {}};
 
-static void InitDefaultsscc_info_RecvSymbolicLogParams_control_2eproto() {
+static void InitDefaultsscc_info_GetEpisodeDataParams_control_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::sl_pb::_RecvSymbolicLogParams_default_instance_;
-    new (ptr) ::sl_pb::RecvSymbolicLogParams();
+    void* ptr = &::sl_pb::_GetEpisodeDataParams_default_instance_;
+    new (ptr) ::sl_pb::GetEpisodeDataParams();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
-  ::sl_pb::RecvSymbolicLogParams::InitAsDefaultInstance();
+  ::sl_pb::GetEpisodeDataParams::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_RecvSymbolicLogParams_control_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_RecvSymbolicLogParams_control_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_GetEpisodeDataParams_control_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_GetEpisodeDataParams_control_2eproto}, {}};
 
 static void InitDefaultsscc_info_SetIndividualPoseParams_control_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -83,6 +83,20 @@ static void InitDefaultsscc_info_SetIndividualPoseParams_control_2eproto() {
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetIndividualPoseParams_control_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SetIndividualPoseParams_control_2eproto}, {}};
 
+static void InitDefaultsscc_info_StartLoggersParams_control_2eproto() {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+  {
+    void* ptr = &::sl_pb::_StartLoggersParams_default_instance_;
+    new (ptr) ::sl_pb::StartLoggersParams();
+    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
+  }
+  ::sl_pb::StartLoggersParams::InitAsDefaultInstance();
+}
+
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StartLoggersParams_control_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_StartLoggersParams_control_2eproto}, {}};
+
 static void InitDefaultsscc_info_StartSimulationParams_control_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
@@ -96,20 +110,6 @@ static void InitDefaultsscc_info_StartSimulationParams_control_2eproto() {
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StartSimulationParams_control_2eproto =
     {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_StartSimulationParams_control_2eproto}, {}};
-
-static void InitDefaultsscc_info_StartSymbolicLogParams_control_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::sl_pb::_StartSymbolicLogParams_default_instance_;
-    new (ptr) ::sl_pb::StartSymbolicLogParams();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::sl_pb::StartSymbolicLogParams::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StartSymbolicLogParams_control_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_StartSymbolicLogParams_control_2eproto}, {}};
 
 static void InitDefaultsscc_info_StopSimulationParams_control_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -166,22 +166,22 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_control_2eproto::offsets[] PRO
   5,
   6,
   7,
-  PROTOBUF_FIELD_OFFSET(::sl_pb::StartSymbolicLogParams, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::sl_pb::StartSymbolicLogParams, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::StartLoggersParams, _has_bits_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::StartLoggersParams, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::sl_pb::StartSymbolicLogParams, taskid_),
-  PROTOBUF_FIELD_OFFSET(::sl_pb::StartSymbolicLogParams, episodeid_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::StartLoggersParams, taskid_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::StartLoggersParams, episodeid_),
   0,
   1,
-  PROTOBUF_FIELD_OFFSET(::sl_pb::RecvSymbolicLogParams, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::sl_pb::RecvSymbolicLogParams, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::GetEpisodeDataParams, _has_bits_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::GetEpisodeDataParams, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::sl_pb::RecvSymbolicLogParams, taskid_),
-  PROTOBUF_FIELD_OFFSET(::sl_pb::RecvSymbolicLogParams, episodeid_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::GetEpisodeDataParams, taskid_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::GetEpisodeDataParams, episodeid_),
   0,
   1,
   PROTOBUF_FIELD_OFFSET(::sl_pb::ApplyForceToParams, _has_bits_),
@@ -202,8 +202,8 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 0, 7, sizeof(::sl_pb::StartSimulationParams)},
   { 9, -1, sizeof(::sl_pb::StopSimulationParams)},
   { 15, 28, sizeof(::sl_pb::SetIndividualPoseParams)},
-  { 36, 43, sizeof(::sl_pb::StartSymbolicLogParams)},
-  { 45, 52, sizeof(::sl_pb::RecvSymbolicLogParams)},
+  { 36, 43, sizeof(::sl_pb::StartLoggersParams)},
+  { 45, 52, sizeof(::sl_pb::GetEpisodeDataParams)},
   { 54, 63, sizeof(::sl_pb::ApplyForceToParams)},
 };
 
@@ -211,8 +211,8 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_StartSimulationParams_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_StopSimulationParams_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_SetIndividualPoseParams_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_StartSymbolicLogParams_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_RecvSymbolicLogParams_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_StartLoggersParams_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_GetEpisodeDataParams_default_instance_),
   reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::sl_pb::_ApplyForceToParams_default_instance_),
 };
 
@@ -223,26 +223,26 @@ const char descriptor_table_protodef_control_2eproto[] PROTOBUF_SECTION_VARIABLE
   "tIndividualPoseParams\022\n\n\002id\030\001 \002(\t\022\014\n\004vec"
   "X\030\002 \002(\002\022\014\n\004vecY\030\003 \002(\002\022\014\n\004vecZ\030\004 \002(\002\022\r\n\005q"
   "uatX\030\005 \002(\002\022\r\n\005quatY\030\006 \002(\002\022\r\n\005quatZ\030\007 \002(\002"
-  "\022\r\n\005quatW\030\010 \002(\002\";\n\026StartSymbolicLogParam"
-  "s\022\016\n\006taskId\030\001 \002(\t\022\021\n\tepisodeId\030\002 \002(\t\":\n\025"
-  "RecvSymbolicLogParams\022\016\n\006taskId\030\001 \002(\t\022\021\n"
-  "\tepisodeId\030\002 \002(\t\"P\n\022ApplyForceToParams\022\n"
-  "\n\002id\030\001 \002(\t\022\016\n\006forceX\030\002 \002(\002\022\016\n\006forceY\030\003 \002"
-  "(\002\022\016\n\006forceZ\030\004 \002(\002"
+  "\022\r\n\005quatW\030\010 \002(\002\"7\n\022StartLoggersParams\022\016\n"
+  "\006taskId\030\001 \002(\t\022\021\n\tepisodeId\030\002 \002(\t\"9\n\024GetE"
+  "pisodeDataParams\022\016\n\006taskId\030\001 \002(\t\022\021\n\tepis"
+  "odeId\030\002 \002(\t\"P\n\022ApplyForceToParams\022\n\n\002id\030"
+  "\001 \002(\t\022\016\n\006forceX\030\002 \002(\002\022\016\n\006forceY\030\003 \002(\002\022\016\n"
+  "\006forceZ\030\004 \002(\002"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_control_2eproto_deps[1] = {
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_control_2eproto_sccs[6] = {
   &scc_info_ApplyForceToParams_control_2eproto.base,
-  &scc_info_RecvSymbolicLogParams_control_2eproto.base,
+  &scc_info_GetEpisodeDataParams_control_2eproto.base,
   &scc_info_SetIndividualPoseParams_control_2eproto.base,
+  &scc_info_StartLoggersParams_control_2eproto.base,
   &scc_info_StartSimulationParams_control_2eproto.base,
-  &scc_info_StartSymbolicLogParams_control_2eproto.base,
   &scc_info_StopSimulationParams_control_2eproto.base,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_control_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_control_2eproto = {
-  false, false, descriptor_table_protodef_control_2eproto, "control.proto", 458,
+  false, false, descriptor_table_protodef_control_2eproto, "control.proto", 453,
   &descriptor_table_control_2eproto_once, descriptor_table_control_2eproto_sccs, descriptor_table_control_2eproto_deps, 6, 0,
   schemas, file_default_instances, TableStruct_control_2eproto::offsets,
   file_level_metadata_control_2eproto, 6, file_level_enum_descriptors_control_2eproto, file_level_service_descriptors_control_2eproto,
@@ -1175,11 +1175,11 @@ void SetIndividualPoseParams::InternalSwap(SetIndividualPoseParams* other) {
 
 // ===================================================================
 
-void StartSymbolicLogParams::InitAsDefaultInstance() {
+void StartLoggersParams::InitAsDefaultInstance() {
 }
-class StartSymbolicLogParams::_Internal {
+class StartLoggersParams::_Internal {
  public:
-  using HasBits = decltype(std::declval<StartSymbolicLogParams>()._has_bits_);
+  using HasBits = decltype(std::declval<StartLoggersParams>()._has_bits_);
   static void set_has_taskid(HasBits* has_bits) {
     (*has_bits)[0] |= 1u;
   }
@@ -1191,13 +1191,13 @@ class StartSymbolicLogParams::_Internal {
   }
 };
 
-StartSymbolicLogParams::StartSymbolicLogParams(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+StartLoggersParams::StartLoggersParams(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
   SharedCtor();
   RegisterArenaDtor(arena);
-  // @@protoc_insertion_point(arena_constructor:sl_pb.StartSymbolicLogParams)
+  // @@protoc_insertion_point(arena_constructor:sl_pb.StartLoggersParams)
 }
-StartSymbolicLogParams::StartSymbolicLogParams(const StartSymbolicLogParams& from)
+StartLoggersParams::StartLoggersParams(const StartLoggersParams& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
@@ -1211,44 +1211,44 @@ StartSymbolicLogParams::StartSymbolicLogParams(const StartSymbolicLogParams& fro
     episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_episodeid(),
       GetArena());
   }
-  // @@protoc_insertion_point(copy_constructor:sl_pb.StartSymbolicLogParams)
+  // @@protoc_insertion_point(copy_constructor:sl_pb.StartLoggersParams)
 }
 
-void StartSymbolicLogParams::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_StartSymbolicLogParams_control_2eproto.base);
+void StartLoggersParams::SharedCtor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_StartLoggersParams_control_2eproto.base);
   taskid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   episodeid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
-StartSymbolicLogParams::~StartSymbolicLogParams() {
-  // @@protoc_insertion_point(destructor:sl_pb.StartSymbolicLogParams)
+StartLoggersParams::~StartLoggersParams() {
+  // @@protoc_insertion_point(destructor:sl_pb.StartLoggersParams)
   SharedDtor();
   _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-void StartSymbolicLogParams::SharedDtor() {
+void StartLoggersParams::SharedDtor() {
   GOOGLE_DCHECK(GetArena() == nullptr);
   taskid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   episodeid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
-void StartSymbolicLogParams::ArenaDtor(void* object) {
-  StartSymbolicLogParams* _this = reinterpret_cast< StartSymbolicLogParams* >(object);
+void StartLoggersParams::ArenaDtor(void* object) {
+  StartLoggersParams* _this = reinterpret_cast< StartLoggersParams* >(object);
   (void)_this;
 }
-void StartSymbolicLogParams::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+void StartLoggersParams::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 }
-void StartSymbolicLogParams::SetCachedSize(int size) const {
+void StartLoggersParams::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const StartSymbolicLogParams& StartSymbolicLogParams::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_StartSymbolicLogParams_control_2eproto.base);
+const StartLoggersParams& StartLoggersParams::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_StartLoggersParams_control_2eproto.base);
   return *internal_default_instance();
 }
 
 
-void StartSymbolicLogParams::Clear() {
-// @@protoc_insertion_point(message_clear_start:sl_pb.StartSymbolicLogParams)
+void StartLoggersParams::Clear() {
+// @@protoc_insertion_point(message_clear_start:sl_pb.StartLoggersParams)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -1266,7 +1266,7 @@ void StartSymbolicLogParams::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* StartSymbolicLogParams::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+const char* StartLoggersParams::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
@@ -1281,7 +1281,7 @@ const char* StartSymbolicLogParams::_InternalParse(const char* ptr, ::PROTOBUF_N
           auto str = _internal_mutable_taskid();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
           #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "sl_pb.StartSymbolicLogParams.taskId");
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "sl_pb.StartLoggersParams.taskId");
           #endif  // !NDEBUG
           CHK_(ptr);
         } else goto handle_unusual;
@@ -1292,7 +1292,7 @@ const char* StartSymbolicLogParams::_InternalParse(const char* ptr, ::PROTOBUF_N
           auto str = _internal_mutable_episodeid();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
           #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "sl_pb.StartSymbolicLogParams.episodeId");
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "sl_pb.StartLoggersParams.episodeId");
           #endif  // !NDEBUG
           CHK_(ptr);
         } else goto handle_unusual;
@@ -1320,9 +1320,9 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* StartSymbolicLogParams::_InternalSerialize(
+::PROTOBUF_NAMESPACE_ID::uint8* StartLoggersParams::_InternalSerialize(
     ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:sl_pb.StartSymbolicLogParams)
+  // @@protoc_insertion_point(serialize_to_array_start:sl_pb.StartLoggersParams)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -1332,7 +1332,7 @@ failure:
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
       this->_internal_taskid().data(), static_cast<int>(this->_internal_taskid().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "sl_pb.StartSymbolicLogParams.taskId");
+      "sl_pb.StartLoggersParams.taskId");
     target = stream->WriteStringMaybeAliased(
         1, this->_internal_taskid(), target);
   }
@@ -1342,7 +1342,7 @@ failure:
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
       this->_internal_episodeid().data(), static_cast<int>(this->_internal_episodeid().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "sl_pb.StartSymbolicLogParams.episodeId");
+      "sl_pb.StartLoggersParams.episodeId");
     target = stream->WriteStringMaybeAliased(
         2, this->_internal_episodeid(), target);
   }
@@ -1351,12 +1351,12 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:sl_pb.StartSymbolicLogParams)
+  // @@protoc_insertion_point(serialize_to_array_end:sl_pb.StartLoggersParams)
   return target;
 }
 
-size_t StartSymbolicLogParams::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:sl_pb.StartSymbolicLogParams)
+size_t StartLoggersParams::RequiredFieldsByteSizeFallback() const {
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:sl_pb.StartLoggersParams)
   size_t total_size = 0;
 
   if (_internal_has_taskid()) {
@@ -1375,8 +1375,8 @@ size_t StartSymbolicLogParams::RequiredFieldsByteSizeFallback() const {
 
   return total_size;
 }
-size_t StartSymbolicLogParams::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:sl_pb.StartSymbolicLogParams)
+size_t StartLoggersParams::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:sl_pb.StartLoggersParams)
   size_t total_size = 0;
 
   if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
@@ -1406,23 +1406,23 @@ size_t StartSymbolicLogParams::ByteSizeLong() const {
   return total_size;
 }
 
-void StartSymbolicLogParams::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:sl_pb.StartSymbolicLogParams)
+void StartLoggersParams::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:sl_pb.StartLoggersParams)
   GOOGLE_DCHECK_NE(&from, this);
-  const StartSymbolicLogParams* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<StartSymbolicLogParams>(
+  const StartLoggersParams* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<StartLoggersParams>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:sl_pb.StartSymbolicLogParams)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:sl_pb.StartLoggersParams)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:sl_pb.StartSymbolicLogParams)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:sl_pb.StartLoggersParams)
     MergeFrom(*source);
   }
 }
 
-void StartSymbolicLogParams::MergeFrom(const StartSymbolicLogParams& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:sl_pb.StartSymbolicLogParams)
+void StartLoggersParams::MergeFrom(const StartLoggersParams& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:sl_pb.StartLoggersParams)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
@@ -1439,26 +1439,26 @@ void StartSymbolicLogParams::MergeFrom(const StartSymbolicLogParams& from) {
   }
 }
 
-void StartSymbolicLogParams::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:sl_pb.StartSymbolicLogParams)
+void StartLoggersParams::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:sl_pb.StartLoggersParams)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void StartSymbolicLogParams::CopyFrom(const StartSymbolicLogParams& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:sl_pb.StartSymbolicLogParams)
+void StartLoggersParams::CopyFrom(const StartLoggersParams& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:sl_pb.StartLoggersParams)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool StartSymbolicLogParams::IsInitialized() const {
+bool StartLoggersParams::IsInitialized() const {
   if (_Internal::MissingRequiredFields(_has_bits_)) return false;
   return true;
 }
 
-void StartSymbolicLogParams::InternalSwap(StartSymbolicLogParams* other) {
+void StartLoggersParams::InternalSwap(StartLoggersParams* other) {
   using std::swap;
   _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
@@ -1466,18 +1466,18 @@ void StartSymbolicLogParams::InternalSwap(StartSymbolicLogParams* other) {
   episodeid_.Swap(&other->episodeid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata StartSymbolicLogParams::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata StartLoggersParams::GetMetadata() const {
   return GetMetadataStatic();
 }
 
 
 // ===================================================================
 
-void RecvSymbolicLogParams::InitAsDefaultInstance() {
+void GetEpisodeDataParams::InitAsDefaultInstance() {
 }
-class RecvSymbolicLogParams::_Internal {
+class GetEpisodeDataParams::_Internal {
  public:
-  using HasBits = decltype(std::declval<RecvSymbolicLogParams>()._has_bits_);
+  using HasBits = decltype(std::declval<GetEpisodeDataParams>()._has_bits_);
   static void set_has_taskid(HasBits* has_bits) {
     (*has_bits)[0] |= 1u;
   }
@@ -1489,13 +1489,13 @@ class RecvSymbolicLogParams::_Internal {
   }
 };
 
-RecvSymbolicLogParams::RecvSymbolicLogParams(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+GetEpisodeDataParams::GetEpisodeDataParams(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
   SharedCtor();
   RegisterArenaDtor(arena);
-  // @@protoc_insertion_point(arena_constructor:sl_pb.RecvSymbolicLogParams)
+  // @@protoc_insertion_point(arena_constructor:sl_pb.GetEpisodeDataParams)
 }
-RecvSymbolicLogParams::RecvSymbolicLogParams(const RecvSymbolicLogParams& from)
+GetEpisodeDataParams::GetEpisodeDataParams(const GetEpisodeDataParams& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
@@ -1509,44 +1509,44 @@ RecvSymbolicLogParams::RecvSymbolicLogParams(const RecvSymbolicLogParams& from)
     episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_episodeid(),
       GetArena());
   }
-  // @@protoc_insertion_point(copy_constructor:sl_pb.RecvSymbolicLogParams)
+  // @@protoc_insertion_point(copy_constructor:sl_pb.GetEpisodeDataParams)
 }
 
-void RecvSymbolicLogParams::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_RecvSymbolicLogParams_control_2eproto.base);
+void GetEpisodeDataParams::SharedCtor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_GetEpisodeDataParams_control_2eproto.base);
   taskid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   episodeid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
-RecvSymbolicLogParams::~RecvSymbolicLogParams() {
-  // @@protoc_insertion_point(destructor:sl_pb.RecvSymbolicLogParams)
+GetEpisodeDataParams::~GetEpisodeDataParams() {
+  // @@protoc_insertion_point(destructor:sl_pb.GetEpisodeDataParams)
   SharedDtor();
   _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-void RecvSymbolicLogParams::SharedDtor() {
+void GetEpisodeDataParams::SharedDtor() {
   GOOGLE_DCHECK(GetArena() == nullptr);
   taskid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   episodeid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
-void RecvSymbolicLogParams::ArenaDtor(void* object) {
-  RecvSymbolicLogParams* _this = reinterpret_cast< RecvSymbolicLogParams* >(object);
+void GetEpisodeDataParams::ArenaDtor(void* object) {
+  GetEpisodeDataParams* _this = reinterpret_cast< GetEpisodeDataParams* >(object);
   (void)_this;
 }
-void RecvSymbolicLogParams::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+void GetEpisodeDataParams::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 }
-void RecvSymbolicLogParams::SetCachedSize(int size) const {
+void GetEpisodeDataParams::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const RecvSymbolicLogParams& RecvSymbolicLogParams::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_RecvSymbolicLogParams_control_2eproto.base);
+const GetEpisodeDataParams& GetEpisodeDataParams::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_GetEpisodeDataParams_control_2eproto.base);
   return *internal_default_instance();
 }
 
 
-void RecvSymbolicLogParams::Clear() {
-// @@protoc_insertion_point(message_clear_start:sl_pb.RecvSymbolicLogParams)
+void GetEpisodeDataParams::Clear() {
+// @@protoc_insertion_point(message_clear_start:sl_pb.GetEpisodeDataParams)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -1564,7 +1564,7 @@ void RecvSymbolicLogParams::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* RecvSymbolicLogParams::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+const char* GetEpisodeDataParams::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
@@ -1579,7 +1579,7 @@ const char* RecvSymbolicLogParams::_InternalParse(const char* ptr, ::PROTOBUF_NA
           auto str = _internal_mutable_taskid();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
           #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "sl_pb.RecvSymbolicLogParams.taskId");
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "sl_pb.GetEpisodeDataParams.taskId");
           #endif  // !NDEBUG
           CHK_(ptr);
         } else goto handle_unusual;
@@ -1590,7 +1590,7 @@ const char* RecvSymbolicLogParams::_InternalParse(const char* ptr, ::PROTOBUF_NA
           auto str = _internal_mutable_episodeid();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
           #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "sl_pb.RecvSymbolicLogParams.episodeId");
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "sl_pb.GetEpisodeDataParams.episodeId");
           #endif  // !NDEBUG
           CHK_(ptr);
         } else goto handle_unusual;
@@ -1618,9 +1618,9 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* RecvSymbolicLogParams::_InternalSerialize(
+::PROTOBUF_NAMESPACE_ID::uint8* GetEpisodeDataParams::_InternalSerialize(
     ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:sl_pb.RecvSymbolicLogParams)
+  // @@protoc_insertion_point(serialize_to_array_start:sl_pb.GetEpisodeDataParams)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -1630,7 +1630,7 @@ failure:
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
       this->_internal_taskid().data(), static_cast<int>(this->_internal_taskid().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "sl_pb.RecvSymbolicLogParams.taskId");
+      "sl_pb.GetEpisodeDataParams.taskId");
     target = stream->WriteStringMaybeAliased(
         1, this->_internal_taskid(), target);
   }
@@ -1640,7 +1640,7 @@ failure:
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
       this->_internal_episodeid().data(), static_cast<int>(this->_internal_episodeid().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "sl_pb.RecvSymbolicLogParams.episodeId");
+      "sl_pb.GetEpisodeDataParams.episodeId");
     target = stream->WriteStringMaybeAliased(
         2, this->_internal_episodeid(), target);
   }
@@ -1649,12 +1649,12 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:sl_pb.RecvSymbolicLogParams)
+  // @@protoc_insertion_point(serialize_to_array_end:sl_pb.GetEpisodeDataParams)
   return target;
 }
 
-size_t RecvSymbolicLogParams::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:sl_pb.RecvSymbolicLogParams)
+size_t GetEpisodeDataParams::RequiredFieldsByteSizeFallback() const {
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:sl_pb.GetEpisodeDataParams)
   size_t total_size = 0;
 
   if (_internal_has_taskid()) {
@@ -1673,8 +1673,8 @@ size_t RecvSymbolicLogParams::RequiredFieldsByteSizeFallback() const {
 
   return total_size;
 }
-size_t RecvSymbolicLogParams::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:sl_pb.RecvSymbolicLogParams)
+size_t GetEpisodeDataParams::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:sl_pb.GetEpisodeDataParams)
   size_t total_size = 0;
 
   if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
@@ -1704,23 +1704,23 @@ size_t RecvSymbolicLogParams::ByteSizeLong() const {
   return total_size;
 }
 
-void RecvSymbolicLogParams::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:sl_pb.RecvSymbolicLogParams)
+void GetEpisodeDataParams::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:sl_pb.GetEpisodeDataParams)
   GOOGLE_DCHECK_NE(&from, this);
-  const RecvSymbolicLogParams* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<RecvSymbolicLogParams>(
+  const GetEpisodeDataParams* source =
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<GetEpisodeDataParams>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:sl_pb.RecvSymbolicLogParams)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:sl_pb.GetEpisodeDataParams)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:sl_pb.RecvSymbolicLogParams)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:sl_pb.GetEpisodeDataParams)
     MergeFrom(*source);
   }
 }
 
-void RecvSymbolicLogParams::MergeFrom(const RecvSymbolicLogParams& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:sl_pb.RecvSymbolicLogParams)
+void GetEpisodeDataParams::MergeFrom(const GetEpisodeDataParams& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:sl_pb.GetEpisodeDataParams)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
@@ -1737,26 +1737,26 @@ void RecvSymbolicLogParams::MergeFrom(const RecvSymbolicLogParams& from) {
   }
 }
 
-void RecvSymbolicLogParams::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:sl_pb.RecvSymbolicLogParams)
+void GetEpisodeDataParams::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:sl_pb.GetEpisodeDataParams)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void RecvSymbolicLogParams::CopyFrom(const RecvSymbolicLogParams& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:sl_pb.RecvSymbolicLogParams)
+void GetEpisodeDataParams::CopyFrom(const GetEpisodeDataParams& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:sl_pb.GetEpisodeDataParams)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool RecvSymbolicLogParams::IsInitialized() const {
+bool GetEpisodeDataParams::IsInitialized() const {
   if (_Internal::MissingRequiredFields(_has_bits_)) return false;
   return true;
 }
 
-void RecvSymbolicLogParams::InternalSwap(RecvSymbolicLogParams* other) {
+void GetEpisodeDataParams::InternalSwap(GetEpisodeDataParams* other) {
   using std::swap;
   _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
@@ -1764,7 +1764,7 @@ void RecvSymbolicLogParams::InternalSwap(RecvSymbolicLogParams* other) {
   episodeid_.Swap(&other->episodeid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata RecvSymbolicLogParams::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata GetEpisodeDataParams::GetMetadata() const {
   return GetMetadataStatic();
 }
 
@@ -2129,11 +2129,11 @@ template<> PROTOBUF_NOINLINE ::sl_pb::StopSimulationParams* Arena::CreateMaybeMe
 template<> PROTOBUF_NOINLINE ::sl_pb::SetIndividualPoseParams* Arena::CreateMaybeMessage< ::sl_pb::SetIndividualPoseParams >(Arena* arena) {
   return Arena::CreateMessageInternal< ::sl_pb::SetIndividualPoseParams >(arena);
 }
-template<> PROTOBUF_NOINLINE ::sl_pb::StartSymbolicLogParams* Arena::CreateMaybeMessage< ::sl_pb::StartSymbolicLogParams >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::sl_pb::StartSymbolicLogParams >(arena);
+template<> PROTOBUF_NOINLINE ::sl_pb::StartLoggersParams* Arena::CreateMaybeMessage< ::sl_pb::StartLoggersParams >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::sl_pb::StartLoggersParams >(arena);
 }
-template<> PROTOBUF_NOINLINE ::sl_pb::RecvSymbolicLogParams* Arena::CreateMaybeMessage< ::sl_pb::RecvSymbolicLogParams >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::sl_pb::RecvSymbolicLogParams >(arena);
+template<> PROTOBUF_NOINLINE ::sl_pb::GetEpisodeDataParams* Arena::CreateMaybeMessage< ::sl_pb::GetEpisodeDataParams >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::sl_pb::GetEpisodeDataParams >(arena);
 }
 template<> PROTOBUF_NOINLINE ::sl_pb::ApplyForceToParams* Arena::CreateMaybeMessage< ::sl_pb::ApplyForceToParams >(Arena* arena) {
   return Arena::CreateMessageInternal< ::sl_pb::ApplyForceToParams >(arena);
