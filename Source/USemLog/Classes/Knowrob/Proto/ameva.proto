@@ -20,6 +20,9 @@ message KRAmevaEvent {
     StopSimulation = 10;
     SetIndividualPose = 11;
     ApplyForceTo = 12;
+	Highlight = 13;
+	RemoveHighlight = 14;
+	RemoveAllHighlight = 15;
   } 
   required FuncToCall funcToCall = 1;
   optional SetTaskParams setTaskParam = 2;
@@ -33,6 +36,8 @@ message KRAmevaEvent {
   optional StopSimulationParams stopSimulationParams = 10;
   optional SetIndividualPoseParams setIndividualPoseParams = 11;
   optional ApplyForceToParams applyForceToParams = 12;
+  optional HighlightParams highlightParams = 13;
+  optional RemoveHighlightParams removeHighlightParams = 14;
 }
 
 message KRAmevaResponse {

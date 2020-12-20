@@ -50,7 +50,7 @@ struct TableStruct_viz_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[5]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[7]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -64,9 +64,15 @@ extern DrawMarkerAtParamsDefaultTypeInternal _DrawMarkerAtParams_default_instanc
 class DrawMarkerTrajParams;
 class DrawMarkerTrajParamsDefaultTypeInternal;
 extern DrawMarkerTrajParamsDefaultTypeInternal _DrawMarkerTrajParams_default_instance_;
+class HighlightParams;
+class HighlightParamsDefaultTypeInternal;
+extern HighlightParamsDefaultTypeInternal _HighlightParams_default_instance_;
 class LoadLevelParams;
 class LoadLevelParamsDefaultTypeInternal;
 extern LoadLevelParamsDefaultTypeInternal _LoadLevelParams_default_instance_;
+class RemoveHighlightParams;
+class RemoveHighlightParamsDefaultTypeInternal;
+extern RemoveHighlightParamsDefaultTypeInternal _RemoveHighlightParams_default_instance_;
 class SetEpisodeParams;
 class SetEpisodeParamsDefaultTypeInternal;
 extern SetEpisodeParamsDefaultTypeInternal _SetEpisodeParams_default_instance_;
@@ -77,7 +83,9 @@ extern SetTaskParamsDefaultTypeInternal _SetTaskParams_default_instance_;
 PROTOBUF_NAMESPACE_OPEN
 template<> ::sl_pb::DrawMarkerAtParams* Arena::CreateMaybeMessage<::sl_pb::DrawMarkerAtParams>(Arena*);
 template<> ::sl_pb::DrawMarkerTrajParams* Arena::CreateMaybeMessage<::sl_pb::DrawMarkerTrajParams>(Arena*);
+template<> ::sl_pb::HighlightParams* Arena::CreateMaybeMessage<::sl_pb::HighlightParams>(Arena*);
 template<> ::sl_pb::LoadLevelParams* Arena::CreateMaybeMessage<::sl_pb::LoadLevelParams>(Arena*);
+template<> ::sl_pb::RemoveHighlightParams* Arena::CreateMaybeMessage<::sl_pb::RemoveHighlightParams>(Arena*);
 template<> ::sl_pb::SetEpisodeParams* Arena::CreateMaybeMessage<::sl_pb::SetEpisodeParams>(Arena*);
 template<> ::sl_pb::SetTaskParams* Arena::CreateMaybeMessage<::sl_pb::SetTaskParams>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
@@ -934,6 +942,365 @@ class DrawMarkerTrajParams PROTOBUF_FINAL :
 };
 // -------------------------------------------------------------------
 
+class HighlightParams PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.HighlightParams) */ {
+ public:
+  inline HighlightParams() : HighlightParams(nullptr) {}
+  virtual ~HighlightParams();
+
+  HighlightParams(const HighlightParams& from);
+  HighlightParams(HighlightParams&& from) noexcept
+    : HighlightParams() {
+    *this = ::std::move(from);
+  }
+
+  inline HighlightParams& operator=(const HighlightParams& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline HighlightParams& operator=(HighlightParams&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const HighlightParams& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const HighlightParams* internal_default_instance() {
+    return reinterpret_cast<const HighlightParams*>(
+               &_HighlightParams_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    4;
+
+  friend void swap(HighlightParams& a, HighlightParams& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(HighlightParams* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(HighlightParams* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline HighlightParams* New() const final {
+    return CreateMaybeMessage<HighlightParams>(nullptr);
+  }
+
+  HighlightParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<HighlightParams>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const HighlightParams& from);
+  void MergeFrom(const HighlightParams& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(HighlightParams* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "sl_pb.HighlightParams";
+  }
+  protected:
+  explicit HighlightParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_viz_2eproto);
+    return ::descriptor_table_viz_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kIdFieldNumber = 1,
+    kColorFieldNumber = 2,
+    kMaterialFieldNumber = 3,
+  };
+  // required string id = 1;
+  bool has_id() const;
+  private:
+  bool _internal_has_id() const;
+  public:
+  void clear_id();
+  const std::string& id() const;
+  void set_id(const std::string& value);
+  void set_id(std::string&& value);
+  void set_id(const char* value);
+  void set_id(const char* value, size_t size);
+  std::string* mutable_id();
+  std::string* release_id();
+  void set_allocated_id(std::string* id);
+  private:
+  const std::string& _internal_id() const;
+  void _internal_set_id(const std::string& value);
+  std::string* _internal_mutable_id();
+  public:
+
+  // required string color = 2;
+  bool has_color() const;
+  private:
+  bool _internal_has_color() const;
+  public:
+  void clear_color();
+  const std::string& color() const;
+  void set_color(const std::string& value);
+  void set_color(std::string&& value);
+  void set_color(const char* value);
+  void set_color(const char* value, size_t size);
+  std::string* mutable_color();
+  std::string* release_color();
+  void set_allocated_color(std::string* color);
+  private:
+  const std::string& _internal_color() const;
+  void _internal_set_color(const std::string& value);
+  std::string* _internal_mutable_color();
+  public:
+
+  // required string material = 3;
+  bool has_material() const;
+  private:
+  bool _internal_has_material() const;
+  public:
+  void clear_material();
+  const std::string& material() const;
+  void set_material(const std::string& value);
+  void set_material(std::string&& value);
+  void set_material(const char* value);
+  void set_material(const char* value, size_t size);
+  std::string* mutable_material();
+  std::string* release_material();
+  void set_allocated_material(std::string* material);
+  private:
+  const std::string& _internal_material() const;
+  void _internal_set_material(const std::string& value);
+  std::string* _internal_mutable_material();
+  public:
+
+  // @@protoc_insertion_point(class_scope:sl_pb.HighlightParams)
+ private:
+  class _Internal;
+
+  // helper for ByteSizeLong()
+  size_t RequiredFieldsByteSizeFallback() const;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr id_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr color_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr material_;
+  friend struct ::TableStruct_viz_2eproto;
+};
+// -------------------------------------------------------------------
+
+class RemoveHighlightParams PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.RemoveHighlightParams) */ {
+ public:
+  inline RemoveHighlightParams() : RemoveHighlightParams(nullptr) {}
+  virtual ~RemoveHighlightParams();
+
+  RemoveHighlightParams(const RemoveHighlightParams& from);
+  RemoveHighlightParams(RemoveHighlightParams&& from) noexcept
+    : RemoveHighlightParams() {
+    *this = ::std::move(from);
+  }
+
+  inline RemoveHighlightParams& operator=(const RemoveHighlightParams& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline RemoveHighlightParams& operator=(RemoveHighlightParams&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const RemoveHighlightParams& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const RemoveHighlightParams* internal_default_instance() {
+    return reinterpret_cast<const RemoveHighlightParams*>(
+               &_RemoveHighlightParams_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    5;
+
+  friend void swap(RemoveHighlightParams& a, RemoveHighlightParams& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(RemoveHighlightParams* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(RemoveHighlightParams* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline RemoveHighlightParams* New() const final {
+    return CreateMaybeMessage<RemoveHighlightParams>(nullptr);
+  }
+
+  RemoveHighlightParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<RemoveHighlightParams>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const RemoveHighlightParams& from);
+  void MergeFrom(const RemoveHighlightParams& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(RemoveHighlightParams* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "sl_pb.RemoveHighlightParams";
+  }
+  protected:
+  explicit RemoveHighlightParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_viz_2eproto);
+    return ::descriptor_table_viz_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kIdFieldNumber = 1,
+  };
+  // required string id = 1;
+  bool has_id() const;
+  private:
+  bool _internal_has_id() const;
+  public:
+  void clear_id();
+  const std::string& id() const;
+  void set_id(const std::string& value);
+  void set_id(std::string&& value);
+  void set_id(const char* value);
+  void set_id(const char* value, size_t size);
+  std::string* mutable_id();
+  std::string* release_id();
+  void set_allocated_id(std::string* id);
+  private:
+  const std::string& _internal_id() const;
+  void _internal_set_id(const std::string& value);
+  std::string* _internal_mutable_id();
+  public:
+
+  // @@protoc_insertion_point(class_scope:sl_pb.RemoveHighlightParams)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr id_;
+  friend struct ::TableStruct_viz_2eproto;
+};
+// -------------------------------------------------------------------
+
 class LoadLevelParams PROTOBUF_FINAL :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.LoadLevelParams) */ {
  public:
@@ -983,7 +1350,7 @@ class LoadLevelParams PROTOBUF_FINAL :
                &_LoadLevelParams_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    4;
+    6;
 
   friend void swap(LoadLevelParams& a, LoadLevelParams& b) {
     a.Swap(&b);
@@ -1903,6 +2270,310 @@ inline void DrawMarkerTrajParams::set_allocated_material(std::string* material) 
 
 // -------------------------------------------------------------------
 
+// HighlightParams
+
+// required string id = 1;
+inline bool HighlightParams::_internal_has_id() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool HighlightParams::has_id() const {
+  return _internal_has_id();
+}
+inline void HighlightParams::clear_id() {
+  id_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline const std::string& HighlightParams::id() const {
+  // @@protoc_insertion_point(field_get:sl_pb.HighlightParams.id)
+  return _internal_id();
+}
+inline void HighlightParams::set_id(const std::string& value) {
+  _internal_set_id(value);
+  // @@protoc_insertion_point(field_set:sl_pb.HighlightParams.id)
+}
+inline std::string* HighlightParams::mutable_id() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.HighlightParams.id)
+  return _internal_mutable_id();
+}
+inline const std::string& HighlightParams::_internal_id() const {
+  return id_.Get();
+}
+inline void HighlightParams::_internal_set_id(const std::string& value) {
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void HighlightParams::set_id(std::string&& value) {
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.HighlightParams.id)
+}
+inline void HighlightParams::set_id(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.HighlightParams.id)
+}
+inline void HighlightParams::set_id(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.HighlightParams.id)
+}
+inline std::string* HighlightParams::_internal_mutable_id() {
+  _has_bits_[0] |= 0x00000001u;
+  return id_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* HighlightParams::release_id() {
+  // @@protoc_insertion_point(field_release:sl_pb.HighlightParams.id)
+  if (!_internal_has_id()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000001u;
+  return id_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void HighlightParams::set_allocated_id(std::string* id) {
+  if (id != nullptr) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  id_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), id,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.HighlightParams.id)
+}
+
+// required string color = 2;
+inline bool HighlightParams::_internal_has_color() const {
+  bool value = (_has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool HighlightParams::has_color() const {
+  return _internal_has_color();
+}
+inline void HighlightParams::clear_color() {
+  color_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline const std::string& HighlightParams::color() const {
+  // @@protoc_insertion_point(field_get:sl_pb.HighlightParams.color)
+  return _internal_color();
+}
+inline void HighlightParams::set_color(const std::string& value) {
+  _internal_set_color(value);
+  // @@protoc_insertion_point(field_set:sl_pb.HighlightParams.color)
+}
+inline std::string* HighlightParams::mutable_color() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.HighlightParams.color)
+  return _internal_mutable_color();
+}
+inline const std::string& HighlightParams::_internal_color() const {
+  return color_.Get();
+}
+inline void HighlightParams::_internal_set_color(const std::string& value) {
+  _has_bits_[0] |= 0x00000002u;
+  color_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void HighlightParams::set_color(std::string&& value) {
+  _has_bits_[0] |= 0x00000002u;
+  color_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.HighlightParams.color)
+}
+inline void HighlightParams::set_color(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000002u;
+  color_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.HighlightParams.color)
+}
+inline void HighlightParams::set_color(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000002u;
+  color_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.HighlightParams.color)
+}
+inline std::string* HighlightParams::_internal_mutable_color() {
+  _has_bits_[0] |= 0x00000002u;
+  return color_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* HighlightParams::release_color() {
+  // @@protoc_insertion_point(field_release:sl_pb.HighlightParams.color)
+  if (!_internal_has_color()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000002u;
+  return color_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void HighlightParams::set_allocated_color(std::string* color) {
+  if (color != nullptr) {
+    _has_bits_[0] |= 0x00000002u;
+  } else {
+    _has_bits_[0] &= ~0x00000002u;
+  }
+  color_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), color,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.HighlightParams.color)
+}
+
+// required string material = 3;
+inline bool HighlightParams::_internal_has_material() const {
+  bool value = (_has_bits_[0] & 0x00000004u) != 0;
+  return value;
+}
+inline bool HighlightParams::has_material() const {
+  return _internal_has_material();
+}
+inline void HighlightParams::clear_material() {
+  material_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline const std::string& HighlightParams::material() const {
+  // @@protoc_insertion_point(field_get:sl_pb.HighlightParams.material)
+  return _internal_material();
+}
+inline void HighlightParams::set_material(const std::string& value) {
+  _internal_set_material(value);
+  // @@protoc_insertion_point(field_set:sl_pb.HighlightParams.material)
+}
+inline std::string* HighlightParams::mutable_material() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.HighlightParams.material)
+  return _internal_mutable_material();
+}
+inline const std::string& HighlightParams::_internal_material() const {
+  return material_.Get();
+}
+inline void HighlightParams::_internal_set_material(const std::string& value) {
+  _has_bits_[0] |= 0x00000004u;
+  material_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void HighlightParams::set_material(std::string&& value) {
+  _has_bits_[0] |= 0x00000004u;
+  material_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.HighlightParams.material)
+}
+inline void HighlightParams::set_material(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000004u;
+  material_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.HighlightParams.material)
+}
+inline void HighlightParams::set_material(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000004u;
+  material_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.HighlightParams.material)
+}
+inline std::string* HighlightParams::_internal_mutable_material() {
+  _has_bits_[0] |= 0x00000004u;
+  return material_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* HighlightParams::release_material() {
+  // @@protoc_insertion_point(field_release:sl_pb.HighlightParams.material)
+  if (!_internal_has_material()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000004u;
+  return material_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void HighlightParams::set_allocated_material(std::string* material) {
+  if (material != nullptr) {
+    _has_bits_[0] |= 0x00000004u;
+  } else {
+    _has_bits_[0] &= ~0x00000004u;
+  }
+  material_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), material,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.HighlightParams.material)
+}
+
+// -------------------------------------------------------------------
+
+// RemoveHighlightParams
+
+// required string id = 1;
+inline bool RemoveHighlightParams::_internal_has_id() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool RemoveHighlightParams::has_id() const {
+  return _internal_has_id();
+}
+inline void RemoveHighlightParams::clear_id() {
+  id_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline const std::string& RemoveHighlightParams::id() const {
+  // @@protoc_insertion_point(field_get:sl_pb.RemoveHighlightParams.id)
+  return _internal_id();
+}
+inline void RemoveHighlightParams::set_id(const std::string& value) {
+  _internal_set_id(value);
+  // @@protoc_insertion_point(field_set:sl_pb.RemoveHighlightParams.id)
+}
+inline std::string* RemoveHighlightParams::mutable_id() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.RemoveHighlightParams.id)
+  return _internal_mutable_id();
+}
+inline const std::string& RemoveHighlightParams::_internal_id() const {
+  return id_.Get();
+}
+inline void RemoveHighlightParams::_internal_set_id(const std::string& value) {
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
+}
+inline void RemoveHighlightParams::set_id(std::string&& value) {
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.RemoveHighlightParams.id)
+}
+inline void RemoveHighlightParams::set_id(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
+              GetArena());
+  // @@protoc_insertion_point(field_set_char:sl_pb.RemoveHighlightParams.id)
+}
+inline void RemoveHighlightParams::set_id(const char* value,
+    size_t size) {
+  _has_bits_[0] |= 0x00000001u;
+  id_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
+      reinterpret_cast<const char*>(value), size), GetArena());
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.RemoveHighlightParams.id)
+}
+inline std::string* RemoveHighlightParams::_internal_mutable_id() {
+  _has_bits_[0] |= 0x00000001u;
+  return id_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline std::string* RemoveHighlightParams::release_id() {
+  // @@protoc_insertion_point(field_release:sl_pb.RemoveHighlightParams.id)
+  if (!_internal_has_id()) {
+    return nullptr;
+  }
+  _has_bits_[0] &= ~0x00000001u;
+  return id_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+}
+inline void RemoveHighlightParams::set_allocated_id(std::string* id) {
+  if (id != nullptr) {
+    _has_bits_[0] |= 0x00000001u;
+  } else {
+    _has_bits_[0] &= ~0x00000001u;
+  }
+  id_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), id,
+      GetArena());
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.RemoveHighlightParams.id)
+}
+
+// -------------------------------------------------------------------
+
 // LoadLevelParams
 
 // required string level = 1;
@@ -1982,6 +2653,10 @@ inline void LoadLevelParams::set_allocated_level(std::string* level) {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

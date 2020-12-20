@@ -112,6 +112,18 @@ void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 	{
 		ApplyForceTo(AmevaEvent.applyforcetoparams());
 	}
+	else if (AmevaEvent.functocall() == AmevaEvent.Highlight)
+	{
+		HighlightIndividual(AmevaEvent.highlightparams());
+	}
+	else if (AmevaEvent.functocall() == AmevaEvent.RemoveHighlight)
+	{
+		RemoveIndividualHighlight(AmevaEvent.removehighlightparams());
+	}
+	else if (AmevaEvent.functocall() == AmevaEvent.RemoveAllHighlight)
+	{
+		RemoveAllIndividualHighlight();
+	}
 
 #endif // SL_WITH_PROTO
 }
@@ -171,6 +183,39 @@ void SLKRMsgDispatcher::DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params)
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
 	Response.Text = TEXT("Completed - Draw trajectory");
+	KRWSClient->SendResponse(Response);
+}
+// Hightlight the individual
+void SLKRMsgDispatcher::HighlightIndividual(sl_pb::HighlightParams params)
+{
+	FString Id = UTF8_TO_TCHAR(params.id().c_str());
+	ESLVizMaterialType MaterialType = GetMarkerMaterialType(UTF8_TO_TCHAR(params.material().c_str()));
+	FLinearColor Color = GetMarkerColor(UTF8_TO_TCHAR(params.color().c_str()));
+	VizManager->HighlightIndividual(Id, Color, MaterialType);
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Completed - Highlight individual");
+	KRWSClient->SendResponse(Response);
+}
+
+// Remove the individual hightlight
+void SLKRMsgDispatcher::RemoveIndividualHighlight(sl_pb::RemoveHighlightParams params)
+{
+	FString Id = UTF8_TO_TCHAR(params.id().c_str());
+	VizManager->RemoveIndividualHighlight(Id);
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Completed - Remove individual highlight");
+	KRWSClient->SendResponse(Response);
+}
+
+// Hightlight the individual
+void SLKRMsgDispatcher::RemoveAllIndividualHighlight()
+{
+	VizManager->RemoveAllIndividualHighlights();
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	Response.Text = TEXT("Completed - Remove individual highlight");
 	KRWSClient->SendResponse(Response);
 }
 
