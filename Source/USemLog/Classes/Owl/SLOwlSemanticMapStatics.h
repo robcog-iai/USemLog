@@ -156,9 +156,6 @@ struct USEMLOG_API FSLOwlSemanticMapStatics
 	// Create mobility property
 	static FSLOwlNode CreateMobilityProperty(const FString& Mobility);
 
-	// Create mass properties
-	static FSLOwlNode CreateMassProperty(float Mass);
-
 	// Create physics properties
 	static TArray<FSLOwlNode> CreatePhysicsProperties(float Mass, bool bGenerateOverlapEvents, bool bGravity);
 

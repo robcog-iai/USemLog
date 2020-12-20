@@ -462,15 +462,6 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateMobilityProperty(const FString& Mobil
 	return FSLOwlNode(KbMobility, FSLOwlAttribute(RdfDatatype, AttrValString), Mobility);
 }
 
-// Create mass property
-FSLOwlNode FSLOwlSemanticMapStatics::CreateMassProperty(float Mass)
-{
-	const FSLOwlPrefixName KbMass("knowrob", "mass");
-	const FSLOwlPrefixName RdfDatatype("rdf", "datatype");
-	const FSLOwlAttributeValue AttrValFloat("xsd", "float");
-	return FSLOwlNode(KbMass, FSLOwlAttribute(RdfDatatype, AttrValFloat), FString::SanitizeFloat(Mass));
-}
-
 // Create physics properties
 TArray<FSLOwlNode> FSLOwlSemanticMapStatics::CreatePhysicsProperties(float Mass, bool bGenerateOverlapEvents, bool bGravity)
 {
@@ -482,7 +473,7 @@ TArray<FSLOwlNode> FSLOwlSemanticMapStatics::CreatePhysicsProperties(float Mass,
 	const FSLOwlAttributeValue AttrValBool("xsd", "boolean");
 	
 	TArray<FSLOwlNode> PhysicsProperties;
-	//PhysicsProperties.Emplace(FSLOwlNode(KbMass, FSLOwlAttribute(RdfDatatype, AttrValFloat), FString::SanitizeFloat(Mass)));
+	PhysicsProperties.Emplace(FSLOwlNode(KbMass, FSLOwlAttribute(RdfDatatype, AttrValFloat), FString::SanitizeFloat(Mass)));
 	PhysicsProperties.Emplace(FSLOwlNode(KbOverlap, FSLOwlAttribute(RdfDatatype, AttrValBool), bGenerateOverlapEvents ? "true" : "false"));
 	PhysicsProperties.Emplace(FSLOwlNode(KbGravity, FSLOwlAttribute(RdfDatatype, AttrValBool), bGravity ? "true" : "false"));
 

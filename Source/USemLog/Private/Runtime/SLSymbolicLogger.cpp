@@ -405,21 +405,19 @@ void ASLSymbolicLogger::FinishImpl(bool bForced)
 	// Create the experiment owl doc	
 	if (ExperimentDoc.IsValid())
 	{
-		TArray<FString> SubActionIds;		
 		for (const auto& Ev : FinishedEvents)
 		{
 			Ev->AddToOwlDoc(ExperimentDoc.Get());
-			SubActionIds.Add(Ev->Id);
 		}
 
 		// Add stored unique timepoints to doc
 		ExperimentDoc->AddTimepointIndividuals();
 
 		// Add stored unique objects to doc
-		//ExperimentDoc->AddObjectIndividuals();
+		ExperimentDoc->AddObjectIndividuals();
 
-		// Add experiment individual to doc		
-		ExperimentDoc->AddExperimentIndividual(SubActionIds);
+		// Add experiment individual to doc
+		ExperimentDoc->AddExperimentIndividual();
 	}
 
 	// Write events to file

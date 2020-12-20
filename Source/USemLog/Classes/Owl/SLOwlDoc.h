@@ -40,7 +40,7 @@ public:
 	FString OntologyName;
 	
 	// Id of the document
-	FString Id;	
+	FString Id;
 
 public:
 	// Default constructor

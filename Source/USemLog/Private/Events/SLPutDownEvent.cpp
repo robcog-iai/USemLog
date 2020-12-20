@@ -30,7 +30,7 @@ FSLOwlNode FSLPutDownEvent::ToOwlNode() const
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", EndTime));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", Individual->GetIdValue()));
-	//EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInEpisodeProperty("log", EpisodeId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInEpisodeProperty("log", EpisodeId));
 	return EventIndividual;
 }
 
@@ -42,10 +42,14 @@ void FSLPutDownEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	// we cannot use the safer dynamic_cast because RTTI is not enabled by default
 	// if (FOwlEvents* EventsDoc = dynamic_cast<FOwlEvents*>(OutDoc))
 	FSLOwlExperiment* EventsDoc = static_cast<FSLOwlExperiment*>(OutDoc);
-	EventsDoc->RegisterTimepoint(StartTime);
-	EventsDoc->RegisterTimepoint(EndTime);
-	EventsDoc->RegisterObject(Manipulator);
-	EventsDoc->RegisterObject(Individual);
+	EventsDoc->AddTimepointIndividual(
+		StartTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", StartTime));
+	EventsDoc->AddTimepointIndividual(
+		EndTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", EndTime));
+	EventsDoc->AddObjectIndividual(Individual,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Individual->GetIdValue(), Manipulator->GetClassValue()));
+	EventsDoc->AddObjectIndividual(Manipulator,
+		FSLOwlExperimentStatics::CreateObjectIndividual("log", Manipulator->GetIdValue(), Manipulator->GetClassValue()));
 	OutDoc->AddIndividual(ToOwlNode());
 }
 

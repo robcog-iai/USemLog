@@ -34,8 +34,8 @@ public:
 	// End time of the event
 	float EndTime;
 
-	//// Id of the episode
-	//FString EpisodeId;
+	// Id of the episode
+	FString EpisodeId;
 
 	// Create owl representation of the event
 	virtual FSLOwlNode ToOwlNode() const = 0;
