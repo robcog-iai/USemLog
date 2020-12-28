@@ -3,6 +3,7 @@
 
 #include "CV/SLCVScanner.h"
 #include "CV/SLCVQScene.h"
+#include "CV/SLCVUtils.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/Type/SLVisibleIndividual.h"
@@ -31,8 +32,9 @@ ASLCVScanner::ASLCVScanner()
 	bIgnore = true;
 	bSaveToFile = false;
 	bPrintProgress = false;
-	bUseActorNamesForFolders = true;
+	bUseIdsForFolderNames = false;
 	bScanOnlySelectedIndividuals = true;
+	bReplaceBackgroundPixels = false;
 	bUseIndividualMaskValue = false;
 	bDisablePostProcessVolumes = false;
 	bDisableAO = false;
@@ -42,11 +44,11 @@ ASLCVScanner::ASLCVScanner()
 	bIsFinished = false;
 
 	// Render all mdoes by default
-	ViewModes.Add(ESLCVViewMode::Lit);
-	ViewModes.Add(ESLCVViewMode::Unlit);
-	ViewModes.Add(ESLCVViewMode::Mask);
-	ViewModes.Add(ESLCVViewMode::Depth);
-	ViewModes.Add(ESLCVViewMode::Normal);
+	RenderModes.Add(ESLCVRenderMode::Lit);
+	RenderModes.Add(ESLCVRenderMode::Unlit);
+	RenderModes.Add(ESLCVRenderMode::Mask);
+	RenderModes.Add(ESLCVRenderMode::Depth);
+	RenderModes.Add(ESLCVRenderMode::Normal);
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
@@ -188,19 +190,19 @@ void ASLCVScanner::Init()
 	}
 
 	// If no view modes are available, add a default one
-	if (ViewModes.Num() == 0)
+	if (RenderModes.Num() == 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s no view modes found, added default one (lit).."),
 			*FString(__func__), __LINE__, *GetName());
-		ViewModes.Add(ESLCVViewMode::Lit);
+		RenderModes.Add(ESLCVRenderMode::Lit);
 	}
 
 	// Setup actor mask clones
-	if (ViewModes.Contains(ESLCVViewMode::Mask))
+	if (RenderModes.Contains(ESLCVRenderMode::Mask))
 	{
 		if (!SetMaskClones())
 		{
-			ViewModes.Remove(ESLCVViewMode::Mask);
+			RenderModes.Remove(ESLCVRenderMode::Mask);
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s Could not setup mask clones .."),
 				*FString(__func__), __LINE__, *GetName());
 		}
@@ -223,7 +225,7 @@ void ASLCVScanner::Init()
 	CameraPoseAndLightActor->SetActorTransform(FTransform(FRotator(0.f, 0.f, 0.f), FVector(0.f, 0.f, 0.f)));
 
 	// Set the background mesh and material
-	if (BackgroundColor != FColor::Black)
+	if (CustomBackgroundColor != FColor::Black && !bReplaceBackgroundPixels)
 	{
 		if (!SetBackgroundStaticMeshActor())
 		{
@@ -284,7 +286,7 @@ void ASLCVScanner::Start()
 
 	// Set the first individual
 	IndividualOrSceneIdx = INDEX_NONE;
-	SetNextView();
+	SetNextScene();
 
 	// Start the dominoes
 	RequestScreenshotAsync();
@@ -338,14 +340,34 @@ void ASLCVScanner::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TA
 		PrintProgress();
 	}
 
+	// Compressed image
+	TArray<uint8> CompressedBitmap;
+
+	if (bReplaceBackgroundPixels)
+	{
+		// Remove const-ness from image 
+		TArray<FColor>& NonConstBitmapRef = const_cast<TArray<FColor>&>(InBitmap);
+
+		// Switch pixel colors (remove black background with custom one)
+		FSLCVUtils::ReplacePixels(NonConstBitmapRef, FColor::Black, CustomBackgroundColor, 17);
+
+		// Compress the modified image
+		FImageUtils::CompressImageArray(SizeX, SizeY, NonConstBitmapRef, CompressedBitmap);
+	}
+	else
+	{
+		// Compress the original image
+		FImageUtils::CompressImageArray(SizeX, SizeY, InBitmap, CompressedBitmap);
+	}
+
 	// Check if the image should be stored locally
 	if (bSaveToFile)
 	{
-		SaveToFile(SizeX, SizeY, InBitmap);
+		SaveToFile(CompressedBitmap);
 	}
 
 	// Set and trigger the next shot
-	if (SetNextViewMode())
+	if (SetNextRenderMode())
 	{
 		RequestScreenshotAsync();
 	}
@@ -357,7 +379,7 @@ void ASLCVScanner::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TA
 		}
 		else
 		{
-			if (SetNextView())
+			if (SetNextScene())
 			{
 				RequestScreenshotAsync();
 			}
@@ -373,13 +395,13 @@ void ASLCVScanner::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TA
 }
 
 // Set next view mode (return false if the last view mode was reached)
-bool ASLCVScanner::SetNextViewMode()
+bool ASLCVScanner::SetNextRenderMode()
 {
-	ViewModeIdx++;
-	if (ViewModes.IsValidIndex(ViewModeIdx))
+	RenderModeIdx++;
+	if (RenderModes.IsValidIndex(RenderModeIdx))
 	{
 		// Apply desired view mode
-		ApplyViewMode(ViewModes[ViewModeIdx]);
+		ApplyRenderMode(RenderModes[RenderModeIdx]);
 
 		// Set image name
 		SetImageName();
@@ -387,7 +409,7 @@ bool ASLCVScanner::SetNextViewMode()
 	}
 	else
 	{
-		ViewModeIdx = INDEX_NONE;
+		RenderModeIdx = INDEX_NONE;
 		return false;
 	}
 }
@@ -399,8 +421,8 @@ bool ASLCVScanner::SetNextCameraPose()
 	if (CameraScanPoses.IsValidIndex(CameraPoseIdx))
 	{
 		// Goto first view mode
-		ViewModeIdx = INDEX_NONE;
-		SetNextViewMode();
+		RenderModeIdx = INDEX_NONE;
+		SetNextRenderMode();
 
 		// Move camera to the desired pose
 		ApplyCameraPose(CameraScanPoses[CameraPoseIdx]);
@@ -419,7 +441,7 @@ bool ASLCVScanner::SetNextCameraPose()
 }
 
 // Set next view mode (return false if the last view mode was reached)
-bool ASLCVScanner::SetNextView()
+bool ASLCVScanner::SetNextScene()
 {
 	IndividualOrSceneIdx++;
 	if (ScanMode == ESLCVScanMode::Individuals)
@@ -437,11 +459,11 @@ bool ASLCVScanner::SetNextView()
 			ApplyIndividual(Individuals[IndividualOrSceneIdx]);
 
 			// Set individual string
-			ViewNameString = bUseActorNamesForFolders ? Individuals[IndividualOrSceneIdx]->GetParentActor()->GetName() 
-				: Individuals[IndividualOrSceneIdx]->GetIdValue();
+			SceneNameString = bUseIdsForFolderNames ? Individuals[IndividualOrSceneIdx]->GetIdValue()
+				: Individuals[IndividualOrSceneIdx]->GetParentActor()->GetName();
 
 			// Set image name
-			ViewIdxString = FString::FromInt(IndividualOrSceneIdx) + "_" + FString::FromInt(Individuals.Num());
+			IndividualOrSceneIdxString = FString::FromInt(IndividualOrSceneIdx) + "_" + FString::FromInt(Individuals.Num());
 			SetImageName();
 
 			return true;
@@ -467,10 +489,10 @@ bool ASLCVScanner::SetNextView()
 			ApplyScene();
 
 			// Set individual string
-			ViewNameString = Scenes[IndividualOrSceneIdx]->GetSceneName();
+			SceneNameString = Scenes[IndividualOrSceneIdx]->GetSceneName();
 
 			// Set image name
-			ViewIdxString = FString::FromInt(IndividualOrSceneIdx) + "_" + FString::FromInt(Scenes.Num());
+			IndividualOrSceneIdxString = FString::FromInt(IndividualOrSceneIdx) + "_" + FString::FromInt(Scenes.Num());
 			SetImageName();
 
 			return true;
@@ -505,10 +527,10 @@ void ASLCVScanner::QuitEditor()
 }
 
 // Apply the selected view mode
-void ASLCVScanner::ApplyViewMode(ESLCVViewMode NewViewMode)
+void ASLCVScanner::ApplyRenderMode(ESLCVRenderMode NewRenderMode)
 {
 	// No change in the rendering view mode
-	if (NewViewMode == PrevViewMode)
+	if (NewRenderMode == PrevRenderMode)
 	{
 		return;
 	}
@@ -516,44 +538,44 @@ void ASLCVScanner::ApplyViewMode(ESLCVViewMode NewViewMode)
 	// Get the console variable for switching buffer views
 	static IConsoleVariable* BufferVisTargetCV = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BufferVisualizationTarget"));
 
-	if (NewViewMode == ESLCVViewMode::Lit)
+	if (NewRenderMode == ESLCVRenderMode::Lit)
 	{
-		ViewModeString = "L";
-		if (PrevViewMode == ESLCVViewMode::Depth || PrevViewMode == ESLCVViewMode::Normal)
+		RenderModeString = "L";
+		if (PrevRenderMode == ESLCVRenderMode::Depth || PrevRenderMode == ESLCVRenderMode::Normal)
 		{
 			ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 		}
 		else
 		{
-			if (PrevViewMode == ESLCVViewMode::Mask)
+			if (PrevRenderMode == ESLCVRenderMode::Mask)
 			{
 				ShowOriginalIndividual();
 			}
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
 		}		
 	}
-	else if (NewViewMode == ESLCVViewMode::Unlit)
+	else if (NewRenderMode == ESLCVRenderMode::Unlit)
 	{
-		ViewModeString = "U";
-		if (PrevViewMode == ESLCVViewMode::Mask)
+		RenderModeString = "U";
+		if (PrevRenderMode == ESLCVRenderMode::Mask)
 		{
 			ShowOriginalIndividual();
 		}
 		else
 		{
-			if (PrevViewMode == ESLCVViewMode::Depth || PrevViewMode == ESLCVViewMode::Normal)
+			if (PrevRenderMode == ESLCVRenderMode::Depth || PrevRenderMode == ESLCVRenderMode::Normal)
 			{
 				ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			}
 			GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode unlit");
 		}
 	}
-	else if (NewViewMode == ESLCVViewMode::Mask)
+	else if (NewRenderMode == ESLCVRenderMode::Mask)
 	{
-		ViewModeString = "M";
-		if (PrevViewMode != ESLCVViewMode::Unlit)
+		RenderModeString = "M";
+		if (PrevRenderMode != ESLCVRenderMode::Unlit)
 		{
-			if (PrevViewMode == ESLCVViewMode::Depth || PrevViewMode == ESLCVViewMode::Normal)
+			if (PrevRenderMode == ESLCVRenderMode::Depth || PrevRenderMode == ESLCVRenderMode::Normal)
 			{
 				ViewportClient->GetEngineShowFlags()->SetVisualizeBuffer(false);
 			}
@@ -561,15 +583,15 @@ void ASLCVScanner::ApplyViewMode(ESLCVViewMode NewViewMode)
 		}
 		ShowMaskIndividual();
 	}
-	else if (NewViewMode == ESLCVViewMode::Depth)
+	else if (NewRenderMode == ESLCVRenderMode::Depth)
 	{
-		ViewModeString = "D";
-		if (PrevViewMode != ESLCVViewMode::Normal)
+		RenderModeString = "D";
+		if (PrevRenderMode != ESLCVRenderMode::Normal)
 		{
-			if (PrevViewMode != ESLCVViewMode::Lit)
+			if (PrevRenderMode != ESLCVRenderMode::Lit)
 			{
 				GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-				if (PrevViewMode == ESLCVViewMode::Mask)
+				if (PrevRenderMode == ESLCVRenderMode::Mask)
 				{
 					ShowOriginalIndividual();
 				}
@@ -579,15 +601,15 @@ void ASLCVScanner::ApplyViewMode(ESLCVViewMode NewViewMode)
 		// SLSceneDepthToCameraPlane / SLSceneDepthToCameraLocation / SLCVScanDepthToCameraPlane / SLCVScanDepthToCameraLocation 
 		BufferVisTargetCV->Set(*FString("SLCVScanDepthToCameraPlane"));
 	}
-	else if (NewViewMode == ESLCVViewMode::Normal)
+	else if (NewRenderMode == ESLCVRenderMode::Normal)
 	{
-		ViewModeString = "N";
-		if (PrevViewMode != ESLCVViewMode::Depth)
+		RenderModeString = "N";
+		if (PrevRenderMode != ESLCVRenderMode::Depth)
 		{
-			if (PrevViewMode != ESLCVViewMode::Lit)
+			if (PrevRenderMode != ESLCVRenderMode::Lit)
 			{
 				GetWorld()->GetFirstPlayerController()->ConsoleCommand("viewmode lit");
-				if (PrevViewMode == ESLCVViewMode::Mask)
+				if (PrevRenderMode == ESLCVRenderMode::Mask)
 				{
 					ShowOriginalIndividual();
 				}
@@ -596,7 +618,7 @@ void ASLCVScanner::ApplyViewMode(ESLCVViewMode NewViewMode)
 		}
 		BufferVisTargetCV->Set(*FString("WorldNormal"));
 	}	
-	PrevViewMode = NewViewMode;
+	PrevRenderMode = NewRenderMode;
 }
 
 // Apply the camera pose
@@ -965,7 +987,7 @@ bool ASLCVScanner::SetBackgroundStaticMeshActor()
 	//DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
 
 	UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(BackgroundMaterial, GetTransientPackage());
-	MID->SetVectorParameterValue(FName("MaskColorParam"), BackgroundColor);
+	MID->SetVectorParameterValue(FName("MaskColorParam"), CustomBackgroundColor);
 #if WITH_EDITOR	
 	BackgroundSM->SetMaterial(0, MID);
 #endif
@@ -1014,7 +1036,7 @@ bool ASLCVScanner::SetScanPoses(uint32 MaxNumPoints/*, float Radius*/)
 void ASLCVScanner::SetImageName()
 {
 	//CurrImageName = ViewIdxString + "_" + CameraPoseIdxString + "_" + ViewModeString;
-	CurrImageName = ViewModeString + "_" + ViewIdxString + "_" + CameraPoseIdxString + "_";
+	CurrImageName = RenderModeString + "_" + IndividualOrSceneIdxString + "_" + CameraPoseIdxString + "_";
 }
 
 // Calculate camera pose sphere radius (proportionate to the sphere bounds of the visual mesh)
@@ -1027,7 +1049,7 @@ void ASLCVScanner::CalcCameraPoseSphereRadius()
 			if (auto AsSMA = Cast<AStaticMeshActor>(Individuals[IndividualOrSceneIdx]->GetParentActor()))
 			{
 				const float SphereRadius = AsSMA->GetStaticMeshComponent()->Bounds.SphereRadius;
-				CurrCameraPoseSphereRadius = SphereRadius * 1.75f;
+				CurrCameraPoseSphereRadius = SphereRadius * CameraRadiusDistanceMultiplier;
 			}
 			else
 			{
@@ -1037,7 +1059,7 @@ void ASLCVScanner::CalcCameraPoseSphereRadius()
 				FVector BBOrigin;
 				FVector BBBoxExtent;
 				Individuals[IndividualOrSceneIdx]->GetParentActor()->GetActorBounds(false, BBOrigin, BBBoxExtent);
-				CurrCameraPoseSphereRadius = BBBoxExtent.Size() * 1.75;
+				CurrCameraPoseSphereRadius = BBBoxExtent.Size() * CameraRadiusDistanceMultiplier;
 			}
 		}
 		else
@@ -1056,26 +1078,23 @@ void ASLCVScanner::CalcCameraPoseSphereRadius()
 void ASLCVScanner::PrintProgress() const
 {
 	// Current scan
-	int32 CurrScan = IndividualOrSceneIdx * CameraScanPoses.Num() * ViewModes.Num() 
-		+ CameraPoseIdx * ViewModes.Num() 
-		+ ViewModeIdx + 1;
-	int32 NumScans = Individuals.Num() * CameraScanPoses.Num() * ViewModes.Num();	
+	int32 CurrScan = IndividualOrSceneIdx * CameraScanPoses.Num() * RenderModes.Num() 
+		+ CameraPoseIdx * RenderModes.Num() 
+		+ RenderModeIdx + 1;
+	int32 NumScans = Individuals.Num() * CameraScanPoses.Num() * RenderModes.Num();	
 	UE_LOG(LogTemp, Log, TEXT("%s::%d::%f Individual:\t%ld/%ld; CameraPose:\t%ld/%ld; ViewMode=\t%ld/%ld; Scan:\t%ld/%ld;"),
 		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
 		IndividualOrSceneIdx + 1, Individuals.Num(),
 		CameraPoseIdx + 1, CameraScanPoses.Num(),
-		ViewModeIdx + 1, ViewModes.Num(),
+		RenderModeIdx + 1, RenderModes.Num(),
 		CurrScan, NumScans );
 }
 
 // Save image to file
-void ASLCVScanner::SaveToFile(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap) const
+void ASLCVScanner::SaveToFile(const TArray<uint8>& CompressedBitmap) const
 {
-	// Compress image
-	TArray<uint8> CompressedBitmap;
-	FImageUtils::CompressImageArray(SizeX, SizeY, InBitmap, CompressedBitmap);
-	//const FString TaskFolderPath = TaskId + "/Scans/" + ViewNameString + "/" + ViewModeString + "/";
-	const FString TaskFolderPath = "/SL/" + TaskId + "/Scans/" + ViewNameString + /*"/" + ViewModeString*/ + "/";
+	//const FString TaskFolderPath = TaskId + "/Scans/" + IndividualId + "/" + ViewModeString + "/";
+	const FString TaskFolderPath = "/SL/" + TaskId + "/Scans/" + SceneNameString + /*"/" + ViewModeString*/ + "/";
 	FString Path = FPaths::ProjectDir() + TaskFolderPath + CurrImageName + ".png";
 	FPaths::RemoveDuplicateSlashes(Path);
 	FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);

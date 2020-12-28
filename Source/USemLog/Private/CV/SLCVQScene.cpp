@@ -161,6 +161,9 @@ void USLCVQScene::ShowSceneImpl(ASLIndividualManager* IndividualManager, ASLMong
 	{
 		if (auto Act = IndividualManager->GetIndividualActor(Id))
 		{
+			FTransform ActPose = MQManager->GetIndividualPoseAt(Task, Episode, Id, Timestamp);
+			Act->SetActorTransform(ActPose);
+			Act->SetActorHiddenInGame(false);
 			SceneActors.Add(Act);
 		}
 	}

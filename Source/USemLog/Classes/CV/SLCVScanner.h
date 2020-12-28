@@ -30,7 +30,7 @@ enum class ESLCVScanMode : uint8
 * View modes
 */
 UENUM()
-enum class ESLCVViewMode : uint8
+enum class ESLCVRenderMode : uint8
 {
 	NONE					UMETA(DisplayName = "None"),
 	Lit						UMETA(DisplayName = "Lit"),
@@ -39,6 +39,7 @@ enum class ESLCVViewMode : uint8
 	Depth					UMETA(DisplayName = "Depth"),
 	Normal					UMETA(DisplayName = "Normal"),
 };
+
 
 /**
  * 
@@ -94,20 +95,20 @@ protected:
 	void ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap);
 	
 	// Set next view mode (return false if the last view mode was reached)
-	bool SetNextViewMode();
+	bool SetNextRenderMode();
 
 	// Set next camera pose (return false if the last was reached)
 	bool SetNextCameraPose();
 
 	// Set next view (individual or scene) (return false if the last was reached)
-	bool SetNextView();
+	bool SetNextScene();
 
 	//  Quit the editor when finished
 	void QuitEditor();
 
 private:
 	// Apply the selected view mode
-	void ApplyViewMode(ESLCVViewMode Mode);
+	void ApplyRenderMode(ESLCVRenderMode Mode);
 
 	// Apply the camera pose
 	void ApplyCameraPose(FTransform NormalizedTransform);
@@ -115,7 +116,7 @@ private:
 	// Apply the individual into position
 	void ApplyIndividual(USLVisibleIndividual* Individual);
 
-	// Apply the scene into position
+	// Set the individual / scene 
 	void ApplyScene();
 
 	// Hide mask clone, show original individual
@@ -161,7 +162,7 @@ private:
 	void PrintProgress() const;
 
 	// Save image to file
-	void SaveToFile(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap) const;
+	void SaveToFile(const TArray<uint8>& CompressedBitmap) const;
 
 protected:
 	// Skip auto init and start
@@ -196,58 +197,57 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
 	FString TaskId = "DefaultTaskId";
 
-	// Mongo server ip addres
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
-	FString MongoServerIP = TEXT("127.0.0.1");
-
-	// Knowrob server port
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
-	int32 MongoServerPort = 27017;
-
 	// Save images to file
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
 	uint8 bSaveToFile : 1;
 
-	// Use parent actor names for folder names
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location", meta = (editcondition = "bSaveToFile"))
-	uint8 bUseActorNamesForFolders : 1;
-
+	// Use unique ids or the actor name as folder names
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location", meta = (editcondition = "bSaveToFile && ScanMode==ESLCVScanMode::Individuals"))
+	uint8 bUseIdsForFolderNames : 1;
 
 	// Maximal number of scan points on the sphere
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	uint32 MaxNumScanPoints = 32;
 
 	// Image resolution
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
-	FIntPoint Resolution = FIntPoint(640, 480);
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	FIntPoint Resolution = FIntPoint(640, 640);
 
 	// Rendering modes to include
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
-	TArray<ESLCVViewMode> ViewModes;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	TArray<ESLCVRenderMode> RenderModes;
+
+	// If true, instead of rendereing the backgorund, replace the black pixels with the value
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	uint8 bReplaceBackgroundPixels : 1;
 
 	// Color of the background
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
-	FColor BackgroundColor = FColor::Black;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	FColor CustomBackgroundColor = FColor::Black;
 
 	// Color of the mask image
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	uint8 bUseIndividualMaskValue : 1;
 
 	// Color of the mask image
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering", meta = (editcondition = "!bUseIndividualMaskValue"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image", meta = (editcondition = "!bUseIndividualMaskValue"))
 	FColor MaskColor = FColor::White;
 
 	// Disable post process volumes in the world
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	uint8 bDisablePostProcessVolumes : 1;
 
 	// Disable ambient occlusion (world and process volumes)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	uint8 bDisableAO : 1;
 
 	// Directional camera light intensity
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	float CameraLightIntensity = 1.6f;
+
+	// The scene bounding box radius camera multiplier
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	float CameraRadiusDistanceMultiplier = 1.75f;
 
 
 	// Add ids from selection button
@@ -298,7 +298,7 @@ private:
 	TMap<USLVisibleIndividual*, AStaticMeshActor*> IndividualsMaskClones;
 
 	// Current active view mode
-	ESLCVViewMode PrevViewMode = ESLCVViewMode::NONE;
+	ESLCVRenderMode PrevRenderMode = ESLCVRenderMode::NONE;
 
 	// Current radius of the camera sphere poses
 	float CurrCameraPoseSphereRadius;
@@ -310,7 +310,7 @@ private:
 	int32 CameraPoseIdx = INDEX_NONE;
 
 	// Current view mode index in the array
-	int32 ViewModeIdx = INDEX_NONE;
+	int32 RenderModeIdx = INDEX_NONE;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
@@ -319,16 +319,16 @@ private:
 	FString CurrImageName;
 
 	// The individual id (used for the folder name)
-	FString ViewNameString;
+	FString SceneNameString;
 
 	// View mode as string (used as folder and image name)
-	FString ViewModeString;
+	FString RenderModeString;
 
 	// The camera pose post fix to be applied to the image name
 	FString CameraPoseIdxString;
 
-	// The camera pose post fix to be applied to the image name
-	FString ViewIdxString;
+	// The individual or scene index as string
+	FString IndividualOrSceneIdxString;
 
 	/* Constants */
 	static constexpr auto DynMaskMatAssetPath = TEXT("/USemLog/CV/M_SLDefaultMask.M_SLDefaultMask");
