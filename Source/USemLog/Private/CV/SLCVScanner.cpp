@@ -7,6 +7,7 @@
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/Type/SLVisibleIndividual.h"
+#include "Mongo/SLMongoQueryManager.h"
 #include "Async.h"
 #include "HighResScreenshot.h"
 #include "ImageUtils.h"
@@ -35,7 +36,7 @@ ASLCVScanner::ASLCVScanner()
 	bUseIdsForFolderNames = false;
 	bScanOnlySelectedIndividuals = true;
 	bReplaceBackgroundPixels = false;
-	bUseIndividualMaskValue = false;
+	bUseUniqueMaskValue = false;
 	bDisablePostProcessVolumes = false;
 	bDisableAO = false;
 
@@ -186,6 +187,36 @@ void ASLCVScanner::Init()
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d %s no scenes found, aborting scan .."),
 				*FString(__func__), __LINE__, *GetName());
+			return;
+		}
+
+		if (!SetMongoQueryManager())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the mongo query manager.."),
+				*FString(__FUNCTION__), __LINE__, *GetName());
+			return;
+		}
+
+		TArray<USLCVQScene*> ScenesToRemove;
+		for (auto& Scene : Scenes)
+		{
+			if (Scene->bIgnore)
+			{
+				ScenesToRemove.Add(Scene);
+				continue;
+			}
+			
+			if (!Scene->InitScene(IndividualManager, MongoQueryManager))
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init scene %s.."),
+					*FString(__FUNCTION__), __LINE__, *GetName(), *Scene->GetName());
+				ScenesToRemove.Add(Scene);
+			}
+		}
+
+		for (auto* SceneToRemove : ScenesToRemove)
+		{
+			Scenes.Remove(SceneToRemove);
 		}
 	}
 
@@ -286,7 +317,13 @@ void ASLCVScanner::Start()
 
 	// Set the first individual
 	IndividualOrSceneIdx = INDEX_NONE;
-	SetNextScene();
+	
+	if (!SetNextScene())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set up first scene, aborting scan .."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return;
+	}
 
 	// Start the dominoes
 	RequestScreenshotAsync();
@@ -343,16 +380,14 @@ void ASLCVScanner::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TA
 	// Compressed image
 	TArray<uint8> CompressedBitmap;
 
+	// Check if the background should be replaced or not
 	if (bReplaceBackgroundPixels)
 	{
-		// Remove const-ness from image 
-		TArray<FColor>& NonConstBitmapRef = const_cast<TArray<FColor>&>(InBitmap);
-
-		// Switch pixel colors (remove black background with custom one)
-		FSLCVUtils::ReplacePixels(NonConstBitmapRef, FColor::Black, CustomBackgroundColor, 17);
+		// Switch pixel colors (switch black background color with a custom one)
+		TArray<FColor> NewImage  = FSLCVUtils::ReplacePixels(InBitmap, FColor::Black, CustomBackgroundColor, CustomBackgroundColorTolerance);
 
 		// Compress the modified image
-		FImageUtils::CompressImageArray(SizeX, SizeY, NonConstBitmapRef, CompressedBitmap);
+		FImageUtils::CompressImageArray(SizeX, SizeY, NewImage, CompressedBitmap);
 	}
 	else
 	{
@@ -478,15 +513,9 @@ bool ASLCVScanner::SetNextScene()
 	{
 		if (Scenes.IsValidIndex(IndividualOrSceneIdx))
 		{
-			// Update camera distance from individual
-			CalcCameraPoseSphereRadius();
-
 			// Goto first camera pose
 			CameraPoseIdx = INDEX_NONE;
 			SetNextCameraPose();
-
-			// Set the scene individuals in position
-			ApplyScene();
 
 			// Set individual string
 			SceneNameString = Scenes[IndividualOrSceneIdx]->GetSceneName();
@@ -494,6 +523,12 @@ bool ASLCVScanner::SetNextScene()
 			// Set image name
 			IndividualOrSceneIdxString = FString::FromInt(IndividualOrSceneIdx) + "_" + FString::FromInt(Scenes.Num());
 			SetImageName();
+
+			// Set the scene individuals in position
+			ApplyScene();
+
+			// Update camera distance from individual
+			CalcCameraPoseSphereRadius();
 
 			return true;
 		}
@@ -657,10 +692,7 @@ void ASLCVScanner::ApplyIndividual(USLVisibleIndividual* Individual)
 
 // Apply the scene into position
 void ASLCVScanner::ApplyScene()
-{
-	UE_LOG(LogTemp, Error, TEXT("%s::%d Applying scene %s .. "),
-		*FString(__FUNCTION__), __LINE__, *Scenes[IndividualOrSceneIdx]->GetSceneName());
-	
+{	
 	// Hide previous scene
 	if (Scenes.IsValidIndex(IndividualOrSceneIdx - 1))
 	{
@@ -668,54 +700,68 @@ void ASLCVScanner::ApplyScene()
 	}
 
 	// Show current scene
-	//Scenes[IndividualOrSceneIdx]->Execute(IndividualManager);
+	Scenes[IndividualOrSceneIdx]->ShowScene();
 }
 
 // Hide mask clone, show original individual
 void ASLCVScanner::ShowOriginalIndividual()
 {
-	if (Individuals.IsValidIndex(IndividualOrSceneIdx))
+	if (ScanMode == ESLCVScanMode::Individuals)
 	{
-		auto Individual = Individuals[IndividualOrSceneIdx];
-		Individual->GetParentActor()->SetActorHiddenInGame(false);
-		if (auto Clone = IndividualsMaskClones.Find(Individual))
+		if (Individuals.IsValidIndex(IndividualOrSceneIdx))
 		{
-			(*Clone)->SetActorHiddenInGame(true);
+			auto Individual = Individuals[IndividualOrSceneIdx];
+			Individual->GetParentActor()->SetActorHiddenInGame(false);
+			if (auto Clone = IndividualsMaskClones.Find(Individual))
+			{
+				(*Clone)->SetActorHiddenInGame(true);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual clone is not found, this should not happen .."),
+					*FString(__FUNCTION__), __LINE__, *GetName(), IndividualOrSceneIdx, Individuals.Num());
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual clone is not found, this should not happen .."),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
 				*FString(__FUNCTION__), __LINE__, *GetName(), IndividualOrSceneIdx, Individuals.Num());
 		}
 	}
-	else
+	else if (ScanMode == ESLCVScanMode::Scenes)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), IndividualOrSceneIdx, Individuals.Num());
+		// todo
 	}
 }
 
 // Hide original individual, show mask clone
 void ASLCVScanner::ShowMaskIndividual()
 {
-	if (Individuals.IsValidIndex(IndividualOrSceneIdx))
+	if (ScanMode == ESLCVScanMode::Individuals)
 	{
-		auto Individual = Individuals[IndividualOrSceneIdx];
-		Individual->GetParentActor()->SetActorHiddenInGame(true);
-		if (auto Clone = IndividualsMaskClones.Find(Individual))
+		if (Individuals.IsValidIndex(IndividualOrSceneIdx))
 		{
-			(*Clone)->SetActorHiddenInGame(false);
+			auto Individual = Individuals[IndividualOrSceneIdx];
+			Individual->GetParentActor()->SetActorHiddenInGame(true);
+			if (auto Clone = IndividualsMaskClones.Find(Individual))
+			{
+				(*Clone)->SetActorHiddenInGame(false);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual clone is not found, this should not happen .."),
+					*FString(__FUNCTION__), __LINE__, IndividualOrSceneIdx, Individuals.Num());
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual clone is not found, this should not happen .."),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
 				*FString(__FUNCTION__), __LINE__, IndividualOrSceneIdx, Individuals.Num());
 		}
 	}
-	else
+	else if (ScanMode == ESLCVScanMode::Scenes)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s's individual index is not valid %d/%d, this should not happen .."),
-			*FString(__FUNCTION__), __LINE__, IndividualOrSceneIdx, Individuals.Num());
+		// todo
 	}
 }
 
@@ -814,24 +860,25 @@ bool ASLCVScanner::SetIndividualManager()
 	{
 		return true;
 	}
-
-	for (TActorIterator<ASLIndividualManager>Iter(GetWorld()); Iter; ++Iter)
+	if (GetWorld())
 	{
-		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
-		{
-			IndividualManager = *Iter;
-			return true;
-		}
+		IndividualManager = ASLIndividualManager::GetExistingOrSpawnNew(GetWorld());
 	}
+	return IndividualManager && IndividualManager->IsValidLowLevel() && !IndividualManager->IsPendingKillOrUnreachable();
+}
 
-	// Spawning a new manager
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = TEXT("SL_IndividualManager");
-	IndividualManager = GetWorld()->SpawnActor<ASLIndividualManager>(SpawnParams);
-#if WITH_EDITOR
-	IndividualManager->SetActorLabel(TEXT("SL_IndividualManager"));
-#endif // WITH_EDITOR
-	return true;
+// Get the mongo query manager (used to set up scenes from episodic memories)
+bool ASLCVScanner::SetMongoQueryManager()
+{
+	if (MongoQueryManager && MongoQueryManager->IsValidLowLevel() && !MongoQueryManager->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+	if (GetWorld())
+	{
+		MongoQueryManager = ASLMongoQueryManager::GetExistingOrSpawnNew(GetWorld());
+	}
+	return MongoQueryManager && MongoQueryManager->IsValidLowLevel() && !MongoQueryManager->IsPendingKillOrUnreachable();
 }
 
 // Set the individuals to be scanned
@@ -892,64 +939,83 @@ bool ASLCVScanner::SetCameraPoseAndLightActor()
 // Create clones of the individuals with mask material
 bool ASLCVScanner::SetMaskClones()
 {
+	if (ScanMode == ESLCVScanMode::Individuals)
+	{
+		GenerateMaskClones(Individuals);
+	}
+	else if (ScanMode == ESLCVScanMode::Scenes)
+	{
+		TArray<USLVisibleIndividual*> SceneIndividuals;
+		for (const auto& Scene : Scenes)
+		{
+			TArray<FString> SceneIds = Scene->GetIds();
+			for (const auto& Id : SceneIds)
+			{
+				if (auto BI = IndividualManager->GetIndividual(Id))
+				{
+					if (auto AsVI = Cast<USLVisibleIndividual>(BI))
+					{
+						SceneIndividuals.Add(AsVI);
+					}
+				}
+			}
+		}
+		GenerateMaskClones(SceneIndividuals);
+	}
+	return IndividualsMaskClones.Num() > 0;
+}
+
+// Generate mask clones from the ids
+void ASLCVScanner::GenerateMaskClones(const TArray<USLVisibleIndividual*>& VisibleIndividuals)
+{
 	// Get the dynamic mask material
 	UMaterial* DefaultMaskMaterial = LoadObject<UMaterial>(this, DynMaskMatAssetPath);
 	if (!DefaultMaskMaterial)
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not load default mask material.."),
 			*FString(__func__), __LINE__, *GetName());
-		return false;
+		return;
 	}
 	DefaultMaskMaterial->bUsedWithStaticLighting = true;
 	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
 
 	// Create the dynamic mask material and set color
 	UMaterialInstanceDynamic* DynamicMaskMaterial = nullptr;
-	if (!bUseIndividualMaskValue)
+	if (!bUseUniqueMaskValue)
 	{
 		DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), MaskColor);
 	}
 
-	if (ScanMode == ESLCVScanMode::Individuals)
+	for (const auto& VI : VisibleIndividuals)
 	{
-		for (const auto& VI : Individuals)
+		if (bUseUniqueMaskValue)
 		{
-			if (bUseIndividualMaskValue)
-			{				
-				DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-				DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FColor::FromHex(VI->GetVisualMaskValue()));
-			}
+			DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+			DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FColor::FromHex(VI->GetVisualMaskValue()));
+		}
 
-			if (auto AsSMA = Cast<AStaticMeshActor>(VI->GetParentActor()))
-			{
-				FActorSpawnParameters Parameters;
-				Parameters.Template = AsSMA;
-				Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-				//Parameters.Instigator = SMA->GetInstigator();
-				Parameters.Name = FName(*(AsSMA->GetName() + TEXT("_MaskClone")));
-				AStaticMeshActor* SMAClone = GetWorld()->SpawnActor<AStaticMeshActor>(AsSMA->GetClass(), Parameters);
-				if (UStaticMeshComponent* SMC = SMAClone->GetStaticMeshComponent())
-				{
-					for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
-					{
-#if WITH_EDITOR	
-						SMC->SetMaterial(MatIdx, DynamicMaskMaterial);
-#endif
-					}
-				}
-				SMAClone->SetActorHiddenInGame(true);
-				IndividualsMaskClones.Add(VI, SMAClone);
-			}
-		}
-	}
-	else if (ScanMode == ESLCVScanMode::Scenes)
-	{
-		for (const auto& Scene : Scenes)
+		if (auto AsSMA = Cast<AStaticMeshActor>(VI->GetParentActor()))
 		{
+			FActorSpawnParameters Parameters;
+			Parameters.Template = AsSMA;
+			Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			//Parameters.Instigator = SMA->GetInstigator();
+			Parameters.Name = FName(*(AsSMA->GetName() + TEXT("_MaskClone")));
+			AStaticMeshActor* SMAClone = GetWorld()->SpawnActor<AStaticMeshActor>(AsSMA->GetClass(), Parameters);
+			if (UStaticMeshComponent* SMC = SMAClone->GetStaticMeshComponent())
+			{
+				for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
+				{
+#if WITH_EDITOR	
+					SMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+#endif
+				}
+			}
+			SMAClone->SetActorHiddenInGame(true);
+			IndividualsMaskClones.Add(VI, SMAClone);
 		}
 	}
-	return IndividualsMaskClones.Num() > 0;
 }
 
 // Set the background static mesh actor and material

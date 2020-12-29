@@ -16,63 +16,101 @@
 #include "Individuals/Type/SLBaseIndividual.h"
 #endif // WITH_EDITOR
 
-// Public execute function
-void USLCVQScene::ShowScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
+// Set the scene actors and cache their relative transforms to the world root
+bool USLCVQScene::InitScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
 {
 	if (bIgnore)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is set to be ignored, skipping execution.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		return false;
 	}
 
 	if (!IndividualManager || !IndividualManager->IsValidLowLevel() || IndividualManager->IsPendingKillOrUnreachable() || !IndividualManager->IsLoaded())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s individual manager is not valid/loaded, aborting execution.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		return false;
 	}
 
-	if (!MQManager || !MQManager->IsValidLowLevel() || MQManager->IsPendingKillOrUnreachable() || !MQManager->IsConnected())
+	if (!MQManager || !MQManager->IsValidLowLevel() || MQManager->IsPendingKillOrUnreachable())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager is not valid/connected, aborting execution.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager is not valid, aborting execution.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		return false;
 	}
 
-	ShowSceneImpl(IndividualManager, MQManager);
+	if (!MQManager->IsConnected())
+	{
+		if (!MQManager->Connect(MongoIp, MongoPort))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager could not connect to %s::%s, aborting execution.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *MongoIp, *FString::FromInt(MongoPort));
+			return false;
+		}
+	}
+
+	if (!MQManager->SetTask(Task) || !MQManager->SetEpisode(Episode))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager could not set task %s or episode %s, aborting execution.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *Task, *Episode);
+		return false;
+	}
+
+	return InitSceneImpl(IndividualManager, MQManager);
+}
+
+// Public execute function
+void USLCVQScene::ShowScene()
+{
+	for (const auto& ActPosePair : SceneActorPoses)
+	{
+		AActor* Actor = ActPosePair.Key;
+		FTransform Pose = ActPosePair.Value;
+		Actor->SetActorTransform(Pose);
+		Actor->SetActorHiddenInGame(false);
+	}
 }
 
 // Hide scene
 void USLCVQScene::HideScene()
 {
-	if (bIgnore)
+	for (const auto& ActPosePair : SceneActorPoses)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is set to be ignored, skipping execution.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
-		return;
+		AActor* Actor = ActPosePair.Key;
+		Actor->SetActorHiddenInGame(true);
 	}
-	HideSceneImpl();
+}
+
+// Get the scene name
+FString USLCVQScene::GetSceneName()
+{
+	if (SceneName.IsEmpty())
+	{
+		SceneName = GetName();
+	}
+	return SceneName;
 }
 
 // Get the bounding sphere radius of the scene
 float USLCVQScene::GetSphereBoundsRadius() const
 {
 	FBoxSphereBounds SphereBounds;
-	for (const auto& Act : SceneActors)
+	for (const auto& ActPosePair : SceneActorPoses)
 	{
-		if (auto AsSMA = Cast<AStaticMeshActor>(Act))
+		AActor* Actor = ActPosePair.Key;
+		if (auto AsSMA = Cast<AStaticMeshActor>(Actor))
 		{
 			SphereBounds = SphereBounds + AsSMA->GetStaticMeshComponent()->Bounds;
 		}
-		else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(Act))
+		else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(Actor))
 		{
 			SphereBounds = SphereBounds + AsSkelMA->GetSkeletalMeshComponent()->Bounds;
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is an unsupported actor type.."),
-				*FString(__FUNCTION__), __LINE__, *Act->GetName());
+				*FString(__FUNCTION__), __LINE__, *Actor->GetName());
 		}
 	}	
 	return SphereBounds.SphereRadius;
@@ -105,21 +143,31 @@ void USLCVQScene::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyC
 		for (FSelectionIterator It(GEditor->GetSelectedActorIterator()); It; ++It)
 		{
 			AActor* SelectedActor = CastChecked<AActor>(*It);
-			if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(SelectedActor))
+			
+			if (SelectedActor->IsA(AStaticMeshActor::StaticClass()) ||
+				SelectedActor->IsA(ASkeletalMeshActor::StaticClass()))
 			{
-				if (BI->IsLoaded())
+				if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(SelectedActor))
 				{
-					bEnsureUniqueness ? Ids.AddUnique(BI->GetIdValue()) : Ids.Add(BI->GetIdValue());
+					if (BI->IsLoaded())
+					{
+						bEnsureUniqueness ? Ids.AddUnique(BI->GetIdValue()) : Ids.Add(BI->GetIdValue());
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual is not loaded.."),
+							*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
+					}
 				}
 				else
 				{
-					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s's individual is not loaded.."),
+					UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no individual representation.."),
 						*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
 				}
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s has no individual representation.."),
+				UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is not a skeletal or static mesh actor, skipping.."),
 					*FString(__FUNCTION__), __LINE__, *SelectedActor->GetName());
 			}
 		}
@@ -150,31 +198,36 @@ void USLCVQScene::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyC
 		}
 	}
 }
-#endif // WITH_EDITOR
 
-// Virtual implementation of the execute function
-void USLCVQScene::ShowSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
+// Virtual implementation for the scene initialization
+bool USLCVQScene::InitSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
 {
-	UE_LOG(LogTemp, Log, TEXT("%s::%d %'s execution"), *FString(__FUNCTION__), __LINE__);
-
+	// Iterate the scene actors, set their original world position
 	for (const auto& Id : Ids)
 	{
 		if (auto Act = IndividualManager->GetIndividualActor(Id))
 		{
-			FTransform ActPose = MQManager->GetIndividualPoseAt(Task, Episode, Id, Timestamp);
-			Act->SetActorTransform(ActPose);
-			Act->SetActorHiddenInGame(false);
-			SceneActors.Add(Act);
+			FTransform WorldPose = MQManager->GetIndividualPoseAt(Id, Timestamp);
+			SceneActorPoses.Add(Act, WorldPose);
 		}
 	}
-}
 
-// Virtual implementation of the hide executed scene function
-void USLCVQScene::HideSceneImpl()
-{
-	for (const auto& Actor : SceneActors)
+	// Calculate the centroid/barycenter of the scene
+	FVector SceneCentroidLocation;
+	for (const auto& ActPosePair : SceneActorPoses)
 	{
-		Actor->SetActorHiddenInGame(true);
+		FTransform WorldPose = ActPosePair.Value;
+		SceneCentroidLocation += WorldPose.GetLocation();
 	}
-	UE_LOG(LogTemp, Log, TEXT("%s::%d %'s hide execution"), *FString(__FUNCTION__), __LINE__);
+	SceneCentroidLocation /= SceneActorPoses.Num();
+
+	// Move scene to root
+	for (auto& ActPosePair : SceneActorPoses)
+	{
+		ActPosePair.Value.AddToTranslation(-SceneCentroidLocation);
+	}
+
+	return SceneActorPoses.Num() > 0;
 }
+#endif // WITH_EDITOR
+

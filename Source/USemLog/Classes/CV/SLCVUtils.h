@@ -11,7 +11,12 @@
 class USEMLOG_API FSLCVUtils
 {
 public:
-	//
-	static void ReplacePixels(TArray<FColor>& InOutBitmap, FColor From, FColor To, float ManhattanTolerance);
+	// Create new image with the pixels replaced 
+	static TArray<FColor> ReplacePixels(const TArray<FColor>& InBitmap, FColor FromColor, FColor ToColor, float Tolerance = 0);
 
+	// Get the manhattan distance between the two colors
+	FORCEINLINE static int32 ManhattanDistance(const FColor& C1, const FColor& C2)
+	{
+		return FMath::Abs(C1.R - C2.R) + FMath::Abs(C1.G - C2.G) + FMath::Abs(C1.B - C2.B);
+	}
 };

@@ -3,7 +3,33 @@
 
 #include "CV/SLCVUtils.h"
 
-// 
-void FSLCVUtils::ReplacePixels(TArray<FColor>& InOutBitmap, FColor From, FColor To, float ManhattanTolerance)
+// Create new image with the pixels replaced 
+TArray<FColor> FSLCVUtils::ReplacePixels(const TArray<FColor>& InBitmap, FColor FromColor, FColor ToColor, float Tolerance)
 {	
+	// Make a copy of the image
+	TArray<FColor> NewImage = InBitmap;
+
+	// Iterate image and switch colors
+	if (Tolerance > 0)
+	{
+		for (auto& Pixel : NewImage)
+		{
+			if (FSLCVUtils::ManhattanDistance(Pixel, FromColor) < Tolerance)
+			{
+				Pixel = ToColor;
+			}
+		}
+	}
+	else
+	{
+		for (auto& Pixel : NewImage)
+		{
+			if (Pixel == FromColor)
+			{
+				Pixel = ToColor;
+			}
+		}
+	}
+
+	return NewImage;
 }

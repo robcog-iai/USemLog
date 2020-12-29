@@ -9,6 +9,7 @@
 
 // Forward declarations
 class ASLIndividualManager;
+class ASLMongoQueryManager;
 class USLVisibleIndividual;
 class AStaticMeshActor;
 class UGameViewportClient;
@@ -137,6 +138,9 @@ private:
 	// Get the individual manager from the world (or spawn a new one)
 	bool SetIndividualManager();
 
+	// Get the mongo query manager (used to set up scenes from episodic memories)
+	bool SetMongoQueryManager();
+
 	// Set the individuals to be scanned
 	bool SetScanIndividuals();
 
@@ -145,6 +149,9 @@ private:
 
 	// Create clones of the individuals with mask material
 	bool SetMaskClones();
+
+	// Generate mask clones from the ids
+	void GenerateMaskClones(const TArray<USLVisibleIndividual*>& VisibleIndividuals);
 
 	// Set the background static mesh actor and material
 	bool SetBackgroundStaticMeshActor();
@@ -217,17 +224,21 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	TArray<ESLCVRenderMode> RenderModes;
 
+	// Color of the background (rendered or replaced in postprocess)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	FColor CustomBackgroundColor = FColor::Black;
+
 	// If true, instead of rendereing the backgorund, replace the black pixels with the value
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	uint8 bReplaceBackgroundPixels : 1;
 
-	// Color of the background
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
-	FColor CustomBackgroundColor = FColor::Black;
+	// Manhattan distance between the pixel color to replace
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image", meta = (editcondition = "bReplaceBackgroundPixels"))
+	int32 CustomBackgroundColorTolerance = 7;
 
 	// Color of the mask image
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
-	uint8 bUseIndividualMaskValue : 1;
+	uint8 bUseUniqueMaskValue : 1;
 
 	// Color of the mask image
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image", meta = (editcondition = "!bUseIndividualMaskValue"))
@@ -275,9 +286,13 @@ protected:
 	// True when done 
 	uint8 bIsFinished : 1;
 
-	// Keeps access to all the individuals in the world
+	// Used to access the actors given their ids 
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLIndividualManager* IndividualManager;
+
+	// Used to to access the locations of the scenes in the episodic memories
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLMongoQueryManager* MongoQueryManager;
 
 	// Convenience actor for setting the camera pose (SetViewTarget(InActor))
 	UPROPERTY()

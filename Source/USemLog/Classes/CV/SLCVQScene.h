@@ -21,17 +21,26 @@ class USLCVQScene : public UDataAsset
 	GENERATED_BODY()
 
 public:
+	// Set the scene actors and cache their relative transforms to the world root
+	bool InitScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
+
 	// Public execute function
-	void ShowScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
+	void ShowScene();
 
 	// Hide executed scene
 	void HideScene();
 
-	// Get the scene name
-	FString GetSceneName() const { return "DefaultSceneName"; };
+	// Get the scene name (if not set, it will generate a random one)
+	FString GetSceneName();
 
 	// Get the bounding sphere radius of the scene
 	float GetSphereBoundsRadius() const;
+
+	// Get the actors in the scene
+	void GetSceneActors(TArray<AActor*>& OutActors) const {	SceneActorPoses.GenerateKeyArray(OutActors); }
+
+	// Get the ids
+	TArray<FString> GetIds() const { return Ids; };
 
 protected:
 #if WITH_EDITOR
@@ -39,11 +48,12 @@ protected:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif // WITH_EDITOR
 
-	// Virtual implementation of the execute function
-	virtual void ShowSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
+	// Virtual implementation for the scene initialization
+	virtual bool InitSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
 
-	// Virtual implementation of the hide executed scene function
-	virtual void HideSceneImpl();
+public:
+	UPROPERTY(EditAnywhere, Category = "CV Scene")
+	bool bIgnore;
 
 protected:
 	/* Individuals in the scene */
@@ -62,8 +72,17 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "CV Scene")
 	FString Episode;
 
+	// Scene name
 	UPROPERTY(EditAnywhere, Category = "CV Scene")
-	bool bIgnore;
+	FString SceneName;
+
+	// Database Server Ip
+	UPROPERTY(EditAnywhere, Category = "CV Scene")
+	FString MongoIp = TEXT("127.0.0.1");
+
+	// Database server port num
+	UPROPERTY(EditAnywhere, Category = "CV Scene")
+	uint16 MongoPort = 27017;
 
 	/* Editor interaction */
 	UPROPERTY(EditAnywhere, Category = "CV Scene|Edit")
@@ -79,6 +98,6 @@ protected:
 	bool bEnsureUniqueness = true;
 
 private:
-	// Current cache of the actors from the ids
-	TArray<AActor*> SceneActors;
+	// Cache of the actors and their poses
+	TMap<AActor*, FTransform> SceneActorPoses;
 };
