@@ -5,6 +5,7 @@
 
 #include "CoreMinimal.h"
 #include "Owl/SLOwlDoc.h"
+#include "Individuals/Type/SLBaseIndividual.h"
 
 /**
 * Events owl document template types
@@ -27,13 +28,13 @@ protected:
 	TArray<FSLOwlNode> TimepointIndividuals;
 
 	// Set of registered timepoints (in order to avoid multiple individual declaration)
-	TSet<float> RegisteredTimepoints;
+	TArray<float> RegisteredTimepoints;
 
 	// Array of object individuals
 	TArray<FSLOwlNode> ObjectIndividuals;
 
 	// Set of registered objects (in order to avoid multiple individual declaration)
-	TSet<UObject*> RegisteredObjects;
+	TSet<USLBaseIndividual*> RegisteredObjects;
 
 	// Experiment individual
 	FSLOwlNode ExperimentIndividual;
@@ -52,30 +53,19 @@ public:
 	// Destructor
 	~FSLOwlExperiment() {}
 
-	// Add timepoint individual
-	bool AddTimepointIndividual(const float Timepoint, const FSLOwlNode& InOwlNode)
+	// Add timepoint individual value
+	void RegisterTimepoint(const float Timepoint)
 	{
-		// Avoid logging the same individual multiple times
-		if (!RegisteredTimepoints.Contains(Timepoint))
-		{
-			RegisteredTimepoints.Add(Timepoint);
-			TimepointIndividuals.Emplace(InOwlNode);
-			return true;
-		}
-		return false;
+		RegisteredTimepoints.AddUnique(Timepoint);
 	}
 
-	// Add object individual
-	bool AddObjectIndividual(UObject* Object, const FSLOwlNode& InOwlNode)
+	// Add individual instalce value
+	bool RegisterObject(USLBaseIndividual* BI)
 	{
 		// Avoid logging the same individual multiple times
-		if (!RegisteredObjects.Contains(Object))
-		{
-			RegisteredObjects.Add(Object);
-			ObjectIndividuals.Emplace(InOwlNode);
-			return true;
-		}
-		return false;
+		bool* bIsAlreadyInSet = false;
+		RegisteredObjects.Add(BI, bIsAlreadyInSet);
+		return *bIsAlreadyInSet;
 	}
 
 	// Create and add experiment node individual

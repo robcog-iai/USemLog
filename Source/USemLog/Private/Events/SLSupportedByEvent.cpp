@@ -30,7 +30,7 @@ FSLOwlNode FSLSupportedByEvent::ToOwlNode() const
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateEndTimeProperty("log", EndTime));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportedProperty("log", SupportedIndividual->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateIsSupportingProperty("log", SupportingIndividual->GetIdValue()));
-	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInEpisodeProperty("log", EpisodeId));
+	//EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInEpisodeProperty("log", EpisodeId));
 	return EventIndividual;
 }
 
@@ -42,14 +42,10 @@ void FSLSupportedByEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	// we cannot use the safer dynamic_cast because RTTI is not enabled by default
 	// if (FOwlEvents* EventsDoc = dynamic_cast<FOwlEvents*>(OutDoc))
 	FSLOwlExperiment* EventsDoc = static_cast<FSLOwlExperiment*>(OutDoc);
-	EventsDoc->AddTimepointIndividual(StartTime,
-		FSLOwlExperimentStatics::CreateTimepointIndividual("log", StartTime));
-	EventsDoc->AddTimepointIndividual(EndTime,
-		FSLOwlExperimentStatics::CreateTimepointIndividual("log", EndTime));
-	EventsDoc->AddObjectIndividual(SupportedIndividual,
-		 FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportedIndividual->GetIdValue(), SupportedIndividual->GetClassValue()));
-	EventsDoc->AddObjectIndividual(SupportingIndividual,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", SupportingIndividual->GetIdValue(), SupportingIndividual->GetClassValue()));
+	EventsDoc->RegisterTimepoint(StartTime);
+	EventsDoc->RegisterTimepoint(EndTime);
+	EventsDoc->RegisterObject(SupportingIndividual);
+	EventsDoc->RegisterObject(SupportedIndividual);
 	OutDoc->AddIndividual(ToOwlNode());
 }
 

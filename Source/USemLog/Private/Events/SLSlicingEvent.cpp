@@ -52,21 +52,12 @@ void FSLSlicingEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	// we cannot use the safer dynamic_cast because RTTI is not enabled by default
 	// if (FOwlEvents* EventsDoc = dynamic_cast<FOwlEvents*>(OutDoc))
 	FSLOwlExperiment* EventsDoc = static_cast<FSLOwlExperiment*>(OutDoc);
-	EventsDoc->AddTimepointIndividual(
-		StartTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", StartTime));
-	EventsDoc->AddTimepointIndividual(
-		EndTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", EndTime));
-	EventsDoc->AddObjectIndividual(PerformedBy,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", PerformedBy->GetIdValue(), PerformedBy->GetClassValue()));
-	EventsDoc->AddObjectIndividual(DeviceUsed,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", DeviceUsed->GetIdValue(), DeviceUsed->GetClassValue()));
-	EventsDoc->AddObjectIndividual(ObjectActedOn,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", ObjectActedOn->GetIdValue(), ObjectActedOn->GetClassValue()));
-	if (bTaskSuccessful)
-	{
-		EventsDoc->AddObjectIndividual(CreatedSlice,
-			FSLOwlExperimentStatics::CreateObjectIndividual("log", CreatedSlice->GetIdValue(), CreatedSlice->GetClassValue()));
-	}
+	EventsDoc->RegisterTimepoint(StartTime);
+	EventsDoc->RegisterTimepoint(EndTime);
+	EventsDoc->RegisterObject(PerformedBy);
+	EventsDoc->RegisterObject(DeviceUsed);
+	EventsDoc->RegisterObject(ObjectActedOn);
+	EventsDoc->RegisterObject(CreatedSlice);
 	OutDoc->AddIndividual(ToOwlNode());
 }
 

@@ -189,18 +189,19 @@ void FSLSemanticMapWriter::AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InS
 		ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePoseProperty(MapPrefix, PoseId));
 
 
-		// If static mesh, add pathToCadModel property
-		if (AStaticMeshActor* ActAsSMA = Cast<AStaticMeshActor>(ObjAsAct))
-		{
-			if (UStaticMeshComponent* SMC = ActAsSMA->GetStaticMeshComponent())
-			{
-				if (UStaticMesh* SM = SMC->GetStaticMesh())
-				{
-					//ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
-					ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
-				}
-			}
-		}
+		// Commented out since value it is stored as a class property
+		//// If static mesh, add pathToCadModel property
+		//if (AStaticMeshActor* ActAsSMA = Cast<AStaticMeshActor>(ObjAsAct))
+		//{
+		//	if (UStaticMeshComponent* SMC = ActAsSMA->GetStaticMeshComponent())
+		//	{
+		//		if (UStaticMesh* SM = SMC->GetStaticMesh())
+		//		{
+		//			//ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(GetPathToCadModelLambda(SM)));
+		//			ObjIndividual.AddChildNode(FSLOwlSemanticMapStatics::CreatePathToCadModelProperty(InClass));
+		//		}
+		//	}
+		//}
 
 		// If skeletalmesh, add bones as properties
 		// Cache created bone individuals (if any)

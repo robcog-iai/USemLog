@@ -50,14 +50,10 @@ void FSLContactEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	// we cannot use the safer dynamic_cast because RTTI is not enabled by default
 	// if (FOwlEvents* EventsDoc = dynamic_cast<FOwlEvents*>(OutDoc))
 	FSLOwlExperiment* EventsDoc = static_cast<FSLOwlExperiment*>(OutDoc);
-	EventsDoc->AddTimepointIndividual(
-		StartTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", StartTime));
-	EventsDoc->AddTimepointIndividual(
-		EndTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", EndTime));
-	EventsDoc->AddObjectIndividual(Individual1,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Individual1->GetIdValue(), Individual1->GetClassValue()));
-	EventsDoc->AddObjectIndividual(Individual2,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Individual2->GetIdValue(), Individual2->GetClassValue()));
+	EventsDoc->RegisterTimepoint(StartTime);
+	EventsDoc->RegisterTimepoint(EndTime);
+	EventsDoc->RegisterObject(Individual1);
+	EventsDoc->RegisterObject(Individual2);
 	OutDoc->AddIndividual(ToOwlNode());
 }
 
