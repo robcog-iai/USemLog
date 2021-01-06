@@ -68,7 +68,7 @@ void FSLManipulatorContactEventHandler::AddNewEvent(const FSLContactResult& InRe
 		FSLUuid::NewGuidInBase64Url(), InResult.Time,
 		FSLUuid::PairEncodeCantor(InResult.Self->GetUniqueID(), InResult.Other->GetUniqueID()),
 		InResult.Self, InResult.Other));
-	//Event->EpisodeId = EpisodeId;
+	Event->EpisodeId = EpisodeId;
 	// Add event to the pending contacts array
 	StartedEvents.Emplace(Event);
 }

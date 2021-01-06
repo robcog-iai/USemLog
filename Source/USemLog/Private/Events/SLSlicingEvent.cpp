@@ -40,7 +40,7 @@ FSLOwlNode FSLSlicingEvent::ToOwlNode() const
 	{
 		EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateOutputsCreatedProperty("log", CreatedSlice->GetIdValue()));
 	}
-	//EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInEpisodeProperty("log", EpisodeId));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInEpisodeProperty("log", EpisodeId));
 	return EventIndividual;
 }
 

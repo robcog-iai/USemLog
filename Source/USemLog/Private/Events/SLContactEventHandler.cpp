@@ -75,7 +75,7 @@ void FSLContactEventHandler::AddNewContactEvent(const FSLContactResult& InResult
 		FSLUuid::NewGuidInBase64Url(), InResult.Time,
 		FSLUuid::PairEncodeCantor(InResult.Self->GetUniqueID(), InResult.Other->GetUniqueID()),
 		InResult.Self, InResult.Other));
-	//Event->EpisodeId = EpisodeId;
+	Event->EpisodeId = EpisodeId;
 	// Add event to the pending contacts array
 	StartedContactEvents.Emplace(Event);
 }
@@ -113,7 +113,7 @@ void FSLContactEventHandler::AddNewSupportedByEvent(USLBaseIndividual* Supported
 	// Start a supported by event
 	TSharedPtr<FSLSupportedByEvent> Event = MakeShareable(new FSLSupportedByEvent(
 		FSLUuid::NewGuidInBase64Url(), StartTime, EventPairId, Supported, Supporting));
-	//Event->EpisodeId = EpisodeId;
+	Event->EpisodeId = EpisodeId;
 	// Add event to the pending array
 	StartedSupportedByEvents.Emplace(Event);
 }

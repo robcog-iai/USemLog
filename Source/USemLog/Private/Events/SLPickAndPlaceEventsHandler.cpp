@@ -69,7 +69,7 @@ void FSLPickAndPlaceEventsHandler::OnSLSlide(USLBaseIndividual* Self, USLBaseInd
 		FSLUuid::NewGuidInBase64Url(), StartTime, EndTime,
 		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
 		Self, Other));
-	//Event->EpisodeId = EpisodeId;
+	Event->EpisodeId = EpisodeId;
 	OnSemanticEvent.ExecuteIfBound(Event);
 }
 
@@ -81,7 +81,7 @@ void FSLPickAndPlaceEventsHandler::OnSLPickUp(USLBaseIndividual* Self, USLBaseIn
 		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
 		Self, Other));
 
-	//Event->EpisodeId = EpisodeId;
+	Event->EpisodeId = EpisodeId;
 	OnSemanticEvent.ExecuteIfBound(Event);
 }
 
@@ -93,7 +93,7 @@ void FSLPickAndPlaceEventsHandler::OnSLTransport(USLBaseIndividual* Self, USLBas
 		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
 		Self, Other));
 
-	//Event->EpisodeId = EpisodeId;
+	Event->EpisodeId = EpisodeId;
 	OnSemanticEvent.ExecuteIfBound(Event);
 }
 
@@ -105,6 +105,6 @@ void FSLPickAndPlaceEventsHandler::OnSLPutDown(USLBaseIndividual* Self,USLBaseIn
 		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
 		Self, Other));
 
-	//Event->EpisodeId = EpisodeId;
+	Event->EpisodeId = EpisodeId;
 	OnSemanticEvent.ExecuteIfBound(Event);
 }
