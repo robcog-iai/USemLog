@@ -19,7 +19,9 @@ extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::interna
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DrawMarkerAtParams_viz_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DrawMarkerTrajParams_viz_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_GetEpisodeDataParams_control_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_HighlightParams_viz_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LoadLevelParams_viz_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_RemoveHighlightParams_viz_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetEpisodeParams_viz_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetIndividualPoseParams_control_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetTaskParams_viz_2eproto;
@@ -47,8 +49,8 @@ static void InitDefaultsscc_info_KRAmevaEvent_ameva_2eproto() {
   ::sl_pb::KRAmevaEvent::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<11> scc_info_KRAmevaEvent_ameva_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 11, 0, InitDefaultsscc_info_KRAmevaEvent_ameva_2eproto}, {
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<13> scc_info_KRAmevaEvent_ameva_2eproto =
+    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 13, 0, InitDefaultsscc_info_KRAmevaEvent_ameva_2eproto}, {
       &scc_info_SetTaskParams_viz_2eproto.base,
       &scc_info_SetEpisodeParams_viz_2eproto.base,
       &scc_info_DrawMarkerAtParams_viz_2eproto.base,
@@ -59,7 +61,9 @@ static void InitDefaultsscc_info_KRAmevaEvent_ameva_2eproto() {
       &scc_info_StartSimulationParams_control_2eproto.base,
       &scc_info_StopSimulationParams_control_2eproto.base,
       &scc_info_SetIndividualPoseParams_control_2eproto.base,
-      &scc_info_ApplyForceToParams_control_2eproto.base,}};
+      &scc_info_ApplyForceToParams_control_2eproto.base,
+      &scc_info_HighlightParams_viz_2eproto.base,
+      &scc_info_RemoveHighlightParams_viz_2eproto.base,}};
 
 static void InitDefaultsscc_info_KRAmevaResponse_ameva_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -97,7 +101,9 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_ameva_2eproto::offsets[] PROTO
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, stopsimulationparams_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, setindividualposeparams_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, applyforcetoparams_),
-  11,
+  PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, highlightparams_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, removehighlightparams_),
+  13,
   0,
   1,
   2,
@@ -109,6 +115,8 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_ameva_2eproto::offsets[] PROTO
   8,
   9,
   10,
+  11,
+  12,
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaResponse, _has_bits_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaResponse, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -126,8 +134,8 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_ameva_2eproto::offsets[] PROTO
   3,
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, 17, sizeof(::sl_pb::KRAmevaEvent)},
-  { 29, 39, sizeof(::sl_pb::KRAmevaResponse)},
+  { 0, 19, sizeof(::sl_pb::KRAmevaEvent)},
+  { 33, 43, sizeof(::sl_pb::KRAmevaResponse)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -137,7 +145,7 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 
 const char descriptor_table_protodef_ameva_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\013ameva.proto\022\005sl_pb\032\tviz.proto\032\016tutoria"
-  "l.proto\032\rcontrol.proto\"\220\007\n\014KRAmevaEvent\022"
+  "l.proto\032\rcontrol.proto\"\272\010\n\014KRAmevaEvent\022"
   "2\n\nfuncToCall\030\001 \002(\0162\036.sl_pb.KRAmevaEvent"
   ".FuncToCall\022*\n\014setTaskParam\030\002 \001(\0132\024.sl_p"
   "b.SetTaskParams\0221\n\020setEpisodeParams\030\003 \001("
@@ -154,18 +162,23 @@ const char descriptor_table_protodef_ameva_2eproto[] PROTOBUF_SECTION_VARIABLE(p
   "pb.StopSimulationParams\022\?\n\027setIndividual"
   "PoseParams\030\013 \001(\0132\036.sl_pb.SetIndividualPo"
   "seParams\0225\n\022applyForceToParams\030\014 \001(\0132\031.s"
-  "l_pb.ApplyForceToParams\"\347\001\n\nFuncToCall\022\013"
-  "\n\007SetTask\020\001\022\016\n\nSetEpisode\020\002\022\020\n\014DrawMarke"
-  "rAt\020\003\022\022\n\016DrawMarkerTraj\020\004\022\r\n\tLoadLevel\020\005"
-  "\022\020\n\014StartLoggers\020\006\022\017\n\013StopLoggers\020\007\022\022\n\016G"
-  "etEpisodeData\020\010\022\023\n\017StartSimulation\020\t\022\022\n\016"
-  "StopSimulation\020\n\022\025\n\021SetIndividualPose\020\013\022"
-  "\020\n\014ApplyForceTo\020\014\"\324\001\n\017KRAmevaResponse\0221\n"
-  "\004type\030\001 \002(\0162#.sl_pb.KRAmevaResponse.Resp"
-  "onseType\022\014\n\004text\030\002 \001(\t\022\020\n\010fileName\030\003 \001(\t"
-  "\022\020\n\010fileData\030\004 \001(\014\022\022\n\ndataLength\030\005 \001(\005\"H"
-  "\n\014ResponseType\022\010\n\004Text\020\001\022\020\n\014FileCreation"
-  "\020\002\022\014\n\010FileData\020\003\022\016\n\nFileFinish\020\004"
+  "l_pb.ApplyForceToParams\022/\n\017highlightPara"
+  "ms\030\r \001(\0132\026.sl_pb.HighlightParams\022;\n\025remo"
+  "veHighlightParams\030\016 \001(\0132\034.sl_pb.RemoveHi"
+  "ghlightParams\"\243\002\n\nFuncToCall\022\013\n\007SetTask\020"
+  "\001\022\016\n\nSetEpisode\020\002\022\020\n\014DrawMarkerAt\020\003\022\022\n\016D"
+  "rawMarkerTraj\020\004\022\r\n\tLoadLevel\020\005\022\020\n\014StartL"
+  "oggers\020\006\022\017\n\013StopLoggers\020\007\022\022\n\016GetEpisodeD"
+  "ata\020\010\022\023\n\017StartSimulation\020\t\022\022\n\016StopSimula"
+  "tion\020\n\022\025\n\021SetIndividualPose\020\013\022\020\n\014ApplyFo"
+  "rceTo\020\014\022\r\n\tHighlight\020\r\022\023\n\017RemoveHighligh"
+  "t\020\016\022\026\n\022RemoveAllHighlight\020\017\"\324\001\n\017KRAmevaR"
+  "esponse\0221\n\004type\030\001 \002(\0162#.sl_pb.KRAmevaRes"
+  "ponse.ResponseType\022\014\n\004text\030\002 \001(\t\022\020\n\010file"
+  "Name\030\003 \001(\t\022\020\n\010fileData\030\004 \001(\014\022\022\n\ndataLeng"
+  "th\030\005 \001(\005\"H\n\014ResponseType\022\010\n\004Text\020\001\022\020\n\014Fi"
+  "leCreation\020\002\022\014\n\010FileData\020\003\022\016\n\nFileFinish"
+  "\020\004"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_ameva_2eproto_deps[3] = {
   &::descriptor_table_control_2eproto,
@@ -178,7 +191,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_ame
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_ameva_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_ameva_2eproto = {
-  false, false, descriptor_table_protodef_ameva_2eproto, "ameva.proto", 1192,
+  false, false, descriptor_table_protodef_ameva_2eproto, "ameva.proto", 1362,
   &descriptor_table_ameva_2eproto_once, descriptor_table_ameva_2eproto_sccs, descriptor_table_ameva_2eproto_deps, 2, 3,
   schemas, file_default_instances, TableStruct_ameva_2eproto::offsets,
   file_level_metadata_ameva_2eproto, 2, file_level_enum_descriptors_ameva_2eproto, file_level_service_descriptors_ameva_2eproto,
@@ -205,6 +218,9 @@ bool KRAmevaEvent_FuncToCall_IsValid(int value) {
     case 10:
     case 11:
     case 12:
+    case 13:
+    case 14:
+    case 15:
       return true;
     default:
       return false;
@@ -224,6 +240,9 @@ constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StartSimulation;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StopSimulation;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::SetIndividualPose;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::ApplyForceTo;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::Highlight;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::RemoveHighlight;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::RemoveAllHighlight;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::FuncToCall_MIN;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::FuncToCall_MAX;
 constexpr int KRAmevaEvent::FuncToCall_ARRAYSIZE;
@@ -279,12 +298,16 @@ void KRAmevaEvent::InitAsDefaultInstance() {
       ::sl_pb::SetIndividualPoseParams::internal_default_instance());
   ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->applyforcetoparams_ = const_cast< ::sl_pb::ApplyForceToParams*>(
       ::sl_pb::ApplyForceToParams::internal_default_instance());
+  ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->highlightparams_ = const_cast< ::sl_pb::HighlightParams*>(
+      ::sl_pb::HighlightParams::internal_default_instance());
+  ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->removehighlightparams_ = const_cast< ::sl_pb::RemoveHighlightParams*>(
+      ::sl_pb::RemoveHighlightParams::internal_default_instance());
 }
 class KRAmevaEvent::_Internal {
  public:
   using HasBits = decltype(std::declval<KRAmevaEvent>()._has_bits_);
   static void set_has_functocall(HasBits* has_bits) {
-    (*has_bits)[0] |= 2048u;
+    (*has_bits)[0] |= 8192u;
   }
   static const ::sl_pb::SetTaskParams& settaskparam(const KRAmevaEvent* msg);
   static void set_has_settaskparam(HasBits* has_bits) {
@@ -330,8 +353,16 @@ class KRAmevaEvent::_Internal {
   static void set_has_applyforcetoparams(HasBits* has_bits) {
     (*has_bits)[0] |= 1024u;
   }
+  static const ::sl_pb::HighlightParams& highlightparams(const KRAmevaEvent* msg);
+  static void set_has_highlightparams(HasBits* has_bits) {
+    (*has_bits)[0] |= 2048u;
+  }
+  static const ::sl_pb::RemoveHighlightParams& removehighlightparams(const KRAmevaEvent* msg);
+  static void set_has_removehighlightparams(HasBits* has_bits) {
+    (*has_bits)[0] |= 4096u;
+  }
   static bool MissingRequiredFields(const HasBits& has_bits) {
-    return ((has_bits[0] & 0x00000800) ^ 0x00000800) != 0;
+    return ((has_bits[0] & 0x00002000) ^ 0x00002000) != 0;
   }
 };
 
@@ -379,6 +410,14 @@ const ::sl_pb::ApplyForceToParams&
 KRAmevaEvent::_Internal::applyforcetoparams(const KRAmevaEvent* msg) {
   return *msg->applyforcetoparams_;
 }
+const ::sl_pb::HighlightParams&
+KRAmevaEvent::_Internal::highlightparams(const KRAmevaEvent* msg) {
+  return *msg->highlightparams_;
+}
+const ::sl_pb::RemoveHighlightParams&
+KRAmevaEvent::_Internal::removehighlightparams(const KRAmevaEvent* msg) {
+  return *msg->removehighlightparams_;
+}
 void KRAmevaEvent::clear_settaskparam() {
   if (settaskparam_ != nullptr) settaskparam_->Clear();
   _has_bits_[0] &= ~0x00000001u;
@@ -422,6 +461,14 @@ void KRAmevaEvent::clear_setindividualposeparams() {
 void KRAmevaEvent::clear_applyforcetoparams() {
   if (applyforcetoparams_ != nullptr) applyforcetoparams_->Clear();
   _has_bits_[0] &= ~0x00000400u;
+}
+void KRAmevaEvent::clear_highlightparams() {
+  if (highlightparams_ != nullptr) highlightparams_->Clear();
+  _has_bits_[0] &= ~0x00000800u;
+}
+void KRAmevaEvent::clear_removehighlightparams() {
+  if (removehighlightparams_ != nullptr) removehighlightparams_->Clear();
+  _has_bits_[0] &= ~0x00001000u;
 }
 KRAmevaEvent::KRAmevaEvent(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
@@ -488,6 +535,16 @@ KRAmevaEvent::KRAmevaEvent(const KRAmevaEvent& from)
   } else {
     applyforcetoparams_ = nullptr;
   }
+  if (from._internal_has_highlightparams()) {
+    highlightparams_ = new ::sl_pb::HighlightParams(*from.highlightparams_);
+  } else {
+    highlightparams_ = nullptr;
+  }
+  if (from._internal_has_removehighlightparams()) {
+    removehighlightparams_ = new ::sl_pb::RemoveHighlightParams(*from.removehighlightparams_);
+  } else {
+    removehighlightparams_ = nullptr;
+  }
   functocall_ = from.functocall_;
   // @@protoc_insertion_point(copy_constructor:sl_pb.KRAmevaEvent)
 }
@@ -495,8 +552,8 @@ KRAmevaEvent::KRAmevaEvent(const KRAmevaEvent& from)
 void KRAmevaEvent::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_KRAmevaEvent_ameva_2eproto.base);
   ::memset(&settaskparam_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&applyforcetoparams_) -
-      reinterpret_cast<char*>(&settaskparam_)) + sizeof(applyforcetoparams_));
+      reinterpret_cast<char*>(&removehighlightparams_) -
+      reinterpret_cast<char*>(&settaskparam_)) + sizeof(removehighlightparams_));
   functocall_ = 1;
 }
 
@@ -519,6 +576,8 @@ void KRAmevaEvent::SharedDtor() {
   if (this != internal_default_instance()) delete stopsimulationparams_;
   if (this != internal_default_instance()) delete setindividualposeparams_;
   if (this != internal_default_instance()) delete applyforcetoparams_;
+  if (this != internal_default_instance()) delete highlightparams_;
+  if (this != internal_default_instance()) delete removehighlightparams_;
 }
 
 void KRAmevaEvent::ArenaDtor(void* object) {
@@ -577,7 +636,7 @@ void KRAmevaEvent::Clear() {
       startsimulationparams_->Clear();
     }
   }
-  if (cached_has_bits & 0x00000f00u) {
+  if (cached_has_bits & 0x00003f00u) {
     if (cached_has_bits & 0x00000100u) {
       GOOGLE_DCHECK(stopsimulationparams_ != nullptr);
       stopsimulationparams_->Clear();
@@ -589,6 +648,14 @@ void KRAmevaEvent::Clear() {
     if (cached_has_bits & 0x00000400u) {
       GOOGLE_DCHECK(applyforcetoparams_ != nullptr);
       applyforcetoparams_->Clear();
+    }
+    if (cached_has_bits & 0x00000800u) {
+      GOOGLE_DCHECK(highlightparams_ != nullptr);
+      highlightparams_->Clear();
+    }
+    if (cached_has_bits & 0x00001000u) {
+      GOOGLE_DCHECK(removehighlightparams_ != nullptr);
+      removehighlightparams_->Clear();
     }
     functocall_ = 1;
   }
@@ -694,6 +761,20 @@ const char* KRAmevaEvent::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
+      // optional .sl_pb.HighlightParams highlightParams = 13;
+      case 13:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 106)) {
+          ptr = ctx->ParseMessage(_internal_mutable_highlightparams(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // optional .sl_pb.RemoveHighlightParams removeHighlightParams = 14;
+      case 14:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 114)) {
+          ptr = ctx->ParseMessage(_internal_mutable_removehighlightparams(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
       default: {
       handle_unusual:
         if ((tag & 7) == 4 || tag == 0) {
@@ -725,7 +806,7 @@ failure:
 
   cached_has_bits = _has_bits_[0];
   // required .sl_pb.KRAmevaEvent.FuncToCall funcToCall = 1;
-  if (cached_has_bits & 0x00000800u) {
+  if (cached_has_bits & 0x00002000u) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
       1, this->_internal_functocall(), target);
@@ -819,6 +900,22 @@ failure:
         12, _Internal::applyforcetoparams(this), target, stream);
   }
 
+  // optional .sl_pb.HighlightParams highlightParams = 13;
+  if (cached_has_bits & 0x00000800u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        13, _Internal::highlightparams(this), target, stream);
+  }
+
+  // optional .sl_pb.RemoveHighlightParams removeHighlightParams = 14;
+  if (cached_has_bits & 0x00001000u) {
+    target = stream->EnsureSpace(target);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
+      InternalWriteMessage(
+        14, _Internal::removehighlightparams(this), target, stream);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -899,7 +996,7 @@ size_t KRAmevaEvent::ByteSizeLong() const {
     }
 
   }
-  if (cached_has_bits & 0x00000700u) {
+  if (cached_has_bits & 0x00001f00u) {
     // optional .sl_pb.StopSimulationParams stopSimulationParams = 10;
     if (cached_has_bits & 0x00000100u) {
       total_size += 1 +
@@ -919,6 +1016,20 @@ size_t KRAmevaEvent::ByteSizeLong() const {
       total_size += 1 +
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
           *applyforcetoparams_);
+    }
+
+    // optional .sl_pb.HighlightParams highlightParams = 13;
+    if (cached_has_bits & 0x00000800u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *highlightparams_);
+    }
+
+    // optional .sl_pb.RemoveHighlightParams removeHighlightParams = 14;
+    if (cached_has_bits & 0x00001000u) {
+      total_size += 1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+          *removehighlightparams_);
     }
 
   }
@@ -980,7 +1091,7 @@ void KRAmevaEvent::MergeFrom(const KRAmevaEvent& from) {
       _internal_mutable_startsimulationparams()->::sl_pb::StartSimulationParams::MergeFrom(from._internal_startsimulationparams());
     }
   }
-  if (cached_has_bits & 0x00000f00u) {
+  if (cached_has_bits & 0x00003f00u) {
     if (cached_has_bits & 0x00000100u) {
       _internal_mutable_stopsimulationparams()->::sl_pb::StopSimulationParams::MergeFrom(from._internal_stopsimulationparams());
     }
@@ -991,6 +1102,12 @@ void KRAmevaEvent::MergeFrom(const KRAmevaEvent& from) {
       _internal_mutable_applyforcetoparams()->::sl_pb::ApplyForceToParams::MergeFrom(from._internal_applyforcetoparams());
     }
     if (cached_has_bits & 0x00000800u) {
+      _internal_mutable_highlightparams()->::sl_pb::HighlightParams::MergeFrom(from._internal_highlightparams());
+    }
+    if (cached_has_bits & 0x00001000u) {
+      _internal_mutable_removehighlightparams()->::sl_pb::RemoveHighlightParams::MergeFrom(from._internal_removehighlightparams());
+    }
+    if (cached_has_bits & 0x00002000u) {
       functocall_ = from.functocall_;
     }
     _has_bits_[0] |= cached_has_bits;
@@ -1043,6 +1160,12 @@ bool KRAmevaEvent::IsInitialized() const {
   if (_internal_has_applyforcetoparams()) {
     if (!applyforcetoparams_->IsInitialized()) return false;
   }
+  if (_internal_has_highlightparams()) {
+    if (!highlightparams_->IsInitialized()) return false;
+  }
+  if (_internal_has_removehighlightparams()) {
+    if (!removehighlightparams_->IsInitialized()) return false;
+  }
   return true;
 }
 
@@ -1051,8 +1174,8 @@ void KRAmevaEvent::InternalSwap(KRAmevaEvent* other) {
   _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(KRAmevaEvent, applyforcetoparams_)
-      + sizeof(KRAmevaEvent::applyforcetoparams_)
+      PROTOBUF_FIELD_OFFSET(KRAmevaEvent, removehighlightparams_)
+      + sizeof(KRAmevaEvent::removehighlightparams_)
       - PROTOBUF_FIELD_OFFSET(KRAmevaEvent, settaskparam_)>(
           reinterpret_cast<char*>(&settaskparam_),
           reinterpret_cast<char*>(&other->settaskparam_));

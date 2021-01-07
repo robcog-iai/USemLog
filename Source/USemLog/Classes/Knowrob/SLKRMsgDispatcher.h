@@ -67,6 +67,15 @@ private:
 	// Draw the individual trajectory
 	void DrawMarkerTraj(sl_pb::DrawMarkerTrajParams params);
 
+	// Hightlight the individual
+	void HighlightIndividual(sl_pb::HighlightParams params);
+
+	// Remove the individual hightlight
+	void RemoveIndividualHighlight(sl_pb::RemoveHighlightParams params);
+
+	// Hightlight the individual
+	void RemoveAllIndividualHighlight();
+
 	// Start Symbolic and World State Logger
 	void StartLoggers(sl_pb::StartLoggersParams params);
 

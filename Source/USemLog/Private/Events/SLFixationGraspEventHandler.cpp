@@ -73,7 +73,7 @@ void FSLFixationGraspEventHandler::AddNewEvent(USLBaseIndividual* Self, USLBaseI
 		FSLUuid::NewGuidInBase64Url(), StartTime, 
 		FSLUuid::PairEncodeCantor(Self->GetUniqueID(), Other->GetUniqueID()),
 		Self, Other));
-	//Event->EpisodeId = EpisodeId;
+	Event->EpisodeId = EpisodeId;
 	// Add event to the pending array
 	StartedEvents.Emplace(Event);
 }

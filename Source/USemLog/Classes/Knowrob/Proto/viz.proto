@@ -37,6 +37,16 @@ message DrawMarkerTrajParams {
   required string material = 7;
 }
 
+message HighlightParams {
+	required string id = 1;
+	required string color = 2;
+	required string material = 3;
+}
+
+message RemoveHighlightParams {
+	required string id = 1;
+}
+
 message LoadLevelParams {
   required string level = 1;
 }

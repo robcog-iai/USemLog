@@ -86,11 +86,14 @@ enum KRAmevaEvent_FuncToCall : int {
   KRAmevaEvent_FuncToCall_StartSimulation = 9,
   KRAmevaEvent_FuncToCall_StopSimulation = 10,
   KRAmevaEvent_FuncToCall_SetIndividualPose = 11,
-  KRAmevaEvent_FuncToCall_ApplyForceTo = 12
+  KRAmevaEvent_FuncToCall_ApplyForceTo = 12,
+  KRAmevaEvent_FuncToCall_Highlight = 13,
+  KRAmevaEvent_FuncToCall_RemoveHighlight = 14,
+  KRAmevaEvent_FuncToCall_RemoveAllHighlight = 15
 };
 bool KRAmevaEvent_FuncToCall_IsValid(int value);
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent_FuncToCall_FuncToCall_MIN = KRAmevaEvent_FuncToCall_SetTask;
-constexpr KRAmevaEvent_FuncToCall KRAmevaEvent_FuncToCall_FuncToCall_MAX = KRAmevaEvent_FuncToCall_ApplyForceTo;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent_FuncToCall_FuncToCall_MAX = KRAmevaEvent_FuncToCall_RemoveAllHighlight;
 constexpr int KRAmevaEvent_FuncToCall_FuncToCall_ARRAYSIZE = KRAmevaEvent_FuncToCall_FuncToCall_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* KRAmevaEvent_FuncToCall_descriptor();
@@ -276,6 +279,12 @@ class KRAmevaEvent PROTOBUF_FINAL :
     KRAmevaEvent_FuncToCall_SetIndividualPose;
   static constexpr FuncToCall ApplyForceTo =
     KRAmevaEvent_FuncToCall_ApplyForceTo;
+  static constexpr FuncToCall Highlight =
+    KRAmevaEvent_FuncToCall_Highlight;
+  static constexpr FuncToCall RemoveHighlight =
+    KRAmevaEvent_FuncToCall_RemoveHighlight;
+  static constexpr FuncToCall RemoveAllHighlight =
+    KRAmevaEvent_FuncToCall_RemoveAllHighlight;
   static inline bool FuncToCall_IsValid(int value) {
     return KRAmevaEvent_FuncToCall_IsValid(value);
   }
@@ -315,6 +324,8 @@ class KRAmevaEvent PROTOBUF_FINAL :
     kStopSimulationParamsFieldNumber = 10,
     kSetIndividualPoseParamsFieldNumber = 11,
     kApplyForceToParamsFieldNumber = 12,
+    kHighlightParamsFieldNumber = 13,
+    kRemoveHighlightParamsFieldNumber = 14,
     kFuncToCallFieldNumber = 1,
   };
   // optional .sl_pb.SetTaskParams setTaskParam = 2;
@@ -515,6 +526,42 @@ class KRAmevaEvent PROTOBUF_FINAL :
       ::sl_pb::ApplyForceToParams* applyforcetoparams);
   ::sl_pb::ApplyForceToParams* unsafe_arena_release_applyforcetoparams();
 
+  // optional .sl_pb.HighlightParams highlightParams = 13;
+  bool has_highlightparams() const;
+  private:
+  bool _internal_has_highlightparams() const;
+  public:
+  void clear_highlightparams();
+  const ::sl_pb::HighlightParams& highlightparams() const;
+  ::sl_pb::HighlightParams* release_highlightparams();
+  ::sl_pb::HighlightParams* mutable_highlightparams();
+  void set_allocated_highlightparams(::sl_pb::HighlightParams* highlightparams);
+  private:
+  const ::sl_pb::HighlightParams& _internal_highlightparams() const;
+  ::sl_pb::HighlightParams* _internal_mutable_highlightparams();
+  public:
+  void unsafe_arena_set_allocated_highlightparams(
+      ::sl_pb::HighlightParams* highlightparams);
+  ::sl_pb::HighlightParams* unsafe_arena_release_highlightparams();
+
+  // optional .sl_pb.RemoveHighlightParams removeHighlightParams = 14;
+  bool has_removehighlightparams() const;
+  private:
+  bool _internal_has_removehighlightparams() const;
+  public:
+  void clear_removehighlightparams();
+  const ::sl_pb::RemoveHighlightParams& removehighlightparams() const;
+  ::sl_pb::RemoveHighlightParams* release_removehighlightparams();
+  ::sl_pb::RemoveHighlightParams* mutable_removehighlightparams();
+  void set_allocated_removehighlightparams(::sl_pb::RemoveHighlightParams* removehighlightparams);
+  private:
+  const ::sl_pb::RemoveHighlightParams& _internal_removehighlightparams() const;
+  ::sl_pb::RemoveHighlightParams* _internal_mutable_removehighlightparams();
+  public:
+  void unsafe_arena_set_allocated_removehighlightparams(
+      ::sl_pb::RemoveHighlightParams* removehighlightparams);
+  ::sl_pb::RemoveHighlightParams* unsafe_arena_release_removehighlightparams();
+
   // required .sl_pb.KRAmevaEvent.FuncToCall funcToCall = 1;
   bool has_functocall() const;
   private:
@@ -548,6 +595,8 @@ class KRAmevaEvent PROTOBUF_FINAL :
   ::sl_pb::StopSimulationParams* stopsimulationparams_;
   ::sl_pb::SetIndividualPoseParams* setindividualposeparams_;
   ::sl_pb::ApplyForceToParams* applyforcetoparams_;
+  ::sl_pb::HighlightParams* highlightparams_;
+  ::sl_pb::RemoveHighlightParams* removehighlightparams_;
   int functocall_;
   friend struct ::TableStruct_ameva_2eproto;
 };
@@ -828,7 +877,7 @@ class KRAmevaResponse PROTOBUF_FINAL :
 
 // required .sl_pb.KRAmevaEvent.FuncToCall funcToCall = 1;
 inline bool KRAmevaEvent::_internal_has_functocall() const {
-  bool value = (_has_bits_[0] & 0x00000800u) != 0;
+  bool value = (_has_bits_[0] & 0x00002000u) != 0;
   return value;
 }
 inline bool KRAmevaEvent::has_functocall() const {
@@ -836,7 +885,7 @@ inline bool KRAmevaEvent::has_functocall() const {
 }
 inline void KRAmevaEvent::clear_functocall() {
   functocall_ = 1;
-  _has_bits_[0] &= ~0x00000800u;
+  _has_bits_[0] &= ~0x00002000u;
 }
 inline ::sl_pb::KRAmevaEvent_FuncToCall KRAmevaEvent::_internal_functocall() const {
   return static_cast< ::sl_pb::KRAmevaEvent_FuncToCall >(functocall_);
@@ -847,7 +896,7 @@ inline ::sl_pb::KRAmevaEvent_FuncToCall KRAmevaEvent::functocall() const {
 }
 inline void KRAmevaEvent::_internal_set_functocall(::sl_pb::KRAmevaEvent_FuncToCall value) {
   assert(::sl_pb::KRAmevaEvent_FuncToCall_IsValid(value));
-  _has_bits_[0] |= 0x00000800u;
+  _has_bits_[0] |= 0x00002000u;
   functocall_ = value;
 }
 inline void KRAmevaEvent::set_functocall(::sl_pb::KRAmevaEvent_FuncToCall value) {
@@ -1722,6 +1771,164 @@ inline void KRAmevaEvent::set_allocated_applyforcetoparams(::sl_pb::ApplyForceTo
   }
   applyforcetoparams_ = applyforcetoparams;
   // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.applyForceToParams)
+}
+
+// optional .sl_pb.HighlightParams highlightParams = 13;
+inline bool KRAmevaEvent::_internal_has_highlightparams() const {
+  bool value = (_has_bits_[0] & 0x00000800u) != 0;
+  PROTOBUF_ASSUME(!value || highlightparams_ != nullptr);
+  return value;
+}
+inline bool KRAmevaEvent::has_highlightparams() const {
+  return _internal_has_highlightparams();
+}
+inline const ::sl_pb::HighlightParams& KRAmevaEvent::_internal_highlightparams() const {
+  const ::sl_pb::HighlightParams* p = highlightparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::HighlightParams*>(
+      &::sl_pb::_HighlightParams_default_instance_);
+}
+inline const ::sl_pb::HighlightParams& KRAmevaEvent::highlightparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.highlightParams)
+  return _internal_highlightparams();
+}
+inline void KRAmevaEvent::unsafe_arena_set_allocated_highlightparams(
+    ::sl_pb::HighlightParams* highlightparams) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(highlightparams_);
+  }
+  highlightparams_ = highlightparams;
+  if (highlightparams) {
+    _has_bits_[0] |= 0x00000800u;
+  } else {
+    _has_bits_[0] &= ~0x00000800u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.highlightParams)
+}
+inline ::sl_pb::HighlightParams* KRAmevaEvent::release_highlightparams() {
+  _has_bits_[0] &= ~0x00000800u;
+  ::sl_pb::HighlightParams* temp = highlightparams_;
+  highlightparams_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::sl_pb::HighlightParams* KRAmevaEvent::unsafe_arena_release_highlightparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.highlightParams)
+  _has_bits_[0] &= ~0x00000800u;
+  ::sl_pb::HighlightParams* temp = highlightparams_;
+  highlightparams_ = nullptr;
+  return temp;
+}
+inline ::sl_pb::HighlightParams* KRAmevaEvent::_internal_mutable_highlightparams() {
+  _has_bits_[0] |= 0x00000800u;
+  if (highlightparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::HighlightParams>(GetArena());
+    highlightparams_ = p;
+  }
+  return highlightparams_;
+}
+inline ::sl_pb::HighlightParams* KRAmevaEvent::mutable_highlightparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.highlightParams)
+  return _internal_mutable_highlightparams();
+}
+inline void KRAmevaEvent::set_allocated_highlightparams(::sl_pb::HighlightParams* highlightparams) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(highlightparams_);
+  }
+  if (highlightparams) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(highlightparams)->GetArena();
+    if (message_arena != submessage_arena) {
+      highlightparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, highlightparams, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00000800u;
+  } else {
+    _has_bits_[0] &= ~0x00000800u;
+  }
+  highlightparams_ = highlightparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.highlightParams)
+}
+
+// optional .sl_pb.RemoveHighlightParams removeHighlightParams = 14;
+inline bool KRAmevaEvent::_internal_has_removehighlightparams() const {
+  bool value = (_has_bits_[0] & 0x00001000u) != 0;
+  PROTOBUF_ASSUME(!value || removehighlightparams_ != nullptr);
+  return value;
+}
+inline bool KRAmevaEvent::has_removehighlightparams() const {
+  return _internal_has_removehighlightparams();
+}
+inline const ::sl_pb::RemoveHighlightParams& KRAmevaEvent::_internal_removehighlightparams() const {
+  const ::sl_pb::RemoveHighlightParams* p = removehighlightparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::RemoveHighlightParams*>(
+      &::sl_pb::_RemoveHighlightParams_default_instance_);
+}
+inline const ::sl_pb::RemoveHighlightParams& KRAmevaEvent::removehighlightparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.removeHighlightParams)
+  return _internal_removehighlightparams();
+}
+inline void KRAmevaEvent::unsafe_arena_set_allocated_removehighlightparams(
+    ::sl_pb::RemoveHighlightParams* removehighlightparams) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(removehighlightparams_);
+  }
+  removehighlightparams_ = removehighlightparams;
+  if (removehighlightparams) {
+    _has_bits_[0] |= 0x00001000u;
+  } else {
+    _has_bits_[0] &= ~0x00001000u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.removeHighlightParams)
+}
+inline ::sl_pb::RemoveHighlightParams* KRAmevaEvent::release_removehighlightparams() {
+  _has_bits_[0] &= ~0x00001000u;
+  ::sl_pb::RemoveHighlightParams* temp = removehighlightparams_;
+  removehighlightparams_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::sl_pb::RemoveHighlightParams* KRAmevaEvent::unsafe_arena_release_removehighlightparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.removeHighlightParams)
+  _has_bits_[0] &= ~0x00001000u;
+  ::sl_pb::RemoveHighlightParams* temp = removehighlightparams_;
+  removehighlightparams_ = nullptr;
+  return temp;
+}
+inline ::sl_pb::RemoveHighlightParams* KRAmevaEvent::_internal_mutable_removehighlightparams() {
+  _has_bits_[0] |= 0x00001000u;
+  if (removehighlightparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::RemoveHighlightParams>(GetArena());
+    removehighlightparams_ = p;
+  }
+  return removehighlightparams_;
+}
+inline ::sl_pb::RemoveHighlightParams* KRAmevaEvent::mutable_removehighlightparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.removeHighlightParams)
+  return _internal_mutable_removehighlightparams();
+}
+inline void KRAmevaEvent::set_allocated_removehighlightparams(::sl_pb::RemoveHighlightParams* removehighlightparams) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(removehighlightparams_);
+  }
+  if (removehighlightparams) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(removehighlightparams)->GetArena();
+    if (message_arena != submessage_arena) {
+      removehighlightparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, removehighlightparams, submessage_arena);
+    }
+    _has_bits_[0] |= 0x00001000u;
+  } else {
+    _has_bits_[0] &= ~0x00001000u;
+  }
+  removehighlightparams_ = removehighlightparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.removeHighlightParams)
 }
 
 // -------------------------------------------------------------------
