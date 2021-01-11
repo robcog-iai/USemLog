@@ -13,19 +13,22 @@ struct USEMLOG_API FSLOwlSemanticMapStatics
 	// Create Default semantic map
 	static TSharedPtr<FSLOwlSemanticMap> CreateDefaultSemanticMap(
 		const FString& InDocId,
-		const FString& InDocPrefix = "ue-def",
+		//const FString& InDocPrefix = "ue-def",
+		const FString& InDocPrefix = "log",
 		const FString& InDocOntologyName = "UE-DefaultMap");
 
 	// Create IAI Kitchen semantic map
 	static TSharedPtr<FSLOwlSemanticMap> CreateIAIKitchenSemanticMap(
 		const FString& InDocId,
-		const FString& InDocPrefix = "ue-iai-kitchen",
+		//const FString& InDocPrefix = "ue-iai-kitchen",
+		const FString& InDocPrefix = "log",
 		const FString& InDocOntologyName = "UE-IAI-Kitchen");
 
 	// Create IAI Supermarket semantic map
 	static TSharedPtr<FSLOwlSemanticMap> CreateIAISupermarketSemanticMap(
 		const FString& InDocId,
-		const FString& InDocPrefix = "ue-iai-supermarket",
+		//const FString& InDocPrefix = "ue-iai-supermarket",
+		const FString& InDocPrefix = "log",
 		const FString& InDocOntologyName = "UE-IAI-Supermarket");
 		
 		
