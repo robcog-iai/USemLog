@@ -8,6 +8,9 @@
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/Type/SLVisibleIndividual.h"
 #include "Mongo/SLMongoQueryManager.h"
+#include "Engine/StaticMeshActor.h"
+#include "Materials/Material.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Async.h"
 #include "HighResScreenshot.h"
 #include "ImageUtils.h"
@@ -183,40 +186,11 @@ void ASLCVScanner::Init()
 	}
 	else if (ScanMode == ESLCVScanMode::Scenes)
 	{
-		if (Scenes.Num() == 0)
+		if (!SetScanScenes())
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s no scenes found, aborting scan .."),
-				*FString(__func__), __LINE__, *GetName());
-			return;
-		}
-
-		if (!SetMongoQueryManager())
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the mongo query manager.."),
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set any scan scenes.."),
 				*FString(__FUNCTION__), __LINE__, *GetName());
 			return;
-		}
-
-		TArray<USLCVQScene*> ScenesToRemove;
-		for (auto& Scene : Scenes)
-		{
-			if (Scene->bIgnore)
-			{
-				ScenesToRemove.Add(Scene);
-				continue;
-			}
-			
-			if (!Scene->InitScene(IndividualManager, MongoQueryManager))
-			{
-				UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init scene %s.."),
-					*FString(__FUNCTION__), __LINE__, *GetName(), *Scene->GetName());
-				ScenesToRemove.Add(Scene);
-			}
-		}
-
-		for (auto* SceneToRemove : ScenesToRemove)
-		{
-			Scenes.Remove(SceneToRemove);
 		}
 	}
 
@@ -231,11 +205,18 @@ void ASLCVScanner::Init()
 	// Setup actor mask clones
 	if (RenderModes.Contains(ESLCVRenderMode::Mask))
 	{
-		if (!SetMaskClones())
+		if (ScanMode == ESLCVScanMode::Individuals)
 		{
-			RenderModes.Remove(ESLCVRenderMode::Mask);
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s Could not setup mask clones .."),
-				*FString(__func__), __LINE__, *GetName());
+			if (!SetMaskClones())
+			{
+				RenderModes.Remove(ESLCVRenderMode::Mask);
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s Could not setup mask clones .."),
+					*FString(__func__), __LINE__, *GetName());
+			}
+		}
+		else if (ScanMode == ESLCVScanMode::Scenes)
+		{
+
 		}
 	}
 
@@ -730,7 +711,10 @@ void ASLCVScanner::ShowOriginalIndividual()
 	}
 	else if (ScanMode == ESLCVScanMode::Scenes)
 	{
-		// todo
+		if (Scenes.IsValidIndex(IndividualOrSceneIdx))
+		{
+			Scenes[IndividualOrSceneIdx]->ShowOriginalMaterials();
+		}		
 	}
 }
 
@@ -761,7 +745,10 @@ void ASLCVScanner::ShowMaskIndividual()
 	}
 	else if (ScanMode == ESLCVScanMode::Scenes)
 	{
-		// todo
+		if (Scenes.IsValidIndex(IndividualOrSceneIdx))
+		{
+			Scenes[IndividualOrSceneIdx]->ShowMaskMaterials();
+		}
 	}
 }
 
@@ -922,6 +909,51 @@ bool ASLCVScanner::SetScanIndividuals()
 	return Individuals.Num() > 0;
 }
 
+// Set the scenes to be scanned
+bool ASLCVScanner::SetScanScenes()
+{
+	if (Scenes.Num() == 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s no scenes found, aborting scan .."),
+			*FString(__func__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (!SetMongoQueryManager())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not set the mongo query manager.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	TArray<USLCVQScene*> ScenesToRemove;
+	for (auto& Scene : Scenes)
+	{
+		// Remove scene if it is flagged with ignore
+		if (Scene->bIgnore)
+		{
+			ScenesToRemove.Add(Scene);
+			continue;
+		}
+
+		// Query and cache the scene actors poses
+		if (!Scene->InitScene(IndividualManager, MongoQueryManager))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not init scene %s.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *Scene->GetName());
+			ScenesToRemove.Add(Scene);
+		}
+	}
+
+	// Remove scenes
+	for (auto* Scene : ScenesToRemove)
+	{
+		Scenes.Remove(Scene);
+	}
+
+	return Scenes.Num() > 0;
+}
+
 // Spawn a light actor which will also be used to move the camera around
 bool ASLCVScanner::SetCameraPoseAndLightActor()
 {
@@ -945,22 +977,17 @@ bool ASLCVScanner::SetMaskClones()
 	}
 	else if (ScanMode == ESLCVScanMode::Scenes)
 	{
-		TArray<USLVisibleIndividual*> SceneIndividuals;
 		for (const auto& Scene : Scenes)
 		{
-			TArray<FString> SceneIds = Scene->GetIds();
-			for (const auto& Id : SceneIds)
+			if (bUseUniqueMaskValue)
 			{
-				if (auto BI = IndividualManager->GetIndividual(Id))
-				{
-					if (auto AsVI = Cast<USLVisibleIndividual>(BI))
-					{
-						SceneIndividuals.Add(AsVI);
-					}
-				}
+				Scene->GenerateMaskClones(DynMaskMatAssetPath);
+			}
+			else
+			{
+				Scene->GenerateMaskClones(DynMaskMatAssetPath, false, MaskColor);
 			}
 		}
-		GenerateMaskClones(SceneIndividuals);
 	}
 	return IndividualsMaskClones.Num() > 0;
 }
@@ -979,7 +1006,7 @@ void ASLCVScanner::GenerateMaskClones(const TArray<USLVisibleIndividual*>& Visib
 	DefaultMaskMaterial->bUsedWithStaticLighting = true;
 	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
 
-	// Create the dynamic mask material and set color
+	// Create a commong dynamic mask material and set its color
 	UMaterialInstanceDynamic* DynamicMaskMaterial = nullptr;
 	if (!bUseUniqueMaskValue)
 	{
@@ -989,12 +1016,20 @@ void ASLCVScanner::GenerateMaskClones(const TArray<USLVisibleIndividual*>& Visib
 
 	for (const auto& VI : VisibleIndividuals)
 	{
+		// Avoid creating duplicates
+		if (IndividualsMaskClones.Contains(VI))
+		{
+			continue;
+		}
+
+		// Use the individual unique visual mask value for the mask
 		if (bUseUniqueMaskValue)
 		{
 			DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 			DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FColor::FromHex(VI->GetVisualMaskValue()));
 		}
 
+		// Make sure parent is a static mesh actor
 		if (auto AsSMA = Cast<AStaticMeshActor>(VI->GetParentActor()))
 		{
 			FActorSpawnParameters Parameters;
@@ -1014,6 +1049,10 @@ void ASLCVScanner::GenerateMaskClones(const TArray<USLVisibleIndividual*>& Visib
 			}
 			SMAClone->SetActorHiddenInGame(true);
 			IndividualsMaskClones.Add(VI, SMAClone);
+		}
+		else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(VI->GetParentActor()))
+		{
+			//todo
 		}
 	}
 }

@@ -144,6 +144,9 @@ private:
 	// Set the individuals to be scanned
 	bool SetScanIndividuals();
 
+	// Set the scenes to be scanned
+	bool SetScanScenes();
+
 	// Spawn a light actor which will also be used to move the camera around
 	bool SetCameraPoseAndLightActor();
 

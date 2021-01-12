@@ -11,6 +11,10 @@
 // Forward declaration
 class ASLIndividualManager;
 class ASLMongoQueryManager;
+class AStaticMeshActor;
+class ASkeletalMeshActor;
+class UStaticMeshComponent;
+class UPoseableMeshComponent;
 
 /**
  * Base class for viz queries
@@ -24,8 +28,17 @@ public:
 	// Set the scene actors and cache their relative transforms to the world root
 	bool InitScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
 
-	// Public execute function
+	// Visualize scene
 	void ShowScene();
+
+	// Generate mask clones
+	void GenerateMaskClones(const TCHAR* MaterialPath, bool bUseInternalMask = true, FColor MaskColor = FColor::White);
+
+	// Show mask values of the scenes
+	void ShowMaskMaterials();
+
+	// Show original material
+	void ShowOriginalMaterials();
 
 	// Hide executed scene
 	void HideScene();
@@ -100,4 +113,12 @@ protected:
 private:
 	// Cache of the actors and their poses
 	TMap<AActor*, FTransform> SceneActorPoses;
+
+	// Static mesh mask clones
+	UPROPERTY(Transient)
+	TMap<AStaticMeshActor*, UStaticMeshComponent*> MaskClones;
+
+	// Skeletal mesh mask clones
+	UPROPERTY(Transient)
+	TMap<ASkeletalMeshActor*, UPoseableMeshComponent*> SkelMaskClones;
 };
