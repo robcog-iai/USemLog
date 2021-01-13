@@ -89,6 +89,9 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 protected:
+	// Setup user input bindings
+	void SetupInputBindings();
+
 	// Request a high res screenshot
 	void RequestScreenshotAsync();
 
@@ -112,7 +115,7 @@ private:
 	void ApplyRenderMode(ESLCVRenderMode Mode);
 
 	// Apply the camera pose
-	void ApplyCameraPose(FTransform NormalizedTransform);
+	void ApplyCameraPose(FTransform UnitSpherePose);
 
 	// Apply the individual into position
 	void ApplyIndividual(USLVisibleIndividual* Individual);
@@ -127,7 +130,7 @@ private:
 	void ShowMaskIndividual();
 
 	// Remove detachments and hide all actors in the world
-	void SetWorldState();
+	void HideAndDetachActors();
 
 	// Set screenshot image resolution
 	void SetScreenshotResolution(FIntPoint InResolution);
@@ -166,7 +169,7 @@ private:
 	void SetImageName();
 
 	// Calculate camera pose sphere radius (proportionate to the sphere bounds of the visual mesh)
-	void CalcCameraPoseSphereRadius();
+	void SetCameraPoseSphereRadius();
 
 	// Print progress to terminal
 	void PrintProgress() const;
@@ -178,6 +181,14 @@ protected:
 	// Skip auto init and start
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;
+
+	// Request the screenshots manually
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bManualTrigger : 1;
+
+	// Folder to store the images in
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bManualTrigger"))
+	FName UserInputActionName = "SLGenericTrigger";
 
 	// Output progress to terminal
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -211,6 +222,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
 	uint8 bSaveToFile : 1;
 
+	// Overwrite files
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
+	uint8 bOverwrite : 1;
+
 	// Use unique ids or the actor name as folder names
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location", meta = (editcondition = "bSaveToFile && ScanMode==ESLCVScanMode::Individuals"))
 	uint8 bUseIdsForFolderNames : 1;
@@ -241,7 +256,7 @@ protected:
 
 	// Color of the mask image
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
-	uint8 bUseUniqueMaskValue : 1;
+	uint8 bUseIndividualMaskValue : 1;
 
 	// Color of the mask image
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image", meta = (editcondition = "!bUseIndividualMaskValue"))
@@ -319,7 +334,7 @@ private:
 	ESLCVRenderMode PrevRenderMode = ESLCVRenderMode::NONE;
 
 	// Current radius of the camera sphere poses
-	float CurrCameraPoseSphereRadius;
+	float CurrCameraPoseSphereRadius = 1.f;
 
 	// Current individual index in the array
 	int32 IndividualOrSceneIdx = INDEX_NONE;

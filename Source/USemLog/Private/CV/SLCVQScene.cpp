@@ -20,9 +20,18 @@
 #include "Individuals/Type/SLBaseIndividual.h"
 #endif // WITH_EDITOR
 
+
 // Set the scene actors and cache their relative transforms to the world root
 bool USLCVQScene::InitScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
 {
+	// Clear any previous data
+	if (SceneActorPoses.Num() > 0 || StaticMaskClones.Num() > 0 || SkelMaskClones.Num() > 0)
+	{
+		SceneActorPoses.Empty();
+		StaticMaskClones.Empty();
+		SkelMaskClones.Empty();
+	}
+
 	if (bIgnore)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is set to be ignored, skipping execution.."),
@@ -74,10 +83,38 @@ void USLCVQScene::ShowScene()
 		Actor->SetActorTransform(Pose);
 		Actor->SetActorHiddenInGame(false);
 	}
+
+	for (const auto& SMClone : StaticMaskClones)
+	{
+		//FVector ActAbsLoc = SMClone.Key->GetActorLocation();
+
+		//FVector OrigRelLoc = SMClone.Key->GetStaticMeshComponent()->RelativeLocation;
+		//FVector OrigAbsLoc = SMClone.Key->GetStaticMeshComponent()->GetComponentLocation();
+
+		//FVector CloneRelLoc = SMClone.Value->RelativeLocation;
+		//FVector CloneAbsLoc = SMClone.Value->GetComponentLocation();
+
+		//UE_LOG(LogTemp, Error, TEXT("%s::%d ****LOC*** Act=%s; Loc=%s; \n\t\tORel=%s; OAbs=%s;\n\t\t CRel=%s; CAbs=%s;"),
+		//	*FString(__FUNCTION__), __LINE__, *SMClone.Key->GetName(), *ActAbsLoc.ToString(),
+		//	*OrigRelLoc.ToString(), *OrigAbsLoc.ToString(),
+		//	*CloneRelLoc.ToString(), *CloneAbsLoc.ToString());
+
+		SMClone.Value->SetWorldTransform(SMClone.Key->GetTransform());
+	}
+}
+
+// Hide scene
+void USLCVQScene::HideScene()
+{
+	for (const auto& ActPosePair : SceneActorPoses)
+	{
+		AActor* Actor = ActPosePair.Key;
+		Actor->SetActorHiddenInGame(true);
+	}
 }
 
 // Generate mask clones for the scene
-void USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseInternalMask, FColor MaskColor)
+bool USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseIndividualMaskValue, FColor MaskColor)
 {
 	// Get the dynamic mask material
 	UMaterial* DefaultMaskMaterial = LoadObject<UMaterial>(this, MaterialPath);
@@ -85,14 +122,14 @@ void USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseInterna
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s could not load default mask material.."),
 			*FString(__func__), __LINE__, *GetName());
-		return;
+		return false;
 	}
 	DefaultMaskMaterial->bUsedWithStaticLighting = true;
 	DefaultMaskMaterial->bUsedWithSkeletalMesh = true;
 
 	// Create a common dynamic mask material and set its color
 	UMaterialInstanceDynamic* DynamicMaskMaterial = nullptr;
-	if (!bUseInternalMask)
+	if (!bUseIndividualMaskValue)
 	{
 		DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), MaskColor);
@@ -101,43 +138,76 @@ void USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseInterna
 	// 
 	for (const auto& ActPosePair : SceneActorPoses)
 	{
-		if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(ActPosePair.Key))
+		AActor* CurrActor = ActPosePair.Key;
+		if (USLBaseIndividual* BI = FSLIndividualUtils::GetIndividualObject(CurrActor))
 		{
+			// Make sure individual is of type visible
 			if (auto VI = Cast<USLVisibleIndividual>(BI))
 			{
-				// Use the individual unique visual mask value for the mask
-				if (bUseInternalMask)
+				// Make sure parent is a static or skeletal mesh actor
+				if (auto AsSMA = Cast<AStaticMeshActor>(CurrActor))
 				{
-					DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
-					DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FColor::FromHex(VI->GetVisualMaskValue()));
+					// Check if the actor already has a clone
+					for (const auto& Comp : AsSMA->GetComponentsByClass(UStaticMeshComponent::StaticClass()))
+					{
+						if (Comp->GetName().EndsWith("_CVQSceneMaskClone"))
+						{
+							// There is alrady a clone, add to array
+							StaticMaskClones.Add(AsSMA, CastChecked<UStaticMeshComponent>(Comp));
+							continue;
+						}
+					}
+
+					// Duplicate/clone the static mesh component
+					UStaticMeshComponent* OrigSMC = AsSMA->GetStaticMeshComponent();
+					//UStaticMeshComponent* CloneSMC = NewObject<UStaticMeshComponent>(AsSMA);
+					//CloneSMC->SetStaticMesh(OrigSMC->GetStaticMesh());
+					UStaticMeshComponent* CloneSMC = DuplicateObject<UStaticMeshComponent>(OrigSMC, AsSMA,
+						FName(*OrigSMC->GetName().Append("_CVQSceneMaskClone")));
+
+					// Check if an individual mask needs to be created
+					if (bUseIndividualMaskValue)
+					{
+						// Use the individual unique visual mask value for the mask
+						DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+						DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FColor::FromHex(VI->GetVisualMaskValue()));
+					}
+
+					// Apply the dynamic mask material to the mesh
+					for (int32 MatIdx = 0; MatIdx < CloneSMC->GetNumMaterials(); ++MatIdx)
+					{
+#if WITH_EDITOR	
+						CloneSMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+#endif
+					}
+
+					// Register with actor
+					AsSMA->AddOwnedComponent(CloneSMC);
+					AsSMA->AddInstanceComponent(CloneSMC);
+					CloneSMC->OnComponentCreated();
+					CloneSMC->RegisterComponent();
+					AsSMA->RerunConstructionScripts();
+
+					// Attach to static mesh component (cannot be used since the world destroys attachments at one point)
+					//CloneSMC->AttachToComponent(OrigSMC, FAttachmentTransformRules::SnapToTargetIncludingScale);
+					//CloneSMC->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
+
+					// Not visible by default
+					CloneSMC->SetVisibility(false);
+
+					// Add to array
+					StaticMaskClones.Add(AsSMA, CloneSMC);
+					
 				}
+				else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(CurrActor))
+				{
 
-				//		// Make sure parent is a static mesh actor
-				//		if (auto AsSMA = Cast<AStaticMeshActor>(VI->GetParentActor()))
-				//		{
-				//			FActorSpawnParameters Parameters;
-				//			Parameters.Template = AsSMA;
-				//			Parameters.Template->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-				//			//Parameters.Instigator = SMA->GetInstigator();
-				//			Parameters.Name = FName(*(AsSMA->GetName() + TEXT("_MaskClone")));
-				//			AStaticMeshActor* SMAClone = GetWorld()->SpawnActor<AStaticMeshActor>(AsSMA->GetClass(), Parameters);
-				//			if (UStaticMeshComponent* SMC = SMAClone->GetStaticMeshComponent())
-				//			{
-				//				for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
-				//				{
-				//#if WITH_EDITOR	
-				//					SMC->SetMaterial(MatIdx, DynamicMaskMaterial);
-				//#endif
-				//				}
-				//			}
-				//			SMAClone->SetActorHiddenInGame(true);
-				//			IndividualsMaskClones.Add(VI, SMAClone);
-				//		}
-				//		else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(VI->GetParentActor()))
-				//		{
-				//			//todo
-				//		}
-
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("%s::%d Actor %s is not of type static or skeletal mesh, this should not happen.."),
+						*FString(__FUNCTION__), __LINE__, *CurrActor->GetName());
+				}
 			}
 			else
 			{
@@ -151,12 +221,13 @@ void USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseInterna
 				*FString(__FUNCTION__), __LINE__, *ActPosePair.Key->GetName());
 		}
 	}
+	return StaticMaskClones.Num() > 0 || SkelMaskClones.Num() > 0;
 }
 
 // Show mask values of the scenes
 void USLCVQScene::ShowMaskMaterials()
 {
-	for (const auto& Pair : MaskClones)
+	for (const auto& Pair : StaticMaskClones)
 	{
 		Pair.Key->GetStaticMeshComponent()->SetVisibility(false);
 		Pair.Value->SetVisibility(true);
@@ -172,7 +243,7 @@ void USLCVQScene::ShowMaskMaterials()
 // Show original material
 void USLCVQScene::ShowOriginalMaterials()
 {
-	for (const auto& Pair : MaskClones)
+	for (const auto& Pair : StaticMaskClones)
 	{
 		Pair.Key->GetStaticMeshComponent()->SetVisibility(true);
 		Pair.Value->SetVisibility(false);
@@ -182,16 +253,6 @@ void USLCVQScene::ShowOriginalMaterials()
 	{
 		Pair.Key->GetSkeletalMeshComponent()->SetVisibility(true);
 		Pair.Value->SetVisibility(false);
-	}
-}
-
-// Hide scene
-void USLCVQScene::HideScene()
-{
-	for (const auto& ActPosePair : SceneActorPoses)
-	{
-		AActor* Actor = ActPosePair.Key;
-		Actor->SetActorHiddenInGame(true);
 	}
 }
 
@@ -205,29 +266,55 @@ FString USLCVQScene::GetSceneName()
 	return SceneName;
 }
 
-// Get the bounding sphere radius of the scene
-float USLCVQScene::GetSphereBoundsRadius() const
+// Get the bounding sphere radius of the applied scene
+float USLCVQScene::GetAppliedSceneSphereBoundsRadius() const
 {
-	FBoxSphereBounds SphereBounds;
+	FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
 	for (const auto& ActPosePair : SceneActorPoses)
 	{
-		AActor* Actor = ActPosePair.Key;
-		if (auto AsSMA = Cast<AStaticMeshActor>(Actor))
+		AActor* CurrActor = ActPosePair.Key;
+		// Calculate sphere bounds radius
+		if (auto AsSMA = Cast<AStaticMeshActor>(CurrActor))
 		{
-			SphereBounds = SphereBounds + AsSMA->GetStaticMeshComponent()->Bounds;
+			// Get the mesh bounds
+			FBoxSphereBounds SMBounds = AsSMA->GetStaticMeshComponent()->Bounds;
+
+			// Set first value, or add the next ones
+			if (SphereBounds.SphereRadius > 0.f)
+			{
+				SphereBounds = SphereBounds + SMBounds;
+			}
+			else
+			{
+				// First value
+				SphereBounds = SMBounds;
+			}
 		}
-		else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(Actor))
+		else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(CurrActor))
 		{
-			SphereBounds = SphereBounds + AsSkelMA->GetSkeletalMeshComponent()->Bounds;
+			// Get the mesh bounds
+			FBoxSphereBounds SMBounds = AsSkelMA->GetSkeletalMeshComponent()->Bounds;
+
+			// Set first value, or add the next ones
+			if (SphereBounds.SphereRadius > 0.f)
+			{
+				SphereBounds = SphereBounds + SMBounds;
+			}
+			else
+			{
+				// First value
+				SphereBounds = SMBounds;
+			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is an unsupported actor type.."),
-				*FString(__FUNCTION__), __LINE__, *Actor->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is an unsupported actor type.. this should not happen.."),
+				*FString(__FUNCTION__), __LINE__, *CurrActor->GetName());
 		}
-	}	
+	}
 	return SphereBounds.SphereRadius;
 }
+
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
@@ -315,17 +402,18 @@ void USLCVQScene::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyC
 // Virtual implementation for the scene initialization
 bool USLCVQScene::InitSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
 {
-	// Iterate the scene actors, set their original world position
+	// Iterate the scene actors, cache their original world position,
 	for (const auto& Id : Ids)
 	{
-		if (auto Act = IndividualManager->GetIndividualActor(Id))
+		if (auto CurrActor = IndividualManager->GetIndividualActor(Id))
 		{
+			// Cache the original world pose
 			FTransform WorldPose = MQManager->GetIndividualPoseAt(Id, Timestamp);
-			SceneActorPoses.Add(Act, WorldPose);
+			SceneActorPoses.Add(CurrActor, WorldPose);
 		}
 	}
 
-	// Calculate the centroid/barycenter of the scene
+	// Calculate the sphere bounds radius and the centroid/barycenter of the scene
 	FVector SceneCentroidLocation;
 	for (const auto& ActPosePair : SceneActorPoses)
 	{

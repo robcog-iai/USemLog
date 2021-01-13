@@ -31,8 +31,11 @@ public:
 	// Visualize scene
 	void ShowScene();
 
+	// Hide executed scene
+	void HideScene();
+
 	// Generate mask clones
-	void GenerateMaskClones(const TCHAR* MaterialPath, bool bUseInternalMask = true, FColor MaskColor = FColor::White);
+	bool GenerateMaskClones(const TCHAR* MaterialPath, bool bUseIndividualMaskValue = true, FColor MaskColor = FColor::White);
 
 	// Show mask values of the scenes
 	void ShowMaskMaterials();
@@ -40,14 +43,11 @@ public:
 	// Show original material
 	void ShowOriginalMaterials();
 
-	// Hide executed scene
-	void HideScene();
-
 	// Get the scene name (if not set, it will generate a random one)
 	FString GetSceneName();
 
-	// Get the bounding sphere radius of the scene
-	float GetSphereBoundsRadius() const;
+	// Get the bounding sphere radius of the applied scene
+	float GetAppliedSceneSphereBoundsRadius() const;
 
 	// Get the actors in the scene
 	void GetSceneActors(TArray<AActor*>& OutActors) const {	SceneActorPoses.GenerateKeyArray(OutActors); }
@@ -112,11 +112,12 @@ protected:
 
 private:
 	// Cache of the actors and their poses
+	//UPROPERTY(Transient)
 	TMap<AActor*, FTransform> SceneActorPoses;
 
 	// Static mesh mask clones
 	UPROPERTY(Transient)
-	TMap<AStaticMeshActor*, UStaticMeshComponent*> MaskClones;
+	TMap<AStaticMeshActor*, UStaticMeshComponent*> StaticMaskClones;
 
 	// Skeletal mesh mask clones
 	UPROPERTY(Transient)
