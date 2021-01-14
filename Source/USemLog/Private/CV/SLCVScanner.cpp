@@ -300,6 +300,10 @@ void ASLCVScanner::Start()
 	// Remove detachments and hide all actors in the world
 	HideAndDetachActors();
 
+	// Make sure the camera light is not hidden
+	CameraPoseAndLightActor->SetActorHiddenInGame(false);
+	CameraPoseAndLightActor->GetLightComponent()->SetVisibility(true);
+
 	// Make sure pawn is not in the scene
 	GetWorld()->GetFirstPlayerController()->GetPawnOrSpectator()->SetActorHiddenInGame(true);
 
@@ -521,7 +525,8 @@ bool ASLCVScanner::SetNextScene()
 
 			// Set individual string
 			SceneNameString = bUseIdsForFolderNames ? Individuals[IndividualOrSceneIdx]->GetIdValue()
-				: Individuals[IndividualOrSceneIdx]->GetParentActor()->GetName();
+				//: Individuals[IndividualOrSceneIdx]->GetParentActor()->GetName();
+				: Individuals[IndividualOrSceneIdx]->GetClassValue();
 
 			// Set image name
 			IndividualOrSceneIdxString = FString::FromInt(IndividualOrSceneIdx) + "_" + FString::FromInt(Individuals.Num());
@@ -1014,7 +1019,7 @@ bool ASLCVScanner::SetCameraPoseAndLightActor()
 	SpawnParams.Name = TEXT("SL_CameraLightAndPose");
 	CameraPoseAndLightActor = GetWorld()->SpawnActor<ADirectionalLight>(SpawnParams);
 #if WITH_EDITOR
-	CameraPoseAndLightActor->SetActorLabel(FString(TEXT("L_CameraLightAndPose")));
+	CameraPoseAndLightActor->SetActorLabel(SpawnParams.Name.ToString());
 #endif // WITH_EDITOR
 	CameraPoseAndLightActor->SetMobility(EComponentMobility::Movable);
 	CameraPoseAndLightActor->GetLightComponent()->SetIntensity(CameraLightIntensity);
@@ -1094,6 +1099,9 @@ void ASLCVScanner::GenerateMaskClones(const TArray<USLVisibleIndividual*>& Visib
 			//Parameters.Instigator = SMA->GetInstigator();
 			Parameters.Name = FName(*(AsSMA->GetName() + TEXT("_MaskClone")));
 			AStaticMeshActor* SMAClone = GetWorld()->SpawnActor<AStaticMeshActor>(AsSMA->GetClass(), Parameters);
+#if WITH_EDITOR
+			SMAClone->SetActorLabel(Parameters.Name.ToString());
+#endif // WITH_EDITOR
 			if (UStaticMeshComponent* SMC = SMAClone->GetStaticMeshComponent())
 			{
 				for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
@@ -1121,7 +1129,7 @@ bool ASLCVScanner::SetBackgroundStaticMeshActor()
 	SpawnParams.Name = TEXT("SM_BackgroundSphereMesh");
 	BackgroundSMA = GetWorld()->SpawnActor<AStaticMeshActor>(SpawnParams);
 #if WITH_EDITOR
-	BackgroundSMA->SetActorLabel(FString(TEXT("SM_Background")));
+	BackgroundSMA->SetActorLabel(SpawnParams.Name.ToString());
 #endif // WITH_EDITOR
 
 	// Set the mesh component
@@ -1197,7 +1205,9 @@ bool ASLCVScanner::SetScanPoses(uint32 MaxNumPoints/*, float Radius*/)
 void ASLCVScanner::SetImageName()
 {
 	//CurrImageName = ViewIdxString + "_" + CameraPoseIdxString + "_" + ViewModeString;
-	CurrImageName = RenderModeString + "_" + IndividualOrSceneIdxString + "_" + CameraPoseIdxString + "_";
+	//CurrImageName = RenderModeString + "_" + IndividualOrSceneIdxString + "_" + CameraPoseIdxString;
+	//CurrImageName = RenderModeString + "_" + FString::FromInt(CameraPoseIdx);
+	CurrImageName = RenderModeString + "/img" + FString::FromInt(10000 + CameraPoseIdx); //ffmpg friendly
 }
 
 // Calculate camera pose sphere radius (proportionate to the sphere bounds of the visual mesh)

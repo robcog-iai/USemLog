@@ -276,7 +276,7 @@ protected:
 
 	// The scene bounding box radius camera multiplier
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
-	float CameraRadiusDistanceMultiplier = 1.75f;
+	float CameraRadiusDistanceMultiplier = 1.5f;
 
 
 	// Add ids from selection button
