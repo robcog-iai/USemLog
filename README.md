@@ -14,6 +14,8 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 
 ![](Documentation/GIF/ameva2_queries.gif)
 
+![](Documentation/GIF/ameva2_cv.gif)
+
 # Related publications
 
 ```bibtex
