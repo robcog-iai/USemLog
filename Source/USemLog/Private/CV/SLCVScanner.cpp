@@ -1254,13 +1254,16 @@ void ASLCVScanner::PrintProgress() const
 	int32 CurrScan = IndividualOrSceneIdx * CameraScanPoses.Num() * RenderModes.Num() 
 		+ CameraPoseIdx * RenderModes.Num() 
 		+ RenderModeIdx + 1;
-	int32 NumScans = Individuals.Num() * CameraScanPoses.Num() * RenderModes.Num();	
-	UE_LOG(LogTemp, Log, TEXT("%s::%d::%f Individual:\t%ld/%ld; CameraPose:\t%ld/%ld; ViewMode:\t%ld/%ld; Scan:\t%ld/%ld;"),
+
+	int32 TotalScenesOrIndividuals = ScanMode == ESLCVScanMode::Individuals ? Individuals.Num() : Scenes.Num();
+	int32 TotalNumScans = TotalScenesOrIndividuals * CameraScanPoses.Num() * RenderModes.Num();
+
+	UE_LOG(LogTemp, Log, TEXT("%s::%d::%f Individual/Scene:\t%ld/%ld; CameraPose:\t%ld/%ld; ViewMode:\t%ld/%ld; Scan:\t%ld/%ld;"),
 		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
-		IndividualOrSceneIdx + 1, Individuals.Num(),
+		IndividualOrSceneIdx + 1, TotalScenesOrIndividuals,
 		CameraPoseIdx + 1, CameraScanPoses.Num(),
 		RenderModeIdx + 1, RenderModes.Num(),
-		CurrScan, NumScans );
+		CurrScan, TotalNumScans);
 }
 
 // Save image to file

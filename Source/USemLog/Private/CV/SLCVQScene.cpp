@@ -46,30 +46,6 @@ bool USLCVQScene::InitScene(ASLIndividualManager* IndividualManager, ASLMongoQue
 		return false;
 	}
 
-	if (!MQManager || !MQManager->IsValidLowLevel() || MQManager->IsPendingKillOrUnreachable())
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager is not valid, aborting execution.."),
-			*FString(__FUNCTION__), __LINE__, *GetName());
-		return false;
-	}
-
-	if (!MQManager->IsConnected())
-	{
-		if (!MQManager->Connect(MongoIp, MongoPort))
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager could not connect to %s::%s, aborting execution.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *MongoIp, *FString::FromInt(MongoPort));
-			return false;
-		}
-	}
-
-	if (!MQManager->SetTask(Task) || !MQManager->SetEpisode(Episode))
-	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager could not set task %s or episode %s, aborting execution.."),
-			*FString(__FUNCTION__), __LINE__, *GetName(), *Task, *Episode);
-		return false;
-	}
-
 	return InitSceneImpl(IndividualManager, MQManager);
 }
 
@@ -86,19 +62,6 @@ void USLCVQScene::ShowScene()
 
 	for (const auto& SMClone : StaticMaskClones)
 	{
-		//FVector ActAbsLoc = SMClone.Key->GetActorLocation();
-
-		//FVector OrigRelLoc = SMClone.Key->GetStaticMeshComponent()->RelativeLocation;
-		//FVector OrigAbsLoc = SMClone.Key->GetStaticMeshComponent()->GetComponentLocation();
-
-		//FVector CloneRelLoc = SMClone.Value->RelativeLocation;
-		//FVector CloneAbsLoc = SMClone.Value->GetComponentLocation();
-
-		//UE_LOG(LogTemp, Error, TEXT("%s::%d ****LOC*** Act=%s; Loc=%s; \n\t\tORel=%s; OAbs=%s;\n\t\t CRel=%s; CAbs=%s;"),
-		//	*FString(__FUNCTION__), __LINE__, *SMClone.Key->GetName(), *ActAbsLoc.ToString(),
-		//	*OrigRelLoc.ToString(), *OrigAbsLoc.ToString(),
-		//	*CloneRelLoc.ToString(), *CloneAbsLoc.ToString());
-
 		SMClone.Value->SetWorldTransform(SMClone.Key->GetTransform());
 	}
 }
@@ -398,10 +361,35 @@ void USLCVQScene::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyC
 		}
 	}
 }
+#endif // WITH_EDITOR
 
 // Virtual implementation for the scene initialization
 bool USLCVQScene::InitSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
 {
+	if (!MQManager || !MQManager->IsValidLowLevel() || MQManager->IsPendingKillOrUnreachable())
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager is not valid, aborting execution.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+		return false;
+	}
+
+	if (!MQManager->IsConnected())
+	{
+		if (!MQManager->Connect(MongoIp, MongoPort))
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager could not connect to %s::%s, aborting execution.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *MongoIp, *FString::FromInt(MongoPort));
+			return false;
+		}
+	}
+
+	if (!MQManager->SetTask(Task) || !MQManager->SetEpisode(Episode))
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s mongo query manager could not set task %s or episode %s, aborting execution.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), *Task, *Episode);
+		return false;
+	}
+
 	// Iterate the scene actors, cache their original world position,
 	for (const auto& Id : Ids)
 	{
@@ -430,5 +418,5 @@ bool USLCVQScene::InitSceneImpl(ASLIndividualManager* IndividualManager, ASLMong
 
 	return SceneActorPoses.Num() > 0;
 }
-#endif // WITH_EDITOR
+
 

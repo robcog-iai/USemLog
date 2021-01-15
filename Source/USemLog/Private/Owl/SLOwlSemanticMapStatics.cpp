@@ -19,7 +19,8 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddEntityDefintion("knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	SemMap->AddEntityDefintion("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	SemMap->AddEntityDefintion("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	SemMap->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	SemMap->AddEntityDefintion("log", "http://knowrob.org/kb/unreal_log.owl#");
+	//SemMap->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add namespaces
 	SemMap->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
@@ -29,7 +30,8 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddNamespaceDeclaration("xmlns", "knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	SemMap->AddNamespaceDeclaration("xmlns", "rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	SemMap->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	SemMap->AddNamespaceDeclaration("xmlns", "log", "http://knowrob.org/kb/unreal_log.owl#");
+	//SemMap->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add imports
 	SemMap->CreateOntologyNode();
@@ -80,7 +82,7 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAISupermarketSema
 	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
 		InDocId, InDocPrefix, InDocOntologyName);
 
-	SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_supermarket_ue.owl");
+	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_supermarket_ue.owl");
 
 	return SemMap;
 }

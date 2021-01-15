@@ -17,7 +17,7 @@ class UStaticMeshComponent;
 class UPoseableMeshComponent;
 
 /**
- * Base class for viz queries
+ * Sets scenes from episodic memories for scanning
  */
 UCLASS()
 class USLCVQScene : public UDataAsset
@@ -110,7 +110,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "CV Scene|Edit")
 	bool bEnsureUniqueness = true;
 
-private:
 	// Cache of the actors and their poses
 	//UPROPERTY(Transient)
 	TMap<AActor*, FTransform> SceneActorPoses;
