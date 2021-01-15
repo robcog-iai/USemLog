@@ -13,9 +13,16 @@ bool USLCVQSceneStatic::InitSceneImpl(ASLIndividualManager* IndividualManager, A
 	{
 		if (auto CurrActor = IndividualManager->GetIndividualActor(Id))
 		{
-			// Cache the original world pose
-			FTransform WorldPose = CurrActor->GetTransform();
-			SceneActorPoses.Add(CurrActor, WorldPose);
+			if (auto* AsSMA = Cast<AStaticMeshActor>(CurrActor))
+			{
+				// Cache the original world pose (no episodic memory is used)
+				FTransform WorldPose = AsSMA->GetTransform();
+				SceneActorPoses.Add(AsSMA, WorldPose);
+			}
+			else if (auto* AsSkelMA = Cast<ASkeletalMeshActor>(CurrActor))
+			{
+				// todo
+			}
 		}
 	}
 
@@ -27,6 +34,29 @@ bool USLCVQSceneStatic::InitSceneImpl(ASLIndividualManager* IndividualManager, A
 		SceneCentroidLocation += WorldPose.GetLocation();
 	}
 	SceneCentroidLocation /= SceneActorPoses.Num();
+
+	// TODO needs testing
+	//// Calculate centroid location
+	//FVector SceneCentroidLocation;
+	//FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
+	//// Add up static mesh bounds
+	//for (const auto& SMAPosePair : SceneActorPoses)
+	//{
+	//	// Get the mesh bounds
+	//	FBoxSphereBounds SMBounds = SMAPosePair.Key->GetStaticMeshComponent()->Bounds;
+
+	//	// Set first value, or add the next ones
+	//	if (SphereBounds.SphereRadius > 0.f)
+	//	{
+	//		SphereBounds = SphereBounds + SMBounds;
+	//	}
+	//	else
+	//	{
+	//		// First value
+	//		SphereBounds = SMBounds;
+	//	}
+	//}
+	//SceneCentroidLocation = SphereBounds.Origin;
 
 	// Move scene to root
 	for (auto& ActPosePair : SceneActorPoses)

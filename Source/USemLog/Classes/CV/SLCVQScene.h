@@ -49,9 +49,6 @@ public:
 	// Get the bounding sphere radius of the applied scene
 	float GetAppliedSceneSphereBoundsRadius() const;
 
-	// Get the actors in the scene
-	void GetSceneActors(TArray<AActor*>& OutActors) const {	SceneActorPoses.GenerateKeyArray(OutActors); }
-
 	// Get the ids
 	TArray<FString> GetIds() const { return Ids; };
 
@@ -112,7 +109,14 @@ protected:
 
 	// Cache of the actors and their poses
 	//UPROPERTY(Transient)
-	TMap<AActor*, FTransform> SceneActorPoses;
+	TMap<AStaticMeshActor*, FTransform> SceneActorPoses;
+
+	// Skeletal actor poses
+	TMap<ASkeletalMeshActor*, TPair<FTransform, TMap<int32, FTransform>>> SceneSkelActorPoses;
+
+	// Original poseable skeletal mesh clone
+	UPROPERTY(Transient)
+	TMap<ASkeletalMeshActor*, UPoseableMeshComponent*> SkelOrigClones;
 
 	// Static mesh mask clones
 	UPROPERTY(Transient)

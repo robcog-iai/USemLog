@@ -4,6 +4,8 @@
 #include "CV/SLCVQScene.h"
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/Type/SLVisibleIndividual.h"
+#include "Individuals/Type/SLSkeletalIndividual.h"
+#include "Individuals/Type/SLBoneIndividual.h"
 #include "Mongo/SLMongoQueryManager.h"
 #include "Engine/StaticMeshActor.h"
 #include "Animation/SkeletalMeshActor.h"
@@ -19,7 +21,6 @@
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #endif // WITH_EDITOR
-
 
 // Set the scene actors and cache their relative transforms to the world root
 bool USLCVQScene::InitScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
@@ -52,17 +53,48 @@ bool USLCVQScene::InitScene(ASLIndividualManager* IndividualManager, ASLMongoQue
 // Public execute function
 void USLCVQScene::ShowScene()
 {
+	// Move static mesh actors (and mask clones) to the given poses
 	for (const auto& ActPosePair : SceneActorPoses)
 	{
-		AActor* Actor = ActPosePair.Key;
-		FTransform Pose = ActPosePair.Value;
-		Actor->SetActorTransform(Pose);
-		Actor->SetActorHiddenInGame(false);
+		AStaticMeshActor* CurrSMA = ActPosePair.Key;
+		FTransform CurrPose = ActPosePair.Value;
+		CurrSMA->SetActorTransform(CurrPose);
+		CurrSMA->SetActorHiddenInGame(false);
+
+		if (auto* CurrClone = StaticMaskClones.Find(CurrSMA))
+		{
+			(*CurrClone)->SetWorldTransform(CurrPose);
+		}
 	}
 
-	for (const auto& SMClone : StaticMaskClones)
+	// Move skeletal mesh actors (and mask clones) to the given poses
+	for (const auto& SkelActPosePair : SceneSkelActorPoses)
 	{
-		SMClone.Value->SetWorldTransform(SMClone.Key->GetTransform());
+		ASkeletalMeshActor* CurrSkelMA = SkelActPosePair.Key;
+		FTransform CurrSkelMAPose = SkelActPosePair.Value.Key;
+		CurrSkelMA->SetActorTransform(CurrSkelMAPose);
+		CurrSkelMA->SetActorHiddenInGame(false);
+
+		// Apply orig clone bone poses
+		TMap<int32, FTransform> CurrBonePoses = SkelActPosePair.Value.Value;
+		if (auto* OrigClone = SkelOrigClones.Find(CurrSkelMA))
+		{
+			for (const auto& BonePosePair : CurrBonePoses)
+			{
+				const FName BoneName = (*OrigClone)->GetBoneName(BonePosePair.Key);
+				(*OrigClone)->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+			}
+		}
+
+		// Apply mask clone bone poses
+		if (auto* MaskClone = SkelMaskClones.Find(CurrSkelMA))
+		{
+			for (const auto& BonePosePair : CurrBonePoses)
+			{
+				const FName BoneName = (*MaskClone)->GetBoneName(BonePosePair.Key);
+				(*MaskClone)->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+			}
+		}
 	}
 }
 
@@ -71,8 +103,12 @@ void USLCVQScene::HideScene()
 {
 	for (const auto& ActPosePair : SceneActorPoses)
 	{
-		AActor* Actor = ActPosePair.Key;
-		Actor->SetActorHiddenInGame(true);
+		ActPosePair.Key->SetActorHiddenInGame(true);
+	}
+
+	for (const auto& SkelActPosePair : SceneSkelActorPoses)
+	{
+		SkelActPosePair.Key->SetActorHiddenInGame(true);
 	}
 }
 
@@ -127,6 +163,7 @@ bool USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseIndivid
 					//CloneSMC->SetStaticMesh(OrigSMC->GetStaticMesh());
 					UStaticMeshComponent* CloneSMC = DuplicateObject<UStaticMeshComponent>(OrigSMC, AsSMA,
 						FName(*OrigSMC->GetName().Append("_CVQSceneMaskClone")));
+					CloneSMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 					// Check if an individual mask needs to be created
 					if (bUseIndividualMaskValue)
@@ -139,9 +176,7 @@ bool USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseIndivid
 					// Apply the dynamic mask material to the mesh
 					for (int32 MatIdx = 0; MatIdx < CloneSMC->GetNumMaterials(); ++MatIdx)
 					{
-#if WITH_EDITOR	
 						CloneSMC->SetMaterial(MatIdx, DynamicMaskMaterial);
-#endif
 					}
 
 					// Register with actor
@@ -158,13 +193,70 @@ bool USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseIndivid
 					// Not visible by default
 					CloneSMC->SetVisibility(false);
 
-					// Add to array
+					// Add to map
 					StaticMaskClones.Add(AsSMA, CloneSMC);
 					
 				}
 				else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(CurrActor))
 				{
+					// Check if the actor already has a clone
+					for (const auto& Comp : AsSkelMA->GetComponentsByClass(UPoseableMeshComponent::StaticClass()))
+					{
+						if (Comp->GetName().EndsWith("_CVQSceneMaskClone"))
+						{
+							// There is alrady a clone, add to array
+							SkelMaskClones.Add(AsSkelMA, CastChecked<UPoseableMeshComponent>(Comp));
+							continue;
+						}
+					}
 
+					// Create skeletal mesh clone
+					FName NewComponentName = FName(*AsSkelMA->GetSkeletalMeshComponent()->GetName().Append("_CVQSceneMaskClone"));
+					UPoseableMeshComponent* CloneSkelMC = NewObject<UPoseableMeshComponent>(AsSkelMA, NewComponentName);
+					CloneSkelMC->SetSkeletalMesh(AsSkelMA->GetSkeletalMeshComponent()->SkeletalMesh);
+					CloneSkelMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+					CloneSkelMC->bPerBoneMotionBlur = false;
+					CloneSkelMC->bHasMotionBlurVelocityMeshes = false;
+
+					// Check if an individual mask needs to be created
+					if (bUseIndividualMaskValue)
+					{
+						if (auto SkelI = Cast<USLSkeletalIndividual>(BI))
+						{
+							for (const auto& BoneI : SkelI->GetBoneIndividuals())
+							{
+								DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
+								DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"),
+									FColor::FromHex(BoneI->GetVisualMaskValue()));
+								CloneSkelMC->SetMaterial(BoneI->GetMaterialIndex(), DynamicMaskMaterial);
+							}
+						}
+						else
+						{
+							UE_LOG(LogTemp, Error, TEXT("%s::%d skeletal actor %s does not have a skeletal individual representation.. "),
+								*FString(__FUNCTION__), __LINE__, *AsSkelMA->GetName());
+						}
+					}
+					else
+					{
+						for (int32 MatIdx = 0; MatIdx < CloneSkelMC->GetNumMaterials(); ++MatIdx)
+						{
+							CloneSkelMC->SetMaterial(MatIdx, DynamicMaskMaterial);
+						}
+					}
+
+					// Register with actor
+					AsSkelMA->AddOwnedComponent(CloneSkelMC);
+					AsSkelMA->AddInstanceComponent(CloneSkelMC);
+					CloneSkelMC->OnComponentCreated();
+					CloneSkelMC->RegisterComponent();
+					AsSkelMA->RerunConstructionScripts();
+
+					// Not visible by default
+					CloneSkelMC->SetVisibility(false);
+
+					// Add to map
+					SkelMaskClones.Add(AsSkelMA, CloneSkelMC);
 				}
 				else
 				{
@@ -233,51 +325,48 @@ FString USLCVQScene::GetSceneName()
 float USLCVQScene::GetAppliedSceneSphereBoundsRadius() const
 {
 	FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
-	for (const auto& ActPosePair : SceneActorPoses)
+
+	// Add up static mesh bounds
+	for (const auto& SMAPosePair : SceneActorPoses)
 	{
-		AActor* CurrActor = ActPosePair.Key;
-		// Calculate sphere bounds radius
-		if (auto AsSMA = Cast<AStaticMeshActor>(CurrActor))
-		{
-			// Get the mesh bounds
-			FBoxSphereBounds SMBounds = AsSMA->GetStaticMeshComponent()->Bounds;
+		// Get the mesh bounds
+		FBoxSphereBounds SMBounds = SMAPosePair.Key->GetStaticMeshComponent()->Bounds;
 
-			// Set first value, or add the next ones
-			if (SphereBounds.SphereRadius > 0.f)
-			{
-				SphereBounds = SphereBounds + SMBounds;
-			}
-			else
-			{
-				// First value
-				SphereBounds = SMBounds;
-			}
-		}
-		else if (auto AsSkelMA = Cast<ASkeletalMeshActor>(CurrActor))
+		// Set first value, or add the next ones
+		if (SphereBounds.SphereRadius > 0.f)
 		{
-			// Get the mesh bounds
-			FBoxSphereBounds SMBounds = AsSkelMA->GetSkeletalMeshComponent()->Bounds;
-
-			// Set first value, or add the next ones
-			if (SphereBounds.SphereRadius > 0.f)
-			{
-				SphereBounds = SphereBounds + SMBounds;
-			}
-			else
-			{
-				// First value
-				SphereBounds = SMBounds;
-			}
+			SphereBounds = SphereBounds + SMBounds;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d %s is an unsupported actor type.. this should not happen.."),
-				*FString(__FUNCTION__), __LINE__, *CurrActor->GetName());
+			// First value
+			SphereBounds = SMBounds;
 		}
 	}
+
+	// Add up skeletal mesh bounds
+	for (const auto& SkelMAPosePair : SceneSkelActorPoses)
+	{
+		// Get the original poseable mesh bounds
+		if (auto* OrigClone = SkelOrigClones.Find(SkelMAPosePair.Key))
+		{
+			FBoxSphereBounds SMBounds = (*OrigClone)->Bounds;
+
+			// Set first value, or add the next ones
+			if (SphereBounds.SphereRadius > 0.f)
+			{
+				SphereBounds = SphereBounds + SMBounds;
+			}
+			else
+			{
+				// First value
+				SphereBounds = SMBounds;
+			}
+		}
+	}
+
 	return SphereBounds.SphereRadius;
 }
-
 
 #if WITH_EDITOR
 // Called when a property is changed in the editor
@@ -395,28 +484,133 @@ bool USLCVQScene::InitSceneImpl(ASLIndividualManager* IndividualManager, ASLMong
 	{
 		if (auto CurrActor = IndividualManager->GetIndividualActor(Id))
 		{
-			// Cache the original world pose
-			FTransform WorldPose = MQManager->GetIndividualPoseAt(Id, Timestamp);
-			SceneActorPoses.Add(CurrActor, WorldPose);
+			if (auto* AsSMA = Cast<AStaticMeshActor>(CurrActor))
+			{
+				// Cache the original world pose
+				FTransform WorldPose = MQManager->GetIndividualPoseAt(Id, Timestamp);
+				SceneActorPoses.Add(AsSMA, WorldPose);
+			}
+			else if (auto* AsSkelMA = Cast<ASkeletalMeshActor>(CurrActor))
+			{
+				TPair<FTransform, TMap<int32, FTransform>> SkelWorldPose = MQManager->GetSkeletalIndividualPoseAt(Id, Timestamp);
+				SceneSkelActorPoses.Add(AsSkelMA, SkelWorldPose);
+				AsSkelMA->GetSkeletalMeshComponent()->SetVisibility(false);
+
+
+				/* Create a poseable mesh clone with the original materials */
+				// Check if the actor already has a clone
+				for (const auto& Comp : AsSkelMA->GetComponentsByClass(UPoseableMeshComponent::StaticClass()))
+				{
+					if (Comp->GetName().EndsWith("_CVQSceneOrigClone"))
+					{
+						// There is alrady a clone, add to array
+						SkelOrigClones.Add(AsSkelMA, CastChecked<UPoseableMeshComponent>(Comp));
+						continue;
+					}
+				}
+
+				// Create a new skeletal mesh clone
+				FName NewComponentName = FName(*AsSkelMA->GetSkeletalMeshComponent()->GetName().Append("_CVQSceneOrigClone"));
+				UPoseableMeshComponent* CloneSkelMC = NewObject<UPoseableMeshComponent>(AsSkelMA, NewComponentName);
+				CloneSkelMC->SetSkeletalMesh(AsSkelMA->GetSkeletalMeshComponent()->SkeletalMesh);
+				CloneSkelMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				CloneSkelMC->bPerBoneMotionBlur = false;
+				CloneSkelMC->bHasMotionBlurVelocityMeshes = false;
+
+				// Register with actor
+				AsSkelMA->AddOwnedComponent(CloneSkelMC);
+				AsSkelMA->AddInstanceComponent(CloneSkelMC);
+				CloneSkelMC->OnComponentCreated();
+				CloneSkelMC->RegisterComponent();
+				AsSkelMA->RerunConstructionScripts();
+
+				// Add to map
+				SkelOrigClones.Add(AsSkelMA, CloneSkelMC);
+			}
 		}
 	}
 
-	// Calculate the sphere bounds radius and the centroid/barycenter of the scene
+	// Calculate the centroid/barycenter of the scene
 	FVector SceneCentroidLocation;
 	for (const auto& ActPosePair : SceneActorPoses)
 	{
 		FTransform WorldPose = ActPosePair.Value;
 		SceneCentroidLocation += WorldPose.GetLocation();
 	}
-	SceneCentroidLocation /= SceneActorPoses.Num();
+	int32 TotalNumBonePoses = 0;
+	for (const auto& SkelActPosePair : SceneSkelActorPoses)
+	{
+		// Use only bone locations for the centroid calculation
+		//FTransform WorldPose = SkelActPosePair.Value.Key;
+		TMap<int32, FTransform> BonePoses = SkelActPosePair.Value.Value;
+		TotalNumBonePoses += BonePoses.Num();
+		for (auto BonePosePair : BonePoses)
+		{
+			SceneCentroidLocation += BonePosePair.Value.GetLocation();
+		}
+	}
+	SceneCentroidLocation /= (SceneActorPoses.Num() + TotalNumBonePoses);
+
+	// TODO needs testing
+	//// Calculate centroid location
+	//FVector SceneCentroidLocation;
+	//FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
+	//// Add up static mesh bounds
+	//for (const auto& SMAPosePair : SceneActorPoses)
+	//{
+	//	// Get the mesh bounds
+	//	FBoxSphereBounds SMBounds = SMAPosePair.Key->GetStaticMeshComponent()->Bounds;
+
+	//	// Set first value, or add the next ones
+	//	if (SphereBounds.SphereRadius > 0.f)
+	//	{
+	//		SphereBounds = SphereBounds + SMBounds;
+	//	}
+	//	else
+	//	{
+	//		// First value
+	//		SphereBounds = SMBounds;
+	//	}
+	//}
+	//// Add up skeletal mesh bounds
+	//for (const auto& SkelMAPosePair : SceneSkelActorPoses)
+	//{
+	//	// Get the original poseable mesh bounds
+	//	if (auto* OrigClone = SkelOrigClones.Find(SkelMAPosePair.Key))
+	//	{
+	//		FBoxSphereBounds SMBounds = (*OrigClone)->Bounds;
+
+	//		// Set first value, or add the next ones
+	//		if (SphereBounds.SphereRadius > 0.f)
+	//		{
+	//			SphereBounds = SphereBounds + SMBounds;
+	//		}
+	//		else
+	//		{
+	//			// First value
+	//			SphereBounds = SMBounds;
+	//		}
+	//	}
+	//}
+	//SceneCentroidLocation = SphereBounds.Origin;
 
 	// Move scene to root
 	for (auto& ActPosePair : SceneActorPoses)
 	{
 		ActPosePair.Value.AddToTranslation(-SceneCentroidLocation);
 	}
+	for (auto& SkelActPosePair : SceneSkelActorPoses)
+	{
+		// Moving the skel actor is probably not needed
+		SkelActPosePair.Value.Key.AddToTranslation(-SceneCentroidLocation);
+		
+		// Moving the bones is needed
+		for (auto& BonePosePair : SkelActPosePair.Value.Value)
+		{
+			BonePosePair.Value.AddToTranslation(-SceneCentroidLocation);
+		}
+	}
 
-	return SceneActorPoses.Num() > 0;
+	return SceneActorPoses.Num() > 0 || SceneSkelActorPoses.Num() > 0;
 }
-
 
