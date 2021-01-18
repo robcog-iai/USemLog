@@ -26,37 +26,37 @@ bool USLCVQSceneStatic::InitSceneImpl(ASLIndividualManager* IndividualManager, A
 		}
 	}
 
-	// Calculate the sphere bounds radius and the centroid/barycenter of the scene
-	FVector SceneCentroidLocation;
-	for (const auto& ActPosePair : SceneActorPoses)
-	{
-		FTransform WorldPose = ActPosePair.Value;
-		SceneCentroidLocation += WorldPose.GetLocation();
-	}
-	SceneCentroidLocation /= SceneActorPoses.Num();
-
-	// TODO needs testing
-	//// Calculate centroid location
+	//// Calculate the sphere bounds radius and the centroid/barycenter of the scene
 	//FVector SceneCentroidLocation;
-	//FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
-	//// Add up static mesh bounds
-	//for (const auto& SMAPosePair : SceneActorPoses)
+	//for (const auto& ActPosePair : SceneActorPoses)
 	//{
-	//	// Get the mesh bounds
-	//	FBoxSphereBounds SMBounds = SMAPosePair.Key->GetStaticMeshComponent()->Bounds;
-
-	//	// Set first value, or add the next ones
-	//	if (SphereBounds.SphereRadius > 0.f)
-	//	{
-	//		SphereBounds = SphereBounds + SMBounds;
-	//	}
-	//	else
-	//	{
-	//		// First value
-	//		SphereBounds = SMBounds;
-	//	}
+	//	FTransform WorldPose = ActPosePair.Value;
+	//	SceneCentroidLocation += WorldPose.GetLocation();
 	//}
-	//SceneCentroidLocation = SphereBounds.Origin;
+	//SceneCentroidLocation /= SceneActorPoses.Num();
+
+
+	// Calculate centroid location
+	FVector SceneCentroidLocation;
+	FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
+	// Add up static mesh bounds
+	for (const auto& SMAPosePair : SceneActorPoses)
+	{
+		// Get the mesh bounds
+		FBoxSphereBounds SMBounds = SMAPosePair.Key->GetStaticMeshComponent()->Bounds;
+
+		// Set first value, or add the next ones
+		if (SphereBounds.SphereRadius > 0.f)
+		{
+			SphereBounds = SphereBounds + SMBounds;
+		}
+		else
+		{
+			// First value
+			SphereBounds = SMBounds;
+		}
+	}
+	SceneCentroidLocation = SphereBounds.Origin;
 
 	// Move scene to root
 	for (auto& ActPosePair : SceneActorPoses)

@@ -130,7 +130,13 @@ private:
 	void ShowMaskIndividual();
 
 	// Remove detachments and hide all actors in the world
-	void HideAndDetachActors();
+	void HideAllActors();
+
+	// Disable physiscs and detach all actors
+	void DisablePhysicsAndDetachAllActors();
+
+	// Set ppv proerties (disable / ambient occlusion)
+	void SetPostProcessVolumeProperties();
 
 	// Set screenshot image resolution
 	void SetScreenshotResolution(FIntPoint InResolution);

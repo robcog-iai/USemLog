@@ -171,6 +171,9 @@ void ASLCVScanner::Init()
 		}
 	}
 
+	// Disable physiscs and detach all actors
+	DisablePhysicsAndDetachAllActors();
+
 	/* Set the individual manager */
 	if (!SetIndividualManager())
 	{
@@ -251,6 +254,9 @@ void ASLCVScanner::Init()
 		}
 	}
 
+	// Set ppv proerties (disable / ambient occlusion)
+	SetPostProcessVolumeProperties();
+
 	/* Set render and screenshot params */
 	SetScreenshotResolution(Resolution);
 	SetRenderParams();
@@ -298,7 +304,7 @@ void ASLCVScanner::Start()
 	}
 
 	// Remove detachments and hide all actors in the world
-	HideAndDetachActors();
+	HideAllActors();
 
 	// Make sure the camera light is not hidden
 	CameraPoseAndLightActor->SetActorHiddenInGame(false);
@@ -811,7 +817,17 @@ void ASLCVScanner::ShowMaskIndividual()
 }
 
 // Remove detachments and hide all actors in the world
-void ASLCVScanner::HideAndDetachActors()
+void ASLCVScanner::HideAllActors()
+{
+	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
+	{		
+		// Hide by default
+		ActItr->SetActorHiddenInGame(true);
+	}
+}
+
+// Disable physiscs and detach all actors
+void ASLCVScanner::DisablePhysicsAndDetachAllActors()
 {
 	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 	{
@@ -826,11 +842,12 @@ void ASLCVScanner::HideAndDetachActors()
 
 		// Clear any attachments between actors
 		ActItr->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		
-		// Hide by default
-		ActItr->SetActorHiddenInGame(true);
 	}
+}
 
+// Set ppv proerties (disable / ambient occlusion)
+void ASLCVScanner::SetPostProcessVolumeProperties()
+{
 	if (bDisablePostProcessVolumes || bDisableAO)
 	{
 		for (TActorIterator<APostProcessVolume> PPVItr(GetWorld()); PPVItr; ++PPVItr)
@@ -1106,11 +1123,10 @@ void ASLCVScanner::GenerateMaskClones(const TArray<USLVisibleIndividual*>& Visib
 			{
 				for (int32 MatIdx = 0; MatIdx < SMC->GetNumMaterials(); ++MatIdx)
 				{
-#if WITH_EDITOR	
 					SMC->SetMaterial(MatIdx, DynamicMaskMaterial);
-#endif
 				}
 			}
+			SMAClone->DisableComponentsSimulatePhysics();
 			SMAClone->SetActorHiddenInGame(true);
 			IndividualsMaskClones.Add(VI, SMAClone);
 		}

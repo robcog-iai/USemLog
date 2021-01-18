@@ -61,6 +61,15 @@ protected:
 	// Virtual implementation for the scene initialization
 	virtual bool InitSceneImpl(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
 
+	// Iterate ids, set up scene actors and their original world poses
+	bool SetSceneActors(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
+
+	// Calculate scene center pose
+	FVector CalcSceneCenterPose();
+
+	// Move scene to root (scan) location (0,0,0)
+	void MoveSceneToRootLocation(FVector Offset);
+
 public:
 	UPROPERTY(EditAnywhere, Category = "CV Scene")
 	bool bIgnore;
