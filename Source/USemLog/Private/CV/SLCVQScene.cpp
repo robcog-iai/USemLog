@@ -65,39 +65,15 @@ void USLCVQScene::ShowScene()
 		AStaticMeshActor* CurrSMA = ActPosePair.Key;
 		FTransform CurrPose = ActPosePair.Value;
 		CurrSMA->SetActorHiddenInGame(false);
-
-
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Act=%s; ActLoc=%s; CurrPose=%s; PRE"),
-			*FString(__FUNCTION__), __LINE__,
-			*CurrSMA->GetName(),
-			*CurrSMA->GetActorLocation().ToString(),
-			*CurrPose.GetLocation().ToString());
-
-
+		
+		// Set the actor with the original materials in its location
 		CurrSMA->SetActorTransform(CurrPose);
-
-		UE_LOG(LogTemp, Error, TEXT("%s::%d Act=%s; ActLoc=%s; CurrPose=%s; POST"),
-			*FString(__FUNCTION__), __LINE__,
-			*CurrSMA->GetName(),			
-			*CurrSMA->GetActorLocation().ToString(),
-			*CurrPose.GetLocation().ToString());
-
+		
+		// Set the clones in their locations
+		// for some reason it has to be done manually again, the relative transform gets broken
 		if (auto* CurrClone = StaticMaskClones.Find(CurrSMA))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("\t\t OrigComp=%s; \t\t CloneComp=%s; \t\t CloneCompRel=%s; ** PRE **"),
-				*CurrSMA->GetStaticMeshComponent()->GetComponentLocation().ToString(),
-				*(*CurrClone)->GetRelativeTransform().GetLocation().ToString(),
-				*(*CurrClone)->GetComponentLocation().ToString());
-
-			//(*CurrClone)->SetRelativeTransform(FTransform::Identity);
-			//(*CurrClone)->SetRelativeTransform(FTransform::Identity);
 			(*CurrClone)->SetWorldTransform(CurrPose);
-			//(*CurrClone)->SetWorldTransform(CurrSMA->GetStaticMeshComponent()->GetComponentTransform());
-
-			UE_LOG(LogTemp, Warning, TEXT("\t\t OrigComp=%s; \t\t CloneComp=%s; \t\t CloneCompRel=%s; ** POST **"),
-				*CurrSMA->GetStaticMeshComponent()->GetComponentLocation().ToString(),
-				*(*CurrClone)->GetRelativeTransform().GetLocation().ToString(),
-				*(*CurrClone)->GetComponentLocation().ToString());
 		}
 	}
 
@@ -202,7 +178,10 @@ bool USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseIndivid
 					FName(*OrigSMC->GetName().Append("_CVQSceneMaskClone")));
 				MaskCloneSMC->SetSimulatePhysics(false);
 				MaskCloneSMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				//MaskCloneSMC->AttachToComponent(OrigSMC, FAttachmentTransformRules::SnapToTargetIncludingScale);
 				//MaskCloneSMC->SetWorldTransform(OrigSMC->GetComponentTransform());
+				//MaskCloneSMC->SetRelativeTransform(FTransform::Identity);
+				//MaskCloneSMC->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
 
 				// Check if an individual mask needs to be created
 				if (bUseIndividualMaskValue)
@@ -225,16 +204,8 @@ bool USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseIndivid
 				MaskCloneSMC->RegisterComponent();
 				CurrSMA->RerunConstructionScripts();
 
-				//MaskCloneSMC->AttachToComponent(OrigSMC, FAttachmentTransformRules::SnapToTargetIncludingScale);
-				//MaskCloneSMC->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
-
 				// Not visible by default
-				//MaskCloneSMC->SetVisibility(false);
-
-				UE_LOG(LogTemp, Warning, TEXT("\t\t OrigComp=%s; \t\t CloneComp=%s; \t\t CloneCompRel=%s; ** INIT **"),
-					*CurrSMA->GetStaticMeshComponent()->GetComponentLocation().ToString(),
-					*MaskCloneSMC->GetRelativeTransform().GetLocation().ToString(),
-					*MaskCloneSMC->GetComponentLocation().ToString());
+				MaskCloneSMC->SetVisibility(false);
 
 				// Add to map
 				StaticMaskClones.Add(CurrSMA, MaskCloneSMC);
