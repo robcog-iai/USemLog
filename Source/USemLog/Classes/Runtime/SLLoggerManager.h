@@ -40,9 +40,6 @@ protected:
 #if WITH_EDITOR
 	// Called when a property is changed in the editor
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-
-	// Called by the editor to query whether a property of this object is allowed to be modified.
-	virtual bool CanEditChange(const UProperty* InProperty) const override;
 #endif // WITH_EDITOR
 
 public:	
@@ -87,6 +84,9 @@ public:
 	// Set log symbolic data
 	void SetLogActionsAndEvens(bool Value) { bLogActionsAndEvents = Value; };
 
+	// Get semantic map id
+	FString GetSemanticMapId() const { return LocationParams.SemanticMapId; };
+
 	// Get TaskId
 	FString GetTaskId() const { return LocationParams.TaskId; };
 
@@ -109,6 +109,9 @@ private:
 
 	// Get the reference or spawn a new initialized symbolic logger
 	bool SetSymbolicLogger();
+
+	// Write semantic map owl file using the semantic map id
+	void WriteSemanticMap(bool bOverwrite = true);
 
 protected:
 	// Set when manager is initialized
@@ -163,4 +166,8 @@ private:
 	// World state logger parameters used for logging
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Symbolic Logger", meta = (editcondition = "bLogActionsAndEvents"))
 	FSLSymbolicLoggerParams SymbolicLoggerParams;
+
+	// Editor button hack to write the semantic map
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bWriteSemanticMapButton = false;
 };

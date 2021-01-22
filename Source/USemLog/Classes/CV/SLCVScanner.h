@@ -327,8 +327,8 @@ protected:
 	AStaticMeshActor* BackgroundSMA;
 
 private:
-	// Camera poses on the sphere
-	TArray<FTransform> CameraScanPoses;
+	// Camera poses on the unit sphere (this will be multiplied with each scenes bounds spehre radius)
+	TArray<FTransform> CameraScanUnitPoses;
 
 	// Individuals to calibrate
 	TArray<USLVisibleIndividual*> Individuals;

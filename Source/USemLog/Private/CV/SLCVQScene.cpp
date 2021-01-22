@@ -65,7 +65,7 @@ void USLCVQScene::ShowScene()
 		AStaticMeshActor* CurrSMA = ActPosePair.Key;
 		FTransform CurrPose = ActPosePair.Value;
 		CurrSMA->SetActorHiddenInGame(false);
-		
+
 		// Set the actor with the original materials in its location
 		CurrSMA->SetActorTransform(CurrPose);
 		
@@ -82,13 +82,22 @@ void USLCVQScene::ShowScene()
 	{
 		ASkeletalMeshActor* CurrSkelMA = SkelActPosePair.Key;
 		FTransform CurrSkelMAPose = SkelActPosePair.Value.Key;
-		CurrSkelMA->SetActorTransform(CurrSkelMAPose);
 		CurrSkelMA->SetActorHiddenInGame(false);
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d %s::%s's CurrentLoc=%s; NewLoc=%s;"),
+			*FString(__FUNCTION__), __LINE__,
+			*GetName(),
+			*SkelActPosePair.Key->GetName(),
+			*CurrSkelMA->GetActorLocation().ToString(),
+			*CurrSkelMAPose.GetLocation().ToString());
+
+		CurrSkelMA->SetActorTransform(CurrSkelMAPose);
 
 		// Apply orig clone bone poses
 		TMap<int32, FTransform> CurrBonePoses = SkelActPosePair.Value.Value;
 		if (auto* OrigClone = SkelOrigClones.Find(CurrSkelMA))
 		{
+			(*OrigClone)->SetWorldTransform(CurrSkelMAPose);
 			for (int32 Idx = 0; Idx < 5; ++Idx)
 			{
 				for (const auto& BonePosePair : CurrBonePoses)
@@ -102,6 +111,7 @@ void USLCVQScene::ShowScene()
 		// Apply mask clone bone poses
 		if (auto* MaskClone = SkelMaskClones.Find(CurrSkelMA))
 		{
+			(*MaskClone)->SetWorldTransform(CurrSkelMAPose);
 			for (int32 Idx = 0; Idx < 5; ++Idx)
 			{
 				for (const auto& BonePosePair : CurrBonePoses)
@@ -550,7 +560,6 @@ bool USLCVQScene::SetSceneActors(ASLIndividualManager* IndividualManager, ASLMon
 				SceneSkelActorPoses.Add(AsSkelMA, SkelWorldPose);
 				AsSkelMA->GetSkeletalMeshComponent()->SetVisibility(false);
 
-
 				/* Create a poseable mesh clone with the original materials */
 				// Check if the actor already has a clone
 				for (const auto& Comp : AsSkelMA->GetComponentsByClass(UPoseableMeshComponent::StaticClass()))
@@ -584,7 +593,6 @@ bool USLCVQScene::SetSceneActors(ASLIndividualManager* IndividualManager, ASLMon
 			}
 		}
 	}
-
 	return SceneActorPoses.Num() > 0 || SceneSkelActorPoses.Num() > 0;
 }
 
@@ -620,6 +628,9 @@ FVector USLCVQScene::CalcSceneCenterPose()
 		// Get the mesh bounds
 		FBoxSphereBounds SMBounds = SMAPosePair.Key->GetStaticMeshComponent()->Bounds;
 
+		// Offset the bounds origin to the episodic memory location
+		SMBounds.Origin = SMAPosePair.Value.GetLocation();
+
 		// Set first value, or add the next ones
 		if (SphereBounds.SphereRadius > 0.f)
 		{
@@ -638,17 +649,44 @@ FVector USLCVQScene::CalcSceneCenterPose()
 		// Get the original poseable mesh bounds
 		if (auto* OrigClone = SkelOrigClones.Find(SkelMAPosePair.Key))
 		{
-			FBoxSphereBounds SMBounds = (*OrigClone)->Bounds;
+			FBoxSphereBounds SkelMBounds = (*OrigClone)->Bounds;
+
+			// The skeletal meshes do not have their root pose in the center of the mesh,
+			// we then need to apply this offset when moving the origin of the bounds to the ep memory location
+			FVector SkelCenterOffset = (*OrigClone)->GetComponentLocation() - SkelMBounds.Origin;
+
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's SkelCenterOffset=%s;"),
+				*FString(__FUNCTION__), __LINE__,
+				*GetName(),
+				*SkelMAPosePair.Key->GetName(),
+				*SkelCenterOffset.ToString());
+
+			// Offset the bounds origin to the episodic memory location
+			if (auto SkelPose = SceneSkelActorPoses.Find(SkelMAPosePair.Key))
+			{
+				SkelMBounds.Origin = (*SkelPose).Key.GetLocation() - SkelCenterOffset;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d %s this should not happen, %s should be in the scene.."),
+					*FString(__FUNCTION__), __LINE__, *GetName(), *SkelMAPosePair.Key->GetName());
+			}
+
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's SkelMBounds.Origin=%s;"),
+				*FString(__FUNCTION__), __LINE__,
+				*GetName(),
+				*SkelMAPosePair.Key->GetName(),
+				*SkelMBounds.Origin.ToString());
 
 			// Set first value, or add the next ones
 			if (SphereBounds.SphereRadius > 0.f)
 			{
-				SphereBounds = SphereBounds + SMBounds;
+				SphereBounds = SphereBounds + SkelMBounds;
 			}
 			else
 			{
 				// First value
-				SphereBounds = SMBounds;
+				SphereBounds = SkelMBounds;
 			}
 		}
 	}
@@ -668,8 +706,23 @@ void USLCVQScene::MoveSceneToRootLocation(FVector Offset)
 		// Reference to the skel actor and bone pose world pose
 		TPair<FTransform, TMap<int32, FTransform>>& SkelPoseRef = SkelActPosePair.Value;
 
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's Offset=%s; OrigLoc=%s;"),
+			*FString(__FUNCTION__), __LINE__,
+			*GetName(),
+			*SkelActPosePair.Key->GetName(),
+			*Offset.ToString(),
+			*SkelPoseRef.Key.GetLocation().ToString());
+
 		// Moving the skel actor is probably not needed
 		SkelPoseRef.Key.AddToTranslation(-Offset);
+
+		UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's Offset=%s; NewLoc=%s;"),
+			*FString(__FUNCTION__), __LINE__,
+			*GetName(),
+			*SkelActPosePair.Key->GetName(),
+			*Offset.ToString(),
+			*SkelPoseRef.Key.GetLocation().ToString());
+
 
 		// Moving the bones is needed
 		for (auto& BonePosePair : SkelPoseRef.Value)

@@ -69,11 +69,13 @@ public:
 	}
 
 	// Create and add experiment node individual
-	void AddExperimentIndividual(const TArray<FString>& SubActionIds)
+	void AddExperimentIndividual(const TArray<FString>& SubActionIds, const FString& SemMapId, const FString& TaskId)
 	{
 		const FSLOwlPrefixName OwlNI("owl", "NamedIndividual");
 		const FSLOwlPrefixName RdfAbout("rdf", "about");
 		const FSLOwlPrefixName RdfType("rdf", "type");
+		const FSLOwlPrefixName KrInMap("knowrob", "inMap");
+		const FSLOwlPrefixName KrExecutedTask("knowrob", "executedTask");
 		const FSLOwlPrefixName KrSubAction("knowrob", "subAction");
 		const FSLOwlPrefixName KrStartTime("knowrob", "startTime");
 		const FSLOwlPrefixName KrEndTime("knowrob", "endTime");
@@ -85,6 +87,14 @@ public:
 		ExperimentIndividual.AddAttribute(FSLOwlAttribute(RdfAbout, ExperimentId));
 		ExperimentIndividual.AddChildNode(FSLOwlNode(RdfType, FSLOwlAttribute(
 			RdfResource, FSLOwlAttributeValue("knowrob", "UnrealExperiment"))));
+
+		// Add semantic map id
+		ExperimentIndividual.AddChildNode(FSLOwlNode(KrInMap, FSLOwlAttribute(
+			RdfResource, FSLOwlAttributeValue("log", SemMapId))));
+
+		// Add executed task id
+		ExperimentIndividual.AddChildNode(FSLOwlNode(KrExecutedTask, FSLOwlAttribute(
+			RdfResource, FSLOwlAttributeValue("log", TaskId))));
 
 		// Add start and end time
 		if (RegisteredTimepoints.Num() > 2)

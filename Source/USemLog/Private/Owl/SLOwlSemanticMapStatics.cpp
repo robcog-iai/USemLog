@@ -6,12 +6,13 @@
 /* Semantic map template creation */
 // Create Default semantic map
 TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
-	const FString& InDocId,
+	const FString& InSemMapId,
+	const FString& InLevelName,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
 {
 	// Create map document (with init)
-	TSharedPtr<FSLOwlSemanticMap> SemMap = MakeShareable(new FSLOwlSemanticMap(InDocPrefix, InDocOntologyName, InDocId));
+	TSharedPtr<FSLOwlSemanticMap> SemMap = MakeShareable(new FSLOwlSemanticMap(InDocPrefix, InDocOntologyName, InSemMapId));
 
 	// Add definitions
 	SemMap->AddEntityDefintion("owl", "http://www.w3.org/2002/07/owl#");
@@ -23,14 +24,16 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	//SemMap->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add namespaces
-	SemMap->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
-	SemMap->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	//SemMap->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	//SemMap->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	SemMap->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/ameva_log.owl#");
+	SemMap->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/ameva_log.owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "owl", "http://www.w3.org/2002/07/owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "xsd", "http://www.w3.org/2001/XMLSchema#");
 	SemMap->AddNamespaceDeclaration("xmlns", "knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	SemMap->AddNamespaceDeclaration("xmlns", "rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	SemMap->AddNamespaceDeclaration("xmlns", "log", "http://knowrob.org/kb/unreal_log.owl#");
+	SemMap->AddNamespaceDeclaration("xmlns", "log", "http://knowrob.org/kb/ameva_log.owl#");
 	//SemMap->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add imports
@@ -54,19 +57,20 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 
 	// Add individuals comment
 	SemMap->AddIndividual(FOwlCommentNode("Individuals"));
-	SemMap->AddSemanticMapIndividual(InDocPrefix, InDocId);
+	SemMap->AddSemanticMapIndividual(InDocPrefix, InSemMapId, InLevelName);
 
 	return SemMap;
 }
 
 // Create IAI Kitchen semantic map
 TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
-	const FString& InDocId,
+	const FString& InSemMapId,
+	const FString& InLevelName,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
 {
 	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
-		InDocId, InDocPrefix, InDocOntologyName);
+		InSemMapId, InLevelName, InDocPrefix, InDocOntologyName);
 
 	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
 
@@ -75,12 +79,13 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAIKitchenSemantic
 
 // Create IAI Supermarket semantic map
 TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(
-	const FString& InDocId,
+	const FString& InSemMapId,
+	const FString& InLevelName,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
 {
 	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
-		InDocId, InDocPrefix, InDocOntologyName);
+		InSemMapId, InLevelName, InDocPrefix, InDocOntologyName);
 
 	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_supermarket_ue.owl");
 
@@ -119,7 +124,6 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreatePoseIndividual(
 
 	// Attribute values constants
 	const FSLOwlAttributeValue AttrValPose("knowrob", "Pose");
-	const FSLOwlAttributeValue AttrValString("xsd", "string");
 
 	// Pose individual
 	FSLOwlNode PoseIndividual(OwlNI, FSLOwlAttribute(RdfAbout, FSLOwlAttributeValue(InDocPrefix, InId)));
@@ -264,12 +268,12 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateClassProperty(const FString& InClass)
 
 // Create describedInMap property
 FSLOwlNode FSLOwlSemanticMapStatics::CreateDescribedInMapProperty(
-	const FString& InDocPrefix, const FString& InDocId)
+	const FString& InDocPrefix, const FString& InSemMapId)
 {
 	const FSLOwlPrefixName RdfResource("rdf", "resource");
 	const FSLOwlPrefixName KbDescribedInMap("knowrob", "describedInMap");
 
-	return FSLOwlNode(KbDescribedInMap, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, InDocId)));
+	return FSLOwlNode(KbDescribedInMap, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, InSemMapId)));
 }
 
 // Create pathToCadModel property

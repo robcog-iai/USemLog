@@ -18,15 +18,16 @@ public:
 	// Write semantic map to file
 	bool WriteToFile(UWorld* World,
 		ESLOwlSemanticMapTemplate TemplateType = ESLOwlSemanticMapTemplate::NONE,
-		const FString& InDirectory = TEXT("SemLog"),
-		const FString& InFilename = TEXT("SemanticMap"),
+		const FString& InDirectoryPath = TEXT("SL/Maps/"),
+		const FString& InSemMapId = TEXT("DefaultSemanticMapId"),
 		bool bOverwrite = false);
 
 private:
 	// Create semantic map template
 	TSharedPtr<FSLOwlSemanticMap> CreateSemanticMapDocTemplate(
 		ESLOwlSemanticMapTemplate TemplateType,
-		const FString& DocId = "");
+		const FString& InLevelName,
+		const FString& InSemMapId);
 
 	// Add individuals to the semantic map
 	void AddAllIndividuals(TSharedPtr<FSLOwlSemanticMap> InSemMap, UWorld* World);

@@ -5,6 +5,9 @@
 #include "Runtime/SLWorldStateLogger.h"
 #include "Runtime/SLSymbolicLogger.h"
 
+#include "Editor/SLSemanticMapWriter.h"
+#include "Individuals/SLIndividualUtils.h"
+
 #include "EngineUtils.h"
 #include "Engine/Engine.h"
 #include "GameFramework/PlayerController.h"
@@ -97,38 +100,14 @@ void ASLLoggerManager::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	/* Logger Properties */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLLoggerManager, LocationParams.bUseCustomEpisodeId))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLLoggerManager, bWriteSemanticMapButton))
 	{
-		if (LocationParams.bUseCustomEpisodeId) { LocationParams.EpisodeId = FSLUuid::NewGuidInBase64Url(); }
-		else { LocationParams.EpisodeId = TEXT(""); };
+		bWriteSemanticMapButton = false;
+		bool bOverwriteSemMap = true;
+		WriteSemanticMap(bOverwriteSemMap);		
 	}
 }
 
-// Called by the editor to query whether a property of this object is allowed to be modified.
-bool ASLLoggerManager::CanEditChange(const UProperty* InProperty) const
-{
-	// Get parent edit property
-	const bool ParentVal = Super::CanEditChange(InProperty);
-
-	// Get the property name
-	const FName PropertyName = InProperty->GetFName();
-
-	//// HostIP and HostPort can only be edited if the world state writer is of type Mongo
-	//if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerIp))
-	//{
-	//	return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
-	//}
-	//else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerPort))
-	//{
-	//	return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
-	//}
-	//else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
-	//{
-	//	return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
-	//}
-
-	return ParentVal;
-}
 #endif // WITH_EDITOR
 
 // Internal init
@@ -358,5 +337,17 @@ bool ASLLoggerManager::SetSymbolicLogger()
 	SymbolicLogger->SetActorLabel(TEXT("SL_SymbolicLogger"));
 #endif // WITH_EDITOR
 	return true;
+}
+
+// Write semantic map owl file using the semantic map id
+void ASLLoggerManager::WriteSemanticMap(bool bOverwrite)
+{
+	// Make sure all the sl individual values are exported to tags
+	FSLIndividualUtils::ExportValues(GetWorld(), bOverwrite);
+
+	// Write the data from the tags as an owl file
+	FSLSemanticMapWriter SemMapWriter;
+	FString Directory = "/SL/Maps/";
+	SemMapWriter.WriteToFile(GetWorld(), ESLOwlSemanticMapTemplate::IAIKitchen, Directory, LocationParams.SemanticMapId, bOverwrite);
 }
 

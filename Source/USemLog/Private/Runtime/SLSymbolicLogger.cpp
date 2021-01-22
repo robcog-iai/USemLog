@@ -418,8 +418,8 @@ void ASLSymbolicLogger::FinishImpl(bool bForced)
 		// Add stored unique objects to doc
 		//ExperimentDoc->AddObjectIndividuals();
 
-		// Add experiment individual to doc		
-		ExperimentDoc->AddExperimentIndividual(SubActionIds);
+		// Add experiment individual to doc	(metadata)	
+		ExperimentDoc->AddExperimentIndividual(SubActionIds, LocationParameters.SemanticMapId, LocationParameters.TaskId);
 	}
 
 	// Write events to file
@@ -486,7 +486,7 @@ void ASLSymbolicLogger::SemanticEventFinishedCallback(TSharedPtr<ISLEvent> Event
 // Write data to file
 void ASLSymbolicLogger::WriteToFile()
 {
-	const FString DirPath = FPaths::ProjectDir() + "/SL/" + LocationParameters.TaskId /*+ TEXT("/Episodes/")*/ + "/";
+	const FString DirPath = FPaths::ProjectDir() + "/SL/Tasks/" + LocationParameters.TaskId /*+ TEXT("/Episodes/")*/ + "/";
 
 	// Write events timelines to file
 	if (LoggerParameters.bWriteTimelines)

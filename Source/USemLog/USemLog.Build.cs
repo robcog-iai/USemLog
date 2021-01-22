@@ -97,6 +97,9 @@ public class USemLog : ModuleRules
 			}
 			);
 
+		// Enable/disable various debug functions throughout the code
+		PublicDefinitions.Add("SL_WITH_DEBUG=1");
+
 		// Check included dependencies and set preprocessor flags accordingly
 		SetDependencyPrepreocessorDefinition("UConversions", "SL_WITH_ROS_CONVERSIONS");
 		SetDependencyPrepreocessorDefinition("UMCGrasp", "SL_WITH_MC_GRASP");

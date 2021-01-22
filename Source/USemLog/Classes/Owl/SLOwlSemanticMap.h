@@ -42,20 +42,26 @@ public:
 	~FSLOwlSemanticMap() {}
 	
 	// Create semantic map node individual
-	void AddSemanticMapIndividual(const FString& InDocPrefix, const FString& InDocId)
+	void AddSemanticMapIndividual(const FString& InDocPrefix, const FString& InSemMapId, const FString& InLevelName)
 	{
 		const FSLOwlPrefixName OwlNI("owl", "NamedIndividual");
 		const FSLOwlPrefixName RdfAbout("rdf", "about");
 		const FSLOwlPrefixName RdfType("rdf", "type");
 		const FSLOwlPrefixName RdfResource("rdf", "resource");
-		const FSLOwlAttributeValue SemMapInd(InDocPrefix, InDocId);
+		const FSLOwlPrefixName KbLevelName("knowrob", "levelName");
+		const FSLOwlPrefixName RdfDatatype("rdf", "datatype");
+		const FSLOwlAttributeValue AttrValString("xsd", "string");
+		const FSLOwlAttributeValue SemMapInd(InDocPrefix, InSemMapId);
 
 		// Create semantic map individual
 		SemMapIndividual.Name = OwlNI;
 		SemMapIndividual.AddAttribute(FSLOwlAttribute(RdfAbout, SemMapInd));
 		SemMapIndividual.AddChildNode(FSLOwlNode(RdfType, FSLOwlAttribute(
 			RdfResource, FSLOwlAttributeValue("knowrob", "SemanticEnvironmentMap"))));
-		SemMapIndividual.Comment = "Semantic Map " + InDocId;
+		SemMapIndividual.AddChildNode(FSLOwlNode(KbLevelName,
+			FSLOwlAttribute(RdfDatatype,	AttrValString), InLevelName));
+
+		SemMapIndividual.Comment = "Semantic Map " + InSemMapId;
 
 		// Add map to the document individuals
 		Individuals.Add(SemMapIndividual);

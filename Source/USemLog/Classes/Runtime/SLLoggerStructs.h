@@ -12,6 +12,10 @@ struct FSLLoggerLocationParams
 {
 	GENERATED_BODY();
 
+	// Unique id of the semantic map
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString SemanticMapId = TEXT("DefaultSemanticMapId");
+
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bUseCustomTaskId = false;
@@ -52,6 +56,7 @@ struct FSLLoggerDBServerParams
 UENUM()
 enum class ESLLoggerStartTime : uint8
 {
+	Externally         UMETA(DisplayName = "Externally"),
 	AtBeginPlay         UMETA(DisplayName = "AtBeginPlay"),
 	AtNextTick			UMETA(DisplayName = "AtNextTick"),
 	AfterDelay			UMETA(DisplayName = "AfterDelay"),
@@ -70,7 +75,7 @@ struct FSLLoggerStartParams
 
 	// Logger start time
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLLoggerStartTime StartTime = ESLLoggerStartTime::AtBeginPlay;
+	ESLLoggerStartTime StartTime = ESLLoggerStartTime::Externally;
 
 	// Start after a given delay (if ESLLoggerStartTime::AfterDelay is selected)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "StartTime==ESLLoggerStartTime::AfterDelay"))

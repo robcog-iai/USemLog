@@ -28,14 +28,14 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	// Add namespaces
 	//Experiment->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 	//Experiment->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
-	Experiment->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/unreal_log.owl#");
-	Experiment->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/unreal_log.owl#");
+	Experiment->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/ameva_log.owl#");
+	Experiment->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/ameva_log.owl#");
 	Experiment->AddNamespaceDeclaration("xmlns", "owl", "http://www.w3.org/2002/07/owl#");
 	Experiment->AddNamespaceDeclaration("xmlns", "xsd", "http://www.w3.org/2001/XMLSchema#");
 	Experiment->AddNamespaceDeclaration("xmlns", "knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	Experiment->AddNamespaceDeclaration("xmlns", "rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	Experiment->AddNamespaceDeclaration("xmlns", "rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	Experiment->AddNamespaceDeclaration("xmlns", "log", "http://knowrob.org/kb/unreal_log.owl#");
+	Experiment->AddNamespaceDeclaration("xmlns", "log", "http://knowrob.org/kb/ameva_log.owl#");
 	//Experiment->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Set and add imports
@@ -58,6 +58,7 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddPropertyDefinition("knowrob", "isSupporting");
 	Experiment->AddPropertyDefinition("knowrob", "inEpisode");
 	Experiment->AddPropertyDefinition("knowrob", "subAction");
+	Experiment->AddPropertyDefinition("knowrob", "inMap");
 
 	// Add datatype definitions
 	Experiment->AddDatatypeDefinition(FOwlCommentNode("Property Definitions"));

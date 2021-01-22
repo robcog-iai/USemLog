@@ -27,6 +27,10 @@
 #include "Components/BillboardComponent.h"
 #endif // WITH_EDITOR
 
+#if SL_WITH_DEBUG
+#include "DrawDebugHelpers.h"
+#endif // SL_WITH_DEBUG
+
 // Sets default values
 ASLCVScanner::ASLCVScanner()
 {
@@ -88,7 +92,7 @@ void ASLCVScanner::BeginPlay()
 
 	//Start();
 	FTimerHandle UnusedHandle;
-	GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::Start, 0.12f, false);
+	GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::Start, 0.25f, false);
 }
 
 // Called when actor removed from game or game ended
@@ -329,9 +333,13 @@ void ASLCVScanner::Start()
 		SetupInputBindings();
 	}
 	else
-	{
+	{		
 		// Start the dominoes
-		RequestScreenshotAsync();
+		//RequestScreenshotAsync();
+
+		// Use a delay, sometimes the materials are not properly loaded
+		FTimerHandle UnusedHandle;
+		GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::RequestScreenshotAsync, 0.1f, false);
 	}
 
 	bIsStarted = true;
@@ -446,7 +454,11 @@ void ASLCVScanner::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TA
 			{
 				if (!bManualTrigger)
 				{
-					RequestScreenshotAsync();
+					//RequestScreenshotAsync();
+
+					// Use a delay, sometimes the materials are not properly loaded
+					FTimerHandle UnusedHandle;
+					GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::RequestScreenshotAsync, 0.1f, false);
 				}
 			}
 			else
@@ -489,17 +501,17 @@ bool ASLCVScanner::SetNextRenderMode()
 bool ASLCVScanner::SetNextCameraPose()
 {
 	CameraPoseIdx++;
-	if (CameraScanPoses.IsValidIndex(CameraPoseIdx))
+	if (CameraScanUnitPoses.IsValidIndex(CameraPoseIdx))
 	{
 		// Goto first view mode
 		RenderModeIdx = INDEX_NONE;
 		SetNextRenderMode();
 
 		// Move camera to the desired pose
-		ApplyCameraPose(CameraScanPoses[CameraPoseIdx]);
+		ApplyCameraPose(CameraScanUnitPoses[CameraPoseIdx]);
 
 		// Set image name
-		CameraPoseIdxString = FString::FromInt(CameraPoseIdx) + "_" + FString::FromInt(CameraScanPoses.Num());
+		CameraPoseIdxString = FString::FromInt(CameraPoseIdx) + "_" + FString::FromInt(CameraScanUnitPoses.Num());
 		SetImageName();
 
 		return true;
@@ -1211,10 +1223,10 @@ bool ASLCVScanner::SetScanPoses(uint32 MaxNumPoints/*, float Radius*/)
 			FQuat Quat = (-Point).ToOrientationQuat();
 
 			FTransform UnitSpherePose = FTransform(Quat, Point);
-			CameraScanPoses.Emplace(UnitSpherePose);
+			CameraScanUnitPoses.Emplace(UnitSpherePose);
 		}
 	}
-	return CameraScanPoses.Num() > 0;
+	return CameraScanUnitPoses.Num() > 0;
 }
 
 // Set the image name
@@ -1223,7 +1235,11 @@ void ASLCVScanner::SetImageName()
 	//CurrImageName = ViewIdxString + "_" + CameraPoseIdxString + "_" + ViewModeString;
 	//CurrImageName = RenderModeString + "_" + IndividualOrSceneIdxString + "_" + CameraPoseIdxString;
 	//CurrImageName = RenderModeString + "_" + FString::FromInt(CameraPoseIdx);
+	
 	CurrImageName = RenderModeString + "/img" + FString::FromInt(10000 + CameraPoseIdx); //ffmpg friendly
+	
+	//int32 CurrIdx = CameraPoseIdx * RenderModes.Num() + RenderModeIdx + 1;
+	//CurrImageName = "/img" + FString::FromInt(10000 + CurrIdx); //ffmpg friendly
 }
 
 // Calculate camera pose sphere radius (proportionate to the sphere bounds of the visual mesh)
@@ -1261,23 +1277,35 @@ void ASLCVScanner::SetCameraPoseSphereRadius()
 		const float SphereRadius = Scenes[IndividualOrSceneIdx]->GetAppliedSceneSphereBoundsRadius();
 		CurrCameraPoseSphereRadius = SphereRadius * CameraRadiusDistanceMultiplier;
 	}
+
+	// Draw the camera poses
+#if SL_WITH_DEBUG
+#if ENABLE_DRAW_DEBUG
+	for (const auto& CameraUnitPose : CameraScanUnitPoses)
+	{
+		FTransform CameraScenePose = CameraUnitPose;
+		//ScenePose.AddToTranslation(ScenePose.GetTranslation() * CurrCameraPoseSphereRadius);
+		//DrawDebugDirectionalArrow(GetWorld(), ScenePose.GetTranslation)
+	}
+#endif // ENABLE_DRAW_DEBUG
+#endif // SL_WITH_DEBUG
 }
 
 // Print progress to terminal
 void ASLCVScanner::PrintProgress() const
 {
 	// Current scan
-	int32 CurrScan = IndividualOrSceneIdx * CameraScanPoses.Num() * RenderModes.Num() 
+	int32 CurrScan = IndividualOrSceneIdx * CameraScanUnitPoses.Num() * RenderModes.Num() 
 		+ CameraPoseIdx * RenderModes.Num() 
 		+ RenderModeIdx + 1;
 
 	int32 TotalScenesOrIndividuals = ScanMode == ESLCVScanMode::Individuals ? Individuals.Num() : Scenes.Num();
-	int32 TotalNumScans = TotalScenesOrIndividuals * CameraScanPoses.Num() * RenderModes.Num();
+	int32 TotalNumScans = TotalScenesOrIndividuals * CameraScanUnitPoses.Num() * RenderModes.Num();
 
 	UE_LOG(LogTemp, Log, TEXT("%s::%d::%f Individual/Scene:\t%ld/%ld; CameraPose:\t%ld/%ld; ViewMode:\t%ld/%ld; Scan:\t%ld/%ld;"),
 		*FString(__func__), __LINE__, GetWorld()->GetTimeSeconds(),
 		IndividualOrSceneIdx + 1, TotalScenesOrIndividuals,
-		CameraPoseIdx + 1, CameraScanPoses.Num(),
+		CameraPoseIdx + 1, CameraScanUnitPoses.Num(),
 		RenderModeIdx + 1, RenderModes.Num(),
 		CurrScan, TotalNumScans);
 }
@@ -1290,4 +1318,12 @@ void ASLCVScanner::SaveToFile(const TArray<uint8>& CompressedBitmap) const
 	FString Path = FPaths::ProjectDir() + TaskFolderPath + CurrImageName + ".png";
 	FPaths::RemoveDuplicateSlashes(Path);
 	FFileHelper::SaveArrayToFile(CompressedBitmap, *Path);
+
+	// Include image in a folder with all of them mixed
+	int32 CurrMixedIdx = CameraPoseIdx * RenderModes.Num() + RenderModeIdx + 1;
+	const FString CurrMixedImageName = "A/img" + FString::FromInt(10000 + CurrMixedIdx); //ffmpg friendly
+
+	FString MixedPath = FPaths::ProjectDir() + TaskFolderPath + CurrMixedImageName + ".png";
+	FPaths::RemoveDuplicateSlashes(MixedPath);
+	FFileHelper::SaveArrayToFile(CompressedBitmap, *MixedPath);
 }
