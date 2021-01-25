@@ -15,6 +15,7 @@ class AStaticMeshActor;
 class ASkeletalMeshActor;
 class UStaticMeshComponent;
 class UPoseableMeshComponent;
+class ASLPoseableMeshActorWithMask;
 
 /**
  * Sets scenes from episodic memories for scanning
@@ -117,23 +118,19 @@ protected:
 	bool bEnsureUniqueness = true;
 
 	// Cache of the actors and their poses
-	//UPROPERTY(Transient)
 	TMap<AStaticMeshActor*, FTransform> SceneActorPoses;
 
-	// Skeletal actor poses
-	TMap<ASkeletalMeshActor*, TPair<FTransform, TMap<int32, FTransform>>> SceneSkelActorPoses;
+	// Poseable skeletal actors
+	//UPROPERTY(Transient)
+	TMap<ASLPoseableMeshActorWithMask*, TPair<FTransform, TMap<int32, FTransform>>> ScenePoseableActorPoses;
 
-	// Original poseable skeletal mesh clone
+	// Keep a mapping to the original actor
 	UPROPERTY(Transient)
-	TMap<ASkeletalMeshActor*, UPoseableMeshComponent*> SkelOrigClones;
+	TMap <ASLPoseableMeshActorWithMask*, ASkeletalMeshActor*> PoseableMeshCloneOfMap;
 
 	// Static mesh mask clones
 	UPROPERTY(Transient)
 	TMap<AStaticMeshActor*, UStaticMeshComponent*> StaticMaskClones;
-
-	// Skeletal mesh mask clones
-	UPROPERTY(Transient)
-	TMap<ASkeletalMeshActor*, UPoseableMeshComponent*> SkelMaskClones;
 
 #if SL_WITH_DEBUG
 	UWorld* ActiveWorld;
