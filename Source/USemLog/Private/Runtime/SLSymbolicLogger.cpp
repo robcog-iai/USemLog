@@ -8,8 +8,8 @@
 #include "Utils/SLUuid.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
-#include "Misc/Paths.h"
-#include "Misc/FileHelper.h"
+//#include "Misc/Paths.h"
+//#include "Misc/FileHelper.h"
 #include "Engine/Engine.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
@@ -502,35 +502,40 @@ void ASLSymbolicLogger::WriteToFile()
 		FSLGoogleCharts::WriteTimelines(FinishedEvents, DirPath, LocationParameters.EpisodeId, Params);
 	}
 
-	// Write owl data to file
-	if (ExperimentDoc.IsValid())
-	{
-		// Write experiment to file
-		FString FullFilePath = DirPath + LocationParameters.EpisodeId + TEXT("_ED.owl");
-		FPaths::RemoveDuplicateSlashes(FullFilePath);
-		if (!FPaths::FileExists(FullFilePath) || LocationParameters.bOverwrite)
-		{
-			FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);					
-		}
-	}
+
+	// Write experiment owl to file
+	FSLOwlExperimentStatics::WriteToFile(ExperimentDoc, DirPath, LocationParameters.bOverwrite);
+
+	//// Write owl data to file
+	//if (ExperimentDoc.IsValid())
+	//{
+	//	// Write experiment to file
+	//	FString FullFilePath = DirPath + LocationParameters.EpisodeId + TEXT("_ED.owl");
+	//	FPaths::RemoveDuplicateSlashes(FullFilePath);
+	//	if (!FPaths::FileExists(FullFilePath) || LocationParameters.bOverwrite)
+	//	{
+	//		FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);					
+	//	}
+	//}
 }
 
 // Create events doc template
 TSharedPtr<FSLOwlExperiment> ASLSymbolicLogger::CreateEventsDocTemplate(ESLOwlExperimentTemplate TemplateType, const FString& InDocId)
 {
-	// Create unique semlog id for the document
-	const FString DocId = InDocId.IsEmpty() ? FSLUuid::NewGuidInBase64Url() : InDocId;
+	return FSLOwlExperimentStatics::CreateDefaultExperiment(InDocId, "log", "ameva_log");
+	//// Create unique semlog id for the document
+	//const FString DocId = InDocId.IsEmpty() ? FSLUuid::NewGuidInBase64Url() : InDocId;
 
-	// Fill document with template values
-	if (TemplateType == ESLOwlExperimentTemplate::Default)
-	{
-		return FSLOwlExperimentStatics::CreateDefaultExperiment(DocId);
-	}
-	else if (TemplateType == ESLOwlExperimentTemplate::IAI)
-	{
-		return FSLOwlExperimentStatics::CreateUEExperiment(DocId);
-	}
-	return MakeShareable(new FSLOwlExperiment());
+	//// Fill document with template values
+	//if (TemplateType == ESLOwlExperimentTemplate::Default)
+	//{
+	//	return FSLOwlExperimentStatics::CreateDefaultExperiment(DocId);
+	//}
+	//else if (TemplateType == ESLOwlExperimentTemplate::IAI)
+	//{
+	//	return FSLOwlExperimentStatics::CreateUEExperiment(DocId);
+	//}
+	//return MakeShareable(new FSLOwlExperiment());
 }
 
 // Get the reference or spawn a new individual manager

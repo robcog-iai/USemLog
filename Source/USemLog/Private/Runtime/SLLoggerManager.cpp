@@ -6,6 +6,7 @@
 #include "Runtime/SLSymbolicLogger.h"
 
 #include "Editor/SLSemanticMapWriter.h"
+#include "Owl/SLOwlTaskStatics.h"
 #include "Individuals/SLIndividualUtils.h"
 
 #include "EngineUtils.h"
@@ -105,6 +106,12 @@ void ASLLoggerManager::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 		bWriteSemanticMapButton = false;
 		bool bOverwriteSemMap = true;
 		WriteSemanticMap(bOverwriteSemMap);		
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLLoggerManager, bWriteTaskButton))
+	{
+		bWriteTaskButton = false;
+		bool bOverwriteTask = true;
+		WriteTask(bOverwriteTask);
 	}
 }
 
@@ -345,9 +352,26 @@ void ASLLoggerManager::WriteSemanticMap(bool bOverwrite)
 	// Make sure all the sl individual values are exported to tags
 	FSLIndividualUtils::ExportValues(GetWorld(), bOverwrite);
 
+	// Map writer parameters
+	FSLSemanticMapWriterParams Params;
+	Params.Id = LocationParams.SemanticMapId;
+	Params.Description = LocationParams.SemanticMapDescription;
+	Params.TemplateType = ESLOwlSemanticMapTemplate::IAIKitchen;
+	Params.Level = GetWorld()->GetMapName();
+	Params.DirectoryPath = TEXT("/SL/Maps/");
+	Params.bOverwrite = bOverwrite;
+
 	// Write the data from the tags as an owl file
 	FSLSemanticMapWriter SemMapWriter;
-	FString Directory = "/SL/Maps/";
-	SemMapWriter.WriteToFile(GetWorld(), ESLOwlSemanticMapTemplate::IAIKitchen, Directory, LocationParams.SemanticMapId, bOverwrite);
+	SemMapWriter.WriteToFile(GetWorld(), Params);
+}
+
+// Write task owl file using the task id
+void ASLLoggerManager::WriteTask(bool bOverwrite)
+{
+	TSharedPtr<FSLOwlTask> Task = FSLOwlTaskStatics::CreateDefaultTask(LocationParams.TaskId, "log", "ameva_log");
+	Task->AddTaskIndividual(LocationParams.TaskDescription, LocationParams.SemanticMapId);
+	FString TaskPath = FPaths::ProjectDir() + TEXT("/SL/Tasks/");
+	FSLOwlTaskStatics::WriteToFile(Task, TaskPath, bOverwrite);
 }
 

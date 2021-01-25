@@ -1278,14 +1278,15 @@ void ASLCVScanner::SetCameraPoseSphereRadius()
 		CurrCameraPoseSphereRadius = SphereRadius * CameraRadiusDistanceMultiplier;
 	}
 
-	// Draw the camera poses
 #if SL_WITH_DEBUG
 #if ENABLE_DRAW_DEBUG
+	// Draw the camera poses
 	for (const auto& CameraUnitPose : CameraScanUnitPoses)
 	{
 		FTransform CameraScenePose = CameraUnitPose;
-		//ScenePose.AddToTranslation(ScenePose.GetTranslation() * CurrCameraPoseSphereRadius);
-		//DrawDebugDirectionalArrow(GetWorld(), ScenePose.GetTranslation)
+		CameraScenePose.AddToTranslation(CameraScenePose.GetTranslation() * CurrCameraPoseSphereRadius);
+		DrawDebugDirectionalArrow(GetWorld(), CameraScenePose.GetTranslation(), FVector::ZeroVector,
+			1.f, FColor::Yellow, true);
 	}
 #endif // ENABLE_DRAW_DEBUG
 #endif // SL_WITH_DEBUG

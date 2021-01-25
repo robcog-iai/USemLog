@@ -25,23 +25,29 @@
 // Write the semantic map
 void FSLEdUtils::WriteSemanticMap(UWorld* World, bool bOverwrite)
 {
-	FSLSemanticMapWriter SemMapWriter;
-	FString TaskDir;
-
+	FString TaskId;
 	for (TActorIterator<ASLLoggerManager> ActItr(World); ActItr; ++ActItr)
 	{
-		TaskDir = *ActItr->GetTaskId();
+		TaskId = *ActItr->GetTaskId();
 		break;
 	}
-	if(TaskDir.IsEmpty())
+	if(TaskId.IsEmpty())
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find the semantic manager to read the task id, set to default.."),
 			*FString(__func__), __LINE__);
-		TaskDir = "DefaultTaskId";
+		TaskId = "DefaultTaskId";
 	}
 	
+	FSLSemanticMapWriterParams Params;
+	Params.Id = TaskId;
+	Params.TemplateType = ESLOwlSemanticMapTemplate::IAIKitchen;
+	Params.Level = World->GetMapName();
+	Params.DirectoryPath = TEXT("SL/") + TaskId;
+	Params.bOverwrite = bOverwrite;
+
 	// Generate map and write to file
-	SemMapWriter.WriteToFile(World, ESLOwlSemanticMapTemplate::IAIKitchen, TaskDir, TEXT("SemanticMap"), bOverwrite);
+	FSLSemanticMapWriter SemMapWriter;
+	SemMapWriter.WriteToFile(World, Params);
 }
 
 

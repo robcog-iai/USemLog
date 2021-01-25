@@ -134,4 +134,8 @@ protected:
 	// Skeletal mesh mask clones
 	UPROPERTY(Transient)
 	TMap<ASkeletalMeshActor*, UPoseableMeshComponent*> SkelMaskClones;
+
+#if SL_WITH_DEBUG
+	UWorld* ActiveWorld;
+#endif // SL_WITH_DEBUG
 };

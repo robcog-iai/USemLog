@@ -13,24 +13,22 @@ struct USEMLOG_API FSLOwlSemanticMapStatics
 	// Create Default semantic map
 	static TSharedPtr<FSLOwlSemanticMap> CreateDefaultSemanticMap(
 		const FString& InDocId,
-		const FString& InLevelName,
 		const FString& InDocPrefix,
 		const FString& InDocOntologyName);
 
-	// Create IAI Kitchen semantic map
-	static TSharedPtr<FSLOwlSemanticMap> CreateIAIKitchenSemanticMap(
-		const FString& InDocId,		
-		const FString& InLevelName,
-		const FString& InDocPrefix,
-		const FString& InDocOntologyName);
+	//// Create IAI Kitchen semantic map
+	//static TSharedPtr<FSLOwlSemanticMap> CreateIAIKitchenSemanticMap(
+	//	const FString& InDocId,		
+	//	const FString& InLevelName,
+	//	const FString& InDocPrefix,
+	//	const FString& InDocOntologyName);
 
-	// Create IAI Supermarket semantic map
-	static TSharedPtr<FSLOwlSemanticMap> CreateIAISupermarketSemanticMap(
-		const FString& InDocId,
-		const FString& InLevelName,		
-		const FString& InDocPrefix,
-		const FString& InDocOntologyName);
-		
+	//// Create IAI Supermarket semantic map
+	//static TSharedPtr<FSLOwlSemanticMap> CreateIAISupermarketSemanticMap(
+	//	const FString& InDocId,
+	//	const FString& InLevelName,		
+	//	const FString& InDocPrefix,
+	//	const FString& InDocOntologyName);
 		
 	/* Owl individuals / definitions creation */
 	// Create an object individual
@@ -84,13 +82,6 @@ struct USEMLOG_API FSLOwlSemanticMapStatics
 
 	// Create a constraint individual
 	static FSLOwlNode CreateClassDefinition(const FString& Class);
-
-	// Create Tags individual
-	static FSLOwlNode CreateTagsIndividual(
-		const FString& InDocPrefix,
-		const FString& Id,
-		const FString& Class);
-
 	
 	/* Owl properties creation */
 	// Create generic property

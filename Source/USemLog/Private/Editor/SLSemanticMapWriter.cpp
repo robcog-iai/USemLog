@@ -28,31 +28,26 @@ FSLSemanticMapWriter::FSLSemanticMapWriter()
 {
 }
 
-// TODO make static
 // Write semantic map to file
-bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
-	ESLOwlSemanticMapTemplate TemplateType,
-	const FString& InDirectoryPath,
-	const FString& InSemMapId,
-	bool bOverwrite)
+bool FSLSemanticMapWriter::WriteToFile(UWorld* World, const FSLSemanticMapWriterParams& InParams)
 {
-	FString FullFilePath = FPaths::ProjectDir() + TEXT("/") + InDirectoryPath + TEXT("/") + InSemMapId + TEXT(".owl");
+	FString FullFilePath = FPaths::ProjectDir() + TEXT("/") + InParams.DirectoryPath + TEXT("/") + InParams.Id + TEXT("_SM.owl");
 	FPaths::RemoveDuplicateSlashes(FullFilePath);
 
 	// Check if map already exists
-	if (!bOverwrite && FPaths::FileExists(FullFilePath))
+	if (!InParams.bOverwrite && FPaths::FileExists(FullFilePath))
 	{
 		return false;
 	}
 
-	// Get the map name
-	FString LevelName = World->GetMapName();
-
 	// Create the semantic map template
-	TSharedPtr<FSLOwlSemanticMap> SemMap = CreateSemanticMapDocTemplate(TemplateType, InSemMapId, LevelName);
+	TSharedPtr<FSLOwlSemanticMap> SemMap = CreateSemanticMapDocTemplate(InParams.TemplateType, InParams.Id);
+
+	// Add map individual
+	SemMap->AddSemanticMapIndividual(InParams.Description, InParams.Level);
 
 	// Add individuals to map
-	AddAllIndividuals(SemMap, World);
+	AddWorldIndividuals(SemMap, World);
 
 	// Write map to file	
 	return FFileHelper::SaveStringToFile(SemMap->ToString(), *FullFilePath);
@@ -60,27 +55,28 @@ bool FSLSemanticMapWriter::WriteToFile(UWorld* World,
 
 // Create semantic map template
 TSharedPtr<FSLOwlSemanticMap> FSLSemanticMapWriter::CreateSemanticMapDocTemplate(
-	ESLOwlSemanticMapTemplate TemplateType, const FString& InSemMapId, const FString& InLevelName)
+	ESLOwlSemanticMapTemplate TemplateType, const FString& InSemMapId)
 {
-	const FString DocId = InSemMapId.IsEmpty() ? FSLUuid::NewGuidInBase64Url() : InSemMapId;
+	return FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(InSemMapId, TEXT("log"), TEXT("ameva_log"));
+	//const FString DocId = InSemMapId.IsEmpty() ? FSLUuid::NewGuidInBase64Url() : InSemMapId;
 
-	if (TemplateType == ESLOwlSemanticMapTemplate::Default)
-	{
-		return FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(DocId, InLevelName, TEXT("log"), TEXT("ameva"));
-	}
-	else if (TemplateType == ESLOwlSemanticMapTemplate::IAIKitchen)
-	{
-		return FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(DocId, InLevelName, TEXT("log"), TEXT("ameva"));
-	}
-	else if (TemplateType == ESLOwlSemanticMapTemplate::IAISupermarket)
-	{
-		return FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(DocId, InLevelName, TEXT("log"), TEXT("ameva"));
-	}
-	return MakeShareable(new FSLOwlSemanticMap());
+	//if (TemplateType == ESLOwlSemanticMapTemplate::Default)
+	//{
+	//	return FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(DocId, InLevelName, TEXT("log"), TEXT("ameva"));
+	//}
+	//else if (TemplateType == ESLOwlSemanticMapTemplate::IAIKitchen)
+	//{
+	//	return FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(DocId, InLevelName, TEXT("log"), TEXT("ameva"));
+	//}
+	//else if (TemplateType == ESLOwlSemanticMapTemplate::IAISupermarket)
+	//{
+	//	return FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(DocId, InLevelName, TEXT("log"), TEXT("ameva"));
+	//}
+	//return MakeShareable(new FSLOwlSemanticMap());
 }
 
 // Add individuals to the semantic map
-void FSLSemanticMapWriter::AddAllIndividuals(TSharedPtr<FSLOwlSemanticMap> InSemMap, UWorld* World)
+void FSLSemanticMapWriter::AddWorldIndividuals(TSharedPtr<FSLOwlSemanticMap> InSemMap, UWorld* World)
 {
 	// Iterate objects with SemLog tag key
 	for (const auto& ActorPairs : FSLTagIO::GetWorldKVPairs(World, "SemLog"))

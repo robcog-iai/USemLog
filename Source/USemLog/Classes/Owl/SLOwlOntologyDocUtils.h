@@ -85,7 +85,7 @@ private:
 
 	/* Constants */
 	//constexpr static char AmevaNs[] = "ameva";
-	static constexpr auto AmevaNs = TEXT("ameva");
+	static constexpr auto AmevaNs = TEXT("ameva_log");
 	//constexpr static char KRNs[] = "knowrob";
 	static constexpr auto KRNs = TEXT("knowrob");
 };

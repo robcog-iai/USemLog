@@ -7,7 +7,6 @@
 // Create Default semantic map
 TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
 	const FString& InSemMapId,
-	const FString& InLevelName,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
 {
@@ -20,7 +19,7 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddEntityDefintion("knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	SemMap->AddEntityDefintion("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	SemMap->AddEntityDefintion("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	SemMap->AddEntityDefintion("log", "http://knowrob.org/kb/unreal_log.owl#");
+	SemMap->AddEntityDefintion("log", "http://knowrob.org/kb/ameva_log.owl#");
 	//SemMap->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add namespaces
@@ -44,6 +43,12 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddPropertyDefinition(FOwlCommentNode("Property Definitions"));
 	SemMap->AddPropertyDefinition("knowrob", "describedInMap");
 	SemMap->AddPropertyDefinition("knowrob", "pathToCadModel");
+	SemMap->AddPropertyDefinition("knowrob", "overlapEvents");
+	SemMap->AddPropertyDefinition("knowrob", "mobility");
+	SemMap->AddPropertyDefinition("knowrob", "levelName");
+	SemMap->AddPropertyDefinition("knowrob", "tagsData");
+	SemMap->AddPropertyDefinition("knowrob", "gravity");
+	SemMap->AddPropertyDefinition("knowrob", "mapDescription");
 
 	// Add datatype definitions
 	SemMap->AddDatatypeDefinition(FOwlCommentNode("Datatype Definitions"));
@@ -55,42 +60,36 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddClassDefinition("knowrob", "SemanticEnvironmentMap");
 	SemMap->AddClassDefinition("knowrob", "Pose");
 
-	// Add individuals comment
-	SemMap->AddIndividual(FOwlCommentNode("Individuals"));
-	SemMap->AddSemanticMapIndividual(InDocPrefix, InSemMapId, InLevelName);
-
 	return SemMap;
 }
 
-// Create IAI Kitchen semantic map
-TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
-	const FString& InSemMapId,
-	const FString& InLevelName,
-	const FString& InDocPrefix,
-	const FString& InDocOntologyName)
-{
-	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
-		InSemMapId, InLevelName, InDocPrefix, InDocOntologyName);
-
-	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
-
-	return SemMap;
-}
-
-// Create IAI Supermarket semantic map
-TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(
-	const FString& InSemMapId,
-	const FString& InLevelName,
-	const FString& InDocPrefix,
-	const FString& InDocOntologyName)
-{
-	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
-		InSemMapId, InLevelName, InDocPrefix, InDocOntologyName);
-
-	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_supermarket_ue.owl");
-
-	return SemMap;
-}
+//// Create IAI Kitchen semantic map
+//TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
+//	const FString& InSemMapId,
+//	const FString& InDocPrefix,
+//	const FString& InDocOntologyName)
+//{
+//	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
+//		InSemMapId, InDocPrefix, InDocOntologyName);
+//
+//	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
+//
+//	return SemMap;
+//}
+//
+//// Create IAI Supermarket semantic map
+//TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(
+//	const FString& InSemMapId,
+//	const FString& InDocPrefix,
+//	const FString& InDocOntologyName)
+//{
+//	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
+//		InSemMapId, InDocPrefix, InDocOntologyName);
+//
+//	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_supermarket_ue.owl");
+//
+//	return SemMap;
+//}
 
 /* Owl individuals creation */
 // Create an object individual

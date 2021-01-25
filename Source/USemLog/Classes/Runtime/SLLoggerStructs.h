@@ -16,6 +16,10 @@ struct FSLLoggerLocationParams
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	FString SemanticMapId = TEXT("DefaultSemanticMapId");
 
+	// Description of the semantic map
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString SemanticMapDescription = TEXT("");
+
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bUseCustomTaskId = false;
@@ -23,6 +27,10 @@ struct FSLLoggerLocationParams
 	// Unique id of the task
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomTaskId"))
 	FString TaskId = TEXT("DefaultTaskId");
+
+	// Description of the task
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString TaskDescription = TEXT("");
 
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")

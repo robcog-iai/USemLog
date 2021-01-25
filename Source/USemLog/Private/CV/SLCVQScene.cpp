@@ -22,6 +22,10 @@
 #include "Individuals/Type/SLBaseIndividual.h"
 #endif // WITH_EDITOR
 
+#if SL_WITH_DEBUG
+#include "DrawDebugHelpers.h"
+#endif // SL_WITH_DEBUG
+
 // Set the scene actors and cache their relative transforms to the world root
 bool USLCVQScene::InitScene(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager)
 {
@@ -524,6 +528,10 @@ bool USLCVQScene::InitSceneImpl(ASLIndividualManager* IndividualManager, ASLMong
 		return false;
 	}
 
+#if SL_WITH_DEBUG
+	ActiveWorld = IndividualManager->GetWorld();
+#endif // SL_WITH_DEBUG
+
 	if (!SetSceneActors(IndividualManager, MQManager))
 	{
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %'s could not set up scene actors, aborting execution.."),
@@ -550,9 +558,26 @@ bool USLCVQScene::SetSceneActors(ASLIndividualManager* IndividualManager, ASLMon
 		{
 			if (auto* AsSMA = Cast<AStaticMeshActor>(CurrActor))
 			{
-				// Cache the original world pose
-				FTransform WorldPose = MQManager->GetIndividualPoseAt(Id, Timestamp);
-				SceneActorPoses.Add(AsSMA, WorldPose);
+				// Cache the episodic memory world pose
+				FTransform EpMemPose = MQManager->GetIndividualPoseAt(Id, Timestamp);
+				SceneActorPoses.Add(AsSMA, EpMemPose);
+
+#if SL_WITH_DEBUG
+#if ENABLE_DRAW_DEBUG
+				if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
+				{
+					// Draw the location in the semantic map
+					DrawDebugPoint(ActiveWorld, AsSMA->GetActorLocation(), 5.f, FColor::Red, true);
+					UE_LOG(LogTemp, Error, TEXT("%s::%d DEBUG ActorLoc=%s;"), *FString(__FUNCTION__), __LINE__, *AsSMA->GetActorLocation().ToString());
+					// Draw the location in the episodic memory
+					DrawDebugPoint(ActiveWorld, EpMemPose.GetLocation(), 10.f, FColor::Green, true);
+					UE_LOG(LogTemp, Error, TEXT("%s::%d DEBUG EpMemLoc=%s;"), *FString(__FUNCTION__), __LINE__, *EpMemPose.GetLocation().ToString());
+					// Draw the movement as between the two locations
+					DrawDebugLine(ActiveWorld, AsSMA->GetActorLocation(), EpMemPose.GetLocation(), FColor::Yellow, true);
+				}
+#endif // ENABLE_DRAW_DEBUG
+#endif // SL_WITH_DEBUG
+
 			}
 			else if (auto* AsSkelMA = Cast<ASkeletalMeshActor>(CurrActor))
 			{
@@ -628,8 +653,18 @@ FVector USLCVQScene::CalcSceneCenterPose()
 		// Get the mesh bounds
 		FBoxSphereBounds SMBounds = SMAPosePair.Key->GetStaticMeshComponent()->Bounds;
 
+#if SL_WITH_DEBUG
+#if ENABLE_DRAW_DEBUG
+		if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
+		{
+		}
+#endif // ENABLE_DRAW_DEBUG
+#endif // SL_WITH_DEBUG
+
 		// Offset the bounds origin to the episodic memory location
 		SMBounds.Origin = SMAPosePair.Value.GetLocation();
+
+
 
 		// Set first value, or add the next ones
 		if (SphereBounds.SphereRadius > 0.f)

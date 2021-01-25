@@ -113,6 +113,9 @@ private:
 	// Write semantic map owl file using the semantic map id
 	void WriteSemanticMap(bool bOverwrite = true);
 
+	// Write task owl file using the task id
+	void WriteTask(bool bOverwrite = true);
+
 protected:
 	// Set when manager is initialized
 	uint8 bIsInit : 1;
@@ -170,4 +173,8 @@ private:
 	// Editor button hack to write the semantic map
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
 	bool bWriteSemanticMapButton = false;
+
+	// Editor button hack to write the task owl file
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bWriteTaskButton = false;
 };

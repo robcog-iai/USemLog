@@ -74,8 +74,8 @@ public:
 		const FSLOwlPrefixName OwlNI("owl", "NamedIndividual");
 		const FSLOwlPrefixName RdfAbout("rdf", "about");
 		const FSLOwlPrefixName RdfType("rdf", "type");
-		const FSLOwlPrefixName KrInMap("knowrob", "inMap");
-		const FSLOwlPrefixName KrExecutedTask("knowrob", "executedTask");
+		const FSLOwlPrefixName KrPerformedInMap("knowrob", "performedInMap");
+		const FSLOwlPrefixName KrPerformedTask("knowrob", "performedTask");
 		const FSLOwlPrefixName KrSubAction("knowrob", "subAction");
 		const FSLOwlPrefixName KrStartTime("knowrob", "startTime");
 		const FSLOwlPrefixName KrEndTime("knowrob", "endTime");
@@ -86,15 +86,15 @@ public:
 		ExperimentIndividual.Name = OwlNI;
 		ExperimentIndividual.AddAttribute(FSLOwlAttribute(RdfAbout, ExperimentId));
 		ExperimentIndividual.AddChildNode(FSLOwlNode(RdfType, FSLOwlAttribute(
-			RdfResource, FSLOwlAttributeValue("knowrob", "UnrealExperiment"))));
+			RdfResource, FSLOwlAttributeValue("knowrob", "AmevaExperiment"))));
 
 		// Add semantic map id
-		ExperimentIndividual.AddChildNode(FSLOwlNode(KrInMap, FSLOwlAttribute(
-			RdfResource, FSLOwlAttributeValue("log", SemMapId))));
+		ExperimentIndividual.AddChildNode(FSLOwlNode(KrPerformedInMap, FSLOwlAttribute(
+			RdfResource, FSLOwlAttributeValue(Prefix, SemMapId))));
 
 		// Add executed task id
-		ExperimentIndividual.AddChildNode(FSLOwlNode(KrExecutedTask, FSLOwlAttribute(
-			RdfResource, FSLOwlAttributeValue("log", TaskId))));
+		ExperimentIndividual.AddChildNode(FSLOwlNode(KrPerformedTask, FSLOwlAttribute(
+			RdfResource, FSLOwlAttributeValue(Prefix, TaskId))));
 
 		// Add start and end time
 		if (RegisteredTimepoints.Num() > 2)

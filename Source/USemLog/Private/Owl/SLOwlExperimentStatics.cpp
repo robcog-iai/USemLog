@@ -4,6 +4,8 @@
 #pragma once
 
 #include "Owl/SLOwlExperimentStatics.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
 
 /* Semantic map template creation */
 // Create default experiment document
@@ -22,7 +24,7 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddEntityDefintion("knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	Experiment->AddEntityDefintion("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	Experiment->AddEntityDefintion("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	Experiment->AddEntityDefintion("log", "http://knowrob.org/kb/unreal_log.owl#");
+	Experiment->AddEntityDefintion("log", "http://knowrob.org/kb/ameva_log.owl#");
 	//Experiment->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add namespaces
@@ -58,7 +60,7 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddPropertyDefinition("knowrob", "isSupporting");
 	Experiment->AddPropertyDefinition("knowrob", "inEpisode");
 	Experiment->AddPropertyDefinition("knowrob", "subAction");
-	Experiment->AddPropertyDefinition("knowrob", "inMap");
+	Experiment->AddPropertyDefinition("knowrob", "performedInMap");
 
 	// Add datatype definitions
 	Experiment->AddDatatypeDefinition(FOwlCommentNode("Property Definitions"));
@@ -67,7 +69,7 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	
 	// Add class definitions
 	Experiment->AddClassDefinition(FOwlCommentNode("Class Definitions"));
-	Experiment->AddClassDefinition("knowrob", "UnrealExperiment");
+	Experiment->AddClassDefinition("knowrob", "AmevaExperiment");
 	Experiment->AddClassDefinition("knowrob", "GraspingSomething");
 	Experiment->AddClassDefinition("knowrob", "SlicingSomething");
 	Experiment->AddClassDefinition("knowrob", "TouchingSituation");
@@ -88,18 +90,34 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	return Experiment;
 }
 
-// Create UE experiment document
-TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateUEExperiment(
-	const FString& InDocId,
-	const FString& InDocPrefix,
-	const FString& InDocOntologyName)
+//// Create UE experiment document
+//TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateUEExperiment(
+//	const FString& InDocId,
+//	const FString& InDocPrefix,
+//	const FString& InDocOntologyName)
+//{
+//	TSharedPtr<FSLOwlExperiment> Experiment = FSLOwlExperimentStatics::CreateDefaultExperiment(
+//		InDocId, InDocPrefix, InDocOntologyName);
+//
+//	Experiment->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
+//
+//	return Experiment;
+//}
+
+// Write experiment to file
+void FSLOwlExperimentStatics::WriteToFile(TSharedPtr<FSLOwlExperiment> Experiment, const FString& Path, bool bOverwrite)
 {
-	TSharedPtr<FSLOwlExperiment> Experiment = FSLOwlExperimentStatics::CreateDefaultExperiment(
-		InDocId, InDocPrefix, InDocOntologyName);
-
-	Experiment->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
-
-	return Experiment;
+	// Write owl data to file
+	if (Experiment.IsValid())
+	{
+		// Write experiment to file
+		FString FullFilePath = Path + "/" + Experiment->Id + TEXT("_ED.owl");
+		FPaths::RemoveDuplicateSlashes(FullFilePath);
+		if (!FPaths::FileExists(FullFilePath) || bOverwrite)
+		{
+			FFileHelper::SaveStringToFile(Experiment->ToString(), *FullFilePath);
+		}
+	}
 }
 
 
