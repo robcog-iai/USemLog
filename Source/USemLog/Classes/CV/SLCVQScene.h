@@ -66,10 +66,23 @@ protected:
 	bool SetSceneActors(ASLIndividualManager* IndividualManager, ASLMongoQueryManager* MQManager);
 
 	// Calculate scene center pose
-	FVector CalcSceneCenterPose();
+	FVector CalcSceneOrigin();
 
 	// Move scene to root (scan) location (0,0,0)
-	void MoveSceneToRootLocation(FVector Offset);
+	void AddOffsetToScene(FVector Offset);
+
+	// Apply cached poses to the scene
+	void ApplyPoses();
+
+private:
+	// 
+	FVector DummyCalcSceneOriginRed();
+
+	// 
+	FVector DummyCalcSceneOriginYellow();
+
+	// 
+	FVector DummyCalcSceneOriginGreen();
 
 public:
 	UPROPERTY(EditAnywhere, Category = "CV Scene")

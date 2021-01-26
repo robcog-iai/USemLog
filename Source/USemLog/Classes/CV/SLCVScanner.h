@@ -132,8 +132,11 @@ private:
 	// Remove detachments and hide all actors in the world
 	void HideAllActors();
 
+	// Detach all actors
+	void DetachAllActors();
+
 	// Disable physiscs and detach all actors
-	void DisablePhysicsAndDetachAllActors();
+	void DisablePhysicsOnAllActors();
 
 	// Set ppv proerties (disable / ambient occlusion)
 	void SetPostProcessVolumeProperties();

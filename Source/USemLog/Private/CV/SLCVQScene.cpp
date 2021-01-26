@@ -65,32 +65,16 @@ bool USLCVQScene::InitScene(ASLIndividualManager* IndividualManager, ASLMongoQue
 // Public execute function
 void USLCVQScene::ShowScene()
 {
-	// Move static mesh actors (and mask clones) to the given poses
-	for (const auto& ActPosePair : SceneActorPoses)
-	{
-		AStaticMeshActor* CurrSMA = ActPosePair.Key;
-		FTransform CurrPose = ActPosePair.Value;
-		CurrSMA->SetActorHiddenInGame(false);
+	// Non-offseted poses, to re-calculate bounds
+	// Redundant call with InitSceneImpl, required otherwise the bounds are not updated
+	ApplyPoses();
 
-		// Set the actor with the original materials in its location
-		CurrSMA->SetActorTransform(CurrPose);
-		
-		// Set the clones in their locations
-		if (auto* CurrClone = StaticMaskClones.Find(CurrSMA))
-		{
-			(*CurrClone)->SetWorldTransform(CurrPose);
-		}
-	}
+	// Add osset to the cached poses
+	FVector SceneOrigin = CalcSceneOrigin();
+	AddOffsetToScene(-SceneOrigin);
 
-	for (const auto& SkelActPosePair : ScenePoseableActorPoses)
-	{
-		ASLPoseableMeshActorWithMask* CurrSkelMA = SkelActPosePair.Key;
-		FTransform CurrSkelMAPose = SkelActPosePair.Value.Key;
-		CurrSkelMA->SetActorHiddenInGame(false);
-
-		// Set actor pose and bone pose
-		CurrSkelMA->SetSkeletalPose(SkelActPosePair.Value);
-	}
+	// Apply offseted (moved to 0,0,0) poes
+	ApplyPoses();
 }
 
 // Hide scene
@@ -311,18 +295,18 @@ float USLCVQScene::GetAppliedSceneSphereBoundsRadius() const
 	for (const auto& SkelMAPosePair : ScenePoseableActorPoses)
 	{
 		// Get the original poseable mesh bounds		
-		UPoseableMeshComponent* OrigClone = SkelMAPosePair.Key->GetPoseableMeshComponent();
-		FBoxSphereBounds SMBounds = OrigClone->Bounds;
+		UPoseableMeshComponent* PoseableMeshComp = SkelMAPosePair.Key->GetPoseableMeshComponent();
+		FBoxSphereBounds PoseableMBounds = PoseableMeshComp->Bounds;
 
 		// Set first value, or add the next ones
 		if (SphereBounds.SphereRadius > 0.f)
 		{
-			SphereBounds = SphereBounds + SMBounds;
+			SphereBounds = SphereBounds + PoseableMBounds;
 		}
 		else
 		{
 			// First value
-			SphereBounds = SMBounds;
+			SphereBounds = PoseableMBounds;
 		}
 	}
 
@@ -450,12 +434,10 @@ bool USLCVQScene::InitSceneImpl(ASLIndividualManager* IndividualManager, ASLMong
 			*FString(__FUNCTION__), __LINE__, *GetName());
 		return false;
 	}
-
-	// Get the center location of the scene
-	FVector SceneCenterLocation = CalcSceneCenterPose();
-
-	// Move scene to root (scan) location (0,0,0) using calculated offset
-	MoveSceneToRootLocation(SceneCenterLocation);	
+	
+	// Dummy call, for some reason it is required otherwise the skeletal bounding boxes
+	// are not updated in the show scene
+	ApplyPoses();
 
 	return true;
 }
@@ -473,26 +455,11 @@ bool USLCVQScene::SetSceneActors(ASLIndividualManager* IndividualManager, ASLMon
 				// Cache the episodic memory world pose
 				FTransform EpMemPose = MQManager->GetIndividualPoseAt(Id, Timestamp);
 				SceneActorPoses.Add(AsSMA, EpMemPose);
-
-#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
-				UE_LOG(LogTemp, Error, TEXT("%s::%d Actor %s:\n (RED)SemMapLoc=%s; (GREEN)EpMemLoc=%s;"),
-					*FString(__FUNCTION__), __LINE__, *AsSMA->GetName(),
-					*AsSMA->GetActorLocation().ToString(),
-					*EpMemPose.GetLocation().ToString());
-
-				if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
-				{
-					DrawDebugPoint(ActiveWorld, AsSMA->GetActorLocation(), 10.f, FColor::Red, true);
-					DrawDebugPoint(ActiveWorld, EpMemPose.GetLocation(), 10.f, FColor::Green, true);
-					DrawDebugLine(ActiveWorld, AsSMA->GetActorLocation(), EpMemPose.GetLocation(), FColor::Yellow, true);
-				}
-#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
 			}
 			else if (auto* AsSkelMA = Cast<ASkeletalMeshActor>(CurrActor))
 			{
 				// Store ep memory skel pose
 				TPair<FTransform, TMap<int32, FTransform>> EpMemSkelPose = MQManager->GetSkeletalIndividualPoseAt(Id, Timestamp);
-				//SceneSkelActorPoses.Add(AsSkelMA, EpMemSkelPose);
 
 				// Name of the poseable mesh
 				const FString PoseableActorName = AsSkelMA->GetName() + TEXT("_CVQSceneClone");
@@ -509,7 +476,6 @@ bool USLCVQScene::SetSceneActors(ASLIndividualManager* IndividualManager, ASLMon
 
 				// Create a clone actor of the skeletal actor
 				FActorSpawnParameters SpawnParams;
-
 				SpawnParams.Name = FName(*PoseableActorName);
 				auto* PoseableCloneAct = IndividualManager->GetWorld()->SpawnActor<ASLPoseableMeshActorWithMask>(SpawnParams);
 #if WITH_EDITOR
@@ -521,46 +487,59 @@ bool USLCVQScene::SetSceneActors(ASLIndividualManager* IndividualManager, ASLMon
 				// Keep a mapping to the original actor
 				PoseableMeshCloneOfMap.Add(PoseableCloneAct, AsSkelMA);
 
+				// Hide by default
+				//PoseableCloneAct->SetActorHiddenInGame(true);
+
 #if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
 				if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
 				{
 					// Sem map location
-					USkeletalMeshComponent* SkelMeshComp = AsSkelMA->GetSkeletalMeshComponent();
-					DrawDebugPoint(ActiveWorld, AsSkelMA->GetActorLocation(), 10.f, FColor::Red, true);
-					DrawDebugSphere(ActiveWorld, SkelMeshComp->GetComponentLocation(), 5.f, 8, FColor::Red, true);
-					for (int32 BIdx = 0; BIdx < SkelMeshComp->GetNumBones(); BIdx++)
-					{
-						FVector CurrBoneLocation = SkelMeshComp->GetBoneTransform(BIdx).GetLocation();
-						DrawDebugPoint(ActiveWorld, CurrBoneLocation, 5.f, FColor::Red, true);
-						DrawDebugLine(ActiveWorld, CurrBoneLocation, AsSkelMA->GetActorLocation(), FColor::Red, true);
-					}
-					
+					// Orig
+					//USkeletalMeshComponent* SkelMeshComp = AsSkelMA->GetSkeletalMeshComponent();
+					//DrawDebugSphere(ActiveWorld, AsSkelMA->GetActorLocation(), 3.f, 4, FColor::Blue, true);
+					//DrawDebugSphere(ActiveWorld, SkelMeshComp->GetComponentLocation(), 5.f, 8, FColor::Blue, true);
+					//for (int32 BIdx = 0; BIdx < SkelMeshComp->GetNumBones(); BIdx++)
+					//{
+					//	FVector CurrBoneLocation = SkelMeshComp->GetBoneTransform(BIdx).GetLocation();
+					//	DrawDebugPoint(ActiveWorld, CurrBoneLocation, 5.f, FColor::Blue, true);
+					//	DrawDebugLine(ActiveWorld, CurrBoneLocation, AsSkelMA->GetActorLocation(), FColor::Blue, true);
+					//}
+					//DrawDebugSphere(ActiveWorld, SkelMeshComp->Bounds.Origin, SkelMeshComp->Bounds.SphereRadius, 16, FColor::Blue, true);
+					//DrawDebugSphere(ActiveWorld, SkelMeshComp->Bounds.Origin, 5.f, 4, FColor::Blue, true);
+					//DrawDebugLine(ActiveWorld, SkelMeshComp->Bounds.Origin, AsSkelMA->GetActorLocation(), FColor::Yellow, true);
+
+					// Clone
+					//UPoseableMeshComponent* PoseableMeshComp = PoseableCloneAct->GetPoseableMeshComponent();
+					//DrawDebugSphere(ActiveWorld, PoseableCloneAct->GetActorLocation(), 3.f, 4, FColor::Magenta, true);
+					//DrawDebugSphere(ActiveWorld, PoseableMeshComp->GetComponentLocation(), 5.f, 8, FColor::Magenta, true);
+					//for (int32 BIdx = 0; BIdx < PoseableMeshComp->GetNumBones(); BIdx++)
+					//{
+					//	FVector CurrBoneLocation = PoseableMeshComp->GetBoneTransform(BIdx).GetLocation();
+					//	DrawDebugPoint(ActiveWorld, CurrBoneLocation, 5.f, FColor::Magenta, true);
+					//	DrawDebugLine(ActiveWorld, CurrBoneLocation, PoseableCloneAct->GetActorLocation(), FColor::Magenta, true);
+					//}
+					//DrawDebugSphere(ActiveWorld, PoseableMeshComp->Bounds.Origin, PoseableMeshComp->Bounds.SphereRadius, 16, FColor::Magenta, true);
+					//DrawDebugSphere(ActiveWorld, PoseableMeshComp->Bounds.Origin, 5.f, 4, FColor::Magenta, true);
+					//DrawDebugLine(ActiveWorld, PoseableMeshComp->Bounds.Origin, PoseableCloneAct->GetActorLocation(), FColor::Yellow, true);
+
 					// Ep mem location
-					DrawDebugPoint(ActiveWorld, EpMemSkelPose.Key.GetLocation(), 20.f, FColor::Green, true);
-					for (const auto& BonePosePair : EpMemSkelPose.Value)
-					{
-						FVector CurrBoneLocation = BonePosePair.Value.GetLocation();
-						DrawDebugPoint(ActiveWorld, CurrBoneLocation, 5.f, FColor::Green, true);
-						DrawDebugLine(ActiveWorld, CurrBoneLocation, EpMemSkelPose.Key.GetLocation(), FColor::Red, true);
-					}
+					//DrawDebugSphere(ActiveWorld, EpMemSkelPose.Key.GetLocation(), 3.f, 4, FColor::White, true);
+					//for (const auto& BonePosePair : EpMemSkelPose.Value)
+					//{
+					//	FVector CurrBoneLocation = BonePosePair.Value.GetLocation();
+					//	DrawDebugPoint(ActiveWorld, CurrBoneLocation, 5.f, FColor::White, true);
+					//	DrawDebugLine(ActiveWorld, CurrBoneLocation, EpMemSkelPose.Key.GetLocation(), FColor::White, true);
+					//}
 				}
 #endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
 			}
 		}
 	}
-
-#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
-	if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
-	{
-		DrawDebugPoint(ActiveWorld, FVector::ZeroVector, 25.f, FColor::White, true);
-	}
-#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
-
 	return SceneActorPoses.Num() > 0 || ScenePoseableActorPoses.Num() > 0;
 }
 
 // Calculate scene center pose
-FVector USLCVQScene::CalcSceneCenterPose()
+FVector USLCVQScene::CalcSceneOrigin()
 {
 	// Calculate centroid location
 	FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
@@ -572,14 +551,6 @@ FVector USLCVQScene::CalcSceneCenterPose()
 
 		// Get the mesh bounds
 		FBoxSphereBounds SMBounds = CurrSMA->GetStaticMeshComponent()->Bounds;
-
-#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
-		if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
-		{
-			DrawDebugSphere(ActiveWorld, SMBounds.Origin, SMBounds.SphereRadius, 16, FColor::Red, true);
-			DrawDebugSphere(ActiveWorld, CurrEpMemPose.GetLocation(), SMBounds.SphereRadius, 16, FColor::Green, true);
-		}
-#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
 
 		// Offset the bounds origin to the episodic memory location
 		SMBounds.Origin = CurrEpMemPose.GetLocation();
@@ -596,76 +567,39 @@ FVector USLCVQScene::CalcSceneCenterPose()
 		}
 	}
 	// Add up skeletal mesh bounds
-	for (const auto& SkelMAPosePair : ScenePoseableActorPoses)
+	for (const auto& SkelActPosePair : ScenePoseableActorPoses)
 	{
 		// Get the original poseable mesh bounds
-		UPoseableMeshComponent* OrigClone = SkelMAPosePair.Key->GetPoseableMeshComponent();
-		FBoxSphereBounds SkelMBounds = OrigClone->Bounds;
-
-#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
-		if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
-		{
-			DrawDebugSphere(ActiveWorld, SkelMBounds.Origin, SkelMBounds.SphereRadius, 16, FColor::Red, true);
-			DrawDebugSphere(ActiveWorld, OrigClone->GetComponentLocation(), SkelMBounds.SphereRadius, 16, FColor::Green, true);
-		}
-#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
-
-		// The skeletal meshes do not have their root pose in the center of the mesh,
-		// we then need to apply this offset when moving the origin of the bounds to the ep memory location
-		FVector SkelCenterOffset = OrigClone->GetComponentLocation() - SkelMBounds.Origin;
-
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's SkelCenterOffset=%s;"),
-			*FString(__FUNCTION__), __LINE__,
-			*GetName(),
-			*SkelMAPosePair.Key->GetName(),
-			*SkelCenterOffset.ToString());
-
-		// Offset the bounds origin to the episodic memory location
-		if (auto SkelPose = ScenePoseableActorPoses.Find(SkelMAPosePair.Key))
-		{
-			SkelMBounds.Origin = (*SkelPose).Key.GetLocation() - SkelCenterOffset;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("%s::%d %s this should not happen, %s should be in the scene.."),
-				*FString(__FUNCTION__), __LINE__, *GetName(), *SkelMAPosePair.Key->GetName());
-		}
-
-		UE_LOG(LogTemp, Error, TEXT("%s::%d %s::%s's SkelMBounds.Origin=%s;"),
-			*FString(__FUNCTION__), __LINE__,
-			*GetName(),
-			*SkelMAPosePair.Key->GetName(),
-			*SkelMBounds.Origin.ToString());
+		ASLPoseableMeshActor* PoseableCloneAct = SkelActPosePair.Key;
+		UPoseableMeshComponent* PoseableMeshComp = PoseableCloneAct->GetPoseableMeshComponent();
+		TPair<FTransform, TMap<int32, FTransform>> CurrEpMemSkelPose = SkelActPosePair.Value;
+			
+		// Move clone to episodic memory location (easier to calculate the bound values)
+		PoseableCloneAct->SetSkeletalPose(CurrEpMemSkelPose);
+		PoseableMeshComp->UpdateBounds();
+		FBoxSphereBounds PoseableMBounds = PoseableMeshComp->Bounds;
 
 		// Set first value, or add the next ones
 		if (SphereBounds.SphereRadius > 0.f)
 		{
-			SphereBounds = SphereBounds + SkelMBounds;
+			SphereBounds = SphereBounds + PoseableMBounds;
 		}
 		else
 		{
 			// First value
-			SphereBounds = SkelMBounds;
+			SphereBounds = PoseableMBounds;
 		}
 	}
-
-#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
-	if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
-	{
-		DrawDebugSphere(ActiveWorld, FVector::ZeroVector, SphereBounds.SphereRadius, 16, FColor::White, true);
-	}
-#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
-
 	return SphereBounds.Origin;
 }
 
 // Move scene to root (scan) location (0,0,0)
-void USLCVQScene::MoveSceneToRootLocation(FVector Offset)
+void USLCVQScene::AddOffsetToScene(FVector Offset)
 {
 	// Move scene to root
 	for (auto& ActPosePair : SceneActorPoses)
 	{
-		ActPosePair.Value.AddToTranslation(-Offset);
+		ActPosePair.Value.AddToTranslation(Offset);
 	}
 
 	for (auto& SkelActPosePair : ScenePoseableActorPoses)
@@ -674,13 +608,279 @@ void USLCVQScene::MoveSceneToRootLocation(FVector Offset)
 		TPair<FTransform, TMap<int32, FTransform>>& SkelPoseRef = SkelActPosePair.Value;
 
 		// Moving the skel actor is probably not needed
-		SkelPoseRef.Key.AddToTranslation(-Offset);
+		SkelPoseRef.Key.AddToTranslation(Offset);
 
 		// Moving the bones is needed
 		for (auto& BonePosePair : SkelPoseRef.Value)
 		{
-			BonePosePair.Value.AddToTranslation(-Offset);
+			BonePosePair.Value.AddToTranslation(Offset);
 		}
 	}
 }
 
+// Apply cached poses to the scene
+void USLCVQScene::ApplyPoses()
+{
+	// Move static mesh actors (and mask clones) to the given poses
+	for (const auto& ActPosePair : SceneActorPoses)
+	{
+		AStaticMeshActor* CurrSMA = ActPosePair.Key;
+		FTransform CurrPose = ActPosePair.Value;
+		CurrSMA->SetActorHiddenInGame(false);
+
+		// Set the actor with the original materials in its location
+		CurrSMA->SetActorTransform(CurrPose);
+
+		// Set the clones in their locations
+		if (auto* CurrClone = StaticMaskClones.Find(CurrSMA))
+		{
+			(*CurrClone)->SetWorldTransform(CurrPose);
+		}
+	}
+
+	for (const auto& SkelActPosePair : ScenePoseableActorPoses)
+	{
+		ASLPoseableMeshActorWithMask* CurrSkelMA = SkelActPosePair.Key;
+		CurrSkelMA->SetActorHiddenInGame(false);
+
+		// Set actor pose and bone pose
+		CurrSkelMA->SetSkeletalPose(SkelActPosePair.Value);
+	}
+}
+
+// 
+FVector USLCVQScene::DummyCalcSceneOriginRed()
+{
+	// Calculate centroid location
+	FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
+	// Add up static mesh bounds
+	for (const auto& SMAPosePair : SceneActorPoses)
+	{
+		AStaticMeshActor* CurrSMA = SMAPosePair.Key;
+		FTransform CurrEpMemPose = SMAPosePair.Value;
+
+		// Get the mesh bounds
+		FBoxSphereBounds SMBounds = CurrSMA->GetStaticMeshComponent()->Bounds;
+
+		// Offset the bounds origin to the episodic memory location
+		SMBounds.Origin = CurrEpMemPose.GetLocation();
+
+		// Set first value, or add the next ones
+		if (SphereBounds.SphereRadius > 0.f)
+		{
+			SphereBounds = SphereBounds + SMBounds;
+		}
+		else
+		{
+			// First value
+			SphereBounds = SMBounds;
+		}
+	}
+	// Add up skeletal mesh bounds
+	for (const auto& SkelActPosePair : ScenePoseableActorPoses)
+	{
+		// Get the original poseable mesh bounds
+		ASLPoseableMeshActor* PoseableCloneAct = SkelActPosePair.Key;
+		UPoseableMeshComponent* PoseableMeshComp = PoseableCloneAct->GetPoseableMeshComponent();
+		TPair<FTransform, TMap<int32, FTransform>> CurrEpMemSkelPose = SkelActPosePair.Value;
+
+		// Move clone to episodic memory location (easier to calculate the bound values)
+		PoseableCloneAct->SetSkeletalPose(CurrEpMemSkelPose);
+		PoseableMeshComp->UpdateBounds();
+		FBoxSphereBounds PoseableMBounds = PoseableMeshComp->Bounds;
+
+#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+		if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
+		{
+			// Clone
+			for (int32 BIdx = 0; BIdx < PoseableMeshComp->GetNumBones(); BIdx++)
+			{
+				FVector CurrBoneLocation = PoseableMeshComp->GetBoneTransform(BIdx).GetLocation();
+				DrawDebugPoint(ActiveWorld, CurrBoneLocation, 8.f, FColor::Red, true);
+				DrawDebugLine(ActiveWorld, CurrBoneLocation, PoseableCloneAct->GetActorLocation(), FColor::Red, true);
+			}
+			DrawDebugSphere(ActiveWorld, PoseableMBounds.Origin, PoseableMBounds.SphereRadius, 16, FColor::Red, true);
+			DrawDebugSphere(ActiveWorld, PoseableMBounds.Origin, 3.f, 6, FColor::Red, true);
+		}
+#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+
+		// Set first value, or add the next ones
+		if (SphereBounds.SphereRadius > 0.f)
+		{
+			SphereBounds = SphereBounds + PoseableMBounds;
+		}
+		else
+		{
+			// First value
+			SphereBounds = PoseableMBounds;
+		}
+	}
+
+#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+	if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
+	{
+		DrawDebugSphere(ActiveWorld, SphereBounds.Origin, SphereBounds.SphereRadius, 32, FColor::Red, true);
+		DrawDebugSphere(ActiveWorld, SphereBounds.Origin, 3.f, 16, FColor::Red, true);
+	}
+#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+
+	return SphereBounds.Origin;
+}
+
+// 
+FVector USLCVQScene::DummyCalcSceneOriginYellow()
+{
+	// Calculate centroid location
+	FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
+	// Add up static mesh bounds
+	for (const auto& SMAPosePair : SceneActorPoses)
+	{
+		AStaticMeshActor* CurrSMA = SMAPosePair.Key;
+		FTransform CurrEpMemPose = SMAPosePair.Value;
+
+		// Get the mesh bounds
+		FBoxSphereBounds SMBounds = CurrSMA->GetStaticMeshComponent()->Bounds;
+
+		// Offset the bounds origin to the episodic memory location
+		SMBounds.Origin = CurrEpMemPose.GetLocation();
+
+		// Set first value, or add the next ones
+		if (SphereBounds.SphereRadius > 0.f)
+		{
+			SphereBounds = SphereBounds + SMBounds;
+		}
+		else
+		{
+			// First value
+			SphereBounds = SMBounds;
+		}
+	}
+	// Add up skeletal mesh bounds
+	for (const auto& SkelActPosePair : ScenePoseableActorPoses)
+	{
+		// Get the original poseable mesh bounds
+		ASLPoseableMeshActor* PoseableCloneAct = SkelActPosePair.Key;
+		UPoseableMeshComponent* PoseableMeshComp = PoseableCloneAct->GetPoseableMeshComponent();
+		TPair<FTransform, TMap<int32, FTransform>> CurrEpMemSkelPose = SkelActPosePair.Value;
+
+		// Move clone to episodic memory location (easier to calculate the bound values)
+		PoseableCloneAct->SetSkeletalPose(CurrEpMemSkelPose);
+		PoseableMeshComp->UpdateBounds();
+		FBoxSphereBounds PoseableMBounds = PoseableMeshComp->Bounds;
+
+#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+		if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
+		{
+			// Clone
+			for (int32 BIdx = 0; BIdx < PoseableMeshComp->GetNumBones(); BIdx++)
+			{
+				FVector CurrBoneLocation = PoseableMeshComp->GetBoneTransform(BIdx).GetLocation();
+				DrawDebugPoint(ActiveWorld, CurrBoneLocation, 8.f, FColor::Yellow, true);
+				DrawDebugLine(ActiveWorld, CurrBoneLocation, PoseableCloneAct->GetActorLocation(), FColor::Yellow, true);
+			}
+			DrawDebugSphere(ActiveWorld, PoseableMBounds.Origin, PoseableMBounds.SphereRadius, 16, FColor::Yellow, true);
+			DrawDebugSphere(ActiveWorld, PoseableMBounds.Origin, 3.f, 6, FColor::Yellow, true);
+		}
+#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+
+		// Set first value, or add the next ones
+		if (SphereBounds.SphereRadius > 0.f)
+		{
+			SphereBounds = SphereBounds + PoseableMBounds;
+		}
+		else
+		{
+			// First value
+			SphereBounds = PoseableMBounds;
+		}
+	}
+
+#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+	if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
+	{
+		DrawDebugSphere(ActiveWorld, SphereBounds.Origin, SphereBounds.SphereRadius, 32, FColor::Yellow, true);
+		DrawDebugSphere(ActiveWorld, SphereBounds.Origin, 3.f, 16, FColor::Yellow, true);
+	}
+#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+
+	return SphereBounds.Origin;
+}
+
+// 
+FVector USLCVQScene::DummyCalcSceneOriginGreen()
+{
+	// Calculate centroid location
+	FBoxSphereBounds SphereBounds(EForceInit::ForceInit);
+	// Add up static mesh bounds
+	for (const auto& SMAPosePair : SceneActorPoses)
+	{
+		AStaticMeshActor* CurrSMA = SMAPosePair.Key;
+		FTransform CurrEpMemPose = SMAPosePair.Value;
+
+		// Get the mesh bounds
+		FBoxSphereBounds SMBounds = CurrSMA->GetStaticMeshComponent()->Bounds;
+
+		// Offset the bounds origin to the episodic memory location
+		SMBounds.Origin = CurrEpMemPose.GetLocation();
+
+		// Set first value, or add the next ones
+		if (SphereBounds.SphereRadius > 0.f)
+		{
+			SphereBounds = SphereBounds + SMBounds;
+		}
+		else
+		{
+			// First value
+			SphereBounds = SMBounds;
+		}
+	}
+	// Add up skeletal mesh bounds
+	for (const auto& SkelActPosePair : ScenePoseableActorPoses)
+	{
+		// Get the original poseable mesh bounds
+		ASLPoseableMeshActor* PoseableCloneAct = SkelActPosePair.Key;
+		UPoseableMeshComponent* PoseableMeshComp = PoseableCloneAct->GetPoseableMeshComponent();
+		TPair<FTransform, TMap<int32, FTransform>> CurrEpMemSkelPose = SkelActPosePair.Value;
+
+		// Move clone to episodic memory location (easier to calculate the bound values)
+		PoseableCloneAct->SetSkeletalPose(CurrEpMemSkelPose);
+		PoseableMeshComp->UpdateBounds();
+		FBoxSphereBounds PoseableMBounds = PoseableMeshComp->Bounds;
+
+#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+		if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
+		{
+			// Clone
+			for (int32 BIdx = 0; BIdx < PoseableMeshComp->GetNumBones(); BIdx++)
+			{
+				FVector CurrBoneLocation = PoseableMeshComp->GetBoneTransform(BIdx).GetLocation();
+				DrawDebugPoint(ActiveWorld, CurrBoneLocation, 8.f, FColor::Green, true);
+				DrawDebugLine(ActiveWorld, CurrBoneLocation, PoseableCloneAct->GetActorLocation(), FColor::Green, true);
+			}
+			DrawDebugSphere(ActiveWorld, PoseableMBounds.Origin, PoseableMBounds.SphereRadius, 16, FColor::Green, true);
+			DrawDebugSphere(ActiveWorld, PoseableMBounds.Origin, 3.f, 6, FColor::Green, true);
+		}
+#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+
+		// Set first value, or add the next ones
+		if (SphereBounds.SphereRadius > 0.f)
+		{
+			SphereBounds = SphereBounds + PoseableMBounds;
+		}
+		else
+		{
+			// First value
+			SphereBounds = PoseableMBounds;
+		}
+	}
+
+#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+	if (ActiveWorld && !ActiveWorld->IsPendingKillOrUnreachable())
+	{
+		DrawDebugSphere(ActiveWorld, SphereBounds.Origin, SphereBounds.SphereRadius, 32, FColor::Green, true);
+		DrawDebugSphere(ActiveWorld, SphereBounds.Origin, 3.f, 16, FColor::Green, true);
+	}
+#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+
+	return SphereBounds.Origin;
+}

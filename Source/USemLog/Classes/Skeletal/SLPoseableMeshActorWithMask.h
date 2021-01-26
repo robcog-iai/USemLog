@@ -46,7 +46,7 @@ public:
 
 protected:
 	// Clone of the skeletal mesh component with movable capabilities
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	UPoseableMeshComponent* PoseableMeshComponentMask;
 
 };

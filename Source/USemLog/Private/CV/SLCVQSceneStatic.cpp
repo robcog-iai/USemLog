@@ -3,6 +3,7 @@
 
 #include "CV/SLCVQSceneStatic.h"
 #include "Individuals/SLIndividualManager.h"
+#include "Engine/StaticMeshActor.h"
 #include "GameFramework/Actor.h"
 
 // Virtual implementation for the scene initialization

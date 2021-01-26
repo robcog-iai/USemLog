@@ -92,7 +92,7 @@ void ASLCVScanner::BeginPlay()
 
 	//Start();
 	FTimerHandle UnusedHandle;
-	GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::Start, 0.25f, false);
+	GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::Start, 0.15f, false);
 }
 
 // Called when actor removed from game or game ended
@@ -176,7 +176,7 @@ void ASLCVScanner::Init()
 	}
 
 	// Disable physiscs and detach all actors
-	DisablePhysicsAndDetachAllActors();
+	DetachAllActors();
 
 	/* Set the individual manager */
 	if (!SetIndividualManager())
@@ -307,7 +307,10 @@ void ASLCVScanner::Start()
 		return;
 	}
 
-	// Remove detachments and hide all actors in the world
+	// Clear physics on all actors
+	DisablePhysicsOnAllActors();
+
+	// Remove hide all actors in the world
 	HideAllActors();
 
 	// Make sure the camera light is not hidden
@@ -339,7 +342,7 @@ void ASLCVScanner::Start()
 
 		// Use a delay, sometimes the materials are not properly loaded
 		FTimerHandle UnusedHandle;
-		GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::RequestScreenshotAsync, 0.1f, false);
+		GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::RequestScreenshotAsync, 0.15f, false);
 	}
 
 	bIsStarted = true;
@@ -458,7 +461,7 @@ void ASLCVScanner::ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TA
 
 					// Use a delay, sometimes the materials are not properly loaded
 					FTimerHandle UnusedHandle;
-					GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::RequestScreenshotAsync, 0.1f, false);
+					GetWorldTimerManager().SetTimer(UnusedHandle, this, &ASLCVScanner::RequestScreenshotAsync, 0.15f, false);
 				}
 			}
 			else
@@ -838,8 +841,18 @@ void ASLCVScanner::HideAllActors()
 	}
 }
 
+// Detach all actors
+void ASLCVScanner::DetachAllActors()
+{
+	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
+	{
+		// Clear any attachments between actors
+		ActItr->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	}
+}
+
 // Disable physiscs and detach all actors
-void ASLCVScanner::DisablePhysicsAndDetachAllActors()
+void ASLCVScanner::DisablePhysicsOnAllActors()
 {
 	for (TActorIterator<AActor> ActItr(GetWorld()); ActItr; ++ActItr)
 	{
@@ -851,9 +864,6 @@ void ASLCVScanner::DisablePhysicsAndDetachAllActors()
 		{
 			ActItr->GetRootComponent()->SetMobility(EComponentMobility::Movable);
 		}
-
-		// Clear any attachments between actors
-		ActItr->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 	}
 }
 
@@ -1278,18 +1288,16 @@ void ASLCVScanner::SetCameraPoseSphereRadius()
 		CurrCameraPoseSphereRadius = SphereRadius * CameraRadiusDistanceMultiplier;
 	}
 
-#if SL_WITH_DEBUG
-#if ENABLE_DRAW_DEBUG
-	// Draw the camera poses
-	for (const auto& CameraUnitPose : CameraScanUnitPoses)
-	{
-		FTransform CameraScenePose = CameraUnitPose;
-		CameraScenePose.AddToTranslation(CameraScenePose.GetTranslation() * CurrCameraPoseSphereRadius);
-		DrawDebugDirectionalArrow(GetWorld(), CameraScenePose.GetTranslation(), FVector::ZeroVector,
-			1.f, FColor::Yellow, true);
-	}
-#endif // ENABLE_DRAW_DEBUG
-#endif // SL_WITH_DEBUG
+#if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
+	//// Draw the camera poses
+	//for (const auto& CameraUnitPose : CameraScanUnitPoses)
+	//{
+	//	FTransform CameraScenePose = CameraUnitPose;
+	//	CameraScenePose.AddToTranslation(CameraScenePose.GetTranslation() * CurrCameraPoseSphereRadius);
+	//	DrawDebugDirectionalArrow(GetWorld(), CameraScenePose.GetTranslation(), FVector::ZeroVector,
+	//		1.f, FColor::Yellow, true);
+	//}
+#endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
 }
 
 // Print progress to terminal

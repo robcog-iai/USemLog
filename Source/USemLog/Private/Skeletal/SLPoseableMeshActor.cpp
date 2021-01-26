@@ -46,7 +46,7 @@ void ASLPoseableMeshActor::SetSkeletalPose(const TPair<FTransform, TMap<int32, F
 		for (const auto& BonePosePair : SkeletalPose.Value)
 		{
 			const FName BoneName = PoseableMeshComponent->GetBoneName(BonePosePair.Key);
-				PoseableMeshComponent->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
+			PoseableMeshComponent->SetBoneTransformByName(BoneName, BonePosePair.Value, EBoneSpaces::WorldSpace);
 		}
 	}
 }
