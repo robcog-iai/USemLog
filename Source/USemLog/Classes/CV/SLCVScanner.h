@@ -287,7 +287,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	float CameraRadiusDistanceMultiplier = 1.5f;
 
-
+	/* Edit */
 	// Add ids from selection button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
 	FString IdCSVString;
@@ -303,6 +303,27 @@ protected:
 	// Overwrite selection
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
 	bool bOverwriteSelectedIds = false;
+
+	/* Debug */
+	// Debug params
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	float DebugArrowThickness = 0.f;
+
+	// Debug params
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	float DebugArrowHeadSize = 1.f;
+
+	// Debug params (0 - sphere origin, 1 - arrow origin)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	float ArrowHeadLocPerc = 0.95f;
+
+	// Debug params
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	FColor StartColorLerp = FColor::Green;
+
+	// Debug params
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	FColor EndColorLerp = FColor::Magenta;
 
 	// True when all references are set and it is connected to the server
 	uint8 bIsInit : 1;

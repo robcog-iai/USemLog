@@ -1289,14 +1289,38 @@ void ASLCVScanner::SetCameraPoseSphereRadius()
 	}
 
 #if SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
-	//// Draw the camera poses
-	//for (const auto& CameraUnitPose : CameraScanUnitPoses)
-	//{
-	//	FTransform CameraScenePose = CameraUnitPose;
-	//	CameraScenePose.AddToTranslation(CameraScenePose.GetTranslation() * CurrCameraPoseSphereRadius);
-	//	DrawDebugDirectionalArrow(GetWorld(), CameraScenePose.GetTranslation(), FVector::ZeroVector,
-	//		1.f, FColor::Yellow, true);
-	//}
+	// Used to calculate the dynamic arrow color
+	int32 PoseIdx = 0;
+	// Draw the camera poses	
+	for (const auto& CameraUnitPose : CameraScanUnitPoses)
+	{
+		// Arrow locations
+		FVector SphereCenter = FVector::ZeroVector;
+		FVector ArrowOrigin = CameraUnitPose.GetLocation() * CurrCameraPoseSphereRadius;
+		FVector ArrowEnd = (ArrowOrigin + SphereCenter) * ArrowHeadLocPerc;
+		FColor ArrowColor = FColor::Green;
+
+		// Scalar to map the arrow color (0 .. 1)
+		float ColorScalar = (1.f / CameraScanUnitPoses.Num()) * PoseIdx;
+
+		// 0.f - Red; 1.f - Green;
+		//ArrowColor = FColor::MakeRedToGreenColorFromScalar(ColorScalar);		
+
+		// 1000K - Red; 15000K - White;
+		//ColorScalar += (ColorScalar * 14000.f) + 1000.f;
+		//ArrowColor = FColor::MakeFromColorTemperature(ColorScalar); 
+
+		// Lerp between colors
+		ArrowColor = FLinearColor::LerpUsingHSV(FLinearColor(StartColorLerp), FLinearColor(EndColorLerp), ColorScalar).ToFColor(true);
+
+		// Draw the debug arrow
+		const float LifeTime = -1.f;
+		const uint8 DepthPriority = 0;
+		DrawDebugDirectionalArrow(GetWorld(), ArrowOrigin, ArrowEnd, DebugArrowHeadSize, ArrowColor, true,
+			LifeTime, DepthPriority, DebugArrowThickness);
+
+		PoseIdx++;
+	}
 #endif // SL_WITH_DEBUG && ENABLE_DRAW_DEBUG
 }
 
