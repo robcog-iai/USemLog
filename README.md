@@ -19,22 +19,30 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 # Related publications
 
 ```bibtex
-@inproceedings{haiduameva19,
-  author    = {Andrei Haidu, Michael Beetz},
-  title     = {Automated Models of Human Everyday Activity based on Game and Virtual Reality Technology},
-  booktitle = {2019 International Conference on Robotics and Automation (ICRA), Montreal, QC, Canada, 2019},
-  year      = {2019}
-  url       = {https://doi.org/10.1109/ICRA.2019.8793859}
+@misc{haidu2020automated,
+    author={Andrei Haidu and Michael Beetz},
+    title={Automated acquisition of structured, semantic models of manipulation activities from human VR demonstration}, 
+    year={2020},
+    eprint={2011.13689},
+    archivePrefix={arXiv},
+    primaryClass={cs.AI}
 }
-```
 
-```bibtex
-@inproceedings{DBLP:conf/iros/HaiduBBB18,
-  author    = {Andrei Haidu, Daniel Bessler, Asil Kaan Bozcuoglu, Michael Beetz},
-  title     = {KnowRob_SIM - Game Engine-Enabled Knowledge Processing Towards Cognition-Enabled Robot Control},
-  booktitle = {2018 {IEEE/RSJ} International Conference on Intelligent Robots and Systems, {IROS} 2018, Madrid, Spain, October 1-5, 2018},
-  year      = {2018},
-  url       = {https://doi.org/10.1109/IROS.2018.8593935}
+@inproceedings{haiduameva19,
+    author={Andrei Haidu, Michael Beetz},
+    title={Automated Models of Human Everyday Activity based on Game and Virtual Reality Technology}, 
+    booktitle={2019 International Conference on Robotics and Automation (ICRA)}, 
+    year={2019},
+    pages={2606-2612},
+    doi={10.1109/ICRA.2019.8793859}}
+
+@inproceedings{haidukrsim18,
+    author={Andrei Haidu, Daniel Bessler, Asil Kaan Bozcuoglu, Michael Beetz},
+    title={KnowRob_SIM - Game Engine-Enabled Knowledge Processing Towards Cognition-Enabled Robot Control},
+    booktitle={2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)}, 
+    year={2018},
+    pages={4491-4498},
+    doi={10.1109/IROS.2018.8593935}}
 }
 ```
 
@@ -45,13 +53,17 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 
 #### Semantically annotate skeletal components:
 
-* [Seletal annotation tutorial](Documentation/SkelAnnotationTutorial.md)
+* [SkelAnnotationTutorial](Documentation/SkelAnnotationTutorial.md)
 
 #### Proto msgs compilation
 
-* [Compile proto msgs](Documentation/ProtoMsgs.md)
+* [ProtoMsgs](Documentation/ProtoMsgs.md)
 
 #### CV scan video generation
 
-* [CV ffmpg](Documentation/CV_ffmpg.md)
+* [CV_ffmpg](Documentation/CV_ffmpg.md)
+
+#### Semantic logger manager usage
+
+* [SLM](Documentation/SLM.md)
 
