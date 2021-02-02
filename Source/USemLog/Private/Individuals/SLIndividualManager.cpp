@@ -57,24 +57,24 @@ void ASLIndividualManager::PostEditChangeProperty(struct FPropertyChangedEvent& 
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	/* Button hacks */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bInitButtonHack))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bInitButton))
 	{
-		bInitButtonHack = false;
-		Init(bResetButtonHack);
+		bInitButton = false;
+		Init(bResetButton);
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bLoadButtonHack))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bLoadButton))
 	{
-		bLoadButtonHack = false;
-		Load(bResetButtonHack);
+		bLoadButton = false;
+		Load(bResetButton);
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bResetButtonHack))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bResetButton))
 	{
-		bResetButtonHack = false;
+		bResetButton = false;
 		InitReset();
 	}
-	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bFindIdButtonHack))
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bFindIdButton))
 	{
-		bFindIdButtonHack = false;
+		bFindIdButton = false;
 		if (FindIdValue.IsEmpty())
 		{
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Id value is empty, set value first.. "), *FString(__FUNCTION__), __LINE__);
@@ -99,6 +99,15 @@ void ASLIndividualManager::PostEditChangeProperty(struct FPropertyChangedEvent& 
 			UE_LOG(LogTemp, Error, TEXT("%s::%d Individual %s could not be found.. "), *FString(__FUNCTION__), __LINE__, *FindIdValue);
 		}
 
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLIndividualManager, bToggleVisualMaskVisiblityButton))
+	{
+		bToggleVisualMaskVisiblityButton = false;
+		for (const auto& IC : IndividualComponents)
+		{
+			bool bIncludeChildren = true;
+			IC->ToggleVisualMaskVisibility(bIncludeChildren);
+		}
 	}
 
 }
