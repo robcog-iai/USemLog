@@ -183,27 +183,31 @@ private:
 
 	/* Editor button hacks */
 	// Triggers a call to init
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bInitButtonHack = false;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bInitButton = false;
 
 	// Triggers a call to load
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bLoadButtonHack = false;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bLoadButton = false;
 
 	// Triggered call reset argument
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bResetFlagButtonHack = false;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bResetFlagButton = false;
 
 	// Triggers a reset call
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bResetButtonHack = false;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bResetButton = false;
 
 	// Searches for id value in the world
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
 	FString FindIdValue = "";
 
 	// Triggers searching for the id
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Buttons")
-	bool bFindIdButtonHack = false;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bFindIdButton = false;
+
+	// Toggle between visualizing the visual mask
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
+	bool bToggleVisualMaskVisiblityButton = false;
 };
 

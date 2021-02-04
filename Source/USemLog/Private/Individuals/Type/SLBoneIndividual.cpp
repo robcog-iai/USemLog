@@ -100,6 +100,13 @@ bool USLBoneIndividual::ApplyMaskMaterials(bool bIncludeChildren /*= false*/)
 	if (!bIsMaskMaterialOn)
 	{
 		SkeletalMeshComponent->SetMaterial(MaterialIndex, VisualMaskDynamicMaterial);
+
+		// Apply for poseable mesh clone if there is one
+		if (UPoseableMeshComponent* PMC = GetPoseableMeshComponent())
+		{
+			PMC->SetMaterial(MaterialIndex, VisualMaskDynamicMaterial);
+		}
+
 		bIsMaskMaterialOn = true;
 		return true;
 	}
