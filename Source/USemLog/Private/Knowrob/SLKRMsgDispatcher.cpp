@@ -92,13 +92,13 @@ void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 	{
 		StopSimulation(AmevaEvent.stopsimulationparams());
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.StartLoggers)
+	else if (AmevaEvent.functocall() == AmevaEvent.StartLogging)
 	{
-		StartLoggers(AmevaEvent.startloggersparams());
+		StartLogging(AmevaEvent.startloggingparams());
 	}
-	else if (AmevaEvent.functocall() == AmevaEvent.StopLoggers)
+	else if (AmevaEvent.functocall() == AmevaEvent.StopLogging)
 	{
-		StopLoggers();
+		StopLogging();
 	}
 	else if (AmevaEvent.functocall() == AmevaEvent.GetEpisodeData)
 	{
@@ -231,7 +231,7 @@ void SLKRMsgDispatcher::LoadLevel(sl_pb::LoadLevelParams params)
 }
 
 // Start Symbolic and World State Logger
-void SLKRMsgDispatcher::StartLoggers(sl_pb::StartLoggersParams params)
+void SLKRMsgDispatcher::StartLogging(sl_pb::StartLoggingParams params)
 {
 	FString TaskId = UTF8_TO_TCHAR(params.taskid().c_str());
 	FString EpisodeId = UTF8_TO_TCHAR(params.episodeid().c_str());
@@ -272,7 +272,7 @@ void SLKRMsgDispatcher::StartLoggers(sl_pb::StartLoggersParams params)
 }
 
 // Stop Symbolicand World State Logger
-void SLKRMsgDispatcher::StopLoggers()
+void SLKRMsgDispatcher::StopLogging()
 {
 	SymbolicLogger->Finish();
 	FSLKRResponse Response;
@@ -286,7 +286,7 @@ void SLKRMsgDispatcher::SendEpisodeData(sl_pb::GetEpisodeDataParams params)
 {
 	FString TaskId = UTF8_TO_TCHAR(params.taskid().c_str());
 	FString EpisodeId = UTF8_TO_TCHAR(params.episodeid().c_str());
-	const FString DirPath = FPaths::ProjectDir() + "/SL/" + TaskId + "/";
+	const FString DirPath = FPaths::ProjectDir() + "/SL/Tasks/" + TaskId + "/";
 	// Write experiment to file
 	FString FullFilePath = DirPath + EpisodeId + TEXT("_ED.owl");
 	FPaths::RemoveDuplicateSlashes(FullFilePath);

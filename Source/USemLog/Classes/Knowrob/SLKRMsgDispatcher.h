@@ -77,10 +77,10 @@ private:
 	void RemoveAllIndividualHighlight();
 
 	// Start Symbolic and World State Logger
-	void StartLoggers(sl_pb::StartLoggersParams params);
+	void StartLogging(sl_pb::StartLoggingParams params);
 
 	// Stop Symbolic and World Logger
-	void StopLoggers();
+	void StopLogging();
 
 	// Send the Episode data
 	void SendEpisodeData(sl_pb::GetEpisodeDataParams params);

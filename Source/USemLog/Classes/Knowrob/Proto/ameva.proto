@@ -3,7 +3,6 @@ syntax = "proto2";
 package sl_pb;
 
 import "viz.proto";
-import "tutorial.proto";
 import "control.proto";
 
 message KRAmevaEvent {
@@ -13,16 +12,16 @@ message KRAmevaEvent {
     DrawMarkerAt = 3;           
     DrawMarkerTraj = 4;
     LoadLevel = 5;
-    StartLoggers = 6;
-    StopLoggers = 7;
+    StartLogging = 6;
+    StopLogging = 7;
     GetEpisodeData = 8; 
     StartSimulation = 9;
     StopSimulation = 10;
     SetIndividualPose = 11;
     ApplyForceTo = 12;
-	Highlight = 13;
-	RemoveHighlight = 14;
-	RemoveAllHighlight = 15;
+    Highlight = 13;
+    RemoveHighlight = 14;
+    RemoveAllHighlight = 15;
   } 
   required FuncToCall funcToCall = 1;
   optional SetTaskParams setTaskParam = 2;
@@ -30,7 +29,7 @@ message KRAmevaEvent {
   optional DrawMarkerAtParams drawMarkerAtParams = 4;
   optional DrawMarkerTrajParams drawMarkerTrajParams = 5;
   optional LoadLevelParams loadLevelParams = 6;
-  optional StartLoggersParams startLoggersParams = 7;
+  optional StartLoggingParams startLoggingParams = 7;
   optional GetEpisodeDataParams getEpisodeDataParams = 8;
   optional StartSimulationParams startSimulationParams = 9;
   optional StopSimulationParams stopSimulationParams = 10;
