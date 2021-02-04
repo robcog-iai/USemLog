@@ -66,9 +66,9 @@ extern GetEpisodeDataParamsDefaultTypeInternal _GetEpisodeDataParams_default_ins
 class SetIndividualPoseParams;
 class SetIndividualPoseParamsDefaultTypeInternal;
 extern SetIndividualPoseParamsDefaultTypeInternal _SetIndividualPoseParams_default_instance_;
-class StartLoggersParams;
-class StartLoggersParamsDefaultTypeInternal;
-extern StartLoggersParamsDefaultTypeInternal _StartLoggersParams_default_instance_;
+class StartLoggingParams;
+class StartLoggingParamsDefaultTypeInternal;
+extern StartLoggingParamsDefaultTypeInternal _StartLoggingParams_default_instance_;
 class StartSimulationParams;
 class StartSimulationParamsDefaultTypeInternal;
 extern StartSimulationParamsDefaultTypeInternal _StartSimulationParams_default_instance_;
@@ -80,7 +80,7 @@ PROTOBUF_NAMESPACE_OPEN
 template<> ::sl_pb::ApplyForceToParams* Arena::CreateMaybeMessage<::sl_pb::ApplyForceToParams>(Arena*);
 template<> ::sl_pb::GetEpisodeDataParams* Arena::CreateMaybeMessage<::sl_pb::GetEpisodeDataParams>(Arena*);
 template<> ::sl_pb::SetIndividualPoseParams* Arena::CreateMaybeMessage<::sl_pb::SetIndividualPoseParams>(Arena*);
-template<> ::sl_pb::StartLoggersParams* Arena::CreateMaybeMessage<::sl_pb::StartLoggersParams>(Arena*);
+template<> ::sl_pb::StartLoggingParams* Arena::CreateMaybeMessage<::sl_pb::StartLoggingParams>(Arena*);
 template<> ::sl_pb::StartSimulationParams* Arena::CreateMaybeMessage<::sl_pb::StartSimulationParams>(Arena*);
 template<> ::sl_pb::StopSimulationParams* Arena::CreateMaybeMessage<::sl_pb::StopSimulationParams>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
@@ -686,23 +686,23 @@ class SetIndividualPoseParams PROTOBUF_FINAL :
 };
 // -------------------------------------------------------------------
 
-class StartLoggersParams PROTOBUF_FINAL :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.StartLoggersParams) */ {
+class StartLoggingParams PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:sl_pb.StartLoggingParams) */ {
  public:
-  inline StartLoggersParams() : StartLoggersParams(nullptr) {}
-  virtual ~StartLoggersParams();
+  inline StartLoggingParams() : StartLoggingParams(nullptr) {}
+  virtual ~StartLoggingParams();
 
-  StartLoggersParams(const StartLoggersParams& from);
-  StartLoggersParams(StartLoggersParams&& from) noexcept
-    : StartLoggersParams() {
+  StartLoggingParams(const StartLoggingParams& from);
+  StartLoggingParams(StartLoggingParams&& from) noexcept
+    : StartLoggingParams() {
     *this = ::std::move(from);
   }
 
-  inline StartLoggersParams& operator=(const StartLoggersParams& from) {
+  inline StartLoggingParams& operator=(const StartLoggingParams& from) {
     CopyFrom(from);
     return *this;
   }
-  inline StartLoggersParams& operator=(StartLoggersParams&& from) noexcept {
+  inline StartLoggingParams& operator=(StartLoggingParams&& from) noexcept {
     if (GetArena() == from.GetArena()) {
       if (this != &from) InternalSwap(&from);
     } else {
@@ -727,20 +727,20 @@ class StartLoggersParams PROTOBUF_FINAL :
   static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
     return GetMetadataStatic().reflection;
   }
-  static const StartLoggersParams& default_instance();
+  static const StartLoggingParams& default_instance();
 
   static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const StartLoggersParams* internal_default_instance() {
-    return reinterpret_cast<const StartLoggersParams*>(
-               &_StartLoggersParams_default_instance_);
+  static inline const StartLoggingParams* internal_default_instance() {
+    return reinterpret_cast<const StartLoggingParams*>(
+               &_StartLoggingParams_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
     3;
 
-  friend void swap(StartLoggersParams& a, StartLoggersParams& b) {
+  friend void swap(StartLoggingParams& a, StartLoggingParams& b) {
     a.Swap(&b);
   }
-  inline void Swap(StartLoggersParams* other) {
+  inline void Swap(StartLoggingParams* other) {
     if (other == this) return;
     if (GetArena() == other->GetArena()) {
       InternalSwap(other);
@@ -748,7 +748,7 @@ class StartLoggersParams PROTOBUF_FINAL :
       ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(StartLoggersParams* other) {
+  void UnsafeArenaSwap(StartLoggingParams* other) {
     if (other == this) return;
     GOOGLE_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -756,17 +756,17 @@ class StartLoggersParams PROTOBUF_FINAL :
 
   // implements Message ----------------------------------------------
 
-  inline StartLoggersParams* New() const final {
-    return CreateMaybeMessage<StartLoggersParams>(nullptr);
+  inline StartLoggingParams* New() const final {
+    return CreateMaybeMessage<StartLoggingParams>(nullptr);
   }
 
-  StartLoggersParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
-    return CreateMaybeMessage<StartLoggersParams>(arena);
+  StartLoggingParams* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<StartLoggingParams>(arena);
   }
   void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
   void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
-  void CopyFrom(const StartLoggersParams& from);
-  void MergeFrom(const StartLoggersParams& from);
+  void CopyFrom(const StartLoggingParams& from);
+  void MergeFrom(const StartLoggingParams& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -780,13 +780,13 @@ class StartLoggersParams PROTOBUF_FINAL :
   inline void SharedCtor();
   inline void SharedDtor();
   void SetCachedSize(int size) const final;
-  void InternalSwap(StartLoggersParams* other);
+  void InternalSwap(StartLoggingParams* other);
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "sl_pb.StartLoggersParams";
+    return "sl_pb.StartLoggingParams";
   }
   protected:
-  explicit StartLoggersParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  explicit StartLoggingParams(::PROTOBUF_NAMESPACE_ID::Arena* arena);
   private:
   static void ArenaDtor(void* object);
   inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
@@ -849,7 +849,7 @@ class StartLoggersParams PROTOBUF_FINAL :
   std::string* _internal_mutable_episodeid();
   public:
 
-  // @@protoc_insertion_point(class_scope:sl_pb.StartLoggersParams)
+  // @@protoc_insertion_point(class_scope:sl_pb.StartLoggingParams)
  private:
   class _Internal;
 
@@ -1717,72 +1717,72 @@ inline void SetIndividualPoseParams::set_quatw(float value) {
 
 // -------------------------------------------------------------------
 
-// StartLoggersParams
+// StartLoggingParams
 
 // required string taskId = 1;
-inline bool StartLoggersParams::_internal_has_taskid() const {
+inline bool StartLoggingParams::_internal_has_taskid() const {
   bool value = (_has_bits_[0] & 0x00000001u) != 0;
   return value;
 }
-inline bool StartLoggersParams::has_taskid() const {
+inline bool StartLoggingParams::has_taskid() const {
   return _internal_has_taskid();
 }
-inline void StartLoggersParams::clear_taskid() {
+inline void StartLoggingParams::clear_taskid() {
   taskid_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   _has_bits_[0] &= ~0x00000001u;
 }
-inline const std::string& StartLoggersParams::taskid() const {
-  // @@protoc_insertion_point(field_get:sl_pb.StartLoggersParams.taskId)
+inline const std::string& StartLoggingParams::taskid() const {
+  // @@protoc_insertion_point(field_get:sl_pb.StartLoggingParams.taskId)
   return _internal_taskid();
 }
-inline void StartLoggersParams::set_taskid(const std::string& value) {
+inline void StartLoggingParams::set_taskid(const std::string& value) {
   _internal_set_taskid(value);
-  // @@protoc_insertion_point(field_set:sl_pb.StartLoggersParams.taskId)
+  // @@protoc_insertion_point(field_set:sl_pb.StartLoggingParams.taskId)
 }
-inline std::string* StartLoggersParams::mutable_taskid() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.StartLoggersParams.taskId)
+inline std::string* StartLoggingParams::mutable_taskid() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.StartLoggingParams.taskId)
   return _internal_mutable_taskid();
 }
-inline const std::string& StartLoggersParams::_internal_taskid() const {
+inline const std::string& StartLoggingParams::_internal_taskid() const {
   return taskid_.Get();
 }
-inline void StartLoggersParams::_internal_set_taskid(const std::string& value) {
+inline void StartLoggingParams::_internal_set_taskid(const std::string& value) {
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
 }
-inline void StartLoggersParams::set_taskid(std::string&& value) {
+inline void StartLoggingParams::set_taskid(std::string&& value) {
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(
     &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
-  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartLoggersParams.taskId)
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartLoggingParams.taskId)
 }
-inline void StartLoggersParams::set_taskid(const char* value) {
+inline void StartLoggingParams::set_taskid(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
               GetArena());
-  // @@protoc_insertion_point(field_set_char:sl_pb.StartLoggersParams.taskId)
+  // @@protoc_insertion_point(field_set_char:sl_pb.StartLoggingParams.taskId)
 }
-inline void StartLoggersParams::set_taskid(const char* value,
+inline void StartLoggingParams::set_taskid(const char* value,
     size_t size) {
   _has_bits_[0] |= 0x00000001u;
   taskid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size), GetArena());
-  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartLoggersParams.taskId)
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartLoggingParams.taskId)
 }
-inline std::string* StartLoggersParams::_internal_mutable_taskid() {
+inline std::string* StartLoggingParams::_internal_mutable_taskid() {
   _has_bits_[0] |= 0x00000001u;
   return taskid_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline std::string* StartLoggersParams::release_taskid() {
-  // @@protoc_insertion_point(field_release:sl_pb.StartLoggersParams.taskId)
+inline std::string* StartLoggingParams::release_taskid() {
+  // @@protoc_insertion_point(field_release:sl_pb.StartLoggingParams.taskId)
   if (!_internal_has_taskid()) {
     return nullptr;
   }
   _has_bits_[0] &= ~0x00000001u;
   return taskid_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline void StartLoggersParams::set_allocated_taskid(std::string* taskid) {
+inline void StartLoggingParams::set_allocated_taskid(std::string* taskid) {
   if (taskid != nullptr) {
     _has_bits_[0] |= 0x00000001u;
   } else {
@@ -1790,73 +1790,73 @@ inline void StartLoggersParams::set_allocated_taskid(std::string* taskid) {
   }
   taskid_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), taskid,
       GetArena());
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartLoggersParams.taskId)
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartLoggingParams.taskId)
 }
 
 // required string episodeId = 2;
-inline bool StartLoggersParams::_internal_has_episodeid() const {
+inline bool StartLoggingParams::_internal_has_episodeid() const {
   bool value = (_has_bits_[0] & 0x00000002u) != 0;
   return value;
 }
-inline bool StartLoggersParams::has_episodeid() const {
+inline bool StartLoggingParams::has_episodeid() const {
   return _internal_has_episodeid();
 }
-inline void StartLoggersParams::clear_episodeid() {
+inline void StartLoggingParams::clear_episodeid() {
   episodeid_.ClearToEmpty(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
   _has_bits_[0] &= ~0x00000002u;
 }
-inline const std::string& StartLoggersParams::episodeid() const {
-  // @@protoc_insertion_point(field_get:sl_pb.StartLoggersParams.episodeId)
+inline const std::string& StartLoggingParams::episodeid() const {
+  // @@protoc_insertion_point(field_get:sl_pb.StartLoggingParams.episodeId)
   return _internal_episodeid();
 }
-inline void StartLoggersParams::set_episodeid(const std::string& value) {
+inline void StartLoggingParams::set_episodeid(const std::string& value) {
   _internal_set_episodeid(value);
-  // @@protoc_insertion_point(field_set:sl_pb.StartLoggersParams.episodeId)
+  // @@protoc_insertion_point(field_set:sl_pb.StartLoggingParams.episodeId)
 }
-inline std::string* StartLoggersParams::mutable_episodeid() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.StartLoggersParams.episodeId)
+inline std::string* StartLoggingParams::mutable_episodeid() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.StartLoggingParams.episodeId)
   return _internal_mutable_episodeid();
 }
-inline const std::string& StartLoggersParams::_internal_episodeid() const {
+inline const std::string& StartLoggingParams::_internal_episodeid() const {
   return episodeid_.Get();
 }
-inline void StartLoggersParams::_internal_set_episodeid(const std::string& value) {
+inline void StartLoggingParams::_internal_set_episodeid(const std::string& value) {
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value, GetArena());
 }
-inline void StartLoggersParams::set_episodeid(std::string&& value) {
+inline void StartLoggingParams::set_episodeid(std::string&& value) {
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(
     &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value), GetArena());
-  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartLoggersParams.episodeId)
+  // @@protoc_insertion_point(field_set_rvalue:sl_pb.StartLoggingParams.episodeId)
 }
-inline void StartLoggersParams::set_episodeid(const char* value) {
+inline void StartLoggingParams::set_episodeid(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value),
               GetArena());
-  // @@protoc_insertion_point(field_set_char:sl_pb.StartLoggersParams.episodeId)
+  // @@protoc_insertion_point(field_set_char:sl_pb.StartLoggingParams.episodeId)
 }
-inline void StartLoggersParams::set_episodeid(const char* value,
+inline void StartLoggingParams::set_episodeid(const char* value,
     size_t size) {
   _has_bits_[0] |= 0x00000002u;
   episodeid_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(
       reinterpret_cast<const char*>(value), size), GetArena());
-  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartLoggersParams.episodeId)
+  // @@protoc_insertion_point(field_set_pointer:sl_pb.StartLoggingParams.episodeId)
 }
-inline std::string* StartLoggersParams::_internal_mutable_episodeid() {
+inline std::string* StartLoggingParams::_internal_mutable_episodeid() {
   _has_bits_[0] |= 0x00000002u;
   return episodeid_.Mutable(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline std::string* StartLoggersParams::release_episodeid() {
-  // @@protoc_insertion_point(field_release:sl_pb.StartLoggersParams.episodeId)
+inline std::string* StartLoggingParams::release_episodeid() {
+  // @@protoc_insertion_point(field_release:sl_pb.StartLoggingParams.episodeId)
   if (!_internal_has_episodeid()) {
     return nullptr;
   }
   _has_bits_[0] &= ~0x00000002u;
   return episodeid_.ReleaseNonDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
 }
-inline void StartLoggersParams::set_allocated_episodeid(std::string* episodeid) {
+inline void StartLoggingParams::set_allocated_episodeid(std::string* episodeid) {
   if (episodeid != nullptr) {
     _has_bits_[0] |= 0x00000002u;
   } else {
@@ -1864,7 +1864,7 @@ inline void StartLoggersParams::set_allocated_episodeid(std::string* episodeid) 
   }
   episodeid_.SetAllocated(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), episodeid,
       GetArena());
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartLoggersParams.episodeId)
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.StartLoggingParams.episodeId)
 }
 
 // -------------------------------------------------------------------

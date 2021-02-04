@@ -25,7 +25,7 @@ extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::S
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetEpisodeParams_viz_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetIndividualPoseParams_control_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_viz_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SetTaskParams_viz_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StartLoggersParams_control_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StartLoggingParams_control_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StartSimulationParams_control_2eproto;
 extern PROTOBUF_INTERNAL_EXPORT_control_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StopSimulationParams_control_2eproto;
 namespace sl_pb {
@@ -56,7 +56,7 @@ static void InitDefaultsscc_info_KRAmevaEvent_ameva_2eproto() {
       &scc_info_DrawMarkerAtParams_viz_2eproto.base,
       &scc_info_DrawMarkerTrajParams_viz_2eproto.base,
       &scc_info_LoadLevelParams_viz_2eproto.base,
-      &scc_info_StartLoggersParams_control_2eproto.base,
+      &scc_info_StartLoggingParams_control_2eproto.base,
       &scc_info_GetEpisodeDataParams_control_2eproto.base,
       &scc_info_StartSimulationParams_control_2eproto.base,
       &scc_info_StopSimulationParams_control_2eproto.base,
@@ -95,7 +95,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_ameva_2eproto::offsets[] PROTO
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, drawmarkeratparams_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, drawmarkertrajparams_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, loadlevelparams_),
-  PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, startloggersparams_),
+  PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, startloggingparams_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, getepisodedataparams_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, startsimulationparams_),
   PROTOBUF_FIELD_OFFSET(::sl_pb::KRAmevaEvent, stopsimulationparams_),
@@ -144,45 +144,43 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 };
 
 const char descriptor_table_protodef_ameva_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\013ameva.proto\022\005sl_pb\032\tviz.proto\032\016tutoria"
-  "l.proto\032\rcontrol.proto\"\272\010\n\014KRAmevaEvent\022"
-  "2\n\nfuncToCall\030\001 \002(\0162\036.sl_pb.KRAmevaEvent"
-  ".FuncToCall\022*\n\014setTaskParam\030\002 \001(\0132\024.sl_p"
-  "b.SetTaskParams\0221\n\020setEpisodeParams\030\003 \001("
-  "\0132\027.sl_pb.SetEpisodeParams\0225\n\022drawMarker"
-  "AtParams\030\004 \001(\0132\031.sl_pb.DrawMarkerAtParam"
-  "s\0229\n\024drawMarkerTrajParams\030\005 \001(\0132\033.sl_pb."
-  "DrawMarkerTrajParams\022/\n\017loadLevelParams\030"
-  "\006 \001(\0132\026.sl_pb.LoadLevelParams\0225\n\022startLo"
-  "ggersParams\030\007 \001(\0132\031.sl_pb.StartLoggersPa"
-  "rams\0229\n\024getEpisodeDataParams\030\010 \001(\0132\033.sl_"
-  "pb.GetEpisodeDataParams\022;\n\025startSimulati"
-  "onParams\030\t \001(\0132\034.sl_pb.StartSimulationPa"
-  "rams\0229\n\024stopSimulationParams\030\n \001(\0132\033.sl_"
-  "pb.StopSimulationParams\022\?\n\027setIndividual"
-  "PoseParams\030\013 \001(\0132\036.sl_pb.SetIndividualPo"
-  "seParams\0225\n\022applyForceToParams\030\014 \001(\0132\031.s"
-  "l_pb.ApplyForceToParams\022/\n\017highlightPara"
-  "ms\030\r \001(\0132\026.sl_pb.HighlightParams\022;\n\025remo"
-  "veHighlightParams\030\016 \001(\0132\034.sl_pb.RemoveHi"
-  "ghlightParams\"\243\002\n\nFuncToCall\022\013\n\007SetTask\020"
-  "\001\022\016\n\nSetEpisode\020\002\022\020\n\014DrawMarkerAt\020\003\022\022\n\016D"
-  "rawMarkerTraj\020\004\022\r\n\tLoadLevel\020\005\022\020\n\014StartL"
-  "oggers\020\006\022\017\n\013StopLoggers\020\007\022\022\n\016GetEpisodeD"
-  "ata\020\010\022\023\n\017StartSimulation\020\t\022\022\n\016StopSimula"
-  "tion\020\n\022\025\n\021SetIndividualPose\020\013\022\020\n\014ApplyFo"
-  "rceTo\020\014\022\r\n\tHighlight\020\r\022\023\n\017RemoveHighligh"
-  "t\020\016\022\026\n\022RemoveAllHighlight\020\017\"\324\001\n\017KRAmevaR"
-  "esponse\0221\n\004type\030\001 \002(\0162#.sl_pb.KRAmevaRes"
-  "ponse.ResponseType\022\014\n\004text\030\002 \001(\t\022\020\n\010file"
-  "Name\030\003 \001(\t\022\020\n\010fileData\030\004 \001(\014\022\022\n\ndataLeng"
-  "th\030\005 \001(\005\"H\n\014ResponseType\022\010\n\004Text\020\001\022\020\n\014Fi"
-  "leCreation\020\002\022\014\n\010FileData\020\003\022\016\n\nFileFinish"
-  "\020\004"
+  "\n\013ameva.proto\022\005sl_pb\032\tviz.proto\032\rcontrol"
+  ".proto\"\272\010\n\014KRAmevaEvent\0222\n\nfuncToCall\030\001 "
+  "\002(\0162\036.sl_pb.KRAmevaEvent.FuncToCall\022*\n\014s"
+  "etTaskParam\030\002 \001(\0132\024.sl_pb.SetTaskParams\022"
+  "1\n\020setEpisodeParams\030\003 \001(\0132\027.sl_pb.SetEpi"
+  "sodeParams\0225\n\022drawMarkerAtParams\030\004 \001(\0132\031"
+  ".sl_pb.DrawMarkerAtParams\0229\n\024drawMarkerT"
+  "rajParams\030\005 \001(\0132\033.sl_pb.DrawMarkerTrajPa"
+  "rams\022/\n\017loadLevelParams\030\006 \001(\0132\026.sl_pb.Lo"
+  "adLevelParams\0225\n\022startLoggingParams\030\007 \001("
+  "\0132\031.sl_pb.StartLoggingParams\0229\n\024getEpiso"
+  "deDataParams\030\010 \001(\0132\033.sl_pb.GetEpisodeDat"
+  "aParams\022;\n\025startSimulationParams\030\t \001(\0132\034"
+  ".sl_pb.StartSimulationParams\0229\n\024stopSimu"
+  "lationParams\030\n \001(\0132\033.sl_pb.StopSimulatio"
+  "nParams\022\?\n\027setIndividualPoseParams\030\013 \001(\013"
+  "2\036.sl_pb.SetIndividualPoseParams\0225\n\022appl"
+  "yForceToParams\030\014 \001(\0132\031.sl_pb.ApplyForceT"
+  "oParams\022/\n\017highlightParams\030\r \001(\0132\026.sl_pb"
+  ".HighlightParams\022;\n\025removeHighlightParam"
+  "s\030\016 \001(\0132\034.sl_pb.RemoveHighlightParams\"\243\002"
+  "\n\nFuncToCall\022\013\n\007SetTask\020\001\022\016\n\nSetEpisode\020"
+  "\002\022\020\n\014DrawMarkerAt\020\003\022\022\n\016DrawMarkerTraj\020\004\022"
+  "\r\n\tLoadLevel\020\005\022\020\n\014StartLogging\020\006\022\017\n\013Stop"
+  "Logging\020\007\022\022\n\016GetEpisodeData\020\010\022\023\n\017StartSi"
+  "mulation\020\t\022\022\n\016StopSimulation\020\n\022\025\n\021SetInd"
+  "ividualPose\020\013\022\020\n\014ApplyForceTo\020\014\022\r\n\tHighl"
+  "ight\020\r\022\023\n\017RemoveHighlight\020\016\022\026\n\022RemoveAll"
+  "Highlight\020\017\"\324\001\n\017KRAmevaResponse\0221\n\004type\030"
+  "\001 \002(\0162#.sl_pb.KRAmevaResponse.ResponseTy"
+  "pe\022\014\n\004text\030\002 \001(\t\022\020\n\010fileName\030\003 \001(\t\022\020\n\010fi"
+  "leData\030\004 \001(\014\022\022\n\ndataLength\030\005 \001(\005\"H\n\014Resp"
+  "onseType\022\010\n\004Text\020\001\022\020\n\014FileCreation\020\002\022\014\n\010"
+  "FileData\020\003\022\016\n\nFileFinish\020\004"
   ;
-static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_ameva_2eproto_deps[3] = {
+static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_ameva_2eproto_deps[2] = {
   &::descriptor_table_control_2eproto,
-  &::descriptor_table_tutorial_2eproto,
   &::descriptor_table_viz_2eproto,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_ameva_2eproto_sccs[2] = {
@@ -191,8 +189,8 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_ame
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_ameva_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_ameva_2eproto = {
-  false, false, descriptor_table_protodef_ameva_2eproto, "ameva.proto", 1362,
-  &descriptor_table_ameva_2eproto_once, descriptor_table_ameva_2eproto_sccs, descriptor_table_ameva_2eproto_deps, 2, 3,
+  false, false, descriptor_table_protodef_ameva_2eproto, "ameva.proto", 1346,
+  &descriptor_table_ameva_2eproto_once, descriptor_table_ameva_2eproto_sccs, descriptor_table_ameva_2eproto_deps, 2, 2,
   schemas, file_default_instances, TableStruct_ameva_2eproto::offsets,
   file_level_metadata_ameva_2eproto, 2, file_level_enum_descriptors_ameva_2eproto, file_level_service_descriptors_ameva_2eproto,
 };
@@ -233,8 +231,8 @@ constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::SetEpisode;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::DrawMarkerAt;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::DrawMarkerTraj;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::LoadLevel;
-constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StartLoggers;
-constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StopLoggers;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StartLogging;
+constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StopLogging;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::GetEpisodeData;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StartSimulation;
 constexpr KRAmevaEvent_FuncToCall KRAmevaEvent::StopSimulation;
@@ -286,8 +284,8 @@ void KRAmevaEvent::InitAsDefaultInstance() {
       ::sl_pb::DrawMarkerTrajParams::internal_default_instance());
   ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->loadlevelparams_ = const_cast< ::sl_pb::LoadLevelParams*>(
       ::sl_pb::LoadLevelParams::internal_default_instance());
-  ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->startloggersparams_ = const_cast< ::sl_pb::StartLoggersParams*>(
-      ::sl_pb::StartLoggersParams::internal_default_instance());
+  ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->startloggingparams_ = const_cast< ::sl_pb::StartLoggingParams*>(
+      ::sl_pb::StartLoggingParams::internal_default_instance());
   ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->getepisodedataparams_ = const_cast< ::sl_pb::GetEpisodeDataParams*>(
       ::sl_pb::GetEpisodeDataParams::internal_default_instance());
   ::sl_pb::_KRAmevaEvent_default_instance_._instance.get_mutable()->startsimulationparams_ = const_cast< ::sl_pb::StartSimulationParams*>(
@@ -329,8 +327,8 @@ class KRAmevaEvent::_Internal {
   static void set_has_loadlevelparams(HasBits* has_bits) {
     (*has_bits)[0] |= 16u;
   }
-  static const ::sl_pb::StartLoggersParams& startloggersparams(const KRAmevaEvent* msg);
-  static void set_has_startloggersparams(HasBits* has_bits) {
+  static const ::sl_pb::StartLoggingParams& startloggingparams(const KRAmevaEvent* msg);
+  static void set_has_startloggingparams(HasBits* has_bits) {
     (*has_bits)[0] |= 32u;
   }
   static const ::sl_pb::GetEpisodeDataParams& getepisodedataparams(const KRAmevaEvent* msg);
@@ -386,9 +384,9 @@ const ::sl_pb::LoadLevelParams&
 KRAmevaEvent::_Internal::loadlevelparams(const KRAmevaEvent* msg) {
   return *msg->loadlevelparams_;
 }
-const ::sl_pb::StartLoggersParams&
-KRAmevaEvent::_Internal::startloggersparams(const KRAmevaEvent* msg) {
-  return *msg->startloggersparams_;
+const ::sl_pb::StartLoggingParams&
+KRAmevaEvent::_Internal::startloggingparams(const KRAmevaEvent* msg) {
+  return *msg->startloggingparams_;
 }
 const ::sl_pb::GetEpisodeDataParams&
 KRAmevaEvent::_Internal::getepisodedataparams(const KRAmevaEvent* msg) {
@@ -438,8 +436,8 @@ void KRAmevaEvent::clear_loadlevelparams() {
   if (loadlevelparams_ != nullptr) loadlevelparams_->Clear();
   _has_bits_[0] &= ~0x00000010u;
 }
-void KRAmevaEvent::clear_startloggersparams() {
-  if (startloggersparams_ != nullptr) startloggersparams_->Clear();
+void KRAmevaEvent::clear_startloggingparams() {
+  if (startloggingparams_ != nullptr) startloggingparams_->Clear();
   _has_bits_[0] &= ~0x00000020u;
 }
 void KRAmevaEvent::clear_getepisodedataparams() {
@@ -505,10 +503,10 @@ KRAmevaEvent::KRAmevaEvent(const KRAmevaEvent& from)
   } else {
     loadlevelparams_ = nullptr;
   }
-  if (from._internal_has_startloggersparams()) {
-    startloggersparams_ = new ::sl_pb::StartLoggersParams(*from.startloggersparams_);
+  if (from._internal_has_startloggingparams()) {
+    startloggingparams_ = new ::sl_pb::StartLoggingParams(*from.startloggingparams_);
   } else {
-    startloggersparams_ = nullptr;
+    startloggingparams_ = nullptr;
   }
   if (from._internal_has_getepisodedataparams()) {
     getepisodedataparams_ = new ::sl_pb::GetEpisodeDataParams(*from.getepisodedataparams_);
@@ -570,7 +568,7 @@ void KRAmevaEvent::SharedDtor() {
   if (this != internal_default_instance()) delete drawmarkeratparams_;
   if (this != internal_default_instance()) delete drawmarkertrajparams_;
   if (this != internal_default_instance()) delete loadlevelparams_;
-  if (this != internal_default_instance()) delete startloggersparams_;
+  if (this != internal_default_instance()) delete startloggingparams_;
   if (this != internal_default_instance()) delete getepisodedataparams_;
   if (this != internal_default_instance()) delete startsimulationparams_;
   if (this != internal_default_instance()) delete stopsimulationparams_;
@@ -624,8 +622,8 @@ void KRAmevaEvent::Clear() {
       loadlevelparams_->Clear();
     }
     if (cached_has_bits & 0x00000020u) {
-      GOOGLE_DCHECK(startloggersparams_ != nullptr);
-      startloggersparams_->Clear();
+      GOOGLE_DCHECK(startloggingparams_ != nullptr);
+      startloggingparams_->Clear();
     }
     if (cached_has_bits & 0x00000040u) {
       GOOGLE_DCHECK(getepisodedataparams_ != nullptr);
@@ -719,10 +717,10 @@ const char* KRAmevaEvent::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
-      // optional .sl_pb.StartLoggersParams startLoggersParams = 7;
+      // optional .sl_pb.StartLoggingParams startLoggingParams = 7;
       case 7:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 58)) {
-          ptr = ctx->ParseMessage(_internal_mutable_startloggersparams(), ptr);
+          ptr = ctx->ParseMessage(_internal_mutable_startloggingparams(), ptr);
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -852,12 +850,12 @@ failure:
         6, _Internal::loadlevelparams(this), target, stream);
   }
 
-  // optional .sl_pb.StartLoggersParams startLoggersParams = 7;
+  // optional .sl_pb.StartLoggingParams startLoggingParams = 7;
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
       InternalWriteMessage(
-        7, _Internal::startloggersparams(this), target, stream);
+        7, _Internal::startloggingparams(this), target, stream);
   }
 
   // optional .sl_pb.GetEpisodeDataParams getEpisodeDataParams = 8;
@@ -974,11 +972,11 @@ size_t KRAmevaEvent::ByteSizeLong() const {
           *loadlevelparams_);
     }
 
-    // optional .sl_pb.StartLoggersParams startLoggersParams = 7;
+    // optional .sl_pb.StartLoggingParams startLoggingParams = 7;
     if (cached_has_bits & 0x00000020u) {
       total_size += 1 +
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-          *startloggersparams_);
+          *startloggingparams_);
     }
 
     // optional .sl_pb.GetEpisodeDataParams getEpisodeDataParams = 8;
@@ -1082,7 +1080,7 @@ void KRAmevaEvent::MergeFrom(const KRAmevaEvent& from) {
       _internal_mutable_loadlevelparams()->::sl_pb::LoadLevelParams::MergeFrom(from._internal_loadlevelparams());
     }
     if (cached_has_bits & 0x00000020u) {
-      _internal_mutable_startloggersparams()->::sl_pb::StartLoggersParams::MergeFrom(from._internal_startloggersparams());
+      _internal_mutable_startloggingparams()->::sl_pb::StartLoggingParams::MergeFrom(from._internal_startloggingparams());
     }
     if (cached_has_bits & 0x00000040u) {
       _internal_mutable_getepisodedataparams()->::sl_pb::GetEpisodeDataParams::MergeFrom(from._internal_getepisodedataparams());
@@ -1145,8 +1143,8 @@ bool KRAmevaEvent::IsInitialized() const {
   if (_internal_has_loadlevelparams()) {
     if (!loadlevelparams_->IsInitialized()) return false;
   }
-  if (_internal_has_startloggersparams()) {
-    if (!startloggersparams_->IsInitialized()) return false;
+  if (_internal_has_startloggingparams()) {
+    if (!startloggingparams_->IsInitialized()) return false;
   }
   if (_internal_has_getepisodedataparams()) {
     if (!getepisodedataparams_->IsInitialized()) return false;

@@ -36,7 +36,6 @@
 #include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 #include "viz.pb.h"
-#include "tutorial.pb.h"
 #include "control.pb.h"
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
@@ -80,8 +79,8 @@ enum KRAmevaEvent_FuncToCall : int {
   KRAmevaEvent_FuncToCall_DrawMarkerAt = 3,
   KRAmevaEvent_FuncToCall_DrawMarkerTraj = 4,
   KRAmevaEvent_FuncToCall_LoadLevel = 5,
-  KRAmevaEvent_FuncToCall_StartLoggers = 6,
-  KRAmevaEvent_FuncToCall_StopLoggers = 7,
+  KRAmevaEvent_FuncToCall_StartLogging = 6,
+  KRAmevaEvent_FuncToCall_StopLogging = 7,
   KRAmevaEvent_FuncToCall_GetEpisodeData = 8,
   KRAmevaEvent_FuncToCall_StartSimulation = 9,
   KRAmevaEvent_FuncToCall_StopSimulation = 10,
@@ -265,10 +264,10 @@ class KRAmevaEvent PROTOBUF_FINAL :
     KRAmevaEvent_FuncToCall_DrawMarkerTraj;
   static constexpr FuncToCall LoadLevel =
     KRAmevaEvent_FuncToCall_LoadLevel;
-  static constexpr FuncToCall StartLoggers =
-    KRAmevaEvent_FuncToCall_StartLoggers;
-  static constexpr FuncToCall StopLoggers =
-    KRAmevaEvent_FuncToCall_StopLoggers;
+  static constexpr FuncToCall StartLogging =
+    KRAmevaEvent_FuncToCall_StartLogging;
+  static constexpr FuncToCall StopLogging =
+    KRAmevaEvent_FuncToCall_StopLogging;
   static constexpr FuncToCall GetEpisodeData =
     KRAmevaEvent_FuncToCall_GetEpisodeData;
   static constexpr FuncToCall StartSimulation =
@@ -318,7 +317,7 @@ class KRAmevaEvent PROTOBUF_FINAL :
     kDrawMarkerAtParamsFieldNumber = 4,
     kDrawMarkerTrajParamsFieldNumber = 5,
     kLoadLevelParamsFieldNumber = 6,
-    kStartLoggersParamsFieldNumber = 7,
+    kStartLoggingParamsFieldNumber = 7,
     kGetEpisodeDataParamsFieldNumber = 8,
     kStartSimulationParamsFieldNumber = 9,
     kStopSimulationParamsFieldNumber = 10,
@@ -418,23 +417,23 @@ class KRAmevaEvent PROTOBUF_FINAL :
       ::sl_pb::LoadLevelParams* loadlevelparams);
   ::sl_pb::LoadLevelParams* unsafe_arena_release_loadlevelparams();
 
-  // optional .sl_pb.StartLoggersParams startLoggersParams = 7;
-  bool has_startloggersparams() const;
+  // optional .sl_pb.StartLoggingParams startLoggingParams = 7;
+  bool has_startloggingparams() const;
   private:
-  bool _internal_has_startloggersparams() const;
+  bool _internal_has_startloggingparams() const;
   public:
-  void clear_startloggersparams();
-  const ::sl_pb::StartLoggersParams& startloggersparams() const;
-  ::sl_pb::StartLoggersParams* release_startloggersparams();
-  ::sl_pb::StartLoggersParams* mutable_startloggersparams();
-  void set_allocated_startloggersparams(::sl_pb::StartLoggersParams* startloggersparams);
+  void clear_startloggingparams();
+  const ::sl_pb::StartLoggingParams& startloggingparams() const;
+  ::sl_pb::StartLoggingParams* release_startloggingparams();
+  ::sl_pb::StartLoggingParams* mutable_startloggingparams();
+  void set_allocated_startloggingparams(::sl_pb::StartLoggingParams* startloggingparams);
   private:
-  const ::sl_pb::StartLoggersParams& _internal_startloggersparams() const;
-  ::sl_pb::StartLoggersParams* _internal_mutable_startloggersparams();
+  const ::sl_pb::StartLoggingParams& _internal_startloggingparams() const;
+  ::sl_pb::StartLoggingParams* _internal_mutable_startloggingparams();
   public:
-  void unsafe_arena_set_allocated_startloggersparams(
-      ::sl_pb::StartLoggersParams* startloggersparams);
-  ::sl_pb::StartLoggersParams* unsafe_arena_release_startloggersparams();
+  void unsafe_arena_set_allocated_startloggingparams(
+      ::sl_pb::StartLoggingParams* startloggingparams);
+  ::sl_pb::StartLoggingParams* unsafe_arena_release_startloggingparams();
 
   // optional .sl_pb.GetEpisodeDataParams getEpisodeDataParams = 8;
   bool has_getepisodedataparams() const;
@@ -589,7 +588,7 @@ class KRAmevaEvent PROTOBUF_FINAL :
   ::sl_pb::DrawMarkerAtParams* drawmarkeratparams_;
   ::sl_pb::DrawMarkerTrajParams* drawmarkertrajparams_;
   ::sl_pb::LoadLevelParams* loadlevelparams_;
-  ::sl_pb::StartLoggersParams* startloggersparams_;
+  ::sl_pb::StartLoggingParams* startloggingparams_;
   ::sl_pb::GetEpisodeDataParams* getepisodedataparams_;
   ::sl_pb::StartSimulationParams* startsimulationparams_;
   ::sl_pb::StopSimulationParams* stopsimulationparams_;
@@ -1299,83 +1298,83 @@ inline void KRAmevaEvent::set_allocated_loadlevelparams(::sl_pb::LoadLevelParams
   // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.loadLevelParams)
 }
 
-// optional .sl_pb.StartLoggersParams startLoggersParams = 7;
-inline bool KRAmevaEvent::_internal_has_startloggersparams() const {
+// optional .sl_pb.StartLoggingParams startLoggingParams = 7;
+inline bool KRAmevaEvent::_internal_has_startloggingparams() const {
   bool value = (_has_bits_[0] & 0x00000020u) != 0;
-  PROTOBUF_ASSUME(!value || startloggersparams_ != nullptr);
+  PROTOBUF_ASSUME(!value || startloggingparams_ != nullptr);
   return value;
 }
-inline bool KRAmevaEvent::has_startloggersparams() const {
-  return _internal_has_startloggersparams();
+inline bool KRAmevaEvent::has_startloggingparams() const {
+  return _internal_has_startloggingparams();
 }
-inline const ::sl_pb::StartLoggersParams& KRAmevaEvent::_internal_startloggersparams() const {
-  const ::sl_pb::StartLoggersParams* p = startloggersparams_;
-  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::StartLoggersParams*>(
-      &::sl_pb::_StartLoggersParams_default_instance_);
+inline const ::sl_pb::StartLoggingParams& KRAmevaEvent::_internal_startloggingparams() const {
+  const ::sl_pb::StartLoggingParams* p = startloggingparams_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::sl_pb::StartLoggingParams*>(
+      &::sl_pb::_StartLoggingParams_default_instance_);
 }
-inline const ::sl_pb::StartLoggersParams& KRAmevaEvent::startloggersparams() const {
-  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.startLoggersParams)
-  return _internal_startloggersparams();
+inline const ::sl_pb::StartLoggingParams& KRAmevaEvent::startloggingparams() const {
+  // @@protoc_insertion_point(field_get:sl_pb.KRAmevaEvent.startLoggingParams)
+  return _internal_startloggingparams();
 }
-inline void KRAmevaEvent::unsafe_arena_set_allocated_startloggersparams(
-    ::sl_pb::StartLoggersParams* startloggersparams) {
+inline void KRAmevaEvent::unsafe_arena_set_allocated_startloggingparams(
+    ::sl_pb::StartLoggingParams* startloggingparams) {
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startloggersparams_);
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startloggingparams_);
   }
-  startloggersparams_ = startloggersparams;
-  if (startloggersparams) {
+  startloggingparams_ = startloggingparams;
+  if (startloggingparams) {
     _has_bits_[0] |= 0x00000020u;
   } else {
     _has_bits_[0] &= ~0x00000020u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.startLoggersParams)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:sl_pb.KRAmevaEvent.startLoggingParams)
 }
-inline ::sl_pb::StartLoggersParams* KRAmevaEvent::release_startloggersparams() {
+inline ::sl_pb::StartLoggingParams* KRAmevaEvent::release_startloggingparams() {
   _has_bits_[0] &= ~0x00000020u;
-  ::sl_pb::StartLoggersParams* temp = startloggersparams_;
-  startloggersparams_ = nullptr;
+  ::sl_pb::StartLoggingParams* temp = startloggingparams_;
+  startloggingparams_ = nullptr;
   if (GetArena() != nullptr) {
     temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
   }
   return temp;
 }
-inline ::sl_pb::StartLoggersParams* KRAmevaEvent::unsafe_arena_release_startloggersparams() {
-  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.startLoggersParams)
+inline ::sl_pb::StartLoggingParams* KRAmevaEvent::unsafe_arena_release_startloggingparams() {
+  // @@protoc_insertion_point(field_release:sl_pb.KRAmevaEvent.startLoggingParams)
   _has_bits_[0] &= ~0x00000020u;
-  ::sl_pb::StartLoggersParams* temp = startloggersparams_;
-  startloggersparams_ = nullptr;
+  ::sl_pb::StartLoggingParams* temp = startloggingparams_;
+  startloggingparams_ = nullptr;
   return temp;
 }
-inline ::sl_pb::StartLoggersParams* KRAmevaEvent::_internal_mutable_startloggersparams() {
+inline ::sl_pb::StartLoggingParams* KRAmevaEvent::_internal_mutable_startloggingparams() {
   _has_bits_[0] |= 0x00000020u;
-  if (startloggersparams_ == nullptr) {
-    auto* p = CreateMaybeMessage<::sl_pb::StartLoggersParams>(GetArena());
-    startloggersparams_ = p;
+  if (startloggingparams_ == nullptr) {
+    auto* p = CreateMaybeMessage<::sl_pb::StartLoggingParams>(GetArena());
+    startloggingparams_ = p;
   }
-  return startloggersparams_;
+  return startloggingparams_;
 }
-inline ::sl_pb::StartLoggersParams* KRAmevaEvent::mutable_startloggersparams() {
-  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.startLoggersParams)
-  return _internal_mutable_startloggersparams();
+inline ::sl_pb::StartLoggingParams* KRAmevaEvent::mutable_startloggingparams() {
+  // @@protoc_insertion_point(field_mutable:sl_pb.KRAmevaEvent.startLoggingParams)
+  return _internal_mutable_startloggingparams();
 }
-inline void KRAmevaEvent::set_allocated_startloggersparams(::sl_pb::StartLoggersParams* startloggersparams) {
+inline void KRAmevaEvent::set_allocated_startloggingparams(::sl_pb::StartLoggingParams* startloggingparams) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
   if (message_arena == nullptr) {
-    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(startloggersparams_);
+    delete reinterpret_cast< ::PROTOBUF_NAMESPACE_ID::MessageLite*>(startloggingparams_);
   }
-  if (startloggersparams) {
+  if (startloggingparams) {
     ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
-      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startloggersparams)->GetArena();
+      reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(startloggingparams)->GetArena();
     if (message_arena != submessage_arena) {
-      startloggersparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
-          message_arena, startloggersparams, submessage_arena);
+      startloggingparams = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, startloggingparams, submessage_arena);
     }
     _has_bits_[0] |= 0x00000020u;
   } else {
     _has_bits_[0] &= ~0x00000020u;
   }
-  startloggersparams_ = startloggersparams;
-  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.startLoggersParams)
+  startloggingparams_ = startloggingparams;
+  // @@protoc_insertion_point(field_set_allocated:sl_pb.KRAmevaEvent.startLoggingParams)
 }
 
 // optional .sl_pb.GetEpisodeDataParams getEpisodeDataParams = 8;

@@ -22,7 +22,7 @@ message SetIndividualPoseParams {
     required float quatW = 8;
 }
 
-message StartLoggersParams {
+message StartLoggingParams {
     required string taskId = 1;
     required string episodeId = 2;
 }
