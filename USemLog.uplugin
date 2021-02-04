@@ -29,7 +29,7 @@
   "Plugins": [
     {
       "Name": "UPhysicsBasedMC",
-      "Enabled": true
+      "Enabled": false
     },
     {
       "Name": "UMongoC",
@@ -37,7 +37,7 @@
     },
     {
       "Name": "SRanipal",
-      "Enabled": true
+      "Enabled": false
     },
     {
       "Name": "UProtobuf",
