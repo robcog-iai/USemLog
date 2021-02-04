@@ -8,6 +8,13 @@
 #include "Viz/SLVizManager.h"
 
 #if WITH_EDITOR
+#include "Engine/Selection.h"
+#include "Editor.h"
+#include "Individuals/SLIndividualUtils.h"
+#include "Individuals/Type/SLBaseIndividual.h"
+#endif // WITH_EDITOR
+
+#if WITH_EDITOR
 // Called when a property is changed in the editor
 void USLVizQMarkerArray::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
