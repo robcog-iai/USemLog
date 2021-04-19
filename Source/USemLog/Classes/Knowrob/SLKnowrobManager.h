@@ -182,7 +182,7 @@ private:
 
 	// Auto connect to mongodb at init
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bLoadValuesFromCommandLine = false;
+	bool bLoadValuesFromCommandLine = true;
 
 	// Websocket connection to knowrob
 	TSharedPtr<FSLKRWSClient> KRWSClient;

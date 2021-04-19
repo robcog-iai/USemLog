@@ -63,9 +63,9 @@ public:
 	bool RegisterObject(USLBaseIndividual* BI)
 	{
 		// Avoid logging the same individual multiple times
-		bool* bIsAlreadyInSet = false;
-		RegisteredObjects.Add(BI, bIsAlreadyInSet);
-		return *bIsAlreadyInSet;
+		bool bIsAlreadyInSet = false;
+		RegisteredObjects.Add(BI, &bIsAlreadyInSet);
+		return bIsAlreadyInSet;
 	}
 
 	// Create and add experiment node individual
