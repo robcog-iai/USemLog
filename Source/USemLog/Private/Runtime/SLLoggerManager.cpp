@@ -75,7 +75,32 @@ void ASLLoggerManager::BeginPlay()
 	Super::BeginPlay();
 	if (bUseIndependently)
 	{
-		Start();
+		if (StartParams.StartTime == ESLLoggerStartTime::AtBeginPlay)
+		{
+			Start();
+		}
+		else if (StartParams.StartTime == ESLLoggerStartTime::AtNextTick)
+		{
+			FTimerDelegate TimerDelegateNextTick;
+			TimerDelegateNextTick.BindLambda([this] {Start(); });
+			GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);
+		}
+		else if (StartParams.StartTime == ESLLoggerStartTime::AfterDelay)
+		{
+			FTimerHandle TimerHandle;
+			FTimerDelegate TimerDelegateDelay;
+			TimerDelegateDelay.BindLambda([this] {Start(); });
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, StartParams.StartDelay, false);
+		}
+		else if (StartParams.StartTime == ESLLoggerStartTime::FromUserInput)
+		{
+			SetupInputBindings();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger (%s) StartImpl() will not be called.."),
+				*FString(__func__), __LINE__, *GetName());
+		}
 	}	
 }
 
@@ -281,16 +306,16 @@ void ASLLoggerManager::UserInputToggleCallback()
 	if (bIsInit && !bIsStarted)
 	{
 		ASLLoggerManager::Start();
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("[%.2f] World state logger (%s) started.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("[%.2f] Logger manager (%s) started.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
 	else if (bIsStarted && !bIsFinished)
 	{
 		ASLLoggerManager::Finish();
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("[%.2f] World state logger (%s) finished.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("[%.2f] Logger manager (%s) finished.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] World state logger (%s) Something went wrong, try again.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] Logger manager (%s), something went wrong, try again.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
 }
 

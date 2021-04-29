@@ -268,8 +268,16 @@ void ASLWorldStateLogger::FinishImpl(bool bForced)
 	bIsStarted = false;
 	bIsInit = false;
 	bIsFinished = true;
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully finished at %.2f.."),
-		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
+	if (GetWorld() != nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) succesfully finished at %.2f.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d World state logger (%s) finished with world as nullptr.."),
+			*FString(__FUNCTION__), __LINE__, *GetName());
+	}
 }
 
 // Bind user inputs
