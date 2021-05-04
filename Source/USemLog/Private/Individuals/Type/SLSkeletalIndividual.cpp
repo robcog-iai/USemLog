@@ -218,6 +218,15 @@ bool USLSkeletalIndividual::ApplyMaskMaterials(bool bIncludeChildren)
 			{
 				SkeletalMeshComponent->SetMaterial(MatIdx, VisualMaskDynamicMaterial);
 			}
+
+			// Apply for poseable mesh clone if there is one
+			if (UPoseableMeshComponent* PMC = GetPoseableMeshComponent())
+			{
+				for (int32 MatIdx = 0; MatIdx < PMC->GetNumMaterials(); ++MatIdx)
+				{
+					PMC->SetMaterial(MatIdx, VisualMaskDynamicMaterial);
+				}
+			}
 		}
 
 		bIsMaskMaterialOn = true;
@@ -242,6 +251,18 @@ bool USLSkeletalIndividual::ApplyOriginalMaterials()
 			SkeletalMeshComponent->SetMaterial(MatIdx, Mat);
 			++MatIdx;
 		}
+
+		// Apply for poseable mesh clone if there is one
+		if (UPoseableMeshComponent* PMC = GetPoseableMeshComponent())
+		{
+			int32 PMCMatIdx = 0;
+			for (const auto& Mat : OriginalMaterials)
+			{
+				PMC->SetMaterial(PMCMatIdx, Mat);
+				++PMCMatIdx;
+			}
+		}
+
 		bIsMaskMaterialOn = false;
 				
 		// Bones share the same original materials with the skeletal parent, this will only set the flag value

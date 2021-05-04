@@ -39,6 +39,9 @@ public:
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
 
+	// Episode id
+	FString EpisodeId;
+
 public:
 	// Called when a semantic event is finished
 	FSLEventSignature OnSemanticEvent;

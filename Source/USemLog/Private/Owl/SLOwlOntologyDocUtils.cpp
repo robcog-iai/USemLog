@@ -313,6 +313,8 @@ void FSLOwlOntologyDocUtils::AddClassDefinitionProperties(FSLOwlNode& ClassNode,
     }
 
     /* Constraint properties */
+
+    /* Static mesh properties */
 }
 
 // Add bounding box properties to the class node defintion

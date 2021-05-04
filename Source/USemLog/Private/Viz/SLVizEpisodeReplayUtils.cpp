@@ -75,10 +75,10 @@ bool FSLVizEpisodeUtils::BuildEpisodeData(ASLIndividualManager* IndividualManage
 	// Iterate individuals with their poses
 	for (const auto& IndividualPosePair : InMongoEpisodeData[0].Value)
 	{
-		const FString ViewNameString = IndividualPosePair.Key;
+		const FString IndividualId = IndividualPosePair.Key;
 		const FTransform IndividualPose = IndividualPosePair.Value;
 
-		if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
+		if (auto Individual = IndividualManager->GetIndividual(IndividualId))
 		{
 			if (Individual->IsA(USLRigidIndividual::StaticClass())
 			|| Individual->IsA(USLSkeletalIndividual::StaticClass())
@@ -127,9 +127,9 @@ bool FSLVizEpisodeUtils::BuildEpisodeData(ASLIndividualManager* IndividualManage
 		// Iterate individuals with their poses
 		for (const auto& IndividualPosePair : InMongoEpisodeData[FrameIndex].Value)
 		{
-			const FString ViewNameString = IndividualPosePair.Key;
+			const FString IndividualId = IndividualPosePair.Key;
 			const FTransform IndividualPose = IndividualPosePair.Value;
-			if (auto Individual = IndividualManager->GetIndividual(ViewNameString))
+			if (auto Individual = IndividualManager->GetIndividual(IndividualId))
 			{
 				if (Individual->IsA(USLRigidIndividual::StaticClass())
 					|| Individual->IsA(USLSkeletalIndividual::StaticClass())
@@ -141,7 +141,7 @@ bool FSLVizEpisodeUtils::BuildEpisodeData(ASLIndividualManager* IndividualManage
 					// Add as new data to the compact frame
 					CompactFrameData.ActorPoses.Emplace(Individual->GetParentActor(), IndividualPose);
 
-					if (ViewNameString.Equals("6HI1inL7OUKmqNXGXI81YA"))
+					if (IndividualId.Equals("6HI1inL7OUKmqNXGXI81YA"))
 					{
 						UE_LOG(LogTemp, Log, TEXT("%s::%d Pose=%s;"), *FString(__FUNCTION__), __LINE__, *IndividualPose.ToString());
 					}
@@ -160,7 +160,7 @@ bool FSLVizEpisodeUtils::BuildEpisodeData(ASLIndividualManager* IndividualManage
 			else
 			{
 				UE_LOG(LogTemp, Warning, TEXT("%s::%d Could not find individual with id=%s, this should not happen, aborting.."),
-					*FString(__FUNCTION__), __LINE__, *ViewNameString);
+					*FString(__FUNCTION__), __LINE__, *IndividualId);
 				return false;
 			}
 		}

@@ -225,6 +225,15 @@ public:
 		}
 		return NodeStr;
 	}
+
+	/* Static helper functions */
+	// Create class property
+	static FSLOwlNode CreateResourceProperty(const FString& Ns, const FString& Value)
+	{
+		const FSLOwlPrefixName RdfResource("rdf", "resource");
+		const FSLOwlPrefixName RdfType("rdf", "type");
+		return FSLOwlNode(RdfType, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(Ns, Value)));
+	}
 };
 
 // Overloads the constructor to set directly the comment
@@ -236,3 +245,4 @@ struct FOwlCommentNode : public FSLOwlNode
 		Comment = InComment;
 	}
 };
+

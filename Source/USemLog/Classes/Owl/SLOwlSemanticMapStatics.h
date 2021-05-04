@@ -13,21 +13,22 @@ struct USEMLOG_API FSLOwlSemanticMapStatics
 	// Create Default semantic map
 	static TSharedPtr<FSLOwlSemanticMap> CreateDefaultSemanticMap(
 		const FString& InDocId,
-		const FString& InDocPrefix = "ue-def",
-		const FString& InDocOntologyName = "UE-DefaultMap");
+		const FString& InDocPrefix,
+		const FString& InDocOntologyName);
 
-	// Create IAI Kitchen semantic map
-	static TSharedPtr<FSLOwlSemanticMap> CreateIAIKitchenSemanticMap(
-		const FString& InDocId,
-		const FString& InDocPrefix = "ue-iai-kitchen",
-		const FString& InDocOntologyName = "UE-IAI-Kitchen");
+	//// Create IAI Kitchen semantic map
+	//static TSharedPtr<FSLOwlSemanticMap> CreateIAIKitchenSemanticMap(
+	//	const FString& InDocId,		
+	//	const FString& InLevelName,
+	//	const FString& InDocPrefix,
+	//	const FString& InDocOntologyName);
 
-	// Create IAI Supermarket semantic map
-	static TSharedPtr<FSLOwlSemanticMap> CreateIAISupermarketSemanticMap(
-		const FString& InDocId,
-		const FString& InDocPrefix = "ue-iai-supermarket",
-		const FString& InDocOntologyName = "UE-IAI-Supermarket");
-		
+	//// Create IAI Supermarket semantic map
+	//static TSharedPtr<FSLOwlSemanticMap> CreateIAISupermarketSemanticMap(
+	//	const FString& InDocId,
+	//	const FString& InLevelName,		
+	//	const FString& InDocPrefix,
+	//	const FString& InDocOntologyName);
 		
 	/* Owl individuals / definitions creation */
 	// Create an object individual
@@ -81,13 +82,6 @@ struct USEMLOG_API FSLOwlSemanticMapStatics
 
 	// Create a constraint individual
 	static FSLOwlNode CreateClassDefinition(const FString& Class);
-
-	// Create Tags individual
-	static FSLOwlNode CreateTagsIndividual(
-		const FString& InDocPrefix,
-		const FString& Id,
-		const FString& Class);
-
 	
 	/* Owl properties creation */
 	// Create generic property
@@ -155,6 +149,9 @@ struct USEMLOG_API FSLOwlSemanticMapStatics
 
 	// Create mobility property
 	static FSLOwlNode CreateMobilityProperty(const FString& Mobility);
+
+	// Create mass properties
+	static FSLOwlNode CreateMassProperty(float Mass);
 
 	// Create physics properties
 	static TArray<FSLOwlNode> CreatePhysicsProperties(float Mass, bool bGenerateOverlapEvents, bool bGravity);

@@ -5,19 +5,20 @@
 #include "Individuals/SLIndividualManager.h"
 #include "Individuals/Type/SLBaseIndividual.h"
 #include "EngineUtils.h"
+#include "TimerManager.h"
 
 ASLControlManager::ASLControlManager()
 {
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-bool ASLControlManager::Init()
+void ASLControlManager::Init()
 {
 	if (bIsInit)
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s::%d Control manager (%s) is already init.."),
 			*FString(__FUNCTION__), __LINE__, *GetName());
-		return true;
+		return;
 	}
 
 	bool RetValue = true;
@@ -34,7 +35,6 @@ bool ASLControlManager::Init()
         RetValue = false;
     }
 	bIsInit = RetValue;
-	return RetValue;
 }
 
 void ASLControlManager::SetIndividualPose(const FString& Id, FVector Location, FQuat Quat)
@@ -46,22 +46,29 @@ void ASLControlManager::SetIndividualPose(const FString& Id, FVector Location, F
 			*FString(__FUNCTION__), __LINE__, *Id);
 		return;
 	}
-	//if (!Individual->IsMovable())
-	//{
-	//	UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) is not movable.."),
-	//		*FString(__FUNCTION__), __LINE__, *Id);
-	//	return;
-	//}
 
 	AActor* ActorToMove = Individual->GetParentActor();
 
-	ActorToMove->SetActorLocation(Location);
 	Quat.Normalize();
-	ActorToMove->SetActorRotation(Quat);
-	
+	ActorToMove->SetActorLocationAndRotation(Location, Quat);
 }
 
-void ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids)
+void ASLControlManager::ApplyForceTo(const FString& Id, FVector Force)
+{
+	USLBaseIndividual* Individual = IndividualManager->GetIndividual(Id);
+	if (Individual == nullptr)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) is not existed.."),
+			*FString(__FUNCTION__), __LINE__, *Id);
+		return;
+	}
+
+	AActor* ActorToApply = Individual->GetParentActor();
+	UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(ActorToApply->GetComponentByClass(UStaticMeshComponent::StaticClass()));
+	StaticMesh->AddForce(Force * 100 * StaticMesh->GetMass());
+}
+
+bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds)
 {
 	for (FString Id : Ids)
 	{
@@ -72,20 +79,31 @@ void ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids)
 				*FString(__FUNCTION__), __LINE__, *GetName());
 			continue;
 		}
-		//if (!Individual->IsMovable())
-		//{
-		//	UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) is not movable.."),
-		//		*FString(__FUNCTION__), __LINE__, *Id);
-		//	return;
-		//}
+
 		AActor* Actor = Individual->GetParentActor();
 		UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(Actor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
 		StaticMesh->SetSimulatePhysics(true);
 	}
+
+	if (Seconds > 0)
+	{
+		FTimerHandle TimerHandle;
+		FTimerDelegate TimerDelegateDelay;
+		TimerDelegateDelay.BindLambda([this](TArray<FString> Ids) {
+			StopSimulationSelectionOnly(Ids);
+		}, Ids);
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, Seconds, false);
+
+	}
+	
+	OnSimulationStart.ExecuteIfBound();
+
+	return true;
 }
 
-void ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids)
-{
+// Stop physics simulation on individuals without delay
+bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids)
+{		
 	for (FString Id : Ids)
 	{
 		USLBaseIndividual* Individual = IndividualManager->GetIndividual(Id);
@@ -95,16 +113,14 @@ void ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids)
 				*FString(__FUNCTION__), __LINE__, *GetName());
 			continue;
 		}
-		//if (!Individual->IsMovable())
-		//{
-		//	UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) is not movable.."),
-		//		*FString(__FUNCTION__), __LINE__, *Id);
-		//	return;
-		//}
+
 		AActor* Actor = Individual->GetParentActor();
 		UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(Actor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
 		StaticMesh->SetSimulatePhysics(false);
 	}
+	OnSimulationFinish.ExecuteIfBound();
+	
+	return true;
 }
 
 /* Managers */

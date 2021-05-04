@@ -12,6 +12,14 @@ struct FSLLoggerLocationParams
 {
 	GENERATED_BODY();
 
+	// Unique id of the semantic map
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString SemanticMapId = TEXT("DefaultSemanticMapId");
+
+	// Description of the semantic map
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString SemanticMapDescription = TEXT("");
+
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	bool bUseCustomTaskId = false;
@@ -19,6 +27,10 @@ struct FSLLoggerLocationParams
 	// Unique id of the task
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bUseCustomTaskId"))
 	FString TaskId = TEXT("DefaultTaskId");
+
+	// Description of the task
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	FString TaskDescription = TEXT("");
 
 	// Set to true in order to edit the episode id
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -52,6 +64,7 @@ struct FSLLoggerDBServerParams
 UENUM()
 enum class ESLLoggerStartTime : uint8
 {
+	Externally         UMETA(DisplayName = "Externally"),
 	AtBeginPlay         UMETA(DisplayName = "AtBeginPlay"),
 	AtNextTick			UMETA(DisplayName = "AtNextTick"),
 	AfterDelay			UMETA(DisplayName = "AfterDelay"),
@@ -70,14 +83,14 @@ struct FSLLoggerStartParams
 
 	// Logger start time
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	ESLLoggerStartTime StartTime = ESLLoggerStartTime::AtBeginPlay;
+	ESLLoggerStartTime StartTime = ESLLoggerStartTime::Externally;
 
 	// Start after a given delay (if ESLLoggerStartTime::AfterDelay is selected)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger"/*, meta = (editcondition = todo 4.22+)*/)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "StartTime==ESLLoggerStartTime::AfterDelay"))
 	float StartDelay = 0.5f;
 
 	// Action name for starting from user input (if ESLLoggerStartTime::FromUserInput is selected)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger"/*, meta = (editcondition = todo 4.22+)*/)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "StartTime==ESLLoggerStartTime::FromUserInput"))
 	FName UserInputActionName = TEXT("SLTrigger");
 };
 

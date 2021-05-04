@@ -7,6 +7,19 @@
 #include "Owl/SLOwlSemanticMap.h"
 
 /**
+ * Parameters for writing the semantic map
+ */
+struct USEMLOG_API FSLSemanticMapWriterParams
+{
+	ESLOwlSemanticMapTemplate TemplateType = ESLOwlSemanticMapTemplate::NONE;
+	FString DirectoryPath = TEXT("SL/Maps/");
+	FString Id = TEXT("DefaultSemanticMapId");
+	FString Description = TEXT("");
+	FString Level = TEXT("");
+	bool bOverwrite = false;
+};
+
+/**
  * Class for exporting the semantic map in an OWL format
  */
 struct USEMLOG_API FSLSemanticMapWriter
@@ -16,20 +29,14 @@ public:
 	FSLSemanticMapWriter();
 
 	// Write semantic map to file
-	bool WriteToFile(UWorld* World,
-		ESLOwlSemanticMapTemplate TemplateType = ESLOwlSemanticMapTemplate::NONE,
-		const FString& InDirectory = TEXT("SemLog"),
-		const FString& InFilename = TEXT("SemanticMap"),
-		bool bOverwrite = false);
+	bool WriteToFile(UWorld* World, const FSLSemanticMapWriterParams& InParams);
 
 private:
 	// Create semantic map template
-	TSharedPtr<FSLOwlSemanticMap> CreateSemanticMapDocTemplate(
-		ESLOwlSemanticMapTemplate TemplateType,
-		const FString& DocId = "");
+	TSharedPtr<FSLOwlSemanticMap> CreateSemanticMapDocTemplate(ESLOwlSemanticMapTemplate TemplateType, const FString& InSemMapId);
 
 	// Add individuals to the semantic map
-	void AddAllIndividuals(TSharedPtr<FSLOwlSemanticMap> InSemMap, UWorld* World);
+	void AddWorldIndividuals(TSharedPtr<FSLOwlSemanticMap> InSemMap, UWorld* World);
 
 	// Add object individual to the semantic map
 	void AddObjectIndividual(TSharedPtr<FSLOwlSemanticMap> InSemMap,

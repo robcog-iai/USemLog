@@ -318,7 +318,9 @@ bool ASLCVMaskCalibrator::SetNextView()
 
 		// Apply color to canvas
 		DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::FromSRGBColor(MaskColor));
+#if WITH_EDITOR	
 		CanvasSM->SetMaterial(0, DynamicMaskMaterial);
+#endif
 		return true;
 	}
 	else
@@ -521,8 +523,9 @@ bool ASLCVMaskCalibrator::SetCanvasMeshActor()
 
 	DynamicMaskMaterial = UMaterialInstanceDynamic::Create(DefaultMaskMaterial, GetTransientPackage());
 	DynamicMaskMaterial->SetVectorParameterValue(FName("MaskColorParam"), FLinearColor::White);
+#if WITH_EDITOR	
 	CanvasSM->SetMaterial(0, DynamicMaskMaterial);
-
+#endif
 	return true;
 }
 

@@ -4,6 +4,8 @@
 #pragma once
 
 #include "Owl/SLOwlExperimentStatics.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
 
 /* Semantic map template creation */
 // Create default experiment document
@@ -22,17 +24,21 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddEntityDefintion("knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	Experiment->AddEntityDefintion("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	Experiment->AddEntityDefintion("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	Experiment->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	Experiment->AddEntityDefintion("log", "http://knowrob.org/kb/ameva_log.owl#");
+	//Experiment->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add namespaces
-	Experiment->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
-	Experiment->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	//Experiment->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	//Experiment->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	Experiment->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/ameva_log.owl#");
+	Experiment->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/ameva_log.owl#");
 	Experiment->AddNamespaceDeclaration("xmlns", "owl", "http://www.w3.org/2002/07/owl#");
 	Experiment->AddNamespaceDeclaration("xmlns", "xsd", "http://www.w3.org/2001/XMLSchema#");
 	Experiment->AddNamespaceDeclaration("xmlns", "knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	Experiment->AddNamespaceDeclaration("xmlns", "rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	Experiment->AddNamespaceDeclaration("xmlns", "rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	Experiment->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	Experiment->AddNamespaceDeclaration("xmlns", "log", "http://knowrob.org/kb/ameva_log.owl#");
+	//Experiment->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Set and add imports
 	Experiment->CreateOntologyNode();
@@ -50,6 +56,11 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	Experiment->AddPropertyDefinition("knowrob", "objectActedOn");
 	Experiment->AddPropertyDefinition("knowrob", "deviceUsed");
 	Experiment->AddPropertyDefinition("knowrob", "outputsCreated");
+	Experiment->AddPropertyDefinition("knowrob", "isSupported");
+	Experiment->AddPropertyDefinition("knowrob", "isSupporting");
+	Experiment->AddPropertyDefinition("knowrob", "inEpisode");
+	Experiment->AddPropertyDefinition("knowrob", "subAction");
+	Experiment->AddPropertyDefinition("knowrob", "performedInMap");
 
 	// Add datatype definitions
 	Experiment->AddDatatypeDefinition(FOwlCommentNode("Property Definitions"));
@@ -58,10 +69,19 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	
 	// Add class definitions
 	Experiment->AddClassDefinition(FOwlCommentNode("Class Definitions"));
-	Experiment->AddClassDefinition("knowrob", "UnrealExperiment");
+	Experiment->AddClassDefinition("knowrob", "AmevaExperiment");
 	Experiment->AddClassDefinition("knowrob", "GraspingSomething");
 	Experiment->AddClassDefinition("knowrob", "SlicingSomething");
 	Experiment->AddClassDefinition("knowrob", "TouchingSituation");
+	Experiment->AddClassDefinition("knowrob", "SupportedBySituation");
+	Experiment->AddClassDefinition("knowrob", "ContainerManipulation");
+	Experiment->AddClassDefinition("knowrob", "PickUpSituation");
+	Experiment->AddClassDefinition("knowrob", "PreGraspSituation");
+	Experiment->AddClassDefinition("knowrob", "PutDownSituation");
+	Experiment->AddClassDefinition("knowrob", "ReachingForSomething");
+	Experiment->AddClassDefinition("knowrob", "SlidingSituation");
+	Experiment->AddClassDefinition("knowrob", "TransportingSituation");
+
 
 	// Add individuals comment
 	// Experiment->AddExperimentIndividual(InDocPrefix, InDocId); // Adding at end
@@ -70,18 +90,34 @@ TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateDefaultExperiment(
 	return Experiment;
 }
 
-// Create UE experiment document
-TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateUEExperiment(
-	const FString& InDocId,
-	const FString& InDocPrefix,
-	const FString& InDocOntologyName)
+//// Create UE experiment document
+//TSharedPtr<FSLOwlExperiment> FSLOwlExperimentStatics::CreateUEExperiment(
+//	const FString& InDocId,
+//	const FString& InDocPrefix,
+//	const FString& InDocOntologyName)
+//{
+//	TSharedPtr<FSLOwlExperiment> Experiment = FSLOwlExperimentStatics::CreateDefaultExperiment(
+//		InDocId, InDocPrefix, InDocOntologyName);
+//
+//	Experiment->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
+//
+//	return Experiment;
+//}
+
+// Write experiment to file
+void FSLOwlExperimentStatics::WriteToFile(TSharedPtr<FSLOwlExperiment> Experiment, const FString& Path, bool bOverwrite)
 {
-	TSharedPtr<FSLOwlExperiment> Experiment = FSLOwlExperimentStatics::CreateDefaultExperiment(
-		InDocId, InDocPrefix, InDocOntologyName);
-
-	Experiment->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
-
-	return Experiment;
+	// Write owl data to file
+	if (Experiment.IsValid())
+	{
+		// Write experiment to file
+		FString FullFilePath = Path + "/" + Experiment->Id + TEXT("_ED.owl");
+		FPaths::RemoveDuplicateSlashes(FullFilePath);
+		if (!FPaths::FileExists(FullFilePath) || bOverwrite)
+		{
+			FFileHelper::SaveStringToFile(Experiment->ToString(), *FullFilePath);
+		}
+	}
 }
 
 
@@ -144,6 +180,16 @@ FSLOwlNode FSLOwlExperimentStatics::CreateClassProperty(const FString& InClass)
 
 	return FSLOwlNode(RdfType, FSLOwlAttribute(
 		RdfResource, FSLOwlAttributeValue("knowrob", InClass)));
+}
+
+// Create inEpisode property
+FSLOwlNode FSLOwlExperimentStatics::CreateInEpisodeProperty(const FString& InDocPrefix, const FString& EpisodeId)
+{
+	const FSLOwlPrefixName RdfResource("rdf", "resource");
+	const FSLOwlPrefixName KbPrefix("knowrob", "inEpisode");
+
+	return FSLOwlNode(KbPrefix, FSLOwlAttribute(
+		RdfResource, FSLOwlAttributeValue(InDocPrefix, EpisodeId)));
 }
 
 // Create startTime property

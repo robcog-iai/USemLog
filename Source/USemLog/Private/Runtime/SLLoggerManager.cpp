@@ -2,9 +2,24 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Runtime/SLLoggerManager.h"
+#include "Runtime/SLWorldStateLogger.h"
+#include "Runtime/SLSymbolicLogger.h"
+
+#include "Editor/SLSemanticMapWriter.h"
+#include "Owl/SLOwlTaskStatics.h"
+#include "Individuals/SLIndividualUtils.h"
+
+#include "EngineUtils.h"
+#include "Engine/Engine.h"
+#include "GameFramework/PlayerController.h"
+#include "Components/InputComponent.h"
 
 // Utils
 #include "Utils/SLUuid.h"
+
+#if WITH_EDITOR
+#include "Components/BillboardComponent.h"
+#endif // WITH_EDITOR
 
 // Sets default values
 ASLLoggerManager::ASLLoggerManager()
@@ -16,10 +31,15 @@ ASLLoggerManager::ASLLoggerManager()
 	bIsInit = false;
 	bIsStarted = false;
 	bIsFinished = false;
+	bUseIndependently = false;
+	bLogWorldState = false;
+	bLogActionsAndEvents = false;
 
 #if WITH_EDITORONLY_DATA
 	// Make manager sprite smaller (used to easily find the actor in the world)
-	SpriteScale = 0.65;
+	SpriteScale = 0.5;
+	ConstructorHelpers::FObjectFinderOptional<UTexture2D> SpriteTexture(TEXT("/USemLog/Sprites/S_SLLoggerManager"));
+	GetSpriteComponent()->Sprite = SpriteTexture.Get();
 #endif // WITH_EDITORONLY_DATA
 }
 
@@ -36,53 +56,16 @@ ASLLoggerManager::~ASLLoggerManager()
 void ASLLoggerManager::PostLoad()
 {
 	Super::PostLoad();
-	UE_LOG(LogTemp, Log, TEXT("%s::%d "), *FString(__FUNCTION__), __LINE__);
-	// Setup references
-
-	//if (!ActualWorldStateLogger
-	//	|| !ActualWorldStateLogger->IsValidLowLevel()
-	//	|| ActualWorldStateLogger->IsPendingKillOrUnreachable()
-	//	|| !ActualWorldStateLogger->CheckStillInWorld())
-	//{
-	//	// Search in the world
-	//	for (TActorIterator<ASLWorldStateLogger> Iter(GetWorld()); Iter; ++Iter)
-	//	{
-	//		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
-	//		{
-	//			ActualWorldStateLogger = *Iter;
-	//			UE_LOG(LogTemp, Warning, TEXT("%s::%d Reference to the Logger manager (%s) set.."),
-	//				*FString(__FUNCTION__), __LINE__, *ActualWorldStateLogger->GetName());
-	//			return;
-	//		}
-	//		else
-	//		{
-	//			UE_LOG(LogTemp, Error, TEXT("%s::%d Reference (%s) invalid.."),
-	//				*FString(__FUNCTION__), __LINE__, *Iter->GetName());
-	//		}
-	//	}
-
-	//	// Not found in the world, spawn new
-	//	FActorSpawnParameters SpawnParams;
-	//	SpawnParams.Name = TEXT("SL_WorldStateLogger");
-	//	ActualWorldStateLogger = GetWorld()->SpawnActor<ASLWorldStateLogger>(SpawnParams);
-	//	//ActualWorldStateLogger->SetActorLabel(TEXT("SL_WorldStateLogger"));
-
-	//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Logger manager not found in the world, spawned new one (%s).."),
-	//		*FString(__FUNCTION__), __LINE__, *ActualWorldStateLogger->GetName());
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("%s::%d ActualWorldStateLogger (%s) is set.."),
-	//		*FString(__FUNCTION__), __LINE__, *ActualWorldStateLogger->GetName());
-	//}
 }
 
 // Allow actors to initialize themselves on the C++ side
 void ASLLoggerManager::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	UE_LOG(LogTemp, Log, TEXT("%s::%d "), *FString(__FUNCTION__), __LINE__);
-	Init();
+	if (bUseIndependently)
+	{
+		Init();
+	}
 }
 
 
@@ -90,16 +73,37 @@ void ASLLoggerManager::PostInitializeComponents()
 void ASLLoggerManager::BeginPlay()
 {
 	Super::BeginPlay();
-	Start();
-	
+	if (bUseIndependently)
+	{
+		if (StartParams.StartTime == ESLLoggerStartTime::AtBeginPlay)
+		{
+			Start();
+		}
+		else if (StartParams.StartTime == ESLLoggerStartTime::AtNextTick)
+		{
+			FTimerDelegate TimerDelegateNextTick;
+			TimerDelegateNextTick.BindLambda([this] {Start(); });
+			GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDelegateNextTick);
+		}
+		else if (StartParams.StartTime == ESLLoggerStartTime::AfterDelay)
+		{
+			FTimerHandle TimerHandle;
+			FTimerDelegate TimerDelegateDelay;
+			TimerDelegateDelay.BindLambda([this] {Start(); });
+			GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDelegateDelay, StartParams.StartDelay, false);
+		}
+		else if (StartParams.StartTime == ESLLoggerStartTime::FromUserInput)
+		{
+			SetupInputBindings();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger (%s) StartImpl() will not be called.."),
+				*FString(__func__), __LINE__, *GetName());
+		}
+	}	
 }
 
-// Called every frame
-void ASLLoggerManager::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
 
 // Called when actor removed from game or game ended
 void ASLLoggerManager::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -122,38 +126,20 @@ void ASLLoggerManager::PostEditChangeProperty(struct FPropertyChangedEvent& Prop
 		PropertyChangedEvent.Property->GetFName() : NAME_None;
 
 	/* Logger Properties */
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLLoggerManager, LocationParams.bUseCustomEpisodeId))
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLLoggerManager, bWriteSemanticMapButton))
 	{
-		if (LocationParams.bUseCustomEpisodeId) { LocationParams.EpisodeId = FSLUuid::NewGuidInBase64Url(); }
-		else { LocationParams.EpisodeId = TEXT(""); };
+		bWriteSemanticMapButton = false;
+		bool bOverwriteSemMap = true;
+		WriteSemanticMap(bOverwriteSemMap);		
+	}
+	else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLLoggerManager, bWriteTaskButton))
+	{
+		bWriteTaskButton = false;
+		bool bOverwriteTask = true;
+		WriteTask(bOverwriteTask);
 	}
 }
 
-// Called by the editor to query whether a property of this object is allowed to be modified.
-bool ASLLoggerManager::CanEditChange(const UProperty* InProperty) const
-{
-	// Get parent edit property
-	const bool ParentVal = Super::CanEditChange(InProperty);
-
-	// Get the property name
-	const FName PropertyName = InProperty->GetFName();
-
-	//// HostIP and HostPort can only be edited if the world state writer is of type Mongo
-	//if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerIp))
-	//{
-	//	return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
-	//}
-	//else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, ServerPort))
-	//{
-	//	return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
-	//}
-	//else if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLManager, bLogMetadata))
-	//{
-	//	return (WriterType == ESLWorldWriterType::MongoCxx) || (WriterType == ESLWorldWriterType::MongoC);
-	//}
-
-	return ParentVal;
-}
 #endif // WITH_EDITOR
 
 // Internal init
@@ -163,6 +149,54 @@ void ASLLoggerManager::Init()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s::%d Logger manager (%s) is already initialized.."), *FString(__FUNCTION__), __LINE__, *GetName());
 		return;
+	}
+
+	if (bLogWorldState)
+	{
+		if (!SetWorldStateLogger())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger manager (%s) could not set the world state logger, aborting init.."),
+				*FString(__FUNCTION__), __LINE__, *GetName());
+			return;
+		}
+		else if(WorldStateLogger->IsRunningIndependently())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger manager (%s) world state logger (%s) is running independently, aborting init.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *WorldStateLogger->GetName());
+			return;
+		}
+
+		WorldStateLogger->Init(WorldStateLoggerParams, LocationParams, DBServerParams);
+		if (!WorldStateLogger->IsInit())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger manager (%s) world state logger (%s) could not be init, aborting init.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *WorldStateLogger->GetName());
+			return;
+		}
+	}
+
+	if (bLogActionsAndEvents)
+	{
+		if (!SetSymbolicLogger())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger manager (%s) could not set the symbolic logger, aborting init.."),
+				*FString(__FUNCTION__), __LINE__, *GetName());
+			return;
+		}
+		else if (SymbolicLogger->IsRunningIndependently())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger manager (%s) symbolic logger (%s) is running independently, aborting init.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *SymbolicLogger->GetName());
+			return;
+		}
+
+		SymbolicLogger->Init(SymbolicLoggerParams, LocationParams);
+		if (!SymbolicLogger->IsInit())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger manager (%s) symbolic logger (%s) could not be init, aborting init.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *SymbolicLogger->GetName());
+			return;
+		}
 	}
 
 
@@ -191,6 +225,28 @@ void ASLLoggerManager::Start()
 		GetWorld()->TimeSeconds = 0.f;
 	}
 
+	if (bLogWorldState)
+	{
+		WorldStateLogger->Start();
+		if (!WorldStateLogger->IsStarted())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger manager (%s) world state logger (%s) could not be started, aborting start.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *WorldStateLogger->GetName());
+			return;
+		}
+	}
+
+	if (bLogActionsAndEvents)
+	{
+		SymbolicLogger->Start();
+		if (!SymbolicLogger->IsStarted())
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d Logger manager (%s) symbolic logger (%s) could not be started, aborting start.."),
+				*FString(__FUNCTION__), __LINE__, *GetName(), *SymbolicLogger->GetName());
+			return;
+		}
+	}
+
 	bIsStarted = true;
 	UE_LOG(LogTemp, Log, TEXT("%s::%d Logger manager (%s) succesfully started at %f.."),
 		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
@@ -211,11 +267,25 @@ void ASLLoggerManager::Finish(bool bForced)
 		return;
 	}
 
+	if (bLogWorldState)
+	{
+		WorldStateLogger->Finish();
+	}
+
+	if (bLogActionsAndEvents)
+	{
+		SymbolicLogger->Finish();
+	}
+
 	bIsStarted = false;
 	bIsInit = false;
 	bIsFinished = true;
-	UE_LOG(LogTemp, Log, TEXT("%s::%d Logger manager (%s) succesfully finished at %f.."),
-		*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
+
+	if (GetWorld())
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Logger manager (%s) succesfully finished at %f.."),
+			*FString(__FUNCTION__), __LINE__, *GetName(), GetWorld()->GetTimeSeconds());
+	}
 }
 
 // Bind user inputs
@@ -236,16 +306,97 @@ void ASLLoggerManager::UserInputToggleCallback()
 	if (bIsInit && !bIsStarted)
 	{
 		ASLLoggerManager::Start();
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("[%.2f] World state logger (%s) started.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, FString::Printf(TEXT("[%.2f] Logger manager (%s) started.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
 	else if (bIsStarted && !bIsFinished)
 	{
 		ASLLoggerManager::Finish();
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("[%.2f] World state logger (%s) finished.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("[%.2f] Logger manager (%s) finished.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] World state logger (%s) Something went wrong, try again.."), GetWorld()->GetTimeSeconds(), *GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("[%.2f] Logger manager (%s), something went wrong, try again.."), GetWorld()->GetTimeSeconds(), *GetName()));
 	}
+}
+
+// Get the reference or spawn a new initialized world state logger
+bool ASLLoggerManager::SetWorldStateLogger()
+{
+	if (WorldStateLogger && WorldStateLogger->IsValidLowLevel() && !WorldStateLogger->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
+	for (TActorIterator<ASLWorldStateLogger>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			WorldStateLogger = *Iter;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_WorldStateLogger");
+	WorldStateLogger = GetWorld()->SpawnActor<ASLWorldStateLogger>(SpawnParams);
+#if WITH_EDITOR
+	WorldStateLogger->SetActorLabel(TEXT("SL_WorldStateLogger"));
+#endif // WITH_EDITOR
+	return true;
+}
+
+// Get the reference or spawn a new initialized symbolic logger
+bool ASLLoggerManager::SetSymbolicLogger()
+{
+	if (SymbolicLogger && SymbolicLogger->IsValidLowLevel() && !SymbolicLogger->IsPendingKillOrUnreachable())
+	{
+		return true;
+	}
+
+	for (TActorIterator<ASLSymbolicLogger>Iter(GetWorld()); Iter; ++Iter)
+	{
+		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
+		{
+			SymbolicLogger = *Iter;
+		}
+	}
+
+	// Spawning a new manager
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("SL_SymbolicLogger");
+	SymbolicLogger = GetWorld()->SpawnActor<ASLSymbolicLogger>(SpawnParams);
+#if WITH_EDITOR
+	SymbolicLogger->SetActorLabel(TEXT("SL_SymbolicLogger"));
+#endif // WITH_EDITOR
+	return true;
+}
+
+// Write semantic map owl file using the semantic map id
+void ASLLoggerManager::WriteSemanticMap(bool bOverwrite)
+{
+	// Make sure all the sl individual values are exported to tags
+	FSLIndividualUtils::ExportValues(GetWorld(), bOverwrite);
+
+	// Map writer parameters
+	FSLSemanticMapWriterParams Params;
+	Params.Id = LocationParams.SemanticMapId;
+	Params.Description = LocationParams.SemanticMapDescription;
+	Params.TemplateType = ESLOwlSemanticMapTemplate::IAIKitchen;
+	Params.Level = GetWorld()->GetMapName();
+	Params.DirectoryPath = TEXT("/SL/Maps/");
+	Params.bOverwrite = bOverwrite;
+
+	// Write the data from the tags as an owl file
+	FSLSemanticMapWriter SemMapWriter;
+	SemMapWriter.WriteToFile(GetWorld(), Params);
+}
+
+// Write task owl file using the task id
+void ASLLoggerManager::WriteTask(bool bOverwrite)
+{
+	TSharedPtr<FSLOwlTask> Task = FSLOwlTaskStatics::CreateDefaultTask(LocationParams.TaskId, "log", "ameva_log");
+	Task->AddTaskIndividual(LocationParams.TaskDescription, LocationParams.SemanticMapId);
+	FString TaskPath = FPaths::ProjectDir() + TEXT("/SL/Tasks/");
+	FSLOwlTaskStatics::WriteToFile(Task, TaskPath, bOverwrite);
 }
 

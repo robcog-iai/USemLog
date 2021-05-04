@@ -53,6 +53,9 @@ public:
 	// Iterate callback
 	void SetIndividualsHiddenIterateCallback();
 
+	// Spawn or get manager from the world
+	static ASLVizSemMapManager* GetExistingOrSpawnNew(UWorld* World);
+
 protected:
 	/* Managers */
 	// Get the individual manager from the world (or spawn a new one)

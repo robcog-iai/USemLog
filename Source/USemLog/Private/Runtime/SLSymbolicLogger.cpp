@@ -8,8 +8,8 @@
 #include "Utils/SLUuid.h"
 #include "EngineUtils.h"
 #include "TimerManager.h"
-#include "Misc/Paths.h"
-#include "Misc/FileHelper.h"
+//#include "Misc/Paths.h"
+//#include "Misc/FileHelper.h"
 #include "Engine/Engine.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
@@ -405,19 +405,21 @@ void ASLSymbolicLogger::FinishImpl(bool bForced)
 	// Create the experiment owl doc	
 	if (ExperimentDoc.IsValid())
 	{
+		TArray<FString> SubActionIds;		
 		for (const auto& Ev : FinishedEvents)
 		{
 			Ev->AddToOwlDoc(ExperimentDoc.Get());
+			SubActionIds.Add(Ev->Id);
 		}
 
 		// Add stored unique timepoints to doc
 		ExperimentDoc->AddTimepointIndividuals();
 
 		// Add stored unique objects to doc
-		ExperimentDoc->AddObjectIndividuals();
+		//ExperimentDoc->AddObjectIndividuals();
 
-		// Add experiment individual to doc
-		ExperimentDoc->AddExperimentIndividual();
+		// Add experiment individual to doc	(metadata)	
+		ExperimentDoc->AddExperimentIndividual(SubActionIds, LocationParameters.SemanticMapId, LocationParameters.TaskId);
 	}
 
 	// Write events to file
@@ -484,7 +486,7 @@ void ASLSymbolicLogger::SemanticEventFinishedCallback(TSharedPtr<ISLEvent> Event
 // Write data to file
 void ASLSymbolicLogger::WriteToFile()
 {
-	const FString DirPath = FPaths::ProjectDir() + "/SL/" + LocationParameters.TaskId /*+ TEXT("/Episodes/")*/ + "/";
+	const FString DirPath = FPaths::ProjectDir() + "/SL/Tasks/" + LocationParameters.TaskId /*+ TEXT("/Episodes/")*/ + "/";
 
 	// Write events timelines to file
 	if (LoggerParameters.bWriteTimelines)
@@ -500,35 +502,40 @@ void ASLSymbolicLogger::WriteToFile()
 		FSLGoogleCharts::WriteTimelines(FinishedEvents, DirPath, LocationParameters.EpisodeId, Params);
 	}
 
-	// Write owl data to file
-	if (ExperimentDoc.IsValid())
-	{
-		// Write experiment to file
-		FString FullFilePath = DirPath + LocationParameters.EpisodeId + TEXT("_ED.owl");
-		FPaths::RemoveDuplicateSlashes(FullFilePath);
-		if (!FPaths::FileExists(FullFilePath) || LocationParameters.bOverwrite)
-		{
-			FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);					
-		}
-	}
+
+	// Write experiment owl to file
+	FSLOwlExperimentStatics::WriteToFile(ExperimentDoc, DirPath, LocationParameters.bOverwrite);
+
+	//// Write owl data to file
+	//if (ExperimentDoc.IsValid())
+	//{
+	//	// Write experiment to file
+	//	FString FullFilePath = DirPath + LocationParameters.EpisodeId + TEXT("_ED.owl");
+	//	FPaths::RemoveDuplicateSlashes(FullFilePath);
+	//	if (!FPaths::FileExists(FullFilePath) || LocationParameters.bOverwrite)
+	//	{
+	//		FFileHelper::SaveStringToFile(ExperimentDoc->ToString(), *FullFilePath);					
+	//	}
+	//}
 }
 
 // Create events doc template
 TSharedPtr<FSLOwlExperiment> ASLSymbolicLogger::CreateEventsDocTemplate(ESLOwlExperimentTemplate TemplateType, const FString& InDocId)
 {
-	// Create unique semlog id for the document
-	const FString DocId = InDocId.IsEmpty() ? FSLUuid::NewGuidInBase64Url() : InDocId;
+	return FSLOwlExperimentStatics::CreateDefaultExperiment(InDocId, "log", "ameva_log");
+	//// Create unique semlog id for the document
+	//const FString DocId = InDocId.IsEmpty() ? FSLUuid::NewGuidInBase64Url() : InDocId;
 
-	// Fill document with template values
-	if (TemplateType == ESLOwlExperimentTemplate::Default)
-	{
-		return FSLOwlExperimentStatics::CreateDefaultExperiment(DocId);
-	}
-	else if (TemplateType == ESLOwlExperimentTemplate::IAI)
-	{
-		return FSLOwlExperimentStatics::CreateUEExperiment(DocId);
-	}
-	return MakeShareable(new FSLOwlExperiment());
+	//// Fill document with template values
+	//if (TemplateType == ESLOwlExperimentTemplate::Default)
+	//{
+	//	return FSLOwlExperimentStatics::CreateDefaultExperiment(DocId);
+	//}
+	//else if (TemplateType == ESLOwlExperimentTemplate::IAI)
+	//{
+	//	return FSLOwlExperimentStatics::CreateUEExperiment(DocId);
+	//}
+	//return MakeShareable(new FSLOwlExperiment());
 }
 
 // Get the reference or spawn a new individual manager
@@ -601,11 +608,12 @@ void ASLSymbolicLogger::InitContactMonitors()
 					ContactMonitors.Emplace(ContactMonitor);
 
 					// Create a contact event handler 
-					TSharedPtr<FSLContactEventHandler> CEHandler = MakeShareable(new FSLContactEventHandler());
-					CEHandler->Init(*Itr);
-					if (CEHandler->IsInit())
+					TSharedPtr<FSLContactEventHandler> EvHandler = MakeShareable(new FSLContactEventHandler());
+					EvHandler->Init(*Itr);
+					EvHandler->EpisodeId = LocationParameters.EpisodeId;
+					if (EvHandler->IsInit())
 					{
-						EventHandlers.Emplace(CEHandler);
+						EventHandlers.Emplace(EvHandler);
 					}
 					else
 					{
@@ -635,6 +643,7 @@ void ASLSymbolicLogger::InitManipulatorContactAndGraspMonitors()
 				{
 					TSharedPtr<FSLGraspEventHandler> EvHandler = MakeShareable(new FSLGraspEventHandler());
 					EvHandler->Init(*Itr);
+					EvHandler->EpisodeId = LocationParameters.EpisodeId;
 					if (EvHandler->IsInit())
 					{
 						EventHandlers.Add(EvHandler);
@@ -650,6 +659,7 @@ void ASLSymbolicLogger::InitManipulatorContactAndGraspMonitors()
 				{
 					TSharedPtr<FSLManipulatorContactEventHandler> EvHandler = MakeShareable(new FSLManipulatorContactEventHandler());
 					EvHandler->Init(*Itr);
+					EvHandler->EpisodeId = LocationParameters.EpisodeId;
 					if (EvHandler->IsInit())
 					{
 						EventHandlers.Add(EvHandler);
@@ -682,6 +692,7 @@ void ASLSymbolicLogger::InitManipulatorGraspFixationMonitors()
 			// Create a grasp event handler 
 			TSharedPtr<FSLFixationGraspEventHandler> EvHandler = MakeShareable(new FSLFixationGraspEventHandler());
 			EvHandler->Init(*Itr);
+			EvHandler->EpisodeId = LocationParameters.EpisodeId;
 			if (EvHandler->IsInit())
 			{
 				EventHandlers.Add(EvHandler);
@@ -709,6 +720,7 @@ void ASLSymbolicLogger::InitReachAndPreGraspMonitors()
 				ReachAndPreGraspMonitors.Emplace(*Itr);
 				TSharedPtr<FSLReachAndPreGraspEventHandler> EvHandler = MakeShareable(new FSLReachAndPreGraspEventHandler());
 				EvHandler->Init(*Itr);
+				EvHandler->EpisodeId = LocationParameters.EpisodeId;
 				if (EvHandler->IsInit())
 				{
 					EventHandlers.Add(EvHandler);
@@ -766,11 +778,12 @@ void ASLSymbolicLogger::InitPickAndPlaceMonitors()
 			if (Itr->IsInit())
 			{
 				PickAndPlaceMonitors.Emplace(*Itr);
-				TSharedPtr<FSLPickAndPlaceEventsHandler> PAPHandler = MakeShareable(new FSLPickAndPlaceEventsHandler());
-				PAPHandler->Init(*Itr);
-				if (PAPHandler->IsInit())
+				TSharedPtr<FSLPickAndPlaceEventsHandler> EvHandler = MakeShareable(new FSLPickAndPlaceEventsHandler());
+				EvHandler->Init(*Itr);
+				EvHandler->EpisodeId = LocationParameters.EpisodeId;
+				if (EvHandler->IsInit())
 				{
-					EventHandlers.Add(PAPHandler);
+					EventHandlers.Add(EvHandler);
 				}
 				else
 				{

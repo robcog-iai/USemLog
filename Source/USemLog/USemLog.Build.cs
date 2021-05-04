@@ -53,8 +53,7 @@ public class USemLog : ModuleRules
 			{
 				"Core",				
 				"MongoC",						// SL_WITH_LIBMONGO_C                
-				"UProtobuf", 					// SL_WITH_PROTO
-				//"UProtoMsgs", 					// SL_WITH_PROTO_MSGS
+				//"UProtobuf", 					// SL_WITH_PROTO
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -98,6 +97,9 @@ public class USemLog : ModuleRules
 			}
 			);
 
+		// Enable/disable various debug functions throughout the code
+		PublicDefinitions.Add("SL_WITH_DEBUG=1");
+
 		// Check included dependencies and set preprocessor flags accordingly
 		SetDependencyPrepreocessorDefinition("UConversions", "SL_WITH_ROS_CONVERSIONS");
 		SetDependencyPrepreocessorDefinition("UMCGrasp", "SL_WITH_MC_GRASP");
@@ -106,7 +108,6 @@ public class USemLog : ModuleRules
 		SetDependencyPrepreocessorDefinition("SRanipal", "SL_WITH_EYE_TRACKING");
 		SetDependencyPrepreocessorDefinition("SlicingLogic", "SL_WITH_SLICING");
 		SetDependencyPrepreocessorDefinition("UProtobuf", "SL_WITH_PROTO");
-		SetDependencyPrepreocessorDefinition("UProtoMsgs", "SL_WITH_PROTO_MSGS");
 		SetDependencyPrepreocessorDefinition("UROSBridge", "SL_WITH_ROSBRIDGE");
 
 		string Json = PrivateDependencyModuleNames.Find(DependencyName => DependencyName.Equals("Json"));

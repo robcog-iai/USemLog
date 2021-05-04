@@ -9,6 +9,7 @@
 
 // Forward declarations
 class ASLIndividualManager;
+class ASLMongoQueryManager;
 class USLVisibleIndividual;
 class AStaticMeshActor;
 class UGameViewportClient;
@@ -30,7 +31,7 @@ enum class ESLCVScanMode : uint8
 * View modes
 */
 UENUM()
-enum class ESLCVViewMode : uint8
+enum class ESLCVRenderMode : uint8
 {
 	NONE					UMETA(DisplayName = "None"),
 	Lit						UMETA(DisplayName = "Lit"),
@@ -39,6 +40,7 @@ enum class ESLCVViewMode : uint8
 	Depth					UMETA(DisplayName = "Depth"),
 	Normal					UMETA(DisplayName = "Normal"),
 };
+
 
 /**
  * 
@@ -87,6 +89,9 @@ public:
 	bool IsFinished() const { return bIsFinished; };
 
 protected:
+	// Setup user input bindings
+	void SetupInputBindings();
+
 	// Request a high res screenshot
 	void RequestScreenshotAsync();
 
@@ -94,28 +99,28 @@ protected:
 	void ScreenshotCapturedCallback(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap);
 	
 	// Set next view mode (return false if the last view mode was reached)
-	bool SetNextViewMode();
+	bool SetNextRenderMode();
 
 	// Set next camera pose (return false if the last was reached)
 	bool SetNextCameraPose();
 
 	// Set next view (individual or scene) (return false if the last was reached)
-	bool SetNextView();
+	bool SetNextScene();
 
 	//  Quit the editor when finished
 	void QuitEditor();
 
 private:
 	// Apply the selected view mode
-	void ApplyViewMode(ESLCVViewMode Mode);
+	void ApplyRenderMode(ESLCVRenderMode Mode);
 
 	// Apply the camera pose
-	void ApplyCameraPose(FTransform NormalizedTransform);
+	void ApplyCameraPose(FTransform UnitSpherePose);
 
 	// Apply the individual into position
 	void ApplyIndividual(USLVisibleIndividual* Individual);
 
-	// Apply the scene into position
+	// Set the individual / scene 
 	void ApplyScene();
 
 	// Hide mask clone, show original individual
@@ -125,7 +130,16 @@ private:
 	void ShowMaskIndividual();
 
 	// Remove detachments and hide all actors in the world
-	void SetWorldState();
+	void HideAllActors();
+
+	// Detach all actors
+	void DetachAllActors();
+
+	// Disable physiscs and detach all actors
+	void DisablePhysicsOnAllActors();
+
+	// Set ppv proerties (disable / ambient occlusion)
+	void SetPostProcessVolumeProperties();
 
 	// Set screenshot image resolution
 	void SetScreenshotResolution(FIntPoint InResolution);
@@ -136,14 +150,23 @@ private:
 	// Get the individual manager from the world (or spawn a new one)
 	bool SetIndividualManager();
 
+	// Get the mongo query manager (used to set up scenes from episodic memories)
+	bool SetMongoQueryManager();
+
 	// Set the individuals to be scanned
 	bool SetScanIndividuals();
+
+	// Set the scenes to be scanned
+	bool SetScanScenes();
 
 	// Spawn a light actor which will also be used to move the camera around
 	bool SetCameraPoseAndLightActor();
 
 	// Create clones of the individuals with mask material
 	bool SetMaskClones();
+
+	// Generate mask clones from the ids
+	void GenerateMaskClones(const TArray<USLVisibleIndividual*>& VisibleIndividuals);
 
 	// Set the background static mesh actor and material
 	bool SetBackgroundStaticMeshActor();
@@ -155,18 +178,26 @@ private:
 	void SetImageName();
 
 	// Calculate camera pose sphere radius (proportionate to the sphere bounds of the visual mesh)
-	void CalcCameraPoseSphereRadius();
+	void SetCameraPoseSphereRadius();
 
 	// Print progress to terminal
 	void PrintProgress() const;
 
 	// Save image to file
-	void SaveToFile(int32 SizeX, int32 SizeY, const TArray<FColor>& InBitmap) const;
+	void SaveToFile(const TArray<uint8>& CompressedBitmap) const;
 
 protected:
 	// Skip auto init and start
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
 	uint8 bIgnore : 1;
+
+	// Request the screenshots manually
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	uint8 bManualTrigger : 1;
+
+	// Folder to store the images in
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "bManualTrigger"))
+	FName UserInputActionName = "SLGenericTrigger";
 
 	// Output progress to terminal
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
@@ -196,60 +227,67 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
 	FString TaskId = "DefaultTaskId";
 
-	// Mongo server ip addres
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
-	FString MongoServerIP = TEXT("127.0.0.1");
-
-	// Knowrob server port
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
-	int32 MongoServerPort = 27017;
-
 	// Save images to file
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
 	uint8 bSaveToFile : 1;
 
-	// Use parent actor names for folder names
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location", meta = (editcondition = "bSaveToFile"))
-	uint8 bUseActorNamesForFolders : 1;
+	// Overwrite files
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location")
+	uint8 bOverwrite : 1;
 
+	// Use unique ids or the actor name as folder names
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Location", meta = (editcondition = "bSaveToFile && ScanMode==ESLCVScanMode::Individuals"))
+	uint8 bUseIdsForFolderNames : 1;
 
 	// Maximal number of scan points on the sphere
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	uint32 MaxNumScanPoints = 32;
 
 	// Image resolution
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
-	FIntPoint Resolution = FIntPoint(640, 480);
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	FIntPoint Resolution = FIntPoint(640, 640);
 
 	// Rendering modes to include
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
-	TArray<ESLCVViewMode> ViewModes;
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	TArray<ESLCVRenderMode> RenderModes;
 
-	// Color of the background
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
-	FColor BackgroundColor = FColor::Black;
+	// Color of the background (rendered or replaced in postprocess)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	FColor CustomBackgroundColor = FColor::Black;
+
+	// If true, instead of rendereing the backgorund, replace the black pixels with the value
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	uint8 bReplaceBackgroundPixels : 1;
+
+	// Manhattan distance between the pixel color to replace
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image", meta = (editcondition = "bReplaceBackgroundPixels"))
+	int32 CustomBackgroundColorTolerance = 7;
 
 	// Color of the mask image
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	uint8 bUseIndividualMaskValue : 1;
 
 	// Color of the mask image
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering", meta = (editcondition = "!bUseIndividualMaskValue"))
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image", meta = (editcondition = "!bUseIndividualMaskValue"))
 	FColor MaskColor = FColor::White;
 
 	// Disable post process volumes in the world
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	uint8 bDisablePostProcessVolumes : 1;
 
 	// Disable ambient occlusion (world and process volumes)
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	uint8 bDisableAO : 1;
 
 	// Directional camera light intensity
-	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Rendering")
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
 	float CameraLightIntensity = 1.6f;
 
+	// The scene bounding box radius camera multiplier
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Image")
+	float CameraRadiusDistanceMultiplier = 1.5f;
 
+	/* Edit */
 	// Add ids from selection button
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
 	FString IdCSVString;
@@ -266,6 +304,27 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Edit")
 	bool bOverwriteSelectedIds = false;
 
+	/* Debug */
+	// Debug params
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	float DebugArrowThickness = 0.f;
+
+	// Debug params
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	float DebugArrowHeadSize = 1.f;
+
+	// Debug params (0 - sphere origin, 1 - arrow origin)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	float ArrowHeadLocPerc = 0.95f;
+
+	// Debug params
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	FColor StartColorLerp = FColor::Green;
+
+	// Debug params
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|Debug")
+	FColor EndColorLerp = FColor::Magenta;
+
 	// True when all references are set and it is connected to the server
 	uint8 bIsInit : 1;
 
@@ -275,9 +334,13 @@ protected:
 	// True when done 
 	uint8 bIsFinished : 1;
 
-	// Keeps access to all the individuals in the world
+	// Used to access the actors given their ids 
 	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
 	ASLIndividualManager* IndividualManager;
+
+	// Used to to access the locations of the scenes in the episodic memories
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLMongoQueryManager* MongoQueryManager;
 
 	// Convenience actor for setting the camera pose (SetViewTarget(InActor))
 	UPROPERTY()
@@ -288,8 +351,8 @@ protected:
 	AStaticMeshActor* BackgroundSMA;
 
 private:
-	// Camera poses on the sphere
-	TArray<FTransform> CameraScanPoses;
+	// Camera poses on the unit sphere (this will be multiplied with each scenes bounds spehre radius)
+	TArray<FTransform> CameraScanUnitPoses;
 
 	// Individuals to calibrate
 	TArray<USLVisibleIndividual*> Individuals;
@@ -298,19 +361,19 @@ private:
 	TMap<USLVisibleIndividual*, AStaticMeshActor*> IndividualsMaskClones;
 
 	// Current active view mode
-	ESLCVViewMode PrevViewMode = ESLCVViewMode::NONE;
+	ESLCVRenderMode PrevRenderMode = ESLCVRenderMode::NONE;
 
 	// Current radius of the camera sphere poses
-	float CurrCameraPoseSphereRadius;
+	float CurrCameraPoseSphereRadius = 1.f;
 
 	// Current individual index in the array
-	int32 ViewIdx = INDEX_NONE;
+	int32 IndividualOrSceneIdx = INDEX_NONE;
 
 	// Current camera pose index in the array
 	int32 CameraPoseIdx = INDEX_NONE;
 
 	// Current view mode index in the array
-	int32 ViewModeIdx = INDEX_NONE;
+	int32 RenderModeIdx = INDEX_NONE;
 
 	// Used for triggering the screenshot request
 	UGameViewportClient* ViewportClient;
@@ -319,16 +382,16 @@ private:
 	FString CurrImageName;
 
 	// The individual id (used for the folder name)
-	FString ViewNameString;
+	FString SceneNameString;
 
 	// View mode as string (used as folder and image name)
-	FString ViewModeString;
+	FString RenderModeString;
 
 	// The camera pose post fix to be applied to the image name
 	FString CameraPoseIdxString;
 
-	// The camera pose post fix to be applied to the image name
-	FString ViewIdxString;
+	// The individual or scene index as string
+	FString IndividualOrSceneIdxString;
 
 	/* Constants */
 	static constexpr auto DynMaskMatAssetPath = TEXT("/USemLog/CV/M_SLDefaultMask.M_SLDefaultMask");

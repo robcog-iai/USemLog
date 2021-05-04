@@ -5,9 +5,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Info.h"
-#include "Knowrob/SLSemanticMapManager.h"
+#include "Knowrob/SLLevelManager.h"
 #include "Knowrob/SLKRWSClient.h"
-#include "Knowrob/SLKREventDispatcher.h"
+#include "Knowrob/SLKRMsgDispatcher.h"
 #include "Viz/SLVizStructs.h"
 #include "VizQ/SLVizQBase.h"
 #include "Runtime/SLLoggerStructs.h"
@@ -20,6 +20,7 @@ class ASLVizSemMapManager;
 class USLVizQBase;
 class ASLControlManager;
 class ASLSymbolicLogger;
+class ASLWorldStateLogger;
 
 /**
 *
@@ -79,6 +80,9 @@ public:
 	// Get mongo manager
 	ASLMongoQueryManager* GetMongoQueryManager() { return MongoQueryManager; };
 
+	// Spawn or get manager from the world
+	static ASLKnowrobManager* GetExistingOrSpawnNew(UWorld* World);
+
 protected:
 	// Setup user input bindings
 	void SetupInputBindings();
@@ -111,6 +115,9 @@ private:
 
 	// Get the symbolic logger from the world (or spawn a new one)
     bool SetSymbolicLogger();
+
+	// Get the world state logger from the world (or spawn a new one)
+	bool SetWorldStateLogger               ();
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -175,7 +182,7 @@ private:
 
 	// Auto connect to mongodb at init
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	bool bLoadValuesFromCommandLine = false;
+	bool bLoadValuesFromCommandLine = true;
 
 	// Websocket connection to knowrob
 	TSharedPtr<FSLKRWSClient> KRWSClient;
@@ -187,7 +194,7 @@ private:
 	int32 KRConnectRetryNum;
 
 	// Handle the protobuf message
-	TSharedPtr<FSLKREventDispatcher> KREventDispatcher;
+	TSharedPtr<SLKRMsgDispatcher> KRMsgDispatcher;
 
 	/* Managers */
 	// Delegates mongo queries
@@ -204,15 +211,19 @@ private:
 
 	// Manages loading semantic map
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
-    ASLSemanticMapManager* SemanticMapManager;
+    ASLLevelManager* LevelManager;
 
     // Manages controlling individual 
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     ASLControlManager* ControlManager;
 
-	// Keeps access to all the individuals in the world
+	// Symbolic data logger
     UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
     ASLSymbolicLogger* SymbolicLogger;
+
+	// Subsymbolic data logger
+	UPROPERTY(VisibleAnywhere, Transient, Category = "Semantic Logger")
+	ASLWorldStateLogger* WorldStateLogger;
 
 	/****************************************************************/
 	/*							VizQ								*/
@@ -237,13 +248,13 @@ private:
 	int32 QueryIndex = INDEX_NONE;
 
 	/****************************************************************/
-	/*					 SemanticMap Editor button hacks 			*/	
+	/*					 Level Switch button hacks 			*/	
 	/****************************************************************/
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
-    FName MapToLoad = TEXT("Map1");
+    FName LevelToSwitch = TEXT("");
 
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
-    bool bLoadMapButtonHack = false;
+    bool bSwitchLevelButtonHack = false;
 
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Map Buttons")
     bool bPrintAllMapsButtonHack = false;
@@ -260,6 +271,9 @@ private:
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
     FQuat ControlQuat;
 
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
+	float DelaySecond;
+
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Control Buttons")
     bool bMoveIndividualButtonHack = false;
 
@@ -275,17 +289,25 @@ private:
 	/****************************************************************/
     /*                        Symbolic Logger tests                 */
     /****************************************************************/
-    // Logger parameters
+    // Symbolic Logger parameters
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
-    FSLSymbolicLoggerParams LoggerParameters;
+    FSLSymbolicLoggerParams SymbolicLoggerParameters;
 
     // Location parameters
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
     FSLLoggerLocationParams LocationParameters;
     
-    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
-    bool StartSymbolicLogButtonHack = false;
+	// World state logger parameters
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+	FSLWorldStateLoggerParams WorldStateLoggerParameters;
+
+	// DB server parameters
+	UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+	FSLLoggerDBServerParams DBServerParameters;
 
     UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
-    bool StopSymbolicLogButtonHack = false;
+    bool StartLogButtonHack = false;
+
+    UPROPERTY(EditAnywhere, Transient, Category = "Semantic Logger|Logger Buttons")
+    bool StopLogButtonHack = false;
 };

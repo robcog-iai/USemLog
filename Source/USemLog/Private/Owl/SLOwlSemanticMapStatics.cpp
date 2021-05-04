@@ -6,12 +6,12 @@
 /* Semantic map template creation */
 // Create Default semantic map
 TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
-	const FString& InDocId,
+	const FString& InSemMapId,
 	const FString& InDocPrefix,
 	const FString& InDocOntologyName)
 {
 	// Create map document (with init)
-	TSharedPtr<FSLOwlSemanticMap> SemMap = MakeShareable(new FSLOwlSemanticMap(InDocPrefix, InDocOntologyName, InDocId));
+	TSharedPtr<FSLOwlSemanticMap> SemMap = MakeShareable(new FSLOwlSemanticMap(InDocPrefix, InDocOntologyName, InSemMapId));
 
 	// Add definitions
 	SemMap->AddEntityDefintion("owl", "http://www.w3.org/2002/07/owl#");
@@ -19,17 +19,21 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddEntityDefintion("knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	SemMap->AddEntityDefintion("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	SemMap->AddEntityDefintion("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	SemMap->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	SemMap->AddEntityDefintion("log", "http://knowrob.org/kb/ameva_log.owl#");
+	//SemMap->AddEntityDefintion(InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add namespaces
-	SemMap->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
-	SemMap->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	//SemMap->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	//SemMap->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	SemMap->AddNamespaceDeclaration("xmlns", "", "http://knowrob.org/kb/ameva_log.owl#");
+	SemMap->AddNamespaceDeclaration("xml", "base", "http://knowrob.org/kb/ameva_log.owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "owl", "http://www.w3.org/2002/07/owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "xsd", "http://www.w3.org/2001/XMLSchema#");
 	SemMap->AddNamespaceDeclaration("xmlns", "knowrob", "http://knowrob.org/kb/knowrob.owl#");
 	SemMap->AddNamespaceDeclaration("xmlns", "rdfs", "http://www.w3.org/2000/01/rdf-schema#");
 	SemMap->AddNamespaceDeclaration("xmlns", "rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-	SemMap->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
+	SemMap->AddNamespaceDeclaration("xmlns", "log", "http://knowrob.org/kb/ameva_log.owl#");
+	//SemMap->AddNamespaceDeclaration("xmlns", InDocPrefix, "http://knowrob.org/kb/" + InDocOntologyName + ".owl#");
 
 	// Add imports
 	SemMap->CreateOntologyNode();
@@ -39,6 +43,12 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddPropertyDefinition(FOwlCommentNode("Property Definitions"));
 	SemMap->AddPropertyDefinition("knowrob", "describedInMap");
 	SemMap->AddPropertyDefinition("knowrob", "pathToCadModel");
+	SemMap->AddPropertyDefinition("knowrob", "overlapEvents");
+	SemMap->AddPropertyDefinition("knowrob", "mobility");
+	SemMap->AddPropertyDefinition("knowrob", "levelName");
+	SemMap->AddPropertyDefinition("knowrob", "tagsData");
+	SemMap->AddPropertyDefinition("knowrob", "gravity");
+	SemMap->AddPropertyDefinition("knowrob", "mapDescription");
 
 	// Add datatype definitions
 	SemMap->AddDatatypeDefinition(FOwlCommentNode("Datatype Definitions"));
@@ -50,40 +60,36 @@ TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateDefaultSemanticMap
 	SemMap->AddClassDefinition("knowrob", "SemanticEnvironmentMap");
 	SemMap->AddClassDefinition("knowrob", "Pose");
 
-	// Add individuals comment
-	SemMap->AddIndividual(FOwlCommentNode("Individuals"));
-	SemMap->AddSemanticMapIndividual(InDocPrefix, InDocId);
-
 	return SemMap;
 }
 
-// Create IAI Kitchen semantic map
-TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
-	const FString& InDocId,
-	const FString& InDocPrefix,
-	const FString& InDocOntologyName)
-{
-	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
-		InDocId, InDocPrefix, InDocOntologyName);
-
-	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
-
-	return SemMap;
-}
-
-// Create IAI Supermarket semantic map
-TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(
-	const FString& InDocId,
-	const FString& InDocPrefix,
-	const FString& InDocOntologyName)
-{
-	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
-		InDocId, InDocPrefix, InDocOntologyName);
-
-	SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_supermarket_ue.owl");
-
-	return SemMap;
-}
+//// Create IAI Kitchen semantic map
+//TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAIKitchenSemanticMap(
+//	const FString& InSemMapId,
+//	const FString& InDocPrefix,
+//	const FString& InDocOntologyName)
+//{
+//	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
+//		InSemMapId, InDocPrefix, InDocOntologyName);
+//
+//	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_kitchen_ue.owl");
+//
+//	return SemMap;
+//}
+//
+//// Create IAI Supermarket semantic map
+//TSharedPtr<FSLOwlSemanticMap> FSLOwlSemanticMapStatics::CreateIAISupermarketSemanticMap(
+//	const FString& InSemMapId,
+//	const FString& InDocPrefix,
+//	const FString& InDocOntologyName)
+//{
+//	TSharedPtr<FSLOwlSemanticMap> SemMap = FSLOwlSemanticMapStatics::CreateDefaultSemanticMap(
+//		InSemMapId, InDocPrefix, InDocOntologyName);
+//
+//	//SemMap->AddOntologyImport("package://knowrob/owl/knowrob_iai_supermarket_ue.owl");
+//
+//	return SemMap;
+//}
 
 /* Owl individuals creation */
 // Create an object individual
@@ -117,7 +123,6 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreatePoseIndividual(
 
 	// Attribute values constants
 	const FSLOwlAttributeValue AttrValPose("knowrob", "Pose");
-	const FSLOwlAttributeValue AttrValString("xsd", "string");
 
 	// Pose individual
 	FSLOwlNode PoseIndividual(OwlNI, FSLOwlAttribute(RdfAbout, FSLOwlAttributeValue(InDocPrefix, InId)));
@@ -262,12 +267,12 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateClassProperty(const FString& InClass)
 
 // Create describedInMap property
 FSLOwlNode FSLOwlSemanticMapStatics::CreateDescribedInMapProperty(
-	const FString& InDocPrefix, const FString& InDocId)
+	const FString& InDocPrefix, const FString& InSemMapId)
 {
 	const FSLOwlPrefixName RdfResource("rdf", "resource");
 	const FSLOwlPrefixName KbDescribedInMap("knowrob", "describedInMap");
 
-	return FSLOwlNode(KbDescribedInMap, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, InDocId)));
+	return FSLOwlNode(KbDescribedInMap, FSLOwlAttribute(RdfResource, FSLOwlAttributeValue(InDocPrefix, InSemMapId)));
 }
 
 // Create pathToCadModel property
@@ -462,6 +467,15 @@ FSLOwlNode FSLOwlSemanticMapStatics::CreateMobilityProperty(const FString& Mobil
 	return FSLOwlNode(KbMobility, FSLOwlAttribute(RdfDatatype, AttrValString), Mobility);
 }
 
+// Create mass property
+FSLOwlNode FSLOwlSemanticMapStatics::CreateMassProperty(float Mass)
+{
+	const FSLOwlPrefixName KbMass("knowrob", "mass");
+	const FSLOwlPrefixName RdfDatatype("rdf", "datatype");
+	const FSLOwlAttributeValue AttrValFloat("xsd", "float");
+	return FSLOwlNode(KbMass, FSLOwlAttribute(RdfDatatype, AttrValFloat), FString::SanitizeFloat(Mass));
+}
+
 // Create physics properties
 TArray<FSLOwlNode> FSLOwlSemanticMapStatics::CreatePhysicsProperties(float Mass, bool bGenerateOverlapEvents, bool bGravity)
 {
@@ -473,7 +487,7 @@ TArray<FSLOwlNode> FSLOwlSemanticMapStatics::CreatePhysicsProperties(float Mass,
 	const FSLOwlAttributeValue AttrValBool("xsd", "boolean");
 	
 	TArray<FSLOwlNode> PhysicsProperties;
-	PhysicsProperties.Emplace(FSLOwlNode(KbMass, FSLOwlAttribute(RdfDatatype, AttrValFloat), FString::SanitizeFloat(Mass)));
+	//PhysicsProperties.Emplace(FSLOwlNode(KbMass, FSLOwlAttribute(RdfDatatype, AttrValFloat), FString::SanitizeFloat(Mass)));
 	PhysicsProperties.Emplace(FSLOwlNode(KbOverlap, FSLOwlAttribute(RdfDatatype, AttrValBool), bGenerateOverlapEvents ? "true" : "false"));
 	PhysicsProperties.Emplace(FSLOwlNode(KbGravity, FSLOwlAttribute(RdfDatatype, AttrValBool), bGravity ? "true" : "false"));
 

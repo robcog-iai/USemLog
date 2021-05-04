@@ -16,15 +16,17 @@ struct USEMLOG_API FSLOwlExperimentStatics
 	static TSharedPtr<FSLOwlExperiment> CreateDefaultExperiment(
 		const FString& InDocId,
 		const FString& InDocPrefix = "log",
-		const FString& InDocOntologyName = "Experiment");
+		const FString& InDocOntologyName = "ameva_log");
 
-	// Create UE experiment
-	static TSharedPtr<FSLOwlExperiment> CreateUEExperiment(
-		const FString& InDocId,
-		const FString& InDocPrefix = "log",
-		const FString& InDocOntologyName = "UE-Experiment");
-		
-		
+	//// Create UE experiment
+	//static TSharedPtr<FSLOwlExperiment> CreateUEExperiment(
+	//	const FString& InDocId,
+	//	const FString& InDocPrefix = "log",
+	//	const FString& InDocOntologyName = "UE-Experiment");
+	
+	// Write experiment to file
+	static void WriteToFile(TSharedPtr<FSLOwlExperiment> Experiment, const FString& Path, bool bOverwrite);
+
 	/* Owl individuals / definitions creation */
 	// Create an event individual
 	static FSLOwlNode CreateEventIndividual(
@@ -47,6 +49,10 @@ struct USEMLOG_API FSLOwlExperimentStatics
 	/* Owl properties creation */
 	// Create class property
 	static FSLOwlNode CreateClassProperty(const FString& InClass);
+
+	// Create inEpisode property
+	static FSLOwlNode CreateInEpisodeProperty(
+		const FString& InDocPrefix, const FString& EpisodeId);
 
 	// Create startTime property
 	static FSLOwlNode CreateStartTimeProperty(

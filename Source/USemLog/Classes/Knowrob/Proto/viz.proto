@@ -1,0 +1,52 @@
+syntax = "proto2";
+
+package sl_pb;
+
+enum MarkerType {
+  Box = 1;
+  Sphere = 2;
+  Cylinder = 3;
+  Arrow = 4;
+  Axis = 5;
+}
+
+message SetTaskParams{
+  required string task = 1;
+}
+
+message SetEpisodeParams {
+  required string episode = 2;
+}
+
+message DrawMarkerAtParams {
+  required string id = 1;
+  required float timestamp = 2;
+  required MarkerType marker = 3;
+  required float scale = 4;
+  required string color = 5;
+  required string material = 6;
+}
+
+message DrawMarkerTrajParams {
+  required string id = 1;
+  required float start = 2;
+  required float end = 3;
+  required MarkerType marker = 4;
+  required float scale = 5;
+  required string color = 6;
+  required string material = 7;
+}
+
+message HighlightParams {
+	required string id = 1;
+	required string color = 2;
+	required string material = 3;
+}
+
+message RemoveHighlightParams {
+	required string id = 1;
+}
+
+message LoadLevelParams {
+  required string level = 1;
+}

@@ -64,12 +64,13 @@ void FSLManipulatorContactEventHandler::Finish(float EndTime, bool bForced)
 void FSLManipulatorContactEventHandler::AddNewEvent(const FSLContactResult& InResult)
 {
 	// Start a semantic contact event
-	TSharedPtr<FSLContactEvent> ContactEvent = MakeShareable(new FSLContactEvent(
+	TSharedPtr<FSLContactEvent> Event = MakeShareable(new FSLContactEvent(
 		FSLUuid::NewGuidInBase64Url(), InResult.Time,
 		FSLUuid::PairEncodeCantor(InResult.Self->GetUniqueID(), InResult.Other->GetUniqueID()),
 		InResult.Self, InResult.Other));
+	Event->EpisodeId = EpisodeId;
 	// Add event to the pending contacts array
-	StartedEvents.Emplace(ContactEvent);
+	StartedEvents.Emplace(Event);
 }
 
 // Publish finished event

@@ -33,6 +33,7 @@ FSLOwlNode FSLGraspEvent::ToOwlNode() const
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreatePerformedByProperty("log", Manipulator->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateObjectActedOnProperty("log", Individual->GetIdValue()));
 	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateGraspTypeProperty("knowrob", GraspType));
+	EventIndividual.AddChildNode(FSLOwlExperimentStatics::CreateInEpisodeProperty("log", EpisodeId));
 	return EventIndividual;
 }
 
@@ -44,14 +45,10 @@ void FSLGraspEvent::AddToOwlDoc(FSLOwlDoc* OutDoc)
 	// we cannot use the safer dynamic_cast because RTTI is not enabled by default
 	// if (FOwlEvents* EventsDoc = dynamic_cast<FOwlEvents*>(OutDoc))
 	FSLOwlExperiment* EventsDoc = static_cast<FSLOwlExperiment*>(OutDoc);
-	EventsDoc->AddTimepointIndividual(
-		StartTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", StartTime));
-	EventsDoc->AddTimepointIndividual(
-		EndTime, FSLOwlExperimentStatics::CreateTimepointIndividual("log", EndTime));
-	EventsDoc->AddObjectIndividual(Manipulator,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Manipulator->GetIdValue(), Manipulator->GetClassValue()));
-	EventsDoc->AddObjectIndividual(Individual,
-		FSLOwlExperimentStatics::CreateObjectIndividual("log", Individual->GetIdValue(), Individual->GetClassValue()));
+	EventsDoc->RegisterTimepoint(StartTime);
+	EventsDoc->RegisterTimepoint(EndTime);
+	EventsDoc->RegisterObject(Manipulator);
+	EventsDoc->RegisterObject(Individual);
 	OutDoc->AddIndividual(ToOwlNode());
 }
 

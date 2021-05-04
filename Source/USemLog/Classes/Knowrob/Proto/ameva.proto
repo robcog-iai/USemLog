@@ -1,0 +1,54 @@
+syntax = "proto2";
+
+package sl_pb;
+
+import "viz.proto";
+import "control.proto";
+
+message KRAmevaEvent {
+  enum FuncToCall {
+    SetTask = 1;                          
+    SetEpisode = 2;                   
+    DrawMarkerAt = 3;           
+    DrawMarkerTraj = 4;
+    LoadLevel = 5;
+    StartLogging = 6;
+    StopLogging = 7;
+    GetEpisodeData = 8; 
+    StartSimulation = 9;
+    StopSimulation = 10;
+    SetIndividualPose = 11;
+    ApplyForceTo = 12;
+    Highlight = 13;
+    RemoveHighlight = 14;
+    RemoveAllHighlight = 15;
+  } 
+  required FuncToCall funcToCall = 1;
+  optional SetTaskParams setTaskParam = 2;
+  optional SetEpisodeParams setEpisodeParams = 3;
+  optional DrawMarkerAtParams drawMarkerAtParams = 4;
+  optional DrawMarkerTrajParams drawMarkerTrajParams = 5;
+  optional LoadLevelParams loadLevelParams = 6;
+  optional StartLoggingParams startLoggingParams = 7;
+  optional GetEpisodeDataParams getEpisodeDataParams = 8;
+  optional StartSimulationParams startSimulationParams = 9;
+  optional StopSimulationParams stopSimulationParams = 10;
+  optional SetIndividualPoseParams setIndividualPoseParams = 11;
+  optional ApplyForceToParams applyForceToParams = 12;
+  optional HighlightParams highlightParams = 13;
+  optional RemoveHighlightParams removeHighlightParams = 14;
+}
+
+message KRAmevaResponse {
+  enum ResponseType {
+    Text = 1;
+    FileCreation = 2;
+    FileData = 3;
+    FileFinish = 4;
+  }
+  required ResponseType type = 1;
+  optional string text = 2;
+  optional string fileName = 3;
+  optional bytes fileData = 4;
+  optional int32 dataLength = 5;
+}
