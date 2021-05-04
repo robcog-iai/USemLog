@@ -159,7 +159,7 @@ int32 FSLWorldStateDBWriterAsyncTask::AddAllIndividuals(bson_t* doc)
 	BSON_APPEND_ARRAY_BEGIN(doc, "individuals", &arr_obj);
 	for (const auto& Individual : IndividualManager->GetIndividuals())
 	{
-		//Individual->UpdateCachedPose(0.0);
+		Individual->UpdateCachedPose(0.0);
 
 		//// TODO workaround
 		//Individual->SetHasMovedFlag(true);
