@@ -30,7 +30,11 @@ void FSLVizEpisodeUtils::SetActorsAsVisualsOnly(UWorld* World)
 		ActItr->SetActorEnableCollision(ECollisionEnabled::NoCollision);
 		if (ActItr->GetRootComponent())
 		{
-			ActItr->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+			// Ignore static actors to avoid breaking the static lighning
+			if (ActItr->GetRootComponent()->Mobility != EComponentMobility::Static)
+			{
+				ActItr->GetRootComponent()->SetMobility(EComponentMobility::Movable);
+			}
 		}
 
 		// Clear any attachments between actors

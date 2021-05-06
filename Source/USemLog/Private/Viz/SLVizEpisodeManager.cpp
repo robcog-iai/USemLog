@@ -508,9 +508,14 @@ void ASLVizEpisodeManager::ApplyPoses(const FSLVizEpisodeFrameData& Frame)
 {
 	for (const auto& ActorPosePair : Frame.ActorPoses)
 	{
-		ActorPosePair.Key->SetActorTransform(ActorPosePair.Value);
+		// todo, static components can be ignored (might make sense to remove them form the episode data)
+		if (ActorPosePair.Key->GetRootComponent()->Mobility != EComponentMobility::Static)
+		{
+			ActorPosePair.Key->SetActorTransform(ActorPosePair.Value);
+		}
 	}
 
+	// todo, without this multiple iteration the bones are weirdly offseted
 	for (int32 Idx = 0; Idx < 5; Idx++)
 	{
 		for (const auto& PMCBonePosesPair : Frame.BonePoses)
