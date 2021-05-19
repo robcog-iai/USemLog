@@ -68,6 +68,7 @@ public class USemLog : ModuleRules
 				"SlateCore",
 				"Landscape",
 				"WebSockets",
+				"CinematicCamera",
 				//"Landscape", "AIModule",	// whitelisted actors when setting the world to visual only
 				//"UConversions",				// SL_WITH_ROS_CONVERSIONS
 				"UMCGrasp",					// SL_WITH_MC_GRASP

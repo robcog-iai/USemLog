@@ -81,6 +81,9 @@ enum class ESLVizPrimitiveMarkerType : uint8
 	Sphere			UMETA(DisplayName = "Sphere"),
 	Cylinder		UMETA(DisplayName = "Cylinder"),
 	Arrow			UMETA(DisplayName = "Arrow"),
+	ArrowX			UMETA(DisplayName = "ArrowX"),
+	ArrowY			UMETA(DisplayName = "ArrowY"),
+	ArrowZ			UMETA(DisplayName = "ArrowZ"),
 	Axis			UMETA(DisplayName = "Axis")
 };
 

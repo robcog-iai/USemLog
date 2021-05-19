@@ -4,14 +4,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Info.h"
 #include "SLVizCineCamManager.generated.h"
 
 // Forward declarations
-class APawn;
+class ACineCameraActor;
 
 UCLASS(ClassGroup = (SL), DisplayName = "SL Viz CineCam Manager")
-class ASLVizCineCamManager : public AActor
+class ASLVizCineCamManager : public AInfo
 {
 	GENERATED_BODY()
 	
@@ -23,19 +23,33 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
+public:
 	// Init director references
 	void Init();
 
+	// Get init state
+	bool IsInit() const { return bIsInit; };
+
+protected:
+	// Setup user input bindings
+	void SetupInputBindings();
+
 private:
-	// Trigger test function
-	void TriggerTest();
+	// Goto next camera
+	void SwitchCamera();
 
 
 private:
+	// User input trigger action name (Shift+V)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
+	FName UserInputActionName = "VizQCineCamTrigger";
+
 	// True if the active pawn is set
 	bool bIsInit;
+
+	// Active camera index
+	int32 CurrCamIdx = INDEX_NONE;
+	
+	// Available cinematic cameras
+	TArray<ACineCameraActor*> CineCameras;
 };

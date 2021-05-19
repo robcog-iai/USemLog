@@ -35,6 +35,15 @@ public:
 	UStaticMesh* MeshArrow;
 
 	UPROPERTY(EditAnywhere, Category = "Mesh")
+	UStaticMesh* MeshArrowX;
+
+	UPROPERTY(EditAnywhere, Category = "Mesh")
+	UStaticMesh* MeshArrowY;
+
+	UPROPERTY(EditAnywhere, Category = "Mesh")
+	UStaticMesh* MeshArrowZ;
+
+	UPROPERTY(EditAnywhere, Category = "Mesh")
 	UStaticMesh* MeshAxis;
 
 

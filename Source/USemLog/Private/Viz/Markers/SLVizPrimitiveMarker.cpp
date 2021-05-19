@@ -83,6 +83,12 @@ UStaticMesh* USLVizPrimitiveMarker::GetPrimitiveStaticMesh(ESLVizPrimitiveMarker
 		return VizAssetsContainer->MeshCylinder;
 	case ESLVizPrimitiveMarkerType::Arrow:
 		return VizAssetsContainer->MeshArrow;
+	case ESLVizPrimitiveMarkerType::ArrowX:
+		return VizAssetsContainer->MeshArrowX;
+	case ESLVizPrimitiveMarkerType::ArrowY:
+		return VizAssetsContainer->MeshArrowY;
+	case ESLVizPrimitiveMarkerType::ArrowZ:
+		return VizAssetsContainer->MeshArrowZ;
 	case ESLVizPrimitiveMarkerType::Axis:
 		return VizAssetsContainer->MeshAxis;
 	default:
