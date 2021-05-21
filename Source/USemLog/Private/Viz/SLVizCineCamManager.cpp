@@ -2,6 +2,7 @@
 // Author: Andrei Haidu (http://haidu.eu)
 
 #include "Viz/SLVizCineCamManager.h"
+#include "Camera/CameraActor.h"
 #include "CineCameraActor.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
@@ -42,17 +43,35 @@ void ASLVizCineCamManager::Init()
 		return;
 	}
 
-	// Get all cinematic camera actors from the world
-	for (TActorIterator<ACineCameraActor> CCActItr(GetWorld()); CCActItr; ++CCActItr)
+	if (bIncludeBasicCameras)
 	{
-		CineCameras.Add(*CCActItr);
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Added %s"), *FString(__FUNCTION__), __LINE__, *CCActItr->GetName());
-	}
+		// Get all cinematic camera actors from the world
+		for (TActorIterator<ACameraActor> CActItr(GetWorld()); CActItr; ++CActItr)
+		{
+			AllCameras.Add(*CActItr);
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Added %s"), *FString(__FUNCTION__), __LINE__, *CActItr->GetName());
+		}
 
-	if (CineCameras.Num() == 0)
+		if (AllCameras.Num() == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d No cameras found.."), *FString(__FUNCTION__), __LINE__);
+			return;
+		}
+	}
+	else 
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d No cine cameras found.."), *FString(__FUNCTION__), __LINE__);
-		return;
+		// Get all cinematic camera actors from the world
+		for (TActorIterator<ACineCameraActor> CCActItr(GetWorld()); CCActItr; ++CCActItr)
+		{
+			CineCameras.Add(*CCActItr);
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Added %s"), *FString(__FUNCTION__), __LINE__, *CCActItr->GetName());
+		}
+
+		if (CineCameras.Num() == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d No cine cameras found.."), *FString(__FUNCTION__), __LINE__);
+			return;
+		}
 	}
 
 	// Bine user input trigger
@@ -78,20 +97,50 @@ void ASLVizCineCamManager::SetupInputBindings()
 // Goto next camera
 void ASLVizCineCamManager::SwitchCamera()
 {
-	if (CineCameras.Num() == 0)
+	if (bIncludeBasicCameras)
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d No cine cameras, this should not happen.."), *FString(__FUNCTION__), __LINE__);
-		return;
-	}
+		if (AllCameras.Num() == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d No cameras, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+			return;
+		}
 
-	CurrCamIdx++;
-	if (!CineCameras.IsValidIndex(CurrCamIdx))
+		CurrCamIdx++;
+		if (!AllCameras.IsValidIndex(CurrCamIdx))
+		{
+			CurrCamIdx = 0;
+		}
+
+		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+		{
+			PC->SetViewTarget(AllCameras[CurrCamIdx]);
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d CamIdx=%d; CamName=%s;"),
+			*FString(__FUNCTION__), __LINE__, CurrCamIdx, *AllCameras[CurrCamIdx]->GetName());
+	}
+	else
 	{
-		CurrCamIdx = 0;
-	}
+		if (CineCameras.Num() == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d No cine cameras, this should not happen.."), *FString(__FUNCTION__), __LINE__);
+			return;
+		}
 
-	UE_LOG(LogTemp, Warning, TEXT("%s::%d CamIdx=%d; CamName=%s;"),
-		*FString(__FUNCTION__), __LINE__, CurrCamIdx, *CineCameras[CurrCamIdx]->GetName());
+		CurrCamIdx++;
+		if (!CineCameras.IsValidIndex(CurrCamIdx))
+		{
+			CurrCamIdx = 0;
+		}
+
+		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+		{
+			PC->SetViewTarget(CineCameras[CurrCamIdx]);
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("%s::%d CamIdx=%d; CamName=%s;"),
+			*FString(__FUNCTION__), __LINE__, CurrCamIdx, *CineCameras[CurrCamIdx]->GetName());
+	}
 
 #if UE_BUILD_DEBUG
 	if (GEngine) 
@@ -101,11 +150,7 @@ void ASLVizCineCamManager::SwitchCamera()
 	}
 #endif	
 
-	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
-	{		
-		//PC->SetCinematicMode(!PC->bCinematicMode, false, false);
-		PC->SetViewTarget(CineCameras[CurrCamIdx]);
-	}
+
 }
 
 

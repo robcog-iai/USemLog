@@ -9,6 +9,7 @@
 
 // Forward declarations
 class ACineCameraActor;
+class ACameraActor;
 
 UCLASS(ClassGroup = (SL), DisplayName = "SL Viz CineCam Manager")
 class ASLVizCineCamManager : public AInfo
@@ -42,6 +43,10 @@ private:
 private:
 	// User input trigger action name (Shift+V)
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
+	bool bIncludeBasicCameras = true;
+
+	// User input trigger action name (Shift+V)
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
 	FName UserInputActionName = "VizQCineCamTrigger";
 
 	// True if the active pawn is set
@@ -52,4 +57,7 @@ private:
 	
 	// Available cinematic cameras
 	TArray<ACineCameraActor*> CineCameras;
+
+	// Available cameras
+	TArray<ACameraActor*> AllCameras;
 };
