@@ -20,21 +20,22 @@ Semantic logging plugin for Unreal Engine. Logs symbolic and sub-symbolic data t
 
 ```bibtex
 @inproceedings{haidu21ameva2,
-   title={Automated acquisition of structured, semantic models of manipulation activities from human VR demonstration}, 
-   author={Andrei Haidu and Michael Beetz},
-   booktitle = {IEEE International Conference on Robotics and Automation (ICRA)},
-   year={2021},
-   address = {Xi'an, China},
-   note = {Accepted for publication, available at \url{https://arxiv.org/pdf/2011.13689.pdf}},
+  title     = {Automated acquisition of structured, semantic models of manipulation activities from human VR demonstration}, 
+  author    = {Andrei Haidu and Michael Beetz},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA)},
+  year      = {2021},
+  address   = {Xi'an, China},
+  url       = {https://arxiv.org/pdf/2011.13689.pdf}
+  note      = {Finalist for Best Paper Award on Human-Robot Interaction},
 }
 
 @inproceedings{haidu19ameva,
-  author    = {A. {Haidu} and M. {Beetz}},
+  author    = {Andrei Haidu and Michael Beetz},
   title     = {Automated Models of Human Everyday Activity based on Game and Virtual Reality Technology},
   booktitle = {2019 International Conference on Robotics and Automation (ICRA)},
   year      = {2019},
   pages     = {2606-2612},
-  url       = { https://doi.org/10.1109/ICRA.2019.8793859}
+  url       = {https://doi.org/10.1109/ICRA.2019.8793859}
 }
 
 @inproceedings{haidu18krsim,
