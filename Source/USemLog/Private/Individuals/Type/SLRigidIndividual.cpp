@@ -113,13 +113,27 @@ FString USLRigidIndividual::CalcDefaultClassValue()
 			if (UStaticMeshComponent* SMC = SMA->GetStaticMeshComponent())
 			{
 				FString ClassName = SMC->GetStaticMesh()->GetFullName();
-				int32 FindCharPos;
+				int32 FindCharPos = INDEX_NONE;
+
+				 //Remove end path from full name
 				ClassName.FindLastChar('.', FindCharPos);
-				ClassName.RemoveAt(0, FindCharPos + 1);
+				if (FindCharPos != INDEX_NONE)
+				{
+					ClassName.RemoveAt(0, FindCharPos + 1);
+				}
+
+				// Remove prefix SM_ClassName)
 				if (!ClassName.RemoveFromStart(TEXT("SM_")))
 				{
 					//UE_LOG(LogTemp, Warning, TEXT("%s::%d %s StaticMesh has no SM_ prefix in its name.."),
 					//	*FString(__func__), __LINE__, *CompOwner->GetName());
+				}
+
+				// Remove any postfix (SM_ClassName_PostfixExample)
+				ClassName.FindLastChar('_', FindCharPos);
+				if (FindCharPos != INDEX_NONE)
+				{
+					ClassName.RemoveAt(FindCharPos, ClassName.Len() - FindCharPos);
 				}
 				return ClassName;
 			}
