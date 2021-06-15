@@ -10,6 +10,7 @@
 #include "Animation/SkeletalMeshActor.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
+#include "UObject/UObjectGlobals.h" // DuplicateObject
 
 // UOwl
 #include "Owl/SLOwlSemanticMap.h"
@@ -378,14 +379,23 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 	{
 		if (UStaticMeshComponent* SMComp = ObjAsSMAct->GetStaticMeshComponent())
 		{
+			// Duplicate static mesh component to ensure the bounding box is in its initial pose
+			UStaticMeshComponent* SMCompDupl = DuplicateObject<UStaticMeshComponent>(SMComp, GetTransientPackage());
+			SMCompDupl->SetWorldRotation(FQuat::Identity);
+			SMCompDupl->UpdateBounds();
+
 			// Bounding box size
 			FVector BBSize;
 #if SL_WITH_ROS_CONVERSIONS
-			BBSize = FConversions::CmToM(SMComp->Bounds.GetBox().GetSize());
+			//BBSize = FConversions::CmToM(SMComp->Bounds.GetBox().GetSize());
+			BBSize = FConversions::CmToM(SMCompDupl->Bounds.GetBox().GetSize());
 #else
-			BBSize = SMComp->Bounds.GetBox().GetSize();	
-			
+			//BBSize = SMComp->Bounds.GetBox().GetSize();	
+			BBSize = SMCompDupl->Bounds.GetBox().GetSize();			
 #endif // SL_WITH_ROS_CONVERSIONS
+
+			SMCompDupl->DestroyComponent();
+
 			if (!BBSize.IsZero())
 			{
 				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateDepthProperty(BBSize.X));
