@@ -383,7 +383,6 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 			UStaticMeshComponent* SMCompDupl = DuplicateObject<UStaticMeshComponent>(SMComp, GetTransientPackage());
 			SMCompDupl->SetWorldRotation(FQuat::Identity);
 			SMCompDupl->UpdateBounds();
-
 			// Bounding box size
 			FVector BBSize;
 #if SL_WITH_ROS_CONVERSIONS

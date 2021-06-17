@@ -37,35 +37,37 @@ void ASLControlManager::Init()
 	bIsInit = RetValue;
 }
 
-void ASLControlManager::SetIndividualPose(const FString& Id, FVector Location, FQuat Quat)
+bool ASLControlManager::SetIndividualPose(const FString& Id, FVector Location, FQuat Quat)
 {
 	USLBaseIndividual* Individual = IndividualManager->GetIndividual(Id);
 	if (Individual == nullptr)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) is not existed.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) does not exist.."),
 			*FString(__FUNCTION__), __LINE__, *Id);
-		return;
+		return false;
 	}
 
 	AActor* ActorToMove = Individual->GetParentActor();
 
 	Quat.Normalize();
 	ActorToMove->SetActorLocationAndRotation(Location, Quat);
+	return true;
 }
 
-void ASLControlManager::ApplyForceTo(const FString& Id, FVector Force)
+bool ASLControlManager::ApplyForceTo(const FString& Id, FVector Force)
 {
 	USLBaseIndividual* Individual = IndividualManager->GetIndividual(Id);
 	if (Individual == nullptr)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) is not existed.."),
+		UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) does not exist.."),
 			*FString(__FUNCTION__), __LINE__, *Id);
-		return;
+		return false;
 	}
 
 	AActor* ActorToApply = Individual->GetParentActor();
 	UStaticMeshComponent* StaticMesh = Cast<UStaticMeshComponent>(ActorToApply->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-	StaticMesh->AddForce(Force * 100 * StaticMesh->GetMass());
+	StaticMesh->AddForce(Force * 100.f * StaticMesh->GetMass());
+	return true;
 }
 
 bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds)
@@ -75,7 +77,7 @@ bool ASLControlManager::StartSimulationSelectionOnly(const TArray<FString>& Ids,
 		USLBaseIndividual* Individual = IndividualManager->GetIndividual(Id);
 		if (Individual == nullptr)
 		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) is not existed.."),
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) does not exist.."),
 				*FString(__FUNCTION__), __LINE__, *GetName());
 			continue;
 		}
@@ -109,7 +111,7 @@ bool ASLControlManager::StopSimulationSelectionOnly(const TArray<FString>& Ids)
 		USLBaseIndividual* Individual = IndividualManager->GetIndividual(Id);
 		if (Individual == nullptr)
 		{
-			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) is not existed.."),
+			UE_LOG(LogTemp, Log, TEXT("%s::%d Individual (%s) does not exist.."),
 				*FString(__FUNCTION__), __LINE__, *GetName());
 			continue;
 		}

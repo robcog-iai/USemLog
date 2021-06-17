@@ -34,10 +34,10 @@ public:
     bool IsInit() const { return bIsInit; }
 
 	// Set the location and rotation of the individual
-    void SetIndividualPose(const FString& Id, FVector Location, FQuat Quat);
+    bool SetIndividualPose(const FString& Id, FVector Location, FQuat Quat);
 	
 	// Apply force to individual
-	void ApplyForceTo(const FString& Id, FVector Force);
+	bool ApplyForceTo(const FString& Id, FVector Force);
 
 	// Apply physics simulation on individuals
     bool StartSimulationSelectionOnly(const TArray<FString>& Ids, int32 Seconds);

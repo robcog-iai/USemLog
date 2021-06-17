@@ -53,7 +53,7 @@ public class USemLog : ModuleRules
 			{
 				"Core",				
 				"MongoC",						// SL_WITH_LIBMONGO_C                
-				//"UProtobuf", 					// SL_WITH_PROTO
+				"UProtobuf", 					// SL_WITH_PROTO
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

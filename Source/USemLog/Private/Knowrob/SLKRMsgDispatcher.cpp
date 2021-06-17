@@ -60,7 +60,7 @@ void SLKRMsgDispatcher::Reset()
 
 // Parse the proto sequence and trigger function
 void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
-{
+{	
 #if SL_WITH_PROTO
 	sl_pb::KRAmevaEvent AmevaEvent;
 	AmevaEvent.ParseFromString(ProtoStr);
@@ -132,20 +132,36 @@ void  SLKRMsgDispatcher::ProcessProtobuf(std::string ProtoStr)
 // Set the task of MongoManager
 void SLKRMsgDispatcher::SetTask(sl_pb::SetTaskParams params)
 {
-	MongoManager->SetTask(UTF8_TO_TCHAR(params.task().c_str()));
+	const FString TaskId = FString(UTF8_TO_TCHAR(params.task().c_str()));
+	bool bSuccess = MongoManager->SetTask(TaskId);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed - Set task");
-	KRWSClient->SendResponse(Response);
+	if (bSuccess)
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Sucesfully set task id to %s .."), *TaskId, FPlatformTime::Seconds());
+	}
+	else
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Failed to set task id to %s .."), *TaskId, FPlatformTime::Seconds());
+	}
+	KRWSClient->SendResponse(Response);	
 }
 
 // Set the episode of MongoManager
 void SLKRMsgDispatcher::SetEpisode(sl_pb::SetEpisodeParams params)
 {
-	MongoManager->SetEpisode(UTF8_TO_TCHAR(params.episode().c_str()));
+	const FString EpId = FString(UTF8_TO_TCHAR(params.episode().c_str()));
+	bool bSuccess = MongoManager->SetEpisode(EpId);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed - Set episode");
+	if (bSuccess)
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Sucesfully set episode id to %s .."), *EpId, FPlatformTime::Seconds());
+	}
+	else
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Failed to set episode id to %s .."), *EpId, FPlatformTime::Seconds());
+	}
 	KRWSClient->SendResponse(Response);
 }
 
@@ -248,26 +264,39 @@ void SLKRMsgDispatcher::StartLogging(sl_pb::StartLoggingParams params)
 	DBServerParameters.Port = MongoServerPort;
 	
 	SymbolicLogger->Init(SymbolicLoggerParameters, LocationParameters);
+	WorldStateLogger->Init(WorldStateLoggerParameters, LocationParameters, DBServerParameters);
+	
+	bool bSuccess = true;
 	if (!SymbolicLogger->IsInit())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d SLKMsgDispatcher could not init the symbolic logger.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to init the symbolic logger.."),
 			*FString(__FUNCTION__), __LINE__);
-		return;
+		bSuccess = false;
 	}
 
-	WorldStateLogger->Init(WorldStateLoggerParameters, LocationParameters, DBServerParameters);
 	if (!WorldStateLogger->IsInit())
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s::%d SLKMsgDispatcher could not init the world state logger.."),
+		UE_LOG(LogTemp, Error, TEXT("%s::%d Failed to init the world state logger.."),
 			*FString(__FUNCTION__), __LINE__ );
-		return;
+		bSuccess = false;
 	}
 
-	SymbolicLogger->Start();
-	WorldStateLogger->Start();
+	if (bSuccess)
+	{
+		SymbolicLogger->Start();
+		WorldStateLogger->Start();
+	}
+
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed - Start logging");
+	if (bSuccess)
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Sucesfully started logging .."), FPlatformTime::Seconds());
+	}
+	else
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Failed to start loggers .."), FPlatformTime::Seconds());
+	}
 	KRWSClient->SendResponse(Response);
 }
 
@@ -275,9 +304,19 @@ void SLKRMsgDispatcher::StartLogging(sl_pb::StartLoggingParams params)
 void SLKRMsgDispatcher::StopLogging()
 {
 	SymbolicLogger->Finish();
+	WorldStateLogger->Finish();
+	bool bSuccess = SymbolicLogger->IsFinished() && WorldStateLogger->IsFinished();
+
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed - Stop logging");
+	if (bSuccess)
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Sucesfully finished logging .."), FPlatformTime::Seconds());
+	}
+	else
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Failed to finish loggers .."), FPlatformTime::Seconds());
+	}
 	KRWSClient->SendResponse(Response);
 }
 
@@ -318,13 +357,22 @@ void SLKRMsgDispatcher::StartSimulation(sl_pb::StartSimulationParams params)
 		Ids.Add(Id);
 	}
 
-	if (!ControlManager->StartSimulationSelectionOnly(Ids, params.duration()))
+	int32 Secs = params.duration();
+	bool bSuccess = ControlManager->StartSimulationSelectionOnly(Ids, Secs);
+
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	if (bSuccess)
 	{
-		FSLKRResponse Response;
-		Response.Type = ResponseType::TEXT;
-		Response.Text = TEXT("Error: Simulation is already Start");
-		KRWSClient->SendResponse(Response);
+		Response.Text = FString::Printf(TEXT("[%.4f] Sucesfully started simulation of %d individuals for %f secs.."),
+			FPlatformTime::Seconds(), Ids.Num(), Secs);
 	}
+	else
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Failed to start simulation of %d individuals for %f secs.."),
+			FPlatformTime::Seconds(), Ids.Num(), Secs);
+	}
+	KRWSClient->SendResponse(Response);
 }
 
 // Stop Simulation
@@ -337,13 +385,21 @@ void SLKRMsgDispatcher::StopSimulation(sl_pb::StopSimulationParams params)
 		Ids.Add(Id);
 	}
 
-	if (!ControlManager->StopSimulationSelectionOnly(Ids))
+	bool bSuccess = ControlManager->StopSimulationSelectionOnly(Ids);
+
+	FSLKRResponse Response;
+	Response.Type = ResponseType::TEXT;
+	if (bSuccess)
 	{
-		FSLKRResponse Response;
-		Response.Type = ResponseType::TEXT;
-		Response.Text = TEXT("Error: Simulation is not running");
-		KRWSClient->SendResponse(Response);
+		Response.Text = FString::Printf(TEXT("[%.4f] Sucesfully stopped simulation of %d individuals.."),
+			FPlatformTime::Seconds(), Ids.Num());
 	}
+	else
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Failed to stop simulation of %d individuals.."),
+			FPlatformTime::Seconds(), Ids.Num());
+	}
+	KRWSClient->SendResponse(Response);
 }
 
 // Move Individual
@@ -352,9 +408,19 @@ void SLKRMsgDispatcher::SetIndividualPose(sl_pb::SetIndividualPoseParams params)
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
 	FVector Loc = FVector(params.vecx(), params.vecy(), params.vecz());
 	FQuat Quat = FQuat(params.quatw(), params.quatx(), params.quaty(), params.quatz());
-	ControlManager->SetIndividualPose(Id, Loc, Quat);
+	bool bSuccess = ControlManager->SetIndividualPose(Id, Loc, Quat);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
+	if (bSuccess)
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Sucesfully set pose of %s to [%s, %s].."),
+			FPlatformTime::Seconds(), *Id, *Loc.ToString(), *Quat.ToString());
+	}
+	else
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Failed to set pose of %s to [%s, %s].."),
+			FPlatformTime::Seconds(), *Id, *Loc.ToString(), *Quat.ToString());
+	}
 	Response.Text = TEXT("Completed - Set individual pose");
 	KRWSClient->SendResponse(Response);
 }
@@ -363,10 +429,19 @@ void SLKRMsgDispatcher::ApplyForceTo(sl_pb::ApplyForceToParams params)
 {
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
 	FVector Force = FVector(params.forcex(), params.forcey(), params.forcez());
-	ControlManager->ApplyForceTo(Id, Force);
+	bool bSuccess = ControlManager->ApplyForceTo(Id, Force);
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed - Apply Force");
+	if (bSuccess)
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Sucesfully applied force of [%s] to %s.."),
+			FPlatformTime::Seconds(), *Force.ToString(), *Id);
+	}
+	else
+	{
+		Response.Text = FString::Printf(TEXT("[%.4f] Failed to apply force of [%s] to %s.."),
+			FPlatformTime::Seconds(), *Force.ToString(), *Id);
+	}
 	KRWSClient->SendResponse(Response);
 }
 
@@ -454,7 +529,7 @@ void SLKRMsgDispatcher::SimulationStopResponse()
 {
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed - Stop Simulation");
+	Response.Text = FString::Printf(TEXT("[%.4f] Simulation finished.."),FPlatformTime::Seconds());
 	KRWSClient->SendResponse(Response);
 }
 
@@ -462,6 +537,6 @@ void SLKRMsgDispatcher::SimulationStartResponse()
 {
 	FSLKRResponse Response;
 	Response.Type = ResponseType::TEXT;
-	Response.Text = TEXT("Completed - Start Simulation");
+	Response.Text = FString::Printf(TEXT("[%.4f] Simulation started.."), FPlatformTime::Seconds());
 	KRWSClient->SendResponse(Response);
 }
