@@ -106,7 +106,7 @@ struct FSLWorldStateLoggerParams
 
 	// Min difference between poses (FTransform) in order for the individual to be logged
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
-	float PoseTolerance = 0.5f;
+	float PoseTolerance = 0.1f;
 
 	// Write mode, only individuals that moved only (sparse) or all individuals
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
