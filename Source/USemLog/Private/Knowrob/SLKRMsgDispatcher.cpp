@@ -407,6 +407,7 @@ void SLKRMsgDispatcher::SetIndividualPose(sl_pb::SetIndividualPoseParams params)
 {
 	FString Id = UTF8_TO_TCHAR(params.id().c_str());
 	FVector Loc = FVector(params.vecx(), params.vecy(), params.vecz());
+	// TODO switch to X Y Z W, also in knowrob_ameva src/ue_control_cpp -> ue_set_individual_pose
 	FQuat Quat = FQuat(params.quatw(), params.quatx(), params.quaty(), params.quatz());
 	bool bSuccess = ControlManager->SetIndividualPose(Id, Loc, Quat);
 	FSLKRResponse Response;
