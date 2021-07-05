@@ -34,6 +34,29 @@ void ASLVizCineCamManager::BeginPlay()
 	Init();	
 }
 
+#if WITH_EDITOR
+// Called when a property is changed in the editor
+void ASLVizCineCamManager::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Get the changed property name
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ?
+		PropertyChangedEvent.Property->GetFName() : NAME_None;
+
+	/* VizQ */
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(ASLVizCineCamManager, bResetButton))
+	{
+		bResetButton = false;
+		AllCameras.Empty();
+		CineCameras.Empty();
+		CurrCamIdx = 0;
+		bIsInit = false;
+		Init();
+	}
+}
+#endif // WITH_EDITOR
+
 // Init director references
 void ASLVizCineCamManager::Init()
 {
@@ -84,8 +107,12 @@ void ASLVizCineCamManager::SetupInputBindings()
 	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{
 		if (UInputComponent* IC = PC->InputComponent)
-		{
-			IC->BindAction(UserInputActionName, IE_Pressed, this, &ASLVizCineCamManager::SwitchCamera);
+		{			
+			if (!bActionInputBindingSet)
+			{
+				IC->BindAction(UserInputActionName, IE_Pressed, this, &ASLVizCineCamManager::SwitchCamera);
+				bActionInputBindingSet = true;
+			}
 		}
 	}
 	else

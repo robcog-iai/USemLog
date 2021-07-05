@@ -24,6 +24,11 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+#if WITH_EDITOR
+	// Called when a property is changed in the editor
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif // WITH_EDITOR
+
 public:
 	// Init director references
 	void Init();
@@ -49,6 +54,10 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ")
 	FName UserInputActionName = "VizQCineCamTrigger";
 
+	// Re-load the cameras from the world
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger|VizQ|Edit")
+	bool bResetButton = true;
+
 	// True if the active pawn is set
 	bool bIsInit;
 
@@ -60,4 +69,7 @@ private:
 
 	// Available cameras
 	TArray<ACameraActor*> AllCameras;
+
+	// Cache the input binding to avoid setting it twice (due to reset capabilities)
+	bool bActionInputBindingSet = false;
 };

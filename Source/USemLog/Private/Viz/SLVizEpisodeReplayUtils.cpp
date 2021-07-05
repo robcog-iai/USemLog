@@ -17,6 +17,7 @@
 //#include "Components/LightComponentBase.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/MovementComponent.h"
+#include "Camera/CameraActor.h"
 //#include "Landscape.h"
 
 
@@ -25,6 +26,12 @@ void FSLVizEpisodeUtils::SetActorsAsVisualsOnly(UWorld* World)
 {
 	for (TActorIterator<AActor> ActItr(World); ActItr; ++ActItr)
 	{
+		// Skip camera attachments
+		if (ActItr->IsA(ACameraActor::StaticClass()))
+		{
+			continue;
+		}
+
 		// Make sure all actors have no physics, have no collisions and are movable
 		ActItr->DisableComponentsSimulatePhysics();
 		ActItr->SetActorEnableCollision(ECollisionEnabled::NoCollision);
@@ -38,7 +45,10 @@ void FSLVizEpisodeUtils::SetActorsAsVisualsOnly(UWorld* World)
 		}
 
 		// Clear any attachments between actors
-		ActItr->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		if (!ActItr->IsA(ACameraActor::StaticClass()))
+		{
+			ActItr->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		}
 
 		// Check if there are any components that need to be removed
 		if (!IsSpecialCaseActor(*ActItr))
