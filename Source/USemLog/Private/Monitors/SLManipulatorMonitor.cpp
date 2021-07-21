@@ -381,7 +381,12 @@ void USLManipulatorMonitor::CreateBoneMonitors()
 			AActor* OnwerActor = GetOwner();
 
 			// Get existing bone monitors
+#if ENGINE_MINOR_VERSION > 23 || ENGINE_MAJOR_VERSION > 4
+			TArray<UActorComponent*> ExistingBoneMonitors;
+			AsSkelMA->GetComponents(USLBoneContactMonitor::StaticClass(), ExistingBoneMonitors);
+#else
 			TArray<UActorComponent*> ExistingBoneMonitors = AsSkelMA->GetComponentsByClass(USLBoneContactMonitor::StaticClass());
+#endif
 
 			// Get list of the skeletal bone names
 			TArray<FName> BoneNames;

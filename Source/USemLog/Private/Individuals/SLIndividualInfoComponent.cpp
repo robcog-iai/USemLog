@@ -85,6 +85,21 @@ void USLIndividualInfoComponent::OnComponentCreated()
 	/*UE_LOG(LogTemp, Warning, TEXT("%s::%d::%s::%.4fs"), *FString(__FUNCTION__), __LINE__, *GetFullName(), FPlatformTime::Seconds());*/
 
 	// Check if actor already has a semantic data component
+#if ENGINE_MINOR_VERSION > 23 || ENGINE_MAJOR_VERSION > 4
+	TArray<UActorComponent*> Components;
+	GetOwner()->GetComponents(USLIndividualComponent::StaticClass(), Components);
+	for (const auto AC : Components)
+	{
+		if (AC != this)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has an individual info component (%s), self-destruction commenced.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+			//DestroyComponent();
+			ConditionalBeginDestroy();
+			return;
+		}
+	}
+#else
 	for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualInfoComponent::StaticClass()))
 	{
 		if (AC != this)
@@ -96,6 +111,7 @@ void USLIndividualInfoComponent::OnComponentCreated()
 			return;
 		}
 	}
+#endif
 }
 
 // Called when the game starts

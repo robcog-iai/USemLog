@@ -203,21 +203,21 @@ void USLContactMonitorSphere::PostEditChangeProperty(struct FPropertyChangedEven
 	{
 		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "Radius", FString::SanitizeFloat(SphereRadius));
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorSphere, RelativeLocation))
-	{
-		if (PropertyName == FName("X"))
-		{
-			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocX", FString::SanitizeFloat(RelativeLocation.X));
-		}
-		else if (PropertyName == FName("Y"))
-		{
-			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocY", FString::SanitizeFloat(RelativeLocation.Y));
-		}
-		else if (PropertyName == FName("Z"))
-		{
-			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocZ", FString::SanitizeFloat(RelativeLocation.Y));
-		}
-	}
+	//else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorSphere, RelativeLocation))
+	//{
+	//	if (PropertyName == FName("X"))
+	//	{
+	//		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocX", FString::SanitizeFloat(RelativeLocation.X));
+	//	}
+	//	else if (PropertyName == FName("Y"))
+	//	{
+	//		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocY", FString::SanitizeFloat(RelativeLocation.Y));
+	//	}
+	//	else if (PropertyName == FName("Z"))
+	//	{
+	//		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocZ", FString::SanitizeFloat(RelativeLocation.Y));
+	//	}
+	//}
 	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorSphere, bReCalcShapeButton))
 	{
 		CalcShapeBounds();

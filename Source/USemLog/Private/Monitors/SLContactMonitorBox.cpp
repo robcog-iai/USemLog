@@ -214,29 +214,29 @@ void USLContactMonitorBox::PostEditChangeProperty(struct FPropertyChangedEvent& 
 			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "ExtY", FString::SanitizeFloat(BoxExtent.Y));
 		}
 	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorBox, RelativeLocation))
-	{
-		if (PropertyName == FName("X"))
-		{
-			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocX", FString::SanitizeFloat(RelativeLocation.X));
-		}
-		else if (PropertyName == FName("Y"))
-		{
-			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocY", FString::SanitizeFloat(RelativeLocation.Y));
-		}
-		else if (PropertyName == FName("Z"))
-		{
-			FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocZ", FString::SanitizeFloat(RelativeLocation.Y));
-		}
-	}
-	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorBox, RelativeRotation))
-	{
-		const FQuat RelQuat = GetRelativeTransform().GetRotation();
-		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "QuatW", FString::SanitizeFloat(RelQuat.W));
-		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "QuatX", FString::SanitizeFloat(RelQuat.X));
-		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "QuatY", FString::SanitizeFloat(RelQuat.Y));
-		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "QuatZ", FString::SanitizeFloat(RelQuat.Z));
-	}
+	//else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorBox, RelativeLocation))
+	//{
+	//	if (PropertyName == FName("X"))
+	//	{
+	//		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocX", FString::SanitizeFloat(RelativeLocation.X));
+	//	}
+	//	else if (PropertyName == FName("Y"))
+	//	{
+	//		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocY", FString::SanitizeFloat(RelativeLocation.Y));
+	//	}
+	//	else if (PropertyName == FName("Z"))
+	//	{
+	//		FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "LocZ", FString::SanitizeFloat(RelativeLocation.Y));
+	//	}
+	//}
+	//else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorBox, RelativeRotation))
+	//{
+	//	const FQuat RelQuat = GetRelativeTransform().GetRotation();
+	//	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "QuatW", FString::SanitizeFloat(RelQuat.W));
+	//	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "QuatX", FString::SanitizeFloat(RelQuat.X));
+	//	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "QuatY", FString::SanitizeFloat(RelQuat.Y));
+	//	FSLTagIO::AddKVPair(GetOwner(), TagTypeName, "QuatZ", FString::SanitizeFloat(RelQuat.Z));
+	//}
 	else if (MemberPropertyName == GET_MEMBER_NAME_CHECKED(USLContactMonitorBox, bReCalcShapeButton))
 	{
 		CalcShapeBounds();

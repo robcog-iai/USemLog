@@ -996,6 +996,17 @@ bool USLMetaScanner::HasScanningRequirements(UStaticMeshComponent* SMC, float Ma
 // Check if the item is wrapped in a semantic contact shape (has a SLContactMonitorInterface sibling)
 bool USLMetaScanner::HasSemanticContactMonitor(UStaticMeshComponent* SMC) const
 {
+#if ENGINE_MINOR_VERSION > 23 || ENGINE_MAJOR_VERSION > 4
+	TArray<UActorComponent*> Components;
+	SMC->GetOwner()->GetComponents(UShapeComponent::StaticClass(), Components);
+	for (const auto C : Components)
+	{
+		if (Cast<ISLContactMonitorInterface>(C))
+		{
+			return true;
+		}
+	}
+#else
 	for(const auto C : SMC->GetOwner()->GetComponentsByClass(UShapeComponent::StaticClass()))
 	{
 		if (Cast<ISLContactMonitorInterface>(C))
@@ -1003,6 +1014,7 @@ bool USLMetaScanner::HasSemanticContactMonitor(UStaticMeshComponent* SMC) const
 			return true;
 		}
 	}
+#endif
 	return false;
 }
 

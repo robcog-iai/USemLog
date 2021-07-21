@@ -123,6 +123,19 @@ bool USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseIndivid
 			if (auto VI = Cast<USLVisibleIndividual>(BI))
 			{
 				// Check if the actor already has a clone
+#if ENGINE_MINOR_VERSION > 23 || ENGINE_MAJOR_VERSION > 4
+				TArray<UActorComponent*> Components;
+				CurrSMA->GetComponents(UStaticMeshComponent::StaticClass(), Components);
+				for (const auto& Comp : Components)
+				{
+					if (Comp->GetName().EndsWith("_CVQSceneMaskClone"))
+					{
+						// There is alrady a clone, add to array
+						StaticMaskClones.Add(CurrSMA, CastChecked<UStaticMeshComponent>(Comp));
+						continue;
+					}
+				}
+#else
 				for (const auto& Comp : CurrSMA->GetComponentsByClass(UStaticMeshComponent::StaticClass()))
 				{
 					if (Comp->GetName().EndsWith("_CVQSceneMaskClone"))
@@ -132,6 +145,7 @@ bool USLCVQScene::GenerateMaskClones(const TCHAR* MaterialPath, bool bUseIndivid
 						continue;
 					}
 				}
+#endif
 
 				// Duplicate/clone the static mesh component
 				UStaticMeshComponent* OrigSMC = CurrSMA->GetStaticMeshComponent();

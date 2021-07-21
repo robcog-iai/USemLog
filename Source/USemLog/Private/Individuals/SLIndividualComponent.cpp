@@ -38,6 +38,21 @@ void USLIndividualComponent::OnComponentCreated()
 	Super::OnComponentCreated();
 
 	// Check if actor already has a semantic data component
+#if ENGINE_MINOR_VERSION > 23 || ENGINE_MAJOR_VERSION > 4
+	TArray<UActorComponent*> Components;
+	GetOwner()->GetComponents(USLIndividualComponent::StaticClass(), Components);
+	for (const auto AC : Components)
+	{
+		if (AC != this)
+		{
+			UE_LOG(LogTemp, Error, TEXT("%s::%d %s already has an individual component (%s), self-destruction commenced.."),
+				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *AC->GetName());
+			//DestroyComponent();
+			ConditionalBeginDestroy();
+			return;
+		}
+	}
+#else
 	for (const auto AC : GetOwner()->GetComponentsByClass(USLIndividualComponent::StaticClass()))
 	{
 		if (AC != this)
@@ -49,6 +64,7 @@ void USLIndividualComponent::OnComponentCreated()
 			return;
 		}
 	}
+#endif
 }
 
 #if WITH_EDITOR
