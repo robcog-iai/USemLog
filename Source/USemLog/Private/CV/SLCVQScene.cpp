@@ -483,8 +483,9 @@ bool USLCVQScene::SetSceneActors(ASLIndividualManager* IndividualManager, ASLMon
 				{
 					if (!(*Iter)->IsPendingKillOrUnreachable())
 					{
-						(*Iter)->GetName().Equals(PoseableActorName);
-						continue;
+						if ((*Iter)->GetName().Equals(PoseableActorName)) {
+							continue;
+						}
 					}
 				}
 

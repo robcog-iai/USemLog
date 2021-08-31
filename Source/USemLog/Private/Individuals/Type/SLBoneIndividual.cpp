@@ -390,7 +390,11 @@ bool USLBoneIndividual::SetParentIndividual()
 	{
 		if (HasValidBoneIndex())
 		{
-			int32 ParentIndex = SkeletalMeshComponent->SkeletalMesh->RefSkeleton.GetParentIndex(BoneIndex);		
+#if ENGINE_MINOR_VERSION > 26 || ENGINE_MAJOR_VERSION > 4		
+			int32 ParentIndex = SkeletalMeshComponent->SkeletalMesh->GetRefSkeleton().GetParentIndex(BoneIndex);
+#else
+			int32 ParentIndex = SkeletalMeshComponent->SkeletalMesh->RefSkeleton.GetParentIndex(BoneIndex);
+#endif
 			if (ParentIndex != INDEX_NONE)
 			{
 				if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
@@ -442,7 +446,13 @@ bool USLBoneIndividual::SetChildrenIndividuals()
 		{
 			TArray<int32> ChildrenIndexes;
 			//SkeletalMeshComponent->SkeletalMesh->RefSkeleton.GetDirectChildBones(BoneIndex, ChildrenIndexes);
+
+#if ENGINE_MINOR_VERSION > 26 || ENGINE_MAJOR_VERSION > 4			
+			SkeletalMeshComponent->SkeletalMesh->GetSkeleton()->GetChildBones(BoneIndex, ChildrenIndexes);
+#else 			
 			SkeletalMeshComponent->SkeletalMesh->Skeleton->GetChildBones(BoneIndex, ChildrenIndexes);
+#endif
+
 			if (USLSkeletalIndividual* SkI = Cast<USLSkeletalIndividual>(GetOuter()))
 			{
 				for (auto ChildIndex : ChildrenIndexes)
