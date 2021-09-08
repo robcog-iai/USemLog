@@ -335,7 +335,12 @@ bool USLManipulatorMonitor::LoadBoneMonitorGroups()
 	// Lambda to check grasp overlap components of owner and add them to their groups
 	const auto GetOverlapComponentsLambda = [this](AActor* Owner)
 	{
-		TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLBoneContactMonitor::StaticClass());
+#if ENGINE_MINOR_VERSION > 23 || ENGINE_MAJOR_VERSION > 4
+	TArray<UActorComponent*> GraspOverlaps;
+	Owner->GetComponents(USLBoneContactMonitor::StaticClass(), GraspOverlaps);
+#else
+	TArray<UActorComponent*> GraspOverlaps = Owner->GetComponentsByClass(USLBoneContactMonitor::StaticClass());
+#endif
 		for (UActorComponent* GraspOverlapComp : GraspOverlaps)
 		{
 			USLBoneContactMonitor* GraspOverlap = CastChecked<USLBoneContactMonitor>(GraspOverlapComp);
