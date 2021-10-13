@@ -27,14 +27,14 @@ TMap<FString, FString> FSLTagIO::GetKVPairs(AActor* Actor, const FString& TagTyp
 	for (const auto& TagItr : Actor->Tags)
 	{
 		// Copy of the current tag as FString
-		FString CurrTag = TagItr.ToString();
+		FString CurrTagCopy = TagItr.ToString();
 
 		// Check if tag is related to the TagType
-		if (CurrTag.RemoveFromStart(TagType))
+		if (CurrTagCopy.StartsWith(TagType + ";") && CurrTagCopy.RemoveFromStart(TagType))
 		{
 			// Split on semicolon
 			FString CurrPair;
-			while (CurrTag.Split(TEXT(";"), &CurrPair, &CurrTag))
+			while (CurrTagCopy.Split(TEXT(";"), &CurrPair, &CurrTagCopy))
 			{
 				// Split on comma
 				FString CurrKey, CurrValue;
@@ -206,17 +206,17 @@ int32 FSLTagIO::IndexOfType(const TArray<FName>& InTags, const FString& TagType)
 FString FSLTagIO::GetValue(const FName& InTag, const FString& TagKey)
 {
 	// Copy of the current tag as FString
-	FString CurrTag = InTag.ToString();
+	FString CurrTagCopy = InTag.ToString();
 
 	// Check the position of the key string in the tag
-	int32 KeyPos = CurrTag.Find(";" + TagKey + ",");
+	int32 KeyPos = CurrTagCopy.Find(";" + TagKey + ",");
 	if (KeyPos != INDEX_NONE)
 	{
 		// Remove from tag with the cut length of: 
 		// pos of the key + length of the semicolon char + length of the key + length of the comma char 
-		CurrTag.RemoveAt(0, KeyPos + 1 + TagKey.Len() + 1);
+		CurrTagCopy.RemoveAt(0, KeyPos + 1 + TagKey.Len() + 1);
 		// Set the tag value as the left side of the string before the semicolon
-		return CurrTag.Left(CurrTag.Find(";"));
+		return CurrTagCopy.Left(CurrTagCopy.Find(";"));
 	}
 	// Return empty string if key was not found
 	return FString();

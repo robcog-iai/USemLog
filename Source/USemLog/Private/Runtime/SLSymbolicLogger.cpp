@@ -551,6 +551,7 @@ bool ASLSymbolicLogger::SetIndividualManager()
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
 		{
 			IndividualManager = *Iter;
+			return true;
 		}
 	}
 

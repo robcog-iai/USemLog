@@ -420,7 +420,15 @@ void FSLSemanticMapWriter::AddClassDefinition(TSharedPtr<FSLOwlSemanticMap> InSe
 			// Set a generic upper class if none is given
 			if (InSubClassOf.IsEmpty())
 			{
-				ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateSubClassOfProperty("Person"));
+				if (ObjAsSkelAct->GetName().Contains("hand"))
+				{
+					ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateSubClassOfProperty("Hand"));
+				}
+				else
+				{
+					ClassDefinition.AddChildNode(FSLOwlSemanticMapStatics::CreateSubClassOfProperty("Person"));
+				}
+
 			}
 
 			FVector BBSize;

@@ -332,6 +332,7 @@ bool ASLLoggerManager::SetWorldStateLogger()
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
 		{
 			WorldStateLogger = *Iter;
+			return true;
 		}
 	}
 
@@ -358,6 +359,7 @@ bool ASLLoggerManager::SetSymbolicLogger()
 		if ((*Iter)->IsValidLowLevel() && !(*Iter)->IsPendingKillOrUnreachable())
 		{
 			SymbolicLogger = *Iter;
+			return true;
 		}
 	}
 
