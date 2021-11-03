@@ -146,16 +146,17 @@ void USLReachAndPreGraspMonitor::Finish(bool bForced)
 		bIsFinished = true;
 
 
-		if (GetWorld())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s component at %.4fs.."),
-			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s component at unknown (world was not valid anymore).."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName());
-		}
+		// TODO - Commented out since GetWorld() can crash in newer versions in nullptr
+		//if (GetWorld())
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s component at %.4fs.."),
+		//	*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
+		//}
+		//else
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s component at unknown (world was not valid anymore).."),
+		//		*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName());
+		//}
 	}
 }
 

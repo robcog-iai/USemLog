@@ -162,16 +162,17 @@ void USLPickAndPlaceMonitor::Finish(float EndTime, bool bForced)
 		bIsInit = false;
 		bIsFinished = true;
 
-		if (GetWorld())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at %.4fs.."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at unknown (world not valid).."),
-				*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName());
-		}
+		// TODO - Commented out since GetWorld() can crash in newer versions in nullptr
+		//if (GetWorld())
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at %.4fs.."),
+		//		*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName(), GetWorld()->GetTimeSeconds());
+		//}
+		//else
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("%s::%d Succefully finished %s::%s at unknown (world not valid).."),
+		//		*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *GetName());
+		//}
 	}
 }
 
