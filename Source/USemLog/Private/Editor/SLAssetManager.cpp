@@ -140,16 +140,34 @@ FName USLAssetManager::GetCurrentLevel()
 
 void USLAssetManager::MoveReferencedObjects(FName PackageName, const FString& SourceBasePath, const FString& DestBasePath)
 {
+	
+	
+
 #if WITH_EDITOR
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 
 	TArray<FName> HardDependencies;
-	AssetRegistryModule.Get().GetDependencies(PackageName, HardDependencies, EAssetRegistryDependencyType::Hard);
-
+	//AssetRegistryModule.Get().GetDependencies(PackageName, HardDependencies, EAssetRegistryDependencyType::Hard);
+	
 	TArray<FName> SoftDependencies;
-	AssetRegistryModule.Get().GetDependencies(PackageName, SoftDependencies, EAssetRegistryDependencyType::Soft);
+	//AssetRegistryModule.Get().GetDependencies(PackageName, SoftDependencies, EAssetRegistryDependencyType::Soft);
+
+	TArray<FName> AllDependencies;
+	AssetRegistryModule.Get().GetDependencies(PackageName, AllDependencies, UE::AssetRegistry::EDependencyCategory::All);
 
 	TArray<FAssetData> AssetsList;
+
+	if (AllDependencies.Num() > 0)
+	{
+		for (const FName Dependency : AllDependencies)
+		{
+			if (Dependency.ToString().StartsWith(TEXT("/Game/")) && !Dependency.ToString().EndsWith(TEXT("BuiltData")))
+			{
+				if (AssetRegistryModule.Get().GetAssetsByPackageName(Dependency, AssetsList))
+					MoveReferencedObjects(Dependency, SourceBasePath, DestBasePath);
+			}
+		}
+	}
 
 	if (HardDependencies.Num() > 0)
 	{

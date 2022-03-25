@@ -3,6 +3,7 @@
 
 #include "Individuals/Type/SLSkyIndividual.h"
 #include "Atmosphere/AtmosphericFog.h"
+#include "Components/SkyAtmosphereComponent.h"
 
 // Ctor
 USLSkyIndividual::USLSkyIndividual()
@@ -113,7 +114,11 @@ FString USLSkyIndividual::CalcDefaultClassValue()
 {
 	if (IsInit())
 	{
-		if (AAtmosphericFog* AAF = Cast<AAtmosphericFog>(ParentActor))
+		//if (AAtmosphericFog* AAF = Cast<AAtmosphericFog>(ParentActor))
+		//{
+		//	return "AtmosphericFog";
+		//}
+		if (ASkyAtmosphere* AAF = Cast<ASkyAtmosphere>(ParentActor))
 		{
 			return "AtmosphericFog";
 		}
