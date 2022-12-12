@@ -46,6 +46,7 @@ public class USemLogEd : ModuleRules
 				"UnrealEd",
 				"LevelEditor",
 				"Projects",
+				"EditorFramework",
 				// ... add private dependencies that you statically link with here ...
 			}
 			);

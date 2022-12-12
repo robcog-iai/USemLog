@@ -3,6 +3,7 @@
 
 #pragma once
 
+//#include "EditorStyleSet.h"
 #include "CoreMinimal.h"
 #include "Toolkits/BaseToolkit.h"
 #include "Widgets/SBoxPanel.h"
@@ -18,6 +19,7 @@ public:
 	FSLEdModeToolkit();
 	
 	/** FModeToolkit interface */
+	//UFUNCTION()
 	virtual void Init(const TSharedPtr<IToolkitHost>& InitToolkitHost) override;
 
 	/** IToolkit interface */
@@ -29,56 +31,56 @@ public:
 private:
 	/* **Start** Vertical Slot Entries */
 	// Separator hack slot
-	SVerticalBox::FSlot& CreateSeparatorHackSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateSeparatorHackSlot();
 
 	// Flag checkboxes
-	SVerticalBox::FSlot& CreateCompactCheckBoxSlot();
-	SVerticalBox::FSlot& CreateOverwriteFlagSlot();
-	SVerticalBox::FSlot& CreateOnlySelectedFlagSlot();
-	SVerticalBox::FSlot& CreateResetFlagSlot();
-	SVerticalBox::FSlot& CreateTryImportFlagSlot();
-	SVerticalBox::FSlot& CreateIncludeChildrenFlagSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateCompactCheckBoxSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateOverwriteFlagSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateOnlySelectedFlagSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateResetFlagSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateTryImportFlagSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIncludeChildrenFlagSlot();
 
 	// Individual Components
-	SVerticalBox::FSlot& CreateIndividualsTxtSlot();
-	SVerticalBox::FSlot& CreateIndividualsSlot();
-	SVerticalBox::FSlot& CreateIndividualsFuncSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualsTxtSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualsSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualsFuncSlot();
 
 	// Individual Values
-	SVerticalBox::FSlot& CreateIndividualValuesTxtSlot();
-	SVerticalBox::FSlot& CreateIndividualValuesAllSlot();
-	SVerticalBox::FSlot& CreateIndivualValuesIdSlot();
-	SVerticalBox::FSlot& CreateIndividualValuesClassSlot();
-	SVerticalBox::FSlot& CreateIndividualValuesVisualMaskSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualValuesTxtSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualValuesAllSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndivualValuesIdSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualValuesClassSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualValuesVisualMaskSlot();
 	
 	// Import / Export
-	SVerticalBox::FSlot& CreateImportExportTxtSlot();
-	SVerticalBox::FSlot& CreateImportExportSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateImportExportTxtSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateImportExportSlot();
 
 	// Individual Visual Info
-	SVerticalBox::FSlot& CreateIndividualsInfoTxtSlot();
-	SVerticalBox::FSlot& CreateIndividualsInfoSlot();
-	SVerticalBox::FSlot& CreateIndividualsInfoFuncSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualsInfoTxtSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualsInfoSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualsInfoFuncSlot();
 
 	// Individual Managers
-	SVerticalBox::FSlot& CreateIndividualsManagersTxtSlot();
-	SVerticalBox::FSlot& CreateIndividualsManagersSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualsManagersTxtSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateIndividualsManagersSlot();
 
 	// Semantic Map
-	SVerticalBox::FSlot& CreateSemMapSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateSemMapSlot();
 
 	// Misc
-	SVerticalBox::FSlot& CreateUtilsTxtSlot();
-	SVerticalBox::FSlot& CreateConvertToVizMapSlot();
-	SVerticalBox::FSlot& CreateLogIdsSlot();
-	SVerticalBox::FSlot& CreateAddSemMonitorsSlot();
-	SVerticalBox::FSlot& CreateEnableOverlapsSlot();
-	SVerticalBox::FSlot& CreateShowSemData();
-	SVerticalBox::FSlot& CreateEnableInstacedMeshMaterialsSlot();
-	SVerticalBox::FSlot& CreateTriggerGCSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateUtilsTxtSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateConvertToVizMapSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateLogIdsSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateAddSemMonitorsSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateEnableOverlapsSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateShowSemData();
+	SVerticalBox::FSlot::FSlotArguments& CreateEnableInstacedMeshMaterialsSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateTriggerGCSlot();
 
 	// Info
-	SVerticalBox::FSlot& CreateGenericButtonSlot();
+	SVerticalBox::FSlot::FSlotArguments& CreateGenericButtonSlot();
 	/* **End** Vertical Slot Entries */
 
 

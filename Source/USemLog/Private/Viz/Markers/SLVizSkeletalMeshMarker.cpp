@@ -491,7 +491,7 @@ void USLVizSkeletalMeshMarker::SetPoseableMeshComponentVisual(USkeletalMesh* Ske
 		PMCRef = NewObject<UPoseableMeshComponent>(this);
 		PMCRef->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		PMCRef->bPerBoneMotionBlur = false;
-		PMCRef->bHasMotionBlurVelocityMeshes = false;
+//		PMCRef->bHasMotionBlurVelocityMeshes = false;
 		PMCRef->bSelectable = false;
 		PMCRef->SetVisibility(false);
 		//PMCRef->AttachToComponent(this, FAttachmentTransformRules::KeepWorldTransform);

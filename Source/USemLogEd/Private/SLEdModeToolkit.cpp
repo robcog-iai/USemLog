@@ -130,7 +130,7 @@ class FEdMode* FSLEdModeToolkit::GetEditorMode() const
 
 /* -Start- Vertical Slot Entries */
 // Separator hack slot
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSeparatorHackSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateSeparatorHackSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -149,7 +149,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSeparatorHackSlot()
 }
 
 // Create the checkbox slots as a bundle
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -237,7 +237,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateCompactCheckBoxSlot()
 
 
 // Checkboxes
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteFlagSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateOverwriteFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -262,7 +262,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOverwriteFlagSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedFlagSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateOnlySelectedFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -288,7 +288,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateOnlySelectedFlagSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateResetFlagSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateResetFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -314,7 +314,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateResetFlagSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateTryImportFlagSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateTryImportFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -340,7 +340,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTryImportFlagSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenFlagSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIncludeChildrenFlagSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -368,7 +368,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIncludeChildrenFlagSlot()
 
 
 // Individual Components
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsTxtSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualsTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -380,7 +380,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsTxtSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -446,7 +446,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsFuncSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualsFuncSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -471,7 +471,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsFuncSlot()
 
 
 // Individual Values
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesTxtSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualValuesTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -483,7 +483,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesTxtSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesAllSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualValuesAllSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -516,7 +516,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesAllSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndivualValuesIdSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndivualValuesIdSlot()
 {
 	return 	SVerticalBox::Slot()
 		.AutoHeight()
@@ -549,7 +549,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndivualValuesIdSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesClassSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualValuesClassSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -582,7 +582,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesClassSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesVisualMaskSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualValuesVisualMaskSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -617,7 +617,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualValuesVisualMaskSlot()
 
 
 // Import / Export
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateImportExportTxtSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateImportExportTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -629,7 +629,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateImportExportTxtSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateImportExportSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateImportExportSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -675,7 +675,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateImportExportSlot()
 
 
 // Individual Visual Info
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoTxtSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualsInfoTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -687,7 +687,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoTxtSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualsInfoSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -753,7 +753,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoFuncSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualsInfoFuncSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -801,7 +801,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsInfoFuncSlot()
 
 
 // Individual Managers
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersTxtSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualsManagersTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -813,7 +813,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersTxtSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateIndividualsManagersSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -859,7 +859,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateIndividualsManagersSlot()
 
 
 // Semantic Map
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemMapSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateSemMapSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -889,7 +889,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateSemMapSlot()
 
 
 // Misc
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateUtilsTxtSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateUtilsTxtSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -901,7 +901,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateUtilsTxtSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateConvertToVizMapSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateConvertToVizMapSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -916,7 +916,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateConvertToVizMapSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateLogIdsSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateLogIdsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -931,7 +931,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateLogIdsSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemMonitorsSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateAddSemMonitorsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -946,7 +946,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateAddSemMonitorsSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableOverlapsSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateEnableOverlapsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -961,7 +961,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableOverlapsSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateShowSemData()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateShowSemData()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -976,7 +976,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateShowSemData()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableInstacedMeshMaterialsSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateEnableInstacedMeshMaterialsSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -991,7 +991,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateEnableInstacedMeshMaterialsSlot()
 		];
 }
 
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateTriggerGCSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateTriggerGCSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()
@@ -1007,7 +1007,7 @@ SVerticalBox::FSlot& FSLEdModeToolkit::CreateTriggerGCSlot()
 }
 
 // Info
-SVerticalBox::FSlot& FSLEdModeToolkit::CreateGenericButtonSlot()
+SVerticalBox::FSlot::FSlotArguments& FSLEdModeToolkit::CreateGenericButtonSlot()
 {
 	return SVerticalBox::Slot()
 		.AutoHeight()

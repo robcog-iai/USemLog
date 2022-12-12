@@ -579,7 +579,7 @@ UPoseableMeshComponent* USLVizMarker::CreateNewSkeletalInstance()
 	PMC->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	PMC->SetSkeletalMesh(SkeletalMesh);
 	PMC->bPerBoneMotionBlur = false;
-	PMC->bHasMotionBlurVelocityMeshes = false;
+//	PMC->bHasMotionBlurVelocityMeshes = false;
 	for (const auto MatPair : SkeletalMaterials)
 	{
 		PMC->SetMaterial(MatPair.Key, MatPair.Value);
