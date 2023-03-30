@@ -15,7 +15,7 @@ class USkeletalMeshComponent;
 /**
 * Hand type
 */
-UENUM()
+UENUM(BlueprintType)
 enum class ESLBoneContactGroup : uint8
 {
 	A					UMETA(DisplayName = "A"),

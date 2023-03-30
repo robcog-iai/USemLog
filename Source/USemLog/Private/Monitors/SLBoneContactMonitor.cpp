@@ -110,8 +110,29 @@ void USLBoneContactMonitor::Start()
 // Attach component to bone
 bool USLBoneContactMonitor::AttachToBone()
 {
+	//Check if the component attached to is a skeletal Mesh
+	if (USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(GetAttachParent()))
+	{
+			if (SkelComp->GetBoneIndex(BoneName) != INDEX_NONE)
+			{
+				FAttachmentTransformRules AttachmentRule = bSnapToBone ? FAttachmentTransformRules::SnapToTargetIncludingScale
+					: FAttachmentTransformRules::KeepRelativeTransform;
+
+				if (AttachToComponent(SkelComp, AttachmentRule, BoneName))
+				{
+					//UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached component %s to the bone %s"),
+					//	*FString(__func__), __LINE__, *GetName(), *BoneName.ToString());
+					return true;
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find bone %s for component %s"),
+					*FString(__func__), __LINE__, *BoneName.ToString(), *GetName());
+			}
+	}
 	// Check if owner is a skeletal actor
-	if (ASkeletalMeshActor* SkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
+	else if (ASkeletalMeshActor* SkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
 	{
 		// Get the skeletal mesh component
 		if (USkeletalMeshComponent* SMC = SkelAct->GetSkeletalMeshComponent())
