@@ -157,6 +157,12 @@ void ISLContactMonitorInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedC
 		return;
 	}
 
+	//Check if the other component should be ignored
+	if (FSLIndividualUtils::CheckIgnoreActor(OtherActor)) {
+		return;
+
+	}
+
 	// Check if the component or its outer is semantically annotated
 	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);
 	if (OtherIndividual == nullptr)
@@ -236,6 +242,13 @@ void ISLContactMonitorInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedCom
 	{
 		return;
 	}
+
+	//Check if the other component should be ignored
+	if (FSLIndividualUtils::CheckIgnoreActor(OtherActor)) {
+		return;
+	
+	}
+
 
 	// Check if the component or its outer is semantically annotated
 	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);
