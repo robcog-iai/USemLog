@@ -4,6 +4,7 @@
 #include "Individuals/SLIndividualUtils.h"
 #include "Individuals/SLIndividualComponent.h"
 #include "Individuals/Type/SLIndividualTypes.h"
+#include "Individuals/SLIgnore.h"
 
 #include "Skeletal/SLSkeletalDataAsset.h"
 #include "AssetRegistryModule.h" // FindSkeletalDataAsset
@@ -554,6 +555,19 @@ USLBaseIndividual* FSLIndividualUtils::GetIndividualObject(AActor* Owner)
 		return IC->GetIndividualObject();
 	}
 	return nullptr;
+}
+
+//Check whether the the actor has a SLIgnore component and thus should be ignored
+bool FSLIndividualUtils::CheckIgnoreActor(AActor* Owner)
+{
+	if (UActorComponent* AC = Owner->GetComponentByClass(USLIgnore::StaticClass())) 
+	{
+		if (CastChecked<USLIgnore>(AC)) 
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 // Create default individual object depending on the owner type (returns nullptr if failed)
