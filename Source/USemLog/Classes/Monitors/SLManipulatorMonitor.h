@@ -3,11 +3,13 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "USemLog.h"
 #include "Components/ActorComponent.h"
 #include "Monitors/SLMonitorStructs.h"
 #include "TimerManager.h"
 #include "Monitors/SLGraspHelper.h"
+#include "Delegates/Delegate.h"
 #include "SLManipulatorMonitor.generated.h"
 
 // Forward declarations
@@ -72,6 +74,9 @@ struct FSLContactEndEvent
 DECLARE_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignature, USLBaseIndividual* /*Self*/, USLBaseIndividual* /*Other*/, float /*Time*/, const FString& /*Type*/);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignature, USLBaseIndividual* /*Self*/, USLBaseIndividual* /*Other*/, float /*Time*/);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FSLBeginManipulatorGraspSignatureBP, USLBaseIndividual*,individualOne, USLBaseIndividual*,individualTwo, float,f, const FString&,s);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FSLEndManipulatorGraspSignatureBP, USLBaseIndividual*, individualOne, USLBaseIndividual*, individualTwo, float,f);
+
 /**
  * Checks for manipulator related events (contact, grasp)
  */
@@ -104,6 +109,10 @@ public:
 
 	// Get finished state
 	bool IsFinished() const { return bIsFinished; };
+
+	//Change the AxisOverwrite value
+	UFUNCTION(BlueprintCallable, Category = "Semantic Logger")
+	void setAxisOverwriteValue(float axisOverwrite);
 
 protected:
 #if WITH_EDITOR
@@ -204,10 +213,17 @@ public:
 	// Event called when grasp begins/ends
 	FSLBeginManipulatorGraspSignature OnBeginManipulatorGrasp;
 	FSLEndManipulatorGraspSignature OnEndManipulatorGrasp;
+	
+	// Additional Events called which are accessible from Blueprint
+	UPROPERTY(BlueprintAssignable, Category = "Grasp")
+		FSLBeginManipulatorGraspSignatureBP OnBeginManipulatorGraspBP;
+	UPROPERTY(BlueprintAssignable, Category = "Grasp")
+		FSLEndManipulatorGraspSignatureBP OnEndManipulatorGraspBP;
 
 	// Event called when a semantic overlap/contact begins/ends
 	FSLBeginContactSignature OnBeginManipulatorContact;
 	FSLEndContactSignature OnEndManipulatorContact;
+
 	
 private:
 	// Log contact related debug messages
@@ -246,6 +262,7 @@ private:
 
 	// Ad Hoc grasp helper is active or not
 	uint8 bIsGraspHelpActive : 1;
+
 		
 #if WITH_EDITORONLY_DATA
 	// Hand type to load pre-defined parameters
@@ -253,8 +270,12 @@ private:
 	ESLGraspHandType HandType;
 #endif // WITH_EDITORONLY_DATA
 	
-	// Read the input directly, avoid biding to various controllers
+	//Overwrite the axis input. Enabling to let the grab react to other events or values. Compares against InputAxisOverwriteValue then. 
 	UPROPERTY(EditAnywhere, Category = "Semantic Logger")
+	bool bOverwriteInputAxisInput;
+
+	// Input axis to listen for grasp events
+	UPROPERTY(EditAnywhere, Category = "Semantic Logger", meta = (editcondition = "!bOverwriteInputAxisInput"))
 	FName InputAxisName;
 
 	// Axis input value to wake up from idle

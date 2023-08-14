@@ -83,6 +83,7 @@ public:
 	FTransform GetCachedPose() const { return CachedPose; };
 
 	// Get actor represented by the individual
+	UFUNCTION(BlueprintCallable)
 	AActor* GetParentActor() const { return ParentActor; };
 
 	// True if individual is part of another individual

@@ -98,6 +98,7 @@ public:
 	void SetAttachedBoneNameChecked(const FName& NewName) { BoneName = NewName; };
 
 	// Attach component to bone
+	UFUNCTION(BLUEPRINTCALLABLE)
 	bool AttachToBone();
 
 #if WITH_EDITOR

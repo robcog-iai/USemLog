@@ -157,7 +157,7 @@ void ISLContactMonitorInterface::OnOverlapBegin(UPrimitiveComponent* OverlappedC
 		return;
 	}
 
-	//Check if the other component should be ignored
+	//Check if the other actor should be ignored
 	if (FSLIndividualUtils::CheckIgnoreActor(OtherActor)) {
 		return;
 
@@ -243,7 +243,7 @@ void ISLContactMonitorInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedCom
 		return;
 	}
 
-	//Check if the other component should be ignored
+	//Check if the other actor should be ignored
 	if (FSLIndividualUtils::CheckIgnoreActor(OtherActor)) {
 		return;
 	
@@ -257,6 +257,8 @@ void ISLContactMonitorInterface::OnOverlapEnd(UPrimitiveComponent* OverlappedCom
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s is not annotated, this should not happen.."), *FString(__FUNCTION__), __LINE__, *OtherActor->GetName());
 		return;
 	}
+
+
 
 	// Delay publishing the overlap event in case of possible concatenations
 	RecentlyEndedOverlapEvents.Emplace(FSLOverlapEndEvent(OtherComp, OtherIndividual, World->GetTimeSeconds()));
