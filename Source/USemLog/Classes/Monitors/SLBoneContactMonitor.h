@@ -15,7 +15,7 @@ class USkeletalMeshComponent;
 /**
 * Hand type
 */
-UENUM()
+UENUM(BlueprintType)
 enum class ESLBoneContactGroup : uint8
 {
 	A					UMETA(DisplayName = "A"),
@@ -98,6 +98,7 @@ public:
 	void SetAttachedBoneNameChecked(const FName& NewName) { BoneName = NewName; };
 
 	// Attach component to bone
+	UFUNCTION(BLUEPRINTCALLABLE)
 	bool AttachToBone();
 
 #if WITH_EDITOR

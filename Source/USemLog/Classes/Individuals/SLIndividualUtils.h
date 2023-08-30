@@ -124,6 +124,9 @@ public:
 	// Get the individual object from the actor (nullptr if it does not exist)
 	static USLBaseIndividual* GetIndividualObject(AActor* Owner);
 
+	//Check whether the the actor has a SLIgnore component and thus should be ignored
+	static bool CheckIgnoreActor(AActor* Owner);
+
 	// Create default individual object depending on the owner type (returns nullptr if failed)
 	static USLBaseIndividual* CreateIndividualObject(UObject* Outer, AActor* Owner);
 

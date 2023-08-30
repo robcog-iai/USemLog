@@ -103,7 +103,7 @@ void USLVizQMarkerArray::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 		}
 		// Resync
 		MarkerIds.Empty();
-		for (const auto& Individual : Individuals)
+		for (const auto Individual : Individuals)
 		{
 			MarkerIds.Add(MarkerIdPrefix + Individual);
 		}		
@@ -134,7 +134,7 @@ void USLVizQMarkerArray::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 		}
 		// Resync
 		MarkerIds.Empty();
-		for (const auto& Individual : Individuals)
+		for (const auto Individual : Individuals)
 		{
 			MarkerIds.Add(MarkerIdPrefix + Individual);
 		}
@@ -143,7 +143,7 @@ void USLVizQMarkerArray::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 	{
 		bSyncMarkerAndIndividualsButton = false;
 		MarkerIds.Empty();
-		for (const auto& Individual : Individuals)
+		for (const auto Individual : Individuals)
 		{	
 			MarkerIds.Add(MarkerIdPrefix + Individual);
 		}
@@ -151,7 +151,7 @@ void USLVizQMarkerArray::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 	else if (PropertyName == GET_MEMBER_NAME_CHECKED(USLVizQMarkerArray, MarkerIdPrefix))
 	{
 		MarkerIds.Empty();
-		for (const auto& Individual : Individuals)
+		for (const auto Individual : Individuals)
 		{
 			MarkerIds.Add(MarkerIdPrefix + Individual);
 		}

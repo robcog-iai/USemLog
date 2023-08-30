@@ -85,6 +85,7 @@ void USLBoneContactMonitor::Init(bool bGrasp, bool bContact)
 				bIsGraspDetectionPaused ? SetColor(FColor::Yellow) : SetColor(FColor::Red);
 			}
 			bIsInit = true;			
+			
 		}
 	}
 }
@@ -110,8 +111,29 @@ void USLBoneContactMonitor::Start()
 // Attach component to bone
 bool USLBoneContactMonitor::AttachToBone()
 {
+	//Check if the component attached to is a skeletal Mesh
+	if (USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(GetAttachParent()))
+	{
+			if (SkelComp->GetBoneIndex(BoneName) != INDEX_NONE)
+			{
+				FAttachmentTransformRules AttachmentRule = bSnapToBone ? FAttachmentTransformRules::SnapToTargetIncludingScale
+					: FAttachmentTransformRules::KeepRelativeTransform;
+
+				if (AttachToComponent(SkelComp, AttachmentRule, BoneName))
+				{
+					//UE_LOG(LogTemp, Warning, TEXT("%s::%d Attached component %s to the bone %s"),
+					//	*FString(__func__), __LINE__, *GetName(), *BoneName.ToString());
+					return true;
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("%s::%d Could not find bone %s for component %s"),
+					*FString(__func__), __LINE__, *BoneName.ToString(), *GetName());
+			}
+	}
 	// Check if owner is a skeletal actor
-	if (ASkeletalMeshActor* SkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
+	else if (ASkeletalMeshActor* SkelAct = Cast<ASkeletalMeshActor>(GetOwner()))
 	{
 		// Get the skeletal mesh component
 		if (USkeletalMeshComponent* SMC = SkelAct->GetSkeletalMeshComponent())
@@ -135,6 +157,7 @@ bool USLBoneContactMonitor::AttachToBone()
 			}
 		}
 	}
+
 	UE_LOG(LogTemp, Error, TEXT("%s::%d Could not attach component %s to the bone %s"),
 		*FString(__func__), __LINE__, *GetName(), *BoneName.ToString());
 	return false;
@@ -401,6 +424,12 @@ void USLBoneContactMonitor::OnGraspOverlapBegin(UPrimitiveComponent* OverlappedC
 		return;
 	}
 
+	//Check if the other Actor should be ignored
+	if (FSLIndividualUtils::CheckIgnoreActor(OtherActor)) {
+		return;
+
+	}
+
 	// Check if the component or its outer is semantically annotated
 	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);
 	if (OtherIndividual == nullptr)
@@ -461,6 +490,12 @@ void USLBoneContactMonitor::OnGraspOverlapEnd(UPrimitiveComponent* OverlappedCom
 		UE_LOG(LogTemp, Error, TEXT("%s::%d %s->%s self overlap, this should not happen.."),
 			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *OtherActor->GetName());
 		return;
+	}
+
+	//Check if the other Actor should be ignored
+	if (FSLIndividualUtils::CheckIgnoreActor(OtherActor)) {
+		return;
+
 	}
 
 	// Check if the component or its outer is semantically annotated
@@ -642,6 +677,12 @@ void USLBoneContactMonitor::OnContactOverlapBegin(UPrimitiveComponent* Overlappe
 		return;
 	}
 
+	//Check if the other Actor should be ignored
+	if (FSLIndividualUtils::CheckIgnoreActor(OtherActor)) {
+		return;
+
+	}
+
 	// Check if the component or its outer is semantically annotated
 	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);
 	if (OtherIndividual == nullptr)
@@ -699,6 +740,13 @@ void USLBoneContactMonitor::OnContactOverlapEnd(UPrimitiveComponent* OverlappedC
 			*FString(__FUNCTION__), __LINE__, *GetOwner()->GetName(), *OtherActor->GetName());
 		return;
 	}
+
+	//Check if the other Actor should be ignored
+	if (FSLIndividualUtils::CheckIgnoreActor(OtherActor)) {
+		return;
+
+	}
+
 
 	// Check if the component or its outer is semantically annotated
 	USLBaseIndividual* OtherIndividual = FSLIndividualUtils::GetIndividualObject(OtherActor);

@@ -13,7 +13,7 @@ void USLVizQCacheEpisodes::ExecuteImpl(ASLKnowrobManager* KRManager)
 	ASLVizManager* VizManager = KRManager->GetVizManager();
 	ASLMongoQueryManager* MongoQueryManager = KRManager->GetMongoQueryManager();
 
-	for (const auto& Episode : Episodes)
+	for (const auto Episode : Episodes)
 	{
 		if (!VizManager->IsEpisodeCached(Episode))
 		{
